@@ -89,8 +89,11 @@ struct AskConversationView: View {
             }
         }
         .onDisappear { model.setRemoteImagesVisible(false) }
-        .onChange(of: auth.isLoggedIn) { _ in model.invalidateRemoteImages() }
-        .onChange(of: auth.userProfile?.id) { _ in model.invalidateRemoteImages() }
+        .onChange(of: auth.isLoggedIn) { _ in accountDidChange() }
+        .onChange(of: auth.userProfile?.id) { _ in accountDidChange() }
+        .onReceive(NotificationCenter.default.publisher(for: .authTokenDidRefresh)) { notification in
+            if let changed = notification.object as? AuthState, changed === auth { accountDidChange() }
+        }
         .tint(AskTheme.accent)
         .environment(\.askContextImageAccess, model.contextImageAccess(launcher: false))
         .environment(\.askRemoteImageAccess, model.remoteImageAccess)
@@ -112,6 +115,11 @@ struct AskConversationView: View {
     private var layout: AskWorkspaceLayout {
         AskWorkspaceLayout(size: windowSize, sidebarCollapsed: sidebarCollapsed, showsUsage: showsUsage || showsWorkflow,
                            rightPanelWidth: showsWorkflow ? 390 : nil)
+    }
+
+    private func accountDidChange() {
+        model.invalidateRemoteImages()
+        Task { await model.refreshAfterAccountChange() }
     }
 
     private var showsWorkflow: Bool { model.authoringSession?.isPresented == true && !showsUsage }

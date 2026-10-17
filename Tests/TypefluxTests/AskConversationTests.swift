@@ -267,7 +267,10 @@ final class AskTestCapture: AskContextCapturing {
 }
 
 @MainActor
-final class AskTestSession { var owner = "owner" }
+final class AskTestSession {
+    var owner = "owner"
+    var token = "token"
+}
 
 /// Conversation tests do not read this Mac's browser data or automation grants.
 private struct AskFixtureBrowserSearch: AskBrowserSearching {
@@ -303,7 +306,7 @@ struct AskTestFixture {
                                      trustedApprovalPeer: approvalReuseEnabled ? .init(version: 1, capabilities: ["scoped_approval_v1"]) : nil,
                                      scopedApprovalEnabled: approvalReuseEnabled, session: { [sessionState] in
                                          if localOnly { return (AskRoutedAPI.localOwner, "") }
-                                         return authenticated ? (sessionState.owner, "token") : nil
+                                         return authenticated ? (sessionState.owner, sessionState.token) : nil
                                      })
         // Keep launcher results independent of this Mac's installed apps and files.
         model.appIndex = AskTestAppIndex([])

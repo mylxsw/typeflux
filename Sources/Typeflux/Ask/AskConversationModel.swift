@@ -829,6 +829,22 @@ final class AskConversationModel: ObservableObject {
         }
     }
 
+    func refreshAfterAccountChange() async {
+        let localSelection = selectedId.flatMap { id in
+            localConversationIds.contains(id) || (owner == AskRoutedAPI.localOwner && conversations.contains { $0.id == id })
+                ? id : nil
+        }
+        guard credentials() != nil else { return }
+        let selection = selectionGeneration
+        await refreshHistory()
+        guard selection == selectionGeneration, session()?.owner == owner else { return }
+        if let localSelection {
+            localConversationIds.insert(localSelection)
+            await select(localSelection)
+        }
+        await loadSavedChatDrafts()
+    }
+
     /// Every conversation stored on this Mac; the engine pages by 50.
     private func localHistory() async throws -> [AskConversationSummary] {
         var all: [AskConversationSummary] = []
@@ -863,6 +879,22 @@ final class AskConversationModel: ObservableObject {
     func select(_ rawId: String, reload: Bool = false) async {
         let id = AskConversationID.canonical(rawId)
         guard leaveTemporaryConversation(for: id) else { return }
+        let previousOwner = owner
+        let accountChanged = !previousOwner.isEmpty && previousOwner != session()?.owner
+        let wasLocal = localConversationIds.contains(id)
+            || (previousOwner == AskRoutedAPI.localOwner && conversations.contains { $0.id == id })
+        let localRow = accountChanged && wasLocal ? conversations.first { $0.id == id } : nil
+        guard credentials() != nil else { return }
+        if accountChanged {
+            // The row may have been clicked before the new account's history loaded.
+            // Keep local rows on their local route; discard rows from the old Cloud account.
+            if wasLocal {
+                localConversationIds.insert(id)
+                if let localRow { conversations = [localRow] }
+            }
+            Task { await refreshHistory() }
+            guard wasLocal else { return }
+        }
         guard let current = credentials(for: id) else { return }
         if selectedId == id, isLoadingSelection || (!reload && selected != nil && !selectionLoadFailed) { return }
         clearCapturedContentFeedback(launcher: false)

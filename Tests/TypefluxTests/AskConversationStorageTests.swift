@@ -212,6 +212,43 @@ struct AskConversationStorageTests {
         #expect(fixture.model.selectedId == nil)
     }
 
+    @Test func selectingLocalHistoryDuringSignInKeepsItsLocalRouteAndReloadsHistory() async throws {
+        let (fixture, _) = try fixture()
+        fixture.sessionState.owner = AskRoutedAPI.localOwner
+        fixture.sessionState.token = ""
+        await fixture.localAPI.seed(summary("p", 20))
+        await fixture.model.refreshHistory()
+        #expect(fixture.model.conversations.map(\.id) == ["p"])
+
+        fixture.sessionState.owner = "owner"
+        fixture.sessionState.token = "token"
+        await fixture.model.select("p")
+
+        #expect(fixture.model.selected?.id == "p")
+        #expect(fixture.model.isLocal("p"))
+        #expect(fixture.model.error == nil)
+        try await fixture.wait { fixture.model.conversations.contains { $0.id == "p" } }
+    }
+
+    @Test func accountRefreshKeepsTheSelectedLocalConversationAfterSignIn() async throws {
+        let (fixture, _) = try fixture()
+        fixture.sessionState.owner = AskRoutedAPI.localOwner
+        fixture.sessionState.token = ""
+        await fixture.localAPI.seed(summary("p", 20))
+        await fixture.model.refreshHistory()
+        await fixture.model.select("p")
+        #expect(fixture.model.selected?.id == "p")
+
+        fixture.sessionState.owner = "owner"
+        fixture.sessionState.token = "token"
+        await fixture.model.refreshAfterAccountChange()
+
+        #expect(fixture.model.selected?.id == "p")
+        #expect(fixture.model.isLocal("p"))
+        #expect(fixture.model.conversations.contains { $0.id == "p" })
+        #expect(fixture.model.error == nil)
+    }
+
     @Test func signedOutEverythingStaysOnThisMac() throws {
         let fixture = try AskTestFixture(localOnly: true)
         #expect(!fixture.model.isSignedIn)
