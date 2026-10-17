@@ -89,7 +89,7 @@ struct AskLauncherMotionTests {
         }
         try await Task.sleep(for: .milliseconds(250))
         try await fixture.wait { !controller.launcherIsResizing }
-        #expect(window.frame.width == min(700, visible.width - 24))
+        #expect(window.frame.width == min(AskMetrics.launcherWidth, visible.width - 24))
         #expect(window.frame.height > 118, "The captured home must add space below the empty composer")
         let homeHeight = window.frame.height
         let editor = try #require(editor(in: content))

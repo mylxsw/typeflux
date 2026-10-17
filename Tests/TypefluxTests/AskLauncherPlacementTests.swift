@@ -9,7 +9,7 @@ struct AskLauncherPlacementTests {
     @Test func launcherOpensAtRestingHeightWithMaximumPanelCentredOnALargeDisplay() {
         let display = NSRect(x: -2400, y: 100, width: 2400, height: 1600)
         let frame = AskLauncherPlacement.preferredFrame(on: display)
-        #expect(frame.size == NSSize(width: 700, height: AskLauncherPlacement.restingHeight))
+        #expect(frame.size == NSSize(width: 1500, height: AskLauncherPlacement.restingHeight))
         #expect(abs(frame.midX - display.midX) <= 0.5)
         #expect(frame.maxY == (display.midY + AskMetrics.launcherWindowHeight / 2).rounded())
     }
@@ -29,7 +29,7 @@ struct AskLauncherPlacementTests {
         let anchor = AskLauncherPlacement.Anchor(left: 100, fromTop: 80)
         let frame = AskLauncherPlacement.preferredFrame(on: display, anchor: anchor)
         #expect(AskLauncherPlacement.anchor(of: frame, on: display) == anchor)
-        #expect(frame.size == NSSize(width: 700, height: AskLauncherPlacement.restingHeight))
+        #expect(frame.size == NSSize(width: AskMetrics.launcherWidth, height: AskLauncherPlacement.restingHeight))
         let outside = AskLauncherPlacement.preferredFrame(on: display, anchor: .init(left: 3000, fromTop: -100))
         #expect(outside.maxX == display.maxX - AskLauncherPlacement.screenMargin)
         #expect(outside.maxY == display.maxY - AskLauncherPlacement.screenMargin)

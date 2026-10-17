@@ -25,15 +25,16 @@ struct AskConversationVisualTests {
         controller.showLauncher()
         try await fixture.wait { window("launcher")?.isVisible == true }
         let launcher = try #require(window("launcher"))
+        let visibleFrame = try #require(launcher.screen?.visibleFrame)
         #expect(launcher.styleMask == [.borderless, .nonactivatingPanel])
-        #expect(launcher.frame.width == AskMetrics.launcherWidth)
+        #expect(launcher.frame.width == min(AskMetrics.launcherWidth,
+                                            visibleFrame.width - AskLauncherPlacement.screenMargin * 2))
         // Empty, it lists its home under the controls.
         let home = AskLauncherSuggestions.height(for: fixture.model.launcherHome())
         #expect(launcher.frame.height <= AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: home) + 4)
         // Placed like Spotlight: a launcher with a typical home is centred on the screen,
         // and every launcher shares that top edge, growing or shrinking below it.
         let top = launcher.frame.maxY
-        let visibleFrame = try #require(launcher.screen?.visibleFrame)
         #expect(abs(top - (visibleFrame.midY + AskLauncherPlacement.restingHeight / 2)) < 2)
         #expect(abs(launcher.frame.midX - visibleFrame.midX) < 1)
         fixture.model.launcherDraft.text = String(repeating: "Line of text\n", count: 30)
