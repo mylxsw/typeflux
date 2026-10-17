@@ -69,4 +69,3 @@ Final SHA-256:
 - App: `7f8d4445ec105d02f152d3ba42b278b66559308b247fb7fd5abca2bc2b7e1fd0`
 
 Private reproducibility archive `.build/realtime-audio-bounds-validation/final`; exact inventories and raw hashes are in the repository method JSON. Every build/inventory/test/archive/extraction job was collected before dependent reads/edits. This archive is local evidence, not a delivered binary or a crash-containment guarantee.
-
