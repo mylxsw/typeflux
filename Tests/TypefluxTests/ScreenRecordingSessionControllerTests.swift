@@ -9,8 +9,9 @@ struct ScreenRecordingSessionControllerTests {
     final class Fixture {
         let suite = UUID().uuidString
         let settings: SettingsStore
+        lazy var toast = ScreenRecordingToastController(settings: settings)
         var recordings: [ScreenRecordingCoordinatorTests.Fixture] = []
-        lazy var controller = ScreenRecordingSessionController(settings: settings, makeWindow: { [settings] in
+        lazy var controller = ScreenRecordingSessionController(settings: settings, toast: toast, makeWindow: { [settings] in
             ScreenRecordingWindowController(settings: settings, preview: ScreenRecordingVisualTests.Devices())
         }) { [unowned self] in
             let recording = ScreenRecordingCoordinatorTests.Fixture()
@@ -148,6 +149,21 @@ struct ScreenRecordingSessionControllerTests {
         fixture.recordings.removeAll()
         try await SettingsBehaviorTestSupport.wait { model == nil && presenter == nil }
         #expect(fixture.controller.sessions.isEmpty)
+    }
+
+    @Test func `opening a recording clears the recovery notice without a rectangular window shadow`() async throws {
+        let fixture = Fixture()
+        let first = await fixture.record()
+        let source = try #require(first.model.sourceURL)
+        fixture.toast.showRecovery(source, open: {}, discard: {})
+        let notice = try #require(fixture.toast.panel)
+        #expect(notice.isVisible)
+        #expect(!notice.hasShadow)
+
+        fixture.controller.show()
+        #expect(fixture.toast.panel == nil)
+        #expect(!notice.isVisible)
+        await fixture.clean()
     }
 
     @Test func `quit retains every unsaved source and drains current setup`() async throws {

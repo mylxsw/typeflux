@@ -16,9 +16,10 @@ final class ScreenRecordingSessionController {
     private let toast: ScreenRecordingToastController
 
     init(settings: SettingsStore,
+         toast: ScreenRecordingToastController? = nil,
          makeWindow: (() -> ScreenRecordingWindowController)? = nil,
          makeModel: @escaping () -> ScreenRecordingCoordinator) {
-        let toast = ScreenRecordingToastController(settings: settings)
+        let toast = toast ?? ScreenRecordingToastController(settings: settings)
         self.toast = toast
         self.makeModel = makeModel
         self.makeWindow = makeWindow ?? { ScreenRecordingWindowController(settings: settings, toast: toast) }
@@ -33,6 +34,7 @@ final class ScreenRecordingSessionController {
     }
 
     func show(format: ScreenRecordingFormat? = nil, region: ScreenRecordingTarget? = nil) {
+        toast.hide()
         if let active = sessions.first(where: { $0.model.isCaptureActive }) {
             active.model.show()
             return
@@ -73,6 +75,7 @@ final class ScreenRecordingSessionController {
     }
 
     func recover(_ source: URL) {
+        toast.hide()
         if let existing = sessions.first(where: { ($0.model.sourceURL ?? $0.recoverySource) == source }) {
             existing.window.show(existing.model)
             return

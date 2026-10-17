@@ -57,7 +57,8 @@ final class ScreenRecordingToastController {
         panel.identifier = ScreenshotCaptureWindowPolicy.toastIdentifier
         panel.appearance = AppAppearance.nsAppearance(for: settings.appearanceMode)
         panel.level = .floating; panel.isOpaque = false; panel.backgroundColor = .clear
-        panel.hasShadow = true; panel.hidesOnDeactivate = false; panel.isReleasedWhenClosed = false
+        // The rounded SwiftUI surface owns its shadow; a window shadow outlines the rectangular panel.
+        panel.hasShadow = false; panel.hidesOnDeactivate = false; panel.isReleasedWhenClosed = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         let host = NSHostingView(rootView: view.interfaceStyle(following: interfaceStyle))
         panel.contentView = host
@@ -68,14 +69,12 @@ final class ScreenRecordingToastController {
             display: true
         )
         panel.orderFrontRegardless(); self.panel = panel
-        if !recovery {
-            let token = model.generation
-            let work = DispatchWorkItem { [weak self] in
-                guard let self, model.generation == token else { return }; hide()
-            }
-            hideWork = work
-            DispatchQueue.main.asyncAfter(deadline: .now() + 10, execute: work)
+        let token = model.generation
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, model.generation == token else { return }; hide()
         }
+        hideWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + (recovery ? 12 : 10), execute: work)
     }
 
     func hide() {
