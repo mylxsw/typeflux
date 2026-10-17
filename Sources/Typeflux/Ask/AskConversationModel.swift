@@ -1673,8 +1673,8 @@ final class AskConversationModel: ObservableObject {
 
     /// Screen capture needs an opened data scope in standard mode, just like files need a root.
     func automaticallyApproves(_ call: AskToolCall, risk: AskToolRisk, conversationId: String) -> Bool {
-        // Personal notes and host commands need explicit consent in every permission mode.
-        if call.function.name == AskNotebookTool.name || call.function.name == "run_command" { return false }
+        // Personal notes always need explicit consent. Other tools follow the selected mode.
+        if call.function.name == AskNotebookTool.name { return false }
         let mode = permissionMode(conversationId: conversationId)
         if mode == .standard, call.function.name == "computer",
            (try? AskLocalTools.arguments(call.function.arguments)["action"] as? String) == "screenshot" {

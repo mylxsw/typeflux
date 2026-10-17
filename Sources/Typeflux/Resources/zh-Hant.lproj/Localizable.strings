@@ -2506,7 +2506,7 @@
 "agent.capability.files.title" = "檔案存取";
 "agent.capability.files.summary" = "讀寫你授權的資料夾，寫入前會確認。";
 "agent.capability.code.title" = "命令執行";
-"agent.capability.code.summary" = "每條命令經你確認後，才會在這台 Mac 上執行。";
+"agent.capability.code.summary" = "在這台 Mac 上執行命令；嚴格、標準模式先確認，YOLO 模式自動執行。";
 "agent.capability.automation.title" = "操作電腦與瀏覽器";
 "agent.capability.automation.summary" = "查看螢幕、點按、輸入，替你完成網頁和 App 中的操作。";
 "agent.capability.skills.summary" = "特定任務的做法，需要時自動載入。";
@@ -2553,7 +2553,7 @@
 "agent.files.rule.read" = "讀取：已開放資料夾內自動執行";
 "agent.files.rule.write" = "寫入：標準模式下執行前確認";
 "agent.files.removed" = "已移除「%@」";
-"agent.code.subtitle" = "每條命令經你確認後，才會以目前 Mac 帳號的權限執行。";
+"agent.code.subtitle" = "命令以目前 Mac 帳號權限執行；嚴格、標準模式先確認，YOLO 模式自動執行。";
 "agent.code.rule.network" = "無網路";
 "agent.code.rule.home" = "無法存取個人目錄";
 "agent.code.rule.confirm" = "標準模式下執行前確認";

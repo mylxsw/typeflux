@@ -2499,7 +2499,7 @@
 "agent.capability.files.title" = "파일 접근";
 "agent.capability.files.summary" = "허용한 폴더를 읽고 수정합니다. 수정하기 전에 확인합니다.";
 "agent.capability.code.title" = "명령 실행";
-"agent.capability.code.summary" = "각 명령을 승인한 후 이 Mac에서 실행합니다.";
+"agent.capability.code.summary" = "이 Mac에서 명령을 실행합니다. 엄격·표준 모드는 확인하고 YOLO 모드는 자동 실행합니다.";
 "agent.capability.automation.title" = "컴퓨터 및 브라우저 제어";
 "agent.capability.automation.summary" = "화면을 보고 클릭하고 입력해 앱과 웹 페이지의 작업을 대신 처리합니다.";
 "agent.capability.skills.summary" = "특정 작업을 위한 지침으로, 필요할 때 불러옵니다.";
@@ -2546,7 +2546,7 @@
 "agent.files.rule.read" = "읽기: 허용된 폴더 내에서 자동 실행";
 "agent.files.rule.write" = "쓰기: 표준 모드에서 실행 전 확인";
 "agent.files.removed" = "'%@' 제거됨";
-"agent.code.subtitle" = "각 명령을 승인한 후 현재 Mac 계정 권한으로 실행합니다.";
+"agent.code.subtitle" = "현재 Mac 계정 권한으로 실행합니다. 엄격·표준 모드는 확인하고 YOLO 모드는 자동 실행합니다.";
 "agent.code.rule.network" = "네트워크 없음";
 "agent.code.rule.home" = "홈 폴더 접근 불가";
 "agent.code.rule.confirm" = "표준 모드에서 실행 전 확인";

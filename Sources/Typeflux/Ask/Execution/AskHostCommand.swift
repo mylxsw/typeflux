@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 
-/// A user-approved command on the host Mac. This is deliberately separate from
+/// A permission-mode-governed command on the host Mac. This is separate from
 /// the isolated analysis sandbox: it runs with the user's normal file access.
 struct AskHostCommand: Sendable {
     static let maximumCommandBytes = 1200
@@ -19,8 +19,8 @@ struct AskHostCommand: Sendable {
         let data = try! JSONSerialization.data(withJSONObject: schema, options: .sortedKeys)
         return .init(name: "run_command", description: """
         Run one shell command on the user's Mac with their normal account access. Use only when the task requires a command. \
-        Show the exact command for a separate user approval before every run, even in YOLO mode. Do not claim that a \
-        referenced script was inspected unless you read it. The command starts in the user's home folder, has no \
+        The client shows the exact command for approval in Strict and Standard modes; YOLO mode runs it automatically. \
+        Do not claim that a referenced script was inspected unless you read it. The command starts in the user's home folder, has no \
         interactive terminal, and has a maximum runtime of 120 seconds. Check the exit status and output afterward.
         """, parameters: JSONValue(data: data))
     }

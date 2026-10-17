@@ -29,13 +29,13 @@ struct AskPermissionModeTests {
         }
     }
 
-    @Test func hostCommandsAlwaysNeedApproval() throws {
+    @Test func hostCommandApprovalFollowsMode() throws {
         let f = try AskTestFixture()
         defer { f.model.resetSession() }
         let command = call("run_command")
         for mode in AskPermissionMode.allCases {
             f.model.permissionModes["c"] = mode
-            #expect(!f.model.automaticallyApproves(command, risk: .destructive, conversationId: "c"))
+            #expect(f.model.automaticallyApproves(command, risk: .destructive, conversationId: "c") == (mode == .yolo))
         }
     }
 
@@ -99,7 +99,7 @@ struct AskPermissionModeTests {
         #expect(f.model.permissionMode(launcher: false) == mode)
     }
 
-    @Test(arguments: ["files", "run_code", "mcp_unknown", "generate_image"])
+    @Test(arguments: ["files", "run_code", "run_command", "mcp_unknown", "generate_image"])
     func yoloResumesPendingWritesAndUnknownTools(_ tool: String) async throws {
         let f = try AskTestFixture()
         defer { f.model.resetSession() }
