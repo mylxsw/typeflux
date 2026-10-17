@@ -1,0 +1,76 @@
+{
+  "baseline": "46b60c0031582f182a417460dbdf8811fb78a1d1",
+  "denominator": "Git added/modified executable Swift lines intersected with LLVM LCOV DA records; new Swift files included. Line coverage only, not branch coverage.",
+  "groups": {
+    "application": {
+      "covered": 62,
+      "executable": 62,
+      "percent": 100.0
+    },
+    "filesystem_helper": {
+      "covered": 72,
+      "executable": 74,
+      "percent": 97.3
+    },
+    "native_media_runtime": {
+      "covered": 0,
+      "executable": 0,
+      "percent": null
+    }
+  },
+  "files": {
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift": {
+      "covered": 0,
+      "executable": 0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticAudioWindows.swift": {
+      "covered": 59,
+      "executable": 59,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Media.swift": {
+      "covered": 12,
+      "executable": 12,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+AudioProgress.swift": {
+      "covered": 11,
+      "executable": 11,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ImageText.swift": {
+      "covered": 2,
+      "executable": 2,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+MediaJobs.swift": {
+      "covered": 33,
+      "executable": 33,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexDiagnostics.swift": {
+      "covered": 1,
+      "executable": 1,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaExtractor.swift": {
+      "covered": 13,
+      "executable": 15,
+      "uncovered": [
+        207,
+        208
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaPriority.swift": {
+      "covered": 1,
+      "executable": 1,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift": {
+      "covered": 2,
+      "executable": 2,
+      "uncovered": []
+    }
+  }
+}

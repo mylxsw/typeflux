@@ -1,0 +1,5 @@
+{
+  "apfs_private_clone_seconds": 12.021754625020549,
+  "source": "accepted PR633 instrumented cache",
+  "module_cache_removed_in_private_copy": true
+}

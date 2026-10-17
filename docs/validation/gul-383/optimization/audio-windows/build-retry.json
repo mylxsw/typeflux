@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticAudioWindowTests|SemanticMediaExtractorTests|SemanticMediaIndexTests|SemanticIndexRecoveryTests/.*media metadata and recipe|SemanticIndexDiagnosticsTests"
+  ],
+  "wall_seconds": 214.80992283398518,
+  "exit_code": 0
+}

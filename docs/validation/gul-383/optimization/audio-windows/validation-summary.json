@@ -1,0 +1,55 @@
+{
+  "test_methods": 21,
+  "suites": 5,
+  "method_results": "21/21 passed, with parameter cases inside the selected methods",
+  "complete_commands": [
+    {
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticAudioWindowTests|SemanticMediaExtractorTests|SemanticMediaIndexTests|SemanticIndexRecoveryTests/.*media metadata and recipe|SemanticIndexDiagnosticsTests"
+      ],
+      "wall_seconds": 279.8165715839714,
+      "exit_code": 2
+    },
+    {
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticAudioWindowTests|SemanticMediaExtractorTests|SemanticMediaIndexTests|SemanticIndexRecoveryTests/.*media metadata and recipe|SemanticIndexDiagnosticsTests"
+      ],
+      "wall_seconds": 214.80992283398518,
+      "exit_code": 0
+    }
+  ],
+  "complete_wall_seconds": 494.62649441795656,
+  "successful_build_seconds": 145.64,
+  "successful_discovery_build_seconds": 185.79,
+  "successful_runner_execution_seconds": 24.15,
+  "first_failure": "Source comment changed during build; no tests executed; same focused command retried with frozen sources. First build had no completion marker.",
+  "cache_preparation": {
+    "apfs_private_clone_seconds": 12.021754625020549,
+    "source": "accepted PR633 instrumented cache",
+    "module_cache_removed_in_private_copy": true
+  },
+  "coverage": {
+    "application": {
+      "covered": 62,
+      "executable": 62,
+      "percent": 100.0
+    },
+    "filesystem_helper": {
+      "covered": 72,
+      "executable": 74,
+      "percent": 97.3
+    },
+    "native_media_runtime": {
+      "covered": 0,
+      "executable": 0,
+      "percent": null
+    }
+  },
+  "coverage_unit": "Git added/modified executable lines intersected with LLVM DA records; line coverage, not branch coverage",
+  "uncovered": "SemanticMediaExtractor.swift:207-208, retained video-audio buffering branch; no standalone audio changed executable line is uncovered.",
+  "claims": "Real native WAV decoding, production IPC resume, SQLite staging/query, fixed vectors; priority interruption injected at the existing callback. No real embedding-model quality, native UI, external time-seeking, Release latency or sustained resource claim."
+}
