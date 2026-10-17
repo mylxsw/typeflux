@@ -71,7 +71,7 @@ extension AskQuickResultsInteractionTests {
         }
     }
 
-    @Test func aShorterListSettlesOnceTypingPauses() async throws {
+    @Test func aShrinkingKeywordListKeepsTheLauncherHeight() async throws {
         try await withPasteboard { _ in
             let launcher = try await Launcher(text: "prefix", prepare: { model in
                 model.modelLibrary.settings.saveAskLauncherKeywords(AskPluginRegistry.defaultKeywords + [
@@ -89,10 +89,11 @@ extension AskQuickResultsInteractionTests {
             try await waitFor { model.plugins.output?.items.count == 1 }
             try await Task.sleep(for: .milliseconds(50))
             let typing = try #require(launcher.heights.last)
-            #expect(typing >= tall - 1, "typing keeps the list height even when most rows disappear")
+            #expect(abs(typing - tall) < 1, "typing keeps the launcher's height when most rows disappear")
             try await Task.sleep(for: AskLauncherHeightReserve.settleDelay + .milliseconds(450))
             let settled = try #require(launcher.heights.last)
-            #expect(settled < typing, "after the pause the panel fits the shorter list")
+            #expect(abs(settled - AskLauncherWindowMode.expandedHeight) < 1,
+                    "after the pause the launcher keeps its one height; the list leaves space below")
         }
     }
 }

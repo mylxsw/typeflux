@@ -78,7 +78,8 @@ struct AskLauncherHeaderTests {
         let request = fixture.model.launcherDraft.request(deviceId: "device", tools: [])
         #expect(request.source == fixture.model.launcherDraft.source)
         #expect(request.selection == "first line\nsecond line")
-        let expected = AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: home)
+        // The expanded launcher keeps one height; the home fills it.
+        let expected = AskLauncherWindowMode.expandedHeight
         #expect(abs(reported.height - expected) <= 4, "reported \(reported.height), expected \(expected)")
         try click(memory, in: window)
         try await fixture.wait { fixture.model.launcherDraft.memoryOff == true }
@@ -319,7 +320,7 @@ struct AskLauncherHeaderTests {
         #expect(find(L("ask.memory"), attribute: "accessibilityLabel", in: window) != nil)
     }
 
-    @Test func voicePanelIsAtLeastItsMinimumWhenThereWereNoResults() async throws {
+    @Test func voicePanelFillsTheResultsAreaWithoutResizingTheLauncher() async throws {
         let fixture = try AskTestFixture()
         fixture.model.launcherDraft.text = "a question with no quick results"
         let recorder = AskTestVoiceRecorder()
@@ -332,7 +333,10 @@ struct AskLauncherHeaderTests {
         let editor = try #require(descendants(window.contentView!).compactMap { $0 as? AskComposerTextView.Editor }.first)
         window.makeFirstResponder(editor)
         #expect(fixture.model.voiceInput.begin(in: editor))
-        #expect(abs(try await settledHeight(fixture, reported) - resting - AskVoicePanel.minimumHeight) <= 1)
+        #expect(abs(try await settledHeight(fixture, reported) - resting) <= 1,
+                "recording takes the results' place at the launcher's one height")
+        let chrome = AskMetrics.launcherHeight(editor: 32, banners: 0)
+        #expect(resting - chrome >= AskVoicePanel.minimumHeight, "the results area holds the whole voice panel")
         fixture.model.voiceInput.cancel()
         #expect(abs(try await settledHeight(fixture, reported) - resting) <= 1)
     }

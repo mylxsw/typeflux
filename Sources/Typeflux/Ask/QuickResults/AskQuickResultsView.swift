@@ -25,6 +25,10 @@ struct AskQuickResultsView: View {
     var calendarProvider: (any CalendarEventProviding)?
 
     @State private var pointer = AskSearchPointer(position: NSEvent.mouseLocation)
+    /// The rows of the previous render: the highlight slides only between the same rows.
+    @State private var highlightMemo = HighlightMemo()
+    @Namespace private var highlightSpace
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var copied: Int?
     @State private var copiedReset: Task<Void, Never>?
 
@@ -74,6 +78,7 @@ struct AskQuickResultsView: View {
             Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
             if !results.listRows.isEmpty || results.notice != nil {
                 let items = Self.listItems(for: results)
+                let _ = highlightMemo.update(rows: items.map(\.id))
                 let scrolls = Self.contentHeight(for: results) > visibleHeight
                 ScrollViewReader { proxy in
                     ScrollView(.vertical, showsIndicators: scrolls) {
@@ -185,8 +190,7 @@ struct AskQuickResultsView: View {
                 }
             }
             .padding(.horizontal, 10).frame(height: Self.appHeight)
-            .background(highlighted ? AskTheme.hoverFill : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background { highlightShape(highlighted, cornerRadius: 14) }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -229,8 +233,7 @@ struct AskQuickResultsView: View {
             }
             .padding(.horizontal, 10)
             .frame(height: Self.calculationHeight)
-            .background(highlighted ? AskTheme.hoverFill : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background { highlightShape(highlighted, cornerRadius: 16) }
             .overlay {
                 if highlighted {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -278,8 +281,7 @@ struct AskQuickResultsView: View {
             }
             .padding(.horizontal, 10)
             .frame(height: Self.appHeight)
-            .background(highlighted ? AskTheme.hoverFill : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background { highlightShape(highlighted, cornerRadius: 14) }
             .overlay {
                 if highlighted, results.best == row, row == results.rows.first {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -318,8 +320,7 @@ struct AskQuickResultsView: View {
             }
             .padding(.horizontal, 10)
             .frame(height: file.evidence == nil ? Self.fileHeight : Self.contentFileHeight)
-            .background(highlighted ? AskTheme.hoverFill : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background { highlightShape(highlighted, cornerRadius: 14) }
             .overlay {
                 if highlighted, results.best == row, row == results.rows.first {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -352,8 +353,7 @@ struct AskQuickResultsView: View {
             .padding(.leading, 50)
             .padding(.trailing, 10)
             .frame(height: Self.moreHeight)
-            .background(highlighted ? AskTheme.hoverFill : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background { highlightShape(highlighted, cornerRadius: 12) }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -401,8 +401,7 @@ struct AskQuickResultsView: View {
             .padding(.leading, 50)
             .padding(.trailing, 10)
             .frame(height: Self.formatHeight)
-            .background(highlighted ? AskTheme.hoverFill : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background { highlightShape(highlighted, cornerRadius: 12) }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -411,6 +410,39 @@ struct AskQuickResultsView: View {
         .accessibilityValue(format.value)
         .accessibilityHint(L("ask.quick.copy"))
         .accessibilityAddTraits(highlighted ? .isSelected : [])
+    }
+
+    /// One highlight shape that moves from row to row. When only the highlight moves
+    /// (arrow keys, the pointer) it glides to the new row; when the rows themselves
+    /// change it simply appears on its row, so a new batch never animates.
+    @ViewBuilder private func highlightShape(_ highlighted: Bool, cornerRadius: CGFloat) -> some View {
+        let slides = highlightMemo.sameRows && !reduceMotion
+        ZStack {
+            if highlighted {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(AskTheme.hoverFill)
+                    .matchedGeometryEffect(id: "quickResults.highlight", in: highlightSpace)
+            }
+        }
+        .transaction { transaction in
+            // The launcher disables animations; the highlight opts back in for itself only.
+            transaction.disablesAnimations = !slides
+            transaction.animation = slides ? Self.highlightMotion : nil
+        }
+    }
+
+    static let highlightMotion: Animation = .easeOut(duration: 0.12)
+
+    /// Remembers the previous render's rows. A reference, so updating it in `body`
+    /// never invalidates the view.
+    final class HighlightMemo {
+        private var rows: [String] = []
+        private(set) var sameRows = false
+
+        func update(rows next: [String]) {
+            sameRows = rows == next
+            rows = next
+        }
     }
 
     private func tile(_ symbol: String, tint: Color) -> some View {
