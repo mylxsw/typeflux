@@ -1,0 +1,18 @@
+{
+  "swift": {
+    "path": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift",
+    "sha256": "c90fc92073e78cd2b3c65efcacf65acfaf4290b02f7a9d301853563b85f4a993"
+  },
+  "clang": {
+    "path": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang",
+    "sha256": "ee029330bf58ab6e481385f4237cc54602eaa8b81526242e5c5ab5b76e8c5a7e"
+  },
+  "llvm-cov": {
+    "path": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/llvm-cov",
+    "sha256": "dbc794bb8d20cd3909cb9070c87cf0fb217a6a6878143c31bc444ec90f8fdad0"
+  },
+  "llvm-profdata": {
+    "path": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/llvm-profdata",
+    "sha256": "4889b3af4baf16ab0ceedb144dabc6df0d2503b294cc489963b3a6eb96f47e0c"
+  }
+}

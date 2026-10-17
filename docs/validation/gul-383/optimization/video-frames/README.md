@@ -4,6 +4,10 @@ Baseline: PR636 merge `67da58f9d03826d26095cf635f8e1d35dcc57006`.
 This slice changes video frames only. Remaining GUL-405 work includes time-aware media opening,
 embedded audio overlap, per-item retry/status, resumable verified downloads and real-model/native-input acceptance.
 
+The current PR also contains a test-only fixture repair. See `fixture-repair/README.md` for the
+independent writer-readiness failure, frozen MOV hashes, minimal revalidation and current-binary
+fingerprints. Results below describe the original production slice and remain preserved.
+
 ## Implementation and limits
 
 - Disposable filesystem worker samples from the video track start at 0.5-second steps, plus one request at

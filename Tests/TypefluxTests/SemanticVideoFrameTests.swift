@@ -64,48 +64,21 @@ struct SemanticVideoFrameTests {
             .write(to: URL(fileURLWithPath: folder).appendingPathComponent(name + ".json"))
     }
 
-    /// Six seconds at 10 fps: red slide, a 0.7 s blue slide, red again, final green frame.
-    /// The old 10 s sampling sees only red. No full-frame decoder is used by production.
-    private func movie(_ root: URL, staticScene: Bool = false) async throws -> URL {
+    /// Reuse the real MOVs frozen in PR638, avoiding hardware encoder readiness during tests.
+    /// The short scene is six seconds at 10 fps, including a 0.7 s blue slide and green EOF frame.
+    private func movie(_ root: URL, name: String = "short-scene") throws -> URL {
+        let expected = try #require([
+            "short-scene": "7db4b38eca51b68f458481fee84c1aa5a3e119e5e29d9faf166a035bbd99ddd2",
+            "static-scene": "263f17d7cdaae6f671ded7c07a83ca22429151f5f0a1f05414fa4bdbbf31093e",
+            "longer-audio": "902e4d62bc5f6b745963c89766e680b917a8cd1104c9ef733f698b31d73195ec"
+        ][name])
+        let source = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("docs/validation/gul-383/optimization/video-frames/\(name).mov")
+        let digest = try SHA256.hash(data: Data(contentsOf: source)).map { String(format: "%02x", $0) }.joined()
+        try #require(digest == expected, "Frozen MOV fixture hash changed: \(name)")
         let url = root.appendingPathComponent(UUID().uuidString + ".mov")
-        let writer = try AVAssetWriter(outputURL: url, fileType: .mov)
-        let input = AVAssetWriterInput(mediaType: .video, outputSettings: [
-            AVVideoCodecKey: AVVideoCodecType.jpeg, AVVideoWidthKey: 64, AVVideoHeightKey: 64
-        ])
-        let adaptor = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: input, sourcePixelBufferAttributes: [
-            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32ARGB,
-            kCVPixelBufferWidthKey as String: 64, kCVPixelBufferHeightKey as String: 64
-        ])
-        writer.add(input); try #require(writer.startWriting()); writer.startSession(atSourceTime: .zero)
-        for index in 0 ..< 60 {
-            var buffer: CVPixelBuffer?
-            try #require(CVPixelBufferCreate(kCFAllocatorDefault, 64, 64, kCVPixelFormatType_32ARGB,
-                                             nil, &buffer) == kCVReturnSuccess)
-            let frame = try #require(buffer)
-            CVPixelBufferLockBaseAddress(frame, [])
-            let bytes = CVPixelBufferGetBaseAddress(frame)!.assumingMemoryBound(to: UInt8.self)
-            let row = CVPixelBufferGetBytesPerRow(frame)
-            for rowIndex in 0 ..< 64 {
-                for column in 0 ..< 64 {
-                    let offset = rowIndex * row + column * 4
-                    bytes[offset] = 255
-                    bytes[offset + 1] = staticScene ? UInt8(220 + index % 2)
-                        : (!(11 ..< 18).contains(index) && index != 59 ? 220 : 0)
-                    bytes[offset + 2] = !staticScene && index == 59 ? 220 : 0
-                    bytes[offset + 3] = !staticScene && (11 ..< 18).contains(index) ? 220 : 0
-                }
-            }
-            CVPixelBufferUnlockBaseAddress(frame, [])
-            for _ in 0 ..< 100 where !input.isReadyForMoreMediaData {
-                try await Task.sleep(for: .milliseconds(5))
-            }
-            try #require(adaptor.append(frame, withPresentationTime: CMTime(value: Int64(index), timescale: 10)))
-        }
-        input.markAsFinished(); await writer.finishWriting(); try #require(writer.status == .completed)
-        if let folder = ProcessInfo.processInfo.environment["TYPEFLUX_GUL405_EVIDENCE"] {
-            try? FileManager.default.copyItem(at: url, to: URL(fileURLWithPath: folder)
-                .appendingPathComponent(staticScene ? "static-scene.mov" : "short-scene.mov"))
-        }
+        try FileManager.default.copyItem(at: source, to: url)
         return url
     }
 
@@ -119,7 +92,7 @@ struct SemanticVideoFrameTests {
 
     @Test func `short scene and EOF tail survive real decode and persisted query`() async throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
-        let file = try await movie(root), reader = VideoCheckpointReader(), media = VideoColorEncoder()
+        let file = try movie(root), reader = VideoCheckpointReader(), media = VideoColorEncoder()
         let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
         let metadata = try reader.read(.init(operation: .content, path: file.path,
                                              scope: semanticScope(root.path), readText: false), isCancelled: { false })
@@ -151,7 +124,7 @@ struct SemanticVideoFrameTests {
     @Test(arguments: [false, true])
     func `cancel or document preemption resumes duplicate run without reencoding`(preempt: Bool) async throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
-        let file = try await movie(root), reader = VideoCheckpointReader(), media = VideoColorEncoder()
+        let file = try movie(root), reader = VideoCheckpointReader(), media = VideoColorEncoder()
         let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
         let metadata = try reader.read(.init(operation: .content, path: file.path,
                                              scope: semanticScope(root.path), readText: false), isCancelled: { false })
@@ -198,7 +171,7 @@ struct SemanticVideoFrameTests {
 
     @Test func `static and near duplicates do not infer again and completed cursor does no decode`() async throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
-        let file = try await movie(root, staticScene: true)
+        let file = try movie(root, name: "static-scene")
         var frames = 0, progress: [SemanticVideoProgress] = []
         let final = try SemanticMediaExtractor.extract(request(file, root: root), mounts: .init(excluded: [])) {
             if $0.media != nil {
@@ -230,27 +203,7 @@ struct SemanticVideoFrameTests {
 
     @Test func `video track stops at its own end instead of longer audio timeline`() async throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
-        let file = try await movie(root)
-        let audio = root.appendingPathComponent("longer.wav")
-        try SemanticMediaExtractor.wave(Data(count: 8 * 64000), to: audio)
-        let source = AVURLAsset(url: file), audioSource = AVURLAsset(url: audio)
-        let composition = AVMutableComposition()
-        let track = try #require(composition.addMutableTrack(withMediaType: .video,
-                                                             preferredTrackID: kCMPersistentTrackID_Invalid))
-        try track.insertTimeRange(CMTimeRange(start: .zero, duration: source.duration),
-                                  of: #require(source.tracks(withMediaType: .video).first), at: .zero)
-        let audioTrack = try #require(composition.addMutableTrack(withMediaType: .audio,
-                                                                  preferredTrackID: kCMPersistentTrackID_Invalid))
-        try audioTrack.insertTimeRange(CMTimeRange(start: .zero, duration: audioSource.duration),
-                                       of: #require(audioSource.tracks(withMediaType: .audio).first), at: .zero)
-        let output = root.appendingPathComponent("longer-audio.mov")
-        let exporter = try #require(AVAssetExportSession(
-            asset: composition,
-            presetName: AVAssetExportPresetPassthrough
-        ))
-        exporter.outputURL = output; exporter.outputFileType = .mov
-        await exporter.export()
-        try #require(exporter.status == .completed)
+        let output = try movie(root, name: "longer-audio")
         let exported = AVURLAsset(url: output)
         let video = try #require(exported.tracks(withMediaType: .video).first)
         #expect(exported.duration.seconds > video.timeRange.end.seconds)
@@ -267,11 +220,6 @@ struct SemanticVideoFrameTests {
         #expect(saved?.complete == true)
         try record("track-range", ["actual_times": times, "asset_duration": exported.duration.seconds,
                                    "video_end": video.timeRange.end.seconds, "complete": saved?.complete == true])
-        if let folder = ProcessInfo.processInfo.environment["TYPEFLUX_GUL405_EVIDENCE"] {
-            try FileManager.default.copyItem(at: output,
-                                             to: URL(fileURLWithPath: folder)
-                                                 .appendingPathComponent("longer-audio.mov"))
-        }
     }
 
     // swiftlint:disable:next function_body_length

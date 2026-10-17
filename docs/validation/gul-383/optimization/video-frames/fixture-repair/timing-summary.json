@@ -1,0 +1,30 @@
+{
+  "commands": [
+    {
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticVideoFrameTests"
+      ],
+      "wall_seconds": 93.02460508298827,
+      "exit_code": 2
+    },
+    {
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticVideoFrameTests/.*(short scene|cancel or document|static and near|video track stops).*"
+      ],
+      "wall_seconds": 148.94112770800712,
+      "exit_code": 0
+    }
+  ],
+  "total_command_wall_seconds": 241.9657327909954,
+  "build_seconds": [
+    54.24,
+    62.2
+  ],
+  "retries": 1,
+  "passing_method_execution_seconds": 4.635,
+  "runner_execution_seconds": 13.06
+}
