@@ -1,0 +1,12 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "scripts.tests.test_macho_audit",
+    "-v"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 12.14515479200054,
+  "reason": "Bash PS4 truncated the long source path before the line number; use source basename for trace coverage."
+}

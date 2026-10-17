@@ -1,0 +1,96 @@
+{
+  "binaries": {
+    ".build/candidate/Typeflux.app/Contents/MacOS/Typeflux": {
+      "sha256": "ff1412263510800bf4e0045ec50848ba40822cfc02c1c06e250b90bec3bbbdb3",
+      "bytes": 144823152
+    },
+    ".build/candidate/Typeflux.app/Contents/Helpers/TypefluxInferenceHelper": {
+      "sha256": "0012b537b42b39ec94ee537dce0fb1e6a17adb88ee85b01d1a3943205fbb798a",
+      "bytes": 5714240
+    },
+    ".build/candidate/Typeflux.app/Contents/Helpers/TypefluxMediaHelper": {
+      "sha256": "ed8a76b4c1f63bce927cbf3e00d768108beef554b4c2606ba7d353a0783befd1",
+      "bytes": 1531792
+    },
+    ".build/candidate/Typeflux.app/Contents/Resources/LocalRuntimes/SemanticSearch/TypefluxSemanticHelper": {
+      "sha256": "353139dd155f76da16d113bad6b46f6d888f3aa00dc34dd44c28b932c5054d7d",
+      "bytes": 11895168
+    },
+    ".build/out/Products/Release/TypefluxFocusedTests.xctest/Contents/MacOS/TypefluxFocusedTests": {
+      "sha256": "f592bebbe9b2921195a2576d21743afa5ef4977c6177374022a4c9805d61a592",
+      "bytes": 166509704
+    }
+  },
+  "profile": {
+    "raw_files": {
+      "native-ui-helper-70634.profraw": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "native-ui-helper-70658.profraw": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "native-ui-helper-70661.profraw": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "native-ui-helper-70694.profraw": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "native-ui-helper-70722.profraw": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "native-ui-helper-70753.profraw": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "native-ui-helper-70769.profraw": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "native-ui-helper-70792.profraw": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "native-ui-helper-70855.profraw": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "native-ui-helper-70890.profraw": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "native-ui-helper-70912.profraw": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "native-ui-helper-70944.profraw": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "native-ui-helper-70968.profraw": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "native-ui-helper-70972.profraw": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "native-ui-helper-71001.profraw": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "packaged-helper-62306.profraw": {
+        "sha256": "bf892f01373604627b6bc0b9bca9b35747c045f8de7cde2c0f678a976c2417ac",
+        "bytes": 2512
+      }
+    },
+    "scope": "Unchanged optimized semantic helper execution counters. Host/test products are not newly coverage-instrumented; Swift changed lines are 0/0 N/A.",
+    "merge_exit_code": 0,
+    "merge_error": "",
+    "merged_sha256": "45f22bf987e7503ec3bd99747fd90893124850f8857ff58f9888defc460b9009"
+  }
+}

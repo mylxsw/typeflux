@@ -1,0 +1,6 @@
+{
+  "stage": "codesign-main",
+  "error": "code object is not signed at all; In subcomponent: Contents/Helpers/swift-transformers_Hub.bundle",
+  "wall_seconds": null,
+  "note": "Original error retained from tool output. Initial aggregate wall timer was not persisted on failure; subsequent failure handling records it."
+}

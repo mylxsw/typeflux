@@ -1,0 +1,1222 @@
+{
+  "Contents/Helpers/TypefluxInferenceHelper": {
+    "bytes": 5714240,
+    "sha256": "0012b537b42b39ec94ee537dce0fb1e6a17adb88ee85b01d1a3943205fbb798a"
+  },
+  "Contents/Helpers/TypefluxMediaHelper": {
+    "bytes": 1531792,
+    "sha256": "ed8a76b4c1f63bce927cbf3e00d768108beef554b4c2606ba7d353a0783befd1"
+  },
+  "Contents/Helpers/swift-transformers_Hub.bundle/Contents/Info.plist": {
+    "bytes": 1139,
+    "sha256": "30e96c06e45cb85af4bba87f795e1030298b2f3ba9a79f2f6ed65580b3395e05"
+  },
+  "Contents/Helpers/swift-transformers_Hub.bundle/Contents/Resources/gpt2_tokenizer_config.json": {
+    "bytes": 234,
+    "sha256": "551e26ec611d8d0c8edc3ef72e518a38418cb71f40de1347dd486a595e1557d7"
+  },
+  "Contents/Helpers/swift-transformers_Hub.bundle/Contents/Resources/t5_tokenizer_config.json": {
+    "bytes": 20746,
+    "sha256": "e0aff0b1de9071e30d9a60a199303b6abe916a64a19932bd1c46992279b41a1f"
+  },
+  "Contents/Helpers/swift-transformers_Hub.bundle/Contents/_CodeSignature/CodeDirectory": {
+    "bytes": 209,
+    "sha256": "9f9c82576a5305dc7770b6d6549d70513a0211f991f9c1845378d13e94a3822c"
+  },
+  "Contents/Helpers/swift-transformers_Hub.bundle/Contents/_CodeSignature/CodeRequirements": {
+    "bytes": 12,
+    "sha256": "987920904eab650e75788c054aa0b0524e6a80bfc71aa32df8d237a61743f986"
+  },
+  "Contents/Helpers/swift-transformers_Hub.bundle/Contents/_CodeSignature/CodeResources": {
+    "bytes": 2728,
+    "sha256": "ae3880b32a4b58e4636e028cf141099134804da084866b30e86115f17fe99df7"
+  },
+  "Contents/Helpers/swift-transformers_Hub.bundle/Contents/_CodeSignature/CodeSignature": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "Contents/Info.plist": {
+    "bytes": 2950,
+    "sha256": "98f4e9987aaed70cb57ecfb586706ce46a685bbd500430599d088ec6b089a9bb"
+  },
+  "Contents/MacOS/Typeflux": {
+    "bytes": 144823152,
+    "sha256": "ff1412263510800bf4e0045ec50848ba40822cfc02c1c06e250b90bec3bbbdb3"
+  },
+  "Contents/Resources/LocalRuntimes/SemanticSearch/TypefluxSemanticHelper": {
+    "bytes": 11895168,
+    "sha256": "353139dd155f76da16d113bad6b46f6d888f3aa00dc34dd44c28b932c5054d7d"
+  },
+  "Contents/Resources/LocalRuntimes/SemanticSearch/licenses/LICENSE-jsonhpp": {
+    "bytes": 1075,
+    "sha256": "c0d068392ea65358b798b8c165103560f06e9e3b38c4ab4e2d8810a7b931af86"
+  },
+  "Contents/Resources/LocalRuntimes/SemanticSearch/licenses/rotate-bits.txt": {
+    "bytes": 1088,
+    "sha256": "ca0b44aec101afb6b46f4c39b23369fa06a64fb9c0add37c2689d702156fee55"
+  },
+  "Contents/Resources/LocalRuntimes/SemanticSearch/licenses/semantic-runtime.txt": {
+    "bytes": 3672,
+    "sha256": "aa091391293869d808898aa7b126d4274cd0168f19c4e64b014b02cce2235691"
+  },
+  "Contents/Resources/LocalRuntimes/SemanticSearch/licenses/sha256.txt": {
+    "bytes": 41,
+    "sha256": "b81d0022ca6367918c67b57e9647d3513ee58809fd4b0ef0b3492f1356bced25"
+  },
+  "Contents/Resources/LocalRuntimes/SemanticSearch/licenses/xxhash.txt": {
+    "bytes": 1389,
+    "sha256": "6ffedbc0f7878612d2b23589f1ff2ab15633e1df7963a5d9fc750ec5500c7e7a"
+  },
+  "Contents/Resources/LocalRuntimes/SemanticSearch/llama.cpp-LICENSE.txt": {
+    "bytes": 1078,
+    "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+  },
+  "Contents/Resources/Typeflux.icns": {
+    "bytes": 403994,
+    "sha256": "c842bace2adbbf8f4f2e6b60ce5d752b965438e8d313f2629f4e9af05b42f0ae"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Info.plist": {
+    "bytes": 1145,
+    "sha256": "5ee9eaed3b479714f0a0dcfd1faf078a1127569b7c4fad8bfbfc1b3d36f1529b"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/LICENSE": {
+    "bytes": 1064,
+    "sha256": "add9d7531d1b21646317a8958e38fc727506fa39d24bdecb44154d943c82753a"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/ace-dark.png": {
+    "bytes": 7212,
+    "sha256": "a342e9f6ff0b22da37755cc2444ff24eb83f32c96e758701eaec9d0367da7196"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/ace-light.png": {
+    "bytes": 7244,
+    "sha256": "abf39f1db4e03b795bf66abb91e7c92d4d49073ca215f2bafb5d032e2cde0d38"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/ai2-dark.png": {
+    "bytes": 3408,
+    "sha256": "2a82382a3464ae5b32c5b9b7c8354105b6a7cf8afc6e991119912dcf442e0f13"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/ai2-light.png": {
+    "bytes": 3408,
+    "sha256": "2a82382a3464ae5b32c5b9b7c8354105b6a7cf8afc6e991119912dcf442e0f13"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/ai21-dark.png": {
+    "bytes": 4779,
+    "sha256": "149ef9d7b743b39cd2c58b6edc755f4848d26c46b50ddea9362e41b42d1a2363"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/ai21-light.png": {
+    "bytes": 4799,
+    "sha256": "72651bb2e853671ca2d9db2eebbcd874a9332a5b76812788216992786a415111"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/aionlabs-dark.png": {
+    "bytes": 30104,
+    "sha256": "3fff75ae993b431dec61fceba52b1e4513b50fcfe231042bff383c3e0836769c"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/aionlabs-light.png": {
+    "bytes": 30104,
+    "sha256": "3fff75ae993b431dec61fceba52b1e4513b50fcfe231042bff383c3e0836769c"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/anthropic-dark.png": {
+    "bytes": 3580,
+    "sha256": "77c77059492c4b09937bcabafbbcfaf06738c893b1bc60a5a272eafeea68a8ea"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/anthropic-light.png": {
+    "bytes": 3580,
+    "sha256": "389105af72687ae02e5dfbbafe24ed99a84a77a6cf6ea339c13993615b64b37e"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/arcee-dark.png": {
+    "bytes": 4569,
+    "sha256": "e81bc3a0c8c9f82475c63b54540ce2ff1015b5b1e0010c6f37c4a7ad7ee2365a"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/arcee-light.png": {
+    "bytes": 4569,
+    "sha256": "e81bc3a0c8c9f82475c63b54540ce2ff1015b5b1e0010c6f37c4a7ad7ee2365a"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/assemblyai-dark.png": {
+    "bytes": 3999,
+    "sha256": "5d57b38411352ba2ee29881d1912f2c45f249fe2aaf92232d1de58061e7aee12"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/assemblyai-light.png": {
+    "bytes": 3999,
+    "sha256": "5d57b38411352ba2ee29881d1912f2c45f249fe2aaf92232d1de58061e7aee12"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/aya-dark.png": {
+    "bytes": 4166,
+    "sha256": "2f72f2d2d1784311644f6f12edf6119193e43ce4f7f7a58f1f920ef8fd2cc742"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/aya-light.png": {
+    "bytes": 4166,
+    "sha256": "2f72f2d2d1784311644f6f12edf6119193e43ce4f7f7a58f1f920ef8fd2cc742"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/baai-dark.png": {
+    "bytes": 8444,
+    "sha256": "c8e60fec0c99e9a6ef27a0a630986b39f04ebf7ecce394a41ae85d77f40aad7e"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/baai-light.png": {
+    "bytes": 8444,
+    "sha256": "89a1f4dcc16d45f078948db0c16adab6d05fdc1a6c4a9eab752392abfd03bba6"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/baichuan-dark.png": {
+    "bytes": 16886,
+    "sha256": "731dc01636a0da23d581f013ed94e82b87c0945f96e45b237f56e620e1849415"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/baichuan-light.png": {
+    "bytes": 16886,
+    "sha256": "731dc01636a0da23d581f013ed94e82b87c0945f96e45b237f56e620e1849415"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/bilibiliindex-dark.png": {
+    "bytes": 8636,
+    "sha256": "e9d7d220eaa84a42f21088179a2d653960928489805379e1b851854fe5b8e662"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/bilibiliindex-light.png": {
+    "bytes": 8636,
+    "sha256": "7a7c51d6b8f3ae0a2156107aea67c46fd5ae39b83d239b3d2a30b3a8a0d2b09a"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/catalog.json": {
+    "bytes": 26566,
+    "sha256": "738a03aea4ac4153567c79c72229b96d6b94e88013490fcd87ca68099aed01aa"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/chatglm-dark.png": {
+    "bytes": 14601,
+    "sha256": "4d3db10e2191d9df313e0ff72e94eed5b7f33fbde798c41d52fe8ce5f16e61a1"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/chatglm-light.png": {
+    "bytes": 14601,
+    "sha256": "4d3db10e2191d9df313e0ff72e94eed5b7f33fbde798c41d52fe8ce5f16e61a1"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/claude-dark.png": {
+    "bytes": 9337,
+    "sha256": "97b53fb85b3bf401ffeb8ee7c5ebad734ce9f6edc3038f242021c53bcc18e23d"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/claude-light.png": {
+    "bytes": 9337,
+    "sha256": "97b53fb85b3bf401ffeb8ee7c5ebad734ce9f6edc3038f242021c53bcc18e23d"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/codegeex-dark.png": {
+    "bytes": 4005,
+    "sha256": "19df7daf6df3577a876e92c04ac6b8e49e798601ad6ea970aec86b7704d7fdff"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/codegeex-light.png": {
+    "bytes": 4005,
+    "sha256": "19df7daf6df3577a876e92c04ac6b8e49e798601ad6ea970aec86b7704d7fdff"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/codex-dark.png": {
+    "bytes": 7578,
+    "sha256": "fcea9ddbaafdca236a8380cef2ecd3342ecd9914a7b080873873cf45f415686d"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/codex-light.png": {
+    "bytes": 7578,
+    "sha256": "fcea9ddbaafdca236a8380cef2ecd3342ecd9914a7b080873873cf45f415686d"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/cogvideo-dark.png": {
+    "bytes": 30549,
+    "sha256": "95bdf301c9fa5fa031fee59c8aa59d82c70593dc6916f773835f15068bbb50fb"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/cogvideo-light.png": {
+    "bytes": 30549,
+    "sha256": "95bdf301c9fa5fa031fee59c8aa59d82c70593dc6916f773835f15068bbb50fb"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/cogview-dark.png": {
+    "bytes": 42360,
+    "sha256": "9bb03d9aa505abe835cc5c9f5d399c7ccb98d98f139c1604aaa3260c7c2d78b4"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/cogview-light.png": {
+    "bytes": 42360,
+    "sha256": "9bb03d9aa505abe835cc5c9f5d399c7ccb98d98f139c1604aaa3260c7c2d78b4"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/cohere-dark.png": {
+    "bytes": 5122,
+    "sha256": "81a4521ebb2e33befce5c347c7c21fb8d4eda4212152d6a7a19f15408a0bd18d"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/cohere-light.png": {
+    "bytes": 5122,
+    "sha256": "81a4521ebb2e33befce5c347c7c21fb8d4eda4212152d6a7a19f15408a0bd18d"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/commanda-dark.png": {
+    "bytes": 5122,
+    "sha256": "81a4521ebb2e33befce5c347c7c21fb8d4eda4212152d6a7a19f15408a0bd18d"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/commanda-light.png": {
+    "bytes": 5122,
+    "sha256": "81a4521ebb2e33befce5c347c7c21fb8d4eda4212152d6a7a19f15408a0bd18d"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/dalle-dark.png": {
+    "bytes": 952,
+    "sha256": "7eee3af48a5d985cb997a0538fbbbc3224d096cdb4679c4ec9681b688d609c9e"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/dalle-light.png": {
+    "bytes": 952,
+    "sha256": "7eee3af48a5d985cb997a0538fbbbc3224d096cdb4679c4ec9681b688d609c9e"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/dbrx-dark.png": {
+    "bytes": 6562,
+    "sha256": "c4dc8ec4bc7028f7c4375a378f7e5a83923cafabf5e5033168c88c1b46dd4322"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/dbrx-light.png": {
+    "bytes": 6562,
+    "sha256": "c4dc8ec4bc7028f7c4375a378f7e5a83923cafabf5e5033168c88c1b46dd4322"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/deepcogito-dark.png": {
+    "bytes": 9348,
+    "sha256": "6932434b6c5cac3728617e487b5f94836d5df8d1a9efa8a70207bda677e57102"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/deepcogito-light.png": {
+    "bytes": 9348,
+    "sha256": "6932434b6c5cac3728617e487b5f94836d5df8d1a9efa8a70207bda677e57102"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/deepseek-dark.png": {
+    "bytes": 6493,
+    "sha256": "f98596fd7802ca0c5290c498fec578fa823988646332ee36c43b7920dc4936eb"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/deepseek-light.png": {
+    "bytes": 6493,
+    "sha256": "f98596fd7802ca0c5290c498fec578fa823988646332ee36c43b7920dc4936eb"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/dolphin-dark.png": {
+    "bytes": 7458,
+    "sha256": "d20950c11362b8f320eb3778edc2b9f9d1d6fdce9db069fa2001c92e56606ffc"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/dolphin-light.png": {
+    "bytes": 7636,
+    "sha256": "a9564316e1cfe57f7ebb264b0c0e265c4b65cbddffb69de5f836aedb613ba35f"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/dotsstudio-dark.png": {
+    "bytes": 4338,
+    "sha256": "377efefa15dfaca0a0b1ea963f587f6f913d2c86adefbaa967225bf48a2d8696"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/dotsstudio-light.png": {
+    "bytes": 4332,
+    "sha256": "d853e8197af604ce7bb8fd64484032c229253f418ca5373ed3464cbdf0eece11"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/doubao-dark.png": {
+    "bytes": 6925,
+    "sha256": "e2a9ade3d125e2965ed06bb1910223b8723a2a9402ad608eb49f540272209847"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/doubao-light.png": {
+    "bytes": 6925,
+    "sha256": "e2a9ade3d125e2965ed06bb1910223b8723a2a9402ad608eb49f540272209847"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/elevenlabs-dark.png": {
+    "bytes": 2116,
+    "sha256": "7666caaf1aa0a2f3c8b02d5e34d45d0217a38e2779293b73f8b5cf5f42234755"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/elevenlabs-light.png": {
+    "bytes": 2116,
+    "sha256": "86b9976c3765c3e601cfe06e9eb7c4ee7fdc02f493039d5f5fc98b529f6c9c87"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/essentialai-dark.png": {
+    "bytes": 9436,
+    "sha256": "8317ff38307b97f4837ce517c2c6ba3d7ec75b2f321b797984e8bbd48d9967f2"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/essentialai-light.png": {
+    "bytes": 9436,
+    "sha256": "8317ff38307b97f4837ce517c2c6ba3d7ec75b2f321b797984e8bbd48d9967f2"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/fishaudio-dark.png": {
+    "bytes": 3357,
+    "sha256": "19054cf630781b3338bb6d3924c0eac78e1a7cf7a1c0ee0ad610f76c4185b505"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/fishaudio-light.png": {
+    "bytes": 3360,
+    "sha256": "e8e596b8a3ae9be1a378731d989ca835748db8f18ab471156f6fafd83b020d11"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/flux-dark.png": {
+    "bytes": 4586,
+    "sha256": "b3cbf0835b55f0a9f4043b7d8a79ee8ddcf8a3c6ffbcdebd44dbf0f5f72a63f7"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/flux-light.png": {
+    "bytes": 4468,
+    "sha256": "7429907ef38e14356f178deb1eb677174a37af96b9e4169f76c4b09825abdb6a"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/gemini-dark.png": {
+    "bytes": 19333,
+    "sha256": "10c628f55d22a9725b9f9fccce7cf062b9fb68da5f7736e87010e0594d7ba6db"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/gemini-light.png": {
+    "bytes": 19333,
+    "sha256": "10c628f55d22a9725b9f9fccce7cf062b9fb68da5f7736e87010e0594d7ba6db"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/gemma-dark.png": {
+    "bytes": 16826,
+    "sha256": "5f64463f9e00b29595c3ce7222100e263b67c3f29035c304d1249f30c99d2913"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/gemma-light.png": {
+    "bytes": 16826,
+    "sha256": "5f64463f9e00b29595c3ce7222100e263b67c3f29035c304d1249f30c99d2913"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/glmv-dark.png": {
+    "bytes": 12969,
+    "sha256": "73d15f7dddf3f4908be028d856903b73be706b3cfa9ff49471de6d2ce4fd8950"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/glmv-light.png": {
+    "bytes": 12969,
+    "sha256": "73d15f7dddf3f4908be028d856903b73be706b3cfa9ff49471de6d2ce4fd8950"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/google-dark.png": {
+    "bytes": 5684,
+    "sha256": "e7139f81e7b9c9eafb28071a74a59ababc26558895ec4b47c0f449682f18bd12"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/google-light.png": {
+    "bytes": 5684,
+    "sha256": "e7139f81e7b9c9eafb28071a74a59ababc26558895ec4b47c0f449682f18bd12"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/grok-dark.png": {
+    "bytes": 6904,
+    "sha256": "dbd7bf8431752d3a1ad00f7b3b28df4ef5bd508cdb8583c3bd9f579936545fa0"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/grok-light.png": {
+    "bytes": 6883,
+    "sha256": "f10ec0b2322f9d65a973d3d48fcdc41270d8b123a5d36e2826dabf9dcefb0762"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/groq-dark.png": {
+    "bytes": 4424,
+    "sha256": "de0d9a7dc3b6419ba9c4c546b8f76273e4d46469340089a8d8aa85e010febe8f"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/groq-light.png": {
+    "bytes": 4402,
+    "sha256": "bb018de642bd10aa7b7a64d90fb76b26da2b264627aa1278f9306c034f98c898"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/happyhorse-dark.png": {
+    "bytes": 7350,
+    "sha256": "f468273483aeb020e0566e40de4676e048b40e85d6fde2a03ec3c0b46d3b4d33"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/happyhorse-light.png": {
+    "bytes": 7321,
+    "sha256": "2614bfcd3164379dd5dc6abfe06fea7bdd853acc3d895a30bee4cf4fbea0f73c"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/hunyuan-dark.png": {
+    "bytes": 9237,
+    "sha256": "0f2f9af09b698f4cfa3158d43b29e90a5f30297b09401c49133c9f195899556d"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/hunyuan-light.png": {
+    "bytes": 9237,
+    "sha256": "0f2f9af09b698f4cfa3158d43b29e90a5f30297b09401c49133c9f195899556d"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/inception-dark.png": {
+    "bytes": 1937,
+    "sha256": "3a7d4aacdf0970285b7b3aaa95940b7bc754c0909be11245654518c9b07181b0"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/inception-light.png": {
+    "bytes": 1929,
+    "sha256": "ab449dad148f79a5ca53facd7af9fcc5b8a6c5b80a657d9a0ab9f3aa08337da4"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/inflection-dark.png": {
+    "bytes": 2102,
+    "sha256": "646a0c763b83155c0936299dd955777af97bd876eafcaaff5e1540f7f6693000"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/inflection-light.png": {
+    "bytes": 2102,
+    "sha256": "0de0d5575c3f6992b28d400abe42c35772d2f814d6a81b7260774ebdf1af885f"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/kimi-dark.png": {
+    "bytes": 3514,
+    "sha256": "373db4703eb8b6e5a2e165c49708bb567ef29bb210f63ee8216f5c9ee1cb66ba"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/kimi-light.png": {
+    "bytes": 3513,
+    "sha256": "ae68c5f479c6b92bc79f56172f2bb789c50e46c69def7a443209555086acddc3"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/kolors-dark.png": {
+    "bytes": 13772,
+    "sha256": "63172ce162757a5f22d70abc74d30bab90a330d319f935ebc6b3fd49473dbccc"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/kolors-light.png": {
+    "bytes": 13772,
+    "sha256": "63172ce162757a5f22d70abc74d30bab90a330d319f935ebc6b3fd49473dbccc"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/kwaikat-dark.png": {
+    "bytes": 6388,
+    "sha256": "7cad3755196c8cece3e99264b218b3907f138ae7b75c214d2675ad311e812bad"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/kwaikat-light.png": {
+    "bytes": 6386,
+    "sha256": "ef28ff5971577ec8b9588b102e309aee1517cf01621e40f8da699a143d0bcbe0"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/kwaipilot-dark.png": {
+    "bytes": 17174,
+    "sha256": "a8f8c4b2b6b515050cbf7dd6dc8ba049975110629fac3c2b6158d20c5a1540b8"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/kwaipilot-light.png": {
+    "bytes": 17174,
+    "sha256": "a8f8c4b2b6b515050cbf7dd6dc8ba049975110629fac3c2b6158d20c5a1540b8"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/liquid-dark.png": {
+    "bytes": 5557,
+    "sha256": "67a68dfc04a4efcae3adc6f303e53e74b16432678fd1108d14193158660e49b4"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/liquid-light.png": {
+    "bytes": 5557,
+    "sha256": "87db16ec89ab0c87d4e9c64fcf100572096594d1bdc9dca98fa844e8757b7c22"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/llava-dark.png": {
+    "bytes": 24812,
+    "sha256": "aee465e664794701128f34d48d37432e8a2d0572a0931b188cab087747315c9a"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/llava-light.png": {
+    "bytes": 24812,
+    "sha256": "aee465e664794701128f34d48d37432e8a2d0572a0931b188cab087747315c9a"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/longcat-dark.png": {
+    "bytes": 5749,
+    "sha256": "d79cb8590135e423337691813f52948f58e97a286ec6a0b672f954652624a328"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/longcat-light.png": {
+    "bytes": 5798,
+    "sha256": "521dbdc2bf5cc1f65eed7fc903a3121066f944ce65d4df90ebef88ae61fd4b0b"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/magic-dark.png": {
+    "bytes": 5793,
+    "sha256": "20818f1939a68c49450ba80a6698ba0ad6f168f34fba8976edde28c9abfb3575"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/magic-light.png": {
+    "bytes": 5793,
+    "sha256": "449004c7dcfa54044b598127fc5aaa5e96026a52f8de337f6db28f416be7091f"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/meshy-dark.png": {
+    "bytes": 22821,
+    "sha256": "827e17227e98797b05b9fb7ce1a8c200b77392edafda3bd9b8ef5fe5791057e6"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/meshy-light.png": {
+    "bytes": 22821,
+    "sha256": "827e17227e98797b05b9fb7ce1a8c200b77392edafda3bd9b8ef5fe5791057e6"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/meta-dark.png": {
+    "bytes": 13478,
+    "sha256": "144fab9ba427c7d8f7ee415e5a9113a3a66538ca4fc79fb0e01502978af29a41"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/meta-light.png": {
+    "bytes": 13478,
+    "sha256": "144fab9ba427c7d8f7ee415e5a9113a3a66538ca4fc79fb0e01502978af29a41"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/microsoft-dark.png": {
+    "bytes": 1931,
+    "sha256": "24e4d6941f867805df0c756d2aac13ac43b4a338bb234a30eeba607c70a52b8a"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/microsoft-light.png": {
+    "bytes": 1931,
+    "sha256": "24e4d6941f867805df0c756d2aac13ac43b4a338bb234a30eeba607c70a52b8a"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/minimax-dark.png": {
+    "bytes": 8665,
+    "sha256": "9e596627348deb4030938a948243cc94e96cc1548d645ce4faf1de0e51b9043a"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/minimax-light.png": {
+    "bytes": 8665,
+    "sha256": "9e596627348deb4030938a948243cc94e96cc1548d645ce4faf1de0e51b9043a"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/mistral-dark.png": {
+    "bytes": 1803,
+    "sha256": "f3b97d586f84e68b8031c74b34bebe4651ee0cb130831ac9b97cb64e1820a2ef"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/mistral-light.png": {
+    "bytes": 1803,
+    "sha256": "f3b97d586f84e68b8031c74b34bebe4651ee0cb130831ac9b97cb64e1820a2ef"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/moonshot-dark.png": {
+    "bytes": 6002,
+    "sha256": "10f9a0e0336b921a21feead2fa9e64056414d6bdd43739eca3b07333d5a5eab4"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/moonshot-light.png": {
+    "bytes": 6002,
+    "sha256": "d578871fe5b2c3bba76ce75d9ebe7e6b614961e0ec893574dbcbd796c7c67287"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/morph-dark.png": {
+    "bytes": 4287,
+    "sha256": "58e7903d9e904adf732e65f1aaf58707cd497eb6ee99bfed9071f03581dd72c4"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/morph-light.png": {
+    "bytes": 4287,
+    "sha256": "58e7903d9e904adf732e65f1aaf58707cd497eb6ee99bfed9071f03581dd72c4"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/nanobanana-dark.png": {
+    "bytes": 5370,
+    "sha256": "696b6e1e281de32018bb49ce2c129774ad63e0cf7097f94ed7049f359f07acf9"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/nanobanana-light.png": {
+    "bytes": 5370,
+    "sha256": "696b6e1e281de32018bb49ce2c129774ad63e0cf7097f94ed7049f359f07acf9"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/nova-dark.png": {
+    "bytes": 12283,
+    "sha256": "6a41519c5e5512f1a7b37bb02db1e5323e741c6e3afd66f20b107b70d6e65f27"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/nova-light.png": {
+    "bytes": 12283,
+    "sha256": "6a41519c5e5512f1a7b37bb02db1e5323e741c6e3afd66f20b107b70d6e65f27"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/nvidia-dark.png": {
+    "bytes": 6422,
+    "sha256": "5a059cec39a179d3de978fb5c83d80882f8bad61e016b9ac5a87ec8cc8dee721"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/nvidia-light.png": {
+    "bytes": 6422,
+    "sha256": "5a059cec39a179d3de978fb5c83d80882f8bad61e016b9ac5a87ec8cc8dee721"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/ollama-dark.png": {
+    "bytes": 8745,
+    "sha256": "601c558832e50aa51e25782429de683fec8885da5fc3a29431fa4f611adf3dad"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/ollama-light.png": {
+    "bytes": 8746,
+    "sha256": "2818613ff0dde6370819dcd6206316710ff01ee7821063cec55e1608b3a60296"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/openai-dark.png": {
+    "bytes": 11297,
+    "sha256": "375016542ebe78b63c7f36b8f6aee3058f2b706d861e5153fd74f9c27f63b8b7"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/openai-light.png": {
+    "bytes": 11297,
+    "sha256": "8a33312f6bb17c1edddf8f9d7fbac09ce1d1d697d6601f37227afa879e94c52e"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/openchat-dark.png": {
+    "bytes": 11684,
+    "sha256": "5bd84d11a37f7c00116690771e5450d727ae557f3d0af00e58926b32df048e2f"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/openchat-light.png": {
+    "bytes": 11684,
+    "sha256": "5bd84d11a37f7c00116690771e5450d727ae557f3d0af00e58926b32df048e2f"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/openrouter-dark.png": {
+    "bytes": 4055,
+    "sha256": "beffae2e08c6bac23bce327ca6f09b10d35beb418f49a54ff30ab5b0ec159e22"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/openrouter-light.png": {
+    "bytes": 4055,
+    "sha256": "beffae2e08c6bac23bce327ca6f09b10d35beb418f49a54ff30ab5b0ec159e22"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/palm-dark.png": {
+    "bytes": 5487,
+    "sha256": "c19d2c1918958c8ef61281f474bd98ff60e0d5d3693feb5d152cbbf0aacf8482"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/palm-light.png": {
+    "bytes": 5487,
+    "sha256": "c19d2c1918958c8ef61281f474bd98ff60e0d5d3693feb5d152cbbf0aacf8482"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/perceptron-dark.png": {
+    "bytes": 5063,
+    "sha256": "846ff14af197469c54f5019318a2732f81e800575de4cedde1c8d53c181f85a9"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/perceptron-light.png": {
+    "bytes": 5062,
+    "sha256": "dbcfdaf01e50e13f933d5f334b876a7f6571060edbdbfd932981b1f86e56cc2d"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/phind-dark.png": {
+    "bytes": 5069,
+    "sha256": "f65f1cd8569570f3403a30861cf813adefff49604f0fba32aba48ca6baf83d07"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/phind-light.png": {
+    "bytes": 5072,
+    "sha256": "5fc0493c726753b065fefad7168d4b638d70194e289fc64b2e541161262f886c"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/poolside-dark.png": {
+    "bytes": 11193,
+    "sha256": "ca8a5458014444c36d522d5a8d26bc4728eb9c37d82494abc2887cf368d30540"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/poolside-light.png": {
+    "bytes": 11193,
+    "sha256": "ca8a5458014444c36d522d5a8d26bc4728eb9c37d82494abc2887cf368d30540"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/prunaai-dark.png": {
+    "bytes": 23233,
+    "sha256": "8ea4d5a2f7a686c5105a234c87db0f0edfcdb35a78ea1c33423e401fc8545ac8"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/prunaai-light.png": {
+    "bytes": 23233,
+    "sha256": "8ea4d5a2f7a686c5105a234c87db0f0edfcdb35a78ea1c33423e401fc8545ac8"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/qwen-dark.png": {
+    "bytes": 10324,
+    "sha256": "de9bc7e285164e0d284a7b9555511c7f7767af7699d6272b3b67b376eeddbfb3"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/qwen-light.png": {
+    "bytes": 10324,
+    "sha256": "de9bc7e285164e0d284a7b9555511c7f7767af7699d6272b3b67b376eeddbfb3"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/reka-dark.png": {
+    "bytes": 6464,
+    "sha256": "9ca92f56078cd8362bc8568db9c5ef4217ad5ceb034d3fbd90eff6854cdd5abe"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/reka-light.png": {
+    "bytes": 6441,
+    "sha256": "8253751292bb152c2fbd01195cb8d1909b7131782d4d6ed2674eb71368e1a72c"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/relace-dark.png": {
+    "bytes": 4773,
+    "sha256": "d7d4addb46f1e7c3c1a4ab4292a6512419f97e4707cc018fd06e955ad3b458b4"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/relace-light.png": {
+    "bytes": 4774,
+    "sha256": "b22841968b66ba58456cb35fce817d376a8d11423b5fa25ef6cebcf10e93ce1e"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/reve-dark.png": {
+    "bytes": 2406,
+    "sha256": "2717fe7e5195c87f6c8b9e5c2ed9bf5f643532475c5c1de1738b5dc7833ad418"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/reve-light.png": {
+    "bytes": 2406,
+    "sha256": "b31b3c96ac21404d4b85b99f0f27027a3e5d86911268c8926c5dfafbcd668dab"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/rules.json": {
+    "bytes": 2051,
+    "sha256": "511ea4566330b8bac2a3d1fe05e7c44d00f1ba3c40613774499d4a98cac62e12"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/rwkv-dark.png": {
+    "bytes": 8475,
+    "sha256": "4d06ccc703cb7b21675dd26240570a9895960b2e976bd304dea079440c410c6e"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/rwkv-light.png": {
+    "bytes": 8475,
+    "sha256": "4d06ccc703cb7b21675dd26240570a9895960b2e976bd304dea079440c410c6e"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/sakana-dark.png": {
+    "bytes": 6653,
+    "sha256": "4adefe6bd119290a30a72b1e1273efebeb56cea10ab07ad802bcc5eecab918a4"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/sakana-light.png": {
+    "bytes": 6653,
+    "sha256": "4adefe6bd119290a30a72b1e1273efebeb56cea10ab07ad802bcc5eecab918a4"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/sensenova-dark.png": {
+    "bytes": 3541,
+    "sha256": "543bcf0d9a29f5dbc5392a434b11dd64c6aa4b631a4bbc663b20e0aa24afe037"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/sensenova-light.png": {
+    "bytes": 3541,
+    "sha256": "543bcf0d9a29f5dbc5392a434b11dd64c6aa4b631a4bbc663b20e0aa24afe037"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/skywork-dark.png": {
+    "bytes": 4842,
+    "sha256": "b43134157e280d8c4c8d5d8ec2f671cdc2f5cdaac151c3e526fa5dacda92ce42"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/skywork-light.png": {
+    "bytes": 4842,
+    "sha256": "b43134157e280d8c4c8d5d8ec2f671cdc2f5cdaac151c3e526fa5dacda92ce42"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/sora-dark.png": {
+    "bytes": 15023,
+    "sha256": "eec45103975b802aae43ca53aaefc4792bbfe694e8ea53966d5616eb3ffa2c1d"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/sora-light.png": {
+    "bytes": 15023,
+    "sha256": "eec45103975b802aae43ca53aaefc4792bbfe694e8ea53966d5616eb3ffa2c1d"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/spark-dark.png": {
+    "bytes": 7706,
+    "sha256": "5d11ec9d03aee234b8f074214dc2cdb1fc364fc75a2d6b32ea68916fe09bda5a"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/spark-light.png": {
+    "bytes": 7706,
+    "sha256": "5d11ec9d03aee234b8f074214dc2cdb1fc364fc75a2d6b32ea68916fe09bda5a"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/stability-dark.png": {
+    "bytes": 5056,
+    "sha256": "590f018df5af220de401432b10db69054f10ab6510362f8863df7a77dfdead34"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/stability-light.png": {
+    "bytes": 5056,
+    "sha256": "590f018df5af220de401432b10db69054f10ab6510362f8863df7a77dfdead34"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/stepfun-dark.png": {
+    "bytes": 4556,
+    "sha256": "4cdbafba61bd48cc0e2172aaf0c741fc85ab28823d88d5153f7a177ae40bfcc7"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/stepfun-light.png": {
+    "bytes": 4556,
+    "sha256": "4fabb84a7bb27454379f8f17d08983451afe578fde125fecfba1691878c1e748"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/unionalpha-dark.png": {
+    "bytes": 10655,
+    "sha256": "caf91a6353bc48e26ba12e729297fe72e9790785d0b2aa54e2b6bb86f9fae4eb"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/unionalpha-light.png": {
+    "bytes": 8652,
+    "sha256": "f166bba628e198c40b510aa01e4a2b40e397f32f4f807da783847ef7e7dcfddd"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/voyage-dark.png": {
+    "bytes": 4714,
+    "sha256": "f63f5ee500b679d481345a3fc676af983b40337ddc34339f7b8b4bfafbf60086"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/voyage-light.png": {
+    "bytes": 4714,
+    "sha256": "f63f5ee500b679d481345a3fc676af983b40337ddc34339f7b8b4bfafbf60086"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/wenxin-dark.png": {
+    "bytes": 11475,
+    "sha256": "eec35d49e783bed2f74da9d8e6869e43441a007d495281578f035b5fefeac033"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/wenxin-light.png": {
+    "bytes": 11475,
+    "sha256": "eec35d49e783bed2f74da9d8e6869e43441a007d495281578f035b5fefeac033"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/xiaomimimo-dark.png": {
+    "bytes": 8607,
+    "sha256": "060e7cb51b2524e1efca8bcdc9f71cd3dbed556820dd98bc44363a0304282fd7"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/xiaomimimo-light.png": {
+    "bytes": 8668,
+    "sha256": "04f78ad5b2ebd628ddaa59261c3696971dc54799c1ae3401454977810ca1f63b"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/xuanyuan-dark.png": {
+    "bytes": 2670,
+    "sha256": "d5e64379ffa20517310eee7101255beb8aaffa90c84162dbe0cb832e5422f167"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/xuanyuan-light.png": {
+    "bytes": 2670,
+    "sha256": "d5e64379ffa20517310eee7101255beb8aaffa90c84162dbe0cb832e5422f167"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/yi-dark.png": {
+    "bytes": 3820,
+    "sha256": "2efd6e5a779eea3fc30d904dc1068c9a10981367aff97f847b93f9a4eb1a12d5"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/yi-light.png": {
+    "bytes": 3727,
+    "sha256": "dfb708ab0d2b4546a6eabf5b7dee461cfcdbfbb12cbdd87fa171babcf4cb89c4"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/zai-dark.png": {
+    "bytes": 2562,
+    "sha256": "3c66d1980cac2edddb594f0c52cb0a4601127aaedb94fc9cb2cbdb5d9d469db9"
+  },
+  "Contents/Resources/TypefluxChat_TypefluxChat.bundle/Contents/Resources/ModelIcons/zai-light.png": {
+    "bytes": 2562,
+    "sha256": "e53c9c5bfac0971024d08ab812ec13682f22f12247fcc4f134b6a0f2c988fee7"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Info.plist": {
+    "bytes": 1129,
+    "sha256": "b733b560b2f83f9f55c47d6f15340389a43065c7786f33d8c2e7d98e717238d2"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/Emoji-ThirdPartyNotices.txt": {
+    "bytes": 3156,
+    "sha256": "81e42e74e06f49dbe930179540901c64a8bfea6ac1a655b6a72ef542414d8cb7"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/ThirdPartyNotices-SemanticSearch.txt": {
+    "bytes": 3672,
+    "sha256": "aa091391293869d808898aa7b126d4274cd0168f19c4e64b014b02cce2235691"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/ThirdPartyNotices-Yams.txt": {
+    "bytes": 2270,
+    "sha256": "78387f9dac0a137ed994b3900862aa80593dc382754cc22d4ae454fd8ef7f036"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/TypefluxIcon.png": {
+    "bytes": 22115,
+    "sha256": "21d29f72397e9ec23ad38fe5ec643712742fadba94e5f99a7841810fe4b9c670"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/case/README.md": {
+    "bytes": 847,
+    "sha256": "a2f16ee9e81d076d22d26436f7abd9da98196004a57b8f993a9eb6c46a2fe479"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/case/main.js": {
+    "bytes": 2340,
+    "sha256": "b671f1d878a3fbc552cea61ea026f1cc0ad16373c5d5e177b67ef864d23ea55f"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/case/workflow.json": {
+    "bytes": 532,
+    "sha256": "a48aec9f0b3b14b15466beb2e1482849653298725367d31bcc64158dc6aa3548"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/code/README.md": {
+    "bytes": 796,
+    "sha256": "3c5f2dbd4b1127b8788f783add249ddcbdca2293a422efdc5625b4bbfe8cd2de"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/code/main.sh": {
+    "bytes": 1848,
+    "sha256": "91a2443066c042d111c41f9a64b4d78a5d7ee645dd084959015e7f8fb6868530"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/code/workflow.json": {
+    "bytes": 605,
+    "sha256": "27ff4945ad42fb86cd8247b52226c1194ee366f72d97f908365a95465ce43382"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/codec/README.md": {
+    "bytes": 708,
+    "sha256": "6c5db2b421d427755d09e024234c64e67cfdc50067be5fda67d1578e3ba24692"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/codec/main.js": {
+    "bytes": 2499,
+    "sha256": "4ead084b8fbd0cc5dfe114488d55dd2f2f73dadceb782822c496b0301a0edc9a"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/codec/workflow.json": {
+    "bytes": 735,
+    "sha256": "fcd1f59faf48690afa837a1667175f0d4d58e38c313bb0653f5b5e14d3f16715"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/cron/README.md": {
+    "bytes": 1470,
+    "sha256": "83636df75be8b03dfdb456a9b51448e27bfb471d88436c9a4714fa5889edc119"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/cron/THIRD_PARTY_NOTICES.txt": {
+    "bytes": 1189,
+    "sha256": "db1ba437392d0f4086773fdc1a6b656c5d5ccc86323789ad1add8a0c37cf8bef"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/cron/main.js": {
+    "bytes": 5817,
+    "sha256": "534a37d8fd8b12924c6763bb4093337801bb64d9e07fd1baa167a1ca6f06730b"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/cron/vendor.cjs": {
+    "bytes": 35176,
+    "sha256": "ce78a1cf2824dddd5c084a41454f45fbf41beb78715b1a7cc15b7837ae19ed74"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/cron/workflow.json": {
+    "bytes": 542,
+    "sha256": "7d9010d5c153850f97d8cfabde15103d7c4fa90aa5865f57aef20dc5f97f943b"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/data/README.md": {
+    "bytes": 1006,
+    "sha256": "19c8fa28230d82ba543a32c33feba118e831f1bfab0281cd0fe924b52249929a"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/data/THIRD_PARTY_NOTICES.txt": {
+    "bytes": 2726,
+    "sha256": "9bf55c442c50e4d2052287863708d6da499564242849865d2e1d3b20bce6444f"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/data/main.js": {
+    "bytes": 3370,
+    "sha256": "bcd15bd02bb2109e38b81ea073b3430dceff92353caef2807c6fb5476921946d"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/data/vendor.cjs": {
+    "bytes": 231376,
+    "sha256": "61fc29d088a23d3991f6ab3450f2023fa05a85aac4cbd31b966a58ee7e66526a"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/data/workflow.json": {
+    "bytes": 549,
+    "sha256": "1b32234caf780bcb24ee38769642335fe60e059783a6f176377cd726338d05b0"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/emoji/README.md": {
+    "bytes": 1117,
+    "sha256": "0783d2913c948f670e98b3faedafd81c179b3375a1ebeaa2e4be669693d9b7a3"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/emoji/THIRD_PARTY_NOTICES.txt": {
+    "bytes": 3157,
+    "sha256": "6aeba6b2387c86a36c5204df1361bfd209351a96c7621d4c95dd6fc6620ef8a6"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/emoji/emoji.json": {
+    "bytes": 317220,
+    "sha256": "666041e504255123d6f22c0a9e3647266c725f9ae8914ab55e8c5f924c6fa201"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/emoji/main.js": {
+    "bytes": 1063,
+    "sha256": "3bf0a5f1171033611677ee2427e5dc06bb4a5ee7b1e59e4a01bcb59f50b2a6d4"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/emoji/workflow.json": {
+    "bytes": 542,
+    "sha256": "7b224c68e46d3c0b511db46948b515ec4476ec1afd6b4e7f83a0ccc48b5c7014"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/entities/README.md": {
+    "bytes": 702,
+    "sha256": "50a2609566aead9159786cb6842dcd54efc7d502c90dfa8944ef564feb91de59"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/entities/main.py": {
+    "bytes": 863,
+    "sha256": "b03498aa864f60ad867585e5ad0ca03b9eef3cd15802bfe1bca5a64ba14dff86"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/entities/workflow.json": {
+    "bytes": 571,
+    "sha256": "d959797a5f6950ea57a789dfb81e1afbaba95182b4525df42cd3299bc08f8b43"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/fx/README.md": {
+    "bytes": 495,
+    "sha256": "8ae5c4d7450e67e169b6868b2818665501979d125870fb32e2eb961bfa437dc9"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/fx/main.py": {
+    "bytes": 724,
+    "sha256": "ff0380d51c12407ba9d07efa113dd8795d03cf87554d2cb5d3a4dd593ac776a8"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/fx/rates.py": {
+    "bytes": 1669,
+    "sha256": "de46d78a85abd8a28f962548507052f536aabd633d9b0d8d3c9702b3cfe0918f"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/fx/table.py": {
+    "bytes": 659,
+    "sha256": "77ebe7082a498860887eb71ef2b59de4e99d743ee8ca4836cecfc29281a009d6"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/fx/workflow.json": {
+    "bytes": 758,
+    "sha256": "e6c9280cbba08a6b951411d712f74d44b6921a2dc9945bf6024d6a7ee0491e7f"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/gallery.json": {
+    "bytes": 13082,
+    "sha256": "ce663e97552741d5ae09efcef991119f7fcfe4fb23e951bc27ea093143125208"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/ip/README.md": {
+    "bytes": 459,
+    "sha256": "fa6d1451549c9ae10606b30fb804e8d387d12b81198bb6896d38735bbec1f89d"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/ip/main.sh": {
+    "bytes": 1925,
+    "sha256": "21850688e19be7c87bd4215e29980f19289115eda9e6560d7b2a3f8c32afc652"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/ip/workflow.json": {
+    "bytes": 453,
+    "sha256": "f59faa018506bd0005c473aa1d08f246e27d6c671c4e4291a96cc140e0df1124"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/json/README.md": {
+    "bytes": 567,
+    "sha256": "f179c64dc0ba2457b5fc4b648f2cfa2c8a442878cfd62501fb293c5a8e05d33b"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/json/main.py": {
+    "bytes": 866,
+    "sha256": "1956098b73e3e80277a97d47ca33e5a3f1f040e402532d503f8d16b6bcb2c9e5"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/json/workflow.json": {
+    "bytes": 658,
+    "sha256": "63b0e29b1aed601eb46a190668d0d911df2774a2b4a56fc9b2293f876a3bf68a"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/jwt/README.md": {
+    "bytes": 798,
+    "sha256": "1038c72f2f74c2f701e750c91d2cddb7a2066fcf3b394e6dfa0b0bbbd03801aa"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/jwt/main.js": {
+    "bytes": 1705,
+    "sha256": "f9e4092748606e5a75c48e46c7e4a2c39fce337580c8c8fc2d85ea898558b745"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/jwt/workflow.json": {
+    "bytes": 520,
+    "sha256": "c8552b97e4c7b828ee599b953772c530f5785dd2e276daf1cac6eeec28c576c6"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/markup/README.md": {
+    "bytes": 1058,
+    "sha256": "7462de512ff99cb75d45b579077c25cbbc9c3986e8c59ab12142619eb1ff0e71"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/markup/THIRD_PARTY_NOTICES.txt": {
+    "bytes": 23050,
+    "sha256": "4152875d3d9db219b624299ace580c7dab768166d713964e46fc7056182a409c"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/markup/main.js": {
+    "bytes": 2762,
+    "sha256": "b7de644cdd0d39499afed304a31df9f43ad8c9335ac80237f04a21e287a4212c"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/markup/vendor.cjs": {
+    "bytes": 1593727,
+    "sha256": "dc431d96990e539442119386b103c51ff95c271112e32404c45bf052833850cf"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/markup/workflow.json": {
+    "bytes": 1063,
+    "sha256": "7d14caa9ac8b89119f9a0da2f8584de4249960b65e441ee6ae131af32ef7b3a5"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/obfuscate/README.md": {
+    "bytes": 910,
+    "sha256": "7844fa09ad270056b14e38dc184fa5d317c0e98e2e2ea9fce6813f1583490cdb"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/obfuscate/main.js": {
+    "bytes": 1562,
+    "sha256": "5d3cb231f31b0bbf34514771d978d51e846c7e02f3db3229976d47053c534459"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/obfuscate/workflow.json": {
+    "bytes": 561,
+    "sha256": "3de01b02d8fadf4b97aefa8c9105e2ab6be220c292f056b4a9dd8202a20ed055"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/qr/README.md": {
+    "bytes": 698,
+    "sha256": "b56f6fdd82abeee63daae79d6f57d14eece6a7f4165ac5af7b7665db35c13367"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/qr/THIRD_PARTY_NOTICES.txt": {
+    "bytes": 3094,
+    "sha256": "680c589fdbcf5c5b2acae2f27bddb65eed2bc410cd2625f921dc5c6251a527cd"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/qr/main.js": {
+    "bytes": 582,
+    "sha256": "acd2c55ba09d280f8022845cb33639063bf583e238507167373fca8f4c13278d"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/qr/vendor.cjs": {
+    "bytes": 58868,
+    "sha256": "397d3dfdef5231eada089860a3796617f2f3602ee1c4187f5fef2b9dae70d2a1"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/qr/workflow.json": {
+    "bytes": 518,
+    "sha256": "129ae16205780900ab03a39558fd0ac2d7bd6e78b605614b331a6aa672617dfe"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/subnet/README.md": {
+    "bytes": 733,
+    "sha256": "584998d931f5f8736fb813a497f6360419f74cd464862bf8799f495109d66d82"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/subnet/main.py": {
+    "bytes": 1540,
+    "sha256": "950e5ba10cb42a7e55ded0d890d0098ee4e6cbb0089d5be58382c86c4eaaf861"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/subnet/workflow.json": {
+    "bytes": 546,
+    "sha256": "ab2dcf9f812a8dac3fe9889d9aad925279b552b5d0e0041ea40563dcc900e042"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/ts/README.md": {
+    "bytes": 252,
+    "sha256": "48412b73e58a209ab1584c3dbba51dd31e05034a477aa8134bf2bd68d07fcf9b"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/ts/main.py": {
+    "bytes": 1671,
+    "sha256": "a241aabf118cec673485109fe0f6bccbb59e68d2e6947e1893bfd0df4d76bb4e"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/ts/workflow.json": {
+    "bytes": 457,
+    "sha256": "3b99d3862a67492acb2d568d2abbe4005c4ef06d94dddbd170617b5646c200e9"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/uuid/README.md": {
+    "bytes": 390,
+    "sha256": "6f71add5b7fb44f3c1a4180a391b976e49b0a90f1774a816f2c85d918df64e66"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/uuid/main.sh": {
+    "bytes": 503,
+    "sha256": "d7a5f4acba4e1ca817a068abe06a49c0e7c52ea4abcbc1cb2f1855062b332c72"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/uuid/workflow.json": {
+    "bytes": 754,
+    "sha256": "2af4ff5ecf4c8c2789f6b5e803bc415a365ff40e14a8cf364fec47c5f9c78d11"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/wc/README.md": {
+    "bytes": 198,
+    "sha256": "a9dadc3772cf3b429120f6d2f84ba85ea13974c9751bace78e85ef25331601cb"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/wc/main.py": {
+    "bytes": 798,
+    "sha256": "b93c52e09b2d9a8a5c43db4b8a801d9d93a94231365228e4171ece0b19bdc055"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/WorkflowGallery/wc/workflow.json": {
+    "bytes": 467,
+    "sha256": "a14ca7401a774b56f1912ec6ca32a19930a9ba8874139b017121987796ecf041"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/apple.svg": {
+    "bytes": 735,
+    "sha256": "1a4838df54e14947a9e9d0e48189f341fd775d5408568b65b45faf438613ae60"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/bailian-color.png": {
+    "bytes": 5901,
+    "sha256": "46d104373ff070be612ed05d17708a5e18493897f87dd0af99b61c9e1e1e662c"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/bytedance-color.png": {
+    "bytes": 2757,
+    "sha256": "ab75ae358258a3306d9ca024cf420abd00c9dee8c6e5b2aea82bac6a3139edc3"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/chatglm-color.png": {
+    "bytes": 14601,
+    "sha256": "4d3db10e2191d9df313e0ff72e94eed5b7f33fbde798c41d52fe8ce5f16e61a1"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/claude-color.png": {
+    "bytes": 9337,
+    "sha256": "97b53fb85b3bf401ffeb8ee7c5ebad734ce9f6edc3038f242021c53bcc18e23d"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/cn.json": {
+    "bytes": 1229,
+    "sha256": "0873d9dd54264bbcf3fd8e6d454524c4bd1e058353c0b86c9f9aa3210b16e794"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/deepseek-color.png": {
+    "bytes": 6493,
+    "sha256": "f98596fd7802ca0c5290c498fec578fa823988646332ee36c43b7920dc4936eb"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/done.mp3": {
+    "bytes": 34560,
+    "sha256": "cb9c93492c808e33946edac2ab5915758267e65914bc4b794a5ca6dc6e655741"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/doubao-color.png": {
+    "bytes": 6925,
+    "sha256": "e2a9ade3d125e2965ed06bb1910223b8723a2a9402ad608eb49f540272209847"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/emoji-catalog.json": {
+    "bytes": 1286515,
+    "sha256": "d7ca087e875e84b0bdaa7bf1f0434def9b778d8b6b63d6056156d3e5d9cac773"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/en.lproj/Localizable.strings": {
+    "bytes": 359746,
+    "sha256": "f65c1c06552aa0071e713db1fdf831866f55d8a1bc0afc9292f148220709c51d"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/error.mp3": {
+    "bytes": 129024,
+    "sha256": "2a292919a6dd2b7b2c25dec49a5062df4b963e173bc88dc65a2ac1e5c661a1dc"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/gemini-color.png": {
+    "bytes": 19333,
+    "sha256": "10c628f55d22a9725b9f9fccce7cf062b9fb68da5f7736e87010e0594d7ba6db"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/github.svg": {
+    "bytes": 913,
+    "sha256": "922f5ef736bd1a588e759d203cba7f7af470d5edb52f87272362b02e95b7349a"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/google.svg": {
+    "bytes": 1358,
+    "sha256": "88055b42d451ea31bc0fbb288fc65379df9ef3424a24ac2d07740c37b76260a7"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/grok.png": {
+    "bytes": 6883,
+    "sha256": "f10ec0b2322f9d65a973d3d48fcdc41270d8b123a5d36e2826dabf9dcefb0762"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/groq.png": {
+    "bytes": 4402,
+    "sha256": "bb018de642bd10aa7b7a64d90fb76b26da2b264627aa1278f9306c034f98c898"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/ja.lproj/Localizable.strings": {
+    "bytes": 420593,
+    "sha256": "a91ec149b55374c1a3e74d5d9bdea170cf0cdca6d90698152da7bdb2ba839c71"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/ko.lproj/Localizable.strings": {
+    "bytes": 393905,
+    "sha256": "7c650f554f6219251cfce2d5cf5a51c223b8a36d832e571982ba01715aef8555"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/minimax-color.png": {
+    "bytes": 8665,
+    "sha256": "9e596627348deb4030938a948243cc94e96cc1548d645ce4faf1de0e51b9043a"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/moonshot.png": {
+    "bytes": 6002,
+    "sha256": "d578871fe5b2c3bba76ce75d9ebe7e6b614961e0ec893574dbcbd796c7c67287"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/ollama.png": {
+    "bytes": 8746,
+    "sha256": "2818613ff0dde6370819dcd6206316710ff01ee7821063cec55e1608b3a60296"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/openai.png": {
+    "bytes": 11297,
+    "sha256": "8a33312f6bb17c1edddf8f9d7fbac09ce1d1d697d6601f37227afa879e94c52e"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/opencode.png": {
+    "bytes": 17111,
+    "sha256": "0641b4cab1145b00a516d5328b8ffbd719b295c56fe49b277ddd6013307065ee"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/openrouter.png": {
+    "bytes": 3833,
+    "sha256": "864410f6ff2c3dfcd638440a6898c33b59381ec7cac80f509aa4bb892e146aed"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/qwen-color.png": {
+    "bytes": 10324,
+    "sha256": "de9bc7e285164e0d284a7b9555511c7f7767af7699d6272b3b67b376eeddbfb3"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/start.mp3": {
+    "bytes": 39168,
+    "sha256": "42e46bea6d00152e4b7e2dd6c5c6784aff1bdb0a801dc07b8b3dd03d763f5224"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/tip.mp3": {
+    "bytes": 6687,
+    "sha256": "ff8a399bf51d9bd30aae768f457a0b6b09de0a90a22960574cca71a7367c6bd2"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/volcengine-color.png": {
+    "bytes": 6436,
+    "sha256": "4c46c1609b4d29f6167649f475f0c0a7328be47bd485ed37002e2ac49c8f6b45"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/wenxin-color.png": {
+    "bytes": 11475,
+    "sha256": "eec35d49e783bed2f74da9d8e6869e43441a007d495281578f035b5fefeac033"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/xai.png": {
+    "bytes": 4510,
+    "sha256": "402a3e4a6f8fc8b07cd22a24c11d94631cfcdbd02399787f8f1916a06cab47e6"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/xiaomimimo.png": {
+    "bytes": 8668,
+    "sha256": "04f78ad5b2ebd628ddaa59261c3696971dc54799c1ae3401454977810ca1f63b"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/yuanbao-color.png": {
+    "bytes": 7348,
+    "sha256": "ac2e0d30b5130f177ef7641af41ef4f3e4645e2bf2bbb3ed90b3894ce1a75fd0"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/zai.png": {
+    "bytes": 2562,
+    "sha256": "e53c9c5bfac0971024d08ab812ec13682f22f12247fcc4f134b6a0f2c988fee7"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/zh-Hans.lproj/Localizable.strings": {
+    "bytes": 354258,
+    "sha256": "6b79a3d91627d19a396486e8aa7ce2895fd09791c6e953f406b31ae39498ae55"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/zh-Hant.lproj/Localizable.strings": {
+    "bytes": 350738,
+    "sha256": "53ad7df18ff70e8ec7770384d5203d3b0fbfdb66027ff5acdccca2c2a80c44ed"
+  },
+  "Contents/Resources/Typeflux_Typeflux.bundle/Contents/Resources/zhipu-color.png": {
+    "bytes": 7823,
+    "sha256": "612dca42bba94fd6e760eea79bb34ee8f40f23e24944e58075d6a9ff43b6801a"
+  },
+  "Contents/_CodeSignature/CodeResources": {
+    "bytes": 107488,
+    "sha256": "1f9c1d3d2cea11730b7110f19b41c876b1b40db64c6c87f7af6d6e9fa424af24"
+  }
+}

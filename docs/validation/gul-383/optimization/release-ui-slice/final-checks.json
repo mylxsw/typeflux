@@ -1,0 +1,25 @@
+{
+  "current_source_manifest_matches": true,
+  "native_rows": 12,
+  "semantic_fts_target_absent": true,
+  "versioned_chunk_evidence": true,
+  "owned_candidate_processes_remaining": 0,
+  "active_synthetic_runtime_directories": [],
+  "review": [
+    "full input/publication/completion chain",
+    "boundary and failure paths",
+    "current source/model/helper identity",
+    "FSEvents and atomic version transition",
+    "scope and private defaults",
+    "cancellation and resource retirement",
+    "packaging architecture/signing",
+    "measurement and documentation limits"
+  ],
+  "static_commands": {
+    "swiftlint_strict": 0,
+    "swiftformat_lint": 0,
+    "bash_n": 0,
+    "python_py_compile": 0,
+    "git_diff_check": 0
+  }
+}

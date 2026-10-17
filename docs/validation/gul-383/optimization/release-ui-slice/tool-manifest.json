@@ -1,0 +1,20 @@
+{
+  "Tests/TypefluxTests/SemanticReleaseUISliceTests.swift": "70074aca075281fcd95b93a1ef7f36e7e36ab109692afdde25a12535ec146c2a",
+  "docs/validation/gul-383/optimization/release-ui-slice/build_candidate.py": "38b2ddd2db5afe172d468111c057eb0de72a4e9163e9d8660a00d783f880bbfa",
+  "docs/validation/gul-383/optimization/release-ui-slice/fetch_licenses.py": "dd7c2407afd7e744b31f1c7dbf66a6a8520798992e3b9ef0e8434fb33f232193",
+  "docs/validation/gul-383/optimization/release-ui-slice/finalize_evidence.py": "dafbde82d85e339c362b96f04e485705058351c241f434d05eebc60a75c43a7a",
+  "docs/validation/gul-383/optimization/release-ui-slice/package_candidate.py": "72f9e0c6cc5dd21434e93b8561ba7ac91c8bdb90d41d86d19409d4aaf3112356",
+  "docs/validation/gul-383/optimization/release-ui-slice/run_ui.py": "6b91932e60f9917a52770706dde6f04186ce0eb692ce0afdc281fa8486627554",
+  "scripts/audit_macho_minos.sh": "49c4dcc8fa0286e09d2f195fc7e4c1d225ab1348f5885a7bd8d34306c794c1e1",
+  "scripts/build_release.sh": "49f61553021edeeae6ca28ef7dc52a8ec871f133d995ab4bb1d62f085675bcbb",
+  "scripts/build_semantic_helper.sh": "e503801d6efa6b0fe4ea7eeb524832bd1e60a68017771d30b26eec332e26e383",
+  "scripts/copy_inference_helper.sh": "7a2a36b59ee3b0b6c1568bf0fcb1b1dd5b3cec9b50f439fd2b51a81a3095e197",
+  "scripts/copy_media_helper.sh": "d913f4f8b4e9f2d668889c87e32f8c58277bf5edc170cf8b56466828463b51b1",
+  "scripts/copy_resource_bundles.sh": "5dc99f5936f1744fe57457ec91b813e774b098ff85e3e5c289b3438b4e3b6925",
+  "scripts/install_semantic_helper.sh": "40e66244caa0c6223d68ffa689abe03f20ee53daec0c866fa67f577ee284488b",
+  "scripts/test_groups.py": "488dbe8cec3f3528adb4ef265bb5d8e3cf5c13867581fb5acb5dc19eb281af46",
+  "scripts/test_profiles.py": "dd23721810dda230c1a3ccefe17d0a21582391ce130e3d38af20dba4904cdde8",
+  "scripts/test_runtime.py": "09c0d2bcb0e82fca07b7ee3c2eea233e5006e457e37fa118957a3bd8d7500a49",
+  "scripts/tests/test_macho_audit.py": "4e427f5af964a3aac3e3e0fc6ed2464048de7a880a5fca157f90b242cd1d078e",
+  "scripts/tests/test_release_packaging.py": "1b46b6eafebe6f8d2d2b1ee78488dc8e549e33553ed2f05ac9ecf7e01972baac"
+}

@@ -87,14 +87,15 @@ minos_versions_for_file() {
 
 file_has_required_architecture() {
   local file_path="$1"
+  local required_arch="${2:-$REQUIRED_ARCH}"
   local archs
 
-  [[ -z "$REQUIRED_ARCH" || "$REQUIRED_ARCH" == "native" ]] && return 0
+  [[ -z "$required_arch" || "$required_arch" == "native" ]] && return 0
 
   archs="$(lipo -archs "$file_path" 2>/dev/null || true)"
-  case "$REQUIRED_ARCH" in
+  case "$required_arch" in
     arm64|x86_64)
-      [[ " ${archs} " == *" ${REQUIRED_ARCH} "* ]]
+      [[ " ${archs} " == *" ${required_arch} "* ]]
       ;;
     universal)
       [[ " ${archs} " == *" arm64 "* && " ${archs} " == *" x86_64 "* ]]
@@ -119,14 +120,23 @@ while IFS= read -r -d '' candidate; do
   fi
 
   scanned_count=$((scanned_count + 1))
+  candidate_minos="$MAX_MACOS_MINOS"
+  candidate_arch="$REQUIRED_ARCH"
+  # This optional subprocess is gated to Apple Silicon/macOS 14 by SemanticFilePolicy.
+  # Its deployment target must not raise the host app's macOS 13 minimum.
+  if [[ "${candidate#$SCAN_ROOT/}" == "Contents/Resources/LocalRuntimes/SemanticSearch/TypefluxSemanticHelper" \
+    && "$REQUIRED_ARCH" != "x86_64" ]]; then
+    candidate_minos="14.0"
+    candidate_arch="arm64"
+  fi
   while IFS= read -r minos; do
-    if version_gt "$minos" "$MAX_MACOS_MINOS"; then
+    if version_gt "$minos" "$candidate_minos"; then
       minos_offenders+=("${candidate#$SCAN_ROOT/}: minos ${minos}")
     fi
   done < <(minos_versions_for_file "$candidate")
 
-  if ! file_has_required_architecture "$candidate"; then
-    arch_offenders+=("${candidate#$SCAN_ROOT/}: missing ${REQUIRED_ARCH}")
+  if ! file_has_required_architecture "$candidate" "$candidate_arch"; then
+    arch_offenders+=("${candidate#$SCAN_ROOT/}: missing ${candidate_arch}")
   fi
 done < <(find "$SCAN_ROOT" -type f -print0)
 

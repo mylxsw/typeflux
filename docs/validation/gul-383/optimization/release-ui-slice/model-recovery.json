@@ -1,0 +1,6 @@
+{
+  "sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+  "bytes": 309855456,
+  "source_revision": "bfcd298762cc34d0357ece5ebdd31791a3a374d8",
+  "reason": "Accepted prior-task model cache disappeared before native execution; recovered pinned model into this task owned build directory."
+}

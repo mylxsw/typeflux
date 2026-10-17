@@ -1,0 +1,143 @@
+{
+  "native_pass": true,
+  "native_stage": "complete",
+  "groups": [
+    {
+      "entry": "mixed",
+      "group": "lexical",
+      "samples": 3,
+      "metrics": {
+        "publication_ms": {
+          "p50": 13.933666632510722,
+          "p95": 26.194291654974222,
+          "p99": 26.194291654974222,
+          "max": 26.194291654974222
+        },
+        "layout_ax_ms": {
+          "p50": 34.45362497586757,
+          "p95": 54.88599999807775,
+          "p99": 54.88599999807775,
+          "max": 54.88599999807775
+        },
+        "complete_query_ms": {
+          "p50": 141.47162495646626,
+          "p95": 146.78062498569489,
+          "p99": 146.78062498569489,
+          "max": 146.78062498569489
+        }
+      }
+    },
+    {
+      "entry": "mixed",
+      "group": "cross_language",
+      "samples": 3,
+      "metrics": {
+        "publication_ms": {
+          "p50": 83.10883329249918,
+          "p95": 85.04066662862897,
+          "p99": 85.04066662862897,
+          "max": 85.04066662862897
+        },
+        "layout_ax_ms": {
+          "p50": 114.77487499359995,
+          "p95": 118.70879167690873,
+          "p99": 118.70879167690873,
+          "max": 118.70879167690873
+        },
+        "complete_query_ms": {
+          "p50": 142.4192083068192,
+          "p95": 143.57083337381482,
+          "p99": 143.57083337381482,
+          "max": 143.57083337381482
+        }
+      }
+    },
+    {
+      "entry": "file-mode",
+      "group": "lexical",
+      "samples": 3,
+      "metrics": {
+        "publication_ms": {
+          "p50": 37.150291725993156,
+          "p95": 51.96995835285634,
+          "p99": 51.96995835285634,
+          "max": 51.96995835285634
+        },
+        "layout_ax_ms": {
+          "p50": 51.09554168302566,
+          "p95": 63.92104167025536,
+          "p99": 63.92104167025536,
+          "max": 63.92104167025536
+        },
+        "complete_query_ms": {
+          "p50": 140.75370831415057,
+          "p95": 173.6596249975264,
+          "p99": 173.6596249975264,
+          "max": 173.6596249975264
+        }
+      }
+    },
+    {
+      "entry": "file-mode",
+      "group": "cross_language",
+      "samples": 3,
+      "metrics": {
+        "publication_ms": {
+          "p50": 107.82725003082305,
+          "p95": 108.41791669372469,
+          "p99": 108.41791669372469,
+          "max": 108.41791669372469
+        },
+        "layout_ax_ms": {
+          "p50": 141.2048334022984,
+          "p95": 144.73441673908383,
+          "p99": 144.73441673908383,
+          "max": 144.73441673908383
+        },
+        "complete_query_ms": {
+          "p50": 144.7470000712201,
+          "p95": 151.6943332972005,
+          "p99": 151.6943332972005,
+          "max": 151.6943332972005
+        }
+      }
+    }
+  ],
+  "mutation": {
+    "file": "final-en-00.txt",
+    "milliseconds": 2323.3830833341926,
+    "new_version": "16777239:84624399:159:1792227268:239434873:1792227268:239692080",
+    "old_version": "16777239:84624235:79:1792227249:47573314:1792227249:47702979",
+    "trigger": "Real atomic write; production FSEvents; no explicit rescan"
+  },
+  "package_pass": true,
+  "native_commands": {
+    "native-ui-run.json": 109.39256804098841,
+    "native-ui-run-excluded-fixture.json": 177.85582629195414,
+    "native-ui-run-missing-cache.json": 96.48920870805159,
+    "native-ui-run-initial.json": 53.81967999995686
+  },
+  "changed_swift_coverage": {
+    "application": {
+      "covered": 0,
+      "executable_lines": 0,
+      "status": "N/A"
+    },
+    "file-helper": {
+      "covered": 0,
+      "executable_lines": 0,
+      "status": "N/A"
+    },
+    "native-helper": {
+      "covered": 0,
+      "executable_lines": 0,
+      "status": "N/A"
+    },
+    "runtime": {
+      "covered": 0,
+      "executable_lines": 0,
+      "status": "N/A"
+    }
+  },
+  "limits": "Three observations per entry/group over 50 existing text sources. No 100k latency, broad quality, physical HID/monitor presentation, or sustained resource acceptance."
+}
