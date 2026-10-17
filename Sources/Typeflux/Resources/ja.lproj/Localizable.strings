@@ -4670,9 +4670,12 @@
 "settings.pane.appearance" = "外観";
 
 
-// Clipboard snippets
+// Clipboard panel and snippets
 "clipboard.tab.clipboard" = "クリップボード";
+"clipboard.tab.transcription" = "文字起こし";
 "clipboard.tab.snippet" = "スニペット";
+"clipboard.transcription.search" = "文字起こしを検索";
+"clipboard.transcription.empty" = "文字起こし履歴はありません";
 "clipboard.action.saveSnippet" = "スニペットとして保存…";
 "clipboard.action.editSnippet" = "スニペットを編集…";
 "clipboard.snippet.permanent" = "無期限に保持";

@@ -160,6 +160,40 @@ private actor ClipboardThumbnailPending {
         session.end(); XCTAssertTrue(images.allSatisfy { $0.image == nil })
     }
 
+    func testThumbnailCacheReusesPixelsUntilThePresentationEnds() async throws {
+        let cache = ClipboardThumbnailCache(), calls = ClipboardThumbnailCalls(), raster = result()
+        let url = URL(fileURLWithPath: "/private/reused.png"), firstEpoch = cache.clear()
+        let decode: ClipboardThumbnailDecoding = { _, _ in await calls.add(); return raster }
+        _ = try await cache.decode(url, edge: 240, epoch: firstEpoch, using: decode)
+        _ = try await cache.decode(url, edge: 240, epoch: firstEpoch, using: decode)
+        let firstCount = await calls.count
+        XCTAssertEqual(firstCount, 1)
+
+        let secondEpoch = cache.clear()
+        do {
+            _ = try await cache.decode(url, edge: 240, epoch: firstEpoch, using: decode)
+            XCTFail("A previous panel session must not receive cached pixels")
+        } catch is CancellationError {
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+        _ = try await cache.decode(url, edge: 240, epoch: secondEpoch, using: decode)
+        let secondCount = await calls.count
+        XCTAssertEqual(secondCount, 2)
+    }
+
+    func testChangingSelectionKeepsVisibleRowPixels() async throws {
+        let panel = ClipboardPanelModel(), entry = ClipboardTestSupport.entry(.image, imagePath: "/private/a.png")
+        panel.reset(entries: [entry, ClipboardTestSupport.entry(.text, text: "next")])
+        let controller = ClipboardPanelController(settingsStore: settings(), thumbnailDecoder: { _, _ in throw MediaFailure.unavailable })
+        controller.present(panel); defer { controller.dismiss() }
+        let raster = result()
+        let access = controller.thumbnails.access(for: entry), image = AskContextImageModel(decode: { _ in raster })
+        await image.load("image", access: access)
+        panel.select(index: 1)
+        XCTAssertTrue(access.allows()); XCTAssertNotNil(image.displayed("image", access: access))
+    }
+
     func testActualOrderOutCloseAndAccountChangeRevokePanelScope() async throws {
         let panel = ClipboardPanelModel(), entry = ClipboardTestSupport.entry(.image, imagePath: "/private/missing.png")
         panel.reset(entries: [entry]); let controller = ClipboardPanelController(settingsStore: settings(), thumbnailDecoder: { _, _ in throw MediaFailure.unavailable })
@@ -175,7 +209,7 @@ private actor ClipboardThumbnailPending {
         panel.replaceEntries([]); XCTAssertFalse(beforeDelete.allows())
     }
 
-    func testPausePreservesHistoryButHiddenPreviewAndOwnerReleaseClearPixels() async throws {
+    func testPauseAndPreviewToggleKeepRowsButOwnerReleaseClearsPixels() async throws {
         let panel = ClipboardPanelModel(), entry = ClipboardTestSupport.entry(.image, imagePath: "/private/missing.png"), raster = result()
         panel.reset(entries: [entry]); panel.showsPreview = true
         var controller: ClipboardPanelController? = ClipboardPanelController(settingsStore: settings(), thumbnailDecoder: { _, _ in throw MediaFailure.unavailable })
@@ -183,7 +217,7 @@ private actor ClipboardThumbnailPending {
         let access = controller!.thumbnails.access(for: entry), image = AskContextImageModel(decode: { _ in raster })
         await image.load("image", access: access)
         panel.isRecordingPaused = true; XCTAssertTrue(access.allows()); XCTAssertNotNil(image.image)
-        panel.showsPreview = false; XCTAssertFalse(access.allows()); XCTAssertNil(image.image)
+        panel.showsPreview = false; XCTAssertTrue(access.allows()); XCTAssertNotNil(image.image)
         let next = controller!.thumbnails.access(for: entry); await image.load("image", access: next)
         let window = controller?.presentedWindow
         controller = nil

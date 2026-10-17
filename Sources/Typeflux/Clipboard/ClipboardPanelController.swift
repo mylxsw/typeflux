@@ -19,10 +19,10 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     private var focusRequest = 0
     private var quickLookURLs: [URL] = []
     private var previewObservation: AnyCancellable?
-    private var selectionObservation: AnyCancellable?
     private var entryObservation: AnyCancellable?
     private var privacyObservers: [NSObjectProtocol] = []
     let thumbnails = ClipboardThumbnailSession()
+    private let iconCache = AskLauncherIconCache(capacity: 128, fileCapacity: 8)
     private let layout = ClipboardPanelLayout()
     /// The launcher's scalar spring also drives the clipboard's width.
     private let previewWidthAnimator = AskLauncherHeightAnimator()
@@ -67,7 +67,6 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         previewObservation = nil
         self.model = model
         thumbnails.begin(model)
-        selectionObservation = model.$selectedIndex.dropFirst().removeDuplicates().sink { [weak self] _ in self?.thumbnails.changed() }
         entryObservation = model.$entries.dropFirst().sink { [weak self] _ in self?.thumbnails.changed() }
         focusRequest += 1
         layout.setWidth(ClipboardPanelView.size(showsPreview: model.showsPreview).width)
@@ -79,7 +78,6 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         panel.makeKeyAndOrderFront(nil)
         installMonitors()
         previewObservation = model.$showsPreview.dropFirst().removeDuplicates().sink { [weak self] shows in
-            self?.thumbnails.changed()
             self?.resizeForPreview(shows)
         }
     }
@@ -110,7 +108,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     }
 
     func dismiss() {
-        thumbnails.end(); entryObservation = nil; selectionObservation = nil
+        thumbnails.end(); entryObservation = nil
         previewWidthAnimator.stop()
         previewObservation = nil
         closeQuickLook()
@@ -136,7 +134,9 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
 
     private func panel(for model: ClipboardPanelModel) -> ClipboardPanelWindow {
         let rootView = AnyView(ClipboardPanelView(thumbnails: thumbnails, model: model, focusRequest: focusRequest, layout: layout)
-            .environment(\.clipboardThumbnailDecoder, thumbnailDecoder)
+            .environment(\.clipboardThumbnailDecoder, thumbnails.decoder(using: thumbnailDecoder))
+            .environment(\.clipboardThumbnailCache, thumbnails.cache)
+            .environment(\.askLauncherIconCache, iconCache)
             .interfaceStyle(following: interfaceStyleObserver))
         if let panel, let hostingView {
             hostingView.rootView = rootView
@@ -150,7 +150,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
             defer: false
         )
         panel.quickLookController = self
-        panel.onHide = { [weak self] in self?.thumbnails.end(); self?.entryObservation = nil; self?.selectionObservation = nil }
+        panel.onHide = { [weak self] in self?.thumbnails.end(); self?.entryObservation = nil }
         panel.level = .floating
         panel.isOpaque = false
         panel.backgroundColor = .clear

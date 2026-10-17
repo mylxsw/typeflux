@@ -4736,9 +4736,12 @@
 "emoji.match.intent" = "Suggested for this expression";
 "emoji.match.typo" = "Spelling correction";
 
-// Clipboard snippets
+// Clipboard panel and snippets
 "clipboard.tab.clipboard" = "Clipboard";
+"clipboard.tab.transcription" = "Transcriptions";
 "clipboard.tab.snippet" = "Snippets";
+"clipboard.transcription.search" = "Search transcriptions";
+"clipboard.transcription.empty" = "No transcriptions yet";
 "clipboard.action.saveSnippet" = "Save as Snippet…";
 "clipboard.action.editSnippet" = "Edit Snippet…";
 "clipboard.snippet.permanent" = "Kept permanently";

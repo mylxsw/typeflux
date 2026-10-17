@@ -258,9 +258,11 @@ struct ClipboardThumbnailView: View {
     var contentMode: ContentMode = .fill
     @Environment(\.askContextImageAccess) private var access
     @Environment(\.clipboardThumbnailDecoder) private var decode
+    @Environment(\.clipboardThumbnailCache) private var cache
 
     var body: some View {
         let url = self.url, edge = maxPixelSize, decode = self.decode
+        let cached = access.allows() ? url.flatMap { cache?.image(for: $0, edge: edge) } : nil
         return AskContextImage(source: url?.absoluteString,
             model: AskContextImageModel(maximumEdge: edge.isFinite && edge >= 1 && edge <= 900 ? Int(edge) : 1, decode: { _ in
                 guard let url else { throw CancellationError() }
@@ -268,7 +270,7 @@ struct ClipboardThumbnailView: View {
             })) { image in
                 ZStack {
                     AskTheme.raisedSurface
-                    if let image { Image(nsImage: image).resizable().aspectRatio(contentMode: contentMode) }
+                    if let image = image ?? cached { Image(nsImage: image).resizable().aspectRatio(contentMode: contentMode) }
                     else { Image(systemName: placeholder).foregroundStyle(.tertiary) }
                 }
             }

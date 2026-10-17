@@ -38,16 +38,18 @@ final class ClipboardFeedTests: XCTestCase {
         XCTAssertEqual(entries.map(\.kind), [.text, .voice, .text, .voice])
     }
 
-    func testCopiedVoiceTextFoldsIntoTheVoiceEntry() {
+    func testCopiedVoiceTextAndRepeatedTranscriptionsRemainInTheirTabs() {
         let record = voice("hello world", offset: 0)
+        let repeated = voice("hello world", offset: -10)
         let entries = ClipboardFeed.entries(
             clipboardItems: [item(text: "hello world\n", offset: 50)],
-            voiceRecords: [record, voice("hello world", offset: -10)],
+            voiceRecords: [record, repeated],
             pinnedVoiceRecordIDs: [record.id]
         )
-        XCTAssertEqual(entries.count, 1)
-        XCTAssertEqual(entries.first?.origin, .voice(record.id))
-        XCTAssertEqual(entries.first?.date, base.addingTimeInterval(50))
+        XCTAssertEqual(entries.count, 3)
+        XCTAssertEqual(ClipboardFeed.filter(entries, category: .all, query: "").map(\.text), ["hello world\n"])
+        XCTAssertEqual(ClipboardFeed.filter(entries, category: .voice, query: "").map(\.origin),
+                       [.voice(record.id), .voice(repeated.id)])
         XCTAssertEqual(entries.first?.isPinned, true)
     }
 
@@ -111,9 +113,11 @@ final class ClipboardFeedTests: XCTestCase {
             voiceRecords: [voice("dictated report", offset: 2)],
             pinnedVoiceRecordIDs: []
         )
-        XCTAssertEqual(ClipboardFeed.filter(entries, category: .all, query: "").count, 4)
+        XCTAssertEqual(ClipboardFeed.filter(entries, category: .all, query: "").count, 3)
+        XCTAssertEqual(ClipboardFeed.filter(entries, category: .voice, query: "").map(\.title), ["dictated report"])
         XCTAssertTrue(ClipboardFeed.filter(entries, category: .snippet, query: "").isEmpty)
-        XCTAssertEqual(ClipboardFeed.filter(entries, category: .all, query: " report ").count, 3)
+        XCTAssertEqual(ClipboardFeed.filter(entries, category: .all, query: " report ").count, 2)
+        XCTAssertEqual(ClipboardFeed.filter(entries, category: .voice, query: " report ").count, 1)
         XCTAssertEqual(ClipboardFeed.filter(entries, category: .all, query: "safari").count, 1)
     }
 
@@ -161,10 +165,22 @@ final class ClipboardFeedTests: XCTestCase {
         let notes = ClipboardTestSupport.entry(.text, text: "b", sourceBundleID: "com.apple.Notes")
         let voice = ClipboardTestSupport.entry(.voice, text: "c")
         let all = [safari, notes, voice]
-        XCTAssertEqual(ClipboardFeed.filter(all, category: .all, query: "").count, 3)
+        XCTAssertEqual(ClipboardFeed.filter(all, category: .all, query: "").count, 2)
+        XCTAssertEqual(ClipboardFeed.filter(all, category: .voice, query: "").map(\.id), [voice.id])
         XCTAssertEqual(
             ClipboardFeed.filter(all, category: .all, query: "", sourceBundleID: "com.apple.Safari").map(\.id), [safari.id]
         )
+    }
+
+    func testInitialTabHasVisibleContent() {
+        let copied = ClipboardTestSupport.entry(.text, text: "copied")
+        let spoken = ClipboardTestSupport.entry(.voice, text: "spoken")
+        var snippet = ClipboardTestSupport.entry(.text, text: "saved")
+        snippet.snippet = ClipboardSnippet(name: "Saved", alias: "")
+        XCTAssertEqual(ClipboardFeed.initialCategory(for: [copied, spoken, snippet]), .all)
+        XCTAssertEqual(ClipboardFeed.initialCategory(for: [spoken, snippet]), .voice)
+        XCTAssertEqual(ClipboardFeed.initialCategory(for: [snippet]), .snippet)
+        XCTAssertEqual(ClipboardFeed.initialCategory(for: []), .all)
     }
 
 }

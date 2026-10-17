@@ -116,7 +116,7 @@ struct ClipboardPanelView: View {
                     searchFocused = true
                 }
             }
-            TextField(L(model.category == .snippet ? "clipboard.snippet.search" : "clipboard.search.placeholder"), text: $model.query)
+            TextField(L(model.category.searchPlaceholderKey), text: $model.query)
                 .textFieldStyle(.plain)
                 .font(.system(size: 17))
                 .focused($searchFocused)
@@ -256,7 +256,7 @@ struct ClipboardPanelView: View {
         VStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 30, weight: .light))
-            Text(model.query.isEmpty ? L(model.category == .snippet ? "clipboard.snippet.empty" : "clipboard.empty") : L("clipboard.search.noResults", model.query))
+            Text(model.query.isEmpty ? L(model.category.emptyKey) : L("clipboard.search.noResults", model.query))
                 .font(.system(size: 12.5))
         }
         .foregroundStyle(StudioTheme.textSecondary)

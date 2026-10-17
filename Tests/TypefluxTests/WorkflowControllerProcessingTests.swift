@@ -4775,8 +4775,10 @@ extension WorkflowControllerProcessingTests {
         XCTAssertEqual(harness.presenter.presentCount, 1)
         XCTAssertEqual(
             harness.controller.historyPickerItems.map(\.kind),
-            [.pdf, .image, .text, .voice]
+            [.pdf, .image, .text]
         )
+        harness.controller.historyPanelModel.category = .voice
+        XCTAssertEqual(harness.controller.historyPickerItems.map(\.kind), [.voice])
 
         harness.controller.handleHistoryPickerRequested()
         XCTAssertFalse(harness.controller.isHistoryPickerPresented)

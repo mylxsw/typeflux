@@ -21,7 +21,7 @@ final class ClipboardPanelModelTests: XCTestCase {
 
     private var entries: [ClipboardEntry] {
         [
-            ClipboardTestSupport.entry(.voice, text: "spoken words"),
+            ClipboardTestSupport.entry(.text, text: "spoken words"),
             ClipboardTestSupport.entry(.link, text: "https://example.com"),
             ClipboardTestSupport.entry(.image, imagePath: "/tmp/shot.png"),
             ClipboardTestSupport.entry(.pdf, filePaths: ["/tmp/report.pdf"]),
@@ -77,6 +77,8 @@ final class ClipboardPanelModelTests: XCTestCase {
         model.cycleCategory(forward: true)
         XCTAssertEqual(model.category, .all)
         model.cycleCategory(forward: true)
+        XCTAssertEqual(model.category, .voice)
+        model.cycleCategory(forward: true)
         XCTAssertEqual(model.category, .snippet)
     }
 
@@ -102,12 +104,15 @@ final class ClipboardPanelModelTests: XCTestCase {
     func testPerformForwardsAvailableActions() {
         model.reset(entries: entries)
         model.perform(.paste)
-        model.perform(.retryTranscription)
         model.perform(.quickLook)
         model.perform(.copy, at: 3)
-        XCTAssertEqual(performed.map(\.0), [.paste, .retryTranscription, .copy])
+        XCTAssertEqual(performed.map(\.0), [.paste, .copy])
         XCTAssertEqual(performed.last?.1, "report.pdf")
         XCTAssertEqual(model.selectedIndex, 3)
+
+        model.reset(entries: [ClipboardTestSupport.entry(.voice, text: "retry me")])
+        model.perform(.retryTranscription)
+        XCTAssertEqual(performed.last?.0, .retryTranscription)
     }
 
     func testMissingFilesBlockContentActionsWithANotice() {
@@ -371,14 +376,21 @@ final class ClipboardPanelModelTests: XCTestCase {
         XCTAssertNotNil(model.appFilter, "Escape clears the search before the app filter")
         model.cancel()
         XCTAssertNil(model.appFilter)
-        XCTAssertEqual(model.visibleEntries.count, 4)
+        XCTAssertEqual(model.visibleEntries.count, 3)
         XCTAssertEqual(dismissCount, 0)
+        model.setAppFilter(ClipboardAppFilter(bundleID: "com.apple.Safari", name: "Safari"))
+        model.category = .voice
+        XCTAssertNil(model.appFilter)
+        XCTAssertEqual(model.visibleEntries.map(\.title), ["spoken"])
+        model.category = .all
         model.cancel()
         XCTAssertEqual(dismissCount, 1)
 
         // Voice results have no source app: the actions are not offered.
-        model.perform(.showOnlyApp, at: 3)
+        model.category = .voice
+        model.perform(.showOnlyApp, at: 0)
         XCTAssertNil(model.appFilter)
+        model.category = .all
         model.setAppFilter(ClipboardAppFilter(bundleID: "com.apple.Notes", name: "Notes"))
         model.reset(entries: appEntries)
         XCTAssertNil(model.appFilter, "A new session shows every app")

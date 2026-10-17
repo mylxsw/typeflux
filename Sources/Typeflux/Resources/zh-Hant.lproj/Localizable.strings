@@ -4721,9 +4721,12 @@
 "emoji.match.intent" = "意圖聯想";
 "emoji.match.typo" = "拼字容錯";
 
-// Clipboard snippets
+// Clipboard panel and snippets
 "clipboard.tab.clipboard" = "剪貼簿";
+"clipboard.tab.transcription" = "轉寫";
 "clipboard.tab.snippet" = "片段";
+"clipboard.transcription.search" = "搜尋轉寫記錄";
+"clipboard.transcription.empty" = "尚無轉寫記錄";
 "clipboard.action.saveSnippet" = "儲存為片段…";
 "clipboard.action.editSnippet" = "編輯片段…";
 "clipboard.snippet.permanent" = "永久保留";

@@ -4736,9 +4736,12 @@
 "emoji.match.intent" = "意图联想";
 "emoji.match.typo" = "拼写容错";
 
-// Clipboard snippets
+// Clipboard panel and snippets
 "clipboard.tab.clipboard" = "剪贴板";
+"clipboard.tab.transcription" = "转写";
 "clipboard.tab.snippet" = "片段";
+"clipboard.transcription.search" = "搜索转写历史";
+"clipboard.transcription.empty" = "还没有转写记录";
 "clipboard.action.saveSnippet" = "保存为片段…";
 "clipboard.action.editSnippet" = "编辑片段…";
 "clipboard.snippet.permanent" = "永久保留";

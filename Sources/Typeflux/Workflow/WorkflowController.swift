@@ -215,6 +215,7 @@ final class WorkflowController {
     var clipboardActionGeneration = UUID()
     var clipboardContentActions: ClipboardContentActing = SystemClipboardContentActions()
     var clipboardHistoryObserver: NSObjectProtocol?
+    var transcriptionHistoryObserver: NSObjectProtocol?
     var clipboardPauseObserver: NSObjectProtocol?
     var lastPaidCreditExhaustedPromptPresentedAt: Date?
     let analyticsLock = NSLock()
@@ -323,6 +324,9 @@ final class WorkflowController {
         }
         if let clipboardHistoryObserver {
             NotificationCenter.default.removeObserver(clipboardHistoryObserver)
+        }
+        if let transcriptionHistoryObserver {
+            NotificationCenter.default.removeObserver(transcriptionHistoryObserver)
         }
     }
 

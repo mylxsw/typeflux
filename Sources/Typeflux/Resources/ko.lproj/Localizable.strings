@@ -4670,9 +4670,12 @@
 "settings.pane.appearance" = "외관";
 
 
-// Clipboard snippets
+// Clipboard panel and snippets
 "clipboard.tab.clipboard" = "클립보드";
+"clipboard.tab.transcription" = "받아쓰기";
 "clipboard.tab.snippet" = "스니펫";
+"clipboard.transcription.search" = "받아쓰기 기록 검색";
+"clipboard.transcription.empty" = "받아쓰기 기록이 없습니다";
 "clipboard.action.saveSnippet" = "스니펫으로 저장…";
 "clipboard.action.editSnippet" = "스니펫 편집…";
 "clipboard.snippet.permanent" = "영구 보관";

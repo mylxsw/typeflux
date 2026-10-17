@@ -151,7 +151,8 @@ final class ClipboardSnippetTests: XCTestCase {
             pinnedVoiceRecordIDs: []
         )
         XCTAssertEqual(entries.count, 2)
-        XCTAssertEqual(ClipboardFeed.filter(entries, category: .all, query: "").map(\.kind), [.voice])
+        XCTAssertTrue(ClipboardFeed.filter(entries, category: .all, query: "").isEmpty)
+        XCTAssertEqual(ClipboardFeed.filter(entries, category: .voice, query: "").map(\.kind), [.voice])
         for query in ["Office", "address", "voice", "Test"] {
             XCTAssertEqual(ClipboardFeed.filter(entries, category: .snippet, query: query).map(\.title), ["Office"])
         }
@@ -164,7 +165,7 @@ final class ClipboardSnippetTests: XCTestCase {
             "clipboard.snippet.voiceAlias",
             "my address"
         )))
-        XCTAssertEqual(ClipboardCategory.allCases, [.all, .snippet])
+        XCTAssertEqual(ClipboardCategory.allCases, [.all, .voice, .snippet])
     }
 
     func testExplicitVoiceCommandNormalization() {

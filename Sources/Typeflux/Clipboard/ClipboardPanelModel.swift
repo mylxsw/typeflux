@@ -18,7 +18,12 @@ final class ClipboardPanelModel: ObservableObject {
     @Published private(set) var visibleEntries: [ClipboardEntry] = []
     @Published private(set) var rows: [Row] = []
     @Published var category: ClipboardCategory = .all {
-        didSet { if category != oldValue { refilter(resetSelection: true) } }
+        didSet {
+            if category != oldValue {
+                if category != .all { appFilter = nil }
+                refilter(resetSelection: true)
+            }
+        }
     }
 
     @Published var query = "" {
@@ -91,7 +96,7 @@ final class ClipboardPanelModel: ObservableObject {
         pendingConfirmation = nil
         appFilter = nil
         query = ""
-        category = .all
+        category = ClipboardFeed.initialCategory(for: entries)
         refilter(resetSelection: true)
         if selectFirstUnpinned, let index = visibleEntries.firstIndex(where: { !$0.isPinned }) {
             selectedIndex = index

@@ -20,35 +20,19 @@ enum ClipboardFeed {
         }
     }
 
-    /// Merges voice results with clipboard items, newest first and pinned entries on top.
-    ///
-    /// Copying a voice result puts the same text on the clipboard; that copy folds into the
-    /// voice entry (keeping the later date) so the text shows once.
+    /// Keeps copied items and individual voice results available in their own tabs.
     static func entries(
         clipboardItems: [ClipboardItem],
         voiceRecords: [HistoryRecord],
         pinnedVoiceRecordIDs: Set<UUID>
     ) -> [ClipboardEntry] {
-        var voiceDates: [String: (record: HistoryRecord, date: Date)] = [:]
+        var entries = clipboardItems.map(entry(for:))
         for record in voiceRecords {
-            guard let text = voiceText(of: record), voiceDates[text] == nil else { continue }
-            voiceDates[text] = (record, record.date)
-        }
-
-        var entries: [ClipboardEntry] = []
-        for item in clipboardItems {
-            if item.snippet == nil, item.payload == .text, let text = item.text?.trimmingCharacters(in: .whitespacesAndNewlines),
-               let voice = voiceDates[text] {
-                voiceDates[text] = (voice.record, max(voice.date, item.date))
-                continue
-            }
-            entries.append(entry(for: item))
-        }
-        for (text, voice) in voiceDates {
+            guard let text = voiceText(of: record) else { continue }
             entries.append(ClipboardEntry(
-                origin: .voice(voice.record.id), kind: .voice, date: voice.date, text: text,
+                origin: .voice(record.id), kind: .voice, date: record.date, text: text,
                 filePaths: [], imagePath: nil, imagePixelSize: nil, byteSize: Int64(text.utf8.count),
-                sourceBundleID: nil, sourceAppName: nil, isPinned: pinnedVoiceRecordIDs.contains(voice.record.id)
+                sourceBundleID: nil, sourceAppName: nil, isPinned: pinnedVoiceRecordIDs.contains(record.id)
             ))
         }
         return entries.sorted { lhs, rhs in
@@ -79,6 +63,18 @@ enum ClipboardFeed {
         )
     }
 
+    static func initialCategory(for entries: [ClipboardEntry]) -> ClipboardCategory {
+        if entries.contains(where: { entry in
+            if case .clipboard = entry.origin { return entry.snippet == nil }
+            return false
+        }) { return .all }
+        if entries.contains(where: { entry in
+            if case .voice = entry.origin { return true }
+            return false
+        }) { return .voice }
+        return entries.isEmpty ? .all : .snippet
+    }
+
     /// `searchText` lets callers pass text built once per entry instead of joining it on every keystroke.
     static func filter(
         _ entries: [ClipboardEntry],
@@ -89,7 +85,14 @@ enum ClipboardFeed {
     ) -> [ClipboardEntry] {
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
         return entries.filter { entry in
-            guard (category == .snippet) == (entry.snippet != nil) else { return false }
+            switch category {
+            case .all:
+                guard case .clipboard = entry.origin, entry.snippet == nil else { return false }
+            case .voice:
+                guard case .voice = entry.origin else { return false }
+            case .snippet:
+                guard entry.snippet != nil else { return false }
+            }
             guard sourceBundleID == nil || entry.sourceBundleID == sourceBundleID else { return false }
             guard !needle.isEmpty else { return true }
             return searchText(entry).localizedCaseInsensitiveContains(needle)

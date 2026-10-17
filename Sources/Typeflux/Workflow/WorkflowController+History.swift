@@ -42,6 +42,13 @@ extension WorkflowController {
         ) { [weak self] _ in
             self?.reloadHistoryPanel()
         }
+        transcriptionHistoryObserver = NotificationCenter.default.addObserver(
+            forName: .historyStoreDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.reloadHistoryPanel()
+        }
     }
 
     func handleHistoryPickerRequested() {

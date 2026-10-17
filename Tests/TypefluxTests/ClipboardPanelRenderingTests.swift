@@ -162,7 +162,7 @@ final class ClipboardPanelRenderingTests: XCTestCase {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let model = ClipboardPanelModel()
-        model.reset(entries: Array(allKindsEntries().prefix(2)))
+        model.reset(entries: Array(allKindsEntries().dropFirst().prefix(2)))
 
         let earlier = ClipboardPanelController(settingsStore: SettingsStore(defaults: defaults))
         let stale = try ClipboardTestSupport.withPresentedPanel(earlier, model) { $0 }
@@ -272,7 +272,11 @@ final class ClipboardPanelRenderingTests: XCTestCase {
         XCTAssertTrue(key(126, ""))
         XCTAssertEqual(model.selectedIndex, 0)
         XCTAssertTrue(key(48, "\t"))
+        XCTAssertEqual(model.category, .voice)
+        XCTAssertTrue(key(48, "\t"))
         XCTAssertEqual(model.category, .snippet)
+        XCTAssertTrue(key(48, "\t", .shift))
+        XCTAssertEqual(model.category, .voice)
         XCTAssertTrue(key(48, "\t", .shift))
         XCTAssertEqual(model.category, .all)
         XCTAssertTrue(key(35, "p", .command))
