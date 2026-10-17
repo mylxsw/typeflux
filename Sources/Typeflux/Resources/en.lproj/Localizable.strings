@@ -15,6 +15,7 @@
 "appIcon.cartoonPetrol" = "Cartoon · Petrol";
 "appIcon.cartoonCobalt" = "Cartoon · Cobalt";
 "appIcon.cartoonLavender" = "Cartoon · Lavender";
+"appIcon.yarnBall" = "Yarn ball";
 "settings.appIcon.title" = "App icon";
 "settings.appIcon.note" = "Changes appear in the Dock immediately. The app file in Finder keeps the default icon.";
 "interfaceStyle.liquidGlass" = "Liquid Glass";

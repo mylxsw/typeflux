@@ -120,8 +120,8 @@ struct AppearanceSettingsTests {
         #expect(pixels[3] == 0)
     }
 
-    @Test func `cartoon icons have rounded transparent corners`() throws {
-        for style in [AppIconStyle.cartoonPetrol, .cartoonCobalt, .cartoonLavender] {
+    @Test func `illustrated icons have rounded transparent corners`() throws {
+        for style in [AppIconStyle.cartoonPetrol, .cartoonCobalt, .cartoonLavender, .yarnBall] {
             let icon = try #require(AppIconController.image(for: style))
             let bitmap = try #require(NSBitmapImageRep(
                 bitmapDataPlanes: nil,

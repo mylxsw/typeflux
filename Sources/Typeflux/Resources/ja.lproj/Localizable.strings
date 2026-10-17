@@ -15,6 +15,7 @@
 "appIcon.cartoonPetrol" = "カートゥーン・深海ブルー";
 "appIcon.cartoonCobalt" = "カートゥーン・コバルト";
 "appIcon.cartoonLavender" = "カートゥーン・ラベンダー";
+"appIcon.yarnBall" = "毛糸玉";
 "settings.appIcon.title" = "アプリアイコン";
 "settings.appIcon.note" = "変更は Dock にすぐ反映されます。Finder のアプリファイルには標準アイコンが表示されます。";
 "interfaceStyle.liquidGlass" = "Liquid Glass";

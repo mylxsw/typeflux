@@ -15,6 +15,7 @@
 "appIcon.cartoonPetrol" = "卡通·深海藍";
 "appIcon.cartoonCobalt" = "卡通·鈷藍";
 "appIcon.cartoonLavender" = "卡通·淡紫";
+"appIcon.yarnBall" = "毛線球";
 "settings.appIcon.title" = "應用程式圖示";
 "settings.appIcon.note" = "切換後立即顯示在 Dock；Finder 中的應用程式檔案仍顯示預設圖示。";
 "interfaceStyle.liquidGlass" = "Liquid Glass";
