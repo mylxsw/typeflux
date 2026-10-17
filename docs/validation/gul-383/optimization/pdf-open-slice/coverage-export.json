@@ -1,0 +1,8 @@
+{
+  "command": [
+    "python3",
+    "docs/validation/gul-383/optimization/pdf-open-slice/export-coverage.py"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 2.5843627079739235
+}

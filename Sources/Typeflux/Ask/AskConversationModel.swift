@@ -49,6 +49,7 @@ final class AskConversationModel: ObservableObject {
     var semanticSearch: (any SemanticFileSearching)?
     /// Whether a found file is still there; tests decide instead.
     var fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }
+    var quickLookFile: (AskFileHit) -> Void = { AskQuickLook.shared.toggle($0.url) }
     /// Opens a file in a given application; tests record it instead.
     var openFileWith: (URL, URL) -> Void = { file, application in
         NSWorkspace.shared.open([file], withApplicationAt: application, configuration: NSWorkspace.OpenConfiguration())

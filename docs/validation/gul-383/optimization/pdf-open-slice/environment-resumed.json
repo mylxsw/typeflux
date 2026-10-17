@@ -1,0 +1,11 @@
+{
+  "baseline": "30adce80696606a2c5d34221b7ea759ff3ef81dd",
+  "os": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "hardware": "Apple M4",
+  "memory_bytes": 17179869184,
+  "configuration": "Debug with coverage",
+  "real_embeddings": false,
+  "external_reader_page_jump": false,
+  "snapshot_style": "Classic; AppKit aqua/darkAqua with explicit SwiftUI color scheme",
+  "updated_at": "2026-10-17T01:06:44.717015+00:00"
+}

@@ -26,7 +26,7 @@ struct AskFilePreviewView: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .padding(10)
             Divider().opacity(0.4)
-            footer.frame(height: 38)
+            footer.frame(height: state.hit?.hasPDFLocationEvidence == true ? 66 : 38)
         }
         .environment(\.askContextImageAccess, state.imageAccess)
         .background(AskGlassBackground(material: .resolve(reduceTransparency: reduceTransparency, style: style),
@@ -56,11 +56,18 @@ struct AskFilePreviewView: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 10) {
-            Text(state.hit.map { ($0.folder as NSString).abbreviatingWithTildeInPath } ?? "")
-                .lineLimit(1).truncationMode(.head)
-            Spacer(minLength: 0)
-            Text("⌘Y " + L("ask.quick.action.quickLook")).fixedSize()
+        VStack(alignment: .leading, spacing: 5) {
+            if state.hit?.hasPDFLocationEvidence == true {
+                Text(L("ask.quick.file.pdf.preview"))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("ask.file.pdf.openCapability")
+            }
+            HStack(spacing: 10) {
+                Text(state.hit.map { ($0.folder as NSString).abbreviatingWithTildeInPath } ?? "")
+                    .lineLimit(1).truncationMode(.head)
+                Spacer(minLength: 0)
+                Text("⌘Y " + L("ask.quick.action.quickLook")).fixedSize()
+            }
         }.font(.system(size: 10)).foregroundStyle(StudioTheme.textSecondary).padding(.horizontal, 14)
     }
 

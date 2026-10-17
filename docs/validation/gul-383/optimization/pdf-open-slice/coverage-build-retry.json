@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=AskPDFLocationActionTests|AskSemanticFileSearchPluginTests|AskFilePreviewLoaderTests|AskFilePreviewControllerTests|AskFilePreviewReaderTests"
+  ],
+  "wall_seconds": 312.16903975000605,
+  "exit_code": 2
+}

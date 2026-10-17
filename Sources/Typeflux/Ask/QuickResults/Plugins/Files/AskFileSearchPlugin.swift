@@ -158,6 +158,14 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
             AskPluginAction(kind: .copy(hit.path), title: L("ask.quick.action.copyPath"), symbol: "link",
                             shortcut: .shiftCommandC)
         ]
+        if hit.hasPDFLocationEvidence {
+            actions[0] = AskPluginAction(kind: .fileAction(.open, hit), title: L("ask.quick.action.open"),
+                                        symbol: "arrow.up.forward.app", shortcut: .enter)
+            actions.insert(contentsOf: [.viewMatch, .openWith, .quickLook].map {
+                AskPluginAction(kind: .fileAction($0, hit), title: $0.title, symbol: $0.symbol,
+                                shortcut: $0 == .openWith ? .optionEnter : nil)
+            }, at: 1)
+        }
         if hit.isFolder {
             actions.append(AskPluginAction(kind: .runWith("in:" + hit.name.filter { !$0.isWhitespace } + " "),
                                            title: L("ask.quick.action.searchIn"), symbol: "magnifyingglass",

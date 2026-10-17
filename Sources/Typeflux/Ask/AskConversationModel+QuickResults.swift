@@ -9,6 +9,7 @@ enum AskQuickActionOutcome: Equatable {
     case panel(AskQuickActionPanel)
     /// Put this in the editor (file mode in a folder).
     case text(String)
+    case preview(AskFileHit)
 }
 
 extension AskConversationModel {
@@ -105,6 +106,10 @@ extension AskConversationModel {
     /// there; one that is gone leaves the index and the launcher says so. One case
     /// per action; splitting them would only scatter them.
     func performQuickFileAction(_ action: AskQuickAction, _ file: AskFileHit) -> AskQuickActionOutcome { // swiftlint:disable:this cyclomatic_complexity
+        if file.evidence != nil, !allowsFileEvidenceAction(file) {
+            confirm(L("ask.quick.file.accessChanged"), for: .seconds(3))
+            return .stay
+        }
         let url = file.url
         if action != .copyPath, action != .copyName, !fileExists(file.path) {
             fileIndex.forget(file.path)
@@ -115,6 +120,7 @@ extension AskConversationModel {
         case .open:
             fileIndex.recordOpen(file.path)
             openURL(url)
+            fileLocationNotice(file)
         case .openWith:
             let applications = AskQuickActionPanel.applications(for: url)
             guard !applications.isEmpty else { return performQuickFileAction(.open, file) }
@@ -122,11 +128,16 @@ extension AskConversationModel {
         case let .openIn(application):
             fileIndex.recordOpen(file.path)
             openFileWith(url, application)
+            fileLocationNotice(file)
         case .reveal:
             revealFile(url)
         case .quickLook:
-            AskQuickLook.shared.toggle(url)
+            quickLookFile(file)
+            if file.hasPDFLocationEvidence { passiveNotice(L("ask.quick.file.pdf.quickLook")) }
             return .stay
+        case .viewMatch:
+            guard file.hasPDFLocationEvidence else { return .stay }
+            return .preview(file)
         case .copyPath:
             AskQuickResults.copy(file.path)
         case .copyFile:

@@ -1,0 +1,21 @@
+{
+  "Sources/Typeflux/Ask/AskComposerViews.swift": "ecd7a9bcec36644c8d977525f0e7581a4824662d9199ac50f352f08ce2c34eb2",
+  "Sources/Typeflux/Ask/AskConversationModel+Plugins.swift": "72e12ab263d20923b0b077e175b32a15e05b353d2cafe5113881abf78f5f4ce0",
+  "Sources/Typeflux/Ask/AskConversationModel+QuickResults.swift": "ff8114bfa501cfbe59b3ed1887a9148d76aa8f2df1ef6ade8c2c6b7c38435d48",
+  "Sources/Typeflux/Ask/AskConversationModel.swift": "574b9a1e27eadbd7f673428a6ba1de90b92b25883bedb7ebec047caf5c06504a",
+  "Sources/Typeflux/Ask/QuickResults/AskQuickActions.swift": "10eedcc77280c685e03e15ec4367ddcd9f11c5d586d321d5cb1545ab6b3182c1",
+  "Sources/Typeflux/Ask/QuickResults/Plugins/AskLauncherPlugin.swift": "2c88f3f97c8875d93ba97b2d0e9079da8a406a749dc593296da4be69d9b2bcbe",
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Files/AskFileSearchPlugin.swift": "b3fc6d58a7eb7b66c0e0c221859909176055cefd2eba99cbcae6ad9a46a60b09",
+  "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift": "d34caf6b39d1c921a582ee7d0977ab3ea468a52a27bfb1e021d42bbf252e564a",
+  "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewView.swift": "9a3f5c6210c3e409e936d90def9e706e5eb834e012d49483abc6ffa52df891a6",
+  "Sources/Typeflux/Resources/en.lproj/Localizable.strings": "8ebe6256062175f9a8e48932484dff6577e206b4aa50eaf5d97b190f7b204160",
+  "Sources/Typeflux/Resources/ja.lproj/Localizable.strings": "d81dd908869e8224b40771a92f7525891d3c2bdf82b7bdf4bef84a2d41efa743",
+  "Sources/Typeflux/Resources/ko.lproj/Localizable.strings": "6e2021a3cf6a6098a352e5183540c06bbb3bd493c59d99cb57d73e423fe3328a",
+  "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings": "168a01892f3dd1bba2e1d44bacb28685e1c9b8032ac47de690e7f525e5810792",
+  "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings": "238783628e690540b61c383ebde547151572f27e8be06b99f794c2dc35c2b0c3",
+  "Tests/TypefluxTests/AskQuickResultsInteractionTests.swift": "eae3b947e132e9d6138f497b411cd8dce685d296f18cf4704cbdd965fc031d6d",
+  "Tests/TypefluxTests/AskSemanticFileSearchPluginTests.swift": "76916b21fd4a0aa5ed74a3be6c8231cfb0aa75fca38a50bc4f161f733c9195d2",
+  "Sources/Typeflux/Ask/QuickResults/Files/AskFileLocationActions.swift": "e57f9a89833585508a7fa13ae0595ca4b2bbe7bf30ab2f31d697df83e802949a",
+  "Tests/TypefluxTests/AskPDFLocationActionTests.swift": "7387b4f4790ea8cb8f081b63313a3add6a07a552b2f396895ef42c7221bf7601",
+  "Tests/TypefluxTests/AskPDFLocationNativeTests.swift": "621f55777442d1e06dd17da8ab2b9aeaaf44a12fde1bdfc9b2b62234bd25a4df"
+}

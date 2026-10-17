@@ -1,0 +1,15 @@
+{
+  "current_strict_exit": 2,
+  "baseline_strict_exit": 2,
+  "current_count": 162,
+  "baseline_count": 161,
+  "added_diagnostic_count_by_file_and_rule": [
+    {
+      "file": "Sources/Typeflux/Ask/AskComposerViews.swift",
+      "rule": "cyclomatic_complexity",
+      "added_count": 1
+    }
+  ],
+  "new_file_strict_exit": 0,
+  "diagnostics_on_added_lines": 0
+}

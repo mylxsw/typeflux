@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=AskPDFLocationActionTests|AskPDFLocationNativeTests|AskSemanticFileSearchPluginTests/.*real launcher runs"
+  ],
+  "wall_seconds": 79.9720765830134,
+  "exit_code": 2
+}

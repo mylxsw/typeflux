@@ -4,7 +4,7 @@ import Quartz
 import SwiftUI
 
 /// Something done with a highlighted application or file besides opening it.
-enum AskQuickAction: Equatable {
+enum AskQuickAction: Equatable, Sendable {
     case open
     /// Lists the applications that can open the file.
     case openWith
@@ -12,6 +12,7 @@ enum AskQuickAction: Equatable {
     case openIn(URL)
     case reveal
     case quickLook
+    case viewMatch
     case copyPath
     case copyFile
     case copyName
@@ -30,6 +31,7 @@ enum AskQuickAction: Equatable {
         case let .openIn(url): FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: "")
         case .reveal: L("ask.quick.action.reveal")
         case .quickLook: L("ask.quick.action.quickLook")
+        case .viewMatch: L("ask.quick.action.viewMatch")
         case .copyPath: L("ask.quick.action.copyPath")
         case .copyFile: L("ask.quick.action.copyFile")
         case .copyName: L("ask.quick.action.copyName")
@@ -47,6 +49,7 @@ enum AskQuickAction: Equatable {
         case .openWith, .openIn: "square.grid.2x2"
         case .reveal: "folder"
         case .quickLook: "eye"
+        case .viewMatch: "text.viewfinder"
         case .copyPath: "link"
         case .copyFile: "doc.on.doc"
         case .copyName: "textformat"
@@ -68,7 +71,7 @@ enum AskQuickAction: Equatable {
         case .copyPath: "⇧⌘C"
         case .copyFile: "⌥⌘C"
         case .askAI: "⇧⌘↩"
-        case .openIn, .copyName, .openInTerminal, .searchInFolder, .quit, .trash: nil
+        case .openIn, .viewMatch, .copyName, .openInTerminal, .searchInFolder, .quit, .trash: nil
         }
     }
 
@@ -106,7 +109,7 @@ struct AskQuickActionPanel: Equatable {
 
     /// The actions for an application, settings pane, file or folder; nil when there is nothing beyond opening.
     static func make(for target: Target, running: (String) -> Bool = AskQuickActionPanel.isRunning) -> AskQuickActionPanel? {
-        let actions: [AskQuickAction]
+        var actions: [AskQuickAction]
         switch target {
         case let .app(app):
             guard app.kind == .application else { return nil }
@@ -118,6 +121,7 @@ struct AskQuickActionPanel: Equatable {
                 actions = [.open, .openWith, .reveal, .quickLook, .copyPath, .copyFile, .copyName, .askAI, .trash]
             }
         }
+        if case let .file(file) = target, file.hasPDFLocationEvidence { actions.insert(.viewMatch, at: 1) }
         return AskQuickActionPanel(target: target, actions: actions)
     }
 

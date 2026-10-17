@@ -1,0 +1,6 @@
+{
+  "original_lcov_sha256": "9f00d3ed35f1ddd9b49622dd6075bafa6eb779331c1c1da2880676a0cec11e68",
+  "original_profdata_sha256": "0867f7ce711ca3663aab31233bebb0ed9bf3617b1ac6ffd4efb41de3259da9f5",
+  "origin": "previous cancelled run, 23 passed and 3 failed methods, before fixture fixes",
+  "use": "historical raw evidence only; never merged with resumed/final profiles"
+}

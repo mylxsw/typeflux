@@ -45,13 +45,11 @@ enum MediaPreviewDisplay {
         else { throw MediaFailure.tooLarge }
         let locatePDF = operation == .previewPDF && evidence?.segmentKind == "pdf-ocr"
             && version != nil && evidence?.version == version
-        let currentPDF = operation == .previewPDF &&
-            (evidence?.segmentKind == "pdf-ocr" ? locatePDF :
-                (evidence?.version == nil || evidence?.version == version))
+        let currentPDF = operation == .previewPDF && version != nil && evidence?.version == version
         let locateText = operation == .previewImage && evidence?.segmentKind == "image-ocr"
             && version != nil && evidence?.version == version
         let options = MediaPreviewOptions(width: Int(pixels.width), height: Int(pixels.height),
-                                          page: operation == .previewPDF ? evidence?.page : nil,
+                                          page: currentPDF ? evidence?.page : nil,
                                           passage: currentPDF || locateText ? evidence?.text : nil,
                                           start: operation.isAV ? (start.isFinite ? max(0, start) : 0) : nil,
                                           container: operation.isAV ? MediaAVContainer(rawValue: url.pathExtension.lowercased()) : nil,

@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=AskPDFLocationActionTests/(persistent PDF hit reaches both open routes with the same page and version|file plugin actions own the current hit and revoke stale or unauthorized selections)|AskSemanticFileSearchPluginTests/real launcher runs aliases moves selection and opens content result"
+  ],
+  "wall_seconds": 72.17521229101112,
+  "exit_code": 2
+}

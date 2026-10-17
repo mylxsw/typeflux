@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/libexec/swift/pm/swiftpm-testing-helper",
+    "--test-bundle-path",
+    "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/.build/pdf-preview/arm64-apple-macosx/debug/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests",
+    "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/.build/pdf-preview/arm64-apple-macosx/debug/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests",
+    "--testing-library",
+    "swift-testing",
+    "--no-parallel",
+    "--filter",
+    "AskPDFLocationNativeTests/.*native PDF preview drops"
+  ],
+  "wall_seconds": 2.1009248749469407,
+  "exit_code": 0,
+  "reason": "SwiftPM profile aggregation failed after the method passed; same method and current instrumented binary, native compatibility runner, no rebuild."
+}
