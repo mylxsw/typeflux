@@ -12,6 +12,7 @@ struct SystemMonitorLauncherView: View {
     var filter: String
     /// Whether the window is already open: ⌘O then goes to it.
     var windowOpen: Bool
+    var feedback: String? = nil
     var onEffect: (SystemMonitorEffect) -> Void
 
     @State private var client: UUID?
@@ -358,7 +359,7 @@ struct SystemMonitorLauncherView: View {
     }
 
     private func footer(_ rows: [SystemProcess]) -> some View {
-        Text(Self.hint(model: model, rows: rows, windowOpen: windowOpen))
+        Text(feedback ?? Self.hint(model: model, rows: rows, windowOpen: windowOpen))
             .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: 16)

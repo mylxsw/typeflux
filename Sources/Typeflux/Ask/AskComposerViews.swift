@@ -1413,8 +1413,12 @@ struct AskComposer: View {
                                                   available: availableHeight.map { $0 + AskMetrics.launcherGutter * 2 },
                                                   natural: launcherResultsViewportHeight))
             }
-            if launcher && !launcherCollapsed && (pluginDisplay?.calendar != true || active) {
-                launcherBar
+            if launcher && !launcherCollapsed {
+                if showsFeatureBar {
+                    launcherFeatureBar
+                } else if showsChatBar {
+                    launcherBar
+                }
             }
         }
         .background {
@@ -1478,6 +1482,23 @@ struct AskComposer: View {
         desiredLauncherHeight - launcherNaturalResultsHeight
     }
 
+    /// An entered keyword owns the results area. Full-screen features include
+    /// their own footer; other plugins keep only their actions and key hints.
+    private var showsFeatureBar: Bool {
+        !active && plugins.isActive && pluginDisplay != nil
+            && pluginDisplay?.systemMonitor != true && pluginDisplay?.systemInfo != true
+            && pluginDisplay?.calendar != true
+    }
+
+    private var showsChatBar: Bool {
+        active || !plugins.isActive || pluginDisplay == nil
+    }
+
+    private var launcherBottomBarHeight: CGFloat {
+        if showsFeatureBar { return 32 }
+        return showsChatBar ? layout.footerHeight : 0
+    }
+
     /// Results that fill whatever room they are given: they scroll or leave space below.
     /// Keyword views with a designed size (the system monitor, a long answer) do not.
     private var launcherResultsFillViewport: Bool {
@@ -1519,12 +1540,14 @@ struct AskComposer: View {
                 SystemMonitorLauncherView(store: model.systemMonitorWindow.store, model: model.systemMonitor,
                                           filter: draft.wrappedValue.text,
                                           windowOpen: model.systemMonitorWindow.isOpen,
+                                          feedback: model.commandFeedback,
                                           onEffect: { effect in
                                               if model.performSystemMonitorEffect(effect) == .close { onDismiss() }
                                           })
             } else if let pluginDisplay, pluginDisplay.systemInfo {
                 SystemInfoLauncherView(store: model.systemInfoStore, model: model.systemInfo,
                                        filter: draft.wrappedValue.text,
+                                       feedback: model.commandFeedback,
                                        onEffect: { effect in
                                            if model.performSystemInfoEffect(effect) == .close { onDismiss() }
                                        })
@@ -2229,6 +2252,38 @@ struct AskComposer: View {
         }
     }
 
+    /// In keyword mode, leave room for plugin feedback without showing the
+    /// chat model, permission or context switches.
+    private var launcherFeatureBar: some View {
+        HStack(spacing: 8) {
+            if let approval = model.workflowApproval {
+                AskWorkflowApprovalView(approval: approval) { model.answerWorkflowApproval($0) }
+            } else if let actions = model.currentWorkflowActions {
+                AskWorkflowActionsSummaryView(state: actions)
+            } else if let feedback = model.capturedContentFeedback(launcher: true) {
+                AskCapturedContentFeedbackView(feedback: feedback) {
+                    model.undoCapturedContent(launcher: true)
+                }
+            } else if let feedback = model.commandFeedback {
+                AskComposerFootnote(text: feedback)
+            } else {
+                Text(launcherSecondaryHint)
+                    .font(.system(size: 11))
+                    .foregroundStyle(AskTheme.launcherMetaText)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .frame(height: launcherBottomBarHeight)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("ask.launcher.featureBar")
+        .overlay(alignment: .top) {
+            Rectangle().fill(AskTheme.launcherSeparator).frame(height: 1).padding(.horizontal, 12)
+        }
+    }
+
     private var launcherHint: String {
         if !active {
             return AskLauncherContext.supportingHint(
@@ -2616,7 +2671,7 @@ struct AskComposer: View {
             return AskMetrics.launcherHeight(editor: editorHeight, banners: 0)
                 + supplementalHeight + commands + quick + panel + keyword
                 + (!recording && showsLauncherSuggestions ? homeHeight : 0)
-                - (!recording && pluginDisplay?.calendar == true ? layout.footerHeight : 0)
+                - layout.footerHeight + launcherBottomBarHeight
         }
         return AskMetrics.launcherHeight(editor: editorHeight, banners: banners,
                                                  suggestions: !recording && showsLauncherSuggestions ? homeHeight : 0,

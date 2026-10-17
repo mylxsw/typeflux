@@ -47,6 +47,23 @@ struct AskLauncherHeaderTests {
         fixture.model.launcherDraft = draft
     }
 
+    @Test func enteredFeaturesHideChatControlsAndKeepTheirOwnFooter() async throws {
+        let keywords: [(AskKeyword, Bool)] = [
+            (AskSystemMonitorPlugin.keywords[0], false),
+            (AskSystemInfoPlugin.keywords[0], false),
+            (AskEmojiPlugin.keywords[0], true)
+        ]
+        for (keyword, hasFeatureBar) in keywords {
+            let fixture = try AskTestFixture()
+            fixture.model.plugins.enter(keyword)
+            let (window, _) = host(fixture)
+            defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
+            try await Task.sleep(for: .milliseconds(100))
+            #expect(find("ask.composer.model", in: window) == nil)
+            #expect((find("ask.launcher.featureBar", in: window) != nil) == hasFeatureBar)
+        }
+    }
+
     @Test func capturedContextLeavesTheEditorClearAndKeepsTheOriginalFooterSwitches() async throws {
         let fixture = try AskTestFixture()
         captured(fixture)

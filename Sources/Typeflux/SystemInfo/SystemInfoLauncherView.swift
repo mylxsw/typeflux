@@ -9,6 +9,7 @@ struct SystemInfoLauncherView: View {
     @ObservedObject var model: SystemInfoLauncherModel
     /// What the editor holds after the keyword: words to find rows by.
     var filter: String
+    var feedback: String? = nil
     var onEffect: (SystemInfoEffect) -> Void
 
     @State private var hovered: String?
@@ -350,8 +351,8 @@ extension SystemInfoLauncherView {
 
     private var footer: some View {
         HStack(spacing: 14) {
-            Text(L(searching ? "system.info.keys.search" : "system.info.keys.browse",
-                   store.snapshot?.sections.count ?? SystemInfoSection.allCases.count))
+            Text(feedback ?? L(searching ? "system.info.keys.search" : "system.info.keys.browse",
+                               store.snapshot?.sections.count ?? SystemInfoSection.allCases.count))
             Spacer(minLength: 8)
             Button {
                 if let snapshot = store.snapshot {
