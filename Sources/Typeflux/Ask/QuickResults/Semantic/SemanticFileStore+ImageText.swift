@@ -8,6 +8,7 @@ extension SemanticFileStore {
 
     static func mediaRecipe(_ path: String) -> String {
         if SemanticMediaPriority.of(path) == .audio { return audioProvenance }
+        if SemanticMediaPriority.of(path) == .video { return videoProvenance }
         return ["png", "jpg", "jpeg"].contains((path as NSString).pathExtension.lowercased())
             ? mediaProvenance + ";" + SemanticImageText.recipe : mediaProvenance
     }

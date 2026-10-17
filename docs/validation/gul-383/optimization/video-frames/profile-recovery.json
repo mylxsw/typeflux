@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticVideoFrameTests"
+  ],
+  "wall_seconds": 72.25567816698458,
+  "exit_code": 0
+}

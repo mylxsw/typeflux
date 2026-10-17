@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticVideoFrameTests/.*video track stops.*"
+  ],
+  "wall_seconds": 138.43492470798083,
+  "exit_code": 0
+}

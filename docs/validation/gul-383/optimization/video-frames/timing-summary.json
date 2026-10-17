@@ -1,0 +1,51 @@
+{
+  "commands": [
+    {
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticVideoFrameTests|SemanticMediaExtractorTests|SemanticMediaIndexTests|SemanticAudioWindowTests/audioRecipeMigration|SemanticIndexDiagnosticsTests"
+      ],
+      "wall_seconds": 129.78824270900805,
+      "exit_code": 2
+    },
+    {
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticVideoFrameTests|SemanticMediaExtractorTests|SemanticMediaIndexTests|SemanticAudioWindowTests/audioRecipeMigration|SemanticIndexDiagnosticsTests"
+      ],
+      "wall_seconds": 53.947906041983515,
+      "exit_code": 2
+    },
+    {
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticVideoFrameTests|SemanticMediaExtractorTests|SemanticMediaIndexTests|SemanticAudioWindowTests/audioRecipeMigration|SemanticIndexDiagnosticsTests"
+      ],
+      "wall_seconds": 385.2443566250149,
+      "exit_code": 2
+    },
+    {
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticVideoFrameTests/.*video track stops.*"
+      ],
+      "wall_seconds": 138.43492470798083,
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticVideoFrameTests"
+      ],
+      "wall_seconds": 72.25567816698458,
+      "exit_code": 0
+    }
+  ],
+  "total_command_wall_seconds": 779.6711082509719,
+  "private_cache_clone_seconds": 19.6
+}

@@ -130,7 +130,7 @@ enum SemanticMediaExtractor {
                                    cursor: resume, emit: frame)
             case .video:
                 let asset = AVURLAsset(url: snapshot)
-                try video(asset, folder: folderURL, start: resume.videoFrames * 10, emit: frame)
+                try SemanticVideoFrames.extract(asset, folder: folderURL, cursor: resume.videoProgress, emit: frame)
                 try audio(asset, folder: folderURL, start: resume.audioUntil, emit: frame)
             }
         } catch { return .init(error: EILSEQ) }
@@ -150,7 +150,7 @@ enum SemanticMediaExtractor {
         try write(raster, to: output)
     }
 
-    private static func write(_ image: CGImage, to output: URL) throws {
+    static func write(_ image: CGImage, to output: URL) throws {
         guard let destination = CGImageDestinationCreateWithURL(
             output as CFURL, "public.jpeg" as CFString, 1, nil
         )
@@ -224,23 +224,5 @@ enum SemanticMediaExtractor {
         data.append(Data("data".utf8)); number(UInt32(samples.count)); data.append(samples)
         try data.write(to: path, options: .atomic)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: path.path)
-    }
-
-    private static func video(_ asset: AVAsset, folder: URL, start: Int = 0,
-                              emit: (AskFileReadResponse) throws -> Void) throws {
-        let duration = asset.duration.seconds
-        guard duration.isFinite, duration > 0, duration < Double(Int.max),
-              !asset.tracks(withMediaType: .video).isEmpty else { return }
-        let generator = AVAssetImageGenerator(asset: asset)
-        generator.appliesPreferredTrackTransform = true
-        generator.maximumSize = CGSize(width: 1008, height: 1008)
-        defer { generator.cancelAllCGImageGeneration() }
-        for time in stride(from: Double(start), to: duration, by: 10) {
-            try emit(.init(more: true))
-            let frame = try generator.copyCGImage(at: CMTime(seconds: time, preferredTimescale: 600), actualTime: nil)
-            let path = folder.appendingPathComponent("frame-\(Int(time)).jpg")
-            try write(frame, to: path)
-            try emit(.init(more: true, media: .init(kind: .image, path: path.path, time: time, endTime: time)))
-        }
     }
 }

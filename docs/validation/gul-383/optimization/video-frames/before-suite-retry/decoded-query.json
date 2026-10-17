@@ -1,0 +1,41 @@
+{
+  "decoded_actual_times" : [
+    0,
+    0.5,
+    1,
+    1.5,
+    2,
+    2.5,
+    3,
+    3.5,
+    4,
+    4.5,
+    5,
+    5.5,
+    5.9000000000000004
+  ],
+  "encoded_actual_times" : [
+    0,
+    1.5,
+    2,
+    5.9000000000000004
+  ],
+  "fixed_vectors" : true,
+  "fixture_sha256" : "SHA256 digest: cf89f6c180fc809245fa6747b11c6b95d7500367fc434ddd51eb69294af9b240",
+  "next_requests" : [
+    0.5,
+    1,
+    1.5,
+    2,
+    2.5,
+    3,
+    3.5,
+    4,
+    4.5,
+    5,
+    5.5,
+    6,
+    6
+  ],
+  "query_hit_time" : 1.5
+}

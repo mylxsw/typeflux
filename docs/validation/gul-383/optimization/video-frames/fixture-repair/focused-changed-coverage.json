@@ -1,0 +1,61 @@
+{
+  "production_against_pr636": {
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift": {
+      "covered": 0,
+      "executable": 0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Media.swift": {
+      "covered": 9,
+      "executable": 9,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ImageText.swift": {
+      "covered": 1,
+      "executable": 1,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+MediaJobs.swift": {
+      "covered": 18,
+      "executable": 18,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+VideoProgress.swift": {
+      "covered": 31,
+      "executable": 32,
+      "uncovered": [
+        24
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaExtractor.swift": {
+      "covered": 2,
+      "executable": 2,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaPriority.swift": {
+      "covered": 0,
+      "executable": 0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift": {
+      "covered": 2,
+      "executable": 2,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVideoFrames.swift": {
+      "covered": 71,
+      "executable": 72,
+      "uncovered": [
+        92
+      ]
+    }
+  },
+  "fixture_repair_against_previous_head": {
+    "Tests/TypefluxTests/SemanticVideoFrameTests.swift": {
+      "covered": 16,
+      "executable": 16,
+      "uncovered": []
+    }
+  },
+  "denominator": "Git added/modified lines intersected with LLVM DA executable lines, line coverage only"
+}

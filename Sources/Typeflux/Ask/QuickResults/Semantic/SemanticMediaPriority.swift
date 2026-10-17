@@ -48,4 +48,5 @@ struct SemanticMediaCursor: Codable, Equatable {
     /// Next uncommitted window start; it can precede the covered endpoint because of overlap.
     var audioUntil: Double = 0
     var audioCoveredUntil: Double = 0
+    var videoProgress: SemanticVideoProgress?
 }
