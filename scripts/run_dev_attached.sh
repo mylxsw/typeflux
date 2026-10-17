@@ -300,6 +300,14 @@ else
   echo "Warning: To enable it, provide TYPEFLUX_DEV_PROVISIONING_PROFILE with a matching macOS provisioning profile that includes the Sign In with Apple capability."
 fi
 
+# The dev app keeps the same path across builds. Refresh Launch Services so
+# Finder and Dock pick up a changed icon instead of the cached previous one.
+touch "$APP_DIR"
+LSREGISTER_BIN="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+if [[ -x "$LSREGISTER_BIN" ]]; then
+  "$LSREGISTER_BIN" -f "$APP_DIR"
+fi
+
 python3 "$ROOT_DIR/scripts/check_dev_app_conflicts.py" "$APP_DIR"
 
 echo "App launched in attached dev mode: $APP_DIR"
