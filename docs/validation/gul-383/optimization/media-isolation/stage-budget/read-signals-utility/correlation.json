@@ -1,0 +1,245 @@
+{
+  "dropped_events": 0,
+  "incomplete_events": 0,
+  "processes": {
+    "78077": {
+      "initial_seen": true,
+      "signal_calls": 0,
+      "identity_consistent": null,
+      "signal_failures_or_unpaired": 0,
+      "stop_pairs": 0,
+      "unmatched_final_stop": null,
+      "commanded_stop_seconds": 0,
+      "stops_acknowledged_status_4": 0,
+      "resumes_observed_status_2": 0,
+      "read_completions_recorded": 0,
+      "last_read_sequence_at_least": 0,
+      "slowest_recorded_reads": []
+    },
+    "78082": {
+      "initial_seen": true,
+      "signal_calls": 212,
+      "identity_consistent": true,
+      "signal_failures_or_unpaired": 0,
+      "stop_pairs": 106,
+      "unmatched_final_stop": null,
+      "commanded_stop_seconds": 4.309525207616389,
+      "stops_acknowledged_status_4": 106,
+      "resumes_observed_status_2": 106,
+      "read_completions_recorded": 0,
+      "last_read_sequence_at_least": 0,
+      "slowest_recorded_reads": []
+    },
+    "78086": {
+      "initial_seen": true,
+      "signal_calls": 406,
+      "identity_consistent": true,
+      "signal_failures_or_unpaired": 0,
+      "stop_pairs": 203,
+      "unmatched_final_stop": null,
+      "commanded_stop_seconds": 8.200923583121039,
+      "stops_acknowledged_status_4": 203,
+      "resumes_observed_status_2": 203,
+      "read_completions_recorded": 2431,
+      "last_read_sequence_at_least": 2224128,
+      "slowest_recorded_reads": [
+        {
+          "sequence": 188121,
+          "bytes": 8,
+          "cumulative_bytes_before": 1532959,
+          "wall_seconds": 0.040099458303302526,
+          "commanded_stop_overlap_seconds": 0.04007366660516709,
+          "wall_outside_commanded_stops_seconds": 2.579169813543558e-05
+        },
+        {
+          "sequence": 2140615,
+          "bytes": 4092,
+          "cumulative_bytes_before": 216979152,
+          "wall_seconds": 0.040062541607767344,
+          "commanded_stop_overlap_seconds": 0.04002187494188547,
+          "wall_outside_commanded_stops_seconds": 4.066666588187218e-05
+        },
+        {
+          "sequence": 2099931,
+          "bytes": 4092,
+          "cumulative_bytes_before": 50503472,
+          "wall_seconds": 0.040054625016637146,
+          "commanded_stop_overlap_seconds": 0.040016416693106294,
+          "wall_outside_commanded_stops_seconds": 3.8208323530852795e-05
+        },
+        {
+          "sequence": 1098752,
+          "bytes": 8,
+          "cumulative_bytes_before": 6948489,
+          "wall_seconds": 0.003352499916218221,
+          "commanded_stop_overlap_seconds": 0,
+          "wall_outside_commanded_stops_seconds": 0.003352499916218221
+        },
+        {
+          "sequence": 778240,
+          "bytes": 4,
+          "cumulative_bytes_before": 5430475,
+          "wall_seconds": 0.00019566668197512627,
+          "commanded_stop_overlap_seconds": 0,
+          "wall_outside_commanded_stops_seconds": 0.00019566668197512627
+        },
+        {
+          "sequence": 455680,
+          "bytes": 7,
+          "cumulative_bytes_before": 3916043,
+          "wall_seconds": 0.00019441661424934864,
+          "commanded_stop_overlap_seconds": 0,
+          "wall_outside_commanded_stops_seconds": 0.00019441661424934864
+        },
+        {
+          "sequence": 231,
+          "bytes": 8,
+          "cumulative_bytes_before": 2157,
+          "wall_seconds": 0.00014579168055206537,
+          "commanded_stop_overlap_seconds": 0,
+          "wall_outside_commanded_stops_seconds": 0.00014579168055206537
+        },
+        {
+          "sequence": 152,
+          "bytes": 8,
+          "cumulative_bytes_before": 1513,
+          "wall_seconds": 0.00012420827988535166,
+          "commanded_stop_overlap_seconds": 0,
+          "wall_outside_commanded_stops_seconds": 0.00012420827988535166
+        }
+      ]
+    },
+    "78460": {
+      "initial_seen": true,
+      "signal_calls": 32,
+      "identity_consistent": true,
+      "signal_failures_or_unpaired": 0,
+      "stop_pairs": 16,
+      "unmatched_final_stop": null,
+      "commanded_stop_seconds": 0.6509226667694747,
+      "stops_acknowledged_status_4": 16,
+      "resumes_observed_status_2": 16,
+      "read_completions_recorded": 2288,
+      "last_read_sequence_at_least": 2080768,
+      "slowest_recorded_reads": [
+        {
+          "sequence": 1,
+          "bytes": 1,
+          "cumulative_bytes_before": 0,
+          "wall_seconds": 1.0333256796002388e-05,
+          "commanded_stop_overlap_seconds": 0,
+          "wall_outside_commanded_stops_seconds": 1.0333256796002388e-05
+        },
+        {
+          "sequence": 76800,
+          "bytes": 4,
+          "cumulative_bytes_before": 594443,
+          "wall_seconds": 3.750086762011051e-06,
+          "commanded_stop_overlap_seconds": 0,
+          "wall_outside_commanded_stops_seconds": 3.750086762011051e-06
+        },
+        {
+          "sequence": 16,
+          "bytes": 8,
+          "cumulative_bytes_before": 104,
+          "wall_seconds": 3.625056706368923e-06,
+          "commanded_stop_overlap_seconds": 0,
+          "wall_outside_commanded_stops_seconds": 3.625056706368923e-06
+        },
+        {
+          "sequence": 478208,
+          "bytes": 3,
+          "cumulative_bytes_before": 4104701,
+          "wall_seconds": 2.41666566580534e-06,
+          "commanded_stop_overlap_seconds": 0,
+          "wall_outside_commanded_stops_seconds": 2.41666566580534e-06
+        },
+        {
+          "sequence": 1605632,
+          "bytes": 8,
+          "cumulative_bytes_before": 11415612,
+          "wall_seconds": 2.0416919142007828e-06,
+          "commanded_stop_overlap_seconds": 0,
+          "wall_outside_commanded_stops_seconds": 2.0416919142007828e-06
+        },
+        {
+          "sequence": 1123328,
+          "bytes": 8,
+          "cumulative_bytes_before": 7154559,
+          "wall_seconds": 1.8333084881305695e-06,
+          "commanded_stop_overlap_seconds": 0,
+          "wall_outside_commanded_stops_seconds": 1.8333084881305695e-06
+        },
+        {
+          "sequence": 95,
+          "bytes": 8,
+          "cumulative_bytes_before": 957,
+          "wall_seconds": 1.750071533024311e-06,
+          "commanded_stop_overlap_seconds": 0,
+          "wall_outside_commanded_stops_seconds": 1.750071533024311e-06
+        },
+        {
+          "sequence": 559104,
+          "bytes": 4,
+          "cumulative_bytes_before": 4553931,
+          "wall_seconds": 1.5833647921681404e-06,
+          "commanded_stop_overlap_seconds": 0,
+          "wall_outside_commanded_stops_seconds": 1.5833647921681404e-06
+        }
+      ]
+    }
+  },
+  "stage_seconds": {
+    "78086:backend": 0.0005058749811723828,
+    "78086:model": 0.9618156666401774,
+    "78086:context": 0.0021156666334718466,
+    "78086:projector": 0.4814298748970032,
+    "78086:bitmap": 0.002094416646286845,
+    "78086:tokenize": 0.0016916666645556688,
+    "78086:media-encode": 14.461354958359152,
+    "78086:text-encode": 0.7421618750086054,
+    "78086:response": 0.0005154166137799621,
+    "78460:backend": 0.0009177083848044276,
+    "78460:model": 0.9843437500530854,
+    "78460:context": 0.0018830833723768592,
+    "78460:text-encode": 0.08981170831248164,
+    "78460:response": 0.00047758338041603565
+  },
+  "qos_calls": [
+    {
+      "sequence": 0,
+      "uptime": 533986.9280250417,
+      "entered": 0.0,
+      "size": 17,
+      "count": 9,
+      "result": 0,
+      "offset": 0,
+      "start_seconds": 0,
+      "start_microseconds": 0,
+      "kind": 6,
+      "pid": 78077,
+      "target": 0,
+      "descriptor": 0,
+      "status": 0,
+      "error": 0
+    },
+    {
+      "sequence": 0,
+      "uptime": 534012.2010775,
+      "entered": 0.0,
+      "size": 17,
+      "count": 17,
+      "result": 0,
+      "offset": 0,
+      "start_seconds": 0,
+      "start_microseconds": 0,
+      "kind": 6,
+      "pid": 78077,
+      "target": 0,
+      "descriptor": 0,
+      "status": 0,
+      "error": 0
+    }
+  ],
+  "scope": "Sparse fread completions and successful signal pairs, not syscall latency or CPU time. Cumulative bytes include rereads and are not file offsets. State 4/2 are Darwin stopped/running observations."
+}

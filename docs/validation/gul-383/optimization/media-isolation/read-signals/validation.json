@@ -1,0 +1,30 @@
+[
+  {
+    "command": [
+      "python3",
+      "-m",
+      "py_compile",
+      "docs/validation/gul-383/optimization/media-isolation/read-signals/events.py",
+      "docs/validation/gul-383/optimization/media-isolation/read-signals/build.py",
+      "docs/validation/gul-383/optimization/media-isolation/read-signals/test_observer.py",
+      "docs/validation/gul-383/optimization/media-isolation/stage-budget/run_screenshot.py"
+    ],
+    "wall_seconds": 0.04252250003628433,
+    "exit_code": 0
+  },
+  {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "docs/validation/gul-383/optimization/media-isolation/read-signals",
+      "-p",
+      "test_observer.py",
+      "-v"
+    ],
+    "wall_seconds": 1.420471541932784,
+    "exit_code": 1
+  }
+]

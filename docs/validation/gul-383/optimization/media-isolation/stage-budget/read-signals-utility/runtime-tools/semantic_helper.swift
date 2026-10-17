@@ -1,0 +1,245 @@
+import CLlama
+import Foundation
+import Darwin
+
+// Diagnostic copy only. Fixed stage names; no request data, paths, or model content.
+// Regular-file appends avoid stdout changes and pipe backpressure. No trace means no I/O.
+func diagnosticStage(_ stage: String) {
+    guard let path = ProcessInfo.processInfo.environment["GUL405_NATIVE_TRACE"] else { return }
+    let fd = open(path, O_WRONLY | O_APPEND | O_NONBLOCK | O_CLOEXEC)
+    guard fd >= 0 else { return }
+    defer { close(fd) }
+    let line = "{\"pid\":\(getpid()),\"uptime\":\(ProcessInfo.processInfo.systemUptime),\"stage\":\"\(stage)\"}\n"
+    line.withCString { bytes in _ = write(fd, bytes, strlen(bytes)) }
+}
+
+
+// Private disposable helper. stdout contains only line-delimited JSON; inputs are never logged.
+struct Media: Decodable { var kind: String; var path: String }
+struct Request: Decodable { var texts: [String]?; var media: Media? }
+struct Response: Encodable {
+    let entries: [String] = []
+    var embeddings: [[Float]]?
+    var error: Int32?
+    var semanticTiming: Timing?
+}
+
+struct Timing: Encodable { var modelLoadMilliseconds: Double?; var encodingMilliseconds: Double }
+enum Failure: Error { case invalidInput, inference }
+
+final class Encoder {
+    let model: OpaquePointer
+    let context: OpaquePointer
+    let batch: OpaquePointer
+    var media: OpaquePointer?
+
+    init(path: String, projector: String? = nil, background: Bool = false) throws {
+        llama_log_set({ _, _, _ in }, nil)
+        if background {
+            // CPU-only workers must not initialize the unused Metal shader compiler and cache.
+            setenv("GGML_METAL_DEVICES", "0", 1)
+        }
+        diagnosticStage("backend-begin")
+        llama_backend_init()
+        diagnosticStage("backend-end")
+        mtmd_helper_log_set({ _, _, _ in }, nil)
+        var modelParams = llama_model_default_params()
+        modelParams.n_gpu_layers = background ? 0 : 999
+        diagnosticStage("model-begin")
+        guard let model = llama_model_load_from_file(path, modelParams) else { throw Failure.inference }
+        diagnosticStage("model-end")
+        var params = llama_context_default_params()
+        params.n_ctx = 2048; params.n_batch = 2048; params.n_ubatch = 2048
+        params.n_seq_max = 8; params.kv_unified = true
+        if background {
+            params.n_threads = 1; params.n_threads_batch = 1; params.offload_kqv = false; params.op_offload = false
+        }
+        params.embeddings = true; params.pooling_type = LLAMA_POOLING_TYPE_MEAN
+        diagnosticStage("context-begin")
+        guard let context = llama_init_from_model(model, params) else {
+            llama_model_free(model); throw Failure.inference
+        }
+        diagnosticStage("context-end")
+        guard llama_model_n_embd_out(model) == 768 else {
+            llama_free(context); llama_model_free(model); throw Failure.inference
+        }
+        guard let batch = llama_batch_ext_init(context) else {
+            llama_free(context); llama_model_free(model); throw Failure.inference
+        }
+        var media: OpaquePointer?
+        if let projector {
+            var options = mtmd_context_params_default()
+            options.use_gpu = !background
+            if background {
+                options.n_threads = 1
+            }
+            options.print_timings = false; options.warmup = false
+            options.image_min_tokens = 1; options.image_max_tokens = 280
+            diagnosticStage("projector-begin")
+            media = mtmd_init_from_file(projector, model, options)
+            diagnosticStage("projector-end")
+            guard media != nil else {
+                llama_batch_ext_free(batch); llama_free(context); llama_model_free(model); throw Failure.inference
+            }
+        }
+        self.model = model; self.context = context; self.batch = batch; self.media = media
+    }
+
+    deinit {
+        if let media {
+            mtmd_free(media)
+        }
+        llama_batch_ext_free(batch); llama_free(context); llama_model_free(model)
+        llama_backend_free()
+    }
+
+    // Keep bitmap, chunks and batch ownership in one inference scope.
+    // swiftlint:disable:next cyclomatic_complexity
+    func embedMedia(_ input: Media) throws -> [Float] {
+        guard let media, ["image", "audio"].contains(input.kind), input.path.hasPrefix("/")
+        else { throw Failure.invalidInput }
+        diagnosticStage("bitmap-begin")
+        let loaded = mtmd_helper_bitmap_init_from_file(media, input.path, false, mtmd_helper_init_opt_default())
+        if let video = loaded.video_ctx {
+            if let bitmap = loaded.bitmap {
+                mtmd_bitmap_free(bitmap)
+            }
+            mtmd_helper_video_free(video); throw Failure.invalidInput
+        }
+        diagnosticStage("bitmap-end")
+        guard let bitmap = loaded.bitmap else { throw Failure.invalidInput }
+        defer { mtmd_bitmap_free(bitmap) }
+        guard mtmd_bitmap_is_audio(bitmap) == (input.kind == "audio") else { throw Failure.invalidInput }
+        let chunks = mtmd_input_chunks_init()
+        defer { mtmd_input_chunks_free(chunks) }
+        var bitmaps: [OpaquePointer?] = [bitmap]
+        diagnosticStage("tokenize-begin")
+        let result = String(cString: mtmd_default_marker()).withCString { marker in
+            var text = mtmd_input_text(text: marker, text_len: strlen(marker), add_special: true, parse_special: true)
+            return mtmd_tokenize(media, chunks, &text, &bitmaps, 1)
+        }
+        diagnosticStage("tokenize-end")
+        guard result == 0 else { throw Failure.inference }
+        llama_batch_ext_clear(batch)
+        defer { llama_batch_ext_clear(batch) }
+        var position = 0
+        let rowSize = Int(llama_model_n_embd_inp(model))
+        for index in 0 ..< mtmd_input_chunks_size(chunks) {
+            let chunk = mtmd_input_chunks_get(chunks, index)
+            if mtmd_input_chunk_get_type(chunk) == MTMD_INPUT_CHUNK_TYPE_TEXT {
+                var count = 0
+                guard let tokens = mtmd_input_chunk_get_tokens_text(chunk, &count) else { continue }
+                for tokenIndex in 0 ..< count {
+                    try place(llama_batch_ext_add_token(batch, 0, tokens[tokenIndex]), position: position)
+                    position += 1
+                }
+            } else {
+                diagnosticStage("media-encode-begin")
+                guard mtmd_encode_chunk(media, chunk) == 0, let rows = mtmd_get_output_embd(media)
+                else { throw Failure.inference }
+                diagnosticStage("media-encode-end")
+                for row in 0 ..< mtmd_input_chunk_get_n_tokens(chunk) {
+                    let value = llama_embd(data: rows + row * rowSize, n_rows: 1, n_embd: rowSize)
+                    try place(llama_batch_ext_add_embd(batch, 0, value), position: position); position += 1
+                }
+            }
+        }
+        return try run()[0]
+    }
+
+    private func place(_ row: Int32, position: Int) throws {
+        var coordinates: [llama_pos] = [llama_pos(position), 0, 0, 0]
+        guard position < 2048, row >= 0, llama_batch_ext_set_pos(batch, row, &coordinates),
+              llama_batch_ext_set_output_embd(batch, row, true) else { throw Failure.inference }
+    }
+
+    private func run(sequences: Int = 1) throws -> [[Float]] {
+        diagnosticStage("text-encode-begin")
+        guard llama_process(context, LLAMA_PROCESS_TYPE_ENCODE, batch) == 0 else { throw Failure.inference }
+        diagnosticStage("text-encode-end")
+        return try (0 ..< sequences).map { sequence in
+            guard let vector = llama_get_embeddings_seq(context, llama_seq_id(sequence))
+            else { throw Failure.inference }
+            let values = Array(UnsafeBufferPointer(start: vector, count: 768))
+            let norm = sqrt(values.reduce(0.0) { $0 + Double($1) * Double($1) })
+            guard norm.isFinite, norm > 0, values.allSatisfy(\.isFinite) else { throw Failure.inference }
+            return values.map { $0 / Float(norm) }
+        }
+    }
+
+    private func tokenize(_ text: String) throws -> [llama_token] {
+        guard !text.isEmpty, text.utf8.count <= 1800 else { throw Failure.invalidInput }
+        let bytes = Array(text.utf8CString)
+        var tokens = [llama_token](repeating: 0, count: bytes.count + 8)
+        let count = llama_tokenize(llama_model_get_vocab(model), bytes, Int32(bytes.count - 1),
+                                   &tokens, Int32(tokens.count), true, false)
+        guard count > 0, count <= 2048 else { throw Failure.invalidInput }
+        return Array(tokens.prefix(Int(count)))
+    }
+
+    /// A real multi-sequence encode. Token budget and sequence count bound each GPU submission;
+    /// request order is retained across splits, with independent positions and mean pooling per sequence.
+    func embed(_ texts: [String]) throws -> [[Float]] {
+        let tokens = try texts.map(tokenize)
+        var result: [[Float]] = [], start = 0
+        while start < tokens.count {
+            var end = start, count = 0
+            while end < tokens.count, end - start < 8, count + tokens[end].count <= 2048 {
+                count += tokens[end].count; end += 1
+            }
+            llama_batch_ext_clear(batch)
+            defer { llama_batch_ext_clear(batch) }
+            for sequence in start ..< end {
+                for (index, token) in tokens[sequence].enumerated() {
+                    let row = llama_batch_ext_add_token(batch, llama_seq_id(sequence - start), token)
+                    var position: [llama_pos] = [llama_pos(index), 0, 0, 0]
+                    guard row >= 0, llama_batch_ext_set_pos(batch, row, &position),
+                          llama_batch_ext_set_output_embd(batch, row, true) else { throw Failure.inference }
+                }
+            }
+            result += try run(sequences: end - start)
+            start = end
+        }
+        return result
+    }
+}
+
+diagnosticStage("swift-entry")
+do {
+    let arguments = CommandLine.arguments.dropFirst().filter { $0 != "--background" }
+    let background = CommandLine.arguments.contains("--background")
+    guard (1 ... 2).contains(arguments.count) else { exit(64) }
+    let loading = ProcessInfo.processInfo.systemUptime
+    let encoder = try Encoder(path: arguments[arguments.startIndex],
+                              projector: arguments
+                                  .count == 2 ? arguments[arguments.index(after: arguments.startIndex)] : nil,
+                              background: background)
+    var loadMilliseconds: Double? = (ProcessInfo.processInfo.systemUptime - loading) * 1000
+    diagnosticStage("read-wait")
+    while let line = readLine() {
+        diagnosticStage("request-read")
+        // Long-lived helpers must not retain Foundation JSON/pipe temporaries between requests.
+        try autoreleasepool {
+            let started = ProcessInfo.processInfo.systemUptime
+            var response: Response
+            do {
+                guard line.utf8.count <= 32768 else { throw Failure.invalidInput }
+                let request = try JSONDecoder().decode(Request.self, from: Data(line.utf8))
+                if let media = request.media {
+                    response = try Response(embeddings: [encoder.embedMedia(media)])
+                } else {
+                    guard let texts = request.texts,
+                          (1 ... 16).contains(texts.count) else { throw Failure.invalidInput }
+                    response = try Response(embeddings: encoder.embed(texts))
+                }
+            } catch Failure.inference { response = Response(error: EIO) } catch { response = Response(error: EINVAL) }
+            response.semanticTiming = Timing(modelLoadMilliseconds: loadMilliseconds,
+                                             encodingMilliseconds: (ProcessInfo.processInfo.systemUptime - started) *
+                                                 1000)
+            loadMilliseconds = nil
+            diagnosticStage("response-begin")
+            try FileHandle.standardOutput.write(contentsOf: JSONEncoder().encode(response) + Data([10]))
+            diagnosticStage("response-end")
+        }
+    }
+} catch { diagnosticStage("fatal-error"); exit(1) }

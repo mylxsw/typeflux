@@ -1,0 +1,17 @@
+{
+  "scope": "Current uninstrumented native helper from the no-injection screenshot run",
+  "covered": 4,
+  "executable": 4,
+  "lines": {
+    "25": 3,
+    "26": 2,
+    "27": 2,
+    "28": 2
+  },
+  "pids": [
+    92972,
+    93014,
+    93022
+  ],
+  "uncovered": []
+}

@@ -1,0 +1,22 @@
+test_real_reads_signals_identity_and_common_clock (test_observer.InterpositionTests.test_real_reads_signals_identity_and_common_clock) ... FAIL
+
+======================================================================
+FAIL: test_real_reads_signals_identity_and_common_clock (test_observer.InterpositionTests.test_real_reads_signals_identity_and_common_clock)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repo>/docs/validation/gul-383/optimization/media-isolation/read-signals/test_observer.py", line 84, in test_real_reads_signals_identity_and_common_clock
+    self.assertEqual([r['count'] for r in signals], [19, 17, 17])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [17, 19, 19] != [19, 17, 17]
+
+First differing element 0:
+17
+19
+
+- [17, 19, 19]
++ [19, 17, 17]
+
+----------------------------------------------------------------------
+Ran 1 test in 0.988s
+
+FAILED (failures=1)

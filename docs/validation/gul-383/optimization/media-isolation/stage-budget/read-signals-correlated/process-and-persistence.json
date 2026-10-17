@@ -1,0 +1,2021 @@
+[
+  {
+    "seconds": 2.864812000072561,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.0",
+        "32",
+        "0:00.00",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ]
+    ]
+  },
+  {
+    "seconds": 3.890247041010298,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "30.6",
+        "57504",
+        "0:00.25",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "T",
+        "0.0",
+        "32",
+        "0:00.00",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ]
+    ],
+    "jobs": [],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 4.914395582978614,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "26.5",
+        "59520",
+        "0:00.51",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.5",
+        "33712",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "656",
+        "0:00.00",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 5.954388083075173,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "1.2",
+        "59536",
+        "0:00.52",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33712",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "128",
+        "0:00.00",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 6.990630000014789,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.7",
+        "59600",
+        "0:00.52",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33712",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "T",
+        "0.0",
+        "128",
+        "0:00.00",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 8.030218124971725,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.7",
+        "59648",
+        "0:00.53",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33712",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "T",
+        "0.0",
+        "128",
+        "0:00.00",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 9.069255916052498,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.6",
+        "59616",
+        "0:00.54",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33712",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "128",
+        "0:00.00",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 10.112877457984723,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.7",
+        "59616",
+        "0:00.55",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33568",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "144",
+        "0:00.00",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 11.158417665981688,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.7",
+        "59664",
+        "0:00.56",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33568",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "T",
+        "0.0",
+        "160",
+        "0:00.00",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 12.19767754105851,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.8",
+        "59728",
+        "0:00.57",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33632",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "176",
+        "0:00.00",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 13.234994541038759,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.5",
+        "59744",
+        "0:00.58",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33632",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "T",
+        "0.0",
+        "176",
+        "0:00.00",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 14.27551504096482,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.9",
+        "59744",
+        "0:00.59",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33632",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "T",
+        "0.0",
+        "176",
+        "0:00.00",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 15.314407082973048,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.6",
+        "59760",
+        "0:00.59",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33632",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "176",
+        "0:00.00",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 16.35449850000441,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.5",
+        "59760",
+        "0:00.60",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33632",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "176",
+        "0:00.00",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 17.394403291051276,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.7",
+        "59760",
+        "0:00.61",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "T",
+        "0.0",
+        "176",
+        "0:00.00",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 18.439518583007157,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.6",
+        "59824",
+        "0:00.62",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "176",
+        "0:00.00",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 19.47812933300156,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.4",
+        "59824",
+        "0:00.63",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "176",
+        "0:00.00",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 20.513837916078046,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.5",
+        "59824",
+        "0:00.64",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "T",
+        "0.0",
+        "176",
+        "0:00.00",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 21.550519208074547,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.5",
+        "59792",
+        "0:00.65",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "T",
+        "0.0",
+        "176",
+        "0:00.00",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 22.591847624978982,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.4",
+        "59808",
+        "0:00.65",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "176",
+        "0:00.00",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 23.6279282909818,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.4",
+        "59824",
+        "0:00.66",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "176",
+        "0:00.00",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 24.668591208057478,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.6",
+        "59840",
+        "0:00.67",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "T",
+        "0.0",
+        "176",
+        "0:00.01",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 25.70588562497869,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.6",
+        "59840",
+        "0:00.68",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "176",
+        "0:00.01",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 26.744351458037272,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Us",
+        "0.5",
+        "59840",
+        "0:00.69",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "176",
+        "0:00.01",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 27.780346457962878,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.6",
+        "59840",
+        "0:00.70",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "T",
+        "0.0",
+        "176",
+        "0:00.01",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 28.818156499997713,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.6",
+        "59888",
+        "0:00.71",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "T",
+        "0.0",
+        "176",
+        "0:00.01",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 29.86066558305174,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.4",
+        "59888",
+        "0:00.71",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "176",
+        "0:00.01",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 30.900881165987812,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.4",
+        "59888",
+        "0:00.72",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "176",
+        "0:00.01",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 31.944583083037287,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.9",
+        "59920",
+        "0:00.73",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "T",
+        "0.0",
+        "176",
+        "0:00.01",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 32.982033875072375,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.6",
+        "59920",
+        "0:00.74",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "176",
+        "0:00.01",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 34.02307754103094,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.5",
+        "59952",
+        "0:00.75",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "176",
+        "0:00.01",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 35.066957624978386,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.5",
+        "59968",
+        "0:00.76",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "T",
+        "0.0",
+        "176",
+        "0:00.01",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 36.10850129101891,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.5",
+        "59968",
+        "0:00.77",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "T",
+        "0.0",
+        "176",
+        "0:00.01",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 37.146667708060704,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.5",
+        "59968",
+        "0:00.78",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "176",
+        "0:00.01",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 38.183871416025795,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.5",
+        "59984",
+        "0:00.78",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "176",
+        "0:00.01",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 39.23064800002612,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.5",
+        "60016",
+        "0:00.79",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "176",
+        "0:00.01",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 40.26664308307227,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.5",
+        "60016",
+        "0:00.80",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "T",
+        "0.0",
+        "176",
+        "0:00.01",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 41.31093637505546,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.5",
+        "60032",
+        "0:00.81",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "T",
+        "0.0",
+        "176",
+        "0:00.01",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 42.34783724998124,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.5",
+        "60048",
+        "0:00.82",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "T",
+        "0.0",
+        "176",
+        "0:00.01",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  },
+  {
+    "seconds": 43.38653120805975,
+    "processes": [
+      [
+        "76648",
+        "76625",
+        "76648",
+        "Ss",
+        "0.7",
+        "60048",
+        "0:00.83",
+        "<repo>/.build/stage-budget/MediaProbe"
+      ],
+      [
+        "76672",
+        "76648",
+        "76672",
+        "S",
+        "0.0",
+        "33584",
+        "0:00.04",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "76675",
+        "76648",
+        "76675",
+        "U",
+        "0.0",
+        "176",
+        "0:00.01",
+        "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+      ]
+    ],
+    "jobs": [
+      {
+        "path": "<private>/corpus/screen.png",
+        "version": "16777239:84323086:32816:1792220298:686695545:1792220298:686708878",
+        "generation": "36E418D2-01D1-4A34-83D4-9E288CD8D16F",
+        "state": "partial",
+        "cursor": "{\"page\":0,\"offset\":0}",
+        "extracted": 0,
+        "attempts": 0,
+        "reason": null,
+        "recipe": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;image-vision-accurate-auto-4096-v1",
+        "processing_seconds": null,
+        "completed_at": null
+      }
+    ],
+    "chunks": [],
+    "media_segments": []
+  }
+]

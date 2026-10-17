@@ -1,0 +1,20 @@
+test_does_not_overwrite_and_records_drops (test_observer.EventFormatTests.test_does_not_overwrite_and_records_drops) ... ok
+test_empty_and_partial_commits (test_observer.EventFormatTests.test_empty_and_partial_commits) ... ok
+test_rejects_mismatched_and_short_format (test_observer.EventFormatTests.test_rejects_mismatched_and_short_format) ... ok
+test_disabled_and_insecure_buffer_preserve_forwarding (test_observer.InterpositionTests.test_disabled_and_insecure_buffer_preserve_forwarding) ... ok
+test_full_buffer_preserves_forwarding (test_observer.InterpositionTests.test_full_buffer_preserves_forwarding) ... ok
+test_real_reads_signals_identity_and_common_clock (test_observer.InterpositionTests.test_real_reads_signals_identity_and_common_clock) ... FAIL
+
+======================================================================
+FAIL: test_real_reads_signals_identity_and_common_clock (test_observer.InterpositionTests.test_real_reads_signals_identity_and_common_clock)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repo>/docs/validation/gul-383/optimization/media-isolation/read-signals/test_observer.py", line 79, in test_real_reads_signals_identity_and_common_clock
+    self.assertTrue(all(start <= row['uptime'] <= end for row in rows))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 6 tests in 1.360s
+
+FAILED (failures=1)

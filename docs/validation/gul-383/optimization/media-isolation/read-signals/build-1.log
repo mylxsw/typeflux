@@ -1,0 +1,4 @@
+docs/validation/gul-383/optimization/media-isolation/read-signals/observe.c:64:49: error: comparison of integers of different signs: 'off_t' (aka 'long long') and 'unsigned long' [-Werror,-Wsign-compare]
+   64 |         || (info.st_mode & 077) || info.st_size < sizeof(Buffer)) { close(fd); return; }
+      |                                    ~~~~~~~~~~~~ ^ ~~~~~~~~~~~~~~
+1 error generated.

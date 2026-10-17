@@ -1,6 +1,6 @@
 {
-  "sha256": "532b5b25a901b786042f581836f33a3f69388fe277dc0365887b3b2d146b42ab",
-  "source_sha256": "127970a78e32a735db7a971eb8726afbfe3b9a9726b5811b2ee552bdbdd0e304",
-  "reused_object_count": 2721,
-  "configuration": "Debug, accepted coverage-instrumented production objects"
+  "sha256": "9e0718ee1bcdda17d5ab578c57cedd2f9e1bf29170f61db383eff7e3e1adf983",
+  "source_sha256": "642a5211f14ca67b95ac809b91be50aedaa994b043f3bb9a980925c56f9a9c78",
+  "reused_object_count": 2723,
+  "configuration": "Current Debug coverage product objects; no interposition"
 }

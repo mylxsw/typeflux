@@ -1,0 +1,10 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticEmbeddingWorkerTests/(indexingMediaKeepsBudgetThreadLimitsCancellationAndRetirement|.*validated.*)|SemanticWorkBudgetTests|SemanticBudgetLifecycleTests|AskFileReaderRetirementTests/testBudgetSignalsRemainInsideTheOwnedChildRetirementBoundary"
+  ],
+  "wall_seconds": 79.93318220798392,
+  "exit_code": 0,
+  "cache": "Private APFS clone of accepted PR646 build; original cache left untouched"
+}

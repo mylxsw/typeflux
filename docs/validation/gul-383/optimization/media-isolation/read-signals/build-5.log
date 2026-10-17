@@ -1,0 +1,24 @@
+<repo>/docs/validation/gul-383/optimization/media-isolation/read-signals/observe.c:143:18: error: call to undeclared function 'posix_spawnattr_set_qos_class_np'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+  143 |     int result = posix_spawnattr_set_qos_class_np(attributes, applied, relative);
+      |                  ^
+<repo>/docs/validation/gul-383/optimization/media-isolation/read-signals/observe.c:143:18: note: did you mean 'posix_spawnattr_set_csm_np'?
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/spawn.h:171:9: note: 'posix_spawnattr_set_csm_np' declared here
+  171 | int     posix_spawnattr_set_csm_np(const posix_spawnattr_t * __restrict attr, uint32_t flags) __API_AVAILABLE(macos(11.0));
+      |         ^
+<repo>/docs/validation/gul-383/optimization/media-isolation/read-signals/observe.c:156:31: error: use of undeclared identifier 'posix_spawnattr_set_qos_class_np'; did you mean 'pair_posix_spawnattr_set_qos_class_np'?
+  156 | INTERPOSE(observed_spawn_qos, posix_spawnattr_set_qos_class_np)
+      |                               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                               pair_posix_spawnattr_set_qos_class_np
+<repo>/docs/validation/gul-383/optimization/media-isolation/read-signals/observe.c:151:52: note: expanded from macro 'INTERPOSE'
+  151 |         (const void *)&replacement, (const void *)&original };
+      |                                                    ^~~~~~~~
+<repo>/docs/validation/gul-383/optimization/media-isolation/read-signals/observe.c:156:1: note: 'pair_posix_spawnattr_set_qos_class_np' declared here
+  156 | INTERPOSE(observed_spawn_qos, posix_spawnattr_set_qos_class_np)
+      | ^
+<repo>/docs/validation/gul-383/optimization/media-isolation/read-signals/observe.c:150:5: note: expanded from macro 'INTERPOSE'
+  150 |     pair_##original __attribute__((section("__DATA,__interpose"))) = { \
+      |     ^
+<scratch space>:25:1: note: expanded from here
+   25 | pair_posix_spawnattr_set_qos_class_np
+      | ^
+2 errors generated.

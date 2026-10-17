@@ -102,7 +102,14 @@ def main():
     parser.add_argument('--label', help='Unique attempt directory; defaults to the media/configuration name')
     parser.add_argument('--fixed-helper', type=Path, help='Use the instrumented minimal helper fix recorded in helper-build.json')
     parser.add_argument('--mode', choices=['service', 'startup'], default='service')
+    parser.add_argument('--io-observer', type=Path, help='Opt-in content-free fread/signal diagnostic dylib; disables stack sampling')
+    parser.add_argument('--utility-media', action='store_true', help='Diagnostic comparison: utility spawn QoS for media; CPU budget unchanged')
+    parser.add_argument('--product-runtime', action='store_true', help='Use current validated product objects and an uninstrumented product helper')
     args = parser.parse_args()
+    if args.utility_media and not args.io_observer:
+        parser.error('utility-media requires the explicit io-observer')
+    if args.product_runtime and (args.io_observer or args.utility_media or not args.fixed_helper):
+        parser.error('product-runtime requires a product helper and no interposition')
     if not 1 <= args.stage_seconds <= 45:
         parser.error('stage-seconds must be in 1...45')
     started = time.monotonic()
@@ -132,6 +139,7 @@ def main():
     process = None
     code = 125
     record = {'media': args.media, 'mode': args.mode, 'stage_seconds': args.stage_seconds, 'budget_enabled': True}
+    record['product_runtime'] = args.product_runtime
     snapshots = []
     sampled = False
     owned_pids = set()
@@ -152,9 +160,15 @@ def main():
         for name, path in [('file-helper', app), ('model-helper', helper), ('probe', binary)]:
             digest = sha(path)
             if name == 'model-helper' and args.fixed_helper:
-                fixed = json.loads((source / 'helper-build.json').read_text())
+                fixed = json.loads(((source.parent / 'read-signals/product-native-build.json')
+                    if args.product_runtime else (source / 'helper-build.json')).read_text())
                 assert digest == fixed['binary_sha256'], 'Fixed helper build mismatch'
-                assert sha(source / 'semantic_helper.swift') == fixed['source_sha256'], 'Fixed helper source mismatch'
+                helper_source = root / 'Sources/TypefluxSemanticHelper/main.swift' if args.product_runtime else source / 'semantic_helper.swift'
+                assert sha(helper_source) == fixed['source_sha256'], 'Fixed helper source mismatch'
+            elif name == 'file-helper' and args.product_runtime:
+                products = json.loads((source.parent / 'read-signals/product-binaries.json').read_text())
+                assert digest == products['file-helper'], 'Current product file helper changed'
+                assert sha(root / 'Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift') == products['worker_source']
             elif name != 'probe':
                 assert digest == expected[name]['sha256'], 'Accepted helper changed'
             fingerprints[name] = {'sha256': digest, 'bytes': path.stat().st_size}
@@ -190,19 +204,45 @@ def main():
                    GUL405_NATIVE_TRACE=str(out / 'native-stages.jsonl'),
                    DYLD_FRAMEWORK_PATH=str(dev / 'Platforms/MacOSX.platform/Developer/Library/Frameworks'),
                    DYLD_LIBRARY_PATH=str(dev / 'Platforms/MacOSX.platform/Developer/usr/lib'))
+        if args.io_observer:
+            import importlib.util
+            module_path = source.parent / 'read-signals/events.py'
+            spec = importlib.util.spec_from_file_location('io_events', module_path)
+            events_module = importlib.util.module_from_spec(spec); spec.loader.exec_module(events_module)
+            observer = args.io_observer.resolve()
+            metadata = json.loads((source.parent / 'read-signals/build.json').read_text())
+            assert sha(observer) == metadata['binary_sha256'], 'I/O observer binary mismatch'
+            assert sha(source.parent / 'read-signals/observe.c') == metadata['source_sha256'], 'I/O observer source mismatch'
+            io_buffer = out / 'io-events.bin'
+            events_module.create(io_buffer)
+            env.update(DYLD_INSERT_LIBRARIES=str(observer), GUL405_IO_BUFFER=str(io_buffer))
+            if args.utility_media:
+                env['GUL405_MEDIA_UTILITY'] = '1'
+            else:
+                env.pop('GUL405_MEDIA_UTILITY', None)
+            record['io_observer_sha256'] = sha(observer)
+            record['utility_media_comparison'] = args.utility_media
+            sampled = True
+            write(out / 'sample-command.json', {'skipped': 'read/signal observer replaces stack sampling', 'attempts': 0})
         if args.cpu_registration:
             wrapper = private / 'cpu-helper'
             wrapper.write_text('#!/bin/sh\nGGML_METAL_DEVICES=0 exec ' + shlex.quote(str(helper)) + ' "$@"\n')
             wrapper.chmod(0o700)
             env['GUL405_MEDIA_HELPER'] = str(wrapper)
             record['diagnostic_media_environment'] = {'GGML_METAL_DEVICES': '0'}
+        if args.product_runtime:
+            env.pop('DYLD_INSERT_LIBRARIES', None); env.pop('GUL405_MEDIA_UTILITY', None)
+            sampled = True
+            write(out / 'sample-command.json', {'skipped': 'product runtime, no diagnostic injection', 'attempts': 0})
         versions = out / 'runtime-tools'
         versions.mkdir()
         for name in ['run_probe.py', 'build_probe.py', 'media_probe.swift', 'probe-binary.json']:
             shutil.copyfile(Path(__file__) if name == 'run_probe.py' else source / name, versions / name)
         if args.fixed_helper:
-            shutil.copyfile(source / 'semantic_helper.swift', versions / 'semantic_helper.swift')
-            shutil.copyfile(source / 'helper-build.json', versions / 'helper-build.json')
+            shutil.copyfile(root / 'Sources/TypefluxSemanticHelper/main.swift' if args.product_runtime else source / 'semantic_helper.swift', versions / 'semantic_helper.swift')
+            shutil.copyfile(source.parent / 'read-signals/product-native-build.json' if args.product_runtime else source / 'helper-build.json', versions / 'helper-build.json')
+        if args.product_runtime:
+            shutil.copyfile(source.parent / 'read-signals/build_product_probe.py', versions / 'build_probe.py')
         with (out / 'runtime.log').open('w') as log:
             process = subprocess.Popen([str(binary)], env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
             record['owned_pid'] = process.pid
@@ -299,6 +339,8 @@ def main():
                 pass
             remaining.append(pid)
         record['post_clear_pids_requiring_cleanup'] = sorted(remaining)
+        if args.io_observer and (out / 'io-events.bin').exists():
+            events_module.export(out / 'io-events.bin', out / 'io-events.json')
         shutil.rmtree(private)
         for path in out.iterdir():
             if path.suffix in ['.json', '.jsonl', '.log', '.txt']:

@@ -100,6 +100,22 @@ final class TracedMedia: SemanticMediaEmbedding {
     }
 }
 
+final class CapturedQuery: SemanticQueryEmbedding, @unchecked Sendable {
+    let base: SemanticEmbeddingWorker
+    private let lock = NSLock()
+    private var vectors: [String: [Float]] = [:]
+    init(helper: URL, model: URL, owner: SemanticEmbeddingOwnership) {
+        base = SemanticEmbeddingWorker(helper: helper, model: model, ownership: owner)
+    }
+    func query(_ text: String, lifecycle: AskSearchCancellation) async throws -> [Float] {
+        let vector = try await base.query(text, lifecycle: lifecycle)
+        lock.withLock { vectors[text] = vector }; return vector
+    }
+    func captured(_ text: String) -> [Float]? { lock.withLock { vectors[text] } }
+    func prepare(lifecycle: AskSearchCancellation) async throws { try await base.prepare(lifecycle: lifecycle) }
+    func stop() { base.stop() }
+}
+
 @main @MainActor
 struct MediaProbe {
     static func hit(_ hit: AskFileHit) -> [String: Any] {
@@ -124,6 +140,8 @@ struct MediaProbe {
         let helper = URL(fileURLWithPath: env["GUL405_MODEL_HELPER"]!)
         let fileHelper = URL(fileURLWithPath: env["GUL405_FILE_HELPER"]!)
         let owners = SemanticEmbeddingOwners()
+        let queryWorker = CapturedQuery(helper: helper,
+            model: directory.appendingPathComponent("embeddinggemma-2-Q8_0.gguf"), owner: owners.query)
         let service = SemanticFileSearchService(settings: settings, directory: directory, helper: helper,
             supported: true, access: { true }, automaticStart: false, budgetEnabled: true,
             models: TracedModels(base: SemanticModelFiles(), trace: trace, label: "model"),
@@ -131,7 +149,8 @@ struct MediaProbe {
             idle: { true }, makeMediaEncoder: { helper, model, projector in
                 TracedMedia(helper: URL(fileURLWithPath: env["GUL405_MEDIA_HELPER"] ?? helper.path),
                     model: model, projector: projector, owners: owners, trace: trace)
-            }, makeReader: { AskFileReader(executable: fileHelper, timeout: 30) }, embeddingOwners: owners)
+            }, makeReader: { AskFileReader(executable: fileHelper, timeout: 30) },
+            makeQuery: { _, _ in queryWorker }, embeddingOwners: owners)
         _ = NSApplication.shared
         var report: [String: Any] = ["complete": false, "budget_enabled": true,
             "media": env["GUL405_MEDIA"]!, "scope": "Single synthetic media; accepted Debug application and Release inference helper. Production resource/thermal/low-power checks enabled; idle callback controlled."]
@@ -210,29 +229,44 @@ struct MediaProbe {
         trace.event("index-observation-ended")
         service.pause(true)
         // A bounded index observation is also useful when legitimate pressure prevents readiness.
-        if service.phase == .ready && service.chunks > 0 && ProcessInfo.processInfo.systemUptime < deadline - 15 {
-            let queries = env["GUL405_MEDIA"] == "screenshot" ? ["ERR-739204", "error dialog"] :
+        if report["ready"] as? Bool == true && service.chunks > 0 && ProcessInfo.processInfo.systemUptime < deadline {
+            let queries = env["GUL405_MEDIA"] == "screenshot" ? ["black text on a white background"] :
                 (env["GUL405_MEDIA"] == "video" ? ["blue slide"] : ["a tone"])
             var rows: [[String: Any]] = []
             for text in queries {
                 trace.event("query-begin", ["query": text])
-                let hits = await service.search(text, type: .all, limit: 5)
+                let request = Task { await service.search(text, type: .all, limit: 5) }
+                let cutoff = Task {
+                    do { try await Task.sleep(for: .seconds(max(0, deadline - ProcessInfo.processInfo.systemUptime))) }
+                    catch { return }
+                    request.cancel()
+                }
+                let hits = await request.value
+                cutoff.cancel(); await cutoff.value
+                report["service_query_complete"] = hits.contains { $0.evidence?.segmentKind == "image" }
                 rows.append(["query": text, "hits": hits.map(hit)])
                 trace.event("query-end", ["hits": hits.count])
             }
             report["queries"] = rows
             do {
                 let reopened = try SemanticFileStore(url: directory.appendingPathComponent("semantic-files.sqlite"))
-                let worker = SemanticEmbeddingWorker(helper: helper, model: service.modelURL)
-                defer { worker.stop() }
                 let text = queries[0]
-                let vector = try await worker.query(text, lifecycle: AskSearchCancellation())
+                guard let vector = queryWorker.captured(text) else { throw SemanticFileStore.Failure.invalidVector }
                 let hits = try reopened.search(vector: vector, text: text, query: .init(text), type: .all,
-                    scope: semanticScope(corpus.path), limit: 5, cancelled: { false })
+                    scope: semanticScope(corpus.path), limit: 5,
+                    cancelled: { ProcessInfo.processInfo.systemUptime >= deadline })
                 report["reopened_query"] = ["query": text, "hits": hits.map(hit)]
+                let lexical = try reopened.lexicalSearch(text: "ERR-739204", query: .init("ERR-739204"), type: .all,
+                    scope: semanticScope(corpus.path), limit: 5,
+                    cancelled: { ProcessInfo.processInfo.systemUptime >= deadline })
+                report["reopened_ocr_query"] = ["query": "ERR-739204", "hits": lexical.map(hit)]
+                report["screenshot_retrieval_complete"] = hits.contains { $0.evidence?.segmentKind == "image" }
+                    && lexical.contains { $0.evidence?.segmentKind == "image-ocr" }
             } catch { report["reopen_error"] = String(describing: error) }
         }
         report["complete"] = report["ready"] as? Bool == true && !service.mediaFailed
+            && report["screenshot_retrieval_complete"] as? Bool == true
+            && report["service_query_complete"] as? Bool == true
         save()
         service.endSearch()
         await service.clear()
