@@ -1,0 +1,33 @@
+{
+  "base": {
+    "exit": 2,
+    "violations": 22,
+    "counts": {
+      "MediaPreviewDecoder.swift/identifier_name": 2,
+      "MediaPreview.swift/cyclomatic_complexity": 1,
+      "MediaPreview.swift/line_length": 6,
+      "MediaPreview.swift/switch_case_alignment": 3,
+      "AskFilePreviewRenderer.swift/line_length": 1,
+      "AskFilePreviewPDF.swift/function_parameter_count": 1,
+      "AskFilePreviewPDF.swift/identifier_name": 1,
+      "AskFilePreviewPDF.swift/line_length": 6,
+      "AskFilePreviewPDF.swift/multiple_closures_with_trailing_closure": 1
+    }
+  },
+  "current": {
+    "exit": 2,
+    "violations": 22,
+    "counts": {
+      "AskFilePreviewRenderer.swift/line_length": 1,
+      "MediaPreviewDecoder.swift/identifier_name": 2,
+      "MediaPreview.swift/cyclomatic_complexity": 1,
+      "MediaPreview.swift/line_length": 6,
+      "MediaPreview.swift/switch_case_alignment": 3,
+      "AskFilePreviewPDF.swift/function_parameter_count": 1,
+      "AskFilePreviewPDF.swift/identifier_name": 1,
+      "AskFilePreviewPDF.swift/line_length": 6,
+      "AskFilePreviewPDF.swift/multiple_closures_with_trailing_closure": 1
+    }
+  },
+  "new_warning_counts": {}
+}

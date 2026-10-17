@@ -1,0 +1,200 @@
+[
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewRenderer.swift",
+    "line" : 76,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/TypefluxMediaRuntime/MediaPreviewDecoder.swift",
+    "line" : 51,
+    "reason" : "Variable name 'w' should be between 3 and 40 characters long",
+    "rule_id" : "identifier_name",
+    "severity" : "Error",
+    "type" : "Identifier Name"
+  },
+  {
+    "character" : 51,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/TypefluxMediaRuntime/MediaPreviewDecoder.swift",
+    "line" : 51,
+    "reason" : "Variable name 'h' should be between 3 and 40 characters long",
+    "rule_id" : "identifier_name",
+    "severity" : "Error",
+    "type" : "Identifier Name"
+  },
+  {
+    "character" : 12,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/TypefluxMediaProtocol/MediaPreview.swift",
+    "line" : 58,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 15",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Error",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/TypefluxMediaProtocol/MediaPreview.swift",
+    "line" : 18,
+    "reason" : "Line should be 120 characters or less; currently it has 166 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/TypefluxMediaProtocol/MediaPreview.swift",
+    "line" : 73,
+    "reason" : "Line should be 120 characters or less; currently it has 129 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/TypefluxMediaProtocol/MediaPreview.swift",
+    "line" : 85,
+    "reason" : "Line should be 120 characters or less; currently it has 122 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/TypefluxMediaProtocol/MediaPreview.swift",
+    "line" : 86,
+    "reason" : "Line should be 120 characters or less; currently it has 157 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/TypefluxMediaProtocol/MediaPreview.swift",
+    "line" : 130,
+    "reason" : "Line should be 120 characters or less; currently it has 143 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/TypefluxMediaProtocol/MediaPreview.swift",
+    "line" : 134,
+    "reason" : "Line should be 120 characters or less; currently it has 149 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 23,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/TypefluxMediaProtocol/MediaPreview.swift",
+    "line" : 117,
+    "reason" : "Case statements should vertically aligned with their closing brace",
+    "rule_id" : "switch_case_alignment",
+    "severity" : "Error",
+    "type" : "Switch and Case Statement Alignment"
+  },
+  {
+    "character" : 48,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/TypefluxMediaProtocol/MediaPreview.swift",
+    "line" : 117,
+    "reason" : "Case statements should vertically aligned with their closing brace",
+    "rule_id" : "switch_case_alignment",
+    "severity" : "Error",
+    "type" : "Switch and Case Statement Alignment"
+  },
+  {
+    "character" : 75,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/TypefluxMediaProtocol/MediaPreview.swift",
+    "line" : 117,
+    "reason" : "Case statements should vertically aligned with their closing brace",
+    "rule_id" : "switch_case_alignment",
+    "severity" : "Error",
+    "type" : "Switch and Case Statement Alignment"
+  },
+  {
+    "character" : 20,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+    "line" : 40,
+    "reason" : "Function should have 5 parameters or less: it currently has 7",
+    "rule_id" : "function_parameter_count",
+    "severity" : "Error",
+    "type" : "Function Parameter Count"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+    "line" : 108,
+    "reason" : "Variable name 'fd' should be between 3 and 40 characters long",
+    "rule_id" : "identifier_name",
+    "severity" : "Error",
+    "type" : "Identifier Name"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+    "line" : 57,
+    "reason" : "Line should be 120 characters or less; currently it has 135 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+    "line" : 59,
+    "reason" : "Line should be 120 characters or less; currently it has 139 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+    "line" : 67,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+    "line" : 79,
+    "reason" : "Line should be 120 characters or less; currently it has 137 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+    "line" : 86,
+    "reason" : "Line should be 120 characters or less; currently it has 131 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+    "line" : 116,
+    "reason" : "Line should be 120 characters or less; currently it has 144 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 108,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-65244badf3b2/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+    "line" : 86,
+    "reason" : "Trailing closure syntax should not be used when passing more than one closure argument",
+    "rule_id" : "multiple_closures_with_trailing_closure",
+    "severity" : "Error",
+    "type" : "Multiple Closures with Trailing Closure"
+  }
+]

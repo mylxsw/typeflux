@@ -1,0 +1,53 @@
+{
+  "finding": "The helper draws the exact page correctly. The test assumed all requested output pixels were occupied by the page, but CGPDF getDrawingTransform caps upscaling at the page point size and centers the page in a larger raster.",
+  "plain": {
+    "rotation": 0,
+    "media_box": [
+      40,
+      60,
+      800,
+      600
+    ],
+    "crop_box": [
+      40,
+      60,
+      800,
+      600
+    ],
+    "transform_for_1040x780": [
+      1,
+      0,
+      0,
+      1,
+      80,
+      30
+    ]
+  },
+  "rotated": {
+    "rotation": 180,
+    "media_box": [
+      0,
+      0,
+      800,
+      600
+    ],
+    "crop_box": [
+      0,
+      0,
+      800,
+      600
+    ],
+    "transform_for_1040x780": [
+      -1,
+      0,
+      0,
+      -1,
+      920,
+      690
+    ]
+  },
+  "repair": "Keep the two actual raster sizes. Assert the known invoice region after scaling and centering the fixture page; continue requiring every highlight pixel to coincide with actual recognized boxes. No product source change.",
+  "initial_error": "Rotated identifier normalized midY = 0.5897435897 fell just below the unadjusted >0.59 threshold.",
+  "probe": "pdf-page-probe.swift, plain-source.png and rotated-source.png preserve the original frame and independently rendered source.",
+  "first_assertion_retry_error": "The initial test repair used requested height 900 instead of the actual aspect-fit raster height (540/780), failing plain and mixed cases. Final assertion uses actual image dimensions for both region and point."
+}

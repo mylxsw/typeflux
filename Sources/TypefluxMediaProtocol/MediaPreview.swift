@@ -12,8 +12,11 @@ public struct MediaPreviewOptions: Codable, Sendable {
     public var start: Double?
     public var container: MediaAVContainer?
     public var imageType: MediaImageType?
-    public init(width: Int, height: Int, page: Int? = nil, passage: String? = nil, start: Double? = nil, container: MediaAVContainer? = nil, imageType: MediaImageType? = nil) {
+    /// Request exact native/OCR location only for current-version indexed PDF evidence.
+    public var locatePDFText: Bool?
+    public init(width: Int, height: Int, page: Int? = nil, passage: String? = nil, start: Double? = nil, container: MediaAVContainer? = nil, imageType: MediaImageType? = nil, locatePDFText: Bool? = nil) {
         self.width = width; self.height = height; self.page = page; self.passage = passage; self.start = start; self.container = container; self.imageType = imageType
+        self.locatePDFText = locatePDFText
     }
     public func validate() throws {
         guard width > 0, height > 0, width <= Self.maxEdge, height <= Self.maxEdge,
@@ -48,7 +51,7 @@ public struct MediaPreviewResult: Codable, Sendable {
     public var start: Double?
     public var waveform: [Float]?
     public var imageType: MediaImageType?
-    /// Exact matched Vision regions in the oriented raster's normalized bottom-left space.
+    /// Exact matched native or Vision regions in the oriented raster's normalized bottom-left space.
     /// An empty geometry reports that the requested passage could not be located.
     public var textGeometry: MediaTextGeometry?
     public init(rasters: [MediaRaster], pages: Int = 0) { self.rasters = rasters; self.pages = pages }
@@ -58,7 +61,9 @@ public struct MediaPreviewResult: Codable, Sendable {
         try options.validate()
         guard imageType == options.imageType else { throw MediaFailure.invalidProtocol }
         if let textGeometry {
-            guard request.operation == .previewImage, options.passage != nil,
+            let pdfText = request.operation == .previewPDF && options.locatePDFText == true &&
+                options.page != nil && rasters.count == 1 && rasters.first?.page == options.page
+            guard request.operation == .previewImage || pdfText, options.passage != nil,
                   textGeometry.boxes.count <= 64 else { throw MediaFailure.invalidProtocol }
             try textGeometry.validate()
         }
