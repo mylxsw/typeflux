@@ -76,7 +76,7 @@ struct AskLauncherViewportTests {
         #expect(applied == count, "no frames are applied for an animator that no longer exists")
     }
 
-    @Test func `the panel resizes once per motion while the card animates`() async throws {
+    @Test func `the panel resizes at most twice per motion while the card animates`() async throws {
         _ = NSApplication.shared
         let previousStore = KeychainTokenStore.useInMemoryStoreForTesting
         KeychainTokenStore.useInMemoryStoreForTesting = true
@@ -91,6 +91,9 @@ struct AskLauncherViewportTests {
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let settings = SettingsStore(defaults: defaults)
+        // The expanded launcher keeps one height; the simple mode's empty bar is the
+        // one place its height still moves, between the bar and the expanded card.
+        settings.askLauncherWindowMode = .simple
         await fixture.model.prepareLauncher()
         let controller = AskConversationWindowController(
             settings: settings, model: fixture.model,
@@ -108,16 +111,12 @@ struct AskLauncherViewportTests {
             MainActor.assumeIsolated { resizes.append(window.frame.height) }
         }
         defer { NotificationCenter.default.removeObserver(observer) }
-        // No match keeps the results area empty; five matches need far more room.
-        fixture.model.launcherDraft.text = "zzqqxx"
-        try await Task.sleep(for: .milliseconds(900))
-        try await fixture.wait { !controller.launcherIsResizing }
-        for text in ["alpha", "zzqqxx"] {
+        for text in ["alpha", ""] {
             resizes = []
             let start = controller.launcherVisibleHeight
             var visible: [CGFloat] = []
             fixture.model.launcherDraft.text = text
-            // Long enough for the reserve to settle after typing pauses, and for the motion.
+            // Long enough for the motion to land.
             for _ in 0 ..< 250 {
                 try await Task.sleep(for: .milliseconds(4))
                 visible.append(controller.launcherVisibleHeight)

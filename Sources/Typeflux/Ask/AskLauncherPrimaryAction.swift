@@ -7,6 +7,10 @@ struct AskLauncherPrimaryAction: Equatable {
     var disabledReason: String?
 
     var title: String { mode.title }
+
+    /// Disabled only until the newest input's results arrive. Typing passes through
+    /// this state on every keystroke, so the button is drawn as ready meanwhile.
+    var waiting: Bool { !enabled && disabledReason == L("ask.launcher.action.wait") }
     var hint: String { enabled ? mode.hint : disabledReason ?? L("ask.launcher.action.unavailable") }
 
     static func confirm(_ title: String, enabled: Bool = true, reason: String? = nil) -> Self {

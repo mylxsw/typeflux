@@ -1344,7 +1344,7 @@ struct AskComposer: View {
                 .frame(height: launcherResultsViewportHeight, alignment: .top)
                 // The card's visible height follows the panel's motion frame by frame.
                 .modifier(AskLauncherViewportClip(viewport: model.launcherViewport,
-                                                  chrome: desiredLauncherHeight - launcherResultsViewportHeight,
+                                                  chrome: launcherChromeHeight,
                                                   available: availableHeight.map { $0 + AskMetrics.launcherGutter * 2 },
                                                   natural: launcherResultsViewportHeight))
             }
@@ -1403,18 +1403,45 @@ struct AskComposer: View {
         }
     }
 
-    /// The results area's own height. `AskLauncherViewportClip` shows as much of
-    /// it as the card's animated height allows, so the footer follows the motion
-    /// instead of jumping to the target height.
-    private var launcherResultsViewportHeight: CGFloat {
+    /// The results' own height: the voice panel, home, history, keyword or quick results.
+    private var launcherNaturalResultsHeight: CGFloat {
         active ? voicePanelHeight : resultsHeight
+    }
+
+    /// Everything the launcher card shows besides its results area, gutters included.
+    private var launcherChromeHeight: CGFloat {
+        desiredLauncherHeight - launcherNaturalResultsHeight
+    }
+
+    /// Results that fill whatever room they are given: they scroll or leave space below.
+    /// Keyword views with a designed size (the system monitor, a long answer) do not.
+    private var launcherResultsFillViewport: Bool {
+        active || pluginDisplay == nil
+    }
+
+    /// The launcher keeps one height while it is expanded, like Spotlight: typing,
+    /// deleting and new results never resize it, so nothing jumps or animates while
+    /// the user types. Only the simple window mode's empty search bar is shorter, and
+    /// a keyword view designed taller than the card makes it grow.
+    private var launcherTargetHeight: CGFloat {
+        if launcherCollapsed { return AskLauncherWindowMode.simpleHeight }
+        let content = launcherResultsFillViewport ? 0 : launcherNaturalResultsHeight
+        return max(AskLauncherWindowMode.expandedHeight, launcherChromeHeight + content)
+    }
+
+    /// The results area inside the launcher's fixed height; lists fill it and scroll.
+    /// `AskLauncherViewportClip` shows as much of it as the card's visible height allows.
+    private var launcherResultsViewportHeight: CGFloat {
+        guard launcher, !launcherCollapsed else { return launcherNaturalResultsHeight }
+        return max(0, launcherTargetHeight - launcherChromeHeight)
     }
 
     private var launcherResults: some View {
         Group {
             if active {
                 // Recording takes the results' place at their height, so the panel stays put.
-                AskVoicePanel(live: voice.live, listening: listening, height: voicePanelHeight, token: contextToken)
+                AskVoicePanel(live: voice.live, listening: listening, height: launcherResultsViewportHeight,
+                              token: contextToken)
             } else if model.launcherHistoryMode {
                 AskLauncherInputHistoryView(model: model, store: inputHistory,
                                             viewportHeight: launcherResultsViewportHeight)
@@ -2031,8 +2058,9 @@ struct AskComposer: View {
                     .accessibilityIdentifier("ask.launcher.featureWindow")
                     .modifier(AskLauncherShortcutBadge(key: "O", leadingInset: 24, topInset: -5))
                 }
-                AskLauncherOpenChatButton(mode: launcherPrimaryAction.mode, enabled: launcherPrimaryAction.enabled,
-                                         disabledReason: launcherPrimaryAction.disabledReason,
+                let primary = launcherPrimaryAction
+                AskLauncherOpenChatButton(mode: primary.mode, enabled: primary.enabled, waiting: primary.waiting,
+                                         disabledReason: primary.disabledReason,
                                          tint: storageTint, action: runLauncherPrimaryAction)
             }
         }
@@ -2514,7 +2542,7 @@ struct AskComposer: View {
     }
 
     private func reportHeight() {
-        let height = launcherCollapsed ? AskLauncherWindowMode.simpleHeight : desiredLauncherHeight
+        let height = launcher ? launcherTargetHeight : desiredLauncherHeight
         // Other layout preferences may change with the first edit too. Hold the
         // native frame until the first search batch instead of resizing an empty list.
         if launcher, !model.launcherHistoryMode, quickSearch.isVisible, draft.wrappedValue.hasText,
