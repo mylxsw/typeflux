@@ -25,10 +25,6 @@ struct AskQuickResultsView: View {
     var calendarProvider: (any CalendarEventProviding)?
 
     @State private var pointer = AskSearchPointer(position: NSEvent.mouseLocation)
-    /// The rows of the previous render: the highlight slides only between the same rows.
-    @State private var highlightMemo = HighlightMemo()
-    @Namespace private var highlightSpace
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var copied: Int?
     @State private var copiedReset: Task<Void, Never>?
 
@@ -78,7 +74,6 @@ struct AskQuickResultsView: View {
             Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
             if !results.listRows.isEmpty || results.notice != nil {
                 let items = Self.listItems(for: results)
-                let _ = highlightMemo.update(rows: items.map(\.id))
                 let scrolls = Self.contentHeight(for: results) > visibleHeight
                 ScrollViewReader { proxy in
                     ScrollView(.vertical, showsIndicators: scrolls) {
@@ -412,36 +407,11 @@ struct AskQuickResultsView: View {
         .accessibilityAddTraits(highlighted ? .isSelected : [])
     }
 
-    /// One highlight shape that moves from row to row. When only the highlight moves
-    /// (arrow keys, the pointer) it glides to the new row; when the rows themselves
-    /// change it simply appears on its row, so a new batch never animates.
+    /// Keep the selection in step with the keyboard and pointer, even under rapid repeats.
     @ViewBuilder private func highlightShape(_ highlighted: Bool, cornerRadius: CGFloat) -> some View {
-        let slides = highlightMemo.sameRows && !reduceMotion
-        ZStack {
-            if highlighted {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(AskTheme.hoverFill)
-                    .matchedGeometryEffect(id: "quickResults.highlight", in: highlightSpace)
-            }
-        }
-        .transaction { transaction in
-            // The launcher disables animations; the highlight opts back in for itself only.
-            transaction.disablesAnimations = !slides
-            transaction.animation = slides ? Self.highlightMotion : nil
-        }
-    }
-
-    static let highlightMotion: Animation = .easeOut(duration: 0.12)
-
-    /// Remembers the previous render's rows. A reference, so updating it in `body`
-    /// never invalidates the view.
-    final class HighlightMemo {
-        private var rows: [String] = []
-        private(set) var sameRows = false
-
-        func update(rows next: [String]) {
-            sameRows = rows == next
-            rows = next
+        if highlighted {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(AskTheme.hoverFill)
         }
     }
 

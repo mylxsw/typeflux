@@ -44,6 +44,7 @@ struct AskSuggestion: Equatable, Identifiable {
 struct AskLauncherSuggestions: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var scrollTarget: String?
+    @State private var pointer = AskSearchPointer(position: NSEvent.mouseLocation)
     var sections: [AskLauncherHome.Section]
     @Binding var highlighted: Int
     var onPick: (AskLauncherHome.Item) -> Void
@@ -148,7 +149,7 @@ struct AskLauncherSuggestions: View {
         }
         .frame(height: viewportHeight ?? Self.height(for: sections), alignment: .top)
         .background(AskLauncherHomeKeyMonitor { key in handle(key, items: items) })
-        .onAppear { clampHighlight(items.count) }
+        .onAppear { pointer.position = NSEvent.mouseLocation; clampHighlight(items.count) }
         .onChange(of: items.count) { clampHighlight($0) }
     }
 
@@ -199,7 +200,10 @@ struct AskLauncherSuggestions: View {
                             let item = AskLauncherHome.Item.chip(chip)
                             chipView(chip, highlighted: item.id == current)
                                 .id(item.id)
-                                .onHover { if $0, let index = items.firstIndex(of: item) { highlighted = index } }
+                                .onContinuousHover { phase in
+                                    if case .active = phase, pointer.moved(to: NSEvent.mouseLocation),
+                                       let index = items.firstIndex(of: item) { highlighted = index }
+                                }
                         }
                     }
                     .padding(.horizontal, Self.contentInset)
@@ -235,7 +239,10 @@ struct AskLauncherSuggestions: View {
                 let item = AskLauncherHome.Item.row(row)
                 rowView(row, number: numbers[row.id], highlighted: item.id == current)
                     .id(item.id)
-                    .onHover { if $0, let index = items.firstIndex(of: item) { highlighted = index } }
+                    .onContinuousHover { phase in
+                        if case .active = phase, pointer.moved(to: NSEvent.mouseLocation),
+                           let index = items.firstIndex(of: item) { highlighted = index }
+                    }
             }
         }
     }
@@ -303,7 +310,8 @@ struct AskLauncherSuggestions: View {
     @ViewBuilder
     private func tile(_ row: AskLauncherHome.Row) -> some View {
         if case let .application(app) = row.action {
-            AskNativeIconView(icon: .init(kind: .file, value: app.url.path), symbol: row.symbol)
+            AskNativeIconView(icon: .init(kind: .file, value: app.url.path), symbol: row.symbol,
+                              immediateLookup: false)
                 .frame(width: 28, height: 28)
         } else {
             Image(systemName: row.symbol).font(.system(size: 12.5))

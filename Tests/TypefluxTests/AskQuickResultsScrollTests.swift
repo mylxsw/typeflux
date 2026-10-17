@@ -29,6 +29,41 @@ struct AskQuickResultsScrollTests {
         return AskQuickResults(apps: matches, lead: true)
     }
 
+    @Test func switchingBetweenExistingRowsUpdatesTheHighlightWithoutMotion() async throws {
+        let state = State()
+        var results = AskQuickResults(apps: [], lead: false)
+        results.features = ["JSON Tools", "JSON Format"].enumerated().map { index, title in
+            AskLauncherSearchEntry(keyword: .init(keyword: "json\(index)", pluginID: "json"),
+                                   title: title, detail: "", symbol: "curlybraces")
+        }
+        results.highlight(0)
+        state.results = results
+        let window = AskTestVoiceWindow(contentRect: NSRect(x: 0, y: 0, width: 680, height: 180),
+                                        styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        let hosting = NSHostingView(rootView: Content(state: state))
+        window.contentView = hosting
+        window.orderFront(nil)
+        defer { window.orderOut(nil); window.close() }
+
+        func snapshot() throws -> Data {
+            hosting.layoutSubtreeIfNeeded()
+            let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
+            hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+            return try #require(bitmap.representation(using: .png, properties: [:]))
+        }
+        try await Task.sleep(for: .milliseconds(100))
+        let first = try snapshot()
+        results.highlight(1)
+        state.results = results
+        try await Task.sleep(for: .milliseconds(32))
+        let immediate = try snapshot()
+        try await Task.sleep(for: .milliseconds(180))
+        let settled = try snapshot()
+        #expect(first != immediate, "the selected row must change")
+        #expect(immediate == settled, "selection must not keep sliding after the state changes")
+    }
+
     @Test(arguments: [NSAppearance.Name.aqua, .darkAqua])
     func replacementRowsHaveNoGhostsOrAIFooter(appearance: NSAppearance.Name) async throws {
         // The rows are located through their AX nodes, which SwiftUI creates on demand.

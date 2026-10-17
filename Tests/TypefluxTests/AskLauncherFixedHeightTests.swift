@@ -2,8 +2,8 @@ import AppKit
 import Testing
 @testable import Typeflux
 
-/// The expanded launcher keeps one height, its list highlight glides between the
-/// same rows, and its primary button does not flicker while a search catches up.
+/// The expanded launcher keeps one height and its primary button does not
+/// flicker while a search catches up.
 @Suite("Launcher fixed height and steady controls", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherFixedHeightTests {
@@ -36,15 +36,5 @@ struct AskLauncherFixedHeightTests {
         let reason = L("ask.launcher.action.input")
         let unavailable = AskLauncherPrimaryAction.confirm("Run", enabled: false, reason: reason)
         #expect(!unavailable.waiting, "missing input is a real disabled state")
-    }
-
-    @Test func `the highlight slides only between the same rows`() {
-        let memo = AskQuickResultsView.HighlightMemo()
-        memo.update(rows: ["app:a", "app:b"])
-        #expect(!memo.sameRows, "the first batch appears in place")
-        memo.update(rows: ["app:a", "app:b"])
-        #expect(memo.sameRows, "moving the highlight over the same rows glides")
-        memo.update(rows: ["app:b", "file:c"])
-        #expect(!memo.sameRows, "a new batch never animates the highlight")
     }
 }

@@ -268,6 +268,35 @@ private actor NativeIconCalls {
         XCTAssertEqual(childCalls, 0)
     }
 
+    func testScrollingHomeDoesNotSynchronouslyLookUpAnUncachedIcon() async throws {
+        _ = NSApplication.shared
+        let pixels = raster(), scope = AskImagePresentationScope()
+        let icon = MediaNativeIcon(kind: .file, value: "/Applications/Uncached.app")
+        var immediateLookups = 0
+        let cache = AskLauncherIconCache(immediateLookup: { _, _ in
+            immediateLookups += 1
+            return NSImage(cgImage: pixels, size: .init(width: 56, height: 56))
+        }, decode: { _ in .init(images: [pixels], numbers: [], pages: 0) })
+        let access = AskImagePresentationAccess(scope: scope, epoch: scope.epoch, authorize: { true })
+        let app = AskAppEntry(name: "Uncached", url: URL(fileURLWithPath: icon.value), bundleID: nil, names: [])
+        let row = AskLauncherHome.Row(id: "application.uncached", title: app.name, symbol: "app",
+                                      tint: .neutral, action: .application(app))
+        let view = NSHostingView(rootView: AskLauncherSuggestions(
+            sections: [.applications(rows: [row])], highlighted: .constant(0), onPick: { _ in }
+        ).frame(width: 400, height: 100)
+            .environment(\.askLauncherIconCache, cache)
+            .environment(\.askContextImageAccess, access))
+        let window = NSWindow(contentRect: .init(x: 100, y: 100, width: 400, height: 100),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false; window.contentView = view; window.orderFront(nil)
+        defer { window.contentView = nil; window.close() }
+        view.layoutSubtreeIfNeeded()
+        XCTAssertEqual(immediateLookups, 0, "a new row must not block layout on Finder icon lookup")
+        for _ in 0..<100 where cache.cached(icon) == nil { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertNotNil(cache.cached(icon), "the icon still loads in the background")
+        XCTAssertEqual(immediateLookups, 0)
+    }
+
     func testClosingLauncherDoesNotRepopulatePrivateIconCacheFromLateDecode() async throws {
         let pixels = raster(), revision = Date(timeIntervalSince1970: 1_000)
         let cache = AskLauncherIconCache(decode: { _ in

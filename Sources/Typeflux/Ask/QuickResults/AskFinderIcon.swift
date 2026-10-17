@@ -105,6 +105,7 @@ struct AskNativeIconImage<Content: View>: View {
     let icon: MediaNativeIcon?
     var revision: Date?
     var folder = false
+    var immediateLookup = true
     var decode: AskNativeIconDecoding?
     @ViewBuilder var content: (NSImage?) -> Content
     @Environment(\.askContextImageAccess) private var access
@@ -119,7 +120,9 @@ struct AskNativeIconImage<Content: View>: View {
         else { selectedDecode = nil }
         let useCache = decode == nil
         let cached = access.allows() && useCache ? icon.flatMap {
-            iconCache?.immediate($0, revision: revision, folder: folder)?.images.first
+            (immediateLookup
+                ? iconCache?.immediate($0, revision: revision, folder: folder)
+                : iconCache?.cached($0, revision: revision))?.images.first
         }.map { NSImage(cgImage: $0, size: .zero) } : nil
         return AskContextImage(source: icon.map { $0.kind.rawValue + ":" + $0.value },
             model: AskContextImageModel(maximumEdge: 56, nativeIcon: .init(icon: icon, revision: revision,
@@ -144,9 +147,11 @@ struct AskNativeIconView: View {
     var symbol = "doc"
     var revision: Date?
     var folder = false
+    var immediateLookup = true
     var decode: AskNativeIconDecoding?
     var body: some View {
-        AskNativeIconImage(icon: icon, revision: revision, folder: folder, decode: decode) { image in
+        AskNativeIconImage(icon: icon, revision: revision, folder: folder,
+                           immediateLookup: immediateLookup, decode: decode) { image in
             if let image { Image(nsImage: image).resizable().interpolation(.high).scaledToFit() }
             else { Image(systemName: symbol).resizable().scaledToFit().padding(3).foregroundStyle(StudioTheme.textTertiary) }
         }
