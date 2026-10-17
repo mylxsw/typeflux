@@ -10,6 +10,8 @@ final class ScreenshotCoordinatorTests: XCTestCase {
         private(set) var dismissals = 0
         var onEvent: ((ScreenshotOverlayEvent) -> Void)?
         var isShowing = false
+        var foreground: CGImage?
+        func backgroundRemovedImage(displayID: CGDirectDisplayID, rect: CGRect) -> CGImage? { foreground }
 
         func present(_ snapshot: ScreenSnapshot, onEvent: @escaping (ScreenshotOverlayEvent) -> Void) {
             XCTAssertFalse(isShowing, "A second overlay over the first one")
@@ -189,6 +191,29 @@ final class ScreenshotCoordinatorTests: XCTestCase {
     private func started(_ coordinator: ScreenshotCoordinator, mode: ScreenshotMode = .region) async {
         coordinator.start(mode: mode)
         await coordinator.pendingTask?.value
+    }
+
+    func testBackgroundRemovedCropReachesRendererBeforeCopyAndSave() async {
+        let foreground = ScreenCaptureTestSupport.image(width: 100, height: 60)
+        overlay.foreground = foreground
+        let rect = CGRect(x: 10, y: 20, width: 50, height: 30)
+        let mark = ScreenshotAnnotation(kind: .rect(rect))
+        var rendered = false
+        let sut = makeCoordinator(render: { display, crop, annotations in
+            XCTAssertTrue(display.image === foreground)
+            XCTAssertEqual(display.frame, rect)
+            XCTAssertEqual(display.scale, 2)
+            XCTAssertEqual(crop, rect)
+            XCTAssertEqual(annotations, [mark])
+            rendered = true
+            return foreground
+        })
+        await started(sut)
+        overlay.onEvent?(.finish(.copyAndSave, displayID: 1, rect: rect, annotations: [mark]))
+        await sut.pendingTask?.value
+        XCTAssertTrue(rendered)
+        XCTAssertEqual(output.copied, [Data("100x60@2".utf8)])
+        XCTAssertEqual(output.saved.count, 1)
     }
 
     func testRecordingModesDispatchWithoutFreezingDisplays() {
@@ -478,6 +503,22 @@ final class ScreenshotCoordinatorTests: XCTestCase {
         XCTAssertEqual(output.copied, [Data("140x100@2".utf8)])
         XCTAssertEqual(try XCTUnwrap(output.saved.first).png, output.copied.first)
         XCTAssertEqual(sut.state, .idle)
+    }
+
+    func testBeautificationComposesTheCutoutBeforeDelivery() async {
+        overlay.foreground = ScreenCaptureTestSupport.image(width: 100, height: 60, gray: 1)
+        let sut = makeCoordinator(encode: { image, _ in
+            let center = ScreenshotMagnifier.color(of: image, at: CGPoint(x: image.width / 2, y: image.height / 2))
+            return Data("\(image.width)x\(image.height):\(center?.hex ?? "none")".utf8)
+        })
+        await started(sut)
+        let beauty = ScreenshotBeautification(isEnabled: true, background: .charcoal, padding: 10,
+                                              cornerRadius: 8, shadow: 0)
+        overlay.onEvent?(.finish(.copyAndSave, displayID: 1, rect: CGRect(x: 10, y: 20, width: 50, height: 30),
+                                 beautification: beauty))
+        await sut.pendingTask?.value
+        XCTAssertEqual(output.copied, [Data("140x100:#FFFFFF".utf8)])
+        XCTAssertEqual(output.saved.first?.png, output.copied.first)
     }
 
     func testBeautifiedFollowUpReceivesTheRedactedImage() async throws {

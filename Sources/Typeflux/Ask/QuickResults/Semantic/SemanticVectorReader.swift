@@ -208,8 +208,8 @@ final class SemanticVectorReader: @unchecked Sendable {
             let imageText = SemanticMediaPriority.of(path) == .image && string(row, 10) == "text"
                 && string(row, 9) == SemanticFileStore.imageRecipe
             if sqlite3_column_bytes(row, 6) == SemanticFilePolicy.dimension * 4,
-               !media || imageText || string(row, 9) == (SemanticMediaPriority.of(path) == .audio
-                   ? SemanticFileStore.audioProvenance : SemanticFileStore.mediaProvenance),
+               !media || imageText || string(row, 9) == SemanticFileStore.mediaVectorProvenance(
+                   path, kind: string(row, 10) == "audio" ? .audio : .image),
                let raw = sqlite3_column_blob(row, 6) {
                 let vector = UnsafeBufferPointer(
                     start: raw.assumingMemoryBound(to: Float.self),

@@ -1,0 +1,10 @@
+{
+  "source_inputs": 2417,
+  "changed_source_inputs": 1,
+  "identical_production_objects": 1117,
+  "identical_tools": 4,
+  "identical_real_mov_fixtures": 3,
+  "raw_profiles": 2,
+  "unchanged_recipe_rollback_method_sha256": "a5e713310522e9f7bdf09ec33f2f9f428ee8b6b2a231dbe0980ffedb9db97bcb",
+  "production_sources_unchanged": true
+}

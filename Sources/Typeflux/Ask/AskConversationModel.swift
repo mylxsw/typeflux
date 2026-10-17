@@ -121,6 +121,10 @@ final class AskConversationModel: ObservableObject {
     lazy var emojiUsage = EmojiUsageStore(defaults: modelLibrary.settings.defaults)
     let systemMonitor = SystemMonitorLauncherModel()
     lazy var calendarLauncher = CalendarLauncherModel()
+    /// This Mac's configuration in the launcher (`sys`); see `AskConversationModel+SystemInfo`.
+    let systemInfo = SystemInfoLauncherModel()
+    /// What `sys` reads the configuration with; tests use their own.
+    lazy var systemInfoStore: SystemInfoStore = .shared
     /// The monitor's own window (⌘O from the launcher); tests use their own.
     lazy var systemMonitorWindow: SystemMonitorWindowController = .shared
     /// The launcher's keyword plugins (`fy` → translate); see `AskConversationModel+Plugins`.

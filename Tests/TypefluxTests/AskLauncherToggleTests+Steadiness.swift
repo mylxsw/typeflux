@@ -142,15 +142,16 @@ extension AskLauncherToggleTests {
         }
     }
 
-    @Test func anEmptyFirstQuerySettlesToItsOwnHeight() async throws {
+    @Test func anEmptyFirstQueryKeepsTheLauncherHeight() async throws {
         let session = try await openSteadyLauncher(initialQuery: "")
         defer { session.close() }
         let initialHeight = session.panel.frame.height
         session.editor.insertText("zzperfprobe", replacementRange: NSRange(location: NSNotFound, length: 0))
-        try await steadily("the empty first query settles below the home") {
-            session.searched("zzperfprobe") && session.panel.frame.height < initialHeight - 0.5
-                && !session.owned.controller.launcherIsResizing
+        try await steadily("the empty first query finishes") {
+            session.searched("zzperfprobe") && !session.owned.controller.launcherIsResizing
         }
+        // The expanded launcher keeps one height; an empty result leaves space below.
+        #expect(abs(session.panel.frame.height - initialHeight) < 0.5)
         #expect(session.fixture.model.quickSearch.presentation == nil)
     }
 
@@ -197,25 +198,22 @@ extension AskLauncherToggleTests {
         #expect(editorDrift < 0.5, "the editor and its controls moved by \(editorDrift)")
     }
 
-    @Test func theListGrowsWithoutShrinkingWhileMatchesComeAndGo() async throws {
-        // Start with one app and no feature matches, leaving room for the list to grow.
+    @Test func theLauncherKeepsItsHeightWhileMatchesComeAndGo() async throws {
+        // Start with one app and no feature matches.
         let session = try await openSteadyLauncher(initialQuery: "qq音乐")
         defer { session.close() }
         let container = try #require(session.editor.enclosingScrollView)
         let recorder = Recorder(panel: session.panel, container: container)
         defer { recorder.stop() }
         // Three apps for "c", one for "co", three again, none for "e", three again:
-        // the panel never shrinks in between.
+        // the panel neither grows nor shrinks in between.
         let shown = try await session.type(["c", "co", "c", "e", "c"], recorder: recorder, waitingForResults: true)
         #expect(shown[0] > shown[1] && shown[1] > 0 && shown[2] == shown[0] && shown[3] == 0 && shown[4] == shown[0],
                 "the matches came and went: \(shown)")
         let heights = recorder.heights
         #expect(heights.count >= 5)
-        #expect((heights.max() ?? 0) - (heights.min() ?? 0) > 0.5,
-                "the launcher grows to fit the larger result list")
-        for (before, after) in zip(heights, heights.dropFirst()) {
-            #expect(after >= before - 0.5, "the panel shrank from \(before) to \(after)")
-        }
+        #expect((heights.max() ?? 0) - (heights.min() ?? 0) < 0.5,
+                "the launcher keeps one height as matches come and go: \(Set(heights))")
     }
 }
 

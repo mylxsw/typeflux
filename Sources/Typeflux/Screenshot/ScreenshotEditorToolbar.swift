@@ -7,6 +7,11 @@ import SwiftUI
 @MainActor
 final class ScreenshotEditorToolbarModel {
     struct State: Equatable {
+        var showsBackgroundRemoval = false
+        var supportsBackgroundRemoval = ScreenshotBackgroundRemoval.isSupported
+        var isRemovingBackground = false
+        var hasRemovedBackground = false
+        var backgroundNoticeKey: String?
         var tool: ScreenshotAnnotationTool?
         var isBeautified = false
         /// Whose options the second row shows: the selected annotation's tool, else the picked one.
@@ -120,6 +125,7 @@ final class ScreenshotEditorToolbarModel {
         case counterStart(Int)
         case calloutAnchor(ScreenshotAnnotationStyle.CalloutAnchor)
         case mosaicScope(ScreenshotMosaic.Scope)
+        case toggleBackgroundRemoval
         case undo, redo, cancel, save, copy, scrollCapture
         /// Recognize the text, translate it or ask the AI about the image.
         case followUp(ScreenshotFollowUp)
@@ -273,6 +279,15 @@ struct ScreenshotEditorToolbar: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Self.rowSpacing) {
             mainBar
+            if let notice = state.isRemovingBackground ? "screenshot.background.processing" : state.backgroundNoticeKey {
+                HStack(spacing: 6) {
+                    if state.isRemovingBackground { ProgressView().controlSize(.small) }
+                    Text(L(notice))
+                        .font(.system(size: 12))
+                }
+                .padding(8)
+                .background(glass(cornerRadius: 10))
+            }
             if state.showsOptions {
                 optionsBar
             }
@@ -306,6 +321,16 @@ struct ScreenshotEditorToolbar: View {
                            isEnabled: state.canScrollCapture) { perform(.record) }
                     .accessibilityLabel(L("recording.title"))
                     .accessibilityIdentifier("screenshot.record")
+            }
+            if state.showsBackgroundRemoval {
+                iconButton("wand.and.stars",
+                           help: L(!state.supportsBackgroundRemoval ? "screenshot.background.unsupported" :
+                                   state.isRemovingBackground ? "screenshot.background.cancel" :
+                                   state.hasRemovedBackground ? "screenshot.background.restore" : "screenshot.background.remove"),
+                           isOn: state.hasRemovedBackground || state.isRemovingBackground,
+                           isEnabled: state.supportsBackgroundRemoval) { perform(.toggleBackgroundRemoval) }
+                    .accessibilityLabel(L(state.hasRemovedBackground ? "screenshot.background.restore" : "screenshot.background.remove"))
+                    .accessibilityIdentifier("screenshot.removeBackground")
             }
             if state.showsPin {
                 iconButton("pin", help: "\(L("screenshot.tool.pin"))  F") { perform(.pin) }

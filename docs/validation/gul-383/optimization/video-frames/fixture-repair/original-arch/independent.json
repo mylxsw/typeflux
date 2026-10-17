@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/libexec/swift/pm/swiftpm-testing-helper",
+    "--test-bundle-path",
+    "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-77cb6039f673/workdir/typeflux/.build/video-frames/arm64-apple-macosx/debug/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests",
+    "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-77cb6039f673/workdir/typeflux/.build/video-frames/arm64-apple-macosx/debug/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests",
+    "--testing-library",
+    "swift-testing",
+    "--no-parallel",
+    "--filter",
+    "SemanticVideoFrameTests"
+  ],
+  "exit_code": -6,
+  "wall_seconds": 11.704850292007904,
+  "builds": 0,
+  "retries": 0
+}

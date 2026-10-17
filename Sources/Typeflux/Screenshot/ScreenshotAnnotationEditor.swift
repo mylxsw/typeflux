@@ -819,7 +819,8 @@ extension ScreenshotAnnotationEditor {
         case .redo: redo()
         case .resetStyles: resetToolStyles()
         case .toggleToolbarPlacement: toggleToolbarPlacement()
-        case .beautify, .toggleColorPanel, .pickColor, .cancel, .save, .copy, .copyAndSave, .pin, .scrollCapture, .record, .followUp,
+        case .beautify, .toggleBackgroundRemoval, .toggleColorPanel, .pickColor, .cancel, .save, .copy,
+             .copyAndSave, .pin, .scrollCapture, .record, .followUp,
              .toggleMoreMenu, .toggleSensitivePanel, .dragToolbar:
             return false
         }

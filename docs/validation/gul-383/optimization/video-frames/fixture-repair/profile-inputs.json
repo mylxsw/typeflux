@@ -1,0 +1,12 @@
+{
+  "Swift Testing6735840775826749234_0.29184.profraw": {
+    "sha256": "1229ac1d91be5cc82834d78a27cf4d8847ec690ef6e95123f69f1f5dfabfd36f",
+    "exit_code": 0,
+    "stderr": ""
+  },
+  "XCTest6735840775826749234_0.29180.profraw": {
+    "sha256": "e0a91dac1e265a7ecc967b089dabd38a5c05367c1b47b8b9145ed5eb9d4cec2a",
+    "exit_code": 0,
+    "stderr": ""
+  }
+}

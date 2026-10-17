@@ -235,8 +235,14 @@ final class ScreenshotCoordinator {
         let image: CGImage
         do {
             // Only the rendered image leaves the overlay, so nothing under a mosaic is ever copied or saved.
-            image = try ScreenshotBeautificationRenderer.render(render(display, rect, annotations),
-                                                               scale: display.scale, settings: beautification)
+            let base: CGImage
+            if let foreground = overlay.backgroundRemovedImage(displayID: displayID, rect: rect) {
+                let processed = ScreenSnapshot.Display(id: display.id, frame: rect, scale: display.scale, image: foreground)
+                base = try render(processed, rect, annotations)
+            } else {
+                base = try render(display, rect, annotations)
+            }
+            image = try ScreenshotBeautificationRenderer.render(base, scale: display.scale, settings: beautification)
         } catch {
             teardown()
             toast.show(.failed)

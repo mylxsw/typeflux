@@ -66,6 +66,9 @@ final class ScreenshotOverlayView: NSView {
 
     private let imageLayer = CALayer()
     private let dimLayer = CAShapeLayer()
+    let backgroundTransition = ScreenshotBackgroundRemovalTransition()
+    private var previewRegion: CGRect?
+    private var previewResult: CGImage?
     private let canvas: ScreenshotAnnotationCanvasView
     private let chrome: ScreenshotOverlayChromeView
     let toolbarModel = ScreenshotEditorToolbarModel()
@@ -74,6 +77,7 @@ final class ScreenshotOverlayView: NSView {
     /// The field for typing a text annotation, while one is typed.
     private(set) var textField: NSTextField?
     private var textOrigin: CGPoint = .zero
+    let backgroundRemoval: ScreenshotBackgroundRemovalState
     let mosaicPreparation = ScreenshotMosaicPreparation()
     private let textMeasurer: (any ScreenshotTextHeightMeasuring)?
     /// Finds sensitive text once a region is chosen and keeps the panel that suggests mosaics.
@@ -84,9 +88,11 @@ final class ScreenshotOverlayView: NSView {
 
     init(display: ScreenSnapshot.Display, windows: [ScreenSnapshot.Window],
          initialModifierFlags: NSEvent.ModifierFlags = [],
+         backgroundProcessor: ScreenshotBackgroundRemovalState.Processor? = nil,
          textMeasurer: (any ScreenshotTextHeightMeasuring)? = nil,
          sensitiveScanner: (any ScreenshotSensitiveInfoScanning)? = nil,
          toolStyles: ScreenshotToolStyleStore = ScreenshotToolStyleStore()) {
+        backgroundRemoval = backgroundProcessor.map { ScreenshotBackgroundRemovalState(process: $0) } ?? ScreenshotBackgroundRemovalState()
         self.display = display
         shiftHeld = initialModifierFlags.contains(.shift)
         self.textMeasurer = textMeasurer
@@ -110,12 +116,15 @@ final class ScreenshotOverlayView: NSView {
         layer?.addSublayer(imageLayer)
         layer?.addSublayer(dimLayer)
         canvas.autoresizingMask = [.width, .height]
+        addSubview(backgroundTransition)
         addSubview(canvas)
         chrome.autoresizingMask = [.width, .height]
         addSubview(chrome)
         editor.preparesMosaicGeometry = textMeasurer != nil
         mosaicPreparation.onChange = { [weak self] in self?.refresh() }
         toolbarModel.onAction = { [weak self] action in self?.perform(action) }
+        backgroundTransition.onFinish = { [weak self] in self?.refresh() }
+        backgroundRemoval.onChange = { [weak self] in self?.refresh() }
         connectSensitiveInfo()
         refresh()
     }
@@ -138,6 +147,9 @@ final class ScreenshotOverlayView: NSView {
     /// Lets go of the frozen image as soon as the overlay closes.
     func releaseImage() {
         beautificationPanel.dismiss()
+        backgroundTransition.cancel()
+        previewResult = nil
+        backgroundRemoval.reset()
         mosaicPreparation.retire()
         editor.cancelGeometry()
         sensitiveInfo.cancel()
@@ -240,6 +252,7 @@ final class ScreenshotOverlayView: NSView {
     /// Editing has started: the region stays put, including its beautification settings.
     var isAnnotating: Bool {
         editor.tool != nil || !editor.document.isEmpty || editor.beautification.isEnabled
+            || backgroundRemoval.image != nil || backgroundRemoval.isProcessing
     }
 
     // MARK: Keys
@@ -380,9 +393,10 @@ final class ScreenshotOverlayView: NSView {
         if selection.nudge(by: offset) == .changed { refresh() }
     }
 
-    /// Capturing again would drop annotations and beautification, so it is only offered before editing.
+    /// Capturing again would drop the current edits, so it is only offered before editing.
     var canScrollCapture: Bool {
         editor.document.isEmpty && textField == nil && !editor.beautification.isEnabled
+            && backgroundRemoval.image == nil && !backgroundRemoval.isProcessing
     }
 
     /// S or the toolbar button: hands the region over to a scrolling capture.
@@ -394,6 +408,7 @@ final class ScreenshotOverlayView: NSView {
     /// Uses the region as the toolbar or a key would; nothing happens while it is being dragged.
     func finish(_ action: ScreenshotOutputAction) {
         endTextEditing()
+        guard !backgroundRemoval.isProcessing else { return }
         guard let rect = selection.rect, !selection.isDragging, !editor.isDragging else { return }
         mosaicPreparation.cancel(); editor.cancelGeometry()
         onEvent?(self, .finish(action, rect, editor.document.annotations))
@@ -407,6 +422,11 @@ final class ScreenshotOverlayView: NSView {
         case .beautify:
             presentBeautification()
             return
+        case .toggleBackgroundRemoval:
+            guard ScreenshotBackgroundRemoval.isSupported, !selection.isDragging, !editor.isDragging,
+                  let rect = selection.rect,
+                  let source = try? ScreenshotImageExporter.crop(display, to: rect.offsetBy(dx: display.frame.minX, dy: display.frame.minY)) else { return }
+            backgroundRemoval.toggle(source: source)
         case .toggleColorPanel:
             showsColorPanel.toggle()
             isPickingColor = false
@@ -451,8 +471,11 @@ final class ScreenshotOverlayView: NSView {
     }
 
     private func presentBeautification() {
-        guard let rect = selection.rect, !selection.isDragging, !editor.isDragging, let window else { return }
-        let local = ScreenSnapshot.Display(id: display.id, frame: bounds, scale: display.scale, image: display.image)
+        guard let rect = selection.rect, !selection.isDragging, !editor.isDragging,
+              !backgroundRemoval.isProcessing, let window else { return }
+        let foreground = backgroundRemoval.image
+        let local = ScreenSnapshot.Display(id: display.id, frame: foreground == nil ? bounds : rect,
+                                           scale: display.scale, image: foreground ?? display.image)
         mosaicPreparation.cancel()
         editor.cancelGeometry()
         do {
@@ -587,6 +610,25 @@ final class ScreenshotOverlayView: NSView {
     }
 
     func refresh() {
+        backgroundRemoval.updateRegion(selection.rect)
+        if previewRegion != selection.rect {
+            backgroundTransition.cancel()
+            previewResult = nil
+            previewRegion = selection.rect
+        }
+        let result = backgroundRemoval.image
+        if result !== previewResult {
+            if let result, let rect = selection.rect,
+               let original = try? ScreenshotImageExporter.crop(display, to: rect.offsetBy(
+                   dx: display.frame.minX, dy: display.frame.minY)) {
+                backgroundTransition.show(result, original: original, in: rect)
+            } else {
+                backgroundTransition.restore()
+            }
+            previewResult = result
+        }
+        canvas.suppressesBackgroundPreview = backgroundTransition.isTransitioning
+        canvas.backgroundRemovedImage = result
         prepareMosaicGeometry()
         CATransaction.begin()
         CATransaction.setDisableActions(true)
@@ -619,13 +661,17 @@ final class ScreenshotOverlayView: NSView {
 
     private func refreshToolbar() {
         // A selected mark shows its own options; changing them restyles it.
-        let state = ScreenshotEditorToolbarModel.State(editor: editor, showsColorPanel: showsColorPanel,
+        var state = ScreenshotEditorToolbarModel.State(editor: editor, showsColorPanel: showsColorPanel,
                                                        isPickingColor: isPickingColor,
                                                        canScrollCapture: canScrollCapture,
                                                        showsMoreMenu: showsMoreMenu,
                                                        canShowSensitivePanel: sensitiveInfo.hasFindings,
                                                        showsSensitivePanel: sensitiveInfo.isPanelShown,
                                                        mosaicPreparation: mosaicPreparation.state)
+        state.showsBackgroundRemoval = true
+        state.hasRemovedBackground = backgroundRemoval.image != nil
+        state.isRemovingBackground = backgroundRemoval.isProcessing
+        state.backgroundNoticeKey = backgroundRemoval.noticeKey
         toolbarModel.state = state
         guard let rect = selection.rect, !selection.isDragging else {
             toolbar?.isHidden = true

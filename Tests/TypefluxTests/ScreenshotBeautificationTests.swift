@@ -214,6 +214,45 @@ final class ScreenshotBeautificationTests: XCTestCase {
 }
 
 extension ScreenshotBeautificationTests {
+    func testBeautificationPreviewsTheFinishedCutoutAndWaitsForProcessing() async throws {
+        try XCTSkipIf(!ScreenshotBackgroundRemoval.isSupported, "Foreground removal requires macOS 14")
+        let context = try XCTUnwrap(CGContext(data: nil, width: 400, height: 200, bitsPerComponent: 8,
+            bytesPerRow: 0, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        let foreground = try XCTUnwrap(context.makeImage())
+        let display = ScreenSnapshot.Display(id: 1, frame: CGRect(x: 400, y: 100, width: 1200, height: 800),
+                                             scale: 1, image: source(width: 1200, height: 800))
+        let view = ScreenshotOverlayView(display: display, windows: [], backgroundProcessor: { _ in foreground })
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 1200, height: 800),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = view
+        defer { view.releaseImage(); window.close() }
+        view.mouseDown(at: CGPoint(x: 100, y: 100), clickCount: 1)
+        view.mouseDragged(to: CGPoint(x: 500, y: 300))
+        view.mouseUp(at: CGPoint(x: 500, y: 300))
+        let done = expectation(description: "Cutout finished")
+        view.backgroundRemoval.onChange = { [weak view] in
+            view?.refresh()
+            if view?.backgroundRemoval.image != nil { done.fulfill() }
+        }
+        view.perform(.toggleBackgroundRemoval)
+        XCTAssertTrue(view.backgroundRemoval.isProcessing)
+        view.perform(.beautify)
+        XCTAssertNil(view.beautificationPanel.panel, "The source must be stable before opening a draft")
+        await fulfillment(of: [done], timeout: 2)
+        view.perform(.beautification(ScreenshotBeautification(isEnabled: true, background: .white,
+                                                              padding: 0, cornerRadius: 0, shadow: 0)))
+        view.perform(.beautify)
+        let host = try XCTUnwrap(view.beautificationPanel.panel?.contentView
+            as? NSHostingView<ScreenshotBeautificationView>)
+        let preview = try XCTUnwrap(host.rootView.model.image)
+        XCTAssertEqual(preview.width, 400)
+        XCTAssertEqual(preview.height, 200)
+        XCTAssertEqual(try pixel(preview, 30, 30), [255, 255, 255, 255],
+                       "The transparent cutout shows the selected background instead of the frozen desktop")
+    }
+
     func testPanelCancelApplyAndReopenKeepDraftsIsolated() throws {
         let parent = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 1200, height: 800),
                               styleMask: [.titled], backing: .buffered, defer: false)

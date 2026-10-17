@@ -1,0 +1,22 @@
+{
+  "source-fingerprints": {
+    "count": 2417,
+    "mismatches": [
+      "Tests/TypefluxTests/SemanticVideoFrameTests.swift"
+    ]
+  },
+  "production-objects": {
+    "count": 1117,
+    "mismatches": []
+  },
+  "binary-sha256": {
+    "count": 1,
+    "mismatches": []
+  },
+  "tool_binaries_match": 4,
+  "fixtures": {
+    "short-scene.mov": "7db4b38eca51b68f458481fee84c1aa5a3e119e5e29d9faf166a035bbd99ddd2",
+    "static-scene.mov": "263f17d7cdaae6f671ded7c07a83ca22429151f5f0a1f05414fa4bdbbf31093e",
+    "longer-audio.mov": "902e4d62bc5f6b745963c89766e680b917a8cd1104c9ef733f698b31d73195ec"
+  }
+}

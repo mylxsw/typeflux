@@ -24,7 +24,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private let conversationFrameAutosaveName: NSWindow.FrameAutosaveName
     private var launcher: AskFloatingPanel?
     private weak var launcherEditor: NSTextView?
-    private var launcherHeight = AskMetrics.launcherHeight(editor: 32, banners: 0)
+    /// The expanded launcher keeps one height; open at it so the first report changes nothing.
+    private var launcherHeight = AskLauncherWindowMode.expandedHeight
     private let launcherHeightAnimator = AskLauncherHeightAnimator()
     let filePreview: AskFilePreviewController
     private var launcherOpeningTop: CGFloat?
@@ -374,6 +375,11 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         let height = min(requestedHeight, screen.map { max(1, $0.height - AskLauncherPlacement.screenMargin * 2) }
                          ?? requestedHeight)
         let viewport = model.launcherViewport
+        // Moving the highlight or a new batch reports the same height; there is
+        // nothing to animate, re-shadow or re-place for it.
+        if !launcherHeightAnimator.isAnimating, viewport.height == height, abs(launcher.frame.height - height) < 0.5 {
+            return
+        }
         let visible = viewport.height ?? launcher.frame.height
         let animated = launcher.isVisible && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         if animated, height > launcher.frame.height { setLauncherPanelHeight(height) }

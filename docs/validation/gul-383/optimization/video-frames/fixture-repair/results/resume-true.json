@@ -1,0 +1,12 @@
+{
+  "encoded_times" : [
+    0,
+    1.5,
+    2,
+    5.9000000000000004
+  ],
+  "IPC_resume" : true,
+  "preempt" : true,
+  "reference_bytes" : 1024,
+  "saved_next" : 1
+}

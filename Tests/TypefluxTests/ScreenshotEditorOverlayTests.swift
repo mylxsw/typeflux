@@ -43,6 +43,87 @@ final class ScreenshotEditorOverlayTests: XCTestCase {
         view.mouseUp(at: end, shift: shift)
     }
 
+    func testBackgroundRemovalPreviewToggleAndRegionInvalidation() async {
+        let display = ScreenSnapshot.Display(id: 1, frame: CGRect(x: 400, y: 100, width: 400, height: 300), scale: 2,
+                                             image: ScreenCaptureTestSupport.image(width: 800, height: 600))
+        var receivedSize: CGSize?
+        let done = expectation(description: "Processed crop")
+        let result = ScreenCaptureTestSupport.image(width: 400, height: 300)
+        let view = ScreenshotOverlayView(display: display, windows: [], backgroundProcessor: { image in
+            receivedSize = CGSize(width: image.width, height: image.height)
+            return result
+        })
+        frame(view, from: CGPoint(x: 50, y: 50), to: CGPoint(x: 250, y: 200))
+        view.backgroundRemoval.onChange = {
+            view.refresh()
+            if view.backgroundRemoval.image != nil { done.fulfill() }
+        }
+        view.perform(.toggleBackgroundRemoval)
+        XCTAssertTrue(view.toolbarModel.state.isRemovingBackground)
+        XCTAssertFalse(view.canScrollCapture)
+        await fulfillment(of: [done], timeout: 2)
+        XCTAssertEqual(receivedSize, CGSize(width: 400, height: 300))
+        XCTAssertTrue(view.toolbarModel.state.hasRemovedBackground)
+        XCTAssertTrue(view.isAnnotating)
+        view.perform(.toggleBackgroundRemoval)
+        XCTAssertNil(view.backgroundRemoval.image)
+        XCTAssertTrue(view.canScrollCapture)
+        view.handleKeyDown(Key.arrowRight, modifiers: [])
+        XCTAssertEqual(view.backgroundRemoval.region, view.selection.rect)
+        view.releaseImage()
+        XCTAssertNil(view.backgroundRemoval.image)
+    }
+
+    func testFinishingWaitsForBackgroundRemovalAndCancelDropsLateResult() async {
+        var continuation: CheckedContinuation<CGImage, Error>?
+        let began = expectation(description: "Processing")
+        let display = ScreenSnapshot.Display(id: 1, frame: CGRect(x: 0, y: 0, width: 400, height: 300), scale: 1,
+                                             image: ScreenCaptureTestSupport.image(width: 400, height: 300))
+        let view = ScreenshotOverlayView(display: display, windows: [], backgroundProcessor: { _ in
+            try await withCheckedThrowingContinuation { continuation = $0; began.fulfill() }
+        })
+        var events: [ScreenshotOverlayView.LocalEvent] = []
+        view.onEvent = { _, event in events.append(event) }
+        frame(view, from: CGPoint(x: 50, y: 50), to: CGPoint(x: 250, y: 200))
+        view.perform(.toggleBackgroundRemoval)
+        await fulfillment(of: [began], timeout: 2)
+        events.removeAll()
+        view.finish(.copy)
+        view.startScrollCapture()
+        view.perform(.record)
+        XCTAssertTrue(events.isEmpty)
+        view.releaseImage()
+        continuation?.resume(returning: display.image)
+        await Task.yield()
+        XCTAssertNil(view.backgroundRemoval.image)
+    }
+
+    func testDissolveDoesNotDelayCopyAndClosingRetiresItsLayers() async {
+        let image = ScreenCaptureTestSupport.image(width: 400, height: 300)
+        let display = ScreenSnapshot.Display(id: 1, frame: CGRect(x: 0, y: 0, width: 400, height: 300),
+                                             scale: 1, image: image)
+        let view = ScreenshotOverlayView(display: display, windows: [], backgroundProcessor: { $0 })
+        let window = NSWindow(contentRect: view.bounds, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = view
+        defer { window.orderOut(nil) }
+        frame(view, from: CGPoint(x: 50, y: 50), to: CGPoint(x: 250, y: 200))
+        let processed = expectation(description: "Processed")
+        view.backgroundRemoval.onChange = {
+            view.refresh()
+            if view.backgroundRemoval.image != nil { processed.fulfill() }
+        }
+        view.perform(.toggleBackgroundRemoval)
+        await fulfillment(of: [processed], timeout: 2)
+        XCTAssertTrue(view.backgroundTransition.isTransitioning)
+        var finished = false
+        view.onEvent = { _, event in if case .finish(.copy, _, _) = event { finished = true } }
+        view.finish(.copy)
+        XCTAssertTrue(finished, "Export uses the finished image immediately, independent of the visual effect")
+        view.releaseImage()
+        XCTAssertFalse(view.backgroundTransition.isTransitioning)
+        XCTAssertNil(view.backgroundTransition.result)
+    }
+
     func testDrawnAnnotationsTravelWithTheFinishedRegion() {
         let (view, events) = makeView()
         frame(view, from: CGPoint(x: 50, y: 50), to: CGPoint(x: 250, y: 200))

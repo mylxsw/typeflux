@@ -79,9 +79,17 @@ extension SemanticFileIndexer {
                             ordinal: ordinal,
                             input: input,
                             vector: vector,
-                            audioProgress: response.audioProgress
+                            audioProgress: response.audioProgress,
+                            videoProgress: response.videoProgress
                         )
                         try? FileManager.default.removeItem(atPath: input.path)
+                    } catch { failure = error; return false }
+                }
+                if response.media == nil, let progress = response.videoProgress {
+                    do {
+                        try waitForIdle()
+                        if cancelled() { throw CancellationError() }
+                        try store.saveVideoProgress(path: path, generation: generation, progress: progress)
                     } catch { failure = error; return false }
                 }
                 if response.media == nil, let progress = response.audioProgress {

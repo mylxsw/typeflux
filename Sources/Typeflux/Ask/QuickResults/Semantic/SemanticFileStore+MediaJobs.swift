@@ -5,6 +5,12 @@ extension SemanticFileStore {
     static let mediaProvenance = "model=\(SemanticModel.sha256);projector=\(SemanticMediaModel.sha256);prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1"
 
     static let audioProvenance = mediaProvenance + ";" + SemanticAudioWindows.recipe
+    static let videoProvenance = mediaProvenance + ";" + SemanticVideoFrames.recipe
+
+    static func mediaVectorProvenance(_ path: String, kind: SemanticMediaInput.Kind) -> String {
+        if SemanticMediaPriority.of(path) == .audio { return audioProvenance }
+        return SemanticMediaPriority.of(path) == .video && kind == .image ? videoProvenance : mediaProvenance
+    }
 
     func prepareMediaJobSchema() throws {
         try transaction {
@@ -31,8 +37,10 @@ extension SemanticFileStore {
             try sql("CREATE INDEX IF NOT EXISTS media_generation ON media_jobs(generation)")
             try addColumn("media_jobs", name: "recipe", declaration: "TEXT NOT NULL DEFAULT ''")
             try addColumn("media_segments", name: "end_time", declaration: "REAL")
+            try addColumn("media_jobs", name: "video_progress", declaration: "BLOB")
             try addColumn("media_jobs", name: "audio_next", declaration: "REAL")
             try addColumn("media_jobs", name: "audio_covered", declaration: "REAL")
+            try queueVideoRecipeUpgrade()
             let extensions = SemanticMediaPriority.audioExtensions.sorted()
             let suffixes = extensions.map { _ in "lower(substr(c.path,-?))=?" }.joined(separator: " OR ")
             try execute("""
@@ -109,7 +117,8 @@ extension SemanticFileStore {
         ordinal: Int,
         input: SemanticMediaInput,
         vector: [Float],
-        audioProgress: SemanticAudioProgress? = nil
+        audioProgress: SemanticAudioProgress? = nil,
+        videoProgress: SemanticVideoProgress? = nil
     ) throws {
         guard Self.valid(vector),
               input.time.map({ $0.isFinite && $0 >= 0 }) ?? true,
@@ -129,6 +138,9 @@ extension SemanticFileStore {
                     path,
                     generation
                 ])
+                if let videoProgress {
+                    try saveVideoProgressLocked(path: path, generation: generation, progress: videoProgress)
+                }
                 if let audioProgress {
                     try saveAudioProgressLocked(path: path, generation: generation, progress: audioProgress)
                 }
@@ -162,11 +174,13 @@ extension SemanticFileStore {
                 INSERT INTO chunks(path,text,time,end_time,vector,generation,modality,segment_kind,provenance)
                 SELECT path,'',time,end_time,vector,?,
                     CASE WHEN kind='audio' THEN 'audio' ELSE ? END,
-                    CASE WHEN kind='audio' THEN 'audio-window' ELSE ? END,?
+                    CASE WHEN kind='audio' THEN 'audio-window' ELSE ? END,
+                    CASE WHEN kind='audio' THEN ? ELSE ? END
                     FROM media_segments WHERE path=? ORDER BY ordinal
                 """, [generation, SemanticMediaPriority.of(path) == .video ? "video" : "image",
                       SemanticMediaPriority.of(path) == .video ? "video-frame" : "image",
-                      SemanticMediaPriority.of(path) == .audio ? Self.audioProvenance : Self.mediaProvenance, path])
+                      Self.mediaVectorProvenance(path, kind: .audio),
+                      Self.mediaVectorProvenance(path, kind: .image), path])
                 try recordLocked(.vectorsPublished, count: segments)
                 let text =
                     try statement(
@@ -201,12 +215,12 @@ extension SemanticFileStore {
         try lock.withLock {
             let row = try statement("""
             SELECT version FROM files WHERE path=? AND NOT EXISTS(
-                SELECT 1 FROM chunks c WHERE c.path=files.path AND (c.provenance IS NULL OR c.provenance NOT IN (?,?)))
+                SELECT 1 FROM chunks c WHERE c.path=files.path AND (c.provenance IS NULL OR c.provenance NOT IN (?,?,?)))
                 AND EXISTS(SELECT 1 FROM jobs j WHERE j.path=files.path AND j.recipe=? AND j.state='done')
             """)
             defer { sqlite3_finalize(row) }
-            bind(row, [path, SemanticMediaPriority.of(path) == .audio ? Self.audioProvenance : Self.mediaProvenance,
-                       Self.imageRecipe, Self.mediaRecipe(path)])
+            bind(row, [path, Self.mediaVectorProvenance(path, kind: .image),
+                       Self.imageRecipe, Self.mediaVectorProvenance(path, kind: .audio), Self.mediaRecipe(path)])
             if sqlite3_step(row) != SQLITE_ROW {
                 return false
             }
@@ -249,7 +263,8 @@ extension SemanticFileStore {
                 videoFrames: images,
                 imageDone: images > 0,
                 audioUntil: saved ? sqlite3_column_double(checkpoint, 0) : sqlite3_column_double(row, 3),
-                audioCoveredUntil: saved ? sqlite3_column_double(checkpoint, 1) : sqlite3_column_double(row, 3)
+                audioCoveredUntil: saved ? sqlite3_column_double(checkpoint, 1) : sqlite3_column_double(row, 3),
+                videoProgress: try videoProgressLocked(path: path, generation: generation)
             )
         }
     }

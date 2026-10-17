@@ -143,8 +143,9 @@ struct AskLauncherMotionTests {
             try await Task.sleep(for: .milliseconds(12))
             try sample()
         }
-        #expect((heights.max() ?? 0) - (heights.min() ?? 0) > 1,
-                "changing results must exercise the adaptive launcher height")
+        #expect((heights.max() ?? 0) - (heights.min() ?? 0) < 1,
+                "typing, deleting and new results must not resize the expanded launcher")
+        #expect(abs(homeHeight - AskLauncherWindowMode.expandedHeight) < 1)
     }
 
     @Test func returnAndNumberShortcutsCannotRunTheDisplayedOldBatch() async throws {

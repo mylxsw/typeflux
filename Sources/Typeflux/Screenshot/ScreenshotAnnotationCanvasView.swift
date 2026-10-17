@@ -22,6 +22,19 @@ final class ScreenshotAnnotationCanvasView: NSView {
         var crop: CGRect
     }
 
+    var suppressesBackgroundPreview = false {
+        didSet { if suppressesBackgroundPreview != oldValue { needsDisplay = true } }
+    }
+
+    var backgroundRemovedImage: CGImage? {
+        didSet {
+            if backgroundRemovedImage !== oldValue {
+                patches = [:]
+                needsDisplay = true
+            }
+        }
+    }
+
     var model = Model() {
         didSet { if model != oldValue { needsDisplay = true } }
     }
@@ -45,6 +58,7 @@ final class ScreenshotAnnotationCanvasView: NSView {
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 
     func releaseImage() {
+        backgroundRemovedImage = nil
         source = nil
         patches = [:]
     }
@@ -61,6 +75,10 @@ final class ScreenshotAnnotationCanvasView: NSView {
         guard let crop = model.crop else { return }
         context.saveGState()
         context.clip(to: crop)
+        if let image = backgroundRemovedImage, !suppressesBackgroundPreview {
+            Self.drawTransparencyGrid(in: crop, context: context)
+            ScreenshotRenderer.drawImage(image, in: crop, context: context)
+        }
         for annotation in model.annotations {
             guard let mosaic = annotation.mosaic,
                   let patch = patch(for: annotation.id, mosaic: mosaic, color: annotation.style.color, crop: crop)
@@ -72,14 +90,27 @@ final class ScreenshotAnnotationCanvasView: NSView {
         if let selection = model.selection { drawSelection(selection, in: context) }
     }
 
+    static func drawTransparencyGrid(in rect: CGRect, context: CGContext) {
+        let side: CGFloat = 8
+        context.setFillColor(NSColor(white: 0.78, alpha: 1).cgColor)
+        context.fill(rect)
+        context.setFillColor(NSColor(white: 0.94, alpha: 1).cgColor)
+        for row in 0 ..< Int(ceil(rect.height / side)) {
+            for column in 0 ..< Int(ceil(rect.width / side)) where (row + column).isMultiple(of: 2) {
+                context.fill(CGRect(x: rect.minX + CGFloat(column) * side,
+                                    y: rect.minY + CGFloat(row) * side, width: side, height: side))
+            }
+        }
+    }
+
     private func patch(for id: UUID, mosaic: ScreenshotMosaic, color: ScreenshotAnnotationStyle.Color,
                        crop: CGRect) -> ScreenshotRenderer.MosaicPatch? {
         let key = PatchKey(mosaic: mosaic, color: color, crop: crop)
         if let cached = patches[id], cached.key == key { return cached.patch }
-        guard let source else { return nil }
+        guard let source = backgroundRemovedImage ?? source else { return nil }
         patchComputations += 1
         let patch = ScreenshotRenderer.mosaicPatch(for: mosaic, color: color, source: source,
-                                                   sourceFrame: CGRect(origin: .zero, size: bounds.size), crop: crop)
+                                                   sourceFrame: backgroundRemovedImage == nil ? CGRect(origin: .zero, size: bounds.size) : crop, crop: crop)
         patches[id] = (key, patch)
         return patch
     }

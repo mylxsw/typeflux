@@ -1,9 +1,9 @@
 {
-  "baseline": "6326a0bab21f1628876352b417d9e54b79160fea",
+  "baseline": "2a383bd80cc3af7e155d9d9e951c6fa5907b46bd",
   "denominator": "Added or modified executable Swift lines in Sources/Typeflux against the baseline, including new files, intersected with unique LLVM LCOV DA records. Tests, local tooling, resources and validation artifacts excluded.",
-  "executable": 295,
-  "covered": 288,
-  "percent": 97.63,
+  "executable": 303,
+  "covered": 296,
+  "percent": 97.69,
   "files": {
     "Sources/Typeflux/Screenshot/LongImage/ScreenshotLongImageCanvas.swift": {
       "executable": 20,
@@ -26,8 +26,8 @@
       "uncovered": []
     },
     "Sources/Typeflux/Screenshot/ScreenshotAnnotationEditor.swift": {
-      "executable": 3,
-      "covered": 3,
+      "executable": 4,
+      "covered": 4,
       "percent": 100.0,
       "uncovered": []
     },
@@ -48,8 +48,8 @@
       ]
     },
     "Sources/Typeflux/Screenshot/ScreenshotCoordinator.swift": {
-      "executable": 11,
-      "covered": 11,
+      "executable": 13,
+      "covered": 13,
       "percent": 100.0,
       "uncovered": []
     },
@@ -58,8 +58,8 @@
       "covered": 5,
       "percent": 71.43,
       "uncovered": [
-        327,
-        328
+        352,
+        353
       ]
     },
     "Sources/Typeflux/Screenshot/ScreenshotOverlayController.swift": {
@@ -69,11 +69,11 @@
       "uncovered": []
     },
     "Sources/Typeflux/Screenshot/ScreenshotOverlayView.swift": {
-      "executable": 22,
-      "covered": 21,
-      "percent": 95.45,
+      "executable": 27,
+      "covered": 26,
+      "percent": 96.3,
       "uncovered": [
-        465
+        488
       ]
     },
     "Sources/Typeflux/Screenshot/ScreenshotPresenting.swift": {

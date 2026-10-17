@@ -16,6 +16,11 @@ enum AskLauncherWindowMode: String, CaseIterable, Sendable {
     static var simpleHeight: CGFloat {
         AskMetrics.launcherHeaderHeight(editor: 32) + AskMetrics.launcherGutter * 2
     }
+
+    /// The launcher's one height while expanded; results fill it and scroll.
+    static var expandedHeight: CGFloat {
+        AskMetrics.launcherWindowHeight
+    }
 }
 
 extension SettingsStore {

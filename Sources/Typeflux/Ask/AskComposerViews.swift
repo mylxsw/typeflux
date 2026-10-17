@@ -240,6 +240,12 @@ struct AskComposer: View {
                     ? L("ask.quick.action.open") : L("ask.quick.action.quit")
                 let enabled = launcherMonitor.confirming != nil || launcherMonitor.selected(in: rows) != nil
                 action = .confirm(title, enabled: enabled)
+            } else if display.systemInfo {
+                let info = model.systemInfo
+                let rows = info.rows(model.systemInfoStore.snapshot, filter: draft.wrappedValue.text)
+                let searching = !draft.wrappedValue.text.trimmingCharacters(in: .whitespaces).isEmpty
+                action = .confirm(L("system.info.copy"),
+                                  enabled: info.selected(in: rows) != nil || (searching && !rows.isEmpty))
             } else {
                 action = .plugin(display, current: launcherPluginInputIsCurrent,
                                  canAskAI: model.canOpenChatFromLauncher && model.submissionPreflights[true] == nil,
@@ -719,9 +725,11 @@ struct AskComposer: View {
                                     phase: plugins.phase, previous: plugins.previous, partial: plugins.partial,
                                     comparing: plugins.comparing, highlighted: asks ? pluginHighlight : 0,
                                     offersAskAI: asks && ![AskKillAppPlugin.id, AskSystemMonitorPlugin.id,
-                                                          AskEmojiPlugin.id, AskCalendarPlugin.id].contains(plugin.id),
+                                                          AskSystemInfoPlugin.id, AskEmojiPlugin.id,
+                                                          AskCalendarPlugin.id].contains(plugin.id),
                                     savesNoteWhenDone: plugins.savesNoteWhenDone,
                                     systemMonitor: plugin.id == AskSystemMonitorPlugin.id,
+                                    systemInfo: plugin.id == AskSystemInfoPlugin.id,
                                     calendar: plugin.id == AskCalendarPlugin.id,
                                     translation: plugin.id == AskTranslatePlugin.id
                                         && !AskTranslatePlugin.opensWordBook(plugins.keyword?.options ?? [:])
@@ -873,6 +881,7 @@ struct AskComposer: View {
         guard launcher, !active, let display = pluginDisplay else { return false }
         if quickActionsKey(key) { return true }
         if display.systemMonitor, let handled = systemMonitorKey(key) { return handled }
+        if display.systemInfo, let handled = systemInfoKey(key) { return handled }
         if display.calendar { return calendarKey(key) }
         let selection = draft.wrappedValue.sentSelection, text = draft.wrappedValue.text
         let language = AppLocalization.shared.language
@@ -1024,9 +1033,33 @@ struct AskComposer: View {
         return true
     }
 
+    /// Keys for this Mac's configuration (`sys`); nil leaves the key to keyword mode's usual handling.
+    private func systemInfoKey(_ key: AskCommandKey) -> Bool? {
+        let mapped: SystemInfoKey
+        switch key {
+        case .up: mapped = .up
+        case .down: mapped = .down
+        case .enter: mapped = .enter
+        case .tab: mapped = .tab
+        case .shiftTab: mapped = .shiftTab
+        case .escape: mapped = .escape
+        case let .number(number): mapped = .number(number)
+        case .commandC: mapped = .copy
+        case .shiftCommandC: mapped = .copyReport
+        default: return nil
+        }
+        let effect = model.systemInfo.handle(mapped, snapshot: model.systemInfoStore.snapshot,
+                                             filter: draft.wrappedValue.text)
+        guard effect != .unhandled else { return false }
+        if model.performSystemInfoEffect(effect) == .close { onDismiss() }
+        return true
+    }
+
     var launcherCanOpenFeatureWindow: Bool {
         guard plugins.isActive, !active, !voice.isActive, model.workflowApproval == nil else { return false }
         if pluginDisplay?.calendar == true || pluginDisplay?.systemMonitor == true { return true }
+        // `sys` carries only its filter as output: there is no result to move into a window.
+        if pluginDisplay?.systemInfo == true { return false }
         guard launcherPluginInputIsCurrent, plugins.canHandOff else { return false }
         // The result window renders text. Lists and images must keep their feature's interface.
         if let output = plugins.currentOutput {
@@ -1378,7 +1411,7 @@ struct AskComposer: View {
                 .frame(height: launcherResultsViewportHeight, alignment: .top)
                 // The card's visible height follows the panel's motion frame by frame.
                 .modifier(AskLauncherViewportClip(viewport: model.launcherViewport,
-                                                  chrome: desiredLauncherHeight - launcherResultsViewportHeight,
+                                                  chrome: launcherChromeHeight,
                                                   available: availableHeight.map { $0 + AskMetrics.launcherGutter * 2 },
                                                   natural: launcherResultsViewportHeight))
             }
@@ -1437,18 +1470,45 @@ struct AskComposer: View {
         }
     }
 
-    /// The results area's own height. `AskLauncherViewportClip` shows as much of
-    /// it as the card's animated height allows, so the footer follows the motion
-    /// instead of jumping to the target height.
-    private var launcherResultsViewportHeight: CGFloat {
+    /// The results' own height: the voice panel, home, history, keyword or quick results.
+    private var launcherNaturalResultsHeight: CGFloat {
         active ? voicePanelHeight : resultsHeight
+    }
+
+    /// Everything the launcher card shows besides its results area, gutters included.
+    private var launcherChromeHeight: CGFloat {
+        desiredLauncherHeight - launcherNaturalResultsHeight
+    }
+
+    /// Results that fill whatever room they are given: they scroll or leave space below.
+    /// Keyword views with a designed size (the system monitor, a long answer) do not.
+    private var launcherResultsFillViewport: Bool {
+        active || pluginDisplay == nil
+    }
+
+    /// The launcher keeps one height while it is expanded, like Spotlight: typing,
+    /// deleting and new results never resize it, so nothing jumps or animates while
+    /// the user types. Only the simple window mode's empty search bar is shorter, and
+    /// a keyword view designed taller than the card makes it grow.
+    private var launcherTargetHeight: CGFloat {
+        if launcherCollapsed { return AskLauncherWindowMode.simpleHeight }
+        let content = launcherResultsFillViewport ? 0 : launcherNaturalResultsHeight
+        return max(AskLauncherWindowMode.expandedHeight, launcherChromeHeight + content)
+    }
+
+    /// The results area inside the launcher's fixed height; lists fill it and scroll.
+    /// `AskLauncherViewportClip` shows as much of it as the card's visible height allows.
+    private var launcherResultsViewportHeight: CGFloat {
+        guard launcher, !launcherCollapsed else { return launcherNaturalResultsHeight }
+        return max(0, launcherTargetHeight - launcherChromeHeight)
     }
 
     private var launcherResults: some View {
         Group {
             if active {
                 // Recording takes the results' place at their height, so the panel stays put.
-                AskVoicePanel(live: voice.live, listening: listening, height: voicePanelHeight, token: contextToken)
+                AskVoicePanel(live: voice.live, listening: listening, height: launcherResultsViewportHeight,
+                              token: contextToken)
             } else if model.launcherHistoryMode {
                 AskLauncherInputHistoryView(model: model, store: inputHistory,
                                             viewportHeight: launcherResultsViewportHeight)
@@ -1464,6 +1524,12 @@ struct AskComposer: View {
                                           onEffect: { effect in
                                               if model.performSystemMonitorEffect(effect) == .close { onDismiss() }
                                           })
+            } else if let pluginDisplay, pluginDisplay.systemInfo {
+                SystemInfoLauncherView(store: model.systemInfoStore, model: model.systemInfo,
+                                       filter: draft.wrappedValue.text,
+                                       onEffect: { effect in
+                                           if model.performSystemInfoEffect(effect) == .close { onDismiss() }
+                                       })
             } else if let pluginDisplay, pluginDisplay.calendar {
                 CalendarLauncherView(model: model.calendarLauncher, onEffect: performCalendarEffect,
                                      onSelect: { day in
@@ -1709,6 +1775,14 @@ struct AskComposer: View {
                 return true
             }
         }
+        // `sys` steps back: the chosen row, the filter, then the section to the overview.
+        if pluginDisplay?.systemInfo == true {
+            if systemInfoKey(.escape) == true { return true }
+            if !draft.wrappedValue.text.isEmpty {
+                draft.wrappedValue.text = ""
+                return true
+            }
+        }
         if plugins.plugin?.id == AskEmojiPlugin.id, !draft.wrappedValue.text.isEmpty {
             draft.wrappedValue.text = ""
             return true
@@ -1830,6 +1904,13 @@ struct AskComposer: View {
         if launcher, key == .enter, !plugins.isActive, !showsQuickResults,
            plugins.hint?.pluginID != AskSystemMonitorPlugin.id || pluginHighlight == 0,
            model.enterLauncherKeywordFromText(pluginID: AskSystemMonitorPlugin.id) {
+            pluginHighlight = 0
+            pluginReserve = 0
+            return true
+        }
+        if launcher, key == .enter, !plugins.isActive, !showsQuickResults,
+           plugins.hint?.pluginID != AskSystemInfoPlugin.id || pluginHighlight == 0,
+           model.enterLauncherKeywordFromText(pluginID: AskSystemInfoPlugin.id) {
             pluginHighlight = 0
             pluginReserve = 0
             return true
@@ -2070,8 +2151,9 @@ struct AskComposer: View {
                     .accessibilityIdentifier("ask.launcher.featureWindow")
                     .modifier(AskLauncherShortcutBadge(key: "O", leadingInset: 24, topInset: -5))
                 }
-                AskLauncherOpenChatButton(mode: launcherPrimaryAction.mode, enabled: launcherPrimaryAction.enabled,
-                                         disabledReason: launcherPrimaryAction.disabledReason,
+                let primary = launcherPrimaryAction
+                AskLauncherOpenChatButton(mode: primary.mode, enabled: primary.enabled, waiting: primary.waiting,
+                                         disabledReason: primary.disabledReason,
                                          tint: storageTint, action: runLauncherPrimaryAction)
             }
         }
@@ -2553,7 +2635,7 @@ struct AskComposer: View {
     }
 
     private func reportHeight() {
-        let height = launcherCollapsed ? AskLauncherWindowMode.simpleHeight : desiredLauncherHeight
+        let height = launcher ? launcherTargetHeight : desiredLauncherHeight
         // Other layout preferences may change with the first edit too. Hold the
         // native frame until the first search batch instead of resizing an empty list.
         if launcher, !model.launcherHistoryMode, quickSearch.isVisible, draft.wrappedValue.hasText,
