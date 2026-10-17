@@ -34,15 +34,20 @@ struct AskPermissionModeMenu: View {
             .withSymbolConfiguration(.init(pointSize: 17, weight: .semibold))
     }
 
-    /// A menu redraws symbol images as templates in the text colour, so the
-    /// current mode's symbol is drawn into a plain image, filled with its colour
-    /// resolved for the menu's appearance. Filling the monochrome symbol keeps its
-    /// cut-out glyph (lock, check, bolt). Other modes keep the template symbol.
+    /// Use the same symbol configuration for every menu row. SwiftUI's default
+    /// menu symbols otherwise look smaller than the coloured current mode.
+    static func menuSymbolImage(_ option: AskPermissionMode) -> NSImage? {
+        NSImage(systemSymbolName: option.symbol, accessibilityDescription: nil)?
+            .withSymbolConfiguration(.init(pointSize: 13, weight: .medium))
+    }
+
+    /// A menu redraws template symbols in the text colour. Draw the current
+    /// mode into a plain image filled with its appearance-specific colour;
+    /// other modes use the same configured symbol as a neutral template.
     static func menuImage(_ option: AskPermissionMode, selected: Bool, dark: Bool) -> NSImage? {
-        guard selected,
-              let symbol = NSImage(systemSymbolName: option.symbol, accessibilityDescription: L("ask.mode.current")),
-              let appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
-        else { return nil }
+        guard let symbol = menuSymbolImage(option) else { return nil }
+        guard selected else { return symbol }
+        guard let appearance = NSAppearance(named: dark ? .darkAqua : .aqua) else { return nil }
         let dynamic = NSColor(tint(option))
         var color = dynamic
         appearance.performAsCurrentDrawingAppearance { color = dynamic.usingColorSpace(.sRGB) ?? dynamic }
@@ -54,7 +59,7 @@ struct AskPermissionModeMenu: View {
             return true
         }
         image.isTemplate = false
-        image.accessibilityDescription = symbol.accessibilityDescription
+        image.accessibilityDescription = L("ask.mode.current")
         return image
     }
 
@@ -67,7 +72,7 @@ struct AskPermissionModeMenu: View {
                         Label {
                             Text(option.title + " · " + option.detail)
                         } icon: {
-                            Image(nsImage: image).renderingMode(.original)
+                            Image(nsImage: image).renderingMode(mode == option ? .original : .template)
                         }
                     } else {
                         Label(option.title + " · " + option.detail, systemImage: option.symbol)

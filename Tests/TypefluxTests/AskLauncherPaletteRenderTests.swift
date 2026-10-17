@@ -41,15 +41,18 @@ struct AskLauncherPaletteRenderTests {
     }
 
     @Test func `only the current mode gets a coloured menu image`() throws {
+        let size = try #require(AskPermissionModeMenu.menuSymbolImage(.strict)).size
         for mode in AskPermissionMode.allCases {
-            #expect(AskPermissionModeMenu.menuImage(mode, selected: false, dark: false) == nil,
-                    "other modes keep the menu's template symbol")
+            let neutral = try #require(AskPermissionModeMenu.menuImage(mode, selected: false, dark: false))
+            #expect(neutral.isTemplate, "other modes keep the menu's template symbol")
+            #expect(neutral.size == size, "all menu rows use the same icon size")
         }
         for dark in [false, true] {
             let appearance = try #require(NSAppearance(named: dark ? .darkAqua : .aqua))
             for mode in AskPermissionMode.allCases {
                 let image = try #require(AskPermissionModeMenu.menuImage(mode, selected: true, dark: dark))
                 #expect(!image.isTemplate, "a template image would be redrawn in the text colour")
+                #expect(image.size == size, "selection keeps the same icon size")
                 #expect(image.accessibilityDescription == L("ask.mode.current"))
                 let census = try census(draw(image))
                 var expected = NSColor.clear
@@ -77,7 +80,7 @@ struct AskLauncherPaletteRenderTests {
 
     @Test func `the coloured menu image keeps the symbol's cut-out glyph`() throws {
         for mode in AskPermissionMode.allCases {
-            let symbol = try #require(NSImage(systemSymbolName: mode.symbol, accessibilityDescription: nil))
+            let symbol = try #require(AskPermissionModeMenu.menuSymbolImage(mode))
             let coloured = try #require(AskPermissionModeMenu.menuImage(mode, selected: true, dark: true))
             #expect(coloured.size == symbol.size, "drawn at the size the menu gives its template symbols")
             // Both drawn at the size a menu shows them, on a Retina-density backing store.
