@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="840" viewBox="0 0 1600 840"><rect width="1600" height="840" fill="#f7f7f4"/><text x="60" y="78" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="40" font-weight="700" fill="#161616">Typeflux 图标方向</text><text x="60" y="116" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="20" fill="#6b6b6b">基于现有无限符号；概念稿，尚未替换客户端资源</text><rect x="60" y="150" width="474.667" height="630" rx="18" fill="#fff" stroke="#e4e4e0" stroke-width="1"/><g><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="90" y="190" width="414.667" height="300" preserveAspectRatio="xMidYMid meet">
+  <title id="c0-title">Typeflux flow loop concept</title>
+  <rect x="18" y="18" width="220" height="220" rx="49" fill="#18181B"/>
+  <path d="M128 128 C109 106 96 94 78 94 C59 94 47 109 47 128 C47 147 59 162 78 162 C96 162 109 150 128 128 C147 106 160 94 178 94 C197 94 209 109 209 128 C209 147 197 162 178 162 C160 162 147 150 128 128 Z" fill="none" stroke="#F5F2EA" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+</g><g><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="90" y="516" width="64" height="64" preserveAspectRatio="xMidYMid meet">
+  <title id="s064-title">Typeflux flow loop concept</title>
+  <rect x="18" y="18" width="220" height="220" rx="49" fill="#18181B"/>
+  <path d="M128 128 C109 106 96 94 78 94 C59 94 47 109 47 128 C47 147 59 162 78 162 C96 162 109 150 128 128 C147 106 160 94 178 94 C197 94 209 109 209 128 C209 147 197 162 178 162 C160 162 147 150 128 128 Z" fill="none" stroke="#F5F2EA" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+</g><text x="122" y="600" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">64px</text><g><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="180" y="548" width="32" height="32" preserveAspectRatio="xMidYMid meet">
+  <title id="s032-title">Typeflux flow loop concept</title>
+  <rect x="18" y="18" width="220" height="220" rx="49" fill="#18181B"/>
+  <path d="M128 128 C109 106 96 94 78 94 C59 94 47 109 47 128 C47 147 59 162 78 162 C96 162 109 150 128 128 C147 106 160 94 178 94 C197 94 209 109 209 128 C209 147 197 162 178 162 C160 162 147 150 128 128 Z" fill="none" stroke="#F5F2EA" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+</g><text x="196" y="600" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">32px</text><g><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="238" y="564" width="16" height="16" preserveAspectRatio="xMidYMid meet">
+  <title id="s016-title">Typeflux flow loop concept</title>
+  <rect x="18" y="18" width="220" height="220" rx="49" fill="#18181B"/>
+  <path d="M128 128 C109 106 96 94 78 94 C59 94 47 109 47 128 C47 147 59 162 78 162 C96 162 109 150 128 128 C147 106 160 94 178 94 C197 94 209 109 209 128 C209 147 197 162 178 162 C160 162 147 150 128 128 Z" fill="none" stroke="#F5F2EA" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+</g><text x="246" y="600" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">16px</text><text x="90.0" y="636" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#161616">A · 夜色丝带</text><text x="90.0" y="670" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">保留立体丝带，反转为深色底。</text><rect x="562.667" y="150" width="474.667" height="630" rx="18" fill="#fff" stroke="#161616" stroke-width="2"/><g><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="592.667" y="190" width="414.667" height="300" preserveAspectRatio="xMidYMid meet">
+  <title id="c1-title">Typeflux pulse loop concept</title>
+  <rect x="18" y="18" width="220" height="220" rx="49" fill="#FAF9F5"/>
+  <path d="M128 128 C108 106 94 94 76 94 C56 94 44 109 44 128 C44 147 56 162 76 162 C94 162 108 150 128 128 C149 106 163 95 182 95 H187 C207 95 218 108 218 123 V133 C218 148 207 161 187 161 H182 C163 161 149 150 128 128 Z" fill="none" stroke="#19191C" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M128 117 L139 128 L128 139 L117 128 Z" fill="#8587F6"/>
+</svg>
+</g><g><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="592.667" y="516" width="64" height="64" preserveAspectRatio="xMidYMid meet">
+  <title id="s164-title">Typeflux pulse loop concept</title>
+  <rect x="18" y="18" width="220" height="220" rx="49" fill="#FAF9F5"/>
+  <path d="M128 128 C108 106 94 94 76 94 C56 94 44 109 44 128 C44 147 56 162 76 162 C94 162 108 150 128 128 C149 106 163 95 182 95 H187 C207 95 218 108 218 123 V133 C218 148 207 161 187 161 H182 C163 161 149 150 128 128 Z" fill="none" stroke="#19191C" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M128 117 L139 128 L128 139 L117 128 Z" fill="#8587F6"/>
+</svg>
+</g><text x="624.667" y="600" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">64px</text><g><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="682.667" y="548" width="32" height="32" preserveAspectRatio="xMidYMid meet">
+  <title id="s132-title">Typeflux pulse loop concept</title>
+  <rect x="18" y="18" width="220" height="220" rx="49" fill="#FAF9F5"/>
+  <path d="M128 128 C108 106 94 94 76 94 C56 94 44 109 44 128 C44 147 56 162 76 162 C94 162 108 150 128 128 C149 106 163 95 182 95 H187 C207 95 218 108 218 123 V133 C218 148 207 161 187 161 H182 C163 161 149 150 128 128 Z" fill="none" stroke="#19191C" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M128 117 L139 128 L128 139 L117 128 Z" fill="#8587F6"/>
+</svg>
+</g><text x="698.667" y="600" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">32px</text><g><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="740.667" y="564" width="16" height="16" preserveAspectRatio="xMidYMid meet">
+  <title id="s116-title">Typeflux pulse loop concept</title>
+  <rect x="18" y="18" width="220" height="220" rx="49" fill="#FAF9F5"/>
+  <path d="M128 128 C108 106 94 94 76 94 C56 94 44 109 44 128 C44 147 56 162 76 162 C94 162 108 150 128 128 C149 106 163 95 182 95 H187 C207 95 218 108 218 123 V133 C218 148 207 161 187 161 H182 C163 161 149 150 128 128 Z" fill="none" stroke="#19191C" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M128 117 L139 128 L128 139 L117 128 Z" fill="#8587F6"/>
+</svg>
+</g><text x="748.667" y="600" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">16px</text><text x="592.6666666666667" y="636" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#161616">B · 输入之流</text><text x="592.6666666666667" y="664" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#161616" letter-spacing="1.5">RECOMMENDED</text><text x="592.6666666666667" y="698" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">左侧柔和发声，右侧收束成文字。</text><rect x="1065.33" y="150" width="474.667" height="630" rx="18" fill="#fff" stroke="#e4e4e0" stroke-width="1"/><g><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="1095.33" y="190" width="414.667" height="300" preserveAspectRatio="xMidYMid meet">
+  <title id="c2-title">Typeflux typing cursor concept</title>
+  <rect x="18" y="18" width="220" height="220" rx="49" fill="#C8B9F4"/>
+  <path d="M128 128 C109 106 96 94 78 94 C59 94 47 109 47 128 C47 147 59 162 78 162 C96 162 109 150 128 128 C147 106 160 94 178 94 C197 94 209 109 209 128 C209 147 197 162 178 162 C160 162 147 150 128 128 Z" fill="none" stroke="#202027" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="78" cy="128" r="6" fill="#F8F5EC"/>
+  <circle cx="178" cy="128" r="6" fill="#F8F5EC"/>
+</svg>
+</g><g><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="1095.33" y="516" width="64" height="64" preserveAspectRatio="xMidYMid meet">
+  <title id="s264-title">Typeflux typing cursor concept</title>
+  <rect x="18" y="18" width="220" height="220" rx="49" fill="#C8B9F4"/>
+  <path d="M128 128 C109 106 96 94 78 94 C59 94 47 109 47 128 C47 147 59 162 78 162 C96 162 109 150 128 128 C147 106 160 94 178 94 C197 94 209 109 209 128 C209 147 197 162 178 162 C160 162 147 150 128 128 Z" fill="none" stroke="#202027" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="78" cy="128" r="6" fill="#F8F5EC"/>
+  <circle cx="178" cy="128" r="6" fill="#F8F5EC"/>
+</svg>
+</g><text x="1127.33" y="600" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">64px</text><g><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="1185.33" y="548" width="32" height="32" preserveAspectRatio="xMidYMid meet">
+  <title id="s232-title">Typeflux typing cursor concept</title>
+  <rect x="18" y="18" width="220" height="220" rx="49" fill="#C8B9F4"/>
+  <path d="M128 128 C109 106 96 94 78 94 C59 94 47 109 47 128 C47 147 59 162 78 162 C96 162 109 150 128 128 C147 106 160 94 178 94 C197 94 209 109 209 128 C209 147 197 162 178 162 C160 162 147 150 128 128 Z" fill="none" stroke="#202027" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="78" cy="128" r="6" fill="#F8F5EC"/>
+  <circle cx="178" cy="128" r="6" fill="#F8F5EC"/>
+</svg>
+</g><text x="1201.33" y="600" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">32px</text><g><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title" viewBox="0 0 256 256" x="1243.33" y="564" width="16" height="16" preserveAspectRatio="xMidYMid meet">
+  <title id="s216-title">Typeflux typing cursor concept</title>
+  <rect x="18" y="18" width="220" height="220" rx="49" fill="#C8B9F4"/>
+  <path d="M128 128 C109 106 96 94 78 94 C59 94 47 109 47 128 C47 147 59 162 78 162 C96 162 109 150 128 128 C147 106 160 94 178 94 C197 94 209 109 209 128 C209 147 197 162 178 162 C160 162 147 150 128 128 Z" fill="none" stroke="#202027" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="78" cy="128" r="6" fill="#F8F5EC"/>
+  <circle cx="178" cy="128" r="6" fill="#F8F5EC"/>
+</svg>
+</g><text x="1251.33" y="600" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">16px</text><text x="1095.3333333333335" y="636" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#161616">C · 角色图标</text><text x="1095.3333333333335" y="670" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">让循环符号长出安静的表情。</text></svg>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Typeflux pulse loop concept</title>
+  <rect x="18" y="18" width="220" height="220" rx="49" fill="#FAF9F5"/>
+  <path d="M128 128 C108 106 94 94 76 94 C56 94 44 109 44 128 C44 147 56 162 76 162 C94 162 108 150 128 128 C149 106 163 95 182 95 H187 C207 95 218 108 218 123 V133 C218 148 207 161 187 161 H182 C163 161 149 150 128 128 Z" fill="none" stroke="#19191C" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M128 117 L139 128 L128 139 L117 128 Z" fill="#8587F6"/>
+</svg>

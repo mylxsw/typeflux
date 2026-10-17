@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title id="title">Typeflux typing cursor concept</title>
+  <rect x="18" y="18" width="220" height="220" rx="49" fill="#C8B9F4"/>
+  <path d="M128 128 C109 106 96 94 78 94 C59 94 47 109 47 128 C47 147 59 162 78 162 C96 162 109 150 128 128 C147 106 160 94 178 94 C197 94 209 109 209 128 C209 147 197 162 178 162 C160 162 147 150 128 128 Z" fill="none" stroke="#202027" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="78" cy="128" r="6" fill="#F8F5EC"/>
+  <circle cx="178" cy="128" r="6" fill="#F8F5EC"/>
+</svg>
