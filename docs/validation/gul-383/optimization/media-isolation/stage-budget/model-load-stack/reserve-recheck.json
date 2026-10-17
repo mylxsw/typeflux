@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "test_sampling.SamplingTests.test_waits_for_loader_then_uses_exact_owned_pid",
+    "test_sampling.SamplingTests.test_timeout_retains_partial_stdout_stderr_and_stack",
+    "test_sampling.SamplingTests.test_identity_check_cannot_consume_cleanup_reserve",
+    "-v"
+  ],
+  "working_directory": "docs/validation/gul-383/optimization/media-isolation/stage-budget",
+  "wall_seconds": 0.11385583400260657,
+  "exit_code": 0,
+  "syntax": "passed",
+  "stdout": "",
+  "stderr": "test_waits_for_loader_then_uses_exact_owned_pid (test_sampling.SamplingTests.test_waits_for_loader_then_uses_exact_owned_pid) ... ok\ntest_timeout_retains_partial_stdout_stderr_and_stack (test_sampling.SamplingTests.test_timeout_retains_partial_stdout_stderr_and_stack) ... ok\ntest_identity_check_cannot_consume_cleanup_reserve (test_sampling.SamplingTests.test_identity_check_cannot_consume_cleanup_reserve) ... ok\n\n----------------------------------------------------------------------\nRan 3 tests in 0.001s\n\nOK\n",
+  "reason": "Self-review added a second deadline check after the potentially one-second PID identity query. No new model observation."
+}

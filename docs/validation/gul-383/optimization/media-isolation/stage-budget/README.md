@@ -1,5 +1,7 @@
 # GUL-405: one screenshot with native stages and the actual work budget
 
+The later authorized [one-shot model-loading capture](model-load-stack/README.md) obtained a valid stack in 6.901 s. It observes GGUF string metadata reads through `fread` / `__read_nocancel`; the underlying latency cause remains unresolved. That continuation supersedes the profiler-availability gap below. This document retains the preceding failed capture as historical evidence.
+
 PR648 stays a draft. This continuation adds diagnostic tools and evidence only. The one screenshot observation still returned zero vectors; screenshot/OCR persistent retrieval, real 30/25 audio boundary retrieval, and short-video scene/time retrieval remain incomplete. GUL-405 and GUL-383 stay in progress. No GUL-406 work, audio/video run, successful CPU text rerun, accepted document test, policy adjustment, or timeout extension was performed.
 
 The new evidence narrows the last observed interval to `llama_model_load_from_file`. Native PID 40022 reached `swift-entry`, completed backend initialization, and emitted `model-begin`; it never emitted `model-end`, context/projector, request-read or encode markers before cancellation. This identifies the instrumented interval, not a root cause. There is no current stack inside the weight loader and no evidence that this request reached inference. Low CPU is not evidence of a memory cause.

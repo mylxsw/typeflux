@@ -1,0 +1,89 @@
+{
+  "sampled_pid": 46138,
+  "sample_started_after_model_begin_seconds": 0.06307454139459878,
+  "sample_tool_wall_seconds": 6.901318667107262,
+  "sample_count": 786,
+  "observed_leaf": "__read_nocancel",
+  "observed_path": "llama_model_load_from_file -> llama_model_loader -> gguf_init_from_reader -> string metadata -> fread -> __read_nocancel",
+  "request": {
+    "start_seconds": 8.893545083352365,
+    "end_seconds": 40.85284070833586,
+    "actual_budget_present": true,
+    "budget_id": "ObjectIdentifier(0x0000000990840300)",
+    "enabled": true,
+    "wall_seconds": 31.959295624983497,
+    "accounted_budget_yield_seconds": 28.326,
+    "accounted_yields": 309,
+    "counter_rounding_bound_seconds": 0.1545,
+    "wall_outside_accounted_yields_seconds": 3.6332956249834965,
+    "interruptions": 0
+  },
+  "native_process": {
+    "executable": "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage",
+    "stages": [
+      {
+        "stage": "swift-entry",
+        "probe_seconds": 24.131981499958783
+      },
+      {
+        "stage": "backend-begin",
+        "probe_seconds": 24.75317983329296
+      },
+      {
+        "stage": "backend-end",
+        "probe_seconds": 25.06794083339628
+      },
+      {
+        "stage": "model-begin",
+        "probe_seconds": 25.37990541663021
+      }
+    ],
+    "observed_cpu_progress_seconds": 0.04,
+    "live_observation_wall_seconds": 30.9814179999521,
+    "state_counts": {
+      "T": 19,
+      "U": 5
+    },
+    "native_entry_observed": true
+  },
+  "retired_pids": {
+    "45968": true,
+    "46121": true,
+    "46138": true
+  },
+  "observation_wall_seconds": 51.65227008308284,
+  "production_inputs_verified": 2448,
+  "production_input_mismatches": [],
+  "verification_wall_seconds": 2.043778666993603,
+  "new_product_source_changes": false,
+  "sample_attempts": 1,
+  "inference_attempts": 1,
+  "product_changed_line_coverage": {
+    "native_helper": {
+      "covered": 4,
+      "total": 4,
+      "reused_from": "media-isolation/changed-coverage.json"
+    },
+    "application": {
+      "covered": 0,
+      "total": 0,
+      "status": "N/A"
+    },
+    "file_helper": {
+      "covered": 0,
+      "total": 0,
+      "status": "N/A"
+    },
+    "media_runtime": {
+      "covered": 0,
+      "total": 0,
+      "status": "N/A"
+    }
+  },
+  "limits": [
+    "One second of sampled stacks does not measure complete loader latency or syscall completion.",
+    "Budget remains enabled. Sample residency and T states do not measure per-PID suspend/resume duration.",
+    "No syscall/page-in/disk completion trace: disk latency, scheduling/throttle and suspension attribution remain unresolved.",
+    "No direct fixable product defect demonstrated. No parameter changes, rebuilds or additional observation authorized here."
+  ]
+}

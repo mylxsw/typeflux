@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "docs/validation/gul-383/optimization/media-isolation/stage-budget",
+    "-p",
+    "test_sampling.py",
+    "-v"
+  ],
+  "wall_seconds": 0.14490108308382332,
+  "exit_code": 0,
+  "syntax": "passed",
+  "stdout": "",
+  "stderr": "test_does_not_sample_after_loader_ended (test_sampling.SamplingTests.test_does_not_sample_after_loader_ended) ... ok\ntest_identity_change_prevents_profiler_launch (test_sampling.SamplingTests.test_identity_change_prevents_profiler_launch) ... ok\ntest_leaves_tool_and_cleanup_time_under_both_cutoffs (test_sampling.SamplingTests.test_leaves_tool_and_cleanup_time_under_both_cutoffs) ... ok\ntest_partial_stage_append_is_ignored (test_sampling.SamplingTests.test_partial_stage_append_is_ignored) ... ok\ntest_rejects_unowned_stale_and_identityless_stage (test_sampling.SamplingTests.test_rejects_unowned_stale_and_identityless_stage) ... ok\ntest_timeout_retains_partial_stdout_stderr_and_stack (test_sampling.SamplingTests.test_timeout_retains_partial_stdout_stderr_and_stack) ... ok\ntest_waits_for_loader_then_uses_exact_owned_pid (test_sampling.SamplingTests.test_waits_for_loader_then_uses_exact_owned_pid) ... ok\n\n----------------------------------------------------------------------\nRan 7 tests in 0.002s\n\nOK\n"
+}

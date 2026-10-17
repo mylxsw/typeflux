@@ -1,0 +1,15 @@
+{
+  "wall_seconds": 0.22312770795542747,
+  "recompiled": false,
+  "binaries": {
+    "MediaProbe": {
+      "sha256": "532b5b25a901b786042f581836f33a3f69388fe277dc0365887b3b2d146b42ab",
+      "bytes": 300305448
+    },
+    "TypefluxSemanticHelper-coverage": {
+      "sha256": "2c6ee0c667df2cb2c68fcd1297710eb063bd233817ff747687262e41a618a54b",
+      "bytes": 11943232
+    }
+  },
+  "source": "previous stage-budget build"
+}

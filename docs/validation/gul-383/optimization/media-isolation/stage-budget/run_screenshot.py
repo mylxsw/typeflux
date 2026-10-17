@@ -25,6 +25,73 @@ def write(path, value):
     path.write_text(json.dumps(value, indent=2) + '\n')
 
 
+def sample_gate(events, trace, owned, identities, helper, launched, now, parent_deadline, stage_seconds):
+    """Return the first owned loader PID, or a recorded reason to skip this one attempt."""
+    begins = [e for e in events if e.get('stage') == 'model-begin']
+    if not begins:
+        return None
+    event = begins[0]
+    pid = event.get('pid')
+    result = {'pid': pid, 'phase': event, 'trigger_monotonic': now}
+    paths = {int(row[0]): row[7] for row in owned}
+    if (not isinstance(pid, int) or paths.get(pid) != str(helper)
+            or not identities.get(pid) or not isinstance(event.get('uptime'), (int, float))
+            or not launched <= event['uptime'] <= now):
+        return dict(result, skipped='stage PID/start identity is not an owned current helper')
+    origin = next((e['uptime'] - e['seconds'] for e in trace
+                   if isinstance(e.get('uptime'), (int, float))
+                   and isinstance(e.get('seconds'), (int, float))), None)
+    if origin is None:
+        return dict(result, skipped='probe clock unavailable; cannot prove remaining cutoff')
+    remaining = min(origin + stage_seconds, parent_deadline) - now
+    result.update(identity=identities[pid], cutoff_monotonic=now + remaining,
+                  remaining_before_cutoff_seconds=remaining,
+                  tool_limit_seconds=12, cleanup_reserve_seconds=2)
+    if any(e.get('pid') == pid and e.get('stage') == 'model-end' for e in events):
+        return dict(result, skipped='loader already ended before sampling')
+    if remaining < 14:
+        return dict(result, skipped='less than 12 s tool processing plus 2 s cleanup remain')
+    return result
+
+
+def read_events(path):
+    # An append can be observed before its newline; leave incomplete data for the next poll.
+    result = []
+    for line in path.read_text().splitlines():
+        try:
+            value = json.loads(line)
+            if isinstance(value, dict):
+                result.append(value)
+        except json.JSONDecodeError:
+            continue
+    return result
+
+
+def capture_stack(out, record, expected_identity):
+    pid = record['pid']
+    current = subprocess.run(['ps', '-p', str(pid), '-o', 'lstart=,comm='],
+                             capture_output=True, text=True, timeout=1)
+    record['identity_before_sample'] = current.stdout.strip()
+    if record['identity_before_sample'] != expected_identity:
+        record['skipped'] = 'PID start identity changed before sample'
+        return
+    started = time.monotonic()
+    if record['cutoff_monotonic'] - started < 14:
+        record['skipped'] = 'identity check consumed the tool/cleanup reserve'
+        return
+    command = ['/usr/bin/sample', str(pid), '1', '1', '-file', str(out / 'current-stack.txt')]
+    record['command'] = command
+    # Files retain partial output even when symbolication exceeds the tool deadline.
+    with (out / 'sample.stdout.txt').open('w') as stdout, (out / 'sample.stderr.txt').open('w') as stderr:
+        try:
+            result = subprocess.run(command, stdout=stdout, stderr=stderr, timeout=12)
+            record['exit_code'] = result.returncode
+        except subprocess.TimeoutExpired:
+            record['timeout_seconds'] = 12
+    record['wall_seconds'] = time.monotonic() - started
+    record['stack_file_exists'] = (out / 'current-stack.txt').is_file()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--cache-checkout', type=Path, required=True)
@@ -169,27 +236,29 @@ def main():
                                 'SELECT path,ordinal,kind,time,end_time,length(vector) AS vector_bytes FROM media_segments')]
                     except sqlite3.Error as error:
                         snapshot['db_snapshot_error'] = str(error)
-                if not sampled and snapshot['seconds'] >= 20:
-                    candidates = [int(r[0]) for r in owned if r[-1] == str(helper)]
-                    if candidates:
-                        sampled = True
-                        pid = candidates[0]
-                        sample_started = time.monotonic()
-                        sample_record = {'pid': pid, 'identity': owned_identity.get(pid), 'seconds': snapshot['seconds']}
-                        try:
-                            result = subprocess.run(['/usr/bin/sample', str(pid), '1', '1', '-file', str(out / 'current-stack.txt')],
-                                capture_output=True, text=True, timeout=3)
-                            sample_record.update(exit_code=result.returncode, stdout=result.stdout, stderr=result.stderr)
-                        except subprocess.TimeoutExpired:
-                            sample_record['timeout_seconds'] = 3
-                        sample_record['wall_seconds'] = time.monotonic() - sample_started
-                        write(out / 'sample-command.json', clean(sample_record))
                 snapshots.append(clean(snapshot))
                 write(out / 'process-and-persistence.json', snapshots)
-                try:
-                    process.wait(timeout=1)
-                except subprocess.TimeoutExpired:
-                    pass
+                poll_end = min(time.monotonic() + 1, deadline)
+                while process.poll() is None and time.monotonic() < poll_end:
+                    if not sampled:
+                        decision = sample_gate(read_events(out / 'native-stages.jsonl'),
+                            read_events(out / 'trace.jsonl'), owned, owned_identity, helper,
+                            record['launch_monotonic'], time.monotonic(), deadline, args.stage_seconds)
+                        if decision is not None:
+                            sampled = True  # Never retry, including a failed gate or tool capture.
+                            if 'skipped' not in decision:
+                                try:
+                                    capture_stack(out, decision, owned_identity[decision['pid']])
+                                except Exception as error:
+                                    decision['error'] = str(error)
+                            write(out / 'sample-command.json', clean(decision))
+                    try:
+                        process.wait(timeout=min(0.1, max(0.001, poll_end - time.monotonic())))
+                    except subprocess.TimeoutExpired:
+                        pass
+            if not sampled:
+                write(out / 'sample-command.json', {'skipped': 'no model-begin observed before process exit/deadline',
+                                                   'tool_limit_seconds': 12, 'attempts': 0})
             code = process.poll()
             if code is None:
                 record['parent_deadline_exceeded'] = True

@@ -1,0 +1,25 @@
+{
+  "pid": 46138,
+  "phase": {
+    "pid": 46138,
+    "uptime": 529827.1224624166,
+    "stage": "model-begin"
+  },
+  "trigger_monotonic": 529827.185536958,
+  "identity": "Sat Oct 17 13:51:15 2026     <repo>/.build/stage-budget/TypefluxSemanticHelper-coverage",
+  "remaining_before_cutoff_seconds": 14.557020041975193,
+  "tool_limit_seconds": 12,
+  "cleanup_reserve_seconds": 2,
+  "identity_before_sample": "Sat Oct 17 13:51:15 2026     <repo>/.build/stage-budget/TypefluxSemanticHelper-coverage",
+  "command": [
+    "/usr/bin/sample",
+    "46138",
+    "1",
+    "1",
+    "-file",
+    "<repo>/docs/validation/gul-383/optimization/media-isolation/stage-budget/model-load-stack/current-stack.txt"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 6.901318667107262,
+  "stack_file_exists": true
+}

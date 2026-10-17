@@ -1,0 +1,25 @@
+{
+  "base_head": "438f0caa3e0080e44f53435891cf56a6566de535",
+  "driver_sha256": "46494b0f971e68d3e85e428e5dea6c5591a9a16bdf38376429c1a66aaf8a474d",
+  "executed_driver_sha256": "5139e5984f23e436ae15d371b43d6f75f87e104113d982a3566eab2392b028c7",
+  "tests_sha256": "4ff5d05a92541e82c8f67b49efd0cc86b6359b52d42f7981dbd6877976237b43",
+  "production_input_manifest_sha256": "3d5f0fee46caebf1c376ebd2b596ce070a1d4a25e9db5e8cce7805d4bde75af7",
+  "production_source_changes": false,
+  "new_model_observations": 1,
+  "profiler_attempts": 1,
+  "rebuilds": 0,
+  "self_review": [
+    "Exact descendant PID, executable and lstart identity checked before sampling.",
+    "Native model-begin and common uptime verified; one attempt consumed on any outcome.",
+    "12 s tool allowance, 40 s in-process cutoff and 60 s parent limit retained.",
+    "Post-identity deadline guard added after self-review; affected methods passed, no model rerun.",
+    "stdout/stderr and full sample retained; no model/media/private paths in textual evidence.",
+    "Three PIDs retired, private root removed, no vectors published on cancellation.",
+    "Executed/final driver differences explicitly retained; production inputs unchanged."
+  ],
+  "scope_remaining": [
+    "Screenshot visual/OCR persistent retrieval",
+    "Real 30/25 audio boundary retrieval",
+    "Short-video scene/actual-time retrieval"
+  ]
+}
