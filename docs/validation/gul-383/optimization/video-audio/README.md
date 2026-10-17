@@ -1,5 +1,15 @@
 # Embedded video audio and media location actions (GUL-405 slice 15)
 
+Repair update (2026-10-17): both previously failed media-location methods now pass.
+The isolated video helper checks the video track range, requests exact frame times and
+rejects mismatched actual output times; the existing host fallback then decodes a real
+beginning frame. The plugin fixture waits for current completed actions. Final verification,
+matching-object coverage reuse and fingerprints are in `location-repair/README.md`.
+The draft PR remains unmerged and GUL-405 remains in progress for its remaining slices.
+
+The report below preserves the original checkpoint at head
+`5eb07cae46f27498ec007af8c1db039f75addae3`; its unresolved statements describe that earlier state.
+
 Baseline: `9021ea52fc2696965e0c8a18cbe678f766038f3f` (PR638 merged main).
 **Partial checkpoint: embedded-audio verification passes; two media-location methods still fail.**
 This is a draft for continuation, not an accepted or complete slice.

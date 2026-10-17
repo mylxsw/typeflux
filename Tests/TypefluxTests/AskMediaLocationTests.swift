@@ -157,7 +157,12 @@ struct AskMediaLocationTests {
             semantic: { service })])
         fixture.model.plugins.enter(AskFileSearchPlugin.keywords[0])
         fixture.model.plugins.update(text: "recording", selection: nil, language: .english, runWhenPlanned: true)
-        try await fixture.wait { fixture.model.selectedPluginFile == hit }
+        try await fixture.wait {
+            fixture.model.plugins.isPlanCurrent && fixture.model.selectedPluginFile == hit
+                && fixture.model.plugins.output?.selected?.actions.contains {
+                    $0.kind == .fileAction(.viewMatch, hit)
+                } == true
+        }
         let actions = try #require(fixture.model.plugins.output?.selected?.actions)
         let view = try #require(actions.first { $0.kind == .fileAction(.viewMatch, hit) })
         #expect(fixture.model.performPluginFileAction(view) == .preview(hit))
@@ -194,6 +199,21 @@ struct AskMediaLocationTests {
         let fallback = try await AskFilePreviewRenderer.generate(invalid, kind: .video,
             pixels: CGSize(width: 400, height: 400), info: info, worker: MediaWorker(timeout: 3))
         #expect(fallback.kind == .video && fallback.startTime == 0)
+        var beginning = invalid; beginning.evidence?.time = 0
+        let first = try await AskFilePreviewRenderer.generate(beginning, kind: .video,
+            pixels: CGSize(width: 400, height: 400), info: info, worker: MediaWorker(timeout: 3))
+        let fallbackImage = try #require(fallback.images.first?.tiffRepresentation)
+        #expect(fallbackImage == first.images.first?.tiffRepresentation)
+        var valid = invalid; valid.evidence?.time = 1.5
+        let matched = try await AskFilePreviewRenderer.generate(valid, kind: .video,
+            pixels: CGSize(width: 400, height: 400), info: info, worker: MediaWorker(timeout: 3))
+        #expect(matched.startTime == 1.5 && matched.images.count == 1)
+        #expect(fallbackImage != matched.images.first?.tiffRepresentation)
+        // A time between actual frames must also fall back, rather than relabel a nearby frame.
+        invalid.evidence?.time = 1.55
+        let inexact = try await AskFilePreviewRenderer.generate(invalid, kind: .video,
+            pixels: CGSize(width: 400, height: 400), info: info, worker: MediaWorker(timeout: 3))
+        #expect(inexact.startTime == 0 && inexact.images.first?.tiffRepresentation == fallbackImage)
     }
 
     private func snapshot(_ content: AskFilePreviewContent, hit: AskFileHit) async throws {

@@ -1,0 +1,50 @@
+{
+  "command": "python3 docs/validation/gul-383/optimization/video-audio/location-repair/verify-helper.py",
+  "wall_seconds": 0.2744411249877885,
+  "cases": [
+    {
+      "start": 1.5,
+      "response": {
+        "preview": {
+          "rasters": [
+            {
+              "width": 64,
+              "bytes": 16384,
+              "height": 64,
+              "stride": 256
+            }
+          ],
+          "pages": 0,
+          "start": 1.5,
+          "duration": 8
+        },
+        "items": [],
+        "id": "363C0933-F8B3-4BC5-A7A3-8424550195A6",
+        "version": 1
+      },
+      "wall_seconds": 0.15375904203392565
+    },
+    {
+      "start": 7,
+      "response": {
+        "id": "D84295AB-86F2-4894-93EC-2F727716BD53",
+        "version": 1,
+        "items": [],
+        "failure": "unreadable"
+      },
+      "wall_seconds": 0.01719033403787762
+    },
+    {
+      "start": 1.55,
+      "response": {
+        "id": "C3AE68C5-032D-4144-9CBF-4DD40FE328DA",
+        "version": 1,
+        "items": [],
+        "failure": "unreadable"
+      },
+      "wall_seconds": 0.09884416701970622
+    }
+  ],
+  "fixture_sha256": "902e4d62bc5f6b745963c89766e680b917a8cd1104c9ef733f698b31d73195ec",
+  "helper_sha256": "3a177a02a218cdbc295e604a8b8229b9216f8c2f9438da7e3d61d98451b6b6f8"
+}

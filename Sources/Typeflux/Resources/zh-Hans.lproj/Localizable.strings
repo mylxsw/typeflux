@@ -5804,6 +5804,11 @@
 
 "ask.preview.textLocationUnavailable" = "无法定位文字区域";
 
+// Media match location and external-open capability.
+"ask.quick.file.media.open" = "正在打开原媒体文件。外部应用不保证跳到命中时间，请在 Typeflux 中选择“查看命中位置”。";
+"ask.quick.file.media.quickLook" = "Quick Look 使用原媒体文件，不保证时间跳转。请在 Typeflux 中选择“查看命中位置”。";
+"ask.quick.file.media.preview" = "打开和 Quick Look 使用原媒体文件；命中位置可用时在此查看。";
+
 // PDF open capabilities
 "ask.quick.action.viewMatch" = "查看命中位置";
 "ask.quick.file.accessChanged" = "文件搜索访问权限已变化，请重新搜索后打开。";
@@ -5819,8 +5824,3 @@
 "screenshot.background.noSubject" = "未识别到主体，请缩小选区后重试。";
 "screenshot.background.failed" = "去背景失败，请重试。";
 "screenshot.background.unsupported" = "去背景需要 macOS 14 或更高版本。";
-
-// Media match location and external-open capability.
-"ask.quick.file.media.open" = "正在打开原媒体文件。外部应用不保证跳到命中时间，请在 Typeflux 中选择“查看命中位置”。";
-"ask.quick.file.media.quickLook" = "Quick Look 使用原媒体文件，不保证时间跳转。请在 Typeflux 中选择“查看命中位置”。";
-"ask.quick.file.media.preview" = "打开和 Quick Look 使用原媒体文件；命中位置可用时在此查看。";

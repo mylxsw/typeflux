@@ -5690,6 +5690,11 @@
 
 "ask.preview.textLocationUnavailable" = "テキストの位置を特定できません";
 
+// Media match location and external-open capability.
+"ask.quick.file.media.open" = "元のメディアファイルを開いています。外部アプリでの一致時刻への移動は保証されません。Typeflux の「一致箇所を表示」を使ってください。";
+"ask.quick.file.media.quickLook" = "Quick Look は元のメディアファイルを使用し、一致時刻への移動は保証されません。Typeflux の「一致箇所を表示」を使ってください。";
+"ask.quick.file.media.preview" = "開く操作と Quick Look は元のメディアファイルを使用します。一致箇所は表示可能な場合ここで確認できます。";
+
 // PDF open capabilities
 "ask.quick.action.viewMatch" = "一致箇所を表示";
 "ask.quick.file.accessChanged" = "ファイル検索のアクセス権が変更されました。再検索してから開いてください。";
@@ -5705,8 +5710,3 @@
 "screenshot.background.noSubject" = "被写体が見つかりません。選択範囲を狭めてください。";
 "screenshot.background.failed" = "背景を削除できませんでした。もう一度お試しください。";
 "screenshot.background.unsupported" = "背景の削除には macOS 14 以降が必要です。";
-
-// Media match location and external-open capability.
-"ask.quick.file.media.open" = "元のメディアファイルを開いています。外部アプリでの一致時刻への移動は保証されません。Typeflux の「一致箇所を表示」を使ってください。";
-"ask.quick.file.media.quickLook" = "Quick Look は元のメディアファイルを使用し、一致時刻への移動は保証されません。Typeflux の「一致箇所を表示」を使ってください。";
-"ask.quick.file.media.preview" = "開く操作と Quick Look は元のメディアファイルを使用します。一致箇所は表示可能な場合ここで確認できます。";

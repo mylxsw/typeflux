@@ -30,19 +30,8 @@ public enum MediaAVDecoder {
             if request.operation == .previewVideo {
                 guard let track = try await asset.loadTracks(withMediaType: .video).first
                 else { throw MediaFailure.unreadable }
-                let size = try await track.load(.naturalSize)
-                guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0,
-                      size.width <= 100_000, size.height <= 100_000,
-                      size.width * size.height <= 100_000_000 else { throw MediaFailure.tooLarge }
-                let generator = AVAssetImageGenerator(asset: asset)
-                generator.appliesPreferredTrackTransform = true
-                generator.maximumSize = CGSize(width: options.width, height: options.height)
-                let raster = try await withTaskCancellationHandler {
-                    let frame = try await generator.image(at: CMTime(seconds: start, preferredTimescale: 600)).image
-                    try Task.checkCancellation()
-                    return try MediaPreviewDecoder.write(frame, index: 0, page: nil, directory: directory)
-                } onCancel: { generator.cancelAllCGImageGeneration() }
-                preview.rasters = [raster]
+                preview.rasters = [try await video(asset, track: track, options: options,
+                                                   start: start, directory: directory)]
             } else {
                 guard let track = try await asset.loadTracks(withMediaType: .audio).first
                 else { throw MediaFailure.unreadable }
@@ -53,6 +42,32 @@ public enum MediaAVDecoder {
             try response.validate(for: request)
             return response
         } onCancel: { asset.cancelLoading() }
+    }
+
+    private static func video(_ asset: AVAsset, track: AVAssetTrack, options: MediaPreviewOptions,
+                              start: Double, directory: URL) async throws -> MediaRaster {
+        let range = try await track.load(.timeRange)
+        let requested = CMTime(seconds: start, preferredTimescale: 600)
+        // Audio may outlast video. Never label a nearby frame as the indexed match.
+        guard CMTimeRangeContainsTime(range, time: requested) else { throw MediaFailure.unreadable }
+        let size = try await track.load(.naturalSize)
+        guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0,
+              size.width <= 100_000, size.height <= 100_000,
+              size.width * size.height <= 100_000_000 else { throw MediaFailure.tooLarge }
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: options.width, height: options.height)
+        generator.requestedTimeToleranceBefore = .zero
+        generator.requestedTimeToleranceAfter = .zero
+        return try await withTaskCancellationHandler {
+            let frame = try await generator.image(at: requested)
+            try Task.checkCancellation()
+            guard frame.actualTime.seconds.isFinite,
+                  CMTimeRangeContainsTime(range, time: frame.actualTime),
+                  abs(frame.actualTime.seconds - start) <= 1.0 / 600
+            else { throw MediaFailure.unreadable }
+            return try MediaPreviewDecoder.write(frame.image, index: 0, page: nil, directory: directory)
+        } onCancel: { generator.cancelAllCGImageGeneration() }
     }
 
     private static func waveform(_ asset: AVAsset, track: AVAssetTrack, duration: Double, start: Double) throws -> [Float] {
