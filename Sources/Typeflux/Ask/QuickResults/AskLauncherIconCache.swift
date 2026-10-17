@@ -33,6 +33,9 @@ final class AskLauncherIconCache {
     private var prefetchTasks: [Key: (id: UUID, task: Task<Void, Never>)] = [:]
     private var applicationPrefetch: Set<Key> = []
     private var filePrefetch: Set<Key> = []
+    private var applicationWarmup: Task<Void, Never>?
+    private var applicationWarmupKeys: Set<Key> = []
+    private var applicationWarmupGeneration = UUID()
     private var generation = UUID()
     private var fileGeneration = UUID()
     private let decode: AskNativeIconDecoding?
@@ -42,7 +45,7 @@ final class AskLauncherIconCache {
     private let lifetime: TimeInterval
     private let immediateLookup: @MainActor (MediaNativeIcon, Bool) -> NSImage?
 
-    init(capacity: Int = 64, fileCapacity: Int = 48, lifetime: TimeInterval = 300,
+    init(capacity: Int = 512, fileCapacity: Int = 48, lifetime: TimeInterval = 3600,
          immediateLookup: @escaping @MainActor (MediaNativeIcon, Bool) -> NSImage? = AskLauncherIconCache.systemIcon,
          worker: MediaWorker = .previews, decode: AskNativeIconDecoding? = nil) {
         self.capacity = capacity; self.fileCapacity = fileCapacity
@@ -194,6 +197,29 @@ final class AskLauncherIconCache {
         return updatePrefetch(ordered, privateFiles: false)
     }
 
+    /// Fill the application cache off the main thread before lower rows enter the viewport.
+    /// This work survives launcher dismissal; visible rows can share an in-flight decode.
+    func warmApplications(_ icons: [MediaNativeIcon]) {
+        var seen: Set<Key> = []
+        let ordered = icons.filter(Self.eligible).map { Key($0) }
+            .filter { seen.insert($0).inserted }.prefix(capacity)
+        let wanted = Set(ordered)
+        guard wanted != applicationWarmupKeys ||
+                (applicationWarmup == nil && ordered.contains(where: { cached($0.icon) == nil })) else { return }
+        applicationWarmup?.cancel()
+        applicationWarmupKeys = wanted
+        applicationWarmupGeneration = UUID()
+        let currentGeneration = applicationWarmupGeneration
+        applicationWarmup = Task { [weak self] in
+            for key in ordered {
+                guard !Task.isCancelled, let self else { return }
+                guard self.cached(key.icon) == nil else { continue }
+                _ = try? await self.load(key.icon)
+            }
+            if self?.applicationWarmupGeneration == currentGeneration { self?.applicationWarmup = nil }
+        }
+    }
+
     @discardableResult func prefetchFiles(_ hits: [AskFileHit]) -> [Task<Void, Never>] {
         // File mode can show more rows than mixed search; include the first folders.
         let folders = Array(hits.filter(\.isFolder).prefix(3))
@@ -264,6 +290,9 @@ final class AskLauncherIconCache {
 
     func clear() {
         generation = UUID()
+        applicationWarmup?.cancel(); applicationWarmup = nil
+        applicationWarmupKeys.removeAll()
+        applicationWarmupGeneration = UUID()
         cancelPrefetch()
         pending.values.forEach { $0.task.cancel() }
         pending.removeAll(); entries.removeAll()

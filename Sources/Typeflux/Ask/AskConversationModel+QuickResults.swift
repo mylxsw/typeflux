@@ -67,10 +67,17 @@ extension AskConversationModel {
     /// Keeps the application list and the file index current; called when the launcher is built and opened.
     func refreshQuickApps() {
         if quickAppsEnabled { appIndex.refreshIfStale() }
+        prepareLauncherAppIcons()
+        fileIndex.start()
+    }
+
+    func prepareLauncherAppIcons() {
         launcherIconCache.prefetch(appIndex.recentApplications(limit: AskLauncherHome.iconPrefetchCount).map {
             .init(kind: .file, value: $0.url.path)
         })
-        fileIndex.start()
+        launcherIconCache.warmApplications(appIndex.applications().map {
+            .init(kind: .file, value: $0.url.path)
+        })
     }
 
     /// Starts a question about a file: the launcher leaves keyword mode, empties its

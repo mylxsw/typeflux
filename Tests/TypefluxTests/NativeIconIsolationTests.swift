@@ -161,6 +161,32 @@ private actor NativeIconCalls {
         XCTAssertFalse(AskLauncherIconCache.eligible(.init(kind: .file, value: "/private/secret.pdf")))
     }
 
+    func testLauncherWarmsLowerApplicationRowsAndReusesThemAfterDismissal() async throws {
+        let calls = NativeIconCalls(), pixels = raster()
+        var immediateLookups = 0
+        let cache = AskLauncherIconCache(immediateLookup: { _, _ in
+            immediateLookups += 1
+            return nil
+        }, decode: { _ in
+            await calls.called()
+            return .init(images: [pixels], numbers: [], pages: 0)
+        })
+        let icons = (0..<80).map { MediaNativeIcon(kind: .file, value: "/Applications/App\($0).app") }
+        cache.warmApplications(icons)
+        cache.cancelPrefetch() // Dismissing the launcher must not interrupt application warmup.
+        for _ in 0..<200 where icons.contains(where: { cache.cached($0) == nil }) {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertTrue(icons.allSatisfy { cache.cached($0) != nil })
+        XCTAssertEqual(immediateLookups, 0)
+        let completedCalls = await calls.count
+        XCTAssertEqual(completedCalls, icons.count)
+        cache.warmApplications(icons)
+        XCTAssertNotNil(cache.cached(icons[0]), "earlier rows remain cached after more than 64 icons")
+        let repeatedCalls = await calls.count
+        XCTAssertEqual(repeatedCalls, icons.count)
+    }
+
     func testLauncherPrefetchesVersionedFilesAndFoldersAndClearsThemOnHide() async throws {
         let calls = NativeIconCalls(), pixels = raster(), revision = Date(timeIntervalSince1970: 1_000)
         let cache = AskLauncherIconCache(fileCapacity: 3, immediateLookup: { _, _ in nil }, decode: { _ in
