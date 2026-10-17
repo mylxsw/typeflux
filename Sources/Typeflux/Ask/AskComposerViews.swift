@@ -1568,7 +1568,7 @@ struct AskComposer: View {
                     .onDisappear { model.calendarLauncher.close() }
             } else if let pluginDisplay {
                 AskPluginResultsView(display: pluginDisplay, question: draft.wrappedValue.text,
-                                     minimumHeight: pluginHeight,
+                                     minimumHeight: pluginHeight, viewportHeight: launcherResultsViewportHeight,
                                      onMain: runPluginMain, onAction: performPluginAction,
                                      translationSettings: model.translationSettingsModel,
                                      onAskAI: askAIFromPlugin,

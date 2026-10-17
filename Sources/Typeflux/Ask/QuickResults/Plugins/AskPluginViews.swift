@@ -89,6 +89,8 @@ struct AskPluginResultsView: View {
     var display: AskPluginDisplay
     var question: String
     var minimumHeight: CGFloat = 0
+    /// Space available in the expanded launcher, including the section heading.
+    var viewportHeight: CGFloat?
     /// Return on the plugin's row: run, or the result's main action.
     var onMain: () -> Void
     var onAction: (AskPluginAction) -> Void
@@ -172,6 +174,13 @@ struct AskPluginResultsView: View {
         let visible = items.prefix(maximumVisibleItems)
         guard visible.contains(where: { $0.excerpt != nil }) else { return itemsHeight(items.count) }
         return visible.reduce(0) { $0 + itemHeight($1) } + CGFloat(visible.count - 1) * itemSpacing
+    }
+
+    /// Use the rest of the launcher for a long list instead of stopping at six rows.
+    static func listHeight(_ output: AskPluginOutput, viewportHeight: CGFloat?) -> CGFloat {
+        let note = output.note == nil ? 0 : 12 + noteHeight
+        let chrome = 1 + listPadding * 2 + sectionHeight + rowSpacing + note
+        return max(itemsHeight(output.items), (viewportHeight ?? 0) - chrome)
     }
 
     /// Heights already measured: the launcher asks for the same text's height several times per update.
@@ -318,7 +327,9 @@ struct AskPluginResultsView: View {
             .padding(Self.listPadding)
             Spacer(minLength: 0)
         }
-        .frame(height: max(minimumHeight, Self.height(for: display)), alignment: .top)
+        .frame(height: max(minimumHeight, Self.height(for: display),
+                           shownCard?.output.flatMap { $0.wordCard == nil && !$0.items.isEmpty ? viewportHeight : nil } ?? 0),
+               alignment: .top)
     }
 
     private func section(_ title: String) -> some View {
@@ -658,7 +669,10 @@ struct AskPluginResultsView: View {
 
     /// Result rows: icon, title and subtitle; the chosen one says what Return does.
     private func itemList(_ output: AskPluginOutput, pending: Bool, dimmed: Bool) -> some View {
-        ScrollViewReader { reader in
+        let visibleHeight = Self.listHeight(output, viewportHeight: viewportHeight)
+        let contentHeight = output.items.reduce(CGFloat(0)) { $0 + Self.itemHeight($1) }
+            + CGFloat(max(0, output.items.count - 1)) * Self.itemSpacing
+        return ScrollViewReader { reader in
             ScrollView(.vertical) {
                 // Histories can contain hundreds of images. Build and decode rows only as they enter the viewport.
                 LazyVStack(spacing: Self.itemSpacing) {
@@ -679,12 +693,12 @@ struct AskPluginResultsView: View {
                 }
                 .transaction { $0.animation = nil; $0.disablesAnimations = true }
             }
-            .scrollDisabled(output.items.count <= Self.maximumVisibleItems)
+            .scrollDisabled(contentHeight <= visibleHeight)
             .onChange(of: output.selected?.id) { id in
                 if let id { reader.scrollTo(id) }
             }
         }
-        .frame(height: Self.itemsHeight(output.items))
+        .frame(height: visibleHeight)
         .opacity(dimmed ? 0.5 : 1)
         .allowsHitTesting(!pending)
         .accessibilityElement(children: .contain)

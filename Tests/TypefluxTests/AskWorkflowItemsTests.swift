@@ -273,6 +273,18 @@ struct AskPluginListViewTests {
         #expect(AskPluginResultsView.itemsHeight(0) == AskPluginResultsView.itemHeight)
     }
 
+    @Test func `long lists use the expanded launcher's available space`() {
+        let shown = display(rows(40))
+        guard case let .done(_, output) = shown.phase else { return }
+        let viewport: CGFloat = 480
+        let list = AskPluginResultsView.listHeight(output, viewportHeight: viewport)
+        #expect(list > AskPluginResultsView.itemsHeight(output.items))
+        #expect(list + AskPluginResultsView.height(for: shown)
+            - AskPluginResultsView.itemsHeight(output.items) == viewport)
+        #expect(AskPluginResultsView.listHeight(output, viewportHeight: nil)
+            == AskPluginResultsView.itemsHeight(output.items))
+    }
+
     @Test func `flat lists have one heading and reserve space for an empty state`() {
         var shown = display(rows(1))
         guard case let .done(plan, original) = shown.phase else { return }
