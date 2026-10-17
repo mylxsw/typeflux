@@ -15,11 +15,17 @@ struct BackgroundActivityMenuLayout: Equatable {
     var titles: [String: String]
     var hiddenCount: Int
 
-    init(activities: [BackgroundActivity]) {
-        let shown = activities.prefix(Self.rowLimit)
+    @MainActor init(activities: [BackgroundActivity]) {
+        let visible = activities.filter(Self.showsInMenu)
+        let shown = visible.prefix(Self.rowLimit)
         rows = shown.map(\.id)
         titles = Dictionary(uniqueKeysWithValues: shown.map { ($0.id, $0.title) })
-        hiddenCount = max(0, activities.count - Self.rowLimit)
+        hiddenCount = max(0, visible.count - Self.rowLimit)
+    }
+
+    @MainActor static func showsInMenu(_ activity: BackgroundActivity) -> Bool {
+        activity.id != ContentIndexActivitySource.indexID ||
+            (activity.state != .paused && activity.state != .waiting)
     }
 
     var isEmpty: Bool {
@@ -55,7 +61,9 @@ struct BackgroundActivityMenuSection: View {
             .frame(height: BackgroundActivityMenuLayout.headerHeight)
             ForEach(layout.rows, id: \.self) { id in
                 if let activity = center.activity(id) {
-                    BackgroundActivityRowView(activity: activity) { perform($0, id) }
+                    if BackgroundActivityMenuLayout.showsInMenu(activity) {
+                        BackgroundActivityRowView(activity: activity) { perform($0, id) }
+                    }
                 } else {
                     ended(layout.titles[id] ?? "")
                 }

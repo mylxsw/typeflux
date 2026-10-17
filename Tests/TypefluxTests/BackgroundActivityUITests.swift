@@ -119,6 +119,39 @@ final class BackgroundActivityUITests: XCTestCase {
         XCTAssertTrue(BackgroundActivityMenuLayout(activities: []).isEmpty)
     }
 
+    func testMenuHidesRestingContentIndexAndShowsItWhenActionable() throws {
+        let (controller, center, source) = try makeController()
+        defer { controller.stop() }
+        let id = ContentIndexActivitySource.indexID
+
+        source.feed.publish([makeActivity(id, kind: .index, state: .waiting)])
+        drain()
+        XCTAssertNotNil(center.activity(id), "the task remains available in the background tasks window")
+        XCTAssertTrue(controller.menuActivityLayout.isEmpty)
+        XCTAssertNil(controller.menu?.items.first?.view)
+
+        source.feed.publish([makeActivity(id, kind: .index)])
+        drain()
+        XCTAssertEqual(controller.menuActivityLayout.rows, [id])
+
+        source.feed.publish([makeActivity(id, kind: .index, state: .paused)])
+        drain()
+        XCTAssertTrue(controller.menuActivityLayout.isEmpty)
+        XCTAssertNil(controller.menu?.items.first?.view)
+
+        source.feed.publish([makeActivity(id, kind: .index, state: .failed)])
+        drain()
+        XCTAssertEqual(controller.menuActivityLayout.rows, [id])
+
+        source.feed.publish([
+            makeActivity(id, kind: .index, state: .paused),
+            makeActivity("other", kind: .index, state: .paused)
+        ])
+        drain()
+        XCTAssertEqual(controller.menuActivityLayout.rows, ["other"])
+        XCTAssertEqual(controller.menuActivityLayout.hiddenCount, 0)
+    }
+
     func testAccessibilityTitleDescribesTasks() throws {
         let center = try makeCenter()
         let source = FakeActivitySource()
