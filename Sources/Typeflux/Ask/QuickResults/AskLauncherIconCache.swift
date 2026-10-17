@@ -18,7 +18,7 @@ final class AskLauncherIconCache {
     }
     private struct Entry {
         let result: AskFilePreviewPDF.Result
-        let expires: Date
+        let expires: Date?
     }
     private struct Pending {
         let task: Task<AskFilePreviewPDF.Result, Error>
@@ -45,7 +45,7 @@ final class AskLauncherIconCache {
     private let lifetime: TimeInterval
     private let immediateLookup: @MainActor (MediaNativeIcon, Bool) -> NSImage?
 
-    init(capacity: Int = 512, fileCapacity: Int = 48, lifetime: TimeInterval = 3600,
+    init(capacity: Int = 512, fileCapacity: Int = 48, lifetime: TimeInterval = 300,
          immediateLookup: @escaping @MainActor (MediaNativeIcon, Bool) -> NSImage? = AskLauncherIconCache.systemIcon,
          worker: MediaWorker = .previews, decode: AskNativeIconDecoding? = nil) {
         self.capacity = capacity; self.fileCapacity = fileCapacity
@@ -62,7 +62,7 @@ final class AskLauncherIconCache {
         guard Self.eligible(icon, revision: revision) else { return nil }
         let key = Key(icon, revision: revision)
         guard let entry = entries[key] else { return nil }
-        guard entry.expires > Date() else {
+        guard entry.expires.map({ $0 > Date() }) ?? true else {
             entries[key] = nil
             if key.isPrivate { fileOrder.removeAll { $0 == key } }
             else { applicationOrder.removeAll { $0 == key } }
@@ -306,7 +306,7 @@ final class AskLauncherIconCache {
     }
 
     private func remember(_ result: AskFilePreviewPDF.Result, for key: Key) {
-        entries[key] = Entry(result: result, expires: Date().addingTimeInterval(lifetime))
+        entries[key] = Entry(result: result, expires: key.isPrivate ? Date().addingTimeInterval(lifetime) : nil)
         if key.isPrivate {
             fileOrder.removeAll { $0 == key }; fileOrder.append(key)
             while fileOrder.count > fileCapacity { entries[fileOrder.removeFirst()] = nil }

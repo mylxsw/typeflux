@@ -161,6 +161,20 @@ private actor NativeIconCalls {
         XCTAssertFalse(AskLauncherIconCache.eligible(.init(kind: .file, value: "/private/secret.pdf")))
     }
 
+    func testApplicationIconsOutliveFileIconExpiration() async throws {
+        let pixels = raster()
+        let cache = AskLauncherIconCache(lifetime: -1, decode: { _ in
+            .init(images: [pixels], numbers: [], pages: 0)
+        })
+        let app = MediaNativeIcon(kind: .file, value: "/Applications/Fixture.app")
+        let file = MediaNativeIcon(kind: .file, value: "/tmp/report.pdf")
+        let revision = Date(timeIntervalSince1970: 1_000)
+        _ = try await cache.load(app)
+        _ = try await cache.load(file, revision: revision)
+        XCTAssertNotNil(cache.cached(app), "application icons stay available for this process")
+        XCTAssertNil(cache.cached(file, revision: revision), "file icons still obey their lifetime")
+    }
+
     func testLauncherWarmsLowerApplicationRowsAndReusesThemAfterDismissal() async throws {
         let calls = NativeIconCalls(), pixels = raster()
         var immediateLookups = 0
