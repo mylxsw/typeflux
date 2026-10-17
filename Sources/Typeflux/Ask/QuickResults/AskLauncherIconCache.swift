@@ -78,9 +78,15 @@ final class AskLauncherIconCache {
     func immediate(_ icon: MediaNativeIcon, revision: Date? = nil, folder: Bool = false) -> AskFilePreviewPDF.Result? {
         guard Self.eligible(icon, revision: revision) else { return nil }
         if let result = cached(icon, revision: revision) { return result }
-        guard (try? icon.validate()) != nil, let image = immediateLookup(icon, folder),
-              let result = Self.rasterized(image) else { return nil }
-        remember(result, for: Key(icon, revision: revision))
+        guard !Task.isCancelled, (try? icon.validate()) != nil else { return nil }
+        let key = Key(icon, revision: revision), currentGeneration = generation, currentFileGeneration = fileGeneration
+        guard let image = immediateLookup(icon, folder), !Task.isCancelled, generation == currentGeneration,
+              !key.isPrivate || fileGeneration == currentFileGeneration else { return nil }
+        if let completed = cached(icon, revision: revision) { return completed }
+        guard let result = Self.rasterized(image), !Task.isCancelled, generation == currentGeneration,
+              !key.isPrivate || fileGeneration == currentFileGeneration else { return nil }
+        if let completed = cached(icon, revision: revision) { return completed }
+        remember(result, for: key)
         return result
     }
 
@@ -199,23 +205,42 @@ final class AskLauncherIconCache {
     }
 
     private func updatePrefetch(_ ordered: [Key], privateFiles: Bool, folders: Set<Key> = []) -> [Task<Void, Never>] {
+        guard !Task.isCancelled else { return [] }
+        let currentGeneration = generation, currentFileGeneration = fileGeneration
         let original = decode == nil ? worker.authorization() : nil
+        guard !Task.isCancelled, generation == currentGeneration,
+              !privateFiles || fileGeneration == currentFileGeneration else { return [] }
         let wanted = Set(ordered)
         let previous = privateFiles ? filePrefetch : applicationPrefetch
         for key in previous.subtracting(wanted) {
             prefetchTasks[key]?.task.cancel(); prefetchTasks[key] = nil
         }
         if privateFiles { filePrefetch = wanted } else { applicationPrefetch = wanted }
-        for key in ordered where immediate(key.icon, revision: key.revision, folder: folders.contains(key)) == nil
-            && prefetchTasks[key] == nil {
+        var handles: [Task<Void, Never>] = [], observed: Set<UUID> = []
+        func collect(_ entry: (id: UUID, task: Task<Void, Never>)?) {
+            guard let entry, observed.insert(entry.id).inserted else { return }
+            handles.append(entry.task)
+        }
+        // A synchronous lookup can clear the dictionary; retain already observed work for collection.
+        for key in ordered { collect(prefetchTasks[key]) }
+        for key in ordered {
+            guard !Task.isCancelled, generation == currentGeneration,
+                  !privateFiles || fileGeneration == currentFileGeneration,
+                  (privateFiles ? filePrefetch : applicationPrefetch) == wanted else { break }
+            let immediate = immediate(key.icon, revision: key.revision, folder: folders.contains(key))
+            collect(prefetchTasks[key])
+            guard !Task.isCancelled, generation == currentGeneration,
+                  !privateFiles || fileGeneration == currentFileGeneration,
+                  (privateFiles ? filePrefetch : applicationPrefetch) == wanted else { break }
+            guard immediate == nil, prefetchTasks[key] == nil else { continue }
             let id = UUID()
             let task = Task { [weak self] in
                 _ = try? await self?.load(key.icon, revision: key.revision, authorization: original)
                 if self?.prefetchTasks[key]?.id == id { self?.prefetchTasks[key] = nil }
             }
-            prefetchTasks[key] = (id, task)
+            prefetchTasks[key] = (id, task); collect(prefetchTasks[key])
         }
-        return ordered.compactMap { prefetchTasks[$0]?.task }
+        return handles
     }
 
     @discardableResult func cancelPrefetch() -> [Task<Void, Never>] {

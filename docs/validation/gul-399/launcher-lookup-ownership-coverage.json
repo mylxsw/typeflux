@@ -1,0 +1,17 @@
+{
+  "covered": 32,
+  "executable_added": 32,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskLauncherIconCache.swift",
+      "covered": 32,
+      "executable_added": 32,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ],
+  "baseline": "30adce80696606a2c5d34221b7ea759ff3ef81dd",
+  "scope": "Three fresh HOST profiles / same final binary only; changed executable lines, not every branch/race/errno/device/native/runtime proof."
+}
