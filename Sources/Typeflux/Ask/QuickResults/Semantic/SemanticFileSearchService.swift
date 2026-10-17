@@ -102,6 +102,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                                                          self?.resourceWaitReason = reason
                                                      }
                                                  })
+    private lazy var preparationBudget = SemanticWorkBudget(enabled: budgetEnabled, lowPower: lowPowerMode)
     private var pausedIndexing = false
     private var pausedReady = false
     private var nextReason: SemanticIndexDiagnostics.Reason = .startup
@@ -188,7 +189,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     }
 
     private var backgroundPaused: Bool {
-        busy || manuallyPaused || thermalConstrained()
+        busy || manuallyPaused || lowPowerMode() || thermalConstrained()
     }
 
     private func currentPermissionRecovery() -> AskSearchCancellation {
@@ -303,7 +304,8 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
               settings.askQuickFileSearchEnabled else { phase = .off; return }
         self.mediaDownload = nil; self.mediaFailed = false
         self.phase = .preparing
-        let directory = directory, model = self.modelURL, helper = helper, access = access, budget = budget
+        let directory = directory, model = self.modelURL, helper = helper, access = access
+        let preparationBudget = preparationBudget
         let models = models
         work = Task { [weak self] in
             await previous?.value
@@ -315,7 +317,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                     guard !token.isCancelled else { throw CancellationError() }
                     let scope = SemanticFilePolicy.scope(names: names, fullDiskAccess: access())
                     guard !token.isCancelled else { throw CancellationError() }
-                    return try budget.perform(cancelled: { token.isCancelled }) {
+                    return try preparationBudget.perform(cancelled: { token.isCancelled }) {
                         let database = Result {
                             try SemanticFileStore(url: directory.appendingPathComponent("semantic-files.sqlite"),
                                                   cancelled: { token.isCancelled })
@@ -337,7 +339,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                     self.modelReady = false; self.phase = .modelRequired; return
                 }
                 try await Task.detached(priority: .utility) {
-                    try budget.perform(cancelled: { token.isCancelled }, operation: {
+                    try preparationBudget.perform(cancelled: { token.isCancelled }, operation: {
                         try models.verify(model, cancelled: { token.isCancelled })
                     })
                 }.value

@@ -198,12 +198,14 @@ struct SemanticFileServiceTests {
         defer { try? FileManager.default.removeItem(at: root) }
         try FileManager.default.copyItem(at: models.source, to: fixture.modelURL)
         let watcher = SemanticFixtureWatcher(), encoder = SemanticFixtureEncoder()
-        let constrained = AskSearchCancellation(), overheated = AskSearchCancellation()
+        let constrained = AskSearchCancellation(), restored = AskSearchCancellation()
+        let overheated = AskSearchCancellation()
         let updated = AskSearchCancellation()
         let service = SemanticFileSearchService(settings: fixture.settings, directory: root,
                                                 helper: URL(fileURLWithPath: "/usr/bin/true"), supported: true,
                                                 watcher: watcher,
-                                                access: { true }, lowPowerMode: { constrained.isCancelled },
+                                                access: { true },
+                                                lowPowerMode: { constrained.isCancelled && !restored.isCancelled },
                                                 thermalConstrained: { overheated.isCancelled }, models: models,
                                                 makeReader: { reader }, makeEncoder: { _, _ in encoder },
                                                 makeQuery: { _, _ in SemanticFixtureQuery() })
@@ -217,14 +219,17 @@ struct SemanticFileServiceTests {
         try await Self.wait { service.phase == .ready }
         constrained.cancel()
         NotificationCenter.default.post(name: .NSProcessInfoPowerStateDidChange, object: ProcessInfo.processInfo)
-        #expect(service.phase == .ready, "Low Power Mode uses the slower work budget")
+        try await Self.wait { service.phase == .paused }
         #expect(service.isEnabled)
         #expect(await service.search("报销流程", type: .all, limit: 10).map(\.path) == [reader.path])
         let calls = encoder.calls
         reader.modified = reader.modified.addingTimeInterval(1)
         watcher.change?([.init(path: reader.path, rescan: false)], 2)
         try await Task.sleep(for: .milliseconds(2250))
-        #expect(encoder.calls > calls, "Low Power Mode still makes useful checkpointed progress")
+        #expect(encoder.calls == calls, "Low Power Mode pauses background indexing")
+        restored.cancel()
+        NotificationCenter.default.post(name: .NSProcessInfoPowerStateDidChange, object: ProcessInfo.processInfo)
+        try await Self.wait { encoder.calls > calls && service.phase == .ready }
         overheated.cancel()
         NotificationCenter.default.post(
             name: ProcessInfo.thermalStateDidChangeNotification,
@@ -235,6 +240,31 @@ struct SemanticFileServiceTests {
         fixture.settings.semanticFileSearch = .init(enabled: false)
         try await Self.wait { service.phase == .off }
         #expect(watcher.started.isEmpty)
+        await service.clear(removeModel: true)
+    }
+
+    @Test func `starting in Low Power Mode prepares search without scanning`() async throws {
+        let (fixture, root, reader, models) = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.copyItem(at: models.source, to: fixture.modelURL)
+        let constrained = AskSearchCancellation(), restored = AskSearchCancellation()
+        constrained.cancel()
+        let service = SemanticFileSearchService(
+            settings: fixture.settings, directory: root,
+            helper: URL(fileURLWithPath: "/usr/bin/true"), supported: true,
+            watcher: SemanticFixtureWatcher(), access: { true },
+            lowPowerMode: { constrained.isCancelled && !restored.isCancelled },
+            thermalConstrained: { false }, models: models,
+            makeReader: { reader }, makeEncoder: { _, _ in SemanticFixtureEncoder() },
+            makeQuery: { _, _ in SemanticFixtureQuery() }
+        )
+        #expect(service.setEnabled(true))
+        try await Self.wait { service.phase == .paused }
+        #expect(service.isEnabled)
+        #expect(reader.directoryReads == 0)
+        restored.cancel()
+        NotificationCenter.default.post(name: .NSProcessInfoPowerStateDidChange, object: ProcessInfo.processInfo)
+        try await Self.wait { service.phase == .ready && reader.directoryReads > 0 }
         await service.clear(removeModel: true)
     }
 
