@@ -84,6 +84,46 @@ struct AskPluginViewTests {
         #expect(try pixels() == settled, "typing must not dim or rebuild the retained local list")
     }
 
+    @MainActor
+    @Test func historyListUsesTheExpandedViewportEvenWithABottomNote() async throws {
+        _ = NSApplication.shared
+        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+        let plan = AskPluginPlan(mode: .live, title: "History")
+        let output = AskPluginOutput(body: "", original: "", meta: [], source: "", note: "Local chats",
+                                     actions: [], items: (0..<30).map {
+                                         AskPluginItem(id: "row-\($0)", title: "History row \($0)")
+                                     })
+        let viewport: CGFloat = 480
+        let view = AskPluginResultsView(display: AskPluginDisplay(title: "History", symbol: "bubble.left.and.bubble.right",
+            phase: .done(plan, output), offersAskAI: false), question: "", viewportHeight: viewport,
+            onMain: {}, onAction: { _ in }, onAskAI: {}, onHighlight: { _ in })
+        let window = AskTestVoiceWindow(contentRect: NSRect(x: 0, y: 0, width: 620, height: viewport),
+                                        styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = NSHostingView(rootView: view)
+        window.orderFront(nil)
+        defer { window.close() }
+        try await Task.sleep(for: .milliseconds(100))
+        window.contentView?.layoutSubtreeIfNeeded()
+        var seen = Set<ObjectIdentifier>()
+        func listFrame(in node: Any) -> NSRect? {
+            guard let object = node as? NSObject, seen.insert(ObjectIdentifier(object)).inserted else { return nil }
+            if object.responds(to: NSSelectorFromString("accessibilityIdentifier")),
+               object.value(forKey: "accessibilityIdentifier") as? String == "ask.plugin.items",
+               object.responds(to: NSSelectorFromString("accessibilityFrame")) {
+                return (object.value(forKey: "accessibilityFrame") as? NSValue)?.rectValue
+            }
+            guard object.responds(to: NSSelectorFromString("accessibilityChildren")) else { return nil }
+            for child in object.value(forKey: "accessibilityChildren") as? [Any] ?? [] {
+                if let frame = listFrame(in: child) { return frame }
+            }
+            return nil
+        }
+        let frame = try #require(listFrame(in: window))
+        #expect(frame.height > 400, "the history list should use the space below its first six rows")
+    }
+
     private let plan = AskPluginPlan(mode: .onSubmit, title: "Translate", meta: [AskPluginMeta(text: "English")])
     private func output(_ body: String = "Hola", note: String? = nil) -> AskPluginOutput {
         AskPluginOutput(body: body, original: "Hello", meta: [], source: "On this Mac", note: note, actions: [
