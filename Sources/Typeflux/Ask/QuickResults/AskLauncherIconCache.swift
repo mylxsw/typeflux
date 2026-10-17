@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 import TypefluxMediaProtocol
 import UniformTypeIdentifiers
@@ -7,6 +8,11 @@ import UniformTypeIdentifiers
 /// only while the launcher is visible and are versioned by the search index.
 @MainActor
 final class AskLauncherIconCache {
+    final class Revision: ObservableObject {
+        @Published private(set) var value = 0
+        func advance() { value &+= 1 }
+    }
+    private struct WeakRevision { weak var value: Revision? }
     private struct Key: Hashable {
         let icon: MediaNativeIcon
         let revision: Date?
@@ -27,6 +33,7 @@ final class AskLauncherIconCache {
     }
 
     private var entries: [Key: Entry] = [:]
+    private var revisions: [Key: WeakRevision] = [:]
     private var applicationOrder: [Key] = []
     private var fileOrder: [Key] = []
     private var pending: [Key: Pending] = [:]
@@ -34,6 +41,8 @@ final class AskLauncherIconCache {
     private var applicationPrefetch: Set<Key> = []
     private var filePrefetch: Set<Key> = []
     private var applicationWarmup: Task<Void, Never>?
+    private var diskPreload: Task<Void, Never>?
+    private var diskPreloadKeys: Set<Key> = []
     private var applicationWarmupKeys: Set<Key> = []
     private var applicationWarmupGeneration = UUID()
     private var applicationFingerprints: [String: String] = [:]
@@ -73,6 +82,17 @@ final class AskLauncherIconCache {
             return nil
         }
         return entry.result
+    }
+
+    func revision(for icon: MediaNativeIcon, modified: Date? = nil) -> Revision {
+        let key = Key(icon, revision: modified)
+        if let current = revisions[key]?.value { return current }
+        let current = Revision()
+        revisions[key] = WeakRevision(value: current)
+        if revisions.count > capacity + fileCapacity {
+            revisions = revisions.filter { $0.value.value != nil }
+        }
+        return current
     }
 
     nonisolated static func eligible(_ icon: MediaNativeIcon, revision: Date?) -> Bool {
@@ -249,6 +269,33 @@ final class AskLauncherIconCache {
         }
     }
 
+    /// Load only existing on-disk application icons while the launcher is idle.
+    /// Missing icons are still decoded on demand when the launcher opens.
+    func preloadApplications(_ icons: [MediaNativeIcon]) {
+        guard let diskCache else { return }
+        var seen: Set<Key> = []
+        let ordered = Array(icons.filter(Self.eligible).map { Key($0) }
+            .filter { seen.insert($0).inserted }.prefix(capacity))
+        let wanted = Set(ordered)
+        guard wanted != diskPreloadKeys ||
+                (diskPreload == nil && ordered.contains(where: { cached($0.icon) == nil })) else { return }
+        diskPreload?.cancel()
+        diskPreloadKeys = wanted
+        let currentGeneration = generation
+        diskPreload = Task { [weak self] in
+            for key in ordered {
+                guard !Task.isCancelled, let self, self.generation == currentGeneration else { return }
+                guard self.cached(key.icon) == nil,
+                      let fingerprint = self.applicationFingerprints[key.icon.value], !fingerprint.isEmpty else { continue }
+                guard let result = await diskCache.load(path: key.icon.value, fingerprint: fingerprint) else { continue }
+                guard !Task.isCancelled, self.generation == currentGeneration,
+                      self.applicationFingerprints[key.icon.value] == fingerprint else { return }
+                if self.cached(key.icon) == nil { self.remember(result, for: key) }
+            }
+            self?.diskPreload = nil
+        }
+    }
+
     /// Discard only icons whose indexed bundle changed or disappeared.
     func reconcileApplications(_ applications: [AskAppEntry]) {
         var next: [String: String] = [:]
@@ -263,6 +310,7 @@ final class AskLauncherIconCache {
             return
         }
         suspendApplicationWarmup()
+        diskPreload?.cancel(); diskPreload = nil; diskPreloadKeys.removeAll()
         applicationWarmupKeys.removeAll()
         for path in changed {
             let key = Key(.init(kind: .file, value: path))
@@ -353,6 +401,7 @@ final class AskLauncherIconCache {
     func clear() {
         generation = UUID()
         suspendApplicationWarmup()
+        diskPreload?.cancel(); diskPreload = nil; diskPreloadKeys.removeAll()
         applicationWarmupKeys.removeAll()
         applicationFingerprints.removeAll()
         cancelPrefetch()
@@ -369,6 +418,9 @@ final class AskLauncherIconCache {
 
     private func remember(_ result: AskFilePreviewPDF.Result, for key: Key) {
         entries[key] = Entry(result: result, expires: key.isPrivate ? Date().addingTimeInterval(lifetime) : nil)
+        if let revision = revisions[key]?.value {
+            DispatchQueue.main.async { [weak revision] in revision?.advance() }
+        }
         if key.isPrivate {
             fileOrder.removeAll { $0 == key }; fileOrder.append(key)
             while fileOrder.count > fileCapacity { entries[fileOrder.removeFirst()] = nil }

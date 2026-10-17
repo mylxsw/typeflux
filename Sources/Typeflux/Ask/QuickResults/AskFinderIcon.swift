@@ -113,24 +113,45 @@ struct AskNativeIconImage<Content: View>: View {
     @Environment(\.nativeIconDecoderOverride) private var environmentDecode
     @Environment(\.askLauncherIconCache) private var launcherCache
     var body: some View {
-        let iconCache = launcherCache
         let selectedDecode: AskNativeIconDecoding?
         if let decode { selectedDecode = { @Sendable icon in try await decode(icon) } }
         else if let environmentDecode { selectedDecode = environmentDecode.decode }
         else { selectedDecode = nil }
         let useCache = decode == nil
-        let cached = access.allows() && useCache ? icon.flatMap {
-            (immediateLookup
-                ? iconCache?.immediate($0, revision: revision, folder: folder)
-                : iconCache?.cached($0, revision: revision))?.images.first
-        }.map { NSImage(cgImage: $0, size: .zero) } : nil
-        return AskContextImage(source: icon.map { $0.kind.rawValue + ":" + $0.value },
-            model: AskContextImageModel(maximumEdge: 56, nativeIcon: .init(icon: icon, revision: revision,
-                cache: iconCache, decode: selectedDecode, useCache: useCache)), content: { image in content(image ?? cached) })
+        let cacheRevision = useCache ? icon.flatMap { launcherCache?.revision(for: $0, modified: revision) } : nil
+        return AskNativeIconProjection(icon: icon, revision: revision, folder: folder,
+            immediateLookup: immediateLookup, decode: selectedDecode, useCache: useCache,
+            cache: launcherCache, cacheRevision: cacheRevision ?? AskLauncherIconCache.Revision(), content: content)
         .id(Identity(icon: icon, epoch: access.epoch, generation: generation, revision: revision))
     }
     private struct Identity: Hashable {
         let icon: MediaNativeIcon?; let epoch: UUID?; let generation: Int; let revision: Date?
+    }
+}
+
+/// Each row observes only its own cached icon. A background preload can replace
+/// a failed placeholder without invalidating the whole launcher list.
+private struct AskNativeIconProjection<Content: View>: View {
+    let icon: MediaNativeIcon?
+    let revision: Date?
+    let folder: Bool
+    let immediateLookup: Bool
+    let decode: AskNativeIconDecoding?
+    let useCache: Bool
+    let cache: AskLauncherIconCache?
+    @ObservedObject var cacheRevision: AskLauncherIconCache.Revision
+    let content: (NSImage?) -> Content
+    @Environment(\.askContextImageAccess) private var access
+
+    var body: some View {
+        let cached = access.allows() && useCache ? icon.flatMap {
+            (immediateLookup
+                ? cache?.immediate($0, revision: revision, folder: folder)
+                : cache?.cached($0, revision: revision))?.images.first
+        }.map { NSImage(cgImage: $0, size: .zero) } : nil
+        AskContextImage(source: icon.map { $0.kind.rawValue + ":" + $0.value },
+            model: AskContextImageModel(maximumEdge: 56, nativeIcon: .init(icon: icon, revision: revision,
+                cache: cache, decode: decode, useCache: useCache)), content: { image in content(image ?? cached) })
     }
 }
 

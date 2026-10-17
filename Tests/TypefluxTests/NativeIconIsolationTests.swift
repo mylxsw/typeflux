@@ -18,6 +18,16 @@ private actor NativeIconCalls {
     var count = 0
     func called() { count += 1 }
 }
+private actor RecoveringNativeIcon {
+    var calls = 0
+    var ready = false
+    func enable() { ready = true }
+    func decode(_ pixels: CGImage) throws -> AskFilePreviewPDF.Result {
+        calls += 1
+        guard ready else { throw MediaFailure.unavailable }
+        return .init(images: [pixels], numbers: [], pages: 0)
+    }
+}
 
 @MainActor private final class IconScopeObserver: AskImageScopeObserver {
     var cancellations = 0
@@ -442,6 +452,65 @@ private actor NativeIconCalls {
         for _ in 0..<100 where cache.cached(icon) == nil { try await Task.sleep(for: .milliseconds(10)) }
         XCTAssertNotNil(cache.cached(icon), "the icon still loads in the background")
         XCTAssertEqual(immediateLookups, 0)
+    }
+
+    func testVisiblePlaceholderUpdatesWhenApplicationCacheRecovers() async throws {
+        _ = NSApplication.shared
+        let pixels = raster(), recovery = RecoveringNativeIcon(), scope = AskImagePresentationScope()
+        let icon = MediaNativeIcon(kind: .file, value: "/Applications/Recovering.app")
+        let cache = AskLauncherIconCache(immediateLookup: { _, _ in nil }, decode: { _ in
+            try await recovery.decode(pixels)
+        })
+        let access = AskImagePresentationAccess(scope: scope, epoch: scope.epoch, authorize: { true })
+        let view = NSHostingView(rootView: AskNativeIconView(icon: icon, symbol: "square",
+            immediateLookup: false).frame(width: 56, height: 56)
+            .environment(\.askLauncherIconCache, cache)
+            .environment(\.askContextImageAccess, access))
+        let window = NSWindow(contentRect: .init(x: 100, y: 100, width: 56, height: 56),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false; window.contentView = view; window.orderFront(nil)
+        defer { window.contentView = nil; window.close() }
+        view.layoutSubtreeIfNeeded()
+        for _ in 0..<100 {
+            if await recovery.calls > 0 { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        let firstCalls = await recovery.calls
+        XCTAssertEqual(firstCalls, 1)
+        await recovery.enable()
+        _ = try await cache.load(icon)
+        var blue: CGFloat = 0
+        for _ in 0..<100 {
+            view.layoutSubtreeIfNeeded()
+            let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+            view.cacheDisplay(in: view.bounds, to: bitmap)
+            blue = bitmap.colorAt(x: bitmap.pixelsWide / 2, y: bitmap.pixelsHigh / 2)?
+                .usingColorSpace(.deviceRGB)?.blueComponent ?? 0
+            if blue > 0.7 { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertGreaterThan(blue, 0.7, "the visible row must redraw when its cached icon arrives")
+    }
+
+    func testApplicationDiskIconsPreloadWithoutStartingDecoders() async throws {
+        let folder = try AskAttachmentFixture.directory()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let disk = AskLauncherIconDiskCache(directory: folder)
+        let icon = MediaNativeIcon(kind: .file, value: "/Applications/Persisted.app")
+        let result = AskFilePreviewPDF.Result(images: [raster()], numbers: [], pages: 0)
+        await disk.store(result, path: icon.value, fingerprint: "version-1")
+        let calls = NativeIconCalls()
+        let cache = AskLauncherIconCache(immediateLookup: { _, _ in nil }, decode: { _ in
+            await calls.called()
+            throw MediaFailure.unavailable
+        }, diskCache: disk)
+        cache.reconcileApplications([AskAppEntry(name: "Persisted", url: URL(fileURLWithPath: icon.value),
+                                                 bundleID: nil, names: [], iconFingerprint: "version-1")])
+        cache.preloadApplications([icon])
+        for _ in 0..<100 where cache.cached(icon) == nil { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertNotNil(cache.cached(icon))
+        let decodeCalls = await calls.count
+        XCTAssertEqual(decodeCalls, 0)
     }
 
     func testHomeLoadsMoreIconsThanTheStandardImageScopeLimit() async throws {

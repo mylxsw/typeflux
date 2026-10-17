@@ -74,6 +74,9 @@ extension AskConversationModel {
     func prepareLauncherAppIcons() {
         let applications = appIndex.applications()
         launcherIconCache.reconcileApplications(applications)
+        launcherIconCache.preloadApplications(applications.map {
+            .init(kind: .file, value: $0.url.path)
+        })
         launcherIconCache.prefetch(applications.filter { $0.bundleID != Bundle.main.bundleIdentifier }
             .prefix(AskLauncherHome.iconPrefetchCount).map {
             .init(kind: .file, value: $0.url.path)
