@@ -63,15 +63,16 @@ extension EnvironmentValues {
 struct AskStoredArtifactCard: View {
     let ref: AskArtifactRef
     @Environment(\.askArtifactAccess) private var access
-    @State private var error: String?
+    @StateObject private var saveModel = AskArtifactSaveModel()
     @StateObject private var previewModel = AskArtifactPreviewModel()
     @StateObject private var imageModel = AskArtifactImageModel()
     @State private var copying: Task<Void, Never>?
 
     @MainActor init(ref: AskArtifactRef, imageModel: AskArtifactImageModel? = nil,
-                    previewModel: AskArtifactPreviewModel? = nil) {
+                    previewModel: AskArtifactPreviewModel? = nil, saveModel: AskArtifactSaveModel? = nil) {
         self.ref = ref; _imageModel = StateObject(wrappedValue: imageModel ?? AskArtifactImageModel())
         _previewModel = StateObject(wrappedValue: previewModel ?? AskArtifactPreviewModel())
+        _saveModel = StateObject(wrappedValue: saveModel ?? AskArtifactSaveModel())
     }
 
     var body: some View {
@@ -97,7 +98,7 @@ struct AskStoredArtifactCard: View {
             HStack {
                 Button(L("ask.preview")) {
                     previewModel.open(ref, access: access)
-                    if previewModel.projection(for: ref, access: access).preview != nil { error = nil }
+                    if previewModel.projection(for: ref, access: access).preview != nil { saveModel.cancel() }
                 }
                 Button(L("ask.artifact.save")) { save() }
                 if ref.mediaType.hasPrefix("image/") {
@@ -107,7 +108,7 @@ struct AskStoredArtifactCard: View {
                     }.disabled(projection.busy)
                 }
             }
-            if let error = error ?? previewProjection.error ?? projection.error {
+            if let error = saveModel.projectedError(for: ref, access: access) ?? previewProjection.error ?? projection.error {
                 Text(error).foregroundStyle(StudioTheme.danger).font(.system(size: 12))
             }
         }
@@ -120,7 +121,7 @@ struct AskStoredArtifactCard: View {
             guard ref.mediaType.hasPrefix("image/") else { return }
             await imageModel.load(ref, access: access)
         }
-        .onDisappear { copying?.cancel(); copying = nil; imageModel.cancel() }
+        .onDisappear { copying?.cancel(); copying = nil; imageModel.cancel(); saveModel.cancel() }
         .sheet(isPresented: Binding(get: { previewModel.projection(for: ref, access: access).preview != nil }, set: {
             if !$0 {
                 previewModel.close()
@@ -133,15 +134,11 @@ struct AskStoredArtifactCard: View {
     }
 
     private func save() {
-        do {
-            let initial = try access.load(ref)
+        saveModel.save(ref, access: access, choose: { initial in
             let panel = NSSavePanel()
             panel.nameFieldStringValue = (initial.manifest.entry as NSString).lastPathComponent
-            guard panel.runModal() == .OK, let url = panel.url else { return }
-            // A dialog may outlive account/grant changes. Revalidate immediately before export.
-            try AskArtifactExport.write(access.load(ref), to: url)
-            error = nil
-        } catch { self.error = error.localizedDescription }
+            return panel.runModal() == .OK ? panel.url : nil
+        }, write: AskArtifactExport.write)
     }
 }
 

@@ -1,0 +1,67 @@
+{
+  "baseline": "19214cef79bd52aa55880983a4118edf0c2bf027",
+  "methods": [
+    "TypefluxTests.ArtifactPreviewSourceTests/actualImageContinuationRefusesClosedForeignCanceledAndRevokedPreviewBeforeRead()",
+    "TypefluxTests.ArtifactPreviewSourceTests/bodyValuesAndDirectLegacyPreviewDoNoPreparationAcrossAllContentBranches()",
+    "TypefluxTests.ArtifactPreviewSourceTests/bundleRevokedDuringReadIsRetainedPrivatelyWithoutReopenOrWrite()",
+    "TypefluxTests.ArtifactPreviewSourceTests/cancellationAtEntrySourceAndTerminalKeepsExistingOwnerOrWithholdsOutput()",
+    "TypefluxTests.ArtifactPreviewSourceTests/freshAuthorizerCannotReviveOriginalBundleAndExplicitReopenUsesFreshSource()",
+    "TypefluxTests.ArtifactPreviewSourceTests/getterCallbacksAndDeniedOriginalCannotRestoreClosedReceipt()",
+    "TypefluxTests.ArtifactPreviewSourceTests/initialDenialExpiredCorruptAndUnknownErrorsHaveBoundedFallback()",
+    "TypefluxTests.ArtifactPreviewSourceTests/oldReentrantSourceReturnOrThrowCannotReplaceNewBundle(_:)",
+    "TypefluxTests.ArtifactPreviewSourceTests/sameProductionFactoryBindsBeforeQueuedOpenAndProjectionNeverReadsFiles()",
+    "TypefluxTests.ArtifactPreviewSourceTests/sourceCallbackRetirementCannotReadOrPublish(_:)",
+    "TypefluxTests.ArtifactPreviewSourceTests/staleDeniedEntryPreservesOwnedBundleOrFailure(_:)",
+    "TypefluxTests.ArtifactSaveOwnershipTests/cancellationAtEachBoundaryStopsNextEffect(_:)",
+    "TypefluxTests.ArtifactSaveOwnershipTests/cardBodyValueProjectsErrorWithoutChooserOrIO()",
+    "TypefluxTests.ArtifactSaveOwnershipTests/enteredWriterEffectIsOnceAndCannotClearNestedNewFailure(_:)",
+    "TypefluxTests.ArtifactSaveOwnershipTests/exactSourceErrorsAndDeniedOldEntryCannotReplaceOwnedFailure()",
+    "TypefluxTests.ArtifactSaveOwnershipTests/finalReloadAndFallbackPreserveBundleWithoutWrite(_:)",
+    "TypefluxTests.ArtifactSaveOwnershipTests/getterSamplesOriginalLastAndNeverReadsOrClearsNewOwnership()",
+    "TypefluxTests.ArtifactSaveOwnershipTests/oldReentrantLoadReturnOrThrowCannotClearFreshError(_:)",
+    "TypefluxTests.ArtifactSaveOwnershipTests/precanceledAndTaskCanceledChooserNeverWriteOrMutateOwnedError()",
+    "TypefluxTests.ArtifactSaveOwnershipTests/productionAccessRetainsOriginalAcrossChooserAndFreshExplicitSaveWritesOnce()",
+    "TypefluxTests.ArtifactSaveOwnershipTests/validFinalReloadRevocationAndInitialWrongRefStopWriter()",
+    "TypefluxTests.ArtifactSaveOwnershipTests/writerAndEntryCallbacksCannotRestoreRetiredState()"
+  ],
+  "new_methods": 11,
+  "regression_methods": 11,
+  "new_parameter_cases": 20,
+  "body_review": "All 22 method bodies plus raw CGContext fixture and shared preview source read before selection. Production save/Card/access/tools/store audited.",
+  "exclusions": [
+    "AskArtifactStoreTests (actual export writes)",
+    "AskArtifactImage MIMEAllowlist / ClipboardWrites / RealHelper / PreviewAndCardRender",
+    "SystemClipboardContentActions including named pasteboard; ConversationModel/AskTestFixture",
+    "All actual save panels, destination writes, hosted UI, codecs/helpers/devices/network"
+  ],
+  "result": {
+    "distinct_methods_passed": 22,
+    "first_functional_pass": true,
+    "swift_testing_seconds": 0.063,
+    "new_suite_seconds": 0.004,
+    "xctest_methods": 0
+  },
+  "verification": {
+    "inputs": 2023,
+    "sources": 1153,
+    "tests": 870,
+    "profiles": 2,
+    "binary_hashes": {
+      "tests": "37d9c628331701fb62fd3a6aae0818cb576c43b755c3d8fbc6fd6ec548a2ea3b",
+      "app": "45559bce40715c4b4a007ec923e9cecb2e4b7300c8c9aa2c23d45dbd91ee600a"
+    },
+    "reported_function_hashes": 452,
+    "all_reported_hashes_zero": true,
+    "note": "Zero Swift hashes do not establish layout compatibility. HOST profiles only; no child coverage claim."
+  },
+  "raw_profiles": [
+    {
+      "path": ".build/arm64-apple-macosx/debug/codecov/XCTest7602031782887601970_0.39896.profraw",
+      "sha256": "31c9c7472f106d6103b7d7ac3f0748925e08a1ace582a0b9395cc214089bfc98"
+    },
+    {
+      "path": ".build/arm64-apple-macosx/debug/codecov/Swift Testing7602031782887601970_0.39897.profraw",
+      "sha256": "36dc47b05dc4a670506b302652d6f6b64eba3b4b426e666059008e0b2e8c458f"
+    }
+  ]
+}
