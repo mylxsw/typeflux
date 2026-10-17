@@ -1,5 +1,5 @@
 {
-  "README.md": "4d9ade47a9cbd55650b93dc77a35c7b24f3ee553f751f3d0372b4f6f855b8d90",
+  "README.md": "59c92bd07485200bd73036f724e839b034b25ba3e454879027e688c3e3307a4f",
   "analyze.py": "164ad5a5936b945e93864df8aab9d73288b11550adf7b393835bbd7920538f52",
   "build-once/build-commands.json": "a393870c57ee34a27480a20148335ad81fd7b081cda4353a1182056a0e18ea9f",
   "build-once/build-total.json": "0285a094caeef55c60426183fc6e7cfae556d0d757973a97c3eaf7f24b727637",
@@ -11,10 +11,10 @@
   "build_probe.py": "d237ec7dc639cdd85e88f493682520fde691af52d4b18dcaf404a04cdeeac589",
   "cached-input-reconciliation.json": "8ac7922b9665c91e6f2104cd9945d4fb64c1a46de803439421bac7de48a45b56",
   "cleanup.json": "8499a48afcb2a6013f7b47aa3a3efefc0b3d7ca13d1b92818323f516bc7afa89",
-  "final-checks.json": "72b759078b3f81729f0ee8232e63b406f26e75acaaeefbfdd2334a5db4a5133a",
+  "final-checks.json": "156b2ee78ee0eac738c70e673087c0d7ab46aa37c5abd48784c2d8689dcda770",
   "helper-build.json": "5aa1b988db836eecb4e2477ac3effffedd0c4886d4f3dfd8cc3e73ffc5ebca41",
-  "helper-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "helper-diagnostic.patch": "4380e0482ac8e160bcac5ac17c0bf400e39985c6bbe3958b86d171be5bfed823",
+  "helper-build.log.gz": "8f229ff6437d28f697433045e0185a923d59368fb130ff60d275a9555812075e",
+  "helper-diagnostic.patch.gz": "38b34c5b47dae9c71a84ea2ebb2501991c968d5c56bb5d060b5d1a611d23e03d",
   "linked-objects-final.json": "c904ccc77ca57d34abcd92c076a9903176f3aee29deffb34dcd7ca3f888349bb",
   "media_probe.swift": "127970a78e32a735db7a971eb8726afbfe3b9a9726b5811b2ee552bdbdd0e304",
   "probe-binary.json": "03a1bef6171c815841fd40f30814a9e978e466f34802c32889398b6b4c9d8c51",
@@ -38,10 +38,10 @@
   "screenshot-once/runtime-tools/probe-binary.json": "03a1bef6171c815841fd40f30814a9e978e466f34802c32889398b6b4c9d8c51",
   "screenshot-once/runtime-tools/run_probe.py": "69928191e1f9821f8d16c569004d104a4e8c47a67b0a6503c725463fd95e22ec",
   "screenshot-once/runtime-tools/semantic_helper.swift": "82c48427861edd4db384b83904d168e93e1c85790c269a349be2be0a3b760772",
-  "screenshot-once/runtime.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "screenshot-once/runtime.log.gz": "d56dd2de6725de6c5729943ae6bbb396ce3c2441d0d2405792aab0860c37b89f",
   "screenshot-once/sample-command.json": "bc11dd3c6be6904ee456efd64950ebbdd149bcbf235609374242aed870ac5c64",
   "screenshot-once/trace.jsonl": "85ab7eec26b934271ead870e51820fde7696dfeba5d61574e4764b5241691faf",
   "semantic_helper.swift": "82c48427861edd4db384b83904d168e93e1c85790c269a349be2be0a3b760772",
   "test_analyze.py": "de2ac5783170de45d37f175484f4af124d8d40258d8b10e95543c0b50e5b885b",
-  "tool-tests.log": "100e70c0e013498381bbf2ef48509315491833239202bcb6677b345baa8b6869"
+  "tool-tests.log.gz": "d0c08bc3a4e7cc72a3c22fdf9dd064a1b5aba1b28036f3969fb1db40f3ce7e22"
 }

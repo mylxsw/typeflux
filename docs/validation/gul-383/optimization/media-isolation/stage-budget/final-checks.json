@@ -31,5 +31,7 @@
   "python_syntax": "passed",
   "media_acceptance": "not passed",
   "automatic_observation_retries": 0,
-  "raw_profile_export_repeated": false
+  "raw_profile_export_repeated": false,
+  "initial_staged_diff_check": "Patch evidence context lines triggered whitespace warnings; retained exact patch bytes as gzip, then rechecked. No product source change.",
+  "final_diff_check": "passed"
 }
