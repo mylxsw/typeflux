@@ -1,0 +1,182 @@
+[
+  {
+    "seconds": 1.0549787499476224,
+    "processes": [
+      [
+        "35356",
+        "35345",
+        "Ss",
+        "0.0",
+        "32",
+        "0:00.00",
+        "<repo>/.build/audio-live/VideoProbe"
+      ]
+    ]
+  },
+  {
+    "seconds": 2.103599000023678,
+    "processes": [
+      [
+        "35356",
+        "35345",
+        "Ss",
+        "0.0",
+        "32",
+        "0:00.00",
+        "<repo>/.build/audio-live/VideoProbe"
+      ]
+    ]
+  },
+  {
+    "seconds": 3.1535329580074176,
+    "processes": [
+      [
+        "35356",
+        "35345",
+        "Ss",
+        "0.0",
+        "32",
+        "0:00.00",
+        "<repo>/.build/audio-live/VideoProbe"
+      ]
+    ]
+  },
+  {
+    "seconds": 4.194088749936782,
+    "processes": [
+      [
+        "35356",
+        "35345",
+        "Ss",
+        "0.0",
+        "32",
+        "0:00.00",
+        "<repo>/.build/audio-live/VideoProbe"
+      ]
+    ]
+  },
+  {
+    "seconds": 5.218554874998517,
+    "processes": [
+      [
+        "35356",
+        "35345",
+        "Rs",
+        "27.2",
+        "91536",
+        "0:00.14",
+        "<repo>/.build/audio-live/VideoProbe"
+      ]
+    ]
+  },
+  {
+    "seconds": 6.245644749957137,
+    "processes": [
+      [
+        "35356",
+        "35345",
+        "Rs",
+        "35.4",
+        "93232",
+        "0:00.46",
+        "<repo>/.build/audio-live/VideoProbe"
+      ],
+      [
+        "35466",
+        "35356",
+        "S",
+        "1.6",
+        "68512",
+        "0:00.06",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ]
+    ]
+  },
+  {
+    "seconds": 7.267393250018358,
+    "processes": [
+      [
+        "35356",
+        "35345",
+        "Ss",
+        "2.9",
+        "94544",
+        "0:00.52",
+        "<repo>/.build/audio-live/VideoProbe"
+      ],
+      [
+        "35466",
+        "35356",
+        "S",
+        "0.0",
+        "68512",
+        "0:00.06",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "35470",
+        "35356",
+        "T",
+        "46.7",
+        "885472",
+        "0:00.46",
+        "<accepted-cache>/.build/stage-budget/ProductSemanticHelper"
+      ]
+    ]
+  },
+  {
+    "seconds": 8.289659332949668,
+    "processes": [
+      [
+        "35356",
+        "35345",
+        "Rs",
+        "34.2",
+        "94976",
+        "0:00.69",
+        "<repo>/.build/audio-live/VideoProbe"
+      ],
+      [
+        "35473",
+        "35356",
+        "S",
+        "4.5",
+        "67600",
+        "0:00.05",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ]
+    ]
+  },
+  {
+    "seconds": 9.317612749990076,
+    "processes": [
+      [
+        "35356",
+        "35345",
+        "Ss",
+        "3.1",
+        "95024",
+        "0:00.77",
+        "<repo>/.build/audio-live/VideoProbe"
+      ],
+      [
+        "35473",
+        "35356",
+        "S",
+        "0.0",
+        "67600",
+        "0:00.05",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "35477",
+        "35356",
+        "R",
+        "52.4",
+        "942496",
+        "0:00.47",
+        "<accepted-cache>/.build/stage-budget/ProductSemanticHelper"
+      ]
+    ]
+  }
+]

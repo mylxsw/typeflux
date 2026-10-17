@@ -1,0 +1,31 @@
+{
+  "observations": [
+    {
+      "observation": "live",
+      "observed_pids": 1,
+      "currently_alive": []
+    },
+    {
+      "observation": "live-visible-root",
+      "observed_pids": 4,
+      "currently_alive": []
+    },
+    {
+      "observation": "live-query-existing-corpus",
+      "observed_pids": 2,
+      "currently_alive": []
+    },
+    {
+      "observation": "live-query-prepared",
+      "observed_pids": 5,
+      "currently_alive": []
+    },
+    {
+      "observation": "video-live",
+      "observed_pids": 5,
+      "currently_alive": []
+    }
+  ],
+  "private_roots_remaining": [],
+  "wall_seconds": 1.1215678340522572
+}

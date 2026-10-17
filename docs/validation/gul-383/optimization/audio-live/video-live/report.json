@@ -1,0 +1,1056 @@
+{
+  "backup_finish" : 0,
+  "backup_step" : 101,
+  "budget_enabled" : true,
+  "cleaned_up" : true,
+  "complete" : true,
+  "diagnosis" : {
+    "absolute_confidence_floor" : 0.69999999999999996,
+    "confident" : true,
+    "distinct_files" : 1,
+    "lexical_candidate_count" : 0,
+    "peak" : 0.70946550369262695,
+    "query" : "blue slide",
+    "query_norm" : 1.0000000451116331,
+    "query_valid" : true,
+    "rows" : [
+      {
+        "allowed" : true,
+        "candidate_score" : 0.38807204663753514,
+        "dimensions" : 768,
+        "float32_dot" : 0.70565651042422328,
+        "id" : 1,
+        "lexical_coverage" : 0,
+        "modality" : "video",
+        "name" : "scene.mov",
+        "norm" : 0.9999999673031823,
+        "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;video-step0.5-tail-rgb16-mean2-max12-actual-v1",
+        "provenance_matches" : true,
+        "scanner_cosine" : 0.7055855393409729,
+        "segment_kind" : "video-frame",
+        "vector_valid" : true
+      },
+      {
+        "allowed" : true,
+        "candidate_score" : 0.39020602703094487,
+        "dimensions" : 768,
+        "float32_dot" : 0.70944114379541912,
+        "id" : 2,
+        "lexical_coverage" : 0,
+        "modality" : "video",
+        "name" : "scene.mov",
+        "norm" : 0.99999998799944234,
+        "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;video-step0.5-tail-rgb16-mean2-max12-actual-v1",
+        "provenance_matches" : true,
+        "scanner_cosine" : 0.70946550369262695,
+        "segment_kind" : "video-frame",
+        "vector_valid" : true
+      },
+      {
+        "allowed" : true,
+        "candidate_score" : 0.38807204663753514,
+        "dimensions" : 768,
+        "float32_dot" : 0.70565651042422328,
+        "id" : 3,
+        "lexical_coverage" : 0,
+        "modality" : "video",
+        "name" : "scene.mov",
+        "norm" : 0.9999999673031823,
+        "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;video-step0.5-tail-rgb16-mean2-max12-actual-v1",
+        "provenance_matches" : true,
+        "scanner_cosine" : 0.7055855393409729,
+        "segment_kind" : "video-frame",
+        "vector_valid" : true
+      },
+      {
+        "allowed" : true,
+        "candidate_score" : 0.38970848619937898,
+        "dimensions" : 768,
+        "float32_dot" : 0.70852194351452336,
+        "id" : 4,
+        "lexical_coverage" : 0,
+        "modality" : "video",
+        "name" : "scene.mov",
+        "norm" : 0.99999998529559808,
+        "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;video-step0.5-tail-rgb16-mean2-max12-actual-v1",
+        "provenance_matches" : true,
+        "scanner_cosine" : 0.70856088399887085,
+        "segment_kind" : "video-frame",
+        "vector_valid" : true
+      }
+    ],
+    "runner_up" : null,
+    "semantic_floor" : 0.45000000000000001
+  },
+  "enabled" : true,
+  "media" : "video",
+  "phase_before_pause" : "ready",
+  "queries" : [
+    {
+      "hits" : [
+        {
+          "chunk_id" : 2,
+          "kind" : "video-frame",
+          "name" : "scene.mov",
+          "score" : 0.39020602703094487,
+          "text" : "",
+          "time" : 1.5,
+          "version" : true
+        }
+      ],
+      "query" : "blue slide"
+    }
+  ],
+  "ready" : true,
+  "reopened_query" : {
+    "hits" : [
+      {
+        "chunk_id" : 2,
+        "kind" : "video-frame",
+        "name" : "scene.mov",
+        "score" : 0.39020602703094487,
+        "text" : "",
+        "time" : 1.5,
+        "version" : true
+      }
+    ],
+    "query" : "blue slide"
+  },
+  "resume_requested" : true,
+  "scope" : "Single synthetic media; accepted Debug application and Release inference helper. Production resource\/thermal\/low-power checks enabled; idle callback controlled.",
+  "service_query_complete" : true,
+  "snapshots" : [
+    {
+      "chunks" : 0,
+      "current" : null,
+      "files" : 0,
+      "items" : [
+
+      ],
+      "media_failed" : false,
+      "model_ready" : false,
+      "phase" : "preparing",
+      "pressure" : 0,
+      "seconds" : 0.045000583282671869,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : null,
+      "files" : 0,
+      "items" : [
+
+      ],
+      "media_failed" : false,
+      "model_ready" : false,
+      "phase" : "preparing",
+      "pressure" : 0,
+      "seconds" : 0.14659104170277715,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : null,
+      "files" : 0,
+      "items" : [
+
+      ],
+      "media_failed" : false,
+      "model_ready" : false,
+      "phase" : "preparing",
+      "pressure" : 0,
+      "seconds" : 0.27383766660932451,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : null,
+      "files" : 0,
+      "items" : [
+
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 0.38333333330228925,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 0.48898695828393102,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 0.59511087497230619,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 0.69618233328219503,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 0.79729220829904079,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 0.94791591668035835,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 1.0517364999977872,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 1.1934004999930039,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 1.2946016249479726,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 1.3968156250193715,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 1.5017197083216161,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 1.6070660416735336,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 1.718194791697897,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 1.8195919583085924,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 1.9209397500380874,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 2.0321395833743736,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 2.1334062917158008,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 2.2407552499789745,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 2.3434347083093598,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : 1
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 2.4448153333505616,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : 1
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 2.8051478333072737,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : 1
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 2.9163566667120904,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : 1
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.0175590416183695,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : 1
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.1189107917016372,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : 1
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.2212441666051745,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : 1
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.3303547500399873,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : 1
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.4415060000028461,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : 1
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.5428022083360702,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : 1
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.6450594166526571,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : 1
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.7567230416461825,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : 1
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.8598215417005122,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : 1
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.9713405000511557,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : 1
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 4.0827497083228081,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : 1
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 4.1841592916753143,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : 1
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 4.2910523333121091,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 2,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : 1.5
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 4.3926124999998137,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 3,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : 3.5
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 4.4938110000221059,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "scene.mov",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 3,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : 5.5
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 4.5951678333804011,
+      "waiting" : null
+    },
+    {
+      "chunks" : 4,
+      "current" : null,
+      "files" : 1,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 4,
+          "name" : "scene.mov",
+          "reason" : null,
+          "state" : "done",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "ready",
+      "pressure" : 0,
+      "seconds" : 4.6966187083162367,
+      "waiting" : null
+    }
+  ],
+  "video_retrieval_complete" : true,
+  "wall_seconds" : 5.2909376666648313
+}

@@ -1,0 +1,17 @@
+{
+  "actual_file_metadata" : true,
+  "budget_enabled" : true,
+  "complete" : false,
+  "live_query" : true,
+  "query" : "a tone",
+  "reopened" : [
+
+  ],
+  "reused_audio_vectors" : 2,
+  "reused_original_text_vectors" : 75,
+  "scope" : "New live query and actual isolated metadata validation; retained audio and original text vectors. No new audio inference or UI claim.",
+  "service" : [
+
+  ],
+  "wall_seconds" : 25.031362041598186
+}

@@ -1,0 +1,8 @@
+{
+  "stage_seconds": 75,
+  "budget_enabled": true,
+  "idle_callback_controlled": true,
+  "exit_code": 1,
+  "wall_seconds": 24.961984999943525,
+  "private_root_removed": true
+}

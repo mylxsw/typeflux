@@ -1,0 +1,8 @@
+{
+  "exit_code": 0,
+  "wall_seconds": 1.0731258749729022,
+  "command": [
+    "python3",
+    "docs/validation/gul-383/optimization/audio-live/test_observer.py"
+  ]
+}
