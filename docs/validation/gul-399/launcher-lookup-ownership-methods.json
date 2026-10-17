@@ -1,0 +1,44 @@
+{
+  "baseline": "30adce80696606a2c5d34221b7ea759ff3ef81dd",
+  "methods": [
+    "TypefluxTests.NativeIconIsolationTests/testClosingLauncherDoesNotRepopulatePrivateIconCacheFromLateDecode",
+    "TypefluxTests.NativeIconIsolationTests/testLauncherCachesAndCoalescesApplicationIcons",
+    "TypefluxTests.NativeIconIsolationTests/testLauncherFileIconCacheHasSeparateSizeBound",
+    "TypefluxTests.NativeIconIsolationTests/testLauncherPrefetchesVersionedFilesAndFoldersAndClearsThemOnHide",
+    "TypefluxTests.NativeIconIsolationTests/testLauncherPreparesEveryVisibleIconBeforePublishingRows",
+    "TypefluxTests.LauncherIconAuthorityTests/canceledPrefetchReturnsHandlesThatCollectActualNativeReturn()",
+    "TypefluxTests.LauncherIconAuthorityTests/canceledUncooperativeRequestsRetainNativeCapacityUntilReturn(privateFiles:)",
+    "TypefluxTests.LauncherIconAuthorityTests/customActorAndImmediateMetadataRemainIndependentOfUnreadyNativeWorker()",
+    "TypefluxTests.LauncherIconAuthorityTests/defaultPendingBindsInAcceptedCallerBeforeItsTask()",
+    "TypefluxTests.LauncherIconAuthorityTests/oldCompletionAfterClearCannotReplaceFreshPrivatePixels()",
+    "TypefluxTests.LauncherIconAuthorityTests/preReadyCanceledAndForwardedOldRequestsDoNotReplayOrCreateNativeWork()",
+    "TypefluxTests.LauncherIconAuthorityTests/prefetchBindsBeforeImmediateLookupAndQueuedTask(privateFile:)",
+    "TypefluxTests.LauncherIconAuthorityTests/sharedPendingKeepsOneNativeCallWhenOneClientCancels()",
+    "TypefluxTests.LauncherIconAuthorityTests/validReplyRevocationCannotCacheAndFreshExplicitRecoveryWorks()",
+    "TypefluxTests.LauncherLookupOwnershipTests/callbackClearRetainsObservedRunningHandleUntilNativeActuallyReturns()",
+    "TypefluxTests.LauncherLookupOwnershipTests/callbackClearStillReturnsTasksAcceptedEarlierInSameLoop()",
+    "TypefluxTests.LauncherLookupOwnershipTests/fileClearDoesNotRetireApplicationPrefetchButDoesRetireFileQueryForBundle()",
+    "TypefluxTests.LauncherLookupOwnershipTests/metadataNamespacesHealthBoundsAndCanceledCacheHitsRemainIndependent()",
+    "TypefluxTests.LauncherLookupOwnershipTests/nestedFreshMetadataSurvivesLateOldLookupReturn(clear:)",
+    "TypefluxTests.LauncherLookupOwnershipTests/nestedPrefetchKeepsLatestWantedSetAndCoalescesCompatibleWork(same:)",
+    "TypefluxTests.LauncherLookupOwnershipTests/precanceledPrefetchDoesNotRetireExistingOwnedRequest()",
+    "TypefluxTests.LauncherLookupOwnershipTests/retiredImmediateLookupCannotPublishAndFreshExplicitLookupWorks(mode:)",
+    "TypefluxTests.LauncherLookupOwnershipTests/retiredPrefetchLookupCannotInterpretRetirementAsNativeMiss(mode:)"
+  ],
+  "result": "23/23 DISTINCT methods FIRST functional pass: 5 XCTest / one suite (0.086s) +18 SwiftTesting / two suites (0.146s overall). New LauncherLookupOwnership9 methods /16 parameter cases, 0.022s.",
+  "selection": "All selected method bodies and called helpers reviewed. NativeIconIsolation ONLY five exact safe cache methods; not a whole-suite invocation.",
+  "exclusions": [
+    "NativeIconIsolation injected native adapter also resolves system icons. RealHelper/native resolution/NSWorkspace, DrawsFirstFrame/ScopedView/ResultAndApplication/ContextApplication/window paths excluded.",
+    "SmallIcon DecoderAdmission uses png() actual encoding despite fake runner. Other codec/encoding/helper/Vision/real media/TCC/permission/device methods excluded.",
+    "SystemClipboardContentActions including named pasteboard/Downloads/home, ConversationModel/AskTestFixture/eager apps/indices, actual panels/windows/QuickLook/HTTP/provider/paid/capture/audio/signing/hardware/full and unrelated document/resource suites excluded."
+  ],
+  "limits": [
+    "Private CGContext/CGImage -> raw-memory NSImage only. Production rasterized() is exercised on these in-memory images, never systemIcon/NSWorkspace or encoding/codec.",
+    "The cache uses existing source generations and wanted-set compatibility, no new grants/queues/DI. Same wanted keys are compatible nested requests; a different wanted set or source retirement stops old admission.",
+    "Returned handles are deduplicated by existing task UUID for accepted/observed current ordered keys, including retired entries removed by callbacks. They are collection receipts, not a count of newly started work. Prior receipts remain owners responsibility for tasks pruned from unrelated prior wanted keys.",
+    "One fixture clears a queued earlier-in-loop Task before it can run; another holds an actual fake-native request across callback clear, asserts active occupancy until gate release, joins both original/observed handles, and then accepts fresh explicit work. No executor freeze/timers/global scheduler hooks.",
+    "Original native stamps/independent budgets/FD-privatecopy-childhost actual collection remain unchanged; no health-triggered replay. Existing native regression uses typed fake success and own module admission, not real helper.",
+    "Scope is specified synchronous lookup/caller Task/source generation boundaries, not arbitrary Published/Combine/AppKit/custom clock reentrancy, all UI epochs or FS/settings/account transaction. Entered effects cannot roll back.",
+    "No hosted SwiftUI/body/render, native icon resolution or System bridge proof. No presentation layout/ABI/entry/package changes, so no screenshot/copied probe."
+  ]
+}
