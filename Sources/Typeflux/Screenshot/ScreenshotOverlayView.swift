@@ -66,6 +66,9 @@ final class ScreenshotOverlayView: NSView {
 
     private let imageLayer = CALayer()
     private let dimLayer = CAShapeLayer()
+    let backgroundTransition = ScreenshotBackgroundRemovalTransition()
+    private var previewRegion: CGRect?
+    private var previewResult: CGImage?
     private let canvas: ScreenshotAnnotationCanvasView
     private let chrome: ScreenshotOverlayChromeView
     let toolbarModel = ScreenshotEditorToolbarModel()
@@ -112,12 +115,14 @@ final class ScreenshotOverlayView: NSView {
         layer?.addSublayer(imageLayer)
         layer?.addSublayer(dimLayer)
         canvas.autoresizingMask = [.width, .height]
+        addSubview(backgroundTransition)
         addSubview(canvas)
         chrome.autoresizingMask = [.width, .height]
         addSubview(chrome)
         editor.preparesMosaicGeometry = textMeasurer != nil
         mosaicPreparation.onChange = { [weak self] in self?.refresh() }
         toolbarModel.onAction = { [weak self] action in self?.perform(action) }
+        backgroundTransition.onFinish = { [weak self] in self?.refresh() }
         backgroundRemoval.onChange = { [weak self] in self?.refresh() }
         connectSensitiveInfo()
         refresh()
@@ -140,6 +145,8 @@ final class ScreenshotOverlayView: NSView {
 
     /// Lets go of the frozen image as soon as the overlay closes.
     func releaseImage() {
+        backgroundTransition.cancel()
+        previewResult = nil
         backgroundRemoval.reset()
         mosaicPreparation.retire()
         editor.cancelGeometry()
@@ -578,7 +585,24 @@ final class ScreenshotOverlayView: NSView {
 
     func refresh() {
         backgroundRemoval.updateRegion(selection.rect)
-        canvas.backgroundRemovedImage = backgroundRemoval.image
+        if previewRegion != selection.rect {
+            backgroundTransition.cancel()
+            previewResult = nil
+            previewRegion = selection.rect
+        }
+        let result = backgroundRemoval.image
+        if result !== previewResult {
+            if let result, let rect = selection.rect,
+               let original = try? ScreenshotImageExporter.crop(display, to: rect.offsetBy(
+                   dx: display.frame.minX, dy: display.frame.minY)) {
+                backgroundTransition.show(result, original: original, in: rect)
+            } else {
+                backgroundTransition.restore()
+            }
+            previewResult = result
+        }
+        canvas.suppressesBackgroundPreview = backgroundTransition.isTransitioning
+        canvas.backgroundRemovedImage = result
         prepareMosaicGeometry()
         CATransaction.begin()
         CATransaction.setDisableActions(true)

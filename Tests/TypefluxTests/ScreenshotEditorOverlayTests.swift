@@ -98,6 +98,32 @@ final class ScreenshotEditorOverlayTests: XCTestCase {
         XCTAssertNil(view.backgroundRemoval.image)
     }
 
+    func testDissolveDoesNotDelayCopyAndClosingRetiresItsLayers() async {
+        let image = ScreenCaptureTestSupport.image(width: 400, height: 300)
+        let display = ScreenSnapshot.Display(id: 1, frame: CGRect(x: 0, y: 0, width: 400, height: 300),
+                                             scale: 1, image: image)
+        let view = ScreenshotOverlayView(display: display, windows: [], backgroundProcessor: { $0 })
+        let window = NSWindow(contentRect: view.bounds, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = view
+        defer { window.orderOut(nil) }
+        frame(view, from: CGPoint(x: 50, y: 50), to: CGPoint(x: 250, y: 200))
+        let processed = expectation(description: "Processed")
+        view.backgroundRemoval.onChange = {
+            view.refresh()
+            if view.backgroundRemoval.image != nil { processed.fulfill() }
+        }
+        view.perform(.toggleBackgroundRemoval)
+        await fulfillment(of: [processed], timeout: 2)
+        XCTAssertTrue(view.backgroundTransition.isTransitioning)
+        var finished = false
+        view.onEvent = { _, event in if case .finish(.copy, _, _) = event { finished = true } }
+        view.finish(.copy)
+        XCTAssertTrue(finished, "Export uses the finished image immediately, independent of the visual effect")
+        view.releaseImage()
+        XCTAssertFalse(view.backgroundTransition.isTransitioning)
+        XCTAssertNil(view.backgroundTransition.result)
+    }
+
     func testDrawnAnnotationsTravelWithTheFinishedRegion() {
         let (view, events) = makeView()
         frame(view, from: CGPoint(x: 50, y: 50), to: CGPoint(x: 250, y: 200))

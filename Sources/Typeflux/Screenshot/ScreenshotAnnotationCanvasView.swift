@@ -22,6 +22,10 @@ final class ScreenshotAnnotationCanvasView: NSView {
         var crop: CGRect
     }
 
+    var suppressesBackgroundPreview = false {
+        didSet { if suppressesBackgroundPreview != oldValue { needsDisplay = true } }
+    }
+
     var backgroundRemovedImage: CGImage? {
         didSet {
             if backgroundRemovedImage !== oldValue {
@@ -71,7 +75,7 @@ final class ScreenshotAnnotationCanvasView: NSView {
         guard let crop = model.crop else { return }
         context.saveGState()
         context.clip(to: crop)
-        if let image = backgroundRemovedImage {
+        if let image = backgroundRemovedImage, !suppressesBackgroundPreview {
             Self.drawTransparencyGrid(in: crop, context: context)
             ScreenshotRenderer.drawImage(image, in: crop, context: context)
         }
@@ -86,7 +90,7 @@ final class ScreenshotAnnotationCanvasView: NSView {
         if let selection = model.selection { drawSelection(selection, in: context) }
     }
 
-    private static func drawTransparencyGrid(in rect: CGRect, context: CGContext) {
+    static func drawTransparencyGrid(in rect: CGRect, context: CGContext) {
         let side: CGFloat = 8
         context.setFillColor(NSColor(white: 0.78, alpha: 1).cgColor)
         context.fill(rect)
