@@ -78,6 +78,7 @@ struct SemanticNativeContentionTests {
 
     @Test func `measure both entries during real indexing when requested`() async throws {
         guard let model = ProcessInfo.processInfo.environment["TYPEFLUX_SEMANTIC_CONTENTION_MODEL"] else { return }
+        try requireSemanticValidationCacheIsolation()
         _ = NSApplication.shared
         let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
         let previous = NSApp.accessibilityAttributeValue(attribute)
@@ -85,7 +86,9 @@ struct SemanticNativeContentionTests {
         defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
         var rows: [[String: Any]] = [], entries: [[String: Any]] = []
         let largeScale = ProcessInfo.processInfo.environment["TYPEFLUX_SEMANTIC_SCALE"] == "1000000"
-        let warmSamples = largeScale ? 20 : 100
+        let warmSamples = Int(ProcessInfo.processInfo.environment["TYPEFLUX_SEMANTIC_SHORT_SAMPLES"] ?? "")
+            ?? (largeScale ? 20 : 100)
+        try #require((1 ... 100).contains(warmSamples))
         var failedBodySamples = 0
         let thermalBefore = ProcessInfo.processInfo.thermalState.rawValue
         var timerGap = 0.0
@@ -146,7 +149,7 @@ struct SemanticNativeContentionTests {
                 data.service.prepareForSearch()
                 stage = "prewarm-\(fileMode)"
                 try await wait { data.service.queryState != .warming }
-                let fixture = try AskTestFixture(authenticated: false)
+                let fixture = try AskTestFixture(authenticated: false, defaults: data.defaults)
                 defer { fixture.model.resetSession(); try? FileManager.default.removeItem(at: fixture.root) }
                 fixture.model.semanticSearch = data.service; fixture.model.fileIndex = data.names
                 if fileMode {

@@ -1,0 +1,731 @@
+[
+  {
+    "character": 11,
+    "file": "<task-checkout>/.build/lint-baseline/SemanticResourceBudgetTests.swift",
+    "line": 105,
+    "reason": "Function should have complexity 10 or less; currently complexity is 12",
+    "rule_id": "cyclomatic_complexity",
+    "severity": "Warning",
+    "type": "Cyclomatic Complexity"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/SemanticResourceBudgetTests.swift",
+    "line": 49,
+    "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 53 lines",
+    "rule_id": "function_body_length",
+    "severity": "Warning",
+    "type": "Function Body Length"
+  },
+  {
+    "character": 11,
+    "file": "<task-checkout>/.build/lint-baseline/SemanticResourceBudgetTests.swift",
+    "line": 105,
+    "reason": "Function body should span 100 lines or less excluding comments and whitespace: currently spans 176 lines",
+    "rule_id": "function_body_length",
+    "severity": "Error",
+    "type": "Function Body Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/SemanticResourceBudgetTests.swift",
+    "line": 59,
+    "reason": "Line should be 120 characters or less; currently it has 122 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/SemanticResourceBudgetTests.swift",
+    "line": 70,
+    "reason": "Line should be 200 characters or less; currently it has 234 characters",
+    "rule_id": "line_length",
+    "severity": "Error",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/SemanticResourceBudgetTests.swift",
+    "line": 80,
+    "reason": "Line should be 120 characters or less; currently it has 133 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/SemanticResourceBudgetTests.swift",
+    "line": 112,
+    "reason": "Line should be 120 characters or less; currently it has 130 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/SemanticResourceBudgetTests.swift",
+    "line": 240,
+    "reason": "Line should be 200 characters or less; currently it has 306 characters",
+    "rule_id": "line_length",
+    "severity": "Error",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/SemanticResourceBudgetTests.swift",
+    "line": 252,
+    "reason": "Line should be 200 characters or less; currently it has 385 characters",
+    "rule_id": "line_length",
+    "severity": "Error",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/SemanticResourceBudgetTests.swift",
+    "line": 9,
+    "reason": "Struct body should span 250 lines or less excluding comments and whitespace: currently spans 270 lines",
+    "rule_id": "type_body_length",
+    "severity": "Warning",
+    "type": "Type Body Length"
+  },
+  {
+    "character": 11,
+    "file": "<task-checkout>/.build/lint-baseline/SemanticNativeContentionTests.swift",
+    "line": 79,
+    "reason": "Function should have complexity 10 or less; currently complexity is 20",
+    "rule_id": "cyclomatic_complexity",
+    "severity": "Warning",
+    "type": "Cyclomatic Complexity"
+  },
+  {
+    "character": 11,
+    "file": "<task-checkout>/.build/lint-baseline/SemanticNativeContentionTests.swift",
+    "line": 79,
+    "reason": "Function body should span 100 lines or less excluding comments and whitespace: currently spans 281 lines",
+    "rule_id": "function_body_length",
+    "severity": "Error",
+    "type": "Function Body Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/SemanticNativeContentionTests.swift",
+    "line": 360,
+    "reason": "Line should be 200 characters or less; currently it has 305 characters",
+    "rule_id": "line_length",
+    "severity": "Error",
+    "type": "Line Length"
+  },
+  {
+    "character": 11,
+    "file": "<task-checkout>/.build/lint-baseline/SemanticNativeLatencyTests.swift",
+    "line": 20,
+    "reason": "Function should have complexity 10 or less; currently complexity is 21",
+    "rule_id": "cyclomatic_complexity",
+    "severity": "Error",
+    "type": "Cyclomatic Complexity"
+  },
+  {
+    "character": 11,
+    "file": "<task-checkout>/.build/lint-baseline/SemanticNativeLatencyTests.swift",
+    "line": 20,
+    "reason": "Function body should span 100 lines or less excluding comments and whitespace: currently spans 258 lines",
+    "rule_id": "function_body_length",
+    "severity": "Error",
+    "type": "Function Body Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/SemanticNativeLatencyTests.swift",
+    "line": 271,
+    "reason": "Line should be 200 characters or less; currently it has 270 characters",
+    "rule_id": "line_length",
+    "severity": "Error",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/SemanticNativeLatencyTests.swift",
+    "line": 275,
+    "reason": "Line should be 200 characters or less; currently it has 245 characters",
+    "rule_id": "line_length",
+    "severity": "Error",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 844,
+    "reason": "File should contain 400 lines or less excluding comments and whitespaces: currently contains 786",
+    "rule_id": "file_length",
+    "severity": "Warning",
+    "type": "File Length"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 337,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 371,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 394,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 406,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 423,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 435,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 447,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 483,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 492,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 506,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 518,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 535,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 549,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 550,
+    "reason": "Variable name 'c' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 567,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 579,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 595,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 597,
+    "reason": "Variable name 'c' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 618,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 662,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 672,
+    "reason": "Variable name 'db' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Warning",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 701,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 719,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 734,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 738,
+    "reason": "Variable name 'b' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 752,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 765,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 770,
+    "reason": "Variable name 'a' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 784,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 804,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 820,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 834,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 87,
+    "reason": "Line should be 120 characters or less; currently it has 148 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 89,
+    "reason": "Line should be 200 characters or less; currently it has 212 characters",
+    "rule_id": "line_length",
+    "severity": "Error",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 90,
+    "reason": "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 91,
+    "reason": "Line should be 200 characters or less; currently it has 214 characters",
+    "rule_id": "line_length",
+    "severity": "Error",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 92,
+    "reason": "Line should be 200 characters or less; currently it has 221 characters",
+    "rule_id": "line_length",
+    "severity": "Error",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 106,
+    "reason": "Line should be 120 characters or less; currently it has 173 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 109,
+    "reason": "Line should be 120 characters or less; currently it has 130 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 113,
+    "reason": "Line should be 120 characters or less; currently it has 184 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 131,
+    "reason": "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 140,
+    "reason": "Line should be 120 characters or less; currently it has 150 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 175,
+    "reason": "Line should be 120 characters or less; currently it has 130 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 193,
+    "reason": "Line should be 120 characters or less; currently it has 146 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 265,
+    "reason": "Line should be 120 characters or less; currently it has 179 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 299,
+    "reason": "Line should be 200 characters or less; currently it has 214 characters",
+    "rule_id": "line_length",
+    "severity": "Error",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 300,
+    "reason": "Line should be 120 characters or less; currently it has 143 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 408,
+    "reason": "Line should be 120 characters or less; currently it has 132 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 454,
+    "reason": "Line should be 120 characters or less; currently it has 138 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 461,
+    "reason": "Line should be 120 characters or less; currently it has 127 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 484,
+    "reason": "Line should be 120 characters or less; currently it has 138 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 560,
+    "reason": "Line should be 120 characters or less; currently it has 128 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 571,
+    "reason": "Line should be 120 characters or less; currently it has 154 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 581,
+    "reason": "Line should be 120 characters or less; currently it has 132 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 600,
+    "reason": "Line should be 120 characters or less; currently it has 134 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 604,
+    "reason": "Line should be 120 characters or less; currently it has 166 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 614,
+    "reason": "Line should be 120 characters or less; currently it has 128 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 633,
+    "reason": "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 635,
+    "reason": "Line should be 120 characters or less; currently it has 172 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 683,
+    "reason": "Line should be 120 characters or less; currently it has 147 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 17,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 630,
+    "reason": "Prefer failable `String(bytes:encoding:)` initializer when converting `Data` to `String`",
+    "rule_id": "optional_data_string_conversion",
+    "severity": "Warning",
+    "type": "Optional Data -> String Conversion"
+  },
+  {
+    "character": 22,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 668,
+    "reason": "Prefer failable `String(bytes:encoding:)` initializer when converting `Data` to `String`",
+    "rule_id": "optional_data_string_conversion",
+    "severity": "Warning",
+    "type": "Optional Data -> String Conversion"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/.build/lint-baseline/AskConversationTests.swift",
+    "line": 321,
+    "reason": "Struct body should span 250 lines or less excluding comments and whitespace: currently spans 305 lines",
+    "rule_id": "type_body_length",
+    "severity": "Warning",
+    "type": "Type Body Length"
+  }
+]

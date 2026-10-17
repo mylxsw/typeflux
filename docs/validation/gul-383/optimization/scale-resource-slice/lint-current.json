@@ -1,0 +1,722 @@
+[
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 847,
+    "reason": "File should contain 400 lines or less excluding comments and whitespaces: currently contains 789",
+    "rule_id": "file_length",
+    "severity": "Warning",
+    "type": "File Length"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 340,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 374,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 397,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 409,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 426,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 438,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 450,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 486,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 495,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 509,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 521,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 538,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 552,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 553,
+    "reason": "Variable name 'c' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 570,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 582,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 598,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 600,
+    "reason": "Variable name 'c' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 621,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 665,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 675,
+    "reason": "Variable name 'db' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Warning",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 704,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 722,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 737,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 741,
+    "reason": "Variable name 'b' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 755,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 768,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 773,
+    "reason": "Variable name 'a' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 787,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 807,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 823,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 837,
+    "reason": "Variable name 'f' should be between 3 and 40 characters long",
+    "rule_id": "identifier_name",
+    "severity": "Error",
+    "type": "Identifier Name"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 87,
+    "reason": "Line should be 120 characters or less; currently it has 148 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 89,
+    "reason": "Line should be 200 characters or less; currently it has 212 characters",
+    "rule_id": "line_length",
+    "severity": "Error",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 90,
+    "reason": "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 91,
+    "reason": "Line should be 200 characters or less; currently it has 214 characters",
+    "rule_id": "line_length",
+    "severity": "Error",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 92,
+    "reason": "Line should be 200 characters or less; currently it has 221 characters",
+    "rule_id": "line_length",
+    "severity": "Error",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 106,
+    "reason": "Line should be 120 characters or less; currently it has 173 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 109,
+    "reason": "Line should be 120 characters or less; currently it has 130 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 113,
+    "reason": "Line should be 120 characters or less; currently it has 184 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 131,
+    "reason": "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 140,
+    "reason": "Line should be 120 characters or less; currently it has 150 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 175,
+    "reason": "Line should be 120 characters or less; currently it has 130 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 193,
+    "reason": "Line should be 120 characters or less; currently it has 146 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 265,
+    "reason": "Line should be 120 characters or less; currently it has 179 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 301,
+    "reason": "Line should be 200 characters or less; currently it has 214 characters",
+    "rule_id": "line_length",
+    "severity": "Error",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 303,
+    "reason": "Line should be 120 characters or less; currently it has 143 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 411,
+    "reason": "Line should be 120 characters or less; currently it has 132 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 457,
+    "reason": "Line should be 120 characters or less; currently it has 138 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 464,
+    "reason": "Line should be 120 characters or less; currently it has 127 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 487,
+    "reason": "Line should be 120 characters or less; currently it has 138 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 563,
+    "reason": "Line should be 120 characters or less; currently it has 128 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 574,
+    "reason": "Line should be 120 characters or less; currently it has 154 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 584,
+    "reason": "Line should be 120 characters or less; currently it has 132 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 603,
+    "reason": "Line should be 120 characters or less; currently it has 134 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 607,
+    "reason": "Line should be 120 characters or less; currently it has 166 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 617,
+    "reason": "Line should be 120 characters or less; currently it has 128 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 636,
+    "reason": "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 638,
+    "reason": "Line should be 120 characters or less; currently it has 172 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 686,
+    "reason": "Line should be 120 characters or less; currently it has 147 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 17,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 633,
+    "reason": "Prefer failable `String(bytes:encoding:)` initializer when converting `Data` to `String`",
+    "rule_id": "optional_data_string_conversion",
+    "severity": "Warning",
+    "type": "Optional Data -> String Conversion"
+  },
+  {
+    "character": 22,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 671,
+    "reason": "Prefer failable `String(bytes:encoding:)` initializer when converting `Data` to `String`",
+    "rule_id": "optional_data_string_conversion",
+    "severity": "Warning",
+    "type": "Optional Data -> String Conversion"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/AskConversationTests.swift",
+    "line": 324,
+    "reason": "Struct body should span 250 lines or less excluding comments and whitespace: currently spans 305 lines",
+    "rule_id": "type_body_length",
+    "severity": "Warning",
+    "type": "Type Body Length"
+  },
+  {
+    "character": 11,
+    "file": "<task-checkout>/Tests/TypefluxTests/SemanticResourceBudgetTests.swift",
+    "line": 105,
+    "reason": "Function should have complexity 10 or less; currently complexity is 14",
+    "rule_id": "cyclomatic_complexity",
+    "severity": "Warning",
+    "type": "Cyclomatic Complexity"
+  },
+  {
+    "character": 13,
+    "file": "<task-checkout>/Tests/TypefluxTests/SemanticResourceBudgetTests.swift",
+    "line": 49,
+    "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 53 lines",
+    "rule_id": "function_body_length",
+    "severity": "Warning",
+    "type": "Function Body Length"
+  },
+  {
+    "character": 11,
+    "file": "<task-checkout>/Tests/TypefluxTests/SemanticResourceBudgetTests.swift",
+    "line": 105,
+    "reason": "Function body should span 100 lines or less excluding comments and whitespace: currently spans 189 lines",
+    "rule_id": "function_body_length",
+    "severity": "Error",
+    "type": "Function Body Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/SemanticResourceBudgetTests.swift",
+    "line": 59,
+    "reason": "Line should be 120 characters or less; currently it has 122 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/SemanticResourceBudgetTests.swift",
+    "line": 70,
+    "reason": "Line should be 200 characters or less; currently it has 234 characters",
+    "rule_id": "line_length",
+    "severity": "Error",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/SemanticResourceBudgetTests.swift",
+    "line": 80,
+    "reason": "Line should be 120 characters or less; currently it has 133 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/SemanticResourceBudgetTests.swift",
+    "line": 112,
+    "reason": "Line should be 120 characters or less; currently it has 130 characters",
+    "rule_id": "line_length",
+    "severity": "Warning",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/SemanticResourceBudgetTests.swift",
+    "line": 265,
+    "reason": "Line should be 200 characters or less; currently it has 385 characters",
+    "rule_id": "line_length",
+    "severity": "Error",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/SemanticResourceBudgetTests.swift",
+    "line": 9,
+    "reason": "Struct body should span 250 lines or less excluding comments and whitespace: currently spans 283 lines",
+    "rule_id": "type_body_length",
+    "severity": "Warning",
+    "type": "Type Body Length"
+  },
+  {
+    "character": 11,
+    "file": "<task-checkout>/Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+    "line": 28,
+    "reason": "Function should have complexity 10 or less; currently complexity is 21",
+    "rule_id": "cyclomatic_complexity",
+    "severity": "Error",
+    "type": "Cyclomatic Complexity"
+  },
+  {
+    "character": 11,
+    "file": "<task-checkout>/Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+    "line": 28,
+    "reason": "Function body should span 100 lines or less excluding comments and whitespace: currently spans 262 lines",
+    "rule_id": "function_body_length",
+    "severity": "Error",
+    "type": "Function Body Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+    "line": 283,
+    "reason": "Line should be 200 characters or less; currently it has 270 characters",
+    "rule_id": "line_length",
+    "severity": "Error",
+    "type": "Line Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+    "line": 287,
+    "reason": "Line should be 200 characters or less; currently it has 245 characters",
+    "rule_id": "line_length",
+    "severity": "Error",
+    "type": "Line Length"
+  },
+  {
+    "character": 11,
+    "file": "<task-checkout>/Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+    "line": 79,
+    "reason": "Function should have complexity 10 or less; currently complexity is 20",
+    "rule_id": "cyclomatic_complexity",
+    "severity": "Warning",
+    "type": "Cyclomatic Complexity"
+  },
+  {
+    "character": 11,
+    "file": "<task-checkout>/Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+    "line": 79,
+    "reason": "Function body should span 100 lines or less excluding comments and whitespace: currently spans 284 lines",
+    "rule_id": "function_body_length",
+    "severity": "Error",
+    "type": "Function Body Length"
+  },
+  {
+    "character": 1,
+    "file": "<task-checkout>/Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+    "line": 363,
+    "reason": "Line should be 200 characters or less; currently it has 305 characters",
+    "rule_id": "line_length",
+    "severity": "Error",
+    "type": "Line Length"
+  }
+]

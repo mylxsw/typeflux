@@ -1,0 +1,19 @@
+{
+  "command": [
+    "swiftlint",
+    "lint",
+    "--quiet",
+    "--reporter",
+    "json",
+    "Tests/TypefluxTests/AskConversationTests.swift",
+    "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+    "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+    "Tests/TypefluxTests/SemanticResourceBudgetTests.swift"
+  ],
+  "exit_code": 2,
+  "wall_seconds": 0.3032232499681413,
+  "baseline_diagnostics": 81,
+  "current_diagnostics": 80,
+  "increased_diagnostic_counts": {},
+  "boundary": "Counts compared by filename/rule/severity; existing method complexity and line findings remain, so strict lint is not green."
+}

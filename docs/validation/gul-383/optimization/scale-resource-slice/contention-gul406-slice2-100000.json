@@ -1,0 +1,339 @@
+{
+  "app_max_rss_bytes" : 534200320,
+  "background_files" : 512,
+  "build" : "Release",
+  "complete" : true,
+  "entries" : [
+    {
+      "chunks_at_end" : 100029,
+      "completed_batches" : 9,
+      "disk_bytes" : 482849664,
+      "entry" : "mixed",
+      "index_intervals" : [
+        [
+          542188.87789900007,
+          542190.23120604164
+        ],
+        [
+          542190.77278145833,
+          542190.81704829168
+        ],
+        [
+          542190.85866279167,
+          542190.92734541674
+        ],
+        [
+          542190.97316133336,
+          542191.07570033334
+        ],
+        [
+          542191.10055929166,
+          542191.2264427084
+        ],
+        [
+          542191.26934091665,
+          542191.37759658333
+        ],
+        [
+          542191.44176970841,
+          542191.52301666664
+        ],
+        [
+          542191.60395462508,
+          542191.7009565417
+        ],
+        [
+          542191.76331745833,
+          542191.84512041672
+        ]
+      ],
+      "load_seconds" : 28.722459958284162,
+      "native_edit_and_close_cancellation" : true,
+      "successfully_embedded_texts" : 1
+    },
+    {
+      "chunks_at_end" : 100058,
+      "completed_batches" : 8,
+      "disk_bytes" : 482833184,
+      "entry" : "file-mode",
+      "index_intervals" : [
+        [
+          542196.8651425417,
+          542198.21879158332
+        ],
+        [
+          542199.67746633338,
+          542199.72842337505
+        ],
+        [
+          542199.81944033341,
+          542199.9133195834
+        ],
+        [
+          542199.9808379584,
+          542200.07955300005
+        ],
+        [
+          542200.13178762503,
+          542200.22966841666
+        ],
+        [
+          542200.30109050008,
+          542200.39756462502
+        ],
+        [
+          542200.48482725001,
+          542200.58516704175
+        ],
+        [
+          542200.66782320838,
+          542200.76838170842
+        ]
+      ],
+      "load_seconds" : 3.5730717916740105,
+      "native_edit_and_close_cancellation" : true,
+      "successfully_embedded_texts" : 1
+    }
+  ],
+  "failed_body_samples" : 0,
+  "index_inference_concurrency" : 1,
+  "initial_chunks" : 100000,
+  "model_sha256" : "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+  "rows" : [
+    {
+      "complete_ms" : 148.862416,
+      "completed_batches" : 3,
+      "entry" : "mixed",
+      "indexed_chunks" : 100029,
+      "input_to_draw_ms" : 58.445540999999999,
+      "input_to_publish_ms" : 29.824833000000002,
+      "input_uptime" : 542190.8602027084,
+      "main_actor_max_timer_gap_ms" : 33.683416999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        542190.85866279167,
+        542190.92734541674
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 0,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 137.964958,
+      "completed_batches" : 4,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 27.709833,
+      "input_to_publish_ms" : 12.020375,
+      "input_uptime" : 542191.02980704175,
+      "main_actor_max_timer_gap_ms" : 14.841042,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        542190.97316133336,
+        542191.07570033334
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 1,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 139.063208,
+      "completed_batches" : 5,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 28.330416,
+      "input_to_publish_ms" : 12.437333000000001,
+      "input_uptime" : 542191.18348937505,
+      "main_actor_max_timer_gap_ms" : 15.088958999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        542191.10055929166,
+        542191.2264427084
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 2,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 146.04108400000001,
+      "completed_batches" : 6,
+      "entry" : "mixed",
+      "indexed_chunks" : 100029,
+      "input_to_draw_ms" : 105.33175,
+      "input_to_publish_ms" : 88.840374999999995,
+      "input_uptime" : 542191.33960845834,
+      "main_actor_max_timer_gap_ms" : 14.999750000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        542191.26934091665,
+        542191.37759658333
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 0,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 144.09354200000001,
+      "completed_batches" : 7,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 102.68104200000001,
+      "input_to_publish_ms" : 86.656666999999999,
+      "input_uptime" : 542191.50228025008,
+      "main_actor_max_timer_gap_ms" : 14.720499999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        542191.44176970841,
+        542191.52301666664
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 1,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 142.95029199999999,
+      "completed_batches" : 8,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 102.5635,
+      "input_to_publish_ms" : 86.460250000000002,
+      "input_uptime" : 542191.66352762503,
+      "main_actor_max_timer_gap_ms" : 15.820207999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        542191.60395462508,
+        542191.7009565417
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 2,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 135.351709,
+      "completed_batches" : 2,
+      "entry" : "file-mode",
+      "indexed_chunks" : 100058,
+      "input_to_draw_ms" : 60.589084,
+      "input_to_publish_ms" : 46.741624999999999,
+      "input_uptime" : 542199.67801754165,
+      "main_actor_max_timer_gap_ms" : 19.877334000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        542199.67746633338,
+        542199.72842337505
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 0,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 103.77124999999999,
+      "completed_batches" : 3,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 46.288417000000003,
+      "input_to_publish_ms" : 35.811166999999998,
+      "input_uptime" : 542199.86014395836,
+      "main_actor_max_timer_gap_ms" : 12.057542,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        542199.81944033341,
+        542199.9133195834
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 1,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 105.133584,
+      "completed_batches" : 4,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 48.211917,
+      "input_to_publish_ms" : 37.379292,
+      "input_uptime" : 542200.01331741665,
+      "main_actor_max_timer_gap_ms" : 12.406375000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        542199.9808379584,
+        542200.07955300005
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 2,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 133.98179200000001,
+      "completed_batches" : 5,
+      "entry" : "file-mode",
+      "indexed_chunks" : 100058,
+      "input_to_draw_ms" : 133.9615,
+      "input_to_publish_ms" : 114.722667,
+      "input_uptime" : 542200.16551483341,
+      "main_actor_max_timer_gap_ms" : 11.824375,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        542200.13178762503,
+        542200.22966841666
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 0,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 132.85612499999999,
+      "completed_batches" : 6,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 132.83095900000001,
+      "input_to_publish_ms" : 114.20699999999999,
+      "input_uptime" : 542200.35426983342,
+      "main_actor_max_timer_gap_ms" : 11.780250000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        542200.30109050008,
+        542200.39756462502
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 1,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 135.826458,
+      "completed_batches" : 7,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 127.702,
+      "input_to_publish_ms" : 116.43529100000001,
+      "input_uptime" : 542200.54027166672,
+      "main_actor_max_timer_gap_ms" : 11.526,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        542200.48482725001,
+        542200.58516704175
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 2,
+      "scenario" : "semantic-real-index"
+    }
+  ],
+  "scope" : "Actual composer\/native commits, production service\/indexer, real background document embeddings and query model; base corpus is synthetic noise plus one real winning passage. Layout\/display is not a GPU fence; timer gaps include polling\/accessibility work.",
+  "thermal_after" : 0,
+  "thermal_before" : 0
+}

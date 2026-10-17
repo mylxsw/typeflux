@@ -1,0 +1,35 @@
+{
+  "hardware": "Mac16,10",
+  "cpu": "Apple M4",
+  "memory_bytes": 17179869184,
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83",
+  "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0",
+  "xcode": "Xcode 27.1\nBuild version 27A9275",
+  "sdk": "27.0",
+  "tools": {
+    "swift": {
+      "basename": "swift-frontend",
+      "sha256": "c90fc92073e78cd2b3c65efcacf65acfaf4290b02f7a9d301853563b85f4a993"
+    },
+    "swiftc": {
+      "basename": "swift-frontend",
+      "sha256": "c90fc92073e78cd2b3c65efcacf65acfaf4290b02f7a9d301853563b85f4a993"
+    },
+    "clang": {
+      "basename": "clang",
+      "sha256": "ee029330bf58ab6e481385f4237cc54602eaa8b81526242e5c5ab5b76e8c5a7e"
+    },
+    "ld": {
+      "basename": "ld",
+      "sha256": "809ad9e3c137cdf6d997b4e67dd3dd2589f6bb5de612dc298504e87bc4936c7e"
+    },
+    "codesign": {
+      "basename": "codesign",
+      "sha256": "844d30a12929b59c9f2215e2a308c3e1db572831a478f35906e452a54025603e"
+    },
+    "swiftlint": {
+      "basename": "swiftlint",
+      "sha256": "68e36afa028787df46a348c9bb269ccfff117aa24a4a643caba12fee22c40f1f"
+    }
+  }
+}

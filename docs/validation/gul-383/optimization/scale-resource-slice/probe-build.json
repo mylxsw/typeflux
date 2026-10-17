@@ -1,0 +1,11 @@
+{
+  "command": [
+    "swiftc",
+    "-O",
+    "<task-checkout>/docs/validation/gul-383/optimization/ranking-scale/native_response_probe.swift",
+    "-o",
+    "<task-checkout>/.build/SemanticNativeResponseProbe.app/Contents/MacOS/SemanticNativeResponseProbe"
+  ],
+  "wall_seconds": 3.3260214159963652,
+  "exit_code": 0
+}

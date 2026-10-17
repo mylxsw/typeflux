@@ -1,0 +1,47 @@
+{
+  "records": [
+    {
+      "record": "cache-preparation.json",
+      "wall_seconds": 5.668775583035313,
+      "exit_code": 0
+    },
+    {
+      "record": "probe-build-failed.json",
+      "wall_seconds": 5.160826292005368,
+      "exit_code": 1
+    },
+    {
+      "record": "probe-build.json",
+      "wall_seconds": 3.3260214159963652,
+      "exit_code": 0
+    },
+    {
+      "record": "initial-plan-SemanticNativeLatencyTests-SemanticNativeContentionTests-SemanticResourceBudgetTests.json",
+      "wall_seconds": 568.1796095829923,
+      "exit_code": 1
+    },
+    {
+      "record": "plan-SemanticNativeLatencyTests-SemanticNativeContentionTests-SemanticResourceBudgetTests.json",
+      "wall_seconds": 73.73992941703182,
+      "exit_code": 0
+    },
+    {
+      "record": "package-refresh.json",
+      "wall_seconds": 3.2970892920857295,
+      "exit_code": 0
+    },
+    {
+      "record": "run-SemanticNativeLatencyTests-SemanticNativeContentionTests-SemanticResourceBudgetTests.json",
+      "wall_seconds": 414.30859866703395,
+      "exit_code": 0
+    },
+    {
+      "record": "resource-on/run.json",
+      "wall_seconds": 414.38511425000615,
+      "exit_code": 0
+    }
+  ],
+  "resource_owner_overlaps_test_command": true,
+  "scope": "Full command walls include failed preparations/retries, build/discovery and execution. Package/probe preparation overlaps build; the sum is command effort, not elapsed wall time. Initial context reads/editing and minor final inspections are outside this ledger. Run started 2026-10-17T09:02:19Z; delivery stays in the 30-minute slice.",
+  "sum_recorded_command_walls_seconds_excluding_resource_owner": 1073.6808502501808
+}

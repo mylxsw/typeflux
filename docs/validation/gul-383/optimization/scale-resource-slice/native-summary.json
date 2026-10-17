@@ -1,0 +1,346 @@
+{
+  "source_commit": "77ef235125864d33e52aa9700e97576d720ae5ad",
+  "groups": [
+    {
+      "entry": "file-mode",
+      "scenario": "fts-cache",
+      "n": 3,
+      "expected": 3,
+      "missing": 0,
+      "input_to_publish_ms": {
+        "0.5": 36.017,
+        "0.95": 38.330417,
+        "0.99": 38.330417,
+        "1": 38.330417
+      },
+      "input_to_draw_ms": {
+        "0.5": 46.872,
+        "0.95": 50.0865,
+        "0.99": 50.0865,
+        "1": 50.0865
+      },
+      "complete_ms": {
+        "0.5": 107.663125,
+        "0.95": 117.487083,
+        "0.99": 117.487083,
+        "1": 117.487083
+      }
+    },
+    {
+      "entry": "file-mode",
+      "scenario": "fts-real-index",
+      "n": 3,
+      "expected": 3,
+      "missing": 0,
+      "input_to_publish_ms": {
+        "0.5": 37.379292,
+        "0.95": 46.741625,
+        "0.99": 46.741625,
+        "1": 46.741625
+      },
+      "input_to_draw_ms": {
+        "0.5": 48.211917,
+        "0.95": 60.589084,
+        "0.99": 60.589084,
+        "1": 60.589084
+      },
+      "complete_ms": {
+        "0.5": 105.133584,
+        "0.95": 135.351709,
+        "0.99": 135.351709,
+        "1": 135.351709
+      }
+    },
+    {
+      "entry": "file-mode",
+      "scenario": "hot-new-semantic",
+      "n": 3,
+      "expected": 3,
+      "missing": 0,
+      "input_to_publish_ms": {
+        "0.5": 115.146125,
+        "0.95": 117.586833,
+        "0.99": 117.586833,
+        "1": 117.586833
+      },
+      "input_to_draw_ms": {
+        "0.5": 132.360667,
+        "0.95": 134.310291,
+        "0.99": 134.310291,
+        "1": 134.310291
+      },
+      "complete_ms": {
+        "0.5": 132.387542,
+        "0.95": 134.336291,
+        "0.99": 134.336291,
+        "1": 134.336291
+      }
+    },
+    {
+      "entry": "file-mode",
+      "scenario": "semantic-real-index",
+      "n": 3,
+      "expected": 3,
+      "missing": 0,
+      "input_to_publish_ms": {
+        "0.5": 114.722667,
+        "0.95": 116.435291,
+        "0.99": 116.435291,
+        "1": 116.435291
+      },
+      "input_to_draw_ms": {
+        "0.5": 132.830959,
+        "0.95": 133.9615,
+        "0.99": 133.9615,
+        "1": 133.9615
+      },
+      "complete_ms": {
+        "0.5": 133.981792,
+        "0.95": 135.826458,
+        "0.99": 135.826458,
+        "1": 135.826458
+      }
+    },
+    {
+      "entry": "mixed",
+      "scenario": "fts-cache",
+      "n": 3,
+      "expected": 3,
+      "missing": 0,
+      "input_to_publish_ms": {
+        "0.5": 11.992667,
+        "0.95": 14.266708,
+        "0.99": 14.266708,
+        "1": 14.266708
+      },
+      "input_to_draw_ms": {
+        "0.5": 28.125959,
+        "0.95": 31.675416,
+        "0.99": 31.675416,
+        "1": 31.675416
+      },
+      "complete_ms": {
+        "0.5": 139.480416,
+        "0.95": 139.788959,
+        "0.99": 139.788959,
+        "1": 139.788959
+      }
+    },
+    {
+      "entry": "mixed",
+      "scenario": "fts-real-index",
+      "n": 3,
+      "expected": 3,
+      "missing": 0,
+      "input_to_publish_ms": {
+        "0.5": 12.437333,
+        "0.95": 29.824833,
+        "0.99": 29.824833,
+        "1": 29.824833
+      },
+      "input_to_draw_ms": {
+        "0.5": 28.330416,
+        "0.95": 58.445541,
+        "0.99": 58.445541,
+        "1": 58.445541
+      },
+      "complete_ms": {
+        "0.5": 139.063208,
+        "0.95": 148.862416,
+        "0.99": 148.862416,
+        "1": 148.862416
+      }
+    },
+    {
+      "entry": "mixed",
+      "scenario": "hot-new-semantic",
+      "n": 3,
+      "expected": 3,
+      "missing": 0,
+      "input_to_publish_ms": {
+        "0.5": 87.359958,
+        "0.95": 98.309083,
+        "0.99": 98.309083,
+        "1": 98.309083
+      },
+      "input_to_draw_ms": {
+        "0.5": 103.273333,
+        "0.95": 114.381167,
+        "0.99": 114.381167,
+        "1": 114.381167
+      },
+      "complete_ms": {
+        "0.5": 144.486166,
+        "0.95": 150.802542,
+        "0.99": 150.802542,
+        "1": 150.802542
+      }
+    },
+    {
+      "entry": "mixed",
+      "scenario": "semantic-real-index",
+      "n": 3,
+      "expected": 3,
+      "missing": 0,
+      "input_to_publish_ms": {
+        "0.5": 86.656667,
+        "0.95": 88.840375,
+        "0.99": 88.840375,
+        "1": 88.840375
+      },
+      "input_to_draw_ms": {
+        "0.5": 102.681042,
+        "0.95": 105.33175,
+        "0.99": 105.33175,
+        "1": 105.33175
+      },
+      "complete_ms": {
+        "0.5": 144.093542,
+        "0.95": 146.041084,
+        "0.99": 146.041084,
+        "1": 146.041084
+      }
+    }
+  ],
+  "reports": {
+    "native-gul406-slice2-100000.json": {
+      "app_max_rss_bytes": 545898496,
+      "build": "Release",
+      "chunks": 100000,
+      "cold_definition": "Ten fresh service/helper openings per entry; OS/model/shader caches may be warm; opening the panel requests prewarming. Reopen and model verification occur outside the timed native edit.",
+      "complete": true,
+      "corpus": [
+        {
+          "chunks": 100000,
+          "disk_bytes": 481903608,
+          "entry": "mixed",
+          "load_seconds": 9.687834708369337,
+          "noise_vector_source": "constructed-orthogonal"
+        },
+        {
+          "chunks": 100000,
+          "disk_bytes": 481907728,
+          "entry": "file-mode",
+          "load_seconds": 27.05759220838081,
+          "noise_vector_source": "constructed-orthogonal"
+        }
+      ],
+      "entry_scope": "all",
+      "failed_body_samples": 0,
+      "index_inference_concurrency": 0,
+      "index_writer_concurrency": 0,
+      "indexed_files": 2,
+      "model_sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+      "permission_denial_fixture": false,
+      "scenario_scope": "short-hot",
+      "scope": "Actual AskComposer, native NSTextView commit, production mixed/f sessions and service, real model and permission helper. Drawing forces layout/display and checks rendered accessibility; it is not a GPU presentation fence.",
+      "warm_samples_per_scenario": 3
+    },
+    "contention-gul406-slice2-100000.json": {
+      "app_max_rss_bytes": 534200320,
+      "background_files": 512,
+      "build": "Release",
+      "complete": true,
+      "entries": [
+        {
+          "chunks_at_end": 100029,
+          "completed_batches": 9,
+          "disk_bytes": 482849664,
+          "entry": "mixed",
+          "index_intervals": [
+            [
+              542188.8778990001,
+              542190.2312060416
+            ],
+            [
+              542190.7727814583,
+              542190.8170482917
+            ],
+            [
+              542190.8586627917,
+              542190.9273454167
+            ],
+            [
+              542190.9731613334,
+              542191.0757003333
+            ],
+            [
+              542191.1005592917,
+              542191.2264427084
+            ],
+            [
+              542191.2693409167,
+              542191.3775965833
+            ],
+            [
+              542191.4417697084,
+              542191.5230166666
+            ],
+            [
+              542191.6039546251,
+              542191.7009565417
+            ],
+            [
+              542191.7633174583,
+              542191.8451204167
+            ]
+          ],
+          "load_seconds": 28.722459958284162,
+          "native_edit_and_close_cancellation": true,
+          "successfully_embedded_texts": 1
+        },
+        {
+          "chunks_at_end": 100058,
+          "completed_batches": 8,
+          "disk_bytes": 482833184,
+          "entry": "file-mode",
+          "index_intervals": [
+            [
+              542196.8651425417,
+              542198.2187915833
+            ],
+            [
+              542199.6774663334,
+              542199.728423375
+            ],
+            [
+              542199.8194403334,
+              542199.9133195834
+            ],
+            [
+              542199.9808379584,
+              542200.079553
+            ],
+            [
+              542200.131787625,
+              542200.2296684167
+            ],
+            [
+              542200.3010905001,
+              542200.397564625
+            ],
+            [
+              542200.48482725,
+              542200.5851670417
+            ],
+            [
+              542200.6678232084,
+              542200.7683817084
+            ]
+          ],
+          "load_seconds": 3.5730717916740105,
+          "native_edit_and_close_cancellation": true,
+          "successfully_embedded_texts": 1
+        }
+      ],
+      "failed_body_samples": 0,
+      "index_inference_concurrency": 1,
+      "initial_chunks": 100000,
+      "model_sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+      "scope": "Actual composer/native commits, production service/indexer, real background document embeddings and query model; base corpus is synthetic noise plus one real winning passage. Layout/display is not a GPU fence; timer gaps include polling/accessibility work.",
+      "thermal_after": 0,
+      "thermal_before": 0
+    }
+  },
+  "scope": "Three observations per cell. Empirical nearest-rank quantiles; p95/p99 are maxima, not reliable production tail estimates. Native commit through actual result publication/layout/AX; not a compositor fence."
+}

@@ -1,0 +1,5 @@
+{
+  "source": "prior GUL-406 first-slice .build; APFS copy-on-write; no source tree mutation",
+  "wall_seconds": 5.668775583035313,
+  "candidate_source_commit": "77ef235125864d33e52aa9700e97576d720ae5ad"
+}
