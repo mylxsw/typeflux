@@ -326,7 +326,7 @@ enum AskTheme {
 /// window geometry depends on them, so they live next to the views that use them.
 enum AskMetrics {
     /// AppKit dimensions use logical points.
-    static let launcherWidth: CGFloat = 1500
+    static let launcherWidth: CGFloat = 750
     /// The expanded launcher's fixed height, and the home suggestions' budget.
     static let launcherWindowHeight: CGFloat = 600
     /// Breathing room around the launcher card.

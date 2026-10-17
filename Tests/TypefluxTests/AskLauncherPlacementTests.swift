@@ -9,7 +9,7 @@ struct AskLauncherPlacementTests {
     @Test func launcherOpensAtRestingHeightWithMaximumPanelCentredOnALargeDisplay() {
         let display = NSRect(x: -2400, y: 100, width: 2400, height: 1600)
         let frame = AskLauncherPlacement.preferredFrame(on: display)
-        #expect(frame.size == NSSize(width: 1500, height: AskLauncherPlacement.restingHeight))
+        #expect(frame.size == NSSize(width: 750, height: AskLauncherPlacement.restingHeight))
         #expect(abs(frame.midX - display.midX) <= 0.5)
         #expect(frame.maxY == (display.midY + AskMetrics.launcherWindowHeight / 2).rounded())
     }
