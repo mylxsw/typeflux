@@ -5810,3 +5810,23 @@
 "ask.quick.file.pdf.open" = "正在打开原 PDF。外部应用不支持可靠跳页，请在 Typeflux 中选择“查看命中位置”。";
 "ask.quick.file.pdf.quickLook" = "Quick Look 显示原 PDF，不会跳到命中页。请在 Typeflux 中选择“查看命中位置”。";
 "ask.quick.file.pdf.preview" = "打开和 Quick Look 使用原 PDF；命中位置可用时在此查看。";
+
+// Screenshot beautification
+"screenshot.beautify.title" = "截图美化";
+"screenshot.beautify.enabled" = "启用";
+"screenshot.beautify.preview" = "美化预览";
+"screenshot.beautify.failed" = "无法渲染此图片。";
+"screenshot.beautify.background" = "背景";
+"screenshot.beautify.padding" = "留白";
+"screenshot.beautify.radius" = "圆角";
+"screenshot.beautify.shadow" = "阴影";
+"screenshot.beautify.reset" = "重置";
+"screenshot.beautify.cancel" = "取消";
+"screenshot.beautify.apply" = "应用";
+"screenshot.beautify.background.transparent" = "透明";
+"screenshot.beautify.background.white" = "白色";
+"screenshot.beautify.background.charcoal" = "深灰";
+"screenshot.beautify.background.sky" = "天空";
+"screenshot.beautify.background.mint" = "薄荷";
+"screenshot.beautify.background.sunset" = "日落";
+"screenshot.beautify.background.lavender" = "薰衣草";

@@ -5696,3 +5696,23 @@
 "ask.quick.file.pdf.open" = "元の PDF を開いています。外部アプリでのページ指定はできません。Typeflux の「一致箇所を表示」を使ってください。";
 "ask.quick.file.pdf.quickLook" = "Quick Look は元の PDF を表示し、一致ページには移動しません。Typeflux の「一致箇所を表示」を使ってください。";
 "ask.quick.file.pdf.preview" = "開く操作と Quick Look は元の PDF を使用します。一致箇所は表示可能な場合ここで確認できます。";
+
+// Screenshot beautification
+"screenshot.beautify.title" = "スクリーンショット装飾";
+"screenshot.beautify.enabled" = "有効";
+"screenshot.beautify.preview" = "プレビュー";
+"screenshot.beautify.failed" = "画像を描画できません。";
+"screenshot.beautify.background" = "背景";
+"screenshot.beautify.padding" = "余白";
+"screenshot.beautify.radius" = "角丸";
+"screenshot.beautify.shadow" = "影";
+"screenshot.beautify.reset" = "リセット";
+"screenshot.beautify.cancel" = "キャンセル";
+"screenshot.beautify.apply" = "適用";
+"screenshot.beautify.background.transparent" = "透明";
+"screenshot.beautify.background.white" = "白";
+"screenshot.beautify.background.charcoal" = "チャコール";
+"screenshot.beautify.background.sky" = "空";
+"screenshot.beautify.background.mint" = "ミント";
+"screenshot.beautify.background.sunset" = "夕焼け";
+"screenshot.beautify.background.lavender" = "ラベンダー";

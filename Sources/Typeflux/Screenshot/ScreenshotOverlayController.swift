@@ -143,7 +143,8 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
             onEvent?(.committed)
         case let .finish(action, rect, annotations):
             onEvent?(.finish(action, displayID: view.display.id, rect: rect.offsetBy(dx: origin.x, dy: origin.y),
-                             annotations: annotations.map { $0.offsetBy(dx: origin.x, dy: origin.y) }))
+                             annotations: annotations.map { $0.offsetBy(dx: origin.x, dy: origin.y) },
+                             beautification: view.editor.beautification))
         case let .scroll(rect):
             onEvent?(.scroll(displayID: view.display.id, rect: rect.offsetBy(dx: origin.x, dy: origin.y)))
         case let .colorPicked(hex):

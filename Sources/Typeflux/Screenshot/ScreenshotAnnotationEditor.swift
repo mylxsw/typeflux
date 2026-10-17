@@ -79,6 +79,7 @@ struct ScreenshotAnnotationEditor {
     /// Each tool's style and the mosaic options; the overlay keeps them in a store between screenshots.
     private(set) var toolStyles: ScreenshotToolStyles
     private(set) var document = ScreenshotAnnotationDocument()
+    private(set) var beautification = ScreenshotBeautification()
     private(set) var selectedID: UUID?
     /// The annotation being drawn, not yet in the document.
     private(set) var draft: ScreenshotAnnotation?
@@ -789,6 +790,7 @@ extension ScreenshotAnnotationEditor {
     @discardableResult
     mutating func apply(_ action: ScreenshotEditorToolbarModel.Action) -> Bool {
         switch action {
+        case let .beautification(settings): beautification = settings.normalized
         case let .tool(tool): selectTool(tool)
         case let .color(color): setColor(color)
         case let .size(size): setSize(size)
@@ -817,7 +819,7 @@ extension ScreenshotAnnotationEditor {
         case .redo: redo()
         case .resetStyles: resetToolStyles()
         case .toggleToolbarPlacement: toggleToolbarPlacement()
-        case .toggleColorPanel, .pickColor, .cancel, .save, .copy, .copyAndSave, .pin, .scrollCapture, .record, .followUp,
+        case .beautify, .toggleColorPanel, .pickColor, .cancel, .save, .copy, .copyAndSave, .pin, .scrollCapture, .record, .followUp,
              .toggleMoreMenu, .toggleSensitivePanel, .dragToolbar:
             return false
         }

@@ -246,7 +246,8 @@ final class ScreenshotLongImageEditorController: ScreenshotLongImagePresenting {
         canvas.onEvent = { [weak view] event in
             switch event {
             case let .finish(action, annotations):
-                onEvent(.finish(action, displayID: image.id, rect: image.frame, annotations: annotations))
+                onEvent(.finish(action, displayID: image.id, rect: image.frame, annotations: annotations,
+                                beautification: view?.canvas.editor.beautification ?? .init()))
             case .cancelled:
                 onEvent(.cancelled)
             case let .zoom(step):

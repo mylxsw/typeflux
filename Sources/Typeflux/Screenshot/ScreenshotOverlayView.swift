@@ -69,6 +69,7 @@ final class ScreenshotOverlayView: NSView {
     private let canvas: ScreenshotAnnotationCanvasView
     private let chrome: ScreenshotOverlayChromeView
     let toolbarModel = ScreenshotEditorToolbarModel()
+    let beautificationPanel = ScreenshotBeautificationPanel()
     private(set) var toolbar: ScreenshotToolbarHostingView?
     /// The field for typing a text annotation, while one is typed.
     private(set) var textField: NSTextField?
@@ -136,6 +137,7 @@ final class ScreenshotOverlayView: NSView {
 
     /// Lets go of the frozen image as soon as the overlay closes.
     func releaseImage() {
+        beautificationPanel.dismiss()
         mosaicPreparation.retire()
         editor.cancelGeometry()
         sensitiveInfo.cancel()
@@ -235,9 +237,9 @@ final class ScreenshotOverlayView: NSView {
         refresh()
     }
 
-    /// A tool is picked or something is marked: the region stays put.
+    /// Editing has started: the region stays put, including its beautification settings.
     var isAnnotating: Bool {
-        editor.tool != nil || !editor.document.isEmpty
+        editor.tool != nil || !editor.document.isEmpty || editor.beautification.isEnabled
     }
 
     // MARK: Keys
@@ -378,9 +380,9 @@ final class ScreenshotOverlayView: NSView {
         if selection.nudge(by: offset) == .changed { refresh() }
     }
 
-    /// Nothing is marked yet: a scrolling capture would drop the marks, since it captures again.
+    /// Capturing again would drop annotations and beautification, so it is only offered before editing.
     var canScrollCapture: Bool {
-        editor.document.isEmpty && textField == nil
+        editor.document.isEmpty && textField == nil && !editor.beautification.isEnabled
     }
 
     /// S or the toolbar button: hands the region over to a scrolling capture.
@@ -402,6 +404,9 @@ final class ScreenshotOverlayView: NSView {
     func perform(_ action: ScreenshotEditorToolbarModel.Action) {
         endTextEditing()
         switch action {
+        case .beautify:
+            presentBeautification()
+            return
         case .toggleColorPanel:
             showsColorPanel.toggle()
             isPickingColor = false
@@ -443,6 +448,22 @@ final class ScreenshotOverlayView: NSView {
         // Keys go back to the overlay after a click on the toolbar.
         window?.makeFirstResponder(self)
         refresh()
+    }
+
+    private func presentBeautification() {
+        guard let rect = selection.rect, !selection.isDragging, !editor.isDragging, let window else { return }
+        let local = ScreenSnapshot.Display(id: display.id, frame: bounds, scale: display.scale, image: display.image)
+        mosaicPreparation.cancel()
+        editor.cancelGeometry()
+        do {
+            let image = try ScreenshotRenderer.render(local, crop: rect, annotations: editor.document.annotations)
+            beautificationPanel.present(source: image, scale: display.scale, settings: editor.beautification,
+                                         over: window) { [weak self] settings in
+                self?.perform(.beautification(settings))
+            }
+        } catch {
+            NSSound.beep()
+        }
     }
 
     // MARK: Text

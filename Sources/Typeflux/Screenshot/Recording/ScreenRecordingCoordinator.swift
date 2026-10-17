@@ -643,7 +643,7 @@ extension ScreenRecordingCoordinator {
                     guard let self, state == .selecting else { return }
                     switch event {
                     case .committed: overlay.finish(.copy)
-                    case let .finish(_, displayID, rect, _):
+                    case let .finish(_, displayID, rect, _, _):
                         overlay.dismiss()
                         choices.removeAll { $0.id == "region" }
                         choices.insert(ScreenRecordingChoice(

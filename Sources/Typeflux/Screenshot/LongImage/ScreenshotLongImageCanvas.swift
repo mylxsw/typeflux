@@ -25,6 +25,7 @@ final class ScreenshotLongImageCanvas: NSView {
     private(set) var showsMoreMenu = false
     private let canvas: ScreenshotAnnotationCanvasView
     let mosaicPreparation = ScreenshotMosaicPreparation()
+    let beautificationPanel = ScreenshotBeautificationPanel()
     private let textMeasurer: (any ScreenshotTextHeightMeasuring)?
     /// The field for typing a text annotation, while one is typed.
     private(set) var textField: NSTextField?
@@ -67,6 +68,7 @@ final class ScreenshotLongImageCanvas: NSView {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     func releaseImage() {
+        beautificationPanel.dismiss()
         mosaicPreparation.retire()
         editor.cancelGeometry()
         sensitiveInfo.cancel()
@@ -232,6 +234,9 @@ final class ScreenshotLongImageCanvas: NSView {
     func perform(_ action: ScreenshotEditorToolbarModel.Action) {
         endTextEditing()
         switch action {
+        case .beautify:
+            presentBeautification()
+            return
         case .toggleColorPanel:
             showsColorPanel.toggle()
             isPickingColor = false
@@ -264,6 +269,22 @@ final class ScreenshotLongImageCanvas: NSView {
         guard !editor.isDragging else { return }
         mosaicPreparation.cancel(); editor.cancelGeometry()
         onEvent?(.finish(action, editor.document.annotations))
+    }
+
+    private func presentBeautification() {
+        guard !editor.isDragging, let window else { return }
+        let display = ScreenSnapshot.Display(id: 0, frame: bounds, scale: scale, image: image)
+        mosaicPreparation.cancel()
+        editor.cancelGeometry()
+        do {
+            let image = try ScreenshotRenderer.render(display, crop: bounds, annotations: editor.document.annotations)
+            beautificationPanel.present(source: image, scale: scale, settings: editor.beautification,
+                                         over: window) { [weak self] settings in
+                self?.perform(.beautification(settings))
+            }
+        } catch {
+            NSSound.beep()
+        }
     }
 
     // MARK: Text

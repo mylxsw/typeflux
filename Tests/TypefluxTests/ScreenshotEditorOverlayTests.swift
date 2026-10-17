@@ -404,7 +404,7 @@ final class ScreenshotEditorOverlayTests: XCTestCase {
         drag(view, from: CGPoint(x: 50, y: 50), to: CGPoint(x: 50, y: 50))
         view.handleKeyDown(Key.keyS, modifiers: .command)
 
-        guard case let .finish(.save, displayID, rect, annotations)? = events.last else { return XCTFail("No finish") }
+        guard case let .finish(.save, displayID, rect, annotations, _)? = events.last else { return XCTFail("No finish") }
         XCTAssertEqual(displayID, 2)
         XCTAssertEqual(rect, CGRect(x: 210, y: 10, width: 100, height: 100))
         XCTAssertEqual(annotations.map(\.kind), [.counter(center: CGPoint(x: 250, y: 50))])

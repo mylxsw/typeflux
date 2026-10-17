@@ -19,7 +19,7 @@ enum ScreenshotOverlayEvent: Equatable {
     case committed
     /// Use the region with its annotations, both in global Quartz points on one display.
     case finish(ScreenshotOutputAction, displayID: CGDirectDisplayID, rect: CGRect,
-                annotations: [ScreenshotAnnotation] = [])
+                annotations: [ScreenshotAnnotation] = [], beautification: ScreenshotBeautification = .init())
     /// Capture the region (global Quartz points) again while it scrolls.
     case scroll(displayID: CGDirectDisplayID, rect: CGRect)
     /// ⇧ while the loupe shows: the color under the pointer, as hex.
