@@ -1,0 +1,32 @@
+{
+  "Sources/Typeflux/Resources/en.lproj/Localizable.strings": {
+    "before_sha256": "a047aaa3c7edec9caf67ce1cf437f65cc24a49e8d4eeedfdcc82f768b29ade85",
+    "after_sha256": "17f220c5c212d2eaf609d1e95c3408545f0c19472fbfd2120a43a1683b1f9689",
+    "equal_key_values": true,
+    "key_count": 5446
+  },
+  "Sources/Typeflux/Resources/ja.lproj/Localizable.strings": {
+    "before_sha256": "782f4e97fc7ba3e3979c7fd90575fc5b6a1d73cbede8fd4bfb27985672cf1136",
+    "after_sha256": "238174ca6a5311380e74fdb4ba3ec0ce1a6c703eab9ebc504393a148ae04cf84",
+    "equal_key_values": true,
+    "key_count": 5334
+  },
+  "Sources/Typeflux/Resources/ko.lproj/Localizable.strings": {
+    "before_sha256": "85c7113512049cba621cdfcf7b3805048b93afc8b09e8ea3fc461dccc54a073e",
+    "after_sha256": "d85742947a0f825aa3180256fa752d54ae2b7b7e3194820957b780e9169ccc06",
+    "equal_key_values": true,
+    "key_count": 5334
+  },
+  "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings": {
+    "before_sha256": "be012ef7fb73685f9cc81508b4c63db2171c365b2066643cdd89f8ab3a271157",
+    "after_sha256": "ca600b24209d005a967e969e4c08a00abacfdf029620acb41b313cbd650b9872",
+    "equal_key_values": true,
+    "key_count": 5446
+  },
+  "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings": {
+    "before_sha256": "e5fdb6ae3011ade548d7d72dcb79dc909bbfa7bdc2ff07f9dcdf4f6d589a7f4c",
+    "after_sha256": "93a6f661a8c2b4b3bf301e9e228785d1d903e23a8d1cd007b6a9ccb83721a250",
+    "equal_key_values": true,
+    "key_count": 5366
+  }
+}

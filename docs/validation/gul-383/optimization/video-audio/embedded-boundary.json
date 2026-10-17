@@ -1,0 +1,13 @@
+{
+  "covered" : 65,
+  "ends" : [
+    30,
+    55
+  ],
+  "eof_decodes_or_encodes" : 0,
+  "real_MOV_PCM" : true,
+  "starts" : [
+    0,
+    25
+  ]
+}

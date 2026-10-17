@@ -1,0 +1,11 @@
+{
+  "application": {
+    "Swift Testing6740709916036478770_0.81001.profraw": "131babda87cf88d34f0df93297b775246166dcb0996cb1873234fd2198f48512",
+    "XCTest6740709916036478770_0.81000.profraw": "adbb1b21b3a778ae69c17f67ace8f43c9d66d705cab6954bcdc596856df44083"
+  },
+  "native-helper": {
+    "helper-81631.profraw": "8ff152cfc1de002902c2d3c25cab16f37a1839e135753462eb014fcaaf7612b6",
+    "helper-81633.profraw": "ff2a92318e5ac8313d47b6d528d9dc97bf1a584dbf7dc4d334a1635094f2ead3",
+    "helper-81634.profraw": "5d083b1dd32e2c069c3c3baf827b943aafca6623b7cedf0c4e95bf4b0eec8fb5"
+  }
+}

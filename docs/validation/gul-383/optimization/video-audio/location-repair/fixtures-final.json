@@ -1,0 +1,8 @@
+{
+  "docs/validation/gul-383/optimization/video-audio/offset.mov": "4a17cb3025822da60b934e0e2d7e1ff63ccb3aa4210a4387a4ca3194cae5cb37",
+  "docs/validation/gul-383/optimization/video-audio/silent-prefix.mov": "d211e41c03d2a55a8065d0ffd85d5aa844418309aaafd4841c635ab2494771e0",
+  "docs/validation/gul-383/optimization/video-audio/boundary.mov": "42b34419df706743fb4d01407bb18e374ef32b103e7a35b0095ee2d030d8d424",
+  "docs/validation/gul-383/optimization/video-frames/short-scene.mov": "7db4b38eca51b68f458481fee84c1aa5a3e119e5e29d9faf166a035bbd99ddd2",
+  "docs/validation/gul-383/optimization/video-frames/static-scene.mov": "263f17d7cdaae6f671ded7c07a83ca22429151f5f0a1f05414fa4bdbbf31093e",
+  "docs/validation/gul-383/optimization/video-frames/longer-audio.mov": "902e4d62bc5f6b745963c89766e680b917a8cd1104c9ef733f698b31d73195ec"
+}

@@ -1,0 +1,93 @@
+{
+  "baseline": "9021ea52fc2696965e0c8a18cbe678f766038f3f",
+  "denominator": "Git added/modified executable Swift lines intersected with LLVM LCOV DA records; new Swift files included. Line coverage only, not branch coverage.",
+  "groups": {
+    "application": {
+      "covered": 78,
+      "executable": 83,
+      "percent": 93.98
+    },
+    "filesystem_helper": {
+      "covered": 20,
+      "executable": 21,
+      "percent": 95.24
+    },
+    "native_media_runtime": {
+      "covered": 0,
+      "executable": 0,
+      "percent": null
+    }
+  },
+  "files": {
+    "Sources/Typeflux/Ask/AskComposerViews.swift": {
+      "covered": 0,
+      "executable": 1,
+      "uncovered": [
+        969
+      ]
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+QuickResults.swift": {
+      "covered": 2,
+      "executable": 2,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskQuickActions.swift": {
+      "covered": 0,
+      "executable": 1,
+      "uncovered": [
+        124
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileLocationActions.swift": {
+      "covered": 14,
+      "executable": 14,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Files/AskFileSearchPlugin.swift": {
+      "covered": 5,
+      "executable": 5,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewRenderer.swift": {
+      "covered": 18,
+      "executable": 21,
+      "uncovered": [
+        66,
+        67,
+        68
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewView.swift": {
+      "covered": 3,
+      "executable": 3,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ImageText.swift": {
+      "covered": 1,
+      "executable": 1,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+MediaJobs.swift": {
+      "covered": 3,
+      "executable": 3,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+VideoAudio.swift": {
+      "covered": 31,
+      "executable": 31,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+VideoProgress.swift": {
+      "covered": 1,
+      "executable": 1,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaExtractor.swift": {
+      "covered": 20,
+      "executable": 21,
+      "uncovered": [
+        171
+      ]
+    }
+  }
+}

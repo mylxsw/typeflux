@@ -9,7 +9,7 @@ extension SemanticFileStore {
         INSERT OR IGNORE INTO work_queue(path,priority)
         SELECT c.path,3 FROM (SELECT path FROM files UNION SELECT path FROM jobs) c
         LEFT JOIN jobs j ON j.path=c.path WHERE COALESCE(j.recipe,'')<>? AND (\(suffixes))
-        """, [Self.videoProvenance] + extensions.flatMap { [$0.count + 1, "." + $0] as [Any] })
+        """, [Self.videoAudioRecipe] + extensions.flatMap { [$0.count + 1, "." + $0] as [Any] })
     }
 
     func saveVideoProgress(path: String, generation: String, progress: SemanticVideoProgress) throws {

@@ -5690,6 +5690,11 @@
 
 "ask.preview.textLocationUnavailable" = "テキストの位置を特定できません";
 
+// Media match location and external-open capability.
+"ask.quick.file.media.open" = "元のメディアファイルを開いています。外部アプリでの一致時刻への移動は保証されません。Typeflux の「一致箇所を表示」を使ってください。";
+"ask.quick.file.media.quickLook" = "Quick Look は元のメディアファイルを使用し、一致時刻への移動は保証されません。Typeflux の「一致箇所を表示」を使ってください。";
+"ask.quick.file.media.preview" = "開く操作と Quick Look は元のメディアファイルを使用します。一致箇所は表示可能な場合ここで確認できます。";
+
 // PDF open capabilities
 "ask.quick.action.viewMatch" = "一致箇所を表示";
 "ask.quick.file.accessChanged" = "ファイル検索のアクセス権が変更されました。再検索してから開いてください。";

@@ -126,12 +126,11 @@ enum SemanticMediaExtractor {
                 } catch { return .init(error: EIO, fileSize: Int64(after.st_size),
                                        modified: Date(timeIntervalSince1970: Double(after.st_mtimespec.tv_sec)
                                            + Double(after.st_mtimespec.tv_nsec) / 1e9), mediaSegments: ordinal) }
-            case .audio: try audio(AVURLAsset(url: snapshot), folder: folderURL, start: resume.audioUntil,
-                                   cursor: resume, emit: frame)
+            case .audio: try audio(AVURLAsset(url: snapshot), folder: folderURL, cursor: resume, emit: frame)
             case .video:
                 let asset = AVURLAsset(url: snapshot)
                 try SemanticVideoFrames.extract(asset, folder: folderURL, cursor: resume.videoProgress, emit: frame)
-                try audio(asset, folder: folderURL, start: resume.audioUntil, emit: frame)
+                try audio(asset, folder: folderURL, cursor: resume, emit: frame)
             }
         } catch { return .init(error: EILSEQ) }
         let modified = Date(timeIntervalSince1970: Double(after.st_mtimespec.tv_sec)
@@ -161,12 +160,23 @@ enum SemanticMediaExtractor {
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: output.path)
     }
 
-    private static func audio(_ asset: AVAsset, folder: URL, start: Double = 0,
-                              cursor: SemanticMediaCursor? = nil, emit: (AskFileReadResponse) throws -> Void) throws {
-        var windows = try cursor.map { try SemanticAudioWindows(cursor: $0) }
+    private static func audio(_ asset: AVAsset, folder: URL, cursor: SemanticMediaCursor,
+                              emit: (AskFileReadResponse) throws -> Void) throws {
         guard let track = asset.tracks(withMediaType: .audio).first else { return }
-        if windows != nil, start >= asset.duration.seconds {
-            try windows!.finish(folder: folder, emit: emit); return
+        // An initial empty edit belongs to the track range but contains no audio samples.
+        let trackStart = track.segments.first(where: { !$0.isEmpty })?.timeMapping.target.start.seconds
+            ?? track.timeRange.start.seconds
+        let trackEnd = track.timeRange.end.seconds
+        guard trackStart.isFinite, trackEnd.isFinite, trackStart >= 0, trackEnd >= trackStart else {
+            throw AskFileReadError.protocolError
+        }
+        var resume = cursor
+        resume.audioUntil = max(cursor.audioUntil, trackStart)
+        resume.audioCoveredUntil = max(cursor.audioCoveredUntil, trackStart)
+        var windows = try SemanticAudioWindows(cursor: resume)
+        let start = resume.audioUntil
+        if start >= trackEnd {
+            try windows.finish(folder: folder, emit: emit); return
         }
         let reader = try AVAssetReader(asset: asset)
         let output = AVAssetReaderTrackOutput(track: track, outputSettings: [
@@ -176,24 +186,10 @@ enum SemanticMediaExtractor {
         ])
         guard reader.canAdd(output) else { throw AskFileReadError.unavailable }
         reader.add(output)
-        if start > 0 {
-            reader.timeRange = CMTimeRange(
-                start: CMTime(seconds: start, preferredTimescale: 16000),
-                end: .positiveInfinity
-            )
-        }
+        reader.timeRange = CMTimeRange(start: CMTime(seconds: start, preferredTimescale: 16000),
+                                       end: CMTime(seconds: trackEnd, preferredTimescale: 16000))
         guard reader.startReading() else { throw AskFileReadError.unavailable }
         defer { reader.cancelReading() }
-        let windowBytes = 30 * 16000 * 4
-        var pending = Data(), offset = cursor == nil ? Int(start * 64000) : 0
-        func flush(_ count: Int) throws {
-            let path = folder.appendingPathComponent("audio-\(offset).wav")
-            try wave(Data(pending.prefix(count)), to: path)
-            try emit(.init(more: true, media: .init(kind: .audio, path: path.path,
-                                                    time: Double(offset) / 64000,
-                                                    endTime: Double(offset + count) / 64000)))
-            offset += count; pending.removeFirst(count)
-        }
         while let sample = output.copyNextSampleBuffer() {
             guard let block = CMSampleBufferGetDataBuffer(sample) else { continue }
             var bytes = Data(count: CMBlockBufferGetDataLength(block))
@@ -201,16 +197,10 @@ enum SemanticMediaExtractor {
                 CMBlockBufferCopyDataBytes(block, atOffset: 0, dataLength: $0.count, destination: $0.baseAddress!)
             }
             guard status == kCMBlockBufferNoErr else { throw AskFileReadError.unavailable }
-            if windows != nil {
-                try windows!.append(bytes, folder: folder, emit: emit)
-            } else {
-                pending.append(bytes)
-                while pending.count >= windowBytes { try flush(windowBytes) }
-            }
+            try windows.append(bytes, folder: folder, emit: emit)
         }
         guard reader.status != .failed else { throw AskFileReadError.unavailable }
-        if windows != nil { try windows!.finish(folder: folder, emit: emit) }
-        if !pending.isEmpty { try flush(pending.count) }
+        try windows.finish(folder: folder, emit: emit)
     }
 
     static func wave(_ samples: Data, to path: URL) throws {

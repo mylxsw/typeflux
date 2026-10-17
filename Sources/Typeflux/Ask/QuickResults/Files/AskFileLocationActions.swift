@@ -3,6 +3,21 @@ import Foundation
 extension AskFileHit {
     /// Even invalid or obsolete evidence needs an honest capability fallback.
     var hasPDFLocationEvidence: Bool { kind == .file && url.pathExtension.lowercased() == "pdf" && evidence != nil }
+
+    var hasMediaLocationEvidence: Bool {
+        kind == .file && evidence != nil && [.audio, .video].contains(SemanticMediaPriority.of(path))
+    }
+
+    var hasLocationEvidence: Bool { hasPDFLocationEvidence || hasMediaLocationEvidence }
+
+    var locationMessagePrefix: String { hasPDFLocationEvidence ? "ask.quick.file.pdf." : "ask.quick.file.media." }
+
+    func mediaPreviewTime(version: String?) -> Double? {
+        guard hasMediaLocationEvidence, let evidence, let version, evidence.version == version,
+              ["audio-window", "video-frame"].contains(evidence.segmentKind ?? ""),
+              let time = evidence.time, time.isFinite, time >= 0, time < Double(Int32.max) else { return nil }
+        return time
+    }
 }
 
 extension AskConversationModel {
@@ -28,9 +43,9 @@ extension AskConversationModel {
     }
 
     func fileLocationNotice(_ hit: AskFileHit) {
-        guard hit.hasPDFLocationEvidence else { return }
-        // NSWorkspace opens the original URL. No installed reader has a verified page-jump contract here.
+        guard hit.hasLocationEvidence else { return }
+        // NSWorkspace opens the original URL; no external page/time positioning contract is verified.
         // Say "opening", since the system's asynchronous handoff is not proof the reader displayed it.
-        passiveNotice(L("ask.quick.file.pdf.open"))
+        passiveNotice(L(hit.locationMessagePrefix + "open"))
     }
 }

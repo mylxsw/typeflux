@@ -5804,6 +5804,11 @@
 
 "ask.preview.textLocationUnavailable" = "Text location unavailable";
 
+// Media match location and external-open capability.
+"ask.quick.file.media.open" = "Opening the original media file. External apps may not seek to the match time. Use View Match Location in Typeflux.";
+"ask.quick.file.media.quickLook" = "Quick Look uses the original media file without a verified time jump. Use View Match Location in Typeflux.";
+"ask.quick.file.media.preview" = "Open and Quick Look use the original media file. Check the match location here when available.";
+
 // PDF open capabilities
 "ask.quick.action.viewMatch" = "View Match Location";
 "ask.quick.file.accessChanged" = "File search access changed. Search again before opening this result.";

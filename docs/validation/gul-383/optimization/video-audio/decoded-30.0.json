@@ -1,0 +1,11 @@
+{
+  "ends" : [
+    30
+  ],
+  "eof_replay_segments" : 0,
+  "fixture_sha256" : "d295a05c55f1c085d2e3b362b6162e2f18340e3fef81213012e69e1173b86e9c",
+  "seconds" : 30,
+  "starts" : [
+    0
+  ]
+}

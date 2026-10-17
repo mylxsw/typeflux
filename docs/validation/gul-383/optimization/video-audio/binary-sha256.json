@@ -1,0 +1,6 @@
+{
+  ".build/video-frames/arm64-apple-macosx/debug/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests": "a781321fb9732e808c7729d33b1318f217e7a0667d558af79fa1fb6edb24cf46",
+  ".build/video-frames/arm64-apple-macosx/debug/Typeflux": "ae618e7d1807e2c53103cb6e8c8f0e4b7b59dce40391d80962f9f1686ed3cfc3",
+  ".build/video-frames/arm64-apple-macosx/debug/TypefluxMediaHelper": "a3e611b200ca3c96bf9b836ced2d41f558b9db18e3479fe59a3a119727e38b31",
+  ".build/video-frames/arm64-apple-macosx/debug/TypefluxInferenceHelper": "f1168a7a79822db762dd9f780fd66b9f30de12c885d4e4a940d9ecec0d97da65"
+}

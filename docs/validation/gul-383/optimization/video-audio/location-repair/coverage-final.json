@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=AskMediaLocationTests/(audioPreviewAndBothActionRoutesKeepTimeAndRevokeOwnership|embeddedAudioMatchBeyondVideoTrackUsesExistingAudioPreview)"
+  ],
+  "wall_seconds": 72.40227370796492,
+  "exit_code": 0
+}
