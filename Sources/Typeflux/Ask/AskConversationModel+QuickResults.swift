@@ -133,10 +133,10 @@ extension AskConversationModel {
             revealFile(url)
         case .quickLook:
             quickLookFile(file)
-            if file.hasPDFLocationEvidence { passiveNotice(L("ask.quick.file.pdf.quickLook")) }
+            if file.hasLocationEvidence { passiveNotice(L(file.locationMessagePrefix + "quickLook")) }
             return .stay
         case .viewMatch:
-            guard file.hasPDFLocationEvidence else { return .stay }
+            guard file.hasLocationEvidence else { return .stay }
             return .preview(file)
         case .copyPath:
             AskQuickResults.copy(file.path)

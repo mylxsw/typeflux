@@ -7,8 +7,10 @@ extension SemanticFileStore {
     static let audioProvenance = mediaProvenance + ";" + SemanticAudioWindows.recipe
     static let videoProvenance = mediaProvenance + ";" + SemanticVideoFrames.recipe
 
+    static let videoAudioRecipe = videoProvenance + ";" + SemanticAudioWindows.recipe
+
     static func mediaVectorProvenance(_ path: String, kind: SemanticMediaInput.Kind) -> String {
-        if SemanticMediaPriority.of(path) == .audio { return audioProvenance }
+        if SemanticMediaPriority.of(path) == .audio || kind == .audio { return audioProvenance }
         return SemanticMediaPriority.of(path) == .video && kind == .image ? videoProvenance : mediaProvenance
     }
 
@@ -53,6 +55,7 @@ extension SemanticFileStore {
 
     func beginMediaJob(path: String, metadata: AskFileReadResponse) throws -> String {
         try lock.withLock {
+            try upgradeVideoAudioJob(path: path, metadata: metadata)
             let row = try statement("SELECT generation,version,recipe FROM media_jobs WHERE path=?")
             bind(row, [path])
             let matched = sqlite3_step(row) == SQLITE_ROW && string(row, 1) == Self
@@ -83,6 +86,7 @@ extension SemanticFileStore {
                                 "{\"page\":0,\"offset\":0}",
                                 Self.mediaRecipe(path)
                             ])
+                try reusePublishedVideoFrames(path: path, metadata: metadata, generation: generation)
                 if SemanticMediaPriority.of(path) == .image, metadata.version != nil {
                     // Reuse only a verified same-version visual input with the exact model/projector recipe.
                     try execute("""

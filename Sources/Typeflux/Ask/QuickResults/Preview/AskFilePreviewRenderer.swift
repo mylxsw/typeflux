@@ -55,7 +55,22 @@ enum AskFilePreviewRenderer {
                                             ? rendered.imageTextLocated ?? false : nil)
         }
         if kind == .video || kind == .audio {
-            return try await media(hit.url, kind: kind, pixels: pixels, start: hit.evidence?.time ?? 0, worker: worker)
+            let time = hit.mediaPreviewTime(version: info.version)
+            let start = time ?? 0
+            let mediaKind: AskFilePreviewKind = time != nil && hit.evidence?.segmentKind == "audio-window"
+                ? .audio : kind
+            let content: AskFilePreviewContent
+            do {
+                content = try await media(hit.url, kind: mediaKind, pixels: pixels, start: start, worker: worker)
+            } catch {
+                try Task.checkCancellation()
+                guard start > 0 else { throw error }
+                return try await media(hit.url, kind: mediaKind, pixels: pixels, start: 0, worker: worker)
+            }
+            if start > 0, start >= content.duration {
+                return try await media(hit.url, kind: mediaKind, pixels: pixels, start: 0, worker: worker)
+            }
+            return content
         }
         let rendered = try await AskQuickLookThumbnail.decode(hit.url, pixels: pixels, worker: worker)
         try Task.checkCancellation()
@@ -67,12 +82,14 @@ enum AskFilePreviewRenderer {
         let cancellation = AskSearchCancellation()
         let rendered = try await withTaskCancellationHandler {
             try await Task.detached(priority: .utility) {
-                try MediaPreviewDisplay.renderAV(url, pixels: pixels, video: kind == .video,
-                                                 start: start, cancellation: cancellation, worker: worker)
+                try MediaPreviewDisplay.renderAV(
+                    url, pixels: pixels, video: kind == .video,
+                    start: start, cancellation: cancellation, worker: worker)
             }.value
         } onCancel: { cancellation.cancel() }
         try Task.checkCancellation()
         return AskFilePreviewContent(kind: kind, images: rendered.images.map { NSImage(cgImage: $0, size: .zero) },
-                                     duration: rendered.duration, startTime: rendered.start, waveform: rendered.waveform)
+                                     duration: rendered.duration, startTime: rendered.start,
+                                     waveform: rendered.waveform)
     }
 }

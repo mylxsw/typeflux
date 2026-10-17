@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticVideoAudioTests/realTrackWindows|AskMediaLocationTests/(nativePreview|audioPreview|embeddedAudio)"
+  ],
+  "wall_seconds": 151.7745413329685,
+  "exit_code": 2
+}

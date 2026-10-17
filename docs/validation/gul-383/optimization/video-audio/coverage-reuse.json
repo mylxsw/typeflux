@@ -1,0 +1,4930 @@
+{
+  "Packages/TypefluxChat/Sources/TypefluxChat/ChatAPIClient.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Packages/TypefluxChat/Sources/TypefluxChat/ChatAccount.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Packages/TypefluxChat/Sources/TypefluxChat/ChatCoding.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Packages/TypefluxChat/Sources/TypefluxChat/ChatConversationStreamState.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Packages/TypefluxChat/Sources/TypefluxChat/ChatModels.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Packages/TypefluxChat/Sources/TypefluxChat/ChatReasoningEffort.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Packages/TypefluxChat/Sources/TypefluxChat/ChatRequest.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Packages/TypefluxChat/Sources/TypefluxChat/ChatSession.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Packages/TypefluxChat/Sources/TypefluxChat/GoogleOAuth.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Packages/TypefluxChat/Sources/TypefluxChat/ModelIconResolver.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Packages/TypefluxChat/Sources/TypefluxChat/SSEFrame.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/Typeflux/Analytics/AppAnalyticsReporter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Analytics/ProductAnalytics.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/AboutView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/AboutWindowController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/AppAppearance.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/AppCoordinator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/AppLocalization.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/AppLoginURLRouter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/AppMenuController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/AppResourceBundle.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/AppServerConfiguration.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/AppStateStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/AppTerminationBarrier.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/AskAnswerWindowController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/AutoUpdater.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/BillingReturnLink.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/DIContainer.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/DockVisibilityController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/ErrorLogStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/LaunchAtLoginManager.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/LocalNotificationService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/NetworkDebugLogger.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/ProcessCommandRunner.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/StatusBarController+Help.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/StatusBarController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/TypefluxApplication.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/TypefluxWindowIdentity.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/App/UpdateAlertWindowController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Artifacts/AskArtifactCapture.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Artifacts/AskArtifactImageModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Artifacts/AskArtifactPreviewModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Artifacts/AskArtifactSaveModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Artifacts/AskArtifactStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Artifacts/AskDevelopmentPreview.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Artifacts/AskLocalTools+Artifacts.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Artifacts/AskPreviewEnginePolicy.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Artifacts/AskPreviewHost.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Artifacts/AskProjectPreviewCapture.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Artifacts/AskStoredArtifactCard.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskAPIClient.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskAccountCard.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskAccountFooter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskActivity.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskActivityViews.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskApprovalViews.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskAttachViews.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskAttachment.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskAttachmentStrip.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskAutomationScriptRunner.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskBrowserExecutor.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskBrowserScripts.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskCapturedContentFeedbackView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskClassicStyle.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskCodeSandbox.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskCommandPaletteView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskCommands.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskComposerLayout.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskComposerNotices.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskComposerTextView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskComposerViews.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskComputerExecutor.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskComputerTargetProbe.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskContentCardSurface.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskContextCapture.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskContextChips.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskContextImage.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationCache.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+Attachments.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+Calendar.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+CapturedContent.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+Clipboard.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+Commands.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+Emoji.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+Help.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+HistorySearch.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+KeywordDirectory.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+KeywordHotkey.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+LauncherHome.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+LauncherInputHistory.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+Memory.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+NoteChat.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+Notes.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+OpenChat.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+Plugins.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+QuickResults.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+Screenshot.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+SystemCommands.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+SystemMonitor.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+Temporary.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+Title.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+WorkflowActions.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel+WorkflowImage.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationOrb.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationStream.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationTitle.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationViews.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskConversationWindowController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskCreditPause.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskCreditPauseViews.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskCustomInference.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskDesign.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskDesktopActions.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskEffortPicker.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskFileTools.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskFolderGrants.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskGlass.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskGlassMenu.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskHarnessContract.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskHistoryPullRefresh.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskHistoryRow.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskHistoryTitleEditor.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskHoverCard.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskIconChipFace+Switch.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskImageCapability.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskImageRecoveryPicker.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskImageRecoveryViews.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskKeywordUsage.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLauncherContext.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLauncherContextToken.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLauncherEscape.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLauncherEscapeMonitor.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLauncherHeightAnimator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLauncherHeightReserve.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLauncherHome.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLauncherInputHistory.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLauncherInputHistoryStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLauncherInputHistoryView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLauncherInputSource.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLauncherNumberShortcuts.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLauncherOpenChatButton.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLauncherPlacement.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLauncherPrimaryAction.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLauncherSuggestions.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLauncherViewport.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLauncherVoiceViews.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLauncherWindowMode.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLibraryChrome.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLocalMode.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLocalTools+Approval.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLocalTools+Automation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskLocalTools.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskMarkdownFences.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskMarkdownTable.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskMemory.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskMemoryNoteFileStorage.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskMemoryNotes.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskMessageProvenance.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskModelLibrary+Presentation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskModelLibrary.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskModelViews.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskMotionEffects.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskObservationStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskPermissionMode.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskPermissionModeMenu.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskPlanList.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskProviderInference.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskQueueViews.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskReasoningEffort.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskReasoningRequest.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskRecordingSheen.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskReference.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskReferenceViews.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskResponseWaiting.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskSavedChatDraft.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskScreenObservation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskScreenshotAttachments.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskSearchPalette.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskSearchPaletteView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskSelectionHoverCard.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskSendQueue.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskSkillInstallationStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskSkillInstaller+GitHub.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskSkillInstaller.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskSkillParser.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskSkillSource.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskSkills.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskSourceApplicationTracker.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskSourceContext.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskStream.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskSubmissionIssue.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskTemporaryCache.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskTemporaryViews.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskToolImageNormalizer.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskToolImageView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskToolPolicy.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskToolPreparationFailure.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskTranscriptText.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskTypedContent.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskUsage.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskUsageDetails.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskUsageViews.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskVisionSwitch.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskVoiceButton.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskVoiceInput.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskVoiceLive.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskWindowDragArea.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskWorkspaceChrome.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskWorkspaceLayout.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/AskWorkspacePresentation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Budget/AskBudgetController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Budget/AskBudgetStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Budget/AskBudgetView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Budget/AskContextPlanner.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/CloudModelPricing.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Execution/AskSecureDirectory.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Execution/ManagedProcess.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Execution/OwnedProcessReaper.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/ImageGeneration/AskGeneratedImageValidator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/ImageGeneration/AskGenerationRecovery.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/ImageGeneration/AskGenerationRecoveryView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/ImageGeneration/AskImageConfiguration.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/ImageGeneration/AskImageGenerationRetention.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/ImageGeneration/AskImageGenerationService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/ImageGeneration/AskImageHTTP.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/ImageGeneration/AskImageModelDiscovery.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/ImageGeneration/AskImageSettings.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/ImageGeneration/AskLocalTools+ImageGeneration.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/ImageGeneration/AskRemoteImage.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Local/AskCloudflareSearch.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Local/AskLocalEngine+Budget.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Local/AskLocalEngine.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Local/AskLocalPrompt.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Local/AskLocalUsage.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Local/AskLocalWebTools.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Local/AskOfflineHTML.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Local/AskRoutedAPI.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Local/AskSearchSettings.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/MediaWorker.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/MemoryProvenance.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Notes/AskMarkdownFormat.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Notes/AskNote.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Notes/AskNoteDetailView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Notes/AskNoteExporter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Notes/AskNoteImporter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Notes/AskNoteMarkdown.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Notes/AskNoteTextViews.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Notes/AskNotebookSkill.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Notes/AskNotebookTool.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Notes/AskNotesList.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Notes/AskNotesSidebar.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Notes/AskNotesView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Notes/AskNotesViewModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Notes/AskNotesWindowController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Notes/SQLiteAskNoteStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Project/AskLocalTools+Project.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Project/AskLocalTools+Terminal.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Project/AskProjectChangeSet.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Project/AskProjectExecutionCopy.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Project/AskProjectFileAccess.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Project/AskProjectPortLease.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Project/AskProjectProcessIO.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Project/AskProjectReviewView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Project/AskProjectRuntime.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Project/AskProjectRuntimePolicy.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Project/AskProjectTerminalCard.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Project/AskProjectWorkspace.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Project/AskTerminalSession.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Project/AskTerminalTextBuffer.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Apps/AskAppEntry.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Apps/AskAppIndex.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Apps/AskAppMatcher.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/AskFinderIcon.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/AskLauncherIconCache.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/AskNativeIconAdmission.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/AskQuickActions.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/AskQuickLookThumbnail.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/AskQuickResultSecondaryClick.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/AskQuickResults.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/AskQuickResultsView+ContentMatch.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/AskQuickResultsView+Layout.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/AskQuickResultsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/AskResultImageCache.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/AskSmallIcon.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserBookmarks.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserFaviconCache.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserFaviconView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserSearchEntry.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserSearchPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserSearchService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserSearchSettings.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserTabScripts.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Calculator/AskCalculator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Calculator/AskCalculatorEvaluator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Calculator/AskCalculatorFormats.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Calculator/AskCalculatorLexer.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Calculator/AskCalculatorNumber.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Calculator/AskCalculatorParser.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Calculator/AskNumberConversions.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Files/AskDirectorySession.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Files/AskFileCrawler.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Files/AskFileIndex.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Files/AskFileIndexState.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Files/AskFileLabels.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Files/AskFileLocationActions.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Files/AskFileMounts.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Files/AskFileReader.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Files/AskFileReaderOwnership.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Files/AskFileScope.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Files/AskFileSearch.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Files/AskFileSearchCandidates.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Files/AskFileSnapshot.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Files/AskFileType.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Files/AskFileWatcher.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/AskClipboardPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/AskHelpPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/AskHistoryPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/AskKeyword.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/AskKillAppPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/AskLauncherPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/AskLauncherSearchEntry.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/AskNotesPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/AskOpenChatPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginItemViews.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginSession.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/AskPrefixPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/AskScreenshotPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/AskScreenshotTextPlugin+Organization.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/AskScreenshotTextPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/AskSettingsPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Calendar/AskCalendarPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Emoji/AskEmojiPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiCatalog.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiGridKeyboard.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiResultsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiSearchService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Files/AskFileSearchPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Files/AskSemanticFileSearchPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Prompt/AskPromptPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/System/AskScreenCleaningController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/System/AskSystemCommand.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/System/AskSystemCommandRunner.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/System/NativeSystemAdapter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/System/NativeSystemProtocol.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/System/NativeSystemWorker.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/System/NativeSystemWorkerCommand.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/SystemMonitor/AskSystemMonitorPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslatePlugin+Output.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslatePlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationConfigurationPresenter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationContentHeight.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationEngineFactory.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationEngines.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationFanout.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationLLMService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationLanguageDownload.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationLanguages.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationSettings.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationStackView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskWordCard.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskWordCardView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationHistory.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelCoordinator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelKeyCommand.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelModel+Actions.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelPlacement.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelPreferences.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Providers/AskBaiduTranslationClient.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Providers/AskDeepLTranslationClient.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Providers/AskGoogleTranslationClient.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Providers/AskMicrosoftTranslationClient.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Providers/AskServiceTranslationEngine.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Providers/AskTencentTranslationClient.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Providers/AskTranslationSigning.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Providers/AskVolcengineTranslationClient.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Providers/AskYoudaoTranslationClient.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/WordBook/AskWordBook.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/WordBook/AskWordBookExporter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/WordBook/AskWordBookRelatedChip.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/WordBook/AskWordBookView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/WordBook/AskWordBookViewModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/WordBook/AskWordBookWindowController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/WordBook/SQLiteAskWordBookStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/WebSearch/AskWebSearchPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflow.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowAction.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowActionRunner.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowActionsSummaryView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowGallery.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowImage.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowImageView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowItemRows.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowItems.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowManifest.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowNoticePanel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowOutput.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowPlaceholders.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowPlugin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowRunner.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowRuntime.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowScriptOutput.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowStore+Editor.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowStore+Gallery.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowTemplate.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowAssistant.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowAuthorManifestSchema.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowAuthorSkill.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowAuthorTools.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowDraft.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowEditorModel+Actions.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowEditorModel+Files.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowEditorModel+Output.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowEditorModel+Presentation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowEditorModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowFileReferences.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowJSONLayout.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowProposal.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowRiskScanner.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowStderrLocator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowSyntaxHighlighter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowTester.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewClock.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewContent.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewLoader.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPlacement.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPolicy.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewRenderer.swift": {
+    "source_matches": false,
+    "production_object_matches": false
+  },
+  "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewText.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Search/AskFuzzyMatcher.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Search/AskLauncherSearchSettings.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Search/AskSearchCancellation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Search/AskSearchKey.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Search/AskSearchPointer.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Search/AskSearchQuery.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Search/AskSearchText.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Search/AskSearchTopK.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticAudioWindows.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticDocumentZIP.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticDownloadProgressDelivery.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingOwnership.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileChangePlan.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Discovery.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Document.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Media.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Priority.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileReaders.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+AudioProgress.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Discovery.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Events.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ImageText.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+MediaJobs.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ProcessingDetails.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchMaintenance.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchSchema.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Totals.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+VideoAudio.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+VideoProgress.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticHTMLText.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticImageText.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexDiagnostics.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexEvents.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexPauseGate.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexProgressDelivery.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexProgressRelay.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaExtractor.swift": {
+    "source_matches": false,
+    "production_object_matches": false
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaPriority.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaWorker.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticModelDownload.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticODTText.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticPDFText.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticPresentationText.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticRTFText.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSQLiteCancellation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticScoreCalibration.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchRanking.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchSnippet.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchTrace.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSettingsAuthority.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSpreadsheetText.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVideoFrames.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticWatcherDelivery.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticWordText.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticWorkBudget.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Recovery/AskConversationCache+Execution.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Recovery/AskConversationModel+Recovery.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Recovery/AskConversationModel+ToolFailure.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Recovery/AskRecovery.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Recovery/AskRecoveryPresentation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Recovery/AskRecoveryViews.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Recovery/RecoveringAskConversationCache.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Recovery/RecoveringAskNoteStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/Recovery/RecoveringAskWordBookStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/ResponsesStream.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/ResultWindow/AskResultDocument.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/ResultWindow/AskResultWindowController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/ResultWindow/AskResultWindowView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/WorkflowAuthoring/AskLocalTools+WorkflowAuthoring.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPresentation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringSession.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Audio/AVFoundationAudioRecorder.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Audio/AudioCaptureCheckCommand.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Audio/AudioContentAnalyzer.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Audio/AudioDeviceManager.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Audio/AudioFileTranscoder.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Audio/AudioInputSignalTracker.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Audio/AudioPCMBufferSnapshot.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Audio/AudioRecorder.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Audio/AudioRecordingBufferConverter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Audio/AudioRecordingQueue.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Audio/AutomaticInputDeviceSelector.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Audio/CoreAudioInput.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Audio/CoreAudioRecorder.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Audio/LowEnergyAudioPreparer.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Audio/RecordingAudioReadiness.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Audio/SoundEffectPlayer.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Audio/SwitchableAudioRecorder.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Audio/SystemAudioOutputMuter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AccessTokenClaims.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AccountAddonCreditRow.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AccountBillingFlow.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AccountCreditChart.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AccountDateDisplayFormatter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AccountHelpSection.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AccountPlanHeroCard.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AccountStatusPresentation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AccountStatusText.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AccountUsageCreditPresentation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AccountUsageDisplayFormatter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AccountUsageSections.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AccountView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AppleSignInService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AuthModels.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AuthService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AuthState+Profile.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AuthState+Session.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AuthState+Subscription.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AuthState+WebLogin.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/AuthState.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/BillingAPIService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/BillingActionLifetime.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/BillingModels.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/BillingPlansLink.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/CloudLoginSyncCoordinator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/CloudUsageAPIService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/CloudUsageModels.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/GitHubOAuthService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/GoogleOAuthService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/KeychainTokenStore+Keychain.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/KeychainTokenStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/LoginView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/LoginWindowController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/PasswordChangeFlow.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/SidebarAccountCardPresentation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/WebLoginAPI.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/WebLoginBrowser.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/WebLoginCoordinator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/WebLoginEntryController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/WebLoginProtocol.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Auth/WebLoginView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/BackgroundActivity/AgentRunActivitySource.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/BackgroundActivity/BackgroundActivity.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/BackgroundActivity/BackgroundActivityCenter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/BackgroundActivity/BackgroundActivityMenuSection.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/BackgroundActivity/BackgroundActivityRowView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/BackgroundActivity/BackgroundActivitySource.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/BackgroundActivity/BackgroundActivityWindowController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/BackgroundActivity/BackgroundActivityWindowView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/BackgroundActivity/ContentIndexActivitySource.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/BackgroundActivity/FileIndexActivitySource.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/BackgroundActivity/OllamaPullActivitySource.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/BackgroundActivity/SpeechModelDownloadActivitySource.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Batch/TypefluxBatchCommand.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Calendar/CalendarDates.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Calendar/CalendarDayInfo.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Calendar/CalendarEvents.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Calendar/CalendarHeaderViews.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Calendar/CalendarHintSummary.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Calendar/CalendarKeywordSettingsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Calendar/CalendarLauncherModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Calendar/CalendarLauncherView+DayDetails.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Calendar/CalendarLauncherView+Events.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Calendar/CalendarLauncherView+Interval.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Calendar/CalendarLauncherView+YearSearch.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Calendar/CalendarLauncherView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Calendar/CalendarPreferences.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Calendar/CalendarQueryParser.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Calendar/EventKitEventProvider.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Calendar/HolidaySchedule.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardAppIconProvider.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardAudioPlayback.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardCapture.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardCaptureRules.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardCaptureSuppression.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardCaptureWorker.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardCategory.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardContentActing.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardContentAction.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardContentActions.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardContentClassifier.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardEntry.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardEntryAction.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardEntryFormatter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardEntryKind.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardEntryPreview.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardFeed.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardInlineMedia.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardMediaInfoProvider.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardMediaPlayer.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardMediaProjection.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardMonitor.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardPanelChrome.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardPanelCommand.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardPanelController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardPanelKeyCommand.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardPanelLayout.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardPanelModel+Snippets.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardPanelModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardPanelPlacement.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardPanelRow.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardPanelView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardPerformance.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardPlaybackClient.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardPreferences.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardPreviewPane.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardRowClickArea.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardRowFrames.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardSnippet.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardSnippetEditor.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardTextRecognizer.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardThumbnailProvider.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardUsage.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardWaveformView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/ClipboardWorkBudget.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/PasteboardContents.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/SQLiteClipboardHistoryStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Clipboard/SystemPasteboardReader.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Dev/DevLauncher.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Feedback/DirectFeedbackSheet.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Feedback/FeedbackAPIService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Feedback/FeedbackDestination.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Feedback/FeedbackImageProcessor.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Feedback/FeedbackUploadFlow.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Help/HelpCatalog.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Help/HelpComponents.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Help/HelpGuideModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Help/HelpKeywordsPage.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Help/HelpSearch.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Help/HelpShortcutsPage.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Help/HelpStartPage.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Help/HelpWindowController+App.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Help/HelpWindowController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Help/HelpWindowView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/History/FileHistoryStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/History/HistoryProcessingDiagnostics.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/History/HistoryRetryPlan.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/History/HistoryStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/History/SQLiteHistoryStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Hotkey/EventTapHotkeyService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Hotkey/GlobeKeyPreference.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Hotkey/HotkeyBinding.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Hotkey/HotkeyConflictChecker.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Hotkey/HotkeyConflictMessages.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Hotkey/HotkeyFormat.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Hotkey/HotkeyGestureArbiter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Hotkey/HotkeyService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Hotkey/HotkeyTarget.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Hotkey/KeywordHotkey.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Hotkey/RecordingGestureDecision.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Hotkey/RecordingStopGesture.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Hotkey/SystemHotkeyPool.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Imaging/ImageTextRecognizer.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Imaging/ImageTiling.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Imaging/RecognizedText.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Imaging/TiledImageTextRecognizer.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/Agent/AgentRequestConfiguration.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/CodingAppDetector.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/FreeModels/FreeLLMModelRegistry.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/LLMAgent.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/LLMAgentResponseSupport.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/LLMAgentRouter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/LLMConfigurationReminderPolicy.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/LLMConfigurationValidator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/LLMConnectionTestResolver.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/LLMHTTPSession.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/LLMRemoteProvider.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/LLMRequestDiagnostics.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/LLMRewriteRequest.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/LLMRouter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/LLMService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/LLMThinkingTuningAdaptation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/MCP/HTTPMCPClient.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/MCP/MCPClient.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/MCP/MCPHTTPExchange.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/MCP/MCPInputValidator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/MCP/MCPMessage.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/MCP/MCPOAuth.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/MCP/MCPRegistry.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/MCP/MCPSSEParser.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/MCP/MCPToolAdapter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/MCP/StdioMCPClient.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/OllamaLLMService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/OllamaLocalModelManager.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/OllamaPullProgress.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/OpenAICompatibleAgentService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/OpenAICompatibleLLMService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/OpenAICompatibleResponseSupport.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/PromptCatalog.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/ResponsesAPI.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/LLM/ResponsesLLMClient.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/MouseVoiceInput/MouseVoiceInputController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/MouseVoiceInput/MouseVoiceTargetAdapters.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/MouseVoiceInput/MouseVoiceTargetResolver.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/MouseVoiceInput/VoiceHandleView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/MouseVoiceInput/VoiceHandleWindowController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Networking/CloudCreditsExhaustedError.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Networking/CloudEndpointProber.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Networking/CloudEndpointRegistry.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Networking/CloudEndpointSelector.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Networking/CloudRequestExecutor.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Networking/CloudServerPreferences.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Networking/OpenAIEndpointResolver.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Networking/RequestRetry.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Networking/ServerConnectivityFailure.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Networking/TypefluxCloudASRDirectiveError.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Networking/TypefluxCloudBillingError.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Networking/TypefluxCloudFeature.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Networking/TypefluxCloudLoginRequiredError.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Networking/TypefluxCloudRequestHeaders.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Networking/TypefluxCloudServerErrorMessage.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Onboarding/OnboardingView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Onboarding/OnboardingViewModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Onboarding/OnboardingWindowController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Overlay/OverlayController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Overlay/OverlayMotion.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Overlay/OverlayWaveformMetrics.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Overlay/ProcessingProgressTimeline.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Overlay/RecordingHintLayout.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Privacy/PrivacyGuard.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/AliCloudRealtimeTranscriber.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/AppleSpeechTranscriber.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/AutoModelDownloadService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/BundledLocalModelLocator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/BundledModelAutoSetup.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/CloudLocalTranscriptionRacer.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/DefaultSenseVoiceFallbackTranscriber.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/DirectoryContentMatcher.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/DoubaoRealtimeTranscriber.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/DownloadProgressReporter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/FreeModels/FreeSTTModelRegistry.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/FreeSTTTranscriber.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/FunASRTranscriber.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/GoogleSpeech/GoogleCloudSpeechOAuth.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/GoogleSpeech/GoogleCloudSpeechTranscriber.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/GoogleSpeech/google/cloud/speech/v2/cloud_speech_minimal.grpc.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/GoogleSpeech/google/cloud/speech/v2/cloud_speech_minimal.pb.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/LiveTranscriptionPreviewer.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/LocalModelDownloadCatalog.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/LocalModelDownloadProgressCenter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/LocalModelDownloadSourceResolver.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/LocalModelDownloadURLCatalog.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/LocalModelLivePreviewBackend.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/LocalModelManager.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/LocalModelTranscriber.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/MultimodalLLMTranscriber.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/OpenAIRealtimePreviewBackend.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/OpenAIRealtimeTranscriber.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/Qwen3ASRTranscriber.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/RealtimeTranscriptionDiagnostics.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/RealtimeTranscriptionSession.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/RemoteSTTTestAudio.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/STTRouter+Fallbacks.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/STTRouter+ModelSelection.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/STTRouter+Recording.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/STTRouter+Transcription.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/SenseVoiceTranscriber.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/SherpaOnnxSupport.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/SonioxTranscriber.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/Transcriber.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/TranscriptionLanguageHints.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/TranscriptionPersonaContext.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/TypefluxASRServerRegistry.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/TypefluxOfficialASRGrantSequence.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/TypefluxOfficialASRRouteCache.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/TypefluxOfficialASRRoutingClient.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/TypefluxOfficialTranscriber+Failover.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/TypefluxOfficialTranscriber.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/WhisperAPITranscriber.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/WhisperKitTranscriber.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/WhisperWorkerClient.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/STT/WhisperWorkerPool.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/LongImage/ScreenshotLongImageCanvas.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/LongImage/ScreenshotLongImageEditorView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/LongImage/ScreenshotLongImageMinimapView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Pin/ScreenshotPinController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Pin/ScreenshotPinRecoveryView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Pin/ScreenshotPinState.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingCameraBubbleView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingCapsule.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingCapture.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingCoordinator+Presentation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingCoordinator+Sources.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingCoordinator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingDevicePreview.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingEncoder.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingExporter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingLayout.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingModels.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingOptionsPopover.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingPreviewMedia.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingPreviewPanel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingPreviewView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingPublication.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingSelectionView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingSessionController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingTimelineLoader.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingTimelineView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingToastController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingToastModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingToolbar.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingWindowController+Actions.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingWindowController+Presentation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingWindowController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Recording/ScreenRecordingWriter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenCaptureContent.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenCaptureGeometry.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenCapturePermission.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenCaptureService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenSnapshot.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotAnnotation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotAnnotationCanvasView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotAnnotationDocument.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotAnnotationEditor.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotAnnotationStyle.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotBackgroundRemoval.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotCaptureWindowPolicy.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotCoordinator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotEditorToolbar.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotFloatingPanel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotFollowUp.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotImageExporter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotMagnifier.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotMode.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotMosaicEffects.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotMosaicPreparation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotOutput.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotOverlayChromeView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotOverlayController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotOverlayView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotPermissionGuideController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotPresenting.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotRedactionSuggestions.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotRenderer.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotSelection.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotSensitiveInfo.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotSensitiveInfoPanel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotStrokeSmoothing.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotTextHeightMeasuring.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotToastController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/ScreenshotToolStyles.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Scrolling/DirectionalScrollStitcher.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Scrolling/ScrollCaptureBar.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Scrolling/ScrollCaptureLayout.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Scrolling/ScrollCaptureOverlayController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Scrolling/ScrollCapturePreviewView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Scrolling/ScrollCaptureSession.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Scrolling/ScrollCaptureState.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Scrolling/ScrollDriver.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Scrolling/ScrollFrame.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Scrolling/ScrollFrameInbox.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Scrolling/ScrollFrameSource.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Scrolling/ScrollStitcher.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Scrolling/ScrollUserActivityMonitor.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Screenshot/Scrolling/VisionScrollOffsetEstimator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AddModelEndpointView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AgentAutomationPermissions.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AgentCapabilityStatus.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AppPreferences.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AppSettingsPane.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AppearanceSettingsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskCloudflareConnectionTest.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskCloudflareSearchSettingsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskImageSettingsModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskImageSettingsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskKeywordDraft.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskKeywordEditorSheet.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskKeywordListComponents.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskKeywordListPresentation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskLauncherPluginSettingsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskMemoryNotesSettingsModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskTemporarySettingsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskTitleSettingsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskToolsSettingsView+Overview.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskToolsSettingsView+Skills.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskToolsSettingsView+Tools.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskToolsSettingsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskTranslationPanelSettingsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskTranslationSettingsModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskTranslationSettingsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskWorkflowRunDetails.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskWorkflowSettingsRow.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AskWorkflowSettingsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/AuxiliaryHotkeyCapture.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ClipboardDataSettingsViews.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ClipboardSettingsModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ClipboardSettingsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/CloudProviderModelsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ConnectionTestSupport.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/HistoryExportDestination.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/HotkeyRecorder.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/HotkeySettingsModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/HotkeySettingsPresentation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/HotkeySettingsTable.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/HotkeySettingsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/InterfaceStyle.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/KeywordHotkeyDraft.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/KeywordHotkeyEditorSheet.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/LauncherSearchSettingsView+Browsers.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/LauncherSearchSettingsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/LauncherSettingsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/LauncherWindowModeSetting.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/LiquidGlassIntensity.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/LiquidGlassIntensitySetting.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/MCPServerEditorView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/MCPServerImport.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/MCPServerStatusPresentation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/MCPSettings.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/MemoryNotesEditorView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ModelAvailability.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ModelCatalogView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ModelFormRow.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ModelIcon.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ModelPageTabBar.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ModelProviderIcon.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ModelProviderRow.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ModelRegistry.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ModelSettingsPage.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ModelSettingsPresentation.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ModelVisionCatalog.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ModelVisualStyle.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ModuleHealthSettingsModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ModuleHealthSettingsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/OpenAIAudioModelCatalog.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/PermissionsSettingsModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/PermissionsSettingsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/PersonaAppDiscovery.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ProjectVocabularyScanner.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ProviderModelCatalog.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/ProviderModelsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/RecentInputMemoryManagementView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/SemanticFileSearchSettingsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/SemanticFileSearchStatus.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/SemanticIndexDetailsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/SemanticIndexDiagnosticsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/SettingsControls.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/SettingsImageSession.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/SettingsPaneLayout.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/SettingsPermission.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/SettingsPermissionService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/SettingsStore+Agent.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/SettingsStore+BackgroundActivity.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/SettingsStore+Clipboard.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/SettingsStore+Hotkeys.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/SettingsStore+LauncherInputHistory.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/SettingsStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/SettingsView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/SettingsViewModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/SettingsWindowController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/StudioModels.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/StudioUnderlineTab.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/StudioViewModel+PersonaLibrary.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/VocabularyStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/VoiceInputTabBar.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowAssistantPanel+Entries.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowCodeView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowEditorCenter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowEditorComponents.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowEditorForms.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowEditorPanels.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowEditorView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowEditorWindowController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowFilesCard.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowGallerySheet.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowNewSheet.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowOutputForm.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowOutputLayout.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Stability/FileIndexModule.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Stability/MediaExtractionModule.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Stability/ModuleHandle.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Stability/ModuleHealth.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Stability/ModuleHealthChannel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Stability/ModuleHealthStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Stability/ModuleRecoveryBudget.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Stability/ModuleRegistry.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Stability/ModuleSupervisor.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Stability/ModuleWorkerGate.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Stability/NativeSystemModule.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Stability/PlaybackModule.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Stability/SemanticModelModules.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Stability/SemanticReaderModules.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Stability/StorageModules.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Stability/WhisperInferenceModule.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Stats/UsageStatsStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Sync/CloudDataSyncAPIService.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Sync/CloudDataSyncCoordinator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Sync/CloudDataSyncModels.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Sync/SQLiteCloudDataSyncStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/SystemMonitor/DarwinSystemMetricsSampler.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/SystemMonitor/SystemMetricsCalculator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/SystemMonitor/SystemMonitorDisplay.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/SystemMonitor/SystemMonitorFormat.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/SystemMonitor/SystemMonitorHistory.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/SystemMonitor/SystemMonitorLauncherModel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/SystemMonitor/SystemMonitorLauncherView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/SystemMonitor/SystemMonitorModels.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/SystemMonitor/SystemMonitorStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/SystemMonitor/SystemMonitorWindowController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/SystemMonitor/SystemMonitorWindowSettings.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/SystemMonitor/SystemMonitorWindowView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/SystemMonitor/SystemProcessTerminator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/TextInjection/AXTextDeliveryBackend.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/TextInjection/AXTextInjector+AX.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/TextInjection/AXTextInjector+DeliveryFocus.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/TextInjection/AXTextInjector+Paste.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/TextInjection/AXTextInjector+ReadOnlySelection.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/TextInjection/AXTextInjector+Selection.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/TextInjection/AXTextInjector+SelectionBounds.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/TextInjection/AXTextInjector+Transaction.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/TextInjection/AXTextInjector.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/TextInjection/ReadOnlySelection.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/TextInjection/ReadOnlySelectionDiagnostics.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/TextInjection/ReadOnlySelectionRequest.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/TextInjection/TextDeliveryContent.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/TextInjection/TextDeliveryCoordinator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/TextInjection/TextInjector.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/ComponentGallery/ComponentGalleryView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/ComponentGallery/ComponentGalleryWindowController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/ComponentGallery/GalleryCompositionsPage.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/ComponentGallery/GalleryContentPages.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/ComponentGallery/GalleryControlPages.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/ComponentGallery/GalleryRowsPage.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/Components/TFButton.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/Components/TFForm.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/Components/TFList.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/Components/TFMenuPanel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/Components/TFMenus.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/Components/TFNativeMenu.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/Components/TFNotices.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/Components/TFRows.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/Components/TFSearch.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/Components/TFTabs.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/Components/TFTokens.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/HistoryPipelineTimelineView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/MarkdownHTMLRenderer.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/MarkdownSwiftUIView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/MarkdownWebView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/PersonaDeletionConfirmationView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/SidebarAccountFooter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/SidebarAccountIdentity.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/SidebarCloudPromoCard.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/StudioComponents.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/StudioOverviewPanel.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/StudioPersonaAppRulesDrawer.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/StudioPersonaDetailView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/StudioPersonaLibraryView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/StudioPersonaRosterView.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/StudioPersonaUsageSettings.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/StudioSegmentedControl.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/StudioSidebarAccountCard.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/UI/StudioTheme.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/AskSelectionDecision.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/AutomaticVocabularyMonitor.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/DictationOutputOptimizer.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/GlobalSoulConsolidator.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/GlobalSoulMemoryStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/InputContextSnapshot.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/LLMRewriteTimeoutPolicy.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/LocalModelDownloadAlertPresenter.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/OpenCCOutputPostProcessor.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/OutputPostProcessor.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/RecentInputMemoryScope.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/RecentInputMemoryStore.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/RecordingStartupLatencyTrace.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/WorkflowComposerRecording.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/WorkflowController+Analytics.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/WorkflowController+AudioRecorder.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/WorkflowController+AutomaticVocabulary.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/WorkflowController+Auxiliary.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/WorkflowController+History.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/WorkflowController+Persona.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/WorkflowController+Processing.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/WorkflowController+RecentInputMemory.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/WorkflowController+Snippets.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/WorkflowController.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/Typeflux/Workflow/WorkflowOverlayPresentationPolicy.swift": {
+    "source_matches": true,
+    "production_object_matches": true
+  },
+  "Sources/TypefluxInferenceProtocol/InferenceMessage.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxInferenceProtocol/InferenceSocket.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxInferenceRuntime/InferenceServer.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxInferenceRuntime/WhisperInferenceEngine.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaProtocol/MediaClipboard.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaProtocol/MediaJPEG.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaProtocol/MediaOCRResult.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaProtocol/MediaPlayback.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaProtocol/MediaPlaybackSocket.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaProtocol/MediaPreview.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaProtocol/MediaPreviewText.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaProtocol/MediaProtocol.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaProtocol/MediaQuickLook.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaProtocol/MediaRecordingExport.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaProtocol/MediaRecordingTimeline.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaProtocol/MediaRegistration.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaProtocol/MediaSensitiveText.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaProtocol/MediaTextGeometry.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaProtocol/MediaTextRecognition.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaProtocol/MediaWorkflowImage.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaRuntime/MediaAVDecoder.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaRuntime/MediaClipboardDecoder.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaRuntime/MediaDecoder.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaRuntime/MediaHelperCommand.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaRuntime/MediaNativeIconDecoder.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaRuntime/MediaOCRDecoder.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaRuntime/MediaPlaybackServer.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaRuntime/MediaPreviewDecoder.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaRuntime/MediaPreviewOCR.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaRuntime/MediaPreviewPDFGeometry.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaRuntime/MediaQuickLookDecoder.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaRuntime/MediaRecordingExportDecoder.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaRuntime/MediaRecordingPosterDecoder.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaRuntime/MediaRecordingTimelineDecoder.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaRuntime/MediaRegistrationDecoder.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaRuntime/MediaTextDecoder.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaRuntime/MediaVideoFrames.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Sources/TypefluxMediaRuntime/MediaWorkflowDecoder.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/AskAppSearchTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/AskConversationTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/AskFilePreviewLoaderTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/AskFilePreviewTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/AskFileReliabilityTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/AskFileSearchTestSupport.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/AskFileStreamingTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/AskMediaLocationTests.swift": {
+    "source_matches": false,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/AskPDFLocationActionTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/AskPDFLocationNativeTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/AskPluginSessionTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/AskQuickResultsInteractionTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/AskQuickSearchSessionTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/AskSemanticFileSearchPluginTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/AskVoiceInputTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/BackgroundActivitySourceTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/ExclusiveUIStateTrait.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticAudioWindowTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticBudgetLifecycleTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticContentSearchProgressTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticDiscoveryPauseTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticDurableEventsTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticEmbeddingWorkerTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticFailureURLProtocol.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticFileCapacityTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticFileChangePlanTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticFileSearchStatusTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticFileSearchTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticFileSearchVisualTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticFileServiceTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticFileValidatorTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticHybridSearchTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticImageOCRTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticIndexDetailsTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticIndexDiagnosticsTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticIndexEventTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticIndexFairnessServiceTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticIndexFairnessTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticIndexPriorityTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticIndexPruneTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticIndexRecoveryTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticLatencyTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticLexicalSearchTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticMediaExtractorTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticMediaIndexTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticMediaServiceTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticMediaWorkerTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticNativeContentionTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticNativeInputTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticNativeLatencyTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticOCRPreviewTests+Snapshots.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticOCRPreviewTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticOriginalMediaOracleTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticPDFOCRTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticPDFPreviewTests+Snapshots.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticPDFPreviewTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticPagedDiscoveryTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticPreparationServiceTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticRankingComparisonTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticReaderOwnershipTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticRealMediaPriorityTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticRealtimeSearchTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticResourceBudgetTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticSQLiteCancellationTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticScoreCalibrationTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticSearchEvaluationTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticSearchMigrationTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticSearchRankingTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticSearchSnippetTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticVideoAudioTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticVideoFrameTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SemanticWorkBudgetTests.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  },
+  "Tests/TypefluxTests/SettingsBehaviorTestSupport.swift": {
+    "source_matches": true,
+    "production_object_matches": false
+  }
+}

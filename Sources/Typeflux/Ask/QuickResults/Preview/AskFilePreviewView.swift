@@ -26,7 +26,7 @@ struct AskFilePreviewView: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .padding(10)
             Divider().opacity(0.4)
-            footer.frame(height: state.hit?.hasPDFLocationEvidence == true ? 66 : 38)
+            footer.frame(height: state.hit?.hasLocationEvidence == true ? 66 : 38)
         }
         .environment(\.askContextImageAccess, state.imageAccess)
         .background(AskGlassBackground(material: .resolve(reduceTransparency: reduceTransparency, style: style),
@@ -57,8 +57,8 @@ struct AskFilePreviewView: View {
 
     private var footer: some View {
         VStack(alignment: .leading, spacing: 5) {
-            if state.hit?.hasPDFLocationEvidence == true {
-                Text(L("ask.quick.file.pdf.preview"))
+            if state.hit?.hasLocationEvidence == true {
+                Text(L((state.hit?.locationMessagePrefix ?? "ask.quick.file.pdf.") + "preview"))
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("ask.file.pdf.openCapability")
             }

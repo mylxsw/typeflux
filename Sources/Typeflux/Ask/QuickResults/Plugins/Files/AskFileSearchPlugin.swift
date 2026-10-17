@@ -158,7 +158,7 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
             AskPluginAction(kind: .copy(hit.path), title: L("ask.quick.action.copyPath"), symbol: "link",
                             shortcut: .shiftCommandC)
         ]
-        if hit.hasPDFLocationEvidence {
+        if hit.hasLocationEvidence {
             actions[0] = AskPluginAction(kind: .fileAction(.open, hit), title: L("ask.quick.action.open"),
                                         symbol: "arrow.up.forward.app", shortcut: .enter)
             actions.insert(contentsOf: [.viewMatch, .openWith, .quickLook].map {
@@ -174,7 +174,10 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
         // A content match names the page it came from and shows the passage on its own line.
         let subtitle = hit.evidence.map { evidence in
             let page = evidence.page.map { " · " + L(evidence.pageLocalizationKey, $0) } ?? ""
-            let time = evidence.time.map { " · " + String(format: "%d:%02d", Int($0) / 60, Int($0) % 60) } ?? ""
+            let time = evidence.time.flatMap { value -> String? in
+                guard value.isFinite, value >= 0, value < Double(Int.max) else { return nil }
+                return " · " + String(format: "%d:%02d", Int(value) / 60, Int(value) % 60)
+            } ?? ""
             return place + page + time
         }
         return AskPluginItem(id: hit.path, title: hit.name,

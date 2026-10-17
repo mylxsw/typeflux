@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticVideoAudioTests|SemanticAudioWindowTests|SemanticMediaIndexTests|AskMediaLocationTests|AskFilePreviewLoaderTests"
+  ],
+  "wall_seconds": 487.5112743329955,
+  "exit_code": 2
+}

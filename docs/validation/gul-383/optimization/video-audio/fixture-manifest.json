@@ -1,0 +1,47 @@
+[
+  {
+    "name": "boundary",
+    "seconds": 65,
+    "offset": 0,
+    "active": [
+      29,
+      31
+    ],
+    "command": [
+      "ffmpeg",
+      "loop frozen static-scene.mov; copy JPEG",
+      "mux synthetic 16kHz float PCM; no video encoding"
+    ],
+    "sha256": "42b34419df706743fb4d01407bb18e374ef32b103e7a35b0095ee2d030d8d424"
+  },
+  {
+    "name": "silent-prefix",
+    "seconds": 65,
+    "offset": 0,
+    "active": [
+      52,
+      54
+    ],
+    "command": [
+      "ffmpeg",
+      "loop frozen static-scene.mov; copy JPEG",
+      "mux synthetic 16kHz float PCM; no video encoding"
+    ],
+    "sha256": "d211e41c03d2a55a8065d0ffd85d5aa844418309aaafd4841c635ab2494771e0"
+  },
+  {
+    "name": "offset",
+    "seconds": 31,
+    "offset": 7.5,
+    "active": [
+      0,
+      31
+    ],
+    "command": [
+      "ffmpeg",
+      "loop frozen static-scene.mov; copy JPEG",
+      "mux synthetic 16kHz float PCM; no video encoding"
+    ],
+    "sha256": "4a17cb3025822da60b934e0e2d7e1ff63ccb3aa4210a4387a4ca3194cae5cb37"
+  }
+]

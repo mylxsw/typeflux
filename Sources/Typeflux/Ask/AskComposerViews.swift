@@ -966,7 +966,7 @@ struct AskComposer: View {
             guard case let .fileIcon(url)? = plugins.output?.selected?.icon else { return false }
             AskQuickLook.shared.toggle(url)
         case .right:
-            guard let hit = model.selectedPluginFile, hit.hasPDFLocationEvidence,
+            guard let hit = model.selectedPluginFile, hit.hasLocationEvidence,
                   let panel = AskQuickActionPanel.make(for: .file(hit)) else { return false }
             quickActions = panel
         case .shiftCommandEnter:

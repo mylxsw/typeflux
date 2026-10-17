@@ -1,0 +1,9 @@
+{
+  "collect.py": "c661e6a6aadaa65fc4fd616dc76eb0931d14f72e509a19eadeaa82b7c30481ac",
+  "coverage-summary.py": "9a23c7565821f5ee8ec9a06d9a2e8e7aec9e1ebcf4a663fe767dd39e10d5704e",
+  "coverage-swift.sh": "42967efaf9199510c5f13f9219641be7b87a08eb2a781fc8b4200bfe1da8996f",
+  "export-coverage.py": "01c465a6d8c34a76acc4f21e0b39599641f834ca38700cc30e947fd056a1218f",
+  "generate-fixtures.py": "0f380377358577fb6fdbd1fb3176737c73e61194a086f3c34f55e47cef64278e",
+  "run-coverage.py": "cda20742d7604169a62ea0b01a162e2e77016dfe8b490bfdde408559a74d99dd",
+  "test-files.json": "cd1ef9f32778fcf1d34a3ea342c1651f9911715fbf6a49639c24cf9f46eb7e27"
+}

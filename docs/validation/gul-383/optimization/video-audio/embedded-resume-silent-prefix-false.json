@@ -1,0 +1,12 @@
+{
+  "audio_times" : [
+    25,
+    50
+  ],
+  "covered" : 30,
+  "next" : 25,
+  "preemption" : false,
+  "real_IPC_both_runs" : true,
+  "resumed_video_decodes" : 0,
+  "total_image_encodes" : 1
+}

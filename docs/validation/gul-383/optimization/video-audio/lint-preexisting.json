@@ -1,0 +1,14 @@
+{
+  "67": {
+    "unchanged": true,
+    "text": "        let options = AskFileSearchOptions(limit: settings.limit, fuzzy: settings.fuzzy, type: type, cancellation: token)"
+  },
+  "73": {
+    "unchanged": true,
+    "text": "                    if token.isCancelled { continuation.resume(throwing: CancellationError()) }"
+  },
+  "157": {
+    "unchanged": true,
+    "text": "            AskPluginAction(kind: .reveal(url), title: L(\"ask.quick.action.reveal\"), symbol: \"folder\", shortcut: .commandR),"
+  }
+}

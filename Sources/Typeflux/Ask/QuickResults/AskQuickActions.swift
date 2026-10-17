@@ -121,7 +121,7 @@ struct AskQuickActionPanel: Equatable {
                 actions = [.open, .openWith, .reveal, .quickLook, .copyPath, .copyFile, .copyName, .askAI, .trash]
             }
         }
-        if case let .file(file) = target, file.hasPDFLocationEvidence { actions.insert(.viewMatch, at: 1) }
+        if case let .file(file) = target, file.hasLocationEvidence { actions.insert(.viewMatch, at: 1) }
         return AskQuickActionPanel(target: target, actions: actions)
     }
 

@@ -1,0 +1,17 @@
+{
+  "Swift Testing15593450958154280213_0.65986.profraw": {
+    "sha256": "bcb9db7997c06fc294e93e73f29bce8ff852c01fe4aa51cf58e1dc83b257ffaa",
+    "exit_code": 0,
+    "stderr": ""
+  },
+  "Swift Testing6740592248958662450_0.65984.profraw": {
+    "sha256": "5c5e01708e9a2b08ca567138266349d151ef744987c060edcf0a946e0204ba5f",
+    "exit_code": 0,
+    "stderr": ""
+  },
+  "XCTest6740592248958662450_0.65977.profraw": {
+    "sha256": "c8a33451159629ffe32b34569cbfff4e8af9d91548938a5b5bf49b928b8cfa6f",
+    "exit_code": 0,
+    "stderr": ""
+  }
+}

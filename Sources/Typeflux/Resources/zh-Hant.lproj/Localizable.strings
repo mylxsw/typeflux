@@ -5739,3 +5739,8 @@
 "screenshot.background.noSubject" = "未辨識到主體，請縮小選取範圍後重試。";
 "screenshot.background.failed" = "去背景失敗，請重試。";
 "screenshot.background.unsupported" = "去背景需要 macOS 14 或以上版本。";
+
+// Media match location and external-open capability.
+"ask.quick.file.media.open" = "正在開啟原媒體檔案。外部應用程式不保證跳至命中時間，請在 Typeflux 選擇「查看命中位置」。";
+"ask.quick.file.media.quickLook" = "Quick Look 使用原媒體檔案，不保證時間跳轉。請在 Typeflux 選擇「查看命中位置」。";
+"ask.quick.file.media.preview" = "開啟和 Quick Look 使用原媒體檔案；命中位置可用時在此查看。";
