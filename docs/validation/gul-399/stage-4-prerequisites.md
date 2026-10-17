@@ -19,6 +19,10 @@ Keep existing capture ownership until the signed audio/TCC and performance gate 
 
 A subsequent migration must use the already-approved stage 4 architecture, with one explicit recording/session owner, original account/permission epoch, bounded PCM transport/backpressure, actual child retirement, truthful partial-recording output and no recording replay. This document does not select a new helper ABI or implement that migration before its prerequisites.
 
+## Read-only package receipt
+
+The [package preflight](stage4-package-preflight.md) provides a reproducible structural check and member-hash receipt before a designated signed package enters this checklist. It never launches/signs code or marks a manual gate passed. Its synthetic tests validate the tool only; a real signed package has not been supplied/verified by that result.
+
 ## Finite manual gate (not executed)
 
 Use a designated test Mac and private disposable data. Record the signed app commit, OS/architecture, signing/notarization identity class, TCC permission owner, device and before/after measurements. Never include tokens, audio content, clipboard contents or model paths in the public record.

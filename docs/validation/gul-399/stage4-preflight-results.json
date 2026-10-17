@@ -1,0 +1,27 @@
+{
+  "methods": 12,
+  "failures": 0,
+  "errors": 0,
+  "target": "scripts/stage4_preflight.py",
+  "covered": 100,
+  "executable": 106,
+  "percent": 94.34,
+  "uncovered": [
+    0,
+    42,
+    85,
+    91,
+    95,
+    128
+  ],
+  "measurement": "Python stdlib trace statement-line coverage, including imports/declarations; not LLVM coverage or branch coverage. Entire target is newly added. Conservative denominator retains synthetic line 0; None pseudo-lines excluded.",
+  "input_hashes": {
+    "scripts/stage4_preflight.py": "175876f8d66fc19d1f803b5a2618dce366a4d71caebdf9773b81aa833a48efec",
+    "scripts/tests/test_stage4_preflight.py": "3e3459c0b8b684400008aebd0f7de6904c7772991afdd9661fed7c24321ca97f",
+    "scripts/copy_inference_helper.sh": "7a2a36b59ee3b0b6c1568bf0fcb1b1dd5b3cec9b50f439fd2b51a81a3095e197",
+    "scripts/copy_media_helper.sh": "d913f4f8b4e9f2d668889c87e32f8c58277bf5edc170cf8b56466828463b51b1"
+  },
+  "wall_seconds": 0.397,
+  "baseline": "be6de6b9c07891639d79f41c3058b7422bf7d5c1",
+  "history": "Both 12-method functional passes succeeded. Initial report extraction failed on Python 3.14 None pseudo-line; only the workspace report harness changed, then the same focused scope was repeated. No product/test input changes."
+}
