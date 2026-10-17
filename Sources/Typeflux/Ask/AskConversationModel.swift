@@ -33,6 +33,12 @@ final class AskConversationModel: ObservableObject {
     /// Applications the launcher can open; tests supply their own list.
     let quickSearch = AskQuickSearchSession()
     let launcherIconCache = AskLauncherIconCache()
+    /// The launcher card's visible height while its panel animates.
+    let launcherViewport = AskLauncherViewport()
+    /// Screen recording access shared by the open launcher's home renders.
+    let launcherCapturePermissions = AskCapturePermissionSnapshot()
+    /// Keyword entries reused while typing (`typingLauncherSearchEntries`).
+    var launcherSearchEntriesCache: (key: LauncherSearchEntriesKey, entries: [AskLauncherSearchEntry])?
     var browserSearch: any AskBrowserSearching = AskBrowserSearchService()
     var systemCommandRunner = AskSystemCommandRunner()
     var confirmSystemCommand: (AskSystemCommand) -> Bool = AskSystemCommandConfirmation.confirm

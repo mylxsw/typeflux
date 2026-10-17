@@ -73,20 +73,21 @@ struct AskQuickResultsView: View {
         VStack(spacing: 0) {
             Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
             if !results.listRows.isEmpty || results.notice != nil {
+                let items = Self.listItems(for: results)
+                let scrolls = Self.contentHeight(for: results) > visibleHeight
                 ScrollViewReader { proxy in
-                    ScrollView(.vertical, showsIndicators: Self.contentHeight(for: results) > visibleHeight) {
-                        LazyVStack(spacing: Self.rowSpacing) {
-                            ForEach(results.listRows.map {
-                                (id: results.identity(of: $0), row: $0)
-                            }, id: \.id) { item in
-                                let index = results.rows.firstIndex(of: item.row) ?? 0
+                    ScrollView(.vertical, showsIndicators: scrolls) {
+                        // At most a few dozen rows: build them all once, so scrolling
+                        // never creates rows or loads icons mid-gesture.
+                        VStack(spacing: Self.rowSpacing) {
+                            ForEach(items, id: \.id) { item in
                                 // One identified block includes its heading. A changing
                                 // heading must not leave the scroll anchor on a removed sibling.
                                 VStack(spacing: Self.rowSpacing) {
-                                    if let section = Self.sectionStart(at: index, in: results.rows, results: results) {
+                                    if let section = item.section {
                                         sectionTitle(section)
                                     }
-                                    resultRow(item.row, index: index)
+                                    resultRow(item.row, index: item.index)
                                 }
                                 .id(item.id)
                             }
@@ -97,11 +98,11 @@ struct AskQuickResultsView: View {
                         .padding(.bottom, Self.listPadding)
                         .id(Self.topID)
                     }
-                    .scrollDisabled(Self.contentHeight(for: results) <= visibleHeight)
+                    .scrollDisabled(!scrolls)
                     // SwiftUI may deliver the new value to an old render's closure.
                     // Carry both the target and list version in the new value itself.
                     .onChange(of: ScrollPosition(
-                        rows: results.rows.map { results.identity(of: $0) },
+                        rows: items.map(\.id),
                         target: results.chosen && results.highlightedRow != .askAI
                             ? results.identity(of: results.highlightedRow) : Self.topID
                     )) { position in

@@ -15,6 +15,9 @@ struct AskLauncherView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
+        // The panel resizes at most twice per height motion, so this reader no longer
+        // evaluates the composer on every frame; the frames in between move only the
+        // results' clip (`model.launcherViewport`).
         GeometryReader { geometry in
             AskComposer(model: model, availableHeight: geometry.size.height, launcher: true,
                         onDismiss: onDismiss, onHeightChange: onHeightChange,
@@ -392,7 +395,8 @@ struct AskComposer: View {
         let sources = AskQuickResults.Sources(apps: model.quickAppsEnabled ? model.appIndex : nil,
                                               files: model.quickFilesEnabled ? model.fileIndex : nil,
                                               settings: model.launcherSearchSettings,
-                                              entries: model.launcherSearchEntries(language: AppLocalization.shared.language),
+                                              entries: model.typingLauncherSearchEntries(
+                                                  language: AppLocalization.shared.language),
                                               browsers: model.browserSearch, browserSettings: model.browserSearchSettings,
                                               semantic: model.semanticSearch)
         if resetActions { quickActions = nil }
@@ -1065,11 +1069,27 @@ struct AskComposer: View {
     }
 
     /// What the launcher's home offers for its context; empty outside the launcher.
+    ///
+    /// Building it reads screen recording access (synchronous TCC IPC), and a
+    /// dozen properties of one render read it: the header, hints, primary action,
+    /// heights and rows. Clearing the input built it about eight times per render.
+    /// Each render builds it once; handlers after the render see what it showed.
     private var home: [AskLauncherHome.Section] {
         guard showsLauncherSuggestions else { return [] }
         _ = homeAppsRevision
-        return model.launcherHome()
+        if let sections = homeMemo.sections { return sections }
+        let sections = model.presentedLauncherHome()
+        homeMemo.sections = sections
+        return sections
     }
+
+    /// The home of the current render. A reference, so filling it never invalidates the view.
+    private final class HomeMemo {
+        var sections: [AskLauncherHome.Section]?
+        func reset() { sections = nil }
+    }
+
+    @State private var homeMemo = HomeMemo()
 
     private var launcherHomeViewportHeight: CGFloat {
         let chromeHeight = AskMetrics.launcherHeight(editor: editorHeight, banners: 0)
@@ -1149,6 +1169,8 @@ struct AskComposer: View {
     }
 
     var body: some View {
+        // Each render builds the home at most once (see `home`).
+        let _ = homeMemo.reset()
         card
             .environment(\.askContextImageAccess, imageAccess)
             .environment(\.askLauncherIconCache, launcher ? model.launcherIconCache : nil)
@@ -1320,7 +1342,11 @@ struct AskComposer: View {
                     launcherResults
                 }
                 .frame(height: launcherResultsViewportHeight, alignment: .top)
-                .clipped()
+                // The card's visible height follows the panel's motion frame by frame.
+                .modifier(AskLauncherViewportClip(viewport: model.launcherViewport,
+                                                  chrome: desiredLauncherHeight - launcherResultsViewportHeight,
+                                                  available: availableHeight.map { $0 + AskMetrics.launcherGutter * 2 },
+                                                  natural: launcherResultsViewportHeight))
             }
             if launcher && !launcherCollapsed && (pluginDisplay?.calendar != true || active) {
                 launcherBar
@@ -1377,13 +1403,11 @@ struct AskComposer: View {
         }
     }
 
-    /// Follow the actual panel height so the footer never jumps to a target
-    /// height before the window reaches it.
+    /// The results area's own height. `AskLauncherViewportClip` shows as much of
+    /// it as the card's animated height allows, so the footer follows the motion
+    /// instead of jumping to the target height.
     private var launcherResultsViewportHeight: CGFloat {
-        let natural = active ? voicePanelHeight : resultsHeight
-        guard let availableHeight else { return natural }
-        let chromeHeight = desiredLauncherHeight - natural - AskMetrics.launcherGutter * 2
-        return max(0, availableHeight - chromeHeight)
+        active ? voicePanelHeight : resultsHeight
     }
 
     private var launcherResults: some View {
@@ -1454,6 +1478,9 @@ struct AskComposer: View {
                                               let target = current.rows.firstIndex(where: {
                                                   current.identity(of: $0) == quickResults.identity(of: quickResults.rows[index])
                                               }) else { return }
+                                        // Pointer motion within the highlighted row must not publish
+                                        // the results again and re-render the launcher.
+                                        guard current.highlighted != target || !current.chosen else { return }
                                         self.quickResults?.highlight(target)
                                     },
                                     onAction: runPanelAction, onShowFileActions: showQuickFileActions,
@@ -2495,7 +2522,8 @@ struct AskComposer: View {
            !contextPanelOpen, pluginDisplay == nil, !showsStrip,
            (draft.wrappedValue.references ?? []).isEmpty, presentedQuickResults == nil,
            quickSearch.isSearching || !quickSearch.isCurrent(text: draft.wrappedValue.text),
-           let availableHeight, height < availableHeight + AskMetrics.launcherGutter * 2 { return }
+           let current = model.launcherViewport.height ?? availableHeight.map({ $0 + AskMetrics.launcherGutter * 2 }),
+           height < current { return }
         onHeightChange(height)
         if launcher {
             onWindowHeightChange(height)

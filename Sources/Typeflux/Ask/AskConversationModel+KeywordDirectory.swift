@@ -1,6 +1,34 @@
 import Foundation
 
 extension AskConversationModel {
+    /// What decides the launcher's searchable keyword entries.
+    struct LauncherSearchEntriesKey: Equatable {
+        var language: AppLanguage
+        var presentation: UUID
+        var keywords: [AskKeyword]
+        var available: [AskKeyword]
+        var workflows: [AskWorkflow]
+        var secondLanguage: String?
+    }
+
+    /// `launcherSearchEntries(language:)` for typing. Building the directory reads
+    /// screen recording access for each capture keyword, which is synchronous TCC
+    /// IPC; doing that for every keystroke made typing lag. The entries are kept
+    /// until a keyword, workflow or language changes, and each presentation of the
+    /// launcher reads access again.
+    func typingLauncherSearchEntries(language: AppLanguage) -> [AskLauncherSearchEntry] {
+        let settings = modelLibrary.settings
+        let workflows = workflows?.workflows ?? []
+        let key = LauncherSearchEntriesKey(language: language, presentation: launcherPresentationID,
+                                           keywords: settings.effectiveAskLauncherKeywords(reserving: workflows),
+                                           available: plugins.availableKeywords, workflows: workflows,
+                                           secondLanguage: settings.askTranslationSecondLanguage)
+        if let cached = launcherSearchEntriesCache, cached.key == key { return cached.entries }
+        let entries = launcherSearchEntries(language: language)
+        launcherSearchEntriesCache = (key, entries)
+        return entries
+    }
+
     func launcherSearchEntries(language: AppLanguage) -> [AskLauncherSearchEntry] {
         var entries = launcherKeywordDirectory(language: language).filter(\.canEnter).map {
             AskLauncherSearchEntry(keyword: $0.keyword, title: $0.title, detail: $0.detail, symbol: $0.symbol,
@@ -63,12 +91,31 @@ extension AskConversationModel {
         return true
     }
 
+    /// A copy of `plugin` for labels: capture plugins answer from this
+    /// presentation's read of screen recording access (synchronous TCC IPC)
+    /// instead of reading it for each keyword. The registry keeps the original,
+    /// so a capture still checks access when it runs.
+    func launcherLabelPlugin(_ plugin: any AskLauncherPlugin) -> any AskLauncherPlugin {
+        let snapshot = launcherCapturePermissions, presentation = launcherPresentationID
+        if var capture = plugin as? AskScreenshotPlugin {
+            let value = snapshot.granted(capture.id, presentation: presentation, read: capture.isPermissionGranted)
+            capture.isPermissionGranted = { value }
+            return capture
+        }
+        if var capture = plugin as? AskScreenshotTextPlugin {
+            let value = snapshot.granted(capture.id, presentation: presentation, read: capture.isPermissionGranted)
+            capture.isPermissionGranted = { value }
+            return capture
+        }
+        return plugin
+    }
+
     /// Reads the live settings and installed manifests, including disabled workflows.
     func launcherKeywordDirectory(language: AppLanguage) -> [AskPrefixPlugin.Entry] {
         let settings = modelLibrary.settings
         let keywords = settings.effectiveAskLauncherKeywords(reserving: workflows?.workflows ?? [])
         var entries = keywords.compactMap { keyword -> AskPrefixPlugin.Entry? in
-            guard let plugin = plugins.plugin(for: keyword) else { return nil }
+            guard let plugin = plugins.plugin(for: keyword).map(launcherLabelPlugin) else { return nil }
             let title = Self.chipTitle(plugin: plugin, keyword: keyword, language: language)
             let summary = AskKeywordListPresentation.summary(
                 of: keyword, interface: language,

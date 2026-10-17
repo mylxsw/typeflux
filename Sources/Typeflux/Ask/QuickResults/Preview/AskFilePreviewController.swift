@@ -170,10 +170,18 @@ final class AskFilePreviewController: AskImageScopeObserver {
         hide(animated: false)
     }
 
+    /// The launcher card's visible height, gutters included, while it animates
+    /// inside a panel that is already taller; nil follows the panel.
+    var visibleHeight: CGFloat?
+
     /// Called on every tick of AskLauncherHeightAnimator, not on an independent animation clock.
     func updateFrame() {
         guard let parent else { return }
-        let card = parent.frame.insetBy(dx: AskMetrics.launcherGutter, dy: AskMetrics.launcherGutter)
+        var frame = parent.frame
+        if let visibleHeight, visibleHeight < frame.height {
+            frame = NSRect(x: frame.minX, y: frame.maxY - visibleHeight, width: frame.width, height: visibleHeight)
+        }
+        let card = frame.insetBy(dx: AskMetrics.launcherGutter, dy: AskMetrics.launcherGutter)
         placement = AskFilePreviewPlacement.resolve(card: card, screens: NSScreen.screens.map(\.visibleFrame))
         guard let placement else { dismissNow(); return }
         pixels = CGSize(width: (placement.frame.width - 20) * parent.backingScaleFactor,

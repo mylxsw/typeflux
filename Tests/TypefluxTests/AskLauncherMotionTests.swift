@@ -109,12 +109,16 @@ struct AskLauncherMotionTests {
 
         func sample() throws {
             content.layoutSubtreeIfNeeded()
+            // The panel grows at once and shrinks after the card; the card's visible
+            // bottom edge is what moves on each frame.
+            let visible = controller.launcherVisibleHeight
             #expect(abs(window.frame.maxY - top) < 0.5, "the panel's top must remain anchored")
+            #expect(window.frame.height >= visible - 0.5, "the card never draws outside its panel")
             #expect(abs((window.frame.maxY - openChat.frame.midY) - headerInset) < 0.5,
-                    "open chat must stay in the header during a resize")
-            #expect(abs((screenshot.frame.midY - window.frame.minY) - footerInset) < 0.5,
-                    "screenshot must follow the live footer, not the target height")
-            heights.append(window.frame.height)
+                    "open chat must stay in the header: \(openChat.frame.midY) in \(window.frame)")
+            #expect(abs((screenshot.frame.midY - (window.frame.maxY - visible)) - footerInset) < 0.5,
+                    "screenshot must follow the live footer: \(screenshot.frame.midY), card \(visible)")
+            heights.append(visible)
             if let directory {
                 let bitmap = try #require(content.bitmapImageRepForCachingDisplay(in: content.bounds))
                 content.cacheDisplay(in: content.bounds, to: bitmap)
