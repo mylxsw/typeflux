@@ -128,6 +128,27 @@ struct AskLauncherPaletteRenderTests {
                 "Both composer variants omit the chevron")
     }
 
+    @Test func `icon-only shield has a readable visual size`() async throws {
+        let size = NSSize(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
+        let bitmap = try await render(AskPermissionModeMenu(mode: .standard, compact: true, bare: true,
+                                                            onSelect: { _ in }),
+                                      size: size, appearance: .darkAqua)
+        var minY = Int.max
+        var maxY = -1
+        for y in 0 ..< bitmap.pixelsHigh {
+            for x in 0 ..< bitmap.pixelsWide {
+                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { continue }
+                if color.blueComponent - color.redComponent > 0.2 && color.blueComponent > color.greenComponent {
+                    minY = min(minY, y)
+                    maxY = max(maxY, y)
+                }
+            }
+        }
+        let height = CGFloat(try #require(maxY >= minY ? maxY - minY + 1 : nil))
+            * size.height / CGFloat(bitmap.pixelsHigh)
+        #expect(height >= 15.5 && height <= 19, "The shield should read at roughly the camera icon's size")
+    }
+
     @Test func `active and inactive switches have no background`() async throws {
         let on = AskContextItem(kind: .screenshot, systemImage: "camera.viewfinder", style: .active,
                                 title: "Screenshot")

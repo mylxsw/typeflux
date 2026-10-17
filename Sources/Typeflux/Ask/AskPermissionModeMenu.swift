@@ -31,6 +31,13 @@ struct AskPermissionModeMenu: View {
         mode == .yolo ? tint(.yolo).opacity(0.11) : .clear
     }
 
+    /// Borderless menus normalize SwiftUI's font on SF Symbols. Configure the
+    /// image itself so the icon-only control can match its neighbors.
+    static func toolbarImage(_ mode: AskPermissionMode) -> NSImage? {
+        NSImage(systemSymbolName: mode.symbol, accessibilityDescription: L("ask.mode.title") + ": " + mode.title)?
+            .withSymbolConfiguration(.init(pointSize: 17, weight: .semibold))
+    }
+
     /// A menu redraws symbol images as templates in the text colour, so the
     /// current mode's symbol is drawn into a plain image, filled with its colour
     /// resolved for the menu's appearance. Filling the monochrome symbol keeps its
@@ -76,13 +83,13 @@ struct AskPermissionModeMenu: View {
             .tint(.primary)
         } label: {
             Group {
-                if iconOnly {
-                    Image(systemName: mode.symbol).accessibilityHidden(true)
+                if iconOnly, let image = Self.toolbarImage(mode) {
+                    Image(nsImage: image).renderingMode(.template).accessibilityHidden(true)
                 } else {
                     Label(mode == .yolo ? "YOLO" : mode.title, systemImage: mode.symbol)
+                        .font(.system(size: 11, weight: .medium))
                 }
             }
-            .font(.system(size: iconOnly ? 14 : 11, weight: iconOnly ? .semibold : .medium))
             .foregroundStyle(Self.labelColor(mode))
             .fixedSize()
         }
