@@ -1,0 +1,10 @@
+{"seconds":0.066881416598334908,"stage":"service-enable"}
+{"seconds":0.18880241666920483,"stage":"model-verify-begin"}
+{"seconds":2.4559448333457112,"stage":"model-verify-end"}
+{"seconds":3.8087546665919945,"stage":"projector-verify-begin"}
+{"seconds":8.12078520830255,"stage":"projector-verify-end"}
+{"seconds":8.1213122915942222,"stage":"media-worker-created"}
+{"end_time":null,"input":"image.jpg","kind":"image","seconds":8.1215717915911227,"stage":"media-request","time":null}
+{"seconds":90.376462208339944,"stage":"index-observation-ended"}
+{"error":"CancellationError()","seconds":90.39797354163602,"stage":"media-error"}
+{"seconds":90.525940458290279,"stage":"service-cleared"}

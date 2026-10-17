@@ -1,0 +1,10 @@
+{
+  "media": "audio",
+  "stage_seconds": 180,
+  "budget_enabled": true,
+  "owned_pid": 80650,
+  "post_clear_pids_requiring_cleanup": [],
+  "exit_code": 1,
+  "wall_seconds": 184.351058500004,
+  "private_root_removed": true
+}

@@ -1,0 +1,35 @@
+{
+  "observation": "First runner grouped by PGID; production helpers start separate groups. Supplementary exact parent-tree observation.",
+  "processes": [
+    [
+      "72776",
+      "72749",
+      "72776",
+      "Ss",
+      "0.2",
+      "86624",
+      "0:01.10",
+      "<repo>/.build/media-isolation/MediaProbe"
+    ],
+    [
+      "72940",
+      "72776",
+      "72940",
+      "S",
+      "0.0",
+      "62080",
+      "0:00.12",
+      "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+    ],
+    [
+      "72959",
+      "72776",
+      "72959",
+      "T",
+      "0.0",
+      "34736",
+      "0:00.08",
+      "<model-cache>/TypefluxSemanticHelper"
+    ]
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "media": "video",
+  "mode": "service",
+  "stage_seconds": 180,
+  "budget_enabled": true,
+  "owned_pid": 22046,
+  "post_clear_pids_requiring_cleanup": [],
+  "exit_code": 1,
+  "wall_seconds": 184.1583782499656,
+  "private_root_removed": true
+}

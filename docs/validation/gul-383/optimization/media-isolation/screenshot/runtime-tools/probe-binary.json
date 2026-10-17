@@ -1,0 +1,6 @@
+{
+  "sha256": "1813e9de333ab9512c85dbdac768c2f406337e3bdf5688cd2f49e00e35522fb6",
+  "source_sha256": "d0379cac38afc695edd1b90aafc8ba1f2246fade1bb0c22d17cf6cac93679faa",
+  "reused_object_count": 2721,
+  "configuration": "Debug, accepted coverage-instrumented production objects"
+}

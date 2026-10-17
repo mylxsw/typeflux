@@ -1,0 +1,12 @@
+{
+  "first_check": {
+    "exit_code": 2,
+    "diagnostic": "candidate-helper.patch:6: trailing whitespace in the saved patch context blank line"
+  },
+  "repair": "Losslessly gzip-compress the raw diff artifact; no production change or extra test run.",
+  "recheck": {
+    "exit_code": 0,
+    "wall_seconds": 0.04161712503992021,
+    "output": ""
+  }
+}

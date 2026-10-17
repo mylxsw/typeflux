@@ -1,0 +1,7 @@
+{
+  "compile_seconds": 2.5249619169626385,
+  "link_seconds": 10.042966334032826,
+  "exit_code": 0,
+  "total_wall_seconds": null,
+  "limitation": "First probe build did not retain total fingerprint/prepare wall time. Phase times copied from foreground command output; do not sum these as complete command time."
+}

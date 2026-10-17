@@ -1,0 +1,41 @@
+{
+  "runtime_attempts": [
+    {
+      "attempt": "screenshot-cpu-registration",
+      "source_binary_match": false,
+      "excluded_build_race": true
+    },
+    {
+      "attempt": "audio-fixed",
+      "source_binary_match": true,
+      "excluded_build_race": false
+    },
+    {
+      "attempt": "video-fixed",
+      "source_binary_match": true,
+      "excluded_build_race": false
+    },
+    {
+      "attempt": "screenshot",
+      "source_binary_match": true,
+      "excluded_build_race": false
+    },
+    {
+      "attempt": "startup-fixed",
+      "source_binary_match": true,
+      "excluded_build_race": false
+    },
+    {
+      "attempt": "screenshot-fixed",
+      "source_binary_match": true,
+      "excluded_build_race": false
+    },
+    {
+      "attempt": "screenshot-cpu-registration-final",
+      "source_binary_match": true,
+      "excluded_build_race": false
+    }
+  ],
+  "frozen_input_count": 2448,
+  "all_current_inputs_match": true
+}

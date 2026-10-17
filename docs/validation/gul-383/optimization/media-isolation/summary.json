@@ -1,0 +1,237 @@
+{
+  "attempts": [
+    {
+      "attempt": "screenshot",
+      "command": {
+        "media": "screenshot",
+        "stage_seconds": 90,
+        "budget_enabled": true,
+        "owned_pid": 72776,
+        "exit_code": 1,
+        "wall_seconds": 96.22381100000348,
+        "private_root_removed": true
+      },
+      "ready": false,
+      "media_requests": [
+        {
+          "end_time": null,
+          "input": "image.jpg",
+          "kind": "image",
+          "seconds": 8.121571791591123,
+          "stage": "media-request",
+          "time": null
+        }
+      ],
+      "media_responses": [],
+      "persisted_chunks_observed": [],
+      "queries_hit": false,
+      "reopened_hit": false,
+      "narrow_path_pass": false,
+      "native_startup_pass": false,
+      "invalid_build_race": false,
+      "snapshot_count": 86
+    },
+    {
+      "attempt": "screenshot-cpu-registration",
+      "command": {
+        "media": "screenshot",
+        "stage_seconds": 90,
+        "budget_enabled": true,
+        "diagnostic_media_environment": {
+          "GGML_METAL_DEVICES": "0"
+        },
+        "owned_pid": 74097,
+        "post_clear_pids_requiring_cleanup": [],
+        "exit_code": -15,
+        "wall_seconds": 42.50304820807651,
+        "private_root_removed": true
+      },
+      "ready": null,
+      "media_requests": [
+        {
+          "end_time": null,
+          "input": "image.jpg",
+          "kind": "image",
+          "seconds": 12.352113500004634,
+          "stage": "media-request",
+          "time": null
+        }
+      ],
+      "media_responses": [],
+      "persisted_chunks_observed": [],
+      "queries_hit": false,
+      "reopened_hit": false,
+      "narrow_path_pass": false,
+      "native_startup_pass": false,
+      "invalid_build_race": true,
+      "snapshot_count": 24
+    },
+    {
+      "attempt": "screenshot-cpu-registration-final",
+      "command": {
+        "media": "screenshot",
+        "stage_seconds": 90,
+        "budget_enabled": true,
+        "diagnostic_media_environment": {
+          "GGML_METAL_DEVICES": "0"
+        },
+        "owned_pid": 74592,
+        "post_clear_pids_requiring_cleanup": [],
+        "exit_code": 1,
+        "wall_seconds": 93.80229533393867,
+        "private_root_removed": true
+      },
+      "ready": false,
+      "media_requests": [
+        {
+          "end_time": null,
+          "input": "image.jpg",
+          "kind": "image",
+          "seconds": 8.762486041639931,
+          "stage": "media-request",
+          "time": null
+        }
+      ],
+      "media_responses": [],
+      "persisted_chunks_observed": [],
+      "queries_hit": false,
+      "reopened_hit": false,
+      "narrow_path_pass": false,
+      "native_startup_pass": false,
+      "invalid_build_race": false,
+      "snapshot_count": 83
+    },
+    {
+      "attempt": "screenshot-fixed",
+      "command": {
+        "media": "screenshot",
+        "stage_seconds": 180,
+        "budget_enabled": true,
+        "owned_pid": 76267,
+        "post_clear_pids_requiring_cleanup": [],
+        "exit_code": 1,
+        "wall_seconds": 183.03123824996874,
+        "private_root_removed": true
+      },
+      "ready": false,
+      "media_requests": [
+        {
+          "end_time": null,
+          "input": "image.jpg",
+          "kind": "image",
+          "seconds": 7.818998000002466,
+          "stage": "media-request",
+          "time": null
+        }
+      ],
+      "media_responses": [],
+      "persisted_chunks_observed": [],
+      "queries_hit": false,
+      "reopened_hit": false,
+      "narrow_path_pass": false,
+      "native_startup_pass": false,
+      "invalid_build_race": false,
+      "snapshot_count": 172
+    },
+    {
+      "attempt": "audio-fixed",
+      "command": {
+        "media": "audio",
+        "stage_seconds": 180,
+        "budget_enabled": true,
+        "owned_pid": 80650,
+        "post_clear_pids_requiring_cleanup": [],
+        "exit_code": 1,
+        "wall_seconds": 184.351058500004,
+        "private_root_removed": true
+      },
+      "ready": false,
+      "media_requests": [
+        {
+          "end_time": 30,
+          "input": "audio-0.wav",
+          "kind": "audio",
+          "seconds": 12.421359333326109,
+          "stage": "media-request",
+          "time": 0
+        },
+        {
+          "end_time": 30,
+          "input": "audio-0.wav",
+          "kind": "audio",
+          "seconds": 44.75917066668626,
+          "stage": "media-request",
+          "time": 0
+        }
+      ],
+      "media_responses": [],
+      "persisted_chunks_observed": [],
+      "queries_hit": false,
+      "reopened_hit": false,
+      "narrow_path_pass": false,
+      "native_startup_pass": false,
+      "invalid_build_race": false,
+      "snapshot_count": 162
+    },
+    {
+      "attempt": "video-fixed",
+      "command": {
+        "media": "video",
+        "mode": "service",
+        "stage_seconds": 180,
+        "budget_enabled": true,
+        "owned_pid": 22046,
+        "post_clear_pids_requiring_cleanup": [],
+        "exit_code": 1,
+        "wall_seconds": 184.1583782499656,
+        "private_root_removed": true
+      },
+      "ready": false,
+      "media_requests": [
+        {
+          "end_time": 0,
+          "input": "frame-0.jpg",
+          "kind": "image",
+          "seconds": 9.48302129167132,
+          "stage": "media-request",
+          "time": 0
+        }
+      ],
+      "media_responses": [],
+      "persisted_chunks_observed": [],
+      "queries_hit": false,
+      "reopened_hit": false,
+      "narrow_path_pass": false,
+      "native_startup_pass": false,
+      "invalid_build_race": false,
+      "snapshot_count": 167
+    },
+    {
+      "attempt": "startup-fixed",
+      "command": {
+        "media": "screenshot",
+        "mode": "startup",
+        "stage_seconds": 90,
+        "budget_enabled": true,
+        "owned_pid": 5129,
+        "post_clear_pids_requiring_cleanup": [],
+        "exit_code": 1,
+        "wall_seconds": 97.78187662502751,
+        "private_root_removed": true
+      },
+      "ready": null,
+      "media_requests": [],
+      "media_responses": [],
+      "persisted_chunks_observed": [],
+      "queries_hit": false,
+      "reopened_hit": false,
+      "narrow_path_pass": false,
+      "native_startup_pass": false,
+      "invalid_build_race": false,
+      "snapshot_count": 0
+    }
+  ],
+  "cohort_recall_or_no_answer_claim": false,
+  "scope": "Synthetic single-input/path diagnostics. No oracle, ranking, quality denominator, resource budget or permission bypass. CPU-registration experiment is diagnostic only. Native helper fix runs have separate source/binary/continuous coverage fingerprints.",
+  "batch_complete": false
+}
