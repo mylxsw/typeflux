@@ -27,6 +27,8 @@ enum AskApprovalPresentation {
             return (args["content"] as? String).map { .content(clip($0)) } ?? .none
         case ("run_code", _):
             return (args["code"] as? String).map { .content(clip($0)) } ?? .none
+        case ("run_command", _):
+            return (args["command"] as? String).map { .content($0) } ?? .none
         case ("computer", "type"), ("browser", "fill"):
             return (args["text"] as? String ?? args["value"] as? String).map { .content(clip($0)) } ?? .none
         case ("memory", "remember"):
@@ -57,7 +59,11 @@ enum AskApprovalPresentation {
     }
 
     static func disclosure(_ call: AskToolCall) -> String? {
-        call.function.name == AskNotebookTool.name ? L("ask.notes.agent.hint") : nil
+        switch call.function.name {
+        case AskNotebookTool.name: L("ask.notes.agent.hint")
+        case "run_command": L("ask.command.hostWarning")
+        default: nil
+        }
     }
 
     static func riskLabel(_ risk: AskToolRisk) -> String {

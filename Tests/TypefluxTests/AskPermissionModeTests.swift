@@ -29,6 +29,16 @@ struct AskPermissionModeTests {
         }
     }
 
+    @Test func hostCommandsAlwaysNeedApproval() throws {
+        let f = try AskTestFixture()
+        defer { f.model.resetSession() }
+        let command = call("run_command")
+        for mode in AskPermissionMode.allCases {
+            f.model.permissionModes["c"] = mode
+            #expect(!f.model.automaticallyApproves(command, risk: .destructive, conversationId: "c"))
+        }
+    }
+
     @Test func commandsStayLocalAndNewConversationsReset() async throws {
         let f = try AskTestFixture()
         defer { f.model.resetSession() }

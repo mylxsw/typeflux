@@ -58,6 +58,11 @@ extension AskLocalTools {
             definition = settings?.askCodeExecutionEnabled == true ? sandbox.definition() : nil
             target = .init(kind: "workspace", id: conversationId, version: "analysis-v1")
             summary = (args["language"] as? String ?? "Code") + " / " + conversationId
+        case "run_command":
+            let request = try AskHostCommand.validated(args)
+            definition = settings?.askCodeExecutionEnabled == true ? AskHostCommand.definition : nil
+            target = .init(kind: "workspace", id: "host-command:" + conversationId, version: "host-command-v1")
+            summary = request.command
         case "computer", "browser":
             definition = automationDefinitions.first { $0.name == call.function.name }
             target = try await automationBinding(call.function.name, args: args, conversationId: conversationId)
@@ -147,6 +152,14 @@ extension AskLocalTools {
             return .init(content: try await tool.execute(args))
         case "run_code":
             let output = try await execute(call, conversationId: conversationId)
+            do { try authorize(); try Task.checkCancellation() }
+            catch { return AskTypedContent.withoutPreparedImages(output) }
+            return output
+        case "run_command":
+            let request = try AskHostCommand.validated(args)
+            guard settings?.askCodeExecutionEnabled == true else { throw AskLocalError.message(L("ask.tool.unavailable")) }
+            try authorize()
+            let output = try await AskHostCommand().run(command: request.command, timeout: request.timeout)
             do { try authorize(); try Task.checkCancellation() }
             catch { return AskTypedContent.withoutPreparedImages(output) }
             return output

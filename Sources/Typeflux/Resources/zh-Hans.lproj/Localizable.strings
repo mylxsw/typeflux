@@ -1963,6 +1963,8 @@
 "ask.settings.notes.empty" = "暂无笔记。";
 "ask.tool.files" = "文件";
 "ask.tool.run_code" = "运行代码";
+"ask.tool.run_command" = "执行命令";
+"ask.command.hostWarning" = "命令以你当前 Mac 账户的权限运行，可能修改文件或启动其他程序。";
 "ask.tool.skill" = "技能";
 "ask.tool.memory" = "记忆";
 "ask.action.inspect" = "检查界面元素";
@@ -2506,8 +2508,8 @@
 "agent.capability.webSearch.summary" = "本机对话用你自己的搜索服务查网页；云端对话由 Typeflux Cloud 提供。";
 "agent.capability.files.title" = "文件访问";
 "agent.capability.files.summary" = "读写你授权的文件夹，写入前会确认。";
-"agent.capability.code.title" = "代码执行";
-"agent.capability.code.summary" = "在隔离沙箱里运行 Python、JavaScript 和 shell。";
+"agent.capability.code.title" = "命令执行";
+"agent.capability.code.summary" = "每条命令经你确认后，才会在这台 Mac 上运行。";
 "agent.capability.automation.title" = "操作电脑与浏览器";
 "agent.capability.automation.summary" = "看屏幕、点击、输入，替你完成网页和应用里的操作。";
 "agent.capability.skills.summary" = "特定任务的做事方法，需要时自动加载。";
@@ -2554,7 +2556,7 @@
 "agent.files.rule.read" = "读取：已开放文件夹内自动执行";
 "agent.files.rule.write" = "写入：标准模式下执行前确认";
 "agent.files.removed" = "已移除「%@」";
-"agent.code.subtitle" = "在隔离沙箱里运行 Python、JavaScript 和 shell，用于计算、处理表格、画图。";
+"agent.code.subtitle" = "每条命令经你确认后，才会以当前 Mac 账户的权限运行。";
 "agent.code.rule.network" = "无网络";
 "agent.code.rule.home" = "不能访问个人目录";
 "agent.code.rule.confirm" = "标准模式下运行前确认";

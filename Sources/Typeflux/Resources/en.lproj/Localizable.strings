@@ -1963,6 +1963,8 @@
 "ask.settings.notes.empty" = "No saved notes.";
 "ask.tool.files" = "Files";
 "ask.tool.run_code" = "Run code";
+"ask.tool.run_command" = "Run command";
+"ask.command.hostWarning" = "Runs with your Mac account's access. The command may change files or start other programs.";
 "ask.tool.skill" = "Skill";
 "ask.tool.memory" = "Memory";
 "ask.action.inspect" = "Inspect app";
@@ -2506,8 +2508,8 @@
 "agent.capability.webSearch.summary" = "Private conversations search the web with your own provider; cloud conversations use Typeflux Cloud.";
 "agent.capability.files.title" = "File Access";
 "agent.capability.files.summary" = "Reads and edits folders you allow; edits are confirmed first.";
-"agent.capability.code.title" = "Code Execution";
-"agent.capability.code.summary" = "Runs Python, JavaScript and shell in an isolated sandbox.";
+"agent.capability.code.title" = "Command Execution";
+"agent.capability.code.summary" = "Runs commands on this Mac after you approve each one.";
 "agent.capability.automation.title" = "Computer & Browser";
 "agent.capability.automation.summary" = "Looks at the screen, clicks and types to finish tasks in apps and web pages.";
 "agent.capability.skills.summary" = "Instructions for specific tasks, loaded when needed.";
@@ -2554,7 +2556,7 @@
 "agent.files.rule.read" = "Reads: automatic within allowed folders";
 "agent.files.rule.write" = "Writes: confirm in Standard mode";
 "agent.files.removed" = "Removed “%@”";
-"agent.code.subtitle" = "Runs Python, JavaScript and shell in an isolated sandbox for calculations, spreadsheets and charts.";
+"agent.code.subtitle" = "Commands run with your Mac account's access after you approve each one.";
 "agent.code.rule.network" = "No network";
 "agent.code.rule.home" = "No access to your home folder";
 "agent.code.rule.confirm" = "Confirm before running in Standard mode";

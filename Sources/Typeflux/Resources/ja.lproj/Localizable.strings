@@ -1953,6 +1953,8 @@
 "ask.settings.notes.empty" = "保存したメモはありません。";
 "ask.tool.files" = "ファイル";
 "ask.tool.run_code" = "コードを実行";
+"ask.tool.run_command" = "コマンドを実行";
+"ask.command.hostWarning" = "Mac の現在のアカウント権限で実行します。ファイルの変更や他のプログラムの起動が可能です。";
 "ask.tool.skill" = "スキル";
 "ask.tool.memory" = "メモリ";
 "ask.action.inspect" = "アプリを調べる";
@@ -2496,8 +2498,8 @@
 "agent.capability.webSearch.summary" = "プライベートな会話は自分の検索サービスで Web を検索し、クラウドの会話は Typeflux Cloud を使います。";
 "agent.capability.files.title" = "ファイルアクセス";
 "agent.capability.files.summary" = "許可したフォルダを読み書きします。書き込みの前に確認します。";
-"agent.capability.code.title" = "コード実行";
-"agent.capability.code.summary" = "隔離されたサンドボックスで Python、JavaScript、シェルを実行します。";
+"agent.capability.code.title" = "コマンド実行";
+"agent.capability.code.summary" = "各コマンドを承認した後、この Mac で実行します。";
 "agent.capability.automation.title" = "コンピュータとブラウザの操作";
 "agent.capability.automation.summary" = "画面を見て、クリックや入力を行い、アプリや Web ページでの作業を代行します。";
 "agent.capability.skills.summary" = "特定の作業の手順。必要なときに読み込まれます。";
@@ -2544,7 +2546,7 @@
 "agent.files.rule.read" = "読み取り：許可済みフォルダ内で自動実行";
 "agent.files.rule.write" = "書き込み：標準モードでは実行前に確認";
 "agent.files.removed" = "「%@」を削除しました";
-"agent.code.subtitle" = "計算、表の処理、グラフ作成のために、隔離されたサンドボックスで Python、JavaScript、シェルを実行します。";
+"agent.code.subtitle" = "各コマンドを承認した後、現在の Mac アカウントの権限で実行します。";
 "agent.code.rule.network" = "ネットワークなし";
 "agent.code.rule.home" = "ホームフォルダにアクセス不可";
 "agent.code.rule.confirm" = "標準モードでは実行前に確認";

@@ -56,7 +56,7 @@ enum AskActivity {
             case "web_search", "research": .search
             case "web_fetch", "browser": .web
             case "files", "project_files", "artifact": .files
-            case "run_code": .code
+            case "run_code", "run_command": .code
             case "computer": .computer
             default: .other
             }

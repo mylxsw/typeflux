@@ -1953,6 +1953,8 @@
 "ask.settings.notes.empty" = "저장된 메모가 없습니다.";
 "ask.tool.files" = "파일";
 "ask.tool.run_code" = "코드 실행";
+"ask.tool.run_command" = "명령 실행";
+"ask.command.hostWarning" = "현재 Mac 계정 권한으로 실행됩니다. 파일을 변경하거나 다른 프로그램을 시작할 수 있습니다.";
 "ask.tool.skill" = "스킬";
 "ask.tool.memory" = "메모리";
 "ask.action.inspect" = "앱 살펴보기";
@@ -2496,8 +2498,8 @@
 "agent.capability.webSearch.summary" = "비공개 대화는 내 검색 서비스로 웹을 검색하고, 클라우드 대화는 Typeflux Cloud를 사용합니다.";
 "agent.capability.files.title" = "파일 접근";
 "agent.capability.files.summary" = "허용한 폴더를 읽고 수정합니다. 수정하기 전에 확인합니다.";
-"agent.capability.code.title" = "코드 실행";
-"agent.capability.code.summary" = "격리된 샌드박스에서 Python, JavaScript, 셸을 실행합니다.";
+"agent.capability.code.title" = "명령 실행";
+"agent.capability.code.summary" = "각 명령을 승인한 후 이 Mac에서 실행합니다.";
 "agent.capability.automation.title" = "컴퓨터 및 브라우저 제어";
 "agent.capability.automation.summary" = "화면을 보고 클릭하고 입력해 앱과 웹 페이지의 작업을 대신 처리합니다.";
 "agent.capability.skills.summary" = "특정 작업을 위한 지침으로, 필요할 때 불러옵니다.";
@@ -2544,7 +2546,7 @@
 "agent.files.rule.read" = "읽기: 허용된 폴더 내에서 자동 실행";
 "agent.files.rule.write" = "쓰기: 표준 모드에서 실행 전 확인";
 "agent.files.removed" = "'%@' 제거됨";
-"agent.code.subtitle" = "계산, 표 처리, 차트를 위해 격리된 샌드박스에서 Python, JavaScript, 셸을 실행합니다.";
+"agent.code.subtitle" = "각 명령을 승인한 후 현재 Mac 계정 권한으로 실행합니다.";
 "agent.code.rule.network" = "네트워크 없음";
 "agent.code.rule.home" = "홈 폴더 접근 불가";
 "agent.code.rule.confirm" = "표준 모드에서 실행 전 확인";

@@ -183,21 +183,61 @@ final class AskAgentToolsTests: XCTestCase {
         names = await tools.definitions(conversationId: nil).map(\.name)
         XCTAssertEqual(Array(names.prefix(2)), ["computer", "browser"])
         XCTAssertTrue(names.contains("skill") && names.contains("memory"))
-        // No authorized folders: no files tool. Code execution follows its setting and this Mac.
+        // No authorized folders: no files tool. Analysis code depends on its sandbox;
+        // host commands are available when command execution is enabled.
         XCTAssertFalse(names.contains("files"))
         XCTAssertEqual(names.contains("run_code"), tools.sandbox.definition() != nil)
+        XCTAssertTrue(names.contains("run_command"))
 
         let risks: [(String, [String: Any], AskToolRisk)] = [
             ("skill", ["name": "x"], .none), ("computer", ["action": "inspect"], .read), ("computer", ["action": "wait"], .read),
             ("computer", ["action": "drag"], .write), ("browser", ["action": "snapshot"], .read), ("browser", ["action": "back"], .write),
             ("files", ["action": "read", "path": "a"], .read), ("files", ["action": "write", "path": "a"], .write),
-            ("run_code", ["language": "python", "code": "1"], .write), ("memory", ["action": "list"], .read),
+            ("run_code", ["language": "python", "code": "1"], .write),
+            ("run_command", ["command": "printf ok"], .destructive), ("memory", ["action": "list"], .read),
             ("memory", ["action": "remember"], .write), ("unknown", [:], .destructive)
         ]
         for (name, args, risk) in risks {
             XCTAssertEqual(tools.risk(of: call(name, args)), risk, "\(name) \(args)")
         }
         XCTAssertEqual(AskLocalTools.builtinRisk(AskToolCall(id: "x", function: .init(name: "files", arguments: "not json"))), .write)
+    }
+
+    func testHostCommandOnlyRunsThroughApprovedDispatch() async throws {
+        XCTAssertEqual(try AskHostCommand.validated(["command": "printf ok"]).timeout,
+                       AskHostCommand.defaultTimeout)
+        for args: [String: Any] in [["command": ""], ["command": String(repeating: "x", count: 1201)],
+                                    ["command": "printf ok", "timeout_seconds": 121],
+                                    ["command": "printf ok", "timeout_seconds": "60"],
+                                    ["command": "printf ok", "unexpected": true]] {
+            XCTAssertThrowsError(try AskHostCommand.validated(args))
+        }
+        let settings = settings()
+        let tools = AskLocalTools(registry: registry(), settings: settings,
+                                  skills: AskSkillLibrary(userDirectory: root),
+                                  notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("n.json")), owner: { "me" })
+        let command = call("run_command", ["command": "printf host-command-ok"])
+        do {
+            _ = try await tools.execute(command, conversationId: "c")
+            XCTFail("Direct execution should be denied")
+        } catch { /* The approved entry point is required. */ }
+        let binding = try await tools.approvalBinding(for: command, conversationId: "c")
+        XCTAssertEqual(binding.summary, "printf host-command-ok")
+        let output = try await tools.executeApproved(command, conversationId: "c", binding: binding, authorize: {})
+        XCTAssertFalse(output.isError)
+        XCTAssertTrue(output.content.contains("host-command-ok"))
+        let failed = call("run_command", ["command": "exit 7"])
+        let failedBinding = try await tools.approvalBinding(for: failed, conversationId: "c")
+        let failure = try await tools.executeApproved(failed, conversationId: "c", binding: failedBinding, authorize: {})
+        XCTAssertTrue(failure.isError)
+        XCTAssertTrue(failure.content.contains("Exit code: 7"))
+        settings.askCodeExecutionEnabled = false
+        let disabledDefinitions = await tools.definitions(conversationId: "c")
+        XCTAssertFalse(disabledDefinitions.contains { $0.name == "run_command" })
+        do {
+            _ = try await tools.executeApproved(command, conversationId: "c", binding: binding, authorize: {})
+            XCTFail("Disabled execution should be denied")
+        } catch { /* The setting must be checked again before dispatch. */ }
     }
 
     func testLocalToolsExecuteFilesCodeSkillsAndMemory() async throws {

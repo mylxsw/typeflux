@@ -27,7 +27,7 @@ extension SettingsStore {
         }
     }
 
-    /// Whether Ask may run programs in the local sandbox.
+    /// Whether Ask may offer individually approved commands on this Mac.
     var askCodeExecutionEnabled: Bool {
         get { defaults.object(forKey: "ask.codeExecutionEnabled") as? Bool ?? true }
         set { defaults.set(newValue, forKey: "ask.codeExecutionEnabled") }

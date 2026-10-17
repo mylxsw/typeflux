@@ -214,6 +214,7 @@ final class AskLocalTools: AskToolExecuting {
             if projectRuntime != nil { result.append(Self.terminalDefinition) }
         }
         if settings?.askCodeExecutionEnabled == true, let code = sandbox.definition() { result.append(code) }
+        if settings?.askCodeExecutionEnabled == true { result.append(AskHostCommand.definition) }
         if let skill = skills.definition(enabledSkills) { result.append(skill) }
         if workflowAuthoringEnabled { result += Self.workflowChatDefinitions }
         result.append(AskMemoryNoteStore.definition)
@@ -261,6 +262,7 @@ final class AskLocalTools: AskToolExecuting {
         case ("project_terminal", _): return ["status", "output"].contains(action) ? .read : .write
         case ("project_files", _): return ["list", "read", "review", "export"].contains(action) ? .read : .write
         case (AskNotebookTool.name, _): return AskNotebookTool.risk(action: action)
+        case ("run_command", _): return .destructive
         case ("computer", _), ("browser", _), ("run_code", _), ("memory", _): return .write
         default: return .destructive
         }
@@ -367,7 +369,8 @@ final class AskLocalTools: AskToolExecuting {
         }
         let args = try Self.jsonArguments(call.function.arguments)
         switch call.function.name {
-        case "artifact", "project_files", "project_terminal", "generate_image": throw AskProjectError.denied // Requires the approved dispatch entry point.
+        case "artifact", "project_files", "project_terminal", "generate_image", "run_command":
+            throw AskProjectError.denied // Requires the approved dispatch entry point.
         case "computer", "browser":
             return try await executeAutomation(call.function.name, args: args, conversationId: conversationId)
         case "files":
