@@ -3,7 +3,7 @@ import SwiftUI
 
 /// The composer's tool permission chooser. Each mode has its own colour so the
 /// current level reads at a glance: strict green, standard blue, YOLO orange.
-/// The label is always drawn in that colour; YOLO also sits on a faint well.
+/// The label is always drawn in that colour, without a background.
 /// In the menu only the current mode is coloured, in place of a checkmark.
 struct AskPermissionModeMenu: View {
     var mode: AskPermissionMode
@@ -25,10 +25,6 @@ struct AskPermissionModeMenu: View {
 
     static func labelColor(_ mode: AskPermissionMode) -> Color {
         tint(mode)
-    }
-
-    static func wellFill(_ mode: AskPermissionMode) -> Color {
-        mode == .yolo ? tint(.yolo).opacity(0.11) : .clear
     }
 
     /// Borderless menus normalize SwiftUI's font on SF Symbols. Configure the
@@ -98,8 +94,6 @@ struct AskPermissionModeMenu: View {
         // Overrides the composer's accent so the label keeps this colour.
         .tint(Self.labelColor(mode))
         .fixedSize()
-        // Drawn around the menu without taking layout space from its neighbours.
-        .background(Capsule().fill(Self.wellFill(mode)).padding(.horizontal, -4).padding(.vertical, -3))
         .help(mode.detail + " /mode [yolo|strict|standard]")
         .accessibilityLabel(L("ask.mode.title") + ": " + mode.title)
         .accessibilityValue(mode.title)

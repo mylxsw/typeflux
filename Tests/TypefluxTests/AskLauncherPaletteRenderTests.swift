@@ -38,9 +38,6 @@ struct AskLauncherPaletteRenderTests {
         for mode in AskPermissionMode.allCases {
             #expect(AskPermissionModeMenu.labelColor(mode) == AskPermissionModeMenu.tint(mode))
         }
-        #expect(AskPermissionModeMenu.wellFill(.strict) == .clear)
-        #expect(AskPermissionModeMenu.wellFill(.standard) == .clear)
-        #expect(AskPermissionModeMenu.wellFill(.yolo) == StudioTheme.warning.opacity(0.11))
     }
 
     @Test func `only the current mode gets a coloured menu image`() throws {
