@@ -1,0 +1,7 @@
+{
+  "cleaned_up" : true,
+  "complete" : false,
+  "error" : "ProbeFailure(message: \"Timeout: initial indexing\")",
+  "scope" : "Synthetic fixed fixtures; real pinned text\/media embeddings, production FSEvents\/index\/service and native editor\/layout. Debug, small corpus; excludes physical HID and compositor fence, release\/large-scale\/long stability.",
+  "wall_seconds" : 240.04217974992935
+}

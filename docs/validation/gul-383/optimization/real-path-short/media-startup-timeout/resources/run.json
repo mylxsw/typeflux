@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "docs/validation/gul-383/optimization/real-path-short/run_probe.py",
+    "--cache-checkout",
+    "<accepted-cache>",
+    "--model-assets",
+    "<model-cache>",
+    "--resource-seconds",
+    "300",
+    "--native-probe",
+    "<native-probe>"
+  ],
+  "started_unix": 1792210956.3644779,
+  "wall_seconds": 248.5938707909081,
+  "exit_code": 1,
+  "samples": 116,
+  "scope": "Same-host reference window and real mixed-file indexing. CPU process time is cumulative; %CPU is lifetime averaged. Owned proc_pid_rusage V2 records sampled physical footprint, physical disk IO and CPU Mach ticks converted using the host timebase; its CPU units were cross-checked against process_time_ns. Unsupported/denied PID reads retain available=false and errno. RSS includes shared resident pages; summed RSS is not unique physical RAM. GPU metrics are best-effort IOAccelerator counters, not energy measurements. No privileged powermetrics, external process arguments, filenames or input contents collected."
+}

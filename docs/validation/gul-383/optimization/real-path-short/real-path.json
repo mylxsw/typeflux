@@ -1,0 +1,395 @@
+{
+  "budget_enabled" : true,
+  "cleaned_up" : true,
+  "complete" : true,
+  "documents_only" : true,
+  "event_real_model_hits" : [
+    {
+      "chunk_id" : 4,
+      "has_version" : true,
+      "name" : "event.txt",
+      "page" : null,
+      "score" : 3.0078450942039492,
+      "snippet" : "Voucher UPDATE-482917 approved for the synthetic project.",
+      "source" : "text",
+      "time" : null
+    }
+  ],
+  "file_event" : {
+    "hits" : [
+      {
+        "chunk_id" : 4,
+        "has_version" : true,
+        "name" : "event.txt",
+        "page" : null,
+        "score" : 3,
+        "snippet" : "Voucher UPDATE-482917 approved for the synthetic project.",
+        "source" : "text",
+        "time" : null
+      }
+    ],
+    "write_to_matching_service_result_ms" : 11658.459291676991
+  },
+  "final_chunks" : 17,
+  "final_files" : 28,
+  "initial_chunks" : 3,
+  "initial_files" : 2,
+  "initial_index_ms" : 32296.886833384633,
+  "native" : [
+    {
+      "draft" : "INV-739204",
+      "entry" : "mixed",
+      "hits" : [
+        {
+          "chunk_id" : 3,
+          "has_version" : true,
+          "name" : "scan.pdf",
+          "page" : 2,
+          "score" : 3,
+          "snippet" : "2\nINVOICE\nInvoice number INV-739204\nPayment due after approval\n2",
+          "source" : "pdf-ocr",
+          "time" : null
+        }
+      ],
+      "input" : "INV-739204",
+      "input_to_layout_ax_ms" : 359.15862501133233,
+      "input_to_publish_ms" : 296.41275003086776
+    },
+    {
+      "draft" : "INV-739204",
+      "entry" : "files",
+      "hits" : [
+        {
+          "chunk_id" : 3,
+          "has_version" : true,
+          "name" : "scan.pdf",
+          "page" : 2,
+          "score" : 3,
+          "snippet" : "2\nINVOICE\nInvoice number INV-739204\nPayment due after approval\n2",
+          "source" : "pdf-ocr",
+          "time" : null
+        }
+      ],
+      "input" : "INV-739204",
+      "input_to_layout_ax_ms" : 117.74104170035571,
+      "input_to_publish_ms" : 101.15870833396912
+    }
+  ],
+  "phase" : "ready",
+  "queries" : [
+    {
+      "found" : true,
+      "hits" : [
+        {
+          "chunk_id" : 1,
+          "has_version" : true,
+          "name" : "body.docx",
+          "page" : null,
+          "score" : 3.0076256698369979,
+          "snippet" : "项目报销 INV-682914 & approval\taccepted\nsecond line\nTable body\n\n\n",
+          "source" : "docx-body",
+          "time" : null
+        }
+      ],
+      "query" : "INV-682914",
+      "service_ms" : 503.84216662496328,
+      "target" : "body.docx"
+    },
+    {
+      "found" : true,
+      "hits" : [
+        {
+          "chunk_id" : 3,
+          "has_version" : true,
+          "name" : "scan.pdf",
+          "page" : 2,
+          "score" : 3.0075130915641783,
+          "snippet" : "2\nINVOICE\nInvoice number INV-739204\nPayment due after approval\n2",
+          "source" : "pdf-ocr",
+          "time" : null
+        }
+      ],
+      "query" : "INV-739204",
+      "service_ms" : 62.350250082090497,
+      "target" : "scan.pdf"
+    },
+    {
+      "found" : true,
+      "hits" : [
+        {
+          "chunk_id" : 2,
+          "has_version" : true,
+          "name" : "scan.pdf",
+          "page" : 1,
+          "score" : 0.38270356655120857,
+          "snippet" : "Project reimbursement handbook",
+          "source" : "pdf-text",
+          "time" : null
+        },
+        {
+          "chunk_id" : 1,
+          "has_version" : true,
+          "name" : "body.docx",
+          "page" : null,
+          "score" : 0.33353521823883059,
+          "snippet" : "项目报销 INV-682914 & approval\taccepted\nsecond line\nTable body\n\n\n",
+          "source" : "docx-body",
+          "time" : null
+        }
+      ],
+      "query" : "How can I get money back for travel?",
+      "service_ms" : 67.666999995708466,
+      "target" : "body.docx"
+    }
+  ],
+  "reopened_real_model_hits" : [
+    {
+      "chunk_id" : 1,
+      "has_version" : true,
+      "name" : "body.docx",
+      "page" : null,
+      "score" : 3.0076256698369979,
+      "snippet" : "项目报销 INV-682914 & approval\taccepted\nsecond line\nTable body\n\n\n",
+      "source" : "docx-body",
+      "time" : null
+    }
+  ],
+  "resource_duration_seconds" : 300.08414383337367,
+  "resource_rows" : [
+    {
+      "chunks" : 4,
+      "elapsed_seconds" : 0.38239820837043226,
+      "files" : 3,
+      "input_to_layout_ms" : 40.229458245448768,
+      "phase" : "ready",
+      "sample" : 0
+    },
+    {
+      "chunks" : 4,
+      "elapsed_seconds" : 10.743826874997467,
+      "files" : 3,
+      "input_to_layout_ms" : 28.415458393283188,
+      "phase" : "indexing",
+      "sample" : 1
+    },
+    {
+      "chunks" : 4,
+      "elapsed_seconds" : 21.247964958311059,
+      "files" : 3,
+      "input_to_layout_ms" : 27.507708291523159,
+      "phase" : "indexing",
+      "sample" : 2
+    },
+    {
+      "chunks" : 4,
+      "elapsed_seconds" : 31.595477125025354,
+      "files" : 3,
+      "input_to_layout_ms" : 25.118083343841136,
+      "phase" : "indexing",
+      "sample" : 3
+    },
+    {
+      "chunks" : 5,
+      "elapsed_seconds" : 41.903324708342552,
+      "files" : 5,
+      "input_to_layout_ms" : 26.969208382070065,
+      "phase" : "indexing",
+      "sample" : 4
+    },
+    {
+      "chunks" : 5,
+      "elapsed_seconds" : 52.249804000020958,
+      "files" : 5,
+      "input_to_layout_ms" : 26.429291698150337,
+      "phase" : "indexing",
+      "sample" : 5
+    },
+    {
+      "chunks" : 6,
+      "elapsed_seconds" : 62.989013249985874,
+      "files" : 5,
+      "input_to_layout_ms" : 25.550500024110079,
+      "phase" : "indexing",
+      "sample" : 6
+    },
+    {
+      "chunks" : 6,
+      "elapsed_seconds" : 73.241309750010259,
+      "files" : 5,
+      "input_to_layout_ms" : 26.308333384804428,
+      "phase" : "indexing",
+      "sample" : 7
+    },
+    {
+      "chunks" : 7,
+      "elapsed_seconds" : 83.8449597916333,
+      "files" : 8,
+      "input_to_layout_ms" : 27.724916697479784,
+      "phase" : "indexing",
+      "sample" : 8
+    },
+    {
+      "chunks" : 7,
+      "elapsed_seconds" : 94.255639583338052,
+      "files" : 8,
+      "input_to_layout_ms" : 27.55254169460386,
+      "phase" : "indexing",
+      "sample" : 9
+    },
+    {
+      "chunks" : 7,
+      "elapsed_seconds" : 104.34820074995514,
+      "files" : 8,
+      "input_to_layout_ms" : 27.546625002287328,
+      "phase" : "indexing",
+      "sample" : 10
+    },
+    {
+      "chunks" : 8,
+      "elapsed_seconds" : 115.00689883332234,
+      "files" : 11,
+      "input_to_layout_ms" : 25.227541686035693,
+      "phase" : "indexing",
+      "sample" : 11
+    },
+    {
+      "chunks" : 10,
+      "elapsed_seconds" : 125.25028429168742,
+      "files" : 15,
+      "input_to_layout_ms" : 30.540791573002934,
+      "phase" : "indexing",
+      "sample" : 12
+    },
+    {
+      "chunks" : 10,
+      "elapsed_seconds" : 135.89942320832051,
+      "files" : 15,
+      "input_to_layout_ms" : 28.808041708543897,
+      "phase" : "indexing",
+      "sample" : 13
+    },
+    {
+      "chunks" : 10,
+      "elapsed_seconds" : 146.25291912502144,
+      "files" : 15,
+      "input_to_layout_ms" : 25.04595834761858,
+      "phase" : "indexing",
+      "sample" : 14
+    },
+    {
+      "chunks" : 10,
+      "elapsed_seconds" : 156.99744674994145,
+      "files" : 15,
+      "input_to_layout_ms" : 26.610624976456165,
+      "phase" : "indexing",
+      "sample" : 15
+    },
+    {
+      "chunks" : 10,
+      "elapsed_seconds" : 167.23034704162274,
+      "files" : 15,
+      "input_to_layout_ms" : 25.19662503618747,
+      "phase" : "indexing",
+      "sample" : 16
+    },
+    {
+      "chunks" : 11,
+      "elapsed_seconds" : 177.81733774999157,
+      "files" : 16,
+      "input_to_layout_ms" : 30.346541665494442,
+      "phase" : "indexing",
+      "sample" : 17
+    },
+    {
+      "chunks" : 11,
+      "elapsed_seconds" : 188.24991274997592,
+      "files" : 16,
+      "input_to_layout_ms" : 25.738541618920863,
+      "phase" : "indexing",
+      "sample" : 18
+    },
+    {
+      "chunks" : 14,
+      "elapsed_seconds" : 198.93767808331177,
+      "files" : 13,
+      "input_to_layout_ms" : 26.801541680470109,
+      "phase" : "indexing",
+      "sample" : 19
+    },
+    {
+      "chunks" : 14,
+      "elapsed_seconds" : 209.03479487495497,
+      "files" : 13,
+      "input_to_layout_ms" : 24.53079167753458,
+      "phase" : "indexing",
+      "sample" : 20
+    },
+    {
+      "chunks" : 14,
+      "elapsed_seconds" : 219.24255770829041,
+      "files" : 13,
+      "input_to_layout_ms" : 28.00283336546272,
+      "phase" : "indexing",
+      "sample" : 21
+    },
+    {
+      "chunks" : 14,
+      "elapsed_seconds" : 229.52496120834257,
+      "files" : 13,
+      "input_to_layout_ms" : 25.718333316035569,
+      "phase" : "indexing",
+      "sample" : 22
+    },
+    {
+      "chunks" : 15,
+      "elapsed_seconds" : 240.25197670829948,
+      "files" : 23,
+      "input_to_layout_ms" : 24.410666665062308,
+      "phase" : "indexing",
+      "sample" : 23
+    },
+    {
+      "chunks" : 15,
+      "elapsed_seconds" : 251.06034387496766,
+      "files" : 27,
+      "input_to_layout_ms" : 25.887541705742478,
+      "phase" : "indexing",
+      "sample" : 24
+    },
+    {
+      "chunks" : 15,
+      "elapsed_seconds" : 261.24071029166225,
+      "files" : 27,
+      "input_to_layout_ms" : 23.917083395645022,
+      "phase" : "indexing",
+      "sample" : 25
+    },
+    {
+      "chunks" : 17,
+      "elapsed_seconds" : 271.98270479170606,
+      "files" : 28,
+      "input_to_layout_ms" : 26.331958244554698,
+      "phase" : "indexing",
+      "sample" : 26
+    },
+    {
+      "chunks" : 17,
+      "elapsed_seconds" : 282.25495087495074,
+      "files" : 28,
+      "input_to_layout_ms" : 28.984458302147686,
+      "phase" : "indexing",
+      "sample" : 27
+    },
+    {
+      "chunks" : 17,
+      "elapsed_seconds" : 292.91607004171237,
+      "files" : 28,
+      "input_to_layout_ms" : 28.286541579291224,
+      "phase" : "indexing",
+      "sample" : 28
+    }
+  ],
+  "resource_started_uptime" : 524959.8277000417,
+  "scope" : "Synthetic fixed fixtures; real pinned text\/media embeddings, production FSEvents\/index\/service and native editor\/layout. Debug, small corpus; excludes physical HID and compositor fence, release\/large-scale\/long stability.",
+  "wall_seconds" : 389.85483925009612
+}

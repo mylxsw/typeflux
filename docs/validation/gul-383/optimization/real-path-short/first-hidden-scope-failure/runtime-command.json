@@ -1,0 +1,12 @@
+{
+  "command": [
+    "RealPathProbe"
+  ],
+  "wall_seconds": 50.88172470894642,
+  "exit_code": 1,
+  "hardware": "arm64",
+  "macos": "26.6.2",
+  "private_root_removed": true,
+  "configuration": "Debug, reused coverage-instrumented PR646 objects; no SwiftPM or product rebuild",
+  "cached_weights_only": true
+}
