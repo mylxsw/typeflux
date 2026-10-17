@@ -1,0 +1,35 @@
+{
+  "production_changed_lines": {
+    "native_helper": {
+      "covered": 4,
+      "total": 4,
+      "reused_from": "media-isolation/changed-coverage.json"
+    },
+    "application": {
+      "covered": 0,
+      "total": 0,
+      "status": "N/A"
+    },
+    "file_helper": {
+      "covered": 0,
+      "total": 0,
+      "status": "N/A"
+    },
+    "media_runtime": {
+      "covered": 0,
+      "total": 0,
+      "status": "N/A"
+    }
+  },
+  "new_product_source_changes": false,
+  "diagnostic_copy_only": true,
+  "tool_tests": {
+    "passed": 4,
+    "failed": 0,
+    "shell_wall_seconds": 0.042208708
+  },
+  "python_syntax": "passed",
+  "media_acceptance": "not passed",
+  "automatic_observation_retries": 0,
+  "raw_profile_export_repeated": false
+}

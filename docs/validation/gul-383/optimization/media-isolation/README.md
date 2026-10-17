@@ -1,5 +1,7 @@
 # GUL-405 single-media stage isolation
 
+Latest continuation: [one screenshot with actual-budget counters and native stages](stage-budget/README.md). It reached Swift/backend initialization and the text-weight loading interval, then cancelled without a vector; PR648 remains a draft.
+
 The bounded follow-up in `startup-diagnostic/` returned one real valid CPU text vector on the unchanged helper (17.181 s complete command), then retained a failed 45 s screenshot observation (48.678 s complete command). No production code changed. PR648 remains a draft and all three media retrieval gates remain unpassed. Its report separates budget yields, scheduled CPU, historical stage samples and missing timing/stage evidence.
 
 This continuation starts at PR647 merge `8da72f495dd91295151cf931da71007e33b7fb24`. Earlier successes and failures remain in `real-path-short/`. No document/resource/native-input matrix, accepted unit-test batch, oracle cohort, ranking calibration, download matrix or GUL-406 work is rerun here.
