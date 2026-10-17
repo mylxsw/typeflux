@@ -346,6 +346,10 @@ extension ClipboardPanelController: @preconcurrency QLPreviewPanelDataSource {
 final class ClipboardPanelWindow: NSPanel {
     fileprivate weak var quickLookController: ClipboardPanelController?
     var onHide: (() -> Void)?
+    override func sendEvent(_ event: NSEvent) {
+        KeyboardFocusPolicy.focusOnMouseDown(event, in: self)
+        super.sendEvent(event)
+    }
     override func orderOut(_ sender: Any?) { onHide?(); super.orderOut(sender) }
     override func close() { onHide?(); super.close() }
 

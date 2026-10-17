@@ -5,6 +5,29 @@ import Testing
 @Suite(.serialized, .exclusiveUIState)
 struct OverlayTransitionTests {
     @Test @MainActor
+    func aShortcutOpenedClipboardSuspendsBackgroundOverlayKeys() async throws {
+        let (overlay, _) = try makeRecording()
+        defer { overlay.dismissImmediately() }
+        overlay.showLockedRecording()
+        #expect(!overlay.keyboardCaptureSuspendedForTesting)
+
+        let suite = UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let clipboard = ClipboardPanelController(settingsStore: SettingsStore(defaults: defaults))
+        clipboard.present(ClipboardPanelModel())
+        defer { clipboard.dismiss() }
+        try await Task.sleep(for: .milliseconds(20))
+        let panelIsKey = clipboard.presentedWindow?.isKeyWindow == true
+        #expect(panelIsKey)
+        let captureSuspended = overlay.keyboardCaptureSuspendedForTesting
+        #expect(captureSuspended)
+
+        overlay.showLockedRecording()
+        #expect(!overlay.keyboardCaptureSuspendedForTesting)
+    }
+
+    @Test @MainActor
     func captionsExpandAndCollapseAroundTheSameBottomAnchor() async throws {
         let (controller, window) = try makeRecording()
         defer { controller.dismissImmediately() }

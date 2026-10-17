@@ -86,6 +86,22 @@ struct ScreenRecordingSessionControllerTests {
         #expect(fixture.controller.sessions.isEmpty)
     }
 
+    @Test func `background editor refresh yields to the newer clipboard window`() {
+        _ = NSApplication.shared
+        let editor = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 320, height: 200),
+                              styleMask: .titled, backing: .buffered, defer: false)
+        let clipboard = NSPanel(contentRect: CGRect(x: 0, y: 0, width: 320, height: 200),
+                                styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        editor.isReleasedWhenClosed = false
+        clipboard.isReleasedWhenClosed = false
+        editor.orderFrontRegardless()
+        clipboard.orderFrontRegardless()
+        defer { clipboard.close(); editor.close() }
+
+        #expect(KeyboardFocusPolicy.shouldFocusReplacement(of: editor, keyWindow: editor))
+        #expect(!KeyboardFocusPolicy.shouldFocusReplacement(of: editor, keyWindow: clipboard))
+    }
+
     @Test func `export does not block capture and saving closes only its own result`() async throws {
         let fixture = Fixture()
         let first = await fixture.record()

@@ -24,6 +24,12 @@ private final class TransparentHostingView<Content: View>: NSHostingView<Content
 
 private final class OverlayPanel: NSPanel {
     var allowsKeyboardFocus = false
+    var onMouseDown: (() -> Void)?
+
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .leftMouseDown || event.type == .rightMouseDown { onMouseDown?() }
+        super.sendEvent(event)
+    }
 
     override var canBecomeKey: Bool {
         allowsKeyboardFocus
@@ -314,6 +320,9 @@ final class OverlayController {
     private var window: NSPanel?
     var presentedWindow: NSWindow? { window }
     private var interfaceStyleObserver: NSObjectProtocol?
+    private var keyWindowObserver: NSObjectProtocol?
+    private var keyboardCaptureSuspended = false
+    var keyboardCaptureSuspendedForTesting: Bool { keyboardCaptureSuspended }
     private var callbackTarget: OverlayCallbackTarget?
 
     private let model = OverlayViewModel()
@@ -360,6 +369,16 @@ final class OverlayController {
             model.glassIntensity = LiquidGlassIntensity(self.settingsStore.liquidGlassIntensity)
             if previousStyle != model.interfaceStyle { configureWindowAppearance() }
         }
+        keyWindowObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didBecomeKeyNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self, window?.isVisible == true,
+                  let focusedWindow = notification.object as? NSWindow else { return }
+            keyboardCaptureSuspended = focusedWindow !== window
+            updateKeyMonitoring()
+        }
         callbackTarget = OverlayCallbackTarget(self)
     }
 
@@ -372,6 +391,7 @@ final class OverlayController {
         // transiently retain `self` under Swift's ownership lowering and abort destruction.
         // This also makes every AppKit/CoreGraphics registration visibly symmetric.
         let styleObserver = interfaceStyleObserver
+        let focusObserver = keyWindowObserver
         let queuedWork = [
             dismissWorkItem,
             pendingFrameAnimationWorkItem,
@@ -408,6 +428,7 @@ final class OverlayController {
                 systemKeyRefs.forEach { UnregisterEventHotKey($0) }
                 if let systemKeyHandlerRef { RemoveEventHandler(systemKeyHandlerRef) }
                 if let styleObserver { NotificationCenter.default.removeObserver(styleObserver) }
+                if let focusObserver { NotificationCenter.default.removeObserver(focusObserver) }
             }
         }
         if Thread.isMainThread {
@@ -503,6 +524,10 @@ final class OverlayController {
             panel.contentView?.wantsLayer = true
             panel.contentView?.layer?.isOpaque = false
             panel.contentView?.layer?.backgroundColor = NSColor.clear.cgColor
+            panel.onMouseDown = { [weak self] in
+                self?.keyboardCaptureSuspended = false
+                self?.updateKeyMonitoring()
+            }
 
             window = panel
         }
@@ -520,6 +545,7 @@ final class OverlayController {
         dismissWorkItem = nil
         cancelRecordingHintAutoHide()
         ensureWindow()
+        keyboardCaptureSuspended = false
         model.presentation = .recordingLocked
         model.recordingPreviewExpanded = false
         model.recordingHintText = hintText ?? ""
@@ -817,6 +843,7 @@ final class OverlayController {
         dismissWorkItem?.cancel()
         stopProcessingProgress()
         ensureWindow()
+        keyboardCaptureSuspended = false
         model.presentation = .personaPicker
         model.personaItems = items
         model.personaSelectedIndex = max(0, min(selectedIndex, max(0, items.count - 1)))
@@ -939,6 +966,7 @@ final class OverlayController {
         frameTransitionID = UUID()
         cancelRecordingHintAutoHide()
         window?.orderOut(nil)
+        keyboardCaptureSuspended = false
         lastPositionedFrame = nil
         lastPositionedPresentation = nil
         var transaction = Transaction()
@@ -1247,6 +1275,11 @@ final class OverlayController {
     }
 
     private func updateKeyMonitoring() {
+        if keyboardCaptureSuspended {
+            removePickerSystemKeyCapture()
+            removeKeyMonitoring()
+            return
+        }
         if model.presentation == .personaPicker {
             installPickerSystemKeyCaptureIfNeeded()
             if pickerSystemKeyRefs.isEmpty {
@@ -1435,6 +1468,7 @@ final class OverlayController {
     }
 
     private func handleKeyCode(_ keyCode: Int) -> Bool {
+        guard !keyboardCaptureSuspended else { return false }
         if model.presentation == .recordingHold || model.presentation == .recordingHoldPreview || model
             .presentation == .recordingLocked || model.presentation == .recordingLockedPreview {
             if keyCode == 53 {

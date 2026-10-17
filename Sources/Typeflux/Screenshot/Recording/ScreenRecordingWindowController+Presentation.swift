@@ -3,13 +3,16 @@ import AVFoundation
 import SwiftUI
 
 extension ScreenRecordingWindowController {
-    func render(_ state: ScreenRecordingCoordinator.State) {
+    func render(_ state: ScreenRecordingCoordinator.State, focus: Bool = false) {
         guard let model else { return }
         let changed = lastState != state
         lastState = state
         switch state {
-        case .setup, .countdown: presentSelection(state, changed: changed)
-        case .preview, .exporting: dismissSelection(); presentEditor()
+        case .setup, .countdown: presentSelection(state, changed: changed, focus: focus)
+        case .preview, .exporting:
+            let selectionHadFocus = selectionPanels.contains(where: \.isKeyWindow)
+            dismissSelection()
+            presentEditor(focus: focus || selectionHadFocus)
         case .starting, .recording, .paused, .stopping: dismissSelection(); presentCapsule(state, changed: changed)
         case .completed:
             if let url = model.savedURL {
@@ -30,8 +33,10 @@ extension ScreenRecordingWindowController {
         permissionGuide.dismiss()
     }
 
-    func presentSelection(_ state: ScreenRecordingCoordinator.State, changed: Bool) {
+    func presentSelection(_ state: ScreenRecordingCoordinator.State, changed: Bool, focus: Bool = false) {
         guard let model else { return }
+        let shouldFocus = focus || selectionPanels.contains(where: \.isKeyWindow)
+            || KeyboardFocusPolicy.shouldFocusReplacement(of: window)
 
         if selectionPanels.isEmpty {
             makeSelection()
@@ -58,8 +63,10 @@ extension ScreenRecordingWindowController {
                 window = panel
             }
             window?.orderFrontRegardless()
-            selectionPanels.first?.makeKey()
-            selectionPanels.first?.makeFirstResponder(selectionViews.first)
+            if shouldFocus {
+                selectionPanels.first?.makeKey()
+                selectionPanels.first?.makeFirstResponder(selectionViews.first)
+            }
             showPermissionGuideIfNeeded()
         } else {
             window?.orderOut(nil)
@@ -89,8 +96,9 @@ extension ScreenRecordingWindowController {
         window?.orderFrontRegardless()
     }
 
-    func presentEditor() {
+    func presentEditor(focus: Bool = false) {
         guard let model else { return }
+        let shouldFocus = focus || KeyboardFocusPolicy.shouldFocusReplacement(of: window)
 
         if window?.styleMask.contains(.titled) != true {
             window?.orderOut(nil)
@@ -133,8 +141,12 @@ extension ScreenRecordingWindowController {
                 }
             }
         }
-        window?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+        if shouldFocus {
+            NSApp.activate(ignoringOtherApps: true)
+            window?.makeKeyAndOrderFront(nil)
+        } else if let window {
+            KeyboardFocusPolicy.showWithoutTakingFocus(window)
+        }
     }
 
     func makeSelection() {

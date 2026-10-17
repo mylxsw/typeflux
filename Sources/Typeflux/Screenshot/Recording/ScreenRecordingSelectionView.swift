@@ -221,6 +221,11 @@ final class ScreenRecordingSelectionView: NSView {
 }
 
 final class ScreenRecordingOverlayPanel: NSPanel {
+    override func sendEvent(_ event: NSEvent) {
+        KeyboardFocusPolicy.focusOnMouseDown(event, in: self)
+        super.sendEvent(event)
+    }
+
     override var canBecomeKey: Bool {
         true
     }

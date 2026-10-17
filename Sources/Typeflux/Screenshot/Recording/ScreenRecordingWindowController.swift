@@ -93,7 +93,7 @@ final class ScreenRecordingWindowController: NSObject, NSWindowDelegate {
         return CGSize(width: min(desired.width, available.width), height: min(desired.height, available.height))
     }
 
-    func show(_ model: ScreenRecordingCoordinator) {
+    func show(_ model: ScreenRecordingCoordinator, focus: Bool = true) {
         if self.model !== model {
             observations = []
             self.model = model
@@ -122,7 +122,7 @@ final class ScreenRecordingWindowController: NSObject, NSWindowDelegate {
             }
         }
         activeScreen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
-        render(model.state)
+        render(model.state, focus: focus)
         if refreshTask == nil {
             refreshTask = Task { [weak self] in
                 while !Task.isCancelled {

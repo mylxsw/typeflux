@@ -42,6 +42,29 @@ struct AskLauncherToggleTests {
         }
     }
 
+    @Test func `shortcut opened launcher takes keyboard focus from the clipboard`() throws {
+        _ = NSApplication.shared
+        let fixture = try AskTestFixture(authenticated: false)
+        let suite = UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = SettingsStore(defaults: defaults)
+        let clipboard = ClipboardPanelController(settingsStore: settings)
+        let clipboardModel = ClipboardPanelModel()
+        clipboard.present(clipboardModel)
+        defer { clipboard.dismiss() }
+        let clipboardWindow = try #require(clipboard.presentedWindow)
+        #expect(clipboardWindow.isKeyWindow)
+
+        let launcher = AskConversationWindowController(settings: settings, model: fixture.model)
+        defer { launcher.dismissLauncher(); fixture.model.resetSession() }
+        launcher.showLauncher()
+        #expect(launcher.launcherWindow?.isKeyWindow == true)
+
+        clipboard.present(clipboardModel)
+        #expect(clipboardWindow.isKeyWindow)
+    }
+
     @Test func `selects configured source after focus only when opening launcher`() throws {
         _ = NSApplication.shared
         let f = try AskTestFixture(authenticated: false)

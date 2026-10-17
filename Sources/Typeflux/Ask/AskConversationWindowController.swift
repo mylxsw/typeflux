@@ -570,8 +570,16 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private func showControl(_ active: Bool) {
         guard active else {
             let wasVisible = controlPanel?.isVisible == true
+            let shouldRestoreFocus = KeyboardFocusPolicy.shouldFocusReplacement(of: controlPanel)
             controlPanel?.orderOut(nil)
-            if wasVisible { model.setRemoteImagesVisible(true); conversationWindow?.makeKeyAndOrderFront(nil) }
+            if wasVisible {
+                model.setRemoteImagesVisible(true)
+                if shouldRestoreFocus {
+                    conversationWindow?.makeKeyAndOrderFront(nil)
+                } else if let conversationWindow {
+                    KeyboardFocusPolicy.showWithoutTakingFocus(conversationWindow)
+                }
+            }
             return
         }
         model.setRemoteImagesVisible(false)
@@ -637,6 +645,10 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
 final class AskFloatingPanel: NSPanel {
     static let willOrderOut = Notification.Name("AskFloatingPanel.willOrderOut")
+    override func sendEvent(_ event: NSEvent) {
+        KeyboardFocusPolicy.focusOnMouseDown(event, in: self)
+        super.sendEvent(event)
+    }
     override func orderOut(_ sender: Any?) {
         NotificationCenter.default.post(name: Self.willOrderOut, object: self)
         super.orderOut(sender)

@@ -37,18 +37,20 @@ final class ScreenRecordingSessionController {
         toast.hide()
         if let active = sessions.first(where: { $0.model.isCaptureActive }) {
             active.model.show()
+            active.window.show(active.model, focus: true)
             return
         }
         guard !isOtherCaptureActive() else { return }
         let session = retain(makeModel())
         session.model.show(format: format, region: region)
+        session.window.show(session.model, focus: true)
     }
 
     private func retain(_ model: ScreenRecordingCoordinator, recoverySource: URL? = nil) -> Session {
         let window = makeWindow()
         let session = Session(model: model, window: window, recoverySource: recoverySource)
         model.isOtherCaptureActive = { [weak self] in self?.isOtherCaptureActive() ?? false }
-        model.present = { [weak window] in window?.show($0) }
+        model.present = { [weak window] in window?.show($0, focus: false) }
         model.dismiss = { [weak self, weak model, weak window] in
             window?.hide()
             guard let model, model.state == .idle else { return }
