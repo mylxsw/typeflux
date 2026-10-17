@@ -8,6 +8,8 @@ struct CalendarLauncherView: View {
     var onHideEvents: () -> Void = {}
     var feedback: String?
     static let height: CGFloat = 448
+    var viewportHeight: CGFloat = Self.height
+    var additionalHeight: CGFloat { max(0, viewportHeight - Self.height) }
     let columns = Array(repeating: GridItem(.flexible(), spacing: 3), count: 7)
 
     var body: some View {
@@ -33,7 +35,7 @@ struct CalendarLauncherView: View {
                 .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 16).frame(height: 32)
         }
         .foregroundStyle(StudioTheme.textPrimary)
-        .frame(height: Self.height, alignment: .top)
+        .frame(height: viewportHeight, alignment: .top)
         .accessibilityIdentifier("calendar.launcher")
     }
 
@@ -162,7 +164,7 @@ struct CalendarLauncherView: View {
                         height: 3
                     ) }
                 }.frame(height: 5)
-            }.frame(maxWidth: .infinity).frame(height: 48)
+            }.frame(maxWidth: .infinity).frame(height: 48 + additionalHeight / 6)
                 .background(holiday.map { ($0.working ? Color.orange : Color.green).opacity(0.12) }
                     ?? (inRange ? Color.blue.opacity(0.12) : .clear), in: RoundedRectangle(cornerRadius: 9))
                 .overlay(alignment: .topTrailing) {

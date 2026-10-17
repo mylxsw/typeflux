@@ -49,7 +49,7 @@ struct CalendarLauncherVisualTests {
             }
             fixture.model.plugins.enter(keyword)
             fixture.model.launcherDraft.text = text
-            let size = NSSize(width: AskMetrics.launcherWidth, height: 536)
+            let size = NSSize(width: AskMetrics.launcherWidth, height: AskMetrics.launcherWindowHeight)
             let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: .borderless,
                                             backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false

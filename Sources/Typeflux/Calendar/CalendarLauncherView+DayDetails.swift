@@ -45,7 +45,7 @@ extension CalendarLauncherView {
                 agenda
             }
             Spacer(minLength: 0)
-        }.frame(height: 346, alignment: .top)
+        }.frame(height: 346 + additionalHeight, alignment: .top)
     }
 
     @ViewBuilder private var holidayDetail: some View {

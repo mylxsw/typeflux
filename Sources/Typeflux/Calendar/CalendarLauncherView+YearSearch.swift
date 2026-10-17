@@ -49,7 +49,7 @@ extension CalendarLauncherView {
                                             ) ? 1 : 0)
                                     }
                                 }
-                            }.padding(7).frame(height: 108)
+                            }.padding(7).frame(height: 108 + additionalHeight / 3)
                                 .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 8))
                                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(
                                     model.dates.calendar
@@ -106,7 +106,7 @@ extension CalendarLauncherView {
                     }
                 }
             }
-        }.frame(height: 347, alignment: .top)
+        }.frame(height: 347 + additionalHeight, alignment: .top)
     }
 
     /// Holidays keep their rest / work colors; today uses the accent and festivals the grid's teal.

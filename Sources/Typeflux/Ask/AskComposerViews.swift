@@ -1534,7 +1534,8 @@ struct AskComposer: View {
                                          model.calendarLauncher.select(day)
                                          draft.wrappedValue.text = ""
                                      }, onHideEvents: model.hideCalendarEvents,
-                                     feedback: model.commandFeedback)
+                                     feedback: model.commandFeedback,
+                                     viewportHeight: launcherResultsViewportHeight)
                     .onAppear {
                         model.calendarLauncher.activate(text: draft.wrappedValue.text,
                                                         options: plugins.keyword?.options ?? [:],
