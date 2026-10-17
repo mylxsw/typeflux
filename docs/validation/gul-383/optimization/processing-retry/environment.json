@@ -1,0 +1,28 @@
+[
+  {
+    "command": [
+      "/usr/bin/sw_vers"
+    ],
+    "exit_code": 0,
+    "output": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83\n"
+  },
+  {
+    "command": [
+      "/usr/sbin/sysctl",
+      "-n",
+      "hw.model",
+      "hw.memsize",
+      "machdep.cpu.brand_string"
+    ],
+    "exit_code": 0,
+    "output": "Mac16,10\n17179869184\nApple M4\n"
+  },
+  {
+    "command": [
+      "/usr/bin/xcodebuild",
+      "-version"
+    ],
+    "exit_code": 0,
+    "output": "Xcode 27.1\nBuild version 27A9275\n"
+  }
+]

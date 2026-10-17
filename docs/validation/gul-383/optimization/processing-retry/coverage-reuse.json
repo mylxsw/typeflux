@@ -1,0 +1,14 @@
+{
+  "source_match": true,
+  "production_object_match": true,
+  "production_objects": 1131,
+  "profiles": [
+    "application-profiles/XCTest6750058766369994546_0.19070.profraw",
+    "application-profiles/Swift Testing6750058766369994546_0.19071.profraw",
+    "first-pass-profiles/Swift Testing6750067559242839858_0.12156.profraw",
+    "first-pass-profiles/XCTest6750067559242839858_0.12155.profraw",
+    "second-pass-profiles/Swift Testing6750058766369994546_0.16408.profraw",
+    "second-pass-profiles/XCTest6750058766369994546_0.16405.profraw"
+  ],
+  "scope": "Nine distinct methods passed across three runs (7 initial methods, 4 repair methods, 1 final method); failures retained; not a single final nine-method run."
+}

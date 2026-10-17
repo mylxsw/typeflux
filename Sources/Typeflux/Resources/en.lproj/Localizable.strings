@@ -5943,3 +5943,27 @@
 "system.info.search.tip" = "Try ip, serial, resolution or cycle";
 "system.info.keys.browse" = "↑↓ Choose · ↩ Copy · ⌘1–%d Sections";
 "system.info.keys.search" = "↑↓ Choose · ↩ Copy · esc Clear";
+
+// Per-file durable progress and recovery.
+"semantic.details.state.pending" = "Queued";
+"semantic.details.state.partial" = "Partially indexed";
+"semantic.details.retry" = "Retry this file";
+"semantic.details.retryUnavailable" = "Could not queue this file. Its state or access may have changed.";
+"semantic.details.reason.password" = "Password-protected document. Unlock it before indexing.";
+"semantic.details.reason.unsupported" = "This document format is not supported.";
+"semantic.details.reason.permission" = "File access was denied. Restore permission to continue.";
+"semantic.details.reason.unavailable" = "The file is missing, changed, or unavailable.";
+"semantic.details.reason.emptyText" = "No readable text was found.";
+"semantic.details.reason.emptyMedia" = "No supported media was found.";
+"semantic.details.reason.silent" = "Silent audio was checked and skipped.";
+"semantic.details.reason.encoding" = "Encoding failed. Saved progress is retained.";
+"semantic.details.reason.ocr" = "Text recognition failed. Saved progress is retained.";
+"semantic.details.reason.read" = "Content could not be read. Repair the file and retry.";
+"semantic.details.reason.unknown" = "Processing stopped for an unknown reason.";
+"semantic.details.savedChunks" = "Saved %@ text blocks; %@ encoded";
+"semantic.details.savedOffset" = "Saved text offset: %@ bytes";
+"semantic.details.savedSegments" = "Saved %@ media segments (index may be incomplete)";
+"semantic.details.audioCovered" = "Audio checked through %@s";
+"semantic.details.videoChecked" = "Video checked at %@s";
+"semantic.details.noSavedProgress" = "No saved progress yet";
+"semantic.details.reason.imageNoText" = "Visual content is indexed; no readable text was found.";

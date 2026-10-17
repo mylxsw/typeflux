@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticProcessingRetryTests/.*(broken|media).*|SemanticFileServiceTests/.*irrelevant.*|SemanticFileSearchVisualTests/.*processing.*"
+  ],
+  "wall_seconds": 80.1991798329982,
+  "exit_code": 2
+}

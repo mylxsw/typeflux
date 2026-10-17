@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticProcessingRetryTests|SemanticIndexDetailsTests|SemanticFileServiceTests/(irrelevant events do not rescan and changed files use targeted reconciliation|completedDiscoverySkipsRestartWalkAndManualRescanWalksAgain)|SemanticFileSearchVisualTests/processing details renders an indexed file"
+  ],
+  "wall_seconds": 131.41433629201492,
+  "exit_code": 2
+}

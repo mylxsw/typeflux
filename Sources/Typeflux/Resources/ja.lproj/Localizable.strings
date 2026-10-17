@@ -5829,3 +5829,27 @@
 "system.info.search.tip" = "ip、シリアル、解像度、充放電 などを試してください";
 "system.info.keys.browse" = "↑↓ 選択 · ↩ コピー · ⌘1–%d セクション";
 "system.info.keys.search" = "↑↓ 選択 · ↩ コピー · esc クリア";
+
+// Per-file durable progress and recovery.
+"semantic.details.state.pending" = "待機中";
+"semantic.details.state.partial" = "一部索引済み";
+"semantic.details.retry" = "このファイルを再試行";
+"semantic.details.retryUnavailable" = "キューに追加できません。状態やアクセス権が変わった可能性があります。";
+"semantic.details.reason.password" = "パスワード保護された書類です。解除してから索引してください。";
+"semantic.details.reason.unsupported" = "この書類形式には対応していません。";
+"semantic.details.reason.permission" = "アクセスが拒否されました。権限を復元してください。";
+"semantic.details.reason.unavailable" = "ファイルが見つからないか、変更されたか、利用できません。";
+"semantic.details.reason.emptyText" = "読み取れるテキストがありません。";
+"semantic.details.reason.emptyMedia" = "対応するメディアがありません。";
+"semantic.details.reason.silent" = "無音の音声を確認してスキップしました。";
+"semantic.details.reason.encoding" = "エンコードに失敗しました。保存済みの進捗は保持されています。";
+"semantic.details.reason.ocr" = "文字認識に失敗しました。保存済みの進捗は保持されています。";
+"semantic.details.reason.read" = "内容を読めません。ファイルを修復して再試行してください。";
+"semantic.details.reason.unknown" = "不明な理由で処理が停止しました。";
+"semantic.details.savedChunks" = "テキスト %@ ブロック保存済み、%@ ブロックエンコード済み";
+"semantic.details.savedOffset" = "保存済みテキスト位置：%@ バイト";
+"semantic.details.savedSegments" = "メディア %@ 区間保存済み（索引は未完了の場合があります）";
+"semantic.details.audioCovered" = "音声を %@ 秒まで確認済み";
+"semantic.details.videoChecked" = "映像を %@ 秒の位置まで確認済み";
+"semantic.details.noSavedProgress" = "保存済みの進捗はありません";
+"semantic.details.reason.imageNoText" = "画像の索引は完了しましたが、読み取れる文字はありません。";

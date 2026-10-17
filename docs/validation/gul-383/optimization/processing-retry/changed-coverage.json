@@ -1,0 +1,62 @@
+{
+  "baseline": "3b63419580ea6e01c8187161d903f28ce396ee59",
+  "denominator": "Git added/modified executable Swift lines intersected with LLVM LCOV DA records; line coverage, not branch coverage.",
+  "application": {
+    "covered": 206,
+    "executable": 224,
+    "percent": 91.96
+  },
+  "filesystem_helper": {
+    "covered": 0,
+    "executable": 0,
+    "status": "No source changes"
+  },
+  "native_media_runtime": {
+    "covered": 0,
+    "executable": 0,
+    "status": "No source changes"
+  },
+  "files": {
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift": {
+      "covered": 43,
+      "executable": 43,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ProcessingDetails.swift": {
+      "covered": 82,
+      "executable": 85,
+      "uncovered": [
+        37,
+        38,
+        39
+      ]
+    },
+    "Sources/Typeflux/Settings/SemanticIndexDetailsView.swift": {
+      "covered": 42,
+      "executable": 55,
+      "uncovered": [
+        81,
+        82,
+        182,
+        183,
+        184,
+        198,
+        199,
+        246,
+        247,
+        248,
+        249,
+        250,
+        251
+      ]
+    },
+    "Sources/Typeflux/Settings/SemanticProcessingPresentation.swift": {
+      "covered": 39,
+      "executable": 41,
+      "uncovered": [
+        35,
+        36
+      ]
+    }
+  }
+}

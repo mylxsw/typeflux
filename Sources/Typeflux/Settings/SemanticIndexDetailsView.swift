@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// Paged, read-only view of the durable content-index queue and completed jobs.
+/// Paged view of the durable content-index queue and completed jobs.
 struct SemanticIndexDetailsView: View {
     @ObservedObject var service: SemanticFileSearchService
     @Environment(\.dismiss) private var dismiss
@@ -9,6 +9,8 @@ struct SemanticIndexDetailsView: View {
     @State private var offset = 0
     @State private var page: SemanticFileStore.ProcessingPage?
     @State private var loadFailed = false
+    @State private var retrying: Set<String> = []
+    @State private var retryFailed: Set<String> = []
 
     private static let pageSize = 50
 
@@ -44,7 +46,9 @@ struct SemanticIndexDetailsView: View {
                             } else if let page {
                                 ForEach(page.items.indices, id: \.self) { index in
                                     itemRow(page.items[index])
-                                    if index < page.items.count - 1 { TFDivider() }
+                                    if index < page.items.count - 1 {
+                                        TFDivider()
+                                    }
                                 }
                             } else if loadFailed {
                                 emptyState(L("semantic.details.unavailable"))
@@ -63,13 +67,19 @@ struct SemanticIndexDetailsView: View {
         .frame(width: 780, height: min(680, max(500, (NSScreen.main?.visibleFrame.height ?? 800) - 100)))
         .background(ModelVisualStyle.canvas)
         .onAppear {
-            if service.phase == .ready { section = .completed }
+            if service.phase == .ready {
+                section = .completed
+            }
         }
         .task(id: PageKey(section: section, offset: offset)) {
             while !Task.isCancelled {
                 let next = await service.processingPage(section, offset: offset, limit: Self.pageSize)
                 guard !Task.isCancelled else { return }
-                if let next { page = next; loadFailed = false } else { loadFailed = true }
+                if let next {
+                    page = next; loadFailed = false
+                } else {
+                    page = nil; loadFailed = true
+                }
                 try? await Task.sleep(for: .seconds(3))
             }
         }
@@ -121,7 +131,7 @@ struct SemanticIndexDetailsView: View {
     }
 
     @ViewBuilder private var currentFile: some View {
-        if let path = service.currentProcessingPath, (service.phase == .indexing || service.phase == .paused) {
+        if let path = service.currentProcessingPath, service.phase == .indexing || service.phase == .paused {
             HStack(alignment: .top, spacing: 12) {
                 TFIconTile(systemImage: "doc.text.magnifyingglass", style: .neutral)
                 VStack(alignment: .leading, spacing: 4) {
@@ -145,6 +155,7 @@ struct SemanticIndexDetailsView: View {
         }
     }
 
+    // swiftlint:disable:next function_body_length
     private func itemRow(_ item: SemanticFileStore.ProcessingItem) -> some View {
         HStack(alignment: .top, spacing: 12) {
             TFIconTile(systemImage: symbol(for: item.priority), style: .neutral)
@@ -153,19 +164,46 @@ struct SemanticIndexDetailsView: View {
                     Text(URL(fileURLWithPath: item.path).lastPathComponent)
                         .font(.system(size: 13, weight: .medium)).foregroundStyle(TFColors.textPrimary)
                         .lineLimit(1).truncationMode(.middle)
-                    if section == .completed {
-                        Text(L("semantic.details.state.\(item.state)"))
-                            .font(.system(size: 10)).foregroundStyle(TFColors.textSecondary)
-                    }
+                    Text(L("semantic.details.state.\(item.displayState)"))
+                        .font(.system(size: 10)).foregroundStyle(TFColors.textSecondary)
                 }
                 Text(AskLauncherSearchSettings.abbreviate((item.path as NSString).deletingLastPathComponent))
                     .font(.system(size: 11)).foregroundStyle(TFColors.textTertiary)
                     .lineLimit(1).truncationMode(.middle)
+                if let reason = item.reason {
+                    Text(L(SemanticProcessingPresentation.reasonKey(reason)))
+                        .font(.system(size: 11)).foregroundStyle(TFColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Text(SemanticProcessingPresentation.progress(item))
+                    .font(.system(size: 11)).foregroundStyle(TFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if retryFailed.contains(item.path) {
+                    Text(L("semantic.details.retryUnavailable"))
+                        .font(.system(size: 11)).foregroundStyle(TFColors.textSecondary)
+                }
                 Text(metadata(for: item))
                     .font(.system(size: 11)).foregroundStyle(TFColors.textSecondary)
                     .lineLimit(2)
             }
             Spacer(minLength: 4)
+            if item.canRetry {
+                TFButton(title: L("semantic.details.retry"), kind: .secondary, size: .small) {
+                    retrying.insert(item.path); retryFailed.remove(item.path)
+                    let key = PageKey(section: section, offset: offset)
+                    Task {
+                        let accepted = await service.retryProcessingItem(item)
+                        retrying.remove(item.path)
+                        if !accepted {
+                            retryFailed.insert(item.path)
+                        }
+                        let next = await service.processingPage(key.section, offset: key.offset, limit: Self.pageSize)
+                        guard section == key.section, offset == key.offset else { return }
+                        page = next; loadFailed = next == nil
+                    }
+                }
+                .disabled(retrying.contains(item.path) || !service.canRetryProcessingItem(item))
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 14)
@@ -180,7 +218,9 @@ struct SemanticIndexDetailsView: View {
 
     private func metadata(for item: SemanticFileStore.ProcessingItem) -> String {
         var parts: [String] = []
-        if let bytes = item.bytes { parts.append(SemanticFileSearchStatus.size(bytes)) }
+        if let bytes = item.bytes {
+            parts.append(SemanticFileSearchStatus.size(bytes))
+        }
         if let modified = item.modified {
             parts.append(L("semantic.details.modified", modified.formatted(date: .abbreviated, time: .omitted)))
         }
@@ -200,9 +240,15 @@ struct SemanticIndexDetailsView: View {
 
     private static func duration(_ seconds: TimeInterval) -> String {
         let value = max(0, Int(seconds.rounded()))
-        if seconds < 1 { return "\(max(1, Int((seconds * 1_000).rounded())))ms" }
-        if value < 60 { return "\(value)s" }
-        if value < 3600 { return "\(value / 60)m \(value % 60)s" }
+        if seconds < 1 {
+            return "\(max(1, Int((seconds * 1000).rounded())))ms"
+        }
+        if value < 60 {
+            return "\(value)s"
+        }
+        if value < 3600 {
+            return "\(value / 60)m \(value % 60)s"
+        }
         return "\(value / 3600)h \((value % 3600) / 60)m"
     }
 

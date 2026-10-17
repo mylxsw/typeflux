@@ -107,6 +107,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     private var nextReason: SemanticIndexDiagnostics.Reason = .startup
     private var eventJournal: SemanticIndexEvents?
     private var pendingChanges = SemanticFileChangePlan()
+    private var pendingProcessingRetry = false
     private var documentSource: SemanticIndexPauseGate.Source?
     private var pendingEventID: UInt64 = 0
     private var committedEventID: UInt64 = 0
@@ -273,7 +274,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
             readerAuthorization = readers.authorization()
             embeddingAuthorization = embeddingOwners.authorization()
         }
-        pendingChanges = .init()
+        pendingChanges = .init(); pendingProcessingRetry = false
         pausedIndexing = false; pausedReady = false
         pauseGate.setPaused(backgroundPaused)
         if fingerprint != key || !backgroundPaused {
@@ -502,7 +503,8 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         guard let fingerprint, ownsLifecycle(token, fingerprint: fingerprint) else { return }
         let lifecycle = token
         guard self.phase != .indexing, !self.backgroundPaused,
-              pendingChanges.fullScan || !pendingChanges.files.isEmpty || !pendingChanges.directories.isEmpty ||
+              pendingProcessingRetry || pendingChanges.fullScan || !pendingChanges.files.isEmpty ||
+              !pendingChanges.directories.isEmpty ||
               self.pendingEventID > self.committedEventID else { return }
         self.rescan?.cancel()
         self.rescan = Task { [weak self] in
@@ -521,14 +523,14 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         let paths: [String] = []
         let directories: [String] = []
         let eventID = self.pendingEventID
-        if paths.isEmpty && directories.isEmpty && eventJournal == nil {
+        if paths.isEmpty && directories.isEmpty && eventJournal == nil && !pendingProcessingRetry {
             do {
                 try database.saveEventID(eventID, scope: scope, volumeSignature: volumeSignature)
                 self.committedEventID = eventID
             } catch { self.phase = .failed }
             return
         }
-        pendingChanges = .init()
+        pendingChanges = .init(); pendingProcessingRetry = false
         self.indexProgress = nil
         self.phase = .indexing
         nextReason = .filesystem
@@ -879,12 +881,50 @@ extension SemanticFileSearchService {
 
     func processingPage(_ section: SemanticFileStore.ProcessingSection, offset: Int,
                         limit: Int = 50) async -> SemanticFileStore.ProcessingPage? {
-        guard let database = store else { return nil }
+        guard let database = store, let fingerprint,
+              ownsLifecycle(token, fingerprint: fingerprint) else { return nil }
+        let lifecycle = token
         let page = try? await Task.detached(priority: .utility) {
             try database.processingPage(section, offset: offset, limit: limit)
         }.value
-        guard store === database else { return nil }
+        guard store === database, ownsLifecycle(lifecycle, fingerprint: fingerprint) else { return nil }
         return page
+    }
+
+    func canRetryProcessingItem(_ item: SemanticFileStore.ProcessingItem) -> Bool {
+        guard item.canRetry, supported, preferences.enabled, settings.semanticFileSearch.enabled,
+              settings.askQuickFileSearchEnabled, modelReady, let fingerprint,
+              ownsLifecycle(token, fingerprint: fingerprint),
+              readerAuthorization?.allowsIndexing(in: readers) == true else { return false }
+        let current = SemanticFilePolicy.scope(names: settings.askLauncherSearchSettings, fullDiskAccess: access())
+        return current.includes(item.path, isDirectory: false) && SemanticFilePolicy.allows(item.path)
+    }
+
+    /// Queue one selection without restarting discovery or resetting unrelated generations.
+    func retryProcessingItem(_ item: SemanticFileStore.ProcessingItem) async -> Bool {
+        guard !Task.isCancelled, canRetryProcessingItem(item), let database = store,
+              let fingerprint else { return false }
+        let lifecycle = token
+        let request = AskSearchCancellation()
+        let queued = await withTaskCancellationHandler {
+            (try? await Task.detached(priority: .utility) {
+                try database.retryProcessingItem(item, cancelled: { lifecycle.isCancelled || request.isCancelled })
+            }.value) == true
+        } onCancel: { request.cancel() }
+        guard queued, !Task.isCancelled, store === database,
+              ownsLifecycle(lifecycle, fingerprint: fingerprint), canRetryProcessingItem(item) else { return false }
+        if item.priority == .document, let documentSource {
+            pauseGate.enqueueDocuments([item.path], from: documentSource)
+        }
+        if !backgroundPaused, phase == .ready || phase == .failed, let scope {
+            indexProgress = nil; phase = .indexing; nextReason = .resume
+            pendingProcessingRetry = false
+            beginIndexing(database, scope: scope, token: lifecycle, paths: [])
+        } else {
+            // Retain a wake intent if the current drain already observed an empty queue.
+            pendingProcessingRetry = true
+        }
+        return true
     }
 }
 
