@@ -1,0 +1,34 @@
+{
+  "embeddinggemma-2-Q8_0.gguf": {
+    "sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+    "bytes": 309855456
+  },
+  "mmproj-embeddinggemma-2-Q8_0.gguf": {
+    "sha256": "c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f",
+    "bytes": 554821024
+  },
+  "body.docx": {
+    "sha256": "2d0d541827701dbe17995f50cc812145b92a205c2057a03dcdea43c4d94b5b96",
+    "source": "docs/validation/gul-383/optimization/word-body-slice/synthetic-body.docx"
+  },
+  "scan.pdf": {
+    "sha256": "c7d9901351f439584603f0fe87e3777b3d6301ae14a2415cb34133877fe96000",
+    "source": "docs/validation/gul-383/optimization/content-ocr-slice/synthetic-invoice.pdf"
+  },
+  "probe": {
+    "sha256": "5374efd9fadf1d304baa41a533e108a0d80727c41da058d7ce89dc89f933706a",
+    "bytes": 300288736
+  },
+  "file-helper": {
+    "sha256": "cc72c493008124828f5ac7c473220533c65ab88dad514546d1d0292949a1aa34",
+    "bytes": 266681584
+  },
+  "model-helper": {
+    "sha256": "7a81bd83814276fd1495a9f2bc3c98d56d808fa48987297001e117269616c2ea",
+    "bytes": 11798056
+  },
+  "native-probe": {
+    "sha256": "79ea041d6c8bed82d9c9f5f728a50cfdcac317a7d96cedea763131f50ad042f7",
+    "bytes": 239016
+  }
+}

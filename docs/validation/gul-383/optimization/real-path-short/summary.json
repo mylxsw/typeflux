@@ -1,0 +1,219 @@
+{
+  "complete": true,
+  "runtime_command": {
+    "command": [
+      "RealPathProbe"
+    ],
+    "wall_seconds": 397.1297435830347,
+    "exit_code": 0,
+    "hardware": "arm64",
+    "macos": "26.6.2",
+    "private_root_removed": true,
+    "configuration": "Debug, reused coverage-instrumented PR646 objects; no SwiftPM or product rebuild",
+    "cached_weights_only": true
+  },
+  "wrapper_command": {
+    "command": [
+      "python3",
+      "docs/validation/gul-383/optimization/real-path-short/run_probe.py",
+      "--cache-checkout",
+      "<accepted-cache>",
+      "--model-assets",
+      "<model-cache>",
+      "--resource-seconds",
+      "300",
+      "--native-probe",
+      "<native-probe>",
+      "--documents-only"
+    ],
+    "started_unix": 1792211329.990796,
+    "wall_seconds": 397.235714374925,
+    "exit_code": 0,
+    "samples": 187,
+    "scope": "Same-host reference window and real mixed-file indexing. CPU process time is cumulative; %CPU is lifetime averaged. Owned proc_pid_rusage V2 records sampled physical footprint, physical disk IO and CPU Mach ticks converted using the host timebase; its CPU units were cross-checked against process_time_ns. Unsupported/denied PID reads retain available=false and errno. RSS includes shared resident pages; summed RSS is not unique physical RAM. GPU metrics are best-effort IOAccelerator counters, not energy measurements. No privileged powermetrics, external process arguments, filenames or input contents collected."
+  },
+  "native_entries": [
+    {
+      "draft": "INV-739204",
+      "entry": "mixed",
+      "hits": [
+        {
+          "chunk_id": 3,
+          "has_version": true,
+          "name": "scan.pdf",
+          "page": 2,
+          "score": 3,
+          "snippet": "2\nINVOICE\nInvoice number INV-739204\nPayment due after approval\n2",
+          "source": "pdf-ocr",
+          "time": null
+        }
+      ],
+      "input": "INV-739204",
+      "input_to_layout_ax_ms": 359.15862501133233,
+      "input_to_publish_ms": 296.41275003086776
+    },
+    {
+      "draft": "INV-739204",
+      "entry": "files",
+      "hits": [
+        {
+          "chunk_id": 3,
+          "has_version": true,
+          "name": "scan.pdf",
+          "page": 2,
+          "score": 3,
+          "snippet": "2\nINVOICE\nInvoice number INV-739204\nPayment due after approval\n2",
+          "source": "pdf-ocr",
+          "time": null
+        }
+      ],
+      "input": "INV-739204",
+      "input_to_layout_ax_ms": 117.74104170035571,
+      "input_to_publish_ms": 101.15870833396912
+    }
+  ],
+  "service_queries": [
+    {
+      "found": true,
+      "hits": [
+        {
+          "chunk_id": 1,
+          "has_version": true,
+          "name": "body.docx",
+          "page": null,
+          "score": 3.007625669836998,
+          "snippet": "\u9879\u76ee\u62a5\u9500 INV-682914 & approval\taccepted\nsecond line\nTable body\n\n\n",
+          "source": "docx-body",
+          "time": null
+        }
+      ],
+      "query": "INV-682914",
+      "service_ms": 503.8421666249633,
+      "target": "body.docx"
+    },
+    {
+      "found": true,
+      "hits": [
+        {
+          "chunk_id": 3,
+          "has_version": true,
+          "name": "scan.pdf",
+          "page": 2,
+          "score": 3.0075130915641783,
+          "snippet": "2\nINVOICE\nInvoice number INV-739204\nPayment due after approval\n2",
+          "source": "pdf-ocr",
+          "time": null
+        }
+      ],
+      "query": "INV-739204",
+      "service_ms": 62.3502500820905,
+      "target": "scan.pdf"
+    },
+    {
+      "found": true,
+      "hits": [
+        {
+          "chunk_id": 2,
+          "has_version": true,
+          "name": "scan.pdf",
+          "page": 1,
+          "score": 0.3827035665512086,
+          "snippet": "Project reimbursement handbook",
+          "source": "pdf-text",
+          "time": null
+        },
+        {
+          "chunk_id": 1,
+          "has_version": true,
+          "name": "body.docx",
+          "page": null,
+          "score": 0.3335352182388306,
+          "snippet": "\u9879\u76ee\u62a5\u9500 INV-682914 & approval\taccepted\nsecond line\nTable body\n\n\n",
+          "source": "docx-body",
+          "time": null
+        }
+      ],
+      "query": "How can I get money back for travel?",
+      "service_ms": 67.66699999570847,
+      "target": "body.docx"
+    }
+  ],
+  "file_event": {
+    "hits": [
+      {
+        "chunk_id": 4,
+        "has_version": true,
+        "name": "event.txt",
+        "page": null,
+        "score": 3,
+        "snippet": "Voucher UPDATE-482917 approved for the synthetic project.",
+        "source": "text",
+        "time": null
+      }
+    ],
+    "write_to_matching_service_result_ms": 11658.45929167699
+  },
+  "resource": {
+    "document_window_seconds": 300.0841438333737,
+    "query_layout_ms": {
+      "n": 29,
+      "0.5": 26.610624976456165,
+      "0.95": 30.540791573002934,
+      "0.99": 40.22945824544877,
+      "1": 40.22945824544877
+    },
+    "first_counts": {
+      "files": 3,
+      "chunks": 4
+    },
+    "last_counts": {
+      "files": 28,
+      "chunks": 17
+    },
+    "final_counts": {
+      "final_files": 28,
+      "final_chunks": 17
+    },
+    "scope": "Small document-only window; mixed entry repeats one exact OCR query. Asynchronous service counters can differ from final database counts. Backlog not drained; no general throughput or long stability conclusion."
+  },
+  "independent_native": {
+    "seconds": 300.0012597499881,
+    "expected_ids": 299,
+    "observed_ids": 299,
+    "contiguous_ids": true,
+    "missing_handlers": 0,
+    "missing_windowserver": 0,
+    "handler_ms": {
+      "n": 299,
+      "0.5": 2.066874993033707,
+      "0.95": 12.607166776433587,
+      "0.99": 41.66266671381891,
+      "1": 236.25166667625308
+    },
+    "windowserver_ms": {
+      "n": 299,
+      "0.5": 16.02908328641206,
+      "0.95": 28.367249993607402,
+      "0.99": 58.32508334424347,
+      "1": 256.52612501289696
+    },
+    "producer_delay_ms": {
+      "n": 299,
+      "0.5": 0.7606250001117587,
+      "0.95": 1.1688333470374346,
+      "0.99": 1.1835417244583368,
+      "1": 1.188750029541552
+    },
+    "metal_presented_samples": 0,
+    "capture_error": null,
+    "scope": "Producer emits IDs1..ceil(seconds)-1. Own-window compositor observation, separate from query result drawing and physical monitor scanout."
+  },
+  "resources": {
+    "samples": 187,
+    "peak_owned_rss_sum_bytes": 1652129792,
+    "pressure_values": [
+      "kern.memorystatus_vm_pressure_level: 2"
+    ],
+    "scope": "Sampled RSS sums include shared pages. Whole wrapper includes preparation, initial indexing and cleanup; this is not unique RAM or energy."
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "cleaned_up" : true,
+  "complete" : false,
+  "error" : "ProbeFailure(message: \"Timeout: native result\")",
+  "initial_chunks" : 0,
+  "initial_files" : 0,
+  "initial_index_ms" : 2257.7958749607205,
+  "phase" : "ready",
+  "queries" : [
+    {
+      "found" : false,
+      "hits" : [
+
+      ],
+      "query" : "INV-682914",
+      "service_ms" : 643.10087496414781,
+      "target" : "body.docx"
+    },
+    {
+      "found" : false,
+      "hits" : [
+
+      ],
+      "query" : "INV-739204",
+      "service_ms" : 64.092541695572436,
+      "target" : "scan.pdf"
+    },
+    {
+      "found" : false,
+      "hits" : [
+
+      ],
+      "query" : "ERR-739204",
+      "service_ms" : 60.236041666939855,
+      "target" : "screen.png"
+    },
+    {
+      "found" : false,
+      "hits" : [
+
+      ],
+      "query" : "red screen",
+      "service_ms" : 64.124166616238654,
+      "target" : "scene.mov"
+    }
+  ],
+  "scope" : "Synthetic fixed fixtures; real pinned text\/media embeddings, production FSEvents\/index\/service and native editor\/layout. Debug, small corpus; excludes physical HID and compositor fence, release\/large-scale\/long stability.",
+  "wall_seconds" : 44.882675791624933
+}

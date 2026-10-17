@@ -1,0 +1,5 @@
+{
+  "media_tool_reconstruction_matches_compiled_source": true,
+  "first_hidden_tool": "Reconstructed preceding source; no source-digest record was retained for this first failed fixture run. Runtime binary digest and raw failure remain.",
+  "build_history_limitation": "First successful probe-only compile/link took 2.01798+8.24875 seconds; its command JSON was overwritten by the guard-only probe build before archiving. These durations are tool-return observations, not retained raw command JSON."
+}

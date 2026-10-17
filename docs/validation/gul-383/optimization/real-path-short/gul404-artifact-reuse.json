@@ -1,0 +1,10 @@
+{
+  "matches": {
+    "model-helper": true,
+    "embeddinggemma-2-Q8_0.gguf": true,
+    "mmproj-embeddinggemma-2-Q8_0.gguf": true,
+    "native-probe": true
+  },
+  "source_provenance": "ranking-scale/final-integration-short/provenance.json",
+  "all_matched": true
+}

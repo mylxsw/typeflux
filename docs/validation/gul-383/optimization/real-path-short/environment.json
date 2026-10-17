@@ -1,0 +1,8 @@
+{
+  "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0",
+  "xcode": "Xcode 27.1\nBuild version 27A9275",
+  "hardware": "Apple M4",
+  "memory_bytes": 17179869184,
+  "base": "7590c7df66091c813c5913aab25d06f378a99356",
+  "configuration": "Reused PR646 Debug objects; real helper uses its frozen Release build"
+}

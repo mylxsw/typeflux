@@ -1,0 +1,86 @@
+{
+  "observed_unix": 1792211502.710672,
+  "rows": [
+    {
+      "name": "body.docx",
+      "text_sha256": "40e3235edd8deec8205153ed7bf0cb3bec0e05ba6e38993b24c6179b7c134efa",
+      "vector_bytes": 3072,
+      "vector_sha256": "c67bdec33149f0763ddf52d81704658ca19f826aab89d47989f3c03c6d9498ee",
+      "segment_kind": "docx-body"
+    },
+    {
+      "name": "scan.pdf",
+      "text_sha256": "642f02ca3ac5b89da21a44c8bbecc11d9162804291761ac35acd0efaa694842b",
+      "vector_bytes": 3072,
+      "vector_sha256": "43547fa857aea63ecf73c1612360709a2f64367e42d8ceceb32bf8d60bfab336",
+      "segment_kind": "pdf-text"
+    },
+    {
+      "name": "scan.pdf",
+      "text_sha256": "600d032a567937d6e82997e2277a1704bc14ac97f8160c58454e0981d25915bb",
+      "vector_bytes": 3072,
+      "vector_sha256": "0d359e14210a04207b337f36756db5c1c07de6cb9b953fb2fe15506fcf66f23f",
+      "segment_kind": "pdf-ocr"
+    },
+    {
+      "name": "event.txt",
+      "text_sha256": "8b381e8bf25643a4be0ad8cce5db7eb9276041f58bf7bff89dde0146e969bd44",
+      "vector_bytes": 3072,
+      "vector_sha256": "7293407c9b5f049d2ac0d8168f27848d6385fecc490874ddd5658eae143096bc",
+      "segment_kind": "text"
+    },
+    {
+      "name": "background-0.txt",
+      "text_sha256": "61f9013087f52b49b2c92fb19aac01c8113593860b9e1006d8fc2e529d4dc976",
+      "vector_bytes": 3072,
+      "vector_sha256": "03c7cd04e80069f0cca87bf1885be000fc8d4aed967a7d9df4d1a1fb1ee7fb9d",
+      "segment_kind": "text"
+    },
+    {
+      "name": "background-3.txt",
+      "text_sha256": "c2cfb2bb9d4861d49381f07f4d593b711b14ed8368cba4ceb4f1519b1a9cad9e",
+      "vector_bytes": 3072,
+      "vector_sha256": "5ecb3625ba8d8b7c1acfdc813863d12a37e27d2131d8492c0e752fba99d36e8e",
+      "segment_kind": "text"
+    },
+    {
+      "name": "background-2.txt",
+      "text_sha256": "864f4e457876cbbe03db315173d91c863cdc4d6c159eb80132de75df29874591",
+      "vector_bytes": 0,
+      "vector_sha256": null,
+      "segment_kind": "text"
+    }
+  ],
+  "jobs": [
+    [
+      "body.docx",
+      "done",
+      null
+    ],
+    [
+      "scan.pdf",
+      "done",
+      null
+    ],
+    [
+      "event.txt",
+      "done",
+      null
+    ],
+    [
+      "background-0.txt",
+      "done",
+      null
+    ],
+    [
+      "background-3.txt",
+      "done",
+      null
+    ],
+    [
+      "background-2.txt",
+      "partial",
+      null
+    ]
+  ]
+}
