@@ -493,6 +493,77 @@ final class ScreenshotCoordinatorTests: XCTestCase {
         XCTAssertTrue(output.copied.isEmpty)
     }
 
+    func testBeautifiedCopyAndSaveUseTheSameRetinaComposition() async throws {
+        let sut = makeCoordinator()
+        await started(sut)
+        let beauty = ScreenshotBeautification(isEnabled: true, background: .mint, padding: 10, cornerRadius: 8, shadow: 0)
+        overlay.onEvent?(.finish(.copyAndSave, displayID: 1, rect: CGRect(x: 10, y: 20, width: 50, height: 30),
+                                 beautification: beauty))
+        await sut.pendingTask?.value
+        XCTAssertEqual(output.copied, [Data("140x100@2".utf8)])
+        XCTAssertEqual(try XCTUnwrap(output.saved.first).png, output.copied.first)
+        XCTAssertEqual(sut.state, .idle)
+    }
+
+    func testBeautificationComposesTheCutoutBeforeDelivery() async {
+        overlay.foreground = ScreenCaptureTestSupport.image(width: 100, height: 60, gray: 1)
+        let sut = makeCoordinator(encode: { image, _ in
+            let center = ScreenshotMagnifier.color(of: image, at: CGPoint(x: image.width / 2, y: image.height / 2))
+            return Data("\(image.width)x\(image.height):\(center?.hex ?? "none")".utf8)
+        })
+        await started(sut)
+        let beauty = ScreenshotBeautification(isEnabled: true, background: .charcoal, padding: 10,
+                                              cornerRadius: 8, shadow: 0)
+        overlay.onEvent?(.finish(.copyAndSave, displayID: 1, rect: CGRect(x: 10, y: 20, width: 50, height: 30),
+                                 beautification: beauty))
+        await sut.pendingTask?.value
+        XCTAssertEqual(output.copied, [Data("140x100:#FFFFFF".utf8)])
+        XCTAssertEqual(output.saved.first?.png, output.copied.first)
+    }
+
+    func testBeautifiedFollowUpReceivesTheRedactedImage() async throws {
+        let sut = makeCoordinator()
+        sut.followUpHandler = followUps
+        await started(sut)
+        let region = CGRect(x: 10, y: 20, width: 50, height: 30)
+        let cover = ScreenshotAnnotation(kind: .mosaic(ScreenshotMosaic(shape: .rect(region), effect: .solid)),
+                                         style: ScreenshotAnnotationStyle(color: .white))
+        let beauty = ScreenshotBeautification(isEnabled: true, background: .charcoal, padding: 10,
+                                              cornerRadius: 8, shadow: 0)
+        overlay.onEvent?(.finish(.followUp(.askAI), displayID: 1, rect: region, annotations: [cover],
+                                 beautification: beauty))
+        let handed = try XCTUnwrap(followUps.handled.first?.image)
+        XCTAssertEqual(handed.pixelSize, CGSize(width: 140, height: 100))
+        XCTAssertEqual(ScreenshotMagnifier.color(of: handed.image, at: CGPoint(x: 70, y: 50))?.hex, "#FFFFFF")
+        XCTAssertTrue(output.copied.isEmpty)
+        XCTAssertEqual(sut.state, .idle)
+    }
+
+    func testBeautifiedPinFitsTheExpandedImageWithoutDistortion() async throws {
+        let sut = makeCoordinator()
+        defer { sut.pins.closeAll() }
+        await started(sut)
+        let beauty = ScreenshotBeautification(isEnabled: true, padding: 10)
+        overlay.onEvent?(.finish(.pin, displayID: 1, rect: CGRect(x: 10, y: 20, width: 50, height: 30),
+                                 beautification: beauty))
+        let pins = try XCTUnwrap(sut.pins as? ScreenshotPinController)
+        let panel = try XCTUnwrap(pins.panels.first)
+        XCTAssertEqual(panel.frame.size, CGSize(width: 70, height: 50))
+        XCTAssertEqual(pins.views.first?.imageSize, CGSize(width: 70, height: 50))
+        XCTAssertEqual(sut.state, .idle)
+    }
+
+    func testLongImageExportsWithBeautification() async throws {
+        let sut = await scrolling()
+        scrollCaptures[0].onFinish?(.finished(ScreenCaptureTestSupport.image(width: 200, height: 900), .reachedEnd))
+        let display = try XCTUnwrap(longEditor.presented.first?.display)
+        let beauty = ScreenshotBeautification(isEnabled: true, padding: 10)
+        longEditor.onEvent?(.finish(.copy, displayID: 1, rect: display.frame, beautification: beauty))
+        await sut.pendingTask?.value
+        XCTAssertEqual(output.copied, [Data("240x940@2".utf8)])
+        XCTAssertEqual(sut.state, .idle)
+    }
+
     func testCopyDeliversTheImageWithItsMosaicsApplied() async {
         // The encoder reports the center pixel, so the test sees what would reach the clipboard.
         let sut = makeCoordinator(encode: { image, _ in

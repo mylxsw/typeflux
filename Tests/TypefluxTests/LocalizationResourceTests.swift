@@ -500,6 +500,9 @@ extension LocalizationResourceTests {
         keys += ScreenshotAnnotationEditor.MosaicShape.allCases.map { "screenshot.mosaic.shape.\($0.rawValue)" }
         keys += ScreenshotMosaic.Effect.allCases.map { "screenshot.mosaic.effect.\($0.rawValue)" }
         keys += ["", ".low", ".medium", ".high"].map { "screenshot.mosaic.strength\($0)" }
+        keys += ["title", "enabled", "preview", "failed", "background", "padding", "radius", "shadow",
+                 "reset", "cancel", "apply"].map { "screenshot.beautify.\($0)" }
+        keys += ScreenshotBeautification.Background.allCases.map { "screenshot.beautify.background.\($0.rawValue)" }
         for language in AppLanguage.allCases {
             let bundle = try localizationBundle(for: language)
             let tableURL = try XCTUnwrap(bundle.url(forResource: "Localizable", withExtension: "strings"))

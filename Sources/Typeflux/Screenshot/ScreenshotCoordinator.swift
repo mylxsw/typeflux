@@ -167,8 +167,8 @@ final class ScreenshotCoordinator {
             guard state == .selecting || state == .editing else { return }
             output.copy(text: hex)
             toast.show(.colorCopied(hex))
-        case let .finish(action, displayID, rect, annotations):
-            finish(action, displayID: displayID, rect: rect, annotations: annotations)
+        case let .finish(action, displayID, rect, annotations, beautification):
+            finish(action, displayID: displayID, rect: rect, annotations: annotations, beautification: beautification)
         }
     }
 
@@ -222,7 +222,7 @@ final class ScreenshotCoordinator {
     }
 
     private func finish(_ action: ScreenshotOutputAction, displayID: CGDirectDisplayID, rect: CGRect,
-                        annotations: [ScreenshotAnnotation]) {
+                        annotations: [ScreenshotAnnotation], beautification: ScreenshotBeautification = .init()) {
         guard state == .selecting || state == .editing || state == .editingLongImage,
               let display = snapshot?.display(id: displayID) else { return }
         if action == .record {
@@ -235,12 +235,14 @@ final class ScreenshotCoordinator {
         let image: CGImage
         do {
             // Only the rendered image leaves the overlay, so nothing under a mosaic is ever copied or saved.
+            let base: CGImage
             if let foreground = overlay.backgroundRemovedImage(displayID: displayID, rect: rect) {
                 let processed = ScreenSnapshot.Display(id: display.id, frame: rect, scale: display.scale, image: foreground)
-                image = try render(processed, rect, annotations)
+                base = try render(processed, rect, annotations)
             } else {
-                image = try render(display, rect, annotations)
+                base = try render(display, rect, annotations)
             }
+            image = try ScreenshotBeautificationRenderer.render(base, scale: display.scale, settings: beautification)
         } catch {
             teardown()
             toast.show(.failed)
@@ -249,8 +251,13 @@ final class ScreenshotCoordinator {
         if action == .pin {
             // A long image has no place on screen to pin to; the long image editor offers no pin.
             guard state != .editingLongImage else { return }
+            let pinRect = beautification.isEnabled
+                ? CGRect(x: rect.midX - CGFloat(image.width) / display.scale / 2,
+                         y: rect.midY - CGFloat(image.height) / display.scale / 2,
+                         width: CGFloat(image.width) / display.scale, height: CGFloat(image.height) / display.scale)
+                : rect
             teardown()
-            pins.pin(image, scale: display.scale, at: rect) { [weak self] event in self?.handlePin(event) }
+            pins.pin(image, scale: display.scale, at: pinRect) { [weak self] event in self?.handlePin(event) }
             return
         }
         if case let .followUp(followUp) = action {

@@ -13,6 +13,7 @@ final class ScreenshotEditorToolbarModel {
         var hasRemovedBackground = false
         var backgroundNoticeKey: String?
         var tool: ScreenshotAnnotationTool?
+        var isBeautified = false
         /// Whose options the second row shows: the selected annotation's tool, else the picked one.
         var optionsTool: ScreenshotAnnotationTool?
         /// The selected annotation's style, else the picked tool's.
@@ -57,6 +58,7 @@ final class ScreenshotEditorToolbarModel {
              showsScrollCapture: Bool = true, canScrollCapture: Bool = true, showsPin: Bool = true,
              showsMoreMenu: Bool = false, canShowSensitivePanel: Bool = false, showsSensitivePanel: Bool = false, mosaicPreparation: ScreenshotMosaicPreparation.State = .idle) {
             let mosaic = editor.selected?.mosaic
+            isBeautified = editor.beautification.isEnabled
             tool = editor.tool
             optionsTool = editor.optionsTool
             style = editor.shownStyle ?? editor.style
@@ -92,6 +94,8 @@ final class ScreenshotEditorToolbarModel {
     }
 
     enum Action: Equatable {
+        case beautify
+        case beautification(ScreenshotBeautification)
         case tool(ScreenshotAnnotationTool)
         case color(ScreenshotAnnotationStyle.Color)
         case size(CGFloat)
@@ -344,6 +348,11 @@ struct ScreenshotEditorToolbar: View {
                 followUpButton(followUp)
             }
             separator
+            iconButton("photo.artframe", help: L("screenshot.beautify.title"), isOn: state.isBeautified) {
+                perform(.beautify)
+            }
+            .accessibilityLabel(L("screenshot.beautify.title"))
+            .accessibilityIdentifier("screenshot.beautify")
             iconButton("square.and.arrow.down", help: "\(L("screenshot.edit.save"))  ⌘S") { perform(.save) }
             iconButton("ellipsis", help: L("screenshot.edit.more"), isOn: state.showsMoreMenu) {
                 perform(.toggleMoreMenu)

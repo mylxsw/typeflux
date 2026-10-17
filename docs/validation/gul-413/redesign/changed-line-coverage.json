@@ -1,0 +1,27 @@
+{
+  "baseline": "b98cb1e540fc0318fece06b9914eea82f4dad641",
+  "denominator": "Added/modified executable Swift lines in Sources/Typeflux since the pre-redesign commit, intersected with LLVM LCOV DA records. Tests and unchanged production lines excluded.",
+  "executable": 182,
+  "covered": 172,
+  "percent": 94.51,
+  "files": {
+    "Sources/Typeflux/Screenshot/ScreenshotBeautificationPanel.swift": {
+      "executable": 182,
+      "covered": 172,
+      "percent": 94.51,
+      "uncovered": [
+        61,
+        64,
+        65,
+        66,
+        67,
+        166,
+        167,
+        168,
+        169,
+        170
+      ]
+    }
+  },
+  "profile_scope": "Final successful ScreenshotBeautificationViewTests/testPaletteSlidersToggleAndActionsWorkThroughNativeAccessibility retry only; earlier profiles are not merged."
+}

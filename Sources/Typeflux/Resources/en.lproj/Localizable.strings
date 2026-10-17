@@ -5816,6 +5816,26 @@
 "ask.quick.file.pdf.quickLook" = "Quick Look shows the original PDF without a page jump. Use View Match Location in Typeflux.";
 "ask.quick.file.pdf.preview" = "Open and Quick Look use the original PDF. Check the match location here when available.";
 
+// Screenshot beautification
+"screenshot.beautify.title" = "Beautify Screenshot";
+"screenshot.beautify.enabled" = "Enable";
+"screenshot.beautify.preview" = "Preview";
+"screenshot.beautify.failed" = "Unable to render this image.";
+"screenshot.beautify.background" = "Background";
+"screenshot.beautify.padding" = "Padding";
+"screenshot.beautify.radius" = "Corners";
+"screenshot.beautify.shadow" = "Shadow";
+"screenshot.beautify.reset" = "Reset";
+"screenshot.beautify.cancel" = "Cancel";
+"screenshot.beautify.apply" = "Apply";
+"screenshot.beautify.background.transparent" = "Transparent";
+"screenshot.beautify.background.white" = "White";
+"screenshot.beautify.background.charcoal" = "Charcoal";
+"screenshot.beautify.background.sky" = "Sky";
+"screenshot.beautify.background.mint" = "Mint";
+"screenshot.beautify.background.sunset" = "Sunset";
+"screenshot.beautify.background.lavender" = "Lavender";
+
 // Screenshot background removal
 "screenshot.background.remove" = "Remove Background";
 "screenshot.background.restore" = "Restore Background";
