@@ -1,0 +1,5 @@
+{
+  "error": "Path.relative_to ValueError for quoted Atomics.build/Unmanaged extensions.swift.o link-file entry",
+  "failed_phase": "Additional final linked-object inventory, after the successful unchanged-input comparison",
+  "correction": "Parse the linker list quoting with shlex.split before Path normalization. No build or native request rerun."
+}

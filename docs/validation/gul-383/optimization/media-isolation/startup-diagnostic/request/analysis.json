@@ -1,0 +1,105 @@
+{
+  "per_pid": {
+    "34155": {
+      "first_seen_seconds": 0.004658584017306566,
+      "last_seen_seconds": 15.422630917048082,
+      "observed_wall_seconds": 15.417972333030775,
+      "first_cpu_seconds": 0.0,
+      "maximum_cpu_seconds": 0.42,
+      "cpu_progress_seconds": 0.42,
+      "maximum_rss_kib": 42464,
+      "sampled_states": {
+        "Ss": 42,
+        "Us": 2
+      },
+      "comm": "<repo>/.build/startup-diagnostic/MediaProbe",
+      "state_transitions": [
+        {
+          "seconds": 0.004658584017306566,
+          "state": "Ss",
+          "cpu": "0:00.00"
+        },
+        {
+          "seconds": 3.781743042054586,
+          "state": "Us",
+          "cpu": "0:00.02"
+        },
+        {
+          "seconds": 4.058271834044717,
+          "state": "Ss",
+          "cpu": "0:00.05"
+        },
+        {
+          "seconds": 4.335852542077191,
+          "state": "Us",
+          "cpu": "0:00.12"
+        },
+        {
+          "seconds": 4.616644542082213,
+          "state": "Ss",
+          "cpu": "0:00.20"
+        }
+      ]
+    },
+    "34203": {
+      "first_seen_seconds": 6.338876459049061,
+      "last_seen_seconds": 15.422630917048082,
+      "observed_wall_seconds": 9.08375445799902,
+      "first_cpu_seconds": 0.0,
+      "maximum_cpu_seconds": 0.93,
+      "cpu_progress_seconds": 0.93,
+      "maximum_rss_kib": 562032,
+      "sampled_states": {
+        "T": 19,
+        "R": 3
+      },
+      "comm": "<repo>/.build/media-isolation/TypefluxSemanticHelper-coverage",
+      "state_transitions": [
+        {
+          "seconds": 6.338876459049061,
+          "state": "T",
+          "cpu": "0:00.00"
+        },
+        {
+          "seconds": 11.961184250074439,
+          "state": "R",
+          "cpu": "0:00.58"
+        },
+        {
+          "seconds": 12.246426417026669,
+          "state": "T",
+          "cpu": "0:00.61"
+        },
+        {
+          "seconds": 13.107808125088923,
+          "state": "R",
+          "cpu": "0:00.71"
+        },
+        {
+          "seconds": 13.395770459086634,
+          "state": "T",
+          "cpu": "0:00.73"
+        },
+        {
+          "seconds": 14.839961292105727,
+          "state": "R",
+          "cpu": "0:00.87"
+        },
+        {
+          "seconds": 15.126720834057778,
+          "state": "T",
+          "cpu": "0:00.90"
+        }
+      ]
+    }
+  },
+  "request_wall_seconds": 9.144463541684672,
+  "request_budget_yield_seconds": 8.139,
+  "request_wall_minus_budget_yields_seconds": 1.005463541684673,
+  "yield_rounding_error_bound_seconds": 0.0445,
+  "qualification": "Wall minus budget yields is time outside deliberate sleeps, not scheduled CPU or native compute duration. Includes polling, I/O and scheduling. Release/trace overhead around the final counter is not separated.",
+  "request_yields": 89,
+  "vector_validity": "768 finite Float values with squared L2 norm within 0.02 of 1 (production validator).",
+  "successful_stack_samples": 0,
+  "sampling_limitation": "The single 1-second sample command timed out at 3 seconds; no current helper stage is inferred from it."
+}

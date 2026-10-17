@@ -1,0 +1,1573 @@
+{
+  "limitations": [
+    "Original process sampling is roughly once per second. T sample counts are not paused durations.",
+    "Original traces do not record budget counters or each SIGSTOP/SIGCONT. Exact effective wall time is unavailable.",
+    "Trace seconds start inside the probe; process seconds start in the runner, before probe startup. No exact clock alignment is inferred.",
+    "CPU TIME is cumulative scheduled CPU (0.01 s resolution), not allowed-running wall time or proof of a hardware cause.",
+    "One-second stack samples only identify the sampled stage, not every stage occupied during the attempt."
+  ],
+  "attempts": {
+    "screenshot-fixed": {
+      "command_wall_seconds": 183.03123824996874,
+      "exit_code": 1,
+      "complete": false,
+      "per_pid": {
+        "76267": {
+          "first_seen_seconds": 1.5854736670153216,
+          "last_seen_seconds": 182.82469658297487,
+          "observed_wall_seconds": 181.23922291595954,
+          "first_cpu_seconds": 0.0,
+          "maximum_cpu_seconds": 2.16,
+          "cpu_progress_seconds": 2.16,
+          "maximum_rss_kib": 57888,
+          "sampled_states": {
+            "Ss": 172,
+            "Us": 1,
+            "Rs": 2
+          },
+          "comm": "<repo>/.build/media-isolation/MediaProbe",
+          "state_transitions": [
+            {
+              "seconds": 1.5854736670153216,
+              "state": "Ss",
+              "cpu": "0:00.00"
+            },
+            {
+              "seconds": 2.6260590829188004,
+              "state": "Us",
+              "cpu": "0:00.19"
+            },
+            {
+              "seconds": 3.6644849999574944,
+              "state": "Ss",
+              "cpu": "0:00.32"
+            },
+            {
+              "seconds": 26.554260666947812,
+              "state": "Rs",
+              "cpu": "0:01.06"
+            },
+            {
+              "seconds": 27.58787124999799,
+              "state": "Ss",
+              "cpu": "0:01.07"
+            },
+            {
+              "seconds": 125.60417533293366,
+              "state": "Rs",
+              "cpu": "0:01.68"
+            },
+            {
+              "seconds": 126.64268225000706,
+              "state": "Ss",
+              "cpu": "0:01.68"
+            }
+          ]
+        },
+        "76279": {
+          "first_seen_seconds": 5.756248249905184,
+          "last_seen_seconds": 181.8036635830067,
+          "observed_wall_seconds": 176.04741533310153,
+          "first_cpu_seconds": 0.09,
+          "maximum_cpu_seconds": 0.1,
+          "cpu_progress_seconds": 0.010000000000000009,
+          "maximum_rss_kib": 37600,
+          "sampled_states": {
+            "T": 1,
+            "S": 169
+          },
+          "comm": "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux",
+          "state_transitions": [
+            {
+              "seconds": 5.756248249905184,
+              "state": "T",
+              "cpu": "0:00.09"
+            },
+            {
+              "seconds": 6.7950727079296485,
+              "state": "S",
+              "cpu": "0:00.10"
+            }
+          ]
+        },
+        "76300": {
+          "first_seen_seconds": 10.977563582942821,
+          "last_seen_seconds": 181.8036635830067,
+          "observed_wall_seconds": 170.8261000000639,
+          "first_cpu_seconds": 0.0,
+          "maximum_cpu_seconds": 11.69,
+          "cpu_progress_seconds": 11.69,
+          "maximum_rss_kib": 770160,
+          "sampled_states": {
+            "T": 140,
+            "R": 13,
+            "S": 2,
+            "U": 10
+          },
+          "comm": "<repo>/.build/media-isolation/TypefluxSemanticHelper-coverage",
+          "state_transitions": [
+            {
+              "seconds": 10.977563582942821,
+              "state": "T",
+              "cpu": "0:00.00"
+            },
+            {
+              "seconds": 16.16032937495038,
+              "state": "R",
+              "cpu": "0:00.42"
+            },
+            {
+              "seconds": 17.199278166983277,
+              "state": "S",
+              "cpu": "0:00.52"
+            },
+            {
+              "seconds": 18.23874029191211,
+              "state": "T",
+              "cpu": "0:00.64"
+            },
+            {
+              "seconds": 27.58787124999799,
+              "state": "U",
+              "cpu": "0:01.19"
+            },
+            {
+              "seconds": 31.745184666942805,
+              "state": "T",
+              "cpu": "0:01.19"
+            },
+            {
+              "seconds": 41.09143333300017,
+              "state": "U",
+              "cpu": "0:01.20"
+            },
+            {
+              "seconds": 44.21030937496107,
+              "state": "T",
+              "cpu": "0:01.20"
+            },
+            {
+              "seconds": 60.850403041928075,
+              "state": "U",
+              "cpu": "0:01.21"
+            },
+            {
+              "seconds": 63.97312608291395,
+              "state": "T",
+              "cpu": "0:01.21"
+            },
+            {
+              "seconds": 94.49139829201158,
+              "state": "R",
+              "cpu": "0:02.36"
+            },
+            {
+              "seconds": 96.56382120796479,
+              "state": "T",
+              "cpu": "0:02.59"
+            },
+            {
+              "seconds": 105.83027099992614,
+              "state": "R",
+              "cpu": "0:03.56"
+            },
+            {
+              "seconds": 106.87755500001367,
+              "state": "T",
+              "cpu": "0:03.67"
+            },
+            {
+              "seconds": 116.24678287492134,
+              "state": "R",
+              "cpu": "0:04.67"
+            },
+            {
+              "seconds": 118.32290137500968,
+              "state": "T",
+              "cpu": "0:04.89"
+            },
+            {
+              "seconds": 119.36487241694704,
+              "state": "S",
+              "cpu": "0:05.00"
+            },
+            {
+              "seconds": 120.41058437491301,
+              "state": "T",
+              "cpu": "0:05.12"
+            },
+            {
+              "seconds": 128.72670624998864,
+              "state": "R",
+              "cpu": "0:06.02"
+            },
+            {
+              "seconds": 129.76525991701055,
+              "state": "T",
+              "cpu": "0:06.14"
+            },
+            {
+              "seconds": 142.26164945797063,
+              "state": "R",
+              "cpu": "0:07.47"
+            },
+            {
+              "seconds": 143.30328537500463,
+              "state": "T",
+              "cpu": "0:07.60"
+            },
+            {
+              "seconds": 150.61130195797887,
+              "state": "R",
+              "cpu": "0:08.40"
+            },
+            {
+              "seconds": 154.76227774994913,
+              "state": "T",
+              "cpu": "0:08.86"
+            },
+            {
+              "seconds": 173.4767142079072,
+              "state": "R",
+              "cpu": "0:10.82"
+            },
+            {
+              "seconds": 174.5187549169641,
+              "state": "T",
+              "cpu": "0:10.92"
+            }
+          ]
+        }
+      },
+      "trace": [
+        {
+          "seconds": 0.0889497083844617,
+          "stage": "service-enable"
+        },
+        {
+          "seconds": 0.19575391663238406,
+          "stage": "model-verify-begin"
+        },
+        {
+          "seconds": 2.574862083303742,
+          "stage": "model-verify-end"
+        },
+        {
+          "seconds": 3.627167124999687,
+          "stage": "projector-verify-begin"
+        },
+        {
+          "seconds": 7.818628166685812,
+          "stage": "projector-verify-end"
+        },
+        {
+          "seconds": 7.818906291737221,
+          "stage": "media-worker-created"
+        },
+        {
+          "end_time": null,
+          "input": "image.jpg",
+          "kind": "image",
+          "seconds": 7.818998000002466,
+          "stage": "media-request",
+          "time": null
+        },
+        {
+          "duration": false,
+          "milliseconds": 0.03900006413459778,
+          "seconds": 7.819103916641325,
+          "stage": "helper-helper-launch"
+        },
+        {
+          "seconds": 180.6427292500157,
+          "stage": "index-observation-ended"
+        },
+        {
+          "error": "CancellationError()",
+          "seconds": 180.67081495840102,
+          "stage": "media-error"
+        },
+        {
+          "seconds": 180.84288654173724,
+          "stage": "service-cleared"
+        }
+      ],
+      "service_state_transitions": [
+        {
+          "phase": "preparing",
+          "waiting": null,
+          "pressure": 1,
+          "seconds": 0.09277604171074927
+        },
+        {
+          "phase": "indexing",
+          "waiting": null,
+          "pressure": 1,
+          "seconds": 3.293601041659713
+        }
+      ],
+      "sampled_stages": {
+        "helper-sample.txt.gz": [
+          "Process:         TypefluxSemanticHelper-coverage [76300]",
+          "Parent Process:  MediaProbe [76267]",
+          "Date/Time:       2026-10-17 12:59:31.702 +0800",
+          "Launch Time:     2026-10-17 12:56:50.385 +0800",
+          "770 Encoder.embedMedia(_:)  (in TypefluxSemanticHelper-coverage) + 1076  [0x104dce30c]",
+          "770 clip_image_batch_encode(clip_ctx*, int, clip_image_f32_batch const*, std::vector<float>&)  (in TypefluxSemanticHelper-coverage) + 72  [0x104e6cbe0]",
+          "770 ggml_graph_compute  (in TypefluxSemanticHelper-coverage) + 444  [0x10511aad4]",
+          "770 ggml_graph_compute_thread  (in TypefluxSemanticHelper-coverage) + 1328  [0x10511b860]"
+        ]
+      }
+    },
+    "audio-fixed": {
+      "command_wall_seconds": 184.351058500004,
+      "exit_code": 1,
+      "complete": false,
+      "per_pid": {
+        "80650": {
+          "first_seen_seconds": 1.656363874906674,
+          "last_seen_seconds": 183.141654041945,
+          "observed_wall_seconds": 181.48529016703833,
+          "first_cpu_seconds": 0.0,
+          "maximum_cpu_seconds": 2.48,
+          "cpu_progress_seconds": 2.48,
+          "maximum_rss_kib": 57152,
+          "sampled_states": {
+            "Rs": 7,
+            "Ss": 137,
+            "Us": 18
+          },
+          "comm": "<repo>/.build/media-isolation/MediaProbe",
+          "state_transitions": [
+            {
+              "seconds": 1.656363874906674,
+              "state": "Rs",
+              "cpu": "0:00.00"
+            },
+            {
+              "seconds": 2.6967052499530837,
+              "state": "Ss",
+              "cpu": "0:00.20"
+            },
+            {
+              "seconds": 12.012172249960713,
+              "state": "Rs",
+              "cpu": "0:00.59"
+            },
+            {
+              "seconds": 13.058098124922253,
+              "state": "Ss",
+              "cpu": "0:00.70"
+            },
+            {
+              "seconds": 37.96108699997421,
+              "state": "Us",
+              "cpu": "0:00.98"
+            },
+            {
+              "seconds": 39.036165624973364,
+              "state": "Ss",
+              "cpu": "0:00.99"
+            },
+            {
+              "seconds": 59.123899333993904,
+              "state": "Us",
+              "cpu": "0:01.53"
+            },
+            {
+              "seconds": 60.16431374999229,
+              "state": "Ss",
+              "cpu": "0:01.53"
+            },
+            {
+              "seconds": 74.59710983396508,
+              "state": "Us",
+              "cpu": "0:01.62"
+            },
+            {
+              "seconds": 75.7299570000032,
+              "state": "Ss",
+              "cpu": "0:01.62"
+            },
+            {
+              "seconds": 79.25354962493293,
+              "state": "Us",
+              "cpu": "0:01.65"
+            },
+            {
+              "seconds": 80.29710399999749,
+              "state": "Ss",
+              "cpu": "0:01.66"
+            },
+            {
+              "seconds": 143.38298933394253,
+              "state": "Us",
+              "cpu": "0:02.16"
+            },
+            {
+              "seconds": 144.98409174999688,
+              "state": "Ss",
+              "cpu": "0:02.18"
+            },
+            {
+              "seconds": 146.65155304200016,
+              "state": "Rs",
+              "cpu": "0:02.19"
+            },
+            {
+              "seconds": 149.02308445901144,
+              "state": "Ss",
+              "cpu": "0:02.20"
+            },
+            {
+              "seconds": 150.2578845839016,
+              "state": "Us",
+              "cpu": "0:02.22"
+            },
+            {
+              "seconds": 151.43018529191613,
+              "state": "Ss",
+              "cpu": "0:02.22"
+            },
+            {
+              "seconds": 152.59959399991203,
+              "state": "Us",
+              "cpu": "0:02.24"
+            },
+            {
+              "seconds": 153.65248799999245,
+              "state": "Ss",
+              "cpu": "0:02.24"
+            },
+            {
+              "seconds": 154.6933018749114,
+              "state": "Us",
+              "cpu": "0:02.25"
+            },
+            {
+              "seconds": 155.95789212500677,
+              "state": "Ss",
+              "cpu": "0:02.26"
+            },
+            {
+              "seconds": 157.0024092089152,
+              "state": "Us",
+              "cpu": "0:02.27"
+            },
+            {
+              "seconds": 159.1632707499666,
+              "state": "Rs",
+              "cpu": "0:02.29"
+            },
+            {
+              "seconds": 160.40179724991322,
+              "state": "Us",
+              "cpu": "0:02.31"
+            },
+            {
+              "seconds": 162.6876003749203,
+              "state": "Ss",
+              "cpu": "0:02.32"
+            },
+            {
+              "seconds": 163.79154362494592,
+              "state": "Rs",
+              "cpu": "0:02.33"
+            },
+            {
+              "seconds": 165.0487620839849,
+              "state": "Us",
+              "cpu": "0:02.34"
+            },
+            {
+              "seconds": 166.16611020895652,
+              "state": "Rs",
+              "cpu": "0:02.35"
+            },
+            {
+              "seconds": 167.21339016698766,
+              "state": "Us",
+              "cpu": "0:02.36"
+            },
+            {
+              "seconds": 168.53056404192466,
+              "state": "Ss",
+              "cpu": "0:02.38"
+            },
+            {
+              "seconds": 176.161447249935,
+              "state": "Us",
+              "cpu": "0:02.43"
+            },
+            {
+              "seconds": 177.20394545898307,
+              "state": "Ss",
+              "cpu": "0:02.43"
+            },
+            {
+              "seconds": 179.52098245895468,
+              "state": "Us",
+              "cpu": "0:02.44"
+            },
+            {
+              "seconds": 180.69907649990637,
+              "state": "Ss",
+              "cpu": "0:02.45"
+            },
+            {
+              "seconds": 182.04477879195474,
+              "state": "Us",
+              "cpu": "0:02.46"
+            }
+          ]
+        },
+        "81214": {
+          "first_seen_seconds": 4.774026416940615,
+          "last_seen_seconds": 21.579023999976926,
+          "observed_wall_seconds": 16.80499758303631,
+          "first_cpu_seconds": 0.05,
+          "maximum_cpu_seconds": 0.21,
+          "cpu_progress_seconds": 0.15999999999999998,
+          "maximum_rss_kib": 46864,
+          "sampled_states": {
+            "T": 5,
+            "R": 1,
+            "S": 11
+          },
+          "comm": "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux",
+          "state_transitions": [
+            {
+              "seconds": 4.774026416940615,
+              "state": "T",
+              "cpu": "0:00.05"
+            },
+            {
+              "seconds": 9.955825333949178,
+              "state": "R",
+              "cpu": "0:00.17"
+            },
+            {
+              "seconds": 10.991922458983026,
+              "state": "S",
+              "cpu": "0:00.21"
+            }
+          ]
+        },
+        "81579": {
+          "first_seen_seconds": 15.137547416961752,
+          "last_seen_seconds": 21.579023999976926,
+          "observed_wall_seconds": 6.441476583015174,
+          "first_cpu_seconds": 0.0,
+          "maximum_cpu_seconds": 0.01,
+          "cpu_progress_seconds": 0.01,
+          "maximum_rss_kib": 144,
+          "sampled_states": {
+            "T": 6,
+            "U": 1
+          },
+          "comm": "<repo>/.build/media-isolation/TypefluxSemanticHelper-coverage",
+          "state_transitions": [
+            {
+              "seconds": 15.137547416961752,
+              "state": "T",
+              "cpu": "0:00.00"
+            },
+            {
+              "seconds": 16.173140124999918,
+              "state": "U",
+              "cpu": "0:00.00"
+            },
+            {
+              "seconds": 17.213754958938807,
+              "state": "T",
+              "cpu": "0:00.00"
+            }
+          ]
+        },
+        "88140": {
+          "first_seen_seconds": 34.81834204192273,
+          "last_seen_seconds": 182.04477879195474,
+          "observed_wall_seconds": 147.226436750032,
+          "first_cpu_seconds": 0.01,
+          "maximum_cpu_seconds": 0.24,
+          "cpu_progress_seconds": 0.22999999999999998,
+          "maximum_rss_kib": 44736,
+          "sampled_states": {
+            "T": 7,
+            "U": 1,
+            "S": 123
+          },
+          "comm": "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux",
+          "state_transitions": [
+            {
+              "seconds": 34.81834204192273,
+              "state": "T",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 43.4154250419233,
+              "state": "U",
+              "cpu": "0:00.24"
+            },
+            {
+              "seconds": 44.46266345900949,
+              "state": "S",
+              "cpu": "0:00.24"
+            }
+          ]
+        },
+        "91955": {
+          "first_seen_seconds": 47.5854460420087,
+          "last_seen_seconds": 182.04477879195474,
+          "observed_wall_seconds": 134.45933274994604,
+          "first_cpu_seconds": 0.01,
+          "maximum_cpu_seconds": 0.04,
+          "cpu_progress_seconds": 0.03,
+          "maximum_rss_kib": 6416,
+          "sampled_states": {
+            "U": 17,
+            "T": 103
+          },
+          "comm": "<repo>/.build/media-isolation/TypefluxSemanticHelper-coverage",
+          "state_transitions": [
+            {
+              "seconds": 47.5854460420087,
+              "state": "U",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 48.62957966700196,
+              "state": "T",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 54.91552249994129,
+              "state": "U",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 55.95332508394495,
+              "state": "T",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 64.48410616698675,
+              "state": "U",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 65.52636762498878,
+              "state": "T",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 70.1619978339877,
+              "state": "U",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 71.20884829200804,
+              "state": "T",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 75.7299570000032,
+              "state": "U",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 78.00944099994376,
+              "state": "T",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 81.33574566699099,
+              "state": "U",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 82.37354883400258,
+              "state": "T",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 84.47229449998122,
+              "state": "U",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 85.51335545897018,
+              "state": "T",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 88.63170720892958,
+              "state": "U",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 89.68646579200868,
+              "state": "T",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 95.94523541699164,
+              "state": "U",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 96.98786579200532,
+              "state": "T",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 115.78189283399843,
+              "state": "U",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 116.8128112499835,
+              "state": "T",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 122.2960326669272,
+              "state": "U",
+              "cpu": "0:00.03"
+            },
+            {
+              "seconds": 123.49310258391779,
+              "state": "T",
+              "cpu": "0:00.03"
+            },
+            {
+              "seconds": 124.81152824999299,
+              "state": "U",
+              "cpu": "0:00.03"
+            },
+            {
+              "seconds": 125.85045308398549,
+              "state": "T",
+              "cpu": "0:00.03"
+            },
+            {
+              "seconds": 132.35211708396673,
+              "state": "U",
+              "cpu": "0:00.03"
+            },
+            {
+              "seconds": 133.4115881669568,
+              "state": "T",
+              "cpu": "0:00.03"
+            },
+            {
+              "seconds": 159.1632707499666,
+              "state": "U",
+              "cpu": "0:00.04"
+            },
+            {
+              "seconds": 160.40179724991322,
+              "state": "T",
+              "cpu": "0:00.04"
+            },
+            {
+              "seconds": 168.53056404192466,
+              "state": "U",
+              "cpu": "0:00.04"
+            },
+            {
+              "seconds": 169.73056258400902,
+              "state": "T",
+              "cpu": "0:00.04"
+            },
+            {
+              "seconds": 170.7890636669472,
+              "state": "U",
+              "cpu": "0:00.04"
+            },
+            {
+              "seconds": 172.37420187494718,
+              "state": "T",
+              "cpu": "0:00.04"
+            }
+          ]
+        }
+      },
+      "trace": [
+        {
+          "seconds": 0.08751570840831846,
+          "stage": "service-enable"
+        },
+        {
+          "seconds": 0.21502395835705101,
+          "stage": "model-verify-begin"
+        },
+        {
+          "seconds": 2.2733253750484437,
+          "stage": "model-verify-end"
+        },
+        {
+          "seconds": 8.462690375046805,
+          "stage": "projector-verify-begin"
+        },
+        {
+          "seconds": 12.42079725000076,
+          "stage": "projector-verify-end"
+        },
+        {
+          "seconds": 12.421241291682236,
+          "stage": "media-worker-created"
+        },
+        {
+          "end_time": 30,
+          "input": "audio-0.wav",
+          "kind": "audio",
+          "seconds": 12.421359333326109,
+          "stage": "media-request",
+          "time": 0
+        },
+        {
+          "duration": false,
+          "milliseconds": 0.052166637033224106,
+          "seconds": 12.42153612500988,
+          "stage": "helper-helper-launch"
+        },
+        {
+          "error": "Interrupted()",
+          "seconds": 20.67608304170426,
+          "stage": "media-error"
+        },
+        {
+          "seconds": 20.677143583307043,
+          "stage": "media-worker-released"
+        },
+        {
+          "seconds": 41.090755166718736,
+          "stage": "projector-verify-begin"
+        },
+        {
+          "seconds": 44.757190791657194,
+          "stage": "projector-verify-end"
+        },
+        {
+          "seconds": 44.7590988749871,
+          "stage": "media-worker-created"
+        },
+        {
+          "end_time": 30,
+          "input": "audio-0.wav",
+          "kind": "audio",
+          "seconds": 44.75917066668626,
+          "stage": "media-request",
+          "time": 0
+        },
+        {
+          "duration": false,
+          "milliseconds": 0.8851250167936087,
+          "seconds": 44.7603117916733,
+          "stage": "helper-helper-launch"
+        },
+        {
+          "seconds": 180.13969033339527,
+          "stage": "index-observation-ended"
+        },
+        {
+          "error": "Interrupted()",
+          "seconds": 180.3022045417456,
+          "stage": "media-error"
+        },
+        {
+          "seconds": 181.15592225000728,
+          "stage": "service-cleared"
+        }
+      ],
+      "service_state_transitions": [
+        {
+          "phase": "preparing",
+          "waiting": null,
+          "pressure": 1,
+          "seconds": 0.09117120830342174
+        },
+        {
+          "phase": "indexing",
+          "waiting": null,
+          "pressure": 1,
+          "seconds": 3.2491303333081305
+        },
+        {
+          "phase": "indexing",
+          "waiting": "memory",
+          "pressure": 2,
+          "seconds": 21.315619874978438
+        },
+        {
+          "phase": "indexing",
+          "waiting": "memory",
+          "pressure": 1,
+          "seconds": 27.54312187503092
+        },
+        {
+          "phase": "indexing",
+          "waiting": "recovery",
+          "pressure": 1,
+          "seconds": 29.779370958334766
+        },
+        {
+          "phase": "indexing",
+          "waiting": null,
+          "pressure": 1,
+          "seconds": 32.94491162500344
+        }
+      ],
+      "sampled_stages": {
+        "helper-sample.txt.gz": [
+          "Process:         TypefluxSemanticHelper-coverage [91955]",
+          "Parent Process:  MediaProbe [80650]",
+          "Date/Time:       2026-10-17 13:01:48.345 +0800",
+          "Launch Time:     2026-10-17 13:00:46.510 +0800",
+          "2 dyld4::prepare(dyld4::APIs&, mach_o::UnsafeHeader const*)  (in dyld) + 2116  [0x1817e1390]"
+        ]
+      }
+    },
+    "video-fixed": {
+      "command_wall_seconds": 184.1583782499656,
+      "exit_code": 1,
+      "complete": false,
+      "per_pid": {
+        "22046": {
+          "first_seen_seconds": 2.2228284999728203,
+          "last_seen_seconds": 184.08380091702566,
+          "observed_wall_seconds": 181.86097241705284,
+          "first_cpu_seconds": 0.0,
+          "maximum_cpu_seconds": 2.0,
+          "cpu_progress_seconds": 2.0,
+          "maximum_rss_kib": 56224,
+          "sampled_states": {
+            "Ss": 155,
+            "Rs": 6,
+            "Us": 10
+          },
+          "comm": "<repo>/.build/media-isolation/MediaProbe",
+          "state_transitions": [
+            {
+              "seconds": 2.2228284999728203,
+              "state": "Ss",
+              "cpu": "0:00.00"
+            },
+            {
+              "seconds": 4.279943624977022,
+              "state": "Rs",
+              "cpu": "0:00.20"
+            },
+            {
+              "seconds": 5.325805000029504,
+              "state": "Ss",
+              "cpu": "0:00.31"
+            },
+            {
+              "seconds": 86.0126413750695,
+              "state": "Us",
+              "cpu": "0:01.36"
+            },
+            {
+              "seconds": 88.29049145907629,
+              "state": "Ss",
+              "cpu": "0:01.37"
+            },
+            {
+              "seconds": 91.40054037503432,
+              "state": "Rs",
+              "cpu": "0:01.38"
+            },
+            {
+              "seconds": 92.44694241706748,
+              "state": "Ss",
+              "cpu": "0:01.39"
+            },
+            {
+              "seconds": 97.82232791697606,
+              "state": "Rs",
+              "cpu": "0:01.42"
+            },
+            {
+              "seconds": 98.98450620903168,
+              "state": "Us",
+              "cpu": "0:01.43"
+            },
+            {
+              "seconds": 100.02434570901096,
+              "state": "Ss",
+              "cpu": "0:01.43"
+            },
+            {
+              "seconds": 102.108807584038,
+              "state": "Rs",
+              "cpu": "0:01.44"
+            },
+            {
+              "seconds": 104.18177341704722,
+              "state": "Ss",
+              "cpu": "0:01.46"
+            },
+            {
+              "seconds": 134.08709883398842,
+              "state": "Us",
+              "cpu": "0:01.68"
+            },
+            {
+              "seconds": 135.1309587500291,
+              "state": "Ss",
+              "cpu": "0:01.69"
+            },
+            {
+              "seconds": 141.56698195904028,
+              "state": "Us",
+              "cpu": "0:01.74"
+            },
+            {
+              "seconds": 144.34950962499715,
+              "state": "Ss",
+              "cpu": "0:01.75"
+            },
+            {
+              "seconds": 145.38062675006222,
+              "state": "Us",
+              "cpu": "0:01.75"
+            },
+            {
+              "seconds": 148.93115012499038,
+              "state": "Ss",
+              "cpu": "0:01.76"
+            },
+            {
+              "seconds": 152.63510433398187,
+              "state": "Us",
+              "cpu": "0:01.78"
+            },
+            {
+              "seconds": 154.4146220840048,
+              "state": "Ss",
+              "cpu": "0:01.79"
+            },
+            {
+              "seconds": 183.04300491698086,
+              "state": "Rs",
+              "cpu": "0:01.99"
+            },
+            {
+              "seconds": 184.08380091702566,
+              "state": "Ss",
+              "cpu": "0:02.00"
+            }
+          ]
+        },
+        "22405": {
+          "first_seen_seconds": 6.363773667020723,
+          "last_seen_seconds": 184.08380091702566,
+          "observed_wall_seconds": 177.72002725000493,
+          "first_cpu_seconds": 0.02,
+          "maximum_cpu_seconds": 0.16,
+          "cpu_progress_seconds": 0.14,
+          "maximum_rss_kib": 37952,
+          "sampled_states": {
+            "T": 3,
+            "S": 164
+          },
+          "comm": "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux",
+          "state_transitions": [
+            {
+              "seconds": 6.363773667020723,
+              "state": "T",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 9.484688624972478,
+              "state": "S",
+              "cpu": "0:00.16"
+            }
+          ]
+        },
+        "23902": {
+          "first_seen_seconds": 13.66175812506117,
+          "last_seen_seconds": 184.08380091702566,
+          "observed_wall_seconds": 170.4220427919645,
+          "first_cpu_seconds": 0.0,
+          "maximum_cpu_seconds": 0.04,
+          "cpu_progress_seconds": 0.04,
+          "maximum_rss_kib": 5248,
+          "sampled_states": {
+            "U": 18,
+            "T": 142
+          },
+          "comm": "<repo>/.build/media-isolation/TypefluxSemanticHelper-coverage",
+          "state_transitions": [
+            {
+              "seconds": 13.66175812506117,
+              "state": "U",
+              "cpu": "0:00.00"
+            },
+            {
+              "seconds": 14.703217417001724,
+              "state": "T",
+              "cpu": "0:00.00"
+            },
+            {
+              "seconds": 20.95524362497963,
+              "state": "U",
+              "cpu": "0:00.00"
+            },
+            {
+              "seconds": 21.992835583980195,
+              "state": "T",
+              "cpu": "0:00.00"
+            },
+            {
+              "seconds": 26.145366000011563,
+              "state": "U",
+              "cpu": "0:00.00"
+            },
+            {
+              "seconds": 27.186669792048633,
+              "state": "T",
+              "cpu": "0:00.00"
+            },
+            {
+              "seconds": 31.35464083403349,
+              "state": "U",
+              "cpu": "0:00.00"
+            },
+            {
+              "seconds": 32.395802417071536,
+              "state": "T",
+              "cpu": "0:00.00"
+            },
+            {
+              "seconds": 44.87016849999782,
+              "state": "U",
+              "cpu": "0:00.00"
+            },
+            {
+              "seconds": 45.908671042067,
+              "state": "T",
+              "cpu": "0:00.00"
+            },
+            {
+              "seconds": 56.4026182499947,
+              "state": "U",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 57.43872533401009,
+              "state": "T",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 61.59498462500051,
+              "state": "U",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 62.635958292055875,
+              "state": "T",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 67.83886958402582,
+              "state": "U",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 68.87958887498826,
+              "state": "T",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 71.99886258400511,
+              "state": "U",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 73.06860008405056,
+              "state": "T",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 77.28237533406354,
+              "state": "U",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 78.32451187504921,
+              "state": "T",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 81.46347670897376,
+              "state": "U",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 82.64372200006619,
+              "state": "T",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 91.40054037503432,
+              "state": "U",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 92.44694241706748,
+              "state": "T",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 97.82232791697606,
+              "state": "U",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 98.98450620903168,
+              "state": "T",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 107.29531408404,
+              "state": "U",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 108.33917795901652,
+              "state": "T",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 112.67792591697071,
+              "state": "U",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 113.71532508404925,
+              "state": "T",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 117.98483149998356,
+              "state": "U",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 119.02675950003322,
+              "state": "T",
+              "cpu": "0:00.02"
+            },
+            {
+              "seconds": 141.56698195904028,
+              "state": "U",
+              "cpu": "0:00.03"
+            },
+            {
+              "seconds": 142.81846083397977,
+              "state": "T",
+              "cpu": "0:00.03"
+            },
+            {
+              "seconds": 172.62843479204457,
+              "state": "U",
+              "cpu": "0:00.04"
+            },
+            {
+              "seconds": 173.67023666703608,
+              "state": "T",
+              "cpu": "0:00.04"
+            }
+          ]
+        }
+      },
+      "trace": [
+        {
+          "seconds": 0.06938016670756042,
+          "stage": "service-enable"
+        },
+        {
+          "seconds": 0.18558604165446013,
+          "stage": "model-verify-begin"
+        },
+        {
+          "seconds": 2.4578159583033994,
+          "stage": "model-verify-end"
+        },
+        {
+          "seconds": 5.630780458333902,
+          "stage": "projector-verify-begin"
+        },
+        {
+          "seconds": 9.482262583333068,
+          "stage": "projector-verify-end"
+        },
+        {
+          "seconds": 9.482796791708097,
+          "stage": "media-worker-created"
+        },
+        {
+          "end_time": 0,
+          "input": "frame-0.jpg",
+          "kind": "image",
+          "seconds": 9.48302129167132,
+          "stage": "media-request",
+          "time": 0
+        },
+        {
+          "duration": false,
+          "milliseconds": 0.06637489423155785,
+          "seconds": 9.483308791648597,
+          "stage": "helper-helper-launch"
+        },
+        {
+          "seconds": 180.53185804164968,
+          "stage": "index-observation-ended"
+        },
+        {
+          "error": "CancellationError()",
+          "seconds": 180.57544608332682,
+          "stage": "media-error"
+        },
+        {
+          "seconds": 180.5930892500328,
+          "stage": "service-cleared"
+        }
+      ],
+      "service_state_transitions": [
+        {
+          "phase": "preparing",
+          "waiting": null,
+          "pressure": 1,
+          "seconds": 0.07227387500461191
+        },
+        {
+          "phase": "indexing",
+          "waiting": null,
+          "pressure": 1,
+          "seconds": 3.2313570000696927
+        }
+      ],
+      "sampled_stages": {
+        "helper-sample.txt.gz": [
+          "Process:         TypefluxSemanticHelper-coverage [23902]",
+          "Parent Process:  MediaProbe [22046]",
+          "Date/Time:       2026-10-17 13:08:40.053 +0800",
+          "Launch Time:     2026-10-17 13:06:05.343 +0800",
+          "858 dyld4::prepare(dyld4::APIs&, mach_o::UnsafeHeader const*)  (in dyld) + 4184  [0x1817e1ba4]",
+          "858 _GLOBAL__sub_I_clip.cpp  (in TypefluxSemanticHelper-coverage) + 0  [0x1002f2a24]",
+          "_GLOBAL__sub_I_clip.cpp  (in TypefluxSemanticHelper-coverage)        858"
+        ]
+      }
+    },
+    "startup-fixed": {
+      "command_wall_seconds": 97.78187662502751,
+      "exit_code": 1,
+      "complete": false,
+      "per_pid": {
+        "5129": {
+          "first_seen_seconds": 1.6548200000543147,
+          "last_seen_seconds": 97.40497662499547,
+          "observed_wall_seconds": 95.75015662494116,
+          "first_cpu_seconds": 0.0,
+          "maximum_cpu_seconds": 0.64,
+          "cpu_progress_seconds": 0.64,
+          "maximum_rss_kib": 52224,
+          "sampled_states": {
+            "Ss": 88,
+            "Us": 4
+          },
+          "comm": "<repo>/.build/media-isolation/MediaProbe",
+          "state_transitions": [
+            {
+              "seconds": 1.6548200000543147,
+              "state": "Ss",
+              "cpu": "0:00.00"
+            },
+            {
+              "seconds": 7.922818207996897,
+              "state": "Us",
+              "cpu": "0:00.18"
+            },
+            {
+              "seconds": 12.089538583066314,
+              "state": "Ss",
+              "cpu": "0:00.40"
+            }
+          ]
+        },
+        "5656": {
+          "first_seen_seconds": 10.011271333089098,
+          "last_seen_seconds": 97.40497662499547,
+          "observed_wall_seconds": 87.39370529190637,
+          "first_cpu_seconds": 0.01,
+          "maximum_cpu_seconds": 0.81,
+          "cpu_progress_seconds": 0.8,
+          "maximum_rss_kib": 344784,
+          "sampled_states": {
+            "T": 71,
+            "U": 12,
+            "S": 1
+          },
+          "comm": "<repo>/.build/media-isolation/TypefluxSemanticHelper-coverage",
+          "state_transitions": [
+            {
+              "seconds": 10.011271333089098,
+              "state": "T",
+              "cpu": "0:00.01"
+            },
+            {
+              "seconds": 18.336203666054644,
+              "state": "U",
+              "cpu": "0:00.03"
+            },
+            {
+              "seconds": 19.390081332996488,
+              "state": "T",
+              "cpu": "0:00.03"
+            },
+            {
+              "seconds": 24.646857290994376,
+              "state": "U",
+              "cpu": "0:00.06"
+            },
+            {
+              "seconds": 25.70912637503352,
+              "state": "T",
+              "cpu": "0:00.06"
+            },
+            {
+              "seconds": 34.07138187508099,
+              "state": "U",
+              "cpu": "0:00.23"
+            },
+            {
+              "seconds": 35.15303483302705,
+              "state": "T",
+              "cpu": "0:00.23"
+            },
+            {
+              "seconds": 36.20765437500086,
+              "state": "U",
+              "cpu": "0:00.23"
+            },
+            {
+              "seconds": 37.26256387506146,
+              "state": "T",
+              "cpu": "0:00.29"
+            },
+            {
+              "seconds": 39.351811708067544,
+              "state": "S",
+              "cpu": "0:00.46"
+            },
+            {
+              "seconds": 40.41827204101719,
+              "state": "T",
+              "cpu": "0:00.48"
+            },
+            {
+              "seconds": 46.74572445801459,
+              "state": "U",
+              "cpu": "0:00.68"
+            },
+            {
+              "seconds": 47.789779458078556,
+              "state": "T",
+              "cpu": "0:00.69"
+            },
+            {
+              "seconds": 49.871485083014704,
+              "state": "U",
+              "cpu": "0:00.70"
+            },
+            {
+              "seconds": 50.91027750005014,
+              "state": "T",
+              "cpu": "0:00.70"
+            },
+            {
+              "seconds": 57.13839199999347,
+              "state": "U",
+              "cpu": "0:00.71"
+            },
+            {
+              "seconds": 58.875944291008636,
+              "state": "T",
+              "cpu": "0:00.71"
+            },
+            {
+              "seconds": 78.63964866602328,
+              "state": "U",
+              "cpu": "0:00.74"
+            },
+            {
+              "seconds": 79.67686445801519,
+              "state": "T",
+              "cpu": "0:00.74"
+            },
+            {
+              "seconds": 82.79858900001273,
+              "state": "U",
+              "cpu": "0:00.74"
+            },
+            {
+              "seconds": 83.8452369159786,
+              "state": "T",
+              "cpu": "0:00.74"
+            },
+            {
+              "seconds": 85.93981287500355,
+              "state": "U",
+              "cpu": "0:00.75"
+            },
+            {
+              "seconds": 86.9854437080212,
+              "state": "T",
+              "cpu": "0:00.75"
+            },
+            {
+              "seconds": 89.09016187500674,
+              "state": "U",
+              "cpu": "0:00.75"
+            },
+            {
+              "seconds": 90.131458625081,
+              "state": "T",
+              "cpu": "0:00.76"
+            },
+            {
+              "seconds": 93.24317891604733,
+              "state": "U",
+              "cpu": "0:00.78"
+            },
+            {
+              "seconds": 94.2852205830859,
+              "state": "T",
+              "cpu": "0:00.79"
+            }
+          ]
+        }
+      },
+      "trace": [
+        {
+          "seconds": 0.13270687509793788,
+          "stage": "startup-model-verify-begin"
+        },
+        {
+          "seconds": 2.0007412499981,
+          "stage": "startup-model-verify-end"
+        },
+        {
+          "seconds": 2.0013442917261273,
+          "stage": "startup-text-request"
+        }
+      ],
+      "service_state_transitions": [],
+      "sampled_stages": {}
+    }
+  }
+}

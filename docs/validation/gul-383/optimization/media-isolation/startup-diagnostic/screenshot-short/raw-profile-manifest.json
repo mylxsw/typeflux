@@ -1,0 +1,19 @@
+[
+  {
+    "pid": 34624,
+    "bytes": 6766592,
+    "sha256": "14e298f3079de7ec9abdd2db01392b06944b620a66748e64caaa539d984b0d6c",
+    "materialized": true
+  },
+  {
+    "pid": 34634,
+    "bytes": 6127616,
+    "sha256": "a5a7130c98c20e39da3fb48ae9dadaebe4cb0926a3b505a9c3974eb99bd06d56",
+    "materialized": true
+  },
+  {
+    "pid": 34650,
+    "materialized": false,
+    "limitation": "No profile file materialized; no coverage or native stage is inferred."
+  }
+]

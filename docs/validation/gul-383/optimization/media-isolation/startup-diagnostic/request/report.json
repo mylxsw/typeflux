@@ -1,0 +1,14 @@
+{
+  "budget_enabled" : true,
+  "complete" : true,
+  "dimensions" : [
+    768
+  ],
+  "interruptions" : 0,
+  "ownership_retired" : true,
+  "request_bound_seconds" : 50,
+  "valid" : true,
+  "wall_seconds" : 11.029011208331212,
+  "yield_milliseconds" : 9721,
+  "yields" : 106
+}

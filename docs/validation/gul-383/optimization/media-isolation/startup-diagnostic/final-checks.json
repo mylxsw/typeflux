@@ -1,0 +1,51 @@
+{
+  "python_syntax": [
+    {
+      "file": "analyze_history.py",
+      "exit_code": 0
+    },
+    {
+      "file": "build_probe.py",
+      "exit_code": 0
+    },
+    {
+      "file": "run_screenshot.py",
+      "exit_code": 0
+    },
+    {
+      "file": "run_startup.py",
+      "exit_code": 0
+    }
+  ],
+  "diff_check_exit_code": 0,
+  "wall_seconds": 0.18659158295486122,
+  "production_changes_this_continuation": 0,
+  "coverage_reused": {
+    "native_helper": {
+      "covered": 4,
+      "changed": 4
+    },
+    "application": {
+      "covered": 0,
+      "changed": 0
+    },
+    "filesystem_helper": {
+      "covered": 0,
+      "changed": 0
+    },
+    "media_runtime": {
+      "covered": 0,
+      "changed": 0
+    }
+  },
+  "unverified": [
+    "No current screenshot stack or exact media budget duration",
+    "No screenshot vector or durable query",
+    "Audio boundary and short-video retrieval",
+    "Native graceful EOF exit",
+    "Native UI response and long-term stability",
+    "Final private-directory exceptional cleanup guard not exercised"
+  ],
+  "runtime_versions": "Captured runtime-tools snapshots are authoritative. Final run_startup.py adds the private_created cleanup guard after the actual run.",
+  "original_evidence_manifest": "Parent evidence-sha256.json describes the original PR648 snapshot. README.md/results.md annotations changed in this continuation; the new evidence-sha256.json covers the current tree."
+}

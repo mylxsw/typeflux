@@ -1,0 +1,12 @@
+{
+  "revision": "4d756bc72bf00a4aacf410ae15a2d315f3db400d",
+  "archive_sha256": "eb32795163af7bc837ba456bf05e7b22694fd95b8ae794d1f59c1937f36abc2a",
+  "metal_object_sha256": "a0496fcae24a672cb6978c82f058ae95bb8db2bf4f0114625b5dc9e7681a24ce",
+  "archive_member_matches_built_object": true,
+  "metal_source_matches_pinned_git": true,
+  "metal_source_sha256": "3392a2ecedd51fda5f90d3b152dd7f9eb7d819a56fbf2d6ac71b9b0bb4b1976c",
+  "helper_sha256": "739bf5f47699395a568f83928571a8bda74743b1256c9fb652e420033503e90e",
+  "linked_registration_sha256": "230590a1e0250d4361e6fd050749e10e298dadb4d55df50ac9f5865ecc267af7",
+  "linked_environment_reference": true,
+  "supported_behavior": "getenv/atoi controls g_devices; zero bypasses device_init loop. Registration object still exists. Swift setenv is after dyld/static initialization."
+}

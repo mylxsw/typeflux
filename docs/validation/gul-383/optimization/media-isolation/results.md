@@ -1,6 +1,6 @@
 # Results: partial handoff, media gates unpassed
 
-The stage-isolation deliverable is reviewable. The three required real-media retrieval paths are **not complete**. No media embedding returned in these bounded observations; no new media vector was staged/published and no media query/reopen pass is claimed. The CPU startup smoke also reached its cancellation bound without a vector. GUL-405 and GUL-383 remain `in_progress`; GUL-406 was neither read nor started. The PR is a draft candidate and evidence handoff, not a merge-ready batch completion.
+The stage-isolation deliverable is reviewable. The three required real-media retrieval paths are **not complete**. No media embedding returned in these bounded observations; no new media vector was staged/published and no media query/reopen pass is claimed. The original CPU startup smoke reached its cancellation bound without a vector. The later `startup-diagnostic/` continuation returned one valid text vector on the same helper, then retained another failed short screenshot; it does not establish a cause for the original startup delays. GUL-405 and GUL-383 remain `in_progress`; GUL-406 was neither read nor started. The PR is a draft candidate and evidence handoff, not a merge-ready batch completion.
 
 | Attempt | Complete runner wall time | Exit | What was actually observed |
 | --- | ---: | ---: | --- |

@@ -1,0 +1,17 @@
+{
+  "attempts": 1,
+  "observation_limit_seconds": 60,
+  "production_policy_unchanged": true,
+  "preparation_seconds": 1.5870386250317097,
+  "probe_pid": 34155,
+  "observation_seconds": 15.582937209052034,
+  "deadline_exceeded": false,
+  "exit_code": 0,
+  "forced_cleanup_pids": [],
+  "wall_seconds": 17.181258250027895,
+  "owned_identity": {
+    "34155": "Sat Oct 17 13:25:16 2026     <repo>/.build/startup-diagnostic/MediaProbe",
+    "34203": "Sat Oct 17 13:25:22 2026     <repo>/.build/media-isolation/TypefluxSemanticHelper-coverage"
+  },
+  "private_root_removed": true
+}
