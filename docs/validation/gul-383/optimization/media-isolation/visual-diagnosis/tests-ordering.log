@@ -1,0 +1,7 @@
+test_persisted_bytes_and_quantization_do_not_explain_rejection (test_analysis.DiagnosisTests.test_persisted_bytes_and_quantization_do_not_explain_rejection) ... ok
+test_script_ordering_does_not_bypass_absolute_confidence (test_analysis.DiagnosisTests.test_script_ordering_does_not_bypass_absolute_confidence) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.002s
+
+OK
