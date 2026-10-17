@@ -1,0 +1,1460 @@
+[
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Plugins/AskLauncherPlugin.swift",
+    "line" : 236,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Plugins/AskLauncherPlugin.swift",
+    "line" : 298,
+    "reason" : "Line should be 120 characters or less; currently it has 140 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Plugins/AskLauncherPlugin.swift",
+    "line" : 299,
+    "reason" : "Line should be 120 characters or less; currently it has 133 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel+QuickResults.swift",
+    "line" : 108,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 61 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Warning",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 20,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+    "line" : 40,
+    "reason" : "Function should have 5 parameters or less: it currently has 7",
+    "rule_id" : "function_parameter_count",
+    "severity" : "Warning",
+    "type" : "Function Parameter Count"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+    "line" : 106,
+    "reason" : "Variable name 'fd' should be between 3 and 40 characters long",
+    "rule_id" : "identifier_name",
+    "severity" : "Warning",
+    "type" : "Identifier Name"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+    "line" : 55,
+    "reason" : "Line should be 120 characters or less; currently it has 135 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+    "line" : 57,
+    "reason" : "Line should be 120 characters or less; currently it has 139 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+    "line" : 65,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+    "line" : 77,
+    "reason" : "Line should be 120 characters or less; currently it has 137 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+    "line" : 84,
+    "reason" : "Line should be 120 characters or less; currently it has 131 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+    "line" : 114,
+    "reason" : "Line should be 120 characters or less; currently it has 144 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 108,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+    "line" : 84,
+    "reason" : "Trailing closure syntax should not be used when passing more than one closure argument",
+    "rule_id" : "multiple_closures_with_trailing_closure",
+    "severity" : "Warning",
+    "type" : "Multiple Closures with Trailing Closure"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Plugins/Files/AskFileSearchPlugin.swift",
+    "line" : 67,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Plugins/Files/AskFileSearchPlugin.swift",
+    "line" : 157,
+    "reason" : "Line should be 120 characters or less; currently it has 124 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 95,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Plugins/Files/AskFileSearchPlugin.swift",
+    "line" : 73,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/AskQuickActions.swift",
+    "line" : 31,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/AskQuickActions.swift",
+    "line" : 185,
+    "reason" : "Line should be 120 characters or less; currently it has 137 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 1750,
+    "reason" : "`if`, `for`, `guard`, `switch`, `while`, and `catch` statements shouldn't unnecessarily wrap their conditionals or arguments in parentheses",
+    "rule_id" : "control_statement",
+    "severity" : "Warning",
+    "type" : "Control Statement"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 279,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 11",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 477,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 20",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 630,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 36",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Error",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 768,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 21",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Error",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 822,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 15",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 868,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 61",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Error",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 999,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 14",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 1666,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 14",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 1736,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 28",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Error",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 630,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 67 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Warning",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 868,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 99 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Warning",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 1736,
+    "reason" : "Function body should span 100 lines or less excluding comments and whitespace: currently spans 111 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Error",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 395,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 396,
+    "reason" : "Line should be 120 characters or less; currently it has 122 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 437,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 445,
+    "reason" : "Line should be 120 characters or less; currently it has 132 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 469,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 532,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 679,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 681,
+    "reason" : "Line should be 120 characters or less; currently it has 129 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 692,
+    "reason" : "Line should be 120 characters or less; currently it has 137 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 695,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 714,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 746,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 752,
+    "reason" : "Line should be 120 characters or less; currently it has 136 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 810,
+    "reason" : "Line should be 120 characters or less; currently it has 127 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 890,
+    "reason" : "Line should be 120 characters or less; currently it has 136 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 929,
+    "reason" : "Line should be 120 characters or less; currently it has 145 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 1088,
+    "reason" : "Line should be 120 characters or less; currently it has 129 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 1269,
+    "reason" : "Line should be 120 characters or less; currently it has 124 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 1307,
+    "reason" : "Line should be 120 characters or less; currently it has 134 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 1318,
+    "reason" : "Line should be 120 characters or less; currently it has 127 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 1466,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 1494,
+    "reason" : "Line should be 120 characters or less; currently it has 129 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 1520,
+    "reason" : "Line should be 120 characters or less; currently it has 148 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 1638,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 1770,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 1845,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 1846,
+    "reason" : "Line should be 120 characters or less; currently it has 134 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 1903,
+    "reason" : "Line should be 120 characters or less; currently it has 132 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 1915,
+    "reason" : "Line should be 120 characters or less; currently it has 131 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 2144,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 2161,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 2272,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 2525,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 2579,
+    "reason" : "Line should be 120 characters or less; currently it has 137 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 70,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 845,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskComposerViews.swift",
+    "line" : 75,
+    "reason" : "Struct body should span 350 lines or less excluding comments and whitespace: currently spans 2189 lines",
+    "rule_id" : "type_body_length",
+    "severity" : "Error",
+    "type" : "Type Body Length"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 851,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 15",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 979,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 15",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1081,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 15",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1185,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 12",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1377,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 53",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Error",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 2072,
+    "reason" : "File should contain 1000 lines or less excluding comments and whitespaces: currently contains 1769",
+    "rule_id" : "file_length",
+    "severity" : "Error",
+    "type" : "File Length"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 851,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 51 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Warning",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 979,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 73 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Warning",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1081,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 66 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Warning",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1185,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 57 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Warning",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1377,
+    "reason" : "Function body should span 100 lines or less excluding comments and whitespace: currently spans 221 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Error",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 63,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1842,
+    "reason" : "Variable name 'to' should be between 3 and 40 characters long",
+    "rule_id" : "identifier_name",
+    "severity" : "Warning",
+    "type" : "Identifier Name"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 45,
+    "reason" : "Line should be 200 characters or less; currently it has 205 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 58,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 144,
+    "reason" : "Line should be 120 characters or less; currently it has 124 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 173,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 175,
+    "reason" : "Line should be 120 characters or less; currently it has 171 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 403,
+    "reason" : "Line should be 120 characters or less; currently it has 157 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 432,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 433,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 532,
+    "reason" : "Line should be 120 characters or less; currently it has 130 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 533,
+    "reason" : "Line should be 200 characters or less; currently it has 341 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 536,
+    "reason" : "Line should be 120 characters or less; currently it has 139 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 537,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 539,
+    "reason" : "Line should be 120 characters or less; currently it has 197 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 555,
+    "reason" : "Line should be 120 characters or less; currently it has 129 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 585,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 592,
+    "reason" : "Line should be 120 characters or less; currently it has 145 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 633,
+    "reason" : "Line should be 120 characters or less; currently it has 137 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 865,
+    "reason" : "Line should be 120 characters or less; currently it has 149 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 868,
+    "reason" : "Line should be 120 characters or less; currently it has 164 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 882,
+    "reason" : "Line should be 120 characters or less; currently it has 133 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 927,
+    "reason" : "Line should be 120 characters or less; currently it has 144 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 985,
+    "reason" : "Line should be 120 characters or less; currently it has 129 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 986,
+    "reason" : "Line should be 120 characters or less; currently it has 128 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1018,
+    "reason" : "Line should be 120 characters or less; currently it has 128 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1048,
+    "reason" : "Line should be 120 characters or less; currently it has 132 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1051,
+    "reason" : "Line should be 120 characters or less; currently it has 134 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1102,
+    "reason" : "Line should be 120 characters or less; currently it has 162 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1112,
+    "reason" : "Line should be 120 characters or less; currently it has 134 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1120,
+    "reason" : "Line should be 200 characters or less; currently it has 344 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1129,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1149,
+    "reason" : "Line should be 120 characters or less; currently it has 134 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1174,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1222,
+    "reason" : "Line should be 120 characters or less; currently it has 130 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1223,
+    "reason" : "Line should be 120 characters or less; currently it has 124 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1224,
+    "reason" : "Line should be 120 characters or less; currently it has 200 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1236,
+    "reason" : "Line should be 120 characters or less; currently it has 152 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1252,
+    "reason" : "Line should be 120 characters or less; currently it has 127 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1281,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1340,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1352,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1359,
+    "reason" : "Line should be 120 characters or less; currently it has 144 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1423,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1425,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1441,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1443,
+    "reason" : "Line should be 120 characters or less; currently it has 140 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1446,
+    "reason" : "Line should be 120 characters or less; currently it has 144 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1448,
+    "reason" : "Line should be 200 characters or less; currently it has 223 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1451,
+    "reason" : "Line should be 200 characters or less; currently it has 272 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1456,
+    "reason" : "Line should be 200 characters or less; currently it has 284 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1475,
+    "reason" : "Line should be 120 characters or less; currently it has 128 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1486,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1489,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1497,
+    "reason" : "Line should be 120 characters or less; currently it has 128 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1530,
+    "reason" : "Line should be 120 characters or less; currently it has 129 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1532,
+    "reason" : "Line should be 120 characters or less; currently it has 122 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1533,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1538,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1554,
+    "reason" : "Line should be 120 characters or less; currently it has 130 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1603,
+    "reason" : "Line should be 120 characters or less; currently it has 122 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1656,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1672,
+    "reason" : "Line should be 120 characters or less; currently it has 127 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1730,
+    "reason" : "Line should be 120 characters or less; currently it has 140 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1733,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 2025,
+    "reason" : "Line should be 120 characters or less; currently it has 156 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 87,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 814,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 78,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1453,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 78,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1580,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 105,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1592,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 25,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1597,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 71,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1765,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 55,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1914,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 7,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 5,
+    "reason" : "Class body should span 350 lines or less excluding comments and whitespace: currently spans 1660 lines",
+    "rule_id" : "type_body_length",
+    "severity" : "Error",
+    "type" : "Type Body Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 180,
+    "reason" : "Limit vertical whitespace to a single empty line; currently 2",
+    "rule_id" : "vertical_whitespace",
+    "severity" : "Warning",
+    "type" : "Vertical Whitespace"
+  },
+  {
+    "character" : 99,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Tests/TypefluxTests/AskQuickResultsInteractionTests.swift",
+    "line" : 87,
+    "reason" : "Variable name 'up' should be between 3 and 40 characters long",
+    "rule_id" : "identifier_name",
+    "severity" : "Warning",
+    "type" : "Identifier Name"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Tests/TypefluxTests/AskQuickResultsInteractionTests.swift",
+    "line" : 65,
+    "reason" : "Line should be 120 characters or less; currently it has 122 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Tests/TypefluxTests/AskQuickResultsInteractionTests.swift",
+    "line" : 67,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel+Plugins.swift",
+    "line" : 580,
+    "reason" : "File should contain 400 lines or less excluding comments and whitespaces: currently contains 507",
+    "rule_id" : "file_length",
+    "severity" : "Warning",
+    "type" : "File Length"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel+Plugins.swift",
+    "line" : 176,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 57 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Warning",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel+Plugins.swift",
+    "line" : 36,
+    "reason" : "Line should be 120 characters or less; currently it has 132 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel+Plugins.swift",
+    "line" : 188,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel+Plugins.swift",
+    "line" : 189,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel+Plugins.swift",
+    "line" : 243,
+    "reason" : "A doc comment should be attached to a declaration",
+    "rule_id" : "orphaned_doc_comment",
+    "severity" : "Warning",
+    "type" : "Orphaned Doc Comment"
+  },
+  {
+    "character" : 52,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel+Plugins.swift",
+    "line" : 489,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  }
+]

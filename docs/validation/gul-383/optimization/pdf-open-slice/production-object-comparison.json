@@ -1,0 +1,12 @@
+{
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskComposerViews.swift.o": true,
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskConversationModel+Plugins.swift.o": true,
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskConversationModel+QuickResults.swift.o": true,
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskConversationModel.swift.o": true,
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskQuickActions.swift.o": true,
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskLauncherPlugin.swift.o": true,
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskFileSearchPlugin.swift.o": true,
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskFilePreviewPDF.swift.o": true,
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskFilePreviewView.swift.o": true,
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskFileLocationActions.swift.o": true
+}

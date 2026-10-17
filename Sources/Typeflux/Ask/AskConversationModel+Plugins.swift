@@ -257,6 +257,10 @@ extension AskConversationModel {
             // Recording and starring are sequenced in one admitted task below.
         } else { plugins.settleWordBook() }
         switch action.kind {
+        case .fileAction:
+            guard let outcome = performPluginFileAction(action) else { return .stay }
+            if outcome == .close { finishPluginResult(); return .close }
+            return .stay
         case let .emoji(action):
             performEmojiAction(action)
             return .stay
@@ -342,17 +346,27 @@ extension AskConversationModel {
             Task { await focusBrowserTab(target) }
             return .stay
         case let .open(url):
+            if url.isFileURL, AskFileSearchPlugin.showsFileResults(for: plugins.plugin?.id) {
+                guard let hit = selectedPluginFile, hit.url == url else { return .stay }
+                guard performQuickFileAction(.open, hit) == .close else { return .stay }
+                finishPluginResult()
+                return .close
+            }
             if plugins.keyword == nil { recordLauncherInput(destination: .web, label: url.host ?? "") }
             finishPluginResult()
             if url.isFileURL { fileIndex.recordOpen(url.path) }
             openURL(url)
             return .close
         case let .openIn(url, application):
+            let hit = selectedPluginFile.flatMap { $0.url == url ? $0 : nil }
+            if AskFileSearchPlugin.showsFileResults(for: plugins.plugin?.id), hit == nil { return .stay }
+            if let hit, hit.evidence != nil, !allowsFileEvidenceAction(hit) { return .stay }
             finishPluginResult()
             // Without that application the file opens as Finder would open it.
             if !openFileInApplication(url, application) {
                 openURL(url)
             }
+            if let hit { fileLocationNotice(hit) }
             return .close
         case let .reveal(url):
             finishPluginResult()

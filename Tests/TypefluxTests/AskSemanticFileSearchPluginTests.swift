@@ -122,7 +122,7 @@ struct AskSemanticFileSearchPluginTests {
         #expect(output.items == [AskFileSearchPlugin.item(hit)])
         #expect(output.selected?.fileHit == hit && output.source == L("semantic.title"))
         #expect(output.selected?.excerpt == hit.evidence?.text)
-        #expect(output.action(for: .enter)?.kind == .open(hit.url))
+        #expect(output.action(for: .enter)?.kind == .fileAction(.open, hit))
         #expect(output.action(for: .commandR)?.kind == .reveal(hit.url))
         #expect(output.action(for: .shiftCommandC)?.kind == .copy(hit.path))
     }
@@ -190,6 +190,12 @@ struct AskSemanticFileSearchPluginTests {
             text: "semanticsearch expense form",
             prepare: { model in
                 model.semanticSearch = service
+                model.fileExists = { _ in true }
+                model.modelLibrary.settings.semanticFileSearch = .init(enabled: true)
+                var settings = model.launcherSearchSettings
+                settings.fileRoots = ["/work"]; settings.excludedPaths = []
+                model.modelLibrary.settings.askLauncherSearchSettings = settings
+                model.passiveNotice = { _ in }
             }
         )
         defer { launcher.close() }

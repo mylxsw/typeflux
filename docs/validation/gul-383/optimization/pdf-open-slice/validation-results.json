@@ -1,0 +1,129 @@
+{
+  "commands": [
+    {
+      "name": "resume-failed-methods",
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=AskPDFLocationActionTests/(persistent PDF hit reaches both open routes with the same page and version|file plugin actions own the current hit and revoke stale or unauthorized selections)|AskSemanticFileSearchPluginTests/real launcher runs aliases moves selection and opens content result"
+      ],
+      "wall_seconds": 72.17521229101112,
+      "exit_code": 2,
+      "build_complete_seconds": []
+    },
+    {
+      "name": "resume-build-retry",
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=AskPDFLocationActionTests/.*(persistent PDF hit|file plugin actions)|AskSemanticFileSearchPluginTests/.*real launcher runs"
+      ],
+      "wall_seconds": 243.7821497080149,
+      "exit_code": 2,
+      "build_complete_seconds": [
+        196.3
+      ]
+    },
+    {
+      "name": "final-focused",
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=AskPDFLocationActionTests|AskPDFLocationNativeTests|AskSemanticFileSearchPluginTests/.*real launcher runs"
+      ],
+      "wall_seconds": 79.9720765830134,
+      "exit_code": 2,
+      "build_complete_seconds": [
+        44.22
+      ]
+    },
+    {
+      "name": "final-native-retry",
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=AskPDFLocationNativeTests"
+      ],
+      "wall_seconds": 67.30956891697133,
+      "exit_code": 2,
+      "build_complete_seconds": [
+        31.92
+      ]
+    },
+    {
+      "name": "final-capability-retry",
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=AskPDFLocationNativeTests/.*native PDF preview drops"
+      ],
+      "wall_seconds": 63.0297958329902,
+      "exit_code": 2,
+      "build_complete_seconds": [
+        32.4
+      ]
+    },
+    {
+      "name": "final-capability-classic",
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=AskPDFLocationNativeTests/.*native PDF preview drops"
+      ],
+      "wall_seconds": 62.46999470895389,
+      "exit_code": 2,
+      "build_complete_seconds": [
+        31.92
+      ]
+    },
+    {
+      "name": "final-capability-text",
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=AskPDFLocationNativeTests/.*native PDF preview drops"
+      ],
+      "wall_seconds": 64.86455687502166,
+      "exit_code": 2,
+      "build_complete_seconds": [
+        32.84
+      ]
+    },
+    {
+      "name": "native-confirm",
+      "command": [
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/libexec/swift/pm/swiftpm-testing-helper",
+        "--test-bundle-path",
+        "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/.build/pdf-preview/arm64-apple-macosx/debug/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests",
+        "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-4eec2633be11/workdir/typeflux/.build/pdf-preview/arm64-apple-macosx/debug/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests",
+        "--testing-library",
+        "swift-testing",
+        "--no-parallel",
+        "--filter",
+        "AskPDFLocationNativeTests/.*native PDF preview drops"
+      ],
+      "wall_seconds": 2.1009248749469407,
+      "exit_code": 0,
+      "reason": "SwiftPM profile aggregation failed after the method passed; same method and current instrumented binary, native compatibility runner, no rebuild.",
+      "build_complete_seconds": []
+    }
+  ],
+  "total_command_wall_seconds": 655.7042797909235,
+  "total_successful_build_phases_seconds": 369.6,
+  "cache_clone_seconds": 13.69017354096286,
+  "passing_method_sources": {
+    "final-focused": [
+      "AskPDFLocationActionTests (3 methods)",
+      "AskSemanticFileSearchPluginTests/real launcher runs aliases moves selection and opens content result"
+    ],
+    "final-native-retry": [
+      "AskPDFLocationNativeTests/native keys preserve the persisted PDF hit through both entry actions"
+    ],
+    "native-confirm": [
+      "AskPDFLocationNativeTests/native PDF preview drops obsolete pages and renders the capability in both appearances"
+    ]
+  },
+  "distinct_passing_methods": 6,
+  "prior_23_methods": "Historical reference only; not counted in these six methods or merged into coverage.",
+  "swiftpm_coverage_failure": "Final method passed; SwiftPM returned 1 while aggregating a library profile with a corrupt header. Native compatibility execution of the same current instrumented method returns 0; independent application-only coverage export returns 0."
+}

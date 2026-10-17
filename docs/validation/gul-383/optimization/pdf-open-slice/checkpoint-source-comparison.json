@@ -1,0 +1,20 @@
+{
+  "baseline": "30adce80696606a2c5d34221b7ea759ff3ef81dd",
+  "same_as_saved_source_before_resume_fixes": {
+    "Sources/Typeflux/Ask/AskComposerViews.swift": true,
+    "Sources/Typeflux/Ask/AskConversationModel+Plugins.swift": true,
+    "Sources/Typeflux/Ask/AskConversationModel+QuickResults.swift": true,
+    "Sources/Typeflux/Ask/AskConversationModel.swift": true,
+    "Sources/Typeflux/Ask/QuickResults/AskQuickActions.swift": true,
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskLauncherPlugin.swift": true,
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Files/AskFileSearchPlugin.swift": true,
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift": true,
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewView.swift": true,
+    "Sources/Typeflux/Resources/en.lproj/Localizable.strings": true,
+    "Sources/Typeflux/Resources/ja.lproj/Localizable.strings": true,
+    "Sources/Typeflux/Resources/ko.lproj/Localizable.strings": true,
+    "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings": true,
+    "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings": true
+  },
+  "prior_results": "23 passing methods; 3 failed; corrected fixture retry cancelled before results. References only; profiles are not merged into a changed binary."
+}

@@ -132,6 +132,8 @@ struct AskPluginAction: Equatable, Sendable {
         /// Opens a link, such as a web search, and closes the launcher.
         case focusBrowserTab(AskBrowserTabTarget)
         case open(URL)
+        /// File search actions retain the exact indexed passage and version.
+        case fileAction(AskQuickAction, AskFileHit)
         /// Opens a file or folder in an application (by name or bundle id), like a project in an editor.
         case openIn(URL, application: String)
         /// Shows a file in Finder.

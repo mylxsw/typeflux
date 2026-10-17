@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=AskPDFLocationNativeTests/.*native PDF preview drops"
+  ],
+  "wall_seconds": 63.0297958329902,
+  "exit_code": 2
+}

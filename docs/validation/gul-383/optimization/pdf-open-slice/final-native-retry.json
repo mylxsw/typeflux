@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=AskPDFLocationNativeTests"
+  ],
+  "wall_seconds": 67.30956891697133,
+  "exit_code": 2
+}

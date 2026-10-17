@@ -5689,3 +5689,10 @@
 "settings.services.semanticMediaInference" = "セマンティックメディア推論";
 
 "ask.preview.textLocationUnavailable" = "テキストの位置を特定できません";
+
+// PDF open capabilities
+"ask.quick.action.viewMatch" = "一致箇所を表示";
+"ask.quick.file.accessChanged" = "ファイル検索のアクセス権が変更されました。再検索してから開いてください。";
+"ask.quick.file.pdf.open" = "元の PDF を開いています。外部アプリでのページ指定はできません。Typeflux の「一致箇所を表示」を使ってください。";
+"ask.quick.file.pdf.quickLook" = "Quick Look は元の PDF を表示し、一致ページには移動しません。Typeflux の「一致箇所を表示」を使ってください。";
+"ask.quick.file.pdf.preview" = "開く操作と Quick Look は元の PDF を使用します。一致箇所は表示可能な場合ここで確認できます。";

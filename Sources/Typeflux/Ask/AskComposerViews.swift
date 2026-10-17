@@ -541,11 +541,17 @@ struct AskComposer: View {
     /// Carries out an action on a found file; closes the launcher unless it says otherwise.
     private func runFileAction(_ action: AskQuickAction, _ file: AskFileHit) {
         switch model.performQuickFileAction(action, file) {
-        case .close: onDismiss()
+        case .close:
+            if AskFileSearchPlugin.showsFileResults(for: plugins.plugin?.id) { model.finishPluginResult() }
+            onDismiss()
         case .stay: break
         case let .panel(panel):
             quickActions = panel
         case let .text(text): draft.wrappedValue.text = text
+        case let .preview(hit):
+            quickActions = nil
+            AskQuickLook.shared.close()
+            onFilePreview(hit, [], false)
         }
     }
 
@@ -556,6 +562,16 @@ struct AskComposer: View {
     /// Runs the action chosen in the panel, asking again before moving to the trash.
     private func runPanelAction(_ action: AskQuickAction) {
         guard var panel = quickActions else { return }
+        if case let .file(file) = panel.target {
+            if AskFileSearchPlugin.showsFileResults(for: plugins.plugin?.id) {
+                guard model.selectedPluginFile == file else { quickActions = nil; return }
+            } else {
+                guard !quickResultsArePending, quickSearch.isCurrent(text: draft.wrappedValue.text),
+                      quickResults?.file(at: quickResults?.highlightedRow ?? .askAI) == file else {
+                    quickActions = nil; return
+                }
+            }
+        }
         if action == .trash, !panel.confirming {
             panel.highlighted = panel.actions.firstIndex(of: .trash) ?? panel.highlighted
             panel.confirming = true
@@ -662,7 +678,7 @@ struct AskComposer: View {
             showAllFiles()
         case .commandY:
             guard let file, file.kind != .folder else { return false }
-            AskQuickLook.shared.toggle(file.url)
+            runFileAction(.quickLook, file)
         case .commandR:
             if let file { runFileAction(.reveal, file) } else if let app { runAppAction(.reveal, app) } else { return false }
         case .shiftCommandC:
@@ -808,6 +824,17 @@ struct AskComposer: View {
     }
 
     private func performPluginAction(_ action: AskPluginAction) {
+        if case .fileAction = action.kind {
+            guard let outcome = model.performPluginFileAction(action) else { return }
+            switch outcome {
+            case .close: model.finishPluginResult(); onDismiss()
+            case let .panel(panel): quickActions = panel
+            case let .preview(hit):
+                quickActions = nil; AskQuickLook.shared.close(); onFilePreview(hit, [], false)
+            case .stay, .text: break
+            }
+            return
+        }
         if case let .pasteClipboard(id) = action.kind {
             if model.applyLauncherClipboard(id: id, paste: true, completed: onDismiss) == .close { onDismiss() }
             return
@@ -844,6 +871,7 @@ struct AskComposer: View {
     /// Keys in keyword mode, see `docs/design/ask-launcher-keyword-plugins.md` §5.5.
     private func pluginKey(_ key: AskCommandKey) -> Bool {
         guard launcher, !active, let display = pluginDisplay else { return false }
+        if quickActionsKey(key) { return true }
         if display.systemMonitor, let handled = systemMonitorKey(key) { return handled }
         if display.calendar { return calendarKey(key) }
         let selection = draft.wrappedValue.sentSelection, text = draft.wrappedValue.text
@@ -933,13 +961,19 @@ struct AskComposer: View {
         case .escape: return false
         case .commandY:
             // A list of files (file mode) previews the chosen one.
+            if let hit = model.selectedPluginFile { runFileAction(.quickLook, hit); return true }
+            if AskFileSearchPlugin.showsFileResults(for: plugins.plugin?.id) { return true }
             guard case let .fileIcon(url)? = plugins.output?.selected?.icon else { return false }
             AskQuickLook.shared.toggle(url)
+        case .right:
+            guard let hit = model.selectedPluginFile, hit.hasPDFLocationEvidence,
+                  let panel = AskQuickActionPanel.make(for: .file(hit)) else { return false }
+            quickActions = panel
         case .shiftCommandEnter:
             // Ask the AI about the chosen file: it becomes an attachment of a new question.
             guard case let .fileIcon(url)? = plugins.output?.selected?.icon else { return false }
             model.attachFileToLauncher(url)
-        case .right, .left, .commandLeft, .commandRight, .commandT, .commandN, .optionCommandN,
+        case .left, .commandLeft, .commandRight, .commandT, .commandN, .optionCommandN,
              .optionCommandC, .commandDown, .commandDelete, .optionCommandDelete: return false
         }
         return true
@@ -1458,6 +1492,11 @@ struct AskComposer: View {
                                          return plugins.selectItem(index)
                                      }, calendarProvider: pluginDisplay.hint?.pluginID == AskCalendarPlugin.id
                                         ? model.calendarLauncher.provider : nil)
+                    .overlay(alignment: .trailing) {
+                        if let quickActions {
+                            AskQuickActionPanelView(panel: quickActions, onAction: runPanelAction)
+                        }
+                    }
             } else if showsQuickResults, let quickResults = presentedQuickResults {
                 AskQuickResultsView(results: quickResults, question: draft.wrappedValue.text,
                                     minimumHeight: resultsHeight, viewportHeight: launcherResultsViewportHeight,

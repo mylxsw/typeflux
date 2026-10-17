@@ -1,0 +1,72 @@
+{
+  "baseline": "30adce80696606a2c5d34221b7ea759ff3ef81dd",
+  "denominator": "Git added/modified executable Swift lines intersected with LLVM LCOV DA records; new Swift files included. Line coverage only, not branch coverage.",
+  "groups": {
+    "application": {
+      "covered": 116,
+      "executable": 119,
+      "percent": 97.48
+    },
+    "shared_media": {
+      "covered": 0,
+      "executable": 0,
+      "percent": null
+    }
+  },
+  "files": {
+    "Sources/Typeflux/Ask/AskComposerViews.swift": {
+      "covered": 39,
+      "executable": 42,
+      "uncovered": [
+        567,
+        829,
+        961
+      ]
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+Plugins.swift": {
+      "covered": 14,
+      "executable": 14,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+QuickResults.swift": {
+      "covered": 11,
+      "executable": 11,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/AskConversationModel.swift": {
+      "covered": 1,
+      "executable": 1,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskQuickActions.swift": {
+      "covered": 5,
+      "executable": 5,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileLocationActions.swift": {
+      "covered": 23,
+      "executable": 23,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskLauncherPlugin.swift": {
+      "covered": 0,
+      "executable": 0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Files/AskFileSearchPlugin.swift": {
+      "covered": 8,
+      "executable": 8,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift": {
+      "covered": 2,
+      "executable": 2,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewView.swift": {
+      "covered": 13,
+      "executable": 13,
+      "uncovered": []
+    }
+  }
+}

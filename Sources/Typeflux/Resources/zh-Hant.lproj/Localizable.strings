@@ -5723,3 +5723,10 @@
 "settings.services.semanticMediaInference" = "語義媒體推理";
 
 "ask.preview.textLocationUnavailable" = "無法定位文字區域";
+
+// PDF open capabilities
+"ask.quick.action.viewMatch" = "查看命中位置";
+"ask.quick.file.accessChanged" = "檔案搜尋存取權限已變更，請重新搜尋後開啟。";
+"ask.quick.file.pdf.open" = "正在開啟原 PDF。外部應用程式無法可靠跳頁，請在 Typeflux 選擇「查看命中位置」。";
+"ask.quick.file.pdf.quickLook" = "Quick Look 顯示原 PDF，不會跳至命中頁。請在 Typeflux 選擇「查看命中位置」。";
+"ask.quick.file.pdf.preview" = "開啟和 Quick Look 使用原 PDF；命中位置可用時在此查看。";

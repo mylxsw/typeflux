@@ -1,0 +1,12 @@
+{
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskComposerViews.swift.o": "6dad85484ffc47df133adb8511de24dd981ff8c8df7dc2b410f120d13dc315b3",
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskConversationModel+Plugins.swift.o": "e9650930ef2a49c1b203cc9a5a6c4056b0298eedb0dcceecc57f0605699fc6e0",
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskConversationModel+QuickResults.swift.o": "0fc6f8e3d03c7283f25760017f11cd6695118ee6ae1ba9a915f53f7ada77d647",
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskConversationModel.swift.o": "c79c4dbf9d10e073cc91eae728ae47ab9392f3100e0c4e92aeb69f508f0fa90b",
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskQuickActions.swift.o": "13be52ddb299ad0f92354a583e07c46c8badc0b2813fb4d77fed0991c5d60658",
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskLauncherPlugin.swift.o": "1ca19975dadb5e631b56630ccb83e389dd9ee1b62b6d66328872411552d4cf37",
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskFileSearchPlugin.swift.o": "f752c4b06b34a61a3de213c6492c9cd2cfbd6a84327d1ef57f8388cca4199472",
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskFilePreviewPDF.swift.o": "64ddfaef0c20710ee43d27699fc4796fb17b2e245d429d5873f5888b2726d673",
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskFilePreviewView.swift.o": "33fc5825470feb3d17c463bb29bdf9187233133fe828f29dc4cc1fa17563c58e",
+  ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux.build/AskFileLocationActions.swift.o": "c7417377f18deac4d84ae146e5a71cdccffbe4a6dab53e2bc9b4480a8bc40c8a"
+}

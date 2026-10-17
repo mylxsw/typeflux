@@ -5803,3 +5803,10 @@
 "settings.services.semanticMediaInference" = "Semantic media inference";
 
 "ask.preview.textLocationUnavailable" = "Text location unavailable";
+
+// PDF open capabilities
+"ask.quick.action.viewMatch" = "View Match Location";
+"ask.quick.file.accessChanged" = "File search access changed. Search again before opening this result.";
+"ask.quick.file.pdf.open" = "Opening the original PDF. Page positioning is unavailable in external apps. Use View Match Location in Typeflux.";
+"ask.quick.file.pdf.quickLook" = "Quick Look shows the original PDF without a page jump. Use View Match Location in Typeflux.";
+"ask.quick.file.pdf.preview" = "Open and Quick Look use the original PDF. Check the match location here when available.";

@@ -1,0 +1,8 @@
+{
+  "final_focused_files": {
+    "Swift Testing6728789063188264754_0.19240.profraw": "6a2334bcbe9026e6023de42c4d170aa8ac34e26fcd0a4211fd1281d75b5c7bac",
+    "Swift Testing15585736270005054741_0.19294.profraw": "0850f37cf0025415f5b42d13393fb0c5850d89a60a1a4507fe8717ef4c3bf150",
+    "XCTest6728789063188264754_0.19231.profraw": "a74641afed755791e9048ecca8ae9970003fbf1b7a78a378946cfd55eb40fd2d"
+  },
+  "discovery_only_profile": "The worktree-root default.profraw contains discovery initialization only (zero changed lines); excluded. Actual failed-run SwiftPM profiles are saved from codecov before native retry starts execution. No old APFS-cloned profiles are used."
+}
