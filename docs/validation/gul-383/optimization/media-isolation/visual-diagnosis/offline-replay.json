@@ -1,0 +1,3092 @@
+{
+  "exact_lexical_queries" : [
+    {
+      "hits" : [
+        {
+          "kind" : "image-ocr",
+          "name" : "screen.png"
+        }
+      ],
+      "query" : "ERR-739204"
+    },
+    {
+      "hits" : [
+
+      ],
+      "query" : "ERR-739205"
+    },
+    {
+      "hits" : [
+        {
+          "kind" : "image-ocr",
+          "name" : "screen.png"
+        }
+      ],
+      "query" : "\"Connection failed\""
+    },
+    {
+      "hits" : [
+
+      ],
+      "query" : "\"Connection succeeded\""
+    }
+  ],
+  "existing_image_color_pairs" : [
+    {
+      "file" : "red",
+      "matches_frozen_target" : true,
+      "query" : "a red square",
+      "query_id" : "image_red-0",
+      "scanner_cosine" : 0.7690730094909668,
+      "single_file_confident" : true
+    },
+    {
+      "file" : "blue",
+      "matches_frozen_target" : false,
+      "query" : "a red square",
+      "query_id" : "image_red-0",
+      "scanner_cosine" : 0.69818198680877686,
+      "single_file_confident" : false
+    },
+    {
+      "file" : "red",
+      "matches_frozen_target" : true,
+      "query" : "red image",
+      "query_id" : "image_red-1",
+      "scanner_cosine" : 0.76561707258224487,
+      "single_file_confident" : true
+    },
+    {
+      "file" : "blue",
+      "matches_frozen_target" : false,
+      "query" : "red image",
+      "query_id" : "image_red-1",
+      "scanner_cosine" : 0.65764927864074707,
+      "single_file_confident" : false
+    },
+    {
+      "file" : "red",
+      "matches_frozen_target" : true,
+      "query" : "a photo of a red square",
+      "query_id" : "image_red-2",
+      "scanner_cosine" : 0.7583734393119812,
+      "single_file_confident" : true
+    },
+    {
+      "file" : "blue",
+      "matches_frozen_target" : false,
+      "query" : "a photo of a red square",
+      "query_id" : "image_red-2",
+      "scanner_cosine" : 0.69262659549713135,
+      "single_file_confident" : false
+    },
+    {
+      "file" : "red",
+      "matches_frozen_target" : false,
+      "query" : "a blue square",
+      "query_id" : "image_blue-0",
+      "scanner_cosine" : 0.67921233177185059,
+      "single_file_confident" : false
+    },
+    {
+      "file" : "blue",
+      "matches_frozen_target" : true,
+      "query" : "a blue square",
+      "query_id" : "image_blue-0",
+      "scanner_cosine" : 0.79133236408233643,
+      "single_file_confident" : true
+    },
+    {
+      "file" : "red",
+      "matches_frozen_target" : false,
+      "query" : "blue image",
+      "query_id" : "image_blue-1",
+      "scanner_cosine" : 0.63340121507644653,
+      "single_file_confident" : false
+    },
+    {
+      "file" : "blue",
+      "matches_frozen_target" : true,
+      "query" : "blue image",
+      "query_id" : "image_blue-1",
+      "scanner_cosine" : 0.76371455192565918,
+      "single_file_confident" : true
+    },
+    {
+      "file" : "red",
+      "matches_frozen_target" : false,
+      "query" : "a photo of a blue square",
+      "query_id" : "image_blue-2",
+      "scanner_cosine" : 0.66563498973846436,
+      "single_file_confident" : false
+    },
+    {
+      "file" : "blue",
+      "matches_frozen_target" : true,
+      "query" : "a photo of a blue square",
+      "query_id" : "image_blue-2",
+      "scanner_cosine" : 0.78277593851089478,
+      "single_file_confident" : true
+    }
+  ],
+  "existing_no_answer_denominator" : 50,
+  "existing_no_answer_false_positives" : 0,
+  "fixed_query" : {
+    "diagnosis" : {
+      "absolute_confidence_floor" : 0.69999999999999996,
+      "confident" : false,
+      "distinct_files" : 1,
+      "lexical_candidate_count" : 0,
+      "peak" : 0.69384241104125977,
+      "query" : "black text on a white background",
+      "query_norm" : 1.0000000025178604,
+      "query_valid" : true,
+      "rows" : [
+        {
+          "allowed" : true,
+          "candidate_score" : 0.38161332607269288,
+          "dimensions" : 768,
+          "float32_dot" : 0.69383973812353883,
+          "id" : 1,
+          "lexical_coverage" : 0,
+          "modality" : "image",
+          "name" : "screen.png",
+          "norm" : 1.0000000440886321,
+          "ordered_candidate_score" : 0.38161332607269288,
+          "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+          "provenance_matches" : true,
+          "scanner_cosine" : 0.69384241104125977,
+          "script_adjustment" : 0,
+          "segment_kind" : "image",
+          "vector_valid" : true
+        },
+        {
+          "allowed" : true,
+          "candidate_score" : 0.35731283128261571,
+          "dimensions" : 768,
+          "float32_dot" : 0.6496671896414582,
+          "id" : 2,
+          "lexical_coverage" : 0,
+          "modality" : "text",
+          "name" : "screen.png",
+          "norm" : 0.99999999418803942,
+          "ordered_candidate_score" : 0.38231283128261573,
+          "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+          "provenance_matches" : true,
+          "scanner_cosine" : 0.64965969324111938,
+          "script_adjustment" : 0.025000000000000001,
+          "segment_kind" : "image-ocr",
+          "vector_valid" : true
+        }
+      ],
+      "runner_up" : null,
+      "semantic_floor" : 0.45000000000000001
+    },
+    "hits" : [
+
+    ]
+  },
+  "mode" : "Offline production Store\/Float16 scanner replay; no inference or parameter changes",
+  "no_answer_rows" : [
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.5643470287322998,
+        "query" : "unobtainium quantum zeppelin 0",
+        "query_norm" : 1.0000000319218512,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29887563288211827,
+            "dimensions" : 768,
+            "float32_dot" : 0.54341462487615289,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.29887563288211827,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.54341024160385132,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.31039086580276493,
+            "dimensions" : 768,
+            "float32_dot" : 0.56435353519872589,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.33539086580276495,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.5643470287322998,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-00",
+      "query" : "unobtainium quantum zeppelin 0"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.5538983941078186,
+        "query" : "unobtainium quantum zeppelin 1",
+        "query_norm" : 0.99999994543852155,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29823352098464967,
+            "dimensions" : 768,
+            "float32_dot" : 0.54224597178396006,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.29823352098464967,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.54224276542663574,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30464411675930025,
+            "dimensions" : 768,
+            "float32_dot" : 0.5539038723484897,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32964411675930028,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.5538983941078186,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-01",
+      "query" : "unobtainium quantum zeppelin 1"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.55480164289474487,
+        "query" : "unobtainium quantum zeppelin 2",
+        "query_norm" : 0.99999998351939001,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29887687861919404,
+            "dimensions" : 768,
+            "float32_dot" : 0.54341816861461656,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.29887687861919404,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.54341250658035278,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30514090359210971,
+            "dimensions" : 768,
+            "float32_dot" : 0.55480657204977024,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.33014090359210974,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.55480164289474487,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-02",
+      "query" : "unobtainium quantum zeppelin 2"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.54870098829269409,
+        "query" : "unobtainium quantum zeppelin 3",
+        "query_norm" : 1.0000000472831683,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29665569663047792,
+            "dimensions" : 768,
+            "float32_dot" : 0.53937905363822014,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.29665569663047792,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.53937399387359619,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30178554356098175,
+            "dimensions" : 768,
+            "float32_dot" : 0.54870559639136796,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32678554356098177,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.54870098829269409,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-03",
+      "query" : "unobtainium quantum zeppelin 3"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.5601765513420105,
+        "query" : "unobtainium quantum zeppelin 4",
+        "query_norm" : 1.0000000008445253,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30100669562816623,
+            "dimensions" : 768,
+            "float32_dot" : 0.54729125538742029,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.30100669562816623,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.54728490114212036,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.3080971032381058,
+            "dimensions" : 768,
+            "float32_dot" : 0.56018001004588569,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.33309710323810582,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.5601765513420105,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-04",
+      "query" : "unobtainium quantum zeppelin 4"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.54183125495910645,
+        "query" : "unobtainium quantum zeppelin 5",
+        "query_norm" : 1.0000000514339746,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.28999362587928773,
+            "dimensions" : 768,
+            "float32_dot" : 0.52726717882599372,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.28999362587928773,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.52726113796234131,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29800719022750854,
+            "dimensions" : 768,
+            "float32_dot" : 0.54183720987437933,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32300719022750857,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.54183125495910645,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-05",
+      "query" : "unobtainium quantum zeppelin 5"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.5493883490562439,
+        "query" : "unobtainium quantum zeppelin 6",
+        "query_norm" : 1.0000000511451181,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29009466171264653,
+            "dimensions" : 768,
+            "float32_dot" : 0.52745044673251196,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.29009466171264653,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.52744483947753906,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30216359198093418,
+            "dimensions" : 768,
+            "float32_dot" : 0.54939474228071794,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.3271635919809342,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.5493883490562439,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-06",
+      "query" : "unobtainium quantum zeppelin 6"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.56045776605606079,
+        "query" : "unobtainium quantum zeppelin 7",
+        "query_norm" : 0.9999999922258741,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29836815893650059,
+            "dimensions" : 768,
+            "float32_dot" : 0.54249080978219566,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.29836815893650059,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.54248756170272827,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30825177133083348,
+            "dimensions" : 768,
+            "float32_dot" : 0.56046367800886798,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.3332517713308335,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.56045776605606079,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-07",
+      "query" : "unobtainium quantum zeppelin 7"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.54588675498962402,
+        "query" : "unobtainium quantum zeppelin 8",
+        "query_norm" : 1.0000000496498382,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29169789254665379,
+            "dimensions" : 768,
+            "float32_dot" : 0.53036592406712624,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.29169789254665379,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.53035980463027954,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30023771524429321,
+            "dimensions" : 768,
+            "float32_dot" : 0.54589244943788018,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32523771524429324,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.54588675498962402,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-08",
+      "query" : "unobtainium quantum zeppelin 8"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.55292207002639771,
+        "query" : "unobtainium quantum zeppelin 9",
+        "query_norm" : 1.0000000256989168,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29629423618316653,
+            "dimensions" : 768,
+            "float32_dot" : 0.53872152324691747,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.29629423618316653,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.53871679306030273,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30410713851451876,
+            "dimensions" : 768,
+            "float32_dot" : 0.55292718181855349,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32910713851451878,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.55292207002639771,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-09",
+      "query" : "unobtainium quantum zeppelin 9"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.55173587799072266,
+        "query" : "unobtainium quantum zeppelin 10",
+        "query_norm" : 1.0000000082705922,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.2975598067045212,
+            "dimensions" : 768,
+            "float32_dot" : 0.54102398053866652,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.2975598067045212,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.54101783037185669,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30345473289489749,
+            "dimensions" : 768,
+            "float32_dot" : 0.55174162812279415,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32845473289489752,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.55173587799072266,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-10",
+      "query" : "unobtainium quantum zeppelin 10"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.55445432662963867,
+        "query" : "unobtainium quantum zeppelin 11",
+        "query_norm" : 1.0000000036855645,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29582583904266357,
+            "dimensions" : 768,
+            "float32_dot" : 0.53787034240715581,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.29582583904266357,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.53786516189575195,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30494987964630127,
+            "dimensions" : 768,
+            "float32_dot" : 0.55446007816397413,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32994987964630129,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.55445432662963867,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-11",
+      "query" : "unobtainium quantum zeppelin 11"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.54005569219589233,
+        "query" : "unobtainium quantum zeppelin 12",
+        "query_norm" : 1.0000000090772969,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29023834764957429,
+            "dimensions" : 768,
+            "float32_dot" : 0.5277119040781566,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.29023834764957429,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.5277060866355896,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29703063070774083,
+            "dimensions" : 768,
+            "float32_dot" : 0.54006199713437675,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32203063070774085,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.54005569219589233,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-12",
+      "query" : "unobtainium quantum zeppelin 12"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.54898154735565186,
+        "query" : "unobtainium quantum zeppelin 13",
+        "query_norm" : 0.99999996909545974,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29609714746475224,
+            "dimensions" : 768,
+            "float32_dot" : 0.53836488311966801,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.29609714746475224,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.53835844993591309,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30193985104560855,
+            "dimensions" : 768,
+            "float32_dot" : 0.54898730437485566,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32693985104560858,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.54898154735565186,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-13",
+      "query" : "unobtainium quantum zeppelin 13"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.5517963171005249,
+        "query" : "unobtainium quantum zeppelin 14",
+        "query_norm" : 0.99999998162871961,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29525093138217928,
+            "dimensions" : 768,
+            "float32_dot" : 0.53682579354117355,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.29525093138217928,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.53681987524032593,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30348797440528874,
+            "dimensions" : 768,
+            "float32_dot" : 0.55180268956269152,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32848797440528876,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.5517963171005249,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-14",
+      "query" : "unobtainium quantum zeppelin 14"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.53973299264907837,
+        "query" : "unobtainium quantum zeppelin 15",
+        "query_norm" : 0.99999997526852036,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.28818566799163819,
+            "dimensions" : 768,
+            "float32_dot" : 0.52397814332275428,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.28818566799163819,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.52397394180297852,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29685314595699314,
+            "dimensions" : 768,
+            "float32_dot" : 0.53973812210912719,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32185314595699316,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.53973299264907837,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-15",
+      "query" : "unobtainium quantum zeppelin 15"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.54602503776550293,
+        "query" : "unobtainium quantum zeppelin 16",
+        "query_norm" : 0.9999999784926864,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.2925199151039124,
+            "dimensions" : 768,
+            "float32_dot" : 0.53185866673751236,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.2925199151039124,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.53185439109802246,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30031377077102661,
+            "dimensions" : 768,
+            "float32_dot" : 0.54603154267208842,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32531377077102663,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.54602503776550293,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-16",
+      "query" : "unobtainium quantum zeppelin 16"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.56462627649307251,
+        "query" : "unobtainium quantum zeppelin 17",
+        "query_norm" : 1.0000000070685517,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29872919321060182,
+            "dimensions" : 768,
+            "float32_dot" : 0.54314856316167726,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.29872919321060182,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.54314398765563965,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.31054445207118991,
+            "dimensions" : 768,
+            "float32_dot" : 0.56463468226244418,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.33554445207118994,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.56462627649307251,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-17",
+      "query" : "unobtainium quantum zeppelin 17"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.55379694700241089,
+        "query" : "unobtainium quantum zeppelin 18",
+        "query_norm" : 0.99999998073365459,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29596542716026308,
+            "dimensions" : 768,
+            "float32_dot" : 0.53812641803315886,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.29596542716026308,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.53811895847320557,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30458832085132603,
+            "dimensions" : 768,
+            "float32_dot" : 0.55380511037591462,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32958832085132606,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.55379694700241089,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-18",
+      "query" : "unobtainium quantum zeppelin 18"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.56406784057617188,
+        "query" : "unobtainium quantum zeppelin 19",
+        "query_norm" : 1.0000000136523002,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30328314900398257,
+            "dimensions" : 768,
+            "float32_dot" : 0.55142857336833029,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.30328314900398257,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.55142390727996826,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.31023731231689455,
+            "dimensions" : 768,
+            "float32_dot" : 0.56407502782015662,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.33523731231689458,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.56406784057617188,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-19",
+      "query" : "unobtainium quantum zeppelin 19"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.55864477157592773,
+        "query" : "unobtainium quantum zeppelin 20",
+        "query_norm" : 1.0000000234083846,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.3030714720487595,
+            "dimensions" : 768,
+            "float32_dot" : 0.55104626946542179,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.3030714720487595,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.55103904008865356,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30725462436676027,
+            "dimensions" : 768,
+            "float32_dot" : 0.55865319914169653,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.33225462436676029,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.55864477157592773,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-20",
+      "query" : "unobtainium quantum zeppelin 20"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.55736440420150757,
+        "query" : "unobtainium quantum zeppelin 21",
+        "query_norm" : 0.99999997380490047,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30160061717033387,
+            "dimensions" : 768,
+            "float32_dot" : 0.54837125677986409,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.30160061717033387,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.54836475849151611,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30655042231082918,
+            "dimensions" : 768,
+            "float32_dot" : 0.55737067514452421,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.33155042231082921,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.55736440420150757,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-21",
+      "query" : "unobtainium quantum zeppelin 21"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.55913078784942627,
+        "query" : "unobtainium quantum zeppelin 22",
+        "query_norm" : 0.99999998150540947,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30139559507369995,
+            "dimensions" : 768,
+            "float32_dot" : 0.54799952827990195,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.30139559507369995,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.54799199104309082,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30752193331718447,
+            "dimensions" : 768,
+            "float32_dot" : 0.55913789251378698,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.33252193331718449,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.55913078784942627,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-22",
+      "query" : "unobtainium quantum zeppelin 22"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.55883920192718506,
+        "query" : "unobtainium quantum zeppelin 23",
+        "query_norm" : 1.0000000062235961,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30301013588905334,
+            "dimensions" : 768,
+            "float32_dot" : 0.55093578439026314,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.30301013588905334,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.55092751979827881,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30736156105995183,
+            "dimensions" : 768,
+            "float32_dot" : 0.55884535567732163,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.33236156105995185,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.55883920192718506,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-23",
+      "query" : "unobtainium quantum zeppelin 23"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.56788986921310425,
+        "query" : "unobtainium quantum zeppelin 24",
+        "query_norm" : 1.0000000156592859,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30456035733222964,
+            "dimensions" : 768,
+            "float32_dot" : 0.55375334727742365,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.30456035733222964,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.55374610424041748,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.31233942806720738,
+            "dimensions" : 768,
+            "float32_dot" : 0.56789610207660612,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.3373394280672074,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.56788986921310425,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-24",
+      "query" : "unobtainium quantum zeppelin 24"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.53941357135772705,
+        "query" : "How do dragons obtain licenses for teleportation?",
+        "query_norm" : 1.0000000218186642,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.28514869213104249,
+            "dimensions" : 768,
+            "float32_dot" : 0.51845871643834252,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.28514869213104249,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.51845216751098633,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.2966774642467499,
+            "dimensions" : 768,
+            "float32_dot" : 0.53941290911738404,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32167746424674992,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.53941357135772705,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-00",
+      "query" : "How do dragons obtain licenses for teleportation?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.566414475440979,
+        "query" : "Does the lunar embassy accept crystal currency?",
+        "query_norm" : 1.000000013400254,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.28760069608688354,
+            "dimensions" : 768,
+            "float32_dot" : 0.52291850133612938,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.28760069608688354,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.52291035652160645,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.31152796149253847,
+            "dimensions" : 768,
+            "float32_dot" : 0.56641770551419079,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.3365279614925385,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.566414475440979,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-01",
+      "query" : "Does the lunar embassy accept crystal currency?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.55966335535049438,
+        "query" : "Where can a mermaid recharge a flying chariot?",
+        "query_norm" : 1.0000000259423023,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29863963127136234,
+            "dimensions" : 768,
+            "float32_dot" : 0.54298531728043797,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.29863963127136234,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.54298114776611328,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30781484544277193,
+            "dimensions" : 768,
+            "float32_dot" : 0.5596705042907022,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.33281484544277196,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.55966335535049438,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-02",
+      "query" : "Where can a mermaid recharge a flying chariot?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.53723156452178955,
+        "query" : "How many feathers are needed to steer a comet?",
+        "query_norm" : 1.0000000273127168,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.27750062048435215,
+            "dimensions" : 768,
+            "float32_dot" : 0.50455429351479508,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.27750062048435215,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.50454658269882202,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29547736048698425,
+            "dimensions" : 768,
+            "float32_dot" : 0.53724022849939723,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32047736048698428,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.53723156452178955,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-03",
+      "query" : "How many feathers are needed to steer a comet?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.57684135437011719,
+        "query" : "What language do invisible nebula creatures speak?",
+        "query_norm" : 1.0000000090605121,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.28170314729213719,
+            "dimensions" : 768,
+            "float32_dot" : 0.51219251058642479,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.28170314729213719,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.51218754053115845,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.31726274490356449,
+            "dimensions" : 768,
+            "float32_dot" : 0.57684864221596244,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.34226274490356451,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.57684135437011719,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-04",
+      "query" : "What language do invisible nebula creatures speak?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.51130688190460205,
+        "query" : "Can a wizard turn moonlight into edible diamonds?",
+        "query_norm" : 0.99999997023750553,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.26258418112993243,
+            "dimensions" : 768,
+            "float32_dot" : 0.47743002627128961,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.26258418112993243,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.47742578387260437,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.28121878504753117,
+            "dimensions" : 768,
+            "float32_dot" : 0.51131180756771721,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.30621878504753119,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.51130688190460205,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-05",
+      "query" : "Can a wizard turn moonlight into edible diamonds?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.53339689970016479,
+        "query" : "Which spell reverses the direction of gravity?",
+        "query_norm" : 0.99999994567975803,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.27939768135547638,
+            "dimensions" : 768,
+            "float32_dot" : 0.50800286356113389,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.27939768135547638,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.50799578428268433,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29336829483509064,
+            "dimensions" : 768,
+            "float32_dot" : 0.53339949367602801,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.31836829483509066,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.53339689970016479,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-06",
+      "query" : "Which spell reverses the direction of gravity?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.5671694278717041,
+        "query" : "Where is the portal to the underwater kingdom?",
+        "query_norm" : 1.000000022739107,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29435826241970064,
+            "dimensions" : 768,
+            "float32_dot" : 0.53519807644865391,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.29435826241970064,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.53519684076309204,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.31194318532943727,
+            "dimensions" : 768,
+            "float32_dot" : 0.56717279814315757,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.33694318532943729,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.5671694278717041,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-07",
+      "query" : "Where is the portal to the underwater kingdom?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.5279158353805542,
+        "query" : "How is a phoenix hatched inside a neutron star?",
+        "query_norm" : 0.99999997706232402,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.27585237920284272,
+            "dimensions" : 768,
+            "float32_dot" : 0.50154710628328303,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.27585237920284272,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.50154978036880493,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29035370945930483,
+            "dimensions" : 768,
+            "float32_dot" : 0.52792196372635924,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.31535370945930485,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.5279158353805542,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-08",
+      "query" : "How is a phoenix hatched inside a neutron star?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.48472726345062256,
+        "query" : "Who invented time travel for ancient dinosaurs?",
+        "query_norm" : 1.0000000254749681,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.26659999489784242,
+            "dimensions" : 768,
+            "float32_dot" : 0.48473905591031308,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.26659999489784242,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.48472726345062256,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.26054518818855288,
+            "dimensions" : 768,
+            "float32_dot" : 0.47372061286830114,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.2855451881885529,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.47371852397918701,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-09",
+      "query" : "Who invented time travel for ancient dinosaurs?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.55889749526977539,
+        "query" : "What fuel powers a spaceship made of starlight?",
+        "query_norm" : 0.99999998988106975,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.2811819046735764,
+            "dimensions" : 768,
+            "float32_dot" : 0.51123667039238607,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.2811819046735764,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.51123982667922974,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30739362239837648,
+            "dimensions" : 768,
+            "float32_dot" : 0.55890770875441231,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.3323936223983765,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.55889749526977539,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-10",
+      "query" : "What fuel powers a spaceship made of starlight?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.55025172233581543,
+        "query" : "How can a ghost unlock a parallel universe?",
+        "query_norm" : 1.0000000144106322,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.28447796106338502,
+            "dimensions" : 768,
+            "float32_dot" : 0.51724020851304287,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.28447796106338502,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.51723265647888184,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30263844728469852,
+            "dimensions" : 768,
+            "float32_dot" : 0.55025745639322887,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32763844728469854,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.55025172233581543,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-11",
+      "query" : "How can a ghost unlock a parallel universe?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.57133752107620239,
+        "query" : "Are enchanted asteroids allergic to silver dust?",
+        "query_norm" : 0.99999997768173088,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.2919773638248444,
+            "dimensions" : 768,
+            "float32_dot" : 0.5308737945173343,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.2919773638248444,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.53086793422698975,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.31423563659191134,
+            "dimensions" : 768,
+            "float32_dot" : 0.57134589946101033,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.33923563659191136,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.57133752107620239,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-12",
+      "query" : "Are enchanted asteroids allergic to silver dust?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.55194973945617676,
+        "query" : "How are unicorn dreams transmitted to distant galaxies?",
+        "query_norm" : 0.99999999823322061,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.28626143038272861,
+            "dimensions" : 768,
+            "float32_dot" : 0.52047938843163133,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.28626143038272861,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.52047532796859741,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30357235670089722,
+            "dimensions" : 768,
+            "float32_dot" : 0.55195516487534868,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32857235670089724,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.55194973945617676,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-13",
+      "query" : "How are unicorn dreams transmitted to distant galaxies?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.55280196666717529,
+        "query" : "Which potion lets a jellyfish breathe in vacuum?",
+        "query_norm" : 0.99999997462660817,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.28445157110691072,
+            "dimensions" : 768,
+            "float32_dot" : 0.51719318671518277,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.28445157110691072,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.51718467473983765,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30404108166694643,
+            "dimensions" : 768,
+            "float32_dot" : 0.5528109505541533,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32904108166694646,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.55280196666717529,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-14",
+      "query" : "Which potion lets a jellyfish breathe in vacuum?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.50304996967315674,
+        "query" : "Why do imaginary planets orbit a square sun?",
+        "query_norm" : 0.99999998985085981,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.27667748332023623,
+            "dimensions" : 768,
+            "float32_dot" : 0.50305832684764806,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.27667748332023623,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.50304996967315674,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.27415135800838475,
+            "dimensions" : 768,
+            "float32_dot" : 0.49846091525170855,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.29915135800838477,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.49845701456069946,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-15",
+      "query" : "Why do imaginary planets orbit a square sun?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.5616878867149353,
+        "query" : "Can talking mountains predict the colour of tomorrow?",
+        "query_norm" : 0.99999999214370816,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29227381646633149,
+            "dimensions" : 768,
+            "float32_dot" : 0.53141320869831188,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.29227381646633149,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.5314069390296936,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30892833769321443,
+            "dimensions" : 768,
+            "float32_dot" : 0.56168898146680468,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.33392833769321445,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.5616878867149353,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-16",
+      "query" : "Can talking mountains predict the colour of tomorrow?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.56534814834594727,
+        "query" : "Where are the invisible wings of a cosmic serpent?",
+        "query_norm" : 0.99999997088228054,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.28384483158588414,
+            "dimensions" : 768,
+            "float32_dot" : 0.51609197197253609,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.28384483158588414,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.51608151197433472,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.31094148159027102,
+            "dimensions" : 768,
+            "float32_dot" : 0.56535106120593703,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.33594148159027104,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.56534814834594727,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-17",
+      "query" : "Where are the invisible wings of a cosmic serpent?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.55584168434143066,
+        "query" : "How does a sorcerer bottle the sound of thunder?",
+        "query_norm" : 0.99999997060848667,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.28074494600296024,
+            "dimensions" : 768,
+            "float32_dot" : 0.51045951804483169,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.28074494600296024,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.51044535636901855,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.30571292638778691,
+            "dimensions" : 768,
+            "float32_dot" : 0.55584910820701894,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.33071292638778693,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.55584168434143066,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-18",
+      "query" : "How does a sorcerer bottle the sound of thunder?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.54188370704650879,
+        "query" : "What is the mass of a fictional antimatter dragon?",
+        "query_norm" : 0.99999997307607569,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.26994407773017887,
+            "dimensions" : 768,
+            "float32_dot" : 0.49081238880735673,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.26994407773017887,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.49080741405487061,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29803603887557983,
+            "dimensions" : 768,
+            "float32_dot" : 0.54189032989905495,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32303603887557986,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.54188370704650879,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-19",
+      "query" : "What is the mass of a fictional antimatter dragon?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.52619314193725586,
+        "query" : "How many moons fit inside a magical teacup?",
+        "query_norm" : 0.99999998678769741,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.27460982203483586,
+            "dimensions" : 768,
+            "float32_dot" : 0.49929885116649741,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.27460982203483586,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.4992905855178833,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.28940622806549077,
+            "dimensions" : 768,
+            "float32_dot" : 0.5262061044531402,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.31440622806549079,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.52619314193725586,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-20",
+      "query" : "How many moons fit inside a magical teacup?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.54156321287155151,
+        "query" : "Which mythical ocean contains liquid rainbows?",
+        "query_norm" : 0.99999999131627237,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.27992751300334934,
+            "dimensions" : 768,
+            "float32_dot" : 0.50896638762667268,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.27992751300334934,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.50895911455154419,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29785976707935335,
+            "dimensions" : 768,
+            "float32_dot" : 0.54157142422425852,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.32285976707935338,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.54156321287155151,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-21",
+      "query" : "Which mythical ocean contains liquid rainbows?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.5383182168006897,
+        "query" : "How does a centaur repair a broken time machine?",
+        "query_norm" : 0.99999997099214422,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.28712888956069949,
+            "dimensions" : 768,
+            "float32_dot" : 0.52205940520350258,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.28712888956069949,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.52205252647399902,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.29607501924037938,
+            "dimensions" : 768,
+            "float32_dot" : 0.53832845368730542,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.3210750192403794,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.5383182168006897,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-22",
+      "query" : "How does a centaur repair a broken time machine?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.5673709511756897,
+        "query" : "What password opens the dream dimension?",
+        "query_norm" : 0.9999999827803826,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.2948875039815903,
+            "dimensions" : 768,
+            "float32_dot" : 0.53616032229502197,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.2948875039815903,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.53615909814834595,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.31205402314662933,
+            "dimensions" : 768,
+            "float32_dot" : 0.5673763699175417,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.33705402314662936,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.5673709511756897,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-23",
+      "query" : "What password opens the dream dimension?"
+    },
+    {
+      "diagnosis" : {
+        "absolute_confidence_floor" : 0.69999999999999996,
+        "confident" : false,
+        "distinct_files" : 1,
+        "lexical_candidate_count" : 0,
+        "peak" : 0.50770878791809082,
+        "query" : "How do extraterrestrial fairies manufacture dark matter?",
+        "query_norm" : 1.0000000174383459,
+        "query_valid" : true,
+        "rows" : [
+          {
+            "allowed" : true,
+            "candidate_score" : 0.26605091989040375,
+            "dimensions" : 768,
+            "float32_dot" : 0.48373835003072929,
+            "id" : 1,
+            "lexical_coverage" : 0,
+            "modality" : "image",
+            "name" : "screen.png",
+            "norm" : 1.0000000440886321,
+            "ordered_candidate_score" : 0.26605091989040375,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.48372894525527954,
+            "script_adjustment" : 0,
+            "segment_kind" : "image",
+            "vector_valid" : true
+          },
+          {
+            "allowed" : true,
+            "candidate_score" : 0.27923983335494995,
+            "dimensions" : 768,
+            "float32_dot" : 0.50771760683622014,
+            "id" : 2,
+            "lexical_coverage" : 0,
+            "modality" : "text",
+            "name" : "screen.png",
+            "norm" : 0.99999999418803942,
+            "ordered_candidate_score" : 0.30423983335494997,
+            "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+            "provenance_matches" : true,
+            "scanner_cosine" : 0.50770878791809082,
+            "script_adjustment" : 0.025000000000000001,
+            "segment_kind" : "image-ocr",
+            "vector_valid" : true
+          }
+        ],
+        "runner_up" : null,
+        "semantic_floor" : 0.45000000000000001
+      },
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-24",
+      "query" : "How do extraterrestrial fairies manufacture dark matter?"
+    }
+  ]
+}

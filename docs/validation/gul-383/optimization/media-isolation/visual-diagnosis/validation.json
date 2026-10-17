@@ -1,0 +1,16 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "docs/validation/gul-383/optimization/media-isolation/visual-diagnosis",
+    "-p",
+    "test_analysis.py",
+    "-v"
+  ],
+  "wall_seconds": 0.06205762503668666,
+  "exit_code": 0,
+  "scope": "Four diagnostic artifact tests only; production acceptance remains false"
+}

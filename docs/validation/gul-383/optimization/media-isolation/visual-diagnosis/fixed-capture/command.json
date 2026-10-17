@@ -1,0 +1,15 @@
+{
+  "media": "screenshot",
+  "mode": "service",
+  "stage_seconds": 40,
+  "budget_enabled": true,
+  "product_runtime": true,
+  "runner_start_monotonic": 535463.186427541,
+  "launch_monotonic": 535464.131555625,
+  "owned_pid": 99568,
+  "observation_limit_seconds": 60,
+  "post_clear_pids_requiring_cleanup": [],
+  "exit_code": 1,
+  "wall_seconds": 25.866407125024125,
+  "private_root_removed": true
+}

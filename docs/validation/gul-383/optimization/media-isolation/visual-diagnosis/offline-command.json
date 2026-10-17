@@ -1,0 +1,10 @@
+{
+  "command": [
+    "<repo>/.build/visual-diagnosis/OfflineReplay",
+    "<repo>"
+  ],
+  "wall_seconds": 3.9367870410205796,
+  "exit_code": 0,
+  "inference": false,
+  "reason": "Add actual production script adjustment and hypothetical same-file winner; no new model request"
+}

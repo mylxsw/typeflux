@@ -1,0 +1,31 @@
+{
+  "feature_complete": false,
+  "production_changes_this_slice": false,
+  "checks": {
+    "query_to_store_chain": "Both channels generated/persisted; fixed visual answerability still fails",
+    "boundaries": "Missing distinct runner-up; two chunks of one file; malformed vector rejection; exact code/quotes and known wrong-color counterexample verified",
+    "resources": "Five observed acquisition PIDs absent; original private directory removed; no helper/app rebuild; no network/model recapture after first collection",
+    "security": "Synthetic data only; SQLite vacuumed after path redaction; text/SQLite local path scan passed; existing permissions/default/ownership/cancellation code untouched",
+    "consistency": "Report script adjustment separately from confidence; keep fail status and original negative denominators"
+  },
+  "issues_repaired": [
+    "Diagnostic omission of actual OCR script adjustment corrected and affected methods rechecked",
+    "Metadata-only relative-path collection failure corrected without product rerun"
+  ],
+  "coverage_this_slice": {
+    "application": "0/0 N/A",
+    "native_helper": "0/0 N/A",
+    "file_helper": "0/0 N/A",
+    "media_runtime": "0/0 N/A"
+  },
+  "pr_coverage_reused": {
+    "application": "3/3",
+    "native_helper": "4/4"
+  },
+  "remaining": [
+    "Screenshot visual retrieval",
+    "Real 30/25 audio boundary retrieval",
+    "Short-video scene and actual-time retrieval"
+  ],
+  "next_step": "Use saved SQLite/query/image vectors and fixed old oracle to evaluate richer visual/OCR agreement and segment selection; a scalar cutoff cannot solve the demonstrated overlap. Do not re-encode screenshot or invent per-sample gate values."
+}

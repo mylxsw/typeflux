@@ -1,0 +1,65 @@
+{
+  "mode": "Diagnostic analysis; current fixed query remains an acceptance failure",
+  "query_norm": 1.0000000025178604,
+  "rows": [
+    {
+      "id": 1,
+      "path": "/gul405-synthetic/corpus/screen.png",
+      "modality": "image",
+      "segment_kind": "image",
+      "provenance": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1",
+      "norm": 1.0000000440886325,
+      "float32_dot": 0.6938397381235383,
+      "scanner_cosine": 0.6938424110412598,
+      "quantization_delta": 2.6729177214912525e-06,
+      "script_adjustment": 0,
+      "ordered_candidate_score": 0.3816133260726929,
+      "generated_float32_bytes_equal_persisted": true
+    },
+    {
+      "id": 2,
+      "path": "/gul405-synthetic/corpus/screen.png",
+      "modality": "text",
+      "segment_kind": "image-ocr",
+      "provenance": "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2;image-vision-accurate-auto-4096-v1",
+      "norm": 0.9999999941880395,
+      "float32_dot": 0.6496671896414593,
+      "scanner_cosine": 0.6496596932411194,
+      "quantization_delta": -7.4964003399236034e-06,
+      "script_adjustment": 0.025,
+      "ordered_candidate_score": 0.38231283128261573,
+      "generated_float32_bytes_equal_persisted": null
+    }
+  ],
+  "file_versions": [
+    [
+      "/gul405-synthetic/corpus/screen.png",
+      "16777239:84446914:32816:1792221929:152270547:1792221929:152286297"
+    ]
+  ],
+  "pipeline_counts": {
+    "persisted_vectors": 2,
+    "compatible_vectors": 2,
+    "eligible_vectors": 2,
+    "accepted_scores": 2,
+    "distinct_files": 1,
+    "after_confidence": 0
+  },
+  "winning_segment_if_confident": "image-ocr",
+  "first_rejection": "SemanticSearchRanking.confident: no complete lexical evidence, no distinct runner-up, peak below 0.70",
+  "missing_absolute_margin": 0.00615758895874019,
+  "existing_no_answer_denominator": 50,
+  "existing_no_answer_false_positives": 0,
+  "maximum_existing_no_answer_cosine": 0.5768413543701172,
+  "stronger_nonmatching_color": {
+    "file": "blue",
+    "matches_frozen_target": false,
+    "query": "a red square",
+    "query_id": "image_red-0",
+    "scanner_cosine": 0.6981819868087769,
+    "single_file_confident": false
+  },
+  "single_absolute_threshold_cannot_accept_fixed_and_reject_this_color_pair": true,
+  "oracle_note": "Original 25 no_answer plus existing 25 media_no_answer replayed on this one screenshot only. Original labels and denominator retained; no full-corpus quality claim. Color pairs are diagnostics, not added to the no-answer denominator.",
+  "product_complete": false
+}
