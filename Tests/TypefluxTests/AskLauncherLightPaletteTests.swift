@@ -142,10 +142,10 @@ struct AskLauncherLightPaletteTests {
         }
     }
 
-    @Test func onSwitchesSitInATintedWell() {
-        #expect(AskIconChipFace.wellFill(.active, hovering: false) == AskTheme.switchOnFill)
-        #expect(AskIconChipFace.wellFill(.active, hovering: true) == AskTheme.switchOnFill)
-        #expect(AskIconChipFace.wellEdge(.active) == AskTheme.switchOnEdge)
+    @Test func onSwitchesHighlightOnlyTheirIcons() {
+        #expect(AskIconChipFace.wellFill(.active, hovering: false) == .clear)
+        #expect(AskIconChipFace.wellFill(.active, hovering: true) == .clear)
+        #expect(AskIconChipFace.wellEdge(.active) == .clear)
         #expect(AskIconChipFace.wellFill(.neutral, hovering: false) == .clear)
         #expect(AskIconChipFace.wellFill(.neutral, hovering: true) == AskTheme.hoverFill)
         #expect(AskIconChipFace.wellFill(.unavailable, hovering: true) == .clear)

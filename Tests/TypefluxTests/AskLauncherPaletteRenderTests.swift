@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-/// Footer controls rendered natively: switches show "on" with a tinted well,
+/// Footer controls rendered natively: switches highlight only their icons,
 /// and the permission menu is drawn in its mode's colour, not the launcher's accent.
 @Suite("Launcher palette rendering", .serialized, .exclusiveUIState)
 @MainActor
@@ -128,7 +128,7 @@ struct AskLauncherPaletteRenderTests {
                 "Both composer variants omit the chevron")
     }
 
-    @Test func `an on switch sits in a tinted well and an off switch does not`() async throws {
+    @Test func `active and inactive switches have no background`() async throws {
         let on = AskContextItem(kind: .screenshot, systemImage: "camera.viewfinder", style: .active,
                                 title: "Screenshot")
         var off = on
@@ -139,8 +139,7 @@ struct AskLauncherPaletteRenderTests {
             let wellPoint = (x: Int(AskIconChipFace.wellInset) + 2, y: Int(size.height / 2))
             let lit = try pixel(await render(AskIconChipFace(item: on), size: size, appearance: appearance),
                                 at: wellPoint)
-            #expect(lit.alphaComponent > 0.1)
-            #expect(lit.blueComponent > lit.redComponent + 0.1)
+            #expect(lit.alphaComponent < 0.02)
             let unlit = try pixel(await render(AskIconChipFace(item: off), size: size, appearance: appearance),
                                   at: wellPoint)
             #expect(unlit.alphaComponent < 0.02)

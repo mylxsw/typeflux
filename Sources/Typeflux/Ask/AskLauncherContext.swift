@@ -79,17 +79,6 @@ enum AskLauncherContext {
         }
     }
 
-    /// What ⌫ in an empty launcher takes off next: the screenshot the token
-    /// shows, then the selected text, then the source. Nil when nothing is left.
-    static func backspaceTarget(_ draft: AskDraft, screenshot: Screenshot) -> AskCapturedContentKind? {
-        if draft.includeScreenshot, [.attached, .capturing, .failed].contains(screenshot) { return .screenshot }
-        if let selection = draft.sentSelection, !selection.isEmpty { return .selection }
-        if let source = draft.sentSource, !source.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return .source
-        }
-        return nil
-    }
-
     /// The keys the bottom bar explains: recording, the highlighted quick result,
     /// or sending, with ⌘K when there is context to open.
     static func hint(voice: AskVoiceInput.Phase, quickResults: AskQuickResults?, hasContext: Bool) -> String {

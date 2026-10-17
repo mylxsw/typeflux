@@ -329,8 +329,7 @@ struct AskIconChipFace: View {
         AskApplicationIcon(bundleID: item.appBundleID) { appImage in
             icon(appImage)
                 .frame(width: AskContextChips.chipSize, height: AskContextChips.chipSize)
-                // A switch that is on sits in a tinted well, so "on" reads by shape as
-                // well as colour next to the borderless menus beside it.
+                // Active switches highlight only their icons.
                 .background {
                     if appImage == nil {
                         RoundedRectangle(cornerRadius: Self.wellCorner, style: .continuous)

@@ -2033,7 +2033,7 @@ struct AskComposer: View {
 
     private func emptyLauncherBackspace() -> Bool {
         if model.launcherHistoryMode { model.leaveLauncherInputHistory(); return true }
-        return removeKeyword() || removeLastContext()
+        return removeKeyword()
     }
 
     private var editorField: some View {
@@ -2300,15 +2300,6 @@ struct AskComposer: View {
     private var screenshotFixAction: (() -> Void)? {
         if case .failed = screenshotState { return screenshotAction }
         return nil
-    }
-
-    /// ⌫ in the empty launcher takes the captured content off, the screenshot first.
-    private func removeLastContext() -> Bool {
-        guard launcher, !active, let token = contextToken,
-              let kind = AskLauncherContext.backspaceTarget(draft.wrappedValue, screenshot: token.screenshot),
-              kind == .screenshot || !model.capturing else { return false }
-        model.removeCapturedContent(kind, launcher: true)
-        return true
     }
 
     /// ⌘K opens and closes the context panel.

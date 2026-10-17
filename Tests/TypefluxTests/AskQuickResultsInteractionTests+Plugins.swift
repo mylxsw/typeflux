@@ -139,6 +139,23 @@ extension AskQuickResultsInteractionTests {
         }
     }
 
+    @Test func emptyBackspaceKeepsCapturedContextEnabled() async throws {
+        let launcher = try await Launcher(text: "", selection: "selected text")
+        defer { launcher.close() }
+        let model = launcher.fixture.model
+        model.launcherDraft.includeScreenshot = true
+        model.launcherDraft.screenshot = "data:image/png;base64,AA=="
+        model.launcherDraft.source = "Finder — Documents"
+        let original = model.launcherDraft
+        try await Task.sleep(for: .milliseconds(100))
+        for _ in 0 ..< 5 { try await launcher.press(Self.backspace) }
+        #expect(model.launcherDraft.includeScreenshot)
+        #expect(model.launcherDraft.screenshot == original.screenshot)
+        #expect(model.launcherDraft.sentSelection == original.sentSelection)
+        #expect(model.launcherDraft.sentSource == original.sentSource)
+        #expect(model.launcherDraft.text.isEmpty)
+    }
+
     @Test func backspaceTurnsTheChipBackIntoText() async throws {
         try await withPasteboard { _ in
             let translation = Translation()

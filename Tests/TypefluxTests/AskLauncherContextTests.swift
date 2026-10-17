@@ -99,21 +99,6 @@ struct AskLauncherContextTests {
         #expect(AskLauncherContext.screenshot(draft: draft(), state: .off, capturing: false) == .off)
     }
 
-    @Test func backspaceRemovesTheScreenshotThenSelectionThenSource() {
-        var value = draft(selection: "picked")
-        #expect(AskLauncherContext.backspaceTarget(value, screenshot: .attached) == .screenshot)
-        #expect(AskLauncherContext.backspaceTarget(value, screenshot: .failed) == .screenshot)
-        #expect(AskLauncherContext.backspaceTarget(value, screenshot: .capturing) == .screenshot)
-        #expect(AskLauncherContext.backspaceTarget(value, screenshot: .none) == .selection,
-                "a screenshot the token does not show is skipped")
-        value.includeScreenshot = false
-        #expect(AskLauncherContext.backspaceTarget(value, screenshot: .off) == .selection)
-        value.selectionOff = true
-        #expect(AskLauncherContext.backspaceTarget(value, screenshot: .off) == .source)
-        value.sourceOff = true
-        #expect(AskLauncherContext.backspaceTarget(value, screenshot: .off) == nil)
-    }
-
     @Test func hintExplainsRecordingQuickResultsAndContext() throws {
         #expect(AskLauncherContext.hint(voice: .listening, quickResults: nil, hasContext: true)
             == L("ask.launcher.hint.voice"))
