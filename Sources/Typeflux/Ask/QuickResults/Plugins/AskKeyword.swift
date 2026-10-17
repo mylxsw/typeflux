@@ -121,6 +121,7 @@ enum AskKeywordAliases {
         case AskWebSearchPlugin.id:
             return keyword.options[AskWebSearchPlugin.engineOption]
         case AskFileSearchPlugin.id: return "filesearch"
+        case AskAppSearchPlugin.id: return "appsearch"
         case AskBrowserSearchPlugin.tabsID: return "tabsearch"
         case AskBrowserSearchPlugin.bookmarksID: return "bookmarksearch"
         case AskOpenChatPlugin.id: return "openchat"

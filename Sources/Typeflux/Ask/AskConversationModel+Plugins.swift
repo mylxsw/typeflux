@@ -8,6 +8,7 @@ enum AskPluginRegistry {
         AskTranslatePlugin.id,
         AskPromptPlugin.id,
         AskWebSearchPlugin.id,
+        AskAppSearchPlugin.id,
         AskFileSearchPlugin.id,
         AskSemanticFileSearchPlugin.id,
         AskOpenChatPlugin.id,
@@ -32,7 +33,7 @@ enum AskPluginRegistry {
         AskKeywordAliases
             .addingEnglishNames(AskKeywordAliases
                 .consolidate(AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin
-                    .keywords + AskFileSearchPlugin.keywords + AskSemanticFileSearchPlugin.keywords
+                    .keywords + AskAppSearchPlugin.keywords + AskFileSearchPlugin.keywords + AskSemanticFileSearchPlugin.keywords
                     + AskOpenChatPlugin.keywords + AskPrefixPlugin
                     .keywords + AskSettingsPlugin.keywords + AskHelpPlugin.keywords + AskHistoryPlugin.keywords + AskClipboardPlugin
                     .keywords + AskNotesPlugin.keywords + AskScreenshotPlugin.keywords
@@ -199,6 +200,7 @@ extension AskConversationModel {
                 savesNotes: notes != nil
             ),
             AskWebSearchPlugin(),
+            AskAppSearchPlugin(index: { [weak self] in self.flatMap { $0.quickAppsEnabled ? $0.appIndex : nil } }),
             AskFileSearchPlugin(
                 index: { [weak self] in self.flatMap { $0.quickFilesEnabled ? $0.fileIndex : nil } },
                 settings: { [weak settings] in settings?.askLauncherSearchSettings ?? AskLauncherSearchSettings() },
@@ -277,6 +279,13 @@ extension AskConversationModel {
                 return .stay
             }
             finishPluginResult()
+            return .close
+        case let .openApplication(app):
+            guard plugins.plugin?.id == AskAppSearchPlugin.id, plugins.isPlanCurrent,
+                  plugins.output?.selected?.actions.contains(action) == true else { return .stay }
+            finishPluginResult()
+            appIndex.recordLaunch(app)
+            openApplication(app.url)
             return .close
         case let .systemCommand(command):
             return performSystemCommand(command)
@@ -394,6 +403,7 @@ extension AskConversationModel {
             if enterLauncherWorkflow(keyword, run: true) { return .stay }
             let listsAtOnce = [
                 AskPrefixPlugin.id,
+                AskAppSearchPlugin.id,
                 AskKillAppPlugin.id,
                 AskHistoryPlugin.id,
                 AskClipboardPlugin.id,

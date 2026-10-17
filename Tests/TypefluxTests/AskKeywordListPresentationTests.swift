@@ -13,6 +13,7 @@ struct AskKeywordListPresentationTests {
         #expect(AskKeywordKind(pluginID: AskPromptPlugin.id) == .prompt)
         #expect(AskKeywordKind(pluginID: AskWebSearchPlugin.id) == .web)
         #expect(AskKeywordKind(pluginID: AskFileSearchPlugin.id) == .files)
+        #expect(AskKeywordKind(pluginID: AskAppSearchPlugin.id) == .apps)
         #expect(AskKeywordKind(pluginID: AskOpenChatPlugin.id) == .chat)
         #expect(AskKeywordKind.chat.pluginID == AskOpenChatPlugin.id)
         #expect(AskKeywordKind.files.pluginID == AskFileSearchPlugin.id)
@@ -35,7 +36,7 @@ struct AskKeywordListPresentationTests {
         ]
         let rows = rows(input)
         #expect(rows.filter { $0.kind != .system }.map(\.keyword) == [
-            "fy", "dict", "rw", "sum", "ex", "custom", "g", "bd", "gh", "f", "ss", "tab", "bmk", "chat", "prefix", "setting",
+            "fy", "dict", "rw", "sum", "ex", "custom", "g", "bd", "gh", "app", "f", "ss", "tab", "bmk", "chat", "prefix", "setting",
             "history", "clip", "em", "cal", "kill"
         ])
         #expect(rows.allSatisfy { $0.kind != .workflow })
@@ -44,7 +45,7 @@ struct AskKeywordListPresentationTests {
         #expect(rows.first { $0.kind == .history }?.source.pluginID == AskHistoryPlugin.id)
         #expect(rows.first { $0.kind == .history }?.summary == L("ask.settings.keywords.kind.history.hint"))
         #expect(AskKeywordListPresentation.filter(rows, kind: nil, query: "wf").isEmpty)
-        #expect(AskKeywordListPresentation.counts(rows)[nil] == 39)
+        #expect(AskKeywordListPresentation.counts(rows)[nil] == 40)
         #expect(AskKeywordListPresentation.filter(rows, kind: .chat, query: "chat").map(\.keyword) == ["chat"])
         #expect(!AskKeywordKind.editableKinds.contains(.workflow))
         #expect(self.rows([]).isEmpty)
@@ -98,7 +99,7 @@ struct AskKeywordListPresentationTests {
         #expect(AskKeywordListPresentation.filter(rows, kind: nil, query: "summarize").map(\.keyword) == ["sum"])
         #expect(AskKeywordListPresentation.filter(rows, kind: .prompt, query: "google").isEmpty)
         let counts = AskKeywordListPresentation.counts(rows)
-        #expect(counts[nil] == 38 && counts[.translate] == 2 && counts[.files] == 1 && counts[.workflow] == nil)
+        #expect(counts[nil] == 39 && counts[.translate] == 2 && counts[.apps] == 1 && counts[.files] == 1 && counts[.workflow] == nil)
         #expect(counts[.semanticFiles] == 1)
         #expect(counts[.calendar] == 1)
         #expect(counts[.clip] == 1)

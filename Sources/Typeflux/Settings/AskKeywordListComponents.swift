@@ -7,7 +7,7 @@ extension AskKeywordKind {
         case .translate: TFColors.accent
         case .prompt: Color.purple
         case .web: TFColors.success
-        case .files, .semanticFiles: Color.teal
+        case .apps, .files, .semanticFiles: Color.teal
         case .tabs: Color.orange
         case .bookmarks: Color.blue
         case .chat: Color.blue

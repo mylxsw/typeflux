@@ -5972,3 +5972,10 @@
 "semantic.details.videoChecked" = "视频已检查到 %@ 秒";
 "semantic.details.noSavedProgress" = "尚无已保存的进度";
 "semantic.details.reason.imageNoText" = "图像内容已索引，未识别到可读取的文字。";
+"ask.plugin.apps.title" = "应用搜索";
+"ask.plugin.apps.placeholder" = "搜索应用";
+"ask.plugin.apps.off" = "应用搜索已关闭，请在“设置 › 启动器 › 搜索”中开启。";
+"ask.plugin.apps.empty" = "尚未索引到应用";
+"ask.plugin.apps.noMatch" = "没有匹配的应用";
+"ask.plugin.apps.open" = "打开应用";
+"ask.settings.keywords.kind.apps.hint" = "仅搜索已安装的应用";

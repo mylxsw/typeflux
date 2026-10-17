@@ -106,6 +106,7 @@ struct AskPluginPlan: Equatable, Sendable {
 struct AskPluginAction: Equatable, Sendable {
     enum Kind: Equatable, Sendable {
         case killApp(AskKillAppTarget)
+        case openApplication(AskAppEntry)
         case openChat
         case emoji(EmojiAction)
         case systemCommand(AskSystemCommand)

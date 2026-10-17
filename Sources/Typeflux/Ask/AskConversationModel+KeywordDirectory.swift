@@ -48,7 +48,7 @@ extension AskConversationModel {
         else { return }
         if enterLauncherWorkflow(current.keyword, run: run) { return }
         let listsAtOnce = [
-            AskKillAppPlugin.id, AskPrefixPlugin.id, AskHistoryPlugin.id, AskClipboardPlugin.id, AskNotesPlugin.id,
+            AskAppSearchPlugin.id, AskKillAppPlugin.id, AskPrefixPlugin.id, AskHistoryPlugin.id, AskClipboardPlugin.id, AskNotesPlugin.id,
             AskBrowserSearchPlugin.tabsID, AskBrowserSearchPlugin.bookmarksID, AskEmojiPlugin.id
         ]
         plugins.enter(current.keyword, waitingForInput: !listsAtOnce.contains(current.keyword.pluginID))

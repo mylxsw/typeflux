@@ -86,6 +86,7 @@ struct AskKeywordEditorSheet: View {
         case .translate: "fyja"
         case .prompt: "fix"
         case .web: "wiki"
+        case .apps: "app"
         case .files: "ff"
         case .semanticFiles: "ss"
         case .tabs: "tab"
@@ -223,7 +224,7 @@ struct AskKeywordEditorSheet: View {
                 }.labelsHidden()
                 hint(L("ask.settings.keywords.kind.system.hint"))
             }
-        case .files, .semanticFiles, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .workflow:
+        case .apps, .files, .semanticFiles, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .workflow:
             EmptyView()
         }
     }

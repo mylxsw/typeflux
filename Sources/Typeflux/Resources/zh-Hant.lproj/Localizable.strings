@@ -5892,3 +5892,10 @@
 "semantic.details.videoChecked" = "影片已檢查到 %@ 秒";
 "semantic.details.noSavedProgress" = "尚無已儲存的進度";
 "semantic.details.reason.imageNoText" = "影像內容已索引，未辨識到可讀取的文字。";
+"ask.plugin.apps.title" = "應用程式搜尋";
+"ask.plugin.apps.placeholder" = "搜尋應用程式";
+"ask.plugin.apps.off" = "應用程式搜尋已關閉，請在「設定 › 啟動器 › 搜尋」中開啟。";
+"ask.plugin.apps.empty" = "尚未索引到應用程式";
+"ask.plugin.apps.noMatch" = "沒有符合的應用程式";
+"ask.plugin.apps.open" = "開啟應用程式";
+"ask.settings.keywords.kind.apps.hint" = "只搜尋已安裝的應用程式";

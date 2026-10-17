@@ -5972,3 +5972,10 @@
 "semantic.details.videoChecked" = "Video checked at %@s";
 "semantic.details.noSavedProgress" = "No saved progress yet";
 "semantic.details.reason.imageNoText" = "Visual content is indexed; no readable text was found.";
+"ask.plugin.apps.title" = "Apps";
+"ask.plugin.apps.placeholder" = "Search applications";
+"ask.plugin.apps.off" = "App search is off. Turn it on in Settings › Launcher › Search.";
+"ask.plugin.apps.empty" = "No applications indexed yet";
+"ask.plugin.apps.noMatch" = "No matching applications";
+"ask.plugin.apps.open" = "Open app";
+"ask.settings.keywords.kind.apps.hint" = "Searches installed apps only";
