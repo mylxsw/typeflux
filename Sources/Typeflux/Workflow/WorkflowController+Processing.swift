@@ -688,6 +688,9 @@ extension WorkflowController {
                 processingStatus: .skipped,
                 applyStatus: .skipped
             )
+            if let incomplete = error as? IncompleteAudioRecording {
+                record.audioFilePath = incomplete.file.fileURL.path
+            }
             record.errorMessage = msg
             saveHistoryRecord(record)
             bindPendingDictationAnalytics(to: record.id)

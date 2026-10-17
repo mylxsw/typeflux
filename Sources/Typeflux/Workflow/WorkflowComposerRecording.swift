@@ -152,7 +152,7 @@ final class WorkflowComposerRecording: AskVoiceRecording {
         let pump = RealtimeAudioBufferPump(session: session)
         realtime = session
         realtimePump = pump
-        relay.activate { pump.append($0) }
+        if relay.activate({ pump.append($0) }) != nil { pump.failInput() }
     }
 
     /// Takes the realtime result when there is one, else transcribes the file.
@@ -205,6 +205,11 @@ final class WorkflowComposerRecording: AskVoiceRecording {
         do {
             file = try workflow.audioRecorder.stop()
         } catch {
+            if error is IncompleteAudioRecording {
+                // stop has collected the writer and retained the partial file in the error receipt.
+                started = false; ownsRecorder = false
+                workflow.isRecording = false; workflow.isAudioRecorderStarted = false
+            }
             let pending = releaseRealtime(cancelling: true)
             pending.pump?.cancel()
             await pending.session?.cancel()
