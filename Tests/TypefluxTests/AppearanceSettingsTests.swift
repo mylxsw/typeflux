@@ -57,9 +57,18 @@ struct AppearanceSettingsTests {
         try await withModel { settings, model in
             model.setLiquidGlassIntensity(0.82)
             try await UI.withWindow(AppearanceSettingsView(viewModel: model), width: 574, height: 1000) { _, host in
+                #expect(!UI.contains(L("settings.appIcon.note"), in: host))
+                let texts = UI.elements(in: host).filter { $0.role == NSAccessibility.Role.staticText.rawValue }
+                let iconTitle = try #require(texts.first { $0.text == L("settings.appIcon.title") })
+                let languageTitle = try #require(texts.first { $0.text == L("settings.language.title") })
+                #expect(iconTitle.frame.maxY < languageTitle.frame.minY)
                 for style in AppIconStyle.allCases {
                     #expect(AppIconController.image(for: style) != nil)
-                    try UI.button(style.displayName, in: host).press()
+                    #expect(!texts.contains { $0.text == style.displayName })
+                    let button = try UI.button(style.displayName, in: host)
+                    #expect(button.frame.width <= 90)
+                    #expect(button.frame.height <= 90)
+                    try button.press()
                     #expect(settings.appIconStyle == style)
                     #expect(model.appIconStyle == style)
                 }

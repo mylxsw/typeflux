@@ -30,31 +30,6 @@ struct AppearanceSettingsView: View {
                     .padding(14)
                 }
             }
-            TFFormSection(footnote: L("settings.appIcon.note")) {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(L("settings.appIcon.title"))
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(TFColors.textPrimary)
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 10)], spacing: 10) {
-                        ForEach(AppIconStyle.allCases) { style in
-                            TFChoiceCard(
-                                title: style.displayName,
-                                isSelected: viewModel.appIconStyle == style,
-                                action: { viewModel.setAppIconStyle(style) }
-                            ) {
-                                if let image = AppIconController.image(for: style) {
-                                    Image(nsImage: image)
-                                        .resizable()
-                                        .interpolation(.high)
-                                        .frame(width: 72, height: 72)
-                                }
-                            }
-                            .accessibilityIdentifier("settings.appIcon." + style.rawValue)
-                        }
-                    }
-                }
-                .padding(14)
-            }
             TFFormSection {
                 LauncherWindowModeSetting(selection: Binding(
                     get: { viewModel.launcherWindowMode }, set: viewModel.setLauncherWindowMode
@@ -71,6 +46,56 @@ struct AppearanceSettingsView: View {
                     )
                 }
             }
+            TFFormSection {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(L("settings.appIcon.title"))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(TFColors.textPrimary)
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 88, maximum: 88), spacing: 8)], spacing: 8) {
+                        ForEach(AppIconStyle.allCases) { style in
+                            AppIconOption(
+                                style: style,
+                                isSelected: viewModel.appIconStyle == style,
+                                action: { viewModel.setAppIconStyle(style) }
+                            )
+                            .accessibilityIdentifier("settings.appIcon." + style.rawValue)
+                        }
+                    }
+                }
+                .padding(14)
+            }
         }
+    }
+}
+
+private struct AppIconOption: View {
+    let style: AppIconStyle
+    let isSelected: Bool
+    let action: () -> Void
+    @State private var isHovering = false
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+        Button(action: action) {
+            Group {
+                if let image = AppIconController.image(for: style) {
+                    Image(nsImage: image)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFit()
+                }
+            }
+            .frame(width: 72, height: 72)
+            .frame(width: 88, height: 88)
+            .background(isHovering ? TFColors.hoverOverlay : .clear, in: shape)
+            .overlay { shape.strokeBorder(isSelected ? TFColors.accent : .clear, lineWidth: 2) }
+            .contentShape(shape)
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovering = $0 }
+        .accessibilityElement(children: .ignore)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+        .accessibilityLabel(style.displayName)
+        .accessibilityAction { action() }
     }
 }
