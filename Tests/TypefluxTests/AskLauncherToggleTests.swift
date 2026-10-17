@@ -148,7 +148,7 @@ struct AskLauncherToggleTests {
         }
     }
 
-    @Test func repeatedToggleOpensBlankAndRecordsAbandonedInput() async throws {
+    @Test func repeatedToggleRetainsAndSelectsAbandonedInput() async throws {
         _ = NSApplication.shared
         let f = try AskTestFixture(authenticated: false)
         let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
@@ -156,16 +156,69 @@ struct AskLauncherToggleTests {
         defer { controller.dismissLauncher(); f.model.resetSession() }
         f.model.launcherDraft.text = "Unfinished question"
 
-        for _ in 0..<2 {
+        var now = Date(timeIntervalSince1970: 1000)
+        controller.launcherNow = { now }
+        controller.toggleLauncher()
+        let window = try #require(controller.launcherWindow)
+        #expect(f.model.launcherDraft.text.isEmpty)
+        let text = "未完成的问题 👋"
+        let editor = try #require(window.firstResponder as? NSTextView)
+        editor.insertText(text, replacementRange: NSRange(location: NSNotFound, length: 0))
+        controller.toggleLauncher()
+        #expect(!window.isVisible)
+        #expect(f.model.launcherInputHistory.history.entries.first?.text == text)
+
+        for interval in [30.0, 60.0] {
+            now.addTimeInterval(interval)
             controller.toggleLauncher()
-            try await f.wait { panel() != nil }
-            #expect(panel() != nil)
-            #expect(f.model.launcherDraft.text.isEmpty)
-            f.model.launcherDraft.text = "Unfinished question"
+            try await f.wait { window.isVisible && (window.firstResponder as? NSTextView)?.string == text }
+            // Selection survives SwiftUI updates and asynchronous context capture.
+            try await f.wait { !f.model.capturing }
+            #expect(f.model.launcherDraft.text == text)
+            #expect(editor.selectedRange() == NSRange(location: 0, length: (text as NSString).length))
             controller.toggleLauncher()
-            #expect(panel() == nil)
-            #expect(f.model.launcherInputHistory.history.entries.first?.text == "Unfinished question")
         }
+
+        now.addTimeInterval(61)
+        controller.toggleLauncher()
+        #expect(f.model.launcherDraft.text.isEmpty)
+        try await f.wait { (window.firstResponder as? NSTextView)?.string.isEmpty == true }
+        controller.toggleLauncher()
+        controller.toggleLauncher()
+        #expect(f.model.launcherDraft.text.isEmpty)
+    }
+
+    @Test func refocusingKeepsSelectionAndTypingReplacesRestoredInput() async throws {
+        _ = NSApplication.shared
+        let f = try AskTestFixture(authenticated: false)
+        let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
+        let controller = AskConversationWindowController(settings: SettingsStore(defaults: defaults), model: f.model)
+        defer { controller.dismissLauncher(); f.model.resetSession() }
+        controller.showLauncher()
+        let window = try #require(controller.launcherWindow)
+        let editor = try #require(window.firstResponder as? NSTextView)
+        editor.insertText("previous input", replacementRange: NSRange(location: NSNotFound, length: 0))
+        controller.dismissLauncher()
+        controller.showLauncher()
+        try await f.wait { !f.model.capturing }
+        #expect(editor.selectedRange() == NSRange(location: 0, length: 14))
+        editor.insertText("new", replacementRange: NSRange(location: NSNotFound, length: 0))
+        #expect(f.model.launcherDraft.text == "new")
+        editor.setSelectedRange(NSRange(location: 1, length: 0))
+        controller.showLauncher()
+        #expect(editor.selectedRange() == NSRange(location: 1, length: 0))
+
+        controller.dismissLauncher()
+        f.model.resetSession()
+        controller.showLauncher()
+        #expect(f.model.launcherDraft.text.isEmpty)
+        controller.dismissLauncher()
+        controller.showLauncher()
+        f.model.openLauncherInputHistory()
+        f.model.launcherDraft.text = "history filter"
+        controller.dismissLauncher()
+        controller.showLauncher()
+        #expect(f.model.launcherDraft.text.isEmpty)
     }
 
     @Test func toggleCancelsBeforePreparationStartsAndCanImmediatelyReopen() async throws {

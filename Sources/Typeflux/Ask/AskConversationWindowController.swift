@@ -32,6 +32,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private(set) var conversationWindow: NSWindow?
     private var controlPanel: AskFloatingPanel?
     private var launchTask: Task<Void, Never>?
+    var launcherNow: () -> Date = Date.init
     private(set) var conversationRefreshTask: Task<Void, Never>?
     private(set) var maintenanceTasks: [Task<Void, Never>] = []
     private var clickMonitor: Any?
@@ -254,7 +255,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             }
             return
         }
-        model.resetLauncherForPresentation()
+        let restoredInput = model.resetLauncherForPresentation(at: launcherNow())
         model.launcherWindowMode = settings.askLauncherWindowMode
         model.quickSearch.setVisible(true)
         model.refreshQuickApps()
@@ -282,6 +283,12 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         // when it becomes first responder. Do this only on a fresh opening.
         if focusEditor(in: panel), !settings.askLauncherInputSourceID.isEmpty {
             launcherInputSource.select(sourceID: settings.askLauncherInputSourceID)
+        }
+        if restoredInput, let editor = panel.firstResponder as? AskComposerTextView.Editor {
+            // Synchronize before selecting: SwiftUI may not have applied the draft yet.
+            editor.string = model.launcherDraft.text
+            editor.caretRequestID = model.launcherHistoryFillID
+            editor.selectAll(nil)
         }
         installClickMonitors()
         launchTask = Task { [weak self] in
@@ -462,8 +469,11 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         model.voiceInput.cancel()
         launchTask?.cancel()
         launchTask = nil
-        if launcher?.isVisible == true { model.recordAbandonedLauncherInput() }
+        let wasVisible = launcher?.isVisible == true
+        let wasHistory = model.launcherHistoryMode
+        if wasVisible { model.recordAbandonedLauncherInput() }
         model.foldLauncherKeyword()
+        if wasVisible { model.launcherDismissedAt = wasHistory ? nil : launcherNow() }
         model.persistDrafts()
         model.quickSearch.setVisible(false)
         launcher?.orderOut(nil)

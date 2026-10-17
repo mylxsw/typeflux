@@ -49,6 +49,7 @@ final class AskConversationModel: ObservableObject {
     @Published var launcherHistoryIndex = 0
     @Published var launcherHistoryFillID: UUID?
     @Published var launcherPresentationID = UUID() { didSet { cancelAttachmentWork(launcher: true); launcherImageScope.invalidate(); workflowImageCopyTask?.cancel(); clipboardAction.cancelPreparation() } }
+    var launcherDismissedAt: Date?
     var launcherExecutedInput: String?
     /// Files and folders the launcher can open; tests supply their own.
     var fileIndex: any AskFileSearching = AskFileIndex.shared
@@ -612,7 +613,7 @@ final class AskConversationModel: ObservableObject {
         attachmentLoads[visionDraftKey(launcher: true)] = nil
         launcherDraft = newQuestionDraft(); draft = .followUp; launcherContextRestored = false
         launcherHistoryMode = false; launcherHistoryIndex = 0; launcherHistoryFillID = nil
-        launcherPresentationID = UUID(); launcherExecutedInput = nil
+        launcherPresentationID = UUID(); launcherExecutedInput = nil; launcherDismissedAt = nil
         capturing = false; capturingScreenshot = false
         controllingConversationId = nil; onControlChanged?(false); owner = ""
     }

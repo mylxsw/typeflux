@@ -75,9 +75,14 @@ extension AskConversationModel {
         launcherHistoryIndex = min(launcherHistoryIndex, max(0, launcherHistoryEntries.count - 1))
     }
 
-    /// A fresh opening clears input state before capture starts; prepared keyword actions run afterwards.
-    func resetLauncherForPresentation() {
+    /// Reopen recent input while refreshing context; prepared actions run afterwards.
+    @discardableResult
+    func resetLauncherForPresentation(at now: Date = Date()) -> Bool {
         if let current = session(), owner != current.owner { resetSession(); owner = current.owner }
+        let retainedText = launcherDismissedAt.flatMap { dismissedAt in
+            (0...60).contains(now.timeIntervalSince(dismissedAt)) ? launcherDraft.text : nil
+        } ?? ""
+        launcherDismissedAt = nil
         captureGeneration = UUID()
         clearCapturedContentFeedback(launcher: true)
         releaseLauncherScreenshot()
@@ -89,12 +94,14 @@ extension AskConversationModel {
         launcherHistoryFillID = nil
         launcherExecutedInput = nil
         launcherDraft = newQuestionDraft()
+        launcherDraft.text = retainedText
         restoreLauncherContextMarker(false)
         captureWarning = nil
         submissionIssues[true] = nil
         launcherPresentationID = UUID()
         attachmentLoads[visionDraftKey(launcher: true)] = nil
         persistDrafts()
+        return !retainedText.isEmpty
     }
 
     /// Called before keyword mode is folded and the panel is hidden. A filter is never a draft.

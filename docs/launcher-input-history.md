@@ -1,9 +1,12 @@
 # Launcher input history
 
-Every fresh launcher opening starts with an empty input, no keyword mode, no
-manually attached files or chosen tools, and the default home highlight. Context
-is captured from the current application. Refocusing an already visible launcher
-keeps the current input. Text abandoned when closing can be recalled from history.
+Reopening the launcher within 60 seconds of closing retains its input text and
+selects all of it, so typing replaces the previous query. After 60 seconds, input
+starts empty. This temporary recall stays in memory and resets with the session;
+history filters are never retained. Each opening clears keyword mode, manually
+attached files and chosen tools, and captures context from the current application.
+Refocusing an already visible launcher keeps the current input and selection.
+Text abandoned when closing can also be recalled from history.
 
 Press **↑** in the empty editor (or above the first home row) to replace the
 results with recent input. History is newest first. **↑/↓** move in screen
