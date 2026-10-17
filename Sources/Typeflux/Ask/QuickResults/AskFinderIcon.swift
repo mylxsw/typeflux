@@ -84,7 +84,7 @@ typealias AskNativeIconDecoding = @Sendable (MediaNativeIcon) async throws -> As
     }
 }
 
-fileprivate struct AskNativeIconDecoderOverride: Sendable { let decode: AskNativeIconDecoding }
+struct AskNativeIconDecoderOverride: Sendable { let decode: AskNativeIconDecoding }
 private struct AskNativeIconDecoderKey: EnvironmentKey {
     static let defaultValue: AskNativeIconDecoderOverride? = nil
 }
@@ -96,7 +96,7 @@ extension EnvironmentValues {
         }
         set { self[AskNativeIconDecoderKey.self] = .init(decode: newValue) }
     }
-    fileprivate var nativeIconDecoderOverride: AskNativeIconDecoderOverride? { self[AskNativeIconDecoderKey.self] }
+    var nativeIconDecoderOverride: AskNativeIconDecoderOverride? { self[AskNativeIconDecoderKey.self] }
 }
 
 /// Native icons remain scoped to visible views. Launcher searches also reuse

@@ -92,21 +92,55 @@ final class AskBrowserFaviconCache: AskImageScopeObserver {
         return access.scope?.visible == true && access.scope?.epoch == access.epoch
     }
 
+    struct PreparedImage {
+        let image: CGImage
+        let isCurrent: @MainActor @Sendable () -> Bool
+    }
+    struct ImagePreparation {
+        let image: @MainActor @Sendable () async -> PreparedImage?
+        let isCurrent: @MainActor @Sendable () -> Bool
+    }
+
+    /// Accept the original source and native snapshot without starting or reserving work.
+    func preparation(_ url: URL, access: AskImagePresentationAccess) -> ImagePreparation {
+        let original = decode == nil ? worker.authorization() : nil
+        let allowed = !Task.isCancelled && url.absoluteString.utf8.count <= 16 * 1024 &&
+            Self.faviconURL(for: url.absoluteString) == url && bind(access)
+        let currentGeneration = generation
+        let current: @MainActor @Sendable () -> Bool = { [weak self] in
+            guard let self else { return false }
+            return allowed && !Task.isCancelled && self.generation == currentGeneration
+        }
+        return .init(image: { [self] in
+            guard current() else { return nil }
+            let result = await preparedImage(url, access: access, authorization: original)
+            guard current() else { return nil }
+            return result
+        }, isCurrent: current)
+    }
+
     func image(_ url: URL, access: AskImagePresentationAccess? = nil) async -> CGImage? {
+        await preparedImage(url, access: access)?.image
+    }
+
+    private func preparedImage(_ url: URL, access: AskImagePresentationAccess?,
+                               authorization original: MediaWorker.Authorization? = nil) async -> PreparedImage? {
         guard !Task.isCancelled, url.absoluteString.utf8.count <= 16 * 1024,
               Self.faviconURL(for: url.absoluteString) == url, bind(access) else { return nil }
         let current = generation
         guard hasCurrentAccess(access, generation: current) else { return nil }
-        if let image = images[url] { return image }
+        if let image = images[url] { return .init(image: image, isCurrent: { true }) }
         if let failure = failures[url], clock().timeIntervalSince(failure) < 60 { return nil }
         guard !Task.isCancelled, generation == current else { return nil }
         let client = UUID(), entry: Pending
         if var existing = pending[url] {
+            // An older outer consumer cannot adopt a newer pending request after recovery.
+            if decode == nil, let original, !worker.permits(original) { return nil }
             guard existing.generation == generation, !existing.task.isCancelled, existing.clients.count < 16 else { return nil }
             existing.clients.insert(client); entry = existing
         } else {
             guard pending.count < 2 else { return nil }
-            let authorization = decode == nil ? worker.authorization() : nil
+            let authorization = decode == nil ? (original ?? worker.authorization()) : nil
             guard let slot = try? Self.downloads.acquire(bytes: 1) else { return nil }
             let task = Task { [loader, decode, worker] () -> CGImage? in
                 defer { withExtendedLifetime(slot) {} }
@@ -142,7 +176,9 @@ final class AskBrowserFaviconCache: AskImageScopeObserver {
                 if failures.count >= 256 { failures.removeAll() }
                 failures[url] = clock()
             }
-            return image
+            guard let image else { return nil }
+            let worker = worker, authorization = entry.authorization
+            return .init(image: image, isCurrent: { authorization.map { worker.permits($0) } ?? true })
         } onCancel: {
             Task { @MainActor [weak self] in self?.release(url, id: entry.id, client: client) }
         }

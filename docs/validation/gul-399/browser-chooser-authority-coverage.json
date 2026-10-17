@@ -1,0 +1,44 @@
+{
+  "covered": 70,
+  "executable_added": 72,
+  "percent": 97.22,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskContextImage.swift",
+      "covered": 11,
+      "executable_added": 11,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskFinderIcon.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserFaviconCache.swift",
+      "covered": 24,
+      "executable_added": 26,
+      "percent": 92.31,
+      "uncovered": [
+        123,
+        124
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserFaviconView.swift",
+      "covered": 34,
+      "executable_added": 34,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ],
+  "baseline": "474d4a8065314e1bb9ee5c3b9541fde2f2b45ab1",
+  "scope": "FINAL two fresh HOST profiles / one binary only. Initial binary/profiles separately archived and excluded. Changed executable lines, not branch/race/runtime proof."
+}

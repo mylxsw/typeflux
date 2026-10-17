@@ -1,6 +1,54 @@
 import SwiftUI
 import TypefluxMediaProtocol
 
+/// One accepted chooser retains both original native branches, then checks only the selected result.
+@MainActor struct AskBrowserIconPreparation {
+    let url: URL
+    let cache: AskBrowserFaviconCache
+    var fallback: MediaNativeIcon?
+    var decode: AskNativeIconDecoding?
+    var worker: MediaWorker = .previews
+
+    func bind(_ source: String, access: AskImagePresentationAccess) throws -> Batch {
+        guard source == url.absoluteString else { throw MediaFailure.unavailable }
+        let native = try fallback.map { icon in
+            try AskNativeIconPreparation(icon: icon, decode: decode, useCache: false, worker: worker)
+                .bind(icon.kind.rawValue + ":" + icon.value)
+        }
+        return Batch(favicon: cache.preparation(url, access: access), native: native, access: access)
+    }
+
+    @MainActor final class Batch {
+        private let favicon: AskBrowserFaviconCache.ImagePreparation
+        private let native: AskNativeIconPreparation.Batch?
+        private let access: AskImagePresentationAccess
+        private var selected: (@MainActor @Sendable () -> Bool)?
+        init(favicon: AskBrowserFaviconCache.ImagePreparation, native: AskNativeIconPreparation.Batch?,
+             access: AskImagePresentationAccess) {
+            self.favicon = favicon; self.native = native; self.access = access
+        }
+        func isCurrent() -> Bool {
+            !Task.isCancelled && favicon.isCurrent() && (selected?() ?? true)
+        }
+        func decode() async throws -> AskFilePreviewPDF.Result {
+            guard isCurrent() else { throw MediaFailure.unavailable }
+            if let result = await favicon.image() {
+                selected = result.isCurrent
+                guard isCurrent() else { throw MediaFailure.unavailable }
+                return .init(images: [result.image], numbers: [], pages: 0)
+            }
+            try Task.checkCancellation()
+            guard isCurrent(), access.allows() else { throw MediaFailure.unavailable }
+            try Task.checkCancellation()
+            guard isCurrent(), let native else { throw MediaFailure.unavailable }
+            selected = native.isCurrent
+            let result = try await native.decode()
+            guard isCurrent() else { throw MediaFailure.unavailable }
+            return result
+        }
+    }
+}
+
 struct AskBrowserFaviconView: View {
     var url: URL
     var fallback: URL?
@@ -10,7 +58,7 @@ struct AskBrowserFaviconView: View {
     var cache = AskBrowserFaviconCache.shared
     @State private var settingsChanged = false
     @Environment(\.askContextImageAccess) private var access
-    @Environment(\.askNativeIconDecoder) private var nativeDecode
+    @Environment(\.nativeIconDecoderOverride) private var nativeDecode
 
     var body: some View {
         Group {
@@ -26,14 +74,9 @@ struct AskBrowserFaviconView: View {
 
     private var preparedIcon: some View {
         let target = fallbackTarget
-        return AskContextImage(source: url.absoluteString, model: AskContextImageModel(maximumEdge: 56, decode: { _ in
-            if let image = await cache.image(url, access: access) {
-                return .init(images: [image], numbers: [], pages: 0)
-            }
-            try Task.checkCancellation()
-            guard await access.allows(), let target else { throw MediaFailure.unavailable }
-            return try await nativeDecode(target)
-        })) { image in
+        return AskContextImage(source: url.absoluteString,
+            model: AskContextImageModel(maximumEdge: 56, browserIcon: .init(url: url, cache: cache,
+                fallback: target, decode: nativeDecode?.decode))) { image in
             if let image {
                 Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
                     .frame(width: 26, height: 26)

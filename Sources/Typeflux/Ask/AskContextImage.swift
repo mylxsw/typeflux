@@ -88,15 +88,17 @@ extension AskConversationModel {
     private let readInput: AskContextImageDecoder.InputReader
     private let smallFileIcon: AskSmallFileIconPreparation?
     private let nativeIcon: AskNativeIconPreparation?
+    private let browserIcon: AskBrowserIconPreparation?
     private let maximumEdge: Int
     init(budget: AskToolPixelBudget = .shared, maximumEdge: Int = 1600, worker: MediaWorker = .previews,
          readInput: @escaping AskContextImageDecoder.InputReader = { try AskContextImageDecoder.input($0) },
          smallFileIcon: AskSmallFileIconPreparation? = nil,
          nativeIcon: AskNativeIconPreparation? = nil,
+         browserIcon: AskBrowserIconPreparation? = nil,
          decode: Decoder? = nil) {
         self.budget = budget; self.decode = decode; self.maximumEdge = min(1600, max(1, maximumEdge))
         self.worker = worker; self.readInput = readInput; self.smallFileIcon = smallFileIcon
-        self.nativeIcon = nativeIcon
+        self.nativeIcon = nativeIcon; self.browserIcon = browserIcon
     }
     func displayed(_ value: String?, access: AskImagePresentationAccess) -> NSImage? {
         let current = generation
@@ -134,16 +136,23 @@ extension AskConversationModel {
             guard value.utf8.count <= AskContextImageDecoder.maximumEncodedBytes,
                   let scope = access.scope, let epoch = access.epoch else { throw MediaFailure.unavailable }
             self.scope = scope; registration = try scope.register(self, epoch: epoch)
-            let authorization = decode == nil && smallFileIcon == nil && nativeIcon == nil ? worker.authorization() : nil
+            let authorization = decode == nil && smallFileIcon == nil && nativeIcon == nil && browserIcon == nil ? worker.authorization() : nil
             let iconBatch = decode == nil ? smallFileIcon?.bind(value) : nil
             let nativeBatch = decode == nil && smallFileIcon == nil ? try nativeIcon?.bind(value) : nil
+            let browserBatch = decode == nil && smallFileIcon == nil && nativeIcon == nil
+                ? try browserIcon?.bind(value, access: access) : nil
+            // Browser source binding includes synchronous access callbacks.
+            guard generation == current else { return }
+            try Task.checkCancellation()
+            if let browserBatch, !browserBatch.isCurrent() { throw MediaFailure.unavailable }
             if let iconBatch, !iconBatch.isCurrent() { throw MediaFailure.unavailable }
             if let nativeBatch, !nativeBatch.isCurrent() { throw MediaFailure.unavailable }
             let reservation = try budget.acquire(bytes: maximumEdge * maximumEdge * 4)
-            let task = Task { [decode, worker, readInput, iconBatch, nativeBatch] in
+            let task = Task { [decode, worker, readInput, iconBatch, nativeBatch, browserBatch] in
                 defer { withExtendedLifetime(reservation) {} }
                 if let iconBatch { return try await iconBatch.decode() }
                 if let nativeBatch { return try await nativeBatch.decode() }
+                if let browserBatch { return try await browserBatch.decode() }
                 if let decode { return try await decode(value) }
                 return try await AskContextImageDecoder.decode(value, worker: worker, authorization: authorization, readInput: readInput)
             }
@@ -157,6 +166,7 @@ extension AskConversationModel {
             guard allowed else { cancel(); return }
             if let iconBatch, !iconBatch.isCurrent() { throw MediaFailure.unavailable }
             if let nativeBatch, !nativeBatch.isCurrent() { throw MediaFailure.unavailable }
+            if let browserBatch, !browserBatch.isCurrent() { throw MediaFailure.unavailable }
             if let authorization, !worker.permits(authorization) { throw MediaFailure.unavailable }
             guard result.images.count == 1, let raster = result.images.first,
                   raster.width > 0, raster.height > 0, raster.width <= maximumEdge, raster.height <= maximumEdge else {
