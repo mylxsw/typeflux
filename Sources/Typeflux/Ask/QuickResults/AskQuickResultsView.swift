@@ -7,6 +7,7 @@ import SwiftUI
 /// heading, so the list reads as search results; the keyboard hint for the
 /// highlighted row sits in the bottom bar.
 struct AskQuickResultsView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var results: AskQuickResults
     /// The launcher's text, which "Ask AI" sends as it is.
     var question: String
@@ -90,6 +91,7 @@ struct AskQuickResultsView: View {
                                     resultRow(item.row, index: item.index)
                                 }
                                 .id(item.id)
+                                .transition(.opacity)
                             }
                             if let notice = results.notice { noticeRow(notice) }
                         }
@@ -97,6 +99,10 @@ struct AskQuickResultsView: View {
                         .padding(.top, Self.listPadding)
                         .padding(.bottom, Self.listPadding)
                         .id(Self.topID)
+                        // Keep matching rows in place and soften only insertions,
+                        // removals and moves. The editor never waits for this motion.
+                        .animation(reduceMotion ? nil : .easeOut(duration: 0.12),
+                                   value: items.map(\.id))
                     }
                     .scrollDisabled(!scrolls)
                     // SwiftUI may deliver the new value to an old render's closure.
@@ -119,7 +125,9 @@ struct AskQuickResultsView: View {
                 AskQuickActionPanelView(panel: actions, onAction: onAction).padding(.top, 8).padding(.trailing, 14)
             }
         }
-        .transaction { $0.animation = nil; $0.disablesAnimations = true }
+        // The launcher suppresses unrelated implicit motion. Re-enable it only
+        // for this list, where the identified rows own a short diff animation.
+        .transaction { $0.animation = nil; $0.disablesAnimations = false }
         .onAppear { pointer.position = NSEvent.mouseLocation }
         .onDisappear { copiedReset?.cancel() }
     }

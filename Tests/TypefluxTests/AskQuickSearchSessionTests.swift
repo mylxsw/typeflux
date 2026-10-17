@@ -262,8 +262,15 @@ struct AskQuickSearchSessionTests {
         #expect(session.pendingResults == first)
         #expect(session.presentation == first)
         #expect(session.results?.apps.isEmpty == true)
+        var pendingTransitions: [Bool] = []
+        var searchingTransitions: [Bool] = []
+        let pendingObservation = session.$pendingResults.dropFirst().sink { pendingTransitions.append($0 != nil) }
+        let searchingObservation = session.$isSearching.dropFirst().sink { searchingTransitions.append($0) }
+        defer { pendingObservation.cancel(); searchingObservation.cancel() }
         update(session, "notebooks", apps: apps)
         #expect(session.pendingResults == first, "rapid typing keeps the last real batch")
+        #expect(!pendingTransitions.contains(false), "typing must not publish a blank presentation")
+        #expect(!searchingTransitions.contains(false), "replacing a query must not report an idle search")
         gate.signal()
         gate.signal()
         try await Self.wait { !session.isSearching }

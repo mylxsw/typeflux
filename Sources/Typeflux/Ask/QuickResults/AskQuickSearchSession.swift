@@ -77,7 +77,9 @@ final class AskQuickSearchSession: ObservableObject {
             && currentBrowserSettings == sources.browserSettings && currentApp == appID && currentFile == fileID
             && currentCalculator == calculator && currentNumberConversions == numberConversions && currentChinese == chinese
             && currentSemantic == semanticID
-        cancel()
+        // Keep the previous presentation intact while replacing the workers.
+        // Clearing it here publishes an empty frame between two keystrokes.
+        cancelWorkers()
         currentApp = appID
         currentFile = fileID
         currentSemantic = semanticID
@@ -96,7 +98,12 @@ final class AskQuickSearchSession: ObservableObject {
         numberResults = nil
         os_signpost(.event, log: Self.log, name: "Input accepted", "%{public}d", generation)
 
-        guard isVisible else { results = nil; return }
+        guard isVisible else {
+            assign(\.isSearching, false)
+            results = nil
+            assign(\.pendingResults, nil)
+            return
+        }
 
         // Pure numbers convert immediately while both indexes continue searching.
         // Arithmetic, including incomplete expressions, still only uses the calculator.
@@ -107,16 +114,20 @@ final class AskQuickSearchSession: ObservableObject {
                 numberResults = AskQuickResults.resolve(text: text, previous: nil, chinese: chinese,
                                                        calculator: true, sources: .init())
             default:
+                assign(\.isSearching, false)
                 results = AskQuickResults.resolve(text: text, previous: previous, chinese: chinese,
                                                   calculator: calculator, numberConversions: numberConversions, sources: .init())
+                assign(\.pendingResults, nil)
                 return
             }
         }
         let query = AskSearchQuery(text)
         let semanticEnabled = sources.files != nil && sources.semantic?.isEnabled == true && SemanticFilePolicy.query(text) != nil
         guard query.isSearchable || query.hasFilters || semanticEnabled else {
+            assign(\.isSearching, false)
             results = numberResults
             results?.keepChoice(from: previous)
+            assign(\.pendingResults, nil)
             return
         }
         let appIndex = query.hasFilters || !query.isSearchable ? nil : sources.apps
@@ -125,9 +136,11 @@ final class AskQuickSearchSession: ObservableObject {
             ((sources.browserSettings.tabsEnabled && sources.browserSettings.directTabs) ||
              (sources.browserSettings.bookmarksEnabled && sources.browserSettings.directBookmarks))
         guard appIndex != nil || sources.files != nil || browserEnabled else {
+            assign(\.isSearching, false)
             results = AskQuickResults.addingNumberConversions(numberResults, to:
                 AskQuickResults.assemble(text, matches: [], hits: [], status: nil, settings: sources.settings, entries: sources.entries))
             results?.keepChoice(from: previous)
+            assign(\.pendingResults, nil)
             return
         }
         let ticket = generation
@@ -309,6 +322,13 @@ final class AskQuickSearchSession: ObservableObject {
     }
 
     func cancel() {
+        cancelWorkers()
+        assign(\.isSearching, false)
+        if results?.searchingContent == true { results?.searchingContent = false }
+        assign(\.pendingResults, nil)
+    }
+
+    private func cancelWorkers() {
         generation += 1
         semanticTask?.cancel(); semanticTask = nil
         browserTask?.cancel()
@@ -319,9 +339,6 @@ final class AskQuickSearchSession: ObservableObject {
         publication = nil
         apps.cancel()
         files.cancel()
-        assign(\.isSearching, false)
-        if results?.searchingContent == true { results?.searchingContent = false }
-        assign(\.pendingResults, nil)
     }
 
     /// Publishes only a change: every write to a published property re-renders
