@@ -32,7 +32,8 @@ final class AskConversationModel: ObservableObject {
     let voiceInput = AskVoiceInput()
     /// Applications the launcher can open; tests supply their own list.
     let quickSearch = AskQuickSearchSession()
-    let launcherIconCache = AskLauncherIconCache()
+    let launcherIconCache = AskLauncherIconCache(diskCache: .shared)
+    var launcherIconWarmupEnabled = false
     /// The launcher card's visible height while its panel animates.
     let launcherViewport = AskLauncherViewport()
     /// Screen recording access shared by the open launcher's home renders.

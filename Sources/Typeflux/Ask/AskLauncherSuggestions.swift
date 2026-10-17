@@ -312,6 +312,7 @@ struct AskLauncherSuggestions: View {
         if case let .application(app) = row.action {
             AskNativeIconView(icon: .init(kind: .file, value: app.url.path), symbol: row.symbol,
                               immediateLookup: false)
+                .id(app.iconFingerprint)
                 .frame(width: 28, height: 28)
         } else {
             Image(systemName: row.symbol).font(.system(size: 12.5))

@@ -174,6 +174,18 @@ struct AskAppIndexTests {
         #expect(AskAppIndex.scan([root.appendingPathComponent("WeChat.app")]).count == 1, "a root can be one app")
     }
 
+    @Test func iconFingerprintChangesWhenBundleMetadataChanges() throws {
+        let root = try makeApps()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("WeChat.app")
+        let original = try #require(AskAppIndex.entry(at: url))
+        let info = url.appendingPathComponent("Contents/Info.plist")
+        try FileManager.default.setAttributes([.modificationDate: Date().addingTimeInterval(120)],
+                                              ofItemAtPath: info.path)
+        let changed = try #require(AskAppIndex.entry(at: url))
+        #expect(original.iconFingerprint != changed.iconFingerprint)
+    }
+
     @Test func hiddenApplicationLinksAreIndexedAndDeduplicated() throws {
         let root = try makeApps()
         defer { try? FileManager.default.removeItem(at: root) }

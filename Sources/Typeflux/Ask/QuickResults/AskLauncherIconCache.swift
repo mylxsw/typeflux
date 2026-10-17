@@ -36,6 +36,7 @@ final class AskLauncherIconCache {
     private var applicationWarmup: Task<Void, Never>?
     private var applicationWarmupKeys: Set<Key> = []
     private var applicationWarmupGeneration = UUID()
+    private var applicationFingerprints: [String: String] = [:]
     private var generation = UUID()
     private var fileGeneration = UUID()
     private let decode: AskNativeIconDecoding?
@@ -43,13 +44,16 @@ final class AskLauncherIconCache {
     private let capacity: Int
     private let fileCapacity: Int
     private let lifetime: TimeInterval
+    private let diskCache: AskLauncherIconDiskCache?
     private let immediateLookup: @MainActor (MediaNativeIcon, Bool) -> NSImage?
 
     init(capacity: Int = 512, fileCapacity: Int = 48, lifetime: TimeInterval = 300,
          immediateLookup: @escaping @MainActor (MediaNativeIcon, Bool) -> NSImage? = AskLauncherIconCache.systemIcon,
-         worker: MediaWorker = .previews, decode: AskNativeIconDecoding? = nil) {
+         worker: MediaWorker = .previews, decode: AskNativeIconDecoding? = nil,
+         diskCache: AskLauncherIconDiskCache? = nil) {
         self.capacity = capacity; self.fileCapacity = fileCapacity
-        self.lifetime = lifetime; self.immediateLookup = immediateLookup; self.decode = decode; self.worker = worker
+        self.lifetime = lifetime; self.immediateLookup = immediateLookup; self.decode = decode
+        self.worker = worker; self.diskCache = diskCache
     }
 
     nonisolated static func eligible(_ icon: MediaNativeIcon) -> Bool {
@@ -81,6 +85,8 @@ final class AskLauncherIconCache {
     func immediate(_ icon: MediaNativeIcon, revision: Date? = nil, folder: Bool = false) -> AskFilePreviewPDF.Result? {
         guard Self.eligible(icon, revision: revision) else { return nil }
         if let result = cached(icon, revision: revision) { return result }
+        if diskCache != nil, !Key(icon, revision: revision).isPrivate,
+           let fingerprint = applicationFingerprints[icon.value], !fingerprint.isEmpty { return nil }
         guard !Task.isCancelled, (try? icon.validate()) != nil else { return nil }
         let key = Key(icon, revision: revision), currentGeneration = generation, currentFileGeneration = fileGeneration
         guard let image = immediateLookup(icon, folder), !Task.isCancelled, generation == currentGeneration,
@@ -126,10 +132,21 @@ final class AskLauncherIconCache {
         guard Self.eligible(icon, revision: revision) else { throw MediaFailure.invalidProtocol }
         try Task.checkCancellation()
         if let result = cached(icon, revision: revision) { return result }
-        if decode == nil, let authorization, !worker.permits(authorization) { throw MediaFailure.unavailable }
         let key = Key(icon, revision: revision)
+        let currentFingerprint = applicationFingerprints[icon.value]
         let currentGeneration = generation
         let currentFileGeneration = fileGeneration
+        if let diskCache, !key.isPrivate, let currentFingerprint, !currentFingerprint.isEmpty,
+           let result = await diskCache.load(path: icon.value, fingerprint: currentFingerprint) {
+            try Task.checkCancellation()
+            guard generation == currentGeneration,
+                  applicationFingerprints[icon.value] == currentFingerprint else { throw CancellationError() }
+            if let completed = cached(icon, revision: revision) { return completed }
+            remember(result, for: key)
+            return result
+        }
+        if let result = cached(icon, revision: revision) { return result }
+        if decode == nil, let authorization, !worker.permits(authorization) { throw MediaFailure.unavailable }
         let client = UUID()
         let task: Task<AskFilePreviewPDF.Result, Error>
         let original: MediaWorker.Authorization?
@@ -152,13 +169,23 @@ final class AskLauncherIconCache {
                 let result = try await task.value
                 try Task.checkCancellation()
                 guard generation == currentGeneration,
+                      applicationFingerprints[icon.value] == currentFingerprint,
                       !key.isPrivate || fileGeneration == currentFileGeneration else { throw CancellationError() }
                 if let original, !worker.permits(original) { throw MediaFailure.unavailable }
                 guard result.images.count == 1, let image = result.images.first,
                       image.width > 0, image.height > 0, image.width <= 56, image.height <= 56 else {
                     throw MediaFailure.invalidProtocol
                 }
+                if let completed = cached(icon, revision: revision) {
+                    release(key, client: client)
+                    return completed
+                }
                 remember(result, for: key)
+                if let diskCache, !key.isPrivate, let currentFingerprint, !currentFingerprint.isEmpty {
+                    Task.detached(priority: .utility) {
+                        await diskCache.store(result, path: icon.value, fingerprint: currentFingerprint)
+                    }
+                }
                 release(key, client: client)
                 return result
             } catch {
@@ -174,10 +201,12 @@ final class AskLauncherIconCache {
     func nativeIconBatch(_ icon: MediaNativeIcon, revision: Date?) -> AskNativeIconPreparation.Batch {
         let currentGeneration = generation, currentFileGeneration = fileGeneration
         let key = Key(icon, revision: revision), completed = cached(icon, revision: revision)
+        let currentFingerprint = applicationFingerprints[icon.value]
         let worker = worker
-        let original = completed == nil && decode == nil ? worker.authorization() : nil
+        let original = completed == nil && decode == nil && diskCache == nil ? worker.authorization() : nil
         let current: @MainActor @Sendable () -> Bool = { [weak self] in
             guard let self, !Task.isCancelled, self.generation == currentGeneration,
+                  self.applicationFingerprints[icon.value] == currentFingerprint,
                   !key.isPrivate || self.fileGeneration == currentFileGeneration else { return false }
             return original.map { worker.permits($0) } ?? true
         }
@@ -197,8 +226,8 @@ final class AskLauncherIconCache {
         return updatePrefetch(ordered, privateFiles: false)
     }
 
-    /// Fill the application cache off the main thread before lower rows enter the viewport.
-    /// This work survives launcher dismissal; visible rows can share an in-flight decode.
+    /// Fill the application cache off the main thread while the launcher is open.
+    /// Visible rows can share an in-flight decode.
     func warmApplications(_ icons: [MediaNativeIcon]) {
         var seen: Set<Key> = []
         let ordered = icons.filter(Self.eligible).map { Key($0) }
@@ -218,6 +247,39 @@ final class AskLauncherIconCache {
             }
             if self?.applicationWarmupGeneration == currentGeneration { self?.applicationWarmup = nil }
         }
+    }
+
+    /// Discard only icons whose indexed bundle changed or disappeared.
+    func reconcileApplications(_ applications: [AskAppEntry]) {
+        var next: [String: String] = [:]
+        for app in applications { next[app.url.path] = app.iconFingerprint }
+        if next != applicationFingerprints, !next.isEmpty,
+           next.values.allSatisfy({ !$0.isEmpty }), let diskCache {
+            Task.detached(priority: .utility) { await diskCache.prune(keeping: next) }
+        }
+        let changed = applicationFingerprints.keys.filter { next[$0] != applicationFingerprints[$0] }
+        guard !changed.isEmpty else {
+            applicationFingerprints = next
+            return
+        }
+        suspendApplicationWarmup()
+        applicationWarmupKeys.removeAll()
+        for path in changed {
+            let key = Key(.init(kind: .file, value: path))
+            entries[key] = nil
+            applicationOrder.removeAll { $0 == key }
+            pending.removeValue(forKey: key)?.task.cancel()
+            prefetchTasks.removeValue(forKey: key)?.task.cancel()
+            applicationPrefetch.remove(key)
+        }
+        applicationFingerprints = next
+    }
+
+    /// Keep finished icons, but stop work the user no longer needs right now.
+    func suspendApplicationWarmup() {
+        applicationWarmup?.cancel()
+        applicationWarmup = nil
+        applicationWarmupGeneration = UUID()
     }
 
     @discardableResult func prefetchFiles(_ hits: [AskFileHit]) -> [Task<Void, Never>] {
@@ -290,9 +352,9 @@ final class AskLauncherIconCache {
 
     func clear() {
         generation = UUID()
-        applicationWarmup?.cancel(); applicationWarmup = nil
+        suspendApplicationWarmup()
         applicationWarmupKeys.removeAll()
-        applicationWarmupGeneration = UUID()
+        applicationFingerprints.removeAll()
         cancelPrefetch()
         pending.values.forEach { $0.task.cancel() }
         pending.removeAll(); entries.removeAll()

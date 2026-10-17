@@ -64,7 +64,15 @@ extension AskConversationModel {
     }
     func setLauncherImagesVisible(_ visible: Bool) {
         if !visible { workflowImageCopyTask?.cancel(); clipboardAction.cancelPreparation() }
-        if !visible { launcherIconCache.cancelPrefetch(); launcherIconCache.clearFiles() }
+        if !visible {
+            launcherIconWarmupEnabled = false
+            launcherIconCache.suspendApplicationWarmup()
+            launcherIconCache.cancelPrefetch()
+            launcherIconCache.clearFiles()
+        } else if !launcherIconWarmupEnabled {
+            launcherIconWarmupEnabled = true
+            prepareLauncherAppIcons()
+        }
         launcherImageScope.setVisible(visible); objectWillChange.send()
     }
 }

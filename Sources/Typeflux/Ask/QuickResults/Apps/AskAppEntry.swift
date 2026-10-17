@@ -14,6 +14,8 @@ struct AskAppEntry: Equatable, Identifiable, Sendable {
     var url: URL
     var bundleID: String?
     var kind: Kind = .application
+    /// Changes when the bundle version or its icon-bearing files change.
+    var iconFingerprint: String
     /// Lowercased names in every language found: Finder's, the bundle's own,
     /// its Chinese name and the file name.
     var names: [String]
@@ -34,11 +36,13 @@ struct AskAppEntry: Equatable, Identifiable, Sendable {
         return URL(string: "x-apple.systempreferences:" + bundleID)
     }
 
-    init(name: String, url: URL, bundleID: String?, names: [String], kind: Kind = .application) {
+    init(name: String, url: URL, bundleID: String?, names: [String], kind: Kind = .application,
+         iconFingerprint: String = "") {
         self.name = name
         self.url = url
         self.bundleID = bundleID
         self.kind = kind
+        self.iconFingerprint = iconFingerprint
         var seen = Set<String>()
         let trimmed = ([name] + names)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }

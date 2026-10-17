@@ -72,12 +72,17 @@ extension AskConversationModel {
     }
 
     func prepareLauncherAppIcons() {
-        launcherIconCache.prefetch(appIndex.recentApplications(limit: AskLauncherHome.iconPrefetchCount).map {
+        let applications = appIndex.applications()
+        launcherIconCache.reconcileApplications(applications)
+        launcherIconCache.prefetch(applications.filter { $0.bundleID != Bundle.main.bundleIdentifier }
+            .prefix(AskLauncherHome.iconPrefetchCount).map {
             .init(kind: .file, value: $0.url.path)
         })
-        launcherIconCache.warmApplications(appIndex.applications().map {
-            .init(kind: .file, value: $0.url.path)
-        })
+        if launcherIconWarmupEnabled {
+            launcherIconCache.warmApplications(applications.map {
+                .init(kind: .file, value: $0.url.path)
+            })
+        }
     }
 
     /// Starts a question about a file: the launcher leaves keyword mode, empties its

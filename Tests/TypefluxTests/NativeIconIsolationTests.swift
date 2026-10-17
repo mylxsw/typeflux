@@ -175,6 +175,108 @@ private actor NativeIconCalls {
         XCTAssertNil(cache.cached(file, revision: revision), "file icons still obey their lifetime")
     }
 
+    func testChangedApplicationInvalidatesOnlyItsCachedIcon() async throws {
+        let pixels = raster(), calls = NativeIconCalls()
+        let cache = AskLauncherIconCache(decode: { _ in
+            await calls.called()
+            return .init(images: [pixels], numbers: [], pages: 0)
+        })
+        func app(_ name: String, fingerprint: String) -> AskAppEntry {
+            AskAppEntry(name: name, url: URL(fileURLWithPath: "/Applications/\(name).app"),
+                        bundleID: nil, names: [], iconFingerprint: fingerprint)
+        }
+        let first = app("First", fingerprint: "v1"), second = app("Second", fingerprint: "v1")
+        let firstIcon = MediaNativeIcon(kind: .file, value: first.url.path)
+        let secondIcon = MediaNativeIcon(kind: .file, value: second.url.path)
+        cache.reconcileApplications([first, second])
+        _ = try await cache.load(firstIcon)
+        _ = try await cache.load(secondIcon)
+        cache.reconcileApplications([app("First", fingerprint: "v2"), second])
+        XCTAssertNil(cache.cached(firstIcon))
+        XCTAssertNotNil(cache.cached(secondIcon))
+        _ = try await cache.load(firstIcon)
+        let completedCalls = await calls.count
+        XCTAssertEqual(completedCalls, 3)
+    }
+
+    func testVersionedDiskCacheAvoidsRepeatedHelperWorkAndMainThreadLookup() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("launcher-icons-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let disk = AskLauncherIconDiskCache(directory: directory)
+        let pixels = raster(), calls = NativeIconCalls()
+        var immediateLookups = 0
+        func makeCache() -> AskLauncherIconCache {
+            AskLauncherIconCache(immediateLookup: { _, _ in
+                immediateLookups += 1
+                return nil
+            }, decode: { _ in
+                await calls.called()
+                return .init(images: [pixels], numbers: [], pages: 0)
+            }, diskCache: disk)
+        }
+        func app(_ version: String) -> AskAppEntry {
+            AskAppEntry(name: "Fixture", url: URL(fileURLWithPath: "/Applications/Fixture.app"),
+                        bundleID: nil, names: [], iconFingerprint: version)
+        }
+        let icon = MediaNativeIcon(kind: .file, value: app("v1").url.path)
+        let first = makeCache()
+        first.reconcileApplications([app("v1")])
+        first.prefetch([icon])
+        for _ in 0..<100 where first.cached(icon) == nil { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertNotNil(first.cached(icon))
+        for _ in 0..<100 {
+            if await disk.load(path: icon.value, fingerprint: "v1") != nil { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        let stored = await disk.load(path: icon.value, fingerprint: "v1")
+        XCTAssertNotNil(stored)
+        let files = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+        XCTAssertEqual(files.count, 1)
+        let size = try FileManager.default.attributesOfItem(atPath: files[0].path)[.size] as? Int
+        XCTAssertEqual(size, 56 * 56 * 4)
+        let second = makeCache()
+        second.reconcileApplications([app("v1")])
+        _ = try await second.load(icon)
+        let reusedCalls = await calls.count
+        XCTAssertEqual(reusedCalls, 1)
+        XCTAssertEqual(immediateLookups, 0)
+        second.reconcileApplications([app("v2")])
+        XCTAssertNil(second.cached(icon))
+        _ = try await second.load(icon)
+        let updatedCalls = await calls.count
+        XCTAssertEqual(updatedCalls, 2)
+        for _ in 0..<100 {
+            if await disk.load(path: icon.value, fingerprint: "v2") != nil { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        let updated = await disk.load(path: icon.value, fingerprint: "v2")
+        XCTAssertNotNil(updated)
+    }
+
+    func testDismissingLauncherPausesUnfinishedApplicationWarmup() async throws {
+        let pixels = raster(), calls = NativeIconCalls()
+        let cache = AskLauncherIconCache(decode: { _ in
+            await calls.called()
+            try await Task.sleep(for: .milliseconds(150))
+            return .init(images: [pixels], numbers: [], pages: 0)
+        })
+        let icons = (0..<3).map { MediaNativeIcon(kind: .file, value: "/Applications/App\($0).app") }
+        cache.warmApplications(icons)
+        for _ in 0..<100 {
+            if await calls.count > 0 { break }
+            try await Task.sleep(for: .milliseconds(2))
+        }
+        cache.suspendApplicationWarmup()
+        try await Task.sleep(for: .milliseconds(180))
+        let suspendedCalls = await calls.count
+        XCTAssertEqual(suspendedCalls, 1)
+        cache.warmApplications(icons)
+        for _ in 0..<100 where icons.contains(where: { cache.cached($0) == nil }) {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertTrue(icons.allSatisfy { cache.cached($0) != nil })
+    }
+
     func testLauncherWarmsLowerApplicationRowsAndReusesThemAfterDismissal() async throws {
         let calls = NativeIconCalls(), pixels = raster()
         var immediateLookups = 0

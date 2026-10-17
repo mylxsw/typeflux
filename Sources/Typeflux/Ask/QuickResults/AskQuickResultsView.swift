@@ -259,6 +259,7 @@ struct AskQuickResultsView: View {
         return Button { onRun(row, true) } label: {
             HStack(spacing: 12) {
                 AskFileIconView(url: app.url, thumbnail: false)
+                    .id(app.iconFingerprint)
                     .frame(width: 28, height: 28)
                     .accessibilityHidden(true)
                 Self.marked(app.name, match.highlights).font(.system(size: 13.5))

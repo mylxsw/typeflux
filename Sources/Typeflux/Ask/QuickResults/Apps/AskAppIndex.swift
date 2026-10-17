@@ -239,7 +239,8 @@ final class AskAppIndex: AskAppSearching, @unchecked Sendable {
             }
         }
         return AskAppEntry(name: display.isEmpty ? fileName : display, url: url,
-                           bundleID: bundle.bundleIdentifier, names: names)
+                           bundleID: bundle.bundleIdentifier, names: names,
+                           iconFingerprint: iconFingerprint(url: url, info: info))
     }
 
     /// The panes of System Settings: its extensions for the settings extension point.
@@ -263,7 +264,25 @@ final class AskAppIndex: AskAppSearching, @unchecked Sendable {
             }
         }
         guard let display = names.first(where: { !$0.isEmpty }) else { return nil }
-        return AskAppEntry(name: display, url: url, bundleID: id, names: names, kind: .settingsPane)
+        return AskAppEntry(name: display, url: url, bundleID: id, names: names, kind: .settingsPane,
+                           iconFingerprint: iconFingerprint(url: url, info: info))
+    }
+
+    /// Read during the background index scan, so UI cache checks never touch the filesystem.
+    private static func iconFingerprint(url: URL, info: [String: Any]) -> String {
+        let files = FileManager.default
+        let iconName = (info["CFBundleIconFile"] as? String).map {
+            $0.hasSuffix(".icns") ? $0 : $0 + ".icns"
+        }
+        let paths = [url.path, url.appendingPathComponent("Contents/Info.plist").path] +
+            (iconName.map { [url.appendingPathComponent("Contents/Resources/" + $0).path] } ?? [])
+        let stamps = paths.map { path in
+            let attributes = try? files.attributesOfItem(atPath: path)
+            let modified = attributes?[.modificationDate] as? Date
+            return modified.map { String($0.timeIntervalSince1970) } ?? ""
+        }
+        return ([info["CFBundleVersion"] as? String ?? "", info["CFBundleShortVersionString"] as? String ?? ""] + stamps)
+            .joined(separator: "|")
     }
 
     private static let chineseLocalizations = ["zh-Hans", "zh_CN", "zh-CN", "zh_Hans", "zh"]
