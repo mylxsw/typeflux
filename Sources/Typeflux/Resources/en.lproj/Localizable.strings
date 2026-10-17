@@ -12,6 +12,9 @@
 "appIcon.black" = "Black";
 "appIcon.colorful" = "Colorful";
 "appIcon.retroMosaic" = "Retro mosaic";
+"appIcon.cartoonPetrol" = "Cartoon · Petrol";
+"appIcon.cartoonCobalt" = "Cartoon · Cobalt";
+"appIcon.cartoonLavender" = "Cartoon · Lavender";
 "settings.appIcon.title" = "App icon";
 "settings.appIcon.note" = "Changes appear in the Dock immediately. The app file in Finder keeps the default icon.";
 "interfaceStyle.liquidGlass" = "Liquid Glass";

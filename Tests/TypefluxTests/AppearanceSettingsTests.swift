@@ -111,6 +111,33 @@ struct AppearanceSettingsTests {
         #expect(pixels[3] == 0)
     }
 
+    @Test func `cartoon icons have rounded transparent corners`() throws {
+        for style in [AppIconStyle.cartoonPetrol, .cartoonCobalt, .cartoonLavender] {
+            let icon = try #require(AppIconController.image(for: style))
+            let bitmap = try #require(NSBitmapImageRep(
+                bitmapDataPlanes: nil,
+                pixelsWide: 1024,
+                pixelsHigh: 1024,
+                bitsPerSample: 8,
+                samplesPerPixel: 4,
+                hasAlpha: true,
+                isPlanar: false,
+                colorSpaceName: .deviceRGB,
+                bytesPerRow: 0,
+                bitsPerPixel: 0
+            ))
+            let context = try #require(NSGraphicsContext(bitmapImageRep: bitmap))
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = context
+            icon.draw(in: NSRect(x: 0, y: 0, width: 1024, height: 1024))
+            context.flushGraphics()
+            NSGraphicsContext.restoreGraphicsState()
+
+            #expect(bitmap.colorAt(x: 0, y: 0)?.alphaComponent == 0)
+            #expect((bitmap.colorAt(x: 512, y: 200)?.alphaComponent ?? 0) > 0.99)
+        }
+    }
+
     @Test func `legacy defaults load without a migration`() async throws {
         try await withModel { settings, _ in
             settings.defaults.set("simple", forKey: "ask.launcher.windowMode")

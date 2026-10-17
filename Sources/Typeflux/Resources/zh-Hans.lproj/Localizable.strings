@@ -12,6 +12,9 @@
 "appIcon.black" = "黑色";
 "appIcon.colorful" = "彩色";
 "appIcon.retroMosaic" = "复古马赛克";
+"appIcon.cartoonPetrol" = "卡通·深海蓝";
+"appIcon.cartoonCobalt" = "卡通·钴蓝";
+"appIcon.cartoonLavender" = "卡通·淡紫";
 "settings.appIcon.title" = "应用图标";
 "settings.appIcon.note" = "切换后立即显示在程序坞；访达中的应用文件仍显示默认图标。";
 "interfaceStyle.liquidGlass" = "Liquid Glass";

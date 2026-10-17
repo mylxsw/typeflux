@@ -12,6 +12,9 @@
 "appIcon.black" = "블랙";
 "appIcon.colorful" = "컬러";
 "appIcon.retroMosaic" = "레트로 모자이크";
+"appIcon.cartoonPetrol" = "카툰 · 딥블루";
+"appIcon.cartoonCobalt" = "카툰 · 코발트";
+"appIcon.cartoonLavender" = "카툰 · 라벤더";
 "settings.appIcon.title" = "앱 아이콘";
 "settings.appIcon.note" = "변경 사항은 Dock에 바로 표시됩니다. Finder의 앱 파일은 기본 아이콘을 유지합니다.";
 "interfaceStyle.liquidGlass" = "Liquid Glass";
