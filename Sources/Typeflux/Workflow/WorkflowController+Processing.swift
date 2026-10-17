@@ -638,14 +638,16 @@ extension WorkflowController {
                 let processingStartedAt = Date()
                 NetworkDebugLogger
                     .logMessage("[Ask Timing] processing task entered intent=\(recordingIntent.traceName)")
-                await realtimeAudioBufferPump?.finishInput()
+                var completedRealtimeSession = realtimeTranscriptionSession
+                do { try await realtimeAudioBufferPump?.finishInput() }
+                catch { completedRealtimeSession = FailedRealtimeAudioInput(error) }
                 NetworkDebugLogger.logMessage(
                     "[Ask Timing] realtime audio pump finished in \(Self.formatDurationSince(processingStartedAt))"
                 )
                 await process(
                     audioFile: transcriptionAudioFile,
                     lowEnergyRetryAudioFile: retryAudioFile,
-                    realtimeTranscriptionSession: realtimeTranscriptionSession,
+                    realtimeTranscriptionSession: completedRealtimeSession,
                     record: record,
                     selectionSnapshot: selectionSnapshot,
                     selectedText: selectedText,

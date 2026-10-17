@@ -13,7 +13,7 @@ final class RealtimeAudioOrderingTests: XCTestCase {
         first.int16ChannelData?[0].update(repeating: 999, count: Int(first.frameLength))
         second.int16ChannelData?[0].update(repeating: 999, count: Int(second.frameLength))
         await session.releaseInput()
-        await pump.finishInput()
+        try await pump.finishInput()
         let values = await session.values
         XCTAssertEqual(values, [100, 200])
     }

@@ -164,8 +164,9 @@ final class WorkflowComposerRecording: AskVoiceRecording {
         guard let session else {
             return try await router.transcribeStream(audioFile: file, optimize: optimize) { _ in }
         }
-        await pump?.finishInput()
         do {
+            try await pump?.finishInput()
+            try Task.checkCancellation()
             if workflow.settingsStore.sttProvider == .typefluxOfficial, router.usesTypefluxOfficialCloudLocalRace {
                 return try await router.transcribeWithTypefluxOfficialCloudPriority(audioFile: file, onUpdate: { _ in }) {
                     try await session.finish()
