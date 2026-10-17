@@ -1,0 +1,33 @@
+{
+  "covered": 57,
+  "executable_added": 57,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskContextImage.swift",
+      "covered": 7,
+      "executable_added": 7,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskFinderIcon.swift",
+      "covered": 32,
+      "executable_added": 32,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskLauncherIconCache.swift",
+      "covered": 18,
+      "executable_added": 18,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ],
+  "baseline": "6931d1885ae642ef422bd2f00e5e1335d7ac2c3a",
+  "scope": "Fresh HOST profiles, same final binary; changed executable lines only, not branch/race/runtime proof."
+}

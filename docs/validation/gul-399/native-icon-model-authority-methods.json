@@ -1,0 +1,43 @@
+{
+  "baseline": "6931d1885ae642ef422bd2f00e5e1335d7ac2c3a",
+  "methods": [
+    "TypefluxTests.LauncherIconAuthorityTests/canceledPrefetchReturnsHandlesThatCollectActualNativeReturn()",
+    "TypefluxTests.LauncherIconAuthorityTests/canceledUncooperativeRequestsRetainNativeCapacityUntilReturn(privateFiles:)",
+    "TypefluxTests.LauncherIconAuthorityTests/customActorAndImmediateMetadataRemainIndependentOfUnreadyNativeWorker()",
+    "TypefluxTests.LauncherIconAuthorityTests/defaultPendingBindsInAcceptedCallerBeforeItsTask()",
+    "TypefluxTests.LauncherIconAuthorityTests/oldCompletionAfterClearCannotReplaceFreshPrivatePixels()",
+    "TypefluxTests.LauncherIconAuthorityTests/preReadyCanceledAndForwardedOldRequestsDoNotReplayOrCreateNativeWork()",
+    "TypefluxTests.LauncherIconAuthorityTests/prefetchBindsBeforeImmediateLookupAndQueuedTask(privateFile:)",
+    "TypefluxTests.LauncherIconAuthorityTests/sharedPendingKeepsOneNativeCallWhenOneClientCancels()",
+    "TypefluxTests.LauncherIconAuthorityTests/validReplyRevocationCannotCacheAndFreshExplicitRecoveryWorks()",
+    "TypefluxTests.NativeIconModelAuthorityTests/canceledNativeConsumersKeepPhysicalCapacityAndPixelsUntilReturn(cached:)",
+    "TypefluxTests.NativeIconModelAuthorityTests/completedCacheIgnoresHealthButRetainsOriginalFileAndGlobalGeneration()",
+    "TypefluxTests.NativeIconModelAuthorityTests/customActorEnvironmentExplicitAndCacheContractsRemainIndependent()",
+    "TypefluxTests.NativeIconModelAuthorityTests/defaultDirectAndCacheBindInAcceptedCallerBeforeContextTask(cached:)",
+    "TypefluxTests.NativeIconModelAuthorityTests/originalManagedBatchSurvivesRecoveryWithoutUpgrading(cached:)",
+    "TypefluxTests.NativeIconModelAuthorityTests/preReadyAndPrecanceledCannotDispatchOrReplayFailedIdentity(cached:)",
+    "TypefluxTests.NativeIconModelAuthorityTests/terminalSourceRevocationAndOldCompletionCannotReplaceFreshScope()",
+    "TypefluxTests.NativeIconModelAuthorityTests/validCollectedNativeResultThenTerminalRevocationCannotPublish(cached:)",
+    "TypefluxTests.SmallFileIconBatchAuthorityTests/canceledPreparationOrNativeWorkRetainsSlotsAndPixelsUntilReturn(_:)",
+    "TypefluxTests.SmallFileIconBatchAuthorityTests/customActorAndLegacyEnvironmentRemainIndependentOfUnreadyNativeWorker()",
+    "TypefluxTests.SmallFileIconBatchAuthorityTests/defaultOuterBindingRunsInAcceptedCallerBeforeQueuedDecoderTask()",
+    "TypefluxTests.SmallFileIconBatchAuthorityTests/heldDefaultPreparationAndFrozenBatchKeepOriginalManagedGeneration()",
+    "TypefluxTests.SmallFileIconBatchAuthorityTests/oldUncooperativeResultCannotReplaceFreshSelection()",
+    "TypefluxTests.SmallFileIconBatchAuthorityTests/preReadyAndCanceledDefaultModelCannotPrepareOrReplayFailedIdentity()",
+    "TypefluxTests.SmallFileIconBatchAuthorityTests/validNativeResultThenTerminalRevocationCannotPublishButCompletedPixelsSurviveLaterHealth()"
+  ],
+  "result": "24/24 DISTINCT methods FIRST functional pass: 24 SwiftTesting methods in 3 suites, 0.306s overall. XCTest discovery ran, zero XCTest methods selected. New suite 8 methods / 13 parameter cases, 0.097s.",
+  "selection": "All selected method bodies and called helpers reviewed. No whole-suite invocation beyond the three explicitly safe private-fixture suites.",
+  "exclusions": [
+    "NativeIconIsolation adapter also performs actual system icon lookup; real-helper/native-resolution/windows/DrawsFirstFrame/ScopedView/ResultAndApplicationCallers/ContextApplicationCallers excluded.",
+    "SmallIcon DecoderAdmission uses png() real encoding despite injected runner. Other image/helper/encoding/permission/device/full-suite methods excluded.",
+    "SystemClipboardContentActions including named pasteboard, ConversationModel/AskTestFixture, Downloads/home/apps/windows/NSWorkspace/QuickLook/actual HTTP/provider/paid/capture/audio/TCC/signing/hardware and document/resource tests excluded."
+  ],
+  "limits": [
+    "Standalone existing uptime clock records scalar task hash INSIDE UnsafeCurrentTask closure and returns real uptime. First authorization observed in accepted caller before Context child Task; no Task escapes, scheduling override or exhaustive hash/race proof.",
+    "Separate managed original batch freeze/recovery refuses stale authorization. This is not a managed Context task paused before its initial child scheduling across restart.",
+    "Terminal native test asserts protocol-valid reply, activeCount zero and original permit at final access callback BEFORE revoking own admission.",
+    "Body checks construct values only: no host/layout/render/task launch/window/symbol lookup. Legacy environment getter with custom actor tested; actual environment installation under SwiftUI hosting not exercised.",
+    "Same pure production preparation and cache factory exercised through actual small Context model; synchronous immediate/NSWorkspace lane unchanged and never executed. Browser chooser earlier boundary remains separate."
+  ]
+}

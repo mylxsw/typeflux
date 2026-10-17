@@ -50,14 +50,53 @@ enum AskFinderIcon {
 }
 
 typealias AskNativeIconDecoding = @Sendable (MediaNativeIcon) async throws -> AskFilePreviewPDF.Result
+
+/// Binds one native-icon consumer before Context queues its preparation.
+@MainActor struct AskNativeIconPreparation {
+    struct Batch: Sendable {
+        let decode: @MainActor @Sendable () async throws -> AskFilePreviewPDF.Result
+        let isCurrent: @MainActor @Sendable () -> Bool
+    }
+    let icon: MediaNativeIcon?
+    var revision: Date?
+    var cache: AskLauncherIconCache?
+    var decode: AskNativeIconDecoding?
+    var useCache = true
+    var worker: MediaWorker = .previews
+
+    func bind(_ source: String) throws -> Batch {
+        guard let icon, source == icon.kind.rawValue + ":" + icon.value else { throw MediaFailure.unavailable }
+        if useCache, let cache, AskLauncherIconCache.eligible(icon, revision: revision) {
+            return cache.nativeIconBatch(icon, revision: revision)
+        }
+        let original = decode == nil ? worker.authorization() : nil
+        let current: @MainActor @Sendable () -> Bool = {
+            !Task.isCancelled && (original.map { worker.permits($0) } ?? true)
+        }
+        return .init(decode: {
+            guard current() else { throw MediaFailure.unavailable }
+            let result: AskFilePreviewPDF.Result
+            if let decode { result = try await decode(icon) }
+            else { result = try await AskFinderIcon.decode(icon, worker: worker, authorization: original) }
+            guard current() else { throw MediaFailure.unavailable }
+            return result
+        }, isCurrent: current)
+    }
+}
+
+fileprivate struct AskNativeIconDecoderOverride: Sendable { let decode: AskNativeIconDecoding }
 private struct AskNativeIconDecoderKey: EnvironmentKey {
-    static let defaultValue: AskNativeIconDecoding = { try await AskFinderIcon.decode($0) }
+    static let defaultValue: AskNativeIconDecoderOverride? = nil
 }
 extension EnvironmentValues {
     var askNativeIconDecoder: AskNativeIconDecoding {
-        get { self[AskNativeIconDecoderKey.self] }
-        set { self[AskNativeIconDecoderKey.self] = newValue }
+        get {
+            if let custom = self[AskNativeIconDecoderKey.self] { return custom.decode }
+            return { @Sendable in try await AskFinderIcon.decode($0) }
+        }
+        set { self[AskNativeIconDecoderKey.self] = .init(decode: newValue) }
     }
+    fileprivate var nativeIconDecoderOverride: AskNativeIconDecoderOverride? { self[AskNativeIconDecoderKey.self] }
 }
 
 /// Native icons remain scoped to visible views. Launcher searches also reuse
@@ -70,23 +109,21 @@ struct AskNativeIconImage<Content: View>: View {
     @ViewBuilder var content: (NSImage?) -> Content
     @Environment(\.askContextImageAccess) private var access
     @Environment(\.askIconGeneration) private var generation
-    @Environment(\.askNativeIconDecoder) private var environmentDecode
+    @Environment(\.nativeIconDecoderOverride) private var environmentDecode
     @Environment(\.askLauncherIconCache) private var launcherCache
     var body: some View {
         let iconCache = launcherCache
-        let selectedDecode = decode ?? environmentDecode
+        let selectedDecode: AskNativeIconDecoding?
+        if let decode { selectedDecode = { @Sendable icon in try await decode(icon) } }
+        else if let environmentDecode { selectedDecode = environmentDecode.decode }
+        else { selectedDecode = nil }
         let useCache = decode == nil
         let cached = access.allows() && useCache ? icon.flatMap {
             iconCache?.immediate($0, revision: revision, folder: folder)?.images.first
         }.map { NSImage(cgImage: $0, size: .zero) } : nil
         return AskContextImage(source: icon.map { $0.kind.rawValue + ":" + $0.value },
-            model: AskContextImageModel(maximumEdge: 56, decode: { _ in
-                guard let icon else { throw MediaFailure.unavailable }
-                if useCache, let iconCache, AskLauncherIconCache.eligible(icon, revision: revision) {
-                    return try await iconCache.load(icon, revision: revision)
-                }
-                return try await selectedDecode(icon)
-            }), content: { image in content(image ?? cached) })
+            model: AskContextImageModel(maximumEdge: 56, nativeIcon: .init(icon: icon, revision: revision,
+                cache: iconCache, decode: selectedDecode, useCache: useCache)), content: { image in content(image ?? cached) })
         .id(Identity(icon: icon, epoch: access.epoch, generation: generation, revision: revision))
     }
     private struct Identity: Hashable {
