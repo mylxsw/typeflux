@@ -1,0 +1,39 @@
+{
+  "baseline": "655363bd17d6c7bf17bc7d7c398cd0fd5eaf0a7b",
+  "methods": [
+    "TypefluxTests.NativeIconIsolationTests/testClosingLauncherDoesNotRepopulatePrivateIconCacheFromLateDecode",
+    "TypefluxTests.NativeIconIsolationTests/testLauncherCachesAndCoalescesApplicationIcons",
+    "TypefluxTests.NativeIconIsolationTests/testLauncherFileIconCacheHasSeparateSizeBound",
+    "TypefluxTests.NativeIconIsolationTests/testLauncherPrefetchesVersionedFilesAndFoldersAndClearsThemOnHide",
+    "TypefluxTests.NativeIconIsolationTests/testLauncherPreparesEveryVisibleIconBeforePublishingRows",
+    "TypefluxTests.LauncherIconAuthorityTests/canceledPrefetchReturnsHandlesThatCollectActualNativeReturn()",
+    "TypefluxTests.LauncherIconAuthorityTests/canceledUncooperativeRequestsRetainNativeCapacityUntilReturn(privateFiles:)",
+    "TypefluxTests.LauncherIconAuthorityTests/customActorAndImmediateMetadataRemainIndependentOfUnreadyNativeWorker()",
+    "TypefluxTests.LauncherIconAuthorityTests/defaultPendingBindsInAcceptedCallerBeforeItsTask()",
+    "TypefluxTests.LauncherIconAuthorityTests/oldCompletionAfterClearCannotReplaceFreshPrivatePixels()",
+    "TypefluxTests.LauncherIconAuthorityTests/preReadyCanceledAndForwardedOldRequestsDoNotReplayOrCreateNativeWork()",
+    "TypefluxTests.LauncherIconAuthorityTests/prefetchBindsBeforeImmediateLookupAndQueuedTask(privateFile:)",
+    "TypefluxTests.LauncherIconAuthorityTests/sharedPendingKeepsOneNativeCallWhenOneClientCancels()",
+    "TypefluxTests.LauncherIconAuthorityTests/validReplyRevocationCannotCacheAndFreshExplicitRecoveryWorks()",
+    "TypefluxTests.NativeIconAuthorityTests/canceledNativeAndQueuedRequestsKeepCapacityUntilActualReturn()",
+    "TypefluxTests.NativeIconAuthorityTests/canceledSharedWorkerWaitCannotDispatchAndRetainsOtherPhysicalWork()",
+    "TypefluxTests.NativeIconAuthorityTests/defaultQueuedRequestCannotAdoptLaterWorkerBindingAndRecovery()",
+    "TypefluxTests.NativeIconAuthorityTests/originalManagedRequestCannotUpgradeAcrossRecovery()",
+    "TypefluxTests.NativeIconAuthorityTests/unavailableCanceledAndOriginalStampsRejectBeforeNativeAndFacade()",
+    "TypefluxTests.NativeIconAuthorityTests/validNativeReplyRetiredBeforeReturnIsRejectedWithoutReplay()"
+  ],
+  "result": "20/20 distinct methods, first functional pass: 5 XCTest + 15 SwiftTesting. New suite 9 methods / 11 parameter cases.",
+  "selection": "All selected bodies and called helpers reviewed. No whole-suite invocation.",
+  "exclusions": [
+    "RealHelper, native adapter (also invokes system lookup), native icon resolution and NSWorkspace tests",
+    "DrawsPreparedApplicationIconOnFirstFrame, ScopedView, ResultAndApplicationCallers, ContextApplicationCallers: windows/encoding",
+    "Production ConversationModel/AskTestFixture/SystemClipboardContentActions: eager clipboard/Downloads/home/apps",
+    "Any prior native/media/permission/codec, tool pixel/view/sandbox encoding, network/provider/paid/device/full-suite fixtures"
+  ],
+  "limits": [
+    "Injected nil lookup or raw-memory NSImage only. No actual system icon lookup.",
+    "Read-only standalone clock observes first authorization task hash; no exhaustive executor/task-identity proof.",
+    "Prefetch test re-enables own admission in the same managed generation inside immediateLookup; this is not a managed-generation restart proof. Separate native regression/late-reply fixtures cover recovery.",
+    "Valid synthetic reply is validated in fake runner before revocation, not frozen after successful host extraction."
+  ]
+}

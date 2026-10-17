@@ -1,0 +1,29 @@
+{
+  "covered": 28,
+  "executable_added": 28,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskLauncherIconCache.swift",
+      "covered": 28,
+      "executable_added": 28,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ],
+  "baseline": "655363bd17d6c7bf17bc7d7c398cd0fd5eaf0a7b",
+  "proof": {
+    "inputs": 2011,
+    "sources": 1150,
+    "tests": 861,
+    "profiles": 3,
+    "binary_hashes": {
+      "tests": "00a5458c36c6369fb26e46004bb770b7933927b2697ad5b4874a140c865225af",
+      "app": "72d43eb6d7fe3b34ec3f51869797e16d41670dae6c6c24d7284b3f9fd7179465"
+    },
+    "reported_function_hashes": 777,
+    "all_reported_hashes_zero": true,
+    "note": "Zero Swift hashes do not establish layout compatibility. HOST profiles only; no child coverage claim."
+  }
+}
