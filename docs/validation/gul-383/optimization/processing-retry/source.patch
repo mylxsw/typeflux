@@ -1,0 +1,878 @@
+diff --git a/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift b/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift
+index 5dcbb86f..d5873adf 100644
+--- a/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift
++++ b/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift
+@@ -107,6 +107,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
+     private var nextReason: SemanticIndexDiagnostics.Reason = .startup
+     private var eventJournal: SemanticIndexEvents?
+     private var pendingChanges = SemanticFileChangePlan()
++    private var pendingProcessingRetry = false
+     private var documentSource: SemanticIndexPauseGate.Source?
+     private var pendingEventID: UInt64 = 0
+     private var committedEventID: UInt64 = 0
+@@ -273,7 +274,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
+             readerAuthorization = readers.authorization()
+             embeddingAuthorization = embeddingOwners.authorization()
+         }
+-        pendingChanges = .init()
++        pendingChanges = .init(); pendingProcessingRetry = false
+         pausedIndexing = false; pausedReady = false
+         pauseGate.setPaused(backgroundPaused)
+         if fingerprint != key || !backgroundPaused {
+@@ -502,7 +503,8 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
+         guard let fingerprint, ownsLifecycle(token, fingerprint: fingerprint) else { return }
+         let lifecycle = token
+         guard self.phase != .indexing, !self.backgroundPaused,
+-              pendingChanges.fullScan || !pendingChanges.files.isEmpty || !pendingChanges.directories.isEmpty ||
++              pendingProcessingRetry || pendingChanges.fullScan || !pendingChanges.files.isEmpty ||
++              !pendingChanges.directories.isEmpty ||
+               self.pendingEventID > self.committedEventID else { return }
+         self.rescan?.cancel()
+         self.rescan = Task { [weak self] in
+@@ -521,14 +523,14 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
+         let paths: [String] = []
+         let directories: [String] = []
+         let eventID = self.pendingEventID
+-        if paths.isEmpty && directories.isEmpty && eventJournal == nil {
++        if paths.isEmpty && directories.isEmpty && eventJournal == nil && !pendingProcessingRetry {
+             do {
+                 try database.saveEventID(eventID, scope: scope, volumeSignature: volumeSignature)
+                 self.committedEventID = eventID
+             } catch { self.phase = .failed }
+             return
+         }
+-        pendingChanges = .init()
++        pendingChanges = .init(); pendingProcessingRetry = false
+         self.indexProgress = nil
+         self.phase = .indexing
+         nextReason = .filesystem
+@@ -879,13 +881,51 @@ extension SemanticFileSearchService {
+ 
+     func processingPage(_ section: SemanticFileStore.ProcessingSection, offset: Int,
+                         limit: Int = 50) async -> SemanticFileStore.ProcessingPage? {
+-        guard let database = store else { return nil }
++        guard let database = store, let fingerprint,
++              ownsLifecycle(token, fingerprint: fingerprint) else { return nil }
++        let lifecycle = token
+         let page = try? await Task.detached(priority: .utility) {
+             try database.processingPage(section, offset: offset, limit: limit)
+         }.value
+-        guard store === database else { return nil }
++        guard store === database, ownsLifecycle(lifecycle, fingerprint: fingerprint) else { return nil }
+         return page
+     }
++
++    func canRetryProcessingItem(_ item: SemanticFileStore.ProcessingItem) -> Bool {
++        guard item.canRetry, supported, preferences.enabled, settings.semanticFileSearch.enabled,
++              settings.askQuickFileSearchEnabled, modelReady, let fingerprint,
++              ownsLifecycle(token, fingerprint: fingerprint),
++              readerAuthorization?.allowsIndexing(in: readers) == true else { return false }
++        let current = SemanticFilePolicy.scope(names: settings.askLauncherSearchSettings, fullDiskAccess: access())
++        return current.includes(item.path, isDirectory: false) && SemanticFilePolicy.allows(item.path)
++    }
++
++    /// Queue one selection without restarting discovery or resetting unrelated generations.
++    func retryProcessingItem(_ item: SemanticFileStore.ProcessingItem) async -> Bool {
++        guard !Task.isCancelled, canRetryProcessingItem(item), let database = store,
++              let fingerprint else { return false }
++        let lifecycle = token
++        let request = AskSearchCancellation()
++        let queued = await withTaskCancellationHandler {
++            (try? await Task.detached(priority: .utility) {
++                try database.retryProcessingItem(item, cancelled: { lifecycle.isCancelled || request.isCancelled })
++            }.value) == true
++        } onCancel: { request.cancel() }
++        guard queued, !Task.isCancelled, store === database,
++              ownsLifecycle(lifecycle, fingerprint: fingerprint), canRetryProcessingItem(item) else { return false }
++        if item.priority == .document, let documentSource {
++            pauseGate.enqueueDocuments([item.path], from: documentSource)
++        }
++        if !backgroundPaused, phase == .ready || phase == .failed, let scope {
++            indexProgress = nil; phase = .indexing; nextReason = .resume
++            pendingProcessingRetry = false
++            beginIndexing(database, scope: scope, token: lifecycle, paths: [])
++        } else {
++            // Retain a wake intent if the current drain already observed an empty queue.
++            pendingProcessingRetry = true
++        }
++        return true
++    }
+ }
+ 
+ extension SemanticFileSearchService {
+diff --git a/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ProcessingDetails.swift b/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ProcessingDetails.swift
+index 38f82373..f9cfd532 100644
+--- a/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ProcessingDetails.swift
++++ b/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ProcessingDetails.swift
+@@ -7,15 +7,36 @@ extension SemanticFileStore {
+ 
+     struct ProcessingItem: Identifiable, Sendable {
+         let path: String
+-        let state: String
++        var state: String
+         let priority: SemanticMediaPriority
+         var bytes: Int64?
+         var modified: Date?
+         let processingSeconds: TimeInterval?
+         let completedAt: Date?
+         let page: Int?
++        var generation: String?
++        var reason: String?
++        var queued = false
++        var offset: Int64 = 0
++        var savedChunks = 0
++        var encodedChunks = 0
++        var savedMediaSegments = 0
++        var audioCovered: Double?
++        var videoChecked: Double?
+ 
+-        var id: String { path }
++        var canRetry: Bool {
++            generation != nil && (state == "partial" || state == "failed")
++                && reason != "password-required" && reason != "unsupported-document"
++        }
++
++        var displayState: String {
++            if queued && state != "partial" { return "pending" }
++            return reason == "audio-silent" ? "skipped" : state
++        }
++
++        var id: String {
++            path
++        }
+     }
+ 
+     struct ProcessingPage: Sendable {
+@@ -23,27 +44,42 @@ extension SemanticFileStore {
+         let total: Int
+     }
+ 
+-    /// A bounded read for the details sheet. File metadata fallback runs after releasing the DB lock.
++    // A bounded read for the details sheet. File metadata fallback runs after releasing the DB lock.
++    // swiftlint:disable:next function_body_length
+     func processingPage(_ section: ProcessingSection, offset: Int, limit: Int = 50) throws -> ProcessingPage {
+         let limit = min(100, max(1, limit)), offset = max(0, offset)
+         var page = try lock.withLock { () throws -> ProcessingPage in
+             let pending = section == .pending
+             let countSQL = pending
+                 ? "SELECT count(*) FROM work_queue"
+-                : "SELECT count(*) FROM jobs j WHERE j.state IN ('done','skipped','failed') AND NOT EXISTS(SELECT 1 FROM work_queue w WHERE w.path=j.path)"
+-            let total = try countQuery(countSQL)
+-            let sql = pending ? """
+-                SELECT w.path,w.priority,f.bytes,f.modified,j.processing_seconds,j.completed_at,j.cursor,
+-                    COALESCE(j.state,'pending')
+-                FROM work_queue w LEFT JOIN files f ON f.path=w.path LEFT JOIN jobs j ON j.path=w.path
+-                ORDER BY w.priority,w.turn LIMIT ? OFFSET ?
+-                """ : """
+-                SELECT j.path,-1,f.bytes,f.modified,j.processing_seconds,j.completed_at,j.cursor,j.state
+-                FROM jobs j LEFT JOIN files f ON f.path=j.path
+-                WHERE j.state IN ('done','skipped','failed')
++                : """
++                SELECT count(*) FROM jobs j WHERE j.state IN ('done','skipped','failed')
+                     AND NOT EXISTS(SELECT 1 FROM work_queue w WHERE w.path=j.path)
+-                ORDER BY j.completed_at DESC,j.path LIMIT ? OFFSET ?
+                 """
++            let total = try countQuery(countSQL)
++            let details = """
++            j.reason,j.generation,EXISTS(SELECT 1 FROM work_queue q WHERE q.path=j.path),
++            (SELECT count(*) FROM chunks c WHERE c.path=j.path AND c.generation=j.generation AND c.modality='text'),
++            (SELECT count(*) FROM chunks c WHERE c.path=j.path AND c.generation=j.generation AND c.modality='text' AND length(c.vector)>0),
++            (SELECT count(*) FROM media_segments s JOIN media_jobs m ON m.path=s.path
++                WHERE s.path=j.path AND m.generation=j.generation)
++                + (SELECT count(*) FROM chunks c WHERE c.path=j.path AND c.generation=j.generation
++                    AND c.modality IN ('image','audio','video')),m.audio_covered,m.video_progress
++            """
++            let sql = pending ? """
++            SELECT w.path,w.priority,f.bytes,f.modified,j.processing_seconds,j.completed_at,j.cursor,
++                COALESCE(j.state,'pending'),\(details)
++            FROM work_queue w LEFT JOIN files f ON f.path=w.path LEFT JOIN jobs j ON j.path=w.path
++            LEFT JOIN media_jobs m ON m.path=j.path AND m.generation=j.generation
++            ORDER BY w.priority,w.turn LIMIT ? OFFSET ?
++            """ : """
++            SELECT j.path,-1,f.bytes,f.modified,j.processing_seconds,j.completed_at,j.cursor,j.state,\(details)
++            FROM jobs j LEFT JOIN files f ON f.path=j.path
++            LEFT JOIN media_jobs m ON m.path=j.path AND m.generation=j.generation
++            WHERE j.state IN ('done','skipped','failed')
++                AND NOT EXISTS(SELECT 1 FROM work_queue w WHERE w.path=j.path)
++            ORDER BY j.completed_at DESC,j.path LIMIT ? OFFSET ?
++            """
+             let row = try statement(sql)
+             defer { sqlite3_finalize(row) }
+             bind(row, [limit, offset])
+@@ -55,15 +91,36 @@ extension SemanticFileStore {
+                     ?? SemanticMediaPriority.of(path) : SemanticMediaPriority.of(path)
+                 let cursor = string(row, 6).data(using: .utf8)
+                     .flatMap { try? JSONDecoder().decode(SemanticContentCursor.self, from: $0) }
++                var video: Double?
++                if let bytes = sqlite3_column_blob(row, 15) {
++                    let data = Data(bytes: bytes, count: Int(sqlite3_column_bytes(row, 15)))
++                    let progress = try? JSONDecoder().decode(SemanticVideoProgress.self, from: data)
++                    if progress?.valid == true {
++                        video = progress?.actual
++                    }
++                }
+                 items.append(.init(path: path, state: string(row, 7), priority: priority,
+-                                   bytes: sqlite3_column_type(row, 2) == SQLITE_NULL ? nil : sqlite3_column_int64(row, 2),
++                                   bytes: sqlite3_column_type(row, 2) == SQLITE_NULL ? nil : sqlite3_column_int64(
++                                       row,
++                                       2
++                                   ),
+                                    modified: sqlite3_column_type(row, 3) == SQLITE_NULL ? nil
+                                        : Date(timeIntervalSince1970: sqlite3_column_double(row, 3)),
+                                    processingSeconds: sqlite3_column_type(row, 4) == SQLITE_NULL ? nil
+                                        : sqlite3_column_double(row, 4),
+                                    completedAt: sqlite3_column_type(row, 5) == SQLITE_NULL ? nil
+                                        : Date(timeIntervalSince1970: sqlite3_column_double(row, 5)),
+-                                   page: priority == .document && (cursor?.page ?? 0) > 0 ? cursor?.page : nil))
++                                   page: priority == .document && (cursor?.page ?? 0) > 0 ? cursor?.page : nil,
++                                   generation: sqlite3_column_type(row, 9) == SQLITE_NULL ? nil : string(row, 9),
++                                   reason: sqlite3_column_type(row, 8) == SQLITE_NULL ? nil : string(row, 8),
++                                   queued: pending || sqlite3_column_int(row, 10) != 0,
++                                   offset: cursor?.offset ?? 0,
++                                   savedChunks: Int(sqlite3_column_int(row, 11)),
++                                   encodedChunks: Int(sqlite3_column_int(row, 12)),
++                                   savedMediaSegments: Int(sqlite3_column_int(row, 13)),
++                                   audioCovered: sqlite3_column_type(row, 14) == SQLITE_NULL ? nil
++                                       : sqlite3_column_double(row, 14),
++                                   videoChecked: video))
+                 step = sqlite3_step(row)
+             }
+             guard step == SQLITE_DONE else { throw Failure.database }
+@@ -73,7 +130,9 @@ extension SemanticFileStore {
+         for index in page.items.indices where page.items[index].bytes == nil || page.items[index].modified == nil {
+             var info = stat()
+             guard lstat(page.items[index].path, &info) == 0, info.st_mode & S_IFMT == S_IFREG else { continue }
+-            if page.items[index].bytes == nil { page.items[index].bytes = Int64(info.st_size) }
++            if page.items[index].bytes == nil {
++                page.items[index].bytes = Int64(info.st_size)
++            }
+             if page.items[index].modified == nil {
+                 page.items[index].modified = Date(timeIntervalSince1970: TimeInterval(info.st_mtimespec.tv_sec))
+             }
+@@ -81,6 +140,25 @@ extension SemanticFileStore {
+         return page
+     }
+ 
++    /// Compare the visible selection under the queue lock; retain every checkpoint and failure reason.
++    func retryProcessingItem(_ item: ProcessingItem, cancelled: () -> Bool) throws -> Bool {
++        try lock.withLock {
++            guard !cancelled(), item.canRetry else { return false }
++            return try transaction {
++                let row = try statement("SELECT state,reason,generation FROM jobs WHERE path=?")
++                defer { sqlite3_finalize(row) }; bind(row, [item.path])
++                guard sqlite3_step(row) == SQLITE_ROW, string(row, 2) == item.generation else { return false }
++                var current = item
++                current.state = string(row, 0)
++                current.reason = sqlite3_column_type(row, 1) == SQLITE_NULL ? nil : string(row, 1)
++                guard current.canRetry, !cancelled() else { return false }
++                try execute("INSERT OR IGNORE INTO work_queue(path,priority) VALUES(?,?)",
++                            [item.path, SemanticMediaPriority.of(item.path).rawValue])
++                return true
++            }
++        }
++    }
++
+     private func countQuery(_ sql: String) throws -> Int {
+         let row = try statement(sql)
+         defer { sqlite3_finalize(row) }
+diff --git a/Sources/Typeflux/Resources/en.lproj/Localizable.strings b/Sources/Typeflux/Resources/en.lproj/Localizable.strings
+index b30c9e25..c954aa57 100644
+--- a/Sources/Typeflux/Resources/en.lproj/Localizable.strings
++++ b/Sources/Typeflux/Resources/en.lproj/Localizable.strings
+@@ -5923,3 +5923,27 @@
+ "system.info.search.tip" = "Try ip, serial, resolution or cycle";
+ "system.info.keys.browse" = "↑↓ Choose · ↩ Copy · ⌘1–%d Sections";
+ "system.info.keys.search" = "↑↓ Choose · ↩ Copy · esc Clear";
++
++// Per-file durable progress and recovery.
++"semantic.details.state.pending" = "Queued";
++"semantic.details.state.partial" = "Partially indexed";
++"semantic.details.retry" = "Retry this file";
++"semantic.details.retryUnavailable" = "Could not queue this file. Its state or access may have changed.";
++"semantic.details.reason.password" = "Password-protected document. Unlock it before indexing.";
++"semantic.details.reason.unsupported" = "This document format is not supported.";
++"semantic.details.reason.permission" = "File access was denied. Restore permission to continue.";
++"semantic.details.reason.unavailable" = "The file is missing, changed, or unavailable.";
++"semantic.details.reason.emptyText" = "No readable text was found.";
++"semantic.details.reason.emptyMedia" = "No supported media was found.";
++"semantic.details.reason.silent" = "Silent audio was checked and skipped.";
++"semantic.details.reason.encoding" = "Encoding failed. Saved progress is retained.";
++"semantic.details.reason.ocr" = "Text recognition failed. Saved progress is retained.";
++"semantic.details.reason.read" = "Content could not be read. Repair the file and retry.";
++"semantic.details.reason.unknown" = "Processing stopped for an unknown reason.";
++"semantic.details.savedChunks" = "Saved %@ text blocks; %@ encoded";
++"semantic.details.savedOffset" = "Saved text offset: %@ bytes";
++"semantic.details.savedSegments" = "Saved %@ media segments (index may be incomplete)";
++"semantic.details.audioCovered" = "Audio checked through %@s";
++"semantic.details.videoChecked" = "Video checked at %@s";
++"semantic.details.noSavedProgress" = "No saved progress yet";
++"semantic.details.reason.imageNoText" = "Visual content is indexed; no readable text was found.";
+diff --git a/Sources/Typeflux/Resources/ja.lproj/Localizable.strings b/Sources/Typeflux/Resources/ja.lproj/Localizable.strings
+index 99c0243c..e79aef85 100644
+--- a/Sources/Typeflux/Resources/ja.lproj/Localizable.strings
++++ b/Sources/Typeflux/Resources/ja.lproj/Localizable.strings
+@@ -5809,3 +5809,27 @@
+ "system.info.search.tip" = "ip、シリアル、解像度、充放電 などを試してください";
+ "system.info.keys.browse" = "↑↓ 選択 · ↩ コピー · ⌘1–%d セクション";
+ "system.info.keys.search" = "↑↓ 選択 · ↩ コピー · esc クリア";
++
++// Per-file durable progress and recovery.
++"semantic.details.state.pending" = "待機中";
++"semantic.details.state.partial" = "一部索引済み";
++"semantic.details.retry" = "このファイルを再試行";
++"semantic.details.retryUnavailable" = "キューに追加できません。状態やアクセス権が変わった可能性があります。";
++"semantic.details.reason.password" = "パスワード保護された書類です。解除してから索引してください。";
++"semantic.details.reason.unsupported" = "この書類形式には対応していません。";
++"semantic.details.reason.permission" = "アクセスが拒否されました。権限を復元してください。";
++"semantic.details.reason.unavailable" = "ファイルが見つからないか、変更されたか、利用できません。";
++"semantic.details.reason.emptyText" = "読み取れるテキストがありません。";
++"semantic.details.reason.emptyMedia" = "対応するメディアがありません。";
++"semantic.details.reason.silent" = "無音の音声を確認してスキップしました。";
++"semantic.details.reason.encoding" = "エンコードに失敗しました。保存済みの進捗は保持されています。";
++"semantic.details.reason.ocr" = "文字認識に失敗しました。保存済みの進捗は保持されています。";
++"semantic.details.reason.read" = "内容を読めません。ファイルを修復して再試行してください。";
++"semantic.details.reason.unknown" = "不明な理由で処理が停止しました。";
++"semantic.details.savedChunks" = "テキスト %@ ブロック保存済み、%@ ブロックエンコード済み";
++"semantic.details.savedOffset" = "保存済みテキスト位置：%@ バイト";
++"semantic.details.savedSegments" = "メディア %@ 区間保存済み（索引は未完了の場合があります）";
++"semantic.details.audioCovered" = "音声を %@ 秒まで確認済み";
++"semantic.details.videoChecked" = "映像を %@ 秒の位置まで確認済み";
++"semantic.details.noSavedProgress" = "保存済みの進捗はありません";
++"semantic.details.reason.imageNoText" = "画像の索引は完了しましたが、読み取れる文字はありません。";
+diff --git a/Sources/Typeflux/Resources/ko.lproj/Localizable.strings b/Sources/Typeflux/Resources/ko.lproj/Localizable.strings
+index 197e6954..31fed359 100644
+--- a/Sources/Typeflux/Resources/ko.lproj/Localizable.strings
++++ b/Sources/Typeflux/Resources/ko.lproj/Localizable.strings
+@@ -5809,3 +5809,27 @@
+ "system.info.search.tip" = "ip, 일련번호, 해상도, 사이클을 입력해 보세요";
+ "system.info.keys.browse" = "↑↓ 선택 · ↩ 복사 · ⌘1–%d 섹션";
+ "system.info.keys.search" = "↑↓ 선택 · ↩ 복사 · esc 지우기";
++
++// Per-file durable progress and recovery.
++"semantic.details.state.pending" = "대기 중";
++"semantic.details.state.partial" = "일부 색인됨";
++"semantic.details.retry" = "이 파일 재시도";
++"semantic.details.retryUnavailable" = "대기열에 추가할 수 없습니다. 상태나 접근 권한이 변경되었을 수 있습니다.";
++"semantic.details.reason.password" = "암호로 보호된 문서입니다. 잠금을 해제한 후 색인하세요.";
++"semantic.details.reason.unsupported" = "지원하지 않는 문서 형식입니다.";
++"semantic.details.reason.permission" = "파일 접근이 거부되었습니다. 권한을 복원하세요.";
++"semantic.details.reason.unavailable" = "파일이 없거나 변경되었거나 사용할 수 없습니다.";
++"semantic.details.reason.emptyText" = "읽을 수 있는 텍스트가 없습니다.";
++"semantic.details.reason.emptyMedia" = "지원되는 미디어가 없습니다.";
++"semantic.details.reason.silent" = "무음 오디오를 확인하고 건너뛰었습니다.";
++"semantic.details.reason.encoding" = "인코딩에 실패했습니다. 저장된 진행 상태는 유지됩니다.";
++"semantic.details.reason.ocr" = "문자 인식에 실패했습니다. 저장된 진행 상태는 유지됩니다.";
++"semantic.details.reason.read" = "내용을 읽을 수 없습니다. 파일을 복구한 후 재시도하세요.";
++"semantic.details.reason.unknown" = "알 수 없는 이유로 처리가 중지되었습니다.";
++"semantic.details.savedChunks" = "텍스트 %@개 블록 저장됨, %@개 인코딩됨";
++"semantic.details.savedOffset" = "저장된 텍스트 위치: %@바이트";
++"semantic.details.savedSegments" = "미디어 %@개 구간 저장됨 (색인이 완료되지 않았을 수 있음)";
++"semantic.details.audioCovered" = "오디오 %@초까지 확인됨";
++"semantic.details.videoChecked" = "영상 %@초 위치까지 확인됨";
++"semantic.details.noSavedProgress" = "저장된 진행 상태 없음";
++"semantic.details.reason.imageNoText" = "이미지가 색인되었으나 읽을 수 있는 텍스트가 없습니다.";
+diff --git a/Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings b/Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings
+index c239bd28..8c781814 100644
+--- a/Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings
++++ b/Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings
+@@ -5923,3 +5923,27 @@
+ "system.info.search.tip" = "试试 ip、序列号、分辨率、循环";
+ "system.info.keys.browse" = "↑↓ 选择 · ↩ 复制 · ⌘1–%d 切换分区";
+ "system.info.keys.search" = "↑↓ 选择 · ↩ 复制 · esc 清空";
++
++// Per-file durable progress and recovery.
++"semantic.details.state.pending" = "排队中";
++"semantic.details.state.partial" = "部分已索引";
++"semantic.details.retry" = "重试此文件";
++"semantic.details.retryUnavailable" = "无法加入队列，文件状态或访问权限可能已变更。";
++"semantic.details.reason.password" = "文档受密码保护，请解锁后再索引。";
++"semantic.details.reason.unsupported" = "暂不支持此文档格式。";
++"semantic.details.reason.permission" = "文件访问被拒绝，请恢复权限后继续。";
++"semantic.details.reason.unavailable" = "文件不存在、已变更或暂不可用。";
++"semantic.details.reason.emptyText" = "未发现可读取的正文。";
++"semantic.details.reason.emptyMedia" = "未发现受支持的媒体内容。";
++"semantic.details.reason.silent" = "已检查并跳过静音音频。";
++"semantic.details.reason.encoding" = "编码失败，已保存的进度仍保留。";
++"semantic.details.reason.ocr" = "文字识别失败，已保存的进度仍保留。";
++"semantic.details.reason.read" = "无法读取内容，请修复文件后重试。";
++"semantic.details.reason.unknown" = "处理因未知原因停止。";
++"semantic.details.savedChunks" = "已保存 %@ 个正文块，已编码 %@ 个";
++"semantic.details.savedOffset" = "已保存正文偏移：%@ 字节";
++"semantic.details.savedSegments" = "已保存 %@ 个媒体片段（索引可能尚未完成）";
++"semantic.details.audioCovered" = "音频已检查至 %@ 秒";
++"semantic.details.videoChecked" = "视频已检查到 %@ 秒";
++"semantic.details.noSavedProgress" = "尚无已保存的进度";
++"semantic.details.reason.imageNoText" = "图像内容已索引，未识别到可读取的文字。";
+diff --git a/Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings b/Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings
+index 537cc1f2..1ff010ef 100644
+--- a/Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings
++++ b/Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings
+@@ -5843,3 +5843,27 @@
+ "system.info.search.tip" = "試試 ip、序號、解析度、循環";
+ "system.info.keys.browse" = "↑↓ 選擇 · ↩ 複製 · ⌘1–%d 切換分區";
+ "system.info.keys.search" = "↑↓ 選擇 · ↩ 複製 · esc 清除";
++
++// Per-file durable progress and recovery.
++"semantic.details.state.pending" = "排隊中";
++"semantic.details.state.partial" = "部分已索引";
++"semantic.details.retry" = "重試此檔案";
++"semantic.details.retryUnavailable" = "無法加入佇列，檔案狀態或存取權限可能已變更。";
++"semantic.details.reason.password" = "文件受密碼保護，請解鎖後再索引。";
++"semantic.details.reason.unsupported" = "暫不支援此文件格式。";
++"semantic.details.reason.permission" = "檔案存取被拒絕，請恢復權限後繼續。";
++"semantic.details.reason.unavailable" = "檔案不存在、已變更或暫不可用。";
++"semantic.details.reason.emptyText" = "未發現可讀取的內文。";
++"semantic.details.reason.emptyMedia" = "未發現受支援的媒體內容。";
++"semantic.details.reason.silent" = "已檢查並略過靜音音訊。";
++"semantic.details.reason.encoding" = "編碼失敗，已儲存的進度仍保留。";
++"semantic.details.reason.ocr" = "文字辨識失敗，已儲存的進度仍保留。";
++"semantic.details.reason.read" = "無法讀取內容，請修復檔案後重試。";
++"semantic.details.reason.unknown" = "處理因未知原因停止。";
++"semantic.details.savedChunks" = "已儲存 %@ 個內文區塊，已編碼 %@ 個";
++"semantic.details.savedOffset" = "已儲存內文位移：%@ 位元組";
++"semantic.details.savedSegments" = "已儲存 %@ 個媒體片段（索引可能尚未完成）";
++"semantic.details.audioCovered" = "音訊已檢查至 %@ 秒";
++"semantic.details.videoChecked" = "影片已檢查到 %@ 秒";
++"semantic.details.noSavedProgress" = "尚無已儲存的進度";
++"semantic.details.reason.imageNoText" = "影像內容已索引，未辨識到可讀取的文字。";
+diff --git a/Sources/Typeflux/Settings/SemanticIndexDetailsView.swift b/Sources/Typeflux/Settings/SemanticIndexDetailsView.swift
+index b596f469..ae0866a6 100644
+--- a/Sources/Typeflux/Settings/SemanticIndexDetailsView.swift
++++ b/Sources/Typeflux/Settings/SemanticIndexDetailsView.swift
+@@ -1,7 +1,7 @@
+ import AppKit
+ import SwiftUI
+ 
+-/// Paged, read-only view of the durable content-index queue and completed jobs.
++/// Paged view of the durable content-index queue and completed jobs.
+ struct SemanticIndexDetailsView: View {
+     @ObservedObject var service: SemanticFileSearchService
+     @Environment(\.dismiss) private var dismiss
+@@ -9,6 +9,8 @@ struct SemanticIndexDetailsView: View {
+     @State private var offset = 0
+     @State private var page: SemanticFileStore.ProcessingPage?
+     @State private var loadFailed = false
++    @State private var retrying: Set<String> = []
++    @State private var retryFailed: Set<String> = []
+ 
+     private static let pageSize = 50
+ 
+@@ -44,7 +46,9 @@ struct SemanticIndexDetailsView: View {
+                             } else if let page {
+                                 ForEach(page.items.indices, id: \.self) { index in
+                                     itemRow(page.items[index])
+-                                    if index < page.items.count - 1 { TFDivider() }
++                                    if index < page.items.count - 1 {
++                                        TFDivider()
++                                    }
+                                 }
+                             } else if loadFailed {
+                                 emptyState(L("semantic.details.unavailable"))
+@@ -63,13 +67,19 @@ struct SemanticIndexDetailsView: View {
+         .frame(width: 780, height: min(680, max(500, (NSScreen.main?.visibleFrame.height ?? 800) - 100)))
+         .background(ModelVisualStyle.canvas)
+         .onAppear {
+-            if service.phase == .ready { section = .completed }
++            if service.phase == .ready {
++                section = .completed
++            }
+         }
+         .task(id: PageKey(section: section, offset: offset)) {
+             while !Task.isCancelled {
+                 let next = await service.processingPage(section, offset: offset, limit: Self.pageSize)
+                 guard !Task.isCancelled else { return }
+-                if let next { page = next; loadFailed = false } else { loadFailed = true }
++                if let next {
++                    page = next; loadFailed = false
++                } else {
++                    page = nil; loadFailed = true
++                }
+                 try? await Task.sleep(for: .seconds(3))
+             }
+         }
+@@ -121,7 +131,7 @@ struct SemanticIndexDetailsView: View {
+     }
+ 
+     @ViewBuilder private var currentFile: some View {
+-        if let path = service.currentProcessingPath, (service.phase == .indexing || service.phase == .paused) {
++        if let path = service.currentProcessingPath, service.phase == .indexing || service.phase == .paused {
+             HStack(alignment: .top, spacing: 12) {
+                 TFIconTile(systemImage: "doc.text.magnifyingglass", style: .neutral)
+                 VStack(alignment: .leading, spacing: 4) {
+@@ -145,6 +155,7 @@ struct SemanticIndexDetailsView: View {
+         }
+     }
+ 
++    // swiftlint:disable:next function_body_length
+     private func itemRow(_ item: SemanticFileStore.ProcessingItem) -> some View {
+         HStack(alignment: .top, spacing: 12) {
+             TFIconTile(systemImage: symbol(for: item.priority), style: .neutral)
+@@ -153,19 +164,46 @@ struct SemanticIndexDetailsView: View {
+                     Text(URL(fileURLWithPath: item.path).lastPathComponent)
+                         .font(.system(size: 13, weight: .medium)).foregroundStyle(TFColors.textPrimary)
+                         .lineLimit(1).truncationMode(.middle)
+-                    if section == .completed {
+-                        Text(L("semantic.details.state.\(item.state)"))
+-                            .font(.system(size: 10)).foregroundStyle(TFColors.textSecondary)
+-                    }
++                    Text(L("semantic.details.state.\(item.displayState)"))
++                        .font(.system(size: 10)).foregroundStyle(TFColors.textSecondary)
+                 }
+                 Text(AskLauncherSearchSettings.abbreviate((item.path as NSString).deletingLastPathComponent))
+                     .font(.system(size: 11)).foregroundStyle(TFColors.textTertiary)
+                     .lineLimit(1).truncationMode(.middle)
++                if let reason = item.reason {
++                    Text(L(SemanticProcessingPresentation.reasonKey(reason)))
++                        .font(.system(size: 11)).foregroundStyle(TFColors.textSecondary)
++                        .fixedSize(horizontal: false, vertical: true)
++                }
++                Text(SemanticProcessingPresentation.progress(item))
++                    .font(.system(size: 11)).foregroundStyle(TFColors.textSecondary)
++                    .fixedSize(horizontal: false, vertical: true)
++                if retryFailed.contains(item.path) {
++                    Text(L("semantic.details.retryUnavailable"))
++                        .font(.system(size: 11)).foregroundStyle(TFColors.textSecondary)
++                }
+                 Text(metadata(for: item))
+                     .font(.system(size: 11)).foregroundStyle(TFColors.textSecondary)
+                     .lineLimit(2)
+             }
+             Spacer(minLength: 4)
++            if item.canRetry {
++                TFButton(title: L("semantic.details.retry"), kind: .secondary, size: .small) {
++                    retrying.insert(item.path); retryFailed.remove(item.path)
++                    let key = PageKey(section: section, offset: offset)
++                    Task {
++                        let accepted = await service.retryProcessingItem(item)
++                        retrying.remove(item.path)
++                        if !accepted {
++                            retryFailed.insert(item.path)
++                        }
++                        let next = await service.processingPage(key.section, offset: key.offset, limit: Self.pageSize)
++                        guard section == key.section, offset == key.offset else { return }
++                        page = next; loadFailed = next == nil
++                    }
++                }
++                .disabled(retrying.contains(item.path) || !service.canRetryProcessingItem(item))
++            }
+         }
+         .frame(maxWidth: .infinity, alignment: .leading)
+         .padding(.horizontal, 14)
+@@ -180,7 +218,9 @@ struct SemanticIndexDetailsView: View {
+ 
+     private func metadata(for item: SemanticFileStore.ProcessingItem) -> String {
+         var parts: [String] = []
+-        if let bytes = item.bytes { parts.append(SemanticFileSearchStatus.size(bytes)) }
++        if let bytes = item.bytes {
++            parts.append(SemanticFileSearchStatus.size(bytes))
++        }
+         if let modified = item.modified {
+             parts.append(L("semantic.details.modified", modified.formatted(date: .abbreviated, time: .omitted)))
+         }
+@@ -200,9 +240,15 @@ struct SemanticIndexDetailsView: View {
+ 
+     private static func duration(_ seconds: TimeInterval) -> String {
+         let value = max(0, Int(seconds.rounded()))
+-        if seconds < 1 { return "\(max(1, Int((seconds * 1_000).rounded())))ms" }
+-        if value < 60 { return "\(value)s" }
+-        if value < 3600 { return "\(value / 60)m \(value % 60)s" }
++        if seconds < 1 {
++            return "\(max(1, Int((seconds * 1000).rounded())))ms"
++        }
++        if value < 60 {
++            return "\(value)s"
++        }
++        if value < 3600 {
++            return "\(value / 60)m \(value % 60)s"
++        }
+         return "\(value / 3600)h \((value % 3600) / 60)m"
+     }
+ 
+diff --git a/Sources/Typeflux/Settings/SemanticProcessingPresentation.swift b/Sources/Typeflux/Settings/SemanticProcessingPresentation.swift
+new file mode 100644
+index 00000000..cf72c501
+--- /dev/null
++++ b/Sources/Typeflux/Settings/SemanticProcessingPresentation.swift
+@@ -0,0 +1,48 @@
++import Foundation
++
++enum SemanticProcessingPresentation {
++    // Only allowlisted codes reach localization; raw worker errors never become UI text.
++    // swiftlint:disable:next cyclomatic_complexity
++    static func reasonKey(_ reason: String) -> String {
++        switch reason {
++        case "password-required": "semantic.details.reason.password"
++        case "unsupported-document": "semantic.details.reason.unsupported"
++        case "permission-denied": "semantic.details.reason.permission"
++        case "missing-or-unavailable", "metadata-unavailable", "file-missing-or-changed", "media-missing-or-changed":
++            "semantic.details.reason.unavailable"
++        case "empty-or-no-text": "semantic.details.reason.emptyText"
++        case "empty-or-no-media": "semantic.details.reason.emptyMedia"
++        case "audio-silent": "semantic.details.reason.silent"
++        case "image-no-text": "semantic.details.reason.imageNoText"
++        case "encoding-failed", "media-encoding-failed": "semantic.details.reason.encoding"
++        case "pdf-ocr-failed", "image-ocr-failed": "semantic.details.reason.ocr"
++        case "unreadable-content", "reader-failed", "extraction-failed", "media-extraction-failed",
++             "inconsistent-media-segments": "semantic.details.reason.read"
++        default: "semantic.details.reason.unknown"
++        }
++    }
++
++    static func progress(_ item: SemanticFileStore.ProcessingItem) -> String {
++        var parts: [String] = []
++        if item.savedChunks > 0 {
++            parts.append(L(
++                "semantic.details.savedChunks",
++                item.savedChunks.formatted(),
++                item.encodedChunks.formatted()
++            ))
++        }
++        if item.priority == .document, item.offset > 0 {
++            parts.append(L("semantic.details.savedOffset", item.offset.formatted()))
++        }
++        if item.savedMediaSegments > 0 {
++            parts.append(L("semantic.details.savedSegments", item.savedMediaSegments.formatted()))
++        }
++        if let seconds = item.audioCovered {
++            parts.append(L("semantic.details.audioCovered", seconds.formatted(.number.precision(.fractionLength(1)))))
++        }
++        if let seconds = item.videoChecked {
++            parts.append(L("semantic.details.videoChecked", seconds.formatted(.number.precision(.fractionLength(1)))))
++        }
++        return parts.isEmpty ? L("semantic.details.noSavedProgress") : parts.joined(separator: " · ")
++    }
++}
+diff --git a/Tests/TypefluxTests/SemanticProcessingRetryTests.swift b/Tests/TypefluxTests/SemanticProcessingRetryTests.swift
+new file mode 100644
+index 00000000..2b709c5a
+--- /dev/null
++++ b/Tests/TypefluxTests/SemanticProcessingRetryTests.swift
+@@ -0,0 +1,228 @@
++import AppKit
++import Foundation
++import SwiftUI
++import Testing
++@testable import Typeflux
++
++@Suite("Per-file processing recovery", .serialized, .exclusiveUIState)
++@MainActor
++struct SemanticProcessingRetryTests {
++    @Test func `broken file retries through native reader and keeps other content`() async throws {
++        let (original, root, _, models) = try SemanticFileServiceTests().fixture()
++        defer { try? FileManager.default.removeItem(at: root) }
++        let bad = root.appendingPathComponent("broken.txt"), good = root.appendingPathComponent("reference.txt")
++        try Data([0xFF, 0xFE, 0xFF]).write(to: bad)
++        try "referencezebra".write(to: good, atomically: true, encoding: .utf8)
++        let indexRoot = root.appendingPathComponent("index-data")
++        try FileManager.default.createDirectory(at: indexRoot, withIntermediateDirectories: true)
++        try FileManager.default.copyItem(at: models.source, to: indexRoot.appendingPathComponent(original.modelURL.lastPathComponent))
++        let service = SemanticFileSearchService(settings: original.settings, directory: indexRoot,
++                                                helper: URL(fileURLWithPath: "/usr/bin/true"), supported: true,
++                                                watcher: SemanticFixtureWatcher(),
++                                                access: { true }, automaticStart: false, budgetEnabled: false,
++                                                lowPowerMode: { false }, thermalConstrained: { false }, models: models,
++                                                makeReader: { AskFileReader() },
++                                                makeEncoder: { _, _ in SemanticFixtureEncoder() },
++                                                makeQuery: { _, _ in SemanticFixtureQuery() })
++        #expect(service.setEnabled(true))
++        let deadline = ContinuousClock.now + .seconds(20)
++        while service.phase != .ready, service.phase != .failed, ContinuousClock.now < deadline {
++            try await Task.sleep(for: .milliseconds(20))
++        }
++        try #require(service.phase == .ready, "Native reader phase: \(service.phase); diagnostics: \(String(describing: service.diagnostics))")
++        let store = try SemanticFileStore(url: indexRoot.appendingPathComponent("semantic-files.sqlite"))
++        let untouched = try #require(try store.job(good.path))
++        let failed = try #require(await service.processingPage(.completed, offset: 0)?.items
++            .first { $0.path == bad.path })
++        #expect(failed.state == "failed" && failed.reason == "unreadable-content")
++        #expect(service.canRetryProcessingItem(failed))
++        let language = AppLocalization.shared.language
++        AppLocalization.shared.setLanguage(.simplifiedChinese)
++        defer { AppLocalization.shared.setLanguage(language) }
++        try await SemanticFileSearchVisualTests.render(SemanticIndexDetailsView(service: service), width: 780,
++                                                       name: "processing-retry")
++        try await pressRetry(service)
++        try await SemanticFileServiceTests.wait { (try? store.job(bad.path)?.attempts) == 1 && service.phase == .ready }
++        #expect(try store.job(bad.path)?.reason == "unreadable-content")
++        let repeated = try #require(await service.processingPage(.completed, offset: 0)?.items
++            .first { $0.path == bad.path })
++        try "repairedzebra".write(to: bad, atomically: true, encoding: .utf8)
++        #expect(await service.retryProcessingItem(repeated))
++        try await SemanticFileServiceTests.wait { service.phase == .ready }
++        #expect(try store.job(bad.path)?.state == .done)
++        #expect(try store.job(bad.path)?.reason == nil)
++        #expect(try store.job(good.path)?.generation == untouched.generation)
++        let hits = await service.search("repairedzebra")
++        #expect(hits.contains { $0.path == bad.path })
++        #expect(await service.search("referencezebra").contains { $0.path == good.path })
++        #expect(try store.processingPage(.pending, offset: 0).total == 0)
++        #expect(try !service
++            .canRetryProcessingItem(#require(store.processingPage(.completed, offset: 0).items
++                    .first { $0.path == good.path })))
++        #expect(
++            await !(service.retryProcessingItem(repeated)),
++            "old selections cannot retry a replacement generation"
++        )
++        original.settings.semanticFileSearch = .init(enabled: false)
++        #expect(!service.canRetryProcessingItem(failed))
++        #expect(await !(service.retryProcessingItem(failed)))
++        #expect(await service.processingPage(.completed, offset: 0) == nil)
++        await service.clear()
++    }
++
++    private func pressRetry(_ service: SemanticFileSearchService) async throws {
++        _ = NSApplication.shared
++        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
++        let previous = NSApp.accessibilityAttributeValue(attribute)
++        NSApp.accessibilitySetValue(true, forAttribute: attribute)
++        defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
++        let host = NSHostingView(rootView: SemanticIndexDetailsView(service: service))
++        let window = NSWindow(contentRect: .init(x: 0, y: 0, width: 780, height: 680), styleMask: .borderless,
++                              backing: .buffered, defer: false)
++        window.isReleasedWhenClosed = false; window.contentView = host; window.orderFront(nil)
++        defer { window.close() }
++        try await SettingsBehaviorTestSupport.wait {
++            SettingsBehaviorTestSupport.elements(in: host).contains { $0.label == L("semantic.details.retry") }
++        }
++        try SettingsBehaviorTestSupport.button(L("semantic.details.retry"), in: host).press()
++    }
++
++    @Test func `paused retry resumes only its queue and rejects revoked scope`() async throws {
++        let (service, root, reader, _) = try SemanticFileServiceTests().fixture()
++        defer { try? FileManager.default.removeItem(at: root) }
++        #expect(service.setEnabled(true)); await service.prepareModelIfNeeded()
++        try await SemanticFileServiceTests.wait { service.phase == .ready }
++        let store = try SemanticFileStore(url: root.appendingPathComponent("semantic-files.sqlite"))
++        let path = root.path + "/handbook.txt"
++        let old = try #require(try store.job(path))
++        try store.failJob(path, reason: "encoding-failed")
++        let item = try #require(store.processingPage(.completed, offset: 0).items.first)
++        service.pause(true)
++        #expect(await service.retryProcessingItem(item))
++        #expect(service.phase == .paused)
++        #expect(try store.job(path)?.reason == "encoding-failed")
++        #expect(try store.processingPage(.pending, offset: 0).total == 1)
++        _ = try store.prepareDocument(path: path, metadata: .init(fileSize: 20, modified: reader.modified))
++        #expect(try store.processingPage(.pending, offset: 0).items.first?.state == "partial")
++        try await SemanticFileSearchVisualTests.render(SemanticIndexDetailsView(service: service), width: 780,
++                                                       name: "processing-partial")
++        service.pause(false)
++        try await SemanticFileServiceTests.wait { (try? store.processingPage(.pending, offset: 0).total) == 0 }
++        #expect(try store.job(path)?.state == .done && store.job(path)?.generation == old.generation)
++        try store.failJob(path, reason: "reader-failed")
++        let next = try #require(store.processingPage(.completed, offset: 0).items.first)
++        var names = service.settings.askLauncherSearchSettings
++        names.excludedPaths = [path]; service.settings.askLauncherSearchSettings = names
++        #expect(!service.canRetryProcessingItem(next))
++        #expect(await !(service.retryProcessingItem(next)))
++        #expect(try store.processingPage(.pending, offset: 0).total == 0)
++        await service.clear()
++    }
++
++    @Test func `partial queue survives restart and reuses saved vectors`() throws {
++        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
++        let path = root.appendingPathComponent("partial.txt")
++        try "firstblock tailmarker".write(to: path, atomically: true, encoding: .utf8)
++        let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
++        let reader = AskFileReader(); defer { reader.stop() }
++        let metadata = try reader.read(.init(
++            operation: .content,
++            path: path.path,
++            scope: semanticScope(root.path),
++            readText: false
++        ))
++        let job = try store.prepareDocument(path: path.path, metadata: metadata)
++        #expect(try store.publish([.init(text: "firstblock", page: nil)], next: .init(offset: 11), job: job))
++        let work = try store.vectorWork(job)
++        #expect(try store.publishVectors([semanticVector()], work: work, job: job))
++        try store.failJob(path.path, reason: "reader-failed")
++        let item = try #require(store.processingPage(.completed, offset: 0).items.first)
++        #expect(item.offset == 11 && item.savedChunks == 1 && item.encodedChunks == 1)
++        #expect(try !(store.retryProcessingItem(item, cancelled: { true })))
++        #expect(try store.retryProcessingItem(item, cancelled: { false }))
++        #expect(try store.retryProcessingItem(item, cancelled: { false }))
++        let reopened = try SemanticFileStore(url: store.url)
++        #expect(try reopened.processingPage(.pending, offset: 0).total == 1)
++        #expect(try reopened.job(path.path)?.reason == "reader-failed")
++        let encoder = SemanticFixtureEncoder()
++        _ = try SemanticFileIndexer.reconcile(paths: [], scope: semanticScope(root.path), store: reopened,
++                                              reader: reader, encoder: encoder, cancelled: { false },
++                                              progress: { _ in })
++        #expect(try reopened.job(path.path)?.generation == job.generation)
++        #expect(try reopened.job(path.path)?.state == .done)
++        #expect(encoder.calls == 1, "only the missing tail is encoded")
++        #expect(try reopened.processingPage(.completed, offset: 0).items.first?.encodedChunks == 2)
++        #expect(try !reopened.retryProcessingItem(item, cancelled: { false }))
++    }
++
++    @Test func `media details keep independent durable progress without publishing staging`() throws {
++        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
++        let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
++        let path = root.path + "/video.mov"
++        let generation = try store.beginMediaJob(
++            path: path,
++            metadata: .init(fileSize: 10, modified: Date(), version: "one")
++        )
++        let other = root.path + "/queued.txt"
++        try store.enqueue([(other, .document), (path, .video)])
++        try store.saveMediaSegment(path: path, generation: generation, ordinal: 0,
++                                   input: .init(kind: .image, path: "fixture", time: 1.5, endTime: 1.5),
++                                   vector: semanticVector(),
++                                   videoProgress: .init(next: 2, actual: 1.5, reference: Data(count: 1024)))
++        try store.saveAudioProgress(path: path, generation: generation, progress: .init(next: 25.0, covered: 30.0))
++        let item = try #require(store.processingPage(.pending, offset: 0).items.first { $0.path == path })
++        #expect(item.state == "partial" && item.queued && item.canRetry)
++        #expect(item.audioCovered == 30)
++        #expect(item.videoChecked == 1.5)
++        #expect(item.savedMediaSegments == 1)
++        let cursor = try store.mediaCursor(path: path, generation: generation)
++        #expect(cursor.audioCoveredUntil == 30 && cursor.videoProgress?.actual == 1.5)
++        #expect(item.savedChunks == 0 && item.encodedChunks == 0)
++        #expect(try store.retryProcessingItem(item, cancelled: { false }))
++        #expect(try store.mediaCursor(path: path, generation: generation).videoFrames == 1)
++        #expect(try store.nextWork(.document) == other && store.nextWork(.video) == path)
++        #expect(try store.processingPage(.pending, offset: 0).total == 2, "other queue entries survive retry")
++        #expect(try store.counts().chunks == 0, "staging is not reported as a published index")
++        let stale = item
++        _ = try store.beginMediaJob(path: path, metadata: .init(fileSize: 11, modified: Date(), version: "two"))
++        #expect(try !store.retryProcessingItem(stale, cancelled: { false }))
++        #expect(try !store.publish([.init(text: "obsolete", page: nil)], next: nil,
++                                   job: .init(
++                                       path: path,
++                                       version: "one",
++                                       generation: generation,
++                                       state: .partial,
++                                       cursor: .init(),
++                                       extracted: false,
++                                       attempts: 0
++                                   )))
++    }
++
++    @Test func `progress and reasons never expose raw errors or claim completion`() {
++        let known = ["password-required", "unsupported-document", "permission-denied", "missing-or-unavailable",
++                     "metadata-unavailable", "file-missing-or-changed", "media-missing-or-changed", "empty-or-no-text",
++                     "empty-or-no-media", "audio-silent", "encoding-failed", "media-encoding-failed", "pdf-ocr-failed",
++                     "image-ocr-failed", "image-no-text", "unreadable-content", "reader-failed", "extraction-failed",
++                     "media-extraction-failed", "inconsistent-media-segments"]
++        for code in known {
++            let key = SemanticProcessingPresentation.reasonKey(code)
++            #expect(L(key) != key)
++        }
++        #expect(SemanticProcessingPresentation
++            .reasonKey("private error /Users/person") == "semantic.details.reason.unknown")
++        var item = SemanticFileStore.ProcessingItem(path: "/fixture/video.mov", state: "partial", priority: .video,
++                                                    bytes: nil, modified: nil, processingSeconds: nil, completedAt: nil,
++                                                    page: nil, generation: "one")
++        #expect(!SemanticProcessingPresentation.progress(item).contains("%"))
++        item.savedChunks = 3; item.encodedChunks = 1; item.offset = 12
++        item.savedMediaSegments = 2; item.audioCovered = 25; item.videoChecked = 1.5
++        #expect(item.canRetry && item.displayState == "partial")
++        #expect(!SemanticProcessingPresentation.progress(item).contains("%"))
++        item.state = "failed"; item.reason = "password-required"
++        #expect(!item.canRetry)
++        item.reason = "unsupported-document"; #expect(!item.canRetry)
++        item.queued = true; #expect(item.displayState == "pending")
++        item.queued = false; item.state = "done"; item.reason = "audio-silent"
++        #expect(item.displayState == "skipped")
++    }
++}

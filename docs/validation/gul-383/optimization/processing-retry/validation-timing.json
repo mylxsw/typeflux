@@ -1,0 +1,65 @@
+{
+  "runs": [
+    {
+      "name": "coverage-run",
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticProcessingRetryTests|SemanticIndexDetailsTests|SemanticFileServiceTests/(irrelevant events do not rescan and changed files use targeted reconciliation|completedDiscoverySkipsRestartWalkAndManualRescanWalksAgain)|SemanticFileSearchVisualTests/processing details renders an indexed file"
+      ],
+      "wall_seconds": 105.40843541698996,
+      "exit_code": 2
+    },
+    {
+      "name": "coverage-build-retry",
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticProcessingRetryTests|SemanticIndexDetailsTests|SemanticFileServiceTests/(irrelevant events do not rescan and changed files use targeted reconciliation|completedDiscoverySkipsRestartWalkAndManualRescanWalksAgain)|SemanticFileSearchVisualTests/processing details renders an indexed file"
+      ],
+      "wall_seconds": 282.1463019999792,
+      "exit_code": 2
+    },
+    {
+      "name": "coverage-frozen",
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticProcessingRetryTests|SemanticIndexDetailsTests|SemanticFileServiceTests/(irrelevant events do not rescan and changed files use targeted reconciliation|completedDiscoverySkipsRestartWalkAndManualRescanWalksAgain)|SemanticFileSearchVisualTests/processing details renders an indexed file"
+      ],
+      "wall_seconds": 162.2229307499947,
+      "exit_code": 2
+    },
+    {
+      "name": "coverage-compile-repair",
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticProcessingRetryTests|SemanticIndexDetailsTests|SemanticFileServiceTests/(irrelevant events do not rescan and changed files use targeted reconciliation|completedDiscoverySkipsRestartWalkAndManualRescanWalksAgain)|SemanticFileSearchVisualTests/processing details renders an indexed file"
+      ],
+      "wall_seconds": 131.41433629201492,
+      "exit_code": 2
+    },
+    {
+      "name": "coverage-two-failures",
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticProcessingRetryTests/.*(broken|media).*|SemanticFileServiceTests/.*irrelevant.*|SemanticFileSearchVisualTests/.*processing.*"
+      ],
+      "wall_seconds": 80.1991798329982,
+      "exit_code": 2
+    },
+    {
+      "name": "coverage-media-fixture",
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticProcessingRetryTests/.*media.*"
+      ],
+      "wall_seconds": 70.87786729203071,
+      "exit_code": 0
+    }
+  ],
+  "wall_seconds": 832.2690515840077
+}

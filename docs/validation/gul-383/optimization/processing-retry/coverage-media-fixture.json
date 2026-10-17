@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticProcessingRetryTests/.*media.*"
+  ],
+  "wall_seconds": 70.87786729203071,
+  "exit_code": 0
+}

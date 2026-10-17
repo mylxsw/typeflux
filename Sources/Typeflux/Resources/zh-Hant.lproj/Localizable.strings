@@ -5843,3 +5843,27 @@
 "system.info.search.tip" = "試試 ip、序號、解析度、循環";
 "system.info.keys.browse" = "↑↓ 選擇 · ↩ 複製 · ⌘1–%d 切換分區";
 "system.info.keys.search" = "↑↓ 選擇 · ↩ 複製 · esc 清除";
+
+// Per-file durable progress and recovery.
+"semantic.details.state.pending" = "排隊中";
+"semantic.details.state.partial" = "部分已索引";
+"semantic.details.retry" = "重試此檔案";
+"semantic.details.retryUnavailable" = "無法加入佇列，檔案狀態或存取權限可能已變更。";
+"semantic.details.reason.password" = "文件受密碼保護，請解鎖後再索引。";
+"semantic.details.reason.unsupported" = "暫不支援此文件格式。";
+"semantic.details.reason.permission" = "檔案存取被拒絕，請恢復權限後繼續。";
+"semantic.details.reason.unavailable" = "檔案不存在、已變更或暫不可用。";
+"semantic.details.reason.emptyText" = "未發現可讀取的內文。";
+"semantic.details.reason.emptyMedia" = "未發現受支援的媒體內容。";
+"semantic.details.reason.silent" = "已檢查並略過靜音音訊。";
+"semantic.details.reason.encoding" = "編碼失敗，已儲存的進度仍保留。";
+"semantic.details.reason.ocr" = "文字辨識失敗，已儲存的進度仍保留。";
+"semantic.details.reason.read" = "無法讀取內容，請修復檔案後重試。";
+"semantic.details.reason.unknown" = "處理因未知原因停止。";
+"semantic.details.savedChunks" = "已儲存 %@ 個內文區塊，已編碼 %@ 個";
+"semantic.details.savedOffset" = "已儲存內文位移：%@ 位元組";
+"semantic.details.savedSegments" = "已儲存 %@ 個媒體片段（索引可能尚未完成）";
+"semantic.details.audioCovered" = "音訊已檢查至 %@ 秒";
+"semantic.details.videoChecked" = "影片已檢查到 %@ 秒";
+"semantic.details.noSavedProgress" = "尚無已儲存的進度";
+"semantic.details.reason.imageNoText" = "影像內容已索引，未辨識到可讀取的文字。";

@@ -1,0 +1,12 @@
+{
+  "loaded_real_weights": false,
+  "model_verification": "SemanticFixtureModels accepts fixture-model bytes",
+  "embedding": "SemanticFixtureEncoder / SemanticFixtureQuery fixed 768-dimensional vectors",
+  "reader": "Actual built Typeflux file-index-worker process",
+  "media_progress": "Synthetic vectors and persisted checkpoints; no media extraction rerun",
+  "fixture_text": [
+    "broken.txt: invalid UTF-8 bytes ff fe ff, then repairedzebra",
+    "reference.txt: referencezebra",
+    "partial.txt: firstblock tailmarker"
+  ]
+}
