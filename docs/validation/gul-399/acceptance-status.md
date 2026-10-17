@@ -1,0 +1,39 @@
+# GUL-399 acceptance status
+
+Updated 2026-10-17. This is the bounded delivery checklist for the approved four-stage design, not a new consumer audit queue. The issue remains in progress: stages 1–3 have delivered implementation and focused evidence; stage 4's permission, signing, device and performance gates are not satisfied. Incremental line coverage must not be presented as whole-application crash protection or a single integrated test pass.
+
+## Fixed completion criteria
+
+1. Retain bounded module startup/recovery, independent failure domains, original-operation ownership, actual resource collection and no effect replay. Existing evidence below is historical and keeps each report's failures/retries and exclusions.
+2. Complete the demonstrated artifact save modal/source/error gap in this delivery. Do not reopen completed OCR, cache or image wrapper audits without a concrete regression.
+3. Use the delivered [stage 4 prerequisite decision and finite manual acceptance script](stage-4-prerequisites.md) for signed audio/device tests, local translation/model performance and shared entry points. Do not move microphone ownership until those prerequisites pass.
+4. Record the signed-device results (or explicitly accepted scope deferral) before marking the whole four-stage issue ready for acceptance. No claim of those results follows from synthetic tests. Non-blocking adjacent findings belong in a follow-up list, not an expanding automatic PR chain.
+
+## Module evidence matrix
+
+“Validated” below means the cited report's explicit scope and source version. It does not mean those historical methods were rerun on the newest main. No global method count or coverage average is computed.
+
+| Module / feature | Delivered implementation | Validation evidence | Remaining boundary |
+| --- | --- | --- | --- |
+| Commands and workflow | Deadlines, bounded pipes/output, process-group ownership, cancellation and terminal delivery; no script/effect replay | [First batch](README.md), [native system](native-system.md), [native lifecycle](native-system-health.md) | Kernel calls and main-process UI remain host boundaries; real hardware toggles not acceptance evidence |
+| Module recovery and settings | Independent lifecycle supervision, persistent budgets/quarantine, bounded observers, explicit recovery and no operation replay | [Supervisor](module-supervisor.md), [registry](module-registry.md), [recovery UI](recovery-ui.md), [health integration](health-chain-integration.md) | Storage-only automatic persistent reset is intentional; generic native reset remains disabled |
+| Chat / AI / Agent | Chat storage startup degradation, preserved drafts and mutation receipts, existing Agent recovery/unknown outcomes retained | [First batch](README.md), [integration](health-chain-integration.md), [generation](generation-recovery.md) | Providers, paid generation and tool effects are never automatically replayed; no arbitrary host crash guarantee |
+| Word book / translation callers | Recoverable store, truthful save outcomes, bounded storage work and preserved translated results | [Word book](word-book.md) | Host SQLite/JSON is not process-isolated; no new real-provider or device performance claim |
+| Notebook | Recoverable storage, unknown mutation outcome handling, independent launcher startup | [Notebook](notebook.md), [registry](module-registry.md) | Actual filesystem/power-loss/OOM behavior is not a generic transaction guarantee |
+| Clipboard / OCR / media | Decode-before-budget protection, helper boundaries, original accepted action grants, source/callback fences and commit once | [Clipboard](clipboard-copy.md), [image action](clipboard-image-action-authority.md), [native OCR](clipboard-vision-request-authority.md), [OCR source](clipboard-ocr-source-ownership.md) | Recent tests prohibit actual system clipboard/Downloads defaults; direct Vision injection audited, arbitrary custom wrappers retain their contract |
+| File / semantic search | Independent reader/model health, progress budgets, checkpoints, partial queues, filename fallback and source/settings receipts | [File index](file-index-health.md), [scan](semantic-scan-admission.md), [progress](semantic-index-progress.md), [settings](semantic-settings-authority.md) | Concurrent preference writers, external prefs/FDA and latest unrelated document features have separate evidence |
+| Launcher / icons / previews | Default accepted requests preserve original native grants; scoped caches and synchronous callback retirement; completed cache is health independent | [Native model](native-icon-model-authority.md), [browser](browser-chooser-authority.md), [lookup](launcher-lookup-ownership.md), [Quick Look](quicklook.md) | Synchronous NSWorkspace and hosted AppKit remain host boundaries; newest concurrent launcher UI not validated by prior binaries |
+| Attachments / generated / tool images | Original batches, independent text/folder fallback, retained original outputs/usage and no paid reissue | [Attachments](attachment-batch-authority.md), [generation batch](generated-batch-authority.md), [tool batches](tool-batch-authority.md) | Custom producers own their contracts; resource caps are not global heap guarantees |
+| Artifact image / retained preview / save | Exact refs and original memory source retained; getters perform no store I/O; explicit save retains source across chooser and reloads fully before one write | [Memory](artifact-memory-authority.md), [preview](artifact-preview-source.md), [save](artifact-save-ownership.md) | Save panel, actual destination writes, WebKit coordinator and production ConversationModel object are untested in the latest SINK-only scope |
+| Local inference | WhisperKit constructors isolated; bounded IPC, retained worker/model leases and no resubmission | [Inference](local-inference.md), [retirement](inference-retirement.md), [health](whisper-inference-health.md) | Real model/CoreML latency, memory, CPU architectures, signed distribution and native system translation need stage 4 evidence |
+| Recording / playback / capture | Existing narrow audio exception bridge; helper media extraction/encoding/playback, timeline and publication ownership | [Timeline](recording-timeline-health.md), [export](recording-export-health.md), [playback](media-playback-health.md) | Live microphone ownership, device removal/sleep-wake/TCC, actual recording quit and signed performance remain unverified; no device operation is authorized by this report |
+| Hotkeys / screenshot / synchronization | Existing controllers retained; media consumers have scoped failure boundaries | Original design stage 4 and related media reports | Cross-feature signed-app regression remains required, not inferred from image or cache unit tests |
+
+## Remaining blockers versus follow-ups
+
+- **B1 — artifact save:** close with the focused save implementation/report in this delivery, including original account/selection, final full reload, exact ref/digest, one entered sink and keyed errors.
+- **B2 — audio prerequisites:** signed app/TCC ownership, device switch/removal/sleep-wake, actual quit collection and latency/memory evidence. No microphone migration or live recording test before this gate.
+- **B3 — local translation/model prerequisites:** identify remaining in-process native engine, packaging/signing and real workload performance gates. Synthetic worker protocol tests do not close this item.
+- **B4 — final shared-entry acceptance:** a finite hotkey/capture/synchronization regression checklist and stage-by-stage acceptance record; no unrelated whole-suite execution.
+
+No new blocking consumer is inferred merely because a neighboring UI exists. External preference/account/FDA ordering, arbitrary Combine/AppKit reentrancy and global memory/native crashes remain explicit limits unless a reproducible defect changes the agreed scope.
