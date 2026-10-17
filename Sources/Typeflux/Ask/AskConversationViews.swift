@@ -744,8 +744,6 @@ struct AskConversationView: View {
             Spacer(minLength: 8)
             if model.isTemporaryComposer(launcher: false) {
                 AskTemporaryChip(model: model, showsTitle: layout.mainWidth >= 760)
-            } else if model.isSignedIn, model.storesLocally(launcher: false) {
-                privateChip
             }
             if let id = model.selectedId {
                 HStack(spacing: 2) {
@@ -790,29 +788,6 @@ struct AskConversationView: View {
         .padding(.leading, sidebarHidden ? AskMetrics.collapsedTitleInset : 14)
         .padding(.trailing, 14)
         .frame(height: AskMetrics.titleBarRowHeight)
-    }
-
-    /// Signed in, a conversation kept on this Mac says so where Cloud ones show credits.
-    private var privateChip: some View {
-        HStack(spacing: 5) {
-            Image(systemName: "lock")
-            if layout.mainWidth >= 760 { Text(L("ask.storage.local")) }
-        }
-        .font(.system(size: 12.5, weight: .medium))
-        .foregroundStyle(AskTheme.privateTint)
-        .labelStyle(.titleAndIcon)
-        .lineLimit(1)
-        .fixedSize()
-        .padding(.horizontal, style.usesGlass ? 12 : 9)
-        .frame(height: style.ask.headerChipHeight)
-        .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
-        .overlay {
-            Capsule().fill(AskTheme.privateHeaderFill)
-                .overlay(Capsule().strokeBorder(AskTheme.privateTint.opacity(0.35), lineWidth: 0.5))
-                .allowsHitTesting(false)
-        }
-        .help(L("ask.storage.local.detail"))
-        .accessibilityLabel(L("ask.storage.local"))
     }
 
     /// A temporary conversation is never named, a new one is just "Temporary chat".
