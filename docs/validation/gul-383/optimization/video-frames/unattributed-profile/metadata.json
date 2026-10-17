@@ -1,0 +1,7 @@
+{
+  "sha256": "77dfe7d4439a3e3ac64dca50a5f859a18c6c060000c1b645c62e813f4427bf61",
+  "used_for_coverage": false,
+  "exit_code": 0,
+  "error": "",
+  "reason": "Root profile from child/discovery is not attributed to the measured XCTest binary; preserved but excluded."
+}

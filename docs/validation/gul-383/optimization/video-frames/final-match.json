@@ -1,0 +1,8 @@
+{
+  "production_objects_identical_across_retries": true,
+  "object_count": 1117,
+  "final_source_count": 2417,
+  "source_mismatches": [],
+  "query_fixture_matches_saved_MOV": true,
+  "fixture_sha256": "7db4b38eca51b68f458481fee84c1aa5a3e119e5e29d9faf166a035bbd99ddd2"
+}

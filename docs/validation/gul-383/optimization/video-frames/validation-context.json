@@ -1,0 +1,33 @@
+{
+  "baseline": "67da58f9d03826d26095cf635f8e1d35dcc57006",
+  "profile": "Debug, coverage instrumentation, --build-system native, 4 build jobs, fixed vectors",
+  "cache_clone_wall_seconds": 19.6,
+  "source_count": 2417,
+  "tools": {
+    "swift": {
+      "exit_code": 0,
+      "stdout": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0\n",
+      "stderr": "swift-driver version: 1.168.6 "
+    },
+    "xcode": {
+      "exit_code": 0,
+      "stdout": "Xcode 27.1\nBuild version 27A9275\n",
+      "stderr": ""
+    },
+    "swiftlint": {
+      "exit_code": 0,
+      "stdout": "0.65.1\n",
+      "stderr": ""
+    },
+    "swiftformat": {
+      "exit_code": 0,
+      "stdout": "0.63.0\n",
+      "stderr": ""
+    },
+    "hardware": {
+      "exit_code": 0,
+      "stdout": "Mac16,10\n17179869184\nApple M4\n",
+      "stderr": ""
+    }
+  }
+}
