@@ -33,8 +33,8 @@ The member lowered this task's changed-code coverage acceptance threshold to **7
 
 ## Remaining blockers versus follow-ups
 
-- **B1 — artifact save:** close with the focused save implementation/report in this delivery, including original account/selection, final full reload, exact ref/digest, one entered sink and keyed errors.
-- **B2 resource follow-up — fixed scope:** realtime pump/encoded queues and the observed Data reset crash are addressed in [realtime-audio-bounds.md](realtime-audio-bounds.md). The two already-identified host queues (startup PCM prefix and audio-file writer) remain the next bounded implementation slice; do not open another consumer audit chain.
+- **B1 — artifact save: closed** by [artifact-save-ownership.md](artifact-save-ownership.md), including original account/selection, final full reload, exact ref/digest, one entered sink and keyed errors.
+- **B2 resource follow-up — fixed scope:** realtime pump/encoded queues and the observed Data reset crash are addressed in [realtime-audio-bounds.md](realtime-audio-bounds.md). The two already-identified host queues (startup PCM prefix and audio-file writer) are now bounded with truthful incomplete-file failure in [recording-queue-bounds.md](recording-queue-bounds.md). This fixed code follow-up is complete; do not open another consumer audit chain.
 - **B2 — audio prerequisites:** signed app/TCC ownership, device switch/removal/sleep-wake, actual quit collection and latency/memory evidence. No microphone migration or live recording test before this gate.
 - **B3 — local translation/model prerequisites:** identify remaining in-process native engine, packaging/signing and real workload performance gates. Synthetic worker protocol tests do not close this item.
 - **B4 — final shared-entry acceptance:** a finite hotkey/capture/synchronization regression checklist and stage-by-stage acceptance record; no unrelated whole-suite execution.

@@ -121,6 +121,12 @@ final class RealtimeAudioBufferPump {
         }
     }
 
+    /// Reject a missing startup prefix through the existing realtime failure policy.
+    func failInput() {
+        admission.lock.lock(); defer { admission.lock.unlock() }
+        admission.failed = true; admission.closed = true; continuation.finish()
+    }
+
     /// Incomplete input must never be presented as a successful realtime transcript.
     func finishInput() async throws {
         close(cancelled: false)

@@ -11,7 +11,7 @@ This report is a read-only prerequisite decision, not evidence of signed-device 
 
 ## Resource prerequisite delivered separately
 
-The subsequent [realtime audio bounds](realtime-audio-bounds.md) increment bounds the PCM handoff and encoded transport queues, rejects incomplete realtime results and checks conversion allocation sizes. Its tests use raw PCM/private Data and fake transports, not recording hardware or an audio codec. This is a concrete resource fix under the audio prerequisite; it does not pass any signed-device gate below or change microphone ownership. The pre-activation relay and asynchronous audio-file writer remain separate host queues, not covered by the realtime queue caps.
+The subsequent [realtime audio bounds](realtime-audio-bounds.md) increment bounds the PCM handoff and encoded transport queues, rejects incomplete realtime results and checks conversion allocation sizes. Its tests use raw PCM/private Data and fake transports, not recording hardware or an audio codec. This is a concrete resource fix under the audio prerequisite; it does not pass any signed-device gate below or change microphone ownership. The separate [recording queue bounds](recording-queue-bounds.md) increment now caps the pre-activation relay and audio-file writer, reserves before preparation and preserves original partial-file errors. Neither synthetic resource result passes a device/signing gate or changes microphone ownership.
 
 ## Decision
 

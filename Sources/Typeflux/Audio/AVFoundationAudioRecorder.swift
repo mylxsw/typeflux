@@ -48,6 +48,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
     private let preparedInputLock = NSLock()
     private let preparedInputBuildGroup = DispatchGroup()
     private let stateCondition = NSCondition()
+    private var writeAttempt: AudioBufferWriteAttempt?
     private var audioFile: AVAudioFile?
     private var recordingBufferConverter: AudioRecordingBufferConverter?
     private var startedAt: Date?
@@ -164,6 +165,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         let inputIsBluetooth = audioDeviceManager.isBluetoothInputDevice(engine.inputNode.auAudioUnit.deviceID)
         let startedAt = Date()
         stateCondition.lock()
+        writeAttempt = writeCoordinator.beginAttempt()
         audioFile = preparedSession.audioFile
         recordingBufferConverter = preparedSession.recordingBufferConverter
         self.startedAt = startedAt
@@ -190,13 +192,15 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         // first spoken frames while the hotkey-triggered session is activating.
         let recordingID = preparedSession.id
         let inputGenerationID = preparedSession.inputGenerationID
-        preparedSession.startupBufferRelay.activate { [weak self] buffer in
+        let relayError = preparedSession.startupBufferRelay.activate { [weak self] buffer in
             self?.handleInputBuffer(
                 buffer,
                 recordingID: recordingID,
                 inputGenerationID: inputGenerationID
             )
         }
+
+        if let relayError { writeAttempt?.fail(relayError) }
 
         scheduleInputHealthCheck(
             for: engine,
@@ -216,6 +220,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
 
         stateCondition.lock()
         let currentAudioFile = audioFile
+        let currentWriteAttempt = writeAttempt
         let currentStartedAt = startedAt
         let currentlyRecording = isRecording
         let startupTiming = AudioRecorderStartupTiming(
@@ -249,6 +254,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         let fileURL = currentAudioFile.url
 
         stateCondition.lock()
+        writeAttempt = nil
         audioFile = nil
         recordingBufferConverter = nil
         startedAt = nil
@@ -271,7 +277,11 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             schedulePreparedInputEngineBuild()
         }
 
-        return AudioFile(fileURL: fileURL, duration: duration, startupTiming: startupTiming)
+        let result = AudioFile(fileURL: fileURL, duration: duration, startupTiming: startupTiming)
+        if let error = currentWriteAttempt?.error {
+            throw IncompleteAudioRecording(file: result, cause: error)
+        }
+        return result
     }
 
     private func stopInternal() {
@@ -296,6 +306,7 @@ final class AVFoundationAudioRecorder: AudioRecorder {
         writeCoordinator.drain()
 
         stateCondition.lock()
+        writeAttempt = nil
         audioFile = nil
         recordingBufferConverter = nil
         startedAt = nil
@@ -1348,7 +1359,8 @@ final class AVFoundationAudioRecorder: AudioRecorder {
                 activeRecordingID == recordingID,
                 activeInputGenerationID == inputGenerationID,
                 let audioFile = self.audioFile,
-                let recordingBufferConverter
+                let recordingBufferConverter,
+                let writeAttempt
             else {
                 stateCondition.unlock()
                 return
@@ -1374,8 +1386,13 @@ final class AVFoundationAudioRecorder: AudioRecorder {
             }
 
             do {
+                // Reserve both converted and preview allocations before conversion/dispatch.
+                let bytes = try recordingBufferConverter.reservationBytes(for: buffer)
+                guard let reservation = writeCoordinator.reserve(bytes: bytes, attempt: writeAttempt) else { return }
                 let monoBuffer = try recordingBufferConverter.convert(buffer)
-                let previewBuffer = clone(buffer: monoBuffer)
+                guard let previewBuffer = AudioPCMBufferSnapshot.copy(
+                    monoBuffer, maximumBytes: AudioBufferWriteCoordinator.maximumBufferBytes
+                ) else { throw RecordingAudioQueueError.invalidBuffer }
                 let inputPower = rmsPower(for: monoBuffer)
                 let normalizedLevel = normalizePower(inputPower)
 
@@ -1385,48 +1402,16 @@ final class AVFoundationAudioRecorder: AudioRecorder {
                 }
                 stateCondition.unlock()
 
-                writeCoordinator.enqueue {
-                    do {
-                        try audioFile.write(from: monoBuffer)
-                        levelHandler?(normalizedLevel)
-                        if let previewBuffer {
-                            audioBufferHandler?(previewBuffer)
-                        }
-                    } catch {
-                        NetworkDebugLogger.logError(context: "Audio buffer handling failed", error: error)
-                    }
+                reservation.submit {
+                    try audioFile.write(from: monoBuffer)
+                    levelHandler?(normalizedLevel)
+                    audioBufferHandler?(previewBuffer)
                 }
             } catch {
+                writeAttempt.fail(error)
                 NetworkDebugLogger.logError(context: "Audio buffer handling failed", error: error)
             }
         }
-    }
-
-    private func clone(buffer: AVAudioPCMBuffer, format: AVAudioFormat? = nil) -> AVAudioPCMBuffer? {
-        let targetFormat = format ?? buffer.format
-        guard let copy = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: buffer.frameCapacity) else {
-            return nil
-        }
-
-        copy.frameLength = buffer.frameLength
-
-        guard
-            let source = buffer.floatChannelData,
-            let destination = copy.floatChannelData
-        else {
-            return nil
-        }
-
-        let frameCount = Int(buffer.frameLength)
-        let channelCount = Int(targetFormat.channelCount)
-        for channel in 0 ..< channelCount {
-            destination[channel].update(
-                from: source[min(channel, Int(buffer.format.channelCount) - 1)],
-                count: frameCount
-            )
-        }
-
-        return copy
     }
 
     private func rmsPower(for buffer: AVAudioPCMBuffer) -> Float {
@@ -1513,12 +1498,20 @@ final class RecordingStartupAudioBufferRelay: @unchecked Sendable {
     private let maximumBufferedDuration: TimeInterval?
     private var pendingBuffers: [AVAudioPCMBuffer] = []
     private var pendingDuration: TimeInterval = 0
+    private var pendingBytes = 0
+    private var failure: Error?
+    private let maximumBuffers: Int
+    private let maximumBytes: Int
+    static let maximumBufferBytes = 256 * 1024
     private var handler: ((AVAudioPCMBuffer) -> Void)?
     private var isCancelled = false
     private var firstReceivedAt: Date?
 
-    init(maximumBufferedDuration: TimeInterval? = nil) {
+    init(maximumBufferedDuration: TimeInterval? = nil, maximumBuffers: Int = 4096,
+         maximumBytes: Int = 32 * 1024 * 1024) {
         self.maximumBufferedDuration = maximumBufferedDuration
+        self.maximumBuffers = max(1, min(maximumBuffers, 4096))
+        self.maximumBytes = max(1, min(maximumBytes, 32 * 1024 * 1024))
     }
 
     var firstBufferReceivedAt: Date? {
@@ -1530,7 +1523,7 @@ final class RecordingStartupAudioBufferRelay: @unchecked Sendable {
     func append(_ buffer: AVAudioPCMBuffer, receivedAt: Date = Date()) {
         lock.lock()
         defer { lock.unlock() }
-        guard !isCancelled else { return }
+        guard !isCancelled, failure == nil else { return }
         if firstReceivedAt == nil {
             firstReceivedAt = receivedAt
             firstBufferSemaphore.signal()
@@ -1541,20 +1534,47 @@ final class RecordingStartupAudioBufferRelay: @unchecked Sendable {
             handler(buffer)
             return
         }
-        guard let copiedBuffer = Self.copy(buffer) else { return }
+        guard let bytes = AudioPCMBufferSnapshot.byteCount(buffer, maximumBytes: Self.maximumBufferBytes) else {
+            fail(RecordingAudioQueueError.invalidBuffer); return
+        }
+        // Preserve the configured pre-roll tail policy before reserving its copy.
+        if let maximumBufferedDuration {
+            while pendingDuration + Self.duration(of: buffer) > maximumBufferedDuration, !pendingBuffers.isEmpty {
+                let removed = pendingBuffers.removeFirst()
+                pendingDuration -= Self.duration(of: removed)
+                pendingBytes -= AudioPCMBufferSnapshot.byteCount(removed, maximumBytes: Self.maximumBufferBytes) ?? 0
+            }
+        }
+        guard pendingBuffers.count < maximumBuffers, bytes <= maximumBytes - pendingBytes else {
+            fail(RecordingAudioQueueError.capacityExceeded); return
+        }
+        guard let copiedBuffer = AudioPCMBufferSnapshot.copy(buffer, maximumBytes: Self.maximumBufferBytes) else {
+            fail(RecordingAudioQueueError.invalidBuffer); return
+        }
         pendingBuffers.append(copiedBuffer)
+        pendingBytes += AudioPCMBufferSnapshot.byteCount(copiedBuffer, maximumBytes: Self.maximumBufferBytes) ?? bytes
         pendingDuration += Self.duration(of: copiedBuffer)
-        trimBufferedAudioIfNeeded()
     }
 
-    func activate(_ handler: @escaping (AVAudioPCMBuffer) -> Void) {
+    @discardableResult
+    func activate(_ handler: @escaping (AVAudioPCMBuffer) -> Void) -> Error? {
         lock.lock()
         defer { lock.unlock() }
-        guard !isCancelled, self.handler == nil else { return }
+        if let failure { return failure }
+        guard !isCancelled, self.handler == nil else { return nil }
         pendingBuffers.forEach(handler)
         pendingBuffers.removeAll(keepingCapacity: false)
         pendingDuration = 0
+        pendingBytes = 0
         self.handler = handler
+        return nil
+    }
+
+    private func fail(_ error: Error) {
+        failure = error
+        pendingBuffers.removeAll()
+        pendingDuration = 0
+        pendingBytes = 0
     }
 
     func waitForFirstBuffer(timeout: DispatchTimeInterval) -> Bool {
@@ -1569,6 +1589,7 @@ final class RecordingStartupAudioBufferRelay: @unchecked Sendable {
         isCancelled = true
         pendingBuffers.removeAll(keepingCapacity: false)
         pendingDuration = 0
+        pendingBytes = 0
         handler = nil
         lock.unlock()
     }
@@ -1577,7 +1598,9 @@ final class RecordingStartupAudioBufferRelay: @unchecked Sendable {
         lock.lock()
         pendingBuffers.removeAll(keepingCapacity: false)
         pendingDuration = 0
+        pendingBytes = 0
         firstReceivedAt = nil
+        failure = nil
         lock.unlock()
     }
 
@@ -1589,39 +1612,9 @@ final class RecordingStartupAudioBufferRelay: @unchecked Sendable {
         }
     #endif
 
-    private func trimBufferedAudioIfNeeded() {
-        guard let maximumBufferedDuration else { return }
-        while pendingDuration > maximumBufferedDuration, pendingBuffers.count > 1 {
-            pendingDuration -= Self.duration(of: pendingBuffers.removeFirst())
-        }
-    }
-
     private static func duration(of buffer: AVAudioPCMBuffer) -> TimeInterval {
         guard buffer.format.sampleRate > 0 else { return 0 }
         return TimeInterval(buffer.frameLength) / buffer.format.sampleRate
-    }
-
-    private static func copy(_ buffer: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {
-        guard let copy = AVAudioPCMBuffer(
-            pcmFormat: buffer.format,
-            frameCapacity: buffer.frameCapacity
-        ) else { return nil }
-        copy.frameLength = buffer.frameLength
-
-        let sourceBuffers = UnsafeMutableAudioBufferListPointer(buffer.mutableAudioBufferList)
-        let destinationBuffers = UnsafeMutableAudioBufferListPointer(copy.mutableAudioBufferList)
-        guard sourceBuffers.count == destinationBuffers.count else { return nil }
-        for (source, destination) in zip(sourceBuffers, destinationBuffers) {
-            guard let sourceData = source.mData,
-                  let destinationData = destination.mData
-            else { continue }
-            memcpy(
-                destinationData,
-                sourceData,
-                Int(min(source.mDataByteSize, destination.mDataByteSize))
-            )
-        }
-        return copy
     }
 }
 
@@ -1657,22 +1650,5 @@ private final class RecordingStartupResultBox {
         lock.lock()
         defer { lock.unlock() }
         return result ?? .failure(AVFoundationAudioRecorder.RecorderError.inputStartupTimedOut)
-    }
-}
-
-final class AudioBufferWriteCoordinator {
-    private let queue = DispatchQueue(label: "typeflux.audio.buffer-writer")
-    private let group = DispatchGroup()
-
-    func enqueue(_ operation: @escaping @Sendable () -> Void) {
-        group.enter()
-        queue.async {
-            defer { self.group.leave() }
-            operation()
-        }
-    }
-
-    func drain() {
-        group.wait()
     }
 }

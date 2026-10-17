@@ -11,6 +11,26 @@ final class AudioRecordingBufferConverter: @unchecked Sendable {
         self.targetFormat = targetFormat
     }
 
+    /// Pure allocation bound, shared by reservation and conversion before native allocation.
+    static func outputCapacity(frameLength: AVAudioFrameCount, inputRate: Double, outputRate: Double,
+                               bytesPerFrame: Int) throws -> AVAudioFrameCount {
+        let frames = Double(frameLength) * outputRate / inputRate
+        guard frameLength > 0, inputRate.isFinite, inputRate > 0,
+              outputRate.isFinite, outputRate > 0, frames.isFinite, frames > 0,
+              bytesPerFrame > 0, bytesPerFrame <= AudioBufferWriteCoordinator.maximumBufferBytes / 2,
+              frames + 256 <= Double(AudioBufferWriteCoordinator.maximumBufferBytes / (2 * bytesPerFrame))
+        else { throw RecordingAudioQueueError.invalidBuffer }
+        return AVAudioFrameCount(frames) + 256
+    }
+
+    func reservationBytes(for buffer: AVAudioPCMBuffer) throws -> Int {
+        guard AudioPCMBufferSnapshot.byteCount(buffer, maximumBytes: AudioBufferWriteCoordinator.maximumBufferBytes) != nil
+        else { throw RecordingAudioQueueError.invalidBuffer }
+        let bytesPerFrame = Int(targetFormat.streamDescription.pointee.mBytesPerFrame) * Int(targetFormat.channelCount)
+        return Int(try Self.outputCapacity(frameLength: buffer.frameLength, inputRate: buffer.format.sampleRate,
+                                          outputRate: targetFormat.sampleRate, bytesPerFrame: bytesPerFrame)) * bytesPerFrame * 2
+    }
+
     func convert(_ buffer: AVAudioPCMBuffer) throws -> AVAudioPCMBuffer {
         lock.lock()
         defer { lock.unlock() }
@@ -23,9 +43,12 @@ final class AudioRecordingBufferConverter: @unchecked Sendable {
             )
         }
 
+        let outputCapacity = try Self.outputCapacity(
+            frameLength: buffer.frameLength, inputRate: buffer.format.sampleRate,
+            outputRate: targetFormat.sampleRate,
+            bytesPerFrame: Int(targetFormat.streamDescription.pointee.mBytesPerFrame) * Int(targetFormat.channelCount)
+        )
         let converter = try converter(for: buffer.format)
-        let ratio = targetFormat.sampleRate / buffer.format.sampleRate
-        let outputCapacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio) + 256
         guard let outputBuffer = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: outputCapacity) else {
             throw NSError(
                 domain: "AudioRecorder",

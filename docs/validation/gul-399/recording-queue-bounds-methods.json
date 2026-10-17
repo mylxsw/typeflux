@@ -1,0 +1,82 @@
+{
+  "baseline": "f8b726d96b41f2231298fd142c198d9fbdb8bdb8",
+  "distinct_methods": 29,
+  "functional_history": "FIRST functional pass: 16 XCTest + 13 Swift Testing methods (14 parameter cases). No functional retries or input edits after the build.",
+  "methods": [
+    "TypefluxTests.AVFoundationAudioRecorderTests/testAudioBufferWriteCoordinatorDrainIncludesMultipleQueuedOperations",
+    "TypefluxTests.AVFoundationAudioRecorderTests/testRecordingStartupBufferRelayDropsBufferedAudioAfterCancellation",
+    "TypefluxTests.AVFoundationAudioRecorderTests/testRecordingStartupBufferRelayDropsStalePreRollWhenWarmEngineStopped",
+    "TypefluxTests.AVFoundationAudioRecorderTests/testRecordingStartupBufferRelayKeepsOnlyTheConfiguredPreRollTail",
+    "TypefluxTests.AVFoundationAudioRecorderTests/testRecordingStartupBufferRelayPreservesFirstBufferArrivalTime",
+    "TypefluxTests.AVFoundationAudioRecorderTests/testRecordingStartupBufferRelayPreservesPrefixAndOrdering",
+    "TypefluxTests.AVFoundationAudioRecorderTests/testRecordingStartupBufferRelaySignalsWhenInstantCaptureIsArmed",
+    "TypefluxTests.RecordingQueueBoundsTests/testCancelledEnteredWriteKeepsPhysicalSlotAndOneSinkEffectUntilReturn",
+    "TypefluxTests.RecordingQueueBoundsTests/testConfiguredTailTrimsBeforeCopyBudgetWithoutChangingOrder",
+    "TypefluxTests.RecordingQueueBoundsTests/testIncompleteFileReceiptAndRelayFailureUseExistingRealtimeErrorContract",
+    "TypefluxTests.RecordingQueueBoundsTests/testInvalidReservationAndPureConversionBoundsRefuseBeforeNativeAllocation",
+    "TypefluxTests.RecordingQueueBoundsTests/testLateOldFailureCannotPoisonFreshAttemptAndOldQueuedWriteDoesNotReplay",
+    "TypefluxTests.RecordingQueueBoundsTests/testRelayByteLimitInvalidInputAndCancellationNeverDeliverPartialSuccess",
+    "TypefluxTests.RecordingQueueBoundsTests/testRelayCountOverflowRefusesIncompletePrefixAndExplicitDiscardReopens",
+    "TypefluxTests.RecordingQueueBoundsTests/testReservationsBoundPreparationAndRetainCapacityAcrossAttemptReplacement",
+    "TypefluxTests.RecordingQueueBoundsTests/testThrowingWriterPreservesFirstFailureAndSkipsQueuedEffects",
+    "TypefluxTests.RealtimeAudioBoundsTests/cancelledEncodedSessionDoesNotRestartAndFinishCollectsItsWriter()",
+    "TypefluxTests.RealtimeAudioBoundsTests/encodedInputLimitAndRawEmptyBufferFailBeforeConversion()",
+    "TypefluxTests.RealtimeAudioBoundsTests/exactByteLimitAndHealthyFinishRetainProducerSnapshot()",
+    "TypefluxTests.RealtimeAudioBoundsTests/finalPartialChunkOverflowFailsRatherThanReturningShortTranscript()",
+    "TypefluxTests.RealtimeAudioBoundsTests/healthyEncodedInputPreservesOrderRemainderAndOneFinalResult()",
+    "TypefluxTests.RealtimeAudioBoundsTests/heapSlicesResetAndFlushKeepOwnedZeroBasedPCMWithoutNativeConversion()",
+    "TypefluxTests.RealtimeAudioBoundsTests/invalidOrOversizedPumpInputNeverReachesSession(_:)",
+    "TypefluxTests.RealtimeAudioBoundsTests/outputAllocationRejectsNonFiniteAndExtremeRatiosBeforeConverter()",
+    "TypefluxTests.RealtimeAudioBoundsTests/planarByteAdmissionAndFailedResultAdapterArePure()",
+    "TypefluxTests.RealtimeAudioBoundsTests/pumpCancellationDiscardsPendingAndCollectionWaitsForEnteredAppend()",
+    "TypefluxTests.RealtimeAudioBoundsTests/pumpOverflowRetainsActualAppendAndRejectsTruncatedCompletion()",
+    "TypefluxTests.RealtimeAudioBoundsTests/queuedConnectionOverflowNeverSendsOrFinishesUpstream()",
+    "TypefluxTests.RealtimeAudioBoundsTests/slowWriterOverflowKeepsOneEnteredEffectAndRefusesStopSuccess()"
+  ],
+  "scope_mapping": {
+    "RecordingQueueBoundsTests": "9 new methods: relay capacity/tail/copy/zero-copy; bounded reservations/actual collection/attempt isolation/one sink effect; pure converter preflight; incomplete-file receipt/realtime refusal.",
+    "AVFoundationAudioRecorderTests": "6 raw PCM relay regressions + ordered coordinator operation test; no recorder constructed.",
+    "RealtimeAudioBoundsTests": "13 raw PCM/Data/fake transport regressions, including the prior consumed-Data-slice crash fix."
+  },
+  "excluded": [
+    "AVFoundationAudioRecorder/CoreAudioRecorder constructors, AVAudioEngine, actual capture/input/output/devices/TCC",
+    "AVAudioFile writes, actual AVAudioConverter, codecs and encoders",
+    "Other AVFoundationAudioRecorderTests and CoreAudioRecorderTests: real engines/settings/files/output defaults",
+    "WorkflowController/WorkflowComposerRecording full objects; System clipboard (including named), ConversationModel/AskTestFixture, home/apps/windows/NSWorkspace",
+    "Network/provider/model/download/paid operations, signing/hardware/full suites, unrelated #636 semantic tests"
+  ],
+  "verification": {
+    "inputs": 2032,
+    "sources": 1157,
+    "tests": 875,
+    "profiles": 3,
+    "binary_hashes": {
+      "tests": "5076cebbea6bb5694e3ae9b3dea19a72031683d43cb61d03635be2527d4d5c97",
+      "app": "8333c46a75ca3546c4e2f0ccada781ce00e795922ade737f407656f15f61a6d6"
+    },
+    "reported_function_hashes": 545,
+    "all_reported_hashes_zero": true,
+    "note": "Zero Swift hashes do not establish layout compatibility. HOST profiles only; no child coverage claim."
+  },
+  "profiles": [
+    {
+      "path": ".build/arm64-apple-macosx/debug/codecov/Swift Testing7610371267570349874_0.19907.profraw",
+      "sha256": "3363f601706be7e453f87f723d47825839d5d097fab32e82444ec8fd4865dd0a"
+    },
+    {
+      "path": ".build/arm64-apple-macosx/debug/codecov/XCTest7610371267570349874_0.19892.profraw",
+      "sha256": "3a3b3bef4644f33702fa1f8c2e53c185578c924128596e3c77cec1516467b268"
+    },
+    {
+      "path": ".build/arm64-apple-macosx/debug/codecov/XCTest7610371267570349874_0.19904.profraw",
+      "sha256": "350ef2242e9459e3d5c630f2a6085a3b5a8f356e551e84d5775a69be7318933f"
+    }
+  ],
+  "excluded_inventory_root_profiles": [
+    {
+      "file": "excluded-inventory-1792202878596102000.profraw",
+      "sha256": "938ef54fb1f1c1604d80bd4c51f97c399e4c9e7953acf728c38609f7d29901d6",
+      "mtime_before_test_start": true
+    }
+  ]
+}

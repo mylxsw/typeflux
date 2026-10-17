@@ -1,0 +1,113 @@
+{
+  "covered": 142,
+  "executable_added": 187,
+  "percent": 75.94,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Audio/AVFoundationAudioRecorder.swift",
+      "covered": 36,
+      "executable_added": 62,
+      "percent": 58.06,
+      "uncovered": [
+        168,
+        195,
+        203,
+        204,
+        223,
+        257,
+        280,
+        281,
+        282,
+        283,
+        284,
+        309,
+        1362,
+        1363,
+        1389,
+        1390,
+        1391,
+        1393,
+        1394,
+        1395,
+        1405,
+        1406,
+        1407,
+        1408,
+        1411,
+        1552
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Audio/AudioRecordingBufferConverter.swift",
+      "covered": 16,
+      "executable_added": 21,
+      "percent": 76.19,
+      "uncovered": [
+        46,
+        47,
+        48,
+        49,
+        50
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Audio/AudioRecordingQueue.swift",
+      "covered": 86,
+      "executable_added": 86,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/STT/RealtimeTranscriptionSession.swift",
+      "covered": 4,
+      "executable_added": 4,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Workflow/WorkflowComposerRecording.swift",
+      "covered": 0,
+      "executable_added": 6,
+      "percent": 0.0,
+      "uncovered": [
+        155,
+        208,
+        209,
+        210,
+        211,
+        212
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Workflow/WorkflowController+Processing.swift",
+      "covered": 0,
+      "executable_added": 3,
+      "percent": 0.0,
+      "uncovered": [
+        691,
+        692,
+        693
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Workflow/WorkflowController.swift",
+      "covered": 0,
+      "executable_added": 5,
+      "percent": 0.0,
+      "uncovered": [
+        1209,
+        1220,
+        1221,
+        1222,
+        1223
+      ],
+      "instrumented": true
+    }
+  ]
+}
