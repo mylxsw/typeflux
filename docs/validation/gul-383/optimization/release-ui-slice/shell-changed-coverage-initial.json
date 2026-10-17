@@ -1,0 +1,81 @@
+{
+  "scripts/build_release.sh": {
+    "covered": 1,
+    "executable_command_lines": 1,
+    "lines": [
+      {
+        "line": 257,
+        "text": "codesign --force --sign \"$TYPEFLUX_CODESIGN_IDENTITY\" --timestamp --options runtime \\",
+        "executed": true
+      }
+    ],
+    "definition": "Changed Bash command-start lines observed through PS4 source/line tracing. Continuation-only and closing syntax excluded; not LLVM/Swift coverage."
+  },
+  "scripts/audit_macho_minos.sh": {
+    "covered": 0,
+    "executable_command_lines": 12,
+    "lines": [
+      {
+        "line": 90,
+        "text": "local required_arch=\"${2:-$REQUIRED_ARCH}\"",
+        "executed": false
+      },
+      {
+        "line": 93,
+        "text": "[[ -z \"$required_arch\" || \"$required_arch\" == \"native\" ]] && return 0",
+        "executed": false
+      },
+      {
+        "line": 96,
+        "text": "case \"$required_arch\" in",
+        "executed": false
+      },
+      {
+        "line": 98,
+        "text": "[[ \" ${archs} \" == *\" ${required_arch} \"* ]]",
+        "executed": false
+      },
+      {
+        "line": 123,
+        "text": "candidate_minos=\"$MAX_MACOS_MINOS\"",
+        "executed": false
+      },
+      {
+        "line": 124,
+        "text": "candidate_arch=\"$REQUIRED_ARCH\"",
+        "executed": false
+      },
+      {
+        "line": 127,
+        "text": "if [[ \"${candidate#$SCAN_ROOT/}\" == \"Contents/Resources/LocalRuntimes/SemanticSearch/TypefluxSemanticHelper\" \\",
+        "executed": false
+      },
+      {
+        "line": 129,
+        "text": "candidate_minos=\"14.0\"",
+        "executed": false
+      },
+      {
+        "line": 130,
+        "text": "candidate_arch=\"arm64\"",
+        "executed": false
+      },
+      {
+        "line": 133,
+        "text": "if version_gt \"$minos\" \"$candidate_minos\"; then",
+        "executed": false
+      },
+      {
+        "line": 138,
+        "text": "if ! file_has_required_architecture \"$candidate\" \"$candidate_arch\"; then",
+        "executed": false
+      },
+      {
+        "line": 139,
+        "text": "arch_offenders+=(\"${candidate#$SCAN_ROOT/}: missing ${candidate_arch}\")",
+        "executed": false
+      }
+    ],
+    "definition": "Changed Bash command-start lines observed through PS4 source/line tracing. Continuation-only and closing syntax excluded; not LLVM/Swift coverage."
+  }
+}

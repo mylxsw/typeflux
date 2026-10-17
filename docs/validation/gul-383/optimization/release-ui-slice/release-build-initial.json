@@ -1,0 +1,36 @@
+{
+  "source_commit": "ad6fad60e2518c1e47b386b28b14e8c30259b12e",
+  "records": [
+    {
+      "phase": "clone-checkouts",
+      "wall_seconds": 3.257318624993786
+    },
+    {
+      "phase": "clone-artifacts",
+      "wall_seconds": 0.0025066660018637776
+    },
+    {
+      "phase": "clone-repositories",
+      "wall_seconds": 1.73245966702234
+    },
+    {
+      "phase": "clone-workspace-state.json",
+      "wall_seconds": 0.002386542037129402
+    },
+    {
+      "phase": "current-source-release",
+      "command": [
+        "swift",
+        "build",
+        "-c",
+        "release",
+        "--jobs",
+        "4"
+      ],
+      "wall_seconds": 53.43877641693689,
+      "exit_code": -15
+    }
+  ],
+  "wall_seconds": 58.44599320902489,
+  "exit_code": -15
+}

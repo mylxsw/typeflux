@@ -1,0 +1,12 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "scripts.tests.test_release_packaging",
+    "scripts.tests.test_inference_packaging",
+    "-v"
+  ],
+  "exit_code": 1,
+  "wall_seconds": 3.2921652499353513
+}

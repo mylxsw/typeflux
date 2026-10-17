@@ -1,0 +1,12 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "scripts.tests.test_release_packaging",
+    "scripts.tests.test_macho_audit",
+    "-v"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 18.754584999987856
+}

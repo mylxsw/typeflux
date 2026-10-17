@@ -255,6 +255,8 @@ if [[ -n "${TYPEFLUX_CODESIGN_IDENTITY:-}" ]]; then
   )
   sign_nested_binaries "$TYPEFLUX_CODESIGN_IDENTITY" false
   codesign --force --sign "$TYPEFLUX_CODESIGN_IDENTITY" --timestamp --options runtime \
+    "$APP_BUNDLE/Contents/Helpers/swift-transformers_Hub.bundle"
+  codesign --force --sign "$TYPEFLUX_CODESIGN_IDENTITY" --timestamp --options runtime \
     "$APP_BUNDLE/Contents/Helpers/TypefluxInferenceHelper"
   codesign --force --sign "$TYPEFLUX_CODESIGN_IDENTITY" --timestamp --options runtime \
     "$APP_BUNDLE/Contents/Helpers/TypefluxMediaHelper"

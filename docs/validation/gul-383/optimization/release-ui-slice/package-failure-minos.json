@@ -1,0 +1,172 @@
+{
+  "records": [
+    {
+      "command": [
+        "bash",
+        "<repo>/scripts/copy_inference_helper.sh",
+        "<repo>/.build/out/Products/Release",
+        "<repo>/.build/candidate/Typeflux.app"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.029594916035421193,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "bash",
+        "<repo>/scripts/copy_media_helper.sh",
+        "<repo>/.build/out/Products/Release",
+        "<repo>/.build/candidate/Typeflux.app"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.010710209026001394,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "bash",
+        "<repo>/scripts/copy_resource_bundles.sh",
+        "<repo>/.build/out/Products/Release",
+        "<repo>/.build/candidate/Typeflux.app/Contents/Resources"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.18737683398649096,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "<repo>/.build/candidate/Typeflux.app/Contents/Helpers/swift-transformers_Hub.bundle"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.017445291974581778,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "<repo>/.build/candidate/Typeflux.app/Contents/Helpers/TypefluxInferenceHelper"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.041012207977473736,
+      "stdout": "",
+      "stderr": "<repo>/.build/candidate/Typeflux.app/Contents/Helpers/TypefluxInferenceHelper: replacing existing signature\n"
+    },
+    {
+      "command": [
+        "codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "<repo>/.build/candidate/Typeflux.app/Contents/Helpers/TypefluxMediaHelper"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.021559915971010923,
+      "stdout": "",
+      "stderr": "<repo>/.build/candidate/Typeflux.app/Contents/Helpers/TypefluxMediaHelper: replacing existing signature\n"
+    },
+    {
+      "command": [
+        "codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "<repo>/.build/candidate/Typeflux.app/Contents/Resources/LocalRuntimes/SemanticSearch/TypefluxSemanticHelper"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.028501291060820222,
+      "stdout": "",
+      "stderr": "<repo>/.build/candidate/Typeflux.app/Contents/Resources/LocalRuntimes/SemanticSearch/TypefluxSemanticHelper: replacing existing signature\n"
+    },
+    {
+      "command": [
+        "codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "<repo>/.build/candidate/Typeflux.app/Contents/MacOS/Typeflux"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 1.090822875034064,
+      "stdout": "",
+      "stderr": "<repo>/.build/candidate/Typeflux.app/Contents/MacOS/Typeflux: replacing existing signature\n"
+    },
+    {
+      "command": [
+        "codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "--entitlements",
+        "<repo>/app/TypefluxRuntime.entitlements",
+        "<repo>/.build/candidate/Typeflux.app"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.39444437494967133,
+      "stdout": "",
+      "stderr": "<repo>/.build/candidate/Typeflux.app: replacing existing signature\n"
+    },
+    {
+      "command": [
+        "codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "--verbose=2",
+        "<repo>/.build/candidate/Typeflux.app"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.1161925409687683,
+      "stdout": "",
+      "stderr": "--prepared:<repo>/.build/candidate/Typeflux.app/Contents/Helpers/swift-transformers_Hub.bundle\n--prepared:<repo>/.build/candidate/Typeflux.app/Contents/Helpers/TypefluxMediaHelper\n--validated:<repo>/.build/candidate/Typeflux.app/Contents/Helpers/TypefluxMediaHelper\n--validated:<repo>/.build/candidate/Typeflux.app/Contents/Helpers/swift-transformers_Hub.bundle\n--prepared:<repo>/.build/candidate/Typeflux.app/Contents/Helpers/TypefluxInferenceHelper\n--validated:<repo>/.build/candidate/Typeflux.app/Contents/Helpers/TypefluxInferenceHelper\n<repo>/.build/candidate/Typeflux.app: valid on disk\n<repo>/.build/candidate/Typeflux.app: satisfies its Designated Requirement\n"
+    },
+    {
+      "command": [
+        "codesign",
+        "-d",
+        "--verbose=4",
+        "<repo>/.build/candidate/Typeflux.app"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.010760291945189238,
+      "stdout": "",
+      "stderr": "Executable=<repo>/.build/candidate/Typeflux.app/Contents/MacOS/Typeflux\nIdentifier=ai.gulu.app.typeflux\nFormat=app bundle with Mach-O thin (arm64)\nCodeDirectory v=20500 size=282613 flags=0x10002(adhoc,runtime) hashes=8821+7 location=embedded\nVersionPlatform=1\nVersionMin=851968\nVersionSDK=851968\nHash type=sha256 size=32\nCandidateCDHash sha256=29a4e3bb24ec5d498e5376e98d0a5859f1d97458\nCandidateCDHashFull sha256=29a4e3bb24ec5d498e5376e98d0a5859f1d974588b495cbe6aeaf32dfa22c507\nHash choices=sha256\nCMSDigest=29a4e3bb24ec5d498e5376e98d0a5859f1d974588b495cbe6aeaf32dfa22c507\nCMSDigestType=2\nExecutable Segment base=0\nExecutable Segment limit=48431104\nExecutable Segment flags=0x1\nPage size=16384\nCDHash=29a4e3bb24ec5d498e5376e98d0a5859f1d97458\nSignature=adhoc\nInfo.plist entries=22\nTeamIdentifier=not set\nRuntime Version=13.0.0\nSealed Resources version=2 rules=13 files=296\nInternal requirements count=0 size=12\n"
+    },
+    {
+      "command": [
+        "bash",
+        "<repo>/scripts/audit_macho_minos.sh",
+        "<repo>/.build/candidate/Typeflux.app",
+        "13.4",
+        "arm64"
+      ],
+      "exit_code": 1,
+      "wall_seconds": 4.412984541035257,
+      "stdout": "Auditing Mach-O minos under <repo>/.build/candidate/Typeflux.app\nMaximum allowed macOS minos: 13.4\nRequired Mach-O architecture: arm64\n",
+      "stderr": "Error: Mach-O files exceed allowed macOS minos 13.4:\n  Contents/Resources/LocalRuntimes/SemanticSearch/TypefluxSemanticHelper: minos 14.0\n"
+    }
+  ],
+  "wall_seconds": 6.781607124954462
+}

@@ -1,0 +1,22 @@
+{
+  "source_commit": "ad6fad60e2518c1e47b386b28b14e8c30259b12e",
+  "records": [
+    {
+      "phase": "current-source-release",
+      "command": [
+        "swift",
+        "build",
+        "-c",
+        "release",
+        "--jobs",
+        "4",
+        "-Xswiftc",
+        "-enable-testing"
+      ],
+      "wall_seconds": 484.09103745792527,
+      "exit_code": 0
+    }
+  ],
+  "wall_seconds": 484.12392754189204,
+  "exit_code": 0
+}
