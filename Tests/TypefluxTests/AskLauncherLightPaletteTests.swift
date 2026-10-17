@@ -175,10 +175,10 @@ struct AskLauncherLightPaletteTests {
         #expect(NSImage(systemSymbolName: AskIconChipFace.symbol(screenshot), accessibilityDescription: nil) != nil)
     }
 
-    @Test func storageOnThisMacSitsInAPrivateWell() {
-        #expect(AskStorageButton.wellFill(local: true, active: false) == AskTheme.privateFill)
-        #expect(AskStorageButton.wellFill(local: true, active: true) == AskTheme.privateFill)
-        #expect(AskStorageButton.wellFill(local: false, active: true) == AskTheme.hoverFill)
+    @Test func storageButtonOnlyColorsItsIcon() {
+        #expect(AskStorageButton.wellFill(local: true, active: false) == .clear)
+        #expect(AskStorageButton.wellFill(local: true, active: true) == .clear)
+        #expect(AskStorageButton.wellFill(local: false, active: true) == .clear)
         #expect(AskStorageButton.wellFill(local: false, active: false) == .clear)
     }
 }

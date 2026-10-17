@@ -376,7 +376,7 @@ struct AskStorageButton: View {
     }
 
     /// The private tint marks this Mac and teal a temporary conversation; hover or an
-    /// open menu brightens the cloud.
+    /// open menu brightens the cloud. The icon alone carries the state colour.
     static func iconColor(_ kind: AskStorageKind, active: Bool) -> Color {
         switch kind {
         case .local: AskTheme.privateTint
@@ -385,14 +385,9 @@ struct AskStorageButton: View {
         }
     }
 
-    /// Kept on this Mac and temporary are states, so they sit in a tinted well like an
-    /// on switch; the cloud only gets the hover wash.
+    /// Keep the icon background transparent in every storage and hover state.
     static func wellFill(_ kind: AskStorageKind, active: Bool) -> Color {
-        switch kind {
-        case .local: AskTheme.privateFill
-        case .temporary: AskTheme.temporaryFill
-        case .cloud: active ? AskTheme.hoverFill : .clear
-        }
+        .clear
     }
 
     static func iconColor(local: Bool, active: Bool) -> Color { iconColor(local ? .local : .cloud, active: active) }
