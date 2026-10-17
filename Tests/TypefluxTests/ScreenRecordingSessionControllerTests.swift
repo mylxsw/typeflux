@@ -175,6 +175,8 @@ struct ScreenRecordingSessionControllerTests {
         let notice = try #require(fixture.toast.panel)
         #expect(notice.isVisible)
         #expect(!notice.hasShadow)
+        #expect(notice.identifier == ScreenshotCaptureWindowPolicy.recordingToastIdentifier)
+        #expect(!ScreenshotCaptureWindowPolicy.excludes(notice))
 
         fixture.controller.show()
         #expect(fixture.toast.panel == nil)
@@ -216,6 +218,39 @@ struct ScreenRecordingSessionControllerTests {
         #expect(!fixture.controller.isCaptureActive)
         fixture.controller.show()
         #expect(fixture.controller.sessions.count == 3)
+        await fixture.clean()
+        await original.clean()
+    }
+
+    @Test func `recovery action reuses an already open editor`() async throws {
+        let fixture = Fixture()
+        let first = await fixture.record()
+        let source = try #require(first.model.sourceURL)
+        fixture.controller.show()
+        let setup = try #require(fixture.controller.sessions.last)
+        setup.model.onRecoverRequested?(source)
+        #expect(fixture.controller.sessions.count == 2)
+        #expect(first.window.window?.isVisible == true)
+        #expect(setup.model.state == .setup)
+        await fixture.clean()
+    }
+
+    @Test func `recovery action opens an unsaved recording in the setup session`() async throws {
+        let original = ScreenRecordingCoordinatorTests.Fixture()
+        await original.recording()
+        original.model.stop()
+        await original.model.pendingTask?.value
+        let source = try #require(original.model.sourceURL)
+
+        let fixture = Fixture()
+        fixture.controller.show()
+        let setup = try #require(fixture.controller.sessions.last)
+        setup.model.onRecoverRequested?(source)
+        await setup.model.pendingTask?.value
+        #expect(fixture.controller.sessions.count == 1)
+        #expect(setup.model.state == .preview)
+        #expect(setup.model.sourceURL == source)
+
         await fixture.clean()
         await original.clean()
     }

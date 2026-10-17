@@ -50,6 +50,14 @@ final class ScreenRecordingSessionController {
         let window = makeWindow()
         let session = Session(model: model, window: window, recoverySource: recoverySource)
         model.isOtherCaptureActive = { [weak self] in self?.isOtherCaptureActive() ?? false }
+        model.onRecoverRequested = { [weak self, weak model] source in
+            guard let self, let model else { return }
+            if let existing = self.sessions.first(where: { ($0.model.sourceURL ?? $0.recoverySource) == source }) {
+                existing.window.show(existing.model)
+            } else {
+                model.recover(source)
+            }
+        }
         model.present = { [weak window] in window?.show($0, focus: false) }
         model.dismiss = { [weak self, weak model, weak window] in
             window?.hide()

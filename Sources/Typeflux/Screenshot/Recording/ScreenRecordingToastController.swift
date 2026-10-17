@@ -54,7 +54,7 @@ final class ScreenRecordingToastController {
         panel.retire = { [weak model] in
             guard let model, model.generation == presentation else { return }; model.retire()
         }
-        panel.identifier = ScreenshotCaptureWindowPolicy.toastIdentifier
+        panel.identifier = ScreenshotCaptureWindowPolicy.recordingToastIdentifier
         panel.appearance = AppAppearance.nsAppearance(for: settings.appearanceMode)
         panel.level = .floating; panel.isOpaque = false; panel.backgroundColor = .clear
         // The rounded SwiftUI surface owns its shadow; a window shadow outlines the rectangular panel.

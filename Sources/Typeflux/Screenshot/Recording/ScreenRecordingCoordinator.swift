@@ -79,6 +79,7 @@ final class ScreenRecordingCoordinator: ObservableObject {
     }
 
     var isOtherCaptureActive: () -> Bool = { false }
+    var onRecoverRequested: ((URL) -> Void)?
     var present: (ScreenRecordingCoordinator) -> Void = { _ in }
     var dismiss: () -> Void = {}
     var copyPublishedFile: (URL) -> Void = ScreenRecordingCoordinator.copyFile

@@ -73,6 +73,8 @@ struct ScreenshotCaptureWindowPolicyTests {
         }
         panel.identifier = nil
         #expect(!ScreenshotCaptureWindowPolicy.excludes(panel))
+        panel.identifier = ScreenshotCaptureWindowPolicy.recordingToastIdentifier
+        #expect(!ScreenshotCaptureWindowPolicy.excludes(panel))
     }
 
     @Test func onlyVisibleCaptureControlsAreListed() {
@@ -142,20 +144,22 @@ struct ScreenshotCaptureWindowPolicyTests {
     }
 
     @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_REAL_SCREEN_CAPTURE_TESTS"] == "1"),
-          arguments: ["page", "launcher", "recording-preview"])
+          arguments: ["page", "launcher", "recording-preview", "recording-toast"])
     func realCaptureKeepsAppPagePixelsBehindCaptureControls(_ kind: String) async throws {
         let isLauncher = kind == "launcher"
+        let isRecordingToast = kind == "recording-toast"
         try #require(CGPreflightScreenCaptureAccess(),
                      "Grant screen recording access before running the real capture test")
         let screen = try #require(NSScreen.screens.first)
         let area = screen.visibleFrame
         let pageFrame = CGRect(x: area.midX - 120, y: area.midY - 90, width: 240, height: 180)
-        let page: NSWindow = isLauncher
+        let page: NSWindow = isLauncher || isRecordingToast
             ? NSPanel(contentRect: pageFrame, styleMask: [.borderless, .nonactivatingPanel],
                       backing: .buffered, defer: false)
             : NSWindow(contentRect: pageFrame, styleMask: [.borderless], backing: .buffered, defer: false)
         page.identifier = isLauncher ? TypefluxWindowIdentity.askLauncherWindowIdentifier :
-            (kind == "recording-preview" ? ScreenRecordingWindowController.previewIdentifier : nil)
+            (isRecordingToast ? ScreenshotCaptureWindowPolicy.recordingToastIdentifier :
+                (kind == "recording-preview" ? ScreenRecordingWindowController.previewIdentifier : nil))
         (page as? NSPanel)?.hidesOnDeactivate = false
         page.isReleasedWhenClosed = false
         page.title = "Typeflux screenshot regression test"

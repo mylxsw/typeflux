@@ -98,6 +98,23 @@ struct ScreenRecordingToolbar: View {
                     Label(L("recording.options"), systemImage: "slider.horizontal.3").padding(.horizontal, 7)
                         .frame(height: 30)
                 }.popover(isPresented: $showsOptions, arrowEdge: .top) { options }
+                if !model.recovered.isEmpty {
+                    Menu {
+                        ForEach(model.recovered, id: \.self) { source in
+                            Button(ScreenRecordingCoordinator.recoveryTitle(source)) {
+                                if let onRecoverRequested = model.onRecoverRequested {
+                                    onRecoverRequested(source)
+                                } else {
+                                    model.recover(source)
+                                }
+                            }
+                        }
+                    } label: {
+                        Label("\(L("recording.recover")) (\(model.recovered.count))",
+                              systemImage: "clock.arrow.circlepath")
+                            .padding(.horizontal, 7).frame(height: 30)
+                    }.accessibilityIdentifier("recording.recover")
+                }
                 separator
                 icon("xmark", title: L("recording.cancel"), action: close)
                 Button(action: model.start) {

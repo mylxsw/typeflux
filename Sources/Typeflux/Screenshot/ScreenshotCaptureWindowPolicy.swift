@@ -3,6 +3,7 @@ import AppKit
 /// Capture controls should not cover the page being reported or feed back into a live capture.
 enum ScreenshotCaptureWindowPolicy {
     static let toastIdentifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.screenshot-toast")
+    static let recordingToastIdentifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.recording-toast")
     static let permissionIdentifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.screenshot-permission")
 
     @MainActor

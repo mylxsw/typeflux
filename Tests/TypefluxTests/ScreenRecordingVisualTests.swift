@@ -191,7 +191,11 @@ struct ScreenRecordingVisualTests {
 
     @Test func `appearance and five languages keep actions inside the toolbar`() async throws {
         let fixture = ScreenRecordingCoordinatorTests.Fixture()
+        let files = ScreenRecordingFiles(root: fixture.root.appendingPathComponent("sessions"))
+        let session = try files.createSession(options: ScreenRecordingOptions())
+        try Data([1]).write(to: session.appendingPathComponent("source.mov"))
         await fixture.setup()
+        #expect(fixture.model.recovered.count == 1)
         let defaults = try #require(UserDefaults(suiteName: fixture.suite))
         let settings = SettingsStore(defaults: defaults)
         settings.appearanceMode = .light

@@ -162,7 +162,6 @@ final class AppCoordinator {
 
         let screenshotCoordinator = di.screenshotCoordinator
         let screenRecordingCoordinator = di.screenRecordingSessions
-        screenRecordingCoordinator.offerRecovery()
         screenshotCoordinator.isRecordingActive = { [weak screenRecordingCoordinator] in
             screenRecordingCoordinator?.isCaptureActive ?? false
         }
