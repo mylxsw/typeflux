@@ -58,9 +58,13 @@ final class ScreenshotBeautificationPanel: NSObject, NSWindowDelegate {
         var draft = settings
         draft.isEnabled = true
         let model = ScreenshotBeautificationPreview(source: source, scale: scale, settings: draft)
-        let panel = NSPanel(contentRect: CGRect(x: 0, y: 0, width: 780, height: 590),
+        let panel = NSPanel(contentRect: CGRect(origin: .zero, size: ScreenshotBeautificationView.size),
                             styleMask: [.titled, .closable, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.title = L("screenshot.beautify.title")
+        panel.titleVisibility = .hidden
+        panel.titlebarAppearsTransparent = true
+        panel.appearance = NSAppearance(named: .darkAqua)
+        panel.backgroundColor = NSColor(white: 0.075, alpha: 1)
         panel.level = parent.level
         panel.isReleasedWhenClosed = false
         panel.delegate = self
@@ -88,89 +92,221 @@ final class ScreenshotBeautificationPanel: NSObject, NSWindowDelegate {
 }
 
 struct ScreenshotBeautificationView: View {
+    static let size = CGSize(width: 820, height: 620)
     @ObservedObject var model: ScreenshotBeautificationPreview
     let cancel: () -> Void
     let apply: () -> Void
 
     var body: some View {
-        VStack(spacing: 16) {
-            HStack {
-                Label(L("screenshot.beautify.title"), systemImage: "photo.artframe").font(.headline)
-                Spacer()
-                Toggle(L("screenshot.beautify.enabled"), isOn: $model.settings.isEnabled).toggleStyle(.switch)
-            }
-            ZStack {
-                RoundedRectangle(cornerRadius: 10).fill(Color.gray.opacity(0.12))
-                if let image = model.image {
-                    Image(decorative: image, scale: 1).resizable().scaledToFit().padding(20)
-                }
-                if model.failed { Text(L("screenshot.beautify.failed")).foregroundStyle(.red) }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .accessibilityLabel(L("screenshot.beautify.preview"))
-            VStack(spacing: 14) {
-                HStack(spacing: 10) {
-                    Text(L("screenshot.beautify.background")).frame(width: 90, alignment: .leading).lineLimit(1)
-                    ForEach(ScreenshotBeautification.Background.allCases, id: \.self) { background in
-                        let selected = model.settings.background == background
-                        Button {
-                            model.settings.background = background
-                            model.settings.isEnabled = true
-                        } label: {
-                            swatch(background)
-                                .frame(width: 44, height: 30)
-                                .clipShape(RoundedRectangle(cornerRadius: 6))
-                                .overlay(RoundedRectangle(cornerRadius: 6)
-                                    .stroke(selected ? Color.accentColor : Color.secondary.opacity(0.25),
-                                            lineWidth: selected ? 3 : 1))
-                        }
-                        .buttonStyle(.plain)
-                        .help(L("screenshot.beautify.background.\(background.rawValue)"))
-                        .accessibilityLabel(L("screenshot.beautify.background.\(background.rawValue)"))
-                        .accessibilityAddTraits(selected ? .isSelected : [])
+        VStack(spacing: 0) {
+            header
+            preview
+                .padding(.horizontal, 32)
+                .padding(.top, 20)
+                .padding(.bottom, 28)
+            VStack(spacing: 0) {
+                HStack(spacing: 24) {
+                    palette
+                        .frame(width: 236, alignment: .leading)
+                    Rectangle().fill(.white.opacity(0.08)).frame(width: 1)
+                    VStack(spacing: 13) {
+                        slider("padding", symbol: "arrow.up.left.and.arrow.down.right",
+                               value: \.padding, range: 0 ... 160, suffix: "pt")
+                        slider("radius", symbol: "app", value: \.cornerRadius,
+                               range: 0 ... 80, suffix: "pt")
+                        slider("shadow", symbol: "square.3.layers.3d", value: \.shadow,
+                               range: 0 ... 1, suffix: "%")
                     }
-                    Spacer(minLength: 0)
                 }
-                slider("padding", value: $model.settings.padding, range: 0 ... 160, suffix: "pt")
-                slider("radius", value: $model.settings.cornerRadius, range: 0 ... 80, suffix: "pt")
-                slider("shadow", value: $model.settings.shadow, range: 0 ... 1, suffix: "%")
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 20).padding(.vertical, 16)
+                Rectangle().fill(.white.opacity(0.08)).frame(height: 1)
+                actions.padding(.horizontal, 20).padding(.vertical, 12)
             }
-            HStack {
-                Button(L("screenshot.beautify.reset")) { model.settings = ScreenshotBeautification() }
-                Spacer()
-                Button(L("screenshot.beautify.cancel"), action: cancel).keyboardShortcut(.cancelAction)
-                Button(L("screenshot.beautify.apply"), action: apply).keyboardShortcut(.defaultAction)
-                    .disabled(model.failed)
+            .background(Color(white: 0.13), in: RoundedRectangle(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.09)))
+            .shadow(color: .black.opacity(0.2), radius: 16, y: 6)
+            .padding(.horizontal, 32)
+            .padding(.bottom, 24)
+        }
+        .frame(width: Self.size.width, height: Self.size.height)
+        .background(Color(white: 0.075))
+        .foregroundStyle(.white.opacity(0.9))
+        .environment(\.colorScheme, .dark)
+    }
+
+    private var header: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "photo.artframe")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(.white.opacity(0.6))
+            Text(L("screenshot.beautify.title")).font(.system(size: 14, weight: .semibold))
+            Spacer()
+            Toggle(L("screenshot.beautify.enabled"), isOn: $model.settings.isEnabled)
+                .toggleStyle(.switch).controlSize(.mini)
+                .font(.system(size: 11)).foregroundStyle(.white.opacity(0.6))
+                .accessibilityLabel(L("screenshot.beautify.enabled"))
+        }
+        .padding(.horizontal, 32)
+        .padding(.top, 10)
+        .padding(.bottom, 6)
+    }
+
+    private var preview: some View {
+        ZStack {
+            if let image = model.image {
+                Image(decorative: image, scale: 1).resizable().scaledToFit()
+                    .background {
+                        ScreenshotTransparencyGrid()
+                            .aspectRatio(CGFloat(image.width) / CGFloat(image.height), contentMode: .fit)
+                    }
+                    .shadow(color: .black.opacity(0.3), radius: 18, y: 8)
+            }
+            if model.failed {
+                Label(L("screenshot.beautify.failed"), systemImage: "exclamationmark.triangle")
+                    .font(.system(size: 12)).foregroundStyle(.orange)
+                    .padding(16)
             }
         }
-        .padding(20)
-        .frame(width: 780, height: 590)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(L("screenshot.beautify.preview"))
+    }
+
+    private var palette: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(L("screenshot.beautify.background")).foregroundStyle(.white.opacity(0.6))
+                        .font(.system(size: 11, weight: .medium))
+                    Text(L("screenshot.beautify.background.\(model.settings.background.rawValue)"))
+                        .foregroundStyle(.white.opacity(0.9)).font(.system(size: 10))
+                }
+                .lineLimit(1)
+                Spacer(minLength: 8)
+                HStack(spacing: 4) {
+                    ForEach([ScreenshotBeautification.Background.transparent, .white, .charcoal], id: \.self) {
+                        swatchButton($0, size: 26, radius: 13)
+                    }
+                }
+            }
+            HStack(spacing: 10) {
+                ForEach([ScreenshotBeautification.Background.sky, .mint, .sunset, .lavender], id: \.self) {
+                    swatchButton($0, size: 42, radius: 9)
+                }
+            }
+        }
+    }
+
+    private func swatchButton(_ background: ScreenshotBeautification.Background,
+                              size: CGFloat, radius: CGFloat) -> some View {
+        let selected = model.settings.background == background
+        return Button {
+            var settings = model.settings
+            settings.background = background
+            settings.isEnabled = true
+            model.settings = settings
+        } label: {
+            swatch(background)
+                .frame(width: size, height: size)
+                .clipShape(RoundedRectangle(cornerRadius: radius))
+                .overlay(RoundedRectangle(cornerRadius: radius).strokeBorder(.white.opacity(0.2)))
+                .overlay {
+                    if selected {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(background == .white || background == .mint ? .black : .white)
+                    }
+                }
+                .padding(3)
+                .overlay(RoundedRectangle(cornerRadius: radius + 3)
+                    .strokeBorder(selected ? .white.opacity(0.9) : .clear, lineWidth: 1.5))
+        }
+        .buttonStyle(.plain)
+        .help(L("screenshot.beautify.background.\(background.rawValue)"))
+        .accessibilityLabel(L("screenshot.beautify.background.\(background.rawValue)"))
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private var actions: some View {
+        HStack(spacing: 10) {
+            Button {
+                model.settings = ScreenshotBeautification()
+            } label: {
+                Label(L("screenshot.beautify.reset"), systemImage: "arrow.counterclockwise")
+            }
+            .buttonStyle(.plain).foregroundStyle(.white.opacity(0.6))
+            .padding(.vertical, 6).contentShape(Rectangle())
+            Spacer()
+            Button(L("screenshot.beautify.cancel"), action: cancel)
+                .buttonStyle(.plain).padding(.horizontal, 12).padding(.vertical, 8)
+                .contentShape(Rectangle())
+                .keyboardShortcut(.cancelAction)
+            Button(action: apply) {
+                Label(L("screenshot.beautify.apply"), systemImage: "checkmark")
+                    .fontWeight(.semibold)
+                    .padding(.horizontal, 16).padding(.vertical, 8)
+                    .foregroundStyle(Color(white: 0.1))
+                    .background(.white.opacity(model.failed ? 0.3 : 0.95),
+                                in: RoundedRectangle(cornerRadius: 8))
+            }
+            .buttonStyle(.plain).keyboardShortcut(.defaultAction).disabled(model.failed)
+        }
+        .font(.system(size: 12))
     }
 
     @ViewBuilder
     private func swatch(_ background: ScreenshotBeautification.Background) -> some View {
         if background == .transparent {
-            ZStack {
-                Color.gray.opacity(0.15)
-                Image(systemName: "checkerboard.rectangle").foregroundStyle(.secondary)
-            }
+            ScreenshotTransparencyGrid()
         } else {
             LinearGradient(colors: background.colors.map { Color(cgColor: $0) }, startPoint: .topLeading,
                            endPoint: .bottomTrailing)
         }
     }
 
-    private func slider(_ key: String, value: Binding<CGFloat>, range: ClosedRange<CGFloat>, suffix: String) -> some View {
-        HStack {
-            Text(L("screenshot.beautify.\(key)")).frame(width: 90, alignment: .leading).lineLimit(1)
-            Slider(value: Binding(get: { value.wrappedValue }, set: {
-                value.wrappedValue = $0
-                model.settings.isEnabled = true
+    private func slider(_ key: String, symbol: String, value: WritableKeyPath<ScreenshotBeautification, CGFloat>,
+                        range: ClosedRange<CGFloat>, suffix: String) -> some View {
+        let current = model.settings[keyPath: value]
+        return HStack(spacing: 10) {
+            Image(systemName: symbol).frame(width: 14).foregroundStyle(.white.opacity(0.4))
+                .accessibilityHidden(true)
+            Text(L("screenshot.beautify.\(key)"))
+                .frame(width: 64, alignment: .leading).lineLimit(1)
+                .foregroundStyle(.white.opacity(0.75))
+            Slider(value: Binding(get: { model.settings[keyPath: value] }, set: {
+                // One published update avoids rendering a discarded intermediate disabled state.
+                var settings = model.settings
+                settings[keyPath: value] = $0
+                settings.isEnabled = true
+                model.settings = settings
             }), in: range)
+            .controlSize(.mini)
             .accessibilityLabel(L("screenshot.beautify.\(key)"))
-            Text("\(Int((value.wrappedValue * (suffix == "%" ? 100 : 1)).rounded())) \(suffix)")
-                .monospacedDigit().frame(width: 60, alignment: .trailing)
+            Text("\(Int((current * (suffix == "%" ? 100 : 1)).rounded())) \(suffix)")
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.6))
+                .frame(width: 48, height: 24)
+                .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 5))
+                .accessibilityHidden(true)
         }
+        .font(.system(size: 11))
+    }
+}
+
+/// Transparency is a preview affordance only; the compositor preserves the exported alpha.
+private struct ScreenshotTransparencyGrid: View {
+    var body: some View {
+        Canvas { context, size in
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(white: 0.22)))
+            let side: CGFloat = 8
+            for row in 0 ..< Int(ceil(size.height / side)) {
+                for column in 0 ..< Int(ceil(size.width / side)) where (row + column).isMultiple(of: 2) {
+                    let rect = CGRect(x: CGFloat(column) * side, y: CGFloat(row) * side, width: side, height: side)
+                    context.fill(Path(rect), with: .color(Color(white: 0.3)))
+                }
+            }
+        }
+        .accessibilityHidden(true)
     }
 }

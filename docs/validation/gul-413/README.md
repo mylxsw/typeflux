@@ -1,3 +1,5 @@
+Current UI: [visual refinement, validation and native window captures](redesign/README.md). The record below describes the initial feature implementation before the visual refinement.
+
 The screenshot toolbar now opens a Beautify sheet for region and scrolling screenshots. It previews transparent, white, charcoal and four gradient backgrounds, with adjustable padding, corner radius and shadow. Apply keeps the settings on the current screenshot; Cancel discards the draft, and Reset removes beautification.
 
 Preview and export share the compositor. When foreground removal is active, its finished cutout is used first. Annotations and mosaics are then flattened, and the background is added at the display's native pixel scale. The sheet opens only after foreground processing finishes. Copy, save, copy-and-save, pins and launcher follow-ups receive that composition. Pins expand around the original region's center to preserve the image's proportions. Recapturing is disabled while beautification is enabled.

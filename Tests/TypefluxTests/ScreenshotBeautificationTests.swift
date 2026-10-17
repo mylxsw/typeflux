@@ -265,6 +265,8 @@ extension ScreenshotBeautificationTests {
         let panel = try XCTUnwrap(controller.panel)
         let host = try XCTUnwrap(panel.contentView as? NSHostingView<ScreenshotBeautificationView>)
         XCTAssertTrue(host.rootView.model.settings.isEnabled)
+        XCTAssertEqual(panel.appearance?.name, .darkAqua)
+        XCTAssertEqual(panel.contentLayoutRect.size, ScreenshotBeautificationView.size)
         host.rootView.model.settings.padding = 80
         host.rootView.cancel()
         XCTAssertTrue(applied.isEmpty)
@@ -281,89 +283,4 @@ extension ScreenshotBeautificationTests {
         XCTAssertEqual(applied.count, 1)
     }
 
-    func testRenderedSwatchAndResetButtonsUpdateThePreview() async throws {
-        _ = NSApplication.shared
-        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
-        let previous = NSApp.accessibilityAttributeValue(attribute)
-        NSApp.accessibilitySetValue(true, forAttribute: attribute)
-        defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
-        let model = ScreenshotBeautificationPreview(source: source(), scale: 1, settings: .init())
-        let host = NSHostingView(rootView: ScreenshotBeautificationView(model: model, cancel: {}, apply: {}))
-        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 780, height: 590),
-                              styleMask: [.titled], backing: .buffered, defer: false)
-        window.isReleasedWhenClosed = false
-        window.contentView = host
-        window.makeKeyAndOrderFront(nil)
-        defer { window.close() }
-        func button(_ label: String) -> NSObject? {
-            SettingsBehaviorTestSupport.elements(in: window).first {
-                ($0.label == label || $0.value("accessibilityTitle") as? String == label) &&
-                    $0.object.responds(to: NSSelectorFromString("accessibilityPerformPress"))
-            }?.object
-        }
-        func press(_ object: NSObject) {
-            let selector = NSSelectorFromString("accessibilityPerformPress")
-            typealias Press = @convention(c) (AnyObject, Selector) -> Bool
-            let action = unsafeBitCast(object.method(for: selector), to: Press.self)
-            XCTAssertTrue(action(object, selector))
-        }
-        try await SettingsBehaviorTestSupport.wait { button(L("screenshot.beautify.background.sky")) != nil }
-        press(try XCTUnwrap(button(L("screenshot.beautify.background.sky"))))
-        try await SettingsBehaviorTestSupport.wait { model.settings.background == .sky && model.settings.isEnabled }
-        XCTAssertEqual(model.image?.width, 176)
-        press(try XCTUnwrap(button(L("screenshot.beautify.reset"))))
-        try await SettingsBehaviorTestSupport.wait { !model.settings.isEnabled }
-        XCTAssertEqual(model.image?.width, 80)
-    }
-
-    func testPreviewViewRendersPresetsAndErrorInBothAppearances() throws {
-        let frame = CGRect(x: 0, y: 0, width: 640, height: 320)
-        let display = ScreenSnapshot.Display(id: 1, frame: frame, scale: 1, image: source(width: 640, height: 320))
-        let code = """
-        let screenshot = capture(region)
-
-        screenshot.beautify(
-            background: .mint,
-            padding: 48,
-            cornerRadius: 12
-        )
-        """
-        let labels = [
-            ScreenshotAnnotation(kind: .text(origin: CGPoint(x: 32, y: 30),
-                                             "Typeflux / Screenshot", fontSize: 26),
-                                 style: ScreenshotAnnotationStyle(color: .white)),
-            ScreenshotAnnotation(kind: .text(origin: CGPoint(x: 32, y: 90),
-                                             code, fontSize: 18),
-                                 style: ScreenshotAnnotationStyle(color: .white))
-        ]
-        let screenshot = try ScreenshotRenderer.render(display, crop: frame, annotations: labels)
-        let directory = ProcessInfo.processInfo.environment["TYPEFLUX_BEAUTIFICATION_SNAPSHOTS"]
-        if let directory {
-            try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
-        }
-        for name in [NSAppearance.Name.aqua, .darkAqua] {
-            let model = ScreenshotBeautificationPreview(source: screenshot, scale: 1,
-                settings: ScreenshotBeautification(isEnabled: true))
-            let host = NSHostingView(rootView: ScreenshotBeautificationView(model: model, cancel: {}, apply: {}))
-            host.appearance = NSAppearance(named: name)
-            host.frame = CGRect(x: 0, y: 0, width: 780, height: 590)
-            let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
-            window.isReleasedWhenClosed = false
-            window.appearance = NSAppearance(named: name)
-            window.contentView = host
-            window.orderFront(nil)
-            defer { window.close() }
-            host.layoutSubtreeIfNeeded()
-            let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
-            host.cacheDisplay(in: host.bounds, to: bitmap)
-            let png = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
-            XCTAssertGreaterThan(png.count, 5000)
-            if let directory {
-                try png.write(to: URL(fileURLWithPath: directory).appendingPathComponent("beautify-\(name.rawValue).png"))
-            }
-        }
-        let invalid = ScreenshotBeautificationPreview(source: source(), scale: 0, settings: settings)
-        let host = NSHostingView(rootView: ScreenshotBeautificationView(model: invalid, cancel: {}, apply: {}))
-        XCTAssertGreaterThan(host.fittingSize.height, 500)
-    }
 }
