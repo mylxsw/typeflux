@@ -23,7 +23,9 @@ struct SystemInfoVisualTests {
     }
 
     private func launcher(_ name: String, light: Bool = false, facts: SystemInfoFacts = SystemInfoFixtures.laptop(),
-                          filter: String = "", prepare: (AskConversationModel) -> Void = { _ in }) async throws {
+                          filter: String = "",
+                          inspect: (NSWindow, AskConversationModel) async throws -> Void = { _, _ in },
+                          prepare: (AskConversationModel) -> Void = { _ in }) async throws {
         let previousStore = KeychainTokenStore.useInMemoryStoreForTesting
         KeychainTokenStore.useInMemoryStoreForTesting = true
         _ = AuthState.shared
@@ -54,29 +56,72 @@ struct SystemInfoVisualTests {
         try await Task.sleep(for: .milliseconds(400))
         try snapshot(hosting, name: name)
         #expect(model.showsSystemInfo)
+        try await inspect(window, model)
+    }
+
+    @Test(arguments: AppLanguage.allCases, [false, true])
+    func `summary icon stays compact accessible and copies`(language: AppLanguage, light: Bool) async throws {
+        _ = NSApplication.shared
+        // SwiftUI only exposes its accessibility tree when an assistive client requests it.
+        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+        let previousAccessibility = NSApp.accessibilityAttributeValue(attribute)
+        NSApp.accessibilitySetValue(true, forAttribute: attribute)
+        let pasteboard = NSPasteboard(name: NSPasteboard.Name("system.info.summary.\(UUID().uuidString)"))
+        let previous = AskQuickResults.pasteboard
+        AskQuickResults.pasteboard = pasteboard
+        defer {
+            NSApp.accessibilitySetValue(previousAccessibility ?? false, forAttribute: attribute)
+            AskQuickResults.pasteboard = previous
+            pasteboard.releaseGlobally()
+        }
+        try await withSystemMonitorLanguageAsync(language) {
+            try await launcher("sys-summary-\(language.rawValue)-\(light ? "light" : "dark")", light: light,
+                               inspect: { window, model in
+                                   let button = try SettingsBehaviorTestSupport.button(
+                                       L("system.info.copySummary"),
+                                       in: window
+                                   )
+                                   #expect(button
+                                       .value("accessibilityIdentifier") as? String == "system.info.copySummary")
+                                   #expect(
+                                       button.frame.width >= 28 && button.frame.width <= 32,
+                                       "the icon leaves room for the model name"
+                                   )
+                                   #expect(button.frame.height >= 28, "the copy target is comfortably clickable")
+                                   try button.press()
+                                   for _ in 0 ..< 100 where pasteboard.string(forType: .string) == nil {
+                                       try await Task.sleep(for: .milliseconds(10))
+                                   }
+                                   let snapshot = try #require(model.systemInfoStore.snapshot)
+                                   #expect(pasteboard.string(forType: .string) == SystemInfoReport.summary(snapshot))
+                                   #expect(model.showsSystemInfo, "copying keeps the configuration open")
+                               })
+        }
     }
 
     @Test func `launcher states`() async throws {
         try await withSystemMonitorLanguageAsync {
             try await launcher("sys-overview")
             try await launcher("sys-overview-light", light: true)
-            try await launcher("sys-storage") { $0.systemInfo.show(.storage) }
-            try await launcher("sys-network") { model in
+            try await launcher("sys-storage", prepare: { $0.systemInfo.show(.storage) })
+            try await launcher("sys-system", prepare: { $0.systemInfo.show(.system) })
+            try await launcher("sys-system-light", light: true, prepare: { $0.systemInfo.show(.system) })
+            try await launcher("sys-network", prepare: { model in
                 model.systemInfo.show(.network)
                 model.systemInfo.select("network.en0.mac")
-            }
-            try await launcher("sys-system-revealed") { model in
+            })
+            try await launcher("sys-system-revealed", prepare: { model in
                 model.systemInfo.show(.system)
                 model.systemInfo.select("system.serial")
                 model.systemInfo.toggleReveal("system.serial")
-            }
+            })
             try await launcher("sys-search-ip", filter: "ip")
             try await launcher("sys-search-none", filter: "nothing-like-this")
             try await launcher("sys-desktop", facts: SystemInfoFixtures.desktop())
         }
         try await withSystemMonitorLanguageAsync(.simplifiedChinese) {
             try await launcher("sys-overview-zh")
-            try await launcher("sys-display-zh-light", light: true) { $0.systemInfo.show(.display) }
+            try await launcher("sys-display-zh-light", light: true, prepare: { $0.systemInfo.show(.display) })
         }
     }
 }

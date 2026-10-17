@@ -153,10 +153,9 @@ struct SystemInfoLauncherView: View {
                         .lineLimit(1)
                 }
                 Spacer(minLength: 8)
-                Button { onEffect(.copy(SystemInfoReport.summary(snapshot))) } label: {
-                    Label(L("system.info.copySummary"), systemImage: "doc.on.doc").font(.system(size: 11.5))
+                AskHeaderIconButton(symbol: "doc.on.doc", label: L("system.info.copySummary")) {
+                    onEffect(.copy(SystemInfoReport.summary(snapshot)))
                 }
-                .buttonStyle(.bordered).controlSize(.small)
                 .accessibilityIdentifier("system.info.copySummary")
             }
             .padding(.horizontal, 14).padding(.vertical, 12)
@@ -295,7 +294,7 @@ extension SystemInfoLauncherView {
         }
         .padding(.horizontal, 10).padding(.vertical, 6)
         .frame(minHeight: 34)
-        .background(selected ? AskTheme.accentSoft : hovered == field.id ? AskTheme.hoverFill : Color.clear)
+        .background(selected ? AskTheme.accentSoft : Color.clear)
         .overlay(alignment: .leading) {
             if selected {
                 Rectangle().fill(AskTheme.accent).frame(width: 2)
