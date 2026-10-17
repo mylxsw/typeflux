@@ -1,0 +1,8 @@
+{"pid":76048,"uptime":533764.9267534167,"stage":"swift-entry"}
+{"pid":76048,"uptime":533765.87648275,"stage":"backend-begin"}
+{"pid":76048,"uptime":533766.0184403333,"stage":"backend-end"}
+{"pid":76048,"uptime":533767.0489100834,"stage":"model-begin"}
+{"pid":76048,"uptime":533784.90173325,"stage":"model-end"}
+{"pid":76048,"uptime":533785.5701285417,"stage":"context-begin"}
+{"pid":76048,"uptime":533786.3222512917,"stage":"context-end"}
+{"pid":76048,"uptime":533786.6389952083,"stage":"projector-begin"}

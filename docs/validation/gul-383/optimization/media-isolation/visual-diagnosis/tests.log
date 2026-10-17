@@ -1,0 +1,9 @@
+test_existing_negative_denominators_and_exact_lexical_gates (test_analysis.DiagnosisTests.test_existing_negative_denominators_and_exact_lexical_gates) ... ok
+test_invalid_vector_artifacts_fail_instead_of_reporting_valid_scores (test_analysis.DiagnosisTests.test_invalid_vector_artifacts_fail_instead_of_reporting_valid_scores) ... ok
+test_persisted_bytes_and_quantization_do_not_explain_rejection (test_analysis.DiagnosisTests.test_persisted_bytes_and_quantization_do_not_explain_rejection) ... ok
+test_scalar_cutoff_cannot_separate_fixed_positive_and_existing_wrong_color (test_analysis.DiagnosisTests.test_scalar_cutoff_cannot_separate_fixed_positive_and_existing_wrong_color) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.004s
+
+OK

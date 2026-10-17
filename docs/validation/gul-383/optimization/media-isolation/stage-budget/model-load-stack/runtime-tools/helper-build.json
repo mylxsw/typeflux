@@ -1,0 +1,21 @@
+{
+  "wall_seconds": 1.5821961669716984,
+  "exit_code": 0,
+  "command": [
+    "swiftc",
+    "-O",
+    "-profile-generate",
+    "-profile-coverage-mapping",
+    "-target",
+    "arm64-apple-macos14.0",
+    "-I",
+    "<native-cache>/include",
+    "-L",
+    "<native-cache>/lib",
+    "<repo>/docs/validation/gul-383/optimization/media-isolation/stage-budget/semantic_helper.swift",
+    "-o",
+    "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage"
+  ],
+  "source_sha256": "82c48427861edd4db384b83904d168e93e1c85790c269a349be2be0a3b760772",
+  "binary_sha256": "2c6ee0c667df2cb2c68fcd1297710eb063bd233817ff747687262e41a618a54b"
+}

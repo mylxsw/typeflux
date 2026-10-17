@@ -1,0 +1,9 @@
+{
+  "pids": {
+    "39889": "",
+    "39912": "",
+    "40022": ""
+  },
+  "private_directories": [],
+  "scope": "Only this one-shot run; no external cleanup signal required"
+}

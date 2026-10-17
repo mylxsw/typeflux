@@ -1,0 +1,13 @@
+{
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift": "e5fdce8f4f4dcbb27bb52c279c641b547cde1d523321f7251144e5425ceed0f5",
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift": "8ef635a2db7df7c62cb3ba775418d2c434f194f153bfca28e17e0459c1f4c09b",
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchRanking.swift": "4b9c1a4fdd22bce1c041cf4305f07bc840d0883653d664a0ebb0ee1e385db21d",
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticScoreCalibration.swift": "4202dd6b2d9fea677ae972c4cfc54d4051e778ee33afa1fe8e391b38417b8ecb",
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift": "6932cb190686224dc4e1f7304947e57e4e29c4ec406f3681c17f76f66372b897",
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+MediaJobs.swift": "4fcff59f24c84ec6cd48033286d0be7cc7c0b9f17ffb5bc94ba62bbd29a62c19",
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ImageText.swift": "47a14d48c2afccc22d3339eb07858d62bfe9307b949902450f8e45e5db5b81e8",
+  "Sources/TypefluxSemanticHelper/main.swift": "8e3d3a3b6b64a62b4fb0ec55cdda50108adc0b22b215f937c3d992eccd00d13d",
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": "f0e1d9d05da01c8830cc8ca176b584b02eceafc8237f5d54fba9f7295e82948e",
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift": "af5c269c93c08e1563efcfd7f61782f74d7de469298f00846d85d3faaeeae1a9",
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift": "325d3469677ee9280dbd23b726236fa42902e40cd369ed140e59a408f2a3cc1e"
+}

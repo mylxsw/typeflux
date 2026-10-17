@@ -1,0 +1,6 @@
+test_persisted_bytes_and_quantization_do_not_explain_rejection (test_analysis.DiagnosisTests.test_persisted_bytes_and_quantization_do_not_explain_rejection) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+OK

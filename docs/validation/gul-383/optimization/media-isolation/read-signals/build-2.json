@@ -1,0 +1,18 @@
+{
+  "command": [
+    "clang",
+    "-std=c11",
+    "-O2",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-dynamiclib",
+    "<repo>/docs/validation/gul-383/optimization/media-isolation/read-signals/observe.c",
+    "-o",
+    "<repo>/.build/stage-budget/observe.dylib"
+  ],
+  "wall_seconds": 0.2128775839228183,
+  "exit_code": 0,
+  "source_sha256": "fc610d3391dc0a47ab78bd93ba8f6bbc5231c5a01c81e680f2c733bfcec3cff3",
+  "binary_sha256": "b0ede8395ea13751e9d4d580cc3150221a69886686e791c3681280940211446f"
+}

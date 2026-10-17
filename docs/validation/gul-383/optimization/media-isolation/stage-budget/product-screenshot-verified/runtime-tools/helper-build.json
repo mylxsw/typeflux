@@ -1,0 +1,21 @@
+{
+  "command": [
+    "swiftc",
+    "-O",
+    "-profile-generate",
+    "-profile-coverage-mapping",
+    "-target",
+    "arm64-apple-macos14.0",
+    "-I",
+    "<native-cache>/include",
+    "-L",
+    "<native-cache>/lib",
+    "<repo>/Sources/TypefluxSemanticHelper/main.swift",
+    "-o",
+    "<repo>/.build/stage-budget/ProductSemanticHelper"
+  ],
+  "wall_seconds": 1.6017544999485835,
+  "exit_code": 0,
+  "source_sha256": "8e3d3a3b6b64a62b4fb0ec55cdda50108adc0b22b215f937c3d992eccd00d13d",
+  "binary_sha256": "1c2a49fa3620ff75612909ef91d1b49b8b83495a754c57a8c6c2905ca31c0b06"
+}

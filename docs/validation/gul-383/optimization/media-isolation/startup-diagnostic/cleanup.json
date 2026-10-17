@@ -1,0 +1,31 @@
+{
+  "processes": [
+    {
+      "pid": 34155,
+      "current_identity": null,
+      "no_live_process": true
+    },
+    {
+      "pid": 34203,
+      "current_identity": null,
+      "no_live_process": true
+    },
+    {
+      "pid": 34624,
+      "current_identity": null,
+      "no_live_process": true
+    },
+    {
+      "pid": 34634,
+      "current_identity": null,
+      "no_live_process": true
+    },
+    {
+      "pid": 34650,
+      "current_identity": null,
+      "no_live_process": true
+    }
+  ],
+  "private_roots_remaining": [],
+  "signals_sent_by_this_check": 0
+}

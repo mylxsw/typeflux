@@ -1,0 +1,11 @@
+{
+  "media": "screenshot",
+  "mode": "startup",
+  "stage_seconds": 90,
+  "budget_enabled": true,
+  "owned_pid": 5129,
+  "post_clear_pids_requiring_cleanup": [],
+  "exit_code": 1,
+  "wall_seconds": 97.78187662502751,
+  "private_root_removed": true
+}

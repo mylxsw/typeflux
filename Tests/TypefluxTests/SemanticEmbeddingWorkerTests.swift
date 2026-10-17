@@ -46,6 +46,34 @@ struct SemanticEmbeddingWorkerTests {
         worker.stop()
     }
 
+    @Test func indexingMediaKeepsBudgetThreadLimitsCancellationAndRetirement() async throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let vector = semanticVector()
+        let json = String(decoding: try JSONEncoder().encode([vector]), as: UTF8.self)
+        let source = try script("""
+        [ "$OMP_NUM_THREADS" = 1 ] && [ "$VECLIB_MAXIMUM_THREADS" = 1 ] || exit 2
+        while IFS= read -r line; do
+          /bin/sleep 0.12
+          printf '%s\\n' '{"entries":[],"embeddings":\(json)}'
+        done
+        """, in: root)
+        let owner = SemanticEmbeddingOwnership()
+        let budget = SemanticWorkBudget(enabled: true, state: { .init(active: true) })
+        let deadline = ProcessInfo.processInfo.systemUptime + 5
+        try budget.perform(cancelled: { ProcessInfo.processInfo.systemUptime >= deadline }) {
+            let worker = SemanticEmbeddingWorker(helper: URL(fileURLWithPath: "/bin/sh"), model: source,
+                indexing: true, projector: root.appendingPathComponent("synthetic-projector"), ownership: owner)
+            defer { worker.release() }
+            let input = SemanticMediaInput(kind: .image, path: root.appendingPathComponent("synthetic.png").path)
+            let actual = try worker.embed(input, cancelled: { ProcessInfo.processInfo.systemUptime >= deadline })
+            #expect(actual == vector)
+            #expect(budget.statistics.yields > 0)
+            #expect(throws: CancellationError.self) { try worker.embed(input, cancelled: { true }) }
+        }
+        await owner.native.waitUntilRetired()
+        #expect(!owner.native.isOccupied)
+    }
+
     @Test func idleReleaseRewarmsTheHelperWhileRetainingQueryVectors() async throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let starts = root.appendingPathComponent("starts"), calls = root.appendingPathComponent("calls")

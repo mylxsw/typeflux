@@ -1,0 +1,12 @@
+[
+  {
+    "phase": "compile-probe",
+    "wall_seconds": 2.047647458035499,
+    "exit_code": 0
+  },
+  {
+    "phase": "link-probe",
+    "wall_seconds": 64.66775445803069,
+    "exit_code": 0
+  }
+]

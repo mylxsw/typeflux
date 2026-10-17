@@ -1,0 +1,7 @@
+test_pid_reuse_or_failed_signal_cannot_claim_pause_duration (test_analysis.CorrelationTests.test_pid_reuse_or_failed_signal_cannot_claim_pause_duration) ... ok
+test_read_overlap_does_not_call_residual_cpu_time (test_analysis.CorrelationTests.test_read_overlap_does_not_call_residual_cpu_time) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.000s
+
+OK

@@ -1,0 +1,51 @@
+{
+  "dropped_events": 0,
+  "incomplete_events": 0,
+  "processes": {
+    "76648": {
+      "initial_seen": true,
+      "signal_calls": 0,
+      "identity_consistent": null,
+      "signal_failures_or_unpaired": 0,
+      "stop_pairs": 0,
+      "unmatched_final_stop": null,
+      "commanded_stop_seconds": 0,
+      "stops_acknowledged_status_4": 0,
+      "resumes_observed_status_2": 0,
+      "read_completions_recorded": 0,
+      "last_read_sequence_at_least": 0,
+      "slowest_recorded_reads": []
+    },
+    "76672": {
+      "initial_seen": true,
+      "signal_calls": 4,
+      "identity_consistent": true,
+      "signal_failures_or_unpaired": 0,
+      "stop_pairs": 2,
+      "unmatched_final_stop": null,
+      "commanded_stop_seconds": 0.08017741667572409,
+      "stops_acknowledged_status_4": 2,
+      "resumes_observed_status_2": 2,
+      "read_completions_recorded": 0,
+      "last_read_sequence_at_least": 0,
+      "slowest_recorded_reads": []
+    },
+    "76675": {
+      "initial_seen": false,
+      "signal_calls": 922,
+      "identity_consistent": true,
+      "signal_failures_or_unpaired": 0,
+      "stop_pairs": 461,
+      "unmatched_final_stop": null,
+      "commanded_stop_seconds": 18.93950370734092,
+      "stops_acknowledged_status_4": 461,
+      "resumes_observed_status_2": 461,
+      "read_completions_recorded": 0,
+      "last_read_sequence_at_least": 0,
+      "slowest_recorded_reads": []
+    }
+  },
+  "stage_seconds": {},
+  "qos_calls": [],
+  "scope": "Sparse fread completions and successful signal pairs, not syscall latency or CPU time. Cumulative bytes include rereads and are not file offsets. State 4/2 are Darwin stopped/running observations."
+}

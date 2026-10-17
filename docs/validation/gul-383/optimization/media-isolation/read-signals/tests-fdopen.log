@@ -1,0 +1,8 @@
+test_disabled_and_insecure_buffer_preserve_forwarding (test_observer.InterpositionTests.test_disabled_and_insecure_buffer_preserve_forwarding) ... ok
+test_full_buffer_preserves_forwarding (test_observer.InterpositionTests.test_full_buffer_preserves_forwarding) ... ok
+test_real_reads_signals_identity_and_common_clock (test_observer.InterpositionTests.test_real_reads_signals_identity_and_common_clock) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 3.115s
+
+OK

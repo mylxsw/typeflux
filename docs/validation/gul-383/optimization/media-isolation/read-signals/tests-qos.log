@@ -1,0 +1,20 @@
+setUpClass (test_observer.InterpositionTests) ... ERROR
+
+======================================================================
+ERROR: setUpClass (test_observer.InterpositionTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repo>/docs/validation/gul-383/optimization/media-isolation/read-signals/test_observer.py", line 53, in setUpClass
+    subprocess.run(['clang', '-Wall', '-Wextra', '-Werror', str(ROOT / 'fixture.c'),
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                    '-o', str(cls.binary)], check=True, capture_output=True)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['clang', '-Wall', '-Wextra', '-Werror', '<repo>/docs/validation/gul-383/optimization/media-isolation/read-signals/fixture.c', '-o', '/tmp/multica-task-2657199100/tmp7f3k_apr/fixture']' returned non-zero exit status 1.
+
+----------------------------------------------------------------------
+Ran 0 tests in 0.040s
+
+FAILED (errors=1)

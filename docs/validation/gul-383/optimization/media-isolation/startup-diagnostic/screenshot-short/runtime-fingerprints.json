@@ -1,0 +1,27 @@
+{
+  "embeddinggemma-2-Q8_0.gguf": {
+    "sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+    "bytes": 309855456
+  },
+  "mmproj-embeddinggemma-2-Q8_0.gguf": {
+    "sha256": "c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f",
+    "bytes": 554821024
+  },
+  "file-helper": {
+    "sha256": "cc72c493008124828f5ac7c473220533c65ab88dad514546d1d0292949a1aa34",
+    "bytes": 266681584
+  },
+  "model-helper": {
+    "sha256": "739bf5f47699395a568f83928571a8bda74743b1256c9fb652e420033503e90e",
+    "bytes": 11938592
+  },
+  "probe": {
+    "sha256": "cde1345d2162f90f144dc584dee40a67240b728c22d09477d2151db2b34c6f1e",
+    "bytes": 300275496
+  },
+  "fixture_source": "image-ocr-slice/synthetic-error.png",
+  "fixture": {
+    "sha256": "64ac930bf325bbe52cbdc5752322538d30d7b87a87667bb940917b3c05f2d253",
+    "bytes": 32816
+  }
+}

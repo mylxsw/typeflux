@@ -1,0 +1,4427 @@
+{
+  "false_positives" : 0,
+  "fixed_hits" : [
+    {
+      "kind" : "image",
+      "name" : "screen.png"
+    }
+  ],
+  "no_answer_denominator" : 50,
+  "note" : "Original scanned\/media_timestamp labels retained as known unsupported sources in this fixed-vector corpus;\nexcluded only from supported recall, never from raw rows or original denominators.",
+  "positive_denominators" : {
+    "audio_cross_language" : 25,
+    "audio_paraphrase" : 25,
+    "audio_topic" : 25,
+    "chinese_short" : 25,
+    "cross_language" : 25,
+    "identifier" : 25,
+    "image" : 6,
+    "lexical" : 25,
+    "long_tail" : 25
+  },
+  "recalled" : {
+    "audio_cross_language" : 25,
+    "audio_paraphrase" : 24,
+    "audio_topic" : 23,
+    "chinese_short" : 25,
+    "cross_language" : 24,
+    "identifier" : 25,
+    "image" : 6,
+    "lexical" : 25,
+    "long_tail" : 25
+  },
+  "rows" : [
+    {
+      "expected" : [
+        "en-00"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-00",
+        "tail-00",
+        "clip-00",
+        "zh-00",
+        "clip-22"
+      ],
+      "id" : "lexical-00",
+      "query" : "reimbursement instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-00"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-00"
+      ],
+      "id" : "identifier-00",
+      "query" : "TS-9000",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-00"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-00",
+        "zh-12",
+        "tail-00",
+        "en-00",
+        "clip-00"
+      ],
+      "id" : "chinese_short-00",
+      "query" : "报销",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-00"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "zh-00",
+        "zh-12",
+        "tail-00",
+        "en-00",
+        "clip-00"
+      ],
+      "id" : "cross_language-00",
+      "query" : "报销",
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "tail-00"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-00"
+      ],
+      "id" : "long_tail-00",
+      "query" : "TAIL-0000",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-00"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-00",
+      "query" : "SCAN-0000",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-00"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "tail-00",
+        "en-00",
+        "clip-00",
+        "clip-10",
+        "zh-00"
+      ],
+      "id" : "media_timestamp-00",
+      "query" : "reimbursement",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-00",
+      "query" : "unobtainium quantum zeppelin 0",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-01"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-01",
+        "tail-01",
+        "zh-01",
+        "clip-01",
+        "clip-07"
+      ],
+      "id" : "lexical-01",
+      "query" : "gardening instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-01"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-01"
+      ],
+      "id" : "identifier-01",
+      "query" : "TS-9001",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-01"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-01",
+        "en-01",
+        "zh-20",
+        "tail-01",
+        "clip-21"
+      ],
+      "id" : "chinese_short-01",
+      "query" : "园艺",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-01"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "en-01",
+        "tail-01",
+        "zh-01",
+        "clip-01",
+        "clip-07"
+      ],
+      "id" : "cross_language-01",
+      "query" : "gardening instructions",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "tail-01"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-01"
+      ],
+      "id" : "long_tail-01",
+      "query" : "TAIL-0001",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-01"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-01",
+      "query" : "SCAN-0001",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-01"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "en-01",
+        "tail-01",
+        "zh-01",
+        "clip-01",
+        "clip-21"
+      ],
+      "id" : "media_timestamp-01",
+      "query" : "gardening",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-01",
+      "query" : "unobtainium quantum zeppelin 1",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-02"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-02",
+        "tail-02",
+        "zh-02",
+        "clip-02",
+        "zh-14"
+      ],
+      "id" : "lexical-02",
+      "query" : "railway instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-02"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-02"
+      ],
+      "id" : "identifier-02",
+      "query" : "TS-9002",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-02"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-02",
+        "zh-19",
+        "en-02",
+        "tail-02",
+        "clip-02"
+      ],
+      "id" : "chinese_short-02",
+      "query" : "铁路",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-02"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "zh-02",
+        "zh-19",
+        "en-02",
+        "tail-02",
+        "clip-02"
+      ],
+      "id" : "cross_language-02",
+      "query" : "铁路",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "tail-02"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-02"
+      ],
+      "id" : "long_tail-02",
+      "query" : "TAIL-0002",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-02"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-02",
+      "query" : "SCAN-0002",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-02"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "en-02",
+        "tail-02",
+        "clip-02",
+        "zh-02",
+        "clip-06"
+      ],
+      "id" : "media_timestamp-02",
+      "query" : "railway",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-02",
+      "query" : "unobtainium quantum zeppelin 2",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-03"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-03",
+        "tail-03",
+        "zh-03",
+        "clip-03",
+        "clip-02"
+      ],
+      "id" : "lexical-03",
+      "query" : "backup instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-03"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-03"
+      ],
+      "id" : "identifier-03",
+      "query" : "TS-9003",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-03"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-03",
+        "en-03",
+        "tail-03",
+        "zh-10",
+        "clip-03"
+      ],
+      "id" : "chinese_short-03",
+      "query" : "备份",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-03"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "en-03",
+        "tail-03",
+        "zh-03",
+        "clip-03",
+        "clip-02"
+      ],
+      "id" : "cross_language-03",
+      "query" : "backup instructions",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "tail-03"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-03"
+      ],
+      "id" : "long_tail-03",
+      "query" : "TAIL-0003",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-03"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-03",
+      "query" : "SCAN-0003",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-03"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "tail-03",
+        "en-03",
+        "zh-03",
+        "clip-03",
+        "clip-02"
+      ],
+      "id" : "media_timestamp-03",
+      "query" : "backup",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-03",
+      "query" : "unobtainium quantum zeppelin 3",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-04"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-04",
+        "tail-04",
+        "zh-19",
+        "zh-04",
+        "clip-19"
+      ],
+      "id" : "lexical-04",
+      "query" : "onboarding instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-04"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-04"
+      ],
+      "id" : "identifier-04",
+      "query" : "TS-9004",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-04"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-04",
+        "zh-19",
+        "en-21",
+        "en-04",
+        "clip-12"
+      ],
+      "id" : "chinese_short-04",
+      "query" : "入职",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-04"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "zh-04",
+        "zh-19",
+        "en-21",
+        "en-04",
+        "clip-12"
+      ],
+      "id" : "cross_language-04",
+      "query" : "入职",
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "tail-04"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-04"
+      ],
+      "id" : "long_tail-04",
+      "query" : "TAIL-0004",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-04"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-04",
+      "query" : "SCAN-0004",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-04"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "tail-04",
+        "en-04",
+        "zh-04",
+        "clip-00",
+        "zh-19"
+      ],
+      "id" : "media_timestamp-04",
+      "query" : "onboarding",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-04",
+      "query" : "unobtainium quantum zeppelin 4",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-05"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-05",
+        "tail-05",
+        "zh-05",
+        "zh-20",
+        "clip-05"
+      ],
+      "id" : "lexical-05",
+      "query" : "cafeteria instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-05"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-05"
+      ],
+      "id" : "identifier-05",
+      "query" : "TS-9005",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-05"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-05",
+        "en-05",
+        "tail-05",
+        "zh-11",
+        "clip-05"
+      ],
+      "id" : "chinese_short-05",
+      "query" : "食堂",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-05"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "en-05",
+        "tail-05",
+        "zh-05",
+        "zh-20",
+        "clip-05"
+      ],
+      "id" : "cross_language-05",
+      "query" : "cafeteria instructions",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "tail-05"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-05"
+      ],
+      "id" : "long_tail-05",
+      "query" : "TAIL-0005",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-05"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-05",
+      "query" : "SCAN-0005",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-05"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "tail-05",
+        "en-05",
+        "zh-05",
+        "zh-20",
+        "clip-05"
+      ],
+      "id" : "media_timestamp-05",
+      "query" : "cafeteria",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-05",
+      "query" : "unobtainium quantum zeppelin 5",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-06"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-06",
+        "en-02",
+        "clip-06",
+        "zh-06",
+        "clip-02"
+      ],
+      "id" : "lexical-06",
+      "query" : "travel instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-06"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-06"
+      ],
+      "id" : "identifier-06",
+      "query" : "TS-9006",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-06"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-06",
+        "zh-13",
+        "en-06",
+        "clip-06",
+        "tail-06"
+      ],
+      "id" : "chinese_short-06",
+      "query" : "差旅",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-06"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "zh-06",
+        "zh-13",
+        "en-06",
+        "clip-06",
+        "tail-06"
+      ],
+      "id" : "cross_language-06",
+      "query" : "差旅",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "tail-06"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-06"
+      ],
+      "id" : "long_tail-06",
+      "query" : "TAIL-0006",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-06"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-06",
+      "query" : "SCAN-0006",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-06"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "en-06",
+        "tail-06",
+        "clip-06",
+        "zh-06",
+        "clip-02"
+      ],
+      "id" : "media_timestamp-06",
+      "query" : "travel",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-06",
+      "query" : "unobtainium quantum zeppelin 6",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-07"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-07",
+        "tail-07",
+        "zh-07",
+        "zh-19",
+        "clip-07"
+      ],
+      "id" : "lexical-07",
+      "query" : "fire instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-07"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-07"
+      ],
+      "id" : "identifier-07",
+      "query" : "TS-9007",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-07"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-07",
+        "zh-19",
+        "en-07",
+        "tail-07",
+        "red"
+      ],
+      "id" : "chinese_short-07",
+      "query" : "消防",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-07"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "en-07",
+        "tail-07",
+        "zh-07",
+        "zh-19",
+        "clip-07"
+      ],
+      "id" : "cross_language-07",
+      "query" : "fire instructions",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "tail-07"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-07"
+      ],
+      "id" : "long_tail-07",
+      "query" : "TAIL-0007",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-07"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-07",
+      "query" : "SCAN-0007",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-07"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "en-07",
+        "tail-07",
+        "zh-07",
+        "red",
+        "blue"
+      ],
+      "id" : "media_timestamp-07",
+      "query" : "fire",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-07",
+      "query" : "unobtainium quantum zeppelin 7",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-08"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-08",
+        "tail-08",
+        "zh-08",
+        "zh-14",
+        "clip-08"
+      ],
+      "id" : "lexical-08",
+      "query" : "recycling instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-08"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-08"
+      ],
+      "id" : "identifier-08",
+      "query" : "TS-9008",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-08"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-08",
+        "zh-10",
+        "en-08",
+        "tail-08",
+        "clip-04"
+      ],
+      "id" : "chinese_short-08",
+      "query" : "回收",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-08"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "zh-08",
+        "zh-10",
+        "en-08",
+        "tail-08",
+        "clip-04"
+      ],
+      "id" : "cross_language-08",
+      "query" : "回收",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "tail-08"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-08"
+      ],
+      "id" : "long_tail-08",
+      "query" : "TAIL-0008",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-08"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-08",
+      "query" : "SCAN-0008",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-08"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "en-08",
+        "tail-08",
+        "zh-08",
+        "clip-04",
+        "clip-08"
+      ],
+      "id" : "media_timestamp-08",
+      "query" : "recycling",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-08",
+      "query" : "unobtainium quantum zeppelin 8",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-09"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-09",
+        "clip-09",
+        "tail-09",
+        "zh-09",
+        "clip-18"
+      ],
+      "id" : "lexical-09",
+      "query" : "bicycle instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-09"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-09"
+      ],
+      "id" : "identifier-09",
+      "query" : "TS-9009",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-09"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-09",
+        "zh-18",
+        "clip-09",
+        "en-09",
+        "tail-09"
+      ],
+      "id" : "chinese_short-09",
+      "query" : "自行车",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-09"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "en-09",
+        "clip-09",
+        "tail-09",
+        "zh-09",
+        "clip-18"
+      ],
+      "id" : "cross_language-09",
+      "query" : "bicycle instructions",
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "tail-09"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-09"
+      ],
+      "id" : "long_tail-09",
+      "query" : "TAIL-0009",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-09"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-09",
+      "query" : "SCAN-0009",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-09"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "en-09",
+        "tail-09",
+        "clip-09",
+        "zh-09",
+        "clip-08"
+      ],
+      "id" : "media_timestamp-09",
+      "query" : "bicycle",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-09",
+      "query" : "unobtainium quantum zeppelin 9",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-10"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-10",
+        "tail-10",
+        "zh-10",
+        "clip-10",
+        "zh-23"
+      ],
+      "id" : "lexical-10",
+      "query" : "library instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-10"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-10"
+      ],
+      "id" : "identifier-10",
+      "query" : "TS-9010",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-10"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-10",
+        "zh-23",
+        "en-06",
+        "en-10",
+        "clip-10"
+      ],
+      "id" : "chinese_short-10",
+      "query" : "图书",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-10"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "zh-10",
+        "zh-23",
+        "en-06",
+        "en-10",
+        "clip-10"
+      ],
+      "id" : "cross_language-10",
+      "query" : "图书",
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "tail-10"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-10"
+      ],
+      "id" : "long_tail-10",
+      "query" : "TAIL-0010",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-10"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-10",
+      "query" : "SCAN-0010",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-10"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "tail-10",
+        "en-10",
+        "clip-10",
+        "clip-11",
+        "zh-10"
+      ],
+      "id" : "media_timestamp-10",
+      "query" : "library",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-10",
+      "query" : "unobtainium quantum zeppelin 10",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-11"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-11",
+        "tail-11",
+        "zh-11",
+        "clip-11",
+        "zh-07"
+      ],
+      "id" : "lexical-11",
+      "query" : "meeting instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-11"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-11"
+      ],
+      "id" : "identifier-11",
+      "query" : "TS-9011",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-11"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-11",
+        "tail-11",
+        "zh-21",
+        "en-11",
+        "clip-11"
+      ],
+      "id" : "chinese_short-11",
+      "query" : "会议",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-11"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "en-11",
+        "tail-11",
+        "zh-11",
+        "clip-11",
+        "zh-07"
+      ],
+      "id" : "cross_language-11",
+      "query" : "meeting instructions",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "tail-11"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-11"
+      ],
+      "id" : "long_tail-11",
+      "query" : "TAIL-0011",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-11"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-11",
+      "query" : "SCAN-0011",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-11"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "tail-11",
+        "en-11",
+        "clip-11",
+        "zh-11",
+        "clip-05"
+      ],
+      "id" : "media_timestamp-11",
+      "query" : "meeting",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-11",
+      "query" : "unobtainium quantum zeppelin 11",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-12"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-12",
+        "tail-12",
+        "clip-12",
+        "zh-12",
+        "clip-13"
+      ],
+      "id" : "lexical-12",
+      "query" : "payroll instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-12"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-12"
+      ],
+      "id" : "identifier-12",
+      "query" : "TS-9012",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-12"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-12",
+        "zh-00",
+        "tail-12",
+        "clip-12",
+        "en-12"
+      ],
+      "id" : "chinese_short-12",
+      "query" : "工资",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-12"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "zh-12",
+        "zh-00",
+        "tail-12",
+        "clip-12",
+        "en-12"
+      ],
+      "id" : "cross_language-12",
+      "query" : "工资",
+      "rank" : 5
+    },
+    {
+      "expected" : [
+        "tail-12"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-12"
+      ],
+      "id" : "long_tail-12",
+      "query" : "TAIL-0012",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-12"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-12",
+      "query" : "SCAN-0012",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-12"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "tail-12",
+        "en-12",
+        "clip-12",
+        "zh-12",
+        "clip-00"
+      ],
+      "id" : "media_timestamp-12",
+      "query" : "payroll",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-12",
+      "query" : "unobtainium quantum zeppelin 12",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-13"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-13",
+        "tail-13",
+        "zh-13",
+        "clip-13",
+        "clip-06"
+      ],
+      "id" : "lexical-13",
+      "query" : "vacation instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-13"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-13"
+      ],
+      "id" : "identifier-13",
+      "query" : "TS-9013",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-13"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-13",
+        "en-13",
+        "tail-13",
+        "zh-12",
+        "clip-13"
+      ],
+      "id" : "chinese_short-13",
+      "query" : "休假",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-13"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "en-13",
+        "tail-13",
+        "zh-13",
+        "clip-13",
+        "clip-06"
+      ],
+      "id" : "cross_language-13",
+      "query" : "vacation instructions",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "tail-13"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-13"
+      ],
+      "id" : "long_tail-13",
+      "query" : "TAIL-0013",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-13"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-13",
+      "query" : "SCAN-0013",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-13"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "tail-13",
+        "en-13",
+        "clip-06",
+        "clip-13",
+        "zh-13"
+      ],
+      "id" : "media_timestamp-13",
+      "query" : "vacation",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-13",
+      "query" : "unobtainium quantum zeppelin 13",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-14"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-14",
+        "tail-14",
+        "zh-14",
+        "clip-14",
+        "zh-23"
+      ],
+      "id" : "lexical-14",
+      "query" : "shipping instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-14"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-14"
+      ],
+      "id" : "identifier-14",
+      "query" : "TS-9014",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-14"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-14",
+        "zh-23",
+        "en-14",
+        "clip-14",
+        "tail-14"
+      ],
+      "id" : "chinese_short-14",
+      "query" : "快递",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-14"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "zh-14",
+        "zh-23",
+        "en-14",
+        "clip-14",
+        "tail-14"
+      ],
+      "id" : "cross_language-14",
+      "query" : "快递",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "tail-14"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-14"
+      ],
+      "id" : "long_tail-14",
+      "query" : "TAIL-0014",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-14"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-14",
+      "query" : "SCAN-0014",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-14"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "en-14",
+        "tail-14",
+        "clip-14",
+        "zh-14",
+        "clip-06"
+      ],
+      "id" : "media_timestamp-14",
+      "query" : "shipping",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-14",
+      "query" : "unobtainium quantum zeppelin 14",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-15"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-15",
+        "clip-15",
+        "tail-15",
+        "zh-15",
+        "clip-18"
+      ],
+      "id" : "lexical-15",
+      "query" : "printing instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-15"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-15"
+      ],
+      "id" : "identifier-15",
+      "query" : "TS-9015",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-15"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-15",
+        "zh-08",
+        "tail-15",
+        "en-15",
+        "clip-15"
+      ],
+      "id" : "chinese_short-15",
+      "query" : "打印",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-15"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "en-15",
+        "clip-15",
+        "tail-15",
+        "zh-15",
+        "clip-18"
+      ],
+      "id" : "cross_language-15",
+      "query" : "printing instructions",
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "tail-15"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-15"
+      ],
+      "id" : "long_tail-15",
+      "query" : "TAIL-0015",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-15"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-15",
+      "query" : "SCAN-0015",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-15"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "tail-15",
+        "en-15",
+        "clip-15",
+        "zh-15",
+        "clip-08"
+      ],
+      "id" : "media_timestamp-15",
+      "query" : "printing",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-15",
+      "query" : "unobtainium quantum zeppelin 15",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-16"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-16",
+        "tail-16",
+        "zh-16",
+        "clip-16",
+        "clip-18"
+      ],
+      "id" : "lexical-16",
+      "query" : "wifi instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-16"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-16"
+      ],
+      "id" : "identifier-16",
+      "query" : "TS-9016",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-16"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-16",
+        "en-16",
+        "zh-19",
+        "tail-16",
+        "clip-16"
+      ],
+      "id" : "chinese_short-16",
+      "query" : "无线网络",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-16"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "zh-16",
+        "en-16",
+        "zh-19",
+        "tail-16",
+        "clip-16"
+      ],
+      "id" : "cross_language-16",
+      "query" : "无线网络",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "tail-16"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-16"
+      ],
+      "id" : "long_tail-16",
+      "query" : "TAIL-0016",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-16"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-16",
+      "query" : "SCAN-0016",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-16"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "en-16",
+        "tail-16",
+        "zh-16",
+        "clip-16",
+        "clip-04"
+      ],
+      "id" : "media_timestamp-16",
+      "query" : "wifi",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-16",
+      "query" : "unobtainium quantum zeppelin 16",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-17"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-17",
+        "en-20",
+        "zh-17",
+        "zh-19",
+        "clip-17"
+      ],
+      "id" : "lexical-17",
+      "query" : "maintenance instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-17"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-17"
+      ],
+      "id" : "identifier-17",
+      "query" : "TS-9017",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-17"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-17",
+        "zh-19",
+        "en-17",
+        "tail-17",
+        "clip-17"
+      ],
+      "id" : "chinese_short-17",
+      "query" : "维修",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-17"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "en-17",
+        "en-20",
+        "zh-17",
+        "zh-19",
+        "clip-17"
+      ],
+      "id" : "cross_language-17",
+      "query" : "maintenance instructions",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "tail-17"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-17"
+      ],
+      "id" : "long_tail-17",
+      "query" : "TAIL-0017",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-17"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-17",
+      "query" : "SCAN-0017",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-17"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "en-17",
+        "tail-17",
+        "zh-17",
+        "clip-17",
+        "zh-20"
+      ],
+      "id" : "media_timestamp-17",
+      "query" : "maintenance",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-17",
+      "query" : "unobtainium quantum zeppelin 17",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-18"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-18",
+        "en-09",
+        "zh-18",
+        "clip-18",
+        "zh-09"
+      ],
+      "id" : "lexical-18",
+      "query" : "parking instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-18"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-18"
+      ],
+      "id" : "identifier-18",
+      "query" : "TS-9018",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-18"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-18",
+        "zh-09",
+        "en-18",
+        "tail-18",
+        "clip-09"
+      ],
+      "id" : "chinese_short-18",
+      "query" : "停车",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-18"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "zh-18",
+        "zh-09",
+        "en-18",
+        "tail-18",
+        "clip-09"
+      ],
+      "id" : "cross_language-18",
+      "query" : "停车",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "tail-18"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-18"
+      ],
+      "id" : "long_tail-18",
+      "query" : "TAIL-0018",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-18"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-18",
+      "query" : "SCAN-0018",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-18"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "en-18",
+        "tail-18",
+        "zh-18",
+        "clip-09",
+        "clip-18"
+      ],
+      "id" : "media_timestamp-18",
+      "query" : "parking",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-18",
+      "query" : "unobtainium quantum zeppelin 18",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-19"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-19",
+        "tail-19",
+        "zh-19",
+        "clip-19",
+        "zh-14"
+      ],
+      "id" : "lexical-19",
+      "query" : "training instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-19"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-19"
+      ],
+      "id" : "identifier-19",
+      "query" : "TS-9019",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-19"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-19",
+        "zh-04",
+        "tail-19",
+        "en-19",
+        "clip-19"
+      ],
+      "id" : "chinese_short-19",
+      "query" : "培训",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-19"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "en-19",
+        "tail-19",
+        "zh-19",
+        "clip-19",
+        "zh-14"
+      ],
+      "id" : "cross_language-19",
+      "query" : "training instructions",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "tail-19"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-19"
+      ],
+      "id" : "long_tail-19",
+      "query" : "TAIL-0019",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-19"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-19",
+      "query" : "SCAN-0019",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-19"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "tail-19",
+        "en-19",
+        "zh-19",
+        "clip-19",
+        "zh-04"
+      ],
+      "id" : "media_timestamp-19",
+      "query" : "training",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-19",
+      "query" : "unobtainium quantum zeppelin 19",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-20"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-20",
+        "tail-20",
+        "zh-20",
+        "clip-20",
+        "zh-01"
+      ],
+      "id" : "lexical-20",
+      "query" : "coffee instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-20"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-20"
+      ],
+      "id" : "identifier-20",
+      "query" : "TS-9020",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-20"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-20",
+        "en-20",
+        "tail-20",
+        "zh-19",
+        "clip-20"
+      ],
+      "id" : "chinese_short-20",
+      "query" : "咖啡",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-20"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "zh-20",
+        "en-20",
+        "tail-20",
+        "zh-19",
+        "clip-20"
+      ],
+      "id" : "cross_language-20",
+      "query" : "咖啡",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "tail-20"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-20"
+      ],
+      "id" : "long_tail-20",
+      "query" : "TAIL-0020",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-20"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-20",
+      "query" : "SCAN-0020",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-20"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "en-20",
+        "tail-20",
+        "zh-20",
+        "clip-20",
+        "clip-05"
+      ],
+      "id" : "media_timestamp-20",
+      "query" : "coffee",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-20",
+      "query" : "unobtainium quantum zeppelin 20",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-21"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-21",
+        "tail-21",
+        "zh-11",
+        "clip-11",
+        "clip-07"
+      ],
+      "id" : "lexical-21",
+      "query" : "conference instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-21"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-21"
+      ],
+      "id" : "identifier-21",
+      "query" : "TS-9021",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-21"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-21",
+        "zh-11",
+        "en-21",
+        "clip-21",
+        "tail-21"
+      ],
+      "id" : "chinese_short-21",
+      "query" : "会展",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-21"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "en-21",
+        "tail-21",
+        "zh-11",
+        "clip-11",
+        "clip-07"
+      ],
+      "id" : "cross_language-21",
+      "query" : "conference instructions",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "tail-21"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-21"
+      ],
+      "id" : "long_tail-21",
+      "query" : "TAIL-0021",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-21"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-21",
+      "query" : "SCAN-0021",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-21"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "en-21",
+        "tail-21",
+        "clip-11",
+        "zh-11",
+        "clip-21"
+      ],
+      "id" : "media_timestamp-21",
+      "query" : "conference",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-21",
+      "query" : "unobtainium quantum zeppelin 21",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-22"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-22",
+        "clip-22",
+        "tail-22",
+        "zh-00",
+        "zh-22"
+      ],
+      "id" : "lexical-22",
+      "query" : "invoice instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-22"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-22"
+      ],
+      "id" : "identifier-22",
+      "query" : "TS-9022",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-22"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-22",
+        "zh-00",
+        "clip-06",
+        "en-22",
+        "en-00"
+      ],
+      "id" : "chinese_short-22",
+      "query" : "开票",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-22"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "zh-22",
+        "zh-00",
+        "clip-06",
+        "en-22",
+        "en-00"
+      ],
+      "id" : "cross_language-22",
+      "query" : "开票",
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "tail-22"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-22"
+      ],
+      "id" : "long_tail-22",
+      "query" : "TAIL-0022",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-22"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-22",
+      "query" : "SCAN-0022",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-22"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "tail-22",
+        "en-22",
+        "clip-22",
+        "zh-00",
+        "zh-22"
+      ],
+      "id" : "media_timestamp-22",
+      "query" : "invoice",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-22",
+      "query" : "unobtainium quantum zeppelin 22",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-23"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-23",
+        "tail-23",
+        "zh-23",
+        "clip-23",
+        "zh-14"
+      ],
+      "id" : "lexical-23",
+      "query" : "warehouse instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-23"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-23"
+      ],
+      "id" : "identifier-23",
+      "query" : "TS-9023",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-23"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-23",
+        "zh-14",
+        "tail-23",
+        "en-23",
+        "clip-23"
+      ],
+      "id" : "chinese_short-23",
+      "query" : "仓库",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-23"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "en-23",
+        "tail-23",
+        "zh-23",
+        "clip-23",
+        "zh-14"
+      ],
+      "id" : "cross_language-23",
+      "query" : "warehouse instructions",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "tail-23"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-23"
+      ],
+      "id" : "long_tail-23",
+      "query" : "TAIL-0023",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-23"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-23",
+      "query" : "SCAN-0023",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-23"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "tail-23",
+        "en-23",
+        "zh-23",
+        "clip-23",
+        "clip-09"
+      ],
+      "id" : "media_timestamp-23",
+      "query" : "warehouse",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-23",
+      "query" : "unobtainium quantum zeppelin 23",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "en-24"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "en-24",
+        "tail-24",
+        "zh-24",
+        "clip-24",
+        "zh-14"
+      ],
+      "id" : "lexical-24",
+      "query" : "contract instructions",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-24"
+      ],
+      "group" : "identifier",
+      "hits" : [
+        "en-24"
+      ],
+      "id" : "identifier-24",
+      "query" : "TS-9024",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "zh-24"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-24",
+        "zh-11",
+        "en-24",
+        "tail-24",
+        "clip-24"
+      ],
+      "id" : "chinese_short-24",
+      "query" : "合同",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "en-24"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "zh-24",
+        "zh-11",
+        "en-24",
+        "tail-24",
+        "clip-24"
+      ],
+      "id" : "cross_language-24",
+      "query" : "合同",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "tail-24"
+      ],
+      "group" : "long_tail",
+      "hits" : [
+        "tail-24"
+      ],
+      "id" : "long_tail-24",
+      "query" : "TAIL-0024",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "scan-24"
+      ],
+      "group" : "scanned",
+      "hits" : [
+
+      ],
+      "id" : "scanned-24",
+      "query" : "SCAN-0024",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "media-24"
+      ],
+      "group" : "media_timestamp",
+      "hits" : [
+        "en-24",
+        "tail-24",
+        "zh-24",
+        "clip-24",
+        "zh-10"
+      ],
+      "id" : "media_timestamp-24",
+      "query" : "contract",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-24",
+      "query" : "unobtainium quantum zeppelin 24",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "clip-00"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-00",
+        "en-00",
+        "clip-00",
+        "clip-10",
+        "zh-00"
+      ],
+      "id" : "audio_topic-00",
+      "query" : "reimbursement",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "clip-00"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "tail-00",
+        "en-00",
+        "clip-00",
+        "clip-12",
+        "zh-00"
+      ],
+      "id" : "audio_paraphrase-00",
+      "query" : "What evidence and sign-off are needed to recover business spending?",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "clip-00"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-00",
+        "tail-00",
+        "zh-12",
+        "en-00",
+        "clip-00"
+      ],
+      "id" : "audio_cross_language-00",
+      "query" : "员工想拿回垫付的项目费用，要准备什么并由谁同意？",
+      "rank" : 5
+    },
+    {
+      "expected" : [
+        "clip-01"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "en-01",
+        "tail-01",
+        "zh-01",
+        "clip-01",
+        "clip-21"
+      ],
+      "id" : "audio_topic-01",
+      "query" : "gardening",
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "clip-01"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "en-01",
+        "tail-01",
+        "clip-01",
+        "zh-01",
+        "clip-20"
+      ],
+      "id" : "audio_paraphrase-01",
+      "query" : "How often should tomatoes receive water?",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "clip-01"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-01",
+        "clip-01",
+        "tail-01",
+        "en-01",
+        "zh-20"
+      ],
+      "id" : "audio_cross_language-01",
+      "query" : "番茄苗多久需要补一次水？",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-02"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "en-02",
+        "tail-02",
+        "clip-02",
+        "zh-02",
+        "clip-06"
+      ],
+      "id" : "audio_topic-02",
+      "query" : "railway",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "clip-02"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-02",
+        "tail-02",
+        "en-02",
+        "zh-02",
+        "clip-06"
+      ],
+      "id" : "audio_paraphrase-02",
+      "query" : "Is a sleeper train seat booking required before getting on?",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "clip-02"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-02",
+        "clip-02",
+        "tail-02",
+        "en-02",
+        "zh-19"
+      ],
+      "id" : "audio_cross_language-02",
+      "query" : "上夜行火车之前是否要先留座？",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-03"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-03",
+        "en-03",
+        "zh-03",
+        "clip-03",
+        "clip-02"
+      ],
+      "id" : "audio_topic-03",
+      "query" : "backup",
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "clip-03"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-03",
+        "tail-03",
+        "en-03",
+        "zh-03",
+        "clip-15"
+      ],
+      "id" : "audio_paraphrase-03",
+      "query" : "Where should protected duplicate data be stored?",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "clip-03"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-03",
+        "clip-03",
+        "zh-08",
+        "tail-03",
+        "en-03"
+      ],
+      "id" : "audio_cross_language-03",
+      "query" : "加密的数据副本应该放在哪里？",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-04"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-04",
+        "en-04",
+        "zh-04",
+        "clip-00",
+        "zh-19"
+      ],
+      "id" : "audio_topic-04",
+      "query" : "onboarding",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "clip-04"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "en-04",
+        "tail-04",
+        "clip-04",
+        "zh-04",
+        "clip-16"
+      ],
+      "id" : "audio_paraphrase-04",
+      "query" : "Where can a new employee pick up their computer?",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "clip-04"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-04",
+        "clip-04",
+        "en-04",
+        "tail-04",
+        "zh-13"
+      ],
+      "id" : "audio_cross_language-04",
+      "query" : "新同事去哪儿拿工作用的电脑？",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-05"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-05",
+        "en-05",
+        "zh-05",
+        "zh-20",
+        "clip-05"
+      ],
+      "id" : "audio_topic-05",
+      "query" : "cafeteria",
+      "rank" : 5
+    },
+    {
+      "expected" : [
+        "clip-05"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "tail-05",
+        "clip-05",
+        "en-05",
+        "zh-05",
+        "clip-20"
+      ],
+      "id" : "audio_paraphrase-05",
+      "query" : "At what hours is the midday meal available?",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-05"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-05",
+        "clip-05",
+        "zh-20",
+        "en-05",
+        "tail-05"
+      ],
+      "id" : "audio_cross_language-05",
+      "query" : "中饭在几点之间供应？",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-06"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "en-06",
+        "tail-06",
+        "clip-06",
+        "zh-06",
+        "clip-02"
+      ],
+      "id" : "audio_topic-06",
+      "query" : "travel",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "clip-06"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+
+      ],
+      "id" : "audio_paraphrase-06",
+      "query" : "Which channel and ticket class should employees use for trips?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "clip-06"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-06",
+        "zh-02",
+        "clip-06",
+        "clip-02",
+        "tail-02"
+      ],
+      "id" : "audio_cross_language-06",
+      "query" : "出差订机票应该选什么舱位，在哪里订？",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "clip-07"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "en-07",
+        "tail-07",
+        "zh-07",
+        "red",
+        "blue"
+      ],
+      "id" : "audio_topic-07",
+      "query" : "fire",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "clip-07"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "en-07",
+        "tail-07",
+        "zh-07",
+        "clip-07",
+        "zh-14"
+      ],
+      "id" : "audio_paraphrase-07",
+      "query" : "How should everyone evacuate and where should they gather?",
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "clip-07"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-07",
+        "en-07",
+        "tail-07",
+        "zh-19",
+        "clip-07"
+      ],
+      "id" : "audio_cross_language-07",
+      "query" : "遇到火警应该走哪条路，最后在哪里集合？",
+      "rank" : 5
+    },
+    {
+      "expected" : [
+        "clip-08"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "en-08",
+        "tail-08",
+        "zh-08",
+        "clip-04",
+        "clip-08"
+      ],
+      "id" : "audio_topic-08",
+      "query" : "recycling",
+      "rank" : 5
+    },
+    {
+      "expected" : [
+        "clip-08"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "en-08",
+        "clip-08",
+        "tail-08",
+        "zh-08",
+        "clip-04"
+      ],
+      "id" : "audio_paraphrase-08",
+      "query" : "Which container takes unsoiled sheets of paper?",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-08"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-08",
+        "clip-08",
+        "en-08",
+        "tail-08",
+        "zh-23"
+      ],
+      "id" : "audio_cross_language-08",
+      "query" : "没有污渍的废纸该丢进哪种颜色的桶？",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-09"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "en-09",
+        "tail-09",
+        "clip-09",
+        "zh-09",
+        "clip-08"
+      ],
+      "id" : "audio_topic-09",
+      "query" : "bicycle",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "clip-09"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "en-09",
+        "clip-09",
+        "tail-09",
+        "zh-09",
+        "clip-14"
+      ],
+      "id" : "audio_paraphrase-09",
+      "query" : "Where may staff leave their bikes?",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-09"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-09",
+        "clip-09",
+        "en-09",
+        "zh-18",
+        "tail-09"
+      ],
+      "id" : "audio_cross_language-09",
+      "query" : "骑来的单车放在什么地方？",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-10"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-10",
+        "en-10",
+        "clip-10",
+        "clip-11",
+        "zh-10"
+      ],
+      "id" : "audio_topic-10",
+      "query" : "library",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "clip-10"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-10",
+        "tail-10",
+        "en-10",
+        "zh-10",
+        "clip-03"
+      ],
+      "id" : "audio_paraphrase-10",
+      "query" : "How long can someone keep a borrowed book?",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "clip-10"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-10",
+        "clip-10",
+        "tail-10",
+        "en-10",
+        "zh-13"
+      ],
+      "id" : "audio_cross_language-10",
+      "query" : "借阅书籍多少天内需要送回？",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-11"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-11",
+        "en-11",
+        "clip-11",
+        "zh-11",
+        "clip-05"
+      ],
+      "id" : "audio_topic-11",
+      "query" : "meeting",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "clip-11"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "en-11",
+        "clip-11",
+        "tail-11",
+        "zh-11",
+        "clip-08"
+      ],
+      "id" : "audio_paraphrase-11",
+      "query" : "Which space should a group book for discussions?",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-11"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-11",
+        "clip-11",
+        "en-11",
+        "tail-11",
+        "zh-02"
+      ],
+      "id" : "audio_cross_language-11",
+      "query" : "多人讨论该提前订哪个房间？",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-12"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-12",
+        "en-12",
+        "clip-12",
+        "zh-12",
+        "clip-00"
+      ],
+      "id" : "audio_topic-12",
+      "query" : "payroll",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "clip-12"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-12",
+        "tail-12",
+        "en-12",
+        "clip-13",
+        "zh-12"
+      ],
+      "id" : "audio_paraphrase-12",
+      "query" : "On which working day does employee pay arrive?",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "clip-12"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-12",
+        "clip-12",
+        "tail-12",
+        "en-12",
+        "zh-13"
+      ],
+      "id" : "audio_cross_language-12",
+      "query" : "每个月哪一天能收到薪水？",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-13"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-13",
+        "en-13",
+        "clip-06",
+        "clip-13",
+        "zh-13"
+      ],
+      "id" : "audio_topic-13",
+      "query" : "vacation",
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "clip-13"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-13",
+        "en-13",
+        "tail-13",
+        "clip-12",
+        "zh-13"
+      ],
+      "id" : "audio_paraphrase-13",
+      "query" : "How far ahead should paid time off be requested?",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "clip-13"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-13",
+        "clip-13",
+        "en-13",
+        "zh-12",
+        "tail-13"
+      ],
+      "id" : "audio_cross_language-13",
+      "query" : "申请带薪年假需要提前多久？",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-14"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "en-14",
+        "tail-14",
+        "clip-14",
+        "zh-14",
+        "clip-06"
+      ],
+      "id" : "audio_topic-14",
+      "query" : "shipping",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "clip-14"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "tail-04",
+        "tail-23",
+        "clip-04",
+        "clip-14",
+        "zh-14"
+      ],
+      "id" : "audio_paraphrase-14",
+      "query" : "Where should a package awaiting collection be left?",
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "clip-14"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-14",
+        "zh-23",
+        "clip-14",
+        "en-14",
+        "tail-14"
+      ],
+      "id" : "audio_cross_language-14",
+      "query" : "等候寄送的包裹应该放在哪里？",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "clip-15"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-15",
+        "en-15",
+        "clip-15",
+        "zh-15",
+        "clip-08"
+      ],
+      "id" : "audio_topic-15",
+      "query" : "printing",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "clip-15"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "en-15",
+        "clip-15",
+        "tail-15",
+        "clip-08",
+        "zh-15"
+      ],
+      "id" : "audio_paraphrase-15",
+      "query" : "How should preliminary documents be printed to save paper?",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-15"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-15",
+        "zh-08",
+        "clip-15",
+        "tail-15",
+        "en-15"
+      ],
+      "id" : "audio_cross_language-15",
+      "query" : "文件初稿怎样印才节约纸张？",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "clip-16"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "en-16",
+        "tail-16",
+        "zh-16",
+        "clip-16",
+        "clip-04"
+      ],
+      "id" : "audio_topic-16",
+      "query" : "wifi",
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "clip-16"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "tail-16",
+        "clip-16",
+        "en-16",
+        "zh-16",
+        "clip-06"
+      ],
+      "id" : "audio_paraphrase-16",
+      "query" : "How do guests get short term internet access?",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-16"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-16",
+        "clip-16",
+        "tail-16",
+        "zh-04",
+        "en-16"
+      ],
+      "id" : "audio_cross_language-16",
+      "query" : "来访人员如何取得临时联网凭证？",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-17"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "en-17",
+        "tail-17",
+        "zh-17",
+        "clip-17",
+        "zh-20"
+      ],
+      "id" : "audio_topic-17",
+      "query" : "maintenance",
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "clip-17"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-17",
+        "en-17",
+        "tail-17",
+        "zh-17",
+        "clip-16"
+      ],
+      "id" : "audio_paraphrase-17",
+      "query" : "Who receives reports of damaged apparatus?",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "clip-17"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-17",
+        "clip-17",
+        "zh-19",
+        "en-17",
+        "tail-17"
+      ],
+      "id" : "audio_cross_language-17",
+      "query" : "仪器坏了该找哪个服务部门？",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-18"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "en-18",
+        "tail-18",
+        "zh-18",
+        "clip-09",
+        "clip-18"
+      ],
+      "id" : "audio_topic-18",
+      "query" : "parking",
+      "rank" : 5
+    },
+    {
+      "expected" : [
+        "clip-18"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "en-18",
+        "clip-18",
+        "tail-18",
+        "zh-18",
+        "clip-09"
+      ],
+      "id" : "audio_paraphrase-18",
+      "query" : "What must a driver do before using the indoor car park?",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-18"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-18",
+        "clip-18",
+        "zh-09",
+        "en-18",
+        "tail-18"
+      ],
+      "id" : "audio_cross_language-18",
+      "query" : "开车进地下车场之前要登记什么？",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-19"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-19",
+        "en-19",
+        "zh-19",
+        "clip-19",
+        "zh-04"
+      ],
+      "id" : "audio_topic-19",
+      "query" : "training",
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "clip-19"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "en-19",
+        "clip-19",
+        "tail-19",
+        "zh-19",
+        "clip-18"
+      ],
+      "id" : "audio_paraphrase-19",
+      "query" : "What is required before someone is allowed inside the lab?",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-19"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-19",
+        "zh-04",
+        "en-19",
+        "clip-19",
+        "tail-19"
+      ],
+      "id" : "audio_cross_language-19",
+      "query" : "想进入实验室，得先学完什么？",
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "clip-20"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "en-20",
+        "tail-20",
+        "zh-20",
+        "clip-20",
+        "clip-05"
+      ],
+      "id" : "audio_topic-20",
+      "query" : "coffee",
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "clip-20"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "tail-20",
+        "en-20",
+        "clip-20",
+        "zh-20",
+        "clip-05"
+      ],
+      "id" : "audio_paraphrase-20",
+      "query" : "What morning task keeps the kitchen drinks machine supplied?",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "clip-20"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-20",
+        "clip-20",
+        "tail-20",
+        "en-20",
+        "zh-01"
+      ],
+      "id" : "audio_cross_language-20",
+      "query" : "每天早上要为厨房的饮品机器添什么？",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-21"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "en-21",
+        "tail-21",
+        "clip-11",
+        "zh-11",
+        "clip-21"
+      ],
+      "id" : "audio_topic-21",
+      "query" : "conference",
+      "rank" : 5
+    },
+    {
+      "expected" : [
+        "clip-21"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "en-21",
+        "clip-21",
+        "tail-21",
+        "zh-21",
+        "clip-16"
+      ],
+      "id" : "audio_paraphrase-21",
+      "query" : "What identification is required to enter an exhibition?",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-21"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-21",
+        "clip-21",
+        "en-21",
+        "zh-16",
+        "tail-21"
+      ],
+      "id" : "audio_cross_language-21",
+      "query" : "进入展览现场需要出示什么证件？",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-22"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-22",
+        "en-22",
+        "clip-22",
+        "zh-00",
+        "zh-22"
+      ],
+      "id" : "audio_topic-22",
+      "query" : "invoice",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "clip-22"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "tail-22",
+        "en-22",
+        "clip-22",
+        "zh-22",
+        "zh-00"
+      ],
+      "id" : "audio_paraphrase-22",
+      "query" : "What order document accompanies a billing request?",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "clip-22"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-22",
+        "zh-00",
+        "clip-22",
+        "en-22",
+        "tail-22"
+      ],
+      "id" : "audio_cross_language-22",
+      "query" : "申请开具账单时应该附带哪张采购单据？",
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "clip-23"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-23",
+        "en-23",
+        "zh-23",
+        "clip-23",
+        "clip-09"
+      ],
+      "id" : "audio_topic-23",
+      "query" : "warehouse",
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "clip-23"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "tail-23",
+        "clip-23",
+        "en-23",
+        "zh-23",
+        "clip-22"
+      ],
+      "id" : "audio_paraphrase-23",
+      "query" : "What inventory step is required before relocating stock?",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "clip-23"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-23",
+        "zh-14",
+        "tail-23",
+        "clip-23",
+        "en-23"
+      ],
+      "id" : "audio_cross_language-23",
+      "query" : "挪动库里的货物之前得先扫什么？",
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "clip-24"
+      ],
+      "group" : "audio_topic",
+      "hits" : [
+        "en-24",
+        "tail-24",
+        "zh-24",
+        "clip-24",
+        "zh-10"
+      ],
+      "id" : "audio_topic-24",
+      "query" : "contract",
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "clip-24"
+      ],
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-24",
+        "en-24",
+        "tail-24",
+        "zh-24",
+        "clip-00"
+      ],
+      "id" : "audio_paraphrase-24",
+      "query" : "Who must approve agreements with vendors?",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "clip-24"
+      ],
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-24",
+        "clip-24",
+        "en-24",
+        "tail-24",
+        "zh-00"
+      ],
+      "id" : "audio_cross_language-24",
+      "query" : "与供货商签的协议必须由谁审阅？",
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-00",
+      "query" : "How do dragons obtain licenses for teleportation?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-01",
+      "query" : "Does the lunar embassy accept crystal currency?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-02",
+      "query" : "Where can a mermaid recharge a flying chariot?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-03",
+      "query" : "How many feathers are needed to steer a comet?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-04",
+      "query" : "What language do invisible nebula creatures speak?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-05",
+      "query" : "Can a wizard turn moonlight into edible diamonds?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-06",
+      "query" : "Which spell reverses the direction of gravity?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-07",
+      "query" : "Where is the portal to the underwater kingdom?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-08",
+      "query" : "How is a phoenix hatched inside a neutron star?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-09",
+      "query" : "Who invented time travel for ancient dinosaurs?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-10",
+      "query" : "What fuel powers a spaceship made of starlight?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-11",
+      "query" : "How can a ghost unlock a parallel universe?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-12",
+      "query" : "Are enchanted asteroids allergic to silver dust?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-13",
+      "query" : "How are unicorn dreams transmitted to distant galaxies?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-14",
+      "query" : "Which potion lets a jellyfish breathe in vacuum?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-15",
+      "query" : "Why do imaginary planets orbit a square sun?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-16",
+      "query" : "Can talking mountains predict the colour of tomorrow?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-17",
+      "query" : "Where are the invisible wings of a cosmic serpent?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-18",
+      "query" : "How does a sorcerer bottle the sound of thunder?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-19",
+      "query" : "What is the mass of a fictional antimatter dragon?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-20",
+      "query" : "How many moons fit inside a magical teacup?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-21",
+      "query" : "Which mythical ocean contains liquid rainbows?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-22",
+      "query" : "How does a centaur repair a broken time machine?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-23",
+      "query" : "What password opens the dream dimension?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-24",
+      "query" : "How do extraterrestrial fairies manufacture dark matter?",
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "red"
+      ],
+      "group" : "image",
+      "hits" : [
+        "red",
+        "blue",
+        "en-08",
+        "en-21",
+        "clip-08"
+      ],
+      "id" : "image_red-0",
+      "query" : "a red square",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "red"
+      ],
+      "group" : "image",
+      "hits" : [
+        "red",
+        "screen",
+        "blue",
+        "en-01",
+        "tail-09"
+      ],
+      "id" : "image_red-1",
+      "query" : "red image",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "red"
+      ],
+      "group" : "image",
+      "hits" : [
+        "red",
+        "blue",
+        "en-01",
+        "en-08",
+        "clip-08"
+      ],
+      "id" : "image_red-2",
+      "query" : "a photo of a red square",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "blue"
+      ],
+      "group" : "image",
+      "hits" : [
+        "blue",
+        "en-08",
+        "clip-08",
+        "tail-08",
+        "red"
+      ],
+      "id" : "image_blue-0",
+      "query" : "a blue square",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "blue"
+      ],
+      "group" : "image",
+      "hits" : [
+        "blue",
+        "screen",
+        "red",
+        "clip-08",
+        "en-08"
+      ],
+      "id" : "image_blue-1",
+      "query" : "blue image",
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "blue"
+      ],
+      "group" : "image",
+      "hits" : [
+        "blue",
+        "en-08",
+        "clip-08",
+        "tail-08",
+        "red"
+      ],
+      "id" : "image_blue-2",
+      "query" : "a photo of a blue square",
+      "rank" : 1
+    }
+  ]
+}

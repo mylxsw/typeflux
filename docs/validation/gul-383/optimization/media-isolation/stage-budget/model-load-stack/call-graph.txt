@@ -1,0 +1,32 @@
+    786 Thread_24494959   DispatchQueue_1: com.apple.main-thread  (serial)
+      786 start  (in dyld) + 6992  [0x1817e04e4]
+        786 main  (in TypefluxSemanticHelper-coverage) + 760  [0x102529778]
+          786 Encoder.init(path:projector:background:)  (in TypefluxSemanticHelper-coverage) + 520  [0x10252c7a8]
+            786 llama_model_load_from_file  (in TypefluxSemanticHelper-coverage) + 204  [0x1026f0b2c]
+              786 llama_model_load_from_file_impl(gguf_context*, void (*)(ggml_tensor*, void*), void*, std::basic_string<char> const&, std::vector<std::basic_string<char>>&, __sFILE*, llama_model_params)  (in TypefluxSemanticHelper-coverage) + 232  [0x1026efb34]
+                786 llama_model_loader::llama_model_loader(gguf_context*, void (*)(ggml_tensor*, void*), void*, std::basic_string<char> const&, std::vector<std::basic_string<char>>&, __sFILE*, llama_load_mode, bool, bool, bool, llama_model_kv_override const*, llama_model_tensor_buft_override const*)  (in TypefluxSemanticHelper-coverage) + 700  [0x10278bb84]
+                  786 gguf_init_from_file  (in TypefluxSemanticHelper-coverage) + 64  [0x1028638e0]
+                    786 gguf_init_from_file_ptr  (in TypefluxSemanticHelper-coverage) + 216  [0x1028636d0]
+                      786 gguf_init_from_reader(gguf_reader const&, gguf_init_params)  (in TypefluxSemanticHelper-coverage) + 1872  [0x102862944]
+                        786 gguf_read_emplace_helper<std::basic_string<char>>(gguf_reader const&, std::vector<gguf_kv>&, std::basic_string<char> const&, bool, unsigned long)  (in TypefluxSemanticHelper-coverage) + 296  [0x10286a818]
+                          400 gguf_reader::read(std::basic_string<char>&) const  (in TypefluxSemanticHelper-coverage) + 120  [0x102868e6c]
+                          + 400 gguf_file_reader_callback(void*, void*, unsigned long long, unsigned long)  (in TypefluxSemanticHelper-coverage) + 64  [0x102863728]
+                          +   400 fread  (in libsystem_c.dylib) + 136  [0x181a4dc5c]
+                          +     400 __fread  (in libsystem_c.dylib) + 488  [0x181a453a0]
+                          +       400 __srefill1  (in libsystem_c.dylib) + 36  [0x181a450f0]
+                          +         400 _sread  (in libsystem_c.dylib) + 32  [0x181a4515c]
+                          +           400 __sread  (in libsystem_c.dylib) + 24  [0x181a67a08]
+                          +             400 __read_nocancel  (in libsystem_kernel.dylib) + 8  [0x181b69cac]
+                          386 gguf_reader::read(std::basic_string<char>&) const  (in TypefluxSemanticHelper-coverage) + 408  [0x102868f8c]
+                            386 gguf_file_reader_callback(void*, void*, unsigned long long, unsigned long)  (in TypefluxSemanticHelper-coverage) + 64  [0x102863728]
+                              386 fread  (in libsystem_c.dylib) + 136  [0x181a4dc5c]
+                                386 __fread  (in libsystem_c.dylib) + 488  [0x181a453a0]
+                                  386 __srefill1  (in libsystem_c.dylib) + 36  [0x181a450f0]
+                                    386 _sread  (in libsystem_c.dylib) + 32  [0x181a4515c]
+                                      386 __sread  (in libsystem_c.dylib) + 24  [0x181a67a08]
+                                        386 __read_nocancel  (in libsystem_kernel.dylib) + 8  [0x181b69cac]
+
+Total number in stack (recursive counted multiple, when >=5):
+
+Sort by top of stack, same collapsed (when >= 5):
+        __read_nocancel  (in libsystem_kernel.dylib)        786

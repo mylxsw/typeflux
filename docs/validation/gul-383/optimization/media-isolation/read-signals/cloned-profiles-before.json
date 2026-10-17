@@ -1,0 +1,6 @@
+{
+  ".build/video-frames/arm64-apple-macosx/debug/codecov/default.profdata": "bc1a47f991fa17d7ef570a78c20b76d956bff1b43778ecd900018b296251ea5a",
+  ".build/video-frames/arm64-apple-macosx/debug/codecov/XCTest6755308177549342514_0.44979.profraw": "34849e8244b1cf30f3f16aadd47c52578ec5df4154215a921c95d607b68374d5",
+  ".build/video-frames/arm64-apple-macosx/debug/codecov/Swift Testing6755308177549342514_0.44980.profraw": "7d26dc9a3d8b938468fc8ea1e6592c9d72f7d982ed2ed528b5b0c88edc9ba94c",
+  ".build/video-frames/arm64-apple-macosx/debug/codecov/Typeflux.json": "f75539007fcccfabc131bf04724631e34a0755de817e40e0e0a80e6aff870c9e"
+}

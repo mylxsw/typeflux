@@ -1,0 +1,8 @@
+{
+  "pid": 34650,
+  "requested_duration_seconds": 1,
+  "timeout_seconds": 3,
+  "exit_code": 255,
+  "output": "sample[34996]: sample cannot examine process 34650 (with name like '34650') because it no longer appears to be running.\n",
+  "wall_seconds": 0.010669499984942377
+}

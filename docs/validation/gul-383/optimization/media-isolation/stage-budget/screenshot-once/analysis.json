@@ -1,0 +1,690 @@
+{
+  "processes": {
+    "39889": {
+      "executable": "<repo>/.build/stage-budget/MediaProbe",
+      "samples": [
+        {
+          "seconds": 1.577225291985087,
+          "state": "Ss",
+          "cpu_seconds": 0.0,
+          "rss_kib": 32
+        },
+        {
+          "seconds": 2.6230351669946685,
+          "state": "Ss",
+          "cpu_seconds": 0.0,
+          "rss_kib": 32
+        },
+        {
+          "seconds": 3.66729666700121,
+          "state": "Ss",
+          "cpu_seconds": 0.0,
+          "rss_kib": 32
+        },
+        {
+          "seconds": 4.68601075001061,
+          "state": "Ss",
+          "cpu_seconds": 0.0,
+          "rss_kib": 32
+        },
+        {
+          "seconds": 5.723313707974739,
+          "state": "Ss",
+          "cpu_seconds": 0.0,
+          "rss_kib": 32
+        },
+        {
+          "seconds": 6.74289829202462,
+          "state": "Ss",
+          "cpu_seconds": 0.04,
+          "rss_kib": 320
+        },
+        {
+          "seconds": 7.772041167016141,
+          "state": "Us",
+          "cpu_seconds": 0.17,
+          "rss_kib": 42144
+        },
+        {
+          "seconds": 8.827310082968324,
+          "state": "Us",
+          "cpu_seconds": 0.23,
+          "rss_kib": 55280
+        },
+        {
+          "seconds": 9.875823499984108,
+          "state": "Us",
+          "cpu_seconds": 0.36,
+          "rss_kib": 56320
+        },
+        {
+          "seconds": 10.92047975002788,
+          "state": "Us",
+          "cpu_seconds": 0.5,
+          "rss_kib": 56512
+        },
+        {
+          "seconds": 11.942721750005148,
+          "state": "Us",
+          "cpu_seconds": 0.52,
+          "rss_kib": 57584
+        },
+        {
+          "seconds": 13.233199166948907,
+          "state": "Ss",
+          "cpu_seconds": 0.53,
+          "rss_kib": 53920
+        },
+        {
+          "seconds": 14.271098874974996,
+          "state": "Us",
+          "cpu_seconds": 0.64,
+          "rss_kib": 58080
+        },
+        {
+          "seconds": 15.603451499948278,
+          "state": "Ss",
+          "cpu_seconds": 0.77,
+          "rss_kib": 58208
+        },
+        {
+          "seconds": 16.641278499970213,
+          "state": "Ss",
+          "cpu_seconds": 0.89,
+          "rss_kib": 58080
+        },
+        {
+          "seconds": 17.685553916962817,
+          "state": "Us",
+          "cpu_seconds": 1.0,
+          "rss_kib": 58272
+        },
+        {
+          "seconds": 18.729194957995787,
+          "state": "Ss",
+          "cpu_seconds": 1.1,
+          "rss_kib": 58144
+        },
+        {
+          "seconds": 19.76485766703263,
+          "state": "Us",
+          "cpu_seconds": 1.13,
+          "rss_kib": 57984
+        },
+        {
+          "seconds": 20.858429457992315,
+          "state": "Rs",
+          "cpu_seconds": 1.14,
+          "rss_kib": 53360
+        },
+        {
+          "seconds": 24.890299333026633,
+          "state": "Us",
+          "cpu_seconds": 1.17,
+          "rss_kib": 53248
+        },
+        {
+          "seconds": 25.934687083004974,
+          "state": "Ss",
+          "cpu_seconds": 1.18,
+          "rss_kib": 53264
+        },
+        {
+          "seconds": 26.969233375042677,
+          "state": "Ss",
+          "cpu_seconds": 1.18,
+          "rss_kib": 53264
+        },
+        {
+          "seconds": 28.00698837498203,
+          "state": "Ss",
+          "cpu_seconds": 1.19,
+          "rss_kib": 53392
+        },
+        {
+          "seconds": 29.05300041695591,
+          "state": "Us",
+          "cpu_seconds": 1.2,
+          "rss_kib": 53392
+        },
+        {
+          "seconds": 30.09054104203824,
+          "state": "Us",
+          "cpu_seconds": 1.21,
+          "rss_kib": 53264
+        },
+        {
+          "seconds": 31.412620041985065,
+          "state": "Us",
+          "cpu_seconds": 1.22,
+          "rss_kib": 53312
+        },
+        {
+          "seconds": 32.44982966699172,
+          "state": "Us",
+          "cpu_seconds": 1.23,
+          "rss_kib": 53312
+        },
+        {
+          "seconds": 33.49243787501473,
+          "state": "Ss",
+          "cpu_seconds": 1.24,
+          "rss_kib": 53312
+        },
+        {
+          "seconds": 34.53783570800442,
+          "state": "Ss",
+          "cpu_seconds": 1.24,
+          "rss_kib": 53312
+        },
+        {
+          "seconds": 35.627886667032726,
+          "state": "Ss",
+          "cpu_seconds": 1.25,
+          "rss_kib": 53312
+        },
+        {
+          "seconds": 36.66842570796143,
+          "state": "Ss",
+          "cpu_seconds": 1.26,
+          "rss_kib": 53312
+        },
+        {
+          "seconds": 37.710476833046414,
+          "state": "Ss",
+          "cpu_seconds": 1.27,
+          "rss_kib": 53312
+        },
+        {
+          "seconds": 38.75092737504747,
+          "state": "Ss",
+          "cpu_seconds": 1.29,
+          "rss_kib": 53312
+        },
+        {
+          "seconds": 39.78774354199413,
+          "state": "Ss",
+          "cpu_seconds": 1.29,
+          "rss_kib": 53312
+        },
+        {
+          "seconds": 40.8323763749795,
+          "state": "Ss",
+          "cpu_seconds": 1.3,
+          "rss_kib": 53328
+        },
+        {
+          "seconds": 41.878888041945174,
+          "state": "Ss",
+          "cpu_seconds": 1.31,
+          "rss_kib": 53360
+        },
+        {
+          "seconds": 42.93548125005327,
+          "state": "Ss",
+          "cpu_seconds": 1.32,
+          "rss_kib": 53360
+        },
+        {
+          "seconds": 43.97189179202542,
+          "state": "Ss",
+          "cpu_seconds": 1.33,
+          "rss_kib": 53488
+        },
+        {
+          "seconds": 45.10544995800592,
+          "state": "Us",
+          "cpu_seconds": 1.33,
+          "rss_kib": 53360
+        },
+        {
+          "seconds": 46.14694687502924,
+          "state": "Ss",
+          "cpu_seconds": 1.34,
+          "rss_kib": 53488
+        },
+        {
+          "seconds": 47.18265299999621,
+          "state": "Us",
+          "cpu_seconds": 1.35,
+          "rss_kib": 53488
+        },
+        {
+          "seconds": 48.22473712498322,
+          "state": "Ss",
+          "cpu_seconds": 1.37,
+          "rss_kib": 53664
+        }
+      ],
+      "stages": [],
+      "observed_cpu_progress_seconds": 1.37,
+      "live_observation_wall_seconds": 46.647511832998134,
+      "state_counts": {
+        "Rs": 1,
+        "Ss": 26,
+        "Us": 15
+      },
+      "native_entry_observed": false
+    },
+    "39912": {
+      "executable": "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux",
+      "samples": [
+        {
+          "seconds": 11.942721750005148,
+          "state": "T",
+          "cpu_seconds": 0.06,
+          "rss_kib": 21120
+        },
+        {
+          "seconds": 13.233199166948907,
+          "state": "T",
+          "cpu_seconds": 0.12,
+          "rss_kib": 36496
+        },
+        {
+          "seconds": 14.271098874974996,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32688
+        },
+        {
+          "seconds": 15.603451499948278,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32688
+        },
+        {
+          "seconds": 16.641278499970213,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32688
+        },
+        {
+          "seconds": 17.685553916962817,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32688
+        },
+        {
+          "seconds": 18.729194957995787,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 19.76485766703263,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32592
+        },
+        {
+          "seconds": 20.858429457992315,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32592
+        },
+        {
+          "seconds": 24.890299333026633,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 25.934687083004974,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 26.969233375042677,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 28.00698837498203,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 29.05300041695591,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 30.09054104203824,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 31.412620041985065,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 32.44982966699172,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 33.49243787501473,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 34.53783570800442,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 35.627886667032726,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 36.66842570796143,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 37.710476833046414,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 38.75092737504747,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 39.78774354199413,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 40.8323763749795,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 41.878888041945174,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 42.93548125005327,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 43.97189179202542,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 45.10544995800592,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 46.14694687502924,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 47.18265299999621,
+          "state": "S",
+          "cpu_seconds": 0.12,
+          "rss_kib": 32544
+        },
+        {
+          "seconds": 48.22473712498322,
+          "state": "Z",
+          "cpu_seconds": 0.0,
+          "rss_kib": 0
+        }
+      ],
+      "stages": [],
+      "observed_cpu_progress_seconds": 0.06,
+      "live_observation_wall_seconds": 35.23993124999106,
+      "state_counts": {
+        "S": 29,
+        "T": 2
+      },
+      "native_entry_observed": false
+    },
+    "40022": {
+      "executable": "<repo>/.build/stage-budget/TypefluxSemanticHelper-coverage",
+      "samples": [
+        {
+          "seconds": 19.76485766703263,
+          "state": "T",
+          "cpu_seconds": 0.0,
+          "rss_kib": 32
+        },
+        {
+          "seconds": 20.858429457992315,
+          "state": "T",
+          "cpu_seconds": 0.0,
+          "rss_kib": 144
+        },
+        {
+          "seconds": 24.890299333026633,
+          "state": "U",
+          "cpu_seconds": 0.0,
+          "rss_kib": 144
+        },
+        {
+          "seconds": 25.934687083004974,
+          "state": "U",
+          "cpu_seconds": 0.0,
+          "rss_kib": 144
+        },
+        {
+          "seconds": 26.969233375042677,
+          "state": "U",
+          "cpu_seconds": 0.01,
+          "rss_kib": 144
+        },
+        {
+          "seconds": 28.00698837498203,
+          "state": "T",
+          "cpu_seconds": 0.01,
+          "rss_kib": 144
+        },
+        {
+          "seconds": 29.05300041695591,
+          "state": "T",
+          "cpu_seconds": 0.01,
+          "rss_kib": 144
+        },
+        {
+          "seconds": 30.09054104203824,
+          "state": "T",
+          "cpu_seconds": 0.01,
+          "rss_kib": 320
+        },
+        {
+          "seconds": 31.412620041985065,
+          "state": "T",
+          "cpu_seconds": 0.02,
+          "rss_kib": 5472
+        },
+        {
+          "seconds": 32.44982966699172,
+          "state": "T",
+          "cpu_seconds": 0.03,
+          "rss_kib": 7888
+        },
+        {
+          "seconds": 33.49243787501473,
+          "state": "T",
+          "cpu_seconds": 0.03,
+          "rss_kib": 8032
+        },
+        {
+          "seconds": 34.53783570800442,
+          "state": "T",
+          "cpu_seconds": 0.03,
+          "rss_kib": 14320
+        },
+        {
+          "seconds": 35.627886667032726,
+          "state": "T",
+          "cpu_seconds": 0.03,
+          "rss_kib": 14320
+        },
+        {
+          "seconds": 36.66842570796143,
+          "state": "T",
+          "cpu_seconds": 0.03,
+          "rss_kib": 14320
+        },
+        {
+          "seconds": 37.710476833046414,
+          "state": "T",
+          "cpu_seconds": 0.03,
+          "rss_kib": 14320
+        },
+        {
+          "seconds": 38.75092737504747,
+          "state": "T",
+          "cpu_seconds": 0.03,
+          "rss_kib": 14320
+        },
+        {
+          "seconds": 39.78774354199413,
+          "state": "T",
+          "cpu_seconds": 0.04,
+          "rss_kib": 14320
+        },
+        {
+          "seconds": 40.8323763749795,
+          "state": "T",
+          "cpu_seconds": 0.04,
+          "rss_kib": 14320
+        },
+        {
+          "seconds": 41.878888041945174,
+          "state": "T",
+          "cpu_seconds": 0.04,
+          "rss_kib": 14320
+        },
+        {
+          "seconds": 42.93548125005327,
+          "state": "T",
+          "cpu_seconds": 0.04,
+          "rss_kib": 14320
+        },
+        {
+          "seconds": 43.97189179202542,
+          "state": "T",
+          "cpu_seconds": 0.04,
+          "rss_kib": 14320
+        },
+        {
+          "seconds": 45.10544995800592,
+          "state": "T",
+          "cpu_seconds": 0.04,
+          "rss_kib": 14320
+        },
+        {
+          "seconds": 46.14694687502924,
+          "state": "U",
+          "cpu_seconds": 0.04,
+          "rss_kib": 14320
+        },
+        {
+          "seconds": 47.18265299999621,
+          "state": "T",
+          "cpu_seconds": 0.04,
+          "rss_kib": 14320
+        },
+        {
+          "seconds": 48.22473712498322,
+          "state": "Z",
+          "cpu_seconds": 0.0,
+          "rss_kib": 0
+        }
+      ],
+      "stages": [
+        {
+          "stage": "swift-entry",
+          "probe_seconds": 24.025978916790336
+        },
+        {
+          "stage": "backend-begin",
+          "probe_seconds": 24.333701666793786
+        },
+        {
+          "stage": "backend-end",
+          "probe_seconds": 24.64210308343172
+        },
+        {
+          "stage": "model-begin",
+          "probe_seconds": 25.25470537506044
+        }
+      ],
+      "observed_cpu_progress_seconds": 0.04,
+      "live_observation_wall_seconds": 27.41779533296358,
+      "state_counts": {
+        "T": 20,
+        "U": 4
+      },
+      "native_entry_observed": true
+    }
+  },
+  "requests": [
+    {
+      "start_seconds": 11.238232291652821,
+      "end_seconds": 40.5230618333444,
+      "actual_budget_present": true,
+      "budget_id": "ObjectIdentifier(0x000000075514c200)",
+      "enabled": true,
+      "wall_seconds": 29.28482954169158,
+      "accounted_budget_yield_seconds": 25.944,
+      "accounted_yields": 283,
+      "counter_rounding_bound_seconds": 0.14150000000000001,
+      "wall_outside_accounted_yields_seconds": 3.34082954169158,
+      "interruptions": 0
+    }
+  ],
+  "budget_snapshots": 92,
+  "media_requests": 1,
+  "media_responses": 0,
+  "release_events": [
+    {
+      "occupied": false,
+      "pid": 39889,
+      "seconds": 40.64133900008164,
+      "stage": "media-ownership-retired",
+      "uptime": 529198.36225875
+    }
+  ],
+  "waiting_snapshots": [],
+  "complete": false,
+  "limits": [
+    "Counters are from the actual media TaskLocal budget, shared across its work scope.",
+    "No per-PID signal-pair timestamps; T samples do not measure exact suspension.",
+    "Wall outside accounted yields includes I/O, scheduler delays and any uncounted in-flight yield; it is not native compute time.",
+    "Native phases come from a diagnostic source copy; no product media acceptance is inferred."
+  ]
+}

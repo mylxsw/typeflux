@@ -1,0 +1,12 @@
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "Retained screenshot visual and OCR corroboration" started.
+◇ Test "incompatible or malformed OCR cannot corroborate" started.
+◇ Test case passing 1 argument field → "provenance" to "incompatible or malformed OCR cannot corroborate" started.
+◇ Test case passing 1 argument field → "segment_kind" to "incompatible or malformed OCR cannot corroborate" started.
+◇ Test case passing 1 argument field → "vector" to "incompatible or malformed OCR cannot corroborate" started.
+◇ Test case passing 1 argument field → "version" to "incompatible or malformed OCR cannot corroborate" started.
+✔ Test "incompatible or malformed OCR cannot corroborate" with 4 test cases passed after 0.030 seconds.
+✔ Suite "Retained screenshot visual and OCR corroboration" passed after 0.030 seconds.
+✔ Test run with 1 test in 1 suite passed after 0.030 seconds.

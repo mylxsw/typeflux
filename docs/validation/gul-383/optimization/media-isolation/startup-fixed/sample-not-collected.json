@@ -1,0 +1,4 @@
+{
+  "exit_code": 255,
+  "reason": "The exact owned helper had exited before the requested sample could attach; no startup stack was collected for this attempt."
+}

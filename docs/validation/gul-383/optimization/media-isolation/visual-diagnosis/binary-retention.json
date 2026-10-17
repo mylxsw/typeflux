@@ -1,0 +1,22 @@
+{
+  "capture-probe": {
+    "sha256": "e9aae53aed809fda3dbc810a8dd72987a95323b5425b2458cb62f3e5453a8273",
+    "bytes": 300636536,
+    "archive": "capture-probe"
+  },
+  "offline-replay": {
+    "sha256": "855fb776122fabd9e8c9d410251f442b8bed04f23775e9b3bf6af8d06f83b10f",
+    "bytes": 300372704,
+    "archive": "offline-replay"
+  },
+  "reused-product-model-helper": {
+    "sha256": "1c2a49fa3620ff75612909ef91d1b49b8b83495a754c57a8c6c2905ca31c0b06",
+    "bytes": 11946472,
+    "archive": "reused from read-signals product binaries and previous issue evidence"
+  },
+  "reused-product-file-helper": {
+    "sha256": "bd5bd750ea94b34a1f23401d1064e9d094a3f958285e775b36de20d27394e96d",
+    "bytes": 266687008,
+    "archive": "reused from read-signals product binaries and previous issue evidence"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "test_analysis.DiagnosisTests.test_persisted_bytes_and_quantization_do_not_explain_rejection",
+    "test_analysis.DiagnosisTests.test_script_ordering_does_not_bypass_absolute_confidence",
+    "-v"
+  ],
+  "PYTHONPATH": "<evidence-directory>",
+  "wall_seconds": 0.05889195797499269,
+  "exit_code": 0,
+  "scope": "Two affected diagnostic artifact methods after script-adjustment reporting; no inference"
+}

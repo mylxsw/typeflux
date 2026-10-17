@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "docs/validation/gul-383/optimization/media-isolation/read-signals",
+    "-p",
+    "test_observer.py",
+    "-k",
+    "real_reads",
+    "-v"
+  ],
+  "wall_seconds": 1.262511375010945,
+  "exit_code": 0
+}

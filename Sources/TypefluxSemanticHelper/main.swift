@@ -22,6 +22,10 @@ final class Encoder {
 
     init(path: String, projector: String? = nil, background: Bool = false) throws {
         llama_log_set({ _, _, _ in }, nil)
+        if background {
+            // CPU-only workers must not initialize the unused Metal shader compiler and cache.
+            setenv("GGML_METAL_DEVICES", "0", 1)
+        }
         llama_backend_init()
         mtmd_helper_log_set({ _, _, _ in }, nil)
         var modelParams = llama_model_default_params()

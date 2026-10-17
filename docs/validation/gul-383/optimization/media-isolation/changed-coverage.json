@@ -1,0 +1,61 @@
+{
+  "baseline": "8da72f495dd91295151cf931da71007e33b7fb24",
+  "denominator": "Changed native Swift lines intersected with LLVM LCOV DA records, the existing acceptance convention. Line coverage, not branch coverage or whole-helper coverage.",
+  "native_inference_helper": {
+    "covered": 4,
+    "executable": 4,
+    "lines": {
+      "25": 3,
+      "26": 3,
+      "27": 3,
+      "28": 3
+    },
+    "percent": 100.0
+  },
+  "application": {
+    "covered": 0,
+    "executable": 0,
+    "percent": null
+  },
+  "file_helper": {
+    "covered": 0,
+    "executable": 0,
+    "percent": null
+  },
+  "media_runtime": {
+    "covered": 0,
+    "executable": 0,
+    "percent": null
+  },
+  "profiles": [
+    {
+      "file": "probe-5656.profraw",
+      "sha256": "26dfc0410e0211ebc003ab3dd0f5b649632263d71fc3d21ef64bb75dac656a19",
+      "bytes": 49152
+    },
+    {
+      "file": "probe-23902.profraw",
+      "sha256": "1813f36fb95e8c277b449817fb3f4d655770136fb58e7f734290e0865b067abd",
+      "bytes": 49152
+    },
+    {
+      "file": "probe-76300.profraw",
+      "sha256": "4252f4601594b3030d861511901ee1c66edcec7218ae1c6163a3ab381bee56ea",
+      "bytes": 49152
+    },
+    {
+      "file": "probe-91955.profraw",
+      "sha256": "68f92cf2551dea1a8195c971140d7bdee5b6185ee4b7dedc1affb2c21406ba88",
+      "bytes": 49152
+    }
+  ],
+  "unavailable_profiles": [
+    {
+      "file": "probe-81579.profraw",
+      "reason": "No LLVM profile materialized for this observed process; no coverage inferred. Startup/pressure observations remain in the raw attempt."
+    }
+  ],
+  "wall_seconds": 0.19909033307339996,
+  "source_sha256": "8e3d3a3b6b64a62b4fb0ec55cdda50108adc0b22b215f937c3d992eccd00d13d",
+  "binary_sha256": "739bf5f47699395a568f83928571a8bda74743b1256c9fb652e420033503e90e"
+}

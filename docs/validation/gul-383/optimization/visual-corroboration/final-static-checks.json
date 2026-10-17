@@ -1,0 +1,25 @@
+[
+  {
+    "command": [
+      "swiftlint",
+      "lint",
+      "--strict",
+      "--quiet",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift",
+      "Tests/TypefluxTests/SemanticImageCorroborationTests.swift"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.08380858297459781,
+    "output": ""
+  },
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.016315166954882443,
+    "output": ""
+  }
+]

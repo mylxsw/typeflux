@@ -1,0 +1,13 @@
+{
+  "media": "screenshot",
+  "stage_seconds": 90,
+  "budget_enabled": true,
+  "diagnostic_media_environment": {
+    "GGML_METAL_DEVICES": "0"
+  },
+  "owned_pid": 74097,
+  "post_clear_pids_requiring_cleanup": [],
+  "exit_code": -15,
+  "wall_seconds": 42.50304820807651,
+  "private_root_removed": true
+}

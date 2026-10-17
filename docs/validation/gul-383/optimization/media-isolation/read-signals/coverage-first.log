@@ -1,0 +1,147 @@
+./scripts/coverage.sh --from-env
+Running tests with code coverage enabled...
+Updating https://github.com/doggy8088/opencc-swift.git
+Updated https://github.com/doggy8088/opencc-swift.git (1.60s)
+Updating https://github.com/apple/swift-nio.git
+Updating https://github.com/apple/swift-system.git
+Updating https://github.com/apple/swift-atomics.git
+Updating https://github.com/apple/swift-log.git
+Updating https://github.com/apple/swift-argument-parser.git
+Updating https://github.com/apple/swift-protobuf.git
+Updating https://github.com/apple/swift-nio-http2.git
+Updated https://github.com/apple/swift-protobuf.git (2.52s)
+Updated https://github.com/apple/swift-log.git (2.54s)
+Updating https://github.com/apple/swift-nio-extras.git
+Updating https://github.com/apple/swift-collections.git
+Updated https://github.com/apple/swift-argument-parser.git (2.68s)
+Updated https://github.com/apple/swift-nio-http2.git (2.68s)
+Updating https://github.com/apple/swift-http-structured-headers.git
+Updating https://github.com/apple/swift-nio-ssl.git
+Updated https://github.com/apple/swift-nio.git (3.27s)
+Updating https://github.com/apple/swift-crypto.git
+Updated https://github.com/apple/swift-atomics.git (3.31s)
+Updated https://github.com/apple/swift-system.git (3.31s)
+Updating https://github.com/swiftlang/swift-cmark.git
+Updating https://github.com/apple/swift-certificates.git
+Updated https://github.com/apple/swift-http-structured-headers.git (1.61s)
+Updating https://github.com/swift-server/swift-service-lifecycle.git
+Updated https://github.com/apple/swift-nio-ssl.git (1.90s)
+Updating https://github.com/apple/swift-nio-transport-services.git
+Updated https://github.com/apple/swift-collections.git (2.13s)
+Updating https://github.com/apple/swift-asn1.git
+Updated https://github.com/apple/swift-nio-extras.git (2.23s)
+Updating https://github.com/jpsim/Yams.git
+Updated https://github.com/apple/swift-crypto.git (1.95s)
+Updating https://github.com/apple/swift-markdown.git
+Updated https://github.com/swift-server/swift-service-lifecycle.git (1.85s)
+Updating https://github.com/huggingface/swift-jinja.git
+Updated https://github.com/apple/swift-nio-transport-services.git (1.63s)
+Updating https://github.com/apple/swift-async-algorithms.git
+Updated https://github.com/apple/swift-asn1.git (1.65s)
+Updating https://github.com/apple/swift-numerics.git
+Updated https://github.com/swiftlang/swift-cmark.git (3.19s)
+Updated https://github.com/apple/swift-certificates.git (3.19s)
+Updating https://github.com/apple/swift-http-types.git
+Updating https://github.com/huggingface/swift-transformers.git
+Updated https://github.com/jpsim/Yams.git (1.91s)
+Updating https://github.com/apple/swift-algorithms.git
+Updated https://github.com/huggingface/swift-jinja.git (1.77s)
+Updating https://github.com/argmaxinc/WhisperKit.git
+Updated https://github.com/apple/swift-http-types.git (1.74s)
+Updating https://github.com/ibireme/yyjson.git
+Updated https://github.com/apple/swift-markdown.git (3.05s)
+Updating https://github.com/grpc/grpc-swift.git
+Updated https://github.com/apple/swift-numerics.git (1.95s)
+Updated https://github.com/apple/swift-algorithms.git (1.63s)
+Updated https://github.com/huggingface/swift-transformers.git (2.04s)
+Updated https://github.com/apple/swift-async-algorithms.git (2.32s)
+Updated https://github.com/ibireme/yyjson.git (1.90s)
+Updated https://github.com/argmaxinc/WhisperKit.git (2.42s)
+Updated https://github.com/grpc/grpc-swift.git (2.59s)
+Computing version for https://github.com/grpc/grpc-swift.git
+Computed https://github.com/grpc/grpc-swift.git at 1.27.5 (11.78s)
+Computing version for https://github.com/apple/swift-protobuf.git
+Computed https://github.com/apple/swift-protobuf.git at 1.36.1 (0.79s)
+Computing version for https://github.com/argmaxinc/WhisperKit.git
+Computed https://github.com/argmaxinc/WhisperKit.git at 0.18.0 (0.76s)
+Computing version for https://github.com/apple/swift-markdown.git
+Computed https://github.com/apple/swift-markdown.git at 0.7.3 (0.80s)
+Computing version for https://github.com/jpsim/Yams.git
+Computed https://github.com/jpsim/Yams.git at 6.2.2 (0.59s)
+Computing version for https://github.com/apple/swift-nio-ssl.git
+Computed https://github.com/apple/swift-nio-ssl.git at 2.36.1 (0.71s)
+Computing version for https://github.com/apple/swift-log.git
+Computed https://github.com/apple/swift-log.git at 1.12.0 (0.61s)
+Computing version for https://github.com/apple/swift-atomics.git
+Computed https://github.com/apple/swift-atomics.git at 1.3.0 (0.72s)
+Computing version for https://github.com/apple/swift-collections.git
+Computed https://github.com/apple/swift-collections.git at 1.4.1 (0.72s)
+Computing version for https://github.com/apple/swift-nio-extras.git
+Computed https://github.com/apple/swift-nio-extras.git at 1.33.0 (0.63s)
+Computing version for https://github.com/apple/swift-nio-transport-services.git
+Computed https://github.com/apple/swift-nio-transport-services.git at 1.26.0 (0.74s)
+Computing version for https://github.com/apple/swift-nio-http2.git
+Computed https://github.com/apple/swift-nio-http2.git at 1.42.0 (0.59s)
+Computing version for https://github.com/apple/swift-nio.git
+Computed https://github.com/apple/swift-nio.git at 2.97.1 (0.75s)
+Computing version for https://github.com/apple/swift-argument-parser.git
+Computed https://github.com/apple/swift-argument-parser.git at 1.7.1 (0.75s)
+Computing version for https://github.com/huggingface/swift-transformers.git
+Computed https://github.com/huggingface/swift-transformers.git at 1.1.9 (0.59s)
+Computing version for https://github.com/swiftlang/swift-cmark.git
+Computed https://github.com/swiftlang/swift-cmark.git at 0.7.1 (0.75s)
+Computing version for https://github.com/apple/swift-async-algorithms.git
+Computed https://github.com/apple/swift-async-algorithms.git at 1.1.3 (0.76s)
+Computing version for https://github.com/swift-server/swift-service-lifecycle.git
+Computed https://github.com/swift-server/swift-service-lifecycle.git at 2.11.0 (0.58s)
+Computing version for https://github.com/apple/swift-asn1.git
+Computed https://github.com/apple/swift-asn1.git at 1.7.0 (0.71s)
+Computing version for https://github.com/apple/swift-certificates.git
+Computed https://github.com/apple/swift-certificates.git at 1.19.1 (0.81s)
+Computing version for https://github.com/apple/swift-algorithms.git
+Computed https://github.com/apple/swift-algorithms.git at 1.2.1 (0.72s)
+Computing version for https://github.com/apple/swift-http-structured-headers.git
+Computed https://github.com/apple/swift-http-structured-headers.git at 1.6.0 (0.58s)
+Computing version for https://github.com/apple/swift-http-types.git
+Computed https://github.com/apple/swift-http-types.git at 1.5.1 (0.58s)
+Computing version for https://github.com/apple/swift-system.git
+Computed https://github.com/apple/swift-system.git at 1.6.4 (0.75s)
+Computing version for https://github.com/ibireme/yyjson.git
+Computed https://github.com/ibireme/yyjson.git at 0.12.0 (0.72s)
+Computing version for https://github.com/apple/swift-crypto.git
+Computed https://github.com/apple/swift-crypto.git at 4.3.1 (0.85s)
+Computing version for https://github.com/huggingface/swift-jinja.git
+Computed https://github.com/huggingface/swift-jinja.git at 2.3.5 (0.59s)
+Computing version for https://github.com/apple/swift-numerics.git
+Computed https://github.com/apple/swift-numerics.git at 1.1.1 (0.65s)
+[0/1] Planning build
+[1/1] Compiling plugin GRPCSwiftPlugin
+[2/2] Compiling plugin SwiftProtobufPlugin
+[3/3] Compiling plugin GenerateManual
+[4/4] Compiling plugin GenerateDoccReference
+Building for debugging...
+[4/522] <repo>/.build/video-frames/arm64-apple-macosx/debug/TypefluxPackageTests.derived/runner.swift
+[5/522] Write TypefluxMediaHelper-entitlement.plist
+[5/522] Write TypefluxInferenceHelper-entitlement.plist
+[6/522] Write Typeflux-entitlement.plist
+[8/572] Write sources
+[8/572] Copying t5_tokenizer_config.json
+[8/572] Copying gpt2_tokenizer_config.json
+[9/572] Copying PrivacyInfo.xcprivacy
+error: precompiled file '<repo>/.build/video-frames/arm64-apple-macosx/debug/ModuleCache/3D2DNYQ77OMBK/_DarwinFoundation2-3J4ZFA06I5V1P.pcm' was compiled with module cache path '<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/ModuleCache/3D2DNYQ77OMBK', but the path is currently '<repo>/.build/video-frames/arm64-apple-macosx/debug/ModuleCache/3D2DNYQ77OMBK'
+1 error generated.
+error: precompiled file '<repo>/.build/video-frames/arm64-apple-macosx/debug/ModuleCache/3D2DNYQ77OMBK/_Builtin_stdbool-2OQWMRBVRD4OJ.pcm' was compiled with module cache path '<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/ModuleCache/3D2DNYQ77OMBK', but the path is currently '<repo>/.build/video-frames/arm64-apple-macosx/debug/ModuleCache/3D2DNYQ77OMBK'
+1 error generated.
+[16/572] Compiling cmark-gfm-extensions tasklist.c
+[16/572] Compiling yyjson.c
+error: precompiled file '<repo>/.build/video-frames/arm64-apple-macosx/debug/ModuleCache/3D2DNYQ77OMBK/_DarwinFoundation2-3J4ZFA06I5V1P.pcm' was compiled with module cache path '<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/ModuleCache/3D2DNYQ77OMBK', but the path is currently '<repo>/.build/video-frames/arm64-apple-macosx/debug/ModuleCache/3D2DNYQ77OMBK'
+In file included from <repo>/.build/video-frames/checkouts/swift-cmark/extensions/tagfilter.c:1:
+In file included from <repo>/.build/video-frames/checkouts/swift-cmark/extensions/tagfilter.h:4:
+<repo>/.build/video-frames/checkouts/swift-cmark/extensions/include/cmark-gfm-core-extensions.h:8:10: fatal error: could not build module 'cmark_gfm'
+    8 | #include "cmark-gfm-extension_api.h"
+      |  ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~
+[16/572] Compiling cmark-gfm-extensions tagfilter.c
+[16/572] Write swift-version--58304C5D6DBC2206.txt
+warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+Total wall time: 65.87s
+make: *** [coverage] Error 1

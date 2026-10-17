@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/libexec/swift/pm/swiftpm-testing-helper",
+    "--test-bundle-path",
+    "<repo>/.build/visual-corroboration/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests",
+    "<repo>/.build/visual-corroboration/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests",
+    "--testing-library",
+    "swift-testing",
+    "--no-parallel",
+    "--filter",
+    "^GUL405CorroborationTests\\.SemanticImageCorroboration(Service)?Tests/"
+  ],
+  "exit_code": 1,
+  "wall_seconds": 1.2687779580010101,
+  "scope": "10 previously unexecuted methods only; legacy module filter omitted new module in first pass"
+}

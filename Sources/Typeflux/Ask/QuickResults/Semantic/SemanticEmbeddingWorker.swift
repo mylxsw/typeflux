@@ -192,7 +192,9 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
             arguments: [model.path] + (projector.map { [$0.path] } ?? []) + (indexing ? ["--background"] : []),
             timeout: indexing ? max(45, timeout) : timeout,
             startupTimeout: indexing ? max(90, startupTimeout) : startupTimeout,
-            qualityOfService: projector != nil ? .background : (indexing ? .utility : .userInitiated),
+            // Background process QoS also throttles dyld/GGUF disk reads. The work budget
+            // already time-slices indexing CPU and interrupts for voice, pressure and heat.
+            qualityOfService: indexing ? .utility : .userInitiated,
             ownership: ownership.native, reaper: reaper
         )
         if indexing {

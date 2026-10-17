@@ -1,0 +1,6 @@
+test_real_reads_signals_identity_and_common_clock (test_observer.InterpositionTests.test_real_reads_signals_identity_and_common_clock) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.532s
+
+OK

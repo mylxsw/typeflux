@@ -1,0 +1,511 @@
+{
+  "fixed_hits" : [
+    {
+      "name" : "screen.png",
+      "score" : 0.38161332607269288,
+      "segment_kind" : "image"
+    }
+  ],
+  "rows" : [
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-00"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-01"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-02"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-03"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-04"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-05"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-06"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-07"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-08"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-09"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-10"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-11"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-12"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-13"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-14"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-15"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-16"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-17"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-18"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-19"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-20"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-21"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-22"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-23"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "no_answer-24"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-00"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-01"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-02"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-03"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-04"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-05"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-06"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-07"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-08"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-09"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-10"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-11"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-12"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-13"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-14"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-15"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-16"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-17"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-18"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-19"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-20"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-21"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-22"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-23"
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-24"
+    }
+  ]
+}

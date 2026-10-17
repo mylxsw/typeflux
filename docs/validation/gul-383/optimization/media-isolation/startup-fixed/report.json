@@ -1,0 +1,10 @@
+{
+  "budget_enabled" : true,
+  "cleaned_up" : true,
+  "complete" : false,
+  "error" : "CancellationError()",
+  "media" : "screenshot",
+  "mode" : "startup",
+  "scope" : "Single synthetic media; accepted Debug application and Release inference helper. Production resource\/thermal\/low-power checks enabled; idle callback controlled.",
+  "wall_seconds" : 90.045276250108145
+}

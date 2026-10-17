@@ -1,0 +1,4 @@
+{"pid":40022,"uptime":529181.7468803334,"stage":"swift-entry"}
+{"pid":40022,"uptime":529182.0546030834,"stage":"backend-begin"}
+{"pid":40022,"uptime":529182.3630045,"stage":"backend-end"}
+{"pid":40022,"uptime":529182.9756067917,"stage":"model-begin"}

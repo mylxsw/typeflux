@@ -1,0 +1,87 @@
+{
+  "command": {
+    "media": "screenshot",
+    "mode": "service",
+    "stage_seconds": 40,
+    "budget_enabled": true,
+    "product_runtime": true,
+    "runner_start_monotonic": 534747.40002425,
+    "launch_monotonic": 534748.291210958,
+    "owned_pid": 92956,
+    "observation_limit_seconds": 60,
+    "post_clear_pids_requiring_cleanup": [],
+    "exit_code": 1,
+    "wall_seconds": 32.86154308298137,
+    "private_root_removed": true
+  },
+  "report": {
+    "budget_enabled": true,
+    "cleaned_up": true,
+    "complete": false,
+    "enabled": true,
+    "media": "screenshot",
+    "phase_before_pause": "ready",
+    "queries": [
+      {
+        "hits": [],
+        "query": "black text on a white background"
+      }
+    ],
+    "ready": true,
+    "reopened_ocr_query": {
+      "hits": [
+        {
+          "chunk_id": 2,
+          "kind": "image-ocr",
+          "name": "screen.png",
+          "score": 3,
+          "text": "Connection failed\nError ERR-739204\nRequest ID REQ-482917",
+          "time": null,
+          "version": true
+        }
+      ],
+      "query": "ERR-739204"
+    },
+    "reopened_query": {
+      "hits": [],
+      "query": "black text on a white background"
+    },
+    "scope": "Single synthetic media; accepted Debug application and Release inference helper. Production resource/thermal/low-power checks enabled; idle callback controlled.",
+    "screenshot_retrieval_complete": false,
+    "service_query_complete": false,
+    "wall_seconds": 27.68669829168357
+  },
+  "final_snapshot": {
+    "chunks": 2,
+    "current": null,
+    "files": 1,
+    "items": [
+      {
+        "audio_covered": null,
+        "encoded_text": 1,
+        "media_segments": 1,
+        "name": "screen.png",
+        "reason": null,
+        "state": "done",
+        "text_chunks": 1,
+        "video_checked": null
+      }
+    ],
+    "media_failed": false,
+    "model_ready": true,
+    "phase": "ready",
+    "pressure": 0,
+    "seconds": 22.878603083314374,
+    "waiting": null
+  },
+  "media_response": {
+    "dimensions": 768,
+    "pid": 92956,
+    "seconds": 20.598929666681215,
+    "squared_norm": 1.0000004768371582,
+    "stage": "media-response",
+    "uptime": 534773.1448350834,
+    "valid": true
+  },
+  "meaning": "Product startup/indexing/OCR persistence passed; fixed visual query returned zero hits. Overall screenshot acceptance is incomplete."
+}

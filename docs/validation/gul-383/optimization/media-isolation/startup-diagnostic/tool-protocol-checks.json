@@ -1,0 +1,7 @@
+{
+  "exit_record_reset_preserved": true,
+  "separate_pid_accounting": true,
+  "cpu_time_parser": true,
+  "state_samples_not_durations": true,
+  "checks": 4
+}

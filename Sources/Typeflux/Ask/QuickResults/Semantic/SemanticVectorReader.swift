@@ -30,6 +30,31 @@ final class SemanticVectorReader: @unchecked Sendable {
         var end: Int64?
         var embedding: SemanticMediaInput.Kind?
         var bucket: SemanticScoreCalibration.Bucket
+        var imageEvidence: Bool?
+    }
+
+    private struct ImageVector {
+        var cosine: Double
+        var values: [Float]
+    }
+
+    private struct ImageSupport {
+        var visual: ImageVector?
+        var ocr: ImageVector?
+
+        var cosine: Double? {
+            guard let visual, let ocr else { return nil }
+            // Exactly one unit vector per modality; repeated OCR chunks never add votes.
+            let visualNorm = sqrt(visual.values.reduce(0.0) { $0 + Double($1) * Double($1) })
+            let ocrNorm = sqrt(ocr.values.reduce(0.0) { $0 + Double($1) * Double($1) })
+            guard visualNorm > 0, ocrNorm > 0 else { return nil }
+            let agreement = zip(visual.values, ocr.values).reduce(0.0) {
+                $0 + Double($1.0) * Double($1.1) / (visualNorm * ocrNorm)
+            }
+            let norm = sqrt(max(0, 2 + 2 * agreement))
+            guard norm > 0 else { return nil }
+            return (visual.cosine / visualNorm + ocr.cosine / ocrNorm) / norm
+        }
     }
 
     private struct Scored {
@@ -192,7 +217,7 @@ final class SemanticVectorReader: @unchecked Sendable {
     private func load(_ number: Int64, revision: Int64, files: inout [String: File],
                       cancelled: () -> Bool) throws -> Page {
         let row = try statement("""
-        SELECT c.id,c.path,c.page,c.time,c.start_offset,c.end_offset,c.vector,f.modified,f.version,c.provenance,c.modality,c.search_script
+        SELECT c.id,c.path,c.page,c.time,c.start_offset,c.end_offset,c.vector,f.modified,f.version,c.provenance,c.modality,c.search_script,c.segment_kind
         FROM chunks c JOIN files f ON f.path=c.path WHERE c.id>=? AND c.id<=? ORDER BY c.id
         """)
         defer { sqlite3_finalize(row) }
@@ -247,7 +272,10 @@ final class SemanticVectorReader: @unchecked Sendable {
                                         modality: imageText ? .document : file.modality,
                                         embedding: string(row, 10) == "audio" ? .audio : nil,
                                         script: Int(sqlite3_column_int(row, 11))
-                                    )))
+                                    ), imageEvidence: file.modality == .image
+                                        ? (imageText && string(row, 12) == "image-ocr" ? false
+                                            : (string(row, 10) == "image" && string(row, 12) == "image" ? true : nil))
+                                        : nil))
                     floats.append(contentsOf: vector)
                 }
             }
@@ -385,6 +413,8 @@ extension SemanticVectorReader {
             // Retain one Float32 scalar per row (4 MiB per million rows), then rank using the
             // final distinct-file confidence, then rank. Each page contributes scores exactly once.
             var scoredPages: [(Int64, [Float])] = []
+            var imageCandidates: [String: Double] = [:]
+            let canCorroborate = ranking.identifiers.isEmpty && ranking.quoted.isEmpty
             for number in revisions.keys.sorted() {
                 let page = try page(number, cancelled: cancelled)
                 guard !cancelled() else { throw CancellationError() }
@@ -405,6 +435,14 @@ extension SemanticVectorReader {
                         row.file.eligibilityGeneration = eligibilityGeneration
                     }
                     guard row.file.allowed else { continue }
+                    // Keep the same bounded candidate budget as ranking, without retaining corpus vectors.
+                    if canCorroborate, row.file.version != nil, row.imageEvidence != nil,
+                       cosine >= ranking.semanticFloor {
+                        imageCandidates[row.file.path] = max(imageCandidates[row.file.path] ?? -.infinity, cosine)
+                        if imageCandidates.count > maximum, let worst = imageCandidates.min(by: {
+                            $0.value == $1.value ? $0.key > $1.key : $0.value < $1.value
+                        }) { imageCandidates.removeValue(forKey: worst.key) }
+                    }
                     // Distinct-file maxima prevent a long book's repeated chunks from defining confidence.
                     if peak?.0 == row.file.path {
                         peak = (row.file.path, max(peak!.1, cosine))
@@ -418,6 +456,32 @@ extension SemanticVectorReader {
                     }
                 }
             }
+            // One extra linear pass over pages, only when images are candidates. At most two
+            // vectors per candidate are retained; no per-file database queries or pairwise scan.
+            var support: [String: ImageSupport] = [:]
+            if !imageCandidates.isEmpty {
+                for (number, scores) in scoredPages {
+                    guard !cancelled() else { throw CancellationError() }
+                    let page = try page(number, cancelled: cancelled)
+                    for (index, row) in page.rows.enumerated() {
+                        guard imageCandidates[row.file.path] != nil, let visual = row.imageEvidence,
+                              Double(scores[index]) >= ranking.semanticFloor else { continue }
+                        var pair = support[row.file.path] ?? ImageSupport()
+                        let previous = visual ? pair.visual : pair.ocr
+                        guard Double(scores[index]) > (previous?.cosine ?? -.infinity) else { continue }
+                        let offset = index * SemanticFilePolicy.dimension
+                        let values = page.values[offset ..< offset + SemanticFilePolicy.dimension]
+                            .map { Float(Float16(bitPattern: $0)) }
+                        let value = ImageVector(cosine: Double(scores[index]), values: values)
+                        if visual { pair.visual = value } else { pair.ocr = value }
+                        support[row.file.path] = pair
+                    }
+                }
+            }
+            let corroborated = Set(support.compactMap { path, pair in
+                pair.cosine.map { ranking.confident(peak: $0, runnerUp: nil, completeLexical: false) } == true
+                    ? path : nil
+            })
             for (number, scores) in scoredPages {
                 let page = try page(number, cancelled: cancelled)
                 for row in page.rows where row.file.eligibilityGeneration != eligibilityGeneration {
@@ -441,7 +505,8 @@ extension SemanticVectorReader {
                         embedding: row.embedding
                     )
                     else { continue }
-                    if !lexical.identifier, !(lexical.coverage == 1 && lexical.phrase) {
+                    if !lexical.identifier, !(lexical.coverage == 1 && lexical.phrase),
+                       row.file.modality != .image || lexical.coverage > 0 {
                         score += ranking.scriptAdjustment(row.bucket)
                     }
                     guard score >= floors[row.bucket.rawValue] else { continue }
@@ -469,7 +534,8 @@ extension SemanticVectorReader {
                                               completeLexical: lexical.contains { $0.evidence.coverage == 1 })
             var best: [String: Scored] = [:]
             for candidate in branches.values.flatMap(\.values) {
-                guard confident || evidence[candidate.id].map(ranking.lexicalAccepted) == true else { continue }
+                guard confident || corroborated.contains(candidate.hit.path)
+                    || evidence[candidate.id].map(ranking.lexicalAccepted) == true else { continue }
                 if let old = best[candidate.hit.path], old.hit.score > candidate.hit.score
                     || (old.hit.score == candidate.hit.score && old.id <= candidate.id) {
                     continue

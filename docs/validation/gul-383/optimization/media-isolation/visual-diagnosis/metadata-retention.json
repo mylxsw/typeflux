@@ -1,0 +1,5 @@
+{
+  "first_attempt_exit_code": 1,
+  "reason": "relative_to current checkout was invalid for a reused-cache binary; metadata only, after process/profile saves succeeded",
+  "repair": "Use role labels for current/reused binaries; no product, test or model rerun"
+}

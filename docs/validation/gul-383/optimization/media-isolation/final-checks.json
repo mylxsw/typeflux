@@ -1,0 +1,42 @@
+[
+  {
+    "name": "python-compile",
+    "command": [
+      "python3",
+      "-m",
+      "py_compile",
+      "docs/validation/gul-383/optimization/media-isolation/build_helper.py",
+      "docs/validation/gul-383/optimization/media-isolation/run_probe.py",
+      "docs/validation/gul-383/optimization/media-isolation/coverage.py",
+      "docs/validation/gul-383/optimization/media-isolation/summarize.py",
+      "docs/validation/gul-383/optimization/media-isolation/build_probe.py"
+    ],
+    "wall_seconds": 0.11122241604607552,
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "name": "native-helper-strict-lint",
+    "command": [
+      "swiftlint",
+      "lint",
+      "--strict",
+      "--quiet",
+      "Sources/TypefluxSemanticHelper/main.swift"
+    ],
+    "wall_seconds": 0.4629573329584673,
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "name": "git-diff-check",
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "wall_seconds": 0.03342737501952797,
+    "exit_code": 0,
+    "output": ""
+  }
+]

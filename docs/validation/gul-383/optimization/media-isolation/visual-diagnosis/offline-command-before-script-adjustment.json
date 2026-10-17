@@ -1,0 +1,9 @@
+{
+  "command": [
+    "<repo>/.build/visual-diagnosis/OfflineReplay",
+    "<repo>"
+  ],
+  "wall_seconds": 4.367810957948677,
+  "exit_code": 0,
+  "inference": false
+}

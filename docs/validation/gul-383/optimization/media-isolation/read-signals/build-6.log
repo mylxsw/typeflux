@@ -1,0 +1,9 @@
+<repo>/docs/validation/gul-383/optimization/media-isolation/read-signals/observe.c:144:72: error: too many arguments to function call, expected 2, have 3
+  144 |     int result = posix_spawnattr_set_qos_class_np(attributes, applied, relative);
+      |                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                      ^~~~~~~~
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/pthread/spawn.h:64:1: note: 'posix_spawnattr_set_qos_class_np' declared here
+   64 | posix_spawnattr_set_qos_class_np(posix_spawnattr_t * __restrict __attr,
+      | ^                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   65 |                                  qos_class_t __qos_class);
+      |                                  ~~~~~~~~~~~~~~~~~~~~~~~
+1 error generated.

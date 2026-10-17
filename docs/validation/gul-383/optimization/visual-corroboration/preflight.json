@@ -1,0 +1,661 @@
+{
+  "mode": "Pre-implementation equal unit-vector sum; unchanged .45/.70 gates; no new labels",
+  "fixed": {
+    "raw": [
+      0.6938397017079737,
+      0.6496671871943619
+    ],
+    "joint": 0.7067359104150899
+  },
+  "negatives": [
+    {
+      "id": "no_answer-00",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5434145989060652,
+        0.5643535365346325
+      ],
+      "joint": 0.5827283270345924,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-01",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5422459490101679,
+        0.5539038765082088
+      ],
+      "joint": 0.576616652499641,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-02",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5434181499191729,
+        0.5548065803000941
+      ],
+      "joint": 0.5777081315794442,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-03",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.539379026107056,
+        0.5487055960672087
+      ],
+      "joint": 0.5723740476606434,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-04",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5472912296107787,
+        0.5601800118708665
+      ],
+      "joint": 0.5825721494785405,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-05",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5272671511509119,
+        0.5418372084450112
+      ],
+      "joint": 0.5623897049944281,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-06",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5274504232626795,
+        0.5493947455639572
+      ],
+      "joint": 0.5664616661464007,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-07",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5424907842556834,
+        0.5604636800235067
+      ],
+      "joint": 0.5801961522471997,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-08",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5303659003997873,
+        0.5458924526040988
+      ],
+      "joint": 0.566152978622605,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-09",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5387214965327192,
+        0.5529271824036103
+      ],
+      "joint": 0.5742488775713159,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-10",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.541023948616457,
+        0.5517416236347956
+      ],
+      "joint": 0.5748364060911018,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-11",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.537870314975322,
+        0.5544600779522177
+      ],
+      "joint": 0.5746074851543514,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-12",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5277118868827878,
+        0.5400620069888735
+      ],
+      "joint": 0.5616898292344455,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-13",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5383648612830533,
+        0.548987309941478
+      ],
+      "joint": 0.5719887505005988,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-14",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5368257718721434,
+        0.5518026948803042
+      ],
+      "joint": 0.5726601306694178,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-15",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5239781182044191,
+        0.5397381236296617
+      ],
+      "joint": 0.5595553493664115,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-16",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5318586424079514,
+        0.546031544997648
+      ],
+      "joint": 0.5670113858113347,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-17",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5431485387157474,
+        0.5646346847898107
+      ],
+      "joint": 0.5827362639326789,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-18",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5381263962793075,
+        0.553805115592044
+      ],
+      "joint": 0.5743976584919643,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-19",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5514285504973391,
+        0.5640750328724973
+      ],
+      "joint": 0.586797467937275,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-20",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5510462457574314,
+        0.5586532018546488
+      ],
+      "joint": 0.5837442709623926,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-21",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5483712304863579,
+        0.5573706761872053
+      ],
+      "joint": 0.5816624533540935,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-22",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5479995058202215,
+        0.559137897906059
+      ],
+      "joint": 0.5823965380753408,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-23",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.550935759831631,
+        0.5588453588550282
+      ],
+      "joint": 0.5837872330653217,
+      "corroborated": false
+    },
+    {
+      "id": "no_answer-24",
+      "group": "no_answer",
+      "expected": [],
+      "raw": [
+        0.5537533281515684,
+        0.5678961104159789
+      ],
+      "joint": 0.5900304223823262,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-00",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.5184586970860732,
+        0.5394129157744805
+      ],
+      "joint": 0.5564808514142507,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-01",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.5229184805169842,
+        0.5664177105692974
+      ],
+      "joint": 0.5730324206855886,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-02",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.5429852977729783,
+        0.55967051185093
+      ],
+      "joint": 0.5800390484977186,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-03",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.5045542726874256,
+        0.5372402327580428
+      ],
+      "joint": 0.5480236791885656,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-04",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.5121924858340707,
+        0.5768486431903773
+      ],
+      "joint": 0.5728772067774044,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-05",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.4774300061368038,
+        0.5113118114634078
+      ],
+      "joint": 0.5201159401557435,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-06",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.5080028369204003,
+        0.5333994928014284
+      ],
+      "joint": 0.5478173797870675,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-07",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.5351980562064936,
+        0.5671728050492061
+      ],
+      "joint": 0.5798891547784599,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-08",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.5015470848931208,
+        0.5279219678134467
+      ],
+      "joint": 0.5415400205377179,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-09",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.4847390388915708,
+        0.473720619833045
+      ],
+      "joint": 0.5041863686000934,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-10",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.5112366537317083,
+        0.5589077179781369
+      ],
+      "joint": 0.5629367910676346,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-11",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.5172401861115586,
+        0.550257459427634
+      ],
+      "joint": 0.5615445120661002,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-12",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.5308737669557169,
+        0.5713458983869433
+      ],
+      "joint": 0.5798096199564685,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-13",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.5204793666307439,
+        0.5519551690002616
+      ],
+      "joint": 0.5641415047145765,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-14",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.5171931599845578,
+        0.5528109493849903
+      ],
+      "joint": 0.5628630077222825,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-15",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.5030582996624142,
+        0.49846091368861556
+      ],
+      "joint": 0.5268373380832719,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-16",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.5314131866552062,
+        0.5616889859294476
+      ],
+      "joint": 0.5750134707158069,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-17",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.5160919511261353,
+        0.56535106611778
+      ],
+      "joint": 0.5688803099315403,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-18",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.510459492025344,
+        0.5558491085871426
+      ],
+      "joint": 0.5609190290442106,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-19",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.4908123712460497,
+        0.541890336913458
+      ],
+      "joint": 0.5432410467470955,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-20",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.4992988246216346,
+        0.526206102071528
+      ],
+      "joint": 0.53945473892865,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-21",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.5089663656495694,
+        0.5415714276083905
+      ],
+      "joint": 0.5526229823430369,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-22",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.5220593835986188,
+        0.5383284586934906
+      ],
+      "joint": 0.5578044841494552,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-23",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.5361602970699548,
+        0.5673763714950285
+      ],
+      "joint": 0.5805024139265156,
+      "corroborated": false
+    },
+    {
+      "id": "media_no_answer-24",
+      "group": "media_no_answer",
+      "expected": [],
+      "raw": [
+        0.48373833163044816,
+        0.5077176125002876
+      ],
+      "joint": 0.5215436743195027,
+      "corroborated": false
+    }
+  ],
+  "color_pairs": [
+    {
+      "file": "red",
+      "matches_frozen_target": true,
+      "query": "a red square",
+      "query_id": "image_red-0",
+      "scanner_cosine": 0.7690730094909668,
+      "single_file_confident": true
+    },
+    {
+      "file": "blue",
+      "matches_frozen_target": false,
+      "query": "a red square",
+      "query_id": "image_red-0",
+      "scanner_cosine": 0.6981819868087769,
+      "single_file_confident": false
+    },
+    {
+      "file": "red",
+      "matches_frozen_target": true,
+      "query": "red image",
+      "query_id": "image_red-1",
+      "scanner_cosine": 0.7656170725822449,
+      "single_file_confident": true
+    },
+    {
+      "file": "blue",
+      "matches_frozen_target": false,
+      "query": "red image",
+      "query_id": "image_red-1",
+      "scanner_cosine": 0.6576492786407471,
+      "single_file_confident": false
+    },
+    {
+      "file": "red",
+      "matches_frozen_target": true,
+      "query": "a photo of a red square",
+      "query_id": "image_red-2",
+      "scanner_cosine": 0.7583734393119812,
+      "single_file_confident": true
+    },
+    {
+      "file": "blue",
+      "matches_frozen_target": false,
+      "query": "a photo of a red square",
+      "query_id": "image_red-2",
+      "scanner_cosine": 0.6926265954971313,
+      "single_file_confident": false
+    },
+    {
+      "file": "red",
+      "matches_frozen_target": false,
+      "query": "a blue square",
+      "query_id": "image_blue-0",
+      "scanner_cosine": 0.6792123317718506,
+      "single_file_confident": false
+    },
+    {
+      "file": "blue",
+      "matches_frozen_target": true,
+      "query": "a blue square",
+      "query_id": "image_blue-0",
+      "scanner_cosine": 0.7913323640823364,
+      "single_file_confident": true
+    },
+    {
+      "file": "red",
+      "matches_frozen_target": false,
+      "query": "blue image",
+      "query_id": "image_blue-1",
+      "scanner_cosine": 0.6334012150764465,
+      "single_file_confident": false
+    },
+    {
+      "file": "blue",
+      "matches_frozen_target": true,
+      "query": "blue image",
+      "query_id": "image_blue-1",
+      "scanner_cosine": 0.7637145519256592,
+      "single_file_confident": true
+    },
+    {
+      "file": "red",
+      "matches_frozen_target": false,
+      "query": "a photo of a blue square",
+      "query_id": "image_blue-2",
+      "scanner_cosine": 0.6656349897384644,
+      "single_file_confident": false
+    },
+    {
+      "file": "blue",
+      "matches_frozen_target": true,
+      "query": "a photo of a blue square",
+      "query_id": "image_blue-2",
+      "scanner_cosine": 0.7827759385108948,
+      "single_file_confident": true
+    }
+  ],
+  "note": "Color oracle has no OCR: same single-modality gates; original text/number/quote gates unchanged by design. Production replay required."
+}

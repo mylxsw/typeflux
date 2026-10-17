@@ -1,0 +1,15 @@
+{
+  "archives": {
+    "gul405-MediaProbe-binary.zip": {
+      "bytes": 72414470,
+      "executable_sha256": "e9aae53aed809fda3dbc810a8dd72987a95323b5425b2458cb62f3e5453a8273",
+      "zip_integrity": "passed"
+    },
+    "gul405-OfflineReplay-binary.zip": {
+      "bytes": 72346732,
+      "executable_sha256": "855fb776122fabd9e8c9d410251f442b8bed04f23775e9b3bf6af8d06f83b10f",
+      "zip_integrity": "passed"
+    }
+  },
+  "wall_seconds": 11.979995667003095
+}

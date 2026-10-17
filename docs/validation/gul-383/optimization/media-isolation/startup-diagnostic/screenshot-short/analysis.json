@@ -1,0 +1,135 @@
+{
+  "per_pid": {
+    "34624": {
+      "first_seen_seconds": 2.1208649170584977,
+      "last_seen_seconds": 48.000358208082616,
+      "observed_wall_seconds": 45.87949329102412,
+      "first_cpu_seconds": 0.0,
+      "maximum_cpu_seconds": 1.05,
+      "cpu_progress_seconds": 1.05,
+      "maximum_rss_kib": 57280,
+      "sampled_states": {
+        "Ss": 41,
+        "Us": 3,
+        "Rs": 1
+      },
+      "comm": "<repo>/.build/media-isolation/MediaProbe",
+      "state_transitions": [
+        {
+          "seconds": 2.1208649170584977,
+          "state": "Ss",
+          "cpu": "0:00.00"
+        },
+        {
+          "seconds": 3.1589630420785397,
+          "state": "Us",
+          "cpu": "0:00.17"
+        },
+        {
+          "seconds": 6.3048127500806,
+          "state": "Ss",
+          "cpu": "0:00.41"
+        },
+        {
+          "seconds": 8.390377417090349,
+          "state": "Rs",
+          "cpu": "0:00.67"
+        },
+        {
+          "seconds": 9.427490458008833,
+          "state": "Ss",
+          "cpu": "0:00.79"
+        }
+      ]
+    },
+    "34634": {
+      "first_seen_seconds": 5.260609542019665,
+      "last_seen_seconds": 48.000358208082616,
+      "observed_wall_seconds": 42.73974866606295,
+      "first_cpu_seconds": 0.02,
+      "maximum_cpu_seconds": 0.09,
+      "cpu_progress_seconds": 0.06999999999999999,
+      "maximum_rss_kib": 31632,
+      "sampled_states": {
+        "T": 1,
+        "S": 41
+      },
+      "comm": "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux",
+      "state_transitions": [
+        {
+          "seconds": 5.260609542019665,
+          "state": "T",
+          "cpu": "0:00.02"
+        },
+        {
+          "seconds": 6.3048127500806,
+          "state": "S",
+          "cpu": "0:00.09"
+        }
+      ]
+    },
+    "34650": {
+      "first_seen_seconds": 10.472832458093762,
+      "last_seen_seconds": 48.000358208082616,
+      "observed_wall_seconds": 37.527525749988854,
+      "first_cpu_seconds": 0.0,
+      "maximum_cpu_seconds": 0.01,
+      "cpu_progress_seconds": 0.01,
+      "maximum_rss_kib": 144,
+      "sampled_states": {
+        "T": 31,
+        "U": 6
+      },
+      "comm": "<repo>/.build/media-isolation/TypefluxSemanticHelper-coverage",
+      "state_transitions": [
+        {
+          "seconds": 10.472832458093762,
+          "state": "T",
+          "cpu": "0:00.00"
+        },
+        {
+          "seconds": 13.599228749983013,
+          "state": "U",
+          "cpu": "0:00.00"
+        },
+        {
+          "seconds": 15.681322708027437,
+          "state": "T",
+          "cpu": "0:00.00"
+        },
+        {
+          "seconds": 24.020563375088386,
+          "state": "U",
+          "cpu": "0:00.01"
+        },
+        {
+          "seconds": 26.10178912500851,
+          "state": "T",
+          "cpu": "0:00.01"
+        },
+        {
+          "seconds": 32.36294620798435,
+          "state": "U",
+          "cpu": "0:00.01"
+        },
+        {
+          "seconds": 33.40430858300533,
+          "state": "T",
+          "cpu": "0:00.01"
+        },
+        {
+          "seconds": 42.782034749980085,
+          "state": "U",
+          "cpu": "0:00.01"
+        },
+        {
+          "seconds": 43.82276666699909,
+          "state": "T",
+          "cpu": "0:00.01"
+        }
+      ]
+    }
+  },
+  "effective_running_wall_seconds": null,
+  "limitation": "Reused media tool records process states and CPU time but no exact budget counters. No current stack was collected; the late sample failed after exit. Do not assign a current inference stage from historical samples."
+}

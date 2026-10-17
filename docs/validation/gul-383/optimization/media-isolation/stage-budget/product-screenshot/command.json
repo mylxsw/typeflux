@@ -1,0 +1,12 @@
+{
+  "media": "screenshot",
+  "mode": "service",
+  "stage_seconds": 40,
+  "budget_enabled": true,
+  "product_runtime": true,
+  "error": "[Errno 2] No such file or directory: '<model-cache>/embeddinggemma-2-Q8_0.gguf'",
+  "post_clear_pids_requiring_cleanup": [],
+  "exit_code": 125,
+  "wall_seconds": 0.12080691708251834,
+  "private_root_removed": true
+}

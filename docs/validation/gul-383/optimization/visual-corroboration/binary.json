@@ -1,0 +1,7 @@
+{
+  "sha256": "660e7b4e717560124d1a6d74ff8d08f1c5ce93749d4272a02cfd4cde742e27af",
+  "reader_sha256": "c92408a24a74c83f0be45f7fad22ffe50d500a5620937af093b9607d08da610f",
+  "tests_sha256": "cb7c489ba325acdeaa539a20110ef863a8f954a94d4278f99eef6bf6e13c3b85",
+  "reused_objects": 2723,
+  "configuration": "Focused Debug production primary plus new tests; accepted remaining objects; no native helper rebuilt"
+}
