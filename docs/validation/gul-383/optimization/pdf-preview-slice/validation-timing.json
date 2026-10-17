@@ -1,0 +1,76 @@
+{
+  "runs": [
+    {
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticPDFPreviewTests|SemanticOCRPreviewTests|AskFilePreviewLoaderTests|AskFilePreviewControllerTests|AskFilePreviewReaderTests"
+      ],
+      "wall_seconds": 279.99669945798814,
+      "exit_code": 2,
+      "name": "coverage-run",
+      "build_complete_seconds": [],
+      "runner_wall_seconds": [
+        278.07
+      ]
+    },
+    {
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticPDFPreviewTests|SemanticOCRPreviewTests|AskFilePreviewLoaderTests|AskFilePreviewControllerTests|AskFilePreviewReaderTests"
+      ],
+      "wall_seconds": 135.15378891600994,
+      "exit_code": 2,
+      "name": "coverage-build-retry",
+      "build_complete_seconds": [
+        40.31
+      ],
+      "runner_wall_seconds": [
+        135.09
+      ]
+    },
+    {
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticPDFPreviewTests/.*persistent"
+      ],
+      "wall_seconds": 118.369842666958,
+      "exit_code": 2,
+      "name": "coverage-method-retry",
+      "build_complete_seconds": [
+        45.8
+      ],
+      "runner_wall_seconds": [
+        117.89
+      ]
+    },
+    {
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticPDFPreviewTests/.*persistent"
+      ],
+      "wall_seconds": 108.09270316601032,
+      "exit_code": 0,
+      "name": "coverage-method-final",
+      "build_complete_seconds": [
+        32.98
+      ],
+      "runner_wall_seconds": [
+        104.11
+      ]
+    }
+  ],
+  "total_command_wall_seconds": 641.6130342069664,
+  "cache_clone_seconds": 9.6,
+  "successful_build_complete_seconds": 119.09,
+  "initial_failed_build": "No Build complete marker; failed before tests, entire 280.00s command retained",
+  "build_retry_count": 1,
+  "failed_method_retry_count": 2,
+  "unique_methods_passing": 21,
+  "suites": 5,
+  "final_method_parameter_cases": 3,
+  "final_command_exit": 0
+}

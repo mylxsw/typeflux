@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticPDFPreviewTests/.*persistent"
+  ],
+  "wall_seconds": 118.369842666958,
+  "exit_code": 2
+}

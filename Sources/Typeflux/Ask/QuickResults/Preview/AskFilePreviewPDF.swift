@@ -43,13 +43,19 @@ enum MediaPreviewDisplay {
         guard pixels.width.isFinite, pixels.height.isFinite, pixels.width >= 1, pixels.height >= 1,
               pixels.width <= Double(MediaPreviewOptions.maxEdge), pixels.height <= Double(MediaPreviewOptions.maxEdge)
         else { throw MediaFailure.tooLarge }
+        let locatePDF = operation == .previewPDF && evidence?.segmentKind == "pdf-ocr"
+            && version != nil && evidence?.version == version
+        let currentPDF = operation == .previewPDF &&
+            (evidence?.segmentKind == "pdf-ocr" ? locatePDF :
+                (evidence?.version == nil || evidence?.version == version))
         let locateText = operation == .previewImage && evidence?.segmentKind == "image-ocr"
             && version != nil && evidence?.version == version
         let options = MediaPreviewOptions(width: Int(pixels.width), height: Int(pixels.height),
                                           page: operation == .previewPDF ? evidence?.page : nil,
-                                          passage: operation == .previewPDF || locateText ? evidence?.text : nil,
+                                          passage: currentPDF || locateText ? evidence?.text : nil,
                                           start: operation.isAV ? (start.isFinite ? max(0, start) : 0) : nil,
-                                          container: operation.isAV ? MediaAVContainer(rawValue: url.pathExtension.lowercased()) : nil)
+                                          container: operation.isAV ? MediaAVContainer(rawValue: url.pathExtension.lowercased()) : nil,
+                                          locatePDFText: locatePDF ? true : nil)
         return try decode(.file(url, version: version), operation: operation, options: options, cancellation: cancellation, worker: worker)
     }
 

@@ -1,0 +1,30 @@
+{
+  "functional_chain": "Passed: real reader -> persistent page/version/chunk/source -> exact selected page -> isolated preview -> real shared production views and explicit fallbacks.",
+  "boundaries": "No OCR or highlight on invalid requested pages; empty/missing/repeated passages and invalid native bounds fall back. The native prefix only aligns a complete persisted passage; regions come from actual OCR substring geometry.",
+  "resources_concurrency": "The existing bounded helper/lease owns PDFKit, Vision and source bytes. No new persistent tasks, connections, caches or handles. Existing context/file cleanup and loader/controller generations are retained.",
+  "security": "No shell execution, URLs, network or untrusted paths added. Only current-version pdf-ocr evidence enables the on-demand location option. No source-format parsing added in host.",
+  "consistency": "PDF location uses existing imageTextLocated state for shared immediate pixel retirement and localized fallback; documented expanded semantics. No indexing/schema/recipe/model changes.",
+  "fixed_during_review": [
+    "Prevented unversioned OCR evidence from falling through the legacy native highlight path",
+    "Removed new lint violations and retained baseline warning counts",
+    "Exported Evidence fields explicitly instead of assuming Codable conformance",
+    "Corrected coordinate test for centered page margins and actual raster dimensions; no production change for these assertion failures"
+  ],
+  "remaining_limits": [
+    "OCR can differ at the lower preview resolution or with complex text order; use explicit fallback",
+    "Mixed passages crossing native/OCR boundary paint only real OCR supplement boxes",
+    "Synthetic fixtures and deterministic vectors do not establish real-model search quality, full native input, Release latency or long-term stability"
+  ],
+  "validation": {
+    "unique_methods_passed": 21,
+    "suites": 5,
+    "final_retry_method_cases_passed": 3,
+    "final_coverage_exit": 0,
+    "application_changed_lines": "11/11",
+    "shared_media_changed_lines": "48/48",
+    "line_not_branch_coverage": true,
+    "new_files_strict_lint_exit": 0,
+    "base_current_lint_warnings": "22/22; both aggregate commands exit 2, no new rule/file warning counts",
+    "diff_check_exit": 0
+  }
+}

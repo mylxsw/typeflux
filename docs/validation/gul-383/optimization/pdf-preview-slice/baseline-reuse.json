@@ -1,0 +1,15 @@
+{
+  "baseline": "5d05927599627fb88bebfe3f1482351e58816123",
+  "baseline_files": 160,
+  "unchanged": 153,
+  "changed": [
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewContent.swift",
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewRenderer.swift",
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewView.swift",
+    "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+    "Sources/TypefluxMediaRuntime/MediaPreviewDecoder.swift",
+    "Sources/TypefluxMediaRuntime/MediaPreviewOCR.swift"
+  ],
+  "new_freeze_count": 169
+}

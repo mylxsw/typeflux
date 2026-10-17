@@ -65,6 +65,7 @@ public enum MediaPreviewDecoder {
         else { throw MediaFailure.unreadable }
         let indices = options.page.flatMap { (1 ... document.pageCount).contains($0) ? [$0 - 1] : nil }
             ?? Array(0 ..< min(3, document.pageCount))
+        var geometry: MediaTextGeometry? = options.locatePDFText == true ? .init(boxes: []) : nil
         let rasters = try indices.enumerated().map { outputIndex, index in
             guard let page = document.page(at: index), let reference = page.pageRef
             else { throw MediaFailure.unreadable }
@@ -80,10 +81,12 @@ public enum MediaPreviewDecoder {
             let context = try context(width: width, height: height)
             let rect = CGRect(x: 0, y: 0, width: width, height: height)
             context.setFillColor(CGColor(gray: 1, alpha: 1)); context.fill(rect)
-            context.concatenate(reference.getDrawingTransform(.mediaBox, rect: rect, rotate: 0,
-                                                              preserveAspectRatio: true))
+            let transform = reference.getDrawingTransform(.mediaBox, rect: rect, rotate: 0, preserveAspectRatio: true)
+            context.saveGState()
+            context.concatenate(transform)
             context.drawPDFPage(reference)
-            if options.page == index + 1, let passage = options.passage, let text = page.string {
+            if options.locatePDFText != true, options.page == index + 1,
+               let passage = options.passage, let text = page.string {
                 context.setFillColor(CGColor(srgbRed: 1, green: 0.8, blue: 0.05, alpha: 0.38))
                 for range in MediaPreviewText.ranges(in: text, passage: passage) {
                     for line in page.selection(for: range)?.selectionsByLine() ?? [] {
@@ -91,9 +94,23 @@ public enum MediaPreviewDecoder {
                     }
                 }
             }
+            context.restoreGState()
+            if options.locatePDFText == true, options.page == index + 1, let passage = options.passage {
+                geometry = MediaPreviewPDFGeometry.locate(
+                    page, context: context, transform: transform, passage: passage
+                )
+                context.setFillColor(CGColor(srgbRed: 1, green: 0.8, blue: 0.05, alpha: 0.38))
+                for box in geometry?.boxes ?? [] {
+                    context.fill(CGRect(x: box.minX * Double(width), y: box.minY * Double(height),
+                                        width: box.width * Double(width), height: box.height * Double(height)))
+                }
+            }
             return try write(context, index: outputIndex, page: index + 1, directory: directory)
         }
-        return .init(rasters: rasters, pages: document.pageCount)
+        var result = MediaPreviewResult(rasters: rasters, pages: document.pageCount)
+        // Invalid pages render the existing overview with an explicit unlocated result in the host.
+        if rasters.count == 1, rasters.first?.page == options.page { result.textGeometry = geometry }
+        return result
     }
 
     private static func context(width: Int, height: Int) throws -> CGContext {

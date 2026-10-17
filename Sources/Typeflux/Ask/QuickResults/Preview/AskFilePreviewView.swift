@@ -103,7 +103,7 @@ struct AskFilePreviewView: View {
                     }
                     Text(String(format: L("ask.preview.pages"), content.pageCount)).font(.system(size: 10))
                 }.padding(10)
-            }
+            }.overlay(alignment: .bottomTrailing) { textLocationFallback(content) }
         case .text: text(content)
         case .markdown:
             ScrollView {

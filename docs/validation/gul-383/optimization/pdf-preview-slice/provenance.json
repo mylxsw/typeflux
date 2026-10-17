@@ -1,0 +1,32 @@
+{
+  "baseline_head": "ebf516a7f410dc047d246627f40709c08542fe68",
+  "build": "Debug, LLVM coverage, jobs=4; private APFS clone relocated and rebuilt; copied module caches parked outside scratch",
+  "final_head": "Recorded in PR and issue comment to avoid self-referential hash",
+  "ocr": "Real local Apple Vision, OS-managed model; synthetic PDF fixtures",
+  "embedding": "Deterministic fixture vectors, no embedding weights loaded",
+  "delivery": "Persistent index hit to real isolated preview and actual production-view PNGs; no physical-keyboard/full launcher claim",
+  "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83",
+  "xcode": "Xcode 27.1\nBuild version 27A9275",
+  "hardware": "Mac16,10",
+  "memory_bytes": "17179869184",
+  "cache_clone_seconds": 9.6,
+  "baseline_tools_match": {
+    "swift": true,
+    "os": true,
+    "xcode": true,
+    "hardware": true,
+    "memory_bytes": true
+  },
+  "binaries_sha256": {
+    ".build/pdf-preview/arm64-apple-macosx/debug/Typeflux": "a1731f9a96fccd87e4e93a52ebd07e07023d3c6cdc2cd8a572c90ae516dabff2",
+    ".build/pdf-preview/arm64-apple-macosx/debug/TypefluxMediaHelper": "5977d7c910fbc40ef5dee5150af4b946984a6355850660e2e185a37d516e0fbd",
+    ".build/pdf-preview/arm64-apple-macosx/debug/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests": "8605a2c44a4524f6c6e948907f5c5fd4f86d0cda6c004973d954e362d9b5b1d8",
+    ".build/pdf-preview/first-tests-binary": "19433193e60dac2c8dda23231a95fb427e05d33a22067245344006d274704a21"
+  },
+  "coverage_export_policy": "Changed-line coverage uses only final passing method app/helper profiles. First binary-matched profiles retain evidence for 20 previously passing methods; no old failed test mappings are applied to the final test binary.",
+  "final_helper_profile_count": 27,
+  "swiftlint": "0.65.1",
+  "llvm_cov": "Apple LLVM version 21.0.0\n  Optimized build.",
+  "baseline_contains_pr624_merge": true
+}

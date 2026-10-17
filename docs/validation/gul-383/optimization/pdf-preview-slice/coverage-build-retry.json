@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticPDFPreviewTests|SemanticOCRPreviewTests|AskFilePreviewLoaderTests|AskFilePreviewControllerTests|AskFilePreviewReaderTests"
+  ],
+  "wall_seconds": 135.15378891600994,
+  "exit_code": 2
+}

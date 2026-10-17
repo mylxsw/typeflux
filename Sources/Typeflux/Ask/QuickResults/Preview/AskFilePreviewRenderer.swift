@@ -50,7 +50,8 @@ enum AskFilePreviewRenderer {
             try Task.checkCancellation()
             return AskFilePreviewContent(kind: kind, images: rendered.images.map { NSImage(cgImage: $0, size: .zero) },
                                          pageCount: rendered.pages, pageNumbers: rendered.numbers,
-                                         imageTextLocated: kind == .image && hit.evidence?.segmentKind == "image-ocr"
+                                         imageTextLocated: (kind == .image && hit.evidence?.segmentKind == "image-ocr")
+                                            || (kind == .pdf && hit.evidence?.segmentKind == "pdf-ocr")
                                             ? rendered.imageTextLocated ?? false : nil)
         }
         if kind == .video || kind == .audio {
