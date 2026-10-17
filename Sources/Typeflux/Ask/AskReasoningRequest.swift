@@ -39,7 +39,7 @@ enum AskReasoningRequest {
         }
         native["thinking"] = ["type": "enabled", "budget_tokens": budget]
         // max_tokens must exceed the thinking budget and still leave room for the answer.
-        let answer = native["max_tokens"] as? Int ?? AskLocalPrompt.maxAnswerTokens
+        let answer = native["max_tokens"] as? Int ?? 4096
         native["max_tokens"] = budget + answer
     }
 

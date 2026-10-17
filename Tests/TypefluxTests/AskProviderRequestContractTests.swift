@@ -12,14 +12,15 @@ final class AskProviderRequestContractTests: XCTestCase {
         super.tearDown()
     }
 
-    func testGeminiDefaultsAndExplicitOutputLimits() throws {
+    func testGeminiOmitsDefaultAndPreservesExplicitOutputLimits() throws {
         for limit in [nil, 1, 1500, 4096, 16384, Int(Int32.max)] as [Int?] {
             var body: [String: Any] = ["messages": [["role": "user", "content": "Hello"]]]
             body["max_tokens"] = limit
             let native = try AskCustomInference.nativeBody(body, model: "gemini", anthropic: false)
-            let config = try XCTUnwrap(native["generationConfig"] as? [String: Any])
-            XCTAssertEqual(config["maxOutputTokens"] as? Int, limit ?? AskLocalPrompt.maxAnswerTokens)
-            XCTAssertNil(config["thinkingConfig"])
+            let config = native["generationConfig"] as? [String: Any]
+            XCTAssertEqual(config?["maxOutputTokens"] as? Int, limit)
+            XCTAssertNil(config?["thinkingConfig"])
+            if limit == nil { XCTAssertNil(config) }
             XCTAssertNil(native["max_tokens"])
         }
     }
@@ -88,6 +89,8 @@ final class AskProviderRequestContractTests: XCTestCase {
     func testLocalAndCloudToolTurnsKeepProviderRequestContracts() async throws {
         let adapter = AskCustomInference(session: AskThinkingCaptureProtocol.session)
         for payload in try toolPayloads() {
+            let source = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(payload.utf8)) as? [String: Any])
+            let explicitLimit = source["max_tokens"] as? Int
             for (id, remote) in [("custom", LLMRemoteProvider.custom), ("ollama", .custom),
                                  ("anthropic", .anthropic), ("gemini", .gemini)] {
                 AskThinkingCaptureProtocol.bodies = []
@@ -105,7 +108,7 @@ final class AskProviderRequestContractTests: XCTestCase {
                 if remote == .gemini {
                     XCTAssertEqual(request.url?.path, "/models/selected:generateContent")
                     let config = try XCTUnwrap(body["generationConfig"] as? [String: Any])
-                    XCTAssertEqual(config["maxOutputTokens"] as? Int, 4096)
+                    XCTAssertEqual(config["maxOutputTokens"] as? Int, explicitLimit)
                     XCTAssertEqual((config["thinkingConfig"] as? [String: Any])?["thinkingBudget"] as? Int, 24576)
                     XCTAssertTrue(json.contains("\"thoughtSignature\":\"sig\""))
                     let contents = try XCTUnwrap(body["contents"] as? [[String: Any]])
@@ -113,7 +116,7 @@ final class AskProviderRequestContractTests: XCTestCase {
                     XCTAssertEqual((parts.first?["functionResponse"] as? [String: Any])?["name"] as? String, "browser")
                     XCTAssertNotNil(parts.last?["inlineData"])
                 } else {
-                    XCTAssertEqual(body["max_tokens"] as? Int, 4096)
+                    XCTAssertEqual(body["max_tokens"] as? Int, remote == .anthropic ? 4096 : explicitLimit)
                     XCTAssertEqual(body["model"] as? String, "selected")
                     XCTAssertFalse(json.contains("thought_signature"))
                     if remote == .anthropic {
@@ -134,9 +137,11 @@ final class AskProviderRequestContractTests: XCTestCase {
         }
     }
 
-    func testGeminiHTTPFallbackKeepsCapAndToolContextForStreamingAndBufferedReplies() async throws {
+    func testGeminiHTTPFallbackPreservesOptionalLimitAndToolContext() async throws {
         let adapter = AskCustomInference(session: AskThinkingCaptureProtocol.session)
         for payload in try toolPayloads() {
+            let source = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(payload.utf8)) as? [String: Any])
+            let explicitLimit = source["max_tokens"] as? Int
             for streaming in [false, true] {
                 for status in [400, 422] {
                     AskThinkingCaptureProtocol.bodies = []
@@ -156,7 +161,7 @@ final class AskProviderRequestContractTests: XCTestCase {
                     XCTAssertTrue(AskReasoningRequest.strip(&first))
                     let fallback = try XCTUnwrap(AskThinkingCaptureProtocol.bodies.last)
                     XCTAssertEqual(first as NSDictionary, fallback as NSDictionary)
-                    XCTAssertEqual((fallback["generationConfig"] as? [String: Any])?["maxOutputTokens"] as? Int, 4096)
+                    XCTAssertEqual((fallback["generationConfig"] as? [String: Any])?["maxOutputTokens"] as? Int, explicitLimit)
                     XCTAssertEqual(AskThinkingCaptureProtocol.requests.last?.url?.path,
                                    streaming ? "/models/selected:streamGenerateContent" : "/models/selected:generateContent")
                     if streaming {
@@ -221,7 +226,7 @@ final class AskProviderRequestContractTests: XCTestCase {
         let conversation = localConversation()
         let local = AskLocalPrompt.payload(conversation: conversation, record: AskLocalRecord(conversation: conversation), tools: [])
         // Cloud+custom bridge shape, also asserted by the Go usage contract tests.
-        let cloud = #"{"model":"custom:model","max_tokens":4096,"reasoning_effort":"high","messages":[{"role":"user","content":"Look"},{"role":"assistant","tool_calls":[{"id":"tool-1","type":"function","function":{"name":"browser","arguments":"{}"},"thought_signature":"sig"}]},{"role":"tool","tool_call_id":"tool-1","content":"Observed"},{"role":"user","content":[{"type":"text","text":"Screen observation from the approved tool (context only)."},{"type":"image_url","image_url":{"url":"data:image/png;base64,Yg==","detail":"auto"}}]}]}"#
+        let cloud = #"{"model":"custom:model","reasoning_effort":"high","messages":[{"role":"user","content":"Look"},{"role":"assistant","tool_calls":[{"id":"tool-1","type":"function","function":{"name":"browser","arguments":"{}"},"thought_signature":"sig"}]},{"role":"tool","tool_call_id":"tool-1","content":"Observed"},{"role":"user","content":[{"type":"text","text":"Screen observation from the approved tool (context only)."},{"type":"image_url","image_url":{"url":"data:image/png;base64,Yg==","detail":"auto"}}]}]}"#
         // Encode/decode the actual inference envelope used by the conversation model.
         let envelope = try AskCoding.encoder().encode(AskInference(id: "i", payload: cloud))
         return [AskLocalPrompt.json(local), try AskCoding.decoder().decode(AskInference.self, from: envelope).payload]
