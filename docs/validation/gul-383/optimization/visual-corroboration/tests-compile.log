@@ -1,0 +1,14 @@
+macro expansion #require:2:3: error: call can throw, but it is not marked with 'try' and the error is not handled
+`- <repo>/.build/visual-corroboration/SemanticImageCorroborationTests.swift:113:116: note: expanded code originates here
+111 |                 input: .init(kind: .image, path: path, time: 0, endTime: 0),
+112 |                 vector: (doc["vector"] as! [NSNumber]).map(\.floatValue))
+113 |             try #require(store.commitMediaJob(path: path, generation: generation, metadata: metadata, segments: 1))
+    |                 `- note: in expansion of macro 'require' here
+    +--- macro expansion #require --------------------------------------
+    |1 | Testing.__checkFunctionCall(store.self,calling: {
+    |2 |   $0.commitMediaJob(path: $1,generation: $2,metadata: $3,segments: $4)
+    |  |   `- error: call can throw, but it is not marked with 'try' and the error is not handled
+    |3 | },path,generation,metadata,1,expression: .__fromFunctionCall(.__fromSyntaxNode("store"),"commitMediaJob",("path",.__fromSyntaxNode("path")),("generation",.__fromSyntaxNode("generation")),("metadata",.__fromSyntaxNode("metadata")),("segments",.__fromSyntaxNode("1"))),comments: [],isRequired: true,sourceLocation: Testing.SourceLocation.__here()).__required()
+    +-------------------------------------------------------------------
+114 |             for q in queries {
+115 |                 let text = q["query"] as! String

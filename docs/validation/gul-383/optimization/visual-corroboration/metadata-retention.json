@@ -1,0 +1,5 @@
+{
+  "initial_attempt": "Failed: cache checkout path used the wrong parent depth; no build or test was repeated",
+  "corrected": "Read-only source fingerprinting used the workspace parent; text artifact paths were then scrubbed",
+  "initial_frontend_stderr": "Overwritten by successful retry; failure phase and diagnostic summary retained in build.json/README"
+}

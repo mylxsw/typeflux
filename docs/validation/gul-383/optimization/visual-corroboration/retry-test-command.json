@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/libexec/swift/pm/swiftpm-testing-helper",
+    "--test-bundle-path",
+    "<repo>/.build/visual-corroboration/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests",
+    "<repo>/.build/visual-corroboration/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests",
+    "--testing-library",
+    "swift-testing",
+    "--no-parallel",
+    "--filter",
+    "^GUL405CorroborationTests\\.SemanticImageCorroborationTests/`incompatible or malformed OCR cannot corroborate`"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 1.7319679580396041,
+  "scope": "Only the failed parameterized method"
+}

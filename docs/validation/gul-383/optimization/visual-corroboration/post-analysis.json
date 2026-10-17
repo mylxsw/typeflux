@@ -1,0 +1,21 @@
+{
+  "query": "black text on a white background",
+  "raw_cosine": {
+    "image": 0.6938424110412598,
+    "image-ocr": 0.6496596932411194
+  },
+  "half_precision_agreement": 0.8069093507391714,
+  "corroboration_score": 0.7067375568197769,
+  "existing_absolute_gate": 0.7,
+  "accepted": true,
+  "winning_segment": "image",
+  "selection_score": 0.3816133260726929,
+  "method": "Recompute the product formula from persisted Float16 values and unchanged production scanner raw scalars; Store and service outcomes recorded separately",
+  "rejection_reasons": {
+    "single_modality": "Original .70 gate; no independent support",
+    "duplicate_OCR": "One best vector per modality; duplicate chunks ignored",
+    "incompatible": "Provenance/segment/norm check excludes support",
+    "unversioned": "No version identity; original confidence applies",
+    "exact_miss": "Identifier or quoted lexical gate rejects before corroboration"
+  }
+}

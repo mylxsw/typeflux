@@ -1,0 +1,5 @@
+Running SwiftFormat...
+Reading config file at <repo>/.swiftformat
+Reading swift-version file at <repo>/.swift-version (version 6.3.1)
+SwiftFormat completed in 0.21s.
+1/1 files formatted.

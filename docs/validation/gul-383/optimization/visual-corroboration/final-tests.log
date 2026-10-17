@@ -1,0 +1,83 @@
+Selected methods 31
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "Retained screenshot visual and OCR corroboration" started.
+◇ Test "retained real vectors select visual evidence before and after reopen" started.
+✔ Test "retained real vectors select visual evidence before and after reopen" passed after 0.011 seconds.
+◇ Test "one modality and its repeated chunks cannot supply independent support" started.
+◇ Test case passing 1 argument kind → "image" to "one modality and its repeated chunks cannot supply independent support" started.
+◇ Test case passing 1 argument kind → "image-ocr" to "one modality and its repeated chunks cannot supply independent support" started.
+✔ Test "one modality and its repeated chunks cannot supply independent support" with 2 test cases passed after 0.841 seconds.
+◇ Test "duplicate OCR across pages leaves the same visual winner" started.
+✔ Test "duplicate OCR across pages leaves the same visual winner" passed after 0.574 seconds.
+◇ Test "incompatible or malformed OCR cannot corroborate" started.
+◇ Test case passing 1 argument field → "provenance" to "incompatible or malformed OCR cannot corroborate" started.
+◇ Test case passing 1 argument field → "segment_kind" to "incompatible or malformed OCR cannot corroborate" started.
+◇ Test case passing 1 argument field → "vector" to "incompatible or malformed OCR cannot corroborate" started.
+◇ Test case passing 1 argument field → "version" to "incompatible or malformed OCR cannot corroborate" started.
+✔ Test "incompatible or malformed OCR cannot corroborate" with 4 test cases passed after 0.024 seconds.
+◇ Test "different files cannot lend each other a modality" started.
+✔ Test "different files cannot lend each other a modality" passed after 0.005 seconds.
+◇ Test "OCR exact identifiers and quotes still require actual lexical evidence" started.
+✔ Test "OCR exact identifiers and quotes still require actual lexical evidence" passed after 0.008 seconds.
+◇ Test "original correct and incorrect color pairs retain the absolute gate" started.
+✔ Test "original correct and incorrect color pairs retain the absolute gate" passed after 0.160 seconds.
+◇ Test "fixed original text and media oracles retain supported recall in a mixed store" started.
+✔ Test "fixed original text and media oracles retain supported recall in a mixed store" passed after 0.742 seconds.
+◇ Test "original fifty no answer queries retain their labels and denominators" started.
+✔ Test "original fifty no answer queries retain their labels and denominators" passed after 0.195 seconds.
+✔ Suite "Retained screenshot visual and OCR corroboration" passed after 2.563 seconds.
+◇ Suite "Retained screenshot service publication" started.
+◇ Test "service publishes visual then rejects changed version and revoked metadata access" started.
+✔ Test "service publishes visual then rejects changed version and revoked metadata access" passed after 0.171 seconds.
+✔ Suite "Retained screenshot service publication" passed after 0.171 seconds.
+◇ Suite "Independent lexical WAL reader" started.
+◇ Test "cjk filters permissions cancellation and committed changes" started.
+✔ Test "cjk filters permissions cancellation and committed changes" passed after 0.128 seconds.
+◇ Test "blocked matches do not consume top K and chunks deduplicate" started.
+✔ Test "blocked matches do not consume top K and chunks deduplicate" passed after 0.007 seconds.
+✔ Suite "Independent lexical WAL reader" passed after 0.135 seconds.
+◇ Suite "Calibrated script and modality branches" started.
+◇ Test "centering is bounded for tiny groups and repeated chunks contribute once" started.
+✔ Test "centering is bounded for tiny groups and repeated chunks contribute once" passed after 0.001 seconds.
+◇ Test "script branches retain cross-language candidates before global TopK" started.
+✔ Test "script branches retain cross-language candidates before global TopK" passed after 0.633 seconds.
+◇ Test "legacy inserts text changes and recipe migration keep compatible vectors" started.
+✔ Test "legacy inserts text changes and recipe migration keep compatible vectors" passed after 0.011 seconds.
+◇ Test "BM25 breaks equal coverage ties rather than insertion order" started.
+✔ Test "BM25 breaks equal coverage ties rather than insertion order" passed after 0.009 seconds.
+✔ Suite "Calibrated script and modality branches" passed after 0.655 seconds.
+◇ Suite "Semantic evidence calibration and immutable pages" started.
+◇ Test "unicode normalization preserves cjk and exact number boundaries" started.
+✔ Test "unicode normalization preserves cjk and exact number boundaries" passed after 0.001 seconds.
+◇ Test "complete terms and identifiers outrank unrelated high cosine" started.
+✔ Test "complete terms and identifiers outrank unrelated high cosine" passed after 0.089 seconds.
+◇ Test "absolute gate retains a single exact vector and rejects orthogonal no answer" started.
+✔ Test "absolute gate retains a single exact vector and rejects orthogonal no answer" passed after 0.007 seconds.
+◇ Test "committed update delete rollback and same ID reuse invalidate pages" started.
+✔ Test "committed update delete rollback and same ID reuse invalidate pages" passed after 0.014 seconds.
+◇ Test "query readers do not wait for an uncommitted writer or checkpoint" started.
+✔ Test "query readers do not wait for an uncommitted writer or checkpoint" passed after 0.006 seconds.
+◇ Test "legacy normalization rebuild preserves vectors and new empty vectors stay invisible" started.
+✔ Test "legacy normalization rebuild preserves vectors and new empty vectors stay invisible" passed after 0.124 seconds.
+◇ Test "ambiguous low similarity refuses answers without breaking a clear semantic match" started.
+✔ Test "ambiguous low similarity refuses answers without breaking a clear semantic match" passed after 0.001 seconds.
+◇ Test "partial lexical overlap never demotes an equally similar passage" started.
+✔ Test "partial lexical overlap never demotes an equally similar passage" passed after 0.001 seconds.
+◇ Test "confidence includes low-scoring files and repeated book chunks do not change the answer" started.
+✔ Test "confidence includes low-scoring files and repeated book chunks do not change the answer" passed after 0.132 seconds.
+◇ Test "video audio windows use audio calibration and preserve their timestamp" started.
+✔ Test "video audio windows use audio calibration and preserve their timestamp" passed after 0.138 seconds.
+◇ Test "database faults and malformed payloads fail closed without stale snapshot publication" started.
+✔ Test "database faults and malformed payloads fail closed without stale snapshot publication" passed after 0.010 seconds.
+◇ Test "half precision scores preserve sorting within the documented error bound" started.
+✔ Test "half precision scores preserve sorting within the documented error bound" passed after 0.076 seconds.
+◇ Test "lexical timestamps reject nonfinite negative and integer overflow values" started.
+✔ Test "lexical timestamps reject nonfinite negative and integer overflow values" passed after 0.008 seconds.
+◇ Test "format requests exclude incidental content mentions" started.
+✔ Test "format requests exclude incidental content mentions" passed after 0.001 seconds.
+◇ Test "stronger raw evidence keeps its order across script distributions" started.
+✔ Test "stronger raw evidence keeps its order across script distributions" passed after 0.012 seconds.
+✔ Suite "Semantic evidence calibration and immutable pages" passed after 0.622 seconds.
+✔ Test run with 31 tests in 5 suites passed after 4.150 seconds.

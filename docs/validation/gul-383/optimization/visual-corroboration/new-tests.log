@@ -1,0 +1,35 @@
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "Retained screenshot visual and OCR corroboration" started.
+◇ Test "retained real vectors select visual evidence before and after reopen" started.
+✔ Test "retained real vectors select visual evidence before and after reopen" passed after 0.010 seconds.
+◇ Test "one modality and its repeated chunks cannot supply independent support" started.
+◇ Test case passing 1 argument kind → "image" to "one modality and its repeated chunks cannot supply independent support" started.
+◇ Test case passing 1 argument kind → "image-ocr" to "one modality and its repeated chunks cannot supply independent support" started.
+✔ Test "one modality and its repeated chunks cannot supply independent support" with 2 test cases passed after 0.134 seconds.
+◇ Test "duplicate OCR across pages leaves the same visual winner" started.
+✔ Test "duplicate OCR across pages leaves the same visual winner" passed after 0.065 seconds.
+◇ Test "incompatible or malformed OCR cannot corroborate" started.
+◇ Test case passing 1 argument field → "provenance" to "incompatible or malformed OCR cannot corroborate" started.
+◇ Test case passing 1 argument field → "segment_kind" to "incompatible or malformed OCR cannot corroborate" started.
+◇ Test case passing 1 argument field → "vector" to "incompatible or malformed OCR cannot corroborate" started.
+◇ Test case passing 1 argument field → "version" to "incompatible or malformed OCR cannot corroborate" started.
+✘ Test "incompatible or malformed OCR cannot corroborate" recorded an issue with 1 argument field → "version" at SemanticImageCorroborationTests.swift:70:6: Caught error: .database
+✘ Test "incompatible or malformed OCR cannot corroborate" with 4 test cases failed after 0.022 seconds with 1 issue.
+◇ Test "different files cannot lend each other a modality" started.
+✔ Test "different files cannot lend each other a modality" passed after 0.005 seconds.
+◇ Test "OCR exact identifiers and quotes still require actual lexical evidence" started.
+✔ Test "OCR exact identifiers and quotes still require actual lexical evidence" passed after 0.008 seconds.
+◇ Test "original correct and incorrect color pairs retain the absolute gate" started.
+✔ Test "original correct and incorrect color pairs retain the absolute gate" passed after 0.028 seconds.
+◇ Test "fixed original text and media oracles retain supported recall in a mixed store" started.
+✔ Test "fixed original text and media oracles retain supported recall in a mixed store" passed after 0.555 seconds.
+◇ Test "original fifty no answer queries retain their labels and denominators" started.
+✔ Test "original fifty no answer queries retain their labels and denominators" passed after 0.187 seconds.
+✘ Suite "Retained screenshot visual and OCR corroboration" failed after 1.018 seconds with 1 issue.
+◇ Suite "Retained screenshot service publication" started.
+◇ Test "service publishes visual then rejects changed version and revoked metadata access" started.
+✔ Test "service publishes visual then rejects changed version and revoked metadata access" passed after 0.179 seconds.
+✔ Suite "Retained screenshot service publication" passed after 0.180 seconds.
+✘ Test run with 10 tests in 2 suites failed after 1.198 seconds with 1 issue.

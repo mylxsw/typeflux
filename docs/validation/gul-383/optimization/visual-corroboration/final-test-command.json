@@ -1,0 +1,8 @@
+{
+  "exit_code": 0,
+  "wall_seconds": 6.458173374994658,
+  "selected_methods": 31,
+  "command": [
+    "docs/validation/gul-383/optimization/visual-corroboration/run_focused.py"
+  ]
+}

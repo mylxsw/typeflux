@@ -1,0 +1,8 @@
+{
+  "changed_version_hits" : 0,
+  "fixed_visual_hits" : [
+    "image"
+  ],
+  "mode" : "Retained real-vector service replay; mocked query and metadata; no inference or UI",
+  "revoked_access_hits" : 0
+}
