@@ -161,6 +161,26 @@ final class AskLauncherIconCache {
         }
     }
 
+    /// Memory-only accepted consumer snapshot; never performs the synchronous system lookup.
+    func nativeIconBatch(_ icon: MediaNativeIcon, revision: Date?) -> AskNativeIconPreparation.Batch {
+        let currentGeneration = generation, currentFileGeneration = fileGeneration
+        let key = Key(icon, revision: revision), completed = cached(icon, revision: revision)
+        let worker = worker
+        let original = completed == nil && decode == nil ? worker.authorization() : nil
+        let current: @MainActor @Sendable () -> Bool = { [weak self] in
+            guard let self, !Task.isCancelled, self.generation == currentGeneration,
+                  !key.isPrivate || self.fileGeneration == currentFileGeneration else { return false }
+            return original.map { worker.permits($0) } ?? true
+        }
+        return .init(decode: { [self] in
+            guard current() else { throw MediaFailure.unavailable }
+            if let completed { return completed }
+            let result = try await load(icon, revision: revision, authorization: original)
+            guard current() else { throw MediaFailure.unavailable }
+            return result
+        }, isCurrent: current)
+    }
+
     /// Replace stale-query prefetches. Returned handles let owners collect accepted work.
     /// Visible rows sharing a request keep it alive.
     @discardableResult func prefetch(_ icons: [MediaNativeIcon]) -> [Task<Void, Never>] {
