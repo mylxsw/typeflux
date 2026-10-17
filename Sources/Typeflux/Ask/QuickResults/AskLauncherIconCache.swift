@@ -22,6 +22,7 @@ final class AskLauncherIconCache {
     }
     private struct Pending {
         let task: Task<AskFilePreviewPDF.Result, Error>
+        let authorization: MediaWorker.Authorization?
         var clients: Set<UUID>
     }
 
@@ -34,7 +35,8 @@ final class AskLauncherIconCache {
     private var filePrefetch: Set<Key> = []
     private var generation = UUID()
     private var fileGeneration = UUID()
-    private let decode: AskNativeIconDecoding
+    private let decode: AskNativeIconDecoding?
+    private let worker: MediaWorker
     private let capacity: Int
     private let fileCapacity: Int
     private let lifetime: TimeInterval
@@ -42,9 +44,9 @@ final class AskLauncherIconCache {
 
     init(capacity: Int = 64, fileCapacity: Int = 48, lifetime: TimeInterval = 300,
          immediateLookup: @escaping @MainActor (MediaNativeIcon, Bool) -> NSImage? = AskLauncherIconCache.systemIcon,
-         decode: @escaping AskNativeIconDecoding = { try await AskFinderIcon.decode($0) }) {
+         worker: MediaWorker = .previews, decode: AskNativeIconDecoding? = nil) {
         self.capacity = capacity; self.fileCapacity = fileCapacity
-        self.lifetime = lifetime; self.immediateLookup = immediateLookup; self.decode = decode
+        self.lifetime = lifetime; self.immediateLookup = immediateLookup; self.decode = decode; self.worker = worker
     }
 
     nonisolated static func eligible(_ icon: MediaNativeIcon) -> Bool {
@@ -110,20 +112,31 @@ final class AskLauncherIconCache {
         return .init(images: [raster], numbers: [], pages: 0)
     }
 
-    func load(_ icon: MediaNativeIcon, revision: Date? = nil) async throws -> AskFilePreviewPDF.Result {
+    func load(_ icon: MediaNativeIcon, revision: Date? = nil,
+              authorization: MediaWorker.Authorization? = nil) async throws -> AskFilePreviewPDF.Result {
         guard Self.eligible(icon, revision: revision) else { throw MediaFailure.invalidProtocol }
         try Task.checkCancellation()
         if let result = cached(icon, revision: revision) { return result }
+        if decode == nil, let authorization, !worker.permits(authorization) { throw MediaFailure.unavailable }
         let key = Key(icon, revision: revision)
         let currentGeneration = generation
         let currentFileGeneration = fileGeneration
         let client = UUID()
         let task: Task<AskFilePreviewPDF.Result, Error>
+        let original: MediaWorker.Authorization?
         if var current = pending[key] {
+            original = current.authorization
             current.clients.insert(client); pending[key] = current; task = current.task
         } else {
-            task = Task { [decode] in try await decode(icon) }
-            pending[key] = Pending(task: task, clients: [client])
+            original = decode == nil ? (authorization ?? worker.authorization()) : nil
+            if let original, !worker.permits(original) { throw MediaFailure.unavailable }
+            task = Task { [decode, worker] in
+                try Task.checkCancellation()
+                if let original, !worker.permits(original) { throw MediaFailure.unavailable }
+                if let decode { return try await decode(icon) }
+                return try await AskFinderIcon.decode(icon, worker: worker, authorization: original)
+            }
+            pending[key] = Pending(task: task, authorization: original, clients: [client])
         }
         return try await withTaskCancellationHandler {
             do {
@@ -131,6 +144,7 @@ final class AskLauncherIconCache {
                 try Task.checkCancellation()
                 guard generation == currentGeneration,
                       !key.isPrivate || fileGeneration == currentFileGeneration else { throw CancellationError() }
+                if let original, !worker.permits(original) { throw MediaFailure.unavailable }
                 guard result.images.count == 1, let image = result.images.first,
                       image.width > 0, image.height > 0, image.width <= 56, image.height <= 56 else {
                     throw MediaFailure.invalidProtocol
@@ -147,23 +161,25 @@ final class AskLauncherIconCache {
         }
     }
 
-    /// Replace stale-query prefetches. Visible rows sharing a request keep it alive.
-    func prefetch(_ icons: [MediaNativeIcon]) {
+    /// Replace stale-query prefetches. Returned handles let owners collect accepted work.
+    /// Visible rows sharing a request keep it alive.
+    @discardableResult func prefetch(_ icons: [MediaNativeIcon]) -> [Task<Void, Never>] {
         let ordered = Array(icons.filter(Self.eligible).prefix(12)).map { Key($0) }
-        updatePrefetch(ordered, privateFiles: false)
+        return updatePrefetch(ordered, privateFiles: false)
     }
 
-    func prefetchFiles(_ hits: [AskFileHit]) {
+    @discardableResult func prefetchFiles(_ hits: [AskFileHit]) -> [Task<Void, Never>] {
         // File mode can show more rows than mixed search; include the first folders.
         let folders = Array(hits.filter(\.isFolder).prefix(3))
         let candidates = Array(hits.prefix(12)) + folders
         let ordered = candidates.map { Key(.init(kind: .file, value: $0.path), revision: $0.modified) }
         let folderKeys = Set(folders.map { Key(.init(kind: .file, value: $0.path), revision: $0.modified) })
         var seen: Set<Key> = []
-        updatePrefetch(ordered.filter { seen.insert($0).inserted }, privateFiles: true, folders: folderKeys)
+        return updatePrefetch(ordered.filter { seen.insert($0).inserted }, privateFiles: true, folders: folderKeys)
     }
 
-    private func updatePrefetch(_ ordered: [Key], privateFiles: Bool, folders: Set<Key> = []) {
+    private func updatePrefetch(_ ordered: [Key], privateFiles: Bool, folders: Set<Key> = []) -> [Task<Void, Never>] {
+        let original = decode == nil ? worker.authorization() : nil
         let wanted = Set(ordered)
         let previous = privateFiles ? filePrefetch : applicationPrefetch
         for key in previous.subtracting(wanted) {
@@ -174,17 +190,20 @@ final class AskLauncherIconCache {
             && prefetchTasks[key] == nil {
             let id = UUID()
             let task = Task { [weak self] in
-                _ = try? await self?.load(key.icon, revision: key.revision)
+                _ = try? await self?.load(key.icon, revision: key.revision, authorization: original)
                 if self?.prefetchTasks[key]?.id == id { self?.prefetchTasks[key] = nil }
             }
             prefetchTasks[key] = (id, task)
         }
+        return ordered.compactMap { prefetchTasks[$0]?.task }
     }
 
-    func cancelPrefetch() {
-        prefetchTasks.values.forEach { $0.task.cancel() }
+    @discardableResult func cancelPrefetch() -> [Task<Void, Never>] {
+        let tasks = prefetchTasks.values.map(\.task)
+        tasks.forEach { $0.cancel() }
         prefetchTasks.removeAll()
         applicationPrefetch.removeAll(); filePrefetch.removeAll()
+        return tasks
     }
 
     func clearFiles() {
