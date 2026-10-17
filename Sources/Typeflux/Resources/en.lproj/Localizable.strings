@@ -1460,7 +1460,7 @@
 
 "history.stats.hotkeyToFirstSignal" = "Hotkey to microphone signal";
 "history.stats.inputZeroPrefix" = "Initial digital silence";
-"workflow.typefluxCloud.localFallbackRequired" = "Cloud speech recognition is available on paid plans. Your request will be processed by the local model.";
+"workflow.typefluxCloud.localFallbackRequired" = "Typeflux Cloud speech recognition is available on paid plans. This request will use a local model.";
 
 // Auxiliary dictation shortcut
 "settings.shortcuts.auxiliary.title" = "Auxiliary Shortcut";

@@ -227,6 +227,13 @@ final class ModelRegistryTests: XCTestCase {
         }
     }
 
+    func testOnlyTypefluxSpeechRequiresTypefluxCloudSubscription() {
+        for provider in STTProvider.allCases {
+            XCTAssertEqual(provider.requiresTypefluxCloudSubscription, provider == .typefluxOfficial,
+                           "provider=\(provider.rawValue)")
+        }
+    }
+
     func testSpeechAvailabilityPreservesUnconfiguredEntries() {
         let settings = SettingsStore(defaults: defaults)
         for provider in [

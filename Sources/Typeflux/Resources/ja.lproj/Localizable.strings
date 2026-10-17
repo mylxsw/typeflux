@@ -1449,7 +1449,7 @@
 
 "history.stats.hotkeyToFirstSignal" = "キー操作からマイク信号まで";
 "history.stats.inputZeroPrefix" = "先頭のデジタル無音";
-"workflow.typefluxCloud.localFallbackRequired" = "クラウド音声認識は有料プランでご利用いただけます。リクエストはローカルモデルで処理されます。";
+"workflow.typefluxCloud.localFallbackRequired" = "Typeflux Cloud の音声認識は有料プランでご利用いただけます。このリクエストはローカルモデルで処理されます。";
 
 // Auxiliary dictation shortcut
 "settings.shortcuts.auxiliary.title" = "補助ショートカット";

@@ -51,7 +51,7 @@ final class LiveTranscriptionPreviewerTests: XCTestCase {
         XCTAssertEqual(openAIStartCount + appleStartCount, 1)
     }
 
-    func testStartUsesLocalBackendForUnpaidRemoteProvider() async throws {
+    func testUnpaidThirdPartyProviderDoesNotUseLocalBackend() async throws {
         let settingsStore = SettingsStore()
         settingsStore.sttProvider = .whisperAPI
 
@@ -71,9 +71,8 @@ final class LiveTranscriptionPreviewerTests: XCTestCase {
         let localStartCount = await localBackend.startCount()
         let openAIStartCount = await openAIBackend.startCount()
         let appleStartCount = await appleBackend.startCount()
-        XCTAssertEqual(localStartCount, 1)
-        XCTAssertEqual(openAIStartCount, 0)
-        XCTAssertEqual(appleStartCount, 0)
+        XCTAssertEqual(localStartCount, 0)
+        XCTAssertEqual(openAIStartCount + appleStartCount, 1)
     }
 
     func testPrepareForStartPreservesPendingBuffersUntilBackendStarts() async throws {

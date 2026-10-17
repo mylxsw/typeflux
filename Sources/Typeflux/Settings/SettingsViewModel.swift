@@ -2892,7 +2892,7 @@ final class StudioViewModel: ObservableObject {
     func testSTTConnection() {
         sttTestTask?.cancel()
 
-        if focusedModelProvider != .localSTT, !AuthState.shared.canUseCloudASR {
+        if focusedModelProvider == .typefluxOfficial, !AuthState.shared.canUseCloudASR {
             sttConnectionTestState = .notice(
                 message: TypefluxCloudASRDirectiveError().localizedDescription
             )

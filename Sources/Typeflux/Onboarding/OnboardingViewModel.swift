@@ -423,7 +423,7 @@ final class OnboardingViewModel: ObservableObject {
     func testSTTConnection() {
         sttTestTask?.cancel()
 
-        if sttProvider != .localModel, !AuthState.shared.canUseCloudASR {
+        if sttProvider.requiresTypefluxCloudSubscription, !AuthState.shared.canUseCloudASR {
             sttConnectionTestState = .notice(
                 message: TypefluxCloudASRDirectiveError().localizedDescription
             )

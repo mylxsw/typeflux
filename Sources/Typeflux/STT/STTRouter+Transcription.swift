@@ -22,7 +22,7 @@ extension STTRouter {
             return try await transcribeSelectedModel(audioFile: audioFile, scenario: scenario,
                                                      optimize: optimize, profile: profile, onUpdate: onUpdate)
         }
-        if settingsStore.sttProvider != .localModel {
+        if settingsStore.sttProvider.requiresTypefluxCloudSubscription {
             let hasPaidSubscription = await hasPaidTypefluxCloudSubscription()
             if !hasPaidSubscription {
                 return try await transcribeWithTypefluxCloudLocalOnly(

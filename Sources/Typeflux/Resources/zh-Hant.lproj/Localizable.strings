@@ -1456,7 +1456,7 @@
 
 "history.stats.hotkeyToFirstSignal" = "按鍵到麥克風有聲音";
 "history.stats.inputZeroPrefix" = "開頭全零音訊";
-"workflow.typefluxCloud.localFallbackRequired" = "雲端語音辨識僅對付費方案開放，您的請求將由本機模型處理。";
+"workflow.typefluxCloud.localFallbackRequired" = "Typeflux Cloud 語音辨識僅對付費方案開放，這次請求將由本機模型處理。";
 
 // Auxiliary dictation shortcut
 "settings.shortcuts.auxiliary.title" = "輔助快捷鍵";

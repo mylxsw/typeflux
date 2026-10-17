@@ -38,6 +38,8 @@ enum STTProvider: String, CaseIterable, Codable {
 
     static let defaultProvider: STTProvider = .localModel
 
+    var requiresTypefluxCloudSubscription: Bool { self == .typefluxOfficial }
+
     static let settingsDisplayOrder: [STTProvider] = [
         .typefluxOfficial,
         .freeModel,

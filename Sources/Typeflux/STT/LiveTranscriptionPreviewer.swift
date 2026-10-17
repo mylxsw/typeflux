@@ -75,7 +75,7 @@ actor LiveTranscriptionPreviewer: LiveTranscriptionPreviewing {
         }
 
         var useLocalBackend = shouldUseLocalBackend
-        if !useLocalBackend {
+        if settingsStore.sttProvider.requiresTypefluxCloudSubscription {
             useLocalBackend = !(await canUseCloudASR())
         }
         if useLocalBackend {

@@ -1460,7 +1460,7 @@
 
 "history.stats.hotkeyToFirstSignal" = "按键到麦克风有声音";
 "history.stats.inputZeroPrefix" = "开头全零音频";
-"workflow.typefluxCloud.localFallbackRequired" = "云端语音识别仅对付费计划开放，您的请求将由本地模型进行处理。";
+"workflow.typefluxCloud.localFallbackRequired" = "Typeflux Cloud 语音识别仅对付费计划开放，此次请求将使用本地模型处理。";
 
 // Auxiliary dictation shortcut
 "settings.shortcuts.auxiliary.title" = "辅助快捷键";

@@ -1,3 +1,4 @@
+import AVFoundation
 @testable import Typeflux
 import XCTest
 
@@ -87,6 +88,27 @@ private final class MockRecordingPrewarmingTranscriber: RecordingPrewarmingTrans
     func cancelPreparedRecording() async {
         cancelCallCount += 1
     }
+}
+
+private final class MockRealtimeFactory: RealtimeTranscriptionSessionFactory {
+    var sessionCount = 0
+
+    func transcribe(audioFile _: AudioFile) async throws -> String { "transcribed" }
+
+    func makeRealtimeTranscriptionSession(
+        scenario _: TypefluxCloudScenario,
+        onUpdate _: @escaping @Sendable (TranscriptionSnapshot) async -> Void
+    ) async throws -> any RealtimeTranscriptionSession {
+        sessionCount += 1
+        return MockRealtimeSession()
+    }
+}
+
+private final class MockRealtimeSession: RealtimeTranscriptionSession {
+    func start() async {}
+    func append(_: AVAudioPCMBuffer) async {}
+    func finish() async throws -> String { "transcribed" }
+    func cancel() async {}
 }
 
 private final class MockScenarioAwareTranscriber: TypefluxCloudScenarioAwareTranscriber {
@@ -234,6 +256,7 @@ final class STTRouterTests: XCTestCase {
 
     private func makeRouter(
         localModelOverride: Transcriber? = nil,
+        aliCloudOverride: Transcriber? = nil,
         doubaoRealtimeOverride: Transcriber? = nil,
         typefluxOfficialOverride: Transcriber? = nil,
         typefluxCloudLoginFallbackLocalModel: Transcriber? = nil,
@@ -248,7 +271,7 @@ final class STTRouterTests: XCTestCase {
             appleSpeech: appleSpeech,
             localModel: localModelOverride ?? localModel,
             multimodal: multimodal,
-            aliCloud: aliCloud,
+            aliCloud: aliCloudOverride ?? aliCloud,
             doubaoRealtime: doubaoRealtimeOverride ?? doubaoRealtime,
             googleCloud: googleCloud,
             groq: groq,
@@ -405,21 +428,21 @@ final class STTRouterTests: XCTestCase {
         XCTAssertEqual(fallback.transcribeCallCount, 1)
     }
 
-    func testFreePlanUsesDefaultLocalModelForEveryRemoteProvider() async throws {
-        let remoteProviders: [STTProvider] = [
-            .freeModel,
-            .whisperAPI,
-            .appleSpeech,
-            .multimodalLLM,
-            .aliCloud,
-            .doubaoRealtime,
-            .googleCloud,
-            .groq,
-            .typefluxOfficial,
-            .soniox
+    func testThirdPartyProvidersIgnoreTypefluxSubscription() async throws {
+        settings.groqSTTAPIKey = "fixture"
+        let independentProviders: [(STTProvider, MockTranscriber)] = [
+            (.freeModel, freeSTT),
+            (.whisperAPI, whisper),
+            (.appleSpeech, appleSpeech),
+            (.multimodalLLM, multimodal),
+            (.aliCloud, aliCloud),
+            (.doubaoRealtime, doubaoRealtime),
+            (.googleCloud, googleCloud),
+            (.groq, groq),
+            (.soniox, soniox)
         ]
 
-        for provider in remoteProviders {
+        for (provider, transcriber) in independentProviders {
             settings.sttProvider = provider
             let fallback = MockTranscriber()
             fallback.resultToReturn = "local result"
@@ -430,19 +453,11 @@ final class STTRouterTests: XCTestCase {
 
             let result = try await router.transcribe(audioFile: dummyAudioFile())
 
-            XCTAssertEqual(result, "local result", "provider=\(provider.rawValue)")
-            XCTAssertEqual(fallback.transcribeCallCount, 1, "provider=\(provider.rawValue)")
+            XCTAssertEqual(result, "transcribed", "provider=\(provider.rawValue)")
+            XCTAssertEqual(fallback.transcribeCallCount, 0, "provider=\(provider.rawValue)")
+            XCTAssertGreaterThan(transcriber.transcribeCallCount, 0, "provider=\(provider.rawValue)")
         }
 
-        XCTAssertEqual(freeSTT.transcribeCallCount, 0)
-        XCTAssertEqual(whisper.transcribeCallCount, 0)
-        XCTAssertEqual(appleSpeech.transcribeCallCount, 0)
-        XCTAssertEqual(multimodal.transcribeCallCount, 0)
-        XCTAssertEqual(aliCloud.transcribeCallCount, 0)
-        XCTAssertEqual(doubaoRealtime.transcribeCallCount, 0)
-        XCTAssertEqual(googleCloud.transcribeCallCount, 0)
-        XCTAssertEqual(groq.transcribeCallCount, 0)
-        XCTAssertEqual(soniox.transcribeCallCount, 0)
         XCTAssertEqual(typefluxOfficial.transcribeCallCount, 0)
     }
 
@@ -1085,7 +1100,7 @@ final class STTRouterTests: XCTestCase {
         XCTAssertEqual(cloud.prepareCallCount, 0)
     }
 
-    func testFreePlanDoesNotPrewarmOtherRemoteProviders() async {
+    func testFreePlanPrewarmsThirdPartyRealtimeProvider() async {
         settings.sttProvider = .doubaoRealtime
         let cloud = MockRecordingPrewarmingTranscriber()
         let router = makeRouter(
@@ -1095,7 +1110,21 @@ final class STTRouterTests: XCTestCase {
 
         await router.prepareForRecording()
 
-        XCTAssertEqual(cloud.prepareCallCount, 0)
+        XCTAssertEqual(cloud.prepareCallCount, 1)
+    }
+
+    func testThirdPartyRealtimeSessionIgnoresTypefluxSubscription() async {
+        settings.sttProvider = .aliCloud
+        let factory = MockRealtimeFactory()
+        let router = makeRouter(
+            aliCloudOverride: factory,
+            hasPaidTypefluxCloudSubscription: { false }
+        )
+
+        let session = await router.makeRealtimeTranscriptionSession(onUpdate: { _ in })
+
+        XCTAssertNotNil(session)
+        XCTAssertEqual(factory.sessionCount, 1)
     }
 
     func testRoutesTypefluxOfficialWithProvidedBusinessScenario() async throws {
