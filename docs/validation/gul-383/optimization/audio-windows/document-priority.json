@@ -1,0 +1,10 @@
+{
+  "document_search_during_pause" : true,
+  "encoded_times" : [
+    0,
+    25,
+    50
+  ],
+  "interruption" : "SemanticWorkBudget.Interrupted",
+  "resume_window" : 25
+}

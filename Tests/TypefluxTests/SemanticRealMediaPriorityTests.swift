@@ -129,7 +129,7 @@ struct SemanticRealMediaPriorityTests {
             #expect(probe.timestamps == [0], "new documents publish while media still waits for idle")
             probe.setIdle(true)
             try await wait { service.phase == .ready }
-            #expect(probe.timestamps == [0, 30, 60], "completed segments must not be repeated after a priority pause")
+            #expect(probe.timestamps == [0, 25, 50], "completed segments must not be repeated after a priority pause")
             let counts = try store.counts()
             #expect(counts.documents == 2 && counts.audio == 1 && counts.chunks == 5)
             let report: [String: Any] = ["model_sha256": SemanticModel.sha256, "projector_sha256": SemanticMediaModel.sha256,

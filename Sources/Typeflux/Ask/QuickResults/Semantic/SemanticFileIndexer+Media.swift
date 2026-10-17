@@ -78,9 +78,17 @@ extension SemanticFileIndexer {
                             generation: generation,
                             ordinal: ordinal,
                             input: input,
-                            vector: vector
+                            vector: vector,
+                            audioProgress: response.audioProgress
                         )
                         try? FileManager.default.removeItem(atPath: input.path)
+                    } catch { failure = error; return false }
+                }
+                if response.media == nil, let progress = response.audioProgress {
+                    do {
+                        try waitForIdle()
+                        if cancelled() { throw CancellationError() }
+                        try store.saveAudioProgress(path: path, generation: generation, progress: progress)
                     } catch { failure = error; return false }
                 }
                 if let pages = response.pages {
@@ -142,7 +150,9 @@ extension SemanticFileIndexer {
             try store.failJob(path, reason: "media-extraction-failed")
             return false
         }
-        if ordinal == 0 {
+        let saved = try store.mediaCursor(path: path, generation: generation)
+        let completedAudio = SemanticMediaPriority.of(path) == .audio && saved.audioCoveredUntil > 0
+        if ordinal == 0 && !completedAudio {
             try store.skipUnavailable(path, reason: "empty-or-no-media")
             return false
         }

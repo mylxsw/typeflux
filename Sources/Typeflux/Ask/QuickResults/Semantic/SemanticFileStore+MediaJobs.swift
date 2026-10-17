@@ -4,6 +4,8 @@ import SQLite3
 extension SemanticFileStore {
     static let mediaProvenance = "model=\(SemanticModel.sha256);projector=\(SemanticMediaModel.sha256);prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1"
 
+    static let audioProvenance = mediaProvenance + ";" + SemanticAudioWindows.recipe
+
     func prepareMediaJobSchema() throws {
         try transaction {
             try sql("""
@@ -29,6 +31,15 @@ extension SemanticFileStore {
             try sql("CREATE INDEX IF NOT EXISTS media_generation ON media_jobs(generation)")
             try addColumn("media_jobs", name: "recipe", declaration: "TEXT NOT NULL DEFAULT ''")
             try addColumn("media_segments", name: "end_time", declaration: "REAL")
+            try addColumn("media_jobs", name: "audio_next", declaration: "REAL")
+            try addColumn("media_jobs", name: "audio_covered", declaration: "REAL")
+            let extensions = SemanticMediaPriority.audioExtensions.sorted()
+            let suffixes = extensions.map { _ in "lower(substr(c.path,-?))=?" }.joined(separator: " OR ")
+            try execute("""
+            INSERT OR IGNORE INTO work_queue(path,priority)
+            SELECT c.path,2 FROM (SELECT path FROM files UNION SELECT path FROM jobs) c
+            LEFT JOIN jobs j ON j.path=c.path WHERE COALESCE(j.recipe,'')<>? AND (\(suffixes))
+            """, [Self.audioProvenance] + extensions.flatMap { [$0.count + 1, "." + $0] as [Any] })
         }
     }
 
@@ -97,7 +108,8 @@ extension SemanticFileStore {
         generation: String,
         ordinal: Int,
         input: SemanticMediaInput,
-        vector: [Float]
+        vector: [Float],
+        audioProgress: SemanticAudioProgress? = nil
     ) throws {
         guard Self.valid(vector),
               input.time.map({ $0.isFinite && $0 >= 0 }) ?? true,
@@ -117,6 +129,9 @@ extension SemanticFileStore {
                     path,
                     generation
                 ])
+                if let audioProgress {
+                    try saveAudioProgressLocked(path: path, generation: generation, progress: audioProgress)
+                }
                 try execute("UPDATE jobs SET state='partial',cursor=?,reason=NULL WHERE path=? AND generation=?",
                             ["{\"page\":0,\"offset\":\(ordinal + 1)}", path, generation])
             }
@@ -127,11 +142,13 @@ extension SemanticFileStore {
         try lock.withLock {
             let row =
                 try statement("""
-                SELECT count(*) FROM media_segments s JOIN media_jobs j ON j.path=s.path WHERE s.path=? AND j.generation=?
+                SELECT count(s.ordinal),COALESCE(MAX(j.audio_covered),0) FROM media_jobs j
+                LEFT JOIN media_segments s ON j.path=s.path WHERE j.path=? AND j.generation=?
                 """)
             defer { sqlite3_finalize(row) }
             bind(row, [path, generation])
-            guard sqlite3_step(row) == SQLITE_ROW, segments > 0, sqlite3_column_int64(row, 0) == segments,
+            guard sqlite3_step(row) == SQLITE_ROW, segments >= 0, sqlite3_column_int64(row, 0) == segments,
+                  segments > 0 || (SemanticMediaPriority.of(path) == .audio && sqlite3_column_double(row, 1) > 0),
                   let date = metadata.modified, let bytes = metadata.fileSize else { return false }
             return try transaction {
                 try execute("DELETE FROM files WHERE path=?", [path])
@@ -148,7 +165,8 @@ extension SemanticFileStore {
                     CASE WHEN kind='audio' THEN 'audio-window' ELSE ? END,?
                     FROM media_segments WHERE path=? ORDER BY ordinal
                 """, [generation, SemanticMediaPriority.of(path) == .video ? "video" : "image",
-                      SemanticMediaPriority.of(path) == .video ? "video-frame" : "image", Self.mediaProvenance, path])
+                      SemanticMediaPriority.of(path) == .video ? "video-frame" : "image",
+                      SemanticMediaPriority.of(path) == .audio ? Self.audioProvenance : Self.mediaProvenance, path])
                 try recordLocked(.vectorsPublished, count: segments)
                 let text =
                     try statement(
@@ -164,10 +182,15 @@ extension SemanticFileStore {
                           sqlite3_column_int64(text, 1), sqlite3_column_int64(text, 2), Self.imageRecipe])
                     try writeLexical(sqlite3_last_insert_rowid(database), text: string(text, 0))
                 }
+                let imageNeedsText = SemanticMediaPriority.of(path) == .image
+                    && Self.mediaRecipe(path) != Self.mediaProvenance
                 try execute("""
                 UPDATE jobs SET recipe=?,reason=CASE WHEN ? AND NOT EXISTS(
                     SELECT 1 FROM media_text WHERE path=?) THEN 'image-no-text' ELSE NULL END WHERE path=?
-                """, [Self.mediaRecipe(path), Self.mediaRecipe(path) != Self.mediaProvenance ? 1 : 0, path, path])
+                """, [Self.mediaRecipe(path), imageNeedsText ? 1 : 0, path, path])
+                if segments == 0 {
+                    try execute("UPDATE jobs SET reason='audio-silent' WHERE path=?", [path])
+                }
                 try execute("DELETE FROM media_jobs WHERE path=?", [path])
                 return true
             }
@@ -182,7 +205,8 @@ extension SemanticFileStore {
                 AND EXISTS(SELECT 1 FROM jobs j WHERE j.path=files.path AND j.recipe=? AND j.state='done')
             """)
             defer { sqlite3_finalize(row) }
-            bind(row, [path, Self.mediaProvenance, Self.imageRecipe, Self.mediaRecipe(path)])
+            bind(row, [path, SemanticMediaPriority.of(path) == .audio ? Self.audioProvenance : Self.mediaProvenance,
+                       Self.imageRecipe, Self.mediaRecipe(path)])
             if sqlite3_step(row) != SQLITE_ROW {
                 return false
             }
@@ -215,11 +239,17 @@ extension SemanticFileStore {
                 return .init()
             }
             let images = Int(sqlite3_column_int64(row, 2))
+            let checkpoint = try statement(
+                "SELECT audio_next,audio_covered FROM media_jobs WHERE path=? AND generation=?"
+            )
+            defer { sqlite3_finalize(checkpoint) }; bind(checkpoint, [path, generation])
+            let saved = sqlite3_step(checkpoint) == SQLITE_ROW && sqlite3_column_type(checkpoint, 0) != SQLITE_NULL
             return .init(
                 nextOrdinal: next,
                 videoFrames: images,
                 imageDone: images > 0,
-                audioUntil: sqlite3_column_double(row, 3)
+                audioUntil: saved ? sqlite3_column_double(checkpoint, 0) : sqlite3_column_double(row, 3),
+                audioCoveredUntil: saved ? sqlite3_column_double(checkpoint, 1) : sqlite3_column_double(row, 3)
             )
         }
     }

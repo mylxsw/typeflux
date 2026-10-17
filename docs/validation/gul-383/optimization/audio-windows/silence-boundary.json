@@ -1,0 +1,16 @@
+{
+  "boundary_starts" : [
+    0,
+    25
+  ],
+  "quiet_amplitude" : 1.0000000000000001e-05,
+  "quiet_segments" : 2,
+  "silence_peak_threshold" : 9.9999999999999995e-08,
+  "silent_progress" : [
+    25,
+    50,
+    65,
+    65
+  ],
+  "whole_boundary_active_samples" : 32000
+}

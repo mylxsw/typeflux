@@ -59,7 +59,7 @@ extension SemanticFileStore {
                       + SemanticWordText.recipe + ";" + SemanticHTMLText.recipe + ";"
                       + SemanticRTFText.recipe + ";" + SemanticODTText.recipe + ";"
                       + SemanticPresentationText.recipe + ";" + SemanticSpreadsheetText.recipe + ";"
-                      + Self.mediaProvenance,
+                      + Self.mediaProvenance + ";" + SemanticAudioWindows.recipe,
                   version + " (" + build + ")"])
             activeRunID = id
             try execute(

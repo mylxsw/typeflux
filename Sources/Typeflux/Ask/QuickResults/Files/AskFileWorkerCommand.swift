@@ -43,6 +43,7 @@ struct AskFileReadResponse: Codable {
     var inspected: Int?
     var mediaOrdinal: Int?
     var mediaSegments: Int?
+    var audioProgress: SemanticAudioProgress?
 }
 
 struct SemanticHelperTiming: Codable {

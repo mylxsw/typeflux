@@ -1,0 +1,12 @@
+{
+  "existing-current": {
+    "exit_code": 2,
+    "diagnostics": 6,
+    "seconds": 0.5030915410025045
+  },
+  "existing-baseline": {
+    "exit_code": 2,
+    "diagnostics": 4,
+    "seconds": 0.1153729580109939
+  }
+}

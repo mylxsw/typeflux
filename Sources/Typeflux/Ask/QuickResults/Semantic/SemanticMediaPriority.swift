@@ -45,5 +45,7 @@ struct SemanticMediaCursor: Codable, Equatable {
     var nextOrdinal = 0
     var videoFrames = 0
     var imageDone = false
+    /// Next uncommitted window start; it can precede the covered endpoint because of overlap.
     var audioUntil: Double = 0
+    var audioCoveredUntil: Double = 0
 }

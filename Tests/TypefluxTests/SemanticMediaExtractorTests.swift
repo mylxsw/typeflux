@@ -75,7 +75,7 @@ struct SemanticMediaExtractorTests {
                 let permissions = attributes[.posixPermissions] as? Int
                 #expect(permissions == 0o600)
             }
-            if source == audio { #expect(pieces.map(\.time) == [0, 30]) }
+            if source == audio { #expect(pieces.map(\.time) == [0, 25]) }
             // The disposable child is killed by its owner and cannot flush coverage on exit.
             // Also verify the worker entry point directly, comparing its contract with real IPC.
             var directPieces: [SemanticMediaInput] = []
