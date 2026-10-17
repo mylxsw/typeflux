@@ -30,10 +30,10 @@ final class DefaultSenseVoiceFallbackTranscriber: Transcriber {
         // installs fail fast here and keep the saved recording available for retry.
         settingsStore.localSTTAutoSetup = false
 
-        return try await LocalModelTranscriber(
+        let transcriber = LocalModelTranscriber(
             settingsStore: settingsStore,
             modelManager: modelManager
         )
-        .transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+        return try await transcriber.transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
     }
 }

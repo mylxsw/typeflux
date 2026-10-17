@@ -151,7 +151,8 @@ private struct AskNativeIconProjection<Content: View>: View {
         }.map { NSImage(cgImage: $0, size: .zero) } : nil
         AskContextImage(source: icon.map { $0.kind.rawValue + ":" + $0.value },
             model: AskContextImageModel(maximumEdge: 56, nativeIcon: .init(icon: icon, revision: revision,
-                cache: cache, decode: decode, useCache: useCache)), content: { image in content(image ?? cached) })
+                cache: cache, decode: decode.map { decoder in { @Sendable icon in try await decoder(icon) } },
+                useCache: useCache)), content: { image in content(image ?? cached) })
     }
 }
 
@@ -172,7 +173,8 @@ struct AskNativeIconView: View {
     var decode: AskNativeIconDecoding?
     var body: some View {
         AskNativeIconImage(icon: icon, revision: revision, folder: folder,
-                           immediateLookup: immediateLookup, decode: decode) { image in
+                           immediateLookup: immediateLookup,
+                           decode: decode.map { decoder in { @Sendable icon in try await decoder(icon) } }) { image in
             if let image { Image(nsImage: image).resizable().interpolation(.high).scaledToFit() }
             else { Image(systemName: symbol).resizable().scaledToFit().padding(3).foregroundStyle(StudioTheme.textTertiary) }
         }

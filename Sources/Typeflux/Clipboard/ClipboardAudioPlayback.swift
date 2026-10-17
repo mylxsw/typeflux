@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Foundation
+import ObjectiveC
 import TypefluxMediaProtocol
 
 /// One view owns one silent load and one explicit command slot. No command is retried.
@@ -151,8 +152,8 @@ import TypefluxMediaProtocol
                 bitmapInfo: [.byteOrder32Big, CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)],
                 provider: provider, decode: nil, shouldInterpolate: true, intent: .defaultIntent)
         else { throw MediaFailure.invalidProtocol }
-        let image = ClipboardVideoImage(size: NSSize(width: frame.width, height: frame.height))
-        image.reservation = reservation
+        let image = NSImage(size: NSSize(width: frame.width, height: frame.height))
+        ClipboardVideoImageReservation.retain(reservation, on: image)
         image.addRepresentation(NSBitmapImageRep(cgImage: cg))
         return image
     }
@@ -175,6 +176,12 @@ import TypefluxMediaProtocol
 
 /// A separate reservation follows each actual displayed image, even if SwiftUI retains
 /// old frames. Exhaustion stops presentation rather than growing a hidden frame history.
-private final class ClipboardVideoImage: NSImage {
-    var reservation: AskToolPixelBudget.Lease?
+@MainActor private enum ClipboardVideoImageReservation {
+    private static var key: UInt8 = 0
+
+    static func retain(_ reservation: AskToolPixelBudget.Lease, on image: NSImage) {
+        withUnsafePointer(to: &key) { pointer in
+            objc_setAssociatedObject(image, pointer, reservation, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+    }
 }

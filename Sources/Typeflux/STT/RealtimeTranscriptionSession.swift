@@ -254,9 +254,18 @@ actor BufferedRealtimeTranscriptionSession: RealtimeTranscriptionSession,
 
     private func enqueue(_ data: Data) async -> Bool {
         guard let continuation else { return false }
-        if case .enqueued = continuation.yield(data) { return true }
-        await fail(RealtimeAudioBufferError.capacityExceeded)
-        return false
+        switch continuation.yield(data) {
+        case .enqueued:
+            return true
+        case .dropped:
+            await fail(RealtimeAudioBufferError.capacityExceeded)
+            return false
+        case .terminated:
+            // The writer may already have failed while connecting. Preserve its error.
+            return false
+        @unknown default:
+            return false
+        }
     }
 
     func finish() async throws -> String {
@@ -334,7 +343,7 @@ struct PCM16FrameChunker {
     private func ownedCopy(_ range: Range<Data.Index>) -> Data {
         var result = Data(count: range.count)
         result.withUnsafeMutableBytes { destination in
-            _ = buffer.copyBytes(to: destination.bindMemory(to: UInt8.self), from: range)
+            buffer.copyBytes(to: destination.bindMemory(to: UInt8.self), from: range)
         }
         return result
     }

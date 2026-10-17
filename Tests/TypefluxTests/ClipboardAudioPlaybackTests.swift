@@ -128,7 +128,8 @@ private actor PlaybackOpening {
             case 2: model.replaceEntries([])
             default: NotificationCenter.default.post(name: .authDidLogout, object: nil)
             }
-            XCTAssertFalse(playback.isLoaded); XCTAssertTrue(client.didStop)
+            XCTAssertFalse(playback.isLoaded, "Action \(action) should clear playback")
+            XCTAssertTrue(client.didStop, "Action \(action) should stop its client")
         }
     }
     func testScopeObserverAdmissionRefusesSeventeenthLoad() async throws {

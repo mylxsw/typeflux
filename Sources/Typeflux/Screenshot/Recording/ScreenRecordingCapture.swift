@@ -223,7 +223,7 @@ final class ScreenRecordingCapture: NSObject, SCStreamOutput, SCStreamDelegate,
         if !video {
             meter.update(sample)
         }
-        let stamp = session.masterClock.map {
+        let stamp = session.synchronizationClock.map {
             CMSyncConvertTime(sample.presentationTimeStamp, from: $0, to: CMClockGetHostTimeClock())
         } ?? sample.presentationTimeStamp
         writer.offer(sample, track: video ? .camera : .microphone, hostTime: stamp.seconds)

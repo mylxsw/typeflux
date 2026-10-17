@@ -1,6 +1,8 @@
 import AppKit
+import ImageIO
 import SwiftUI
 import Testing
+import TypefluxMediaProtocol
 @testable import Typeflux
 
 private actor BrowserFaviconTestLoader {
@@ -40,6 +42,15 @@ private actor BrowserFaviconTestTransport: AskImageTransport {
 @Suite(.exclusiveUIState)
 @MainActor
 struct AskBrowserFaviconTests {
+    private static let decodeImage: AskBrowserFaviconCache.Decoder = { data in
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                  kCGImageSourceCreateThumbnailFromImageAlways: true,
+                  kCGImageSourceThumbnailMaxPixelSize: 56
+              ] as CFDictionary) else { throw MediaFailure.unreadable }
+        return image
+    }
+
     private func png() throws -> Data {
         let bitmap = try #require(NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 128, pixelsHigh: 128,
                                                    bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true,
@@ -88,7 +99,7 @@ struct AskBrowserFaviconTests {
 
     @Test func `concurrent rows share one downsampled image and recreated rows use cache`() async throws {
         let loader = try BrowserFaviconTestLoader(data: png())
-        let cache = AskBrowserFaviconCache(loader: { await loader.load($0) })
+        let cache = AskBrowserFaviconCache(loader: { await loader.load($0) }, decode: Self.decodeImage)
         let url = try #require(URL(string: "https://example.com/favicon.ico"))
         let first = Task { await cache.image(url) }, second = Task { await cache.image(url) }
         let image = try #require(await first.value)
@@ -105,7 +116,8 @@ struct AskBrowserFaviconTests {
         let url = try #require(URL(string: "https://example.com/favicon.ico"))
         var now = Date(timeIntervalSinceReferenceDate: 100)
         let loader = BrowserFaviconTestLoader(data: nil, delay: .zero)
-        let cache = AskBrowserFaviconCache(loader: { await loader.load($0) }, clock: { now })
+        let cache = AskBrowserFaviconCache(loader: { await loader.load($0) }, clock: { now },
+                                           decode: Self.decodeImage)
         #expect(await cache.image(url) == nil)
         #expect(await cache.image(url) == nil)
         #expect(await loader.calls == 1)
@@ -116,7 +128,7 @@ struct AskBrowserFaviconTests {
             #expect(try await cache.image(#require(URL(string: "https://missing-\(index).test/favicon.ico"))) == nil)
         }
         for data in [Data("bad".utf8), Data(repeating: 1, count: 262_145)] {
-            let invalid = AskBrowserFaviconCache(loader: { _ in data })
+            let invalid = AskBrowserFaviconCache(loader: { _ in data }, decode: Self.decodeImage)
             #expect(await invalid.image(url) == nil)
             #expect(invalid.cached(url) == nil)
         }
@@ -124,7 +136,7 @@ struct AskBrowserFaviconTests {
 
     @Test func `canceling one row preserves others and canceling last stops download`() async throws {
         let loader = try BrowserFaviconTestLoader(data: png(), delay: .milliseconds(80))
-        let cache = AskBrowserFaviconCache(loader: { await loader.load($0) })
+        let cache = AskBrowserFaviconCache(loader: { await loader.load($0) }, decode: Self.decodeImage)
         let url = try #require(URL(string: "https://example.com/favicon.ico"))
         let first = Task { await cache.image(url) }, second = Task { await cache.image(url) }
         try await Task.sleep(for: .milliseconds(10))
@@ -144,7 +156,7 @@ struct AskBrowserFaviconTests {
 
     @Test func `canceled and unnormalized requests never start download`() async throws {
         let loader = BrowserFaviconTestLoader(data: nil)
-        let cache = AskBrowserFaviconCache(loader: { await loader.load($0) })
+        let cache = AskBrowserFaviconCache(loader: { await loader.load($0) }, decode: Self.decodeImage)
         let canceled = Task {
             withUnsafeCurrentTask { $0?.cancel() }
             return await cache.image(URL(string: "https://example.com/favicon.ico")!)
@@ -171,7 +183,7 @@ struct AskBrowserFaviconTests {
         _ = NSApplication.shared
         let data = try png(), url = try #require(URL(string: "https://example.com/favicon.ico"))
         let loader = BrowserFaviconTestLoader(data: data, delay: .milliseconds(30))
-        let cache = AskBrowserFaviconCache(loader: { await loader.load($0) })
+        let cache = AskBrowserFaviconCache(loader: { await loader.load($0) }, decode: Self.decodeImage)
         for site in try [url, #require(URL(string: "https://missing.test/favicon.ico"))] {
             let scope = AskImagePresentationScope()
             let access = AskImagePresentationAccess(scope: scope, epoch: scope.epoch, authorize: { true })

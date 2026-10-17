@@ -61,6 +61,7 @@ extension EnvironmentValues {
         end(); self.model = model; active = true; scope.setVisible(true); revision = UUID()
     }
     func changed() { cacheEpoch = cache.clear(); scope.invalidate(); revision = UUID() }
+    func selectionChanged() { scope.invalidate(); revision = UUID() }
     func end() {
         active = false; model = nil; cacheEpoch = cache.clear(); scope.setVisible(false); revision = UUID()
     }

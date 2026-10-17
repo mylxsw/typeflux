@@ -20,6 +20,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     private var quickLookURLs: [URL] = []
     private var previewObservation: AnyCancellable?
     private var entryObservation: AnyCancellable?
+    private var selectionObservation: AnyCancellable?
     private var privacyObservers: [NSObjectProtocol] = []
     let thumbnails = ClipboardThumbnailSession()
     private let iconCache = AskLauncherIconCache(capacity: 128, fileCapacity: 8)
@@ -46,6 +47,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     deinit {
         privacyObservers.forEach(NotificationCenter.default.removeObserver)
         entryObservation?.cancel()
+        selectionObservation?.cancel()
         Task { @MainActor [thumbnails, weak panel, keyMonitor, clickMonitor] in
             thumbnails.end()
             panel?.orderOut(nil)
@@ -68,6 +70,9 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         self.model = model
         thumbnails.begin(model)
         entryObservation = model.$entries.dropFirst().sink { [weak self] _ in self?.thumbnails.changed() }
+        selectionObservation = model.$selectedIndex.dropFirst().removeDuplicates().sink { [weak self] _ in
+            self?.thumbnails.selectionChanged()
+        }
         focusRequest += 1
         layout.setWidth(ClipboardPanelView.size(showsPreview: model.showsPreview).width)
         let panel = panel(for: model)
@@ -108,7 +113,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     }
 
     func dismiss() {
-        thumbnails.end(); entryObservation = nil
+        thumbnails.end(); entryObservation = nil; selectionObservation = nil
         previewWidthAnimator.stop()
         previewObservation = nil
         closeQuickLook()
@@ -150,7 +155,9 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
             defer: false
         )
         panel.quickLookController = self
-        panel.onHide = { [weak self] in self?.thumbnails.end(); self?.entryObservation = nil }
+        panel.onHide = { [weak self] in
+            self?.thumbnails.end(); self?.entryObservation = nil; self?.selectionObservation = nil
+        }
         panel.level = .floating
         panel.isOpaque = false
         panel.backgroundColor = .clear
@@ -332,7 +339,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     }
 }
 
-extension ClipboardPanelController: @preconcurrency QLPreviewPanelDataSource {
+extension ClipboardPanelController: QLPreviewPanelDataSource {
     func numberOfPreviewItems(in _: QLPreviewPanel!) -> Int {
         quickLookURLs.count
     }

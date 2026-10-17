@@ -499,7 +499,7 @@ final class StudioViewModel: ObservableObject {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 let preserveDraft = hasPersonaDraftChanges || isCreatingPersonaDraft
-                let updated = settingsStore.personas
+                let updated = self.settingsStore.personas
                 if personas.sorted(by: { $0.id.uuidString < $1.id.uuidString })
                     != updated.sorted(by: { $0.id.uuidString < $1.id.uuidString }) {
                     dismissPersonaUndo()

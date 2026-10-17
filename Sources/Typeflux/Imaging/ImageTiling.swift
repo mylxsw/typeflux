@@ -68,7 +68,7 @@ enum ImageTiling {
                                             width: rect.width / imageSize.width,
                                             height: rect.height / imageSize.height)
                 placed.locate = line.locate.map { locate in
-                    { [band] range in
+                    let translated: RecognizedText.Line.RangeLocator = { [band] range in
                         locate(range).map { box in
                             let pixels = CGRect(x: box.minX * imageSize.width,
                                                 y: CGFloat(band.start) + box.minY * CGFloat(band.height),
@@ -79,6 +79,7 @@ enum ImageTiling {
                                           height: pixels.height / imageSize.height)
                         }
                     }
+                    return translated
                 }
                 if kept.contains(where: { $0.band != index && isDuplicate($0.line, placed, imageSize: imageSize) }) {
                     continue

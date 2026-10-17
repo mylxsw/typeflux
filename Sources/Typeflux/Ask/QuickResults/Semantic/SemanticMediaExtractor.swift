@@ -162,11 +162,11 @@ enum SemanticMediaExtractor {
 
     private static func audio(_ asset: AVAsset, folder: URL, cursor: SemanticMediaCursor,
                               emit: (AskFileReadResponse) throws -> Void) throws {
-        guard let track = asset.tracks(withMediaType: .audio).first else { return }
+        guard let metadata = try SemanticAssetMetadata.audio(asset) else { return }
+        let track = metadata.track
         // An initial empty edit belongs to the track range but contains no audio samples.
-        let trackStart = track.segments.first(where: { !$0.isEmpty })?.timeMapping.target.start.seconds
-            ?? track.timeRange.start.seconds
-        let trackEnd = track.timeRange.end.seconds
+        let trackStart = metadata.start
+        let trackEnd = metadata.end
         guard trackStart.isFinite, trackEnd.isFinite, trackStart >= 0, trackEnd >= trackStart else {
             throw AskFileReadError.protocolError
         }

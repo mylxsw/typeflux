@@ -108,7 +108,7 @@ struct LauncherSettingsView: View {
             TFSegmentedControl(
                 options: [TFOption(AskLauncherPosition.center, L("settings.shortcuts.launcherPosition.center")),
                           TFOption(.lastPosition, L("settings.shortcuts.launcherPosition.last"))],
-                selection: Binding(get: { launcherPosition }, set: setLauncherPosition)
+                selection: Binding(get: { launcherPosition }, set: { position in setLauncherPosition(position) })
             )
             .accessibilityIdentifier("launcher.settings.position")
         }

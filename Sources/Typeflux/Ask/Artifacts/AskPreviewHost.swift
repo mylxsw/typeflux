@@ -149,7 +149,6 @@ struct AskPreviewPolicy {
         let configuration = WKWebViewConfiguration()
         try AskPreviewEnginePolicy.apply(to: configuration.preferences)
         configuration.websiteDataStore = .nonPersistent()
-        configuration.processPool = WKProcessPool()
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
         configuration.mediaTypesRequiringUserActionForPlayback = .all
@@ -204,11 +203,11 @@ struct AskPreviewPolicy {
     func collectDiagnostics() async throws -> (errors: [String], console: [String]) {
         try validate?()
         guard let view = webView else { throw AskArtifactError.unavailable }
-        let errors = try await view.evaluateJavaScript(
-            "typefluxPreviewErrors.splice(0)",
-            in: nil,
-            in: .defaultClient
-        ) as? [String] ?? []
+        let errors: [String] = try await withCheckedThrowingContinuation { continuation in
+            view.evaluateJavaScript("typefluxPreviewErrors.splice(0)", in: nil, in: .defaultClient) { result in
+                continuation.resume(with: result.map { $0 as? [String] ?? [] })
+            }
+        }
         for error in errors {
             record(error)
         }

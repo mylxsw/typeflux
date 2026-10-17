@@ -61,7 +61,7 @@ final class ComponentGalleryWindowController: NSObject, NSWindowDelegate {
     private let activate: () -> Void
 
     init(dock: DockVisibilityController = .shared,
-         activate: @escaping () -> Void = { NSApp.activate(ignoringOtherApps: true) }) {
+         activate: @escaping @MainActor () -> Void = { NSApp.activate(ignoringOtherApps: true) }) {
         self.dock = dock
         self.activate = activate
         super.init()

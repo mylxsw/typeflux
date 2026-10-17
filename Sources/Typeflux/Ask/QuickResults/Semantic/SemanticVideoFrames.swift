@@ -48,9 +48,9 @@ enum SemanticVideoFrames {
             guard cursor.valid else { throw AskFileReadError.protocolError }
         }
         guard cursor?.complete != true else { return }
-        guard let track = asset.tracks(withMediaType: .video).first else { return }
-        let start = max(0, track.timeRange.start.seconds)
-        let duration = min(asset.duration.seconds, track.timeRange.end.seconds)
+        guard let metadata = try SemanticAssetMetadata.video(asset) else { return }
+        let start = metadata.start
+        let duration = metadata.end
         guard start.isFinite, duration.isFinite, duration > start, duration < Double(Int.max) else { return }
         let generator = AVAssetImageGenerator(asset: asset)
         generator.appliesPreferredTrackTransform = true

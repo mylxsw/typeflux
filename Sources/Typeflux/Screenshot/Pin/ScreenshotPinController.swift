@@ -277,7 +277,7 @@ final class ScreenshotPinView: NSView {
     func contextMenu() -> NSMenu {
         let menu = NSMenu()
         menu.autoenablesItems = false
-        func item(_ title: String, _ action: Selector, key: String = "") -> NSMenuItem {
+        @discardableResult func item(_ title: String, _ action: Selector, key: String = "") -> NSMenuItem {
             let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
             item.target = self
             menu.addItem(item)

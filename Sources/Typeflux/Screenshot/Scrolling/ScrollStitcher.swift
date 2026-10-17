@@ -292,7 +292,7 @@ struct ScrollStitcher: @unchecked Sendable {
                let widened = widenedFixedRows(fixed, shift: shift, footer: widening == .both, previous: previous,
                                               current: current),
                isBetter(widened.candidate, than: plain) {
-                return widened
+                return (candidate: widened.candidate, fixed: widened.fixed)
             }
             return (plain, fixed)
         }
