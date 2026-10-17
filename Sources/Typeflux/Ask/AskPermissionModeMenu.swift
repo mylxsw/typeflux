@@ -56,6 +56,7 @@ struct AskPermissionModeMenu: View {
     }
 
     var body: some View {
+        let iconOnly = bare || (compact && mode != .yolo)
         Menu {
             ForEach(AskPermissionMode.allCases, id: \.self) { option in
                 Button { onSelect(option) } label: {
@@ -75,13 +76,13 @@ struct AskPermissionModeMenu: View {
             .tint(.primary)
         } label: {
             Group {
-                if bare || (compact && mode != .yolo) {
+                if iconOnly {
                     Image(systemName: mode.symbol).accessibilityHidden(true)
                 } else {
                     Label(mode == .yolo ? "YOLO" : mode.title, systemImage: mode.symbol)
                 }
             }
-            .font(.system(size: 11, weight: .medium))
+            .font(.system(size: iconOnly ? 14 : 11, weight: iconOnly ? .semibold : .medium))
             .foregroundStyle(Self.labelColor(mode))
             .fixedSize()
         }
