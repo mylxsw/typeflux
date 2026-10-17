@@ -1505,7 +1505,7 @@ final class AskConversationModel: ObservableObject {
                 try Task.checkCancellation()
                 guard session()?.owner == current.account else { throw CancellationError() }
                 value = try await api.inferenceResult(conversationId: value.id, request: receipt!, token: current.token)
-                try await cache.recordExecution(id: identity.key, event: .acknowledged, owner: current.owner)
+                try await acknowledgeExecution(identity, response: value, current: current)
                 inferenceUsage[inference.id] = nil
                 continue
             }

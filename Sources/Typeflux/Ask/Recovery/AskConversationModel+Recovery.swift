@@ -81,6 +81,15 @@ extension AskConversationModel {
         }
     }
 
+    /// Observation may publish the settled run before its receipt is acknowledged.
+    /// Refresh the journal here even if the next snapshot has the same revision
+    /// and accept() therefore skips it.
+    func acknowledgeExecution(_ identity: AskExecutionIdentity, response: AskConversation,
+                              current: AskRoute) async throws {
+        try await cache.recordExecution(id: identity.key, event: .acknowledged, owner: current.owner)
+        await refreshRecovery(response, route: current)
+    }
+
     /// User-requested delivery only. Does not call drive, retry, tools or a model.
     func retransmitSavedReceipts() async {
         guard !recoveryWorking, let value = selected, !busyIds.contains(value.id),

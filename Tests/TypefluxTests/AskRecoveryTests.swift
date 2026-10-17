@@ -224,6 +224,32 @@ struct AskRecoveryJournalTests {
 @Suite("Ask recovery interactions", .serialized, .exclusiveUIState)
 @MainActor
 struct AskRecoveryInteractionTests {
+    @Test func `acknowledged failed inference clears stale recovery after observation`() async throws {
+        let fixture = try AskTestFixture()
+        var value = AskRecoveryFixture.conversation(model: true)
+        let audit = AskRecoveryFixture.audit(value, model: true)
+        value.run?.status = "failed"
+        value.run?.inference = nil
+        value.run?.error = "Output limit reached"
+        await fixture.api.seed(value)
+        #expect(try await fixture.cache.claimExecution(audit, owner: "owner"))
+        let receipt = AskExecutionReceipt.inference(.init(
+            runId: audit.identity.runId, deviceId: audit.identity.deviceId,
+            inferenceId: audit.identity.callId, content: "", failed: true,
+            reasoning: "Partial reasoning"
+        ))
+        try await fixture.cache.saveReceipt(receipt, identity: audit.identity, owner: "owner")
+        await fixture.model.select(value.id)
+        #expect(fixture.model.hasRecoveryNotice)
+
+        let route = try #require(fixture.model.credentials(for: value.id))
+        try await fixture.model.acknowledgeExecution(audit.identity, response: value, current: route)
+        #expect(fixture.model.selected?.revision == value.revision)
+        #expect(!fixture.model.hasRecoveryNotice)
+        #expect(!fixture.model.recoveryBlocksResume(value))
+        fixture.model.resetSession()
+    }
+
     @Test func `unreadable journal cannot enable resume`() async throws {
         let fixture = try AskTestFixture(), value = AskRecoveryFixture.conversation()
         await fixture.api.seed(value)

@@ -192,7 +192,9 @@ struct AskProviderStream {
 
     func result() throws -> (String, [AskToolCall]) {
         if style == .responses { return try responses.result() }
-        guard finished, !progress.text.isEmpty || !progress.toolCalls.isEmpty else { throw invalid() }
+        // A provider can spend the whole output budget on reasoning. Preserve
+        // the explicit length finish so the caller reports truncation accurately.
+        guard finished, progress.truncated || !progress.text.isEmpty || !progress.toolCalls.isEmpty else { throw invalid() }
         var resultCalls: [AskToolCall] = []
         for index in calls.keys.sorted() {
             guard var call = calls[index] else { continue }

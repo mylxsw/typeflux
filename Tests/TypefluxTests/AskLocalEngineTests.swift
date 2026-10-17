@@ -77,6 +77,7 @@ final class AskLocalEngineTests: XCTestCase {
         XCTAssertEqual(c.run?.status, "waiting_inference")
         XCTAssertEqual(c.title, "读一下当前页面")
         let body = try payload(c)
+        XCTAssertEqual(body["max_tokens"] as? Int, 8192)
         // Read the system texts themselves; serialized JSON escapes "/".
         let text = ((body["messages"] as? [[String: Any]]) ?? []).compactMap { $0["content"] as? String }.joined(separator: "\n")
         XCTAssertTrue(text.contains("You are Typeflux Ask"))

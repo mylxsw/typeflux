@@ -40,7 +40,7 @@ extension AskConversationModel {
         }
         let response = try await api.result(conversationId: identity.conversationId,
                                             request: result, token: current.token)
-        try await cache.recordExecution(id: identity.key, event: .acknowledged, owner: current.owner)
+        try await acknowledgeExecution(identity, response: response, current: current)
         cloudApprovals[identity.key] = nil
         return response
     }
