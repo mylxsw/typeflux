@@ -100,6 +100,8 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     private var scope: AskFileScope?
     private var fingerprint: String?
     private var watcher: AskFileWatching?
+    private var watcherRevision = 0
+    private var preservingPublishedBuild = false
     private var lastEventID: UInt64 = 0
     private var dirty = false
     private var saveScheduled = false
@@ -364,10 +366,12 @@ extension AskFileIndex {
         publish(phase: .off)
     }
 
-    /// Scans every search folder into a fresh index, publishing as it grows.
-    private func build(scope: AskFileScope, run: Int) {
+    /// Scans every search folder into a fresh index, optionally keeping the old results available.
+    private func build(scope: AskFileScope, run: Int, preservePublished: Bool = false) {
         guard isCurrent(run) else { return }
         watcher?.stop()
+        preservingPublishedBuild = preservePublished
+        defer { preservingPublishedBuild = false }
         let count = status.count
         let estimate = count > 0 ? count : nil
         skippedMounts.removeAll()
@@ -376,7 +380,8 @@ extension AskFileIndex {
         let startEvent = AskFSEventsWatcher.currentEventID
         working = AskFileIndexState(home: home)
         self.scope = scope
-        publish(phase: .building(found: 0, estimate: estimate))
+        if preservePublished { reportBuildProgress(found: 0, estimate: estimate, run: run) }
+        else { publish(phase: .building(found: 0, estimate: estimate)) }
         var truncated = false
         // Outer folders first, so a folder added inside another hangs under it when the outer scan reached it.
         for root in scope.roots.reversed() {
@@ -387,9 +392,10 @@ extension AskFileIndex {
                                  skipped: recordSkip) { entry in
                 insert(entry)
                 let now = ProcessInfo.processInfo.systemUptime
-                if working.count % Self.publishEvery == 0 || now - lastPublish >= 0.25 {
+                if working.count % Self.publishEvery == 0 || now - lastPublish >= (preservePublished ? 2 : 0.25) {
                     lastPublish = now
-                    publish(phase: .building(found: working.count, estimate: estimate))
+                    if preservePublished { reportBuildProgress(found: working.count, estimate: estimate, run: run) }
+                    else { publish(phase: .building(found: working.count, estimate: estimate)) }
                 }
                 return true
             }
@@ -406,13 +412,15 @@ extension AskFileIndex {
     private func watch(since eventID: UInt64, run: Int) {
         guard let scope else { return }
         watcher?.stop()
+        watcherRevision += 1
+        let revision = watcherRevision
         let watcher = makeWatcher()
         self.watcher = watcher
         let mounts = AskFileMounts.current()
         watcher.start(paths: scope.roots.filter { scope.includes($0, isDirectory: true) && mounts.blocking($0) == nil }, since: eventID) { [weak self] changes, last in
             self?.queue.async {
-                guard let self, self.isCurrent(run) else { return }
-                self.apply(changes)
+                guard let self, self.watcherRevision == revision, self.isCurrent(run) else { return }
+                self.apply(changes, run: run)
                 if last > self.lastEventID { self.lastEventID = last }
             }
         }
@@ -421,7 +429,7 @@ extension AskFileIndex {
     // MARK: - Changes
 
     /// Brings the index up to date with what the file system reported.
-    func apply(_ changes: [AskFileChange]) {
+    func apply(_ changes: [AskFileChange], run: Int) {
         guard let scope, !changes.isEmpty, lock.withLock({ !suspended }), readerOwnership.permitsWork else { return }
         // Each event batch starts with a fresh worker; earlier directory failures do not carry over.
         reader = makeReader()
@@ -436,6 +444,12 @@ extension AskFileIndex {
                 let entry = try AskFileCrawler.metadata(at: path, scope: scope, reader: reader)
                 if scope.roots.contains(path) {
                     guard change.rescan || entry == nil else { continue }
+                    if change.rescan, entry != nil {
+                        // Rebuild into a fresh state. Removing every old record and then
+                        // compacting it doubles the work for a dropped root event.
+                        build(scope: scope, run: run, preservePublished: true)
+                        return
+                    }
                     changed = working.remove(path) || changed
                     for root in scope.roots.reversed() where AskFileScope.isInside(root, path) {
                         guard scope.includes(root, isDirectory: true),
@@ -524,6 +538,15 @@ extension AskFileIndex {
         DispatchQueue.main.async { NotificationCenter.default.post(name: Self.didChange, object: self) }
     }
 
+    private func reportBuildProgress(found: Int, estimate: Int?, run: Int) {
+        guard lock.withLock({ () -> Bool in
+            guard generation == run, !suspended else { return false }
+            currentStatus.phase = .building(found: found, estimate: estimate)
+            return true
+        }) else { return }
+        DispatchQueue.main.async { NotificationCenter.default.post(name: Self.didChange, object: self) }
+    }
+
     static func bytes(of state: AskFileIndexState) -> Int {
         state.records.count * MemoryLayout<AskFileRecord>.stride + state.keys.count + state.starts.count
             + state.names.count + state.directories.reduce(0) { $0 + 48 + $1.path.utf8.count + $1.key.count }
@@ -538,7 +561,7 @@ extension AskFileIndex {
             case .nonLocalMount: currentStatus.nonLocalMounts += 1
             }
         }
-        publish(phase: status.phase)
+        if !preservingPublishedBuild { publish(phase: status.phase) }
     }
 
     private func markDirty() {

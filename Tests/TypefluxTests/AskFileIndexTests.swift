@@ -368,8 +368,10 @@ struct AskFileIndexServiceTests {
 
         // Events dropped for the search folder itself: everything is read again, nothing is lost.
         try Data().write(to: root.appendingPathComponent("AfterDrop.txt"))
+        let stopsBeforeRootRescan = watcher.stopped
         watcher.send([AskFileChange(path: root.path, rescan: true)], id: 11)
         index.waitUntilIdle()
+        #expect(watcher.stopped > stopsBeforeRootRescan, "a root rescan restarts the watcher after a fresh build")
         #expect(search("afterdrop") == ["AfterDrop.txt"])
         #expect(search("report") == ["Report 2026.pdf"])
         #expect(search("inside") == ["inside.txt"])
@@ -377,6 +379,46 @@ struct AskFileIndexServiceTests {
         watcher.send([AskFileChange(path: root.path, rescan: false)], id: 12)
         index.waitUntilIdle()
         #expect(search("report") == ["Report 2026.pdf"])
+    }
+
+    @Test func rootRescanKeepsPreviousResultsUntilFreshIndexIsReady() throws {
+        let root = try makeTree()
+        let snapshot = root.appendingPathExtension("bin")
+        defer {
+            try? FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: snapshot)
+        }
+        let reader = AskRecordingFileReader()
+        let watcher = AskTestFileWatcher()
+        let lock = NSLock()
+        let entered = DispatchSemaphore(value: 0)
+        let resume = DispatchSemaphore(value: 0)
+        var blockDirectories = false
+        reader.respond = { request in
+            if request.operation == .directory, lock.withLock({ blockDirectories }) {
+                entered.signal()
+                _ = resume.wait(timeout: .now() + 5)
+            }
+            return AskFileWorkerCommand.handle(request)
+        }
+        let index = AskFileIndex(configuration: { (true, settings(root)) }, fullDiskAccess: { true },
+                                 snapshotURL: snapshot, home: root.path, makeReader: { reader }, makeWatcher: { watcher })
+        index.start()
+        index.waitUntilIdle()
+        #expect(index.search(.init("report"), options: .init()).first?.name == "Report 2026.pdf")
+
+        lock.withLock { blockDirectories = true }
+        watcher.send([AskFileChange(path: root.path, rescan: true)], id: 11)
+        let scanStarted = entered.wait(timeout: .now() + 3) == .success
+        #expect(scanStarted)
+        if scanStarted {
+            #expect(index.status.isBuilding)
+            #expect(index.search(.init("report"), options: .init()).first?.name == "Report 2026.pdf")
+        }
+        lock.withLock { blockDirectories = false }
+        resume.signal()
+        index.waitUntilIdle()
+        #expect(index.status.phase == .ready)
     }
 
     @Test func reloadsTheSnapshotAndRebuildsWhenSettingsChange() throws {
