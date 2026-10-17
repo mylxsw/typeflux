@@ -102,6 +102,13 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
         views.first { $0.selection.rect != nil }?.finish(action)
     }
 
+    func backgroundRemovedImage(displayID: CGDirectDisplayID, rect: CGRect) -> CGImage? {
+        guard let view = views.first(where: { $0.display.id == displayID }),
+              view.backgroundRemoval.region?.offsetBy(dx: view.display.frame.minX, dy: view.display.frame.minY) == rect
+        else { return nil }
+        return view.backgroundRemoval.image
+    }
+
     func dismiss() {
         for panel in panels {
             panel.orderOut(nil)

@@ -5810,3 +5810,12 @@
 "ask.quick.file.pdf.open" = "Opening the original PDF. Page positioning is unavailable in external apps. Use View Match Location in Typeflux.";
 "ask.quick.file.pdf.quickLook" = "Quick Look shows the original PDF without a page jump. Use View Match Location in Typeflux.";
 "ask.quick.file.pdf.preview" = "Open and Quick Look use the original PDF. Check the match location here when available.";
+
+// Screenshot background removal
+"screenshot.background.remove" = "Remove Background";
+"screenshot.background.restore" = "Restore Background";
+"screenshot.background.processing" = "Removing background…";
+"screenshot.background.cancel" = "Cancel Background Removal";
+"screenshot.background.noSubject" = "No subject found. Try a tighter selection.";
+"screenshot.background.failed" = "Couldn’t remove the background. Please try again.";
+"screenshot.background.unsupported" = "Background removal requires macOS 14 or later.";

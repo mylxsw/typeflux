@@ -5696,3 +5696,12 @@
 "ask.quick.file.pdf.open" = "元の PDF を開いています。外部アプリでのページ指定はできません。Typeflux の「一致箇所を表示」を使ってください。";
 "ask.quick.file.pdf.quickLook" = "Quick Look は元の PDF を表示し、一致ページには移動しません。Typeflux の「一致箇所を表示」を使ってください。";
 "ask.quick.file.pdf.preview" = "開く操作と Quick Look は元の PDF を使用します。一致箇所は表示可能な場合ここで確認できます。";
+
+// Screenshot background removal
+"screenshot.background.remove" = "背景を削除";
+"screenshot.background.restore" = "背景を復元";
+"screenshot.background.processing" = "背景を削除中…";
+"screenshot.background.cancel" = "背景の削除をキャンセル";
+"screenshot.background.noSubject" = "被写体が見つかりません。選択範囲を狭めてください。";
+"screenshot.background.failed" = "背景を削除できませんでした。もう一度お試しください。";
+"screenshot.background.unsupported" = "背景の削除には macOS 14 以降が必要です。";

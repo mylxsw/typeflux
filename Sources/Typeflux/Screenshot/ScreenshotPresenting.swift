@@ -39,6 +39,12 @@ protocol ScreenshotOverlayPresenting: AnyObject {
     func finish(_ action: ScreenshotOutputAction)
     /// Closes every panel and lets go of the frozen images. Safe to call when nothing shows.
     func dismiss()
+    /// A processed crop in native pixels, if background removal is active for this region.
+    func backgroundRemovedImage(displayID: CGDirectDisplayID, rect: CGRect) -> CGImage?
+}
+
+extension ScreenshotOverlayPresenting {
+    func backgroundRemovedImage(displayID: CGDirectDisplayID, rect: CGRect) -> CGImage? { nil }
 }
 
 /// The short message at the bottom of the screen after a screenshot.

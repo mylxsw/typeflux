@@ -5810,3 +5810,12 @@
 "ask.quick.file.pdf.open" = "正在打开原 PDF。外部应用不支持可靠跳页，请在 Typeflux 中选择“查看命中位置”。";
 "ask.quick.file.pdf.quickLook" = "Quick Look 显示原 PDF，不会跳到命中页。请在 Typeflux 中选择“查看命中位置”。";
 "ask.quick.file.pdf.preview" = "打开和 Quick Look 使用原 PDF；命中位置可用时在此查看。";
+
+// Screenshot background removal
+"screenshot.background.remove" = "去背景";
+"screenshot.background.restore" = "恢复背景";
+"screenshot.background.processing" = "正在去除背景…";
+"screenshot.background.cancel" = "取消去背景";
+"screenshot.background.noSubject" = "未识别到主体，请缩小选区后重试。";
+"screenshot.background.failed" = "去背景失败，请重试。";
+"screenshot.background.unsupported" = "去背景需要 macOS 14 或更高版本。";
