@@ -7,6 +7,7 @@
 "appearance.system" = "跟隨系統";
 "appearance.light" = "淺色";
 "appearance.dark" = "深色";
+"appIcon.glassFrosted" = "磨砂玻璃";
 "appIcon.pureWhite" = "純白";
 "appIcon.white" = "暖白";
 "appIcon.black" = "黑色";

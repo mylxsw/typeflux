@@ -103,6 +103,18 @@ struct AppearanceSettingsTests {
         }
     }
 
+    @Test func `frosted glass icon is bundled with transparent corners`() throws {
+        #expect(AppIconController.image(for: .glassFrosted) != nil)
+        let url = try #require(Bundle.appResources.url(
+            forResource: "TypefluxIconGlassFrosted", withExtension: "png", subdirectory: "AppIcons"
+        ) ?? Bundle.appResources.url(forResource: "TypefluxIconGlassFrosted", withExtension: "png"))
+        let bitmap = try #require(NSBitmapImageRep(data: try Data(contentsOf: url)))
+        #expect(bitmap.pixelsWide == 1024)
+        #expect(bitmap.pixelsHigh == 1024)
+        #expect(bitmap.colorAt(x: 0, y: 0)?.alphaComponent == 0)
+        #expect((bitmap.colorAt(x: 512, y: 512)?.alphaComponent ?? 0) > 0.99)
+    }
+
     @Test func `pure white icon has white background and transparent corners`() throws {
         #expect(AppIconController.image(for: .pureWhite) != nil)
         let url = try #require(Bundle.appResources.url(

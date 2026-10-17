@@ -189,8 +189,8 @@ final class SettingsStore {
 
     var appIconStyle: AppIconStyle {
         get {
-            let raw = defaults.string(forKey: "ui.appIconStyle") ?? AppIconStyle.black.rawValue
-            return AppIconStyle(rawValue: raw) ?? .black
+            let raw = defaults.string(forKey: "ui.appIconStyle") ?? AppIconStyle.glassFrosted.rawValue
+            return AppIconStyle(rawValue: raw) ?? .glassFrosted
         }
         set {
             guard appIconStyle != newValue else { return }

@@ -1,6 +1,7 @@
 import AppKit
 
 enum AppIconStyle: String, CaseIterable, Codable, Identifiable {
+    case glassFrosted
     case pureWhite
     case white
     case black
@@ -15,6 +16,7 @@ enum AppIconStyle: String, CaseIterable, Codable, Identifiable {
 
     var displayName: String {
         switch self {
+        case .glassFrosted: L("appIcon.glassFrosted")
         case .pureWhite: L("appIcon.pureWhite")
         case .white: L("appIcon.white")
         case .black: L("appIcon.black")
@@ -29,6 +31,7 @@ enum AppIconStyle: String, CaseIterable, Codable, Identifiable {
 
     var resourceName: String {
         switch self {
+        case .glassFrosted: "TypefluxIconGlassFrosted"
         case .pureWhite: "TypefluxIconPureWhite"
         case .white: "TypefluxIconWhite"
         case .black: "TypefluxIconBlack"
@@ -77,7 +80,7 @@ enum AppIconController {
 
     @discardableResult
     static func apply(_ style: AppIconStyle) -> Bool {
-        if style == .black {
+        if style == .glassFrosted {
             NSApp.applicationIconImage = nil
             return true
         }
