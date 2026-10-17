@@ -1749,7 +1749,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         factory.releaseSetup()
         await startup.value
         try recorder.emitAudio(frameCount: 320, value: 0.3)
-        await controller.activeRealtimeAudioBufferPump?.finishInput()
+        try await controller.activeRealtimeAudioBufferPump?.finishInput()
         let samples = await factory.session.receivedFirstSamples
         XCTAssertEqual(samples, [0.1, 0.2, 0.3])
         controller.cancelRecording()
@@ -4160,7 +4160,7 @@ extension WorkflowControllerProcessingTests {
         factory.releaseSetup()
         await startup.value
         try recorder.emitAudio(frameCount: 320, value: 0.3)
-        await controller.activeRealtimeAudioBufferPump?.finishInput()
+        try await controller.activeRealtimeAudioBufferPump?.finishInput()
         let samples = await factory.session.receivedFirstSamples
         XCTAssertEqual(samples, [0.1, 0.2, 0.3])
         XCTAssertEqual(recorder.startCallCount, 1)

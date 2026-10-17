@@ -2,6 +2,8 @@
 
 Updated 2026-10-17. This is the bounded delivery checklist for the approved four-stage design, not a new consumer audit queue. The issue remains in progress: stages 1–3 have delivered implementation and focused evidence; stage 4's permission, signing, device and performance gates are not satisfied. Incremental line coverage must not be presented as whole-application crash protection or a single integrated test pass.
 
+The member lowered this task's changed-code coverage acceptance threshold to **70%** on 2026-10-17. Earlier reports retain their historical targets/results; no extra tests or rebuilds are required solely to pursue 80% or 90%. Critical failure, cancellation and no-replay behavior still require focused tests.
+
 ## Fixed completion criteria
 
 1. Retain bounded module startup/recovery, independent failure domains, original-operation ownership, actual resource collection and no effect replay. Existing evidence below is historical and keeps each report's failures/retries and exclusions.
@@ -32,6 +34,7 @@ Updated 2026-10-17. This is the bounded delivery checklist for the approved four
 ## Remaining blockers versus follow-ups
 
 - **B1 — artifact save:** close with the focused save implementation/report in this delivery, including original account/selection, final full reload, exact ref/digest, one entered sink and keyed errors.
+- **B2 resource follow-up — fixed scope:** realtime pump/encoded queues and the observed Data reset crash are addressed in [realtime-audio-bounds.md](realtime-audio-bounds.md). The two already-identified host queues (startup PCM prefix and audio-file writer) remain the next bounded implementation slice; do not open another consumer audit chain.
 - **B2 — audio prerequisites:** signed app/TCC ownership, device switch/removal/sleep-wake, actual quit collection and latency/memory evidence. No microphone migration or live recording test before this gate.
 - **B3 — local translation/model prerequisites:** identify remaining in-process native engine, packaging/signing and real workload performance gates. Synthetic worker protocol tests do not close this item.
 - **B4 — final shared-entry acceptance:** a finite hotkey/capture/synchronization regression checklist and stage-by-stage acceptance record; no unrelated whole-suite execution.

@@ -9,6 +9,10 @@ This report is a read-only prerequisite decision, not evidence of signed-device 
 - WhisperKit has an existing inference helper and protocol/retirement evidence. That does not establish real model memory/latency or system Translation behavior. The previous [inference report](local-inference.md) retains the exact unverified release/device limitations.
 - Existing media helpers protect their own native operations. Hotkey/event taps, permission UI, explicit Quick Look panel, synchronization and other AppKit callbacks remain host entry points. A worker restart is never authorization to repeat a keystroke, sync mutation, paid request or recording.
 
+## Resource prerequisite delivered separately
+
+The subsequent [realtime audio bounds](realtime-audio-bounds.md) increment bounds the PCM handoff and encoded transport queues, rejects incomplete realtime results and checks conversion allocation sizes. Its tests use raw PCM/private Data and fake transports, not recording hardware or an audio codec. This is a concrete resource fix under the audio prerequisite; it does not pass any signed-device gate below or change microphone ownership. The pre-activation relay and asynchronous audio-file writer remain separate host queues, not covered by the realtime queue caps.
+
 ## Decision
 
 Keep existing capture ownership until the signed audio/TCC and performance gate below passes. Do not add a second concurrent microphone owner, move recording into an unsigned test child or use successful synthetic media tests as permission evidence. No full application crash-recovery claim is possible while arbitrary UI, filesystem and native callbacks remain in-process.

@@ -1,0 +1,50 @@
+{
+  "covered": 132,
+  "executable_added": 140,
+  "percent": 94.29,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Audio/AudioPCMBufferSnapshot.swift",
+      "covered": 19,
+      "executable_added": 19,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/STT/RealtimeTranscriptionSession.swift",
+      "covered": 113,
+      "executable_added": 115,
+      "percent": 98.26,
+      "uncovered": [
+        231,
+        401
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Workflow/WorkflowComposerRecording.swift",
+      "covered": 0,
+      "executable_added": 2,
+      "percent": 0.0,
+      "uncovered": [
+        168,
+        169
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Workflow/WorkflowController+Processing.swift",
+      "covered": 0,
+      "executable_added": 4,
+      "percent": 0.0,
+      "uncovered": [
+        641,
+        642,
+        643,
+        650
+      ],
+      "instrumented": true
+    }
+  ]
+}

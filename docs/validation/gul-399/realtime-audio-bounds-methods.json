@@ -1,0 +1,90 @@
+{
+  "baseline": "46b60c0031582f182a417460dbdf8811fb78a1d1",
+  "initial_inventory": [
+    "TypefluxTests.AudioPCMBufferSnapshotTests/testCopyNeverInitializesTheProducersChannelPointers",
+    "TypefluxTests.AudioPCMBufferSnapshotTests/testPreservesEverySampleForInterleavedAndPlanarPCMFormats",
+    "TypefluxTests.AudioPCMBufferSnapshotTests/testRejectsEmptyAudio",
+    "TypefluxTests.AudioPCMBufferSnapshotTests/testRejectsMissingSampleData",
+    "TypefluxTests.AudioPCMBufferSnapshotTests/testRejectsTruncatedSampleData",
+    "TypefluxTests.RealtimeAudioOrderingTests/testPumpSnapshotsAudioBeforeTheProducerCanReuseIt",
+    "TypefluxTests.RealtimeTranscriptionSessionTests/testDiagnosticsRecordsInboundResultMilestonesOnlyOnce",
+    "TypefluxTests.RealtimeTranscriptionSessionTests/testPCM16FrameChunkerKeepsRemainderUntilFlush",
+    "TypefluxTests.RealtimeTranscriptionSessionTests/testPCM16FrameChunkerRebasesChunksAfterDrainingBuffer",
+    "TypefluxTests.RealtimeAudioBoundsTests/cancelledEncodedSessionDoesNotRestartAndFinishCollectsItsWriter()",
+    "TypefluxTests.RealtimeAudioBoundsTests/encodedInputLimitAndRawEmptyBufferFailBeforeConversion()",
+    "TypefluxTests.RealtimeAudioBoundsTests/exactByteLimitAndHealthyFinishRetainProducerSnapshot()",
+    "TypefluxTests.RealtimeAudioBoundsTests/finalPartialChunkOverflowFailsRatherThanReturningShortTranscript()",
+    "TypefluxTests.RealtimeAudioBoundsTests/healthyEncodedInputPreservesOrderRemainderAndOneFinalResult()",
+    "TypefluxTests.RealtimeAudioBoundsTests/invalidOrOversizedPumpInputNeverReachesSession(_:)",
+    "TypefluxTests.RealtimeAudioBoundsTests/outputAllocationRejectsNonFiniteAndExtremeRatiosBeforeConverter()",
+    "TypefluxTests.RealtimeAudioBoundsTests/planarByteAdmissionAndFailedResultAdapterArePure()",
+    "TypefluxTests.RealtimeAudioBoundsTests/pumpCancellationDiscardsPendingAndCollectionWaitsForEnteredAppend()",
+    "TypefluxTests.RealtimeAudioBoundsTests/pumpOverflowRetainsActualAppendAndRejectsTruncatedCompletion()",
+    "TypefluxTests.RealtimeAudioBoundsTests/queuedConnectionOverflowNeverSendsOrFinishesUpstream()",
+    "TypefluxTests.RealtimeAudioBoundsTests/slowWriterOverflowKeepsOneEnteredEffectAndRefusesStopSuccess()"
+  ],
+  "final_inventory": [
+    "TypefluxTests.RealtimeAudioOrderingTests/testPumpSnapshotsAudioBeforeTheProducerCanReuseIt",
+    "TypefluxTests.RealtimeTranscriptionSessionTests/testPCM16FrameChunkerKeepsRemainderUntilFlush",
+    "TypefluxTests.RealtimeTranscriptionSessionTests/testPCM16FrameChunkerRebasesChunksAfterDrainingBuffer",
+    "TypefluxTests.RealtimeAudioBoundsTests/cancelledEncodedSessionDoesNotRestartAndFinishCollectsItsWriter()",
+    "TypefluxTests.RealtimeAudioBoundsTests/encodedInputLimitAndRawEmptyBufferFailBeforeConversion()",
+    "TypefluxTests.RealtimeAudioBoundsTests/exactByteLimitAndHealthyFinishRetainProducerSnapshot()",
+    "TypefluxTests.RealtimeAudioBoundsTests/finalPartialChunkOverflowFailsRatherThanReturningShortTranscript()",
+    "TypefluxTests.RealtimeAudioBoundsTests/healthyEncodedInputPreservesOrderRemainderAndOneFinalResult()",
+    "TypefluxTests.RealtimeAudioBoundsTests/heapSlicesResetAndFlushKeepOwnedZeroBasedPCMWithoutNativeConversion()",
+    "TypefluxTests.RealtimeAudioBoundsTests/invalidOrOversizedPumpInputNeverReachesSession(_:)",
+    "TypefluxTests.RealtimeAudioBoundsTests/outputAllocationRejectsNonFiniteAndExtremeRatiosBeforeConverter()",
+    "TypefluxTests.RealtimeAudioBoundsTests/planarByteAdmissionAndFailedResultAdapterArePure()",
+    "TypefluxTests.RealtimeAudioBoundsTests/pumpCancellationDiscardsPendingAndCollectionWaitsForEnteredAppend()",
+    "TypefluxTests.RealtimeAudioBoundsTests/pumpOverflowRetainsActualAppendAndRejectsTruncatedCompletion()",
+    "TypefluxTests.RealtimeAudioBoundsTests/queuedConnectionOverflowNeverSendsOrFinishesUpstream()",
+    "TypefluxTests.RealtimeAudioBoundsTests/slowWriterOverflowKeepsOneEnteredEffectAndRefusesStopSuccess()"
+  ],
+  "results": {
+    "distinct_methods_with_passing_results_across_runs": 22,
+    "initial_xctest_passed": 9,
+    "initial_new_methods_passed_before_signal5": 4,
+    "initial_swift_testing_aborted_on": "queuedConnectionOverflowNeverSendsOrFinishesUpstream",
+    "diagnostic": "Same method reproduced Data InlineSlice reset fault; owned helper/backtracer/debugger collected.",
+    "final_xctest_passed": 3,
+    "final_swift_testing_passed": 13,
+    "final_new_suite_cases": 14,
+    "earlier_methods_not_rerun": 6,
+    "not_one_shot_22_of_22": true
+  },
+  "exclusions": [
+    "Remaining RealtimeAudioOrdering/Session methods call AVAudioConverter",
+    "Snapshot concurrency stress method (not needed for parameter/queue change)",
+    "AVFoundationAudioRecorder/CoreAudioRecorder constructors, devices and actual audio files",
+    "WorkflowController/composer object fixtures with system/UI/provider defaults",
+    "All clipboard/home/network/provider/model/TCC/signing/full-suite/device tests"
+  ],
+  "verification": {
+    "inputs": 2027,
+    "sources": 1154,
+    "tests": 873,
+    "profiles": 3,
+    "binary_hashes": {
+      "tests": "d5e54720e7db7f27144dad686478ae941e997fbb57e583995a4fdce8d5cce8b0",
+      "app": "7f8d4445ec105d02f152d3ba42b278b66559308b247fb7fd5abca2bc2b7e1fd0"
+    },
+    "reported_function_hashes": 368,
+    "all_reported_hashes_zero": true,
+    "note": "Zero Swift hashes do not establish layout compatibility. HOST profiles only; no child coverage claim."
+  },
+  "final_raw_profiles": [
+    {
+      "path": ".build/arm64-apple-macosx/debug/codecov/Swift Testing7606087139482056498_0.92571.profraw",
+      "sha256": "e0914e096e02e1efaa2a7c2628aad6c4aa60fbfb98c2b1b2f6d7b32dd9dc9afe"
+    },
+    {
+      "path": ".build/arm64-apple-macosx/debug/codecov/XCTest7606087139482056498_0.92521.profraw",
+      "sha256": "04841372127d11117c57a7d87ee0d9ee37da63b95885475ffbea6b8acbc1618d"
+    },
+    {
+      "path": ".build/arm64-apple-macosx/debug/codecov/XCTest7606087139482056498_0.92538.profraw",
+      "sha256": "6d16983674ae4508dcdb00b9b491853188d256020c60f9f14053111bc0f3276a"
+    }
+  ]
+}
