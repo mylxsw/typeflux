@@ -128,38 +128,48 @@ struct AskLauncherPaletteRenderTests {
                 "Both composer variants omit the chevron")
     }
 
-    @Test func `footer status icons match the storage lock height`() async throws {
+    @Test func `footer status icons match the storage lock visually`() async throws {
         let size = NSSize(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
-        func blueHeight(_ view: some View) async throws -> CGFloat {
+        func blueMetrics(_ view: some View) async throws -> (width: CGFloat, height: CGFloat, ink: Int) {
             let bitmap = try await render(view, size: size, appearance: .darkAqua)
-            var minY = Int.max
-            var maxY = -1
+            var minX = Int.max, maxX = -1, minY = Int.max, maxY = -1, ink = 0
             for y in 0 ..< bitmap.pixelsHigh {
                 for x in 0 ..< bitmap.pixelsWide {
                     guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { continue }
                     if color.blueComponent - color.redComponent > 0.2 && color.blueComponent > color.greenComponent {
+                        minX = min(minX, x)
+                        maxX = max(maxX, x)
                         minY = min(minY, y)
                         maxY = max(maxY, y)
+                        ink += 1
                     }
                 }
             }
-            return CGFloat(try #require(maxY >= minY ? maxY - minY + 1 : nil))
+            let width = CGFloat(try #require(maxX >= minX ? maxX - minX + 1 : nil))
+                * size.width / CGFloat(bitmap.pixelsWide)
+            let height = CGFloat(try #require(maxY >= minY ? maxY - minY + 1 : nil))
                 * size.height / CGFloat(bitmap.pixelsHigh)
+            return (width, height, ink)
         }
-        let lock = try await blueHeight(
+        let lock = try await blueMetrics(
             Image(systemName: "lock")
                 .font(.system(size: AskMetrics.footerStatusSymbolSize, weight: .semibold))
                 .foregroundStyle(StudioTheme.accent)
         )
-        let shield = try await blueHeight(AskPermissionModeMenu(mode: .standard, compact: true, bare: true,
-                                                               onSelect: { _ in }))
-        let camera = try await blueHeight(AskIconChipFace(item: .init(kind: .screenshot,
+        let shield = try await blueMetrics(AskPermissionModeMenu(mode: .standard, compact: true, bare: true,
+                                                                onSelect: { _ in }))
+        let camera = try await blueMetrics(AskIconChipFace(item: .init(kind: .screenshot,
             systemImage: "camera.viewfinder", style: .active, title: "Screenshot")))
-        let brain = try await blueHeight(AskIconChipFace(item: .init(kind: .memory,
+        let brain = try await blueMetrics(AskIconChipFace(item: .init(kind: .memory,
             systemImage: "brain", style: .active, title: "Memory")))
-        for (name, height) in [("shield", shield), ("camera", camera), ("brain", brain)] {
-            #expect(abs(height - lock) <= 2, "\(name): \(height)pt versus lock: \(lock)pt")
+        for (name, metrics) in [("shield", shield), ("camera", camera)] {
+            #expect(abs(metrics.height - lock.height) <= 2,
+                    "\(name): \(metrics.height)pt versus lock: \(lock.height)pt")
         }
+        #expect(brain.width <= camera.width + 2, "brain width: \(brain.width)pt, camera: \(camera.width)pt")
+        #expect(brain.height <= camera.height + 1 && brain.height >= camera.height - 7)
+        #expect(Double(brain.ink) <= Double(camera.ink) * 1.3,
+                "brain ink: \(brain.ink), camera: \(camera.ink)")
     }
 
     @Test func `active and inactive switches have no background`() async throws {

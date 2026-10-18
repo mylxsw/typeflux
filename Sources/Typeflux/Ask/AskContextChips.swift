@@ -379,7 +379,8 @@ struct AskIconChipFace: View {
         } else {
             ZStack {
                 Image(systemName: Self.symbol(item))
-                    .font(.system(size: AskMetrics.footerStatusSymbolSize, weight: .semibold))
+                    .font(.system(size: item.kind == .memory ? Self.memorySymbolSize
+                        : AskMetrics.footerStatusSymbolSize, weight: .semibold))
                 if item.style == .unavailable {
                     Rectangle().frame(width: 20, height: 1.5).rotationEffect(.degrees(-45))
                 }

@@ -5,6 +5,8 @@ import SwiftUI
 extension AskIconChipFace {
     static let wellInset: CGFloat = 3
     static let wellCorner: CGFloat = 9
+    /// The filled brain has a wider, denser drawing than the other footer symbols.
+    static let memorySymbolSize: CGFloat = 9.5
 
     /// Active icons stay borderless; warnings and inactive hover retain feedback.
     static func wellFill(_ style: AskChip.Style, hovering: Bool) -> Color {
