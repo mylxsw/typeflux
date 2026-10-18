@@ -40,6 +40,14 @@ jobs:
           security import "$package" -P "$APPLE_CERTIFICATE_PASSWORD" -A -f pkcs12 -k "$keychain"
 
           echo "Imported certificates: $(security find-certificate -a -p "$keychain" | grep -c 'BEGIN CERTIFICATE')"
+          for store in /System/Library/Keychains/SystemRootCertificates.keychain \
+            /Library/Keychains/System.keychain; do
+            roots=$(security find-certificate -a -p -c 'Apple Root CA' "$store" \
+              | grep -c 'BEGIN CERTIFICATE' || true)
+            intermediates=$(security find-certificate -a -p -c 'Developer ID Certification Authority' "$store" \
+              | grep -c 'BEGIN CERTIFICATE' || true)
+            echo "$(basename "$store"): Apple roots=$roots, Developer ID intermediates=$intermediates"
+          done
           if security find-key -t private "$keychain" >/dev/null 2>&1; then
             echo "Private key present in temporary keychain: yes"
           else
@@ -56,4 +64,5 @@ jobs:
           result=$?
           set -e
           echo "Offline code-signing trust check exit: $result"
-          grep -Ei 'error|status|failed|result' "$RUNNER_TEMP/verify-cert.log" | tail -12 || true
+          sed -E 's/Developer ID Application: [^"]+/Developer ID Application: [redacted]/g' \
+            "$RUNNER_TEMP/verify-cert.log" | tail -80
