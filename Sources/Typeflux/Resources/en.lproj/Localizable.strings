@@ -6070,3 +6070,6 @@
 "ask.web.sites.privacy" = "Password fields and payment details are never sent to the AI.";
 "ask.web.sites.clearAll" = "Sign Out of All Sites";
 "ask.web.sites.clearAll.confirm" = "Sign out of every site and clear all browser data?";
+
+"auth.account.subscriptionPrepaidHint" = "Prepaid membership. No automatic renewal.";
+"auth.account.renewMembership" = "Renew membership";

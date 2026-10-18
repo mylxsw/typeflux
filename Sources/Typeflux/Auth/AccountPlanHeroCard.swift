@@ -220,17 +220,22 @@ struct AccountPlanHeroCard: View {
     private func actions(_ status: AccountStatusPresentation) -> some View {
         let paid = authState.subscription.hasPaidSubscription
             || AccountStatusPresentation.isPaymentIssue(authState.subscription)
-        let primary: (title: String, destination: AccountStatusPresentation.Destination) = switch status.offer {
-        case .fixPayment: (L("account.page.fixPayment"), .billingPortal)
-        case .restore: (L("account.offer.restoreAction"), .billingPortal)
-        default: paid ? (L("account.card.manage"), .billingPortal) : (L("account.offer.upgradeTitle"), .plans)
+        let primary: (title: String, destination: AccountStatusPresentation.Destination)
+        if authState.subscription.isPrepaidMembership {
+            primary = (L("auth.account.renewMembership"), .plans)
+        } else {
+            primary = switch status.offer {
+            case .fixPayment: (L("account.page.fixPayment"), .billingPortal)
+            case .restore: (L("account.offer.restoreAction"), .billingPortal)
+            default: paid ? (L("account.card.manage"), .billingPortal) : (L("account.offer.upgradeTitle"), .plans)
+            }
         }
         return VStack(spacing: StudioTheme.Spacing.xSmall) {
             StudioButton(title: primary.title, systemImage: nil, variant: .primary,
                          isDisabled: isOpeningBilling || authState.isSyncingSubscription,
                          isLoading: isOpeningBilling) { onOpenBilling(primary.destination) }
                 .frame(maxWidth: .infinity)
-            if paid {
+            if paid && !authState.subscription.isPrepaidMembership {
                 // Fixing a payment or resuming happen in the same portal.
                 Text(L("account.card.manageHint"))
                     .font(.studioBody(StudioTheme.Typography.caption))

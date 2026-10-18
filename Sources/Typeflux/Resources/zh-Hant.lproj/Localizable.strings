@@ -5990,3 +5990,6 @@
 "ask.web.sites.privacy" = "密碼欄位內容和付款資訊永遠不會傳送給 AI。";
 "ask.web.sites.clearAll" = "登出全部網站";
 "ask.web.sites.clearAll.confirm" = "登出所有網站並清除全部瀏覽器資料？";
+
+"auth.account.subscriptionPrepaidHint" = "按期購買的會員，不會自動續費。";
+"auth.account.renewMembership" = "續購會員";

@@ -5949,3 +5949,6 @@
 "ask.web.sites.privacy" = "비밀번호 칸과 결제 정보는 AI에 전송되지 않습니다.";
 "ask.web.sites.clearAll" = "모든 사이트에서 로그아웃";
 "ask.web.sites.clearAll.confirm" = "모든 사이트에서 로그아웃하고 브라우저 데이터를 모두 지울까요?";
+
+"auth.account.subscriptionPrepaidHint" = "선불 멤버십입니다. 자동 갱신되지 않습니다.";
+"auth.account.renewMembership" = "멤버십 연장";
