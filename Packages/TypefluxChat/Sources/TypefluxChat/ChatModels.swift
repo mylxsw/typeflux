@@ -9,11 +9,14 @@ public struct ChatConversation: Codable, Equatable, Identifiable, Sendable {
     public var updatedAt: Date
     public var messages: [ChatMessage]
     public var run: ChatRun?
+    /// `auto` once a title was generated, `manual` after a rename; nil while the
+    /// conversation still carries its provisional title.
+    public var titleSource: String?
 
     public init(id: String, title: String, revision: Int64 = 0, updatedAt: Date = Date(),
-                messages: [ChatMessage] = [], run: ChatRun? = nil) {
+                messages: [ChatMessage] = [], run: ChatRun? = nil, titleSource: String? = nil) {
         self.id = id; self.title = title; self.revision = revision
-        self.updatedAt = updatedAt; self.messages = messages; self.run = run
+        self.updatedAt = updatedAt; self.messages = messages; self.run = run; self.titleSource = titleSource
     }
 }
 
@@ -38,18 +41,22 @@ public struct ChatMessage: Codable, Equatable, Identifiable, Sendable {
     public var toolCalls: [ChatToolCall]?
     public var toolCallId: String?
     public var isError: Bool?
-    /// The model that wrote this answer. Set for answers written on this device;
-    /// cloud documents do not carry it per message.
+    /// The model that wrote this answer, for answers written on this device.
     public var modelRef: String?
+    /// The public Typeflux Cloud model that wrote this answer, including when
+    /// the request asked for the default. Older servers omit both.
+    public var modelAlias: String?
+    public var modelName: String?
 
     public init(id: String, role: String, text: String, createdAt: Date = Date(), image: String? = nil,
                 reasoning: String? = nil, reasoningMilliseconds: Int? = nil, attachments: [ChatAttachment]? = nil,
                 toolCalls: [ChatToolCall]? = nil, toolCallId: String? = nil,
-                isError: Bool? = nil, modelRef: String? = nil) {
+                isError: Bool? = nil, modelRef: String? = nil, modelAlias: String? = nil, modelName: String? = nil) {
         self.id = id; self.role = role; self.text = text; self.createdAt = createdAt
         self.image = image; self.reasoning = reasoning; self.toolCalls = toolCalls
         self.reasoningMilliseconds = reasoningMilliseconds; self.attachments = attachments
         self.toolCallId = toolCallId; self.isError = isError; self.modelRef = modelRef
+        self.modelAlias = modelAlias; self.modelName = modelName
     }
 
     public var hasImage: Bool { image != nil || attachments?.contains { $0.kind == "image" } == true }
@@ -101,8 +108,12 @@ public struct ChatRun: Codable, Equatable, Identifiable, Sendable {
     public var pending: [ChatToolCall]
     /// The model reference the run was started with, e.g. `cloud:default`.
     public var modelRef: String?
+    /// The public catalog model serving the run; `cloud:default` resolves to it.
+    public var modelAlias: String?
+    public var modelName: String?
     private enum CodingKeys: String, CodingKey {
         case id, deviceId, status, updatedAt, preview, reasoning, reasoningMilliseconds, error, pending, modelRef
+        case modelAlias, modelName
     }
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -116,6 +127,8 @@ public struct ChatRun: Codable, Equatable, Identifiable, Sendable {
         error = try values.decodeIfPresent(String.self, forKey: .error)
         pending = try values.decodeIfPresent([ChatToolCall].self, forKey: .pending) ?? []
         modelRef = try values.decodeIfPresent(String.self, forKey: .modelRef)
+        modelAlias = try values.decodeIfPresent(String.self, forKey: .modelAlias)
+        modelName = try values.decodeIfPresent(String.self, forKey: .modelName)
     }
     public var isActive: Bool { !["completed", "failed", "cancelled"].contains(status) }
     /// These runs require a desktop executor. Mobile can display or cancel them,
@@ -126,10 +139,12 @@ public struct ChatRun: Codable, Equatable, Identifiable, Sendable {
     public var isPausedForCredits: Bool { status == "paused_credits" }
     public init(id: String, deviceId: String, status: String, updatedAt: Date = Date(),
                 preview: String? = nil, reasoning: String? = nil, reasoningMilliseconds: Int? = nil, error: String? = nil,
-                pending: [ChatToolCall] = [], modelRef: String? = nil) {
+                pending: [ChatToolCall] = [], modelRef: String? = nil, modelAlias: String? = nil,
+                modelName: String? = nil) {
         self.id = id; self.deviceId = deviceId; self.status = status; self.updatedAt = updatedAt
         self.preview = preview; self.reasoning = reasoning; self.error = error; self.pending = pending
         self.reasoningMilliseconds = reasoningMilliseconds; self.modelRef = modelRef
+        self.modelAlias = modelAlias; self.modelName = modelName
     }
 }
 
@@ -216,11 +231,31 @@ public struct ChatSendRequest: Encodable, Equatable, Sendable {
     public let platform = "iOS"
     public var timeZone: String
     public var locale: String
+    /// Starts a temporary conversation: never listed and deleted when left.
+    /// Ignored by the server once the conversation exists.
+    public var temporary: Bool?
     public init(id: String = UUID().uuidString, deviceId: String, text: String,
                 image: String? = nil, modelRef: String? = nil, reasoningEffort: String? = nil,
-                timeZone: String = TimeZone.current.identifier, locale: String = Locale.current.identifier) {
+                timeZone: String = TimeZone.current.identifier, locale: String = Locale.current.identifier,
+                temporary: Bool? = nil) {
         self.id = id; self.deviceId = deviceId; self.text = text
         self.image = image; self.modelRef = modelRef; self.timeZone = timeZone; self.locale = locale
-        self.reasoningEffort = reasoningEffort
+        self.reasoningEffort = reasoningEffort; self.temporary = temporary
+    }
+}
+
+/// `POST /:id/title`: `rename` sets a manual title; `generate` asks the server to
+/// name the conversation once, with its conversation-title model.
+public struct ChatTitleRequest: Encodable, Equatable, Sendable {
+    public var action: String
+    public var id: String?
+    public var title: String?
+
+    public static func rename(_ title: String) -> ChatTitleRequest {
+        ChatTitleRequest(action: "rename", id: nil, title: title)
+    }
+
+    public static func generate(task: String = UUID().uuidString.lowercased()) -> ChatTitleRequest {
+        ChatTitleRequest(action: "generate", id: task, title: nil)
     }
 }
