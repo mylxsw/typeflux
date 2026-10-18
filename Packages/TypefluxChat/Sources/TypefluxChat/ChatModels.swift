@@ -2,7 +2,7 @@ import Foundation
 
 /// Mobile projection of the cloud document. Unknown desktop-only metadata is
 /// ignored during decoding; mobile never PUTs this projection over the document.
-public struct ChatConversation: Decodable, Equatable, Identifiable, Sendable {
+public struct ChatConversation: Codable, Equatable, Identifiable, Sendable {
     @ChatConversationID public var id: String
     public var title: String
     public var revision: Int64
@@ -26,7 +26,7 @@ public struct ChatConversationSummary: Codable, Equatable, Identifiable, Sendabl
     }
 }
 
-public struct ChatMessage: Decodable, Equatable, Identifiable, Sendable {
+public struct ChatMessage: Codable, Equatable, Identifiable, Sendable {
     public var id: String
     public var role: String
     public var text: String
@@ -38,15 +38,18 @@ public struct ChatMessage: Decodable, Equatable, Identifiable, Sendable {
     public var toolCalls: [ChatToolCall]?
     public var toolCallId: String?
     public var isError: Bool?
+    /// The model that wrote this answer. Set for answers written on this device;
+    /// cloud documents do not carry it per message.
+    public var modelRef: String?
 
     public init(id: String, role: String, text: String, createdAt: Date = Date(), image: String? = nil,
                 reasoning: String? = nil, reasoningMilliseconds: Int? = nil, attachments: [ChatAttachment]? = nil,
                 toolCalls: [ChatToolCall]? = nil, toolCallId: String? = nil,
-                isError: Bool? = nil) {
+                isError: Bool? = nil, modelRef: String? = nil) {
         self.id = id; self.role = role; self.text = text; self.createdAt = createdAt
         self.image = image; self.reasoning = reasoning; self.toolCalls = toolCalls
         self.reasoningMilliseconds = reasoningMilliseconds; self.attachments = attachments
-        self.toolCallId = toolCallId; self.isError = isError
+        self.toolCallId = toolCallId; self.isError = isError; self.modelRef = modelRef
     }
 
     public var hasImage: Bool { image != nil || attachments?.contains { $0.kind == "image" } == true }
@@ -60,7 +63,7 @@ public struct ChatMessage: Decodable, Equatable, Identifiable, Sendable {
 
 /// Read-only attachment projection. Desktop file contents and local folder paths
 /// are deliberately not exposed; inline images can be displayed on any device.
-public struct ChatAttachment: Decodable, Equatable, Sendable {
+public struct ChatAttachment: Codable, Equatable, Sendable {
     public var kind: String
     public var id: String?
     public var name: String?
@@ -86,7 +89,7 @@ public struct ChatToolCall: Codable, Equatable, Identifiable, Sendable {
     }
 }
 
-public struct ChatRun: Decodable, Equatable, Identifiable, Sendable {
+public struct ChatRun: Codable, Equatable, Identifiable, Sendable {
     public var id: String
     public var deviceId: String
     public var status: String
@@ -96,8 +99,10 @@ public struct ChatRun: Decodable, Equatable, Identifiable, Sendable {
     public var reasoningMilliseconds: Int?
     public var error: String?
     public var pending: [ChatToolCall]
+    /// The model reference the run was started with, e.g. `cloud:default`.
+    public var modelRef: String?
     private enum CodingKeys: String, CodingKey {
-        case id, deviceId, status, updatedAt, preview, reasoning, reasoningMilliseconds, error, pending
+        case id, deviceId, status, updatedAt, preview, reasoning, reasoningMilliseconds, error, pending, modelRef
     }
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -110,6 +115,7 @@ public struct ChatRun: Decodable, Equatable, Identifiable, Sendable {
         reasoningMilliseconds = try values.decodeIfPresent(Int.self, forKey: .reasoningMilliseconds)
         error = try values.decodeIfPresent(String.self, forKey: .error)
         pending = try values.decodeIfPresent([ChatToolCall].self, forKey: .pending) ?? []
+        modelRef = try values.decodeIfPresent(String.self, forKey: .modelRef)
     }
     public var isActive: Bool { !["completed", "failed", "cancelled"].contains(status) }
     /// These runs require a desktop executor. Mobile can display or cancel them,
@@ -120,14 +126,14 @@ public struct ChatRun: Decodable, Equatable, Identifiable, Sendable {
     public var isPausedForCredits: Bool { status == "paused_credits" }
     public init(id: String, deviceId: String, status: String, updatedAt: Date = Date(),
                 preview: String? = nil, reasoning: String? = nil, reasoningMilliseconds: Int? = nil, error: String? = nil,
-                pending: [ChatToolCall] = []) {
+                pending: [ChatToolCall] = [], modelRef: String? = nil) {
         self.id = id; self.deviceId = deviceId; self.status = status; self.updatedAt = updatedAt
         self.preview = preview; self.reasoning = reasoning; self.error = error; self.pending = pending
-        self.reasoningMilliseconds = reasoningMilliseconds
+        self.reasoningMilliseconds = reasoningMilliseconds; self.modelRef = modelRef
     }
 }
 
-public struct ChatModel: Decodable, Equatable, Identifiable, Sendable {
+public struct ChatModel: Codable, Equatable, Identifiable, Sendable {
     public var id: String
     public var name: String
     public var vision: Bool?
@@ -138,7 +144,12 @@ public struct ChatModel: Decodable, Equatable, Identifiable, Sendable {
     /// Catalog pricing uses decimal strings to avoid rounding billing metadata.
     /// Older servers omit pricing entirely.
     public var pricing: [String: String]?
-    public var reference: String { "cloud:" + id }
+    /// A model from the user's own provider, answered on this device. Nil for Typeflux Cloud.
+    public var providerName: String?
+    private var localReference: String?
+    /// `cloud:<alias>` for Typeflux Cloud; `local:<provider>/<model>` for the user's own models.
+    public var reference: String { localReference ?? "cloud:" + id }
+    public var isLocal: Bool { localReference != nil }
     public init(id: String, name: String, vision: Bool? = nil, pricing: [String: String]? = nil,
                 reasoning: Bool? = nil, reasoningEfforts: [String]? = nil,
                 contextWindowTokens: Int? = nil, maxOutputTokens: Int? = nil) {
@@ -147,12 +158,37 @@ public struct ChatModel: Decodable, Equatable, Identifiable, Sendable {
         self.contextWindowTokens = contextWindowTokens; self.maxOutputTokens = maxOutputTokens
     }
 
+    /// A model of the user's own provider. Its reference never starts with `cloud:`,
+    /// so it can never be sent to Typeflux as a Cloud selection.
+    public static func local(reference: String, id: String, name: String, providerName: String,
+                             vision: Bool) -> ChatModel {
+        var model = ChatModel(id: id, name: name, vision: vision)
+        model.localReference = reference
+        model.providerName = providerName
+        return model
+    }
+
     private enum CodingKeys: String, CodingKey {
         case id, name, vision, pricing, capabilities, reasoningEfforts, contextWindowTokens, maxOutputTokens
     }
 
-    private struct Capabilities: Decodable {
+    private struct Capabilities: Codable {
         var reasoning: Bool?
+    }
+
+    /// Encodes the Cloud catalog shape so a cached catalog decodes like a fresh one.
+    public func encode(to encoder: Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encode(id, forKey: .id)
+        try values.encode(name, forKey: .name)
+        try values.encodeIfPresent(vision, forKey: .vision)
+        try values.encodeIfPresent(pricing, forKey: .pricing)
+        if let reasoning {
+            try values.encode(Capabilities(reasoning: reasoning), forKey: .capabilities)
+        }
+        try values.encodeIfPresent(reasoningEfforts, forKey: .reasoningEfforts)
+        try values.encodeIfPresent(contextWindowTokens, forKey: .contextWindowTokens)
+        try values.encodeIfPresent(maxOutputTokens, forKey: .maxOutputTokens)
     }
 
     public init(from decoder: Decoder) throws {
