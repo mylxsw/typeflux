@@ -385,3 +385,32 @@ extension ClipboardPanelModel {
         }
     }
 }
+
+// MARK: - Shelf
+
+extension ClipboardPanelModel {
+    func moveToFirst() {
+        select(index: 0)
+    }
+
+    /// An entry dropped into another app was used, as if pasted, so the panel closes.
+    func dragEnded(accepted: Bool) {
+        if accepted { onDismiss?() }
+    }
+
+    func moveToLast() {
+        select(index: visibleEntries.count - 1)
+    }
+
+    /// Apps behind the clipboard items in panel order (pinned, then newest), for the shelf's
+    /// app buttons.
+    func recentSourceApps(limit: Int) -> [ClipboardAppFilter] {
+        var seen = Set<String>()
+        var apps: [ClipboardAppFilter] = []
+        for entry in entries where entry.snippet == nil && apps.count < limit {
+            guard let app = ClipboardAppFilter(entry: entry), seen.insert(app.bundleID).inserted else { continue }
+            apps.append(app)
+        }
+        return apps
+    }
+}

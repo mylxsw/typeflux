@@ -491,6 +491,13 @@
 "clipboard.settings.position.launcher" = "With the launcher";
 "clipboard.settings.position.center" = "Center of the screen";
 "clipboard.settings.position.mouse" = "At the pointer";
+"clipboard.settings.style" = "Panel style";
+"clipboard.settings.style.shelf" = "Cards at the bottom of the screen";
+"clipboard.settings.style.list" = "List";
+"clipboard.shelf.showPreview" = "Show preview";
+"clipboard.shelf.hidePreview" = "Hide preview";
+"clipboard.shelf.hint.preview" = "Preview";
+"clipboard.shelf.hint.quickPaste" = "Quick paste";
 "clipboard.action.editBeforePaste" = "Edit Before Pasting";
 "clipboard.action.showOnlyApp" = "Show Only %@";
 "clipboard.action.deleteAllFromApp" = "Delete All from %@…";

@@ -28,6 +28,10 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     private let previewWidthAnimator = AskLauncherHeightAnimator()
     private var previewCenterX: CGFloat?
     var reduceMotion: () -> Bool = { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
+    /// The style the panel was last presented in, read from settings on every `present`.
+    private(set) var style: ClipboardPanelStyle = .list
+    private let shelf = ClipboardShelfPresenter()
+    private var scrollMonitor: Any?
 
     init(settingsStore: SettingsStore, thumbnailDecoder: @escaping ClipboardThumbnailDecoding = { try await ClipboardThumbnailProvider.decode($0, edge: $1) }) {
         self.settingsStore = settingsStore
@@ -46,11 +50,13 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     deinit {
         privacyObservers.forEach(NotificationCenter.default.removeObserver)
         entryObservation?.cancel()
-        Task { @MainActor [thumbnails, weak panel, keyMonitor, clickMonitor] in
+        Task { @MainActor [thumbnails, shelf, weak panel, keyMonitor, clickMonitor, scrollMonitor] in
             thumbnails.end()
+            shelf.dismiss()
             panel?.orderOut(nil)
             if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
             if let clickMonitor { NSEvent.removeMonitor(clickMonitor) }
+            if let scrollMonitor { NSEvent.removeMonitor(scrollMonitor) }
         }
     }
 
@@ -59,20 +65,30 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     }
 
     var presentedWindow: NSWindow? { isPresented ? panel : nil }
+    /// The shelf's floating preview while it is on screen.
+    var presentedPreviewWindow: NSWindow? { shelf.presentedPreviewWindow }
     var isResizingPreview: Bool { previewWidthAnimator.isAnimating }
     var contentViewportWidth: CGFloat? { layout.width }
 
     func present(_ model: ClipboardPanelModel) {
         previewWidthAnimator.stop()
+        shelf.dismiss()
         previewObservation = nil
         self.model = model
+        style = settingsStore.clipboardPanelStyle
         thumbnails.begin(model)
         entryObservation = model.$entries.dropFirst().sink { [weak self] entries in self?.thumbnails.changed(entries) }
         focusRequest += 1
+        if style == .shelf {
+            presentShelf(model)
+            return
+        }
         layout.setWidth(ClipboardPanelView.size(showsPreview: model.showsPreview).width)
         let panel = panel(for: model)
         applyAppearance(to: panel)
+        panel.alphaValue = 1
         panel.setContentSize(ClipboardPanelView.size(showsPreview: model.showsPreview))
+        hostingView?.frame = NSRect(origin: .zero, size: panel.frame.size)
         position(panel)
         previewCenterX = settingsStore.clipboardPanelPosition == .mouse ? panel.frame.midX : panel.screen?.visibleFrame.midX
         panel.makeKeyAndOrderFront(nil)
@@ -110,6 +126,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     func dismiss() {
         thumbnails.end(); entryObservation = nil
         previewWidthAnimator.stop()
+        shelf.dismiss()
         previewObservation = nil
         closeQuickLook()
         removeMonitors()
@@ -133,7 +150,17 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     // MARK: - Window
 
     private func panel(for model: ClipboardPanelModel) -> ClipboardPanelWindow {
-        let rootView = AnyView(ClipboardPanelView(thumbnails: thumbnails, model: model, focusRequest: focusRequest, layout: layout)
+        let content: AnyView = switch style {
+        case .list:
+            AnyView(ClipboardPanelView(
+                thumbnails: thumbnails, model: model, focusRequest: focusRequest, layout: layout
+            ))
+        case .shelf:
+            AnyView(ClipboardShelfView(
+                thumbnails: thumbnails, model: model, focusRequest: focusRequest, layout: shelf.layout
+            ))
+        }
+        let rootView = AnyView(content
             .environment(\.clipboardThumbnailDecoder, thumbnails.decoder(using: thumbnailDecoder))
             .environment(\.clipboardThumbnailCache, thumbnails.cache)
             .environment(\.askLauncherIconCache, iconCache)
@@ -200,6 +227,12 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
                 return nil
             }
         }
+        if scrollMonitor == nil {
+            scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
+                guard let self, handleScrollWheel(event) else { return event }
+                return nil
+            }
+        }
         if clickMonitor == nil {
             // Clicks in other apps close the panel; clicks in our own windows arrive as local events.
             clickMonitor = NSEvent.addGlobalMonitorForEvents(
@@ -213,8 +246,10 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     private func removeMonitors() {
         if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
         if let clickMonitor { NSEvent.removeMonitor(clickMonitor) }
+        if let scrollMonitor { NSEvent.removeMonitor(scrollMonitor) }
         keyMonitor = nil
         clickMonitor = nil
+        scrollMonitor = nil
     }
 
     /// Maps a key press in the panel (or in Quick Look) to the model. Returns whether it was consumed.
@@ -244,7 +279,8 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
             modifiers: event.modifierFlags,
             characters: event.charactersIgnoringModifiers,
             queryIsEmpty: model.query.isEmpty,
-            hasTextSelection: (editor?.selectedRange().length ?? 0) > 0
+            hasTextSelection: (editor?.selectedRange().length ?? 0) > 0,
+            style: style
         )
         guard let command else { return false }
         Self.run(command, on: model, isRepeat: event.isARepeat)
@@ -255,6 +291,8 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         switch command {
         case .moveUp: model.moveSelection(by: -1)
         case .moveDown: model.moveSelection(by: 1)
+        case .moveToFirst: model.moveToFirst()
+        case .moveToLast: model.moveToLast()
         case .nextCategory: model.cycleCategory(forward: true)
         case .previousCategory: model.cycleCategory(forward: false)
         case .cancel: model.cancel()
@@ -299,9 +337,43 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         case 36, 76: model.confirmPending()
         case 53: model.cancelPending()
         case 125, 126, 48: break
+        // The shelf's arrows move the selection, which stays put while confirming.
+        case 123 where style == .shelf, 124 where style == .shelf: break
         default: return false
         }
         return true
+    }
+
+    /// A mouse wheel over the shelf moves the selection, which scrolls the cards; trackpads
+    /// scroll the rail directly with their horizontal deltas.
+    func handleScrollWheel(_ event: NSEvent) -> Bool {
+        guard let panel, event.window === panel else { return false }
+        return handleShelfScroll(
+            deltaX: event.scrollingDeltaX, deltaY: event.scrollingDeltaY, isPrecise: event.hasPreciseScrollingDeltas
+        )
+    }
+
+    /// A scroll over the visible shelf. Returns whether it moved the selection.
+    func handleShelfScroll(deltaX: CGFloat, deltaY: CGFloat, isPrecise: Bool) -> Bool {
+        style == .shelf && shelf.handleScroll(deltaX: deltaX, deltaY: deltaY, isPrecise: isPrecise)
+    }
+
+    private func presentShelf(_ model: ClipboardPanelModel) {
+        let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
+        let panel = panel(for: model)
+        applyAppearance(to: panel)
+        shelf.present(
+            panel, model: model, screen: screen, animated: !reduceMotion(),
+            previewRoot: { [weak self] model in
+                guard let self else { return AnyView(EmptyView()) }
+                return AnyView(ClipboardShelfPreview(model: model, thumbnails: thumbnails)
+                    .environment(\.clipboardThumbnailDecoder, thumbnails.decoder(using: thumbnailDecoder))
+                    .environment(\.clipboardThumbnailCache, thumbnails.cache)
+                    .environment(\.askLauncherIconCache, iconCache)
+                    .interfaceStyle(following: interfaceStyleObserver))
+            }
+        )
+        installMonitors()
     }
 
     // MARK: - Quick Look

@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux 剪贴板：底部卡片架（Shelf）</title>
+<style>
+  :root { --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+          --mono: ui-monospace, "SF Mono", Menlo, monospace; --accent: #0a84ff; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: var(--font); background: #0b0b0d; color: #eee; display: flex; flex-direction: column; align-items: center; padding: 14px; gap: 10px; }
+  body.light { background: #d9dde4; color: #111; }
+
+  /* ---------- prototype controls (not part of the product) ---------- */
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 12px; width: 1280px; }
+  .seg { display: inline-flex; padding: 2px; border-radius: 8px; background: rgba(127,127,127,.18); }
+  .seg button, .btn { border: 0; background: transparent; color: inherit; font: inherit; padding: 4px 10px; border-radius: 6px; cursor: pointer; opacity: .7; }
+  .seg button.on { background: rgba(127,127,127,.38); opacity: 1; }
+  .btn { background: rgba(127,127,127,.22); opacity: 1; }
+  .hint { opacity: .6; }
+  kbd { font: 11px var(--font); padding: 1px 5px; border-radius: 4px; background: rgba(127,127,127,.25); }
+
+  /* ---------- fake desktop (1280 × 800 screen) ---------- */
+  .screen { width: 1280px; height: 800px; border-radius: 12px; position: relative; overflow: hidden; flex: none;
+            background: radial-gradient(1200px 600px at 20% 10%, #3b4f7d, transparent 60%),
+                        radial-gradient(900px 600px at 90% 90%, #6d3b6f, transparent 60%), #1b2133; }
+  body.light .screen { background: radial-gradient(1200px 600px at 20% 10%, #9fc0f5, transparent 60%),
+                        radial-gradient(900px 600px at 90% 90%, #f0b7d3, transparent 60%), #c9d4ea; }
+  .menubar { height: 26px; display: flex; align-items: center; gap: 18px; padding: 0 14px; font-size: 13px; color: #fff;
+             background: rgba(20,20,24,.35); backdrop-filter: blur(20px); }
+  body.light .menubar { color: #111; background: rgba(255,255,255,.4); }
+  .menubar b { font-weight: 600; }
+  .menubar .right { margin-left: auto; display: flex; gap: 14px; opacity: .85; }
+
+  .window { position: absolute; left: 200px; top: 70px; width: 760px; height: 440px; border-radius: 12px; overflow: hidden;
+            background: #1e1e1e; color: #e8e8e8; box-shadow: 0 24px 70px rgba(0,0,0,.45); border: .5px solid rgba(255,255,255,.12); }
+  body.light .window { background: #fff; color: #1d1d1f; border-color: rgba(0,0,0,.12); }
+  .window .titlebar { height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-bottom: .5px solid rgba(127,127,127,.25); font-size: 13px; }
+  .lights { display: flex; gap: 8px; } .lights i { width: 12px; height: 12px; border-radius: 6px; display: block; }
+  .window .doc { padding: 22px 28px; font-size: 15px; line-height: 1.6; white-space: pre-wrap; height: calc(100% - 38px); overflow: auto; }
+  .caret { display: inline-block; width: 2px; height: 18px; background: var(--accent); vertical-align: -3px; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .inserted { background: rgba(10,132,255,.22); border-radius: 3px; animation: fadeMark 1.6s ease forwards; }
+  @keyframes fadeMark { to { background: transparent; } }
+
+  .dock { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); height: 62px; padding: 7px 10px; display: flex; gap: 8px;
+          border-radius: 20px; background: rgba(255,255,255,.18); backdrop-filter: blur(20px); border: .5px solid rgba(255,255,255,.22); }
+  .dock i { width: 48px; height: 48px; border-radius: 12px; display: block; }
+
+  /* ---------- the shelf ---------- */
+  /* Sits on the visible frame (above the Dock), 8pt inset, full width of the screen with the pointer. */
+  .shelf { --surface: rgba(30,30,32,.78); --text: #f2f2f2; --text2: #b4b4b8; --text3: #7d7d82; --line: rgba(255,255,255,.09);
+           --chip: rgba(255,255,255,.10); --tile: rgba(255,255,255,.06); --card: #2a2a2d; --cardBody: #232325; --hover: rgba(255,255,255,.08);
+           position: absolute; left: 8px; right: 8px; bottom: 76px; height: 348px; border-radius: 18px;
+           background: var(--surface); backdrop-filter: blur(40px) saturate(1.6); -webkit-backdrop-filter: blur(40px) saturate(1.6);
+           border: .5px solid rgba(255,255,255,.16); box-shadow: 0 -10px 60px rgba(0,0,0,.45); color: var(--text);
+           display: flex; flex-direction: column; transform: translateY(calc(100% + 90px)); opacity: 0;
+           transition: transform .26s cubic-bezier(.2,.9,.25,1.08), opacity .18s ease; z-index: 10; }
+  body.light .shelf { --surface: rgba(246,246,249,.82); --text: #161616; --text2: #4a4a4f; --text3: #8a8a90; --line: rgba(0,0,0,.08);
+           --chip: rgba(0,0,0,.08); --tile: rgba(0,0,0,.05); --card: #ffffff; --cardBody: #ffffff; --hover: rgba(0,0,0,.05);
+           border-color: rgba(0,0,0,.12); box-shadow: 0 -10px 50px rgba(0,0,0,.16); }
+  .shelf.open { transform: translateY(0); opacity: 1; }
+  body.reduce .shelf { transition: opacity .15s ease; transform: none; }
+  body.reduce .shelf:not(.open) { visibility: hidden; }
+
+  .bar { height: 52px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 12px 0 16px; }
+  .search { display: flex; align-items: center; gap: 8px; width: 300px; height: 32px; padding: 0 10px; border-radius: 9px; background: var(--tile); }
+  .search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: 14px var(--font); }
+  .search input::placeholder { color: var(--text3); }
+  .search .x { cursor: pointer; color: var(--text3); display: none; } .search.has .x { display: block; }
+  .chipf { display: none; align-items: center; gap: 5px; height: 22px; padding: 0 6px 0 4px; border-radius: 6px; background: var(--chip); font-size: 12px; white-space: nowrap; }
+  .chipf.on { display: inline-flex; } .chipf span.close { cursor: pointer; opacity: .7; }
+  .tabs { display: flex; padding: 2px; border-radius: 8px; background: var(--tile); }
+  .tabs span { font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 6px; color: var(--text2); cursor: pointer; user-select: none; display: flex; gap: 6px; align-items: center; }
+  .tabs span.on { color: var(--text); background: var(--chip); }
+  .tabs em { font-style: normal; font-size: 10.5px; color: var(--text3); }
+  .apps { display: flex; gap: 4px; align-items: center; }
+  .apps .ai { width: 22px; height: 22px; border-radius: 6px; cursor: pointer; opacity: .75; display: grid; place-items: center; font-size: 11px; font-weight: 700; color: #fff; outline: 2px solid transparent; outline-offset: 1px; }
+  .apps .ai:hover { opacity: 1; } .apps .ai.on { opacity: 1; outline-color: var(--accent); }
+  .spacer { flex: 1; }
+  .tool { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; cursor: pointer; color: var(--text2); }
+  .tool:hover { background: var(--hover); } .tool.on { color: #ff9f0a; }
+  .paused { display: none; font-size: 11.5px; color: #ff9f0a; } .paused.on { display: block; }
+
+  .rail { flex: 1; display: flex; align-items: stretch; gap: 12px; padding: 10px 16px 4px; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; scroll-padding: 0 40px; }
+  .rail::-webkit-scrollbar { height: 0; }
+  .group { display: flex; gap: 12px; align-items: flex-start; flex: none; }
+  .glabel { writing-mode: vertical-rl; font-size: 11px; font-weight: 600; color: var(--text3); letter-spacing: 2px; padding: 8px 0; flex: none; align-self: flex-start; display: flex; align-items: center; gap: 6px; }
+  .glabel::after { content: ""; width: 1px; height: 160px; background: var(--line); }
+
+  .card { width: 224px; height: 240px; flex: none; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; cursor: default; position: relative;
+          background: var(--cardBody); box-shadow: 0 1px 2px rgba(0,0,0,.25), 0 0 0 .5px var(--line); transition: transform .14s ease, box-shadow .14s ease; }
+  .card:hover { transform: translateY(-2px); }
+  .card.sel { box-shadow: 0 0 0 3px var(--accent), 0 10px 26px rgba(10,132,255,.25); transform: translateY(-4px); }
+  .card .head { height: 50px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 10px 0 12px; color: #fff; position: relative; }
+  .card .head .k { font-size: 13px; font-weight: 600; line-height: 16px; }
+  .card .head .t { font-size: 11px; opacity: .8; line-height: 14px; }
+  .card .head .ico { margin-left: auto; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-size: 13px; font-weight: 800;
+                     background: rgba(255,255,255,.95); box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+  .card .pin { margin-left: auto; font-size: 12px; }
+  .card .pin + .ico { margin-left: 0; }
+  /* Holding ⌘ swaps the footer for the quick-paste number. */
+  .card .num { position: absolute; left: 0; right: 0; bottom: 0; height: 26px; display: grid; place-items: center; background: var(--accent);
+               color: #fff; font-size: 12.5px; font-weight: 600; opacity: 0; transition: opacity .1s; pointer-events: none; z-index: 2; }
+  body.cmd .card .num { opacity: 1; }
+  .card .body { flex: 1; min-height: 0; padding: 10px 12px; font-size: 12.5px; line-height: 17px; overflow: hidden; position: relative; color: var(--text); }
+  .card .body.text { display: -webkit-box; -webkit-line-clamp: 8; -webkit-box-orient: vertical; word-break: break-word; }
+  .card .body.code { font: 11.5px/16px var(--mono); white-space: pre; color: var(--text); background: var(--tile); }
+  .card .body.media { padding: 0; display: grid; place-items: center; background: var(--tile); }
+  .card .foot { height: 26px; flex: none; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 11px; color: var(--text3); border-top: .5px solid var(--line); }
+  .card.missing .body { opacity: .45; } .card.missing .foot { color: #ff9f0a; }
+
+  .link .og { height: 92px; border-radius: 8px; margin-bottom: 8px; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 20px; }
+  .link .ttl { font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .link .dom { color: var(--accent); font-size: 11.5px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .imgfill { width: 100%; height: 100%; }
+  .grid3 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; width: 100%; height: 100%; padding: 6px; }
+  .grid3 div { border-radius: 6px; display: grid; place-items: center; color: #fff; font-weight: 600; }
+  .pdf { width: 92px; height: 120px; background: #fff; border-radius: 3px; box-shadow: 0 2px 8px rgba(0,0,0,.25); padding: 10px 9px; display: flex; flex-direction: column; gap: 5px; }
+  .pdf i { display: block; height: 4px; border-radius: 2px; background: #d0d0d5; } .pdf i.h { background: #c33; width: 60%; height: 6px; }
+  .play { width: 40px; height: 40px; border-radius: 20px; background: rgba(0,0,0,.55); display: grid; place-items: center; color: #fff; font-size: 14px; }
+  .dur { position: absolute; right: 8px; bottom: 8px; font-size: 11px; color: #fff; background: rgba(0,0,0,.55); padding: 1px 6px; border-radius: 4px; }
+  .wave { display: flex; align-items: center; gap: 2px; height: 56px; padding: 0 14px; width: 100%; }
+  .wave i { flex: 1; border-radius: 1px; background: var(--text3); display: block; }
+  .wave i.p { background: var(--accent); }
+  .files { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; width: 100%; align-self: start; }
+  .files div { display: flex; gap: 8px; align-items: center; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .files b { width: 22px; height: 26px; border-radius: 3px; flex: none; display: grid; place-items: center; font-size: 8px; color: #fff; font-weight: 700; }
+  .voice .q { font-size: 13px; line-height: 18px; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+  .voice .mini { display: flex; align-items: center; gap: 2px; height: 16px; margin-top: 8px; }
+  .voice .mini i { width: 2px; border-radius: 1px; background: var(--accent); opacity: .7; display: block; }
+
+  .empty { flex: 1; display: grid; place-items: center; color: var(--text3); font-size: 13px; }
+  .shelf-foot { height: 26px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 16px; font-size: 11px; color: var(--text3); }
+  .shelf-foot b { font-weight: 500; color: var(--text2); }
+  .shelf-foot .count { margin-left: auto; }
+
+  /* ---------- preview popover (Space / ⌘Y) ---------- */
+  .preview { position: absolute; bottom: 420px; width: 520px; max-height: 360px; border-radius: 16px; background: var(--surface, rgba(30,30,32,.9));
+             backdrop-filter: blur(40px); border: .5px solid rgba(255,255,255,.16); box-shadow: 0 20px 60px rgba(0,0,0,.45); display: none; flex-direction: column; overflow: hidden; z-index: 12; color: #f2f2f2; }
+  body.light .preview { background: rgba(250,250,252,.94); color: #161616; border-color: rgba(0,0,0,.12); }
+  .preview.on { display: flex; animation: pop .16s ease; }
+  @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+  .preview .ph { display: flex; align-items: center; gap: 8px; padding: 10px 14px; font-size: 12px; border-bottom: .5px solid rgba(127,127,127,.25); }
+  .preview .ph .sp { flex: 1; }
+  .preview .pb { padding: 14px; overflow: auto; font-size: 13.5px; line-height: 1.55; white-space: pre-wrap; }
+  .preview .pb.code { font: 12.5px/1.5 var(--mono); }
+  .preview .pm { display: grid; grid-template-columns: 72px 1fr; gap: 4px 10px; padding: 10px 14px; font-size: 11.5px; border-top: .5px solid rgba(127,127,127,.25); opacity: .8; }
+  .preview textarea { width: 100%; min-height: 160px; border: 0; outline: 0; resize: none; background: transparent; color: inherit; font: 13.5px/1.55 var(--font); }
+  .preview .pa { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 14px; border-top: .5px solid rgba(127,127,127,.25); }
+  .preview .pa button { border: 0; border-radius: 7px; padding: 5px 12px; font: 12px var(--font); cursor: pointer; background: rgba(127,127,127,.25); color: inherit; }
+  .preview .pa button.primary { background: var(--accent); color: #fff; }
+
+  /* ---------- context menu ---------- */
+  .menu { position: absolute; min-width: 230px; padding: 5px; border-radius: 10px; background: rgba(40,40,44,.92); backdrop-filter: blur(30px); color: #f2f2f2;
+          border: .5px solid rgba(255,255,255,.16); box-shadow: 0 12px 40px rgba(0,0,0,.45); display: none; z-index: 20; font-size: 13px; }
+  body.light .menu { background: rgba(246,246,248,.95); color: #161616; border-color: rgba(0,0,0,.12); }
+  .menu.on { display: block; }
+  .menu div { display: flex; justify-content: space-between; gap: 18px; padding: 4px 10px; border-radius: 5px; cursor: default; }
+  .menu div:hover { background: var(--accent); color: #fff; }
+  .menu div span { opacity: .55; } .menu div:hover span { opacity: .9; }
+  .menu hr { border: 0; border-top: .5px solid rgba(127,127,127,.35); margin: 4px 6px; }
+  .menu div.danger { color: #ff453a; } .menu div.danger:hover { color: #fff; background: #ff453a; }
+
+  .confirm { position: absolute; left: 50%; transform: translateX(-50%); bottom: 34px; display: none; align-items: center; gap: 12px; padding: 8px 10px 8px 14px; border-radius: 10px;
+             background: rgba(40,40,44,.95); color: #fff; font-size: 12.5px; box-shadow: 0 8px 24px rgba(0,0,0,.35); z-index: 11; }
+  .confirm.on { display: flex; }
+  .confirm button { border: 0; border-radius: 6px; padding: 4px 10px; font: 12px var(--font); cursor: pointer; background: rgba(255,255,255,.15); color: #fff; }
+  .confirm button.danger { background: #ff453a; }
+
+  .toast { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); padding: 8px 14px; border-radius: 10px; background: rgba(30,30,32,.9); color: #fff;
+           font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 30; }
+  .toast.on { opacity: 1; }
+
+  .notes { width: 1280px; font-size: 12.5px; line-height: 1.7; opacity: .85; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px 28px; }
+  .notes h4 { margin: 4px 0 2px; font-size: 12.5px; }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <button class="btn" id="toggleBtn">呼出 / 收起剪贴板（<kbd>⇧⌘V</kbd>）</button>
+  <span class="seg" id="themeSeg"><button data-v="dark" class="on">深色</button><button data-v="light">浅色</button></span>
+  <span class="seg" id="motionSeg"><button data-v="full" class="on">完整动画</button><button data-v="reduce">减少动态效果</button></span>
+  <span class="seg" id="dataSeg"><button data-v="full" class="on">有数据</button><button data-v="empty">空状态</button></span>
+  <span class="hint">按住 <kbd>⌘</kbd> 显示编号 · <kbd>←</kbd><kbd>→</kbd> 选择 · <kbd>↩</kbd> 粘贴 · <kbd>Space</kbd> 预览 · <kbd>Tab</kbd> 切换分类 · 直接打字即搜索 · 右键看菜单 · <kbd>Esc</kbd> 收起</span>
+</div>
+
+<div class="screen" id="screen">
+  <div class="menubar"><b></b><b>备忘录</b><span>文件</span><span>编辑</span><span>格式</span><span>显示</span><span>窗口</span><span>帮助</span>
+    <span class="right"><span id="mbPause" title="Typeflux">◉ Typeflux</span><span>周六 18:42</span></span></div>
+  <div class="window">
+    <div class="titlebar"><span class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span style="margin-left:10px;opacity:.7">周会纪要</span></div>
+    <div class="doc" id="doc">周会纪要 · 10 月 18 日
+
+1. 剪贴板改版评审：
+</div>
+  </div>
+  <div class="dock"><i style="background:linear-gradient(#5ac8fa,#007aff)"></i><i style="background:linear-gradient(#ffd60a,#ff9f0a)"></i><i style="background:linear-gradient(#34c759,#248a3d)"></i><i style="background:linear-gradient(#bf5af2,#5e5ce6)"></i><i style="background:linear-gradient(#3a3a3c,#1c1c1e)"></i><i style="background:linear-gradient(#ff375f,#ff2d55)"></i><i style="background:linear-gradient(#64d2ff,#0a84ff)"></i></div>
+
+  <div class="preview" id="preview"></div>
+
+  <div class="shelf" id="shelf" role="dialog" aria-label="剪贴板">
+    <div class="bar">
+      <div class="search" id="searchBox">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" style="opacity:.6"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
+        <span class="chipf" id="appChip"><span id="appChipIcon"></span><span id="appChipName"></span><span class="close" id="appChipClose">✕</span></span>
+        <input id="q" placeholder="搜索剪贴板" autocomplete="off" spellcheck="false">
+        <span class="x" id="clearQ">✕</span>
+      </div>
+      <div class="tabs" id="tabs"></div>
+      <div class="apps" id="apps" title="只看某个应用复制的内容"></div>
+      <div class="spacer"></div>
+      <span class="paused" id="pausedLabel">已暂停记录</span>
+      <div class="tool" id="pauseBtn" title="暂停记录（⇧⌘P）"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg></div>
+      <div class="tool" id="moreBtn" title="更多"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg></div>
+      <div class="tool" title="剪贴板设置（⌘,）"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.3"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/></svg></div>
+    </div>
+    <div class="rail" id="rail"></div>
+    <div class="shelf-foot"><span><b>↩</b> 粘贴</span><span><b>⌘↩</b> 纯文本</span><span><b>Space</b> 预览</span><span><b>⌘P</b> 固定</span><span><b>⌘⌫</b> 删除</span><span><b>⌘1–9</b> 快速粘贴</span><span class="count" id="count"></span></div>
+    <div class="confirm" id="confirm"><span id="confirmMsg"></span><button id="confirmNo">取消</button><button class="danger" id="confirmYes">删除</button></div>
+  </div>
+
+  <div class="menu" id="menu"></div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<div class="notes">
+  <div><h4>形态</h4>从屏幕可见区域底部（Dock 之上）滑出，宽度铺满鼠标所在屏幕，左右各留 8pt；高度 348pt。<br>不抢占目标应用的焦点：粘贴后面板收起，内容插入到原光标位置。</div>
+  <div><h4>卡片</h4>224×240pt。顶部色条取来源应用的主色，显示类型与时间，右侧是应用图标；正文按类型渲染（文本 / 链接 / 代码 / 图片 / 多图 / PDF / 视频 / 音频 / 文件 / 语音）；底部是字数、尺寸或大小。</div>
+  <div><h4>键盘</h4>←/→ 选择，⌘←/⌘→ 到首尾，↩ 粘贴，⌘↩ 纯文本，⌘1–9 快速粘贴，Space（搜索为空时）/ ⌘Y 预览，⌘E 编辑后粘贴，⌘P 固定，⌘⌫ 删除，Tab 切换分类，Esc 先关预览再收起。</div>
+</div>
+
+<script>
+const APPS = {
+  safari:  { name: "Safari 浏览器", color: "#1a73e8", mark: "S",  fg: "#1a73e8" },
+  vscode:  { name: "Visual Studio Code", color: "#1f6fb5", mark: "</>", fg: "#1f6fb5" },
+  slack:   { name: "Slack", color: "#4a154b", mark: "#", fg: "#4a154b" },
+  wechat:  { name: "微信", color: "#07a654", mark: "微", fg: "#07a654" },
+  figma:   { name: "Figma", color: "#a259ff", mark: "F", fg: "#a259ff" },
+  finder:  { name: "访达", color: "#3d8bfd", mark: "☺", fg: "#3d8bfd" },
+  notes:   { name: "备忘录", color: "#d4a20b", mark: "N", fg: "#c08f00" },
+  term:    { name: "终端", color: "#3a3a3c", mark: ">_", fg: "#222" },
+  preview: { name: "预览", color: "#5f6b7a", mark: "P", fg: "#5f6b7a" },
+  typeflux:{ name: "Typeflux", color: "#ff6b3d", mark: "T", fg: "#ff6b3d" },
+};
+const KIND = { voice: "语音输入", text: "文本", link: "链接", code: "代码", image: "图片", images: "图片", pdf: "PDF", video: "视频", audio: "音频", files: "文件" };
+
+let ENTRIES = [
+  { id: 1, cat: "all", kind: "text", app: "notes", time: "今天 08:12", group: "pinned", pinned: true,
+    text: "收货地址：上海市徐汇区漕溪北路 88 号 圣爱大厦 12 楼 1203 室，张先生 138 0000 0000" },
+  { id: 2, cat: "snippet", kind: "text", app: "typeflux", time: "语音：签名", group: "snippets", title: "邮件签名",
+    text: "Best regards,\n\nMylxsw\nArchitect · Typeflux\nhttps://typeflux.app" },
+  { id: 3, cat: "voice", kind: "voice", app: "typeflux", time: "刚刚", group: "today",
+    text: "把剪贴板改成从屏幕底部滑出的卡片形式，每个条目一张卡片，左右键选择，回车直接粘贴到当前光标的位置。", secs: 9 },
+  { id: 4, cat: "all", kind: "link", app: "safari", time: "2 分钟前", group: "today",
+    title: "Paste — Endless Clipboard for Mac, iPhone & iPad", url: "pasteapp.io/features", og: "linear-gradient(135deg,#3a7bff,#9a5bff)" },
+  { id: 5, cat: "all", kind: "code", app: "vscode", time: "5 分钟前", group: "today",
+    text: "func frame(size: NSSize,\n           screen: NSRect) -> NSRect {\n    NSRect(x: screen.minX + 8,\n           y: screen.minY + 8,\n           width: screen.width - 16,\n           height: size.height)\n}", lines: 7 },
+  { id: 6, cat: "all", kind: "image", app: "figma", time: "12 分钟前", group: "today", w: 1920, h: 1080, size: "842 KB",
+    img: "linear-gradient(160deg,#ffd1dc 0%,#c6b8ff 45%,#7fd0ff 100%)" },
+  { id: 7, cat: "all", kind: "text", app: "slack", time: "18 分钟前", group: "today",
+    text: "明天下午 3 点评审剪贴板改版，Figma 链接在频道置顶里。记得把深色和浅色两个版本都带上，另外看一下减少动态效果时的表现。" },
+  { id: 8, cat: "all", kind: "files", app: "finder", time: "25 分钟前", group: "today",
+    files: [["PDF", "#d93025", "季度报告-Q3.pdf"], ["KEY", "#2f7cf6", "剪贴板改版.key"], ["XLS", "#1e8e3e", "用户访谈记录.xlsx"]], size: "3 个文件 · 18.4 MB" },
+  { id: 9, cat: "all", kind: "audio", app: "wechat", time: "40 分钟前", group: "today", name: "语音备忘 0418.m4a", dur: "1:24", size: "1.2 MB" },
+  { id: 10, cat: "all", kind: "images", app: "wechat", time: "1 小时前", group: "today", count: 5,
+    imgs: ["linear-gradient(#f6d365,#fda085)", "linear-gradient(#84fab0,#8fd3f4)", "linear-gradient(#a18cd1,#fbc2eb)", "linear-gradient(#fccb90,#d57eeb)"] },
+  { id: 11, cat: "all", kind: "text", app: "term", time: "1 小时前", group: "today", text: "make test FILTER=ClipboardPanelPlacementTests" , mono: true },
+  { id: 12, cat: "voice", kind: "voice", app: "typeflux", time: "2 小时前", group: "today",
+    text: "提醒我周五之前把剪贴板设计稿发给团队确认。", secs: 4 },
+  { id: 13, cat: "all", kind: "pdf", app: "preview", time: "昨天 21:05", group: "yesterday", name: "Typeflux 产品规划.pdf", pages: 24, size: "4.6 MB" },
+  { id: 14, cat: "all", kind: "video", app: "finder", time: "昨天 17:30", group: "yesterday", name: "录屏 2026-10-17.mov", dur: "0:48", size: "26 MB",
+    img: "linear-gradient(135deg,#0f2027,#2c5364)" },
+  { id: 15, cat: "all", kind: "link", app: "slack", time: "昨天 15:12", group: "yesterday",
+    title: "GUL-421 剪切板优化 · Multica", url: "multica.ai/issues/GUL-421", og: "linear-gradient(135deg,#ff7a45,#ff4d6d)" },
+  { id: 16, cat: "all", kind: "text", app: "wechat", time: "昨天 11:40", group: "yesterday", text: "验证码 482913，5 分钟内有效。", missing: false },
+  { id: 17, cat: "all", kind: "image", app: "safari", time: "10月14日", group: "earlier", w: 640, h: 640, size: "—", missing: true,
+    img: "linear-gradient(#555,#333)" },
+  { id: 18, cat: "snippet", kind: "code", app: "typeflux", time: "永久保留", group: "snippets", title: "SQL：最近 7 天活跃",
+    text: "SELECT user_id, count(*)\nFROM events\nWHERE created_at > now() - interval '7 days'\nGROUP BY 1\nORDER BY 2 DESC;", lines: 5 },
+];
+const SAMPLE = JSON.parse(JSON.stringify(ENTRIES));
+const GROUPS = [["snippets", "片段"], ["pinned", "已固定"], ["today", "今天"], ["yesterday", "昨天"], ["earlier", "更早"]];
+const CATS = [["all", "剪贴板"], ["voice", "转写"], ["snippet", "片段"]];
+
+const $ = (id) => document.getElementById(id);
+const state = { open: false, cat: "all", q: "", app: null, sel: 0, preview: false, editing: false, paused: false, menuFor: null, confirm: null };
+
+function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function inCat(e, cat) { return cat === "all" ? e.cat === "all" || (e.pinned && e.cat !== "snippet" && e.cat !== "voice") : e.cat === cat; }
+function textOf(e) { return [e.text, e.title, e.name, e.url, APPS[e.app].name, KIND[e.kind], (e.files || []).map((f) => f[2]).join(" ")].filter(Boolean).join(" ").toLowerCase(); }
+function visible() {
+  const q = state.q.trim().toLowerCase();
+  // Pinned entries keep their own section; snippets show in the 片段 tab only.
+  let list = ENTRIES.filter((e) => (state.cat === "all" ? e.cat === "all" : e.cat === state.cat));
+  if (state.app) list = list.filter((e) => e.app === state.app);
+  if (q) list = list.filter((e) => textOf(e).includes(q));
+  const order = GROUPS.map((g) => g[0]);
+  return list.slice().sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group));
+}
+
+function footFor(e) {
+  if (e.missing) return "原文件已不存在";
+  switch (e.kind) {
+    case "text": case "voice": return `${[...e.text].length} 字` + (e.secs ? ` · ${e.secs} 秒` : "");
+    case "code": return `${e.lines} 行`;
+    case "link": return e.url.split("/")[0];
+    case "image": return `${e.w} × ${e.h} · ${e.size}`;
+    case "images": return `${e.count} 张图片`;
+    case "pdf": return `${e.pages} 页 · ${e.size}`;
+    case "video": case "audio": return `${e.dur} · ${e.size}`;
+    case "files": return e.size;
+  }
+}
+function bodyFor(e) {
+  switch (e.kind) {
+    case "text":
+      return e.mono ? `<div class="body code">${esc(e.text)}</div>` : `<div class="body text">${esc(e.text).replace(/\n/g, "<br>")}</div>`;
+    case "voice": {
+      const bars = Array.from({ length: 34 }, (_, i) => `<i style="height:${4 + Math.abs(Math.sin(i * 1.7 + e.id)) * 12}px"></i>`).join("");
+      return `<div class="body voice"><div class="q">${esc(e.text)}</div><div class="mini">${bars}</div></div>`;
+    }
+    case "code": return `<div class="body code">${esc(e.text)}</div>`;
+    case "link": return `<div class="body link"><div class="og" style="background:${e.og}">${esc(e.url[0].toUpperCase())}</div><div class="ttl">${esc(e.title)}</div><div class="dom">${esc(e.url)}</div></div>`;
+    case "image": return `<div class="body media"><div class="imgfill" style="background:${e.img}"></div></div>`;
+    case "images": {
+      const tiles = e.imgs.slice(0, 4).map((g, i) => `<div style="background:${g}">${i === 3 && e.count > 4 ? "+" + (e.count - 3) : ""}</div>`).join("");
+      return `<div class="body media"><div class="grid3">${tiles}</div></div>`;
+    }
+    case "pdf": return `<div class="body media"><div class="pdf"><i class="h"></i><i></i><i></i><i style="width:80%"></i><i></i><i style="width:70%"></i><i></i><i style="width:50%"></i></div></div>`;
+    case "video": return `<div class="body media" style="background:${e.img}"><div class="play">▶</div><span class="dur">${e.dur}</span></div>`;
+    case "audio": {
+      const bars = Array.from({ length: 40 }, (_, i) => `<i class="${i < 12 ? "p" : ""}" style="height:${8 + Math.abs(Math.sin(i * .9) * Math.cos(i * .31)) * 44}px"></i>`).join("");
+      return `<div class="body media" style="display:flex;flex-direction:column;justify-content:center;gap:8px"><div class="wave">${bars}</div><div style="font-size:11.5px;color:var(--text2)">${esc(e.name)}</div></div>`;
+    }
+    case "files": return `<div class="body media"><div class="files">${e.files.map((f) => `<div><b style="background:${f[1]}">${f[0]}</b>${esc(f[2])}</div>`).join("")}</div></div>`;
+  }
+}
+function headColor(e) { return e.kind === "voice" ? "linear-gradient(135deg,#ff8a3d,#ff5e7a)" : e.cat === "snippet" ? "linear-gradient(135deg,#5e5ce6,#8e7cff)" : APPS[e.app].color; }
+
+function renderTabs() {
+  $("tabs").innerHTML = CATS.map(([k, t]) => `<span data-k="${k}" class="${state.cat === k ? "on" : ""}">${t}<em>${ENTRIES.filter((e) => e.cat === k).length}</em></span>`).join("");
+  const appIds = [...new Set(ENTRIES.filter((e) => e.cat === "all").map((e) => e.app))];
+  $("apps").innerHTML = state.cat === "all" ? appIds.map((a) => `<span class="ai ${state.app === a ? "on" : ""}" data-a="${a}" title="只看 ${APPS[a].name}" style="background:${APPS[a].color}">${esc(APPS[a].mark)}</span>`).join("") : "";
+  $("appChip").classList.toggle("on", !!state.app);
+  if (state.app) { $("appChipIcon").innerHTML = `<span class="ai" style="display:inline-grid;place-items:center;width:16px;height:16px;border-radius:4px;font-size:9px;color:#fff;background:${APPS[state.app].color}">${esc(APPS[state.app].mark)}</span>`; $("appChipName").textContent = APPS[state.app].name; }
+  $("q").placeholder = { all: "搜索剪贴板", voice: "搜索转写", snippet: "搜索片段" }[state.cat];
+}
+
+function render() {
+  renderTabs();
+  const list = visible();
+  state.sel = Math.max(0, Math.min(state.sel, list.length - 1));
+  const rail = $("rail");
+  if (!list.length) {
+    rail.innerHTML = `<div class="empty">${state.q ? `没有与“${esc(state.q)}”匹配的内容` : { all: "这里还没有内容。复制任意文本、图片或文件后会出现在这里。", voice: "还没有语音转写记录。", snippet: "还没有片段，右键一张文字卡片即可保存。" }[state.cat]}</div>`;
+  } else {
+    let html = "", idx = 0;
+    for (const [g, label] of GROUPS) {
+      const items = list.filter((e) => e.group === g);
+      if (!items.length) continue;
+      html += `<div class="group"><div class="glabel">${label}</div>`;
+      for (const e of items) {
+        const i = idx++;
+        html += `<div class="card ${i === state.sel ? "sel" : ""} ${e.missing ? "missing" : ""}" data-i="${i}" data-id="${e.id}" title="${esc(APPS[e.app].name)}">
+          <div class="head" style="background:${headColor(e)}">
+            <div><div class="k">${e.cat === "snippet" ? esc(e.title) : KIND[e.kind]}</div><div class="t">${e.time}</div></div>
+            ${e.pinned ? '<span class="pin" title="已固定">📌</span>' : ""}
+            <div class="ico" style="color:${APPS[e.app].fg}">${esc(APPS[e.app].mark)}</div>
+          </div>
+          ${bodyFor(e)}
+          <div class="foot">${footFor(e)}</div>
+          ${i < 9 ? `<span class="num">⌘${i + 1}</span>` : ""}
+        </div>`;
+      }
+      html += `</div>`;
+    }
+    rail.innerHTML = html;
+  }
+  $("count").textContent = `${list.length} 项`;
+  $("searchBox").classList.toggle("has", !!state.q);
+  scrollSelIntoView();
+  renderPreview();
+}
+
+function scrollSelIntoView() {
+  const card = $("rail").querySelector(".card.sel");
+  if (card) card.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+function selected() { return visible()[state.sel]; }
+
+function renderPreview() {
+  const p = $("preview"), e = selected();
+  if (!state.open || !state.preview || !e) { p.classList.remove("on"); state.editing = false; return; }
+  const card = $("rail").querySelector(".card.sel");
+  if (card) {
+    const r = card.getBoundingClientRect(), s = $("screen").getBoundingClientRect();
+    p.style.left = Math.max(12, Math.min(s.width - 532, r.left - s.left + r.width / 2 - 260)) + "px";
+  }
+  let body;
+  if (state.editing) body = `<div class="pb"><textarea id="editArea">${esc(e.text)}</textarea></div><div class="pa"><span style="flex:1;font-size:11.5px;opacity:.6;align-self:center">只修改这次粘贴的内容，原记录不变</span><button id="editCancel">取消</button><button class="primary" id="editPaste">粘贴 ⌘↩</button></div>`;
+  else if (["text", "voice"].includes(e.kind)) body = `<div class="pb">${esc(e.text)}</div>`;
+  else if (e.kind === "code") body = `<div class="pb code">${esc(e.text)}</div>`;
+  else if (e.kind === "link") body = `<div class="pb"><div style="height:150px;border-radius:10px;background:${e.og}"></div><div style="font-weight:600;margin-top:10px">${esc(e.title)}</div><div style="color:var(--accent)">https://${esc(e.url)}</div></div>`;
+  else if (e.kind === "image" || e.kind === "video") body = `<div class="pb" style="padding:0"><div style="height:${e.missing ? 120 : 260}px;background:${e.img};display:grid;place-items:center;color:#fff">${e.missing ? "原文件已被移动或删除，只能查看记录" : e.kind === "video" ? '<div class="play">▶</div>' : ""}</div></div>`;
+  else if (e.kind === "images") body = `<div class="pb" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${[...e.imgs, ...e.imgs].slice(0, e.count).map((g) => `<div style="height:110px;border-radius:8px;background:${g}"></div>`).join("")}</div>`;
+  else body = `<div class="pb">${esc(e.name || (e.files || []).map((f) => f[2]).join("\n"))}</div>`;
+  const meta = state.editing ? "" : `<div class="pm"><span>类型</span><span>${KIND[e.kind]}</span><span>来源</span><span>${APPS[e.app].name}</span><span>复制时间</span><span>${e.time}</span><span>大小</span><span>${footFor(e)}</span></div>`;
+  p.innerHTML = `<div class="ph"><b>${state.editing ? "编辑后粘贴" : e.title || KIND[e.kind]}</b><span class="sp"></span><span style="opacity:.6">${state.editing ? "Esc 取消" : "Space 关闭 · ⌘E 编辑后粘贴"}</span></div>${body}${meta}`;
+  p.classList.add("on");
+  if (state.editing) {
+    const ta = $("editArea"); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+    $("editCancel").onclick = () => { state.editing = false; renderPreview(); $("q").focus(); };
+    $("editPaste").onclick = () => doPaste(e, { text: ta.value });
+  }
+}
+
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 1600); }
+
+function openShelf() { state.open = true; state.sel = 0; $("shelf").classList.add("open"); render(); setTimeout(() => $("q").focus(), 30); }
+function closeShelf() { state.open = false; state.preview = false; state.editing = false; hideMenu(); $("confirm").classList.remove("on"); $("shelf").classList.remove("open"); renderPreview(); $("q").blur(); }
+function toggleShelf() { state.open ? closeShelf() : openShelf(); }
+
+function doPaste(e, opts = {}) {
+  if (!e) return;
+  if (e.missing) { toast("原文件已不存在"); return; }
+  let text;
+  if (opts.text != null) text = opts.text;
+  else if (["text", "voice", "code"].includes(e.kind)) text = e.text;
+  else if (e.kind === "link") text = "https://" + e.url;
+  else if (opts.plain && e.kind === "files") text = e.files.map((f) => "~/Documents/" + f[2]).join("\n");
+  else if (opts.plain && e.name) text = "~/Downloads/" + e.name;
+  else text = `[${KIND[e.kind]}${e.name ? "：" + e.name : ""}]`;
+  closeShelf();
+  const doc = $("doc");
+  doc.querySelectorAll(".caret").forEach((c) => c.remove());
+  doc.insertAdjacentHTML("beforeend", `<span class="inserted">${esc(text)}</span><span class="caret"></span>`);
+  doc.scrollTop = doc.scrollHeight;
+  toast(opts.plain ? "已粘贴为纯文本" : "已粘贴到 备忘录");
+}
+
+function move(d) { const n = visible().length; if (!n) return; state.sel = Math.max(0, Math.min(n - 1, state.sel + d)); render(); }
+function setCat(k) { state.cat = k; state.sel = 0; if (k !== "all") state.app = null; state.preview = false; render(); }
+function nextCat(d) { const i = CATS.findIndex((c) => c[0] === state.cat); setCat(CATS[(i + d + CATS.length) % CATS.length][0]); }
+function togglePin(e) {
+  if (!e || e.cat === "snippet") return;
+  e.pinned = !e.pinned;
+  if (e.pinned) { e.prevGroup = e.group; e.group = "pinned"; } else { e.group = e.prevGroup || "today"; }
+  // Keep the same card selected after it moves between sections.
+  state.sel = visible().indexOf(e);
+  toast(e.pinned ? "已固定" : "已取消固定"); render();
+}
+function del(e) { if (!e) return; if (e.cat === "snippet") { askConfirm(`删除片段“${e.title}”？此操作无法撤销。`, () => remove(e)); return; } remove(e); }
+function remove(e) { ENTRIES = ENTRIES.filter((x) => x !== e); toast("已删除"); render(); }
+function askConfirm(msg, fn) { $("confirmMsg").textContent = msg; $("confirm").classList.add("on"); state.confirm = fn; }
+$("confirmNo").onclick = () => { $("confirm").classList.remove("on"); state.confirm = null; $("q").focus(); };
+$("confirmYes").onclick = () => { const f = state.confirm; $("confirm").classList.remove("on"); state.confirm = null; f && f(); $("q").focus(); };
+
+/* ---------- context menu (mirrors ClipboardEntryAction.available) ---------- */
+function actionsFor(e) {
+  const textual = ["text", "voice", "code", "link"].includes(e.kind);
+  const a = [["粘贴", "↩", () => doPaste(e)]];
+  if (textual || ["files", "pdf", "video", "audio", "image"].includes(e.kind)) a.push([textual ? "粘贴为纯文本" : "粘贴文件路径", "⌘↩", () => doPaste(e, { plain: true })]);
+  if (textual && e.text) a.push(["编辑后粘贴", "⌘E", () => { state.preview = true; state.editing = true; renderPreview(); }]);
+  a.push(["复制", "⌘C", () => toast("已复制")]);
+  if (!textual) a.push(["快速查看", "⌘Y", () => { state.preview = true; renderPreview(); }]);
+  if (e.kind === "image") a.push(["复制图片中的文字", "", () => toast("已复制图片中的文字")]);
+  if (e.kind === "voice") a.push(["重新转写", "", () => toast("正在重新转写…")]);
+  if (textual && e.text) a.push([e.cat === "snippet" ? "编辑片段" : "保存为片段", "", () => toast("片段已保存")]);
+  a.push("-");
+  if (e.cat === "all") a.push([`只看“${APPS[e.app].name}”`, "", () => { state.app = e.app; state.sel = 0; render(); }]);
+  if (e.cat !== "snippet") a.push([e.pinned ? "取消固定" : "固定", "⌘P", () => togglePin(e)]);
+  a.push(["删除", "⌘⌫", () => del(e), "danger"]);
+  if (e.cat === "all" && !e.pinned) a.push([`删除“${APPS[e.app].name}”的所有记录…`, "", () => { const n = ENTRIES.filter((x) => x.app === e.app && x.cat === "all" && !x.pinned).length; askConfirm(`删除来自“${APPS[e.app].name}”的 ${n} 条未固定记录？`, () => { ENTRIES = ENTRIES.filter((x) => !(x.app === e.app && x.cat === "all" && !x.pinned)); render(); }); }, "danger"]);
+  return a;
+}
+function showMenu(x, y, items) {
+  const m = $("menu"), s = $("screen").getBoundingClientRect();
+  m.innerHTML = items.map((it, i) => it === "-" ? "<hr>" : `<div data-i="${i}" class="${it[3] || ""}">${esc(it[0])}<span>${it[1]}</span></div>`).join("");
+  m.classList.add("on");
+  const mw = m.offsetWidth, mh = m.offsetHeight;
+  m.style.left = Math.min(x - s.left, s.width - mw - 8) + "px";
+  m.style.top = Math.max(8, Math.min(y - s.top, s.height - mh - 8)) + "px";
+  m.onclick = (ev) => { const d = ev.target.closest("div[data-i]"); if (!d) return; hideMenu(); items[+d.dataset.i][2](); };
+}
+function hideMenu() { $("menu").classList.remove("on"); }
+
+/* ---------- events ---------- */
+$("rail").addEventListener("click", (ev) => { const c = ev.target.closest(".card"); if (!c) return; state.sel = +c.dataset.i; render(); $("q").focus(); });
+$("rail").addEventListener("dblclick", (ev) => { const c = ev.target.closest(".card"); if (c) doPaste(visible()[+c.dataset.i]); });
+$("rail").addEventListener("contextmenu", (ev) => { const c = ev.target.closest(".card"); if (!c) return; ev.preventDefault(); state.sel = +c.dataset.i; render(); showMenu(ev.clientX, ev.clientY, actionsFor(selected())); });
+// Vertical wheel scrolls the rail horizontally, as in Paste.
+$("rail").addEventListener("wheel", (ev) => { if (Math.abs(ev.deltaY) > Math.abs(ev.deltaX)) { ev.preventDefault(); $("rail").scrollLeft += ev.deltaY; } }, { passive: false });
+$("tabs").addEventListener("click", (ev) => { const t = ev.target.closest("span[data-k]"); if (t) { setCat(t.dataset.k); $("q").focus(); } });
+$("apps").addEventListener("click", (ev) => { const a = ev.target.closest("[data-a]"); if (a) { state.app = state.app === a.dataset.a ? null : a.dataset.a; state.sel = 0; render(); $("q").focus(); } });
+$("appChipClose").onclick = () => { state.app = null; render(); $("q").focus(); };
+$("q").addEventListener("input", () => { state.q = $("q").value; state.sel = 0; render(); });
+$("clearQ").onclick = () => { $("q").value = ""; state.q = ""; render(); $("q").focus(); };
+$("pauseBtn").onclick = () => { state.paused = !state.paused; $("pauseBtn").classList.toggle("on", state.paused); $("pausedLabel").classList.toggle("on", state.paused); toast(state.paused ? "已暂停记录" : "已恢复记录"); };
+$("moreBtn").onclick = (ev) => { const r = ev.currentTarget.getBoundingClientRect(); const n = ENTRIES.filter((e) => e.cat === "all" && !e.pinned).length;
+  showMenu(r.left - 200, r.top - 120, [["清空未固定的记录…", "", () => askConfirm(`删除 ${n} 条未固定的剪贴板记录？语音转写和片段不受影响。`, () => { ENTRIES = ENTRIES.filter((e) => e.cat !== "all" || e.pinned); render(); }), "danger"], "-", [state.paused ? "恢复记录" : "暂停记录", "⇧⌘P", () => $("pauseBtn").click()], ["剪贴板设置…", "⌘,", () => toast("打开 设置 › 剪贴板")]]); };
+$("toggleBtn").onclick = toggleShelf;
+document.addEventListener("mousedown", (ev) => { if (!ev.target.closest(".menu")) hideMenu(); });
+// Clicking outside the shelf (on the desktop) dismisses it, like a non-activating panel losing key.
+$("screen").addEventListener("mousedown", (ev) => { if (state.open && !ev.target.closest(".shelf,.preview,.menu,.toast")) closeShelf(); });
+
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Meta") document.body.classList.add("cmd");
+  if (ev.key === "V" && ev.metaKey && ev.shiftKey) { ev.preventDefault(); toggleShelf(); return; }
+  if (!state.open) return;
+  if ($("menu").classList.contains("on") && ev.key === "Escape") { hideMenu(); return; }
+  if (state.confirm) { if (ev.key === "Escape") $("confirmNo").click(); if (ev.key === "Enter") { ev.preventDefault(); $("confirmYes").click(); } return; }
+  if (state.editing) {
+    if (ev.key === "Escape") { ev.preventDefault(); state.editing = false; renderPreview(); $("q").focus(); }
+    if (ev.key === "Enter" && ev.metaKey) { ev.preventDefault(); doPaste(selected(), { text: $("editArea").value }); }
+    return;
+  }
+  const e = selected(), meta = ev.metaKey || ev.ctrlKey, k = ev.key.toLowerCase();
+  if (ev.key === "ArrowRight") { ev.preventDefault(); meta ? move(1e9) : move(1); return; }
+  if (ev.key === "ArrowLeft") { ev.preventDefault(); meta ? move(-1e9) : move(-1); return; }
+  if (ev.key === "Enter") { ev.preventDefault(); doPaste(e, { plain: meta }); return; }
+  if (ev.key === "Escape") { ev.preventDefault(); if (state.preview) { state.preview = false; renderPreview(); } else if (state.q) { $("clearQ").click(); } else closeShelf(); return; }
+  if (ev.key === "Tab") { ev.preventDefault(); nextCat(ev.shiftKey ? -1 : 1); return; }
+  if (ev.key === " " && !state.q) { ev.preventDefault(); state.preview = !state.preview; renderPreview(); return; }
+  if (meta && /^[1-9]$/.test(ev.key)) { ev.preventDefault(); doPaste(visible()[+ev.key - 1]); return; }
+  if (meta && k === "y") { ev.preventDefault(); state.preview = !state.preview; renderPreview(); return; }
+  if (meta && k === "e" && e && e.text) { ev.preventDefault(); state.preview = true; state.editing = true; renderPreview(); return; }
+  if (meta && k === "p" && !ev.shiftKey) { ev.preventDefault(); togglePin(e); return; }
+  if (meta && ev.shiftKey && k === "p") { ev.preventDefault(); $("pauseBtn").click(); return; }
+  if (meta && ev.key === "Backspace" && !state.q) { ev.preventDefault(); del(e); return; }
+  if (meta && k === "c" && !window.getSelection().toString()) { ev.preventDefault(); toast("已复制"); return; }
+  if (document.activeElement !== $("q") && ev.key.length === 1 && !meta) $("q").focus();
+});
+document.addEventListener("keyup", (ev) => { if (ev.key === "Meta") document.body.classList.remove("cmd"); });
+window.addEventListener("blur", () => document.body.classList.remove("cmd"));
+
+function seg(id, fn) { $(id).addEventListener("click", (ev) => { const b = ev.target.closest("button"); if (!b) return; $(id).querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); fn(b.dataset.v); }); }
+seg("themeSeg", (v) => document.body.classList.toggle("light", v === "light"));
+seg("motionSeg", (v) => document.body.classList.toggle("reduce", v === "reduce"));
+seg("dataSeg", (v) => { ENTRIES = v === "empty" ? [] : JSON.parse(JSON.stringify(SAMPLE)); render(); });
+
+// Query parameters for screenshots: ?open=1&theme=light&preview=1&cmd=1&sel=3&q=…
+const P = new URLSearchParams(location.search);
+if (P.get("theme") === "light") $("themeSeg").querySelector('[data-v="light"]').click();
+if (P.get("cat")) state.cat = P.get("cat");
+if (P.get("q")) { state.q = P.get("q"); $("q").value = state.q; }
+if (P.get("empty")) $("dataSeg").querySelector('[data-v="empty"]').click();
+render();
+if (P.get("open")) { document.body.classList.add("reduce"); openShelf(); state.sel = +(P.get("sel") || 0); if (P.get("preview")) state.preview = true; render(); }
+if (P.get("cmd")) document.body.classList.add("cmd");
+if (P.get("menu")) { const c = $("rail").querySelector(".card.sel"); const r = c.getBoundingClientRect(); showMenu(r.left + 120, r.top - 20, actionsFor(selected())); }
+</script>
+</body>
+</html>

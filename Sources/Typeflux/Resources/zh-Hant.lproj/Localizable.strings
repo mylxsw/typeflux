@@ -489,6 +489,13 @@
 "clipboard.settings.position.launcher" = "與啟動器一致";
 "clipboard.settings.position.center" = "螢幕中央";
 "clipboard.settings.position.mouse" = "游標所在位置";
+"clipboard.settings.style" = "面板樣式";
+"clipboard.settings.style.shelf" = "螢幕底部卡片";
+"clipboard.settings.style.list" = "列表";
+"clipboard.shelf.showPreview" = "顯示預覽";
+"clipboard.shelf.hidePreview" = "隱藏預覽";
+"clipboard.shelf.hint.preview" = "預覽";
+"clipboard.shelf.hint.quickPaste" = "快速貼上";
 "clipboard.action.editBeforePaste" = "編輯後貼上";
 "clipboard.action.showOnlyApp" = "只看 %@";
 "clipboard.action.deleteAllFromApp" = "刪除 %@ 的全部記錄…";

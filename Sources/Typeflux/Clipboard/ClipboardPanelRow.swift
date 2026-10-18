@@ -17,6 +17,8 @@ struct ClipboardPanelRow: View, Equatable {
     var number: Int?
     var onClick: (Int) -> Void = { _ in }
     var onPerform: (ClipboardEntryAction) -> Void = { _ in }
+    /// Whether another app accepted the entry dragged out of the panel.
+    var onDragEnded: (Bool) -> Void = { _ in }
     var onHover: (Bool) -> Void = { _ in }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
@@ -56,10 +58,14 @@ struct ClipboardPanelRow: View, Equatable {
             }
         }
         .contentShape(Rectangle())
-        .overlay(ClipboardRowClickArea(onClick: onClick))
+        .overlay(ClipboardRowClickArea(
+            onClick: onClick,
+            dragItems: { [entry, isMissing] in ClipboardEntryDrag.items(for: entry, isMissing: isMissing) },
+            onDragEnded: onDragEnded
+        ))
         .accessibilityAction { onClick(1) }
         .onHover(perform: onHover)
-        .contextMenu { contextMenu }
+        .contextMenu { ClipboardEntryContextMenu(entry: entry, isMissing: isMissing, onPerform: onPerform) }
         .modifier(AskLauncherNumberBadge(number: number))
     }
 
@@ -130,12 +136,18 @@ struct ClipboardPanelRow: View, Equatable {
         default: false
         }
     }
+}
 
-    @ViewBuilder
-    private var contextMenu: some View {
+/// The context menu of a list row or shelf card: every available action, grouped.
+struct ClipboardEntryContextMenu: View {
+    let entry: ClipboardEntry
+    let isMissing: Bool
+    let onPerform: (ClipboardEntryAction) -> Void
+
+    var body: some View {
         let actions = ClipboardEntryAction.available(for: entry)
         ForEach(Array(actions.enumerated()), id: \.offset) { offset, action in
-            if offset > 0, Self.startsMenuGroup(action, after: actions[offset - 1]) {
+            if offset > 0, ClipboardPanelRow.startsMenuGroup(action, after: actions[offset - 1]) {
                 Divider()
             }
             Button {

@@ -60,6 +60,22 @@ enum ClipboardStorageLimit: Int, CaseIterable, Identifiable {
     }
 }
 
+/// How the clipboard panel looks: a row of cards along the bottom of the screen, or the
+/// searchable list that opens where `ClipboardPanelPosition` says.
+enum ClipboardPanelStyle: String, CaseIterable, Identifiable {
+    case shelf
+    case list
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .shelf: L("clipboard.settings.style.shelf")
+        case .list: L("clipboard.settings.style.list")
+        }
+    }
+}
+
 /// Where the clipboard panel opens.
 enum ClipboardPanelPosition: String, CaseIterable, Identifiable {
     /// Under the launcher's top edge, on the screen with the mouse.

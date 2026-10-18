@@ -370,6 +370,7 @@ final class OnboardingViewModel: ObservableObject {
     func skipWithoutAnimation() {
         reportAbandonedIfNeeded()
         settingsStore.applyDefaultPersonaIfLLMConfigured()
+        settingsStore.applyNewUserClipboardDefaults()
         settingsStore.isOnboardingCompleted = true
     }
 
@@ -768,6 +769,7 @@ final class OnboardingViewModel: ObservableObject {
             ]
         )
         settingsStore.applyDefaultPersonaIfLLMConfigured()
+        settingsStore.applyNewUserClipboardDefaults()
         settingsStore.isOnboardingCompleted = true
         onComplete()
     }

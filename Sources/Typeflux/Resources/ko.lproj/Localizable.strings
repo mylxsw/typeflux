@@ -487,6 +487,13 @@
 "clipboard.settings.position.launcher" = "런처와 같은 위치";
 "clipboard.settings.position.center" = "화면 중앙";
 "clipboard.settings.position.mouse" = "포인터 위치";
+"clipboard.settings.style" = "패널 스타일";
+"clipboard.settings.style.shelf" = "화면 하단 카드";
+"clipboard.settings.style.list" = "목록";
+"clipboard.shelf.showPreview" = "미리보기 표시";
+"clipboard.shelf.hidePreview" = "미리보기 숨기기";
+"clipboard.shelf.hint.preview" = "미리보기";
+"clipboard.shelf.hint.quickPaste" = "빠른 붙여넣기";
 "clipboard.action.editBeforePaste" = "편집 후 붙여넣기";
 "clipboard.action.showOnlyApp" = "%@만 보기";
 "clipboard.action.deleteAllFromApp" = "%@의 모든 항목 삭제…";

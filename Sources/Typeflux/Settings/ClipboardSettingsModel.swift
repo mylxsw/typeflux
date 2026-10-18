@@ -19,6 +19,7 @@ final class ClipboardSettingsModel: ObservableObject {
     @Published private(set) var singleClickPastes: Bool
     @Published private(set) var showsPreview: Bool
     @Published private(set) var selectsFirstUnpinned: Bool
+    @Published private(set) var panelStyle: ClipboardPanelStyle
     @Published private(set) var panelPosition: ClipboardPanelPosition
     @Published private(set) var pause: PauseChoice
     @Published private(set) var ignoredApps: [ClipboardIgnoredApp]
@@ -44,6 +45,7 @@ final class ClipboardSettingsModel: ObservableObject {
         singleClickPastes = store.clipboardSingleClickPastes
         showsPreview = store.clipboardShowsPreview
         selectsFirstUnpinned = store.clipboardSelectsFirstUnpinned
+        panelStyle = store.clipboardPanelStyle
         panelPosition = store.clipboardPanelPosition
         pause = Self.pauseChoice(store: store, now: now())
         pauseObserver = NotificationCenter.default.addObserver(
@@ -141,6 +143,11 @@ final class ClipboardSettingsModel: ObservableObject {
     func setSelectsFirstUnpinned(_ value: Bool) {
         selectsFirstUnpinned = value
         store.clipboardSelectsFirstUnpinned = value
+    }
+
+    func setPanelStyle(_ value: ClipboardPanelStyle) {
+        panelStyle = value
+        store.clipboardPanelStyle = value
     }
 
     func setPanelPosition(_ value: ClipboardPanelPosition) {

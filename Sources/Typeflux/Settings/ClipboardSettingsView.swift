@@ -52,9 +52,16 @@ struct ClipboardSettingsView: View {
                 toggleRow(icon: "pin.slash", title: "clipboard.settings.firstUnpinned",
                           isOn: Binding(get: { model.selectsFirstUnpinned }, set: model.setSelectsFirstUnpinned))
                 TFDivider.formWithIcon
-                pickerRow(icon: "macwindow", title: "clipboard.settings.position",
-                          options: ClipboardPanelPosition.allCases.map { TFOption($0, $0.title) },
-                          selection: Binding(get: { model.panelPosition }, set: model.setPanelPosition))
+                pickerRow(icon: "rectangle.split.3x1", title: "clipboard.settings.style",
+                          options: ClipboardPanelStyle.allCases.map { TFOption($0, $0.title) },
+                          selection: Binding(get: { model.panelStyle }, set: model.setPanelStyle))
+                // The shelf always opens at the bottom of the screen.
+                if model.panelStyle == .list {
+                    TFDivider.formWithIcon
+                    pickerRow(icon: "macwindow", title: "clipboard.settings.position",
+                              options: ClipboardPanelPosition.allCases.map { TFOption($0, $0.title) },
+                              selection: Binding(get: { model.panelPosition }, set: model.setPanelPosition))
+                }
             }
             ClipboardIgnoredAppsSection(model: model)
             if model.history != nil {
