@@ -87,6 +87,39 @@ final class ScreenshotOverlayTests: XCTestCase {
         XCTAssertEqual(view.backgroundRemoval.region, rect.offsetBy(dx: 10, dy: 10))
     }
 
+    func testDimLayersCoverOnlyOutsideTheSelectedRegion() {
+        let bounds = CGRect(x: 0, y: 0, width: 200, height: 100)
+        let hole = CGRect(x: 40, y: 20, width: 100, height: 50)
+        let frames = ScreenshotOverlayView.dimFrames(in: bounds, around: hole)
+
+        XCTAssertEqual(frames.count, 4)
+        XCTAssertEqual(frames.reduce(0) { $0 + $1.width * $1.height },
+                       bounds.width * bounds.height - hole.width * hole.height)
+        for point in [CGPoint(x: 20, y: 50), CGPoint(x: 180, y: 50), CGPoint(x: 90, y: 10),
+                      CGPoint(x: 90, y: 90)] {
+            XCTAssertEqual(frames.filter { $0.contains(point) }.count, 1)
+        }
+        XCTAssertFalse(frames.contains { $0.contains(CGPoint(x: 90, y: 45)) })
+        XCTAssertEqual(ScreenshotOverlayView.dimFrames(in: bounds, around: nil).first, bounds)
+        XCTAssertEqual(ScreenshotOverlayView.dimFrames(in: bounds, around: bounds).reduce(0) {
+            $0 + $1.width * $1.height
+        }, 0)
+    }
+
+    func testFramingTimerDrawsLatestPointAndMouseUpFlushesImmediately() throws {
+        let (view, _) = makeView()
+        view.mouseDown(at: CGPoint(x: 10, y: 10), clickCount: 1)
+        view.mouseDragged(to: CGPoint(x: 40, y: 40))
+        view.mouseDragged(to: CGPoint(x: 80, y: 60))
+
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        XCTAssertEqual(try chrome(of: view).model.selection, CGRect(x: 10, y: 10, width: 70, height: 50))
+
+        view.mouseDragged(to: CGPoint(x: 100, y: 70))
+        view.mouseUp(at: CGPoint(x: 100, y: 70))
+        XCTAssertEqual(try chrome(of: view).model.selection, CGRect(x: 10, y: 10, width: 90, height: 60))
+    }
+
     func testLoupeAtTheCornerShowsOnlyPixelsOnTheImage() throws {
         let (view, _) = makeView()
         view.pointerMoved(to: .zero)

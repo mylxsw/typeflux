@@ -65,7 +65,12 @@ final class ScreenshotOverlayView: NSView {
     }
 
     private let imageLayer = CALayer()
-    private let dimLayer = CAShapeLayer()
+    private let dimLayers = (0 ..< 4).map { _ in CALayer() }
+    private var lastDimmedHighlight: CGRect?
+    private var hasUpdatedDimLayers = false
+    private var pendingVisualRefresh: Timer?
+    private var lastVisualRefresh: CFTimeInterval = 0
+    private static let visualRefreshInterval: CFTimeInterval = 1.0 / 60.0
     let backgroundTransition = ScreenshotBackgroundRemovalTransition()
     private var previewRegion: CGRect?
     private var previewResult: CGImage?
@@ -110,11 +115,11 @@ final class ScreenshotOverlayView: NSView {
         imageLayer.contents = display.image
         imageLayer.contentsGravity = .resize
         imageLayer.frame = bounds
-        dimLayer.fillRule = .evenOdd
-        dimLayer.fillColor = NSColor.black.withAlphaComponent(0.42).cgColor
-        dimLayer.frame = bounds
         layer?.addSublayer(imageLayer)
-        layer?.addSublayer(dimLayer)
+        for dimLayer in dimLayers {
+            dimLayer.backgroundColor = NSColor.black.withAlphaComponent(0.42).cgColor
+            layer?.addSublayer(dimLayer)
+        }
         canvas.autoresizingMask = [.width, .height]
         addSubview(backgroundTransition)
         addSubview(canvas)
@@ -146,6 +151,8 @@ final class ScreenshotOverlayView: NSView {
 
     /// Lets go of the frozen image as soon as the overlay closes.
     func releaseImage() {
+        pendingVisualRefresh?.invalidate()
+        pendingVisualRefresh = nil
         beautificationPanel.dismiss()
         backgroundTransition.cancel()
         previewResult = nil
@@ -181,7 +188,11 @@ final class ScreenshotOverlayView: NSView {
     func pointerMoved(to point: CGPoint) {
         selection.pointerMoved(to: point)
         updateCursor(at: point)
-        refresh()
+        if chrome.model.pointer == nil && showsLoupe {
+            refresh()
+        } else {
+            scheduleVisualRefresh()
+        }
     }
 
     func mouseDown(at point: CGPoint, clickCount: Int, shift: Bool = false) {
@@ -226,15 +237,17 @@ final class ScreenshotOverlayView: NSView {
             return
         }
         refresh()
+        if selection.isDragging { lastVisualRefresh = 0 }
     }
 
     func mouseDragged(to point: CGPoint, shift: Bool = false) {
         if editor.isDragging {
             editor.mouseDragged(to: point, shift: shift)
+            refresh()
         } else {
             _ = selection.mouseDragged(to: point, movesSelection: spaceHeld)
+            scheduleVisualRefresh()
         }
-        refresh()
     }
 
     func mouseUp(at point: CGPoint, shift: Bool = false) {
@@ -609,7 +622,57 @@ final class ScreenshotOverlayView: NSView {
         return ScreenshotMagnifier.color(of: display.image, at: pixel)
     }
 
+    /// Pointer events can arrive faster than the display needs new frames. Keep the
+    /// latest geometry and draw it once per frame; mouse-up still flushes immediately.
+    private func scheduleVisualRefresh() {
+        let elapsed = CACurrentMediaTime() - lastVisualRefresh
+        if elapsed >= Self.visualRefreshInterval {
+            refresh()
+            return
+        }
+        guard pendingVisualRefresh == nil else { return }
+        let delay = Self.visualRefreshInterval - elapsed
+        let timer = Timer(timeInterval: delay, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.pendingVisualRefresh = nil
+                self?.refresh()
+            }
+        }
+        pendingVisualRefresh = timer
+        RunLoop.main.add(timer, forMode: .common)
+    }
+
+    /// Four solid layers cover the area outside the selection without rasterizing a
+    /// full-display even-odd shape every time the pointer moves.
+    static func dimFrames(in bounds: CGRect, around highlighted: CGRect?) -> [CGRect] {
+        guard let highlighted else { return [bounds, .zero, .zero, .zero] }
+        let hole = highlighted.intersection(bounds)
+        guard !hole.isNull, !hole.isEmpty else { return [bounds, .zero, .zero, .zero] }
+        return [
+            CGRect(x: bounds.minX, y: bounds.minY, width: bounds.width, height: hole.minY - bounds.minY),
+            CGRect(x: bounds.minX, y: hole.maxY, width: bounds.width, height: bounds.maxY - hole.maxY),
+            CGRect(x: bounds.minX, y: hole.minY, width: hole.minX - bounds.minX, height: hole.height),
+            CGRect(x: hole.maxX, y: hole.minY, width: bounds.maxX - hole.maxX, height: hole.height)
+        ]
+    }
+
+    private func updateDimLayers() {
+        let highlighted = selection.highlighted
+        guard !hasUpdatedDimLayers || highlighted != lastDimmedHighlight else { return }
+        hasUpdatedDimLayers = true
+        lastDimmedHighlight = highlighted
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        for (layer, frame) in zip(dimLayers, Self.dimFrames(in: bounds, around: highlighted)) {
+            layer.frame = frame
+        }
+        CATransaction.commit()
+    }
+
     func refresh() {
+        pendingVisualRefresh?.invalidate()
+        pendingVisualRefresh = nil
+        lastVisualRefresh = CACurrentMediaTime()
         let framing = selection.isDragging && !editor.isDragging
         // A moving frame has no committed region. Retire any old preview once,
         // then leave image processing and toolbar layout until the drag ends.
@@ -638,13 +701,7 @@ final class ScreenshotOverlayView: NSView {
         } else {
             prepareMosaicGeometry()
         }
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        let path = CGMutablePath()
-        path.addRect(bounds)
-        if let highlighted = selection.highlighted { path.addRect(highlighted) }
-        dimLayer.path = path
-        CATransaction.commit()
+        updateDimLayers()
         chrome.model = ScreenshotOverlayChromeView.Model(
             selection: selection.rect,
             hovered: selection.rect == nil ? selection.hovered : nil,
