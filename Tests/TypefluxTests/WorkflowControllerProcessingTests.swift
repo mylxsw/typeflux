@@ -1187,8 +1187,11 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         }
     }
 
-    func testPersonaRewriteTimeoutAfterTranscriptionIsThreeSeconds() {
-        XCTAssertEqual(WorkflowController.llmTimeoutAfterTranscriptionSeconds, 3)
+    func testPersonaRewriteTimeoutUsesFiveSecondDefault() {
+        let controller = makeWorkflowController()
+
+        XCTAssertEqual(controller.llmTimeoutAfterTranscription, 5)
+        XCTAssertEqual(controller.llmRewriteTimeoutBudget(for: "Short text").baseSeconds, 5)
     }
 
     func testPersonaRewriteTimeoutUsesCurrentSetting() {

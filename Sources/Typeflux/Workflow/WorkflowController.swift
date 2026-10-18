@@ -54,7 +54,6 @@ final class WorkflowController {
     // At the 250ms retry interval this allows about 2.75 seconds to settle.
     static let audioReconfigurationStartupMaxAttemptCount = 12
     static let audioStartupRetryDelay: Duration = .milliseconds(250)
-    static let llmTimeoutAfterTranscriptionSeconds: TimeInterval = 3
     static let paidCreditExhaustedPromptSuppressionInterval: TimeInterval = 60 * 60
     private var llmTimeoutAfterTranscriptionOverride: TimeInterval?
     var llmTimeoutAfterTranscription: TimeInterval {

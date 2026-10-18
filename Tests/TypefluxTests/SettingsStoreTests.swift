@@ -175,7 +175,13 @@ final class SettingsStoreTests: XCTestCase {
 
     // MARK: - Voice Processing Timeout
 
-    func testVoiceProcessingTimeoutDefaultsToThreeSeconds() {
+    func testVoiceProcessingTimeoutDefaultsToFiveSeconds() {
+        XCTAssertEqual(store.voiceProcessingTimeout, .fiveSeconds)
+    }
+
+    func testVoiceProcessingTimeoutPreservesPreviouslySelectedThreeSeconds() {
+        defaults.set(3, forKey: "voice.processing.timeoutSeconds")
+
         XCTAssertEqual(store.voiceProcessingTimeout, .threeSeconds)
     }
 
@@ -189,7 +195,7 @@ final class SettingsStoreTests: XCTestCase {
     func testVoiceProcessingTimeoutRejectsUnsupportedStoredValue() {
         defaults.set(7, forKey: "voice.processing.timeoutSeconds")
 
-        XCTAssertEqual(store.voiceProcessingTimeout, .threeSeconds)
+        XCTAssertEqual(store.voiceProcessingTimeout, .fiveSeconds)
     }
 
     func testVoiceProcessingTimeoutMigratesLegacySixtySecondsToThirtySeconds() {

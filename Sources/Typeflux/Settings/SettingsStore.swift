@@ -82,7 +82,7 @@ enum VoiceProcessingTimeout: Int, CaseIterable, Identifiable {
     case tenSeconds = 10
     case thirtySeconds = 30
 
-    static let defaultValue: VoiceProcessingTimeout = .threeSeconds
+    static let defaultValue: VoiceProcessingTimeout = .fiveSeconds
 
     var id: Int { rawValue }
     var seconds: TimeInterval { TimeInterval(rawValue) }
