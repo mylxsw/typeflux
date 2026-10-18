@@ -4245,6 +4245,7 @@
 "screenshot.edit.redo" = "重做";
 "screenshot.edit.cancel" = "取消";
 "screenshot.edit.save" = "儲存";
+"screenshot.key.space" = "空白鍵";
 "screenshot.edit.copy" = "拷貝";
 "screenshot.edit.color" = "顏色";
 "screenshot.edit.size" = "粗細";

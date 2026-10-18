@@ -4238,6 +4238,7 @@
 "screenshot.edit.redo" = "다시 실행";
 "screenshot.edit.cancel" = "취소";
 "screenshot.edit.save" = "저장";
+"screenshot.key.space" = "스페이스";
 "screenshot.edit.copy" = "복사";
 "screenshot.edit.color" = "색상";
 "screenshot.edit.size" = "굵기";

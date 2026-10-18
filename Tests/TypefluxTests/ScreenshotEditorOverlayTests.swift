@@ -346,6 +346,7 @@ final class ScreenshotEditorOverlayTests: XCTestCase {
                                                      charactersIgnoringModifiers: "c", isARepeat: false,
                                                      keyCode: Key.keyC))
         XCTAssertFalse(view.performKeyEquivalent(with: copyKey), "⌘C copies the typed text, not the screenshot")
+        XCTAssertFalse(view.handleKeyDown(Key.space, modifiers: []), "Space belongs to the text annotation")
         XCTAssertEqual(events(), [.committed])
 
         view.handleKeyDown(Key.keyC, modifiers: .command)

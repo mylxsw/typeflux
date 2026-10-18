@@ -69,9 +69,13 @@ final class ScreenshotLongImageEditorTests: XCTestCase {
 
         canvas.handleKeyDown(Key.keyC, modifiers: .command)
         canvas.handleKeyDown(Key.keyS, modifiers: .command)
+        XCTAssertFalse(canvas.handleKeyDown(Key.space, modifiers: .shift))
+        XCTAssertTrue(canvas.handleKeyDown(Key.space, modifiers: [], isRepeat: true))
+        canvas.handleKeyDown(Key.space, modifiers: [])
         canvas.handleKeyDown(Key.enter, modifiers: [])
         canvas.handleKeyDown(Key.escape, modifiers: [])
-        XCTAssertEqual(events(), [.finish(.copy, []), .finish(.save, []), .finish(.copy, []), .cancelled])
+        XCTAssertEqual(events(), [.finish(.copy, []), .finish(.save, []), .finish(.save, []),
+                                  .finish(.copy, []), .cancelled])
     }
 
     func testZoomKeys() {
@@ -100,9 +104,14 @@ final class ScreenshotLongImageEditorTests: XCTestCase {
                                                    timestamp: 0, windowNumber: 0, context: nil, characters: "\u{1b}",
                                                    charactersIgnoringModifiers: "\u{1b}", isARepeat: false,
                                                    keyCode: Key.escape))
+        let space = try XCTUnwrap(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [],
+                                                   timestamp: 0, windowNumber: 0, context: nil, characters: " ",
+                                                   charactersIgnoringModifiers: " ", isARepeat: false,
+                                                   keyCode: Key.space))
         XCTAssertFalse(canvas.performKeyEquivalent(with: plain), "Only ⌘ keys")
+        canvas.keyDown(with: space)
         canvas.keyDown(with: plain)
-        XCTAssertEqual(events(), [.zoom(1), .cancelled])
+        XCTAssertEqual(events(), [.zoom(1), .finish(.save, []), .cancelled])
     }
 
     func testToolbarActions() {
@@ -140,6 +149,8 @@ final class ScreenshotLongImageEditorTests: XCTestCase {
         canvas.handleKeyDown(ScreenshotAnnotationTool.text.keyCode, modifiers: [])
         canvas.mouseDown(at: CGPoint(x: 30, y: 1200), clickCount: 1)
         let field = try XCTUnwrap(canvas.textField)
+        XCTAssertFalse(canvas.handleKeyDown(Key.space, modifiers: []), "Space belongs to the text annotation")
+        XCTAssertTrue(events().isEmpty)
         field.stringValue = "Long"
         canvas.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification))
         XCTAssertGreaterThan(field.frame.width, 20)

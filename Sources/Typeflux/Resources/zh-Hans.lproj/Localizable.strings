@@ -4260,6 +4260,7 @@
 "screenshot.edit.redo" = "重做";
 "screenshot.edit.cancel" = "取消";
 "screenshot.edit.save" = "保存";
+"screenshot.key.space" = "空格";
 "screenshot.edit.copy" = "复制";
 "screenshot.edit.color" = "颜色";
 "screenshot.edit.size" = "粗细";

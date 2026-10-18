@@ -4238,6 +4238,7 @@
 "screenshot.edit.redo" = "やり直す";
 "screenshot.edit.cancel" = "キャンセル";
 "screenshot.edit.save" = "保存";
+"screenshot.key.space" = "スペース";
 "screenshot.edit.copy" = "コピー";
 "screenshot.edit.color" = "色";
 "screenshot.edit.size" = "太さ";

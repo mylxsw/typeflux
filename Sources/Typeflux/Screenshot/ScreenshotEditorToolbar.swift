@@ -352,7 +352,8 @@ struct ScreenshotEditorToolbar: View {
                 iconButton("pin", help: "\(L("screenshot.tool.pin"))  F") { perform(.pin) }
                     .accessibilityIdentifier("screenshot.pin")
             }
-            iconButton("square.and.arrow.down", help: "\(L("screenshot.edit.save"))  ⌘S") { perform(.save) }
+            iconButton("square.and.arrow.down",
+                       help: "\(L("screenshot.edit.save"))  \(L("screenshot.key.space")) / ⌘S") { perform(.save) }
             separator
             iconButton("ellipsis", help: L("screenshot.edit.more"), isOn: state.showsMoreMenu) {
                 perform(.toggleMoreMenu)

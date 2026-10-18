@@ -141,10 +141,11 @@ final class ScreenshotOverlayTests: XCTestCase {
         XCTAssertTrue(view.handleKeyDown(Key.enter, modifiers: []))
         XCTAssertTrue(view.handleKeyDown(Key.keyC, modifiers: .command))
         XCTAssertTrue(view.handleKeyDown(Key.keyS, modifiers: .command))
+        XCTAssertTrue(view.handleKeyDown(Key.space, modifiers: []))
         XCTAssertTrue(view.handleKeyDown(Key.escape, modifiers: []))
         let all = CGRect(x: 0, y: 0, width: 200, height: 100)
         XCTAssertEqual(events(), [.committed, .finish(.copy, all), .finish(.copy, all), .finish(.copy, all),
-                                  .finish(.save, all), .cancelled])
+                                  .finish(.save, all), .finish(.save, all), .cancelled])
 
         XCTAssertTrue(view.handleKeyDown(Key.keyC, modifiers: []), "Plain C picks the callout")
         XCTAssertEqual(view.editor.tool, .callout)
@@ -182,6 +183,30 @@ final class ScreenshotOverlayTests: XCTestCase {
         view.handleKeyUp(Key.space)
         XCTAssertFalse(view.spaceHeld)
         view.handleKeyUp(Key.keyA)
+    }
+
+    func testSpaceSavesOnlyAfterTheRegionIsCommitted() {
+        let (view, events) = makeView()
+        XCTAssertTrue(view.handleKeyDown(Key.space, modifiers: []))
+        XCTAssertTrue(view.spaceHeld)
+        XCTAssertTrue(events().isEmpty)
+        view.handleKeyUp(Key.space)
+
+        let start = CGPoint(x: 10, y: 10)
+        let end = CGPoint(x: 110, y: 60)
+        view.mouseDown(at: start, clickCount: 1)
+        view.mouseDragged(to: end)
+        XCTAssertTrue(view.handleKeyDown(Key.space, modifiers: []))
+        XCTAssertTrue(view.spaceHeld)
+        XCTAssertTrue(events().isEmpty)
+        view.handleKeyUp(Key.space)
+        view.mouseUp(at: end)
+
+        XCTAssertFalse(view.handleKeyDown(Key.space, modifiers: .shift))
+        XCTAssertTrue(view.handleKeyDown(Key.space, modifiers: [], isRepeat: true))
+        XCTAssertEqual(events(), [.committed])
+        XCTAssertTrue(view.handleKeyDown(Key.space, modifiers: []))
+        XCTAssertEqual(events(), [.committed, .finish(.save, CGRect(x: 10, y: 10, width: 100, height: 50))])
     }
 
     func testDoubleClickInsideCopies() {
@@ -278,8 +303,8 @@ final class ScreenshotOverlayTests: XCTestCase {
         XCTAssertNil(view.selection.pointer)
         view.rightMouseDown(with: try mouse(.rightMouseDown, CGPoint(x: 20, y: 20)))
 
-        XCTAssertEqual(events(), [.committed, .finish(.copy, CGRect(x: 20, y: 20, width: 100, height: 50)),
-                                  .cancelled])
+        XCTAssertEqual(events(), [.committed, .finish(.save, CGRect(x: 20, y: 20, width: 100, height: 50)),
+                                  .finish(.copy, CGRect(x: 20, y: 20, width: 100, height: 50)), .cancelled])
     }
 
     func testChromeDrawsEveryPart() throws {

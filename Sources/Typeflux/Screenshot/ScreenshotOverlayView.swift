@@ -294,6 +294,7 @@ final class ScreenshotOverlayView: NSView {
     @discardableResult
     func handleKeyDown(_ keyCode: UInt16, modifiers: NSEvent.ModifierFlags, isRepeat: Bool = false) -> Bool {
         let command = modifiers.contains(.command)
+        let plainKey = modifiers.intersection([.command, .option, .control, .shift]).isEmpty
         if handleEditingKey(keyCode, modifiers: modifiers) { return true }
         if let offset = Self.nudgeOffset(for: keyCode, modifiers: modifiers) {
             nudge(offset)
@@ -319,6 +320,10 @@ final class ScreenshotOverlayView: NSView {
             selectAll()
         case Key.keyS where !command && selection.rect != nil:
             startScrollCapture()
+        case Key.space where textField != nil || !plainKey:
+            return false
+        case Key.space where selection.rect != nil && !selection.isDragging && !editor.isDragging:
+            if !isRepeat { finish(.save) }
         case Key.space:
             spaceHeld = true
         default:

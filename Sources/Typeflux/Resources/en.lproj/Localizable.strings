@@ -4260,6 +4260,7 @@
 "screenshot.edit.redo" = "Redo";
 "screenshot.edit.cancel" = "Cancel";
 "screenshot.edit.save" = "Save";
+"screenshot.key.space" = "Space";
 "screenshot.edit.copy" = "Copy";
 "screenshot.edit.color" = "Color";
 "screenshot.edit.size" = "Size";

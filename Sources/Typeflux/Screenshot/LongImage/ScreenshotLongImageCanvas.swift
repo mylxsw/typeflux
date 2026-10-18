@@ -161,7 +161,8 @@ final class ScreenshotLongImageCanvas: NSView {
     // MARK: Keys
 
     override func keyDown(with event: NSEvent) {
-        if !handleKeyDown(event.keyCode, modifiers: event.modifierFlags, characters: event.charactersIgnoringModifiers) {
+        if !handleKeyDown(event.keyCode, modifiers: event.modifierFlags,
+                          characters: event.charactersIgnoringModifiers, isRepeat: event.isARepeat) {
             super.keyDown(with: event)
         }
     }
@@ -169,14 +170,17 @@ final class ScreenshotLongImageCanvas: NSView {
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         // While typing, ⌘C, ⌘A, ⌘Z and the like belong to the text field.
         guard event.type == .keyDown, event.modifierFlags.contains(.command), textField == nil else { return false }
-        return handleKeyDown(event.keyCode, modifiers: event.modifierFlags, characters: event.charactersIgnoringModifiers)
+        return handleKeyDown(event.keyCode, modifiers: event.modifierFlags,
+                             characters: event.charactersIgnoringModifiers, isRepeat: event.isARepeat)
     }
 
     /// - Returns: whether the key meant something here.
     @discardableResult
-    func handleKeyDown(_ keyCode: UInt16, modifiers: NSEvent.ModifierFlags, characters: String? = nil) -> Bool {
+    func handleKeyDown(_ keyCode: UInt16, modifiers: NSEvent.ModifierFlags,
+                       characters: String? = nil, isRepeat: Bool = false) -> Bool {
         typealias Key = ScreenshotOverlayView.Key
         let command = modifiers.contains(.command)
+        let plainKey = modifiers.intersection([.command, .option, .control, .shift]).isEmpty
         if command, let zoom = Self.zoomStep(keyCode: keyCode, characters: characters) {
             onEvent?(.zoom(zoom))
             return true
@@ -194,6 +198,8 @@ final class ScreenshotLongImageCanvas: NSView {
             finish(.copy)
         case Key.keyS where command:
             finish(.save)
+        case Key.space where textField == nil && !editor.isDragging && plainKey:
+            if !isRepeat { finish(.save) }
         case Key.keyZ where command:
             if modifiers.contains(.shift) { editor.redo() } else { editor.undo() }
         case Key.delete, Key.forwardDelete:
