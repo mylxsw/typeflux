@@ -25,7 +25,10 @@ class InferencePackagingTests(unittest.TestCase):
             (resources / 'tokenizer.json').write_text('{}')
             subprocess.run(command, check=True)
             self.assertEqual((app / 'Contents/Helpers/TypefluxInferenceHelper').read_bytes(), helper.read_bytes())
-            self.assertTrue((app / 'Contents/Helpers/swift-transformers_Hub.bundle/tokenizer.json').is_file())
+            packaged = app / 'Contents/Helpers/swift-transformers_Hub.bundle'
+            self.assertTrue((packaged / 'Contents/Resources/tokenizer.json').is_file())
+            self.assertTrue((packaged / 'Contents/Info.plist').is_file())
+            subprocess.run(['codesign', '--force', '--sign', '-', str(packaged)], check=True)
 
     def test_xcode_app_embeds_both_worker_and_tokenizer_resources(self):
         script = r'''
