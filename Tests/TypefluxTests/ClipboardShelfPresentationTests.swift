@@ -116,6 +116,33 @@ final class ClipboardShelfPresentationTests: XCTestCase {
         }
     }
 
+    /// Each card on its own, since the lazy rail only builds the cards in view.
+    @MainActor
+    func testEveryCardDrawsAloneInEachState() throws {
+        var entries = entries()
+        entries.append(ClipboardTestSupport.entry(.files, filePaths: (1 ... 6).map { "/tmp/file\($0).txt" }))
+        entries.append(ClipboardTestSupport.entry(.document, filePaths: ["/tmp/plan.docx"]))
+        let states: [(selected: Bool, hovered: Bool, missing: Bool, number: Int?)] = [
+            (false, false, false, nil), (true, false, false, 1), (false, true, true, 9), (false, false, false, 10)
+        ]
+        for (index, entry) in entries.enumerated() {
+            for state in states {
+                var clicks: [Int] = []
+                let card = ClipboardShelfCard(
+                    entry: entry, index: index, isSelected: state.selected, isHovered: state.hovered,
+                    isMissing: state.missing, number: state.number, onClick: { clicks.append($0) }
+                )
+                try render(card.environment(\.askLauncherNumberHints, true),
+                           size: NSSize(width: ClipboardShelfCard.width + 20, height: ClipboardShelfCard.height + 20),
+                           name: "card-\(index)-\(state.selected)-\(state.missing)")
+                card.onClick(2)
+                card.onPerform(.paste)
+                card.onHover(true)
+                XCTAssertEqual(clicks, [2])
+            }
+        }
+    }
+
     func testCardEqualityIgnoresCallbacks() {
         let entry = ClipboardTestSupport.entry(.text, text: "a")
         let card = ClipboardShelfCard(entry: entry, index: 0, isSelected: false, isHovered: false, isMissing: false)
