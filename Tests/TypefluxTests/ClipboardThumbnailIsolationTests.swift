@@ -22,6 +22,26 @@ private actor ClipboardThumbnailPending {
     var started: Bool { pending != nil }
     func resolve(_ value: AskFilePreviewPDF.Result) { pending?.resume(returning: value); pending = nil }
 }
+private actor ClipboardThumbnailDecodeProbe {
+    private let fallback: AskFilePreviewPDF.Result
+    private var startedKeys: [String] = []
+    private var continuations: [String: CheckedContinuation<AskFilePreviewPDF.Result, Never>] = [:]
+    init(fallback: AskFilePreviewPDF.Result) { self.fallback = fallback }
+    var started: [String] { startedKeys }
+    func decode(_ key: String) async -> AskFilePreviewPDF.Result {
+        await withCheckedContinuation { continuation in
+            startedKeys.append(key)
+            continuations[key] = continuation
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                finish(key, with: fallback)
+            }
+        }
+    }
+    func finish(_ key: String, with result: AskFilePreviewPDF.Result) {
+        continuations.removeValue(forKey: key)?.resume(returning: result)
+    }
+}
 
 @MainActor final class ClipboardThumbnailIsolationTests: XCTestCase {
     private func result() -> AskFilePreviewPDF.Result {
@@ -180,6 +200,87 @@ private actor ClipboardThumbnailPending {
         _ = try await cache.decode(url, edge: 240, epoch: secondEpoch, using: decode)
         let secondCount = await calls.count
         XCTAssertEqual(secondCount, 2)
+    }
+
+    func testVisibleThumbnailRequestsQueueAndSelectedPreviewGetsNextSlot() async throws {
+        let cache = ClipboardThumbnailCache(), raster = result()
+        let probe = ClipboardThumbnailDecodeProbe(fallback: raster)
+        let epoch = cache.clear()
+        func request(_ name: String, edge: CGFloat = 240) -> Task<AskFilePreviewPDF.Result, Error> {
+            Task {
+                try await cache.decode(URL(fileURLWithPath: "/private/\(name).png"), edge: edge, epoch: epoch,
+                    using: { url, _ in await probe.decode(url.deletingPathExtension().lastPathComponent) })
+            }
+        }
+        let first = request("first"), second = request("second")
+        for _ in 0..<100 {
+            if await probe.started.count >= 2 { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        let initial = await probe.started
+        XCTAssertEqual(initial.count, 2)
+        guard initial.count == 2 else { return }
+        let queued = request("queued")
+        try await Task.sleep(for: .milliseconds(20))
+        let selected = request("selected", edge: 900)
+        try await Task.sleep(for: .milliseconds(30))
+        let beforeRelease = await probe.started
+        XCTAssertEqual(beforeRelease.count, 2)
+
+        await probe.finish(initial[0], with: raster)
+        for _ in 0..<100 {
+            if await probe.started.count >= 3 { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        let afterFirst = await probe.started
+        XCTAssertEqual(afterFirst.last, "selected")
+        await probe.finish(initial[1], with: raster)
+        for _ in 0..<100 {
+            if await probe.started.count >= 4 { break }
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        let afterSecond = await probe.started
+        XCTAssertEqual(afterSecond.last, "queued")
+        await probe.finish("selected", with: raster)
+        await probe.finish("queued", with: raster)
+        _ = try await (first.value, second.value, selected.value, queued.value)
+    }
+
+    func testSelectionAndDateRefreshKeepLoadedThumbnailAuthorized() {
+        let session = ClipboardThumbnailSession(), panel = ClipboardPanelModel(), id = UUID()
+        let original = ClipboardTestSupport.entry(.image, id: id, date: Date(timeIntervalSince1970: 100), imagePath: "/private/a.png")
+        let other = ClipboardTestSupport.entry(.text, text: "other")
+        panel.reset(entries: [original, other])
+        session.begin(panel)
+        let access = session.access(for: original), epoch = access.epoch
+        panel.select(index: 1)
+        XCTAssertTrue(access.allows())
+        XCTAssertEqual(session.access(for: original).epoch, epoch)
+        let updated = ClipboardTestSupport.entry(.image, id: id, date: Date(timeIntervalSince1970: 200), imagePath: "/private/a.png")
+        panel.replaceEntries([updated, other])
+        session.changed()
+        XCTAssertTrue(access.allows())
+        XCTAssertEqual(session.access(for: updated).epoch, epoch)
+        panel.replaceEntries([ClipboardTestSupport.entry(.text, text: "new"), updated, other])
+        session.changed()
+        XCTAssertTrue(access.allows())
+        XCTAssertEqual(session.access(for: updated).epoch, epoch)
+        session.end()
+        XCTAssertFalse(access.allows())
+    }
+
+    func testTransientThumbnailWorkerRefusalRetriesOnce() async throws {
+        let cache = ClipboardThumbnailCache(), calls = ClipboardThumbnailCalls(), raster = result()
+        let epoch = cache.clear()
+        let image = try await cache.decode(URL(fileURLWithPath: "/private/retry.png"), edge: 240, epoch: epoch,
+            using: { _, _ in
+                await calls.add()
+                if await calls.count == 1 { throw MediaFailure.unavailable }
+                return raster
+            })
+        XCTAssertEqual(image.images.count, 1)
+        let count = await calls.count
+        XCTAssertEqual(count, 2)
     }
 
     func testChangingSelectionKeepsVisibleRowPixels() async throws {

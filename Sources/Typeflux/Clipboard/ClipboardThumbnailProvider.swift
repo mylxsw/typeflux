@@ -56,14 +56,29 @@ extension EnvironmentValues {
     private var cacheEpoch = UUID()
     @Published private(set) var revision = UUID()
     private weak var model: ClipboardPanelModel?
+    private var entries: [String: ClipboardEntry] = [:]
     private var active = false
     func begin(_ model: ClipboardPanelModel) {
-        end(); self.model = model; active = true; scope.setVisible(true); revision = UUID()
+        end(); self.model = model; entries = Dictionary(uniqueKeysWithValues: model.entries.map { ($0.id, $0) })
+        active = true; scope.setVisible(true); revision = UUID()
     }
-    func changed() { cacheEpoch = cache.clear(); scope.invalidate(); revision = UUID() }
-    func selectionChanged() { scope.invalidate(); revision = UUID() }
+    func changed(_ publishedEntries: [ClipboardEntry]? = nil) {
+        guard let model else { return }
+        let next = Dictionary(uniqueKeysWithValues: (publishedEntries ?? model.entries).map { ($0.id, $0) })
+        // New rows, recopy dates and pin changes do not alter existing image pixels.
+        if entries.contains(where: { id, old in
+            guard let current = next[id] else { return true }
+            return !Self.sameContent(old, current)
+        }) {
+            cacheEpoch = cache.clear()
+            scope.invalidate()
+        }
+        entries = next
+        revision = UUID()
+    }
     func end() {
-        active = false; model = nil; cacheEpoch = cache.clear(); scope.setVisible(false); revision = UUID()
+        active = false; model = nil; entries = [:]
+        cacheEpoch = cache.clear(); scope.setVisible(false); revision = UUID()
     }
     func decoder(using base: @escaping ClipboardThumbnailDecoding) -> ClipboardThumbnailDecoding {
         return { [weak self] url, edge in
@@ -80,8 +95,62 @@ extension EnvironmentValues {
         guard let entry, active else { return .init() }
         return .init(scope: scope, epoch: scope.epoch, authorize: { [weak self] in
             guard let self, active, let model else { return false }
-            return model.entries.contains(entry)
+            return model.entries.contains { Self.sameContent($0, entry) }
         })
+    }
+
+    private static func sameContent(_ lhs: ClipboardEntry, _ rhs: ClipboardEntry) -> Bool {
+        lhs.id == rhs.id && lhs.kind == rhs.kind && lhs.text == rhs.text &&
+            lhs.filePaths == rhs.filePaths && lhs.imagePath == rhs.imagePath &&
+            lhs.imagePixelSize == rhs.imagePixelSize && lhs.byteSize == rhs.byteSize && lhs.snippet == rhs.snippet
+    }
+}
+
+/// Queue visible thumbnail work instead of letting requests beyond the media worker's two slots fail.
+@MainActor final class ClipboardThumbnailDecodeGate {
+    private struct Waiter {
+        let id: UUID
+        let priority: Bool
+        let continuation: CheckedContinuation<Void, Error>
+    }
+    private let limit: Int
+    private var active = 0
+    private var waiters: [Waiter] = []
+
+    init(limit: Int = 2) { self.limit = max(1, limit) }
+
+    func run<T>(priority: Bool, _ operation: () async throws -> T) async throws -> T {
+        try await acquire(priority: priority)
+        defer { release() }
+        try Task.checkCancellation()
+        return try await operation()
+    }
+
+    private func acquire(priority: Bool) async throws {
+        try Task.checkCancellation()
+        if active < limit { active += 1; return }
+        let id = UUID()
+        try await withTaskCancellationHandler(operation: {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                guard !Task.isCancelled else { continuation.resume(throwing: CancellationError()); return }
+                let waiter = Waiter(id: id, priority: priority, continuation: continuation)
+                let index = priority ? (waiters.firstIndex { !$0.priority } ?? waiters.count) : waiters.count
+                waiters.insert(waiter, at: index)
+            }
+        }, onCancel: {
+            Task { @MainActor in self.cancel(id) }
+        })
+        if Task.isCancelled { release(); throw CancellationError() }
+    }
+
+    private func cancel(_ id: UUID) {
+        guard let index = waiters.firstIndex(where: { $0.id == id }) else { return }
+        waiters.remove(at: index).continuation.resume(throwing: CancellationError())
+    }
+
+    private func release() {
+        if waiters.isEmpty { active -= 1 }
+        else { waiters.removeFirst().continuation.resume() }
     }
 }
 
@@ -104,6 +173,7 @@ extension EnvironmentValues {
     private var bytes = 0
     private var pending: [Key: Pending] = [:]
     private var pendingOrder: [Key] = []
+    private let decodeGate = ClipboardThumbnailDecodeGate()
 
     @discardableResult func clear() -> UUID {
         generation = UUID()
@@ -125,11 +195,21 @@ extension EnvironmentValues {
         if let current = pending[key] {
             work = current
         } else {
-            if pendingOrder.count >= 12 {
+            if pendingOrder.count >= 32 {
                 let oldest = pendingOrder.removeFirst()
                 pending.removeValue(forKey: oldest)?.task.cancel()
             }
-            work = Pending(id: UUID(), task: Task { try await base(url, edge) })
+            work = Pending(id: UUID(), task: Task {
+                try await decodeGate.run(priority: edge >= 500) {
+                    do {
+                        return try await base(url, edge)
+                    } catch {
+                        guard !Task.isCancelled, (error as? MediaFailure) == .unavailable else { throw error }
+                        try await Task.sleep(for: .milliseconds(120))
+                        return try await base(url, edge)
+                    }
+                }
+            })
             pending[key] = work
             pendingOrder.append(key)
         }
