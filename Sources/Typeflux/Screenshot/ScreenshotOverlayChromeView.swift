@@ -31,7 +31,12 @@ final class ScreenshotOverlayChromeView: NSView {
     static let pillHeight: CGFloat = 22
 
     var model = Model() {
-        didSet { if model != oldValue { needsDisplay = true } }
+        didSet {
+            guard model != oldValue else { return }
+            for rect in Self.invalidationRects(from: oldValue, to: model, in: bounds) {
+                setNeedsDisplay(rect)
+            }
+        }
     }
 
     override var isFlipped: Bool { true }
@@ -53,14 +58,56 @@ final class ScreenshotOverlayChromeView: NSView {
             context.stroke(selection.insetBy(dx: -0.75, dy: -0.75))
             if model.handles { drawHandles(around: selection, in: context) }
         }
-        if let label = model.sizeLabel, let target = model.selection ?? model.hovered {
-            let size = Self.pillSize(for: label)
-            var origin = CGPoint(x: target.minX, y: target.minY - size.height - 6)
-            if origin.y < bounds.minY { origin.y = target.minY + 6; origin.x = target.minX + 6 }
-            origin.x = min(max(origin.x, bounds.minX), bounds.maxX - size.width)
-            drawPill(label, in: CGRect(origin: origin, size: size))
+        if let label = model.sizeLabel, let frame = Self.sizeLabelFrame(for: model, in: bounds) {
+            drawPill(label, in: frame)
         }
         if let loupe = model.loupe { drawLoupe(loupe, in: context) }
+    }
+
+    /// Only the moving guides span the display. The frame, label and loupe invalidate
+    /// their old and new bounds instead of repainting the whole overlay on every event.
+    static func invalidationRects(from old: Model, to new: Model, in bounds: CGRect) -> [CGRect] {
+        var rects: [CGRect] = []
+        if old.selection != new.selection || old.handles != new.handles {
+            rects += [old.selection, new.selection].compactMap { $0 }.flatMap { outlineRects($0, margin: 12) }
+        }
+        if old.hovered != new.hovered {
+            rects += [old.hovered, new.hovered].compactMap { $0 }.flatMap { outlineRects($0, margin: 4) }
+        }
+        if old.sizeLabel != new.sizeLabel || old.selection != new.selection || old.hovered != new.hovered {
+            rects += [sizeLabelFrame(for: old, in: bounds), sizeLabelFrame(for: new, in: bounds)]
+                .compactMap { $0?.insetBy(dx: -2, dy: -2) }
+        }
+        if old.pointer != new.pointer {
+            for point in [old.pointer, new.pointer].compactMap({ $0 }) {
+                rects.append(CGRect(x: bounds.minX, y: point.y - 2, width: bounds.width, height: 4))
+                rects.append(CGRect(x: point.x - 2, y: bounds.minY, width: 4, height: bounds.height))
+            }
+        }
+        if old.loupe != new.loupe {
+            rects += [old.loupe, new.loupe].compactMap { $0?.frame.insetBy(dx: -2, dy: -2) }
+        }
+        return rects.map { $0.intersection(bounds) }.filter { !$0.isNull && !$0.isEmpty }
+    }
+
+    private static func outlineRects(_ rect: CGRect, margin: CGFloat) -> [CGRect] {
+        let width = rect.width + margin * 2
+        let height = rect.height + margin * 2
+        return [
+            CGRect(x: rect.minX - margin, y: rect.minY - margin, width: width, height: margin * 2),
+            CGRect(x: rect.minX - margin, y: rect.maxY - margin, width: width, height: margin * 2),
+            CGRect(x: rect.minX - margin, y: rect.minY - margin, width: margin * 2, height: height),
+            CGRect(x: rect.maxX - margin, y: rect.minY - margin, width: margin * 2, height: height)
+        ]
+    }
+
+    private static func sizeLabelFrame(for model: Model, in bounds: CGRect) -> CGRect? {
+        guard let label = model.sizeLabel, let target = model.selection ?? model.hovered else { return nil }
+        let size = pillSize(for: label)
+        var origin = CGPoint(x: target.minX, y: target.minY - size.height - 6)
+        if origin.y < bounds.minY { origin.y = target.minY + 6; origin.x = target.minX + 6 }
+        origin.x = min(max(origin.x, bounds.minX), bounds.maxX - size.width)
+        return CGRect(origin: origin, size: size)
     }
 
     /// Where the editing toolbar goes: below the region (above it with `prefersAbove`), else on the

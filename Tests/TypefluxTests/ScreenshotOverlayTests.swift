@@ -61,6 +61,32 @@ final class ScreenshotOverlayTests: XCTestCase {
         XCTAssertNil(model.pointer)
     }
 
+    func testFramingDefersEditorWorkUntilTheRegionIsCommitted() throws {
+        let (view, _) = makeView()
+        let canvas = try XCTUnwrap(view.subviews.first { $0 is ScreenshotAnnotationCanvasView }
+            as? ScreenshotAnnotationCanvasView)
+        view.mouseDown(at: CGPoint(x: 10, y: 10), clickCount: 1)
+        view.mouseDragged(to: CGPoint(x: 60, y: 40))
+        view.mouseDragged(to: CGPoint(x: 100, y: 70))
+
+        XCTAssertNil(view.backgroundRemoval.region)
+        XCTAssertNil(canvas.model.crop, "An empty editor does not redraw while framing")
+        XCTAssertNil(view.toolbar)
+
+        view.mouseUp(at: CGPoint(x: 100, y: 70))
+        let rect = CGRect(x: 10, y: 10, width: 90, height: 60)
+        XCTAssertEqual(view.backgroundRemoval.region, rect)
+        XCTAssertEqual(canvas.model.crop, rect)
+        XCTAssertEqual(view.toolbar?.isHidden, false)
+
+        view.mouseDown(at: CGPoint(x: 30, y: 30), clickCount: 1)
+        XCTAssertEqual(view.backgroundRemoval.region, rect, "Pressing without moving keeps the committed preview")
+        view.mouseDragged(to: CGPoint(x: 40, y: 40))
+        XCTAssertNil(view.backgroundRemoval.region, "A changed region retires the old preview")
+        view.mouseUp(at: CGPoint(x: 40, y: 40))
+        XCTAssertEqual(view.backgroundRemoval.region, rect.offsetBy(dx: 10, dy: 10))
+    }
+
     func testLoupeAtTheCornerShowsOnlyPixelsOnTheImage() throws {
         let (view, _) = makeView()
         view.pointerMoved(to: .zero)
@@ -244,6 +270,24 @@ final class ScreenshotOverlayTests: XCTestCase {
         // The hovered window's outline, and nothing in the middle of it.
         XCTAssertGreaterThan(hovered.colorAt(x: Int(11 * scale), y: Int(35 * scale))?.alphaComponent ?? 0, 0.5)
         XCTAssertEqual(hovered.colorAt(x: Int(35 * scale), y: Int(50 * scale))?.alphaComponent ?? 1, 0)
+    }
+
+    func testChromeInvalidatesOnlyChangedFramingParts() {
+        let bounds = CGRect(x: 0, y: 0, width: 1440, height: 900)
+        let old = ScreenshotOverlayChromeView.Model(selection: CGRect(x: 100, y: 100, width: 200, height: 120),
+                                                    sizeLabel: "200 × 120", pointer: CGPoint(x: 300, y: 220))
+        let new = ScreenshotOverlayChromeView.Model(selection: CGRect(x: 100, y: 100, width: 250, height: 160),
+                                                    sizeLabel: "250 × 160", pointer: CGPoint(x: 350, y: 260))
+        let rects = ScreenshotOverlayChromeView.invalidationRects(from: old, to: new, in: bounds)
+
+        XCTAssertFalse(rects.isEmpty)
+        XCTAssertTrue(rects.allSatisfy { $0.width < bounds.width || $0.height < bounds.height },
+                      "Dragging never invalidates the whole display")
+        XCTAssertLessThan(rects.reduce(0) { $0 + $1.width * $1.height }, bounds.width * bounds.height / 2,
+                          "Only outlines and narrow guide strips need repainting")
+        XCTAssertTrue(rects.contains { $0.contains(CGPoint(x: 300, y: 220)) }, "Old frame is erased")
+        XCTAssertTrue(rects.contains { $0.contains(CGPoint(x: 350, y: 260)) }, "New frame is drawn")
+        XCTAssertTrue(ScreenshotOverlayChromeView.invalidationRects(from: new, to: new, in: bounds).isEmpty)
     }
 
     func testToolbarGoesBelowAboveOrInside() {

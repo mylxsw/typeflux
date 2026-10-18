@@ -610,11 +610,15 @@ final class ScreenshotOverlayView: NSView {
     }
 
     func refresh() {
-        backgroundRemoval.updateRegion(selection.rect)
-        if previewRegion != selection.rect {
+        let framing = selection.isDragging && !editor.isDragging
+        // A moving frame has no committed region. Retire any old preview once,
+        // then leave image processing and toolbar layout until the drag ends.
+        let region = framing && selection.rect != backgroundRemoval.region ? nil : selection.rect
+        backgroundRemoval.updateRegion(region)
+        if previewRegion != region {
             backgroundTransition.cancel()
             previewResult = nil
-            previewRegion = selection.rect
+            previewRegion = region
         }
         let result = backgroundRemoval.image
         if result !== previewResult {
@@ -629,7 +633,11 @@ final class ScreenshotOverlayView: NSView {
         }
         canvas.suppressesBackgroundPreview = backgroundTransition.isTransitioning
         canvas.backgroundRemovedImage = result
-        prepareMosaicGeometry()
+        if framing {
+            if mosaicPreparation.state == .preparing { mosaicPreparation.cancel() }
+        } else {
+            prepareMosaicGeometry()
+        }
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         let path = CGMutablePath()
@@ -646,12 +654,18 @@ final class ScreenshotOverlayView: NSView {
             loupe: showsLoupe ? loupe() : nil
         )
         let selected = editor.editingTextID == nil ? editor.selected : nil
-        canvas.model = ScreenshotAnnotationCanvasView.Model(crop: selection.rect,
-                                                            annotations: editor.visibleAnnotations,
-                                                            selection: selected?.frame,
-                                                            handles: editor.selectionHandles,
-                                                            bendHandle: editor.bendHandle)
-        refreshToolbar()
+        if !framing || !editor.document.isEmpty {
+            canvas.model = ScreenshotAnnotationCanvasView.Model(crop: selection.rect,
+                                                                annotations: editor.visibleAnnotations,
+                                                                selection: selected?.frame,
+                                                                handles: editor.selectionHandles,
+                                                                bendHandle: editor.bendHandle)
+        }
+        if framing {
+            toolbar?.isHidden = true
+        } else {
+            refreshToolbar()
+        }
         layOutSensitiveInfo()
         if editor.toolStyles != syncedStyles {
             toolStyles.styles = editor.toolStyles
