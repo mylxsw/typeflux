@@ -11,6 +11,7 @@ enum AppIconStyle: String, CaseIterable, Codable, Identifiable {
     case cartoonCobalt
     case cartoonLavender
     case yarnBall
+    case hairyPuppet
 
     var id: String { rawValue }
 
@@ -26,6 +27,7 @@ enum AppIconStyle: String, CaseIterable, Codable, Identifiable {
         case .cartoonCobalt: L("appIcon.cartoonCobalt")
         case .cartoonLavender: L("appIcon.cartoonLavender")
         case .yarnBall: L("appIcon.yarnBall")
+        case .hairyPuppet: L("appIcon.hairyPuppet")
         }
     }
 
@@ -41,12 +43,13 @@ enum AppIconStyle: String, CaseIterable, Codable, Identifiable {
         case .cartoonCobalt: "TypefluxIconCartoonCobalt"
         case .cartoonLavender: "TypefluxIconCartoonLavender"
         case .yarnBall: "TypefluxIconYarnBall"
+        case .hairyPuppet: "TypefluxIconHairyPuppet"
         }
     }
 
     var needsRoundedTile: Bool {
         switch self {
-        case .cartoonPetrol, .cartoonCobalt, .cartoonLavender, .yarnBall: true
+        case .cartoonPetrol, .cartoonCobalt, .cartoonLavender, .yarnBall, .hairyPuppet: true
         default: false
         }
     }
