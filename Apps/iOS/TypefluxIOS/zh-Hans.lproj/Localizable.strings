@@ -389,8 +389,7 @@
 "Private conversation" = "私密对话";
 "Your models" = "我的模型";
 "Kept on this iPhone" = "仅存本机";
-"Use for new conversations" = "设为新对话默认模型";
-"Models and pricing are provided by Typeflux Cloud. Add your own models in Settings → Model providers." = "模型与积分倍率来自 Typeflux Cloud。可以在「设置 → 模型服务商」中添加自己的模型。";
+"Use for new conversations" = "设为默认模型";
 "Typeflux Cloud conversations sync with your Mac. Conversations with your models stay on this iPhone." = "Typeflux Cloud 对话会与 Mac 同步；使用自己模型的对话只保存在这台 iPhone。";
 "This conversation stays on this iPhone, so it continues with your own models." = "这段对话只保存在本机，因此只能继续使用你自己的模型。";
 "This conversation is kept in Typeflux Cloud, so it continues with Typeflux Cloud models." = "这段对话保存在 Typeflux Cloud，因此只能继续使用 Typeflux Cloud 模型。";

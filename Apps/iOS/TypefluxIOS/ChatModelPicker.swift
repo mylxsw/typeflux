@@ -207,19 +207,38 @@ struct ChatModelEffortCard: View {
 
     private var modelsPage: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Button { page = .effort } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "chevron.left").font(.system(size: 11, weight: .semibold))
-                    Text(NSLocalizedString("Reasoning effort", comment: ""))
+            HStack(spacing: 0) {
+                Button { page = .effort } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left").font(.system(size: 11, weight: .semibold))
+                        Text(NSLocalizedString("Reasoning effort", comment: ""))
+                    }
+                    .font(.system(size: 13.5))
+                    .foregroundStyle(ChatTheme.secondary)
+                    .padding(.horizontal, 16)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
                 }
-                .font(.system(size: 13.5))
-                .foregroundStyle(ChatTheme.secondary)
-                .padding(.horizontal, 16)
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("backToReasoning")
+                Spacer(minLength: 4)
+                // In the header row so the list keeps its height on short screens.
+                if store.selectedModel != nil, store.library.defaultModelRef != store.modelRef {
+                    Button {
+                        store.setDefaultModel(store.modelRef)
+                    } label: {
+                        Label(NSLocalizedString("Use for new conversations", comment: ""), systemImage: "star")
+                            .font(.system(size: 12.5, weight: .medium))
+                            .foregroundStyle(ChatTheme.accentText)
+                            .lineLimit(1).minimumScaleFactor(0.8)
+                            .padding(.horizontal, 14)
+                            .frame(minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("model.setDefault")
+                }
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("backToReasoning")
             if store.hasConversationImages, store.availableModels.contains(where: { $0.vision != true }) {
                 Label(NSLocalizedString("This conversation needs a model that supports photos.", comment: ""),
                       systemImage: "info.circle")
@@ -256,22 +275,9 @@ struct ChatModelEffortCard: View {
                 }
                 .padding(.horizontal, 6)
             }
-            if store.selectedModel != nil, store.library.defaultModelRef != store.modelRef {
-                Button {
-                    store.setDefaultModel(store.modelRef)
-                } label: {
-                    Label(NSLocalizedString("Use for new conversations", comment: ""), systemImage: "star")
-                        .font(.system(size: 13.5, weight: .medium))
-                        .foregroundStyle(ChatTheme.accentText)
-                        .padding(.horizontal, 18).frame(minHeight: 40)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("model.setDefault")
-            }
             Rectangle().fill(ChatTheme.separator).frame(height: 0.5).padding(.top, 6)
             Text(NSLocalizedString(store.library.models.isEmpty
-                    ? "Models and pricing are provided by Typeflux Cloud. Add your own models in Settings → Model providers."
+                    ? "Models and pricing are provided by Typeflux Cloud."
                     : "Typeflux Cloud conversations sync with your Mac. Conversations with your models stay on this iPhone.",
                 comment: ""))
                 .font(.system(size: 12))

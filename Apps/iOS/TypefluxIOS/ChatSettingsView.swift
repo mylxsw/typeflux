@@ -13,12 +13,14 @@ struct ChatSettingsView: View {
     @State private var confirmingSignOut = false
     @State private var cachedBytes = 0
 
+    /// The model new conversations start with; without a chosen default, the one picked for them.
     private var defaultModelName: String {
-        guard let reference = store.library.defaultModelRef else {
-            return NSLocalizedString("Automatic", comment: "Default model")
+        let reference = store.library.defaultModelRef ?? store.preferredModelRef
+        if let model = store.availableModels.first(where: { $0.reference == reference }) {
+            return model.name
         }
-        return store.availableModels.first { $0.reference == reference }?.name
-            ?? NSLocalizedString("Unavailable", comment: "Default model")
+        return NSLocalizedString(store.library.defaultModelRef == nil ? "None" : "Unavailable",
+                                 comment: "Default model")
     }
 
     var body: some View {
