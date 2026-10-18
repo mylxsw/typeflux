@@ -737,7 +737,7 @@ struct AskConversationView: View {
                 .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
             headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
                 .accessibilityIdentifier("ask.workspace.usage")
-            browserButton
+            browserButton()
             Menu {
                 Button(L("ask.search"), action: openSearch).keyboardShortcut("k", modifiers: .command)
                 if model.isTemporaryComposer(launcher: false) {
@@ -807,10 +807,12 @@ struct AskConversationView: View {
                         headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
                             .accessibilityIdentifier("ask.workspace.usage")
                     }
-                    browserButton
+                    browserButton(showsInteriorFill: model.selectedId != nil || !style.usesGlass)
                 }
                 .padding(.horizontal, 3)
                 .frame(height: AskMetrics.headerCapsuleHeight)
+                .frame(width: style.usesGlass && model.selectedId == nil
+                    ? AskMetrics.headerCapsuleHeight : nil)
                 .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             }
         }
@@ -819,12 +821,14 @@ struct AskConversationView: View {
         .frame(height: AskMetrics.titleBarRowHeight)
     }
 
-    @ViewBuilder private var browserButton: some View {
+    @ViewBuilder private func browserButton(showsInteriorFill: Bool = true) -> some View {
         if model.tools.browserWorkspace != nil {
             AskHeaderIconButton(symbol: model.selectedId == nil ? "sidebar.right" : "globe",
                                 label: L(model.selectedId == nil ? "ask.sidebar.right.toggle" : "ask.web.title"),
                                 shortcut: "⌘⇧B",
-                                active: showsBrowserPanel) { setBrowser(!showsBrowserPanel) }
+                                active: showsBrowserPanel, showsInteriorFill: showsInteriorFill) {
+                setBrowser(!showsBrowserPanel)
+            }
                 .keyboardShortcut("b", modifiers: [.command, .shift])
                 .accessibilityIdentifier("ask.workspace.browser")
         }

@@ -71,6 +71,7 @@ struct AskHeaderIconButton: View {
     var label: String
     var shortcut: String?
     var active = false
+    var showsInteriorFill = true
     var action: () -> Void
     @State private var hovering = false
     @Environment(\.interfaceStyle) private var style
@@ -85,7 +86,8 @@ struct AskHeaderIconButton: View {
             Image(systemName: symbol).font(.system(size: 13.5, weight: .regular))
                 .foregroundStyle(AskHeaderIconButton.ink(active: active, hovering: hovering))
                 .frame(width: 30, height: 28)
-                .background(hovering || active ? AskTheme.hoverFill : Color.clear, in: style.controlShape(height: 28))
+                .background(showsInteriorFill && (hovering || active) ? AskTheme.hoverFill : Color.clear,
+                            in: style.controlShape(height: 28))
                 .contentShape(style.controlShape(height: 28))
         }
         .buttonStyle(AskPressableStyle())
