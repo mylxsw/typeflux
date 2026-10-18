@@ -61,6 +61,12 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             screenObservation: AskScreenObservation(capturer: screenCapture, permission: screenCapturePermission)
         )
         let sandbox = tools.sandbox
+        if services?.tools == nil {
+            // One embedded browser for the window, with a profile kept apart from other web views.
+            tools.embeddedBrowser = AskEmbeddedBrowserTool(
+                workspace: AskBrowserWorkspace(policy: AskBrowserSitePolicy(defaults: settings.defaults))
+            )
+        }
         self.tools = tools
         let cache: any AskCaching = services?.cache ?? conversationCache ?? RecoveringAskConversationCache()
         let deviceKey = "ask.deviceId"

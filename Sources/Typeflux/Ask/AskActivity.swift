@@ -54,7 +54,7 @@ enum AskActivity {
         static func of(_ name: String) -> Category {
             switch name {
             case "web_search", "research": .search
-            case "web_fetch", "browser": .web
+            case "web_fetch", "browser", AskEmbeddedBrowserTool.name: .web
             case "files", "project_files", "artifact": .files
             case "run_code", "run_command": .code
             case "computer": .computer
@@ -124,7 +124,7 @@ enum AskActivity {
                     value.storedArtifacts.append(ref)
                 }
             }
-            guard !["computer", "browser"].contains(name),
+            guard !["computer", "browser", AskEmbeddedBrowserTool.name].contains(name),
                   let result = results.first(where: { $0.toolCallId == call.id }),
                   result.isError != true || result.harness?.outcome != nil else { continue }
             for (index, image) in result.retainedResultImages.enumerated() {

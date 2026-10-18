@@ -284,6 +284,12 @@ enum AskTheme {
         case "artifact": return L("ask.artifact.title")
         case "project_files": return L("ask.project.title") + " · " + (args["action"] as? String ?? "")
         case "update_plan": return L("ask.tool.update_plan")
+        case AskEmbeddedBrowserTool.name:
+            let action = args["action"] as? String ?? ""
+            let title = AskEmbeddedBrowserTool.actions.contains(action)
+                ? L("ask.web.action." + action) : L("ask.tool.web_browser")
+            let host = (args["url"] as? String).flatMap { URL(string: $0)?.host }
+            return host.map { title + " · " + $0 } ?? title
         case "research":
             let question = (args["question"] as? String).map { String($0.prefix(60)) }
             return question.map { L("ask.tool.research") + " · " + $0 } ?? L("ask.tool.research")
@@ -1252,7 +1258,7 @@ enum AskPresentation {
         case .failed: return L("ask.tool.failed")
         default:
             guard result?.retainedResultImages.isEmpty == false else { return L("ask.tool.done") }
-            let captures = call.map { ["computer", "browser"].contains($0.function.name) } ?? true
+            let captures = call.map { ["computer", "browser", AskEmbeddedBrowserTool.name].contains($0.function.name) } ?? true
             return L(captures ? "ask.image.captured" : "ask.image.generated")
         }
     }
@@ -1261,7 +1267,7 @@ enum AskPresentation {
         switch call.function.name {
         case "generate_image": return "photo.badge.plus"
         case "computer": return "desktopcomputer"
-        case "browser": return "globe"
+        case "browser", AskEmbeddedBrowserTool.name: return "globe"
         case "web_search": return "magnifyingglass"
         case "web_fetch": return "network"
         case "artifact": return "doc.richtext"

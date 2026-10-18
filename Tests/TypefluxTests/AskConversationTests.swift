@@ -216,6 +216,8 @@ actor AskTestAPI: AskAPI {
 @MainActor
 final class AskTestTools: AskToolExecuting {
     var executions = 0
+    /// Set to show the embedded browser in the window under test.
+    var browserWorkspace: AskBrowserWorkspace?
     var bindingVersion = "v1"
     var targetID = "test-target"
     var beforeBinding: (() -> Void)?

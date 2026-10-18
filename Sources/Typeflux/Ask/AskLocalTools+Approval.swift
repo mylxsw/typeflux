@@ -1,6 +1,8 @@
 import AppKit
 
 extension AskLocalTools {
+    // Every built-in tool resolves its binding here, so approvals stay comparable in one place.
+    // swiftlint:disable:next cyclomatic_complexity
     func approvalBinding(for call: AskToolCall, conversationId: String) async throws -> AskToolBinding {
         if Self.workflowChatNames.contains(call.function.name) {
             return try workflowBinding(call, conversationId: conversationId)
@@ -63,6 +65,11 @@ extension AskLocalTools {
             definition = settings?.askCodeExecutionEnabled == true ? AskHostCommand.definition : nil
             target = .init(kind: "workspace", id: "host-command:" + conversationId, version: "host-command-v1")
             summary = request.command
+        case AskEmbeddedBrowserTool.name:
+            guard let embeddedBrowser else { throw AskLocalError.message(L("ask.tool.unavailable")) }
+            definition = AskEmbeddedBrowserTool.definition
+            let binding = try embeddedBrowser.binding(args)
+            target = binding.target; summary = binding.summary; reusable = binding.reusable
         case "computer", "browser":
             definition = automationDefinitions.first { $0.name == call.function.name }
             target = try await automationBinding(call.function.name, args: args, conversationId: conversationId)
