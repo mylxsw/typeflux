@@ -103,7 +103,9 @@ struct ClipboardShelfView: View {
                                     .id(row.entry.id)
                             }
                         }
-                        .padding(.horizontal, 16)
+                        // Rotated section titles extend beyond their narrow layout frame.
+                        .padding(.leading, 28)
+                        .padding(.trailing, 16)
                         // Room for the selected card's lift and shadow.
                         .padding(.top, 10)
                         .padding(.bottom, 14)

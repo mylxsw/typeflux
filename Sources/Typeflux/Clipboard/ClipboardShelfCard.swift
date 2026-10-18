@@ -37,7 +37,8 @@ struct ClipboardShelfCard: View, Equatable {
         VStack(spacing: 0) {
             ClipboardShelfCardHeader(entry: entry)
             ClipboardShelfCardBody(entry: entry, info: info, isMissing: isMissing)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .frame(width: Self.width, height: Self.height - Self.headerHeight - Self.footerHeight,
+                       alignment: .topLeading)
                 .clipped()
             footer(info: info)
         }
