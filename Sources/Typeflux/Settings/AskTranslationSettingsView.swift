@@ -11,7 +11,9 @@ struct AskTranslationSettingsView: View {
     @MainActor
     init(settings: SettingsStore, library: AskModelLibrary? = nil,
          credentials: any AskTranslationCredentialStoring = AskKeychainTranslationCredentials()) {
-        _model = StateObject(wrappedValue: AskTranslationSettingsModel(store: settings, credentials: credentials))
+        _model = StateObject(wrappedValue: AskTranslationSettingsModel(
+            store: settings, credentials: credentials, loadConfiguredImmediately: false
+        ))
         self.library = library ?? .shared
     }
 
@@ -34,7 +36,7 @@ struct AskTranslationSettingsView: View {
                 }
             }
         }
-        .onAppear(perform: model.reloadConfigured)
+        .task { await model.refreshConfigured() }
         .sheet(isPresented: Binding(get: { model.editing != nil }, set: { if !$0 { model.cancelEdit() } })) {
             if let provider = model.editing { AskTranslationProviderSheet(model: model, provider: provider) }
         }

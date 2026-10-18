@@ -271,8 +271,6 @@ struct StudioView: View {
                 alignment: .topLeading
             )
             .id(viewModel.currentSection)
-            .transition(.opacity)
-            .animation(.easeInOut(duration: 0.15), value: viewModel.currentSection)
         }
         .interfaceStyle(following: interfaceStyleObserver)
         .onChange(of: interfaceStyleObserver.style) { viewModel.interfaceStyle = $0 }

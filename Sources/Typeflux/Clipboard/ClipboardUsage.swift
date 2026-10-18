@@ -15,6 +15,10 @@ struct ClipboardUsage: Equatable {
 
     let apps: [App]
 
+    init(apps: [App]) {
+        self.apps = apps
+    }
+
     var totalBytes: Int64 { apps.reduce(0) { $0 + $1.bytes } }
     var totalCount: Int { apps.reduce(0) { $0 + $1.itemCount } }
 

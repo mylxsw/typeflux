@@ -19,21 +19,38 @@ final class AskTranslationSettingsModel: ObservableObject {
     /// Where connection tests go; tests answer them without the network.
     var http: any AskTranslationHTTP = AskURLSessionTranslationHTTP()
     private var testTask: Task<Void, Never>?
+    private var configuredRefreshGeneration = 0
 
-    init(store: SettingsStore, credentials: any AskTranslationCredentialStoring = AskKeychainTranslationCredentials()) {
+    init(store: SettingsStore, credentials: any AskTranslationCredentialStoring = AskKeychainTranslationCredentials(),
+         loadConfiguredImmediately: Bool = true) {
         self.store = store
         self.credentials = credentials
         settings = store.askTranslationSettings
         secondLanguage = store.askTranslationSecondLanguage
             ?? AskTranslationLanguages.defaultSecond(for: AppLocalization.shared.language)
-        reloadConfigured()
+        if loadConfiguredImmediately { reloadConfigured() }
     }
 
     deinit { testTask?.cancel() }
 
     func reloadConfigured() {
+        configuredRefreshGeneration += 1
         configured = Set(AskTranslationProvider.allCases.filter {
             credentials.credentials(for: $0)?.isComplete(for: $0) == true
+        })
+    }
+
+    /// Keychain reads can block; populate the badges after the pane has appeared.
+    func refreshConfigured() async {
+        configuredRefreshGeneration += 1
+        let generation = configuredRefreshGeneration
+        let credentials = credentials
+        let values = await Task.detached(priority: .userInitiated) {
+            AskTranslationProvider.allCases.map { ($0, credentials.credentials(for: $0)) }
+        }.value
+        guard !Task.isCancelled, generation == configuredRefreshGeneration else { return }
+        configured = Set(values.compactMap { provider, value in
+            value?.isComplete(for: provider) == true ? provider : nil
         })
     }
 
@@ -163,6 +180,7 @@ final class AskTranslationSettingsModel: ObservableObject {
             show(L("ask.translation.keychainFailed"), error: true)
             return false
         }
+        configuredRefreshGeneration += 1
         configured.insert(editing)
         cancelEdit()
         return true
@@ -172,6 +190,7 @@ final class AskTranslationSettingsModel: ObservableObject {
     func remove() {
         guard let editing else { return }
         credentials.remove(editing)
+        configuredRefreshGeneration += 1
         configured.remove(editing)
         for service in settings.services where service.provider == editing { setEnabled(service.id, false) }
         cancelEdit()

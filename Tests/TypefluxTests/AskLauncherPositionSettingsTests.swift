@@ -6,6 +6,16 @@ import Testing
 @Suite("Ask launcher position settings", .exclusiveUIState)
 @MainActor
 struct AskLauncherPositionSettingsTests {
+    @MainActor
+    private final class InputSourceProbe: AskLauncherInputSourceListing {
+        var calls = 0
+
+        func availableSources() -> [AskLauncherInputSource] {
+            calls += 1
+            return []
+        }
+    }
+
     private func store() throws -> SettingsStore {
         SettingsStore(defaults: try #require(UserDefaults(suiteName: "AskLauncherPosition-\(UUID().uuidString)")))
     }
@@ -77,6 +87,30 @@ struct AskLauncherPositionSettingsTests {
                         || ($0.role == NSAccessibility.Role.button.rawValue && $0.label == "Center again")
                 })
                 #expect(settings.askLauncherAnchors["built-in"] == .init(left: 40, fromTop: 120))
+            }
+        }
+    }
+
+    @Test func otherLauncherPanesDoNotEnumerateInputSources() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            let probe = InputSourceProbe()
+            try await SettingsBehaviorTestSupport.withWindow(
+                LauncherSettingsView(settings: settings, pane: .keywords, inputSources: probe),
+                width: 900, height: 700
+            ) { window, _ in
+                try await SettingsBehaviorTestSupport.wait {
+                    SettingsBehaviorTestSupport.contains(L("ask.settings.keywords.listFootnote"), in: window)
+                }
+                #expect(probe.calls == 0)
+            }
+            try await SettingsBehaviorTestSupport.withWindow(
+                LauncherSettingsView(settings: settings, pane: .basics, inputSources: probe),
+                width: 900, height: 700
+            ) { window, _ in
+                try await SettingsBehaviorTestSupport.wait {
+                    SettingsBehaviorTestSupport.contains(L("launcher.inputSource.title"), in: window)
+                }
+                #expect(probe.calls == 1)
             }
         }
     }

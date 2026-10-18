@@ -81,6 +81,18 @@ final class SQLiteClipboardHistoryStoreTests: XCTestCase {
         XCTAssertEqual(item.byteSize, 150)
     }
 
+    func testUsageMatchesFullItemGroupingWithoutReadingPayloads() throws {
+        let notes = ClipboardSource(bundleID: "com.apple.Notes", appName: "Notes")
+        store.record(.text("one"), source: notes, at: date(0))
+        store.record(.text("two two"), source: notes, at: date(1))
+        store.record(.files([ClipboardTestSupport.makeFile(named: "usage.txt", in: directory, bytes: 80)]),
+                     source: ClipboardSource(bundleID: "com.apple.finder", appName: "Finder"), at: date(2))
+        store.record(.text("unknown"), source: nil, at: date(3))
+
+        XCTAssertEqual(store.usage(), ClipboardUsage(items: store.items(limit: Int(Int32.max))))
+        XCTAssertEqual(store.usage().apps.first { $0.bundleID == "com.apple.finder" }?.bytes, 0)
+    }
+
     func testPinnedItemsSurvivePurgeAndTrim() throws {
         let pinned = try XCTUnwrap(store.record(.text("pinned"), source: nil, at: date(0)))
         store.setPinned(true, id: pinned.id)

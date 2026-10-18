@@ -199,6 +199,17 @@ struct AskTranslationSettingsModelTests {
         return AskTranslationSettingsModel(store: SettingsStore(defaults: defaults), credentials: credentials)
     }
 
+    @Test func deferredCredentialStatusLoadsAfterThePaneAppears() async {
+        let credentials = AskTestTranslationCredentials([.deepl: .init(key: "k")])
+        let defaults = UserDefaults(suiteName: "AskTranslationDeferred-" + UUID().uuidString)!
+        let model = AskTranslationSettingsModel(
+            store: SettingsStore(defaults: defaults), credentials: credentials, loadConfiguredImmediately: false
+        )
+        #expect(model.configured.isEmpty)
+        await model.refreshConfigured()
+        #expect(model.configured == [.deepl])
+    }
+
     @Test func orderedServicesPersistAndUnconfiguredEnablingOpensTheSheet() {
         let model = model(AskTestTranslationCredentials([.deepl: .init(key: "k")]))
         #expect(model.configured == [.deepl])

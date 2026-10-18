@@ -71,6 +71,39 @@ final class SQLiteClipboardHistoryStore: ClipboardHistoryStore {
         }
     }
 
+    /// Read only the metadata needed by Settings; full clipboard text and file paths can be large.
+    func usage() -> ClipboardUsage {
+        queue.sync {
+            var statement: OpaquePointer?
+            defer { sqlite3_finalize(statement) }
+            let sql = "SELECT source_bundle_id, source_app_name, payload, byte_size FROM clipboard_items ORDER BY date DESC;"
+            guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else {
+                ErrorLogStore.shared.log("Failed to read clipboard usage")
+                return ClipboardUsage(apps: [])
+            }
+
+            var groups: [String: (name: String?, count: Int, bytes: Int64)] = [:]
+            while sqlite3_step(statement) == SQLITE_ROW {
+                let bundleID = string(at: 0, in: statement).flatMap { $0.isEmpty ? nil : $0 }
+                let key = bundleID ?? ""
+                var group = groups[key] ?? (name: nil, count: 0, bytes: 0)
+                if group.name == nil { group.name = string(at: 1, in: statement) }
+                group.count += 1
+                if string(at: 2, in: statement) != ClipboardItem.Payload.files.rawValue {
+                    group.bytes += sqlite3_column_int64(statement, 3)
+                }
+                groups[key] = group
+            }
+            let apps = groups.map { key, group in
+                ClipboardUsage.App(bundleID: key.isEmpty ? nil : key, name: group.name,
+                                   itemCount: group.count, bytes: group.bytes)
+            }.sorted { lhs, rhs in
+                lhs.bytes != rhs.bytes ? lhs.bytes > rhs.bytes : (lhs.name ?? "") < (rhs.name ?? "")
+            }
+            return ClipboardUsage(apps: apps)
+        }
+    }
+
     func setPinned(_ pinned: Bool, id: UUID) {
         mutate("Clipboard pin failed") {
             try self.execute(sql: "UPDATE clipboard_items SET pinned = ? WHERE id = ? AND snippet_name IS NULL;") { statement in

@@ -43,10 +43,14 @@ struct LauncherSettingsView: View {
                 AskWorkflowSettingsView(store: workflows, settings: settings)
             }
         }
-        .onAppear(perform: reload)
+        .onAppear {
+            if pane == .basics { reload() }
+        }
         .onReceive(DistributedNotificationCenter.default().publisher(
             for: Notification.Name(kTISNotifyEnabledKeyboardInputSourcesChanged as String)
-        )) { _ in reloadInputSources() }
+        )) { _ in
+            if pane == .basics { reloadInputSources() }
+        }
         .alert(L("ask.inputHistory.clear"), isPresented: $confirmingClearInputHistory) {
             Button(L("common.cancel"), role: .cancel) {}
             Button(L("ask.inputHistory.deleteAll"), role: .destructive) { settings.clearLauncherInputHistory() }

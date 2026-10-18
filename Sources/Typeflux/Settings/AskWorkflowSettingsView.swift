@@ -138,7 +138,7 @@ struct AskWorkflowSettingsView: View {
             header
             TFCard { list }
         }
-        .onAppear { store.reload() }
+        .task { await store.refresh() }
         .sheet(isPresented: $showingGallery) {
             AskWorkflowGallerySheet(
                 store: store,

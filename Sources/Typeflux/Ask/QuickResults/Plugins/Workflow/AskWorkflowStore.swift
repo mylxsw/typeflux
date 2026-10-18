@@ -37,6 +37,7 @@ final class AskWorkflowStore: ObservableObject {
         let scanned = await Task.detached(priority: .userInitiated) {
             Self.scan(root: root, trusted: trusted, disabled: disabled, fileManager: .default)
         }.value
+        guard !Task.isCancelled else { return }
         apply(scanned)
     }
 

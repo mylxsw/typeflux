@@ -13,6 +13,7 @@ protocol ClipboardHistoryStore: AnyObject {
     @discardableResult
     func record(_ capture: ClipboardCapture, source: ClipboardSource?, at date: Date) -> ClipboardItem?
     func items(limit: Int) -> [ClipboardItem]
+    func usage() -> ClipboardUsage
     /// Updates an existing text item, or creates a text snapshot (e.g. of a voice result).
     /// Throws on validation or persistence failure; successful saves are never pinned.
     func saveSnippet(id: UUID?, name: String, text: String, alias: String,
