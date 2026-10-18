@@ -247,7 +247,8 @@ struct AskToolPreparationTests {
         #expect(await f.base.api.results.isEmpty && f.desktop.events.isEmpty)
     }
 
-    @Test func `classified failure advances the real local engine`() async throws {
+    @Test(arguments: ["denied", "failed"])
+    func `classified failure advances the real local engine`(_ status: String) async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let engine = AskLocalEngine(directory: root)
@@ -273,14 +274,15 @@ struct AskToolPreparationTests {
         #expect(value.run?.status == "waiting_tool")
         let refusal = AskToolPreparationFailure(AskObservationError.disabled)
         let receipt = AskToolResultRequest(runId: run.id, deviceId: "device", toolCallId: "call",
-                                           content: refusal.message, isError: true, harness: .init(
+                                           content: status == "failed" ? "Exit code: 1" : refusal.message,
+                                           isError: true, harness: .init(
                                                version: 1,
-                                               outcome: refusal.outcome
+                                               outcome: status == "failed" ? .init(status: status) : refusal.outcome
                                            ))
         value = try await engine.result(conversationId: value.id, request: receipt, token: "")
         #expect(value.run?.status == "waiting_inference" && value.run?.pending.isEmpty == true)
         #expect(value.run?.needsRecoveryInspection == false)
-        #expect(value.messages.last?.harness?.outcome?.status == "denied")
+        #expect(value.messages.last?.harness?.outcome?.status == status)
         let duplicate = try await engine.result(conversationId: value.id, request: receipt, token: "")
         #expect(duplicate.revision == value.revision)
     }

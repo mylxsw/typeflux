@@ -231,6 +231,10 @@ final class AskAgentToolsTests: XCTestCase {
         let failure = try await tools.executeApproved(failed, conversationId: "c", binding: failedBinding, authorize: {})
         XCTAssertTrue(failure.isError)
         XCTAssertTrue(failure.content.contains("Exit code: 7"))
+        XCTAssertEqual(failure.outcome?.safeStatus, .failed)
+        let timedOut = try await AskHostCommand().run(command: "sleep 2", timeout: 1)
+        XCTAssertTrue(timedOut.isError)
+        XCTAssertEqual(timedOut.outcome?.safeStatus, .timeout)
         settings.askCodeExecutionEnabled = false
         let disabledDefinitions = await tools.definitions(conversationId: "c")
         XCTAssertFalse(disabledDefinitions.contains { $0.name == "run_command" })
@@ -267,6 +271,7 @@ final class AskAgentToolsTests: XCTestCase {
             let failed = try await tools.execute(call("run_code", ["language": "shell", "code": "echo hi; exit 2"]), conversationId: "c")
             XCTAssertTrue(failed.isError)
             XCTAssertTrue(failed.content.contains("Exit code: 2"))
+            XCTAssertEqual(failed.outcome?.safeStatus, .failed)
         }
         settings.askCodeExecutionEnabled = false
         do {

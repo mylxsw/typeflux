@@ -74,7 +74,7 @@ struct AskApprovalScope: Codable, Equatable, Sendable {
 }
 
 enum AskExecutionStatus: String, CaseIterable, Sendable {
-    case ok, denied, invalid, timeout, cancelled, unknown
+    case ok, failed, denied, invalid, timeout, cancelled, unknown
 }
 
 struct AskExecutionOutcome: Codable, Equatable, Sendable {

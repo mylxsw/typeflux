@@ -403,9 +403,11 @@ final class AskLocalTools: AskToolExecuting {
             let timeout = args["timeout_seconds"] as? Int ?? AskCodeSandbox.defaultTimeout
             let execution = try await sandbox.run(language, code: code, conversationId: conversationId, timeout: timeout)
             let workspace = try sandbox.workspace(for: conversationId).path
+            let status: AskExecutionStatus = execution.timedOut ? .timeout
+                : execution.outcomeUnknown || execution.imageIncomplete ? .unknown
+                : execution.exitCode == 0 ? .ok : .failed
             return .init(content: AskCodeSandbox.report(execution, workspace: workspace), image: execution.image,
-                         isError: execution.timedOut || execution.exitCode != 0 || execution.imageIncomplete,
-                         outcome: execution.imageIncomplete ? .init(status: execution.timedOut || execution.exitCode != 0 ? "unknown" : "ok") : nil)
+                         isError: status != .ok, outcome: .init(status: status.rawValue))
         case "skill":
             guard let name = args["name"] as? String else { throw AskLocalError.message(L("ask.tool.invalid")) }
             guard enabledSkills.contains(where: { $0.name == name }) else {

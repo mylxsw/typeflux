@@ -171,6 +171,7 @@ struct AskCodeSandbox: Sendable {
         var changedFiles: [(name: String, size: Int)]
         var image: String?
         var imageIncomplete = false
+        var outcomeUnknown = false
     }
 
     func run(_ language: Language, code: String, conversationId: String,
@@ -225,9 +226,13 @@ struct AskCodeSandbox: Sendable {
         try Task.checkCancellation()
         let changed = Self.changes(before: before, after: workspace.snapshot())
         let image = await Self.firstImage(changed, workspace: workspace)
+        let outcomeUnknown: Bool = switch result.termination {
+        case .exited: result.outputTruncated
+        case .signalled, .timedOut, .cancelled, .outputLimit: true
+        }
         return Execution(exitCode: result.exitCode, timedOut: result.termination == .timedOut,
                          stdout: result.stdout, stderr: result.stderr, changedFiles: changed,
-                         image: image.url, imageIncomplete: image.incomplete)
+                         image: image.url, imageIncomplete: image.incomplete, outcomeUnknown: outcomeUnknown)
     }
 
     private func readableRoots(control: AskSecureDirectory, root: AskSecureDirectory,

@@ -59,7 +59,13 @@ struct AskHostCommand: Sendable {
         if !result.stdout.isEmpty { lines += ["--- stdout ---", result.stdout] }
         if !result.stderr.isEmpty { lines += ["--- stderr ---", result.stderr] }
         if result.outputTruncated { lines.append("[output truncated]") }
-        return .init(content: lines.joined(separator: "\n"),
-                     isError: result.termination != .exited(0) || result.outputTruncated)
+        let status: AskExecutionStatus = switch result.termination {
+        case .exited(0): result.outputTruncated ? .unknown : .ok
+        case .exited: result.outputTruncated ? .unknown : .failed
+        case .timedOut: .timeout
+        case .signalled, .outputLimit, .cancelled: .unknown
+        }
+        return .init(content: lines.joined(separator: "\n"), isError: status != .ok,
+                     outcome: .init(status: status.rawValue))
     }
 }
