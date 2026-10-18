@@ -168,7 +168,7 @@ extension AXTextInjector {
             return nil
         }
         guard let snapshot = result.load() else {
-            NetworkDebugLogger.logMessage("[Text Injection] pasteboard snapshot exceeded size limit")
+            NetworkDebugLogger.logMessage("[Text Injection] pasteboard snapshot unavailable")
             return nil
         }
         return snapshot
@@ -186,15 +186,24 @@ extension AXTextInjector {
         for item in pasteboard.pasteboardItems ?? [] {
             var representations: [(type: NSPasteboard.PasteboardType, data: Data)] = []
             for type in item.types {
-                guard let data = item.data(forType: type) else { return nil }
-                guard data.count <= maximumBytes - totalBytes else { return nil }
+                guard let data = item.data(forType: type) else {
+                    NetworkDebugLogger.logMessage("[Text Injection] pasteboard snapshot representation unavailable")
+                    return nil
+                }
+                guard data.count <= maximumBytes - totalBytes else {
+                    NetworkDebugLogger.logMessage("[Text Injection] pasteboard snapshot exceeded size limit")
+                    return nil
+                }
                 totalBytes += data.count
                 representations.append((type: type, data: data))
             }
             capturedItems.append(PasteboardItemSnapshot(representations: representations))
         }
 
-        guard pasteboard.changeCount == initialChangeCount else { return nil }
+        guard pasteboard.changeCount == initialChangeCount else {
+            NetworkDebugLogger.logMessage("[Text Injection] pasteboard changed during snapshot")
+            return nil
+        }
         return PasteboardSnapshot(changeCount: initialChangeCount, items: capturedItems)
     }
 

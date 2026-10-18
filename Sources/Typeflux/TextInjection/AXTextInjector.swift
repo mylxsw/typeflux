@@ -239,7 +239,7 @@ final class AXTextInjector: TextInjector {
     static let replacementAXMessagingTimeout: Float = 0.25
     static let pasteboardReadTimeoutMilliseconds = 250
     static let pasteboardSnapshotTimeoutMilliseconds = 250
-    static let maximumPasteboardSnapshotBytes = 8 * 1_024 * 1_024
+    static let maximumPasteboardSnapshotBytes = 32 * 1_024 * 1_024
     /// Pasteboard history tools use this convention to exclude temporary payloads.
     static let transientPasteboardType = NSPasteboard.PasteboardType(
         "org.nspasteboard.TransientType"

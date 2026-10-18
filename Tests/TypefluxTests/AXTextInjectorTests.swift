@@ -1283,6 +1283,22 @@ final class AXTextInjectorTests: XCTestCase {
         ))
     }
 
+    func testDeliverySnapshotPreservesStoredImageWithLargeTIFFRepresentation() throws {
+        let pasteboard = NSPasteboard.withUniqueName()
+        let item = NSPasteboardItem()
+        let tiff = Data(repeating: 0x01, count: 15 * 1_024 * 1_024)
+        item.setData(tiff, forType: .tiff)
+        item.setData(Data([0x89, 0x50, 0x4e, 0x47]), forType: .png)
+        pasteboard.writeObjects([item])
+
+        let snapshot = try XCTUnwrap(AXTextInjector.capturePasteboardSnapshot(
+            from: pasteboard,
+            maximumBytes: AXTextInjector.maximumPasteboardSnapshotBytes
+        ))
+
+        XCTAssertEqual(snapshot.items.first?.representations.first(where: { $0.type == .tiff })?.data.count, tiff.count)
+    }
+
     func testCapturePasteboardSnapshotRejectsNegativeSizeLimit() {
         let pasteboard = NSPasteboard.withUniqueName()
         pasteboard.setString("original", forType: .string)

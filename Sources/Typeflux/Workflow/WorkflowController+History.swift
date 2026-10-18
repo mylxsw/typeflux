@@ -261,7 +261,7 @@ extension WorkflowController {
             clipboardAction.start(entry: entry, plainText: plainText, paste: paste, actions: clipboardContentActions,
                 authorized: { [weak self] in
                     guard let self else { return false }
-                    return self.clipboardActionGeneration == generation && self.billingAuth() === auth && auth.sessionGeneration == accountGeneration && self.historyPanelEntries().contains(entry)
+                    return self.clipboardActionGeneration == generation && self.billingAuth() === auth && auth.sessionGeneration == accountGeneration && self.historyPanelEntries().contains { $0.id == entry.id }
                 }, beforeCommit: { [weak self] in self?.isHistoryPickerPresented == true },
                 committed: { [weak self] in
                     guard let self else { return }

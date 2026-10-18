@@ -4680,6 +4680,7 @@ private final class MockClipboardContentActions: ClipboardContentActing, @unchec
     private var storedWrites: [(title: String, plainText: Bool)] = []
     private var storedPasteShortcutCount = 0
     var writeSucceeds = true
+    var onWrite: (() -> Void)?
     var revealed: [[URL]] = []
     var savedURL: URL?
     var recognizedText: String?
@@ -4692,6 +4693,7 @@ private final class MockClipboardContentActions: ClipboardContentActing, @unchec
 
     func writeToPasteboard(_ entry: ClipboardEntry, asPlainText: Bool, image: AskWorkflowImage.Clipboard?) -> Bool {
         lock.withLock { storedWrites.append((entry.title, asPlainText)) }
+        onWrite?()
         return writeSucceeds
     }
 
@@ -4815,6 +4817,22 @@ extension WorkflowControllerProcessingTests {
         await waitUntil { harness.actions.pasteShortcutCount == 1 }
         XCTAssertEqual(harness.actions.pasteShortcutCount, 1)
         XCTAssertTrue(harness.textInjector.insertedTexts.isEmpty)
+    }
+
+    @MainActor func testPastingOlderImageStillSendsPasteAfterHistoryDateChanges() async {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.actions.onWrite = {
+            _ = harness.store.record(.image(png: Data([1]), pixelWidth: 2, pixelHeight: 2),
+                                     source: nil, at: Date())
+        }
+        harness.controller.handleHistoryPickerRequested()
+        let index = harness.index(of: L("clipboard.entry.image"))
+        XCTAssertGreaterThan(index, 0)
+
+        harness.model.perform(.paste, at: index)
+
+        await waitUntil { harness.actions.pasteShortcutCount == 1 }
+        XCTAssertEqual(harness.actions.pasteShortcutCount, 1)
     }
 
     @MainActor func testPastingFilePathsAsPlainText() async {
