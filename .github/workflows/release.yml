@@ -7,17 +7,18 @@ on:
   push:
     branches:
       - pre-release
+  workflow_dispatch: {}
 
 concurrency:
   group: release-${{ github.event.release.tag_name || github.ref }}
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build-signed-macos-app:
-    runs-on: macos-latest
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 180
     strategy:
       fail-fast: false
@@ -25,9 +26,11 @@ jobs:
         include:
           - release_arch: arm64
             package_arch: apple-silicon
+            runner: typeflux-macos-vm
             release_script: ./scripts/release_notarize.sh
           - release_arch: x86_64
             package_arch: intel
+            runner: macos-latest
             release_script: ./scripts/release_intel.sh
     env:
       APP_NAME: Typeflux
@@ -42,6 +45,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Add Homebrew tools to self-hosted PATH
+        if: runner.environment == 'self-hosted'
+        run: echo /opt/homebrew/bin >> "$GITHUB_PATH"
 
       - name: Configure temporary paths
         run: |
@@ -60,7 +67,15 @@ jobs:
             typeflux-bundled-models-${{ runner.os }}-
 
       - name: Install packaging tools
+        if: runner.environment == 'github-hosted'
         run: brew install create-dmg cmake
+
+      - name: Verify preinstalled packaging tools
+        if: runner.environment == 'self-hosted'
+        run: |
+          test "$RUNNER_ARCH" = ARM64
+          create-dmg --version
+          cmake --version
 
       - name: Import Developer ID certificate
         env:
@@ -209,6 +224,8 @@ jobs:
     needs: build-signed-macos-app
     runs-on: macos-latest
     timeout-minutes: 45
+    permissions:
+      contents: write
     env:
       APP_NAME: Typeflux
       BUILD_DIR: .build/release
