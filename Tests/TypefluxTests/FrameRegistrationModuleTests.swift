@@ -205,7 +205,7 @@ private final class RegistrationHealthState: @unchecked Sendable {
             let model = ModuleHealthSettingsModel(registry: registry)
             try await UI.withWindow(ModuleHealthSettingsView(model: model), width: 640, height: 190) { _, host in
                 try await UI.wait { model.health[.frameRegistration]?.failure == .healthPersistence }
-                #expect(UI.contains(L("settings.services.frameRegistration"), in: host))
+                #expect(UI.contains(L(model.featureKey(.frameRegistration)), in: host))
                 try UI.snapshot(host, name: "frame-registration-health")
                 let button = try #require(UI.elements(in: host).first { $0.value("accessibilityIdentifier") as? String == "settings.services.frameRegistration.recover" })
                 clock.advance()

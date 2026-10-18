@@ -233,7 +233,7 @@ private final class FileHealthClock: @unchecked Sendable {
             let model = ModuleHealthSettingsModel(registry: registry)
             try await UI.withWindow(ModuleHealthSettingsView(model: model), width: 640, height: 190) { _, host in
                 try await UI.wait { model.health[.fileIndex]?.failure == .healthPersistence }
-                #expect(UI.contains(L("settings.services.fileIndex"), in: host))
+                #expect(UI.contains(L(model.featureKey(.fileIndex)), in: host))
                 try UI.snapshot(host, name: "file-health")
                 let button = try #require(UI.elements(in: host).first { $0.value("accessibilityIdentifier") as? String == "settings.services.fileIndex.recover" })
                 clock.advance(); try button.press()

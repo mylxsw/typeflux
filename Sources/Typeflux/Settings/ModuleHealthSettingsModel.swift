@@ -12,6 +12,75 @@ final class ModuleHealthSettingsModel: ObservableObject {
     private var lifetime = UUID()
     private(set) var observing = false
 
+    var affectedEntries: [ModuleRegistration] {
+        entries.filter { entry in
+            guard !observationFailed.contains(entry.id) else { return false }
+            guard let snapshot = health[entry.id] else { return false }
+            return snapshot.failure == .quarantined || snapshot.failure == .healthPersistence
+                || snapshot.state == .degraded || snapshot.state == .circuitOpen || snapshot.state == .recovering
+        }
+    }
+
+    var unavailableCount: Int {
+        let unavailable = affectedEntries.filter { entry in
+            guard let snapshot = health[entry.id] else { return false }
+            return snapshot.failure == .quarantined || snapshot.failure == .healthPersistence
+                || snapshot.state == .degraded
+        }
+        return Set(unavailable.map { featureKey($0.id) }).count
+    }
+
+    var affectedFeatureCount: Int {
+        Set(affectedEntries.map { featureKey($0.id) }).count
+    }
+
+    var summaryKey: String {
+        if entries.isEmpty { return "settings.services.summaryUnknown" }
+        if unavailableCount > 0 { return "settings.services.summaryUnavailable" }
+        if !observationFailed.isEmpty { return "settings.services.summaryUnknown" }
+        if !affectedEntries.isEmpty { return "settings.services.summaryRecovering" }
+        return "settings.services.summaryHealthy"
+    }
+
+    func canOfferRetry(_ id: ModuleID) -> Bool {
+        guard canRecover(id), let snapshot = health[id] else { return false }
+        guard snapshot.failure != .invalidPolicy else { return false }
+        let paused = snapshot.failure == .quarantined || snapshot.failure == .healthPersistence
+            || snapshot.state == .degraded
+        return paused && snapshot.state != .circuitOpen && snapshot.state != .recovering
+            && snapshot.activeOperations == 0 && !snapshot.hasLifecycleWork
+    }
+
+    func detailKey(_ id: ModuleID) -> String {
+        guard let snapshot = health[id] else { return "settings.services.summaryUnknownDetail" }
+        if snapshot.failure == .invalidPolicy { return "settings.services.invalidPolicyDetail" }
+        if snapshot.failure == .quarantined { return "settings.services.quarantinedDetail" }
+        if snapshot.failure == .healthPersistence { return "settings.services.healthPersistenceDetail" }
+        if snapshot.activeOperations > 0 || snapshot.hasLifecycleWork { return "settings.services.busy" }
+        switch snapshot.state {
+        case .degraded: return "settings.services.unavailableDetail"
+        case .circuitOpen: return "settings.services.coolingDownDetail"
+        case .recovering, .starting: return "settings.services.recoveringDetail"
+        case .stopped, .ready, .disabled: return "settings.services.summaryHealthyDetail"
+        }
+    }
+
+    func featureKey(_ id: ModuleID) -> String {
+        switch id {
+        case .conversations: "settings.services.conversations"
+        case .wordBook: "settings.services.wordBook"
+        case .notebook: "settings.services.notebook"
+        case .mediaExtraction, .mediaPreviews: "settings.services.featureAttachments"
+        case .clipboardThumbnails, .clipboardOCR, .clipboardMetadata, .mediaPlayback: "settings.services.featureClipboard"
+        case .frameRegistration, .textRecognition: "settings.services.featureScreenshots"
+        case .recordingTimeline, .recordingExport: "settings.services.featureRecordings"
+        case .nativeSystem: "settings.services.featureCommands"
+        case .whisperInference: "settings.services.featureTranscription"
+        case .fileIndex, .semanticValidation, .semanticIndexReading, .semanticPriorityReading,
+             .semanticQueryInference, .semanticIndexInference, .semanticMediaInference: "settings.services.featureFileSearch"
+        }
+    }
+
     init(registry: ModuleRegistry?) {
         var seen: Set<ModuleID> = []
         entries = (registry?.registrations ?? []).filter { seen.insert($0.id).inserted }
@@ -26,6 +95,7 @@ final class ModuleHealthSettingsModel: ObservableObject {
         guard !observing else { return }
         observing = true
         let current = lifetime
+        health.removeAll()
         observationFailed.removeAll()
         for entry in entries {
             if let snapshot = entry.health.current { health[entry.id] = snapshot }

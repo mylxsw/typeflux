@@ -257,7 +257,7 @@ private final class ClipboardMetadataHealthState: @unchecked Sendable {
             let model = ModuleHealthSettingsModel(registry: registry)
             try await UI.withWindow(ModuleHealthSettingsView(model: model), width: 640, height: 190) { _, host in
                 try await UI.wait { model.health[.clipboardMetadata]?.failure == .healthPersistence }
-                #expect(UI.contains(L("settings.services.clipboardMetadata"), in: host))
+                #expect(UI.contains(L(model.featureKey(.clipboardMetadata)), in: host))
                 try UI.snapshot(host, name: "metadata-health")
                 let button = try #require(UI.elements(in: host).first { $0.value("accessibilityIdentifier") as? String == "settings.services.clipboardMetadata.recover" })
                 clock.advance()

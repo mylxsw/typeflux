@@ -247,7 +247,7 @@ private final class NativeHealthState: @unchecked Sendable {
             let model = ModuleHealthSettingsModel(registry: registry)
             try await UI.withWindow(ModuleHealthSettingsView(model: model), width: 640, height: 190) { _, host in
                 try await UI.wait { model.health[.nativeSystem]?.failure == .healthPersistence }
-                #expect(UI.contains(L("settings.services.nativeSystem"), in: host))
+                #expect(UI.contains(L(model.featureKey(.nativeSystem)), in: host))
                 try UI.snapshot(host, name: "native-health")
                 let button = try #require(UI.elements(in: host).first { $0.value("accessibilityIdentifier") as? String == "settings.services.nativeSystem.recover" })
                 state.advance(); try button.press()
