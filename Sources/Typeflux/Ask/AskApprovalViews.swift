@@ -29,7 +29,7 @@ enum AskApprovalPresentation {
             return (args["code"] as? String).map { .content(clip($0)) } ?? .none
         case ("run_command", _):
             return (args["command"] as? String).map { .content($0) } ?? .none
-        case ("computer", "type"), ("browser", "fill"):
+        case ("computer", "type"), ("browser", "fill"), (AskEmbeddedBrowserTool.name, "fill"):
             return (args["text"] as? String ?? args["value"] as? String).map { .content(clip($0)) } ?? .none
         case ("memory", "remember"):
             return (args["text"] as? String).map { .content(clip($0)) } ?? .none

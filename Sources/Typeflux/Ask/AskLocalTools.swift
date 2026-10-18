@@ -45,10 +45,13 @@ protocol AskToolExecuting {
     /// Opens folders the user attached to the `files` tool for one conversation.
     func grantFolders(_ paths: [String], conversationId: String)
     func deleteArtifacts(ownerId: String, conversationId: String) throws
+    /// Typeflux's own browser panel, when this executor offers the `web_browser` tool.
+    var browserWorkspace: AskBrowserWorkspace? { get }
 }
 
 extension AskToolExecuting {
     var generationRecoveryRoot: URL? { nil }
+    var browserWorkspace: AskBrowserWorkspace? { nil }
     func setExecutionDeadline(_: Date?, conversationId _: String) {}
     func deleteArtifacts(ownerId _: String, conversationId _: String) throws {}
     func cancelProjects(conversationId _: String?) {}
@@ -114,6 +117,9 @@ final class AskLocalTools: AskToolExecuting {
     let computerExecutor: AskComputerExecutor
     let computerProbe = AskComputerTargetProbe()
     let screenObservation: AskScreenObservation
+    /// The `web_browser` tool; nil leaves the tool out.
+    var embeddedBrowser: AskEmbeddedBrowserTool?
+    var browserWorkspace: AskBrowserWorkspace? { embeddedBrowser?.workspace }
     var conversationEpochs: [String: UUID] = [:]
     /// Native environment override for controlled integration tests.
     var computerEnvironment: ((NSRunningApplication?) -> AskComputerExecutor.Environment)?
@@ -218,6 +224,7 @@ final class AskLocalTools: AskToolExecuting {
         if let skill = skills.definition(enabledSkills) { result.append(skill) }
         if workflowAuthoringEnabled { result += Self.workflowChatDefinitions }
         result.append(AskMemoryNoteStore.definition)
+        if embeddedBrowser != nil { result.append(AskEmbeddedBrowserTool.definition) }
         if notebookAvailable { result.append(AskNotebookTool.definition) }
         if imageConfiguration != nil { result.append(Self.imageGenerationDefinition) }
         mcpTools = [:]
@@ -247,6 +254,11 @@ final class AskLocalTools: AskToolExecuting {
         if Self.workflowChatNames.contains(call.function.name) {
             return call.function.name == AskWorkflowAuthorTools.test ? .destructive : .read
         }
+        if call.function.name == AskEmbeddedBrowserTool.name, let embeddedBrowser {
+            // Site permissions decide; a call that cannot be parsed is treated as the worst case.
+            guard let args = try? Self.jsonArguments(call.function.arguments) else { return .destructive }
+            return embeddedBrowser.risk(args)
+        }
         return Self.builtinRisk(call)
     }
 
@@ -255,6 +267,9 @@ final class AskLocalTools: AskToolExecuting {
         let action = args["action"] as? String ?? ""
         switch (call.function.name, action) {
         case ("skill", _): return .none
+        case (AskEmbeddedBrowserTool.name, _):
+            return AskBrowserRisk.observeActions.contains(action) || AskBrowserRisk.neutralActions.contains(action)
+                ? .read : .write
         case ("computer", "screenshot"), ("computer", "inspect"), ("computer", "wait"),
              ("browser", "read"), ("browser", "snapshot"), ("memory", "list"): return .read
         case ("files", _): return AskFileTools.risk(action: action)
@@ -373,6 +388,9 @@ final class AskLocalTools: AskToolExecuting {
             throw AskProjectError.denied // Requires the approved dispatch entry point.
         case "computer", "browser":
             return try await executeAutomation(call.function.name, args: args, conversationId: conversationId)
+        case AskEmbeddedBrowserTool.name:
+            guard let embeddedBrowser else { throw AskLocalError.message(L("ask.tool.unavailable")) }
+            return try await embeddedBrowser.execute(args, conversationId: conversationId)
         case "files":
             let files = fileTools(conversationId: conversationId)
             let output = try await Task.detached(priority: .userInitiated) { try files.execute(args) }.value

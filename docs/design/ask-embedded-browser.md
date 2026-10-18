@@ -11,6 +11,26 @@
 - **信息管理**：「站点与登录」面板集中列出用户登录过的站点，每个站点单独设置 AI 权限（禁止 / 每次询问 / 仅读取 / 可操作），可以一键退出并清除数据。AI 整理出的结果写进现有的笔记 / 记忆。
 - 现有的 AppleScript 通道（控制用户自己的 Safari / Chrome）**保留**为「改用我的浏览器」。用户必须用自己的真实浏览器配置时（如 Google 账号、Passkey），走这条路。
 
+## 实现状态（GUL-417 第一版）
+
+已实现，代码在 `Sources/Typeflux/Ask/Browser/`：
+
+- **面板**：`AskBrowserPanel`，包括标签栏、地址栏（输入网址或搜索词）、前进 / 后退 / 刷新、新建（无痕）标签页、在默认浏览器打开、复制链接、清除站点数据。面板可拖动调宽（宽度会记住），窗口窄时变成抽屉，顶栏地球按钮或 ⌘⇧B 切换。AI 使用浏览器时面板自动打开。
+- **持久化配置**：`AskBrowserWorkspace`。macOS 14+ 使用 `WKWebsiteDataStore(forIdentifier:)` 独立配置，macOS 13 退回默认存储；最多 8 个标签页；弹窗作为新标签页打开（保留 `window.opener`）；`file:` / `javascript:` 及顶层 `data:` 导航被拒绝；不支持下载，会给出提示。
+- **工具**：新增 `web_browser`（`AskEmbeddedBrowserTool`），与现有、控制用户 Safari / Chrome 的 `browser` 工具并存。动作有 `tabs` / `new_tab` / `select_tab` / `close_tab` / `open` / `back` / `scroll` / `read` / `snapshot` / `screenshot` / `click` / `fill` / `wait` / `handoff`。
+  - 观察和操作脚本复用 `AskBrowserExecutor` 的 JS，跑在隔离的 `WKContentWorld("typeflux.agent")` 中，页面脚本读不到观察状态。
+  - `click` / `fill` 只接受最新快照里的 ref，`observation_id` 用过一次即作废；页面导航后旧观察失效。
+  - 拒绝向密码框 `fill`；AI 只能关闭自己打开的标签页；无痕标签页对 AI 不可用。
+- **站点权限**：`AskBrowserSitePolicy`，取值为禁止 / 每次询问 / 仅读取 / 可操作，默认每次询问。权限映射到现有审批风险等级（见 `AskBrowserRisk`）。点击支付、发送、删除这类控件时风险为 destructive，即使站点设为「可操作」也会询问。
+- **人在回路**：AI 操作时页面加蓝色边框，底部浮条提供暂停 / 接管 / 停止。暂停只作用于发起操作的那个对话。`handoff` 会显示横幅并阻塞，直到用户点「完成，继续」或「跳过」，取消回答也会结束等待。回答结束时活动和暂停状态自动清除。
+- **站点与登录**：`AskBrowserSitesView`，列出有数据或设过权限的站点，可逐个设置权限、退出并清除数据，或退出全部站点。
+
+与上文方案的差异和待办：
+
+- 点击和输入目前由隔离 world 里的 JS 派发（`isTrusted=false`），尚未改为合成原生 `NSEvent`。少数只认可信事件的站点可能不响应，这是下一步。
+- 尚未实现：`key` 动作、输入框里 @ 引用网页、下载、定时任务。
+- 回答结束后，标签页仍留在面板里供用户继续使用。
+
 ## 参考：ChatGPT / Codex 怎么做
 
 Issue 附带的截图是 Codex 桌面客户端：左侧是对话，右侧是一个**带标签页的工作区面板**。浏览器只是其中一种标签页，和 Files、Terminal、Side chat、New page 并列，顶部是常规的地址栏和前进 / 后退 / 刷新。

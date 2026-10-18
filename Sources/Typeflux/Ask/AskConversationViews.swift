@@ -1,10 +1,15 @@
 // swiftlint:disable file_length type_body_length
 import AppKit
+import Combine
 import SwiftUI
 
 struct AskConversationView: View {
     @ObservedObject var model: AskConversationModel
     @State private var showsUsage = false
+    /// The embedded browser panel; it stays open across conversations.
+    @State private var showsBrowser = false
+    @AppStorage("ask.browser.panelWidth") private var browserWidth: Double = 560
+    @State private var browserDragBase: CGFloat?
     @State private var usageRunId: String?
     @State private var deleteId: String?
     @State private var newMenuOpen = false
@@ -59,7 +64,12 @@ struct AskConversationView: View {
             showsSidebarDrawer = false
         }
         .onChange(of: model.authoringSession?.revision) { _ in
-            if model.authoringSession?.isPresented == true { showsUsage = false }
+            if model.authoringSession?.isPresented == true { showsUsage = false; showsBrowser = false }
+        }
+        .onReceive(browserPresentation) { _ in setBrowser(true) }
+        .onChange(of: model.runPhase?.offersStop == true) { active in
+            // A finished run no longer controls the browser, and its pause never carries over.
+            if !active, let id = model.selectedId { model.tools.browserWorkspace?.endActivity(conversationId: id) }
         }
         .onChange(of: layout.sidebarInline) { inline in
             if inline { showsSidebarDrawer = false }
@@ -113,8 +123,9 @@ struct AskConversationView: View {
     }
 
     private var layout: AskWorkspaceLayout {
-        AskWorkspaceLayout(size: windowSize, sidebarCollapsed: sidebarCollapsed, showsUsage: showsUsage || showsWorkflow,
-                           rightPanelWidth: showsWorkflow ? 390 : nil)
+        AskWorkspaceLayout(size: windowSize, sidebarCollapsed: sidebarCollapsed,
+                           showsUsage: showsUsage || showsWorkflow || showsBrowserPanel,
+                           rightPanelWidth: showsBrowserPanel ? CGFloat(browserWidth) : (showsWorkflow ? 390 : nil))
     }
 
     private func accountDidChange() {
@@ -122,10 +133,47 @@ struct AskConversationView: View {
         Task { await model.refreshAfterAccountChange() }
     }
 
-    private var showsWorkflow: Bool { model.authoringSession?.isPresented == true && !showsUsage }
+    private var showsWorkflow: Bool { model.authoringSession?.isPresented == true && !showsUsage && !showsBrowser }
+    private var showsBrowserPanel: Bool { showsBrowser && !showsUsage && model.tools.browserWorkspace != nil }
+
+    private var browserPresentation: AnyPublisher<Int, Never> {
+        model.tools.browserWorkspace?.$presentationRequest.dropFirst().eraseToAnyPublisher()
+            ?? Empty().eraseToAnyPublisher()
+    }
+
+    private func setBrowser(_ shown: Bool) {
+        guard shown != showsBrowser || (shown && showsUsage) else { return }
+        withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) {
+            showsSidebarDrawer = false
+            isSearching = false
+            if shown {
+                showsUsage = false
+                model.authoringSession?.isPresented = false
+                if model.tools.browserWorkspace?.tabs.isEmpty == true {
+                    _ = try? model.tools.browserWorkspace?.newTab()
+                }
+            }
+            showsBrowser = shown
+        }
+    }
+
+    /// The conversation keeps at least 420pt beside the panel.
+    private func resizeBrowser(_ delta: CGFloat?) {
+        guard let delta else { browserDragBase = nil; return }
+        let base = browserDragBase ?? CGFloat(browserWidth)
+        browserDragBase = base
+        let maximum = max(380, windowSize.width - (layout.sidebarInline ? AskMetrics.sidebarWidth : 0) - 420)
+        browserWidth = Double(min(maximum, max(380, base + delta)))
+    }
 
     @ViewBuilder private var rightPanel: some View {
-        if showsWorkflow, let session = model.authoringSession {
+        if showsBrowserPanel, let workspace = model.tools.browserWorkspace {
+            AskBrowserPanel(workspace: workspace, floating: layout.usageOverlay,
+                            runningConversationId: model.runPhase?.offersStop == true ? model.selectedId : nil,
+                            stopRun: { model.stop() }, close: { setBrowser(false) },
+                            resize: layout.usageOverlay ? nil : resizeBrowser)
+                .frame(width: layout.usageInline ? layout.usageWidth : layout.drawerWidth)
+        } else if showsWorkflow, let session = model.authoringSession {
             AskWorkflowAuthoringPanel(session: session, focusCloseOnAppear: layout.usageOverlay,
                                       floating: layout.usageOverlay, close: {
                 session.isPresented = false
@@ -232,6 +280,7 @@ struct AskConversationView: View {
         withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) {
             if !showsSidebarDrawer {
                 showsUsage = false
+                showsBrowser = false
                 model.authoringSession?.isPresented = false
             }
             showsSidebarDrawer = false
@@ -689,6 +738,7 @@ struct AskConversationView: View {
                 .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
             headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
                 .accessibilityIdentifier("ask.workspace.usage")
+            browserButton
             Menu {
                 Button(L("ask.search"), action: openSearch).keyboardShortcut("k", modifiers: .command)
                 if model.isTemporaryComposer(launcher: false) {
@@ -752,11 +802,16 @@ struct AskConversationView: View {
             if model.isTemporaryComposer(launcher: false) {
                 AskTemporaryChip(model: model, showsTitle: layout.mainWidth >= 760)
             }
-            if let id = model.selectedId {
+            if model.selectedId != nil || model.tools.browserWorkspace != nil {
                 HStack(spacing: 2) {
-                    headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
-                        .accessibilityIdentifier("ask.workspace.usage")
-                    headerAction(.trash, label: L("ask.delete")) { deleteId = id }
+                    if model.selectedId != nil {
+                        headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
+                            .accessibilityIdentifier("ask.workspace.usage")
+                    }
+                    browserButton
+                    if let id = model.selectedId {
+                        headerAction(.trash, label: L("ask.delete")) { deleteId = id }
+                    }
                 }
                 .padding(.horizontal, 3)
                 .frame(height: AskMetrics.headerCapsuleHeight)
@@ -766,6 +821,15 @@ struct AskConversationView: View {
         .padding(.leading, sidebarHidden ? AskMetrics.collapsedTitleInset : 14)
         .padding(.trailing, 14)
         .frame(height: AskMetrics.titleBarRowHeight)
+    }
+
+    @ViewBuilder private var browserButton: some View {
+        if model.tools.browserWorkspace != nil {
+            AskHeaderIconButton(symbol: "globe", label: L("ask.web.title"), shortcut: "⌘⇧B",
+                                active: showsBrowserPanel) { setBrowser(!showsBrowserPanel) }
+                .keyboardShortcut("b", modifiers: [.command, .shift])
+                .accessibilityIdentifier("ask.workspace.browser")
+        }
     }
 
     /// A temporary conversation is never named, a new one is just "Temporary chat".
@@ -787,6 +851,7 @@ struct AskConversationView: View {
             showsSidebarDrawer = false
             isSearching = false
             showsUsage = shown
+            if shown { showsBrowser = false }
         }
     }
 
