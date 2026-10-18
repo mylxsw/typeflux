@@ -31,6 +31,7 @@ struct ClipboardShelfView: View {
     @ObservedObject var thumbnails = ClipboardThumbnailSession()
     @ObservedObject var model: ClipboardPanelModel
     let focusRequest: Int
+    @ObservedObject var focusSignal = ClipboardPanelFocusSignal()
     var interfaceStyle: InterfaceStyle?
     @ObservedObject var layout = ClipboardShelfLayout()
     @Environment(\.interfaceStyle) private var environmentStyle
@@ -78,6 +79,7 @@ struct ClipboardShelfView: View {
         .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
         .onAppear { searchFocused = true }
         .onChange(of: focusRequest) { _ in searchFocused = true }
+        .onChange(of: focusSignal.generation) { _ in searchFocused = true }
         .onChange(of: model.snippetDraft == nil) { closed in
             if closed { searchFocused = true }
         }

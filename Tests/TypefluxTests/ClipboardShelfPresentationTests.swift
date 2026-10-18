@@ -223,11 +223,17 @@ final class ClipboardShelfPresentationTests: XCTestCase {
         let model = textModel()
         controller.prewarm(model)
         XCTAssertNil(controller.presentedWindow)
+        XCTAssertEqual(controller.hostedRootBuildCount, 1)
 
         controller.present(model)
         let panel = try XCTUnwrap(controller.presentedWindow)
         XCTAssertTrue(panel.isVisible)
         XCTAssertEqual(controller.style, .shelf)
+        XCTAssertEqual(controller.hostedRootBuildCount, 1, "Presenting must reuse the prewarmed SwiftUI tree")
+
+        controller.dismiss()
+        controller.present(model)
+        XCTAssertEqual(controller.hostedRootBuildCount, 1, "Reopening must not rebuild all rows")
     }
 
     @MainActor
@@ -362,14 +368,11 @@ final class ClipboardShelfPresentationTests: XCTestCase {
         let panel = try XCTUnwrap(controller.presentedWindow)
         let screen = try XCTUnwrap((panel.screen ?? NSScreen.main)?.visibleFrame)
         let target = ClipboardPanelPlacement.shelfFrame(height: ClipboardShelfView.height, screen: screen)
-        XCTAssertEqual(target.minY - panel.frame.minY, ClipboardShelfScroll.slideDistance, accuracy: 1)
-        XCTAssertEqual(panel.alphaValue, 1, "The shelf is fully visible on its first frame")
+        XCTAssertEqual(panel.frame, target, "Sliding the content must not move the native window")
+        XCTAssertEqual(panel.alphaValue, 1, "The shelf does not fade during the slide")
+        XCTAssertNotNil(panel.contentView?.layer?.animation(forKey: "clipboardShelfSlide"))
         let settled = expectation(description: "slide settles")
-        func poll(_ remaining: Int) {
-            if panel.alphaValue == 1, panel.frame == target || remaining == 0 { settled.fulfill(); return }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { poll(remaining - 1) }
-        }
-        poll(60)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { settled.fulfill() }
         wait(for: [settled], timeout: 5)
         XCTAssertEqual(panel.frame, target)
         XCTAssertEqual(panel.alphaValue, 1)

@@ -4,6 +4,15 @@ import Quartz
 import QuartzCore
 import SwiftUI
 
+@MainActor
+final class ClipboardPanelFocusSignal: ObservableObject {
+    @Published private(set) var generation = 0
+
+    func request() {
+        generation += 1
+    }
+}
+
 /// Hosts the clipboard panel in a non-activating panel that still takes keyboard focus, so the
 /// app the user was typing in stays frontmost and receives the paste after the panel closes.
 @preconcurrency @MainActor
@@ -17,6 +26,10 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     private var keyMonitor: Any?
     private var clickMonitor: Any?
     private var focusRequest = 0
+    private let focusSignal = ClipboardPanelFocusSignal()
+    private weak var hostedModel: ClipboardPanelModel?
+    private var hostedStyle: ClipboardPanelStyle?
+    private(set) var hostedRootBuildCount = 0
     private var quickLookURLs: [URL] = []
     private var previewObservation: AnyCancellable?
     private var entryObservation: AnyCancellable?
@@ -115,6 +128,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         position(panel)
         previewCenterX = settingsStore.clipboardPanelPosition == .mouse ? panel.frame.midX : panel.screen?.visibleFrame.midX
         panel.makeKeyAndOrderFront(nil)
+        focusSignal.request()
         installMonitors()
         previewObservation = model.$showsPreview.dropFirst().removeDuplicates().sink { [weak self] shows in
             self?.resizeForPreview(shows)
@@ -179,14 +193,20 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     // MARK: - Window
 
     private func panel(for model: ClipboardPanelModel) -> ClipboardPanelWindow {
+        if let panel, hostingView != nil, hostedModel === model, hostedStyle == style {
+            return panel
+        }
+        hostedRootBuildCount += 1
         let content: AnyView = switch style {
         case .list:
             AnyView(ClipboardPanelView(
-                thumbnails: thumbnails, model: model, focusRequest: focusRequest, layout: layout
+                thumbnails: thumbnails, model: model, focusRequest: focusRequest,
+                focusSignal: focusSignal, layout: layout
             ))
         case .shelf:
             AnyView(ClipboardShelfView(
-                thumbnails: thumbnails, model: model, focusRequest: focusRequest, layout: shelf.layout
+                thumbnails: thumbnails, model: model, focusRequest: focusRequest,
+                focusSignal: focusSignal, layout: shelf.layout
             ))
         }
         let rootView = AnyView(content
@@ -196,6 +216,9 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
             .interfaceStyle(following: interfaceStyleObserver))
         if let panel, let hostingView {
             hostingView.rootView = rootView
+            if style == .shelf { hostingView.wantsLayer = true }
+            hostedModel = model
+            hostedStyle = style
             return panel
         }
         let size = NSSize(width: ClipboardPanelView.width, height: ClipboardPanelView.height)
@@ -221,9 +244,12 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         // The controller owns sizing; SwiftUI must not independently move the native window.
         hostingView.sizingOptions = []
         hostingView.frame = NSRect(origin: .zero, size: size)
+        if style == .shelf { hostingView.wantsLayer = true }
         panel.contentView = hostingView
         self.panel = panel
         self.hostingView = hostingView
+        hostedModel = model
+        hostedStyle = style
         return panel
     }
 
@@ -402,6 +428,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
                     .interfaceStyle(following: interfaceStyleObserver))
             }
         )
+        focusSignal.request()
         installMonitors()
     }
 

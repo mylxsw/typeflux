@@ -12,7 +12,7 @@ final class ClipboardShelfPresenter {
     let layout = ClipboardShelfLayout()
     private weak var panel: NSWindow?
     private weak var model: ClipboardPanelModel?
-    private let animator = ClipboardShelfSlideAnimator()
+    private static let slideAnimationKey = "clipboardShelfSlide"
     /// The shelf's settled frame; the slide and the editor growth both aim for it.
     private(set) var frame: NSRect?
     private var previewWindow: ClipboardShelfPreviewWindow?
@@ -39,21 +39,32 @@ final class ClipboardShelfPresenter {
             height: ClipboardShelfView.height, screen: screen?.visibleFrame ?? panel.frame
         )
         self.frame = frame
-        let initialProgress: CGFloat = animated ? 0 : 1
-        place(panel, shelf: frame, progress: initialProgress)
+        place(panel, shelf: frame)
+        if animated, let content = panel.contentView {
+            content.wantsLayer = true
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            content.layer?.transform = CATransform3DMakeTranslation(0, -ClipboardShelfScroll.slideDistance, 0)
+            CATransaction.commit()
+        }
         panel.makeKeyAndOrderFront(nil)
-        if animated {
-            animator.start(view: panel.contentView, framesPerSecond: screen?.maximumFramesPerSecond ?? 60) {
-                [weak self, weak panel] progress in
-                guard let self, let panel, panel.isVisible, let frame = self.frame else { return }
-                place(panel, shelf: frame, progress: progress)
-            }
+        if animated, let layer = panel.contentView?.layer {
+            let slide = CABasicAnimation(keyPath: "transform.translation.y")
+            slide.fromValue = -ClipboardShelfScroll.slideDistance
+            slide.toValue = 0
+            slide.duration = 0.12
+            slide.timingFunction = CAMediaTimingFunction(name: .linear)
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            layer.transform = CATransform3DIdentity
+            layer.add(slide, forKey: Self.slideAnimationKey)
+            CATransaction.commit()
         }
         observe(model)
     }
 
     func dismiss() {
-        animator.stop()
+        panel?.contentView?.layer?.removeAnimation(forKey: Self.slideAnimationKey)
         observations = []
         hidePreview()
     }
@@ -68,11 +79,9 @@ final class ClipboardShelfPresenter {
         return true
     }
 
-    /// `progress` 0 is below the settled frame; the panel stays fully visible during the slide.
-    private func place(_ panel: NSWindow, shelf frame: NSRect, progress: CGFloat) {
-        let clamped = min(max(progress, 0), 1)
-        let offset = -ClipboardShelfScroll.slideDistance * (1 - clamped)
-        panel.setFrame(frame.offsetBy(dx: 0, dy: offset), display: false)
+    /// Keep the native window at its final frame; Core Animation moves only its content.
+    private func place(_ panel: NSWindow, shelf frame: NSRect) {
+        panel.setFrame(frame, display: false)
         panel.alphaValue = 1
         if panel.contentView?.frame.size != frame.size {
             panel.contentView?.frame = NSRect(origin: .zero, size: frame.size)
@@ -135,9 +144,7 @@ final class ClipboardShelfPresenter {
         let screen = (panel.screen ?? NSScreen.main)?.visibleFrame ?? current
         let next = ClipboardPanelPlacement.shelfFrame(height: height, screen: screen)
         frame = next
-        if !animator.isAnimating {
-            place(panel, shelf: next, progress: 1)
-        }
+        place(panel, shelf: next)
     }
 
     private func hidePreview() {
@@ -182,26 +189,4 @@ final class ClipboardShelfPresenter {
 final class ClipboardShelfPreviewWindow: NSPanel {
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
-}
-
-/// A brief constant-speed entrance without the spring's slow settling tail.
-@MainActor
-private final class ClipboardShelfSlideAnimator {
-    private let clock = AskDisplayClock()
-    private static let duration: TimeInterval = 0.09
-
-    var isAnimating: Bool { clock.isRunning }
-
-    func start(view: NSView?, framesPerSecond: Int, apply: @escaping (CGFloat) -> Void) {
-        let startedAt = CACurrentMediaTime()
-        clock.start(view: view, framesPerSecond: framesPerSecond) { time in
-            let progress = min(max((time - startedAt) / Self.duration, 0), 1)
-            apply(CGFloat(progress))
-            return progress < 1
-        }
-    }
-
-    func stop() {
-        clock.stop()
-    }
 }

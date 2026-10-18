@@ -17,6 +17,7 @@ struct ClipboardPanelView: View {
     @ObservedObject var thumbnails = ClipboardThumbnailSession()
     @ObservedObject var model: ClipboardPanelModel
     let focusRequest: Int
+    @ObservedObject var focusSignal = ClipboardPanelFocusSignal()
     /// Read from settings each time the panel opens.
     var interfaceStyle: InterfaceStyle? = nil
     @Environment(\.interfaceStyle) private var environmentStyle
@@ -71,6 +72,7 @@ struct ClipboardPanelView: View {
         .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
         .onAppear { searchFocused = true }
         .onChange(of: focusRequest) { _ in searchFocused = true }
+        .onChange(of: focusSignal.generation) { _ in searchFocused = true }
         .onChange(of: model.snippetDraft == nil) { closed in
             if closed { searchFocused = true }
         }
