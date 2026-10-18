@@ -103,6 +103,58 @@ final class ClipboardEntryDragTests: XCTestCase {
         XCTAssertFalse(control.isDragging)
     }
 
+    @MainActor
+    func testMouseDragPastTheThresholdStartsOneDragWithTheEntryItems() throws {
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 300, height: 300),
+                              styleMask: .borderless, backing: .buffered, defer: false)
+        addTeardownBlock { window.orderOut(nil) }
+        let control = ClipboardRowClickArea.Control(frame: NSRect(x: 20, y: 20, width: 200, height: 120))
+        window.contentView?.addSubview(control)
+        var clicks: [Int] = []
+        var started: [[NSDraggingItem]] = []
+        control.onClick = { clicks.append($0) }
+        control.dragItems = { ["one" as NSString, "two" as NSString, "three" as NSString] }
+        control.startDrag = { _, items, _ in started.append(items) }
+        func event(_ type: NSEvent.EventType, _ x: CGFloat, _ y: CGFloat) throws -> NSEvent {
+            try XCTUnwrap(NSEvent.mouseEvent(with: type, location: NSPoint(x: x, y: y), modifierFlags: [],
+                                             timestamp: 0, windowNumber: window.windowNumber, context: nil,
+                                             eventNumber: 0, clickCount: 1, pressure: 1))
+        }
+
+        control.mouseDragged(with: try event(.leftMouseDragged, 90, 90))
+        XCTAssertTrue(started.isEmpty, "No drag without a mouse-down")
+        control.mouseDown(with: try event(.leftMouseDown, 50, 50))
+        XCTAssertEqual(clicks, [1])
+        control.mouseDragged(with: try event(.leftMouseDragged, 52, 51))
+        XCTAssertTrue(started.isEmpty, "Small movements stay a click")
+        control.mouseDragged(with: try event(.leftMouseDragged, 60, 58))
+        XCTAssertEqual(started.count, 1)
+        let items = try XCTUnwrap(started.first)
+        XCTAssertEqual(items.count, 3)
+        XCTAssertEqual(items[0].draggingFrame, control.bounds)
+        XCTAssertEqual(items[2].draggingFrame, control.bounds.offsetBy(dx: 12, dy: -12), "Files fan out behind")
+        XCTAssertNotNil(items[0].imageComponents?.first, "The card itself is the drag image")
+        XCTAssertTrue(control.isDragging)
+        control.mouseDragged(with: try event(.leftMouseDragged, 80, 80))
+        XCTAssertEqual(started.count, 1, "One drag per press")
+
+        control.finishDrag(operation: [])
+        control.mouseDown(with: try event(.leftMouseDown, 50, 50))
+        control.mouseUp(with: try event(.leftMouseUp, 50, 50))
+        control.mouseDragged(with: try event(.leftMouseDragged, 90, 90))
+        XCTAssertEqual(started.count, 1, "Releasing the button ends the gesture")
+
+        control.dragItems = { [] }
+        control.mouseDown(with: try event(.leftMouseDown, 50, 50))
+        control.mouseDragged(with: try event(.leftMouseDragged, 90, 90))
+        XCTAssertEqual(started.count, 1, "An entry without content cannot be dragged")
+        XCTAssertFalse(control.isDragging)
+
+        control.enabled = false
+        control.mouseDown(with: try event(.leftMouseDown, 50, 50))
+        XCTAssertEqual(clicks, [1, 1, 1], "A disabled row ignores the press")
+    }
+
     func testAcceptedDropClosesThePanel() {
         let model = ClipboardPanelModel()
         var dismissed = 0

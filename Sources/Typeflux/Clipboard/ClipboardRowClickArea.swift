@@ -31,6 +31,11 @@ struct ClipboardRowClickArea: NSViewRepresentable {
         var enabled = true
         private var mouseDownLocation: NSPoint?
         private(set) var isDragging = false
+        /// Starts the AppKit drag session; tests capture the items instead.
+        var startDrag: (Control, [NSDraggingItem], NSEvent) -> Void = { control, items, event in
+            let session = control.beginDraggingSession(with: items, event: event, source: control)
+            session.animatesToStartingPositionsOnCancelOrFail = true
+        }
         /// Synthetic test events do not set NSApplication.currentEvent.
         var currentEvent: () -> NSEvent? = { NSApp.currentEvent }
 
@@ -66,8 +71,7 @@ struct ClipboardRowClickArea: NSViewRepresentable {
                 item.setDraggingFrame(bounds.offsetBy(dx: step, dy: -step), contents: offset == 0 ? image : nil)
                 return item
             }
-            let session = beginDraggingSession(with: items, event: event, source: self)
-            session.animatesToStartingPositionsOnCancelOrFail = true
+            startDrag(self, items, event)
         }
 
         override func mouseUp(with _: NSEvent) {
