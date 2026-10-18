@@ -106,7 +106,7 @@ Design and plan: `docs/design/ios-offline-local-mode.md` and the interactive boa
   `ChatStore.connectivity` (`serviceUnavailable` or `offline`, also driven by
   `NWPathMonitor`). The conversation and sidebar show a banner with Retry instead of
   an error; history stays readable. A cloud message is never queued or replayed: its
-  draft stays, consent fails closed, and the composer offers to continue in a private
+  draft stays and the composer offers to continue in a private
   conversation when the user has a provider. Regaining the network refreshes. Network
   errors never sign the user out.
 - **Drafts** (text and photo) are saved per conversation, and for the not-yet-started

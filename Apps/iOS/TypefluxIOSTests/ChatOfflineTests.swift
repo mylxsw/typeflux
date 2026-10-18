@@ -22,15 +22,13 @@ struct ChatOfflineTests {
     func make(api: OutageAPI = OutageAPI(), credentials: MemoryCredentials = MemoryCredentials(),
               provider: ScriptedProvider = ScriptedProvider(), library: ChatModelLibrary? = nil,
               cache: ChatLocalStore? = nil, local: ChatLocalStore? = nil, withProvider: Bool = false) throws -> Fixture {
-        let defaults = UserDefaults(suiteName: UUID().uuidString)!
-        defaults.set("test|Test Provider", forKey: "ai-consent.test-user")
         let library = library ?? ChatModelLibrary.ephemeral()
         if withProvider {
             try library.save(Self.deepSeek, key: "sk-test")
         }
         let cache = try cache ?? ChatLocalStore.inMemory()
         let local = try local ?? ChatLocalStore.inMemory()
-        let store = ChatStore(service: api, credentials: credentials, deviceID: "ios-test", consentDefaults: defaults,
+        let store = ChatStore(service: api, credentials: credentials, deviceID: "ios-test",
                               reconnectDelay: .milliseconds(1), library: library, providerService: provider,
                               cache: cache, localStore: local)
         return Fixture(store: store, api: api, credentials: credentials, provider: provider, library: library,
@@ -105,9 +103,8 @@ struct ChatOfflineTests {
         #expect(fixture.store.errorMessage == ChatStore.offlineMessage)
         #expect(fixture.store.connectivity == .offline)
         #expect(fixture.store.offersLocalFallback)
-        // Consent could not be confirmed, so the message was not even attempted.
-        #expect(await fixture.api.sendAttempts == 0)
-        #expect(!fixture.store.showsConsent)
+        // One attempt, never repeated on its own.
+        #expect(await fixture.api.sendAttempts == 1)
 
         fixture.store.continueInPrivateConversation()
         #expect(fixture.store.draft == "Still here")
@@ -116,7 +113,7 @@ struct ChatOfflineTests {
         #expect(!fixture.store.offersLocalFallback)
         await fixture.api.setOutage(nil)
         await fixture.store.send()
-        #expect(await fixture.api.sendAttempts == 0)
+        #expect(await fixture.api.sendAttempts == 1)
         #expect(fixture.store.localConversations.count == 1)
     }
 
@@ -137,18 +134,18 @@ struct ChatOfflineTests {
         #expect(fixture.store.errorMessage == ChatStore.unavailableMessage)
         // Without a provider of their own, there is nowhere else to continue.
         #expect(!fixture.store.offersLocalFallback)
-        #expect(await fixture.api.sendAttempts == 0)
+        #expect(await fixture.api.sendAttempts == 1)
 
-        // The message request itself fails after consent was confirmed.
+        // Only the message request itself fails.
         await fixture.api.setOutage(nil)
         await fixture.api.setSendOutage(.networkConnectionLost)
         await fixture.store.send()
-        #expect(await fixture.api.sendAttempts == 1)
+        #expect(await fixture.api.sendAttempts == 2)
         #expect(fixture.store.errorMessage == ChatStore.offlineMessage)
         #expect(fixture.store.draft == "Q")
         await fixture.api.setSendOutage(nil)
         await fixture.store.send()
-        #expect(await fixture.api.sendAttempts == 2)
+        #expect(await fixture.api.sendAttempts == 3)
         #expect(fixture.store.draft.isEmpty)
         #expect(fixture.store.errorMessage == nil)
     }

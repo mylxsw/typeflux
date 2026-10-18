@@ -14,7 +14,6 @@ struct ChatRootView: View {
     @State private var dragOffset: CGFloat = 0
     @State private var showSettings = false
     @State private var settingsDismissed = true
-    @State private var loginDismissed = true
     @AppStorage("guest.welcome-dismissed") private var welcomeDismissed = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -61,27 +60,22 @@ struct ChatRootView: View {
             }
         }
         .task {
-            await store.restore()
+            // Only what is on the device gates the first screen; an unreachable
+            // server is refreshed afterwards and shown as a banner, never a spinner.
+            await store.restoreSession()
             checkingSession = false
             if !store.isAuthenticated, !welcomeDismissed {
                 store.showsLogin = true
             }
+            await store.refreshAfterRestore()
         }
         .sheet(isPresented: Binding(get: { store.showsLogin && settingsDismissed },
                                     set: { store.showsLogin = $0 }), onDismiss: {
                 welcomeDismissed = true
                 store.cancelPendingLogin()
-                loginDismissed = true
             }) {
                 LoginView(store: store)
                     .presentationDetents([.large])
-                    .onAppear { loginDismissed = false }
-        }
-        .sheet(isPresented: Binding(
-            get: { store.showsConsent && !store.showsLogin && loginDismissed && settingsDismissed },
-            set: { store.showsConsent = $0 }
-        )) {
-            ChatConsentView(store: store)
         }
         .sheet(isPresented: $showSettings, onDismiss: { settingsDismissed = true }) {
             ChatSettingsView(store: store, preferences: preferences, shop: shop)

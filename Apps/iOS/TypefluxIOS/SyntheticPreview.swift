@@ -17,11 +17,6 @@
 
         static func makeStore(arguments: [String] = ProcessInfo.processInfo.arguments,
                               now: Date = Date(), streamInterval: Duration? = nil) -> ChatStore {
-            let defaults = UserDefaults(suiteName: "app.typeflux.ios.synthetic-consent")!
-            defaults.removePersistentDomain(forName: "app.typeflux.ios.synthetic-consent")
-            if !arguments.contains("--synthetic-no-consent") {
-                defaults.set("preview|Preview Provider", forKey: "ai-consent." + userID)
-            }
             let library = ChatModelLibrary.ephemeral()
             if arguments.contains("--synthetic-providers") {
                 try? library.save(provider, key: "sk-preview")
@@ -31,7 +26,7 @@
                                  longEmail: arguments.contains("--synthetic-long-email"),
                                  guest: arguments.contains("--synthetic-guest")
                              ),
-                             deviceID: "synthetic-device", isSynthetic: true, consentDefaults: defaults,
+                             deviceID: "synthetic-device", isSynthetic: true,
                              historyPageSize: Scenario.resolve(arguments) == .history ? 5 : 50,
                              library: library, providerService: PreviewProviderService())
         }

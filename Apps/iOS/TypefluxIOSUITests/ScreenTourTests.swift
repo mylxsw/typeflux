@@ -71,7 +71,7 @@ final class ScreenTourTests: XCTestCase {
 
     @MainActor
     func testTourConversationAndComposer() {
-        let app = launch("--synthetic-empty", "--synthetic-no-consent")
+        let app = launch("--synthetic-empty")
         XCTAssertTrue(app.textFields["chat.composer"].waitForExistence(timeout: 8))
         capture("10-new-conversation")
         app.buttons["chat.attach"].tap()
@@ -88,10 +88,6 @@ final class ScreenTourTests: XCTestCase {
         let field = app.textFields["chat.composer"]
         field.tap(); field.typeText("帮我写一段周会开场白")
         capture("14-composer-typing")
-        app.buttons["chat.send"].tap()
-        XCTAssertTrue(app.buttons["privacy.agree"].waitForExistence(timeout: 5))
-        capture("15-ai-consent")
-        app.buttons["privacy.agree"].tap()
         app.buttons["chat.send"].tap()
         let more = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "chat.more.")).firstMatch
         XCTAssertTrue(more.waitForExistence(timeout: 8))

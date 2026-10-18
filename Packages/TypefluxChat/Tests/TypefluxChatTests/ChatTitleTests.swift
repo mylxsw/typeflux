@@ -86,6 +86,16 @@ final class ChatTitleTests: XCTestCase {
         XCTAssertEqual(value.messages.first?.modelAlias, "fast")
     }
 
+    func testReadsFailFastWhileModelStepsMayTakeMinutes() async throws {
+        XCTAssertEqual(ChatAPIClient.timeout(method: "GET", path: "/api/v1/ask/conversations"), 20)
+        XCTAssertEqual(ChatAPIClient.timeout(method: "POST", path: "/api/v1/auth/refresh"), 30)
+        XCTAssertEqual(ChatAPIClient.timeout(method: "POST", path: "/api/v1/ask/conversations/c/messages"), 200)
+        _ = try await client().conversation(id: "c1", token: "t")
+        XCTAssertEqual(lastRequest()?.timeoutInterval, 20)
+        _ = try await client().updateTitle(conversationId: "c1", request: .rename("x"), token: "t")
+        XCTAssertEqual(lastRequest()?.timeoutInterval, 200)
+    }
+
     func testTemporaryIsSentOnlyWhenRequested() throws {
         let plain = try JSONSerialization.jsonObject(with: ChatCoding.encoder().encode(
             ChatSendRequest(deviceId: "d", text: "Hi"))) as? [String: Any]

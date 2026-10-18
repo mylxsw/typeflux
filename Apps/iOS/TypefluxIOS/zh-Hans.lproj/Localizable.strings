@@ -193,13 +193,12 @@
 "The server could not verify your Apple sign-in. Please try again or contact support." = "服务器无法验证你的 Apple 登录，请重试或联系支持。";
 "The server could not verify your sign-in. Please try again or contact support." = "服务器无法验证你的登录，请重试或联系支持。";
 
-/* Guest access, AI consent and account privacy. */
+/* Guest access, AI data sharing and account privacy. */
 "AI and tool providers" = "AI 与工具服务商";
 "AI data sharing" = "AI 数据共享";
+"Provider information is unavailable right now." = "暂时无法获取服务商信息。";
 "Account details are unavailable. Refresh to continue." = "暂时无法获取账号信息，请刷新后继续。";
 "Additional details (optional)" = "补充说明（选填）";
-"Agree and continue" = "同意并继续";
-"Before sending, review how your data is used" = "发送前，确认数据如何使用";
 "Browse first" = "先随便看看";
 "Continue with Apple to verify and permanently delete this account." = "通过 Apple 验证身份后，将永久删除此账号。";
 "Data and privacy" = "数据与隐私";
@@ -211,15 +210,12 @@
 "Local example · No credits used" = "本地示例 · 不消耗额度";
 "Make an email more professional" = "把邮件改正式";
 "Manage App Store subscriptions" = "管理 App Store 订阅";
-"Not now" = "暂不同意";
 "Payment records required for accounting, security logs and previously submitted support reports may be retained under the Privacy Policy. Data already sent to providers is subject to their retention policies." = "会计所需的付款记录、安全日志以及已提交的反馈可能依据隐私政策保留。已发送给服务商的数据适用其数据保留政策。";
 "Permanently delete your account" = "永久删除你的账号";
-"Provider details are unavailable. Try again before sending any content." = "暂时无法获取服务商信息。请重试，确认后再发送内容。";
 "Reason" = "举报原因";
 "Report answer" = "举报此回答";
 "Report submitted" = "举报已提交";
 "Retry" = "重试";
-"Review data sharing" = "查看数据共享说明";
 "Rewrite politely: Tomorrow's meeting is now at 3. Send me the materials first." = "把这句话改得正式一些：明天的会议调到下午三点，请先把资料发给我。";
 "Sign in to sync your conversations" = "登录后同步你的对话";
 "Submit" = "提交";
@@ -235,15 +231,11 @@
 "Verify with Google and delete" = "通过 Google 验证并删除";
 "Verify your identity" = "验证你的身份";
 "Website subscriptions will be cancelled immediately. Deletion does not issue a refund. Any App Store subscriptions must be managed separately." = "网站订阅将立即取消。删除账号不会自动退款。如有 App Store 订阅，请另行管理。";
-"Withdraw consent" = "撤回同意";
-"You can withdraw consent in Settings. Withdrawal stops new requests; it does not recall data already sent." = "你可以在设置中撤回同意。撤回后将停止新的请求，但无法收回已经发送的数据。";
 "Your account, cloud conversations, photos, memories and sync data will be deleted. All devices will lose account access. This cannot be undone." = "你的账号、云端对话及图片、记忆和同步数据将被删除。所有设备都将无法再访问此账号。此操作无法撤销。";
 "Your draft is saved. Sign in, then review and send it yourself." = "草稿已保留。登录后请检查内容，再手动发送。";
 "Your messages, selected photos, dictated text and conversation context are sent to Typeflux to generate and sync replies." = "你的消息、选中的图片、语音转写文字和对话上下文会发送给 Typeflux，用于生成和同步回复。";
 "• Friday: test the new design.\n• Alex: prepare the prototype.\n• Sam: gather feedback." = "• 周五：测试新设计。\n• Alex：准备原型。\n• Sam：收集反馈。";
 "谢谢你的帮助。我会在明天发送修改后的方案。" = "谢谢你的帮助。我会在明天发送修改后的方案。";
-"Consent granted" = "已同意";
-"Consent not granted" = "未同意";
 "Harmful or unsafe content" = "有害或危险内容";
 "Incorrect or misleading" = "事实错误或误导信息";
 "Offensive or discriminatory" = "冒犯或歧视内容";
@@ -312,8 +304,6 @@
 "This step runs on your Mac. Keep Typeflux open there and online." = "这一步需要在 Mac 上完成，请保持 Mac 上的 Typeflux 打开并联网。";
 "Quote in reply" = "引用到回复";
 "More actions" = "更多操作";
-"On" = "已开启";
-"Off" = "未开启";
 "Sign in to Typeflux" = "登录 Typeflux";
 "Sync conversations and share credits with your Mac." = "同步对话，并与 Mac 共用积分。";
 "New password" = "新密码";

@@ -75,12 +75,9 @@ final class ChatStore {
     /// How long the server gets to name a cloud conversation before the list is refreshed.
     var titleRefreshDelay: Duration = .seconds(6)
     var showsLogin = false
-    var showsConsent = false
     var example: ChatExample?
+    /// Which AI providers receive cloud messages; shown in Settings → AI data sharing.
     private(set) var disclosure: ChatAIDisclosure?
-    private(set) var isCheckingConsent = false
-    private let consentDefaults: UserDefaults
-    private var consentRevision = 0
     private var session: ChatSession?
     var accountGeneration = 0
     var selectionGeneration = 0
@@ -96,7 +93,6 @@ final class ChatStore {
         credentials: any CredentialStore,
         deviceID: String,
         isSynthetic: Bool = false,
-        consentDefaults: UserDefaults = .standard,
         reconnectDelay: Duration = .milliseconds(500),
         historyPageSize: Int = 50,
         library: ChatModelLibrary? = nil,
@@ -109,7 +105,6 @@ final class ChatStore {
         self.cache = cache
         self.localStore = localStore
         self.historyPageSize = max(1, historyPageSize)
-        self.consentDefaults = consentDefaults
         self.service = service
         self.credentials = credentials
         self.deviceID = deviceID
@@ -118,22 +113,39 @@ final class ChatStore {
     }
 
     func restore() async {
+        guard await restoreSession() else { return }
+        await refreshAfterRestore()
+    }
+
+    /// Restores everything kept on the device: private conversations, the saved
+    /// account and its cached history. Never waits for the network, so launch
+    /// cannot hang on an unreachable server. Returns true when an account was restored.
+    @discardableResult
+    func restoreSession() async -> Bool {
         await loadLocalHome()
-        guard !isAuthenticated else { return }
+        guard !isAuthenticated else { return false }
         do {
             guard let account = try credentials.load() else {
                 adoptPreferredModelIfUnset()
                 await restoreDraft()
-                return
+                return false
             }
             email = account.email
             session = account.session
             isAuthenticated = true
-            // The device's copy is shown at once; the server refresh replaces it when it answers.
             await loadCachedHome()
-            await refreshHome()
-            await loadDisclosure()
-        } catch { errorMessage = Self.userMessage(for: error) }
+            return true
+        } catch {
+            errorMessage = Self.userMessage(for: error)
+            return false
+        }
+    }
+
+    /// Replaces the device's copy with the server's once it answers.
+    func refreshAfterRestore() async {
+        guard isAuthenticated else { return }
+        await refreshHome()
+        await loadDisclosure()
     }
 
     func login(email: String, password: String) async {
@@ -286,10 +298,7 @@ final class ChatStore {
             return
         }
         guard isAuthenticated else { showsLogin = true; return }
-        let intendedDraft = draft
-        let intendedImage = imageDataURL
-        guard await ensureConsent() else { return }
-        guard draft == intendedDraft, imageDataURL == intendedImage, canSend else { return }
+        guard canSend else { return }
         if selectedID == nil {
             selectedID = UUID().uuidString.lowercased()
         }
@@ -422,7 +431,7 @@ extension ChatStore {
     }
 
     var canSend: Bool {
-        (sendsLocally || (isAuthenticated && hasAIConsent)) && !isSending && !isRunning &&
+        (sendsLocally || isAuthenticated) && !isSending && !isRunning &&
             composerValidation == nil && !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
@@ -659,7 +668,6 @@ extension ChatStore {
     func resetAccount() {
         infoMessage = nil
         disclosure = nil
-        showsConsent = false
         example = nil
         accountGeneration += 1
         observationTask?.cancel()
@@ -862,7 +870,7 @@ extension ChatStore {
             await regenerateLocal(messageID: messageID)
             return
         }
-        guard isAuthenticated, await ensureConsent() else { return }
+        guard isAuthenticated else { return }
         guard let value = conversation, regenerableMessageID == messageID, composerValidation == nil else { return }
         let generation = accountGeneration
         let selection = selectionGeneration
@@ -914,38 +922,9 @@ extension ChatStore {
 
 extension ChatStore {
     var canAttemptSend: Bool {
-        !isSending && !isRunning && !isCheckingConsent &&
+        !isSending && !isRunning &&
             (!(isAuthenticated || sendsLocally) || composerValidation == nil) &&
             !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    var hasAIConsent: Bool {
-        // UserDefaults writes alone do not invalidate SwiftUI observation.
-        _ = consentRevision
-        guard isAuthenticated, let id = profile?.id, let disclosure, disclosure.isValid else { return false }
-        return consentDefaults.string(forKey: "ai-consent." + id) == consentFingerprint(disclosure)
-    }
-
-    private func consentFingerprint(_ value: ChatAIDisclosure) -> String {
-        // Include recipients as well as the policy revision to detect an operator edit.
-        value.version + "|" + value.providers.sorted().joined(separator: "|")
-    }
-
-    func acceptAIConsent() {
-        guard let id = profile?.id, let disclosure, disclosure.isValid else { return }
-        consentDefaults.set(consentFingerprint(disclosure), forKey: "ai-consent." + id)
-        consentDefaults.set(Date(), forKey: "ai-consent-date." + id)
-        consentRevision += 1
-        showsConsent = false
-        // Deliberately never send here: the user reviews the restored draft first.
-    }
-
-    func revokeAIConsent() {
-        if let id = profile?.id {
-            consentDefaults.removeObject(forKey: "ai-consent." + id)
-            consentDefaults.removeObject(forKey: "ai-consent-date." + id)
-            consentRevision += 1
-        }
     }
 
     func cancelPendingLogin() {
@@ -963,53 +942,21 @@ extension ChatStore {
 
     private func finishLogin() async {
         guard isAuthenticated else { return }
-        let generation = accountGeneration
         showsLogin = false
-        await loadDisclosure()
-        guard generation == accountGeneration, isAuthenticated else { return }
-        if !hasAIConsent {
-            showsConsent = true
-        }
     }
 
-    /// Returns the outage when Typeflux could not be reached; consent then fails closed.
-    @discardableResult
-    func loadDisclosure() async -> ChatConnectivity? {
-        guard isAuthenticated else { return nil }
+    /// Loads the provider list for Settings. Sending never waits for it.
+    func loadDisclosure() async {
+        guard isAuthenticated else { return }
         let generation = accountGeneration
         do {
             let value = try await authorized { [service] token in try await service.aiDisclosure(token: token) }
             try checkAccount(generation)
             disclosure = value.isValid ? value : nil
-            return nil
         } catch {
-            guard generation == accountGeneration else { return nil }
+            guard generation == accountGeneration else { return }
             disclosure = nil
-            let issue = ChatConnectivity.classify(error)
-            if let issue {
-                connectivity = issue
-            }
-            return issue
         }
-    }
-
-    private func ensureConsent() async -> Bool {
-        guard !isCheckingConsent else { return false }
-        isCheckingConsent = true
-        defer { isCheckingConsent = false }
-        let generation = accountGeneration
-        let selection = selectionGeneration
-        let outage = await loadDisclosure()
-        guard generation == accountGeneration, selection == selectionGeneration, isAuthenticated else { return false }
-        if let outage {
-            // Nothing can be sent anyway; explain the outage instead of asking for consent.
-            noteUnsent(outage)
-            return false
-        }
-        if !hasAIConsent {
-            showsConsent = true; return false
-        }
-        return true
     }
 
     func deleteAccount(proof: ChatDeletionProof) async -> Bool {
@@ -1024,7 +971,6 @@ extension ChatStore {
         do {
             try await authorized { [service] token in try await service.deleteAccount(proof: proof, token: token) }
             try checkAccount(generation)
-            revokeAIConsent()
             await forgetAccountData()
             resetAccount()
             do { try credentials.clear() } catch {

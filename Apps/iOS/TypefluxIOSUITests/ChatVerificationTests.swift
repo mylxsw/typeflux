@@ -449,22 +449,15 @@ extension ChatVerificationTests {
     }
 
     @MainActor
-    func testConsentDeclineAndManualSend() {
-        let app = launch("--synthetic-empty", "--synthetic-no-consent")
+    func testFirstCloudMessageIsSentWithoutInterruption() {
+        let app = launch("--synthetic-empty")
         let field = app.textFields["chat.composer"]
-        field.tap(); field.typeText("Review then send")
+        field.tap(); field.typeText("Send right away")
         app.buttons["chat.send"].tap()
-        XCTAssertTrue(app.buttons["privacy.decline"].waitForExistence(timeout: 5))
-        screenshot(app, "gul217-ai-consent")
-        app.buttons["privacy.decline"].tap()
-        XCTAssertEqual(field.value as? String, "Review then send")
-        app.buttons["chat.send"].tap()
-        XCTAssertTrue(app.buttons["privacy.agree"].waitForExistence(timeout: 5))
-        app.buttons["privacy.agree"].tap()
-        XCTAssertEqual(field.value as? String, "Review then send")
-        screenshot(app, "gul217-draft-after-consent")
-        app.buttons["chat.send"].tap()
-        XCTAssertNotEqual(field.value as? String, "Review then send")
+        let more = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "chat.more.")).firstMatch
+        XCTAssertTrue(more.waitForExistence(timeout: 8))
+        XCTAssertFalse(app.buttons["privacy.agree"].exists)
+        XCTAssertNotEqual(field.value as? String, "Send right away")
     }
 
     @MainActor
@@ -533,7 +526,7 @@ extension ChatVerificationTests {
 
 extension ChatVerificationTests {
     @MainActor
-    func testWelcomeAndConsentInEnglishDarkMode() {
+    func testWelcomeInEnglishDarkMode() {
         let app = XCUIApplication()
         app.launchArguments = ["--synthetic-preview", "--synthetic-guest", "--synthetic-dark",
                                "-AppleLanguages", "(en)", "-AppleLocale", "en_US",
@@ -544,68 +537,32 @@ extension ChatVerificationTests {
         screenshot(app, "gul217-welcome-dark-english")
         app.buttons["login.close"].tap()
         XCTAssertTrue(app.buttons["guest.login"].waitForExistence(timeout: 5))
-        app.terminate()
-        app.launchArguments = ["--synthetic-preview", "--synthetic-empty", "--synthetic-no-consent", "--synthetic-dark",
-                               "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
-        app.launch()
-        XCTAssertTrue(app.textFields["chat.composer"].waitForExistence(timeout: 8))
-        enter("Check my draft", in: app)
-        app.buttons["chat.send"].tap()
-        XCTAssertTrue(app.buttons["privacy.agree"].waitForExistence(timeout: 5))
-        screenshot(app, "gul217-consent-dark-english")
-        app.buttons["privacy.decline"].tap()
-        XCTAssertEqual(app.textFields["chat.composer"].value as? String, "Check my draft")
     }
 
     @MainActor
-    func testPrivacyActionsRemainReachableWithLargeText() {
-        let app = launch("--synthetic-empty", "--synthetic-no-consent",
-                         "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL")
-        enter("Keep this draft", in: app)
-        app.buttons["chat.send"].tap()
-        let agree = app.buttons["privacy.agree"]
-        XCTAssertTrue(agree.waitForExistence(timeout: 5))
-        XCTAssertTrue(agree.isHittable)
-        XCTAssertTrue(app.buttons["privacy.decline"].isHittable)
-        XCTAssertGreaterThan(agree.frame.width, app.frame.width * 0.8)
-        let policy = app.descendants(matching: .any)["privacy.policy"].firstMatch
-        for _ in 0 ..< 14 where !policy.isHittable {
-            app.scrollViews.firstMatch.swipeUp()
-        }
-        XCTAssertTrue(policy.isHittable)
-        screenshot(app, "gul217-consent-large-text")
-        app.buttons["privacy.decline"].tap()
-        XCTAssertEqual(app.textFields["chat.composer"].value as? String, "Keep this draft")
-    }
-
-    @MainActor
-    func testWithdrawConsentInSettings() {
+    func testAIDataSharingListsProvidersInSettings() {
         let app = launch("--synthetic-empty")
         openHistory(app)
         app.buttons["chat.account"].tap()
         let privacy = app.buttons["settings.aiPrivacy"]
         XCTAssertTrue(privacy.waitForExistence(timeout: 5))
         privacy.tap()
-        let revoke = app.buttons["privacy.revoke"]
-        XCTAssertTrue(revoke.waitForExistence(timeout: 5))
-        revoke.tap()
-        XCTAssertTrue(revoke.waitForNonExistence(timeout: 5))
-        app.navigationBars.buttons.firstMatch.tap()
-        app.buttons["settings.done"].tap()
-        enter("Consent is required again", in: app)
-        app.buttons["chat.send"].tap()
-        XCTAssertTrue(app.buttons["privacy.decline"].waitForExistence(timeout: 5))
+        let providers = app.descendants(matching: .any)["privacy.providers"].firstMatch
+        XCTAssertTrue(providers.waitForExistence(timeout: 5))
+        let named = NSPredicate(format: "label CONTAINS %@", "Preview Provider")
+        XCTAssertTrue(app.descendants(matching: .any).matching(named).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["privacy.revoke"].exists)
+        screenshot(app, "gul418-ai-data-sharing")
     }
 }
 
 extension ChatVerificationTests {
     @MainActor
-    func testGuestSettingsLoginPreservesDraftThroughConsent() {
+    func testGuestSettingsLoginPreservesDraft() {
         let app = XCUIApplication()
         app.launchArguments = [
             "--synthetic-preview",
             "--synthetic-guest",
-            "--synthetic-no-consent",
             "-AppleLanguages",
             "(zh-Hans)",
             "-AppleLocale",
@@ -627,10 +584,10 @@ extension ChatVerificationTests {
         app.secureTextFields["login.password"].tap()
         app.secureTextFields["login.password"].typeText("proof")
         app.buttons["login.submit"].tap()
-        XCTAssertTrue(app.buttons["privacy.agree"].waitForExistence(timeout: 8))
-        app.buttons["privacy.agree"].tap()
+        XCTAssertTrue(app.buttons["guest.login"].waitForNonExistence(timeout: 8))
+        XCTAssertTrue(composer.waitForExistence(timeout: 5))
         XCTAssertEqual(composer.value as? String, "Draft before sign-in")
-        XCTAssertFalse(app.buttons["guest.login"].exists)
+        XCTAssertFalse(app.buttons["privacy.agree"].exists)
         XCTAssertFalse(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "chat.more.")).firstMatch
             .exists)
         screenshot(app, "gul217-draft-after-login")
