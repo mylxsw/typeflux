@@ -171,10 +171,14 @@ struct AskBrowserPanel: View {
                     }
                 }
             } label: {
-                Image(systemName: "ellipsis").font(.system(size: 13)).frame(width: 28, height: 28)
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 13))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .frame(width: 28, height: 28)
             }
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
+            .tint(StudioTheme.textSecondary)
             .fixedSize()
             .accessibilityLabel(L("ask.web.more"))
         }

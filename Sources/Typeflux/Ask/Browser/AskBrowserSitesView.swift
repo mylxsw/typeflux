@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// A blank tab: the sites the user is signed in to, and what the browser is for.
+/// A blank tab showing the sites the user is signed in to.
 struct AskBrowserStartPage: View {
     @ObservedObject var workspace: AskBrowserWorkspace
     var tab: AskBrowserTab?
@@ -31,7 +31,6 @@ struct AskBrowserStartPage: View {
                         }
                     }
                 }
-                note("shield", L("ask.web.start.detail"))
             }
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
