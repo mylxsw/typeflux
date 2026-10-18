@@ -48,7 +48,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Typeflux uses the camera when you take a photo to ask about.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Typeflux connects to the API you choose on your local network.</string>
+	<string>Typeflux connects to model servers you add on your local network, such as Ollama.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Typeflux uses the microphone when you dictate a question.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

@@ -11,6 +11,15 @@ struct ChatSettingsView: View {
     @Environment(\.openURL) private var openURL
     @State private var settingsOpenFailed = false
     @State private var confirmingSignOut = false
+    @State private var cachedBytes = 0
+
+    private var defaultModelName: String {
+        guard let reference = store.library.defaultModelRef else {
+            return NSLocalizedString("Automatic", comment: "Default model")
+        }
+        return store.availableModels.first { $0.reference == reference }?.name
+            ?? NSLocalizedString("Unavailable", comment: "Default model")
+    }
 
     var body: some View {
         NavigationStack {
@@ -21,6 +30,63 @@ struct ChatSettingsView: View {
                     } else {
                         signInCard
                     }
+                    sectionLabel("Models")
+                    group {
+                        NavigationLink { ChatDefaultModelView(store: store) } label: {
+                            row(symbol: "cpu", tint: ChatTheme.purple, title: "Default model") {
+                                HStack(spacing: 5) {
+                                    Text(defaultModelName).lineLimit(1)
+                                    chevron
+                                }
+                                .foregroundStyle(ChatTheme.secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("settings.defaultModel")
+                        divider
+                        NavigationLink { ChatProvidersView(store: store) } label: {
+                            row(symbol: "key.fill", tint: .orange, title: "Model providers") {
+                                HStack(spacing: 5) {
+                                    Text(store.library.providers.isEmpty
+                                        ? NSLocalizedString("None", comment: "No providers")
+                                        : String(store.library.providers.count))
+                                    chevron
+                                }
+                                .foregroundStyle(ChatTheme.secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("settings.providers")
+                    }
+                    sectionLabel("Storage")
+                    group {
+                        if store.isAuthenticated {
+                            row(symbol: "icloud.and.arrow.down", tint: ChatTheme.accent, title: "Offline copy") {
+                                HStack(spacing: 10) {
+                                    Text(ByteCountFormatter.string(fromByteCount: Int64(cachedBytes), countStyle: .file))
+                                        .foregroundStyle(ChatTheme.secondary)
+                                    Button("Clear") {
+                                        Task {
+                                            await store.clearCloudCopies()
+                                            cachedBytes = await store.cachedContentSize()
+                                        }
+                                    }
+                                    .disabled(cachedBytes == 0)
+                                    .accessibilityIdentifier("settings.clearCache")
+                                }
+                            }
+                            divider
+                        }
+                        row(symbol: "lock.fill", tint: Color(red: 0.55, green: 0.36, blue: 0.96),
+                            title: "Private conversations") {
+                            Text(String(store.localConversations.count)).foregroundStyle(ChatTheme.secondary)
+                        }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityIdentifier("settings.privateCount")
+                    }
+                    Text("Recent cloud conversations are kept on this iPhone so you can read them offline. Clearing the copy doesn't delete them from your account. Private conversations exist only on this iPhone.")
+                        .font(.system(size: 12.5)).foregroundStyle(ChatTheme.tertiary)
+                        .padding(.horizontal, 16)
                     sectionLabel("General")
                     group {
                         ViewThatFits(in: .horizontal) {
@@ -101,7 +167,7 @@ struct ChatSettingsView: View {
                             .accessibilityIdentifier("settings.deleteAccount")
                         }
                         Text(
-                            "Signing out removes this account from this device. Your cloud conversations stay in your account."
+                            "Signing out removes this account and its copy from this device. Your cloud conversations stay in your account; private conversations and your providers stay on this iPhone."
                         )
                         .font(.system(size: 12.5)).foregroundStyle(ChatTheme.tertiary)
                         .padding(.horizontal, 16)
@@ -137,7 +203,10 @@ struct ChatSettingsView: View {
         }
         .tint(ChatTheme.accent)
         .preferredColorScheme(preferences.appearance.colorScheme)
-        .task { await store.refreshAccountDetails() }
+        .task {
+            cachedBytes = await store.cachedContentSize()
+            await store.refreshAccountDetails()
+        }
         .onChange(of: store.isAuthenticated) { _, authenticated in
             if !authenticated {
                 dismiss()
@@ -176,6 +245,13 @@ struct ChatSettingsView: View {
             if let usage = store.creditUsage {
                 Rectangle().fill(ChatTheme.separator).frame(height: 0.5)
                 ChatCreditSummary(usage: usage).padding(16)
+                if store.connectivity != .online, let synced = store.cloudSyncedAt {
+                    Text(String(format: NSLocalizedString("Updated %@", comment: "Cache time"),
+                                synced.formatted(date: .abbreviated, time: .shortened)))
+                        .font(.system(size: 12)).foregroundStyle(ChatTheme.tertiary)
+                        .padding(.horizontal, 16).padding(.bottom, 12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
             if shop != nil {
                 Rectangle().fill(ChatTheme.separator).frame(height: 0.5)
@@ -190,6 +266,8 @@ struct ChatSettingsView: View {
                     .padding(.horizontal, 16).frame(minHeight: 50).contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                // Purchases need Typeflux to grant credits; finished ones are delivered later anyway.
+                .disabled(store.connectivity != .online)
                 .accessibilityIdentifier("settings.buyCredits")
             }
         }

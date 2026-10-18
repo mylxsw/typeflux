@@ -8,6 +8,7 @@ struct TypefluxIOSApp: App {
     @State private var preferences: ChatPreferences
     @State private var shop: ChatCreditShop
     @Environment(\.scenePhase) private var scenePhase
+    @State private var network = ChatNetworkMonitor()
 
     init() {
         #if DEBUG
@@ -25,7 +26,10 @@ struct TypefluxIOSApp: App {
         let store = ChatStore(
             service: ChatAPIClient(baseURL: endpoint, deviceId: DeviceIdentity.persistentID()),
             credentials: KeychainCredentialStore(endpoint: endpoint),
-            deviceID: DeviceIdentity.persistentID()
+            deviceID: DeviceIdentity.persistentID(),
+            library: ChatModelLibrary(),
+            cache: ChatStorageLocation.cloudCopy(endpoint: endpoint),
+            localStore: ChatStorageLocation.privateConversations()
         )
         _store = State(initialValue: store)
         _shop = State(initialValue: ChatCreditShop(store: store, storeKit: LiveStoreKit()))
@@ -36,6 +40,7 @@ struct TypefluxIOSApp: App {
             ChatRootView(store: store, preferences: preferences, shop: shop)
                 .tint(ChatTheme.accent)
                 .preferredColorScheme(preferredColorScheme)
+                .task { await network.start(store: store) }
                 .onChange(of: scenePhase) { _, phase in
                     Task {
                         await store.setForeground(phase == .active)
@@ -103,5 +108,54 @@ enum AppConfiguration {
                 bytes[0] & 0xFE == 0xFC || (bytes[0] == 0xFE && bytes[1] & 0xC0 == 0x80)
         }
         return false
+    }
+}
+
+/// Where the device keeps conversations. The cloud copy is a cache: it lives in
+/// Caches, is excluded from backups and can be rebuilt from Typeflux. Private
+/// conversations exist nowhere else, so they live in Application Support.
+enum ChatStorageLocation {
+    static func cloudCopy(endpoint: URL) -> ChatLocalStore? {
+        guard let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else { return nil }
+        // Separate files per server, like the Keychain session namespace.
+        let name = "cloud-" + (endpoint.host ?? "default").replacingOccurrences(of: ":", with: "-") + ".sqlite"
+        var url = base.appendingPathComponent("Typeflux", isDirectory: true).appendingPathComponent(name)
+        let store = try? ChatLocalStore(url: url)
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try? url.setResourceValues(values)
+        return store
+    }
+
+    static func privateConversations() -> ChatLocalStore? {
+        guard let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+        else { return nil }
+        return try? ChatLocalStore(url: base.appendingPathComponent("Typeflux", isDirectory: true)
+            .appendingPathComponent("conversations.sqlite"))
+    }
+}
+
+/// Tells the store when the device loses or regains a network.
+@MainActor
+final class ChatNetworkMonitor {
+    private var monitor: NWPathMonitor?
+
+    func start(store: ChatStore) async {
+        guard monitor == nil, !store.isSynthetic else { return }
+        let monitor = NWPathMonitor()
+        self.monitor = monitor
+        let paths = AsyncStream<Bool> { continuation in
+            monitor.pathUpdateHandler = { path in continuation.yield(path.status == .satisfied) }
+            continuation.onTermination = { _ in monitor.cancel() }
+            monitor.start(queue: DispatchQueue(label: "app.typeflux.ios.network"))
+        }
+        var last: Bool?
+        for await available in paths where available != last {
+            // The first report only establishes the baseline.
+            if last != nil {
+                await store.networkChanged(available: available)
+            }
+            last = available
+        }
     }
 }

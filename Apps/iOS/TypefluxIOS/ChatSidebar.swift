@@ -10,7 +10,12 @@ struct ChatSidebar: View {
     var onSettings: () -> Void
     @State private var search = ""
     @State private var pendingDelete: ChatConversationSummary?
+    @State private var filter = ChatHistoryFilter.all
     @FocusState private var searchFocused: Bool
+
+    private var items: [ChatConversationSummary] {
+        store.history(store.hasBothStorages ? filter : .all)
+    }
 
     private var isSearching: Bool {
         !search.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -20,10 +25,23 @@ struct ChatSidebar: View {
         VStack(spacing: 0) {
             header
             searchField.padding(.horizontal, 4).padding(.top, 10).padding(.bottom, 4)
+            if store.hasBothStorages {
+                Picker("Show", selection: $filter) {
+                    ForEach(ChatHistoryFilter.allCases) { item in
+                        Text(NSLocalizedString(item.title, comment: "History filter")).tag(item)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 4).padding(.bottom, 4)
+                .accessibilityIdentifier("chat.history.filter")
+            }
+            ChatConnectivityBanner(store: store).padding(.horizontal, 4).padding(.bottom, 4)
             List {
                 if !store.isAuthenticated {
                     guestRow(symbol: "person.crop.circle.badge.plus", tint: ChatTheme.accentText,
                              title: Text("Sign in to sync your conversations")) { store.showsLogin = true }
+                }
+                if !store.isAuthenticated, store.localConversations.isEmpty {
                     Section {
                         ForEach(ChatExample.allCases) { example in
                             guestRow(symbol: "sparkles", tint: .primary, title: Text(verbatim: example.title)) {
@@ -41,10 +59,10 @@ struct ChatSidebar: View {
                         .listRowBackground(Color.clear).listRowSeparator(.hidden)
                 }
                 ForEach(ChatHistorySection.allCases) { section in
-                    let items = ChatPresentation.history(store.conversations, matching: search, section: section)
-                    if !items.isEmpty {
+                    let sectionItems = ChatPresentation.history(items, matching: search, section: section)
+                    if !sectionItems.isEmpty {
                         Section {
-                            ForEach(items) { item in row(item) }
+                            ForEach(sectionItems) { item in row(item) }
                         } header: {
                             Text(NSLocalizedString(section.title, comment: "History section"))
                                 .font(.system(size: 12.5, weight: .semibold)).foregroundStyle(ChatTheme.tertiary)
@@ -86,8 +104,12 @@ struct ChatSidebar: View {
                 Task { await store.deleteConversation(item.id) }
             }
             .accessibilityIdentifier("chat.history.confirmDelete")
-        } message: { _ in
-            Text("It is removed from every device signed in to this account.")
+        } message: { item in
+            if store.isLocalConversation(item.id) {
+                Text("It is removed from this iPhone. Private conversations have no other copy.")
+            } else {
+                Text("It is removed from every device signed in to this account.")
+            }
         }
     }
 
@@ -135,6 +157,10 @@ struct ChatSidebar: View {
                     Circle().fill(ChatTheme.accent).frame(width: 6, height: 6)
                         .accessibilityLabel(Text("Running"))
                 }
+                if store.isLocalConversation(item.id) {
+                    Image(systemName: "lock.fill").font(.system(size: 10.5)).foregroundStyle(ChatTheme.purple)
+                        .accessibilityLabel(Text("Private conversation"))
+                }
                 Text(item.title.isEmpty ? NSLocalizedString("New conversation", comment: "") : item.title)
                     .font(.system(size: 15, weight: selected ? .semibold : .regular))
                     .foregroundStyle(selected ? ChatTheme.accentText : Color.primary)
@@ -177,11 +203,11 @@ struct ChatSidebar: View {
     }
 
     @ViewBuilder private var emptyOverlay: some View {
-        if store.isAuthenticated, store.conversations.isEmpty, !store.isLoading {
+        if store.isAuthenticated, items.isEmpty, !store.isLoading {
             ContentUnavailableView("Start a conversation", systemImage: "bubble.left.and.bubble.right",
                                    description: Text("Ask a question or continue a conversation from your Mac."))
                 .allowsHitTesting(false)
-        } else if isSearching, !store.conversations.contains(where: { ChatPresentation.matches($0, query: search) }) {
+        } else if isSearching, !items.contains(where: { ChatPresentation.matches($0, query: search) }) {
             ContentUnavailableView.search(text: search).allowsHitTesting(false)
         }
     }
@@ -195,7 +221,8 @@ struct ChatSidebar: View {
                     Image(systemName: "person.crop.circle.fill").font(.system(size: 30))
                         .foregroundStyle(ChatTheme.tertiary).frame(width: 32, height: 32).accessibilityHidden(true)
                 }
-                Text(store.isAuthenticated ? store.displayName : NSLocalizedString("Guest mode", comment: ""))
+                Text(store.isAuthenticated ? store.displayName
+                    : NSLocalizedString(store.library.models.isEmpty ? "Guest mode" : "On this iPhone", comment: ""))
                     .font(.system(
                         size: 14.5,
                         weight: .semibold

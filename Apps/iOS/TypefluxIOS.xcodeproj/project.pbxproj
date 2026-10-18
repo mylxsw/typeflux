@@ -54,6 +54,11 @@
 		C9043DE6202ECA0D7E76738E /* ChatPurchases.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D0EDBE2E4EC7E8A0BB62D7B /* ChatPurchases.swift */; };
 		4F44639CC525302FDE497BE4 /* ChatCreditViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5011B349457AB44404938D00 /* ChatCreditViews.swift */; };
 		78E1230DF8F690F166B12307 /* ChatPurchasesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5EEB10E4A2BCF06E35406AC /* ChatPurchasesTests.swift */; };
+		DA697F4EAF30F834199BDE84 /* ChatModelLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = F37E9340A1A8E9DFDA697F4E /* ChatModelLibrary.swift */; };
+		D39BF6D51DEAC559B69480C5 /* ChatStore+Offline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 817242F80C11DE42D39BF6D5 /* ChatStore+Offline.swift */; };
+		B582631822D916F630C55B15 /* ChatStore+Local.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73788C543B78762FB5826318 /* ChatStore+Local.swift */; };
+		CB4D58229413BA765B09BF32 /* ChatProviderViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B051E88F57E27DE8CB4D5822 /* ChatProviderViews.swift */; };
+		0A1684799A73180EB2AF48D0 /* ChatOfflineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B081A1DB4D3D27630A168479 /* ChatOfflineTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -119,6 +124,11 @@
 		0D0EDBE2E4EC7E8A0BB62D7B /* ChatPurchases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPurchases.swift; sourceTree = "<group>"; };
 		5011B349457AB44404938D00 /* ChatCreditViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatCreditViews.swift; sourceTree = "<group>"; };
 		C5EEB10E4A2BCF06E35406AC /* ChatPurchasesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatPurchasesTests.swift; sourceTree = "<group>"; };
+		F37E9340A1A8E9DFDA697F4E /* ChatModelLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModelLibrary.swift; sourceTree = "<group>"; };
+		817242F80C11DE42D39BF6D5 /* ChatStore+Offline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChatStore+Offline.swift"; sourceTree = "<group>"; };
+		73788C543B78762FB5826318 /* ChatStore+Local.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChatStore+Local.swift"; sourceTree = "<group>"; };
+		B051E88F57E27DE8CB4D5822 /* ChatProviderViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatProviderViews.swift; sourceTree = "<group>"; };
+		B081A1DB4D3D27630A168479 /* ChatOfflineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChatOfflineTests.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -192,6 +202,10 @@
 				89FC27794BC62EECC2FC209E /* ChatTranscript.swift */,
 				9E67E6FC41E4FD3453A359BC /* Localizable.strings */,
 				292AE82520A2009E372E3F40 /* ChatPreferences.swift */,
+				B051E88F57E27DE8CB4D5822 /* ChatProviderViews.swift */,
+				73788C543B78762FB5826318 /* ChatStore+Local.swift */,
+				817242F80C11DE42D39BF6D5 /* ChatStore+Offline.swift */,
+				F37E9340A1A8E9DFDA697F4E /* ChatModelLibrary.swift */,
 				7DEF3F74976AE35C15AD619F /* ChatSettingsView.swift */,
 			);
 			path = TypefluxIOS;
@@ -204,6 +218,7 @@
 				A20900000000000000000003 /* GoogleSignInTests.swift */,
 				6EDC9ED4857EF34E96A3F17C /* ChatAccountTests.swift */,
 				00000000000000000000012C /* ChatStoreTests.swift */,
+				B081A1DB4D3D27630A168479 /* ChatOfflineTests.swift */,
 				00000000000000000000012D /* PlatformTests.swift */,
 				B3DDBF0BF21F3C6EF11F383B /* ChatPresentationTests.swift */,
 				D9BFEEE1307B424C80BF6F19 /* ChatVisualComponentsTests.swift */,
@@ -374,6 +389,10 @@
 				1EFBD9C88D1DB393F7B858CB /* ChatTheme.swift in Sources */,
 				5D6004A2082941E89C718AD1 /* ChatTranscript.swift in Sources */,
 				C8CB23790EF24DD1D1E9E935 /* ChatPreferences.swift in Sources */,
+				CB4D58229413BA765B09BF32 /* ChatProviderViews.swift in Sources */,
+				B582631822D916F630C55B15 /* ChatStore+Local.swift in Sources */,
+				D39BF6D51DEAC559B69480C5 /* ChatStore+Offline.swift in Sources */,
+				DA697F4EAF30F834199BDE84 /* ChatModelLibrary.swift in Sources */,
 				B6A18D912191CDDE99B711B7 /* ChatSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -386,6 +405,7 @@
 				A20900000000000000000004 /* GoogleSignInTests.swift in Sources */,
 				27D885831CAAFB84B2CFE3DA /* ChatAccountTests.swift in Sources */,
 				000000000000000000000190 /* ChatStoreTests.swift in Sources */,
+				0A1684799A73180EB2AF48D0 /* ChatOfflineTests.swift in Sources */,
 				000000000000000000000191 /* PlatformTests.swift in Sources */,
 				46541A7671FBF7ED48366811 /* ChatPresentationTests.swift in Sources */,
 				AD0929A6B478ABA412104B19 /* ChatVisualComponentsTests.swift in Sources */,
