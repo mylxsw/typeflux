@@ -407,3 +407,16 @@
 "It is removed from this iPhone. Private conversations have no other copy." = "将从这台 iPhone 删除。私密对话没有其他副本。";
 "Use your own models" = "使用自己的模型";
 "No account needed. Conversations stay on this iPhone; your API key stays in its Keychain." = "无需账号。对话只保存在这台 iPhone，API Key 保存在本机钥匙串中。";
+
+/* GUL-418 follow-ups: temporary chats, renaming, routed model */
+"Auto → %@" = "自动 → %@";
+"Keep conversation" = "保留这段对话";
+"Temporary chat" = "临时对话";
+"Temporary chat on" = "临时对话已开启";
+"It won't appear in history and is deleted when you leave." = "不会出现在历史记录中，离开后自动删除。";
+"Rename" = "重命名";
+"Rename conversation" = "重命名对话";
+"Title" = "标题";
+"Use a single line of up to 60 characters." = "请使用一行、不超过 60 个字的标题。";
+"Wait for the answer to finish, then rename the conversation." = "请等回答结束后再重命名。";
+"Typeflux is unavailable right now. Try again when you're back online." = "Typeflux 服务暂不可用，请恢复联网后再试。";

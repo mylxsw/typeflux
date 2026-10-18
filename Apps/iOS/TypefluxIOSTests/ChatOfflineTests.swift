@@ -564,11 +564,15 @@ actor ScriptedProvider: ChatProviderService {
     private var script: [Step] = [.text("Hel"), .text("lo")]
     private(set) var requests: [ChatProviderRequest] = []
 
+    /// Scripts used once each, in order, before falling back to `script`.
+    private var queue: [[Step]] = []
+
     func setScript(_ steps: [Step]) { script = steps }
+    func enqueue(_ scripts: [[Step]]) { queue += scripts }
 
     private func begin(_ request: ChatProviderRequest) -> [Step] {
         requests.append(request)
-        return script
+        return queue.isEmpty ? script : queue.removeFirst()
     }
 
     nonisolated func models(provider _: ChatProvider, apiKey _: String?) async throws -> [ChatProviderModel] {

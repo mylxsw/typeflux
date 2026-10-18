@@ -251,6 +251,43 @@ final class ScreenTourTests: XCTestCase {
         capture("49-default-model")
     }
 
+    /// GUL-418 follow-ups: a temporary conversation and renaming from the sidebar.
+    @MainActor
+    func testTourTemporaryAndRename() {
+        let app = launch("--synthetic-history")
+        XCTAssertTrue(app.buttons["chat.temporary"].waitForExistence(timeout: 8))
+        app.buttons["chat.temporary"].tap()
+        capture("52-temporary-new")
+        let field = app.textFields["chat.composer"]
+        field.tap(); field.typeText("只问一次")
+        app.buttons["chat.send"].tap()
+        XCTAssertTrue(app.buttons["chat.temporary.keep"].waitForExistence(timeout: 8))
+        capture("53-temporary-conversation")
+        openSidebar(app)
+        let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "chat.history.preview"))
+            .firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["只问一次"].exists, "Temporary conversations are never listed")
+        row.swipeLeft()
+        let rename = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "chat.history.rename."))
+            .firstMatch
+        XCTAssertTrue(rename.waitForExistence(timeout: 3))
+        rename.tap()
+        let title = app.textFields["chat.rename.field"]
+        XCTAssertTrue(title.waitForExistence(timeout: 3))
+        title.tap()
+        title.press(forDuration: 1.0)
+        if app.menuItems["全选"].waitForExistence(timeout: 2) {
+            app.menuItems["全选"].tap()
+        }
+        title.typeText("新的标题")
+        capture("54-rename")
+        app.buttons["chat.rename.save"].tap()
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "新的标题")).firstMatch
+            .waitForExistence(timeout: 5))
+        capture("55-renamed")
+    }
+
     @MainActor
     func testTourWelcomeOwnModels() {
         let app = launch("--synthetic-guest", "-guest.welcome-dismissed", "NO")

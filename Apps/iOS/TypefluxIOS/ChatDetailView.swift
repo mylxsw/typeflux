@@ -134,6 +134,20 @@ struct ChatDetailView: View {
                 } else {
                     Spacer()
                 }
+                if store.isTemporary, store.conversation?.messages.isEmpty == false {
+                    barButton("tray.and.arrow.down", label: "Keep conversation", identifier: "chat.temporary.keep",
+                              tint: ChatTheme.temporary) {
+                        Task { await store.keepTemporary() }
+                    }
+                    .disabled(store.isBusy)
+                } else if isEmpty, store.canStartTemporary {
+                    barButton(store.startsTemporary ? "hourglass.circle.fill" : "hourglass",
+                              label: store.startsTemporary ? "Temporary chat on" : "Temporary chat",
+                              identifier: "chat.temporary",
+                              tint: store.startsTemporary ? ChatTheme.temporary : ChatTheme.secondary) {
+                        store.toggleTemporary()
+                    }
+                }
                 barButton("square.and.pencil", label: "New conversation", identifier: "chat.detail.new",
                           tint: isEmpty ? ChatTheme.tertiary : ChatTheme.accent) {
                     editorFocused = false
@@ -171,6 +185,11 @@ struct ChatDetailView: View {
     private func titlePill(_ conversation: ChatConversation) -> some View {
         VStack(spacing: 1) {
             HStack(spacing: 4) {
+                if store.isTemporary {
+                    Image(systemName: "hourglass").font(.system(size: 10.5, weight: .semibold))
+                        .foregroundStyle(ChatTheme.temporary)
+                        .accessibilityLabel(NSLocalizedString("Temporary chat", comment: ""))
+                }
                 if store.conversationStorage == .local {
                     Image(systemName: "lock.fill").font(.system(size: 10.5, weight: .semibold))
                         .foregroundStyle(ChatTheme.purple)
@@ -209,10 +228,11 @@ struct ChatDetailView: View {
         VStack(spacing: 0) {
             Spacer(minLength: 24)
             ChatOrb(size: 96).padding(.bottom, 22)
-            Text(store.sendsLocally ? "Ask privately" : "What's on your mind?")
+            Text(store.startsTemporary ? "Temporary chat" : store.sendsLocally ? "Ask privately" : "What's on your mind?")
                 .font(.system(size: 25, weight: .semibold))
                 .multilineTextAlignment(.center)
-            Text(store.sendsLocally ? "Answered by your own model and kept only on this iPhone."
+            Text(store.startsTemporary ? "It won't appear in history and is deleted when you leave."
+                : store.sendsLocally ? "Answered by your own model and kept only on this iPhone."
                 : "Look at photos, translate, read the web")
                 .font(.system(size: 14.5)).foregroundStyle(ChatTheme.secondary).multilineTextAlignment(.center)
                 .padding(.top, 8).padding(.horizontal, 24)

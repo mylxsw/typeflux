@@ -11,6 +11,8 @@ struct ChatSidebar: View {
     @State private var search = ""
     @State private var pendingDelete: ChatConversationSummary?
     @State private var filter = ChatHistoryFilter.all
+    @State private var renaming: ChatConversationSummary?
+    @State private var renameText = ""
     @FocusState private var searchFocused: Bool
 
     private var items: [ChatConversationSummary] {
@@ -93,6 +95,23 @@ struct ChatSidebar: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("chat.sidebar")
+        .alert("Rename conversation", isPresented: Binding(get: { renaming != nil }, set: {
+            if !$0 {
+                renaming = nil
+            }
+        })) {
+            TextField("Title", text: $renameText)
+                .accessibilityIdentifier("chat.rename.field")
+            Button("Cancel", role: .cancel) { renaming = nil }
+            Button("Save") {
+                if let item = renaming {
+                    let title = renameText
+                    Task { await store.rename(item.id, to: title) }
+                }
+                renaming = nil
+            }
+            .accessibilityIdentifier("chat.rename.save")
+        }
         .confirmationDialog(Text("Delete this conversation?"), isPresented: Binding(
             get: { pendingDelete != nil }, set: {
                 if !$0 {
@@ -111,6 +130,11 @@ struct ChatSidebar: View {
                 Text("It is removed from every device signed in to this account.")
             }
         }
+    }
+
+    private func beginRename(_ item: ChatConversationSummary) {
+        renameText = item.title
+        renaming = item
     }
 
     private var header: some View {
@@ -179,6 +203,13 @@ struct ChatSidebar: View {
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button(role: .destructive) { pendingDelete = item } label: { Label("Delete", systemImage: "trash") }
                 .accessibilityIdentifier("chat.history.delete.\(item.id)")
+            Button { beginRename(item) } label: { Label("Rename", systemImage: "pencil") }
+                .tint(.gray)
+                .accessibilityIdentifier("chat.history.rename.\(item.id)")
+        }
+        .contextMenu {
+            Button { beginRename(item) } label: { Label("Rename", systemImage: "pencil") }
+            Button(role: .destructive) { pendingDelete = item } label: { Label("Delete", systemImage: "trash") }
         }
         .accessibilityIdentifier("chat.history.\(item.id)")
         .accessibilityAddTraits(selected ? .isSelected : [])

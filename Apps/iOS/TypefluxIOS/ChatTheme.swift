@@ -8,6 +8,8 @@ enum ChatTheme {
     static let accentText = dynamic(light: (0.106, 0.341, 0.839), dark: (0.557, 0.741, 1))
     static let accentSoft = dynamic(light: (0.902, 0.933, 0.992), dark: (0.082, 0.149, 0.243))
     static let purple = dynamic(light: (0.49, 0.25, 0.94), dark: (0.71, 0.55, 1))
+    /// Temporary conversations, as on the Mac.
+    static let temporary = dynamic(light: (0.055, 0.561, 0.651), dark: (0.251, 0.784, 0.878))
     /// The page behind everything.
     static let background = dynamic(light: (0.961, 0.961, 0.969), dark: (0.059, 0.059, 0.071))
     /// Solid cards on the canvas: tool cards, tables, settings groups.

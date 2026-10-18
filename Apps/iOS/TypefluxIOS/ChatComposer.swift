@@ -148,7 +148,7 @@ struct ChatComposer: View {
 
     /// Private conversations use violet, like the Mac's private storage.
     private var sendTint: Color {
-        store.sendsLocally ? ChatTheme.purple : ChatTheme.accent
+        store.isTemporary ? ChatTheme.temporary : store.sendsLocally ? ChatTheme.purple : ChatTheme.accent
     }
 
     private var attachMenu: some View {

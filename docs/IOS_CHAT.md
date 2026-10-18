@@ -86,8 +86,8 @@ phone, with one accent colour, one type scale and glass only on floating layers.
 - Runs waiting for a desktop tool or local model show as waiting for their
   originating device. The phone does not take over those operations.
 
-Not yet available on iOS: renaming conversations and subscriptions (monthly plans
-are bought on the web; credit packs are bought in the app).
+Not yet available on iOS: subscriptions (monthly plans are bought on the web;
+credit packs are bought in the app).
 
 ## Offline use, private conversations and model choice (GUL-418)
 
@@ -127,8 +127,22 @@ Design and plan: `docs/design/ios-offline-local-mode.md` and the interactive boa
   “Use for new conversations” and Settings → Default model set the default
   (`ask.model.default`); an automatic choice is upgraded when the catalog arrives,
   a user's choice is never replaced. Reopening a conversation restores its model,
-  and answers show the model that wrote them (for cloud conversations, the latest
-  run's model; the server does not record the routed model per message).
+  and answers show the model that wrote them.
+
+- **Temporary conversations.** Before the first message, the hourglass button in
+  the top bar starts a temporary conversation (cloud: sends `temporary: true`;
+  private: kept in memory only). It never appears in history, the device copy or
+  drafts, and it is deleted as soon as the user leaves it; the server also expires
+  cloud ones after 24 hours. "Keep" in the top bar (`POST /:id/keep`, or saving a
+  private one) turns it into an ordinary conversation.
+- **Renaming and titles.** Swipe or long-press a history row to rename it
+  (`POST /:id/title` with `rename`; private conversations are renamed on the
+  device). After the second completed answer, a cloud conversation asks the server
+  to generate its title once (`generate`); a private conversation is named by the
+  same provider with the Mac's title prompt. A manual title is never replaced.
+- **Routed model.** With typeflux-api #144, answers carry `model_name`; an answer to
+  "Auto" (`cloud:default`) shows "Auto → <model>". Older servers fall back to the
+  requested model.
 
 The server owns cloud history and run state; the device copy is only a cache.
 Existing private Mac conversations remain on the Mac and private iPhone
