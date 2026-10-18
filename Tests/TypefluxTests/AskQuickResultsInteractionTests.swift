@@ -4,7 +4,7 @@ import Testing
 @testable import Typeflux
 
 /// Drives the real launcher with key presses: Return copies, ⌘Return asks the
-/// AI, Tab keeps calculating and the arrows move. Copies go to a private
+/// AI, Tab keeps calculating or enters an app, and the arrows move. Copies go to a private
 /// pasteboard, never the user's clipboard.
 @Suite("Ask quick results in the launcher", .serialized, .exclusiveUIState)
 @MainActor
@@ -213,7 +213,7 @@ struct AskQuickResultsInteractionTests {
             defer { launcher.close() }
             try await launcher.press(Self.down)
             try await launcher.press(Self.tab)
-            #expect(launcher.fixture.model.launcherDraft.text == "wechat?", "Tab only writes back calculations")
+            #expect(launcher.fixture.model.launcherDraft.text.isEmpty, "Tab enters the selected application's items")
             try await launcher.press(Self.returnKey)
             #expect(launcher.opened.count == 1)
             #expect(await launcher.fixture.api.sends.isEmpty)

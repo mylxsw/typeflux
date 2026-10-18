@@ -5871,6 +5871,21 @@
 "semantic.details.videoChecked" = "映像を %@ 秒の位置まで確認済み";
 "semantic.details.noSavedProgress" = "保存済みの進捗はありません";
 "semantic.details.reason.imageNoText" = "画像の索引は完了しましたが、読み取れる文字はありません。";
+"ask.appContinue.title" = "作業を再開";
+"ask.appContinue.back" = "検索に戻る";
+"ask.appContinue.entry" = "最近の項目";
+"ask.appContinue.openApp" = "アプリを開く";
+"ask.appContinue.loading" = "開いているタブを読み込み中…";
+"ask.appContinue.tabs" = "開いているタブ";
+"ask.appContinue.files" = "Typeflux から開いたファイル";
+"ask.appContinue.emptyFiles" = "Typeflux からこのアプリで開いたファイルはここに表示されます。";
+"ask.appContinue.emptyBrowser" = "開いているタブはありません。Typeflux から開いたファイルもここに表示されます。";
+"ask.appContinue.tabsDisabled" = "このブラウザのタブ取得はオフです。Typeflux から開いたファイルは表示されます。";
+"ask.appContinue.noMatch" = "一致する項目がありません";
+"ask.appContinue.permission" = "タブを読み込めません。システム設定のオートメーション権限を確認してください。";
+"ask.appContinue.hint" = "↑↓ 選択 · ↩ 開く · Esc 検索に戻る";
+"ask.appContinue.browseHint" = "→ 最近の項目";
+"ask.appContinue.filter" = "%@ の最近の項目を検索";
 
 /* Embedded browser (web_browser) */
 "ask.tool.web_browser" = "ブラウザ";

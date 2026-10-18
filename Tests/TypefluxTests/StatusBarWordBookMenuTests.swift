@@ -1,4 +1,5 @@
 import AppKit
+import CoreAudio
 import Testing
 @testable import Typeflux
 
@@ -115,8 +116,54 @@ struct StatusBarWordBookMenuTests {
         #expect(wordBookItem.isEnabled && wordBookItem.submenu == nil)
         #expect(wordBookItem.target === controller)
         let voiceMenu = try #require(rootMenu.items[2].submenu)
-        #expect(voiceMenu.items.prefix(2).map(\.title) == [L("menu.transcriptionHistory"), L("menu.personas")])
+        #expect(voiceMenu.items.prefix(3).map(\.title) == [
+            L("settings.microphone.title"), L("menu.transcriptionHistory"), L("menu.personas")
+        ])
         #expect(voiceMenu.items.contains { $0.title == L("menu.textTransformation") } == (language == .traditionalChinese))
+    }
+
+    @Test
+    func `voice input microphone menu refreshes devices and saves the selected input`() throws {
+        let suite = "VoiceMicrophoneMenu-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = SettingsStore(defaults: defaults)
+        let devices = MenuAudioDeviceManager()
+        devices.inputs = [AudioInputDevice(id: "built-in", name: "Mac Microphone")]
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(suite)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let controller = StatusBarController(
+            appState: AppStateStore(), settingsStore: settings,
+            historyStore: FileHistoryStore(baseDir: directory), audioDeviceManager: devices
+        )
+        controller.start()
+        defer { controller.stop() }
+
+        let voiceMenu = try #require(controller.menu?.items.first { $0.title == L("menu.voiceInput") }?.submenu)
+        let microphoneMenu = try #require(voiceMenu.items.first { $0.title == L("settings.microphone.title") }?.submenu)
+        controller.menuWillOpen(microphoneMenu)
+        #expect(microphoneMenu.items.map(\.title) == [L("settings.microphone.automatic"), "", "Mac Microphone"])
+        #expect(microphoneMenu.items[0].state == .on)
+        microphoneMenu.performActionForItem(at: 2)
+        #expect(settings.preferredMicrophoneID == "built-in")
+
+        devices.inputs.append(AudioInputDevice(id: "usb", name: "USB Microphone"))
+        controller.menuWillOpen(microphoneMenu)
+        #expect(microphoneMenu.items.map(\.title) == [
+            L("settings.microphone.automatic"), "", "Mac Microphone", "USB Microphone"
+        ])
+        #expect(microphoneMenu.items[2].state == .on)
+        microphoneMenu.performActionForItem(at: 3)
+        #expect(settings.preferredMicrophoneID == "usb")
+
+        devices.inputs.removeAll { $0.id == "usb" }
+        microphoneMenu.performActionForItem(at: 3)
+        #expect(settings.preferredMicrophoneID == "usb")
+        controller.menuWillOpen(microphoneMenu)
+        microphoneMenu.performActionForItem(at: 0)
+        #expect(settings.preferredMicrophoneID == AudioDeviceManager.automaticDeviceID)
+        controller.menuWillOpen(microphoneMenu)
+        #expect(microphoneMenu.items[0].state == .on)
     }
 
     @Test(arguments: [false, true])
@@ -165,4 +212,15 @@ struct StatusBarWordBookMenuTests {
         #expect(wordBook.window?.isVisible == true)
         #expect(wordBook.model?.entries.count == (hasWords ? 1 : 0))
     }
+}
+
+private final class MenuAudioDeviceManager: AudioDeviceManaging {
+    var inputs: [AudioInputDevice] = []
+
+    func availableInputDevices() -> [AudioInputDevice] { inputs }
+    func resolveInputDeviceID(for _: String) -> AudioDeviceID? { nil }
+    func defaultInputDeviceID() -> AudioDeviceID? { nil }
+    func observeDefaultInputDeviceChanges(
+        _: @escaping @Sendable () -> Void
+    ) -> AudioInputDeviceChangeObservation? { nil }
 }

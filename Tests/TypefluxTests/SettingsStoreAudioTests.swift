@@ -48,6 +48,25 @@ final class SettingsStoreAudioTests: XCTestCase {
         XCTAssertTrue(viewModel.instantVoiceInputEnabled)
         XCTAssertTrue(store.instantVoiceInputEnabled)
     }
+
+    func testSettingsViewModelReflectsMicrophoneSelectedOutsideSettings() async throws {
+        let suiteName = "SettingsStoreAudioTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = SettingsStore(defaults: defaults)
+        let viewModel = StudioViewModel(
+            settingsStore: store,
+            historyStore: AudioSettingsHistoryStore(),
+            initialSection: .settings
+        )
+
+        store.preferredMicrophoneID = "external-microphone"
+        let deadline = Date().addingTimeInterval(1)
+        while viewModel.preferredMicrophoneID != "external-microphone", Date() < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertEqual(viewModel.preferredMicrophoneID, "external-microphone")
+    }
 }
 
 private final class AudioSettingsHistoryStore: HistoryStore {

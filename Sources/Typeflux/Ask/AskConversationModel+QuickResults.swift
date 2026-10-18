@@ -134,6 +134,9 @@ extension AskConversationModel {
         switch action {
         case .open:
             fileIndex.recordOpen(file.path)
+            if let application = NSWorkspace.shared.urlForApplication(toOpen: url) {
+                appContinueHistory.record(url, applicationID: Bundle(url: application)?.bundleIdentifier ?? application.path)
+            }
             openURL(url)
             fileLocationNotice(file)
         case .openWith:
@@ -142,6 +145,7 @@ extension AskConversationModel {
             return .panel(AskQuickActionPanel(target: .file(file), actions: applications))
         case let .openIn(application):
             fileIndex.recordOpen(file.path)
+            appContinueHistory.record(url, applicationID: Bundle(url: application)?.bundleIdentifier ?? application.path)
             openFileWith(url, application)
             fileLocationNotice(file)
         case .reveal:

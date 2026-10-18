@@ -20,6 +20,7 @@ struct AskQuickResultsView: View {
     var thumbnails = true
     /// Runs a row. `close` is true for Return and for the calculation row.
     var onRun: (AskQuickResults.Row, _ close: Bool) -> Void
+    var onBrowseApp: (AskAppEntry) -> Void = { _ in }
     var onHighlight: (Int) -> Void
     var onAction: (AskQuickAction) -> Void = { _ in }
     var onShowFileActions: (AskFileHit) -> Void = { _ in }
@@ -284,6 +285,7 @@ struct AskQuickResultsView: View {
                 }
             }
             .padding(.horizontal, 10)
+            .padding(.trailing, app.kind == .application ? 92 : 0)
             .frame(height: Self.appHeight)
             .background { highlightShape(highlighted, cornerRadius: 14) }
             .overlay {
@@ -299,6 +301,22 @@ struct AskQuickResultsView: View {
         .accessibilityHint(L("ask.quick.app.open"))
         .accessibilityAddTraits(highlighted ? .isSelected : [])
         .accessibilityIdentifier(app.kind == .settingsPane ? "ask.quick.pane" : "ask.quick.app")
+        .overlay(alignment: .trailing) {
+            if app.kind == .application {
+                Button { onBrowseApp(app) } label: {
+                    HStack(spacing: 4) {
+                        Text(L("ask.appContinue.entry"))
+                        Image(systemName: "chevron.right")
+                    }
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .frame(width: 88, height: Self.appHeight)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L("ask.appContinue.title"))
+                .padding(.trailing, 6)
+            }
+        }
     }
 
     /// A file or folder: its icon or thumbnail, name with the matched letters marked,

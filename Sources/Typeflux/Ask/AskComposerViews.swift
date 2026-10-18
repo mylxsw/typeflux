@@ -134,6 +134,17 @@ struct AskComposer: View {
     private var listening: Bool { voice.context == contextID && voice.phase == .listening }
     @State private var showingStripPreview = false
     @State private var homeAppsRevision = 0
+    private struct AppContinueSession {
+        var app: AskAppEntry
+        var previousQuery: String
+        var tabs: [AskBrowserSearchEntry] = []
+        var loading = false
+        var permissionIssue = false
+        var emptyMessageKey: String
+        var selected = 0
+    }
+    @State private var appContinue: AppContinueSession?
+    @State private var appContinueTask: Task<Void, Never>?
     /// Files are dragged over the editor or the card.
     @State private var editorDropTargeted = false
     @State private var cardDropTargeted = false
@@ -210,7 +221,11 @@ struct AskComposer: View {
     /// Shared by the header, Return and the footer; local actions never depend on AI readiness.
     var launcherPrimaryAction: AskLauncherPrimaryAction {
         let action: AskLauncherPrimaryAction
-        if model.launcherHistoryMode, !paletteOpen {
+        if let appContinue {
+            let items = appContinueItems
+            action = .confirm(appContinue.selected == 0 || items.isEmpty
+                ? L("ask.appContinue.openApp") : L("ask.quick.action.open"))
+        } else if model.launcherHistoryMode, !paletteOpen {
             action = .confirm(L("ask.inputHistory.fill"), enabled: model.highlightedLauncherHistory != nil)
         } else if AskPermissionMode.command(draft.wrappedValue.text).recognized,
                   AskPermissionMode.command(draft.wrappedValue.text).mode != nil || !paletteOpen {
@@ -300,6 +315,8 @@ struct AskComposer: View {
             selection = palette.highlightedCommand?.id ?? "palette"
         } else if let panel = quickActions {
             selection = String(describing: panel.target) + ":\(panel.highlighted)"
+        } else if let appContinue {
+            selection = "appContinue:\(appContinue.app.id):\(appContinue.selected)"
         } else if showsQuickResults, let results = quickResults {
             selection = results.identity(of: results.highlightedRow)
         } else {
@@ -378,7 +395,7 @@ struct AskComposer: View {
     /// Quick results show while the launcher's text is all there is to send:
     /// quotes, files or chosen tools mean the text is written for the AI.
     private var showsQuickResults: Bool {
-        guard launcher, quickSearch.isVisible,
+        guard launcher, appContinue == nil, quickSearch.isVisible,
               presentedQuickResults != nil, !paletteOpen, !model.launcherHistoryMode,
               pluginDisplay == nil else { return false }
         let value = draft.wrappedValue
@@ -396,6 +413,7 @@ struct AskComposer: View {
 
     private func refreshQuickResultsBody(resetActions: Bool) {
         guard launcher, searchVisible, quickSearch.isVisible else { return }
+        if appContinue != nil { quickSearch.cancel(); return }
         if model.launcherHistoryMode { quickSearch.cancel(); quickResults = nil; return }
         if refreshPlugins() { quickSearch.cancel(); quickResults = nil; return }
         let sources = AskQuickResults.Sources(apps: model.quickAppsEnabled ? model.appIndex : nil,
@@ -606,6 +624,138 @@ struct AskComposer: View {
         return true
     }
 
+    private var appContinueItems: [AskAppContinueItem] {
+        guard let appContinue else { return [] }
+        let tabs = appContinue.tabs.map(AskAppContinueItem.tab)
+        let files = model.appContinueHistory.recent(for: appContinue.app).map(AskAppContinueItem.file)
+        return (tabs + files).filter { $0.matches(draft.wrappedValue.text) }
+    }
+
+    private func enterAppContinue(_ app: AskAppEntry) {
+        guard launcher, app.kind == .application else { return }
+        appContinueTask?.cancel()
+        let browser = AskSearchBrowser.allCases.first { $0.bundleID == app.bundleID }
+        let settings = model.browserSearchSettings
+        let readsTabs = browser.map { settings.tabsEnabled && settings.tabBrowsers.contains($0) } == true
+        let emptyMessageKey = browser == nil ? "ask.appContinue.emptyFiles"
+            : readsTabs ? "ask.appContinue.emptyBrowser" : "ask.appContinue.tabsDisabled"
+        appContinue = AppContinueSession(app: app, previousQuery: draft.wrappedValue.text,
+                                         loading: readsTabs,
+                                         emptyMessageKey: emptyMessageKey,
+                                         selected: model.appContinueHistory.recent(for: app).isEmpty ? 0 : 1)
+        quickActions = nil
+        quickSearch.cancel()
+        quickResults = nil
+        quickReserve = 0
+        draft.wrappedValue.text = ""
+        reportHeight()
+        focusLauncherEditorAfterNavigation()
+        guard readsTabs, let browser else { return }
+        let presentation = model.launcherPresentationID
+        appContinueTask = Task { @MainActor in
+            let snapshot = await model.browserSearch.refreshSnapshot(kind: .tab, browsers: [browser], interactive: true)
+            guard !Task.isCancelled, model.launcherPresentationID == presentation,
+                  appContinue?.app.id == app.id else { return }
+            let selectedItem = appContinue.flatMap { session in
+                let items = appContinueItems
+                return session.selected > 0 && items.indices.contains(session.selected - 1)
+                    ? items[session.selected - 1] : nil
+            }
+            appContinue?.tabs = snapshot.entries.filter { $0.browser == browser && $0.kind == .tab }
+            appContinue?.permissionIssue = !snapshot.issues.isEmpty
+            appContinue?.loading = false
+            if let selectedItem, let index = appContinueItems.firstIndex(of: selectedItem) {
+                appContinue?.selected = index + 1
+            } else if appContinue?.selected == 0 && !appContinueItems.isEmpty {
+                appContinue?.selected = 1
+            }
+        }
+    }
+
+    private func leaveAppContinue() {
+        guard let session = appContinue else { return }
+        appContinueTask?.cancel()
+        appContinueTask = nil
+        appContinue = nil
+        draft.wrappedValue.text = session.previousQuery
+        quickResults = quickSearch.results
+        refreshQuickResults()
+        reportHeight()
+        focusLauncherEditorAfterNavigation()
+    }
+
+    private func focusLauncherEditorAfterNavigation() {
+        guard launcher, let window = NSApp.keyWindow, let content = window.contentView else { return }
+        let expectedContext = contextID
+        func editor(in view: NSView) -> AskComposerTextView.Editor? {
+            if let editor = view as? AskComposerTextView.Editor, editor.contextID == expectedContext {
+                return editor
+            }
+            return view.subviews.lazy.compactMap(editor(in:)).first
+        }
+        guard let editor = editor(in: content) else { return }
+        let text = draft.wrappedValue.text
+        if editor.string != text {
+            editor.string = text
+            editor.setSelectedRange(NSRange(location: (text as NSString).length, length: 0))
+        }
+        window.makeFirstResponder(editor)
+    }
+
+    private func openAppContinueSelection() {
+        guard let session = appContinue else { return }
+        let items = appContinueItems
+        guard session.selected > 0, items.indices.contains(session.selected - 1) else {
+            model.openQuickApp(session.app)
+            onDismiss()
+            return
+        }
+        openAppContinueItem(items[session.selected - 1])
+    }
+
+    private func openAppContinueItem(_ item: AskAppContinueItem) {
+        guard let app = appContinue?.app else { return }
+        switch item {
+        case let .tab(tab):
+            guard let target = tab.target else { return }
+            Task { @MainActor in
+                if await model.focusBrowserTab(target) { onDismiss() }
+            }
+        case let .file(file):
+            guard model.fileExists(file.path) else {
+                model.confirm(L("ask.quick.file.gone"), for: .seconds(3))
+                return
+            }
+            model.fileIndex.recordOpen(file.path)
+            model.appContinueHistory.record(file.url, applicationID: app.id)
+            model.openFileWith(file.url, app.url)
+            model.finishQuickResult()
+            onDismiss()
+        }
+    }
+
+    private func appContinueKey(_ key: AskCommandKey) -> Bool {
+        guard var session = appContinue else { return false }
+        switch key {
+        case .up, .down:
+            let count = appContinueItems.count + 1
+            session.selected = (session.selected + (key == .up ? -1 : 1) + count) % count
+            appContinue = session
+        case .enter: openAppContinueSelection()
+        case .escape: leaveAppContinue()
+        case .left:
+            guard draft.wrappedValue.text.isEmpty else { return false }
+            leaveAppContinue()
+        case .tab, .shiftTab:
+            let count = appContinueItems.count + 1
+            session.selected = (session.selected + (key == .tab ? 1 : -1) + count) % count
+            appContinue = session
+        case .right: return false
+        default: return false
+        }
+        return true
+    }
+
     /// Selects the clicked file by path, so a search update cannot redirect its actions.
     private func showQuickFileActions(_ file: AskFileHit) {
         guard showsQuickResults, !active, !quickResultsArePending, var results = quickResults,
@@ -671,6 +821,10 @@ struct AskComposer: View {
         case .commandEnter:
             model.submitLauncher()
         case .tab:
+            if let app = results.app(at: results.highlightedRow), app.kind == .application {
+                enterAppContinue(app)
+                return true
+            }
             if case .feature = results.highlightedRow {
                 runQuickResult(results.highlightedRow, close: false)
                 return true
@@ -678,6 +832,10 @@ struct AskComposer: View {
             guard let value = results.value(of: .calculation), !results.stale else { return false }
             draft.wrappedValue.text = value
         case .right:
+            if let app, app.kind == .application {
+                enterAppContinue(app)
+                return true
+            }
             return openQuickActions(results)
         case .commandDown:
             guard results.moreFiles || !results.files.isEmpty else { return false }
@@ -1128,7 +1286,7 @@ struct AskComposer: View {
     /// The launcher offers its starting points until something is typed. They
     /// stay (disabled) while dictating, so the panel never jumps mid-recording.
     var showsLauncherSuggestions: Bool {
-        launcher && !model.launcherHistoryMode && !launcherCollapsed && !plugins.isActive
+        launcher && appContinue == nil && !model.launcherHistoryMode && !launcherCollapsed && !plugins.isActive
             && !draft.wrappedValue.hasText && (draft.wrappedValue.references ?? []).isEmpty
             && (draft.wrappedValue.attachments ?? []).isEmpty && (draft.wrappedValue.skills ?? []).isEmpty
             && (draft.wrappedValue.mcpServers ?? []).isEmpty
@@ -1171,7 +1329,7 @@ struct AskComposer: View {
     }
 
     private var launcherCollapsed: Bool {
-        launcher && model.launcherIsCollapsed && !active && !paletteOpen && !contextPanelOpen
+        launcher && appContinue == nil && model.launcherIsCollapsed && !active && !paletteOpen && !contextPanelOpen
     }
 
     private var highlightedHomeItem: AskLauncherHome.Item? {
@@ -1271,6 +1429,7 @@ struct AskComposer: View {
             // The home fills in as the context arrives after the panel shows.
             .onChange(of: model.launcherPresentationID) { _ in
                 guard launcher else { return }
+                appContinueTask?.cancel(); appContinueTask = nil; appContinue = nil
                 suggestionIndex = 0; pluginHighlight = 0; pluginReserve = 0; quickReserve = 0
                 quickActions = nil; contextPanelOpen = false; closePalette()
                 refreshQuickResults(); reportHeight()
@@ -1284,6 +1443,10 @@ struct AskComposer: View {
             .onChange(of: homeHeight) { _ in reportHeight() }
             .onChange(of: draft.wrappedValue.text) { _ in
                 if launcher, model.launcherHistoryMode { model.launcherHistoryIndex = 0 }
+                if appContinue != nil {
+                    let maximum = appContinueItems.count
+                    if (appContinue?.selected ?? 0) > maximum { appContinue?.selected = maximum }
+                }
                 refreshQuickResults()
                 if !draft.wrappedValue.hasText {
                     reserveSettle?.cancel()
@@ -1344,6 +1507,7 @@ struct AskComposer: View {
             }
             .onDisappear {
                 reserveSettle?.cancel()
+                appContinueTask?.cancel()
                 if launcher {
                     searchVisible = false; quickSearch.cancel(); model.semanticSearch?.endSearch()
                 }
@@ -1528,11 +1692,24 @@ struct AskComposer: View {
                 // Recording takes the results' place at their height, so the panel stays put.
                 AskVoicePanel(live: voice.live, listening: listening, height: launcherResultsViewportHeight,
                               token: contextToken)
+            } else if let appContinue {
+                AskAppContinueView(app: appContinue.app, items: appContinueItems,
+                                   selected: appContinue.selected, loading: appContinue.loading,
+                                   permissionIssue: appContinue.permissionIssue,
+                                   query: draft.wrappedValue.text,
+                                   emptyMessage: L(appContinue.permissionIssue
+                                       ? "ask.appContinue.permission" : appContinue.emptyMessageKey),
+                                   viewportHeight: launcherResultsViewportHeight,
+                                   onBack: leaveAppContinue,
+                                   onOpenApp: { model.openQuickApp(appContinue.app); onDismiss() },
+                                   onOpenItem: openAppContinueItem,
+                                   onSelect: { self.appContinue?.selected = $0 })
             } else if model.launcherHistoryMode {
                 AskLauncherInputHistoryView(model: model, store: inputHistory,
                                             viewportHeight: launcherResultsViewportHeight)
             } else if showsLauncherSuggestions {
                 AskLauncherSuggestions(sections: home, highlighted: $suggestionIndex, onPick: pick,
+                                       onBrowseApp: enterAppContinue,
                                        viewportHeight: launcherResultsViewportHeight,
                                        onHistory: model.openLauncherInputHistory)
                     .disabled(active)
@@ -1599,6 +1776,7 @@ struct AskComposer: View {
                                               }) else { return }
                                         runQuickResult(target, close: close)
                                     },
+                                    onBrowseApp: enterAppContinue,
                                     onHighlight: { index in
                                         guard !quickResultsArePending, quickResults.rows.indices.contains(index),
                                               let current = self.quickResults,
@@ -1779,6 +1957,7 @@ struct AskComposer: View {
 
     /// Esc steps back one layer (`AskLauncherEscape`); false closes the launcher.
     private func escapeKey() -> Bool {
+        if appContinue != nil { leaveAppContinue(); return true }
         if pluginDisplay?.calendar == true {
             if calendarKey(.escape) {
                 return true
@@ -1857,6 +2036,7 @@ struct AskComposer: View {
     }
 
     private func routeCommandKey(_ key: AskCommandKey) -> Bool {
+        if appContinue != nil, appContinueKey(key) { return true }
         // ⌥⌘N makes the launcher's question temporary; the workspace starts one from its title bar.
         if key == .optionCommandN {
             guard launcher, !active else { return false }
@@ -2036,6 +2216,7 @@ struct AskComposer: View {
     /// Quotes waiting in the draft name what the follow-up is about. The
     /// launcher says what it does besides asking: search and calculate.
     private var placeholder: String {
+        if launcher, let appContinue { return L("ask.appContinue.filter", appContinue.app.name) }
         if launcher, model.launcherHistoryMode { return L("ask.inputHistory.filter") }
         if launcher, let plugin = plugins.plugin {
             let lines = draft.wrappedValue.sentSelection.map { AskPresentation.lineCount($0) }
@@ -2054,6 +2235,7 @@ struct AskComposer: View {
     }
 
     private func emptyLauncherBackspace() -> Bool {
+        if appContinue != nil { leaveAppContinue(); return true }
         if model.launcherHistoryMode { model.leaveLauncherInputHistory(); return true }
         return removeKeyword()
     }
@@ -2297,11 +2479,19 @@ struct AskComposer: View {
     }
 
     private var launcherSecondaryHint: String {
+        if appContinue != nil { return L("ask.appContinue.hint") }
         if !active, model.launcherHistoryMode { return L("ask.inputHistory.hint") }
         if !active, let pluginDisplay { return AskPluginResultsView.hint(for: pluginDisplay) }
         if !active, showsLauncherSuggestions, let item = highlightedHomeItem {
             let hint = AskLauncherSuggestions.hint(for: item, hasContext: contextToken != nil)
-            return inputHistory.enabled ? L("ask.inputHistory.homeHint") + " · " + hint : hint
+            let browse = if case let .row(row) = item, case .application = row.action {
+                " · " + L("ask.appContinue.browseHint")
+            } else { "" }
+            return (inputHistory.enabled ? L("ask.inputHistory.homeHint") + " · " + hint : hint) + browse
+        }
+        if !active, showsQuickResults, let results = presentedQuickResults,
+           let app = results.app(at: results.highlightedRow), app.kind == .application {
+            return AskQuickResultsView.hint(for: results) + " · " + L("ask.appContinue.browseHint")
         }
         return AskLauncherContext.hint(voice: active ? voice.phase : .idle,
                                 quickResults: showsQuickResults && !showsLauncherSuggestions ? presentedQuickResults : nil,
@@ -2315,6 +2505,7 @@ struct AskComposer: View {
     }
 
     private var resultsHeight: CGFloat {
+        if appContinue != nil { return AskQuickResultsView.maximumHeight }
         if model.launcherHistoryMode { return historyHeight }
         if showsLauncherSuggestions { return homeHeight }
         if pluginDisplay != nil { return pluginHeight }

@@ -5992,6 +5992,21 @@
 "ask.plugin.apps.noMatch" = "No matching applications";
 "ask.plugin.apps.open" = "Open app";
 "ask.settings.keywords.kind.apps.hint" = "Searches installed apps only";
+"ask.appContinue.title" = "Continue work";
+"ask.appContinue.back" = "Back to search";
+"ask.appContinue.entry" = "Recent items";
+"ask.appContinue.openApp" = "Open application";
+"ask.appContinue.loading" = "Loading open tabs…";
+"ask.appContinue.tabs" = "Open tabs";
+"ask.appContinue.files" = "Opened from Typeflux";
+"ask.appContinue.emptyFiles" = "Files opened with this app from Typeflux will appear here.";
+"ask.appContinue.emptyBrowser" = "No open tabs. Files opened from Typeflux will also appear here.";
+"ask.appContinue.tabsDisabled" = "Tab access is off for this browser. Files opened from Typeflux will still appear here.";
+"ask.appContinue.noMatch" = "No matching items";
+"ask.appContinue.permission" = "Couldn't read tabs. Check Automation access in System Settings.";
+"ask.appContinue.hint" = "↑↓ Select · ↩ Open · Esc Back to search";
+"ask.appContinue.browseHint" = "→ Recent items";
+"ask.appContinue.filter" = "Search %@'s recent items";
 
 /* Embedded browser (web_browser) */
 "ask.tool.web_browser" = "Browser";
