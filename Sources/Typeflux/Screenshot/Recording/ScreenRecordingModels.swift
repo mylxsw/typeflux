@@ -1,6 +1,7 @@
 import CoreGraphics
 import CoreMedia
 import Foundation
+import TypefluxMediaProtocol
 
 enum ScreenRecordingFormat: String, Codable, CaseIterable, Sendable {
     case mp4, gif
@@ -163,14 +164,88 @@ struct ScreenRecordingTimeline {
     }
 }
 
+/// The kept source range plus how it is played back: speed, and one volume per source audio track.
 struct ScreenRecordingTrim: Equatable {
     var start: Double
     var end: Double
+    var rate = 1.0
+    /// Zero leaves a track out of the export; `nil` keeps every track at full volume.
+    var volumes: [Double]?
     func validated(duration: Double, format: ScreenRecordingFormat) throws -> CMTimeRange {
         guard start.isFinite, end.isFinite, duration.isFinite, start >= 0,
-              end > start, end <= duration + 0.01,
-              format != .gif || end - start <= 30.01 else { throw ScreenRecordingFailure.invalidRange }
+              end > start, end <= duration + 0.01, rate.isFinite, rate > 0,
+              format != .gif || (end - start) / rate <= ScreenRecordingEdit.gifLimit + 0.01
+        else { throw ScreenRecordingFailure.invalidRange }
         return CMTimeRange(start: CMTime(seconds: start, preferredTimescale: 600),
                            duration: CMTime(seconds: min(end, duration) - start, preferredTimescale: 600))
+    }
+}
+
+/// One recorded audio source as shown in the editor, addressed by its position in the source file.
+struct ScreenRecordingAudioTrack: Equatable, Identifiable {
+    enum Kind: String { case systemAudio, microphone, other }
+    let id: Int
+    var kind: Kind
+    var waveform: [Float]
+    var included = true
+    var volume = 1.0
+
+    var title: String {
+        switch kind {
+        case .systemAudio: L("recording.systemAudio")
+        case .microphone: L("recording.microphone")
+        case .other: L("recording.trackNumber", id + 1)
+        }
+    }
+
+    /// The writer adds system audio before the microphone, each only when it was enabled.
+    static func tracks(waveforms: [[Float]], options: ScreenRecordingOptions) -> [Self] {
+        let kinds: [Kind] = [(options.systemAudio, Kind.systemAudio), (options.microphone, .microphone)]
+            .filter { $0.0 && options.capturesAudio }.map(\.1)
+        return waveforms.enumerated().map { index, waveform in
+            Self(id: index, kind: kinds.count == waveforms.count ? kinds[index] : .other, waveform: waveform)
+        }
+    }
+}
+
+/// Speed and audio choices that apply to both the preview and the exported file.
+struct ScreenRecordingEdit: Equatable {
+    static let rates: [Double] = [0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4]
+    static let gifLimit = 30.0
+    var rate = 1.0
+    var tracks: [ScreenRecordingAudioTrack] = []
+
+    var volumes: [Double]? {
+        tracks.isEmpty ? nil : tracks.map { $0.included ? min(1, max(0, $0.volume)) : 0 }
+    }
+
+    var includedTracks: [ScreenRecordingAudioTrack] {
+        tracks.filter(\.included)
+    }
+
+    var isDefault: Bool {
+        rate == 1 && tracks.allSatisfy { $0.included && $0.volume == 1 }
+    }
+
+    var playbackMix: MediaPlaybackMix {
+        MediaPlaybackMix(rate: rate, volumes: volumes ?? [])
+    }
+
+    func outputDuration(_ selection: Double) -> Double {
+        max(0, selection) / rate
+    }
+
+    /// Last source second a GIF starting at `start` can include at this speed.
+    func gifSourceEnd(from start: Double) -> Double {
+        start + Self.gifLimit * rate
+    }
+
+    /// The slowest faster preset that fits `selection` into a GIF, if any.
+    func fittingGIFRate(selection: Double) -> Double? {
+        Self.rates.first { $0 > rate && selection / $0 <= Self.gifLimit + 0.01 }
+    }
+
+    static func rateTitle(_ rate: Double) -> String {
+        (rate == rate.rounded() ? String(Int(rate)) : String(rate)) + "×"
     }
 }

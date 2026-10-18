@@ -30,9 +30,51 @@ extension ScreenRecordingCoordinator {
         return (try? ScreenRecordingGeometry.outputSize(points: media.size, scale: 1, maxDimension: 960)) ?? media.size
     }
 
+    /// Proportional to the exported length. Each recorded AAC track is ~128 kbps; export mixes
+    /// the kept tracks into one, so dropping every track removes that share.
     var estimatedBytes: Int64 {
         guard duration > 0 else { return 0 }
-        return Int64(Double(media.fileBytes) * selectionDuration / duration * (options.format == .gif ? 1.5 : 1))
+        let gif = options.format == .gif
+        let output = edit.outputDuration(selectionDuration)
+        let seconds = gif ? min(output, ScreenRecordingEdit.gifLimit) : output
+        let audioRate = Self.audioBytesPerSecond
+        let videoRate = max(0, Double(media.fileBytes) / duration - audioRate * Double(edit.tracks.count))
+        let audio = gif || edit.includedTracks.isEmpty ? 0 : audioRate
+        return Int64((videoRate * (gif ? 1.5 : 1) + audio) * seconds)
+    }
+
+    static let audioBytesPerSecond = 128_000.0 / 8
+
+    /// Frames per second for frame stepping: the source rate, or GIF's fixed 10.
+    var frameRate: Int {
+        options.format == .gif ? 10 : media.fps > 0 ? max(1, Int(media.fps.rounded())) : options.captureFPS
+    }
+
+    /// Exported length after the speed change.
+    var outputDuration: Double {
+        edit.outputDuration(selectionDuration)
+    }
+
+    var gifTooLong: Bool {
+        options.format == .gif && outputDuration > ScreenRecordingEdit.gifLimit + 0.01
+    }
+
+    /// "Video · System audio + Microphone · 2× · 24.0 s" for the export bar.
+    var exportSummary: String {
+        var parts: [String]
+        if options.format == .gif {
+            parts = [L("recording.kind.gif"), L("recording.silent"), L("recording.max30")]
+        } else {
+            let kept = edit.includedTracks.map(\.title)
+            let audio = edit.tracks.isEmpty ? L("recording.silent")
+                : kept.isEmpty ? L("recording.allTracksOff") : kept.joined(separator: " + ")
+            parts = [L("recording.kind.mp4"), audio]
+        }
+        if edit.rate != 1 {
+            parts.append(ScreenRecordingEdit.rateTitle(edit.rate))
+            parts.append(L("recording.outputSeconds", outputDuration))
+        }
+        return parts.joined(separator: " · ")
     }
 
     var selectedSource: ScreenRecordingChoice? {
@@ -57,7 +99,7 @@ extension ScreenRecordingCoordinator {
     }
 
     var trimIsValid: Bool {
-        (try? ScreenRecordingTrim(start: trimStart, end: trimEnd)
+        (try? ScreenRecordingTrim(start: trimStart, end: trimEnd, rate: edit.rate)
             .validated(duration: duration, format: options.format)) != nil
     }
 

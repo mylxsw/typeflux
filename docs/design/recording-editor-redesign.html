@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 录屏剪辑窗口 重设计（可交互原型）</title>
+<style>
+:root{
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+  --mono: "SF Mono", ui-monospace, Menlo, monospace;
+  --accent:#3B82F6; --accent-hover:#2F74E6; --accent-soft:rgba(59,130,246,.16);
+  --warn:#F5A524; --danger:#F04B4B; --ok:#32C77A;
+}
+[data-theme="dark"]{
+  --page:#15161A; --win:#1E1F24; --win-edge:rgba(255,255,255,.09); --chrome:#232429;
+  --surface:#2A2B31; --surface-2:#313238; --hover:rgba(255,255,255,.07); --sep:rgba(255,255,255,.08);
+  --text:#ECEDEF; --text-2:#A6A8AF; --text-3:#6E7078; --stage:#0B0B0D; --shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 .5px rgba(0,0,0,.6);
+  --dim:rgba(8,8,10,.62); --kbd:#3A3B42;
+}
+[data-theme="light"]{
+  --page:#E9EAEE; --win:#F6F6F8; --win-edge:rgba(0,0,0,.10); --chrome:#EEEEF1;
+  --surface:#FFFFFF; --surface-2:#E6E7EB; --hover:rgba(0,0,0,.05); --sep:rgba(0,0,0,.08);
+  --text:#1C1D21; --text-2:#5B5E66; --text-3:#9599A2; --stage:#111113; --shadow:0 30px 80px rgba(20,24,40,.22),0 0 0 .5px rgba(0,0,0,.18);
+  --dim:rgba(246,246,248,.72); --kbd:#E3E4E8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--font);background:var(--page);color:var(--text);font-size:13px;-webkit-font-smoothing:antialiased;display:flex;gap:28px;padding:24px;min-height:100vh;align-items:flex-start;justify-content:center;transition:background .2s}
+button{font:inherit;color:inherit;cursor:pointer}
+.kbd{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:5px;background:var(--kbd);color:var(--text-2);font:500 11px var(--font);line-height:1}
+
+/* ---------- Prototype controls (not part of the design) ---------- */
+.proto{width:300px;flex:none;position:sticky;top:24px;display:flex;flex-direction:column;gap:14px}
+.proto h1{font-size:15px;margin:0 0 2px}
+.proto p.sub{margin:0;color:var(--text-3);font-size:12px;line-height:1.5}
+.card{background:var(--surface);border:1px solid var(--sep);border-radius:12px;padding:12px}
+.card h3{margin:0 0 8px;font-size:11px;font-weight:600;color:var(--text-3);letter-spacing:.04em;text-transform:uppercase}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--sep);background:transparent;border-radius:7px;padding:5px 9px;font-size:12px;color:var(--text-2)}
+.seg button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--text)}
+.notes{margin:0;padding-left:18px;color:var(--text-2);font-size:12px;line-height:1.6}
+.notes b{color:var(--text)}
+.notes li{margin-bottom:6px}
+
+/* ---------- Window ---------- */
+.win{width:1040px;height:720px;flex:none;background:var(--win);border-radius:14px;box-shadow:var(--shadow);outline:1px solid var(--win-edge);display:flex;flex-direction:column;overflow:hidden;position:relative;user-select:none}
+.titlebar{height:48px;display:flex;align-items:center;padding:0 12px 0 16px;gap:10px;flex:none}
+.lights{display:flex;gap:8px;margin-right:14px}
+.lights i{width:12px;height:12px;border-radius:50%;display:block}
+.lights i:nth-child(1){background:#FF5F57}.lights i:nth-child(2){background:#FEBC2E}.lights i:nth-child(3){background:#28C840}
+.name{display:flex;align-items:center;border-radius:7px;padding:0 4px 0 2px;height:28px;border:1px solid transparent;transition:background .12s,border-color .12s;max-width:440px}
+.name:hover{background:var(--hover)}
+.name:focus-within{background:var(--surface);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.name input{border:0;background:transparent;color:var(--text);font:600 13.5px var(--font);outline:none;padding:0 4px;min-width:60px}
+.name .ext{color:var(--text-3);font-weight:500;font-size:13px}
+.name .pen{opacity:0;color:var(--text-3);margin-left:6px;transition:opacity .12s;display:flex}
+.name:hover .pen{opacity:1}
+.name:focus-within .pen{display:none}
+.chip{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:11px;background:var(--hover);color:var(--text-2);font-size:11.5px;white-space:nowrap}
+.chip svg{opacity:.85}
+.spacer{flex:1}
+.icon-btn{width:28px;height:28px;border-radius:7px;border:0;background:transparent;display:inline-flex;align-items:center;justify-content:center;color:var(--text-2)}
+.icon-btn:hover{background:var(--hover);color:var(--text)}
+.icon-btn:disabled{opacity:.35;cursor:default;background:transparent}
+
+/* stage */
+.stage{flex:1;min-height:0;margin:0 16px;border-radius:10px;background:var(--stage);position:relative;overflow:hidden;cursor:pointer}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%}
+.bigplay{position:absolute;left:50%;top:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;background:rgba(0,0,0,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;color:#fff;opacity:0;transform:scale(.9);transition:opacity .18s,transform .18s;pointer-events:none;box-shadow:0 0 0 1px rgba(255,255,255,.12)}
+.stage:hover .bigplay.paused{opacity:1;transform:scale(1)}
+.bigplay.flash{animation:flash .5s ease-out}
+@keyframes flash{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.25)}}
+.stage-msg{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#C9CBD1;cursor:default}
+.stage-msg .t{font-size:14px;font-weight:600;color:#fff}
+.stage-msg .d{font-size:12px;color:#9A9CA3;max-width:360px;text-align:center;line-height:1.5}
+.stage-msg .row{display:flex;gap:8px}
+
+/* transport */
+.transport{height:44px;flex:none;display:flex;align-items:center;gap:6px;padding:0 14px}
+.play-btn{width:32px;height:32px;border-radius:8px;border:0;background:transparent;display:flex;align-items:center;justify-content:center;color:var(--text)}
+.play-btn:hover{background:var(--hover)}
+.tc{font:500 13px var(--mono);letter-spacing:-.2px;color:var(--text);margin-left:2px}
+.tc .tot{color:var(--text-3)}
+.vsep{width:1px;height:16px;background:var(--sep);margin:0 6px}
+.pill{height:26px;padding:0 9px;border-radius:7px;border:1px solid var(--sep);background:transparent;color:var(--text-2);font-size:12px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.pill:hover{background:var(--hover);color:var(--text)}
+.pill.on{background:var(--accent-soft);border-color:var(--accent);color:var(--text)}
+.pill:disabled{opacity:.4;cursor:default;background:transparent}
+.pill .mono{font:600 12px var(--mono)}
+.sw{width:30px;height:18px;border-radius:9px;border:0;background:var(--surface-2);position:relative;flex:none;padding:0;transition:background .15s}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:left .15s}
+.sw.on{background:var(--accent)}.sw.on::after{left:14px}
+[data-theme="light"] .sw{background:#CDCFD5}[data-theme="light"] .sw.on{background:var(--accent)}
+.trk{display:grid;grid-template-columns:auto 64px 1fr 38px;align-items:center;gap:10px;height:34px;font-size:12.5px}
+.trk input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+.trk .pct{font:500 11px var(--mono);color:var(--text-3);text-align:right}
+.trk.off .nm,.trk.off .pct{color:var(--text-3)}
+.trk.off input{opacity:.35}
+.mute-note{display:flex;align-items:center;gap:6px;color:var(--text-3);font-size:12px}
+
+/* timeline */
+.timeline{flex:none;padding:2px 16px 0;position:relative}
+.ruler{height:20px;position:relative;cursor:pointer}
+.ruler .tick{position:absolute;bottom:3px;width:1px;background:var(--text-3);opacity:.5}
+.ruler .lbl{position:absolute;top:0;font:500 10px var(--mono);color:var(--text-3);transform:translateX(-50%);white-space:nowrap}
+.track{position:relative;border-radius:8px;cursor:pointer}
+.strip{height:56px;border-radius:8px;overflow:hidden;background:#000;display:flex}
+.strip canvas{height:100%;flex:none;display:block}
+.lane{height:26px;margin-top:4px;border-radius:7px;background:var(--surface-2);position:relative;overflow:hidden}
+.lane canvas{width:100%;height:100%;display:block;transition:opacity .15s}
+.lane .ltag{position:absolute;left:18px;top:3px;height:20px;padding:0 7px 0 5px;border-radius:5px;border:0;background:rgba(0,0,0,.45);color:#fff;font-size:11px;display:flex;align-items:center;gap:5px;z-index:2}
+[data-theme="light"] .lane .ltag{background:rgba(255,255,255,.85);color:var(--text)}
+.lane .ltag .cb{width:12px;height:12px;border-radius:3px;background:var(--accent);display:flex;align-items:center;justify-content:center}
+.lane.off .ltag .cb{background:transparent;box-shadow:inset 0 0 0 1.3px currentColor}
+.lane.off .ltag .cb svg{display:none}
+.lane.off canvas{opacity:.15;filter:grayscale(1)}
+.lane.off .ltag span{text-decoration:line-through;opacity:.75}
+.lane .wlabel{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;color:var(--text-2);pointer-events:none}
+.lane.muted canvas{opacity:.2;filter:grayscale(1)}
+.lane.muted .ltag{display:none}
+.dim{position:absolute;top:0;bottom:0;background:var(--dim);pointer-events:none}
+.dim.l{left:0;border-radius:8px 0 0 8px}.dim.r{right:0;border-radius:0 8px 8px 0}
+.over{position:absolute;top:0;bottom:0;pointer-events:none;background:repeating-linear-gradient(135deg,rgba(245,165,36,.42) 0 6px,rgba(245,165,36,.12) 6px 12px);border-top:2px solid var(--warn);border-bottom:2px solid var(--warn)}
+.sel{position:absolute;top:-2px;bottom:-2px;border:2px solid var(--accent);border-left-width:0;border-right-width:0;pointer-events:none}
+.sel.warn{border-color:var(--warn)}
+.handle{position:absolute;top:-2px;bottom:-2px;width:14px;background:var(--accent);display:flex;align-items:center;justify-content:center;cursor:ew-resize;z-index:3}
+.handle.l{border-radius:7px 0 0 7px}.handle.r{border-radius:0 7px 7px 0}
+.handle i{width:2px;height:20px;border-radius:1px;background:rgba(255,255,255,.9)}
+.handle:hover,.handle.drag{background:var(--accent-hover)}
+.sel.warn~.handle{background:var(--warn)}
+.bubble{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#111;color:#fff;font:600 11px var(--mono);padding:3px 7px;border-radius:5px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s}
+.bubble::after{content:"";position:absolute;top:100%;left:50%;margin-left:-4px;border:4px solid transparent;border-top-color:#111}
+.handle:hover .bubble,.handle.drag .bubble{opacity:1}
+.head{position:absolute;top:-22px;bottom:-4px;width:2px;margin-left:-1px;background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.5),0 0 6px rgba(0,0,0,.35);pointer-events:none;z-index:4}
+[data-theme="light"] .head{background:#1C1D21;box-shadow:none}
+.head::before{content:"";position:absolute;top:0;left:-5px;width:12px;height:12px;border-radius:3px 3px 6px 6px;background:inherit}
+.hover-line{position:absolute;top:-22px;bottom:-4px;width:1px;background:var(--text-3);opacity:0;pointer-events:none;z-index:2}
+.hover-tip{position:absolute;top:-44px;transform:translateX(-50%);background:var(--surface);border:1px solid var(--sep);color:var(--text);font:500 10.5px var(--mono);padding:2px 6px;border-radius:5px;opacity:0;pointer-events:none;white-space:nowrap;z-index:5}
+
+/* trim row */
+.trimrow{height:46px;flex:none;display:flex;align-items:center;gap:8px;padding:0 16px}
+.tfield{display:flex;align-items:center;gap:6px;height:28px;padding:0 4px 0 9px;border-radius:7px;background:var(--surface-2);border:1px solid transparent}
+.tfield .k{color:var(--text-3);font-size:11.5px}
+.tfield .v{font:600 12.5px var(--mono);color:var(--text);padding:2px 4px;border-radius:4px}
+.tfield .v:hover{background:var(--hover)}
+.tfield .set{height:20px;padding:0 6px;border-radius:5px;border:0;background:transparent;color:var(--text-2);font-size:11px;display:flex;align-items:center;gap:4px}
+.tfield .set:hover{background:var(--hover);color:var(--text)}
+.dur{font-size:12px;color:var(--text-2);margin-left:4px}
+.dur b{font:600 12.5px var(--mono);color:var(--text)}
+.link{border:0;background:transparent;color:var(--accent);font-size:12px;padding:4px 6px;border-radius:6px}
+.link:hover{background:var(--accent-soft)}
+.hidden{display:none!important}
+
+/* banners */
+.banner{margin:0 16px 8px;padding:8px 10px 8px 12px;border-radius:9px;display:flex;align-items:center;gap:10px;font-size:12px}
+.banner.warn{background:rgba(245,165,36,.13);color:var(--text)}
+.banner.warn svg{color:var(--warn)}
+.banner.err{background:rgba(240,75,75,.12)}
+.banner.err svg{color:var(--danger)}
+.banner .grow{flex:1}
+.btn{height:28px;padding:0 11px;border-radius:7px;border:1px solid var(--sep);background:var(--surface);color:var(--text);font-size:12.5px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.sm{height:24px;font-size:12px;padding:0 9px}
+.btn.primary{background:var(--accent);border-color:transparent;color:#fff;font-weight:600}
+.btn.primary:hover{background:var(--accent-hover)}
+.btn.primary .sc{font-weight:500;opacity:.7;font-size:11px;margin-left:2px}
+.btn.danger-ghost{border-color:transparent;background:transparent;color:var(--danger)}
+.btn.danger-ghost:hover{background:rgba(240,75,75,.1)}
+.btn.danger{background:var(--danger);border-color:transparent;color:#fff;font-weight:600}
+
+/* export bar */
+.exportbar{height:68px;flex:none;border-top:1px solid var(--sep);background:var(--chrome);display:flex;align-items:center;gap:12px;padding:0 14px}
+.fmt{display:flex;background:var(--surface-2);border-radius:8px;padding:2px;gap:2px}
+.fmt button{border:0;background:transparent;height:26px;padding:0 12px;border-radius:6px;font-size:12px;font-weight:600;color:var(--text-2);display:flex;align-items:center;gap:5px}
+.fmt button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.25)}
+[data-theme="dark"] .fmt button.on{background:#45464D}
+.spec{display:flex;flex-direction:column;gap:2px;min-width:0}
+.spec .a{font-size:12px;color:var(--text);white-space:nowrap}
+.spec .b{font-size:11px;color:var(--text-3);white-space:nowrap}
+.dest{display:flex;align-items:center;gap:6px;height:28px;padding:0 8px;border-radius:7px;border:0;background:transparent;color:var(--text-2);font-size:12px}
+.dest:hover{background:var(--hover);color:var(--text)}
+.dest b{color:var(--text);font-weight:500;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.progress{display:flex;align-items:center;gap:10px}
+.pbar{width:240px;height:28px;border-radius:7px;background:var(--surface-2);position:relative;overflow:hidden}
+.pbar .fill{position:absolute;inset:0 auto 0 0;background:var(--accent-soft);border-right:2px solid var(--accent);transition:width .2s linear}
+.pbar span{position:absolute;inset:0;display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:600}
+
+/* menus / popovers */
+.menu{position:absolute;z-index:50;min-width:220px;background:var(--surface);border:1px solid var(--sep);border-radius:10px;padding:5px;box-shadow:0 12px 40px rgba(0,0,0,.35);display:none}
+.menu.open{display:block;animation:pop .12s ease-out}
+@keyframes pop{from{opacity:0;transform:translateY(4px) scale(.98)}to{opacity:1;transform:none}}
+.menu .it{display:flex;align-items:center;gap:8px;height:28px;padding:0 9px;border-radius:6px;font-size:12.5px;width:100%;border:0;background:transparent;text-align:left}
+.menu .it:hover{background:var(--accent);color:#fff}
+.menu .it:hover .r{color:rgba(255,255,255,.8)}
+.menu .it .r{margin-left:auto;color:var(--text-3);font-size:11.5px}
+.menu .ck{width:14px;display:inline-flex}
+.menu hr{border:0;border-top:1px solid var(--sep);margin:5px 4px}
+.menu .hd{font-size:11px;color:var(--text-3);padding:6px 9px 4px}
+.pop{position:absolute;z-index:50;width:280px;background:var(--surface);border:1px solid var(--sep);border-radius:12px;padding:14px;box-shadow:0 12px 40px rgba(0,0,0,.35);display:none}
+.pop.open{display:block;animation:pop .12s ease-out}
+.pop .t{font-weight:600;font-size:13px;margin-bottom:4px}
+.pop .d{font-size:12px;color:var(--text-2);line-height:1.5;margin-bottom:12px}
+.pop .row{display:flex;justify-content:flex-end;gap:8px}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:7px 12px;font-size:12px;color:var(--text-2);align-items:center}
+.keys span:nth-child(odd){display:flex;gap:3px;justify-content:flex-end}
+
+/* toast */
+.toast{position:absolute;left:50%;bottom:84px;transform:translateX(-50%) translateY(8px);background:rgba(28,29,33,.94);color:#fff;border-radius:10px;padding:8px 12px;font-size:12.5px;display:flex;align-items:center;gap:8px;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:60;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.toast svg{color:var(--ok)}
+
+/* saved state */
+.saved{position:absolute;inset:0;background:var(--page);display:none;align-items:flex-end;justify-content:flex-end;padding:20px;z-index:70;border-radius:14px}
+.saved.show{display:flex}
+.saved .ghost{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:12px;text-align:center;line-height:1.8}
+.scard{width:340px;background:var(--surface);border:1px solid var(--sep);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.35);padding:12px;display:flex;gap:12px;align-items:center;animation:pop .2s ease-out;position:relative}
+.scard canvas{width:88px;height:56px;border-radius:7px;background:#000;flex:none}
+.scard .t{font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px}
+.scard .t svg{color:var(--ok)}
+.scard .f{font-size:11.5px;color:var(--text-3);margin:3px 0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.scard .row{display:flex;gap:6px}
+</style>
+</head>
+<body data-theme="dark">
+
+<!-- ================= Prototype controls ================= -->
+<aside class="proto">
+  <div>
+    <h1>录屏剪辑窗口 · 重设计</h1>
+    <p class="sub">高保真可交互原型。左侧面板仅用于切换演示场景，不属于设计本身。</p>
+  </div>
+  <div class="card">
+    <h3>演示素材</h3>
+    <div class="seg" id="scenarioSeg">
+      <button data-v="silent" class="on">区域 · 4.6 秒 · 无声</button>
+      <button data-v="audio">全屏 · 48 秒 · 声音+摄像头</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>窗口状态</h3>
+    <div class="seg" id="stateSeg">
+      <button data-v="preview" class="on">编辑中</button>
+      <button data-v="error">导出失败</button>
+      <button data-v="unavailable">预览不可用</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>外观</h3>
+    <div class="seg" id="themeSeg">
+      <button data-v="dark" class="on">深色</button>
+      <button data-v="light">浅色</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>试试这些</h3>
+    <ol class="notes">
+      <li>空格播放；<b>只播放保留片段</b>，到终点自动停</li>
+      <li>拖动蓝色把手剪头尾，拖动时显示精确时间</li>
+      <li>播放头移到某处，按 <span class="kbd">I</span>/<span class="kbd">O</span> 或点「设为当前」</li>
+      <li><span class="kbd">←</span><span class="kbd">→</span> 逐帧，<span class="kbd">⇧</span>+方向键 跳 1 秒</li>
+      <li>48 秒素材切到 GIF：超出 30 秒的部分在时间轴上标黄</li>
+      <li>点「保存到」切换目录；<span class="kbd">⌘S</span> 保存</li>
+      <li><b>新</b> 48 秒素材：点音轨标签或「音轨 2/2」，单独关掉麦克风 / 调音量，体积估算同步变化</li>
+      <li><b>新</b> 点「1×」或按 <span class="kbd">[</span><span class="kbd">]</span> 变速；GIF 超长时可一键「加速到 2×」放进 30 秒</li>
+    </ol>
+  </div>
+</aside>
+
+<!-- ================= Window ================= -->
+<div class="win" id="win">
+  <div class="titlebar">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <label class="name" title="点击重命名">
+      <input id="fileName" spellcheck="false" value="录屏 2026-10-19 00.39.32">
+      <span class="ext" id="ext">.mp4</span>
+      <span class="pen"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M11 2.5l2.5 2.5L5 13.5H2.5V11z"/></svg></span>
+    </label>
+    <span class="chip" id="srcChip"></span>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="keysBtn" title="键盘快捷键">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1.5" y="4" width="13" height="8.5" rx="1.8"/><path d="M4 7h.01M6.5 7h.01M9 7h.01M11.5 7h.01M5 10h6"/></svg>
+    </button>
+    <button class="icon-btn" id="moreBtn" title="更多">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="3.5" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="12.5" cy="8" r="1.3"/></svg>
+    </button>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="video"></canvas>
+    <div class="bigplay paused" id="bigplay"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l10.5-6.5z"/></svg></div>
+    <div class="stage-msg" id="stageMsg">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9A9CA3" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 5l18 14"/></svg>
+      <div class="t">预览暂不可用</div>
+      <div class="d">原始录屏已保留，不会丢失。可以重新加载预览，或在 Finder 中找到原始文件。</div>
+      <div class="row"><button class="btn" id="reloadBtn">重新加载预览</button><button class="btn" data-act="reveal">在 Finder 中显示原始录屏</button></div>
+    </div>
+  </div>
+
+  <div class="transport">
+    <button class="play-btn" id="playBtn" title="播放 / 暂停（空格）"></button>
+    <div class="tc"><span id="cur">00:00.0</span> <span class="tot">/ <span id="tot">00:04.6</span></span></div>
+    <div class="spacer"></div>
+    <button class="pill" id="speedBtn" title="播放与导出速度（[ / ]）"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2.5 11.5a6 6 0 1 1 11 0"/><path d="M8 9.5l3-4"/></svg><span class="mono" id="speedLbl">1×</span></button>
+    <button class="pill" id="audioBtn" title="音轨"></button>
+    <span class="mute-note hidden" id="silentNote" title="这段录制没有声音"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6h3l4-3v10l-4-3H2zM11 6l4 4M15 6l-4 4"/></svg>无声录制</span>
+  </div>
+
+  <div class="timeline" id="timeline">
+    <div class="ruler" id="ruler"></div>
+    <div class="track" id="track">
+      <div class="strip" id="strip"></div>
+      <div id="lanes"></div>
+      <div class="dim l" id="dimL"></div><div class="dim r" id="dimR"></div>
+      <div class="over hidden" id="over"></div>
+      <div class="sel" id="sel"></div>
+      <div class="handle l" id="hL" tabindex="0" aria-label="开始"><i></i><div class="bubble" id="bL"></div></div>
+      <div class="handle r" id="hR" tabindex="0" aria-label="结束"><i></i><div class="bubble" id="bR"></div></div>
+      <div class="hover-line" id="hoverLine"></div>
+      <div class="hover-tip" id="hoverTip"></div>
+      <div class="head" id="head"></div>
+    </div>
+  </div>
+
+  <div class="trimrow" id="trimRow">
+    <div class="tfield"><span class="k">起点</span><span class="v" id="inV" title="跳到起点"></span>
+      <button class="set" id="setIn" title="把起点设为播放头位置">设为当前 <span class="kbd">I</span></button></div>
+    <div class="tfield"><span class="k">终点</span><span class="v" id="outV" title="跳到终点"></span>
+      <button class="set" id="setOut" title="把终点设为播放头位置">设为当前 <span class="kbd">O</span></button></div>
+    <div class="dur">保留 <b id="selDur"></b> <span id="ofTotal"></span> <span id="outDur"></span></div>
+    <button class="link hidden" id="resetBtn">恢复完整</button>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="banner warn hidden" id="gifBanner">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5l7 12.5H1z" opacity=".2"/><path d="M8 1.5l7 12.5H1zM8 6v3.6M8 11.6v.1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="grow"><b>GIF 最多 30 秒</b> · 当前导出时长 <span id="gifLen"></span>，黄色部分不会被导出</div>
+    <button class="btn sm" id="fitSpeed"></button>
+    <button class="btn sm" id="keep30">保留开头 30 秒</button>
+    <button class="btn sm" id="toMp4">改存 MP4</button>
+  </div>
+  <div class="banner err hidden" id="errBanner">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.8v3.8M8 11v.1" stroke-linecap="round"/></svg>
+    <div class="grow">无法编码录制内容，请检查可用磁盘空间并尝试较低分辨率。原始录屏已保留。</div>
+    <button class="btn sm" id="retryBtn">重试</button>
+    <button class="icon-btn" id="errClose" title="关闭"><svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" stroke-width="1.5"><path d="M2 2l8 8M10 2l-8 8"/></svg></button>
+  </div>
+
+  <div class="exportbar" id="exportBar">
+    <button class="btn danger-ghost" id="discardBtn" title="丢弃这次录制">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5h6.6L12 4M6.8 6.8v4M9.2 6.8v4"/></svg>丢弃
+    </button>
+    <div class="vsep"></div>
+    <div class="fmt" id="fmt">
+      <button data-f="mp4" class="on">MP4</button>
+      <button data-f="gif">GIF</button>
+    </div>
+    <div class="spec"><div class="a" id="specA"></div><div class="b" id="specB"></div></div>
+    <div class="spacer"></div>
+    <div id="actions" style="display:flex;align-items:center;gap:8px">
+      <button class="dest" id="destBtn" title="保存位置">
+        保存到
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M1.5 4.5v8h13v-7H7.5L6 3.5H1.5z"/></svg>
+        <b id="destName">桌面</b>
+        <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3.5l3 3 3-3"/></svg>
+      </button>
+      <button class="btn" id="copyBtn" title="导出并复制文件到剪贴板">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="5" width="9" height="9" rx="1.8"/><path d="M11 5V3.3A1.3 1.3 0 0 0 9.7 2H3.3A1.3 1.3 0 0 0 2 3.3v6.4A1.3 1.3 0 0 0 3.3 11H5"/></svg>复制
+      </button>
+      <button class="btn primary" id="saveBtn"><span id="saveLabel">保存 MP4</span><span class="sc">⌘S</span></button>
+    </div>
+    <div class="progress hidden" id="progress">
+      <div class="pbar"><div class="fill" id="pfill" style="width:0"></div><span id="ptext"></span></div>
+      <button class="btn" id="cancelExport">取消导出</button>
+    </div>
+  </div>
+
+  <!-- menus -->
+  <div class="menu" id="moreMenu" style="top:42px;right:12px">
+    <button class="it" data-act="reveal">在 Finder 中显示原始录屏</button>
+    <button class="it" data-act="reload">重新加载预览</button>
+    <hr>
+    <button class="it" data-act="keys">键盘快捷键 <span class="r">?</span></button>
+  </div>
+  <div class="menu" id="destMenu" style="bottom:60px;right:178px">
+    <div class="hd">保存位置</div>
+    <button class="it" data-dir="桌面"><span class="ck">✓</span>桌面</button>
+    <button class="it" data-dir="下载"><span class="ck"></span>下载</button>
+    <button class="it" data-dir="影片"><span class="ck"></span>影片</button>
+    <button class="it" data-dir="项目素材"><span class="ck"></span>项目素材 <span class="r">最近</span></button>
+    <hr>
+    <button class="it" data-act="choose"><span class="ck"></span>选择其他文件夹…</button>
+    <button class="it" data-act="saveas"><span class="ck"></span>另存为… <span class="r">⇧⌘S</span></button>
+  </div>
+  <div class="pop" id="discardPop" style="bottom:60px;left:12px">
+    <div class="t">丢弃这次录制？</div>
+    <div class="d">尚未保存的录制内容将被删除。</div>
+    <div class="row"><button class="btn" id="keepBtn">保留</button><button class="btn danger" id="confirmDiscard">丢弃</button></div>
+  </div>
+  <div class="pop" id="keysPop" style="top:42px;right:48px;width:250px">
+    <div class="t" style="margin-bottom:10px">键盘快捷键</div>
+    <div class="keys">
+      <span><span class="kbd">空格</span></span><span>播放 / 暂停保留片段</span>
+      <span><span class="kbd">I</span></span><span>起点设为播放头</span>
+      <span><span class="kbd">O</span></span><span>终点设为播放头</span>
+      <span><span class="kbd">←</span><span class="kbd">→</span></span><span>逐帧移动</span>
+      <span><span class="kbd">⇧</span><span class="kbd">←</span><span class="kbd">→</span></span><span>移动 1 秒</span>
+      <span><span class="kbd">[</span><span class="kbd">]</span></span><span>减速 / 加速</span>
+      <span><span class="kbd">⌘</span><span class="kbd">S</span></span><span>保存</span>
+      <span><span class="kbd">⇧</span><span class="kbd">⌘</span><span class="kbd">S</span></span><span>另存为…</span>
+      <span><span class="kbd">esc</span></span><span>关闭（未保存时确认）</span>
+    </div>
+  </div>
+
+  <div class="menu" id="speedMenu" style="min-width:250px">
+    <div class="hd">播放与导出速度</div>
+    <div id="speedItems"></div>
+    <hr>
+    <div class="hd" style="line-height:1.5;padding-bottom:6px">预览按此速度播放，导出的文件也会变速。<br>声音保持原音调；GIF 的 30 秒按导出后的时长计算。</div>
+  </div>
+  <div class="pop" id="audioPop" style="width:310px">
+    <div class="t">音轨</div>
+    <div class="d" style="margin-bottom:6px">关掉的音轨不会写入导出文件；音量同时作用于预览和导出。</div>
+    <div id="trackRows"></div>
+    <div class="d" id="audioPopNote" style="margin:8px 0 0"></div>
+  </div>
+  <div class="toast" id="toast"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8.5l3 3 7-7"/></svg><span id="toastText"></span></div>
+
+  <div class="saved" id="saved">
+    <div class="ghost">编辑窗口已关闭<br>保存结果以通知卡片呈现（沿用现有 recording.saved 提示）<br><br><button class="btn" id="again">重新打开原型</button></div>
+    <div class="scard">
+      <canvas id="savedThumb" width="176" height="112"></canvas>
+      <div>
+        <div class="t"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8.5l3 3 7-7"/></svg>录制已保存</div>
+        <div class="f" id="savedFile"></div>
+        <div class="row"><button class="btn sm">打开</button><button class="btn sm">在 Finder 中显示</button><button class="btn sm" id="doneBtn">完成</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const SCENARIOS = {
+  silent: {duration:4.6, w:1230, h:1072, kind:'区域', tracks:[], camera:false, fps:30, bytes:88*1024},
+  audio:  {duration:48.0, w:1920, h:1080, kind:'全屏', camera:true, fps:30, bytes:9.6*1024*1024,
+           tracks:[{id:'sys', name:'系统声音', seed:7, phase:0}, {id:'mic', name:'麦克风', seed:13, phase:2.3}]}
+};
+const S = {sc:null, scKey:'silent', t:0, inT:0, outT:0, playing:false, fmt:'mp4', dir:'桌面', speed:1, tracks:{}, state:'preview', exporting:false, progress:0};
+
+const fmtT = s => { s = Math.max(0,s); const m = Math.floor(s/60); const r = s - m*60; return String(m).padStart(2,'0') + ':' + r.toFixed(1).padStart(4,'0'); };
+const fmtBytes = b => b < 1024*1024 ? Math.round(b/1024) + ' KB' : (b/1024/1024).toFixed(1) + ' MB';
+const clamp = (v,a,b) => Math.min(b, Math.max(a, v));
+const MIN_SEL = () => Math.min(0.5, S.sc.duration);
+const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
+const speedText = v => v + '×';
+const outLen = () => (S.outT - S.inT) / S.speed;            // exported duration
+const gifSourceLimit = () => S.inT + 30 * S.speed;           // last source second a GIF can include
+const includedTracks = () => S.sc.tracks.filter(t => S.tracks[t.id].on);
+
+/* ---------- fake recorded content ---------- */
+function drawFrame(ctx, W, H, t) {
+  const sc = S.sc, ar = sc.w / sc.h;
+  ctx.fillStyle = '#000'; ctx.fillRect(0,0,W,H);
+  let w = W, h = W / ar; if (h > H) { h = H; w = H * ar; }
+  const x0 = (W - w)/2, y0 = (H - h)/2, u = w / 100;
+  ctx.save(); ctx.beginPath(); ctx.rect(x0,y0,w,h); ctx.clip();
+  ctx.fillStyle = '#1B1C20'; ctx.fillRect(x0,y0,w,h);
+  const p = t / sc.duration;
+  if (sc.kind === '全屏') {
+    // desktop + app window
+    const g = ctx.createLinearGradient(x0,y0,x0+w,y0+h); g.addColorStop(0,'#2B3A67'); g.addColorStop(1,'#6A3E78');
+    ctx.fillStyle = g; ctx.fillRect(x0,y0,w,h);
+    ctx.fillStyle = 'rgba(20,20,24,.85)'; ctx.fillRect(x0, y0, w, 2.2*u);
+    rr(ctx, x0+8*u, y0+7*u, 84*u, 46*u, 1.4*u, '#1E1F24');
+    rr(ctx, x0+8*u, y0+7*u, 18*u, 46*u, 1.4*u, '#18191D');
+    for (let i=0;i<8;i++) rr(ctx, x0+10*u, y0+(11+i*4.5)*u, 13*u, 2.4*u, .6*u, i===Math.floor(p*8)%8?'#3B82F6':'#2A2B31');
+    const n = Math.floor(2 + p*9);
+    for (let i=0;i<n && i<9;i++) { const ww = (30 + ((i*37)%30))*u; rr(ctx, x0+(i%2?88*u-ww:29*u), y0+(10+i*4.6)*u, ww, 3*u, .9*u, i%2?'#3B82F6':'#2E2F36'); }
+    // camera bubble
+    const cx = x0 + w - 13*u, cy = y0 + h - 13*u, r = 9*u;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fillStyle = '#C9A27E'; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy - 1.8*u, 3.2*u, 0, Math.PI*2); ctx.fillStyle = '#5B3B2A'; ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx, cy + 6*u, 6*u, 4*u, 0, Math.PI, 0); ctx.fillStyle = '#3D5A80'; ctx.fill();
+    ctx.lineWidth = .5*u; ctx.strokeStyle = '#fff'; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke();
+  } else {
+    // a chat transcript scrolling in a region (mirrors the screenshot)
+    ctx.fillStyle = '#26272C'; ctx.fillRect(x0+3*u, y0+1*u, 94*u, 5*u);
+    text(ctx, 'Show 1 more file  ⌄', x0+5*u, y0+4.4*u, 2.2*u, '#C9CBD1');
+    text(ctx, 'Today 12:35 AM', x0+40*u, y0+13*u, 2*u, '#7F828A');
+    rr(ctx, x0+80*u, y0+16*u, 15*u, 6*u, 2*u, '#2C2D33');
+    const scroll = p * 12 * u;
+    const lines = ['已实现：框选完成后按空格键，会按现有保存设置将截图存到本地；', '滚动长图编辑器也支持。插入文字标注时键入空格的行为保留，', '保存按钮的悬停提示已更新为“空格 / ⌘S”。', '', '8 项针对性测试通过，Typeflux Dev 已重新构建并启动。'];
+    lines.forEach((l,i) => text(ctx, l, x0+5*u, y0+(33+i*4.2)*u - scroll, 2.15*u, i===4?'#E7E8EB':'#D9DBE0'));
+    rr(ctx, x0+5*u, y0+58*u - scroll, 90*u, 40*u, 1.4*u, '#222328');
+    text(ctx, 'Edited 11 files   +63 -9', x0+8*u, y0+63*u - scroll, 2.1*u, '#E7E8EB');
+    ['Screenshot/LongImage/ScreenshotLongImageCanvas.swift','Screenshot/ScreenshotEditorToolbar.swift','Screenshot/ScreenshotOverlayView.swift','Screenshot/ScreenshotCoordinator.swift','Screenshot/ScreenshotSaveAction.swift'].forEach((f,i)=>text(ctx,'Sources/Typeflux/'+f,x0+8*u,y0+(70+i*5.6)*u - scroll,2*u,'#B7B9C0'));
+    text(ctx, 'Worked for 10m 50s  ›', x0+5*u, y0+27*u - scroll, 2*u, '#8A8D95');
+  }
+  // cursor
+  const cx = x0 + (30 + 40*Math.sin(p*Math.PI*1.3))*u, cy = y0 + (45 + 25*Math.cos(p*Math.PI*0.9))*u;
+  ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = Math.max(1, .25*u);
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx, cy+4.2*u); ctx.lineTo(cx+1.1*u, cy+3.1*u); ctx.lineTo(cx+2.9*u, cy+3.1*u); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+function rr(ctx,x,y,w,h,r,c){ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fillStyle=c;ctx.fill();}
+function text(ctx,s,x,y,size,c){ctx.font=`${size}px -apple-system,"PingFang SC",sans-serif`;ctx.fillStyle=c;ctx.fillText(s,x,y);}
+
+/* ---------- rendering ---------- */
+const video = $('video'), vctx = video.getContext('2d');
+function sizeCanvas(c){ const r = c.getBoundingClientRect(), d = devicePixelRatio||1; c.width = Math.round(r.width*d); c.height = Math.round(r.height*d); }
+function renderVideo(){ if (S.state==='unavailable') return; drawFrame(vctx, video.width, video.height, S.t); }
+
+function buildStrip(){
+  const strip = $('strip'); strip.innerHTML = '';
+  const W = strip.clientWidth, H = 56, tw = Math.max(48, H * S.sc.w / S.sc.h), n = Math.ceil(W / tw), d = devicePixelRatio||1;
+  for (let i=0;i<n;i++){ const c = document.createElement('canvas'); c.style.width = tw+'px'; c.width = tw*d; c.height = H*d;
+    drawFrame(c.getContext('2d'), c.width, c.height, S.sc.duration * (i+.5)/n); strip.appendChild(c); }
+}
+const peaksCache = {};
+function peaks(tr){
+  if (peaksCache[tr.id]) return peaksCache[tr.id];
+  const out = []; let seed = tr.seed; const rnd = () => (seed = (seed*16807)%2147483647)/2147483647;
+  for (let i=0;i<220;i++){ const speech = Math.sin(i/9 + tr.phase)*.5+.5; out.push(clamp((.15 + speech*.75) * (.45 + rnd()*.55) * ((i+tr.seed*3)%37<5?.15:1),0,1)); }
+  return peaksCache[tr.id] = out;
+}
+const CHECK = '<svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="1.8"><path d="M1.5 5.2l2.3 2.3 4.7-5"/></svg>';
+function renderLanes(){
+  const box = $('lanes'); box.innerHTML = '';          // silent recordings: no empty lanes at all
+  const gif = S.fmt === 'gif', accent = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+  S.sc.tracks.forEach((tr, idx) => {
+    const st = S.tracks[tr.id], lane = document.createElement('div');
+    lane.className = 'lane' + (gif ? ' muted' : (st.on ? '' : ' off'));
+    lane.innerHTML = `<canvas></canvas><button class="ltag" title="${st.on ? '不导出' : '导出'}这条音轨"><i class="cb">${CHECK}</i><span>${tr.name}</span></button>` +
+      (gif && idx === 0 ? '<div class="wlabel"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6h3l4-3v10l-4-3H2zM11 6l4 4M15 6l-4 4"/></svg>GIF 不含声音</div>' : '');
+    box.appendChild(lane);
+    const tag = lane.querySelector('.ltag');
+    tag.addEventListener('pointerdown', e => e.stopPropagation());
+    tag.onclick = e => { e.stopPropagation(); toggleTrack(tr.id); };
+    const c = lane.querySelector('canvas'); sizeCanvas(c);
+    const ctx = c.getContext('2d'), W = c.width, H = c.height, pk = peaks(tr), bw = W / pk.length;
+    ctx.fillStyle = accent; ctx.globalAlpha = .7;
+    pk.forEach((v,i) => { const h = Math.max(2, v * st.vol * H * .85); ctx.fillRect(i*bw, (H-h)/2, Math.max(1, bw-1.2), h); });
+  });
+}
+function toggleTrack(id){ S.tracks[id].on = !S.tracks[id].on; renderLanes(); renderTrackRows(); render(); }
+function renderTrackRows(){
+  const rows = $('trackRows'); rows.innerHTML = '';
+  S.sc.tracks.forEach(tr => {
+    const st = S.tracks[tr.id], row = document.createElement('div');
+    row.className = 'trk' + (st.on ? '' : ' off');
+    row.innerHTML = `<button class="sw ${st.on?'on':''}" aria-label="导出${tr.name}"></button><span class="nm">${tr.name}</span>` +
+      `<input type="range" min="0" max="2" step="0.05" value="${st.vol}" aria-label="${tr.name}音量"><span class="pct">${Math.round(st.vol*100)}%</span>`;
+    row.querySelector('.sw').onclick = () => toggleTrack(tr.id);
+    const r = row.querySelector('input');
+    r.oninput = () => { st.vol = +r.value; row.querySelector('.pct').textContent = Math.round(st.vol*100) + '%'; renderLanes(); };
+    rows.appendChild(row);
+  });
+  const n = includedTracks().length;
+  $('audioPopNote').textContent = n === 0 ? '所有音轨都已关闭，将导出无声视频。' : (n < S.sc.tracks.length ? '只导出已勾选的音轨。' : '');
+}
+
+function buildRuler(){
+  const ruler = $('ruler'); ruler.innerHTML = ''; const W = ruler.clientWidth, d = S.sc.duration;
+  const steps = [0.5,1,2,5,10,15,30,60]; const step = steps.find(s => W/(d/s) >= 70) || 60;
+  for (let s=0; s<=d+1e-6; s+=step/2){ const major = Math.abs((s/step) - Math.round(s/step)) < 1e-6; const x = s/d*W;
+    const tk = document.createElement('div'); tk.className='tick'; tk.style.left = x+'px'; tk.style.height = (major?6:3)+'px'; ruler.appendChild(tk);
+    if (major && x > 14 && x < W - 24){ const l = document.createElement('div'); l.className='lbl'; l.style.left=x+'px'; l.textContent = step<1 ? fmtT(s) : fmtT(s).replace(/\.\d$/,''); ruler.appendChild(l); } }
+}
+
+function layoutTimeline(){
+  const W = $('track').clientWidth, d = S.sc.duration, xi = S.inT/d*W, xo = S.outT/d*W;
+  $('dimL').style.width = xi+'px'; $('dimR').style.width = (W-xo)+'px';
+  $('sel').style.left = xi+'px'; $('sel').style.width = (xo-xi)+'px';
+  $('hL').style.left = (xi-14)+'px'; $('hR').style.left = xo+'px';
+  $('bL').textContent = fmtT(S.inT); $('bR').textContent = fmtT(S.outT);
+  $('head').style.left = (S.t/d*W)+'px';
+  const over = S.fmt==='gif' && outLen() > 30.01;
+  $('over').classList.toggle('hidden', !over); $('sel').classList.toggle('warn', over);
+  if (over){ const xs = gifSourceLimit()/d*W; $('over').style.left = xs+'px'; $('over').style.width = (xo-xs)+'px'; }
+}
+
+function renderChrome(){
+  const sc = S.sc, sel = S.outT - S.inT, gif = S.fmt === 'gif';
+  $('cur').textContent = fmtT(S.t); $('tot').textContent = fmtT(sc.duration);
+  $('playBtn').innerHTML = S.playing
+    ? '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="3.5" y="2.5" width="3" height="11" rx=".8"/><rect x="9.5" y="2.5" width="3" height="11" rx=".8"/></svg>'
+    : '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4.5 2.6v10.8L13 8z"/></svg>';
+  $('bigplay').classList.toggle('paused', !S.playing);
+  $('inV').textContent = fmtT(S.inT); $('outV').textContent = fmtT(S.outT);
+  $('selDur').textContent = sel.toFixed(1) + ' 秒';
+  const trimmed = S.inT > 0.001 || S.outT < sc.duration - 0.001;
+  $('ofTotal').textContent = trimmed ? `/ 共 ${sc.duration.toFixed(1)} 秒` : '（完整）';
+  $('outDur').innerHTML = S.speed !== 1 ? `→ 导出 <b>${outLen().toFixed(1)} 秒</b>（${speedText(S.speed)}）` : '';
+  $('resetBtn').classList.toggle('hidden', !trimmed);
+  $('ext').textContent = '.' + S.fmt;
+  document.querySelectorAll('#fmt button').forEach(b => b.classList.toggle('on', b.dataset.f === S.fmt));
+  // output spec
+  let ow = sc.w, oh = sc.h; if (gif){ const f = Math.min(1, 960/Math.max(ow,oh)); ow = Math.floor(ow*f/2)*2; oh = Math.floor(oh*f/2)*2; }
+  const fps = gif ? 10 : sc.fps, out = outLen(), effOut = gif ? Math.min(out, 30) : out;
+  // Audio is ~12% of an MP4 with sound; dropped tracks shrink the estimate.
+  const nOn = includedTracks().length, audioShare = sc.tracks.length ? 0.12 : 0;
+  const bytes = sc.bytes * effOut / sc.duration * (gif ? 1.5 : (1 - audioShare + audioShare * nOn / Math.max(1, sc.tracks.length)));
+  $('specA').textContent = `${ow} × ${oh} · ${fps} FPS · 约 ${fmtBytes(bytes)}`;
+  const audioDesc = !sc.tracks.length ? '无声' : (nOn ? '含' + includedTracks().map(t => t.name).join(' + ') : '已移除全部音轨（无声）');
+  const speedDesc = S.speed !== 1 ? ` · ${speedText(S.speed)} · 时长 ${out.toFixed(1)} 秒` : '';
+  $('specB').textContent = (gif ? '动图 · 无声 · 最长 30 秒' : '视频 · ' + audioDesc) + speedDesc;
+  $('saveLabel').textContent = '保存 ' + S.fmt.toUpperCase();
+  const tooLong = gif && out > 30.01;
+  $('gifBanner').classList.toggle('hidden', !tooLong);
+  $('gifLen').textContent = out.toFixed(1) + ' 秒';
+  const fit = SPEEDS.find(v => v > S.speed && sel / v <= 30);
+  $('fitSpeed').classList.toggle('hidden', !fit);
+  if (fit) { $('fitSpeed').textContent = `加速到 ${speedText(fit)}（${(sel/fit).toFixed(1)} 秒）`; $('fitSpeed').dataset.v = fit; }
+  const canExport = !tooLong && S.state !== 'unavailable';
+  $('saveBtn').disabled = !canExport; $('copyBtn').disabled = !canExport;
+  $('saveBtn').title = tooLong ? 'GIF 片段需不超过 30 秒' : '';
+  // speed + audio tracks
+  $('speedLbl').textContent = speedText(S.speed); $('speedBtn').classList.toggle('on', S.speed !== 1);
+  const hasTracks = sc.tracks.length > 0;
+  $('audioBtn').classList.toggle('hidden', !hasTracks); $('silentNote').classList.toggle('hidden', hasTracks);
+  if (hasTracks) {
+    const ab = $('audioBtn'); ab.disabled = gif || S.exporting; ab.title = gif ? 'GIF 不含声音' : '音轨';
+    ab.classList.toggle('on', !gif && nOn < sc.tracks.length);
+    ab.innerHTML = (gif || nOn === 0)
+      ? '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6h3l4-3v10l-4-3H2zM11 6l4 4M15 6l-4 4"/></svg>' + (gif ? 'GIF 无声' : '音轨 0/' + sc.tracks.length)
+      : '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 6h3l4-3v10l-4-3H2zM11 5.5a3.5 3.5 0 0 1 0 5M12.8 3.5a6 6 0 0 1 0 9"/></svg>音轨 ' + nOn + '/' + sc.tracks.length;
+  }
+  $('speedBtn').disabled = S.exporting || S.state === 'unavailable';
+  $('srcChip').innerHTML = `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">${sc.kind==='区域'?'<path d="M2 5V2h3M11 2h3v3M14 11v3h-3M5 14H2v-3"/>':'<rect x="1.5" y="2.5" width="13" height="9" rx="1.2"/><path d="M5.5 14h5"/>'}</svg>${sc.kind}${sc.camera?' · 摄像头':''} · ${sc.w} × ${sc.h}`;
+  // export state
+  $('actions').classList.toggle('hidden', S.exporting); $('progress').classList.toggle('hidden', !S.exporting);
+  $('pfill').style.width = (S.progress*100)+'%'; $('ptext').textContent = `正在保存 ${S.fmt.toUpperCase()}… ${Math.round(S.progress*100)}%`;
+  $('timeline').style.opacity = S.exporting ? .5 : 1; $('timeline').style.pointerEvents = S.exporting ? 'none' : '';
+  $('trimRow').style.opacity = S.exporting ? .5 : 1; $('trimRow').style.pointerEvents = S.exporting ? 'none' : '';
+  $('fmt').style.pointerEvents = S.exporting ? 'none' : ''; $('fmt').style.opacity = S.exporting ? .5 : 1;
+  $('fileName').disabled = S.exporting;
+  // states
+  $('errBanner').classList.toggle('hidden', S.state !== 'error');
+  const un = S.state === 'unavailable';
+  $('stageMsg').style.display = un ? 'flex' : 'none'; video.style.visibility = un ? 'hidden' : 'visible'; $('bigplay').style.display = un ? 'none':'';
+  $('playBtn').disabled = un; $('timeline').style.opacity = un ? .4 : $('timeline').style.opacity; if (un) $('timeline').style.pointerEvents='none';
+  layoutTimeline();
+}
+function render(){ renderVideo(); renderChrome(); }
+
+/* ---------- model actions (mirror ScreenRecordingCoordinator) ---------- */
+function seek(t){ S.t = clamp(t, 0, S.sc.duration); render(); }
+function setIn(t){ S.inT = Math.min(clamp(t,0,S.sc.duration), Math.max(0, S.outT - MIN_SEL())); seek(S.inT); }
+function setOut(t){ S.outT = Math.max(clamp(t,0,S.sc.duration), Math.min(S.sc.duration, S.inT + MIN_SEL())); seek(S.outT); }
+let last = 0;
+function togglePlay(){
+  if (S.state === 'unavailable' || S.exporting) return;
+  if (S.playing){ S.playing = false; render(); return; }
+  if (S.t < S.inT || S.t >= S.outT - 0.05) S.t = S.inT;   // play(range: trimStart...trimEnd)
+  S.playing = true; last = performance.now(); flash(); requestAnimationFrame(tick); render();
+}
+function flash(){ const b = $('bigplay'); b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash'); }
+function tick(now){
+  if (!S.playing) return;
+  S.t += (now - last)/1000 * S.speed; last = now;
+  const end = (S.fmt==='gif') ? Math.min(S.outT, gifSourceLimit()) : S.outT;
+  if (S.t >= end){ S.t = end; S.playing = false; }
+  render(); if (S.playing) requestAnimationFrame(tick);
+}
+function toast(msg){ $('toastText').textContent = msg; $('toast').classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(()=>$('toast').classList.remove('show'), 1800); }
+function exportFile(copy){
+  if ($('saveBtn').disabled || S.exporting) return;
+  S.playing = false; S.exporting = true; S.progress = 0; if (S.state==='error') S.state='preview'; render();
+  const dur = S.fmt==='gif' ? 2600 : 1600, t0 = performance.now();
+  (function step(now){ if (!S.exporting) return; S.progress = Math.min(1,(now-t0)/dur); renderChrome();
+    if (S.progress < 1) requestAnimationFrame(step); else { S.exporting = false;
+      if (copy) { render(); toast('已导出并复制到剪贴板，可直接粘贴发送'); }
+      else showSaved(); } })(t0);
+}
+function showSaved(){
+  const name = ($('fileName').value.trim() || '录屏') + '.' + S.fmt;
+  $('savedFile').textContent = S.dir + ' / ' + name;
+  const c = $('savedThumb'); drawFrame(c.getContext('2d'), c.width, c.height, S.inT + (S.outT-S.inT)/2);
+  $('saved').classList.add('show'); render();
+}
+function closeMenus(except){ ['moreMenu','destMenu','discardPop','keysPop','speedMenu','audioPop'].forEach(id => { if (id!==except) $(id).classList.remove('open'); }); }
+function toggleMenu(id){ const open = !$(id).classList.contains('open'); closeMenus(); $(id).classList.toggle('open', open); }
+
+/* ---------- timeline interaction ---------- */
+function timeAt(clientX){ const r = $('track').getBoundingClientRect(); return clamp((clientX - r.left)/r.width,0,1)*S.sc.duration; }
+function drag(el, onMove){
+  el.addEventListener('pointerdown', e => { if (S.exporting) return; e.stopPropagation(); e.preventDefault(); el.setPointerCapture(e.pointerId); el.classList.add('drag'); S.playing=false; onMove(e);
+    const mv = ev => onMove(ev), up = () => { el.classList.remove('drag'); el.removeEventListener('pointermove', mv); el.removeEventListener('pointerup', up); render(); };
+    el.addEventListener('pointermove', mv); el.addEventListener('pointerup', up); });
+}
+drag($('hL'), e => setIn(timeAt(e.clientX)));
+drag($('hR'), e => setOut(timeAt(e.clientX)));
+drag($('track'), e => seek(timeAt(e.clientX)));
+drag($('ruler'), e => seek(timeAt(e.clientX)));
+const tl = $('timeline');
+tl.addEventListener('pointermove', e => { const r = $('track').getBoundingClientRect(); const x = e.clientX - r.left; if (x<0||x>r.width||e.target.closest('.handle')||document.querySelector('.handle.drag')) return hideHover();
+  $('hoverLine').style.left = x+'px'; $('hoverLine').style.opacity = .7; $('hoverTip').style.left = x+'px'; $('hoverTip').style.opacity = 1; $('hoverTip').textContent = fmtT(timeAt(e.clientX)); });
+tl.addEventListener('pointerleave', hideHover);
+function hideHover(){ $('hoverLine').style.opacity = 0; $('hoverTip').style.opacity = 0; }
+[['hL',d=>setIn(S.inT+d)],['hR',d=>setOut(S.outT+d)]].forEach(([id,fn]) => $(id).addEventListener('keydown', e => {
+  if (e.key==='ArrowLeft'||e.key==='ArrowRight'){ e.preventDefault(); e.stopPropagation(); fn((e.key==='ArrowRight'?1:-1)*(e.shiftKey?1:0.1)); } }));
+
+/* ---------- wiring ---------- */
+$('stage').addEventListener('click', togglePlay);
+$('playBtn').onclick = togglePlay;
+$('setIn').onclick = () => setIn(S.t);
+$('setOut').onclick = () => setOut(S.t);
+$('inV').onclick = () => seek(S.inT);
+$('outV').onclick = () => seek(S.outT);
+$('resetBtn').onclick = () => { S.inT = 0; S.outT = S.sc.duration; render(); };
+$('keep30').onclick = () => { S.outT = Math.min(S.sc.duration, gifSourceLimit()); if (S.t > S.outT) S.t = S.outT; render(); };
+$('toMp4').onclick = () => { S.fmt = 'mp4'; renderLanes(); render(); };
+$('fitSpeed').onclick = () => setSpeed(+$('fitSpeed').dataset.v);
+document.querySelectorAll('#fmt button').forEach(b => b.onclick = () => { S.fmt = b.dataset.f; closeMenus(); renderLanes(); render(); });
+function setSpeed(v){ S.speed = v; renderSpeedItems(); render(); }
+function renderSpeedItems(){
+  $('speedItems').innerHTML = SPEEDS.map(v => `<button class="it" data-speed="${v}"><span class="ck">${v===S.speed?'✓':''}</span>${speedText(v)}<span class="r">${v===1?'原速':(v<1?'慢放':'快进')}</span></button>`).join('');
+  $('speedItems').querySelectorAll('[data-speed]').forEach(b => b.onclick = e => { e.stopPropagation(); closeMenus(); setSpeed(+b.dataset.speed); });
+}
+function openAnchored(id, btn){
+  const el = $(id), open = !el.classList.contains('open'); closeMenus(); if (!open) return;
+  const w = $('win').getBoundingClientRect(), r = btn.getBoundingClientRect();
+  el.style.bottom = (w.bottom - r.top + 6) + 'px'; el.style.right = (w.right - r.right) + 'px'; el.style.top = 'auto';
+  el.classList.add('open');
+}
+$('speedBtn').onclick = e => { e.stopPropagation(); renderSpeedItems(); openAnchored('speedMenu', $('speedBtn')); };
+$('audioBtn').onclick = e => { e.stopPropagation(); renderTrackRows(); openAnchored('audioPop', $('audioBtn')); };
+$('saveBtn').onclick = () => exportFile(false);
+$('copyBtn').onclick = () => exportFile(true);
+$('cancelExport').onclick = () => { S.exporting = false; render(); toast('已取消导出，录制内容未改动'); };
+$('retryBtn').onclick = () => exportFile(false);
+$('errClose').onclick = () => { S.state = 'preview'; setSeg('stateSeg','preview'); render(); };
+$('discardBtn').onclick = e => { e.stopPropagation(); toggleMenu('discardPop'); };
+$('keepBtn').onclick = () => closeMenus();
+$('confirmDiscard').onclick = () => { closeMenus(); $('saved').classList.add('show'); $('saved').querySelector('.scard').style.display='none'; };
+$('moreBtn').onclick = e => { e.stopPropagation(); toggleMenu('moreMenu'); };
+$('keysBtn').onclick = e => { e.stopPropagation(); toggleMenu('keysPop'); };
+$('destBtn').onclick = e => { e.stopPropagation(); toggleMenu('destMenu'); };
+document.querySelectorAll('[data-dir]').forEach(b => b.onclick = () => { S.dir = b.dataset.dir; $('destName').textContent = S.dir;
+  document.querySelectorAll('[data-dir] .ck').forEach(c => c.textContent = ''); b.querySelector('.ck').textContent = '✓'; closeMenus(); });
+document.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); closeMenus(); const a = b.dataset.act;
+  if (a==='reveal') toast('已在 Finder 中显示原始录屏');
+  if (a==='reload' ) { if (S.state==='unavailable'){ S.state='preview'; setSeg('stateSeg','preview'); } render(); toast('预览已重新加载'); }
+  if (a==='keys') toggleMenu('keysPop');
+  if (a==='choose') toast('打开系统文件夹选择面板…');
+  if (a==='saveas') toast('打开系统“另存为”面板…'); }));
+$('reloadBtn').onclick = e => { e.stopPropagation(); S.state='preview'; setSeg('stateSeg','preview'); render(); };
+document.addEventListener('click', e => { if (!e.target.closest('.menu,.pop')) closeMenus(); });
+['discardPop','keysPop','moreMenu','destMenu','speedMenu','audioPop'].forEach(id => $(id).addEventListener('click', e => e.stopPropagation()));
+$('doneBtn').onclick = $('again').onclick = () => { $('saved').classList.remove('show'); $('saved').querySelector('.scard').style.display=''; };
+$('fileName').addEventListener('keydown', e => { if (e.key==='Enter'||e.key==='Escape') e.target.blur(); e.stopPropagation(); });
+const measure = document.createElement('canvas').getContext('2d');
+$('fileName').addEventListener('input', e => { measure.font = getComputedStyle(e.target).font;
+  e.target.style.width = Math.min(400, Math.max(60, measure.measureText(e.target.value).width + 10)) + 'px'; });
+
+document.addEventListener('keydown', e => {
+  if ($('saved').classList.contains('show')) return;
+  if (e.metaKey && e.key.toLowerCase()==='s'){ e.preventDefault(); if (e.shiftKey) toast('打开系统“另存为”面板…'); else exportFile(false); return; }
+  if (e.metaKey || e.ctrlKey || e.altKey || S.exporting || S.state==='unavailable') return;
+  const k = e.key; const frame = 1/(S.fmt==='gif'?10:S.sc.fps);
+  if (k===' '){ e.preventDefault(); togglePlay(); }
+  else if (k==='i'||k==='I') setIn(S.t);
+  else if (k==='o'||k==='O') setOut(S.t);
+  else if (k==='ArrowLeft'||k==='ArrowRight'){ e.preventDefault(); S.playing=false; seek(S.t + (k==='ArrowRight'?1:-1)*(e.shiftKey?1:frame)); }
+  else if (k==='['||k===']'){ const i = SPEEDS.indexOf(S.speed) + (k===']'?1:-1); if (i>=0 && i<SPEEDS.length){ setSpeed(SPEEDS[i]); toast('速度 ' + speedText(S.speed)); } }
+  else if (k==='?') toggleMenu('keysPop');
+  else if (k==='Escape'){ if (document.querySelector('.menu.open,.pop.open')) closeMenus(); else toggleMenu('discardPop'); }
+});
+
+function setSeg(id, v){ document.querySelectorAll('#'+id+' button').forEach(b => b.classList.toggle('on', b.dataset.v===v)); }
+function bindSeg(id, fn){ document.querySelectorAll('#'+id+' button').forEach(b => b.onclick = () => { setSeg(id, b.dataset.v); fn(b.dataset.v); }); }
+bindSeg('scenarioSeg', v => loadScenario(v));
+bindSeg('stateSeg', v => { S.exporting=false; S.playing=false; S.state = v; render(); });
+bindSeg('themeSeg', v => { document.body.dataset.theme = v; renderLanes(); render(); });
+
+function loadScenario(key){
+  S.scKey = key; S.sc = SCENARIOS[key]; S.t = 0; S.inT = 0; S.outT = S.sc.duration; S.playing = false; S.exporting = false;
+  S.speed = 1; S.tracks = {}; S.sc.tracks.forEach(t => S.tracks[t.id] = {on:true, vol:1});
+  $('fileName').value = key==='silent' ? '录屏 2026-10-19 00.39.32' : '录屏 2026-10-19 10.12.05';
+  $('fileName').dispatchEvent(new Event('input'));
+  relayout();
+}
+function relayout(){ sizeCanvas(video); buildStrip(); buildRuler(); renderLanes(); render(); }
+window.addEventListener('resize', relayout);
+loadScenario('silent');
+})();
+</script>
+</body>
+</html>

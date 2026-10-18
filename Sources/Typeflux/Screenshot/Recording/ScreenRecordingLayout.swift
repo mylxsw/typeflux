@@ -49,6 +49,15 @@ enum ScreenRecordingLayout {
         return cleaned.isEmpty || cleaned == "." || cleaned == ".." ? "Typeflux Recording" : String(cleaned.prefix(180))
     }
 
+    /// "Save to" choices: the current folder first, then the common user folders.
+    static func destinationFolders(current: URL, manager: FileManager = .default) -> [URL] {
+        let common: [FileManager.SearchPathDirectory] = [.desktopDirectory, .downloadsDirectory, .moviesDirectory]
+        var folders = [current.standardizedFileURL]
+        for url in common.compactMap({ manager.urls(for: $0, in: .userDomainMask).first?.standardizedFileURL })
+            where !folders.contains(url) { folders.append(url) }
+        return folders
+    }
+
     static func preciseTime(_ seconds: Double) -> String {
         let value = max(0, seconds.isFinite ? seconds : 0)
         return String(format: "%02d:%04.1f", Int(value) / 60, value.truncatingRemainder(dividingBy: 60))

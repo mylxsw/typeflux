@@ -5214,8 +5214,6 @@
 
 "recording.keep30" = "保留開頭 30 秒";
 
-"recording.keepRange" = "保留";
-
 "recording.later" = "稍後";
 
 "recording.liveCamera" = "即時";
@@ -5244,13 +5242,9 @@
 
 "recording.selectionKeys" = "↩ 開始 · esc 取消 · ⇥ 切換來源";
 
-"recording.selectionSeconds" = "· 共 %.1f 秒";
-
 "recording.switchMP4" = "改存 MP4";
 
 "recording.systemAudioScope" = "不含 Typeflux 自己的聲音；錄視窗時包含該應用程式的全部聲音。";
-
-"recording.timelineKeys" = "拖動兩端剪掉頭尾 · I / O 設起止點 · 空白鍵 播放";
 
 "recording.unsaved" = "未儲存的錄製";
 
@@ -6024,3 +6018,41 @@
 
 "auth.account.subscriptionPrepaidHint" = "按期購買的會員，不會自動續費。";
 "auth.account.renewMembership" = "續購會員";
+
+/* Recording editor: speed, audio tracks and trimming */
+"recording.trackNumber" = "音軌 %d";
+"recording.kind.mp4" = "影片";
+"recording.kind.gif" = "動圖";
+"recording.allTracksOff" = "已移除全部音軌（無聲）";
+"recording.outputSeconds" = "長度 %.1f 秒";
+"recording.speed" = "播放與輸出速度";
+"recording.speedHint" = "預覽按此速度播放，輸出的檔案也會變速。聲音保持原音調；GIF 的 30 秒按輸出後的長度計算。";
+"recording.speed.normal" = "原速";
+"recording.speed.slow" = "慢放";
+"recording.speed.fast" = "快轉";
+"recording.tracks" = "音軌";
+"recording.tracksButton" = "音軌 %d/%d";
+"recording.tracksHint" = "關掉的音軌不會寫入輸出檔案；音量同時作用於預覽和輸出。";
+"recording.tracksAllOff" = "所有音軌都已關閉，將輸出無聲影片。";
+"recording.includeTrack" = "輸出%@";
+"recording.trackVolume" = "%@音量";
+"recording.fitSpeed" = "加速到 %@（%.1f 秒）";
+"recording.gifTooLongDetail" = "目前輸出長度 %.1f 秒，黃色部分不會被輸出。";
+"recording.inPoint" = "起點";
+"recording.outPoint" = "終點";
+"recording.setToPlayhead" = "設為目前";
+"recording.keptSeconds" = "保留 %.1f 秒";
+"recording.ofTotal" = "/ 共 %.1f 秒";
+"recording.fullLength" = "（完整）";
+"recording.exportsAs" = "→ 輸出 %.1f 秒（%@）";
+"recording.saveTo" = "儲存到";
+"recording.chooseFolder" = "選擇其他資料夾…";
+"recording.shortcuts" = "鍵盤快速鍵";
+"recording.key.play" = "播放 / 暫停保留片段";
+"recording.key.in" = "起點設為播放頭";
+"recording.key.out" = "終點設為播放頭";
+"recording.key.frame" = "逐格移動";
+"recording.key.second" = "移動 1 秒";
+"recording.key.speed" = "減速 / 加速";
+"recording.key.save" = "儲存";
+"recording.key.close" = "關閉（未儲存時確認）";

@@ -2,7 +2,9 @@ import Foundation
 
 /// A playback session has one ordered command and one reply in flight, never a replay queue.
 public struct MediaPlaybackMessage: Codable, Equatable, Sendable {
-    public enum Kind: String, Codable, Sendable { case load, loadVideo, play, pause, seek, volume, playRange, seekPaused, status, reply, failed }
+    public enum Kind: String, Codable, Sendable {
+        case load, loadVideo, play, pause, seek, volume, playRange, seekPaused, status, reply, failed, mix
+    }
     public static let maximumBytes = 2048
     public static let maximumSequence = 100_000
     public static let lifetime: Double = 14_400
@@ -13,11 +15,15 @@ public struct MediaPlaybackMessage: Codable, Equatable, Sendable {
     public var fraction: Double?
     public var state: MediaPlaybackState?
     public var range: MediaPlaybackRange?
-    public init(id: UUID, sequence: Int, kind: Kind, fraction: Double? = nil, state: MediaPlaybackState? = nil, range: MediaPlaybackRange? = nil) {
-        self.id = id; self.sequence = sequence; self.kind = kind; self.fraction = fraction; self.state = state; self.range = range
+    public var mix: MediaPlaybackMix?
+    public init(id: UUID, sequence: Int, kind: Kind, fraction: Double? = nil, state: MediaPlaybackState? = nil,
+                range: MediaPlaybackRange? = nil, mix: MediaPlaybackMix? = nil) {
+        self.id = id; self.sequence = sequence; self.kind = kind; self.fraction = fraction; self.state = state
+        self.range = range; self.mix = mix
     }
     public func validate() throws {
         guard version == 1, (1...Self.maximumSequence).contains(sequence) else { throw MediaFailure.invalidProtocol }
+        try validateMix()
         if kind == .playRange { guard let range else { throw MediaFailure.invalidProtocol }; try range.validate() }
         else if range != nil { throw MediaFailure.invalidProtocol }
         if kind == .reply { guard fraction == nil, let state else { throw MediaFailure.invalidProtocol }; try state.validate() }
@@ -30,11 +36,31 @@ public struct MediaPlaybackMessage: Codable, Equatable, Sendable {
     }
 }
 
+extension MediaPlaybackMessage {
+    /// Only a `.mix` command carries a mix, and it always does.
+    func validateMix() throws {
+        guard (kind == .mix) == (mix != nil) else { throw MediaFailure.invalidProtocol }
+        try mix?.validate()
+    }
+}
+
 public struct MediaPlaybackRange: Codable, Equatable, Sendable {
     public let start: Double, end: Double
     public init(start: Double, end: Double) { self.start = start; self.end = end }
     public func validate() throws {
         guard start.isFinite, end.isFinite, start >= 0, end > start, end <= 86_400 else { throw MediaFailure.invalidProtocol }
+    }
+}
+
+/// Recording preview speed and per-source-track volume, mirroring what export will produce.
+public struct MediaPlaybackMix: Codable, Equatable, Sendable {
+    public let rate: Double
+    /// One volume per source audio track, in asset order.
+    public let volumes: [Double]
+    public init(rate: Double, volumes: [Double]) { self.rate = rate; self.volumes = volumes }
+    public func validate() throws {
+        guard rate.isFinite, MediaRecordingExport.rates.contains(rate),
+              MediaRecordingExport.validVolumes(volumes) else { throw MediaFailure.invalidProtocol }
     }
 }
 

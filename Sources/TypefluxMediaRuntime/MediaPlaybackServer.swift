@@ -65,6 +65,8 @@ import TypefluxMediaProtocol
     private let recording: Bool
     private var rangeEnd: Double?
     private var frames: MediaVideoFrames?
+    private var audioTracks: [AVAssetTrack] = []
+    private var rate: Float = 1
     public init(video: Bool = false, recording: Bool = false) { self.video = video; self.recording = recording }
     public func load(_ url: URL) async throws {
         guard player == nil else { throw MediaFailure.invalidProtocol }
@@ -80,7 +82,10 @@ import TypefluxMediaProtocol
         guard video ? tracks.count == 1 : (tracks.isEmpty && !audio.isEmpty)
         else { throw MediaFailure.unreadable }
         duration = seconds
+        audioTracks = audio
         let item = AVPlayerItem(asset: asset)
+        // Speed changes keep voices at their natural pitch, matching export.
+        item.audioTimePitchAlgorithm = .spectral
         if video { frames = try await MediaVideoFrames(item: item, track: tracks[0], duration: seconds) }
         let value = AVPlayer(playerItem: item)
         // Loading is silent. Status failures are checked before every acknowledged control.
@@ -106,15 +111,14 @@ import TypefluxMediaProtocol
                 guard await player.seek(to: CMTime(seconds: range.start, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) else { throw MediaFailure.unavailable }
                 refresh = true
             }
-            ended = false; player.play()
+            ended = false; player.play(); player.rate = rate
         case .play:
             player.currentItem?.forwardPlaybackEndTime = .invalid; rangeEnd = nil
             if ended || player.currentTime().seconds >= duration {
                 guard await player.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero) else { throw MediaFailure.unavailable }
-                refresh = true
-                ended = false
+                refresh = true; ended = false
             }
-            player.play()
+            player.play(); player.rate = rate
         case .pause: player.pause()
         case .seek, .seekPaused:
             if command.kind == .seekPaused { player.pause() }
@@ -125,6 +129,7 @@ import TypefluxMediaProtocol
         case .volume:
             guard video, let fraction = command.fraction else { throw MediaFailure.invalidProtocol }
             player.volume = Float(fraction)
+        case .mix: try apply(command.mix, to: player)
         case .load, .loadVideo:
             guard (command.kind == .loadVideo) == video else { throw MediaFailure.invalidProtocol }
         case .status: break
@@ -143,8 +148,24 @@ import TypefluxMediaProtocol
         }
         return state
     }
+    /// Recording previews only. An empty volume list changes speed alone, for recordings whose
+    /// tracks the host could not list.
+    private func apply(_ mix: MediaPlaybackMix?, to player: AVPlayer) throws {
+        guard recording, let mix, mix.volumes.isEmpty || mix.volumes.count == audioTracks.count,
+              let item = player.currentItem else { throw MediaFailure.invalidProtocol }
+        rate = Float(mix.rate)
+        if player.rate != 0 { player.rate = rate }
+        guard !mix.volumes.isEmpty else { item.audioMix = nil; return }
+        let audioMix = AVMutableAudioMix()
+        audioMix.inputParameters = zip(audioTracks, mix.volumes).map { track, volume in
+            let parameter = AVMutableAudioMixInputParameters(track: track)
+            parameter.setVolume(Float(volume), at: .zero)
+            return parameter
+        }
+        item.audioMix = audioMix
+    }
     public func stop() {
-        player?.pause(); player?.replaceCurrentItem(with: nil); player = nil; frames = nil
+        player?.pause(); player?.replaceCurrentItem(with: nil); player = nil; frames = nil; audioTracks = []; rate = 1
         if let endObserver { NotificationCenter.default.removeObserver(endObserver) }
         endObserver = nil; ended = false
     }

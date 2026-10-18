@@ -5229,8 +5229,6 @@
 
 "recording.keep30" = "保留开头 30 秒";
 
-"recording.keepRange" = "保留";
-
 "recording.later" = "稍后";
 
 "recording.liveCamera" = "实时";
@@ -5259,13 +5257,9 @@
 
 "recording.selectionKeys" = "↩ 开始 · esc 取消 · ⇥ 切换来源";
 
-"recording.selectionSeconds" = "· 共 %.1f 秒";
-
 "recording.switchMP4" = "改存 MP4";
 
 "recording.systemAudioScope" = "不含 Typeflux 自己的声音；录窗口时包含该应用的全部声音。";
-
-"recording.timelineKeys" = "拖动两端剪掉头尾 · I / O 设起止点 · 空格 播放";
 
 "recording.unsaved" = "未保存的录制";
 
@@ -6104,3 +6098,41 @@
 
 "auth.account.subscriptionPrepaidHint" = "按期购买的会员，不会自动续费。";
 "auth.account.renewMembership" = "续购会员";
+
+/* Recording editor: speed, audio tracks and trimming */
+"recording.trackNumber" = "音轨 %d";
+"recording.kind.mp4" = "视频";
+"recording.kind.gif" = "动图";
+"recording.allTracksOff" = "已移除全部音轨（无声）";
+"recording.outputSeconds" = "时长 %.1f 秒";
+"recording.speed" = "播放与导出速度";
+"recording.speedHint" = "预览按此速度播放，导出的文件也会变速。声音保持原音调；GIF 的 30 秒按导出后的时长计算。";
+"recording.speed.normal" = "原速";
+"recording.speed.slow" = "慢放";
+"recording.speed.fast" = "快进";
+"recording.tracks" = "音轨";
+"recording.tracksButton" = "音轨 %d/%d";
+"recording.tracksHint" = "关掉的音轨不会写入导出文件；音量同时作用于预览和导出。";
+"recording.tracksAllOff" = "所有音轨都已关闭，将导出无声视频。";
+"recording.includeTrack" = "导出%@";
+"recording.trackVolume" = "%@音量";
+"recording.fitSpeed" = "加速到 %@（%.1f 秒）";
+"recording.gifTooLongDetail" = "当前导出时长 %.1f 秒，黄色部分不会被导出。";
+"recording.inPoint" = "起点";
+"recording.outPoint" = "终点";
+"recording.setToPlayhead" = "设为当前";
+"recording.keptSeconds" = "保留 %.1f 秒";
+"recording.ofTotal" = "/ 共 %.1f 秒";
+"recording.fullLength" = "（完整）";
+"recording.exportsAs" = "→ 导出 %.1f 秒（%@）";
+"recording.saveTo" = "保存到";
+"recording.chooseFolder" = "选择其他文件夹…";
+"recording.shortcuts" = "键盘快捷键";
+"recording.key.play" = "播放 / 暂停保留片段";
+"recording.key.in" = "起点设为播放头";
+"recording.key.out" = "终点设为播放头";
+"recording.key.frame" = "逐帧移动";
+"recording.key.second" = "移动 1 秒";
+"recording.key.speed" = "减速 / 加速";
+"recording.key.save" = "保存";
+"recording.key.close" = "关闭（未保存时确认）";

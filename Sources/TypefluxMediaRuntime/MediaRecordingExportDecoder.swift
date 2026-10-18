@@ -61,20 +61,20 @@ public enum MediaRecordingExportDecoder {
         let range = CMTimeRange(start: CMTime(seconds: request.start, preferredTimescale: 600), duration: CMTime(seconds: seconds, preferredTimescale: 600))
         try Task.checkCancellation()
         switch request.format {
-        case .mp4: try await video(asset: asset, destination: destination, range: range, progress: progress)
-        case .gif: try gif(asset: asset, destination: destination, range: range, progress: progress)
+        case .mp4: try await video(asset, to: destination, range: range, request: request, progress: progress)
+        case .gif: try gif(asset: asset, destination: destination, range: range, rate: request.rate, progress: progress)
         }
         let bytes = try fileSize(destination, limit: request.outputLimit)
         // A native file-length limit can finish early. Never publish a truncated trim as success.
         if request.format == .mp4 {
             let output = AVURLAsset(url: destination, options: [AVURLAssetReferenceRestrictionsKey: AVAssetReferenceRestrictions.forbidAll.rawValue])
             let actual = try await output.load(.duration).seconds
-            guard actual.isFinite, abs(actual - range.duration.seconds) <= 0.05,
+            guard actual.isFinite, abs(actual - seconds / request.rate) <= 0.05,
                   try await output.loadTracks(withMediaType: .video).count == 1 else { throw MediaFailure.unreadable }
         } else {
             guard let image = CGImageSourceCreateWithURL(destination as CFURL, nil),
                   CGImageSourceGetType(image) as String? == UTType.gif.identifier,
-                  CGImageSourceGetCount(image) == max(1, Int(ceil(range.duration.seconds * 10))),
+                  CGImageSourceGetCount(image) == max(1, Int(ceil(seconds / request.rate * 10))),
                   CGImageSourceGetStatus(image) == .statusComplete else { throw MediaFailure.unreadable }
         }
         return bytes
@@ -111,9 +111,9 @@ public enum MediaRecordingExportDecoder {
             }
         }
     }
-    private static func video(asset: AVAsset, destination: URL, range: CMTimeRange,
-                       progress: @escaping @Sendable (Double) -> Void) async throws {
-        // Composition combines the microphone and system tracks into one portable AAC track.
+    private static func video(_ asset: AVAsset, to destination: URL, range: CMTimeRange, request: MediaRecordingExport,
+                              progress: @escaping @Sendable (Double) -> Void) async throws {
+        // Composition combines the kept microphone and system tracks into one portable AAC track.
         let composition = AVMutableComposition()
         let videoTracks = try await asset.loadTracks(withMediaType: .video)
         guard let sourceVideo = videoTracks.first,
@@ -124,20 +124,10 @@ public enum MediaRecordingExportDecoder {
         else { throw MediaFailure.unreadable }
         try video.insertTimeRange(range, of: sourceVideo, at: .zero)
         video.preferredTransform = try await sourceVideo.load(.preferredTransform)
-        let audioSources = try await asset.loadTracks(withMediaType: .audio)
-        var parameters: [AVAudioMixInputParameters] = []
-        for source in audioSources {
-            guard let track = composition.addMutableTrack(
-                withMediaType: .audio,
-                preferredTrackID: kCMPersistentTrackID_Invalid
-            )
-            else { throw MediaFailure.unavailable }
-            let overlap = try await CMTimeRangeGetIntersection(range, otherRange: source.load(.timeRange))
-            guard overlap.duration.seconds > 0 else { continue }
-            try track.insertTimeRange(overlap, of: source, at: overlap.start - range.start)
-            let parameter = AVMutableAudioMixInputParameters(track: track)
-            parameter.setVolume(audioSources.count > 1 ? 0.5 : 1, at: .zero)
-            parameters.append(parameter)
+        let parameters = try await audio(asset: asset, into: composition, range: range, volumes: request.volumes)
+        if request.rate != 1 {
+            let scaled = CMTimeMultiplyByFloat64(range.duration, multiplier: 1 / request.rate)
+            composition.scaleTimeRange(CMTimeRange(start: .zero, duration: range.duration), toDuration: scaled)
         }
         guard let session = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality)
         else {
@@ -146,6 +136,8 @@ public enum MediaRecordingExportDecoder {
         let mix = AVMutableAudioMix()
         mix.inputParameters = parameters
         session.audioMix = mix
+        // Keeps voices at their natural pitch when the recording is sped up or slowed down.
+        session.audioTimePitchAlgorithm = .spectral
         session.outputFileType = .mp4
         session.outputURL = destination
         session.shouldOptimizeForNetworkUse = true
@@ -165,13 +157,38 @@ public enum MediaRecordingExportDecoder {
         progress(1)
     }
 
+    /// Adds the kept source audio tracks to `composition`. A zero volume leaves the track out entirely.
+    private static func audio(asset: AVAsset, into composition: AVMutableComposition, range: CMTimeRange,
+                              volumes: [Double]?) async throws -> [AVAudioMixInputParameters] {
+        let sources = try await asset.loadTracks(withMediaType: .audio)
+        // Volumes are addressed by source track position, so a list for a different track count is refused.
+        guard volumes.map({ $0.count == sources.count }) ?? true else { throw MediaFailure.invalidProtocol }
+        let levels = volumes ?? Array(repeating: 1, count: sources.count)
+        let kept = sources.indices.filter { levels[$0] > 0 }
+        var parameters: [AVAudioMixInputParameters] = []
+        for index in kept {
+            let overlap = try await CMTimeRangeGetIntersection(range, otherRange: sources[index].load(.timeRange))
+            guard overlap.duration.seconds > 0 else { continue }
+            guard let track = composition.addMutableTrack(withMediaType: .audio,
+                                                          preferredTrackID: kCMPersistentTrackID_Invalid)
+            else { throw MediaFailure.unavailable }
+            try track.insertTimeRange(overlap, of: sources[index], at: overlap.start - range.start)
+            let parameter = AVMutableAudioMixInputParameters(track: track)
+            // Two full-scale tracks would clip once mixed into a single track.
+            parameter.setVolume(Float(levels[index] * (kept.count > 1 ? 0.5 : 1)), at: .zero)
+            parameters.append(parameter)
+        }
+        return parameters
+    }
+
     public static func frameCount(_ duration: Double) throws -> Int {
         guard duration.isFinite, duration > 0, duration <= 30.01 else { throw MediaFailure.tooLarge }
         return max(1, Int(ceil(duration * 10)))
     }
-    private static func gif(asset: AVAsset, destination: URL, range: CMTimeRange,
-                     progress: @escaping @Sendable (Double) -> Void) throws {
-        let duration = range.duration.seconds
+    private static func gif(asset: AVAsset, destination: URL, range: CMTimeRange, rate: Double,
+                            progress: @escaping @Sendable (Double) -> Void) throws {
+        // GIF timing is in output seconds; each frame samples the source `rate` times further along.
+        let duration = range.duration.seconds / rate
         let frames = try frameCount(duration)
         guard let output = CGImageDestinationCreateWithURL(destination as CFURL, UTType.gif.identifier as CFString,
                                                            frames, nil) else { throw MediaFailure.unavailable }
@@ -189,7 +206,8 @@ public enum MediaRecordingExportDecoder {
             try Task.checkCancellation()
             try autoreleasepool {
                 let position = Double(index) / 10
-                let time = range.start + CMTime(seconds: position, preferredTimescale: 600)
+                let offset = min(position * rate, range.duration.seconds)
+                let time = range.start + CMTime(seconds: offset, preferredTimescale: 600)
                 let image = try reader.copyCGImage(at: time, actualTime: nil)
                 guard image.width <= 960, image.height <= 960 else { throw MediaFailure.tooLarge }
                 let delay = max(0.02, min(0.1, duration - position))

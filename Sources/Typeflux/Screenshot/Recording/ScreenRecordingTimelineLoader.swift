@@ -33,6 +33,7 @@ final class ScreenRecordingTimelineLoader: @unchecked Sendable {
                             try Self.image(raster, bytes: MediaPreviewDisplay.read(raster, index: index, directory: directory), lease: ownership.pixels)
                         }
                         return ScreenRecordingPreviewMedia(thumbnails: images, waveform: value.waveform,
+                            tracks: value.tracks,
                             size: .init(width: value.width, height: value.height), fps: value.fps,
                             fileBytes: Int64(source.bytes), audio: value.audio)
                     }

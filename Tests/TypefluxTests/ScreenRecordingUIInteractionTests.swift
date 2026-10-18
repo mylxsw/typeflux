@@ -31,7 +31,9 @@ struct ScreenRecordingUIInteractionTests {
                 ) { window, content in
                     let nodes = SettingsBehaviorTestSupport.elements(in: content)
                     var previousFrame: CGRect?
-                    for action in ["directory", "copy", "saveAs", "save"] {
+                    // "Save As…" and "Choose Another Folder…" live in the destination popover.
+                    #expect(!nodes.contains { $0.value("accessibilityIdentifier") as? String == "recording.preview.saveAs" })
+                    for action in ["directory", "copy", "save"] {
                         let button = try #require(nodes.first {
                             $0.value("accessibilityIdentifier") as? String == "recording.preview." + action
                         })
@@ -43,9 +45,20 @@ struct ScreenRecordingUIInteractionTests {
                             #expect(button.frame.minY == previousFrame.minY)
                         }
                         previousFrame = button.frame
-                        if action == "directory" || action == "saveAs" {
-                            try button.press()
+                    }
+                    for row in ["chooseFolder", "saveAs"] {
+                        let directory = try #require(nodes.first {
+                            $0.value("accessibilityIdentifier") as? String == "recording.preview.directory"
+                        })
+                        try directory.press()
+                        var item: SettingsBehaviorTestSupport.Element?
+                        for _ in 0 ..< 100 where item == nil {
+                            try await Task.sleep(for: .milliseconds(10))
+                            item = NSApp.windows.compactMap(\.contentView).flatMap { SettingsBehaviorTestSupport.elements(in: $0) }
+                                .first { $0.value("accessibilityIdentifier") as? String == "recording.preview." + row }
                         }
+                        try #require(item).press()
+                        try await Task.sleep(for: .milliseconds(50))
                     }
                     let discard = try #require(nodes.first {
                         $0.value("accessibilityIdentifier") as? String == "recording.preview.discard"
@@ -60,7 +73,7 @@ struct ScreenRecordingUIInteractionTests {
         fixture.model.trimEnd = 0
         try await SettingsBehaviorTestSupport
             .withWindow(ScreenRecordingPreviewView(model: fixture.model)) { _, content in
-                for action in ["copy", "saveAs", "save"] {
+                for action in ["copy", "save"] {
                     let button = try #require(SettingsBehaviorTestSupport.elements(in: content).first {
                         $0.value("accessibilityIdentifier") as? String == "recording.preview." + action
                     })

@@ -24,6 +24,10 @@ final class ScreenRecordingCoordinator: ObservableObject {
     @Published private(set) var duration: Double = 0
     @Published var trimStart: Double = 0
     @Published var trimEnd: Double = 0
+    /// Speed and per-track audio for this preview; applied to playback and export alike.
+    @Published var edit = ScreenRecordingEdit() {
+        didSet { if edit != oldValue { applyMix() } }
+    }
     @Published private(set) var error: String?
     @Published private(set) var savedURL: URL?
     let playback: ClipboardAudioPlayback
@@ -316,6 +320,8 @@ extension ScreenRecordingCoordinator {
             self?.previewAuthorized == true && self?.sourceURL == url && self?.generation == token
         })
         duration = 0; trimStart = 0; trimEnd = 0
+        // A new recording starts at normal speed with every track, and has its own track list.
+        edit = ScreenRecordingEdit(); playback.setMix(nil)
         do {
             let duration = try await playback.prepare(url, access: access)
             try Task.checkCancellation()
@@ -339,6 +345,7 @@ extension ScreenRecordingCoordinator {
                     let result = try await load(url)
                     guard let self, !Task.isCancelled, access.allows(), sourceURL == url else { return }
                     media = result
+                    edit.tracks = ScreenRecordingAudioTrack.tracks(waveforms: result.tracks, options: options)
                 } catch {
                     guard let self, !Task.isCancelled, access.allows(), sourceURL == url else { return }
                     media.audio = .unavailable
@@ -389,7 +396,7 @@ extension ScreenRecordingCoordinator {
 
     func export(directory: URL? = nil, destinationURL: URL? = nil, copy: Bool = false) {
         guard state == .preview, previewAuthorized, let sourceURL, let sessionDirectory else { return }
-        let trim = ScreenRecordingTrim(start: trimStart, end: trimEnd)
+        let trim = ScreenRecordingTrim(start: trimStart, end: trimEnd, rate: edit.rate, volumes: edit.volumes)
         guard trimIsValid else { error = ScreenRecordingFailure.invalidRange.localizedDescription; return }
         let admission: AskToolPixelBudget.Lease
         let original: ClipboardPlaybackSource
@@ -766,7 +773,38 @@ extension ScreenRecordingCoordinator {
 
     func keepFirstGIFSegment() {
         guard state == .preview else { return }
-        trimEnd = min(duration, trimStart + 30)
+        trimEnd = min(duration, edit.gifSourceEnd(from: trimStart))
+    }
+
+    /// Speeds the kept range up just enough to fit in a GIF, instead of cutting it.
+    func fitGIFBySpeed() {
+        guard state == .preview, let rate = edit.fittingGIFRate(selection: selectionDuration) else { return }
+        edit.rate = rate
+    }
+
+    func setRate(_ rate: Double) {
+        guard state == .preview, ScreenRecordingEdit.rates.contains(rate) else { return }
+        edit.rate = rate
+    }
+
+    /// Steps through the speed presets; `[` and `]` in the editor.
+    func stepRate(by offset: Int) {
+        guard let index = ScreenRecordingEdit.rates.firstIndex(of: edit.rate) else { return }
+        let next = index + offset
+        guard ScreenRecordingEdit.rates.indices.contains(next) else { return }
+        setRate(ScreenRecordingEdit.rates[next])
+    }
+
+    func setTrack(_ id: Int, included: Bool? = nil, volume: Double? = nil) {
+        guard state == .preview, let index = edit.tracks.firstIndex(where: { $0.id == id }) else { return }
+        if let included { edit.tracks[index].included = included }
+        if let volume, volume.isFinite { edit.tracks[index].volume = min(1, max(0, volume)) }
+    }
+
+    /// Default edits are never sent, so playback engines without mix support keep working.
+    private func applyMix() {
+        guard !(edit.isDefault && playback.mix == nil) else { return }
+        playback.setMix(edit.playbackMix)
     }
 
     func finishSavedPresentation() {

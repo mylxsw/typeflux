@@ -11,7 +11,8 @@ final class ScreenRecordingEncoder: @unchecked Sendable {
     func export(source: URL, destination: URL, format: ScreenRecordingFormat, trim: ScreenRecordingTrim,
                 progress: @escaping @Sendable (Double) -> Void) async throws {
         try Task.checkCancellation()
-        let request = MediaRecordingExport(format: format == .gif ? .gif : .mp4, start: trim.start, end: trim.end)
+        let request = MediaRecordingExport(format: format == .gif ? .gif : .mp4, start: trim.start, end: trim.end,
+                                           rate: trim.rate, volumes: trim.volumes)
         try request.validate()
         let ownership = try Ownership(slot: Self.slots.acquire(bytes: 1))
         let cancellation = AskSearchCancellation(), worker = self.worker
