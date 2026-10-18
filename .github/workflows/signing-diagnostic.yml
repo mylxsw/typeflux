@@ -32,6 +32,8 @@ jobs:
           openssl pkcs12 -in "$package" -clcerts -nokeys \
             -passin env:APPLE_CERTIFICATE_PASSWORD -out "$RUNNER_TEMP/signing-leaf.pem"
           openssl x509 -in "$RUNNER_TEMP/signing-leaf.pem" -noout -dates
+          openssl pkcs12 -in "$package" -passin env:APPLE_CERTIFICATE_PASSWORD \
+            -info -noout 2>&1 | awk '/Keybag|Key bag/ { keys++ } /Certificate bag/ { certificates++ } END { print "P12 key bags: " keys+0 "; certificate bags: " certificates+0 }'
 
           password="$(openssl rand -hex 32)"
           security create-keychain -p "$password" "$keychain"
@@ -45,8 +47,14 @@ jobs:
           done
 
           echo "Imported certificates: $(security find-certificate -a -p "$keychain" | grep -c 'BEGIN CERTIFICATE')"
+          if security find-key -t private "$keychain" >/dev/null 2>&1; then
+            echo "Private key present in temporary keychain: yes"
+          else
+            echo "Private key present in temporary keychain: no"
+          fi
           security find-identity -p codesigning "$keychain" | tail -1
           security find-identity -v -p codesigning "$keychain" | tail -1
+          security find-identity -p codesigning | tail -1
           set +e
           security verify-cert -c "$RUNNER_TEMP/signing-leaf.pem" -p codeSign \
             -k "$keychain" -L -v > "$RUNNER_TEMP/verify-cert.log" 2>&1
