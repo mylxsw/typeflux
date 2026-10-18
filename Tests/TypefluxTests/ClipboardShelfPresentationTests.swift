@@ -351,7 +351,7 @@ final class ClipboardShelfPresentationTests: XCTestCase {
         let screen = try XCTUnwrap((panel.screen ?? NSScreen.main)?.visibleFrame)
         let target = ClipboardPanelPlacement.shelfFrame(height: ClipboardShelfView.height, screen: screen)
         XCTAssertLessThan(panel.frame.minY, target.minY + 0.5, "The slide starts at or below its final frame")
-        XCTAssertGreaterThan(panel.alphaValue, 0, "The shelf is visible on its first frame")
+        XCTAssertEqual(panel.alphaValue, 1, "The shelf is fully visible on its first frame")
         let settled = expectation(description: "slide settles")
         func poll(_ remaining: Int) {
             if panel.alphaValue == 1, panel.frame == target || remaining == 0 { settled.fulfill(); return }

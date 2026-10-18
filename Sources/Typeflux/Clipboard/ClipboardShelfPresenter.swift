@@ -11,7 +11,7 @@ final class ClipboardShelfPresenter {
     let layout = ClipboardShelfLayout()
     private weak var panel: NSWindow?
     private weak var model: ClipboardPanelModel?
-    /// Slides the shelf up from just below its final frame while fading it in.
+    /// A short slide keeps the shelf responsive from its first visible frame.
     private let animator = AskLauncherHeightAnimator()
     /// The shelf's settled frame; the slide and the editor growth both aim for it.
     private(set) var frame: NSRect?
@@ -39,12 +39,12 @@ final class ClipboardShelfPresenter {
             height: ClipboardShelfView.height, screen: screen?.visibleFrame ?? panel.frame
         )
         self.frame = frame
-        let initialProgress: CGFloat = animated ? 0.15 : 1
+        let initialProgress: CGFloat = animated ? 0.8 : 1
         place(panel, shelf: frame, progress: initialProgress)
         panel.makeKeyAndOrderFront(nil)
         animator.update(
             from: initialProgress, to: 1, animated: animated,
-            framesPerSecond: screen?.maximumFramesPerSecond ?? 60, rate: 44, view: panel.contentView
+            framesPerSecond: screen?.maximumFramesPerSecond ?? 60, rate: 64, view: panel.contentView
         ) { [weak self, weak panel] progress in
             guard let self, let panel, panel.isVisible, let frame = self.frame else { return }
             place(panel, shelf: frame, progress: progress)
@@ -68,12 +68,12 @@ final class ClipboardShelfPresenter {
         return true
     }
 
-    /// `progress` 0 is the start of the slide, slightly low and transparent; 1 is in place.
+    /// `progress` 0 is below the settled frame; the panel stays fully visible during the slide.
     private func place(_ panel: NSWindow, shelf frame: NSRect, progress: CGFloat) {
         let clamped = min(max(progress, 0), 1)
         let offset = -ClipboardShelfScroll.slideDistance * (1 - clamped)
         panel.setFrame(frame.offsetBy(dx: 0, dy: offset), display: false)
-        panel.alphaValue = clamped
+        panel.alphaValue = 1
         if panel.contentView?.frame.size != frame.size {
             panel.contentView?.frame = NSRect(origin: .zero, size: frame.size)
         }
