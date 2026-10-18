@@ -27,11 +27,22 @@ public protocol ChatAPI: Sendable {
     func appleCreditPacks(language: String, token: String) async throws -> ChatAppleCreditPacks
     func submitAppleTransaction(_ signedTransaction: String, token: String) async throws -> ChatApplePurchaseReceipt
     func resume(conversationId: String, runId: String, token: String) async throws -> ChatConversation
+    func updateTitle(conversationId: String, request: ChatTitleRequest, token: String) async throws -> ChatConversation
+    func keep(conversationId: String, token: String) async throws -> ChatConversation
 }
 
 /// Account and history extras are optional for test doubles and older fixtures:
 /// an implementation that does not provide them reports the feature unavailable.
 public extension ChatAPI {
+    func updateTitle(conversationId _: String, request _: ChatTitleRequest,
+                     token _: String) async throws -> ChatConversation {
+        throw ChatAPIError.unavailable
+    }
+
+    func keep(conversationId _: String, token _: String) async throws -> ChatConversation {
+        throw ChatAPIError.unavailable
+    }
+
     func aiDisclosure(token _: String) async throws -> ChatAIDisclosure {
         throw ChatAPIError.unavailable
     }
@@ -234,6 +245,19 @@ public struct ChatAPIClient: ChatAPI {
     public func resume(conversationId: String, runId: String, token: String) async throws -> ChatConversation {
         try await execute(path: conversationPath(conversationId) + "/runs/" + ChatRequest.pathComponent(runId) + "/resume",
                           method: "POST", body: Data("{}".utf8), token: token)
+    }
+
+    /// Renames a conversation, or asks the server to generate its title once.
+    public func updateTitle(conversationId: String, request: ChatTitleRequest,
+                            token: String) async throws -> ChatConversation {
+        try await execute(path: conversationPath(conversationId) + "/title", method: "POST",
+                          body: ChatCoding.encoder().encode(request), token: token)
+    }
+
+    /// Turns a temporary conversation into an ordinary, listed one.
+    public func keep(conversationId: String, token: String) async throws -> ChatConversation {
+        try await execute(path: conversationPath(conversationId) + "/keep", method: "POST",
+                          body: Data("{}".utf8), token: token)
     }
 
     public func observe(

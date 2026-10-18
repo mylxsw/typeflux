@@ -26,7 +26,7 @@ extension ChatStore {
     }
 
     func isLocalConversation(_ id: String) -> Bool {
-        localConversations.contains { $0.id == id }
+        localTemporaryIDs.contains(id) || localConversations.contains { $0.id == id }
     }
 
     /// The next message goes to the user's own provider instead of Typeflux.
@@ -110,6 +110,12 @@ extension ChatStore {
     func modelLabel(for message: ChatMessage) -> String? {
         guard message.role == "assistant" else { return nil }
         let latest = conversation?.messages.last(where: { $0.role == "assistant" })?.id == message.id
+        // The server names the catalog model that answered; "Auto" shows where it was routed.
+        if let served = message.modelName ?? (latest ? conversation?.run?.modelName : nil), !served.isEmpty {
+            let requested = latest ? conversation?.run?.modelRef : nil
+            return latest && requested == "cloud:default"
+                ? String(format: NSLocalizedString("Auto → %@", comment: "Routed model"), served) : served
+        }
         guard let reference = message.modelRef ?? (latest ? conversation?.run?.modelRef : nil) else { return nil }
         if let model = availableModels.first(where: { $0.reference == reference }) {
             return model.providerName.map { $0 + " · " + model.name } ?? model.name
@@ -167,6 +173,11 @@ extension ChatStore {
         }
         let id = selectedID ?? UUID().uuidString.lowercased()
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        if startsTemporary, conversationStorage == nil {
+            // Kept in memory only: never written to the device store or listed.
+            temporaryIDs.insert(id)
+            localTemporaryIDs.insert(id)
+        }
         let start = ChatLocalConversation.begin(conversationStorage == .local ? conversation : nil, id: id,
                                                 text: text, image: imageDataURL, modelRef: modelRef,
                                                 deviceID: deviceID)
@@ -237,8 +248,8 @@ extension ChatStore {
 
     // MARK: Streaming
 
-    private func storeLocal(_ value: ChatConversation) async {
-        guard !deletedLocalIDs.contains(value.id) else { return }
+    func storeLocal(_ value: ChatConversation) async {
+        guard !deletedLocalIDs.contains(value.id), !localTemporaryIDs.contains(value.id) else { return }
         try? await localStore?.save(value, storage: .local, owner: Self.localOwner, modelRef: value.run?.modelRef)
         guard !deletedLocalIDs.contains(value.id) else {
             // Deleted while saving: the deletion was queued after this write, so it wins.
@@ -295,6 +306,9 @@ extension ChatStore {
         guard !deletedLocalIDs.contains(start.id) else { return }
         show(working)
         await storeLocal(working)
+        if status == "completed" {
+            requestLocalTitleIfNeeded(working, provider: request.provider, key: request.apiKey, model: request.model)
+        }
     }
 
     /// Updates the screen only while the conversation is still selected.

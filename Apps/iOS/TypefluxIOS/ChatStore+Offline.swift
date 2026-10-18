@@ -73,7 +73,7 @@ extension ChatStore {
 
     /// Saves settled cloud snapshots; a streaming run is saved once it ends.
     func cacheConversation(_ value: ChatConversation) {
-        guard let owner = cacheOwner, let cache, !isLocalConversation(value.id),
+        guard let owner = cacheOwner, let cache, !isLocalConversation(value.id), !temporaryIDs.contains(value.id),
               value.run?.isActive != true, !value.messages.isEmpty else { return }
         Task { try? await cache.save(value, storage: .cloud, owner: owner, modelRef: value.run?.modelRef) }
     }
@@ -174,11 +174,13 @@ extension ChatStore {
     }
 
     func saveDraft() async {
+        guard !isTemporary else { return }
         try? await localStore?.saveDraft(ChatDraft(text: draft, image: imageDataURL), id: draftKey, owner: draftOwner)
     }
 
     func saveDraftInBackground() {
-        guard let localStore else { return }
+        // Temporary conversations leave nothing behind, drafts included.
+        guard let localStore, !isTemporary else { return }
         let value = ChatDraft(text: draft, image: imageDataURL), key = draftKey, owner = draftOwner
         Task { try? await localStore.saveDraft(value, id: key, owner: owner) }
     }

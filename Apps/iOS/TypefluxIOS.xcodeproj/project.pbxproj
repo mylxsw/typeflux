@@ -59,6 +59,8 @@
 		B582631822D916F630C55B15 /* ChatStore+Local.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73788C543B78762FB5826318 /* ChatStore+Local.swift */; };
 		CB4D58229413BA765B09BF32 /* ChatProviderViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B051E88F57E27DE8CB4D5822 /* ChatProviderViews.swift */; };
 		0A1684799A73180EB2AF48D0 /* ChatOfflineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B081A1DB4D3D27630A168479 /* ChatOfflineTests.swift */; };
+		9548A4C2943212AC9F3667B0 /* ChatStore+Titles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4964D06140242DA19548A4C2 /* ChatStore+Titles.swift */; };
+		CCC3655A5B851E82B1ABEBAB /* ChatFollowupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A95A8A301E18D990CCC3655A /* ChatFollowupTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -129,6 +131,8 @@
 		73788C543B78762FB5826318 /* ChatStore+Local.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChatStore+Local.swift"; sourceTree = "<group>"; };
 		B051E88F57E27DE8CB4D5822 /* ChatProviderViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatProviderViews.swift; sourceTree = "<group>"; };
 		B081A1DB4D3D27630A168479 /* ChatOfflineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChatOfflineTests.swift"; sourceTree = "<group>"; };
+		4964D06140242DA19548A4C2 /* ChatStore+Titles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChatStore+Titles.swift"; sourceTree = "<group>"; };
+		A95A8A301E18D990CCC3655A /* ChatFollowupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChatFollowupTests.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -202,6 +206,7 @@
 				89FC27794BC62EECC2FC209E /* ChatTranscript.swift */,
 				9E67E6FC41E4FD3453A359BC /* Localizable.strings */,
 				292AE82520A2009E372E3F40 /* ChatPreferences.swift */,
+				4964D06140242DA19548A4C2 /* ChatStore+Titles.swift */,
 				B051E88F57E27DE8CB4D5822 /* ChatProviderViews.swift */,
 				73788C543B78762FB5826318 /* ChatStore+Local.swift */,
 				817242F80C11DE42D39BF6D5 /* ChatStore+Offline.swift */,
@@ -218,6 +223,7 @@
 				A20900000000000000000003 /* GoogleSignInTests.swift */,
 				6EDC9ED4857EF34E96A3F17C /* ChatAccountTests.swift */,
 				00000000000000000000012C /* ChatStoreTests.swift */,
+				A95A8A301E18D990CCC3655A /* ChatFollowupTests.swift */,
 				B081A1DB4D3D27630A168479 /* ChatOfflineTests.swift */,
 				00000000000000000000012D /* PlatformTests.swift */,
 				B3DDBF0BF21F3C6EF11F383B /* ChatPresentationTests.swift */,
@@ -389,6 +395,7 @@
 				1EFBD9C88D1DB393F7B858CB /* ChatTheme.swift in Sources */,
 				5D6004A2082941E89C718AD1 /* ChatTranscript.swift in Sources */,
 				C8CB23790EF24DD1D1E9E935 /* ChatPreferences.swift in Sources */,
+				9548A4C2943212AC9F3667B0 /* ChatStore+Titles.swift in Sources */,
 				CB4D58229413BA765B09BF32 /* ChatProviderViews.swift in Sources */,
 				B582631822D916F630C55B15 /* ChatStore+Local.swift in Sources */,
 				D39BF6D51DEAC559B69480C5 /* ChatStore+Offline.swift in Sources */,
@@ -405,6 +412,7 @@
 				A20900000000000000000004 /* GoogleSignInTests.swift in Sources */,
 				27D885831CAAFB84B2CFE3DA /* ChatAccountTests.swift in Sources */,
 				000000000000000000000190 /* ChatStoreTests.swift in Sources */,
+				CCC3655A5B851E82B1ABEBAB /* ChatFollowupTests.swift in Sources */,
 				0A1684799A73180EB2AF48D0 /* ChatOfflineTests.swift in Sources */,
 				000000000000000000000191 /* PlatformTests.swift in Sources */,
 				46541A7671FBF7ED48366811 /* ChatPresentationTests.swift in Sources */,

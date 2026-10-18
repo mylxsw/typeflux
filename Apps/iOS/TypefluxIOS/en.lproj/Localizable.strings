@@ -407,3 +407,16 @@
 "It is removed from this iPhone. Private conversations have no other copy." = "It is removed from this iPhone. Private conversations have no other copy.";
 "Use your own models" = "Use your own models";
 "No account needed. Conversations stay on this iPhone; your API key stays in its Keychain." = "No account needed. Conversations stay on this iPhone; your API key stays in its Keychain.";
+
+/* GUL-418 follow-ups: temporary chats, renaming, routed model */
+"Auto → %@" = "Auto → %@";
+"Keep conversation" = "Keep conversation";
+"Temporary chat" = "Temporary chat";
+"Temporary chat on" = "Temporary chat on";
+"It won't appear in history and is deleted when you leave." = "It won't appear in history and is deleted when you leave.";
+"Rename" = "Rename";
+"Rename conversation" = "Rename conversation";
+"Title" = "Title";
+"Use a single line of up to 60 characters." = "Use a single line of up to 60 characters.";
+"Wait for the answer to finish, then rename the conversation." = "Wait for the answer to finish, then rename the conversation.";
+"Typeflux is unavailable right now. Try again when you're back online." = "Typeflux is unavailable right now. Try again when you're back online.";

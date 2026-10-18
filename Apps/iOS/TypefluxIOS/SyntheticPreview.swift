@@ -524,6 +524,26 @@
 
         func deleteConversation(id: String, token _: String) async throws {
             documents.removeAll { $0.id == id }
+            temporary.remove(id)
+        }
+
+        /// Temporary conversations are never listed, like the server.
+        private var temporary: Set<String> = []
+
+        func updateTitle(conversationId: String, request: ChatTitleRequest,
+                         token _: String) async throws -> ChatConversation {
+            let index = try documentIndex(conversationId)
+            if request.action == "rename", let title = request.title {
+                documents[index].title = title
+                documents[index].titleSource = "manual"
+                documents[index].revision += 1
+            }
+            return documents[index]
+        }
+
+        func keep(conversationId: String, token _: String) async throws -> ChatConversation {
+            temporary.remove(conversationId)
+            return try documents[documentIndex(conversationId)]
         }
 
         func regenerate(conversationId: String, request: ChatRegenerateRequest,
@@ -542,6 +562,7 @@
 
         func list(token _: String, offset: Int) async throws -> [ChatConversationSummary] {
             try reach("list")
+            let documents = documents.filter { !temporary.contains($0.id) }
             let pageSize = scenario == .history ? 5 : documents.count
             return documents.dropFirst(max(0, offset)).prefix(pageSize).map {
                 ChatConversationSummary(id: $0.id, title: $0.title, updatedAt: $0.updatedAt)
@@ -559,6 +580,9 @@
             }
             if !documents.contains(where: { $0.id == conversationId }) {
                 documents.insert(ChatConversation(id: conversationId, title: "Synthetic conversation"), at: 0)
+                if request.temporary == true {
+                    temporary.insert(conversationId)
+                }
             }
             let index = try documentIndex(conversationId)
             documents[index].messages.append(ChatMessage(

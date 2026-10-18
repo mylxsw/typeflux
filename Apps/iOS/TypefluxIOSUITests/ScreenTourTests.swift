@@ -251,6 +251,45 @@ final class ScreenTourTests: XCTestCase {
         capture("49-default-model")
     }
 
+    /// GUL-418 follow-ups: a temporary conversation and renaming from the sidebar.
+    @MainActor
+    func testTourTemporaryAndRename() {
+        let app = launch("--synthetic-history")
+        XCTAssertTrue(app.buttons["chat.temporary"].waitForExistence(timeout: 8))
+        app.buttons["chat.temporary"].tap()
+        capture("52-temporary-new")
+        let field = app.textFields["chat.composer"]
+        field.tap(); field.typeText("只问一次")
+        app.buttons["chat.send"].tap()
+        XCTAssertTrue(app.buttons["chat.temporary.keep"].waitForExistence(timeout: 8))
+        capture("53-temporary-conversation")
+        openSidebar(app)
+        let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "chat.history.history-"))
+            .firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["只问一次"].exists, "Temporary conversations are never listed")
+        row.swipeLeft()
+        let rename = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "chat.history.rename."))
+            .firstMatch
+        XCTAssertTrue(rename.waitForExistence(timeout: 3))
+        rename.tap()
+        // System alerts do not keep SwiftUI identifiers on their fields.
+        let alert = app.alerts.firstMatch
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        let title = alert.textFields.firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 3))
+        // Put the cursor after the prefilled title, then clear it.
+        title.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.5)).tap()
+        let current = (title.value as? String) ?? ""
+        title.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: current.count + 2))
+        title.typeText("新的标题")
+        capture("54-rename")
+        alert.buttons.element(boundBy: alert.buttons.count - 1).tap()
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "新的标题")).firstMatch
+            .waitForExistence(timeout: 5))
+        capture("55-renamed")
+    }
+
     @MainActor
     func testTourWelcomeOwnModels() {
         let app = launch("--synthetic-guest", "-guest.welcome-dismissed", "NO")

@@ -63,6 +63,17 @@ final class ChatStore {
     var localTasks: [String: Task<Void, Never>] = [:]
     /// Private conversations deleted in this session; a late stream must not save them again.
     var deletedLocalIDs: Set<String> = []
+    /// The next new conversation starts as a temporary one: never listed, deleted when left.
+    var startsTemporary = false
+    /// Temporary conversations of this session; private ones are also in `localTemporaryIDs`.
+    var temporaryIDs: Set<String> = []
+    var localTemporaryIDs: Set<String> = []
+    /// Conversations whose title was already requested in this session.
+    var titleRequestedIDs: Set<String> = []
+    /// Title work in flight, by conversation; tests await it.
+    var titleTasks: [String: Task<Void, Never>] = [:]
+    /// How long the server gets to name a cloud conversation before the list is refreshed.
+    var titleRefreshDelay: Duration = .seconds(6)
     var showsLogin = false
     var showsConsent = false
     var example: ChatExample?
@@ -299,6 +310,10 @@ final class ChatStore {
                 activeSendID = nil
             }
         }
+        if request.temporary == true {
+            // Marked before sending: even a reply lost in transit must never be cached or listed.
+            temporaryIDs.insert(id)
+        }
         do {
             let value = try await authorized { [service] token in try await service.send(
                 conversationId: id,
@@ -474,11 +489,16 @@ extension ChatStore {
             return pendingRequest
         }
         return ChatSendRequest(deviceId: deviceID, text: text, image: imageDataURL,
-                               modelRef: requestedModel, reasoningEffort: requestedEffort)
+                               modelRef: requestedModel, reasoningEffort: requestedEffort,
+                               temporary: startsTemporary && conversationStorage == nil ? true : nil)
     }
 
     func changeSelection(_ id: String) {
         saveDraftInBackground()
+        if let previous = selectedID, previous != id, temporaryIDs.contains(previous) {
+            discardTemporary(previous)
+        }
+        startsTemporary = false
         observationTask?.cancel()
         observationTask = nil
         selectionGeneration += 1
@@ -506,6 +526,7 @@ extension ChatStore {
         }
         conversation = value
         cacheConversation(value)
+        requestCloudTitleIfNeeded(value)
     }
 
     func startObservation() {
