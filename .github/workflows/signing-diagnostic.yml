@@ -24,7 +24,6 @@ jobs:
             security delete-keychain "$RUNNER_TEMP/repacked-signing.keychain-db" >/dev/null 2>&1 || true
             rm -f "$package" "$RUNNER_TEMP/signing-leaf.pem" \
               "$RUNNER_TEMP/repacked-signing.p12" \
-              "$RUNNER_TEMP/DeveloperIDCA.cer" "$RUNNER_TEMP/DeveloperIDG2CA.cer" \
               "$RUNNER_TEMP/verify-cert.log"
           }
           trap cleanup EXIT
@@ -41,12 +40,6 @@ jobs:
           security create-keychain -p "$password" "$keychain"
           security unlock-keychain -p "$password" "$keychain"
           security import "$package" -P "$APPLE_CERTIFICATE_PASSWORD" -A -f pkcs12 -k "$keychain"
-          for certificate in DeveloperIDCA.cer DeveloperIDG2CA.cer; do
-            curl --fail --silent --show-error --location \
-              "https://www.apple.com/certificateauthority/$certificate" \
-              --output "$RUNNER_TEMP/$certificate"
-            security import "$RUNNER_TEMP/$certificate" -k "$keychain"
-          done
 
           echo "Imported certificates: $(security find-certificate -a -p "$keychain" | grep -c 'BEGIN CERTIFICATE')"
           if security find-key -t private "$keychain" >/dev/null 2>&1; then
@@ -77,8 +70,5 @@ jobs:
           security unlock-keychain -p "$password" "$repacked_keychain"
           security import "$RUNNER_TEMP/repacked-signing.p12" -P "$repack_password" \
             -A -f pkcs12 -k "$repacked_keychain"
-          for certificate in DeveloperIDCA.cer DeveloperIDG2CA.cer; do
-            security import "$RUNNER_TEMP/$certificate" -k "$repacked_keychain"
-          done
           security find-identity -p codesigning "$repacked_keychain" | tail -1
           security find-identity -v -p codesigning "$repacked_keychain" | tail -1
