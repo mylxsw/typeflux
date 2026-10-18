@@ -21,7 +21,9 @@ jobs:
           package="$RUNNER_TEMP/signing-diagnostic.p12"
           cleanup() {
             security delete-keychain "$keychain" >/dev/null 2>&1 || true
+            security delete-keychain "$RUNNER_TEMP/repacked-signing.keychain-db" >/dev/null 2>&1 || true
             rm -f "$package" "$RUNNER_TEMP/signing-leaf.pem" \
+              "$RUNNER_TEMP/repacked-signing.p12" \
               "$RUNNER_TEMP/DeveloperIDCA.cer" "$RUNNER_TEMP/DeveloperIDG2CA.cer" \
               "$RUNNER_TEMP/verify-cert.log"
           }
@@ -62,3 +64,21 @@ jobs:
           set -e
           echo "Offline code-signing trust check exit: $result"
           grep -Ei 'error|status|failed|result' "$RUNNER_TEMP/verify-cert.log" | tail -12 || true
+
+          echo "OpenSSL version: $(openssl version)"
+          repack_password="$(openssl rand -hex 32)"
+          echo "::add-mask::$repack_password"
+          export REPACK_PASSWORD="$repack_password"
+          openssl pkcs12 -in "$package" -nodes -passin env:APPLE_CERTIFICATE_PASSWORD \
+            | openssl pkcs12 -export -passout env:REPACK_PASSWORD \
+              -out "$RUNNER_TEMP/repacked-signing.p12"
+          repacked_keychain="$RUNNER_TEMP/repacked-signing.keychain-db"
+          security create-keychain -p "$password" "$repacked_keychain"
+          security unlock-keychain -p "$password" "$repacked_keychain"
+          security import "$RUNNER_TEMP/repacked-signing.p12" -P "$repack_password" \
+            -A -f pkcs12 -k "$repacked_keychain"
+          for certificate in DeveloperIDCA.cer DeveloperIDG2CA.cer; do
+            security import "$RUNNER_TEMP/$certificate" -k "$repacked_keychain"
+          done
+          security find-identity -p codesigning "$repacked_keychain" | tail -1
+          security find-identity -v -p codesigning "$repacked_keychain" | tail -1
