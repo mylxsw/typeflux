@@ -187,6 +187,7 @@ final class STTRouterTests: XCTestCase {
     private var doubaoRealtime: MockTranscriber!
     private var googleCloud: MockTranscriber!
     private var groq: MockTranscriber!
+    private var soniox: MockTranscriber!
     private var typefluxOfficial: MockTranscriber!
 
     override func setUp() {
@@ -204,6 +205,7 @@ final class STTRouterTests: XCTestCase {
         doubaoRealtime = MockTranscriber()
         googleCloud = MockTranscriber()
         groq = MockTranscriber()
+        soniox = MockTranscriber()
         typefluxOfficial = MockTranscriber()
     }
 
@@ -221,6 +223,7 @@ final class STTRouterTests: XCTestCase {
         doubaoRealtime = nil
         googleCloud = nil
         groq = nil
+        soniox = nil
         typefluxOfficial = nil
         super.tearDown()
     }
@@ -245,7 +248,7 @@ final class STTRouterTests: XCTestCase {
             doubaoRealtime: doubaoRealtimeOverride ?? doubaoRealtime,
             googleCloud: googleCloud,
             groq: groq,
-            soniox: MockTranscriber(),
+            soniox: soniox,
             typefluxOfficial: typefluxOfficialOverride ?? typefluxOfficial,
             typefluxCloudLoginFallbackLocalModel: typefluxCloudLoginFallbackLocalModel,
             typefluxOfficialCloudPriorityWindow: typefluxOfficialCloudPriorityWindow,
