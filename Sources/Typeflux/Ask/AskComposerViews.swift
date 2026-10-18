@@ -140,6 +140,7 @@ struct AskComposer: View {
         var tabs: [AskBrowserSearchEntry] = []
         var loading = false
         var permissionIssue = false
+        var emptyMessageKey: String
         var selected = 0
     }
     @State private var appContinue: AppContinueSession?
@@ -636,8 +637,11 @@ struct AskComposer: View {
         let browser = AskSearchBrowser.allCases.first { $0.bundleID == app.bundleID }
         let settings = model.browserSearchSettings
         let readsTabs = browser.map { settings.tabsEnabled && settings.tabBrowsers.contains($0) } == true
+        let emptyMessageKey = browser == nil ? "ask.appContinue.emptyFiles"
+            : readsTabs ? "ask.appContinue.emptyBrowser" : "ask.appContinue.tabsDisabled"
         appContinue = AppContinueSession(app: app, previousQuery: draft.wrappedValue.text,
                                          loading: readsTabs,
+                                         emptyMessageKey: emptyMessageKey,
                                          selected: model.appContinueHistory.recent(for: app).isEmpty ? 0 : 1)
         quickActions = nil
         quickSearch.cancel()
@@ -645,6 +649,7 @@ struct AskComposer: View {
         quickReserve = 0
         draft.wrappedValue.text = ""
         reportHeight()
+        focusLauncherEditorAfterNavigation()
         guard readsTabs, let browser else { return }
         let presentation = model.launcherPresentationID
         appContinueTask = Task { @MainActor in
@@ -673,8 +678,28 @@ struct AskComposer: View {
         appContinueTask = nil
         appContinue = nil
         draft.wrappedValue.text = session.previousQuery
+        quickResults = quickSearch.results
         refreshQuickResults()
         reportHeight()
+        focusLauncherEditorAfterNavigation()
+    }
+
+    private func focusLauncherEditorAfterNavigation() {
+        guard launcher, let window = NSApp.keyWindow, let content = window.contentView else { return }
+        let expectedContext = contextID
+        func editor(in view: NSView) -> AskComposerTextView.Editor? {
+            if let editor = view as? AskComposerTextView.Editor, editor.contextID == expectedContext {
+                return editor
+            }
+            return view.subviews.lazy.compactMap(editor(in:)).first
+        }
+        guard let editor = editor(in: content) else { return }
+        let text = draft.wrappedValue.text
+        if editor.string != text {
+            editor.string = text
+            editor.setSelectedRange(NSRange(location: (text as NSString).length, length: 0))
+        }
+        window.makeFirstResponder(editor)
     }
 
     private func openAppContinueSelection() {
@@ -721,7 +746,11 @@ struct AskComposer: View {
         case .left:
             guard draft.wrappedValue.text.isEmpty else { return false }
             leaveAppContinue()
-        case .right, .tab, .shiftTab: return true
+        case .tab, .shiftTab:
+            let count = appContinueItems.count + 1
+            session.selected = (session.selected + (key == .tab ? 1 : -1) + count) % count
+            appContinue = session
+        case .right: return false
         default: return false
         }
         return true
@@ -1300,7 +1329,7 @@ struct AskComposer: View {
     }
 
     private var launcherCollapsed: Bool {
-        launcher && model.launcherIsCollapsed && !active && !paletteOpen && !contextPanelOpen
+        launcher && appContinue == nil && model.launcherIsCollapsed && !active && !paletteOpen && !contextPanelOpen
     }
 
     private var highlightedHomeItem: AskLauncherHome.Item? {
@@ -1668,6 +1697,8 @@ struct AskComposer: View {
                                    selected: appContinue.selected, loading: appContinue.loading,
                                    permissionIssue: appContinue.permissionIssue,
                                    query: draft.wrappedValue.text,
+                                   emptyMessage: L(appContinue.permissionIssue
+                                       ? "ask.appContinue.permission" : appContinue.emptyMessageKey),
                                    viewportHeight: launcherResultsViewportHeight,
                                    onBack: leaveAppContinue,
                                    onOpenApp: { model.openQuickApp(appContinue.app); onDismiss() },
@@ -2185,7 +2216,7 @@ struct AskComposer: View {
     /// Quotes waiting in the draft name what the follow-up is about. The
     /// launcher says what it does besides asking: search and calculate.
     private var placeholder: String {
-        if launcher, appContinue != nil { return L("ask.appContinue.filter") }
+        if launcher, let appContinue { return L("ask.appContinue.filter", appContinue.app.name) }
         if launcher, model.launcherHistoryMode { return L("ask.inputHistory.filter") }
         if launcher, let plugin = plugins.plugin {
             let lines = draft.wrappedValue.sentSelection.map { AskPresentation.lineCount($0) }
@@ -2204,6 +2235,7 @@ struct AskComposer: View {
     }
 
     private func emptyLauncherBackspace() -> Bool {
+        if appContinue != nil { leaveAppContinue(); return true }
         if model.launcherHistoryMode { model.leaveLauncherInputHistory(); return true }
         return removeKeyword()
     }

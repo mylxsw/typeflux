@@ -295,7 +295,7 @@ struct AskLauncherSuggestions: View {
                 }
             }
             .padding(.horizontal, Self.contentInset)
-            .padding(.trailing, app == nil ? 0 : 28)
+            .padding(.trailing, app == nil ? 0 : 92)
             .frame(height: Self.rowHeight)
             .background(highlighted ? AskTheme.launcherSelection : Color.clear,
                         in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -315,9 +315,13 @@ struct AskLauncherSuggestions: View {
         .overlay(alignment: .trailing) {
             if let app {
                 Button { onBrowseApp(app) } label: {
-                    Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .frame(width: 28, height: Self.rowHeight)
+                    HStack(spacing: 4) {
+                        Text(L("ask.appContinue.entry"))
+                        Image(systemName: "chevron.right")
+                    }
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .frame(width: 88, height: Self.rowHeight)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(L("ask.appContinue.title"))

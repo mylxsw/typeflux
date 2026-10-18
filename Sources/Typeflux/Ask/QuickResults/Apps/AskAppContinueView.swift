@@ -39,6 +39,7 @@ struct AskAppContinueView: View {
     var loading: Bool
     var permissionIssue: Bool
     var query: String
+    var emptyMessage: String
     var viewportHeight: CGFloat
     var onBack: () -> Void
     var onOpenApp: () -> Void
@@ -53,18 +54,24 @@ struct AskAppContinueView: View {
             Rectangle().fill(AskTheme.launcherSeparator).frame(height: 1).padding(.horizontal, 12)
             HStack(spacing: 9) {
                 Button(action: onBack) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 12, weight: .semibold))
-                        .frame(width: 26, height: 26)
+                    HStack(spacing: 5) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 11, weight: .semibold))
+                        Text(L("ask.appContinue.back"))
+                            .font(.system(size: 11.5))
+                    }
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .frame(height: 26)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(L("ask.appContinue.back"))
+                Rectangle().fill(AskTheme.launcherSeparator).frame(width: 1, height: 16)
                 AskFileIconView(url: app.url, thumbnail: false).frame(width: 24, height: 24)
                 Text(app.name).font(.system(size: 13, weight: .semibold)).lineLimit(1)
                 Text(L("ask.appContinue.title")).font(.system(size: 11.5))
                     .foregroundStyle(StudioTheme.textSecondary)
                 Spacer()
-                Text("Esc").font(.system(size: 10.5, design: .monospaced))
+                Text("Esc / ⌫").font(.system(size: 10.5, design: .monospaced))
                     .foregroundStyle(StudioTheme.textTertiary)
             }
             .padding(.horizontal, 13)
@@ -83,9 +90,9 @@ struct AskAppContinueView: View {
                             itemRows { if case .file = $0 { true } else { false } }
                         }
                         if !loading && items.isEmpty {
-                            status(L(query.isEmpty ? "ask.appContinue.empty" : "ask.appContinue.noMatch"))
+                            status(query.isEmpty ? emptyMessage : L("ask.appContinue.noMatch"))
                         }
-                        if permissionIssue { status(L("ask.appContinue.permission")) }
+                        if permissionIssue && !items.isEmpty { status(L("ask.appContinue.permission")) }
                     }
                     .padding(6)
                 }
@@ -95,6 +102,7 @@ struct AskAppContinueView: View {
             }
         }
         .frame(height: viewportHeight, alignment: .top)
+        .accessibilityIdentifier("ask.appContinue")
     }
 
     private func section(_ title: String) -> some View {

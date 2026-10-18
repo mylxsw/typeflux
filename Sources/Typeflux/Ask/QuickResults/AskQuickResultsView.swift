@@ -285,7 +285,7 @@ struct AskQuickResultsView: View {
                 }
             }
             .padding(.horizontal, 10)
-            .padding(.trailing, app.kind == .application ? 28 : 0)
+            .padding(.trailing, app.kind == .application ? 92 : 0)
             .frame(height: Self.appHeight)
             .background { highlightShape(highlighted, cornerRadius: 14) }
             .overlay {
@@ -304,10 +304,13 @@ struct AskQuickResultsView: View {
         .overlay(alignment: .trailing) {
             if app.kind == .application {
                 Button { onBrowseApp(app) } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .frame(width: 28, height: Self.appHeight)
+                    HStack(spacing: 4) {
+                        Text(L("ask.appContinue.entry"))
+                        Image(systemName: "chevron.right")
+                    }
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .frame(width: 88, height: Self.appHeight)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(L("ask.appContinue.title"))

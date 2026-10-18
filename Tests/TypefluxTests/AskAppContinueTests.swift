@@ -64,6 +64,67 @@ extension AskQuickResultsInteractionTests {
     }
 }
 
+extension AskLauncherToggleTests {
+    @Test func simpleLauncherKeepsAppItemsVisibleAndReturnsFromKeyboard() async throws {
+        _ = NSApplication.shared
+        let suite = "app-continue-simple-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = SettingsStore(defaults: defaults)
+        settings.askLauncherWindowMode = .simple
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+        let fixture = try AskTestFixture(authenticated: false, modelLibrary: library, defaults: defaults)
+        let app = AskTestAppIndex.app("Editor", id: "test.editor")
+        fixture.model.appIndex = AskTestAppIndex([app])
+        let controller = AskConversationWindowController(settings: settings, model: fixture.model)
+        defer {
+            controller.dismissLauncher()
+            fixture.model.resetSession()
+        }
+        controller.showLauncher()
+        let panel = try #require(controller.launcherWindow)
+        let editor = try #require(panel.firstResponder as? AskComposerTextView.Editor)
+        #expect(panel.frame.height == AskLauncherWindowMode.simpleHeight)
+        editor.insertText("Editor", replacementRange: NSRange(location: NSNotFound, length: 0))
+        try await fixture.wait {
+            guard let results = fixture.model.quickSearch.results else { return false }
+            return fixture.model.launcherDraft.text == "Editor"
+                && fixture.model.quickSearch.isCurrent(text: "Editor")
+                && results.app(at: results.highlightedRow)?.id == app.id
+        }
+
+        func press(_ keyCode: UInt16) async throws {
+            let event = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [],
+                                                      timestamp: 0, windowNumber: panel.windowNumber, context: nil,
+                                                      characters: "", charactersIgnoringModifiers: "",
+                                                      isARepeat: false, keyCode: keyCode))
+            editor.keyDown(with: event)
+            try await Task.sleep(for: .milliseconds(50))
+        }
+
+        try await press(124)
+        try await fixture.wait { fixture.model.launcherDraft.text.isEmpty
+            && panel.frame.height > AskLauncherWindowMode.simpleHeight }
+        #expect(editor.string.isEmpty)
+        #expect(panel.firstResponder === editor)
+        try await press(53)
+        try await fixture.wait { fixture.model.launcherDraft.text == "Editor" }
+        #expect(editor.string == "Editor")
+        #expect(panel.frame.height > AskLauncherWindowMode.simpleHeight)
+
+        try await press(48)
+        try await fixture.wait { fixture.model.launcherDraft.text.isEmpty }
+        try await press(51)
+        try await fixture.wait { fixture.model.launcherDraft.text == "Editor" }
+
+        try await press(48)
+        try await fixture.wait { fixture.model.launcherDraft.text.isEmpty }
+        try await press(123)
+        try await fixture.wait { fixture.model.launcherDraft.text == "Editor" }
+        #expect(panel.firstResponder === editor)
+    }
+}
+
 @Suite("Application continue preview", .serialized, .exclusiveUIState)
 @MainActor
 struct AskAppContinuePreviewTests {
@@ -90,7 +151,8 @@ struct AskAppContinuePreviewTests {
             window.isReleasedWhenClosed = false
             window.appearance = NSAppearance(named: appearance)
             let view = AskAppContinueView(app: app, items: [.tab(tab), .file(file)], selected: 1,
-                                          loading: false, permissionIssue: false, query: "", viewportHeight: 360,
+                                          loading: false, permissionIssue: false, query: "",
+                                          emptyMessage: L("ask.appContinue.emptyBrowser"), viewportHeight: 360,
                                           onBack: {}, onOpenApp: {}, onOpenItem: { _ in }, onSelect: { _ in })
             let hosting = NSHostingView(rootView: view.frame(width: size.width, height: size.height)
                 .background(StudioTheme.surface))
