@@ -29,6 +29,11 @@ class InferencePackagingTests(unittest.TestCase):
             self.assertTrue((packaged / 'Contents/Resources/tokenizer.json').is_file())
             self.assertTrue((packaged / 'Contents/Info.plist').is_file())
             subprocess.run(['codesign', '--force', '--sign', '-', str(packaged)], check=True)
+            lookup = '''import Foundation
+let bundle = Bundle(url: URL(fileURLWithPath: CommandLine.arguments[1]))!
+guard bundle.url(forResource: "tokenizer", withExtension: "json") != nil else { exit(1) }
+'''
+            subprocess.run(['swift', '-e', lookup, str(packaged)], check=True)
 
     def test_xcode_app_embeds_both_worker_and_tokenizer_resources(self):
         script = r'''
