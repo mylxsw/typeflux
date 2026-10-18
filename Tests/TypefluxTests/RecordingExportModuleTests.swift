@@ -322,7 +322,7 @@ private final class ExportHealthState: @unchecked Sendable {
             let model = ModuleHealthSettingsModel(registry: registry)
             try await UI.withWindow(ModuleHealthSettingsView(model: model), width: 640, height: 190) { _, host in
                 try await UI.wait { model.health[.recordingExport]?.failure == .healthPersistence }
-                #expect(UI.contains(L("settings.services.recordingExport"), in: host))
+                #expect(UI.contains(L(model.featureKey(.recordingExport)), in: host))
                 try UI.snapshot(host, name: "encoding-health")
                 let button = try #require(UI.elements(in: host).first { $0.value("accessibilityIdentifier") as? String == "settings.services.recordingExport.recover" })
                 clock.advance()

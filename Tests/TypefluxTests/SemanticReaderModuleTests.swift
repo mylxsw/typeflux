@@ -299,7 +299,7 @@ private final class SemanticHealthReader: AskFileReading, @unchecked Sendable {
                 try UI.snapshot(host, name: "semantic-reader-health")
                 clock.advance()
                 for domain in SemanticReaderModule.Domain.allCases {
-                    #expect(UI.contains(L("settings.services.\(domain.id.rawValue)"), in: host))
+                    #expect(UI.contains(L(model.featureKey(domain.id)), in: host))
                     let button = try #require(UI.elements(in: host).first {
                         $0.value("accessibilityIdentifier") as? String == "settings.services.\(domain.id.rawValue).recover"
                     })

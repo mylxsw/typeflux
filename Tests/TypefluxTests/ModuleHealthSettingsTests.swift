@@ -69,8 +69,9 @@ struct ModuleRecoveryRequestTests {
 struct ModuleHealthSettingsTests {
     private typealias UI = SettingsBehaviorTestSupport
 
-    private func snapshot(_ state: ModuleState, failure: ModuleFailure? = nil) -> ModuleHealth {
-        .init(state: state, generation: UUID(), pendingStarts: 0, activeOperations: 0, hasLifecycleWork: false, failure: failure)
+    private func snapshot(_ state: ModuleState, failure: ModuleFailure? = nil, activeOperations: Int = 0) -> ModuleHealth {
+        .init(state: state, generation: UUID(), pendingStarts: 0, activeOperations: activeOperations,
+              hasLifecycleWork: false, failure: failure)
     }
 
     @Test func openingAndReopeningOnlyObserveAndReleaseSubscriptions() async throws {
@@ -88,6 +89,45 @@ struct ModuleHealthSettingsTests {
         #expect(!model.canRecover(.notebook))
         let streams = try (0..<16).map { _ in try module.health.observe() }
         #expect(streams.count == 16)
+        await registry.shutdown()
+    }
+
+    @Test func summaryCountsAffectedFeaturesAndOffersRetryOnlyWhenWorkHasStopped() async throws {
+        let media = ModuleHandle(factory: { 1 }), preview = ModuleHandle(factory: { 2 })
+        let notes = ModuleHandle(factory: { 3 })
+        let registry = ModuleRegistry([.init(.mediaExtraction, handle: media), .init(.mediaPreviews, handle: preview),
+                                       .init(.notebook, handle: notes)])
+        let model = ModuleHealthSettingsModel(registry: registry)
+        model.startObserving()
+        media.health.publish(snapshot(.ready))
+        preview.health.publish(snapshot(.ready))
+        notes.health.publish(snapshot(.disabled))
+        try await UI.wait { model.health[.mediaExtraction]?.state == .ready
+            && model.health[.mediaPreviews]?.state == .ready && model.health[.notebook]?.state == .disabled }
+        #expect(model.summaryKey == "settings.services.summaryHealthy")
+        #expect(model.affectedEntries.isEmpty)
+
+        media.health.publish(snapshot(.recovering))
+        preview.health.publish(snapshot(.recovering))
+        try await UI.wait { model.health[.mediaExtraction]?.state == .recovering
+            && model.health[.mediaPreviews]?.state == .recovering }
+        #expect(model.summaryKey == "settings.services.summaryRecovering")
+        #expect(model.affectedFeatureCount == 1)
+        #expect(!model.canOfferRetry(.mediaExtraction))
+
+        media.health.publish(snapshot(.degraded, activeOperations: 1))
+        try await UI.wait { model.health[.mediaExtraction]?.activeOperations == 1 }
+        #expect(model.summaryKey == "settings.services.summaryUnavailable")
+        #expect(model.unavailableCount == 1)
+        #expect(!model.canOfferRetry(.mediaExtraction))
+        media.health.publish(snapshot(.degraded))
+        try await UI.wait { model.health[.mediaExtraction]?.activeOperations == 0 }
+        #expect(model.canOfferRetry(.mediaExtraction))
+        media.health.publish(snapshot(.degraded, failure: .invalidPolicy))
+        try await UI.wait { model.health[.mediaExtraction]?.failure == .invalidPolicy }
+        #expect(!model.canOfferRetry(.mediaExtraction))
+        #expect(model.detailKey(.mediaExtraction) == "settings.services.invalidPolicyDetail")
+        model.stopObserving()
         await registry.shutdown()
     }
 
@@ -167,7 +207,11 @@ struct ModuleHealthSettingsTests {
                     fresh.stopObserving()
                 }
                 for key in ["title", "conversations", "wordBook", "notebook", "mediaExtraction", "mediaPreviews", "recover", "hint", "stopped", "recovering",
-                            "ready", "coolingDown", "unavailable", "disabled", "quarantined", "observationFailed", "requested", "wait", "busy"] {
+                            "ready", "coolingDown", "unavailable", "disabled", "quarantined", "observationFailed", "requested", "wait", "busy",
+                            "summaryHealthy", "summaryHealthyDetail", "summaryUnavailable", "summaryUnavailableDetail", "summaryRecovering",
+                            "summaryUnknown", "summaryUnknownDetail", "diagnostics", "retry", "invalidPolicyDetail", "quarantinedDetail", "healthPersistenceDetail",
+                            "unavailableDetail", "coolingDownDetail", "recoveringDetail", "featureAttachments", "featureClipboard",
+                            "featureScreenshots", "featureRecordings", "featureCommands", "featureTranscription", "featureFileSearch"] {
                     #expect(L("settings.services." + key) != "settings.services." + key)
                 }
             }
@@ -260,9 +304,15 @@ struct ModuleHealthSettingsTests {
             try await UI.withWindow(StudioView(viewModel: studio, settingsPane: .advanced, moduleHealth: healthModel),
                                     width: 1100, height: 1000) { _, host in
                 try await UI.wait { UI.contains(L("settings.services.quarantined"), in: host) }
-                #expect(UI.contains(L("settings.services.ready"), in: host))
+                #expect(UI.contains(L("settings.services.summaryUnavailable", 2), in: host))
+                #expect(UI.contains(L("settings.services.summaryUnavailableDetail"), in: host))
+                #expect(UI.contains(L("settings.services.quarantinedDetail"), in: host))
+                #expect(!UI.contains(L("settings.services.conversations"), in: host))
                 #expect(UI.contains(L("settings.services.hint"), in: host))
                 try UI.snapshot(host, name: "recovery-services-zh-Hans")
+                try UI.button(L("settings.services.diagnostics"), in: host).press()
+                try await UI.wait { UI.contains(L("settings.services.conversations"), in: host) }
+                #expect(UI.contains(L("settings.services.ready"), in: host))
                 let button = try #require(UI.elements(in: host).first {
                     $0.value("accessibilityIdentifier") as? String == "settings.services.wordBook.recover"
                 })
@@ -285,7 +335,7 @@ struct ModuleHealthSettingsTests {
         try await UI.withFixture { _ in
             let model = ModuleHealthSettingsModel(registry: nil)
             try await UI.withWindow(ModuleHealthSettingsView(model: model), width: 700, height: 300) { _, host in
-                try await UI.wait { UI.contains(L("settings.services.observationFailed"), in: host) }
+                try await UI.wait { UI.contains(L("settings.services.summaryUnknown"), in: host) }
                 #expect(!model.canRecover(.notebook))
             }
             model.stopObserving()
@@ -299,5 +349,28 @@ struct ModuleHealthSettingsTests {
         try await UI.wait { released == nil }
         await configured.shutdown()
         await registry.shutdown()
+    }
+
+    @Test func healthyPanelHidesModuleListAndRecoveryControlsUntilDiagnosticsOpen() async throws {
+        try await UI.withFixture { _ in
+            let module = ModuleHandle(factory: { 1 })
+            let registry = ModuleRegistry([.init(.notebook, handle: module)])
+            try await registry.start(.notebook)
+            let model = ModuleHealthSettingsModel(registry: registry)
+            try await UI.withWindow(ModuleHealthSettingsView(model: model), width: 700, height: 300) { _, host in
+                try await UI.wait {
+                    model.health[.notebook]?.state == .ready && UI.contains(L("settings.services.summaryHealthy"), in: host)
+                }
+                #expect(!UI.contains(L("settings.services.notebook"), in: host))
+                #expect(!UI.contains(L("settings.services.retry"), in: host))
+                #expect(UI.contains(L("settings.services.summaryHealthyDetail"), in: host))
+                try UI.snapshot(host, name: "service-health-healthy")
+                try UI.button(L("settings.services.diagnostics"), in: host).press()
+                try await UI.wait { UI.contains(L("settings.services.notebook"), in: host) }
+                #expect(!UI.contains(L("settings.services.retry"), in: host))
+            }
+            model.stopObserving()
+            await registry.shutdown()
+        }
     }
 }

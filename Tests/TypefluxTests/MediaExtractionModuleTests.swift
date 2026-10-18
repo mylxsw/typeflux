@@ -333,7 +333,7 @@ struct MediaExtractionHealthViewTests {
             let model = ModuleHealthSettingsModel(registry: registry)
             try await UI.withWindow(ModuleHealthSettingsView(model: model), width: 640, height: 190) { _, host in
                 try await UI.wait { model.health[.mediaExtraction]?.failure == .healthPersistence }
-                #expect(UI.contains(L("settings.services.mediaExtraction"), in: host))
+                #expect(UI.contains(L(model.featureKey(.mediaExtraction)), in: host))
                 try UI.snapshot(host, name: "media-extraction-health")
                 clock.advance()
                 let button = try #require(UI.elements(in: host).first { $0.value("accessibilityIdentifier") as? String == "settings.services.mediaExtraction.recover" })

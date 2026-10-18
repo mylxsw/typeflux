@@ -270,7 +270,7 @@ private final class ModelHealthClock: @unchecked Sendable {
                 try UI.snapshot(host, name: "semantic-model-health")
                 clock.advance()
                 for domain in SemanticModelModule.Domain.allCases {
-                    #expect(UI.contains(L("settings.services.\(domain.id.rawValue)"), in: host))
+                    #expect(UI.contains(L(model.featureKey(domain.id)), in: host))
                     let button = try #require(UI.elements(in: host).first {
                         $0.value("accessibilityIdentifier") as? String == "settings.services.\(domain.id.rawValue).recover"
                     })

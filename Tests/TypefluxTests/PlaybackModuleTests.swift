@@ -286,7 +286,7 @@ private final class PlaybackHealthClock: @unchecked Sendable {
             let model = ModuleHealthSettingsModel(registry: registry)
             try await UI.withWindow(ModuleHealthSettingsView(model: model), width: 640, height: 190) { _, host in
                 try await UI.wait { model.health[.mediaPlayback]?.failure == .healthPersistence }
-                #expect(UI.contains(L("settings.services.mediaPlayback"), in: host))
+                #expect(UI.contains(L(model.featureKey(.mediaPlayback)), in: host))
                 try UI.snapshot(host, name: "playback-health")
                 let button = try #require(UI.elements(in: host).first { $0.value("accessibilityIdentifier") as? String == "settings.services.mediaPlayback.recover" })
                 clock.advance(); try button.press()

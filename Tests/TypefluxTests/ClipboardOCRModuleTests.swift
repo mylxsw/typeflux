@@ -241,7 +241,7 @@ private final class ClipboardOCRHealthState: @unchecked Sendable {
             let model = ModuleHealthSettingsModel(registry: registry)
             try await UI.withWindow(ModuleHealthSettingsView(model: model), width: 640, height: 190) { _, host in
                 try await UI.wait { model.health[.clipboardOCR]?.failure == .healthPersistence }
-                #expect(UI.contains(L("settings.services.clipboardOCR"), in: host))
+                #expect(UI.contains(L(model.featureKey(.clipboardOCR)), in: host))
                 try UI.snapshot(host, name: "clipboard-ocr-health")
                 let button = try #require(UI.elements(in: host).first { $0.value("accessibilityIdentifier") as? String == "settings.services.clipboardOCR.recover" })
                 clock.advance()
