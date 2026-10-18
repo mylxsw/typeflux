@@ -320,6 +320,29 @@ final class ClipboardShelfPresentationTests: XCTestCase {
     }
 
     @MainActor
+    func testMenuStyleChangeKeepsTheCurrentSearchAndSelection() throws {
+        let model = textModel()
+        controller.present(model)
+        model.query = "item"
+        model.select(index: 2)
+        let selectedID = model.selectedEntry?.id
+
+        model.onPanelStyleChange?(.list)
+        XCTAssertEqual(settings.clipboardPanelStyle, .list)
+        XCTAssertEqual(controller.style, .list)
+        XCTAssertEqual(controller.presentedWindow?.frame.size, ClipboardPanelView.size(showsPreview: false))
+        XCTAssertEqual(model.query, "item")
+        XCTAssertEqual(model.selectedEntry?.id, selectedID)
+
+        model.onPanelStyleChange?(.shelf)
+        XCTAssertEqual(settings.clipboardPanelStyle, .shelf)
+        XCTAssertEqual(controller.style, .shelf)
+        XCTAssertEqual(model.query, "item")
+        XCTAssertEqual(model.selectedEntry?.id, selectedID)
+        XCTAssertNotNil(controller.presentedWindow)
+    }
+
+    @MainActor
     func testSlideInEndsInPlaceAndOpaque() throws {
         controller.reduceMotion = { false }
         let model = textModel()
@@ -328,6 +351,7 @@ final class ClipboardShelfPresentationTests: XCTestCase {
         let screen = try XCTUnwrap((panel.screen ?? NSScreen.main)?.visibleFrame)
         let target = ClipboardPanelPlacement.shelfFrame(height: ClipboardShelfView.height, screen: screen)
         XCTAssertLessThan(panel.frame.minY, target.minY + 0.5, "The slide starts at or below its final frame")
+        XCTAssertGreaterThan(panel.alphaValue, 0, "The shelf is visible on its first frame")
         let settled = expectation(description: "slide settles")
         func poll(_ remaining: Int) {
             if panel.alphaValue == 1, panel.frame == target || remaining == 0 { settled.fulfill(); return }

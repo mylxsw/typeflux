@@ -39,10 +39,12 @@ final class ClipboardShelfPresenter {
             height: ClipboardShelfView.height, screen: screen?.visibleFrame ?? panel.frame
         )
         self.frame = frame
-        place(panel, shelf: frame, progress: animated ? 0 : 1)
+        let initialProgress: CGFloat = animated ? 0.15 : 1
+        place(panel, shelf: frame, progress: initialProgress)
         panel.makeKeyAndOrderFront(nil)
         animator.update(
-            from: 0, to: 1, animated: animated, framesPerSecond: screen?.maximumFramesPerSecond ?? 60, rate: 22
+            from: initialProgress, to: 1, animated: animated,
+            framesPerSecond: screen?.maximumFramesPerSecond ?? 60, rate: 44, view: panel.contentView
         ) { [weak self, weak panel] progress in
             guard let self, let panel, panel.isVisible, let frame = self.frame else { return }
             place(panel, shelf: frame, progress: progress)
@@ -72,7 +74,9 @@ final class ClipboardShelfPresenter {
         let offset = -ClipboardShelfScroll.slideDistance * (1 - clamped)
         panel.setFrame(frame.offsetBy(dx: 0, dy: offset), display: false)
         panel.alphaValue = clamped
-        panel.contentView?.frame = NSRect(origin: .zero, size: frame.size)
+        if panel.contentView?.frame.size != frame.size {
+            panel.contentView?.frame = NSRect(origin: .zero, size: frame.size)
+        }
     }
 
     /// `@Published` fires before the value changes, so the windows are updated on the next run

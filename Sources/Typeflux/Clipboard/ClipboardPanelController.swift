@@ -71,13 +71,20 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     var contentViewportWidth: CGFloat? { layout.width }
 
     func present(_ model: ClipboardPanelModel) {
+        let continuingSession = isPresented && self.model === model
         previewWidthAnimator.stop()
         shelf.dismiss()
         previewObservation = nil
         self.model = model
         style = settingsStore.clipboardPanelStyle
-        thumbnails.begin(model)
-        entryObservation = model.$entries.dropFirst().sink { [weak self] entries in self?.thumbnails.changed(entries) }
+        model.onPanelStyleChange = { [weak self, weak model] selectedStyle in
+            guard let self, let model else { return }
+            self.setPanelStyle(selectedStyle, for: model)
+        }
+        if !continuingSession {
+            thumbnails.begin(model)
+            entryObservation = model.$entries.dropFirst().sink { [weak self] entries in self?.thumbnails.changed(entries) }
+        }
         focusRequest += 1
         if style == .shelf {
             presentShelf(model)
@@ -96,6 +103,12 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         previewObservation = model.$showsPreview.dropFirst().removeDuplicates().sink { [weak self] shows in
             self?.resizeForPreview(shows)
         }
+    }
+
+    private func setPanelStyle(_ selectedStyle: ClipboardPanelStyle, for model: ClipboardPanelModel) {
+        guard self.model === model, isPresented, selectedStyle != style else { return }
+        settingsStore.clipboardPanelStyle = selectedStyle
+        present(model)
     }
 
     /// One spring drives the native frame and content viewport around the same horizontal centre.

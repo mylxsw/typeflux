@@ -18,6 +18,19 @@ struct ClipboardPanelToolbar: View {
             Button(L(previewTitleKey)) {
                 model.togglePreview()
             }
+            Menu(L("clipboard.settings.style")) {
+                ForEach(ClipboardPanelStyle.allCases) { option in
+                    Button {
+                        model.onPanelStyleChange?(option)
+                    } label: {
+                        if option == style {
+                            Label(option.title, systemImage: "checkmark")
+                        } else {
+                            Text(option.title)
+                        }
+                    }
+                }
+            }
             Divider()
             Button(L("clipboard.toolbar.settings")) { model.send(.openSettings) }
             Divider()
