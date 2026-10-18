@@ -1634,6 +1634,7 @@
 
 "ask.search" = "搜索对话";
 "ask.sidebar.toggle" = "切换侧边栏";
+"ask.sidebar.right.toggle" = "切换右侧边栏";
 "ask.search.actions" = "操作";
 "ask.search.conversations" = "对话";
 "ask.search.placeholder" = "搜索对话或操作";

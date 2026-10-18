@@ -1624,6 +1624,7 @@
 
 "ask.search" = "会話を検索";
 "ask.sidebar.toggle" = "サイドバーを切り替え";
+"ask.sidebar.right.toggle" = "右サイドバーを切り替え";
 "ask.search.actions" = "アクション";
 "ask.search.conversations" = "会話";
 "ask.search.placeholder" = "Search conversations or actions";

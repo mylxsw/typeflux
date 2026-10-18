@@ -1634,6 +1634,7 @@
 
 "ask.search" = "Search conversations";
 "ask.sidebar.toggle" = "Toggle sidebar";
+"ask.sidebar.right.toggle" = "Toggle right sidebar";
 "ask.search.actions" = "Actions";
 "ask.search.conversations" = "Conversations";
 "ask.search.placeholder" = "Search conversations or actions";

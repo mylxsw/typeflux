@@ -1624,6 +1624,7 @@
 
 "ask.search" = "대화 검색";
 "ask.sidebar.toggle" = "사이드바 전환";
+"ask.sidebar.right.toggle" = "오른쪽 사이드바 전환";
 "ask.search.actions" = "작업";
 "ask.search.conversations" = "대화";
 "ask.search.placeholder" = "Search conversations or actions";

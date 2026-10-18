@@ -825,7 +825,9 @@ struct AskConversationView: View {
 
     @ViewBuilder private var browserButton: some View {
         if model.tools.browserWorkspace != nil {
-            AskHeaderIconButton(symbol: "globe", label: L("ask.web.title"), shortcut: "⌘⇧B",
+            AskHeaderIconButton(symbol: model.selectedId == nil ? "sidebar.right" : "globe",
+                                label: L(model.selectedId == nil ? "ask.sidebar.right.toggle" : "ask.web.title"),
+                                shortcut: "⌘⇧B",
                                 active: showsBrowserPanel) { setBrowser(!showsBrowserPanel) }
                 .keyboardShortcut("b", modifiers: [.command, .shift])
                 .accessibilityIdentifier("ask.workspace.browser")
