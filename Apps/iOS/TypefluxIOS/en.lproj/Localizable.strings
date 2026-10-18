@@ -193,13 +193,12 @@
 "The server could not verify your Apple sign-in. Please try again or contact support." = "The server could not verify your Apple sign-in. Please try again or contact support.";
 "The server could not verify your sign-in. Please try again or contact support." = "The server could not verify your sign-in. Please try again or contact support.";
 
-/* Guest access, AI consent and account privacy. */
+/* Guest access, AI data sharing and account privacy. */
 "AI and tool providers" = "AI and tool providers";
 "AI data sharing" = "AI data sharing";
+"Provider information is unavailable right now." = "Provider information is unavailable right now.";
 "Account details are unavailable. Refresh to continue." = "Account details are unavailable. Refresh to continue.";
 "Additional details (optional)" = "Additional details (optional)";
-"Agree and continue" = "Agree and continue";
-"Before sending, review how your data is used" = "Before sending, review how your data is used";
 "Browse first" = "Browse first";
 "Continue with Apple to verify and permanently delete this account." = "Continue with Apple to verify and permanently delete this account.";
 "Data and privacy" = "Data and privacy";
@@ -211,15 +210,12 @@
 "Local example · No credits used" = "Local example · No credits used";
 "Make an email more professional" = "Make an email more professional";
 "Manage App Store subscriptions" = "Manage App Store subscriptions";
-"Not now" = "Not now";
 "Payment records required for accounting, security logs and previously submitted support reports may be retained under the Privacy Policy. Data already sent to providers is subject to their retention policies." = "Payment records required for accounting, security logs and previously submitted support reports may be retained under the Privacy Policy. Data already sent to providers is subject to their retention policies.";
 "Permanently delete your account" = "Permanently delete your account";
-"Provider details are unavailable. Try again before sending any content." = "Provider details are unavailable. Try again before sending any content.";
 "Reason" = "Reason";
 "Report answer" = "Report answer";
 "Report submitted" = "Report submitted";
 "Retry" = "Retry";
-"Review data sharing" = "Review data sharing";
 "Rewrite politely: Tomorrow's meeting is now at 3. Send me the materials first." = "Rewrite politely: Tomorrow's meeting is now at 3. Send me the materials first.";
 "Sign in to sync your conversations" = "Sign in to sync your conversations";
 "Submit" = "Submit";
@@ -235,15 +231,11 @@
 "Verify with Google and delete" = "Verify with Google and delete";
 "Verify your identity" = "Verify your identity";
 "Website subscriptions will be cancelled immediately. Deletion does not issue a refund. Any App Store subscriptions must be managed separately." = "Website subscriptions will be cancelled immediately. Deletion does not issue a refund. Any App Store subscriptions must be managed separately.";
-"Withdraw consent" = "Withdraw consent";
-"You can withdraw consent in Settings. Withdrawal stops new requests; it does not recall data already sent." = "You can withdraw consent in Settings. Withdrawal stops new requests; it does not recall data already sent.";
 "Your account, cloud conversations, photos, memories and sync data will be deleted. All devices will lose account access. This cannot be undone." = "Your account, cloud conversations, photos, memories and sync data will be deleted. All devices will lose account access. This cannot be undone.";
 "Your draft is saved. Sign in, then review and send it yourself." = "Your draft is saved. Sign in, then review and send it yourself.";
 "Your messages, selected photos, dictated text and conversation context are sent to Typeflux to generate and sync replies." = "Your messages, selected photos, dictated text and conversation context are sent to Typeflux to generate and sync replies.";
 "• Friday: test the new design.\n• Alex: prepare the prototype.\n• Sam: gather feedback." = "• Friday: test the new design.\n• Alex: prepare the prototype.\n• Sam: gather feedback.";
 "谢谢你的帮助。我会在明天发送修改后的方案。" = "谢谢你的帮助。我会在明天发送修改后的方案。";
-"Consent granted" = "Consent granted";
-"Consent not granted" = "Consent not granted";
 "Harmful or unsafe content" = "Harmful or unsafe content";
 "Incorrect or misleading" = "Incorrect or misleading";
 "Offensive or discriminatory" = "Offensive or discriminatory";
@@ -312,8 +304,6 @@
 "This step runs on your Mac. Keep Typeflux open there and online." = "This step runs on your Mac. Keep Typeflux open there and online.";
 "Quote in reply" = "Quote in reply";
 "More actions" = "More actions";
-"On" = "On";
-"Off" = "Off";
 "Sign in to Typeflux" = "Sign in to Typeflux";
 "Sync conversations and share credits with your Mac." = "Sync conversations and share credits with your Mac.";
 "New password" = "New password";
@@ -420,7 +410,3 @@
 "Use a single line of up to 60 characters." = "Use a single line of up to 60 characters.";
 "Wait for the answer to finish, then rename the conversation." = "Wait for the answer to finish, then rename the conversation.";
 "Typeflux is unavailable right now. Try again when you're back online." = "Typeflux is unavailable right now. Try again when you're back online.";
-"This server can't accept cloud messages yet" = "This server can't accept cloud messages yet";
-"The Typeflux server hasn't published which AI providers receive your data, so consent can't be given. Its operator needs to set AI_DATA_PROCESSORS and AI_PRIVACY_VERSION and restart the server." = "The Typeflux server hasn't published which AI providers receive your data, so consent can't be given. Its operator needs to set AI_DATA_PROCESSORS and AI_PRIVACY_VERSION and restart the server.";
-"Use your own models instead" = "Use your own models instead";
-"Check again" = "Check again";

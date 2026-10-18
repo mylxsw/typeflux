@@ -251,10 +251,8 @@ private extension ChatAccountTests {
     func makeStore() -> (ChatStore, AccountFakeAPI, MemoryCredentials) {
         let api = AccountFakeAPI()
         let credentials = MemoryCredentials()
-        let defaults = UserDefaults(suiteName: UUID().uuidString)!
-        defaults.set("test|Test Provider", forKey: "ai-consent.u1")
         return (
-            ChatStore(service: api, credentials: credentials, deviceID: "ios-test", consentDefaults: defaults),
+            ChatStore(service: api, credentials: credentials, deviceID: "ios-test"),
             api,
             credentials
         )

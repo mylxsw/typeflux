@@ -2,135 +2,26 @@ import AuthenticationServices
 import SwiftUI
 import TypefluxChat
 
-struct ChatConsentView: View {
-    @Bindable var store: ChatStore
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    Text("Before sending, review how your data is used").font(.title2.bold())
-                    VStack(alignment: .leading, spacing: 10) {
-                        Label("Shared with Typeflux", systemImage: "bubble.left.and.bubble.right").font(.headline)
-                        Text(
-                            "Your messages, selected photos, dictated text and conversation context are sent to Typeflux to generate and sync replies."
-                        )
-                        .font(.subheadline)
-                    }.padding(16).frame(maxWidth: .infinity, alignment: .leading).chatCard()
-                    if let disclosure = store.disclosure {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Label("AI and tool providers", systemImage: "network").font(.headline)
-                            Text(disclosure.providers.joined(separator: ", ")).font(.subheadline)
-                            Text(
-                                "These providers may receive the context needed to answer your request, including search queries when web tools are used."
-                            )
-                            .font(.footnote).foregroundStyle(.secondary)
-                        }.padding(16).frame(maxWidth: .infinity, alignment: .leading).chatCard()
-                    } else if store.disclosureUnconfigured {
-                        unconfigured
-                    } else {
-                        Text("Provider details are unavailable. Try again before sending any content.")
-                            .foregroundStyle(.orange)
-                        Button("Retry") { Task { await store.loadDisclosure() } }
-                    }
-                    Text(
-                        "You can withdraw consent in Settings. Withdrawal stops new requests; it does not recall data already sent."
-                    )
-                    .font(.footnote).foregroundStyle(.secondary)
-                    if store.profile == nil {
-                        Text("Account details are unavailable. Refresh to continue.").foregroundStyle(.orange)
-                        Button("Retry") { Task { await store.refreshAccountDetails() } }
-                    }
-                    Link("Privacy Policy", destination: ChatSettingsInfo.privacyURL)
-                        .frame(minHeight: 44)
-                        .accessibilityIdentifier("privacy.policy")
-                }.padding(20)
-            }
-            .background(ChatTheme.background)
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                VStack(spacing: 8) {
-                    Text("Continue to review your draft. Nothing is sent automatically.")
-                        .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
-                    Button { store.acceptAIConsent(); dismiss() } label: {
-                        Text("Agree and continue").frame(maxWidth: .infinity, minHeight: 28)
-                    }
-                    .buttonStyle(.borderedProminent).controlSize(.large)
-                    .disabled(store.disclosure?.isValid != true || store.profile == nil)
-                    .accessibilityIdentifier("privacy.agree")
-                    Button { store.showsConsent = false; dismiss() } label: {
-                        Text("Not now").frame(maxWidth: .infinity, minHeight: 44)
-                    }.accessibilityIdentifier("privacy.decline")
-                }.padding(.horizontal, 20).padding(.top, 12).background(.regularMaterial)
-            }
-            .navigationTitle("AI data sharing").navigationBarTitleDisplayMode(.inline)
-        }.presentationDragIndicator(.visible)
-    }
-}
-
-extension ChatConsentView {
-    /// The server answered, but its operator has not published the AI data
-    /// recipients. Retrying cannot help; the user's own models still work.
-    @ViewBuilder var unconfigured: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label("This server can't accept cloud messages yet", systemImage: "exclamationmark.triangle")
-                .font(.headline).foregroundStyle(.orange)
-            Text("The Typeflux server hasn't published which AI providers receive your data, so consent can't be given. Its operator needs to set AI_DATA_PROCESSORS and AI_PRIVACY_VERSION and restart the server.")
-                .font(.subheadline)
-                .fixedSize(horizontal: false, vertical: true)
-            if store.library.models.isEmpty {
-                NavigationLink {
-                    ChatProviderEditor(store: store, existing: nil) { _ in
-                        continuePrivately()
-                    }
-                } label: {
-                    Label("Use your own models instead", systemImage: "lock")
-                }
-                .accessibilityIdentifier("privacy.ownModels")
-            } else {
-                Button { continuePrivately() } label: {
-                    Label("Continue privately with your own model", systemImage: "lock")
-                }
-                .accessibilityIdentifier("privacy.ownModels")
-            }
-            Button("Check again") { Task { await store.loadDisclosure() } }
-                .accessibilityIdentifier("privacy.retry")
-        }
-        .padding(16).frame(maxWidth: .infinity, alignment: .leading).chatCard()
-        .accessibilityIdentifier("privacy.unconfigured")
-    }
-
-    private func continuePrivately() {
-        store.showsConsent = false
-        store.continueInPrivateConversation()
-        dismiss()
-    }
-}
-
 struct ChatPrivacySettings: View {
     @Bindable var store: ChatStore
-    @State private var showConsent = false
     var body: some View {
         Form {
             Section("AI data sharing") {
-                LabeledContent("Status") {
-                    Text(store.hasAIConsent ? "Consent granted" : "Consent not granted")
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("AI and tool providers")
+                    Text(store.disclosure?.providers.joined(separator: ", ")
+                        ?? String(localized: "Provider information is unavailable right now."))
+                        .font(.subheadline)
+                        .foregroundStyle(ChatTheme.secondary)
                 }
-                if let disclosure = store.disclosure {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("AI and tool providers")
-                        Text(disclosure.providers.joined(separator: ", ")).font(.subheadline)
-                            .foregroundStyle(ChatTheme.secondary)
-                    }
-                    .accessibilityElement(children: .combine)
-                }
-                Button("Review data sharing") { showConsent = true }
-                if store.hasAIConsent {
-                    Button("Withdraw consent", role: .destructive) { store.revokeAIConsent() }
-                        .accessibilityIdentifier("privacy.revoke")
-                }
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("privacy.providers")
                 Text(
-                    "You can withdraw consent in Settings. Withdrawal stops new requests; it does not recall data already sent."
+                    "Your messages, selected photos, dictated text and conversation context are sent to Typeflux to generate and sync replies."
+                )
+                .font(.footnote).foregroundStyle(.secondary)
+                Text(
+                    "These providers may receive the context needed to answer your request, including search queries when web tools are used."
                 )
                 .font(.footnote).foregroundStyle(.secondary)
             }
@@ -141,7 +32,6 @@ struct ChatPrivacySettings: View {
         }
         .navigationTitle("Data and privacy")
         .task { await store.loadDisclosure() }
-        .sheet(isPresented: $showConsent) { ChatConsentView(store: store) }
     }
 }
 

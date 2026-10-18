@@ -122,11 +122,7 @@ struct ChatSettingsView: View {
                             divider
                             NavigationLink { ChatPrivacySettings(store: store) } label: {
                                 row(symbol: "checkmark.shield.fill", tint: ChatTheme.success, title: "AI data sharing") {
-                                    HStack(spacing: 5) {
-                                        Text(store.hasAIConsent ? "On" : "Off")
-                                        chevron
-                                    }
-                                    .foregroundStyle(ChatTheme.secondary)
+                                    chevron
                                 }
                             }
                             .buttonStyle(.plain)

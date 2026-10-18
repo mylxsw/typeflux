@@ -9,14 +9,12 @@ import TypefluxChat
 struct ChatFollowupTests {
     func make(api: TitleAPI = TitleAPI(), provider: ScriptedProvider = ScriptedProvider(),
               withProvider: Bool = false, local: ChatLocalStore? = nil) throws -> (ChatStore, TitleAPI, ScriptedProvider) {
-        let defaults = UserDefaults(suiteName: UUID().uuidString)!
-        defaults.set("test|Test Provider", forKey: "ai-consent.test-user")
         let library = ChatModelLibrary.ephemeral()
         if withProvider {
             try library.save(ChatOfflineTests.deepSeek, key: "sk-test")
         }
         let store = ChatStore(service: api, credentials: MemoryCredentials(), deviceID: "ios-test",
-                              consentDefaults: defaults, reconnectDelay: .milliseconds(1), library: library,
+                              reconnectDelay: .milliseconds(1), library: library,
                               providerService: provider, cache: try ChatLocalStore.inMemory(),
                               localStore: try local ?? ChatLocalStore.inMemory())
         store.titleRefreshDelay = .milliseconds(1)
@@ -257,7 +255,7 @@ struct ChatFollowupTests {
         #expect(await api.generated == 1)
     }
 
-    // MARK: Launch and consent
+    // MARK: Launch and AI providers
 
     @Test func `launch shows the device copy without waiting for the server`() async throws {
         let cache = try ChatLocalStore.inMemory()
@@ -269,8 +267,7 @@ struct ChatFollowupTests {
         let credentials = MemoryCredentials()
         credentials.value = SavedAccount(email: "person@example.com",
                                          session: ChatSession(accessToken: "t", expiresAt: 0, refreshToken: nil))
-        let defaults = UserDefaults(suiteName: UUID().uuidString)!
-        let store = ChatStore(service: api, credentials: credentials, deviceID: "ios-test", consentDefaults: defaults,
+        let store = ChatStore(service: api, credentials: credentials, deviceID: "ios-test",
                               cache: cache, localStore: try ChatLocalStore.inMemory())
         #expect(await store.restoreSession())
         #expect(store.isAuthenticated)
@@ -285,23 +282,21 @@ struct ChatFollowupTests {
         #expect(await !store.restoreSession())
     }
 
-    @Test func `an unconfigured disclosure is reported and private models stay usable`() async throws {
-        let (store, api, _) = try make(withProvider: true)
+    @Test func `cloud messages never wait for the provider list`() async throws {
+        let (store, api, _) = try make()
         await api.setPrivacyUnconfigured(true)
         await store.login(email: "person@example.com", password: "pw")
-        #expect(store.disclosureUnconfigured)
-        #expect(store.disclosure == nil)
         store.draft = "Cloud question"
+        #expect(store.canSend)
         await store.send()
-        #expect(store.showsConsent)
-        #expect(await api.lastSend == nil)
-        store.continueInPrivateConversation()
-        #expect(store.sendsLocally)
-        #expect(store.draft == "Cloud question")
+        #expect(await api.lastSend?.text == "Cloud question")
+        #expect(store.errorMessage == nil)
+        // Settings shows the providers once the server publishes them.
+        await store.loadDisclosure()
+        #expect(store.disclosure == nil)
         await api.setPrivacyUnconfigured(false)
-        _ = await store.loadDisclosure()
-        #expect(!store.disclosureUnconfigured)
-        #expect(store.disclosure != nil)
+        await store.loadDisclosure()
+        #expect(store.disclosure?.providers.isEmpty == false)
     }
 
     // MARK: Routed model

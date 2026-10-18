@@ -207,8 +207,7 @@ struct ChatPurchasesTests {
 
     @Test func `short history pages do not offer more`() async {
         let api = CreditsAPI()
-        let store = ChatStore(service: api, credentials: MemoryCredentials(), deviceID: "d",
-                              consentDefaults: Self.consented(Self.userID))
+        let store = ChatStore(service: api, credentials: MemoryCredentials(), deviceID: "d")
         await store.login(email: "user@example.com", password: "password")
         #expect(store.conversations.count == 1)
         #expect(!store.hasMore)
@@ -255,16 +254,10 @@ struct ChatPurchasesTests {
 
     // MARK: Fixtures
 
-    static func consented(_ id: String) -> UserDefaults {
-        let defaults = UserDefaults(suiteName: UUID().uuidString)!
-        defaults.set("v|Provider", forKey: "ai-consent." + id)
-        return defaults
-    }
-
     private func signedIn(profileID: String = userID) async -> (ChatStore, CreditsAPI, FixtureStoreKit) {
         let api = CreditsAPI(profileID: profileID)
         let store = ChatStore(service: api, credentials: MemoryCredentials(), deviceID: "ios-test",
-                              consentDefaults: Self.consented(profileID), reconnectDelay: .milliseconds(1))
+                              reconnectDelay: .milliseconds(1))
         await store.login(email: "user@example.com", password: "password")
         await store.loadDisclosure()
         return (store, api, FixtureStoreKit())
