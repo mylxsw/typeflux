@@ -219,6 +219,18 @@ final class ClipboardShelfPresentationTests: XCTestCase {
     }
 
     @MainActor
+    func testPrewarmedShelfStaysHiddenUntilPresented() throws {
+        let model = textModel()
+        controller.prewarm(model)
+        XCTAssertNil(controller.presentedWindow)
+
+        controller.present(model)
+        let panel = try XCTUnwrap(controller.presentedWindow)
+        XCTAssertTrue(panel.isVisible)
+        XCTAssertEqual(controller.style, .shelf)
+    }
+
+    @MainActor
     func testSpaceAndVerticalArrowsShowThePreviewWindowAboveTheShelf() throws {
         let model = textModel()
         model.showsPreview = false
@@ -350,7 +362,7 @@ final class ClipboardShelfPresentationTests: XCTestCase {
         let panel = try XCTUnwrap(controller.presentedWindow)
         let screen = try XCTUnwrap((panel.screen ?? NSScreen.main)?.visibleFrame)
         let target = ClipboardPanelPlacement.shelfFrame(height: ClipboardShelfView.height, screen: screen)
-        XCTAssertLessThan(panel.frame.minY, target.minY + 0.5, "The slide starts at or below its final frame")
+        XCTAssertEqual(target.minY - panel.frame.minY, ClipboardShelfScroll.slideDistance, accuracy: 1)
         XCTAssertEqual(panel.alphaValue, 1, "The shelf is fully visible on its first frame")
         let settled = expectation(description: "slide settles")
         func poll(_ remaining: Int) {

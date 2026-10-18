@@ -136,6 +136,11 @@ final class AppCoordinator {
             textRecognizer: di.imageTextRecognizer
         )
         workflowController.enforceClipboardRetentionPolicy()
+        let clipboardPanelController = di.clipboardPanelController
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak clipboardPanelController, weak workflowController] in
+            guard let model = workflowController?.historyPanelModel else { return }
+            clipboardPanelController?.prewarm(model)
+        }
         let semanticSearch = SemanticFileSearchService.shared
         workflowController.onForegroundActivityChanged = { [weak semanticSearch] busy in semanticSearch?.setForegroundBusy(busy) }
         di.clipboardMonitor.start()

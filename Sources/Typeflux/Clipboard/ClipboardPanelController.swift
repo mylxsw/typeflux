@@ -70,6 +70,22 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     var isResizingPreview: Bool { previewWidthAnimator.isAnimating }
     var contentViewportWidth: CGFloat? { layout.width }
 
+    /// Build the native window while the app is idle, before the first hotkey press.
+    func prewarm(_ model: ClipboardPanelModel) {
+        guard panel == nil else { return }
+        style = settingsStore.clipboardPanelStyle
+        let panel = panel(for: model)
+        applyAppearance(to: panel)
+        if style == .shelf, let screen = NSScreen.main {
+            let size = ClipboardPanelPlacement.shelfFrame(
+                height: ClipboardShelfView.height, screen: screen.visibleFrame
+            ).size
+            panel.setContentSize(size)
+            hostingView?.frame = NSRect(origin: .zero, size: size)
+        }
+        hostingView?.layoutSubtreeIfNeeded()
+    }
+
     func present(_ model: ClipboardPanelModel) {
         let continuingSession = isPresented && self.model === model
         previewWidthAnimator.stop()

@@ -19,7 +19,7 @@ final class ClipboardPanelModel: ObservableObject {
     @Published private(set) var rows: [Row] = []
     @Published var category: ClipboardCategory = .all {
         didSet {
-            if category != oldValue {
+            if !isResetting, category != oldValue {
                 if category != .all { appFilter = nil }
                 refilter(resetSelection: true)
             }
@@ -27,7 +27,7 @@ final class ClipboardPanelModel: ObservableObject {
     }
 
     @Published var query = "" {
-        didSet { if query != oldValue { refilter(resetSelection: true) } }
+        didSet { if !isResetting, query != oldValue { refilter(resetSelection: true) } }
     }
 
     @Published var selectedIndex = 0 {
@@ -79,7 +79,8 @@ final class ClipboardPanelModel: ObservableObject {
     /// Whether an entry's files are gone, checked once per entry per session instead of on every redraw.
     private var missingCache: [String: Bool] = [:]
     /// Lowercase-insensitive search text per entry ID, built once per entry list.
-    private var searchIndex: [String: String] = [:]
+    private var searchIndex: [String: String]?
+    private var isResetting = false
 
     var selectedEntry: ClipboardEntry? {
         visibleEntries.indices.contains(selectedIndex) ? visibleEntries[selectedIndex] : nil
@@ -88,6 +89,7 @@ final class ClipboardPanelModel: ObservableObject {
     /// Starts a new session: all entries, no search, first row selected — or, with
     /// `selectFirstUnpinned`, the newest row below the pinned ones.
     func reset(entries: [ClipboardEntry], selectFirstUnpinned: Bool = false) {
+        isResetting = true
         missingCache = [:]
         setEntries(entries)
         notice = nil
@@ -98,6 +100,7 @@ final class ClipboardPanelModel: ObservableObject {
         appFilter = nil
         query = ""
         category = ClipboardFeed.initialCategory(for: entries)
+        isResetting = false
         refilter(resetSelection: true)
         if selectFirstUnpinned, let index = visibleEntries.firstIndex(where: { !$0.isPinned }) {
             selectedIndex = index
@@ -265,19 +268,23 @@ final class ClipboardPanelModel: ObservableObject {
 
     private func setEntries(_ entries: [ClipboardEntry]) {
         self.entries = entries
-        searchIndex = Dictionary(
-            entries.map { ($0.id, ClipboardFeed.searchableText(of: $0)) },
-            uniquingKeysWith: { first, _ in first }
-        )
+        searchIndex = nil
     }
 
     private func refilter(resetSelection: Bool) {
         let signpost = ClipboardPerformance.begin("refilter")
         defer { ClipboardPerformance.end("refilter", signpost) }
+        if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, searchIndex == nil {
+            searchIndex = Dictionary(
+                entries.map { ($0.id, ClipboardFeed.searchableText(of: $0)) },
+                uniquingKeysWith: { first, _ in first }
+            )
+        }
+        let searchIndex = searchIndex
         visibleEntries = ClipboardFeed.filter(
             entries, category: category, query: query, sourceBundleID: appFilter?.bundleID
         ) { [searchIndex] entry in
-            searchIndex[entry.id] ?? ClipboardFeed.searchableText(of: entry)
+            searchIndex?[entry.id] ?? ClipboardFeed.searchableText(of: entry)
         }
         rows = Self.rows(for: visibleEntries, now: now())
         if resetSelection {

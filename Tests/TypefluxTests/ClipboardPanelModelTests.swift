@@ -53,6 +53,16 @@ final class ClipboardPanelModelTests: XCTestCase {
         XCTAssertEqual(model.selectedIndex, 0)
     }
 
+    func testSearchAfterResetUsesTheNewEntries() {
+        model.reset(entries: entries)
+        model.query = "words"
+        XCTAssertEqual(model.visibleEntries.count, 2)
+
+        model.reset(entries: [ClipboardTestSupport.entry(.text, text: "fresh result")])
+        model.query = "fresh"
+        XCTAssertEqual(model.visibleEntries.map(\.title), ["fresh result"])
+    }
+
     func testSelectionIsClamped() {
         model.reset(entries: entries)
         model.moveSelection(by: -3)

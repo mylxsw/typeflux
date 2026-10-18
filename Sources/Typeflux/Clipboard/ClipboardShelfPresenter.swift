@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import QuartzCore
 import SwiftUI
 
 /// The window side of the clipboard shelf, for `ClipboardPanelController`: places the panel
@@ -11,8 +12,7 @@ final class ClipboardShelfPresenter {
     let layout = ClipboardShelfLayout()
     private weak var panel: NSWindow?
     private weak var model: ClipboardPanelModel?
-    /// A short slide keeps the shelf responsive from its first visible frame.
-    private let animator = AskLauncherHeightAnimator()
+    private let animator = ClipboardShelfSlideAnimator()
     /// The shelf's settled frame; the slide and the editor growth both aim for it.
     private(set) var frame: NSRect?
     private var previewWindow: ClipboardShelfPreviewWindow?
@@ -39,15 +39,15 @@ final class ClipboardShelfPresenter {
             height: ClipboardShelfView.height, screen: screen?.visibleFrame ?? panel.frame
         )
         self.frame = frame
-        let initialProgress: CGFloat = animated ? 0.8 : 1
+        let initialProgress: CGFloat = animated ? 0 : 1
         place(panel, shelf: frame, progress: initialProgress)
         panel.makeKeyAndOrderFront(nil)
-        animator.update(
-            from: initialProgress, to: 1, animated: animated,
-            framesPerSecond: screen?.maximumFramesPerSecond ?? 60, rate: 64, view: panel.contentView
-        ) { [weak self, weak panel] progress in
-            guard let self, let panel, panel.isVisible, let frame = self.frame else { return }
-            place(panel, shelf: frame, progress: progress)
+        if animated {
+            animator.start(view: panel.contentView, framesPerSecond: screen?.maximumFramesPerSecond ?? 60) {
+                [weak self, weak panel] progress in
+                guard let self, let panel, panel.isVisible, let frame = self.frame else { return }
+                place(panel, shelf: frame, progress: progress)
+            }
         }
         observe(model)
     }
@@ -182,4 +182,26 @@ final class ClipboardShelfPresenter {
 final class ClipboardShelfPreviewWindow: NSPanel {
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
+}
+
+/// A brief constant-speed entrance without the spring's slow settling tail.
+@MainActor
+private final class ClipboardShelfSlideAnimator {
+    private let clock = AskDisplayClock()
+    private static let duration: TimeInterval = 0.09
+
+    var isAnimating: Bool { clock.isRunning }
+
+    func start(view: NSView?, framesPerSecond: Int, apply: @escaping (CGFloat) -> Void) {
+        let startedAt = CACurrentMediaTime()
+        clock.start(view: view, framesPerSecond: framesPerSecond) { time in
+            let progress = min(max((time - startedAt) / Self.duration, 0), 1)
+            apply(CGFloat(progress))
+            return progress < 1
+        }
+    }
+
+    func stop() {
+        clock.stop()
+    }
 }
