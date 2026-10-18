@@ -29,7 +29,9 @@ struct AskLauncherView: View {
             // controls up or down for that frame.
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .overlay(alignment: .top) { if let drag { grip(drag) } }
-            .onHover { hovering = $0 }
+            .onHover { inside in
+                withAnimation(.easeOut(duration: 0.18)) { hovering = inside }
+            }
             .environment(\.askWindowDrag, drag)
             .environment(\.askLauncherNumberHints, showingNumberHints)
             .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
@@ -55,11 +57,12 @@ struct AskLauncherView: View {
         AskWindowDragArea(handlers: drag)
             .frame(height: Self.gripHeight)
             .overlay(alignment: .top) {
-                Capsule().fill(StudioTheme.textTertiary)
-                    .frame(width: 36, height: 4)
-                    .padding(.top, 3)
-                    .opacity(hovering ? 0.5 : 0)
-                    .allowsHitTesting(false)
+                if hovering {
+                    AskLauncherGripIndicator()
+                        .padding(.top, 3)
+                        .transition(.opacity)
+                        .allowsHitTesting(false)
+                }
             }
             .help(L("ask.launcher.drag"))
             .accessibilityIdentifier("ask.launcher.grip")
@@ -69,6 +72,28 @@ struct AskLauncherView: View {
 
     /// The card's top points, clear of the editor row's controls (they start 14pt down).
     static let gripHeight: CGFloat = 9
+}
+
+private struct AskLauncherGripIndicator: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var breathing = false
+
+    var body: some View {
+        Capsule().fill(StudioTheme.textTertiary)
+            .frame(width: 36, height: 4)
+            .scaleEffect(x: breathing ? 1.12 : 1, y: 1)
+            .opacity(reduceMotion ? 0.5 : (breathing ? 0.65 : 0.4))
+            .onAppear { updateBreathing() }
+            .onChange(of: reduceMotion) { _ in updateBreathing() }
+            .accessibilityHidden(true)
+    }
+
+    private func updateBreathing() {
+        guard !reduceMotion else { breathing = false; return }
+        withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
+            breathing = true
+        }
+    }
 }
 
 /// Included content sits above the editor; switches and actions sit below it.
