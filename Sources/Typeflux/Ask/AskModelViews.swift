@@ -70,7 +70,7 @@ struct AskModelMenu: View {
                 .frame(width: 240)
             } else {
                 modelLabel
-                    .font(.system(size: compact ? 13.5 : 13, weight: compact ? .semibold : .medium))
+                    .font(.system(size: compact ? 12.5 : 13, weight: compact ? .semibold : .medium))
                     .padding(.leading, compact ? 12 : 11)
                     .padding(.trailing, compact ? 10 : 11)
                     .frame(height: compact ? AskMetrics.composerControlHeight : 32)
@@ -125,7 +125,7 @@ struct AskModelMenu: View {
             }
             if let shownEffort, !condensed {
                 Text(shownEffort.label)
-                    .font(.system(size: 13.5, weight: .regular))
+                    .font(.system(size: compact ? 11.5 : 13, weight: .regular))
                     .foregroundStyle(shownEffort.isTop(in: effortLevels)
                         ? AskTheme.reasoningTopText : StudioTheme.textSecondary)
                     .lineLimit(1).fixedSize()
