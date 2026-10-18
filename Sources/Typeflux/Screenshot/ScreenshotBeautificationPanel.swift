@@ -137,7 +137,7 @@ struct ScreenshotBeautificationView: View {
 
     private var header: some View {
         HStack(spacing: 10) {
-            Image(systemName: "photo.artframe")
+            Image(systemName: "slider.horizontal.3")
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.white.opacity(0.6))
             Text(L("screenshot.beautify.title")).font(.system(size: 14, weight: .semibold))

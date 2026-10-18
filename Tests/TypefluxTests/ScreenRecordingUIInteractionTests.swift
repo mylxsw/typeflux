@@ -95,7 +95,7 @@ struct ScreenRecordingUIInteractionTests {
                 #expect(button.frame.size == CGSize(width: 30, height: 30))
                 #expect(button.frame.size == pin.frame.size)
                 #expect(button.frame.minY == pin.frame.minY)
-                #expect(pin.frame.minX - button.frame.maxX == 2)
+                #expect(button.frame.minX < pin.frame.minX)
                 #expect(button.label == L("recording.title"))
                 #expect(window.frame.contains(button.frame))
                 #expect(button.value("isAccessibilityEnabled") as? Bool == editable)
@@ -120,6 +120,36 @@ struct ScreenRecordingUIInteractionTests {
             try ScreenshotSnapshotSupport.write(#require(image.cgImage),
                                                 name: dark ? "screenshot-recording-entry" :
                                                     "screenshot-recording-entry-light")
+        }
+    }
+
+    @Test func `screenshot toolbar keeps the reordered actions accessible`() async throws {
+        _ = NSApplication.shared
+        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+        var state = ScreenshotEditorToolbarModel.State()
+        state.showsBackgroundRemoval = true
+        try await SettingsBehaviorTestSupport.withWindow(
+            ScreenshotEditorToolbar(state: state) { _ in }, width: 1200, height: 120
+        ) { _, content in
+            let elements = SettingsBehaviorTestSupport.elements(in: content)
+            let ids = ["screenshot.record", "screenshot.removeBackground", "screenshot.beautify",
+                       "screenshot.followUp.recognizeText", "screenshot.followUp.translate",
+                       "screenshot.followUp.askAI", "screenshot.pin", "screenshot.more",
+                       "screenshot.cancel", "screenshot.copy"]
+            let buttons = try ids.map { id in
+                try #require(elements.first { $0.value("accessibilityIdentifier") as? String == id })
+            }
+            for pair in zip(buttons, buttons.dropFirst()) {
+                #expect(pair.0.frame.maxX < pair.1.frame.minX)
+            }
+            let askAI = try #require(buttons.first {
+                $0.value("accessibilityIdentifier") as? String == "screenshot.followUp.askAI"
+            })
+            #expect(askAI.frame.width == 30, "Ask AI should use one icon slot")
+            #expect(askAI.label == L("screenshot.followUp.askAI"))
+            #expect(buttons[buttons.count - 2].label == L("screenshot.edit.cancel"))
+            #expect(buttons[buttons.count - 1].label == L("screenshot.edit.copy"))
         }
     }
 

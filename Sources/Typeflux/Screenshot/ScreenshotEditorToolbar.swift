@@ -306,14 +306,6 @@ struct ScreenshotEditorToolbar: View {
 
     private var mainBar: some View {
         HStack(spacing: 2) {
-            ForEach(ScreenshotAnnotationTool.allCases, id: \.self) { tool in
-                iconButton(ScreenshotEditorToolbarModel.symbol(for: tool),
-                           help: ScreenshotEditorToolbarModel.help(for: tool),
-                           isOn: state.tool == tool) { perform(.tool(tool)) }
-            }
-            if state.showsScrollCapture || state.showsPin {
-                separator
-            }
             if state.showsScrollCapture {
                 iconButton("rectangle.expand.vertical", help: "\(L("screenshot.tool.scroll"))  S",
                            isEnabled: state.canScrollCapture) { perform(.scrollCapture) }
@@ -321,7 +313,21 @@ struct ScreenshotEditorToolbar: View {
                            isEnabled: state.canScrollCapture) { perform(.record) }
                     .accessibilityLabel(L("recording.title"))
                     .accessibilityIdentifier("screenshot.record")
+                separator
             }
+            ForEach(ScreenshotAnnotationTool.allCases, id: \.self) { tool in
+                iconButton(ScreenshotEditorToolbarModel.symbol(for: tool),
+                           help: ScreenshotEditorToolbarModel.help(for: tool),
+                           isOn: state.tool == tool) { perform(.tool(tool)) }
+            }
+            separator
+            iconButton("arrow.uturn.backward", help: "\(L("screenshot.edit.undo"))  ⌘Z", isEnabled: state.canUndo) {
+                perform(.undo)
+            }
+            iconButton("arrow.uturn.forward", help: "\(L("screenshot.edit.redo"))  ⇧⌘Z", isEnabled: state.canRedo) {
+                perform(.redo)
+            }
+            separator
             if state.showsBackgroundRemoval {
                 iconButton("wand.and.stars",
                            help: L(!state.supportsBackgroundRemoval ? "screenshot.background.unsupported" :
@@ -332,28 +338,22 @@ struct ScreenshotEditorToolbar: View {
                     .accessibilityLabel(L(state.hasRemovedBackground ? "screenshot.background.restore" : "screenshot.background.remove"))
                     .accessibilityIdentifier("screenshot.removeBackground")
             }
-            if state.showsPin {
-                iconButton("pin", help: "\(L("screenshot.tool.pin"))  F") { perform(.pin) }
-                    .accessibilityIdentifier("screenshot.pin")
+            iconButton("slider.horizontal.3", help: L("screenshot.beautify.title"), isOn: state.isBeautified) {
+                perform(.beautify)
             }
-            separator
-            iconButton("arrow.uturn.backward", help: "\(L("screenshot.edit.undo"))  ⌘Z", isEnabled: state.canUndo) {
-                perform(.undo)
-            }
-            iconButton("arrow.uturn.forward", help: "\(L("screenshot.edit.redo"))  ⇧⌘Z", isEnabled: state.canRedo) {
-                perform(.redo)
-            }
+            .accessibilityLabel(L("screenshot.beautify.title"))
+            .accessibilityIdentifier("screenshot.beautify")
             separator
             ForEach(ScreenshotFollowUp.allCases, id: \.self) { followUp in
                 followUpButton(followUp)
             }
             separator
-            iconButton("photo.artframe", help: L("screenshot.beautify.title"), isOn: state.isBeautified) {
-                perform(.beautify)
+            if state.showsPin {
+                iconButton("pin", help: "\(L("screenshot.tool.pin"))  F") { perform(.pin) }
+                    .accessibilityIdentifier("screenshot.pin")
             }
-            .accessibilityLabel(L("screenshot.beautify.title"))
-            .accessibilityIdentifier("screenshot.beautify")
             iconButton("square.and.arrow.down", help: "\(L("screenshot.edit.save"))  ⌘S") { perform(.save) }
+            separator
             iconButton("ellipsis", help: L("screenshot.edit.more"), isOn: state.showsMoreMenu) {
                 perform(.toggleMoreMenu)
             }
@@ -828,27 +828,12 @@ struct ScreenshotEditorToolbar: View {
         .help(help)
     }
 
-    /// "Recognize text" and "Translate" as icons, "Ask AI" with its name, as in the design.
-    @ViewBuilder
+    /// All follow-ups use compact icons; their localized names remain available to assistive technology.
     private func followUpButton(_ followUp: ScreenshotFollowUp) -> some View {
-        if followUp == .askAI {
-            Button { perform(.followUp(followUp)) } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: followUp.symbol).font(.system(size: 13, weight: .medium))
-                    Text(followUp.title).font(.system(size: 12.5)).lineLimit(1).fixedSize()
-                }
-                .foregroundStyle(AskTheme.accent)
-                .padding(.horizontal, 7)
-                .frame(height: 30)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help(followUp.title)
+        iconButton(followUp.symbol, help: followUp.title,
+                   tint: followUp == .askAI ? AskTheme.accent : nil) { perform(.followUp(followUp)) }
+            .accessibilityLabel(followUp.title)
             .accessibilityIdentifier("screenshot.followUp.\(followUp.rawValue)")
-        } else {
-            iconButton(followUp.symbol, help: followUp.title) { perform(.followUp(followUp)) }
-                .accessibilityIdentifier("screenshot.followUp.\(followUp.rawValue)")
-        }
     }
 
     private func optionButton(_ symbol: String, help: String, isOn: Bool,

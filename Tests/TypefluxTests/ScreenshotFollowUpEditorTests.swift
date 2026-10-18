@@ -46,10 +46,10 @@ final class ScreenshotFollowUpEditorTests: XCTestCase {
         XCTAssertEqual(events(), [.committed] + ScreenshotFollowUp.allCases.map { .finish(.followUp($0), region, []) })
     }
 
-    func testTheToolbarShowsTheFollowUpsByName() {
+    func testTheToolbarKeepsLocalizedNamesForFollowUps() {
         let state = ScreenshotEditorToolbarModel.State()
         let host = NSHostingView(rootView: ScreenshotEditorToolbar(state: state) { _ in })
-        XCTAssertGreaterThan(host.fittingSize.width, 500, "Three named buttons more")
+        XCTAssertGreaterThan(host.fittingSize.width, 500)
         for followUp in ScreenshotFollowUp.allCases {
             XCTAssertFalse(followUp.symbol.isEmpty)
             XCTAssertNotEqual(followUp.title, "screenshot.followUp.\(followUp.rawValue)")
