@@ -127,6 +127,7 @@ private final class TooltipFloatingPanel: NSPanel {
             defer: false
         )
         isFloatingPanel = true
+        identifier = ScreenshotCaptureWindowPolicy.tooltipIdentifier
         // Stay above the statusBar-level overlay panel
         level = NSWindow.Level(rawValue: NSWindow.Level.statusBar.rawValue + 2)
         backgroundColor = .clear
@@ -147,13 +148,17 @@ private final class TooltipFloatingPanel: NSPanel {
 }
 
 @MainActor
-private final class TooltipWindowController {
+final class TooltipWindowController {
     static let shared = TooltipWindowController()
 
     private let panel = TooltipFloatingPanel()
     private var hostingView: NSHostingView<AnyView>?
+    private var owner: UUID?
 
-    func show(text: String, screenFrame: NSRect, yOffset: CGFloat) {
+    func show(text: String, screenFrame: NSRect, yOffset: CGFloat, owner: UUID,
+              level: NSWindow.Level = NSWindow.Level(rawValue: NSWindow.Level.statusBar.rawValue + 2)) {
+        self.owner = owner
+        panel.level = level
         let tooltipView = AnyView(
             Text(text)
                 .font(.studioBody(StudioTheme.Typography.tooltip, weight: .semibold))
@@ -179,11 +184,11 @@ private final class TooltipWindowController {
         guard let hosting = hostingView else { return }
         let size = hosting.fittingSize
 
-        // Match the old overlay tooltip behavior: yOffset controls how far the
-        // tooltip's top edge sits above the anchor's top edge.
+        // Keep the tooltip clear of the pointer, then move it below when the
+        // upper edge of the display would cut it off.
         var origin = NSPoint(
             x: screenFrame.midX - size.width / 2,
-            y: screenFrame.maxY + yOffset - size.height
+            y: screenFrame.maxY + yOffset
         )
 
         // Clamp to the screen that contains the mouse
@@ -192,16 +197,19 @@ private final class TooltipWindowController {
         }) ?? NSScreen.main
         if let bounds = screen?.frame {
             origin.x = max(bounds.minX + 4, min(origin.x, bounds.maxX - size.width - 4))
-            if origin.y + size.height > bounds.maxY {
-                origin.y = screenFrame.minY - yOffset
+            if origin.y + size.height > bounds.maxY - 4 {
+                origin.y = screenFrame.minY - yOffset - size.height
             }
+            origin.y = max(bounds.minY + 4, min(origin.y, bounds.maxY - size.height - 4))
         }
 
         panel.setFrame(NSRect(origin: origin, size: size), display: false)
-        panel.orderFront(nil)
+        panel.orderFrontRegardless()
     }
 
-    func hide() {
+    func hide(owner: UUID) {
+        guard self.owner == owner else { return }
+        self.owner = nil
         panel.orderOut(nil)
     }
 }
@@ -245,6 +253,8 @@ private struct ScreenFrameAnchor: NSViewRepresentable {
 private struct StudioTooltipModifier: ViewModifier {
     let text: String
     var yOffset: CGFloat = 10
+    var level = NSWindow.Level(rawValue: NSWindow.Level.statusBar.rawValue + 2)
+    @State private var owner = UUID()
 
     func body(content: Content) -> some View {
         content
@@ -257,18 +267,26 @@ private struct StudioTooltipModifier: ViewModifier {
                     TooltipWindowController.shared.show(
                         text: text,
                         screenFrame: anchor,
-                        yOffset: yOffset
+                        yOffset: yOffset,
+                        owner: owner,
+                        level: level
                     )
                 } else {
-                    TooltipWindowController.shared.hide()
+                    TooltipWindowController.shared.hide(owner: owner)
                 }
             }
+            .onDisappear { TooltipWindowController.shared.hide(owner: owner) }
     }
 }
 
 extension View {
-    func studioTooltip(_ text: String, yOffset: CGFloat = 10) -> some View {
-        modifier(StudioTooltipModifier(text: text, yOffset: yOffset))
+    func studioTooltip(_ text: String, yOffset: CGFloat = 10,
+                       level: NSWindow.Level = NSWindow.Level(rawValue: NSWindow.Level.statusBar.rawValue + 2)) -> some View {
+        modifier(StudioTooltipModifier(text: text, yOffset: yOffset, level: level))
+    }
+
+    func screenshotTooltip(_ text: String) -> some View {
+        studioTooltip(text, level: NSWindow.Level(rawValue: NSWindow.Level.screenSaver.rawValue + 2))
     }
 }
 

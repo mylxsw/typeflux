@@ -67,6 +67,7 @@ struct ScreenshotCaptureWindowPolicyTests {
         panel.isReleasedWhenClosed = false
         defer { panel.close() }
         for identifier in [ScreenshotCaptureWindowPolicy.toastIdentifier,
+                           ScreenshotCaptureWindowPolicy.tooltipIdentifier,
                            ScreenshotCaptureWindowPolicy.permissionIdentifier] {
             panel.identifier = identifier
             #expect(ScreenshotCaptureWindowPolicy.excludes(panel))
@@ -75,6 +76,26 @@ struct ScreenshotCaptureWindowPolicyTests {
         #expect(!ScreenshotCaptureWindowPolicy.excludes(panel))
         panel.identifier = ScreenshotCaptureWindowPolicy.recordingToastIdentifier
         #expect(!ScreenshotCaptureWindowPolicy.excludes(panel))
+    }
+
+    @Test func `screenshot tooltips stay above the capture overlay and hide on exit`() throws {
+        let owner = UUID()
+        let otherOwner = UUID()
+        let level = NSWindow.Level(rawValue: NSWindow.Level.screenSaver.rawValue + 2)
+        let controller = TooltipWindowController.shared
+        controller.show(text: "Record screen", screenFrame: frame, yOffset: 10, owner: owner, level: level)
+        let panel = try #require(NSApp.windows.first {
+            $0.identifier == ScreenshotCaptureWindowPolicy.tooltipIdentifier
+        })
+        defer { controller.hide(owner: owner) }
+        #expect(panel.isVisible)
+        #expect(panel.level == level)
+        #expect(ScreenshotCaptureWindowPolicy.excludes(panel))
+        #expect(ScreenshotCaptureWindowPolicy.excludedWindowIDs().contains(CGWindowID(panel.windowNumber)))
+        controller.hide(owner: otherOwner)
+        #expect(panel.isVisible)
+        controller.hide(owner: owner)
+        #expect(!panel.isVisible)
     }
 
     @Test func onlyVisibleCaptureControlsAreListed() {

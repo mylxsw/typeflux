@@ -384,7 +384,8 @@ struct ScreenshotEditorToolbar: View {
             .gesture(DragGesture(minimumDistance: 1, coordinateSpace: .global)
                 .onChanged { perform(.dragToolbar($0.translation, ended: false)) }
                 .onEnded { perform(.dragToolbar($0.translation, ended: true)) })
-            .help(L("screenshot.edit.dragToolbar"))
+            .screenshotTooltip(L("screenshot.edit.dragToolbar"))
+            .accessibilityLabel(L("screenshot.edit.dragToolbar"))
     }
 
     /// Less used actions, as a short list under the toolbar.
@@ -601,7 +602,8 @@ struct ScreenshotEditorToolbar: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(L("screenshot.text.font.\(font.rawValue)"))
+        .screenshotTooltip(L("screenshot.text.font.\(font.rawValue)"))
+        .accessibilityLabel(L("screenshot.text.font.\(font.rawValue)"))
     }
 
     private func textStyleButton(_ textStyle: ScreenshotAnnotationStyle.TextStyle, isOn: Bool) -> some View {
@@ -627,7 +629,8 @@ struct ScreenshotEditorToolbar: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(L("screenshot.text.style.\(textStyle.rawValue)"))
+        .screenshotTooltip(L("screenshot.text.style.\(textStyle.rawValue)"))
+        .accessibilityLabel(L("screenshot.text.style.\(textStyle.rawValue)"))
     }
 
     private func textOption(_ title: String, isOn: Bool, action: @escaping () -> Void) -> some View {
@@ -711,7 +714,8 @@ struct ScreenshotEditorToolbar: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .help(L("screenshot.edit.color"))
+        .screenshotTooltip(L("screenshot.edit.color"))
+        .accessibilityLabel(L("screenshot.edit.color"))
         .accessibilityIdentifier("screenshot.color.button")
     }
 
@@ -769,7 +773,8 @@ struct ScreenshotEditorToolbar: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .help(ScreenshotEditorToolbarModel.help(for: color))
+        .screenshotTooltip(ScreenshotEditorToolbarModel.help(for: color))
+        .accessibilityLabel(ScreenshotEditorToolbarModel.help(for: color))
     }
 
     /// A compact slider with its caption and value; a drag reports its start and end, so it undoes in one step.
@@ -825,7 +830,8 @@ struct ScreenshotEditorToolbar: View {
         .buttonStyle(.plain)
         .disabled(!isEnabled)
         .opacity(isEnabled ? 1 : 0.35)
-        .help(help)
+        .screenshotTooltip(help)
+        .accessibilityLabel(help)
     }
 
     /// All follow-ups use compact icons; their localized names remain available to assistive technology.
@@ -847,7 +853,8 @@ struct ScreenshotEditorToolbar: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(help)
+        .screenshotTooltip(help)
+        .accessibilityLabel(help)
     }
 
     private func caption(_ text: String) -> some View {
