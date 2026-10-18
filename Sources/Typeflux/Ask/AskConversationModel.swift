@@ -2029,7 +2029,22 @@ extension AskConversationModel {
     }
 
     func resumeQueue() {
-        guard let id = selectedId else { return }
+        guard let value = selected, !recoveryWorking else { return }
+        let id = value.id
+        if value.run?.isActive == true, recoveryBlocksResume(value) {
+            guard !recoveryPresentation.otherDevice else {
+                error = L("ask.recovery.binding")
+                return
+            }
+            Task { [weak self] in
+                guard let self else { return }
+                await endRecoveryRun()
+                guard selectedId == id, selected?.run?.isActive == false else { return }
+                sendQueue.resume(id)
+                queueDidSettle(id)
+            }
+            return
+        }
         sendQueue.resume(id)
         queueDidSettle(id)
     }
@@ -2107,7 +2122,7 @@ extension AskConversationModel {
     func queueDidSettle(_ id: String) {
         guard let value = snapshots[id] ?? (selected?.id == id ? selected : nil) else { return }
         sendQueue.reconcile(id, transcript: value.messages, run: value.run)
-        if recoveryBlocksResume(value) { sendQueue.pause(id); return }
+        if value.run?.isActive == true, recoveryBlocksResume(value) { sendQueue.pause(id); return }
         guard selectedId == id, selected != nil, !isLoadingSelection, !busyIds.contains(id), pendingSends[id] == nil,
               value.run?.isActive != true, let next = sendQueue.next(for: id), !steeringIds.contains(next.id),
               let item = sendQueue.take(next.id, from: id) else { return }

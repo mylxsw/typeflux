@@ -170,6 +170,47 @@ struct AskSendQueueTests {
         #expect(!f.model.isQueuePaused)
     }
 
+    @Test func continuingQueueAfterUnknownResultEndsTheOldRunAndSendsTheFollowUp() async throws {
+        let f = try AskTestFixture()
+        defer { f.model.resetSession() }
+        let value = AskRecoveryFixture.conversation()
+        _ = try await f.cache.claimExecution(AskRecoveryFixture.audit(value), owner: "owner")
+        await f.api.seed(value)
+        await f.model.select(value.id)
+        f.model.draft.text = "Only explain the SSH tunnel"
+        f.model.submitDraft()
+        let queued = try #require(f.model.queuedMessages.first)
+        f.model.queueDidSettle(value.id)
+        #expect(f.model.isQueuePaused)
+        #expect(await f.api.sends.isEmpty)
+
+        f.model.resumeQueue()
+        try await f.wait { f.model.queuedMessages.isEmpty && f.model.busyIds.isEmpty
+            && f.model.selected?.run?.id != value.run?.id }
+        #expect(await f.api.sends.map(\.id) == [queued.id])
+        #expect(await f.api.sends.map(\.text) == ["Only explain the SSH tunnel"])
+        #expect(await f.api.results.isEmpty)
+        #expect(f.model.draft.text.isEmpty)
+        #expect(!f.model.isQueuePaused && !f.model.hasRecoveryNotice)
+    }
+
+    @Test func anotherDeviceCannotContinueAnUnknownQueue() async throws {
+        let f = try AskTestFixture()
+        defer { f.model.resetSession() }
+        var value = AskRecoveryFixture.conversation()
+        value.run?.deviceId = "elsewhere"
+        _ = try await f.cache.claimExecution(AskRecoveryFixture.audit(value), owner: "owner")
+        await f.api.seed(value)
+        await f.model.select(value.id)
+        f.model.draft.text = "Keep this follow-up"
+        f.model.submitDraft()
+        f.model.queueDidSettle(value.id)
+        f.model.resumeQueue()
+        #expect(f.model.isQueuePaused && f.model.queuedMessages.count == 1)
+        #expect(f.model.selected?.run?.status == "waiting_tool")
+        #expect(await f.api.sends.isEmpty)
+    }
+
     @Test func removingAndClearingQueuedMessages() async throws {
         let f = try AskTestFixture()
         let id = try await busyConversation(f)
