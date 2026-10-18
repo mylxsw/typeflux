@@ -420,3 +420,7 @@
 "Use a single line of up to 60 characters." = "Use a single line of up to 60 characters.";
 "Wait for the answer to finish, then rename the conversation." = "Wait for the answer to finish, then rename the conversation.";
 "Typeflux is unavailable right now. Try again when you're back online." = "Typeflux is unavailable right now. Try again when you're back online.";
+"This server can't accept cloud messages yet" = "This server can't accept cloud messages yet";
+"The Typeflux server hasn't published which AI providers receive your data, so consent can't be given. Its operator needs to set AI_DATA_PROCESSORS and AI_PRIVACY_VERSION and restart the server." = "The Typeflux server hasn't published which AI providers receive your data, so consent can't be given. Its operator needs to set AI_DATA_PROCESSORS and AI_PRIVACY_VERSION and restart the server.";
+"Use your own models instead" = "Use your own models instead";
+"Check again" = "Check again";

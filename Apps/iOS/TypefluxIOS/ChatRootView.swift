@@ -61,11 +61,14 @@ struct ChatRootView: View {
             }
         }
         .task {
-            await store.restore()
+            // Only what is on the device gates the first screen; an unreachable
+            // server is refreshed afterwards and shown as a banner, never a spinner.
+            await store.restoreSession()
             checkingSession = false
             if !store.isAuthenticated, !welcomeDismissed {
                 store.showsLogin = true
             }
+            await store.refreshAfterRestore()
         }
         .sheet(isPresented: Binding(get: { store.showsLogin && settingsDismissed },
                                     set: { store.showsLogin = $0 }), onDismiss: {

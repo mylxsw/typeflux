@@ -257,6 +257,53 @@ struct ChatFollowupTests {
         #expect(await api.generated == 1)
     }
 
+    // MARK: Launch and consent
+
+    @Test func `launch shows the device copy without waiting for the server`() async throws {
+        let cache = try ChatLocalStore.inMemory()
+        let owner = "account:person@example.com"
+        try await cache.syncCloudPage([ChatConversationSummary(id: "one", title: "Cached")], owner: owner,
+                                      firstPage: true, complete: true)
+        let api = TitleAPI()
+        await api.setOutage(true)
+        let credentials = MemoryCredentials()
+        credentials.value = SavedAccount(email: "person@example.com",
+                                         session: ChatSession(accessToken: "t", expiresAt: 0, refreshToken: nil))
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        let store = ChatStore(service: api, credentials: credentials, deviceID: "ios-test", consentDefaults: defaults,
+                              cache: cache, localStore: try ChatLocalStore.inMemory())
+        #expect(await store.restoreSession())
+        #expect(store.isAuthenticated)
+        #expect(store.conversations.map(\.title) == ["Cached"])
+        // No request has been made yet, so nothing has failed.
+        #expect(store.connectivity == .online)
+        #expect(await api.requests == 0)
+        await store.refreshAfterRestore()
+        #expect(store.connectivity == .serviceUnavailable)
+        #expect(store.conversations.map(\.title) == ["Cached"])
+        // A second restore is a no-op once signed in.
+        #expect(await !store.restoreSession())
+    }
+
+    @Test func `an unconfigured disclosure is reported and private models stay usable`() async throws {
+        let (store, api, _) = try make(withProvider: true)
+        await api.setPrivacyUnconfigured(true)
+        await store.login(email: "person@example.com", password: "pw")
+        #expect(store.disclosureUnconfigured)
+        #expect(store.disclosure == nil)
+        store.draft = "Cloud question"
+        await store.send()
+        #expect(store.showsConsent)
+        #expect(await api.lastSend == nil)
+        store.continueInPrivateConversation()
+        #expect(store.sendsLocally)
+        #expect(store.draft == "Cloud question")
+        await api.setPrivacyUnconfigured(false)
+        _ = await store.loadDisclosure()
+        #expect(!store.disclosureUnconfigured)
+        #expect(store.disclosure != nil)
+    }
+
     // MARK: Routed model
 
     @Test func `answers name the model Auto was routed to`() async throws {
@@ -297,8 +344,13 @@ actor TitleAPI: ChatAPI {
     func setRenameConflict(_ value: Bool) { renameConflict = value }
     func setTwoPairs() { twoPairs = true }
     func setServedModel(ref: String, name: String) { servedRef = ref; servedName = name }
+    private var privacyUnconfigured = false
+    func setPrivacyUnconfigured(_ value: Bool) { privacyUnconfigured = value }
+    /// Requests that reached this service, whatever their outcome.
+    private(set) var requests = 0
 
     private func check() throws {
+        requests += 1
         if outage { throw URLError(.cannotConnectToHost) }
     }
 
@@ -371,6 +423,9 @@ actor TitleAPI: ChatAPI {
 
     func aiDisclosure(token _: String) async throws -> ChatAIDisclosure {
         try check()
+        if privacyUnconfigured {
+            throw ChatAPIError.server(code: "PRIVACY_UNAVAILABLE", message: "AI provider details are not configured.")
+        }
         return ChatAIDisclosure(version: "test", providers: ["Test Provider"])
     }
 

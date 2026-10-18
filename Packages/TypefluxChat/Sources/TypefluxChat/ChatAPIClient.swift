@@ -295,7 +295,8 @@ public struct ChatAPIClient: ChatAPI {
                                            decoder: JSONDecoder = ChatCoding.decoder()) async throws -> Value {
         try Task.checkCancellation()
         let request = ChatRequest.make(baseURL: baseURL, path: path, method: method, body: body,
-                                       token: token, headers: clientHeaders)
+                                       token: token, timeout: Self.timeout(method: method, path: path),
+                                       headers: clientHeaders)
         let (data, response) = try await session.data(for: request)
         try Task.checkCancellation()
         guard let http = response as? HTTPURLResponse else { throw ChatAPIError.invalidResponse }
@@ -305,6 +306,14 @@ public struct ChatAPIClient: ChatAPI {
             // A proxy or load balancer answered instead of Typeflux: the service is down.
             throw ChatAPIError.server(code: ChatConnectivity.serviceErrorCode(http.statusCode), message: nil)
         }
+    }
+
+    /// Reads and sign-in answer quickly or the service is unreachable; only model
+    /// steps (sending, regenerating, resuming) may legitimately take minutes.
+    static func timeout(method: String, path: String) -> TimeInterval {
+        if method == "GET" { return 20 }
+        if path.hasPrefix("/api/v1/auth/") { return 30 }
+        return 200
     }
 
     private var clientHeaders: [String: String] {

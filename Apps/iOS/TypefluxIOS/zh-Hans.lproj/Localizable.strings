@@ -420,3 +420,7 @@
 "Use a single line of up to 60 characters." = "请使用一行、不超过 60 个字的标题。";
 "Wait for the answer to finish, then rename the conversation." = "请等回答结束后再重命名。";
 "Typeflux is unavailable right now. Try again when you're back online." = "Typeflux 服务暂不可用，请恢复联网后再试。";
+"This server can't accept cloud messages yet" = "该服务器暂时无法接收云端消息";
+"The Typeflux server hasn't published which AI providers receive your data, so consent can't be given. Its operator needs to set AI_DATA_PROCESSORS and AI_PRIVACY_VERSION and restart the server." = "Typeflux 服务器还没有公布会接收你数据的 AI 服务商，因此无法确认同意。需要服务器管理员配置 AI_DATA_PROCESSORS 和 AI_PRIVACY_VERSION 后重启服务。";
+"Use your own models instead" = "改用自己的模型";
+"Check again" = "重新检查";

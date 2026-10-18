@@ -63,6 +63,10 @@ final class ChatStore {
     var localTasks: [String: Task<Void, Never>] = [:]
     /// Private conversations deleted in this session; a late stream must not save them again.
     var deletedLocalIDs: Set<String> = []
+    /// The server has not published which AI providers receive cloud messages
+    /// (`PRIVACY_UNAVAILABLE`), so consent cannot be given until its operator does.
+    var disclosureUnconfigured = false
+    nonisolated static let disclosureUnconfiguredCode = "PRIVACY_UNAVAILABLE"
     /// The next new conversation starts as a temporary one: never listed, deleted when left.
     var startsTemporary = false
     /// Temporary conversations of this session; private ones are also in `localTemporaryIDs`.
@@ -118,22 +122,39 @@ final class ChatStore {
     }
 
     func restore() async {
+        guard await restoreSession() else { return }
+        await refreshAfterRestore()
+    }
+
+    /// Restores everything kept on the device: private conversations, the saved
+    /// account and its cached history. Never waits for the network, so launch
+    /// cannot hang on an unreachable server. Returns true when an account was restored.
+    @discardableResult
+    func restoreSession() async -> Bool {
         await loadLocalHome()
-        guard !isAuthenticated else { return }
+        guard !isAuthenticated else { return false }
         do {
             guard let account = try credentials.load() else {
                 adoptPreferredModelIfUnset()
                 await restoreDraft()
-                return
+                return false
             }
             email = account.email
             session = account.session
             isAuthenticated = true
-            // The device's copy is shown at once; the server refresh replaces it when it answers.
             await loadCachedHome()
-            await refreshHome()
-            await loadDisclosure()
-        } catch { errorMessage = Self.userMessage(for: error) }
+            return true
+        } catch {
+            errorMessage = Self.userMessage(for: error)
+            return false
+        }
+    }
+
+    /// Replaces the device's copy with the server's once it answers.
+    func refreshAfterRestore() async {
+        guard isAuthenticated else { return }
+        await refreshHome()
+        await loadDisclosure()
     }
 
     func login(email: String, password: String) async {
@@ -659,6 +680,7 @@ extension ChatStore {
     func resetAccount() {
         infoMessage = nil
         disclosure = nil
+        disclosureUnconfigured = false
         showsConsent = false
         example = nil
         accountGeneration += 1
@@ -981,10 +1003,14 @@ extension ChatStore {
             let value = try await authorized { [service] token in try await service.aiDisclosure(token: token) }
             try checkAccount(generation)
             disclosure = value.isValid ? value : nil
+            disclosureUnconfigured = false
             return nil
         } catch {
             guard generation == accountGeneration else { return nil }
             disclosure = nil
+            if case let ChatAPIError.server(code, _) = error, code == Self.disclosureUnconfiguredCode {
+                disclosureUnconfigured = true
+            }
             let issue = ChatConnectivity.classify(error)
             if let issue {
                 connectivity = issue

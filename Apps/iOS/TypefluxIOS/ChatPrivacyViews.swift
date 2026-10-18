@@ -27,6 +27,8 @@ struct ChatConsentView: View {
                             )
                             .font(.footnote).foregroundStyle(.secondary)
                         }.padding(16).frame(maxWidth: .infinity, alignment: .leading).chatCard()
+                    } else if store.disclosureUnconfigured {
+                        unconfigured
                     } else {
                         Text("Provider details are unavailable. Try again before sending any content.")
                             .foregroundStyle(.orange)
@@ -63,6 +65,45 @@ struct ChatConsentView: View {
             }
             .navigationTitle("AI data sharing").navigationBarTitleDisplayMode(.inline)
         }.presentationDragIndicator(.visible)
+    }
+}
+
+extension ChatConsentView {
+    /// The server answered, but its operator has not published the AI data
+    /// recipients. Retrying cannot help; the user's own models still work.
+    @ViewBuilder var unconfigured: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("This server can't accept cloud messages yet", systemImage: "exclamationmark.triangle")
+                .font(.headline).foregroundStyle(.orange)
+            Text("The Typeflux server hasn't published which AI providers receive your data, so consent can't be given. Its operator needs to set AI_DATA_PROCESSORS and AI_PRIVACY_VERSION and restart the server.")
+                .font(.subheadline)
+                .fixedSize(horizontal: false, vertical: true)
+            if store.library.models.isEmpty {
+                NavigationLink {
+                    ChatProviderEditor(store: store, existing: nil) { _ in
+                        continuePrivately()
+                    }
+                } label: {
+                    Label("Use your own models instead", systemImage: "lock")
+                }
+                .accessibilityIdentifier("privacy.ownModels")
+            } else {
+                Button { continuePrivately() } label: {
+                    Label("Continue privately with your own model", systemImage: "lock")
+                }
+                .accessibilityIdentifier("privacy.ownModels")
+            }
+            Button("Check again") { Task { await store.loadDisclosure() } }
+                .accessibilityIdentifier("privacy.retry")
+        }
+        .padding(16).frame(maxWidth: .infinity, alignment: .leading).chatCard()
+        .accessibilityIdentifier("privacy.unconfigured")
+    }
+
+    private func continuePrivately() {
+        store.showsConsent = false
+        store.continueInPrivateConversation()
+        dismiss()
     }
 }
 
