@@ -183,7 +183,12 @@ struct AskTranslationSettings: Codable, Equatable, Sendable {
         var singleton = Set<String>()
         var result: [AskTranslationService] = []
         for service in services {
-            let key = service.provider.map { "provider." + $0.rawValue } ?? (service.kind == .device ? "device" : nil)
+            let key: String?
+            switch service.kind {
+            case .provider(let provider): key = "provider." + provider.rawValue
+            case .device: key = "device"
+            case .ai: key = nil
+            }
             if let key, !singleton.insert(key).inserted { continue }
             result.append(service)
         }

@@ -37,7 +37,7 @@ jobs:
           lipo -archs "$bin_dir/Typeflux" | grep -qw arm64
 
   build-signed-macos-app:
-    runs-on: ${{ matrix.runner }}
+    runs-on: macos-latest
     timeout-minutes: 180
     strategy:
       fail-fast: false
@@ -45,11 +45,9 @@ jobs:
         include:
           - release_arch: arm64
             package_arch: apple-silicon
-            runner: xcode-27
             release_script: ./scripts/release_notarize.sh
           - release_arch: x86_64
             package_arch: intel
-            runner: macos-latest
             release_script: ./scripts/release_intel.sh
     env:
       APP_NAME: Typeflux
@@ -64,12 +62,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Select Xcode 27.1 for Apple Silicon
-        if: matrix.release_arch == 'arm64'
-        run: |
-          sudo xcode-select --switch /Applications/Xcode_27.1.app/Contents/Developer
-          xcodebuild -version
 
       - name: Configure temporary paths
         run: |
