@@ -27,7 +27,6 @@ struct AskDesignFidelityTests {
         #expect(AskMetrics.composerMaxWidth == 760)
         #expect(AskMetrics.composerControlHeight == 34)
         #expect(AskSendButton.size == 36)
-        #expect(AskMetrics.suggestionsMaxWidth == 680)
         let workspace = AskComposerChrome.workspace
         #expect(workspace.corner == 28)
         #expect(workspace.footerHeight == 48)
@@ -190,7 +189,7 @@ struct AskDesignFidelityTests {
 
     // MARK: - Launcher
 
-    @Test func launcherSuggestionsWrapAndMatchTheEmptyState() {
+    @Test func slashPromptSuggestionsRemainAvailable() {
         #expect(AskSuggestion.all.map(\.key) == ["ask.suggest.screen", "ask.suggest.selection", "ask.suggest.page"])
         #expect(AskSuggestion.all.filter(\.screenshot).map(\.key) == ["ask.suggest.screen"])
         #expect(AskSuggestion.all.allSatisfy { $0.title != $0.key && $0.caption != $0.key + ".caption" })

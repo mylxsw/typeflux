@@ -371,8 +371,6 @@ enum AskMetrics {
     static let columnWidth: CGFloat = 768
     static let columnInset: CGFloat = 24
     static let composerMaxWidth: CGFloat = 760
-    /// The empty state's three suggestion cards.
-    static let suggestionsMaxWidth: CGFloat = 680
     static let transcriptMaxWidth: CGFloat = columnWidth - columnInset * 2
     static let bubbleMaxWidth: CGFloat = 560
     static let sidebarRowCorner: CGFloat = 12

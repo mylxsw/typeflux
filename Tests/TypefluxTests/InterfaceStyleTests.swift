@@ -49,7 +49,6 @@ struct InterfaceStyleTests {
         #expect(glass.sidebarRowHeight == 38)
         #expect(glass.sidebarRowCorner == AskMetrics.sidebarRowCorner)
         #expect(glass.composerCorner == 28)
-        #expect(glass.suggestionCorner == 18)
         #expect(glass.paletteCorner == AskMetrics.paletteCorner)
         #expect(glass.headerChipHeight == AskMetrics.headerCapsuleHeight)
     }
@@ -60,7 +59,7 @@ struct InterfaceStyleTests {
         let pairs: [(CGFloat, CGFloat)] = [
             (classic.sidebarRowHeight, glass.sidebarRowHeight), (classic.sidebarRowCorner, glass.sidebarRowCorner),
             (classic.searchFieldHeight, glass.searchFieldHeight), (classic.searchFieldCorner, glass.searchFieldCorner),
-            (classic.filterCorner, glass.filterCorner), (classic.suggestionCorner, glass.suggestionCorner),
+            (classic.filterCorner, glass.filterCorner),
             (classic.composerCorner, glass.composerCorner), (classic.paletteCorner, glass.paletteCorner),
             (classic.menuCorner, glass.menuCorner), (classic.hoverCardCorner, glass.hoverCardCorner),
             (classic.menuRowCorner, glass.menuRowCorner), (classic.headerChipHeight, glass.headerChipHeight)

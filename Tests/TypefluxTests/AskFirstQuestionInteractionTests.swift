@@ -6,6 +6,19 @@ import Testing
 @Suite("Ask first question controls", .serialized, .exclusiveUIState)
 @MainActor
 struct AskFirstQuestionInteractionTests {
+    @Test func newConversationShowsComposerWithoutPromptCards() async throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        let auth = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil }, loadStoredUserProfile: { nil })
+        let host = FirstQuestionControlHost(AskConversationView(model: fixture.model, auth: auth),
+                                            size: NSSize(width: 1180, height: 760))
+        defer { host.close() }
+        try await host.settle()
+        let labels = host.labels
+        #expect(host.identifiers.contains("ask.composer.send"))
+        #expect(AskSuggestion.all.allSatisfy { !labels.contains($0.title) })
+    }
+
     @Test(arguments: [true, false])
     func modelAndSignInButtonsDispatchTheirRealRoutes(launcher: Bool) async throws {
         let fixture = try AskTestFixture(localOnly: true)

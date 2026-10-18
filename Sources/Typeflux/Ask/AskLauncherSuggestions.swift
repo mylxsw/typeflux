@@ -1,9 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// A starting point the workspace offers while its composer is empty, and the
-/// `/` palette's prompts. The launcher builds its own from what the user is
-/// looking at (`AskLauncherHome`).
+/// Prompts available in the workspace's `/` palette. The launcher builds its
+/// own home from what the user is looking at (`AskLauncherHome`).
 struct AskSuggestion: Equatable, Identifiable {
     var key: String
     var systemImage: String

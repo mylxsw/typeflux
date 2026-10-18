@@ -27,15 +27,10 @@ enum AskClassic {
         light: NSColor(srgbRed: 0.953, green: 0.957, blue: 0.965, alpha: 1),
         dark: NSColor(srgbRed: 0.149, green: 0.149, blue: 0.149, alpha: 1)
     )
-    /// The composer and the empty state's cards, raised off the canvas.
+    /// The composer, raised off the canvas.
     static let card = StudioTheme.dynamic(
         light: NSColor(srgbRed: 1, green: 1, blue: 1, alpha: 1),
         dark: NSColor(srgbRed: 0.165, green: 0.165, blue: 0.165, alpha: 1)
-    )
-    /// A card under the pointer.
-    static let cardHover = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0.973, green: 0.973, blue: 0.980, alpha: 1),
-        dark: NSColor(srgbRed: 0.200, green: 0.200, blue: 0.200, alpha: 1)
     )
     /// Edges of cards and fields: one firmer step than the glass hairline,
     /// because nothing else (no rim light, no shadow) separates them.
@@ -64,7 +59,6 @@ struct AskStyleMetrics: Equatable {
     var searchFieldCorner: CGFloat
     /// The history filter's track; its thumb is 2pt tighter.
     var filterCorner: CGFloat
-    var suggestionCorner: CGFloat
     var composerCorner: CGFloat
     var paletteCorner: CGFloat
     var menuCorner: CGFloat
@@ -77,7 +71,7 @@ struct AskStyleMetrics: Equatable {
     static let liquidGlass = AskStyleMetrics(
         sidebarRowHeight: 38, sidebarRowCorner: AskMetrics.sidebarRowCorner,
         searchFieldHeight: 34, searchFieldCorner: 17, filterCorner: 9,
-        suggestionCorner: 18, composerCorner: 28, paletteCorner: AskMetrics.paletteCorner,
+        composerCorner: 28, paletteCorner: AskMetrics.paletteCorner,
         menuCorner: 18, hoverCardCorner: 14, menuRowCorner: 10,
         headerChipHeight: AskMetrics.headerCapsuleHeight
     )
@@ -85,7 +79,7 @@ struct AskStyleMetrics: Equatable {
     static let classic = AskStyleMetrics(
         sidebarRowHeight: 32, sidebarRowCorner: 6,
         searchFieldHeight: 28, searchFieldCorner: 7, filterCorner: 7,
-        suggestionCorner: 10, composerCorner: 12, paletteCorner: 12,
+        composerCorner: 12, paletteCorner: 12,
         menuCorner: 10, hoverCardCorner: 8, menuRowCorner: 4,
         headerChipHeight: 24
     )

@@ -878,12 +878,9 @@ struct AskConversationView: View {
                     if model.isTemporaryComposer(launcher: false) {
                         AskTemporaryEmptyHint().padding(.top, layout.isShort ? 4 : 12)
                     }
-                    suggestions
-                        .frame(maxWidth: AskMetrics.suggestionsMaxWidth)
-                        .padding(.top, layout.isShort ? 4 : 26)
                     if hasStatus {
                         statusColumn
-                            .frame(maxWidth: AskMetrics.suggestionsMaxWidth)
+                            .frame(maxWidth: AskMetrics.transcriptMaxWidth)
                             .padding(.top, 20)
                     }
                 }
@@ -897,49 +894,9 @@ struct AskConversationView: View {
         }
     }
 
-    private var suggestions: some View {
-        let arrangement = layout.compactContent
-            ? AnyLayout(VStackLayout(spacing: layout.isVeryShort ? 4 : 8))
-            : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
-        return arrangement {
-            suggestion("ask.suggest.screen", systemImage: "display", tint: AskTheme.accent, shortcut: "1",
-                       screenshot: true)
-            suggestion("ask.suggest.selection", systemImage: "character.bubble", tint: AskTheme.accent,
-                       shortcut: "2", screenshot: false)
-            suggestion("ask.suggest.page", systemImage: "globe", tint: AskTheme.accent, shortcut: "3",
-                       screenshot: false)
-        }
-    }
-
     /// Summon and voice shortcuts, read from the configured hotkeys.
     private var emptyHint: some View {
         AskShortcutHint(settings: model.modelLibrary.settings)
-    }
-
-    /// The caption used to sit at the trailing edge in the faintest grey in the
-    /// window, where it read as a disabled tag. It belongs under its own title.
-    /// This is a hotkey-summoned tool, so each row carries a real shortcut;
-    /// Command-digit rather than Option-digit, which types a character.
-    /// `key` names the title; its caption lives under `key + ".caption"`.
-    /// The screenshot suggestion follows the model: it names the vision model a
-    /// local draft moves to, or says why it cannot run and links to model settings.
-    private func suggestion(_ key: String, systemImage: String, tint: Color,
-                            shortcut: String, screenshot: Bool) -> some View {
-        let title = L(key)
-        let state = screenshot ? model.screenshotSuggestion(launcher: false) : .ready
-        let caption = state.caption(default: L(key + ".caption"))
-        let addsModel = state == .needsVisionModel
-        return AskSuggestionCard(title: title, caption: caption, systemImage: systemImage, tint: tint,
-                                 shortcut: shortcut, compact: layout.compactContent || layout.isShort,
-                                 short: layout.isShort, dimmed: !state.enabled,
-                                 captionAction: addsModel ? L("ask.vision.add") : nil) {
-            if addsModel { model.onOpenSettings?(.models); return }
-            model.draft.text = title
-            if screenshot { model.attachScreenshotForSuggestion(launcher: false) }
-        }
-        .keyboardShortcut(KeyEquivalent(Character(shortcut)), modifiers: .command)
-        .disabled(!state.enabled && !addsModel)
-        .help((addsModel ? L("ask.vision.addHelp") : caption) + " · ⌘" + shortcut)
     }
 
     /// Conversation events: they read in the transcript after the answer they
@@ -1543,90 +1500,6 @@ private struct AskTranscriptFrames: PreferenceKey {
     static let defaultValue: [String: CGRect] = [:]
     static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
         value.merge(nextValue(), uniquingKeysWith: { _, new in new })
-    }
-}
-
-/// An empty-state suggestion: one of three content cards in a row. Hover lifts
-/// it and fills its icon tile, so the starting points read as buttons.
-private struct AskSuggestionCard: View {
-    let title: String
-    let caption: String
-    let systemImage: String
-    let tint: Color
-    let shortcut: String
-    var compact = false
-    var short = false
-    /// Shown as unavailable while still clickable, e.g. to open model settings.
-    var dimmed = false
-    /// A link after the caption, such as "Add".
-    var captionAction: String?
-    var action: () -> Void
-    @State private var hovering = false
-    @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.interfaceStyle) private var style
-    private var available: Bool { isEnabled && !dimmed }
-
-    static func corner(style: InterfaceStyle) -> CGFloat { style.ask.suggestionCorner }
-
-    var body: some View {
-        Button(action: action) {
-            Group {
-                if compact {
-                    HStack(spacing: 10) {
-                        Image(systemName: systemImage)
-                            .foregroundStyle(available ? tint : StudioTheme.textTertiary)
-                            .frame(width: 24, height: 24)
-                            .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 7))
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(title).font(.system(size: 12.5, weight: .medium)).lineLimit(1)
-                            if !short {
-                                Text(captionAction.map { caption + " · " + $0 } ?? caption)
-                                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
-                            }
-                        }
-                        Spacer(minLength: 0)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, short ? 3 : 9)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                } else {
-                    VStack(alignment: .leading, spacing: 10) {
-                        // The shortcut lives in the tooltip; the card face matches the design board.
-                        let iconTint = available ? tint : StudioTheme.textTertiary
-                        Image(systemName: systemImage).font(.system(size: 14))
-                            .foregroundStyle(hovering && available ? Color.white : iconTint)
-                            .frame(width: 30, height: 30)
-                            .background(hovering && available ? iconTint : iconTint.opacity(0.14),
-                                        in: RoundedRectangle(cornerRadius: style.usesGlass ? 10 : 7, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: style.usesGlass ? 10 : 7, style: .continuous)
-                                .strokeBorder(iconTint.opacity(0.35), lineWidth: 0.5))
-                        Text(title).font(.system(size: 13.5, weight: .semibold))
-                            .foregroundStyle(available ? StudioTheme.textPrimary : StudioTheme.textTertiary)
-                            .lineLimit(2)
-                            .fixedSize(horizontal: false, vertical: true)
-                        (Text(caption).foregroundColor(StudioTheme.textTertiary)
-                            + Text(captionAction.map { " · " + $0 } ?? "")
-                            .fontWeight(.semibold).foregroundColor(AskTheme.accentText))
-                            .font(.system(size: 11.5)).lineLimit(1)
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.top, 14)
-                    .padding(.bottom, 13)
-                    .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
-                }
-            }
-            .askContentCard(corner: Self.corner(style: style),
-                            opaqueFill: style.usesGlass ? AskTheme.composerSurface
-                                : (hovering && available ? AskClassic.cardHover : AskClassic.card),
-                            elevatedInLight: false)
-            .contentShape(RoundedRectangle(cornerRadius: Self.corner(style: style), style: .continuous))
-            .opacity(available ? 1 : 0.7)
-            .animation(.easeOut(duration: 0.18), value: hovering)
-        }
-        .buttonStyle(AskLiftingCardStyle())
-        .onHover { hovering = isEnabled && $0 }
-        .accessibilityLabel(title)
-        .accessibilityHint(caption)
     }
 }
 

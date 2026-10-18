@@ -68,9 +68,7 @@ struct AskMotionEffectsTests {
         }
     }
 
-    @Test func cardsLiftAndGiveWayGently() {
-        #expect(AskLiftingCardStyle.hoverLift > 0 && AskLiftingCardStyle.hoverLift <= 4)
-        #expect(AskLiftingCardStyle.pressedScale < 1 && AskLiftingCardStyle.pressedScale > 0.9)
+    @Test func shimmerHasPositiveDuration() {
         #expect(AskShimmer.duration > 0)
     }
 }
