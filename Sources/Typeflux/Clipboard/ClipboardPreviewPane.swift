@@ -7,6 +7,8 @@ struct ClipboardPreviewPane: View {
 
     let entry: ClipboardEntry?
     let isMissing: Bool
+    /// The shelf shows the pane wider, in its own window.
+    var width: CGFloat = Self.width
 
     var body: some View {
         ClipboardMediaValue(request: isMissing ? nil : entry.flatMap(ClipboardMediaInfoProvider.Request.info)) { value in
@@ -25,7 +27,7 @@ struct ClipboardPreviewPane: View {
             }
         }
         .padding(14)
-        .frame(width: Self.width)
+        .frame(width: width)
         .frame(maxHeight: .infinity)
 
     }

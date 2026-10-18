@@ -23,6 +23,26 @@ enum ClipboardPanelPlacement {
         return AskLauncherPlacement.clamped(frame, screen: screen)
     }
 
+    /// The shelf's inset from the screen's usable edges.
+    static let shelfMargin: CGFloat = 8
+
+    /// The shelf spans the bottom of the usable screen, above the Dock, inset on three sides.
+    static func shelfFrame(height: CGFloat, screen: NSRect) -> NSRect {
+        NSRect(
+            x: screen.minX + shelfMargin, y: screen.minY + shelfMargin,
+            width: max(0, screen.width - shelfMargin * 2), height: min(height, max(0, screen.height - shelfMargin * 2))
+        )
+    }
+
+    /// The shelf's preview: centred over the selected card, just above the shelf, inside the screen.
+    static func shelfPreviewFrame(size: NSSize, shelf: NSRect, cardMidX: CGFloat, screen: NSRect) -> NSRect {
+        let minX = screen.minX + shelfMargin
+        let maxX = max(minX, screen.maxX - shelfMargin - size.width)
+        let left = min(max(shelf.minX + cardMidX - size.width / 2, minX), maxX).rounded()
+        let top = min(shelf.maxY + shelfMargin + size.height, screen.maxY - shelfMargin)
+        return NSRect(x: left, y: top - size.height, width: size.width, height: size.height)
+    }
+
     /// The frame for the position chosen in settings: the launcher's top edge, the middle of the
     /// screen, or centered on the mouse pointer.
     static func frame(

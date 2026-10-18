@@ -60,6 +60,22 @@ extension SettingsStore {
         set { defaults.set(newValue, forKey: "clipboard.selectsFirstUnpinned") }
     }
 
+    /// Unset for people who used the clipboard before the shelf existed: they keep the list.
+    /// New users get the shelf when onboarding finishes (`applyNewUserClipboardDefaults`).
+    var clipboardPanelStyle: ClipboardPanelStyle {
+        get {
+            defaults.string(forKey: "clipboard.panelStyle").flatMap(ClipboardPanelStyle.init(rawValue:)) ?? .list
+        }
+        set { defaults.set(newValue.rawValue, forKey: "clipboard.panelStyle") }
+    }
+
+    /// Called once onboarding completes; a style chosen earlier is kept.
+    func applyNewUserClipboardDefaults() {
+        guard defaults.object(forKey: "clipboard.panelStyle") == nil else { return }
+        clipboardPanelStyle = .shelf
+    }
+
+    /// Only used by the list style; the shelf always sits at the bottom of the screen.
     var clipboardPanelPosition: ClipboardPanelPosition {
         get {
             defaults.string(forKey: "clipboard.panelPosition").flatMap(ClipboardPanelPosition.init(rawValue:))

@@ -22,7 +22,6 @@ struct ClipboardPanelView: View {
     @Environment(\.interfaceStyle) private var environmentStyle
     @ObservedObject var layout = ClipboardPanelLayout()
     @FocusState private var searchFocused: Bool
-    @Namespace private var tabNamespace
     @State private var hoveredIndex: Int?
     @State private var showingNumberHints = false
     @State private var rowFrames = ClipboardRowFrames()
@@ -132,43 +131,12 @@ struct ClipboardPanelView: View {
                 .buttonStyle(.plain)
                 .help(L("clipboard.search.clear"))
             }
-            categoryTabs
+            ClipboardCategoryTabs(model: model) { searchFocused = true }
             ClipboardPanelToolbar(model: model)
         }
         .padding(.leading, 18)
         .padding(.trailing, 10)
         .frame(height: 54)
-    }
-
-    private var categoryTabs: some View {
-        HStack(spacing: 0) {
-            ForEach(ClipboardCategory.allCases) { category in
-                let selected = model.category == category
-                Text(category.title)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background {
-                        if selected {
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(Color.primary.opacity(0.1))
-                                .shadow(color: .black.opacity(0.12), radius: 1, y: 0.5)
-                                .matchedGeometryEffect(id: "tab", in: tabNamespace)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) { model.category = category }
-                        searchFocused = true
-                    }
-            }
-        }
-        .padding(2)
-        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.05)))
-        .animation(.spring(response: 0.25, dampingFraction: 0.85), value: model.category)
-        // The search field shrinks before the tab titles wrap.
-        .fixedSize()
     }
 
     // MARK: - List

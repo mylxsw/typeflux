@@ -1,9 +1,11 @@
 import SwiftUI
 
-/// Vertical extents of the clipboard rows SwiftUI has built, in the list viewport's coordinates.
-/// A reference type so updating it while scrolling does not redraw the panel.
+/// Extents along the scroll axis of the rows (or shelf cards) SwiftUI has built, in the viewport's
+/// coordinates: vertical in the list, horizontal on the shelf. A reference type so updating it
+/// while scrolling does not redraw the panel.
 final class ClipboardRowFrames {
     var frames: [Int: ClosedRange<CGFloat>] = [:]
+    /// The viewport's length along the scroll axis (the shelf stores its width here).
     var viewportHeight: CGFloat = 0
 }
 

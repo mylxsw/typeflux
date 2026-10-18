@@ -1,6 +1,6 @@
 # 剪贴板：底部卡片架（Shelf）
 
-> 状态：设计稿，待确认（GUL-421）。可交互设计稿：`docs/design/clipboard-shelf.html`（浏览器直接打开；`⇧⌘V` 呼出，可切换深浅色、减少动态效果、空状态）。截图在 `docs/design/clipboard-shelf/`。
+> 状态：已确认并实现（GUL-421）。实现与设计稿的差异见 §8。可交互设计稿：`docs/design/clipboard-shelf.html`（浏览器直接打开；`⇧⌘V` 呼出，可切换深浅色、减少动态效果、空状态）。截图在 `docs/design/clipboard-shelf/`。
 
 ## 1. 目标
 
@@ -11,7 +11,7 @@
 | 项 | 规格 |
 |----|------|
 | 位置 | 鼠标所在屏幕的 `visibleFrame` 底部（Dock 之上），左右和底部各留 8pt；宽度铺满，高 348pt |
-| 出现 / 收起 | 自下而上滑出 0.26s（带轻微回弹），收起反向。开启「减少动态效果」时只做淡入淡出 |
+| 出现 / 收起 | 从最终位置下方 28pt 处上滑并淡入（临界阻尼弹簧，与启动器同一个动画驱动）。收起时立即隐藏，不做退场动画，以免拖慢粘贴前的焦点归还。开启「减少动态效果」时直接出现 |
 | 材质 | 沿用 `AskGlassBackground` 的玻璃材质和 `AskTheme.floatingBorder`，圆角 18pt |
 | 焦点 | 和现在一样是 non-activating key panel：不抢目标应用的焦点，粘贴后收起，内容插入原光标位置。点击面板外部或切换应用即收起 |
 
@@ -51,8 +51,8 @@
 | 粘贴 | `↩` | 双击 |
 | 粘贴为纯文本 / 文件路径 | `⌘↩` | 右键菜单 |
 | 快速粘贴前 9 张 | `⌘1`–`⌘9`（按住 `⌘` 时卡片底部换成编号） | — |
-| 预览 | `Space`（搜索框为空时）/ `⌘Y` | 右键 › 快速查看 |
-| 编辑后粘贴 | `⌘E`，在预览浮层里编辑，`⌘↩` 粘贴，`Esc` 取消 | 右键菜单 |
+| 预览 | `↑` / `↓`，`Space`（搜索框为空时）；`⌘Y` 系统快速查看 | 右键 › 快速查看 |
+| 编辑后粘贴 | `⌘E`，在编辑浮层里编辑，`⌘↩` 粘贴，`Esc` 取消 | 右键菜单 |
 | 固定 / 取消固定 | `⌘P`（选中跟随卡片移动到新分组） | 右键菜单 |
 | 删除 | `⌘⌫`（搜索框为空时）；片段和批量删除先确认 | 右键菜单 |
 | 切换分类 | `Tab` / `⇧Tab` | 点分类 |
@@ -67,15 +67,25 @@
 
 设置 › 剪贴板 › 面板 新增「面板样式」：**卡片架（屏幕底部）** / **列表**。选「列表」时，现有的「面板位置」（启动器 / 屏幕中央 / 鼠标位置）才生效。
 
-## 6. 实现落点（确认后再做）
+## 6. 实现
 
-- `ClipboardPanelStyle` 枚举 + `SettingsStore+Clipboard` 持久化。
-- `ClipboardPanelPlacement` 增加 `shelfFrame(screen:)`（visibleFrame 底部、内缩 8pt）。
-- 新视图 `ClipboardShelfView` / `ClipboardShelfCard`，复用 `ClipboardPanelModel`（数据、筛选、动作、确认、编辑后粘贴、片段编辑都不变）；`ClipboardPanelKeyCommand` 按样式切换方向键含义。
-- `ClipboardPanelController` 按样式选择视图、frame 和出现动画。
-- 卡片头部颜色：`ClipboardAppIconProvider` 增加主色提取并缓存。
+- `ClipboardPanelStyle`（`shelf` / `list`）存在 `clipboard.panelStyle`；`SettingsStore.applyNewUserClipboardDefaults()` 在引导完成时为新用户写入 `shelf`。
+- `ClipboardPanelPlacement.shelfFrame` / `shelfPreviewFrame`：visibleFrame 底部内缩 8pt；预览居中于选中卡片上方，夹在屏幕内。
+- `ClipboardShelfView`、`ClipboardShelfCard`、`ClipboardShelfPreview` 复用 `ClipboardPanelModel`（数据、筛选、动作、确认、编辑后粘贴、片段编辑都不变）。`ClipboardCategoryTabs`、`ClipboardEntryContextMenu` 从列表面板中抽出，两种样式共用。
+- `ClipboardPanelKeyCommand.command(..., style:)` 按样式决定方向键含义；模型新增 `moveToFirst` / `moveToLast` / `recentSourceApps(limit:)`。
+- `ClipboardPanelController` 按样式选择视图；卡片架的窗口逻辑在 `ClipboardShelfPresenter`：定位、滑入动画、编辑时增高，以及跟随选中卡片的预览子窗口（`ClipboardShelfPreviewWindow`，不抢焦点）。
+- `ClipboardAppAccent`：把应用图标缩到 16×16，取饱和像素的平均色，亮度上限 0.72 以保证白字可读，按 bundle ID 缓存；灰色图标用中性灰。
 
-## 7. 待确认
+## 7. 决定
 
-1. 默认样式：建议新用户默认「卡片架」，已有用户保持「列表」，在设置里可以切换。
-2. 是否需要「把卡片拖到其他应用」（Paste 支持）。建议放到第二期，第一期先做键盘和点击。
+1. 默认样式：新用户（完成引导时尚未选择过）默认「卡片架」，已有用户保持「列表」，可在设置里切换。
+2. 「把卡片拖到其他应用」放到第二期。
+
+## 8. 与设计稿的差异
+
+- **预览**：`↑` 打开、`↓` 关闭、`Space`（搜索为空时）或 `⌘\` 切换；`⌘Y` 仍是系统快速查看。预览沿用列表面板的预览内容（`ClipboardPreviewPane`，加宽到 520pt），在单独的子窗口里显示。编辑后粘贴直接用列表面板已有的编辑浮层。
+- **编辑浮层**：片段编辑器和编辑后粘贴比卡片架高，打开时卡片架向上长到 470pt，关闭后恢复。
+- **滚轮**：鼠标滚轮每格移动一张卡片（选中卡片滚入视野）；触控板横向滑动直接滚动卡片。
+- **链接卡片**：没有网页预览图（剪贴板不联网抓取），显示链接图标、域名和完整 URL。
+- **来源应用按钮**：最多 8 个，按面板顺序（已固定、再按时间）取不重复的应用。
+

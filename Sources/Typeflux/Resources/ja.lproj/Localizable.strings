@@ -487,6 +487,13 @@
 "clipboard.settings.position.launcher" = "ランチャーと同じ";
 "clipboard.settings.position.center" = "画面中央";
 "clipboard.settings.position.mouse" = "ポインタの位置";
+"clipboard.settings.style" = "パネルのスタイル";
+"clipboard.settings.style.shelf" = "画面下部のカード";
+"clipboard.settings.style.list" = "リスト";
+"clipboard.shelf.showPreview" = "プレビューを表示";
+"clipboard.shelf.hidePreview" = "プレビューを隠す";
+"clipboard.shelf.hint.preview" = "プレビュー";
+"clipboard.shelf.hint.quickPaste" = "クイックペースト";
 "clipboard.action.editBeforePaste" = "編集してからペースト";
 "clipboard.action.showOnlyApp" = "%@ のみ表示";
 "clipboard.action.deleteAllFromApp" = "%@ の項目をすべて削除…";

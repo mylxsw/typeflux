@@ -3,6 +3,8 @@ import SwiftUI
 /// The more menu, right of the clipboard panel's type tabs.
 struct ClipboardPanelToolbar: View {
     @ObservedObject var model: ClipboardPanelModel
+    /// The shelf previews in a floating window rather than a side pane.
+    var style: ClipboardPanelStyle = .list
 
     var body: some View {
         moreMenu
@@ -13,7 +15,7 @@ struct ClipboardPanelToolbar: View {
             Button(L(model.isRecordingPaused ? "clipboard.toolbar.resume" : "clipboard.toolbar.pause")) {
                 model.send(.togglePause)
             }
-            Button(L(model.showsPreview ? "clipboard.menu.hidePreview" : "clipboard.menu.showPreview")) {
+            Button(L(previewTitleKey)) {
                 model.togglePreview()
             }
             Divider()
@@ -32,6 +34,13 @@ struct ClipboardPanelToolbar: View {
         .fixedSize()
         .help(L("clipboard.toolbar.more"))
         .accessibilityLabel(L("clipboard.toolbar.more"))
+    }
+
+    private var previewTitleKey: String {
+        switch style {
+        case .list: model.showsPreview ? "clipboard.menu.hidePreview" : "clipboard.menu.showPreview"
+        case .shelf: model.showsPreview ? "clipboard.shelf.hidePreview" : "clipboard.shelf.showPreview"
+        }
     }
 }
 
@@ -145,5 +154,44 @@ struct ClipboardConfirmationBar: View {
         .shadow(color: .black.opacity(0.2), radius: 10, y: 4)
         .padding(.horizontal, 12)
         .padding(.bottom, 48)
+    }
+}
+
+/// The clipboard / transcription / snippet tabs, shared by the list panel and the shelf.
+struct ClipboardCategoryTabs: View {
+    @ObservedObject var model: ClipboardPanelModel
+    /// Called after a tab is clicked, to hand focus back to the search field.
+    var onSelect: () -> Void = {}
+    @Namespace private var tabNamespace
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(ClipboardCategory.allCases) { category in
+                let selected = model.category == category
+                Text(category.title)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background {
+                        if selected {
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(Color.primary.opacity(0.1))
+                                .shadow(color: .black.opacity(0.12), radius: 1, y: 0.5)
+                                .matchedGeometryEffect(id: "tab", in: tabNamespace)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) { model.category = category }
+                        onSelect()
+                    }
+            }
+        }
+        .padding(2)
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.05)))
+        .animation(.spring(response: 0.25, dampingFraction: 0.85), value: model.category)
+        // The search field shrinks before the tab titles wrap.
+        .fixedSize()
     }
 }
