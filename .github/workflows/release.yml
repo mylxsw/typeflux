@@ -17,8 +17,27 @@ permissions:
   contents: read
 
 jobs:
+  verify-apple-silicon-build:
+    runs-on: typeflux-macos-vm
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Add Homebrew tools to PATH
+        run: echo /opt/homebrew/bin >> "$GITHUB_PATH"
+
+      - name: Compile native Apple Silicon release
+        run: |
+          set -euo pipefail
+          test "$RUNNER_ARCH" = ARM64
+          swift build -c release --arch arm64
+          bin_dir="$(swift build -c release --arch arm64 --show-bin-path)"
+          test -f "$bin_dir/Typeflux"
+          lipo -archs "$bin_dir/Typeflux" | grep -qw arm64
+
   build-signed-macos-app:
-    runs-on: ${{ matrix.runner }}
+    runs-on: macos-latest
     timeout-minutes: 180
     strategy:
       fail-fast: false
@@ -26,11 +45,9 @@ jobs:
         include:
           - release_arch: arm64
             package_arch: apple-silicon
-            runner: typeflux-macos-vm
             release_script: ./scripts/release_notarize.sh
           - release_arch: x86_64
             package_arch: intel
-            runner: macos-latest
             release_script: ./scripts/release_intel.sh
     env:
       APP_NAME: Typeflux
@@ -45,17 +62,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Add Homebrew tools to self-hosted PATH
-        if: runner.environment == 'self-hosted'
-        run: |
-          echo /opt/homebrew/bin >> "$GITHUB_PATH"
-          for tool_dir in /opt/homebrew/Cellar/create-dmg/*/bin; do
-            if [[ -x "$tool_dir/create-dmg" ]]; then
-              echo "$tool_dir" >> "$GITHUB_PATH"
-              break
-            fi
-          done
 
       - name: Configure temporary paths
         run: |
@@ -74,21 +80,12 @@ jobs:
             typeflux-bundled-models-${{ runner.os }}-
 
       - name: Install packaging tools
-        if: runner.environment == 'github-hosted'
         run: brew install create-dmg cmake
-
-      - name: Verify preinstalled packaging tools
-        if: runner.environment == 'self-hosted'
-        run: |
-          test "$RUNNER_ARCH" = ARM64
-          create-dmg --version
-          cmake --version
 
       - name: Import Developer ID certificate
         env:
           APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          RUNNER_ENVIRONMENT: ${{ runner.environment }}
         run: |
           set -euo pipefail
 
@@ -111,16 +108,6 @@ jobs:
             -T /usr/bin/productbuild \
             -f pkcs12 \
             -k "$KEYCHAIN_PATH"
-
-          if [[ "$RUNNER_ENVIRONMENT" == self-hosted ]]; then
-            for certificate in DeveloperIDCA.cer DeveloperIDG2CA.cer; do
-              certificate_path="$RUNNER_TEMP/$certificate"
-              curl --fail --silent --show-error --location --retry 3 \
-                "https://www.apple.com/certificateauthority/$certificate" \
-                --output "$certificate_path"
-              security import "$certificate_path" -k "$KEYCHAIN_PATH"
-            done
-          fi
 
           if ! security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -q "Developer ID Application"; then
             echo "Error: no Developer ID Application signing identity was imported into the temporary keychain."
@@ -237,10 +224,9 @@ jobs:
 
           security delete-keychain "$KEYCHAIN_PATH" || true
           rm -f "$APPLE_CERTIFICATE_PATH"
-          rm -f "$RUNNER_TEMP/DeveloperIDCA.cer" "$RUNNER_TEMP/DeveloperIDG2CA.cer"
 
   publish-release-artifacts:
-    needs: build-signed-macos-app
+    needs: [verify-apple-silicon-build, build-signed-macos-app]
     runs-on: macos-latest
     timeout-minutes: 45
     permissions:
