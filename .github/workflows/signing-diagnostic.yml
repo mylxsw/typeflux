@@ -1,0 +1,56 @@
+name: Diagnose self-hosted signing
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: typeflux-macos-vm
+    timeout-minutes: 30
+    steps:
+      - name: Inspect temporary signing identity
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          keychain="$RUNNER_TEMP/signing-diagnostic.keychain-db"
+          package="$RUNNER_TEMP/signing-diagnostic.p12"
+          cleanup() {
+            security delete-keychain "$keychain" >/dev/null 2>&1 || true
+            rm -f "$package" "$RUNNER_TEMP/signing-leaf.pem" \
+              "$RUNNER_TEMP/DeveloperIDCA.cer" "$RUNNER_TEMP/DeveloperIDG2CA.cer" \
+              "$RUNNER_TEMP/verify-cert.log"
+          }
+          trap cleanup EXIT
+
+          echo "Guest time: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "$APPLE_CERTIFICATE_BASE64" | base64 --decode > "$package"
+          openssl pkcs12 -in "$package" -clcerts -nokeys \
+            -passin env:APPLE_CERTIFICATE_PASSWORD -out "$RUNNER_TEMP/signing-leaf.pem"
+          openssl x509 -in "$RUNNER_TEMP/signing-leaf.pem" -noout -dates
+
+          password="$(openssl rand -hex 32)"
+          security create-keychain -p "$password" "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          security import "$package" -P "$APPLE_CERTIFICATE_PASSWORD" -A -f pkcs12 -k "$keychain"
+          for certificate in DeveloperIDCA.cer DeveloperIDG2CA.cer; do
+            curl --fail --silent --show-error --location \
+              "https://www.apple.com/certificateauthority/$certificate" \
+              --output "$RUNNER_TEMP/$certificate"
+            security import "$RUNNER_TEMP/$certificate" -k "$keychain"
+          done
+
+          echo "Imported certificates: $(security find-certificate -a -p "$keychain" | grep -c 'BEGIN CERTIFICATE')"
+          security find-identity -p codesigning "$keychain" | tail -1
+          security find-identity -v -p codesigning "$keychain" | tail -1
+          set +e
+          security verify-cert -c "$RUNNER_TEMP/signing-leaf.pem" -p codeSign \
+            -k "$keychain" -L -v > "$RUNNER_TEMP/verify-cert.log" 2>&1
+          result=$?
+          set -e
+          echo "Offline code-signing trust check exit: $result"
+          grep -Ei 'error|status|failed|result' "$RUNNER_TEMP/verify-cert.log" | tail -12 || true
