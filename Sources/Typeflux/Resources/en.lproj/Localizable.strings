@@ -5992,3 +5992,15 @@
 "ask.plugin.apps.noMatch" = "No matching applications";
 "ask.plugin.apps.open" = "Open app";
 "ask.settings.keywords.kind.apps.hint" = "Searches installed apps only";
+"ask.appContinue.title" = "Continue work";
+"ask.appContinue.back" = "Back to applications";
+"ask.appContinue.openApp" = "Open application";
+"ask.appContinue.loading" = "Loading open tabs…";
+"ask.appContinue.tabs" = "Open tabs";
+"ask.appContinue.files" = "Opened from Typeflux";
+"ask.appContinue.empty" = "No items to continue yet";
+"ask.appContinue.noMatch" = "No matching items";
+"ask.appContinue.permission" = "Couldn't read tabs. Check Automation access in System Settings.";
+"ask.appContinue.hint" = "↩ Open · Esc Back";
+"ask.appContinue.browseHint" = "→ Continue work";
+"ask.appContinue.filter" = "Search this application's items";

@@ -5992,3 +5992,15 @@
 "ask.plugin.apps.noMatch" = "没有匹配的应用";
 "ask.plugin.apps.open" = "打开应用";
 "ask.settings.keywords.kind.apps.hint" = "仅搜索已安装的应用";
+"ask.appContinue.title" = "继续工作";
+"ask.appContinue.back" = "返回应用列表";
+"ask.appContinue.openApp" = "打开应用";
+"ask.appContinue.loading" = "正在读取打开的标签页…";
+"ask.appContinue.tabs" = "当前标签页";
+"ask.appContinue.files" = "从 Typeflux 打开过";
+"ask.appContinue.empty" = "暂时没有可继续的项目";
+"ask.appContinue.noMatch" = "没有匹配的项目";
+"ask.appContinue.permission" = "无法读取标签页，请检查系统设置中的自动化权限。";
+"ask.appContinue.hint" = "↩ 打开 · Esc 返回";
+"ask.appContinue.browseHint" = "→ 继续工作";
+"ask.appContinue.filter" = "搜索这个应用的项目";

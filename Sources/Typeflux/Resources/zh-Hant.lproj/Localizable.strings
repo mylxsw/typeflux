@@ -5912,3 +5912,15 @@
 "ask.plugin.apps.noMatch" = "沒有符合的應用程式";
 "ask.plugin.apps.open" = "開啟應用程式";
 "ask.settings.keywords.kind.apps.hint" = "只搜尋已安裝的應用程式";
+"ask.appContinue.title" = "繼續工作";
+"ask.appContinue.back" = "返回應用程式列表";
+"ask.appContinue.openApp" = "打開應用程式";
+"ask.appContinue.loading" = "正在讀取已開啟的分頁…";
+"ask.appContinue.tabs" = "目前分頁";
+"ask.appContinue.files" = "從 Typeflux 打開過";
+"ask.appContinue.empty" = "暫時沒有可繼續的項目";
+"ask.appContinue.noMatch" = "沒有符合的項目";
+"ask.appContinue.permission" = "無法讀取分頁，請檢查系統設定中的自動化權限。";
+"ask.appContinue.hint" = "↩ 打開 · Esc 返回";
+"ask.appContinue.browseHint" = "→ 繼續工作";
+"ask.appContinue.filter" = "搜尋這個應用程式的項目";

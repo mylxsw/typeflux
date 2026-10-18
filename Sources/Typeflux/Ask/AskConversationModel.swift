@@ -44,6 +44,7 @@ final class AskConversationModel: ObservableObject {
     var systemCommandRunner = AskSystemCommandRunner()
     var confirmSystemCommand: (AskSystemCommand) -> Bool = AskSystemCommandConfirmation.confirm
     var appIndex: any AskAppSearching = AskAppIndex.shared
+    lazy var appContinueHistory = AskAppContinueHistory(defaults: modelLibrary.settings.defaults)
     var launcherHomeFallbackKeywordIDs: [String] = []
     lazy var launcherInputHistory = AskLauncherInputHistoryStore(settings: modelLibrary.settings)
     @Published var launcherHistoryMode = false
