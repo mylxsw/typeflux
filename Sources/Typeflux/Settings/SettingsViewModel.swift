@@ -287,6 +287,7 @@ final class StudioViewModel: ObservableObject {
     private var personaSelectionObserver: NSObjectProtocol?
     private var personaStoreObserver: NSObjectProtocol?
     private var hotkeySettingsObserver: NSObjectProtocol?
+    private var preferredMicrophoneObserver: NSObjectProtocol?
     private var appearanceObserver: NSObjectProtocol?
     private var appIconObserver: NSObjectProtocol?
     private var vocabularyObserver: NSObjectProtocol?
@@ -523,6 +524,17 @@ final class StudioViewModel: ObservableObject {
                 self?.syncHotkeysFromStore()
             }
         }
+        preferredMicrophoneObserver = NotificationCenter.default.addObserver(
+            forName: .preferredMicrophoneDidChange,
+            object: settingsStore,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                availableMicrophones = audioDeviceManager.availableInputDevices()
+                preferredMicrophoneID = settingsStore.preferredMicrophoneID
+            }
+        }
         appearanceObserver = NotificationCenter.default.addObserver(
             forName: .appearanceModeDidChange,
             object: settingsStore,
@@ -596,6 +608,9 @@ final class StudioViewModel: ObservableObject {
         }
         if let hotkeySettingsObserver {
             NotificationCenter.default.removeObserver(hotkeySettingsObserver)
+        }
+        if let preferredMicrophoneObserver {
+            NotificationCenter.default.removeObserver(preferredMicrophoneObserver)
         }
         if let appearanceObserver {
             NotificationCenter.default.removeObserver(appearanceObserver)

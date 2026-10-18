@@ -11,6 +11,7 @@ final class StatusBarController: NSObject {
         static let screenshotText = 9006
         static let restorePinnedScreenshots = 9007
         static let closePinnedScreenshots = 9008
+        static let microphone = 9009
     }
 
     private enum MenuValue {
@@ -29,6 +30,7 @@ final class StatusBarController: NSObject {
 
     private let appState: AppStateStore
     private let settingsStore: SettingsStore
+    private let audioDeviceManager: AudioDeviceManaging
     private let historyStore: HistoryStore
     private let wordBookWindow: AskWordBookWindowController?
     private let modelManager: OllamaModelManaging
@@ -73,6 +75,7 @@ final class StatusBarController: NSObject {
         appState: AppStateStore,
         settingsStore: SettingsStore,
         historyStore: HistoryStore,
+        audioDeviceManager: AudioDeviceManaging = AudioDeviceManager(),
         wordBookWindow: AskWordBookWindowController? = nil,
         modelManager: OllamaModelManaging = OllamaLocalModelManager(),
         localModelManager: LocalSTTModelManaging = LocalModelManager(),
@@ -92,6 +95,7 @@ final class StatusBarController: NSObject {
     ) {
         self.appState = appState
         self.settingsStore = settingsStore
+        self.audioDeviceManager = audioDeviceManager
         self.historyStore = historyStore
         self.wordBookWindow = wordBookWindow
         self.modelManager = modelManager
@@ -343,6 +347,10 @@ final class StatusBarController: NSObject {
     private func buildVoiceInputMenu() -> NSMenu {
         let menu = NSMenu(title: L("menu.voiceInput"))
         menu.autoenablesItems = false
+        let microphoneItem = NSMenuItem(title: L("settings.microphone.title"), action: nil, keyEquivalent: "")
+        microphoneItem.tag = MenuTag.microphone
+        microphoneItem.submenu = buildMicrophoneMenu()
+        menu.addItem(microphoneItem)
         let historyItem = NSMenuItem(title: L("menu.transcriptionHistory"), action: nil, keyEquivalent: "")
         historyItem.tag = MenuTag.transcriptionHistory
         historyItem.submenu = buildTranscriptionHistoryMenu()
@@ -358,6 +366,35 @@ final class StatusBarController: NSObject {
             menu.addItem(textTransformationItem)
         }
         return menu
+    }
+
+    private func buildMicrophoneMenu() -> NSMenu {
+        let menu = NSMenu(title: L("settings.microphone.title"))
+        menu.autoenablesItems = false
+        menu.delegate = self
+        populateMicrophoneMenu(menu, includeDevices: false)
+        return menu
+    }
+
+    private func populateMicrophoneMenu(_ menu: NSMenu, includeDevices: Bool = true) {
+        let selectedID = settingsStore.preferredMicrophoneID
+        let automaticItem = makeItem(
+            title: L("settings.microphone.automatic"), action: #selector(selectMicrophoneFromMenu(_:))
+        )
+        automaticItem.representedObject = AudioDeviceManager.automaticDeviceID
+        automaticItem.state = selectedID.isEmpty ? .on : .off
+        menu.addItem(automaticItem)
+
+        guard includeDevices else { return }
+        let devices = audioDeviceManager.availableInputDevices()
+        guard !devices.isEmpty else { return }
+        menu.addItem(NSMenuItem.separator())
+        for device in devices {
+            let item = makeItem(title: device.name, action: #selector(selectMicrophoneFromMenu(_:)))
+            item.representedObject = device.id
+            item.state = device.id == selectedID ? .on : .off
+            menu.addItem(item)
+        }
     }
 
     private func buildTranscriptionHistoryMenu() -> NSMenu {
@@ -646,6 +683,14 @@ final class StatusBarController: NSObject {
         rebuildMenu()
     }
 
+    @objc private func selectMicrophoneFromMenu(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String else { return }
+        guard id.isEmpty || audioDeviceManager.availableInputDevices().contains(where: { $0.id == id }) else {
+            return
+        }
+        settingsStore.preferredMicrophoneID = id
+    }
+
     @objc private func toggleTextTransformation(_: NSMenuItem) {
         guard settingsStore.isTextTransformationAvailable else { return }
         settingsStore.outputOpenCCEnabled.toggle()
@@ -739,6 +784,11 @@ extension StatusBarController: NSMenuDelegate {
         if menu.title == L("menu.personas") {
             menu.removeAllItems()
             populatePersonasMenu(menu)
+        }
+
+        if menu.title == L("settings.microphone.title") {
+            menu.removeAllItems()
+            populateMicrophoneMenu(menu)
         }
 
         if menu.title == L("menu.textTransformation") {

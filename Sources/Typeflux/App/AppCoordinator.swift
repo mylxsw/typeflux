@@ -228,6 +228,7 @@ final class AppCoordinator {
             appState: di.appState,
             settingsStore: di.settingsStore,
             historyStore: di.historyStore,
+            audioDeviceManager: di.audioDeviceManager,
             modelManager: di.ollamaModelManager,
             localModelManager: di.localModelManager,
             notificationService: di.notificationService,
