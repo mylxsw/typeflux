@@ -2,6 +2,8 @@ import Foundation
 
 struct BillingSubscriptionSnapshot: Decodable, Equatable {
     let billingEnabled: Bool
+    let billingMode: String?
+    let autoRenew: Bool?
     let planCode: String?
     let planName: String?
     let status: String?
@@ -15,6 +17,8 @@ struct BillingSubscriptionSnapshot: Decodable, Equatable {
     let periodSource: String?
 
     enum CodingKeys: String, CodingKey {
+        case billingMode = "billing_mode"
+        case autoRenew = "auto_renew"
         case active
         case paid
         case cloudASRAllowed = "cloud_asr_allowed"
@@ -47,9 +51,13 @@ struct BillingSubscriptionSnapshot: Decodable, Equatable {
         paid: Bool? = nil,
         cloudASRAllowed: Bool? = nil,
         periodSource: String? = nil,
-        billingEnabled: Bool = false
+        billingEnabled: Bool = false,
+        billingMode: String? = nil,
+        autoRenew: Bool? = nil
     ) {
         self.billingEnabled = billingEnabled
+        self.billingMode = billingMode
+        self.autoRenew = autoRenew
         self.planCode = planCode
         self.planName = planName
         self.status = status
@@ -98,7 +106,9 @@ struct BillingSubscriptionSnapshot: Decodable, Equatable {
             periodSource: source.decodeIfPresent(String.self, forKey: .periodSource),
             billingEnabled: root.decodeIfPresent(Bool.self, forKey: .billingEnabled)
                 ?? source.decodeIfPresent(Bool.self, forKey: .billingEnabled)
-                ?? false
+                ?? false,
+            billingMode: source.decodeIfPresent(String.self, forKey: .billingMode),
+            autoRenew: source.decodeIfPresent(Bool.self, forKey: .autoRenew)
         )
     }
 
@@ -130,8 +140,18 @@ struct BillingSubscriptionSnapshot: Decodable, Equatable {
             paid: paid,
             cloudASRAllowed: cloudASRAllowed,
             periodSource: periodSource,
-            billingEnabled: false
+            billingEnabled: false,
+            billingMode: billingMode,
+            autoRenew: autoRenew
         )
+    }
+
+    var isPrepaidMembership: Bool {
+        billingMode == "prepaid" || periodSource == "aidea"
+    }
+
+    var renewsAutomatically: Bool {
+        !isPrepaidMembership && (autoRenew ?? !cancelAtPeriodEnd)
     }
 
     var hasPaidSubscription: Bool {
@@ -255,7 +275,7 @@ struct AccountSubscriptionPresentation: Equatable {
             status: statusValue(for: snapshot),
             periodLabelKey: periodLabelKey(for: snapshot),
             period: periodValue(for: snapshot),
-            billingAction: snapshot.hasPaidSubscription ? .manageBilling : .subscribe,
+            billingAction: snapshot.hasPaidSubscription && !snapshot.isPrepaidMembership ? .manageBilling : .subscribe,
             showsSubscriptionSyncAction: snapshot.billingEnabled && !snapshot.hasPaidSubscription
         )
     }
@@ -263,6 +283,9 @@ struct AccountSubscriptionPresentation: Equatable {
     private static func subtitleKey(for snapshot: BillingSubscriptionSnapshot) -> String {
         if snapshot.isFreePlan {
             return "auth.account.subscriptionFreeHint"
+        }
+        if snapshot.isPrepaidMembership {
+            return "auth.account.subscriptionPrepaidHint"
         }
         if snapshot.entitled {
             return "auth.account.subscriptionActiveHint"
@@ -323,7 +346,7 @@ struct AccountSubscriptionPresentation: Equatable {
         if snapshot.isFreePlan {
             return .cycle(start: snapshot.currentPeriodStart, end: periodEnd)
         }
-        if snapshot.cancelAtPeriodEnd {
+        if !snapshot.renewsAutomatically {
             return .endsOn(periodEnd)
         }
         return .renewsOn(periodEnd)

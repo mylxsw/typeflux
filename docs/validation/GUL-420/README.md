@@ -1,0 +1,5 @@
+The account screenshot uses an injected, synthetic prepaid membership and usage fixture. It shows expiry and the web renewal action with no Stripe invoice hint. No real account or payment is pictured.
+
+Focused validation selected billing decoding, account presentation, web/portal routing, sidebar text and HTTP client suites: 57 tests passed. Both `make coverage SUITE='PrepaidMembershipPresentationTests AccountSubscriptionPresentationTests AccountStatusPresentationTests AccountBillingFlowTests BillingAPIServiceTests SidebarAccountCardPresentationTests AccountStatusTextTests'` attempts passed the selected tests, but this host's Swift 6.4 toolchain did not generate its expected codecov directory. Coverage collection therefore failed and changed-code coverage is unavailable. The default build-system attempt took 461.74 seconds; the native build-system retry took 487.13 seconds, including preparation and execution.
+
+`make test SUITE=PrepaidMembershipRenderingTests` passed the additional isolated native rendering case in 106.30 seconds, including preparation and execution. No full suite was run.

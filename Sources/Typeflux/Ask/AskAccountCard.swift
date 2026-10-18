@@ -233,7 +233,7 @@ struct AskAccountCard: View {
                               trailing: L("account.card.profileHint"), external: false, action: onOpenAccount)
             switch presentation.billingLink {
             case .plans:
-                AskAccountLinkRow(symbol: "sparkles", title: L("account.card.plans"), trailing: nil,
+                AskAccountLinkRow(symbol: "sparkles", title: L(auth.subscription.isPrepaidMembership ? "auth.account.renewMembership" : "account.card.plans"), trailing: nil,
                                   external: true) { openBilling(.plans) }
             case .billingPortal:
                 AskAccountLinkRow(symbol: "creditcard", title: L("account.card.manage"),

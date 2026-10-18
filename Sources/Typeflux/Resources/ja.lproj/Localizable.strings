@@ -5972,3 +5972,6 @@
 "ask.web.sites.privacy" = "パスワード欄や支払い情報が AI に送られることはありません。";
 "ask.web.sites.clearAll" = "すべてのサイトからサインアウト";
 "ask.web.sites.clearAll.confirm" = "すべてのサイトからサインアウトし、ブラウザのデータをすべて消去しますか？";
+
+"auth.account.subscriptionPrepaidHint" = "プリペイド会員です。自動更新はありません。";
+"auth.account.renewMembership" = "会員期間を延長";

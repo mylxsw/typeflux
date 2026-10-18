@@ -6093,3 +6093,6 @@
 "ask.web.sites.privacy" = "密码框内容和支付信息永远不会发送给 AI。";
 "ask.web.sites.clearAll" = "退出全部站点";
 "ask.web.sites.clearAll.confirm" = "退出所有站点并清除全部浏览器数据？";
+
+"auth.account.subscriptionPrepaidHint" = "按期购买的会员，不会自动续费。";
+"auth.account.renewMembership" = "续购会员";

@@ -105,7 +105,7 @@ struct AccountStatusPresentation: Equatable {
 
         let offer: Offer? = if paymentIssue {
             .fixPayment
-        } else if paid, subscription.cancelAtPeriodEnd {
+        } else if paid, subscription.cancelAtPeriodEnd, !subscription.isPrepaidMembership {
             .restore(endsOn: subscription.currentPeriodEnd.flatMap(ISO8601DateFormatter.typefluxBillingDate(from:)))
         } else if level == .exhausted {
             .exhausted(canUpgrade: canUpgrade)
@@ -117,7 +117,9 @@ struct AccountStatusPresentation: Equatable {
             nil
         }
 
-        let billingLink: Destination? = if paid || paymentIssue {
+        let billingLink: Destination? = if subscription.isPrepaidMembership {
+            .plans
+        } else if paid || paymentIssue {
             .billingPortal
         } else if subscription.billingEnabled {
             .plans
@@ -182,7 +184,7 @@ struct AccountStatusPresentation: Equatable {
         if paymentIssue { return .paymentFailed }
         if subscription.hasPaidSubscription,
            let end = subscription.currentPeriodEnd.flatMap(ISO8601DateFormatter.typefluxBillingDate(from:)) {
-            return subscription.cancelAtPeriodEnd ? .ends(end) : .renews(end)
+            return subscription.renewsAutomatically ? .renews(end) : .ends(end)
         }
         let end = usagePeriodEnd ?? subscription.currentPeriodEnd
         return end.flatMap(ISO8601DateFormatter.typefluxBillingDate(from:)).map(PeriodNote.resets)
