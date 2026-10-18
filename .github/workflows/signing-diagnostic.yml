@@ -22,7 +22,8 @@ jobs:
           cleanup() {
             security delete-keychain "$keychain" >/dev/null 2>&1 || true
             rm -f "$package" "$RUNNER_TEMP/signing-leaf.pem" \
-              "$RUNNER_TEMP/verify-cert.log"
+              "$RUNNER_TEMP/verify-cert.log" "$RUNNER_TEMP/signing-probe" \
+              "$RUNNER_TEMP/signing-probe.log"
           }
           trap cleanup EXIT
 
@@ -37,6 +38,9 @@ jobs:
           password="$(openssl rand -hex 32)"
           security create-keychain -p "$password" "$keychain"
           security unlock-keychain -p "$password" "$keychain"
+          security default-keychain -d user -s "$keychain"
+          security list-keychains -d user -s "$keychain" \
+            $(security list-keychains -d user | tr -d '"')
           security import "$package" -P "$APPLE_CERTIFICATE_PASSWORD" -A -f pkcs12 -k "$keychain"
 
           echo "Imported certificates: $(security find-certificate -a -p "$keychain" | grep -c 'BEGIN CERTIFICATE')"
@@ -66,3 +70,19 @@ jobs:
           echo "Offline code-signing trust check exit: $result"
           sed -E 's/Developer ID Application: [^"]+/Developer ID Application: [redacted]/g' \
             "$RUNNER_TEMP/verify-cert.log" | tail -80
+
+          identity=$(security find-identity -p codesigning "$keychain" \
+            | grep -Eo '[0-9A-F]{40}' | head -1)
+          cp /bin/echo "$RUNNER_TEMP/signing-probe"
+          set +e
+          codesign --force --sign "$identity" --keychain "$keychain" \
+            --timestamp=none --options runtime "$RUNNER_TEMP/signing-probe" \
+            > "$RUNNER_TEMP/signing-probe.log" 2>&1
+          result=$?
+          set -e
+          echo "Temporary executable signing exit: $result"
+          sed -E 's/Developer ID Application: [^"]+/Developer ID Application: [redacted]/g' \
+            "$RUNNER_TEMP/signing-probe.log" | tail -12
+          if [[ "$result" -eq 0 ]]; then
+            codesign --verify --strict "$RUNNER_TEMP/signing-probe"
+          fi
