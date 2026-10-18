@@ -48,7 +48,6 @@ struct AskLauncherSuggestions: View {
     var sections: [AskLauncherHome.Section]
     @Binding var highlighted: Int
     var onPick: (AskLauncherHome.Item) -> Void
-    var onBrowseApp: (AskAppEntry) -> Void = { _ in }
     var now = Date()
     var viewportHeight: CGFloat?
     var onHistory: (() -> Void)?
@@ -169,13 +168,9 @@ struct AskLauncherSuggestions: View {
             highlighted = AskLauncherHome.move(highlighted, by: delta, in: items)
             scrollTarget = items[highlighted].id
         case let .horizontal(delta):
-            guard items.indices.contains(highlighted) else { return false }
-            if delta > 0, case let .row(row) = items[highlighted],
-               case let .application(app) = row.action {
-                onBrowseApp(app)
-            } else if case .chip = items[highlighted] {
-                highlighted = AskLauncherHome.move(highlighted, by: delta, in: items, horizontal: true)
-            } else { return false }
+            // Left and right stay with the editor unless a chip is highlighted.
+            guard items.indices.contains(highlighted), case .chip = items[highlighted] else { return false }
+            highlighted = AskLauncherHome.move(highlighted, by: delta, in: items, horizontal: true)
         case let .number(number):
             let rows = AskLauncherHome.numberedRows(sections)
             guard rows.indices.contains(number - 1) else { return false }
@@ -273,8 +268,7 @@ struct AskLauncherSuggestions: View {
     }
 
     private func rowView(_ row: AskLauncherHome.Row, number: Int?, highlighted: Bool) -> some View {
-        let app: AskAppEntry? = if case let .application(value) = row.action { value } else { nil }
-        return Button { onPick(.row(row)) } label: {
+        Button { onPick(.row(row)) } label: {
             HStack(spacing: 12) {
                 tile(row)
                 Text(row.title).font(.system(size: 13.5))
@@ -295,7 +289,6 @@ struct AskLauncherSuggestions: View {
                 }
             }
             .padding(.horizontal, Self.contentInset)
-            .padding(.trailing, app == nil ? 0 : 92)
             .frame(height: Self.rowHeight)
             .background(highlighted ? AskTheme.launcherSelection : Color.clear,
                         in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -312,22 +305,6 @@ struct AskLauncherSuggestions: View {
         .modifier(AskLauncherNumberBadge(number: number))
         .accessibilityHint(row.detail ?? "")
         .accessibilityAddTraits(highlighted ? .isSelected : [])
-        .overlay(alignment: .trailing) {
-            if let app {
-                Button { onBrowseApp(app) } label: {
-                    HStack(spacing: 4) {
-                        Text(L("ask.appContinue.entry"))
-                        Image(systemName: "chevron.right")
-                    }
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .frame(width: 88, height: Self.rowHeight)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L("ask.appContinue.title"))
-                .padding(.trailing, 7)
-            }
-        }
     }
 
     @ViewBuilder

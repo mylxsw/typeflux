@@ -4,7 +4,7 @@ import Testing
 @testable import Typeflux
 
 /// Drives the real launcher with key presses: Return copies, ⌘Return asks the
-/// AI, Tab keeps calculating or enters an app, and the arrows move. Copies go to a private
+/// AI, Tab keeps calculating and the arrows move. Copies go to a private
 /// pasteboard, never the user's clipboard.
 @Suite("Ask quick results in the launcher", .serialized, .exclusiveUIState)
 @MainActor
@@ -213,10 +213,24 @@ struct AskQuickResultsInteractionTests {
             defer { launcher.close() }
             try await launcher.press(Self.down)
             try await launcher.press(Self.tab)
-            #expect(launcher.fixture.model.launcherDraft.text.isEmpty, "Tab enters the selected application's items")
+            #expect(launcher.fixture.model.launcherDraft.text == "wechat?", "Tab only writes back calculations")
             try await launcher.press(Self.returnKey)
             #expect(launcher.opened.count == 1)
             #expect(await launcher.fixture.api.sends.isEmpty)
+        }
+    }
+
+    @Test func rightArrowOpensApplicationActionsWithoutLeavingSearch() async throws {
+        try await withPasteboard { _ in
+            let launcher = try await Launcher(text: "wechat?", apps: AskTestAppIndex(AskTestAppIndex.sample.entries))
+            defer { launcher.close() }
+            try await launcher.press(Self.down)
+            try await launcher.press(Self.right)
+            #expect(launcher.fixture.model.launcherDraft.text == "wechat?")
+            try await launcher.press(Self.escape)
+            #expect(launcher.dismissed == 0, "Escape closes the app actions and keeps the launcher open")
+            try await launcher.press(Self.returnKey)
+            #expect(launcher.opened.count == 1)
         }
     }
 

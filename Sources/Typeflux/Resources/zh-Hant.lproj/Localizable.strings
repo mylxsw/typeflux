@@ -5912,21 +5912,6 @@
 "ask.plugin.apps.noMatch" = "沒有符合的應用程式";
 "ask.plugin.apps.open" = "開啟應用程式";
 "ask.settings.keywords.kind.apps.hint" = "只搜尋已安裝的應用程式";
-"ask.appContinue.title" = "繼續工作";
-"ask.appContinue.back" = "返回搜尋";
-"ask.appContinue.entry" = "最近項目";
-"ask.appContinue.openApp" = "打開應用程式";
-"ask.appContinue.loading" = "正在讀取已開啟的分頁…";
-"ask.appContinue.tabs" = "目前分頁";
-"ask.appContinue.files" = "從 Typeflux 打開過";
-"ask.appContinue.emptyFiles" = "從 Typeflux 用這個應用程式打開檔案後，會顯示在這裡。";
-"ask.appContinue.emptyBrowser" = "沒有開啟的分頁；從 Typeflux 打開的檔案也會顯示在這裡。";
-"ask.appContinue.tabsDisabled" = "此瀏覽器的分頁讀取已關閉；從 Typeflux 打開的檔案仍會顯示在這裡。";
-"ask.appContinue.noMatch" = "沒有符合的項目";
-"ask.appContinue.permission" = "無法讀取分頁，請檢查系統設定中的自動化權限。";
-"ask.appContinue.hint" = "↑↓ 選擇 · ↩ 打開 · Esc 返回搜尋";
-"ask.appContinue.browseHint" = "→ 最近項目";
-"ask.appContinue.filter" = "搜尋 %@ 的最近項目";
 
 /* Embedded browser (web_browser) */
 "ask.tool.web_browser" = "瀏覽器";
