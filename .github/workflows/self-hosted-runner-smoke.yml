@@ -32,10 +32,13 @@ jobs:
     runs-on: typeflux-macos-vm
     timeout-minutes: 10
     steps:
-      - name: Verify macOS ARM64 runner and Xcode
+      - name: Verify macOS ARM64 runner and Swift compiler
         shell: bash
         run: |
           test "$RUNNER_OS" = macOS
           test "$RUNNER_ARCH" = ARM64
           sw_vers
           xcodebuild -version
+          printf 'print("swift-compiler-ok")\n' > "$RUNNER_TEMP/smoke.swift"
+          xcrun swiftc "$RUNNER_TEMP/smoke.swift" -o "$RUNNER_TEMP/smoke"
+          test "$("$RUNNER_TEMP/smoke")" = swift-compiler-ok
