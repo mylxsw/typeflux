@@ -48,7 +48,14 @@ jobs:
 
       - name: Add Homebrew tools to self-hosted PATH
         if: runner.environment == 'self-hosted'
-        run: echo /opt/homebrew/bin >> "$GITHUB_PATH"
+        run: |
+          echo /opt/homebrew/bin >> "$GITHUB_PATH"
+          for tool_dir in /opt/homebrew/Cellar/create-dmg/*/bin; do
+            if [[ -x "$tool_dir/create-dmg" ]]; then
+              echo "$tool_dir" >> "$GITHUB_PATH"
+              break
+            fi
+          done
 
       - name: Configure temporary paths
         run: |

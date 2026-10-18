@@ -43,7 +43,6 @@ struct AskMarkdownTable {
         block.setWidth(Self.horizontalPadding, type: .absoluteValueType, for: .padding, edge: .maxX)
         block.setWidth(Self.verticalPadding, type: .absoluteValueType, for: .padding, edge: .minY)
         block.setWidth(Self.verticalPadding, type: .absoluteValueType, for: .padding, edge: .maxY)
-        block.verticalAlignment = .top
         if row == 0 {
             block.backgroundColor = AskTableCellBlock.headerFill
         }

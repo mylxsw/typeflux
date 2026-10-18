@@ -286,6 +286,11 @@ struct SemanticSearchRankingTests {
         #expect(conversion == kvImageNoError)
         var scratch: [Float] = []
         let scores = try SemanticVectorReader.scores(compact, vector: query, scratch: &scratch)
+        let decoded = try SemanticVectorReader.decodedVector(compact, offset: 768)
+        #expect(zip(decoded, rows[1]).allSatisfy { abs($0 - $1) < 0.0001 })
+        #expect(throws: SemanticFileStore.Failure.self) {
+            try SemanticVectorReader.decodedVector(compact, offset: count)
+        }
         let exact = rows.map { row in zip(row, query).reduce(0.0) { $0 + Double($1.0) * Double($1.1) } }
         #expect(zip(scores, exact).allSatisfy { abs(Double($0) - $1) < 0.0001 })
         #expect(scores.indices.sorted { scores[$0] > scores[$1] }.prefix(5) == exact.indices

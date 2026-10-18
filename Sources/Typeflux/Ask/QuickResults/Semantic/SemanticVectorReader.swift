@@ -357,6 +357,29 @@ final class SemanticVectorReader: @unchecked Sendable {
                     Int32(vector.count), vector, 1, 0, &result, 1)
         return result
     }
+
+    static func decodedVector(_ compact: [UInt16], offset: Int) throws -> [Float] {
+        let dimension = SemanticFilePolicy.dimension
+        guard offset >= 0, offset <= compact.count - dimension else {
+            throw SemanticFileStore.Failure.invalidVector
+        }
+        var result = [Float](repeating: 0, count: dimension)
+        try compact.withUnsafeBytes { source in
+            try result.withUnsafeMutableBytes { target in
+                var input = vImage_Buffer(
+                    data: UnsafeMutableRawPointer(mutating: source.baseAddress!.advanced(by: offset * 2)),
+                    height: 1, width: UInt(dimension), rowBytes: dimension * 2
+                )
+                var output = vImage_Buffer(
+                    data: target.baseAddress!, height: 1, width: UInt(dimension), rowBytes: target.count
+                )
+                guard vImageConvert_Planar16FtoPlanarF(&input, &output, 0) == kvImageNoError else {
+                    throw SemanticFileStore.Failure.invalidVector
+                }
+            }
+        }
+        return result
+    }
 }
 
 extension SemanticVectorReader {
@@ -470,8 +493,7 @@ extension SemanticVectorReader {
                         let previous = visual ? pair.visual : pair.ocr
                         guard Double(scores[index]) > (previous?.cosine ?? -.infinity) else { continue }
                         let offset = index * SemanticFilePolicy.dimension
-                        let values = page.values[offset ..< offset + SemanticFilePolicy.dimension]
-                            .map { Float(Float16(bitPattern: $0)) }
+                        let values = try Self.decodedVector(page.values, offset: offset)
                         let value = ImageVector(cosine: Double(scores[index]), values: values)
                         if visual { pair.visual = value } else { pair.ocr = value }
                         support[row.file.path] = pair
