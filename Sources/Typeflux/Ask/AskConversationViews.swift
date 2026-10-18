@@ -710,8 +710,7 @@ struct AskConversationView: View {
 
     /// The title and the conversation's actions as two glass capsules over the
     /// transcript: the title carries the run's state as a dot and a summary;
-    /// the actions capsule appears only for an existing conversation and carries
-    /// the credits this conversation spent ("Used here"), usage, and delete.
+    /// the actions capsule carries usage and browser controls.
     /// Classic puts the same controls on an opaque title row ruled off from the transcript.
     @ViewBuilder private var header: some View {
         Group {
@@ -809,9 +808,6 @@ struct AskConversationView: View {
                             .accessibilityIdentifier("ask.workspace.usage")
                     }
                     browserButton
-                    if let id = model.selectedId {
-                        headerAction(.trash, label: L("ask.delete")) { deleteId = id }
-                    }
                 }
                 .padding(.horizontal, 3)
                 .frame(height: AskMetrics.headerCapsuleHeight)
