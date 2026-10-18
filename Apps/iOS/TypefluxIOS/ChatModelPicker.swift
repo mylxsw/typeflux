@@ -12,11 +12,16 @@ struct ChatModelPicker: View {
         let shown = store.reasoningEffort.nearest(in: store.supportedReasoningLevels)
         Button { expanded = true } label: {
             HStack(spacing: 6) {
+                if store.sendsLocally {
+                    Image(systemName: "lock.fill").font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(ChatTheme.purple)
+                        .accessibilityLabel(NSLocalizedString("Private conversation", comment: ""))
+                }
                 if let model = store.selectedModel {
                     ChatModelLogo(model: model, size: 16)
                 }
                 Text(store.selectedModel?.name ?? NSLocalizedString(
-                    store.isAuthenticated ? "Choose model" : "Auto",
+                    store.canChooseModel ? "Choose model" : "Auto",
                     comment: ""
                 ))
                 .lineLimit(1).truncationMode(.middle)
@@ -41,7 +46,7 @@ struct ChatModelPicker: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .disabled(store.isBusy || store.models.isEmpty)
+        .disabled(store.isBusy || store.availableModels.isEmpty)
         .accessibilityLabel(NSLocalizedString("Model and reasoning", comment: ""))
         .accessibilityValue([store.selectedModel?.name, shown == .providerDefault ? nil : shown.label]
             .compactMap(\.self).joined(separator: ", "))
@@ -202,42 +207,79 @@ struct ChatModelEffortCard: View {
 
     private var modelsPage: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Button { page = .effort } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "chevron.left").font(.system(size: 11, weight: .semibold))
-                    Text(NSLocalizedString("Reasoning effort", comment: ""))
+            HStack(spacing: 0) {
+                Button { page = .effort } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left").font(.system(size: 11, weight: .semibold))
+                        Text(NSLocalizedString("Reasoning effort", comment: ""))
+                    }
+                    .font(.system(size: 13.5))
+                    .foregroundStyle(ChatTheme.secondary)
+                    .padding(.horizontal, 16)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
                 }
-                .font(.system(size: 13.5))
-                .foregroundStyle(ChatTheme.secondary)
-                .padding(.horizontal, 16)
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("backToReasoning")
+                Spacer(minLength: 4)
+                // In the header row so the list keeps its height on short screens.
+                if store.selectedModel != nil, store.library.defaultModelRef != store.modelRef {
+                    Button {
+                        store.setDefaultModel(store.modelRef)
+                    } label: {
+                        Label(NSLocalizedString("Use for new conversations", comment: ""), systemImage: "star")
+                            .font(.system(size: 12.5, weight: .medium))
+                            .foregroundStyle(ChatTheme.accentText)
+                            .lineLimit(1).minimumScaleFactor(0.8)
+                            .padding(.horizontal, 14)
+                            .frame(minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("model.setDefault")
+                }
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("backToReasoning")
-            HStack {
-                Text(verbatim: "Typeflux Cloud")
-                Spacer()
-                Text(NSLocalizedString("Credits", comment: ""))
-            }
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(ChatTheme.tertiary)
-            .padding(.horizontal, 18).padding(.bottom, 6)
-            if store.hasConversationImages, store.models.contains(where: { $0.vision != true }) {
+            if store.hasConversationImages, store.availableModels.contains(where: { $0.vision != true }) {
                 Label(NSLocalizedString("This conversation needs a model that supports photos.", comment: ""),
                       systemImage: "info.circle")
                     .font(.system(size: 12))
                     .foregroundStyle(ChatTheme.secondary)
                     .padding(.horizontal, 18).padding(.bottom, 6)
             }
-            VStack(spacing: 2) {
-                ForEach(store.models) { model in
-                    modelRow(model)
-                }
+            if let lock = storageLock {
+                Label(NSLocalizedString(lock, comment: ""), systemImage: "lock")
+                    .font(.system(size: 12))
+                    .foregroundStyle(ChatTheme.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 18).padding(.bottom, 6)
             }
-            .padding(.horizontal, 6)
+            if !store.models.isEmpty {
+                sectionHeader(Text(verbatim: "Typeflux Cloud"),
+                              trailing: cloudNotice.map { Text(NSLocalizedString($0, comment: "")) }
+                                  ?? Text(NSLocalizedString("Credits", comment: "")))
+                VStack(spacing: 2) {
+                    ForEach(store.models) { model in
+                        modelRow(model)
+                    }
+                }
+                .padding(.horizontal, 6)
+            }
+            if !store.library.models.isEmpty {
+                sectionHeader(Text(NSLocalizedString("Your models", comment: "")),
+                              trailing: Text(NSLocalizedString("Kept on this iPhone", comment: "")))
+                    .padding(.top, store.models.isEmpty ? 0 : 10)
+                VStack(spacing: 2) {
+                    ForEach(store.library.models) { model in
+                        modelRow(model)
+                    }
+                }
+                .padding(.horizontal, 6)
+            }
             Rectangle().fill(ChatTheme.separator).frame(height: 0.5).padding(.top, 6)
-            Text(NSLocalizedString("Models and pricing are provided by Typeflux Cloud.", comment: ""))
+            Text(NSLocalizedString(store.library.models.isEmpty
+                    ? "Models and pricing are provided by Typeflux Cloud."
+                    : "Typeflux Cloud conversations sync with your Mac. Conversations with your models stay on this iPhone.",
+                comment: ""))
                 .font(.system(size: 12))
                 .foregroundStyle(ChatTheme.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -245,9 +287,38 @@ struct ChatModelEffortCard: View {
         }
     }
 
+    private func sectionHeader(_ title: Text, trailing: Text) -> some View {
+        HStack {
+            title
+            Spacer()
+            trailing
+        }
+        .font(.system(size: 12, weight: .semibold))
+        .foregroundStyle(ChatTheme.tertiary)
+        .padding(.horizontal, 18).padding(.bottom, 6)
+    }
+
+    private var cloudNotice: String? {
+        switch store.connectivity {
+        case .online: nil
+        case .serviceUnavailable: "Unavailable"
+        case .offline: "Offline"
+        }
+    }
+
+    private var storageLock: String? {
+        switch store.conversationStorage {
+        case .local: "This conversation stays on this iPhone, so it continues with your own models."
+        case .cloud where !store.library.models.isEmpty:
+            "This conversation is kept in Typeflux Cloud, so it continues with Typeflux Cloud models."
+        default: nil
+        }
+    }
+
     private func modelRow(_ model: ChatModel) -> some View {
         let selected = model.reference == store.modelRef
-        let blocked = store.hasConversationImages && model.vision != true
+        let blocked = (store.hasConversationImages && model.vision != true) || !store.allowsModel(model)
+        let isDefault = store.library.defaultModelRef == model.reference
         return Button {
             let previous = shown
             guard store.selectModel(model) else { return }
@@ -264,9 +335,19 @@ struct ChatModelEffortCard: View {
                         .foregroundStyle(blocked ? ChatTheme.secondary : selected ? ChatTheme.accentText : Color
                             .primary)
                         .lineLimit(2)
-                    if blocked {
+                    if !store.allowsModel(model) {
+                        Text(NSLocalizedString(model.isLocal ? "For private conversations" : "For cloud conversations",
+                                               comment: ""))
+                            .font(.system(size: 12)).foregroundStyle(ChatTheme.secondary)
+                    } else if blocked {
                         Text(NSLocalizedString("Does not support photos", comment: ""))
                             .font(.system(size: 12)).foregroundStyle(ChatTheme.secondary)
+                    } else if let provider = model.providerName {
+                        Text(isDefault ? provider + " · " + NSLocalizedString("Default", comment: "") : provider)
+                            .font(.system(size: 12)).foregroundStyle(ChatTheme.secondary)
+                    } else if isDefault {
+                        Text(NSLocalizedString("Default", comment: "")).font(.system(size: 12))
+                            .foregroundStyle(ChatTheme.accentText)
                     } else if let capacity = ChatModelPickerDisplay.capacity(model) {
                         Text(capacity).font(.system(size: 12)).foregroundStyle(ChatTheme.secondary)
                     }
@@ -298,7 +379,7 @@ struct ChatModelEffortCard: View {
         .buttonStyle(ChatModelRowStyle())
         .disabled(blocked || store.isBusy)
         .accessibilityAddTraits(selected ? .isSelected : [])
-        .accessibilityIdentifier("model-" + model.id)
+        .accessibilityIdentifier(model.isLocal ? "model-local-" + model.id : "model-" + model.id)
     }
 }
 

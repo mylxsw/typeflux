@@ -206,6 +206,61 @@ final class ScreenTourTests: XCTestCase {
         capture("33-sign-out-confirm")
     }
 
+    /// GUL-418: Typeflux unreachable, a private conversation with the user's own
+    /// provider, the model picker sections, history filter and provider settings.
+    @MainActor
+    func testTourOfflineAndPrivateConversations() {
+        let app = launch("--synthetic-offline", "--synthetic-providers", "--synthetic-history")
+        XCTAssertTrue(app.descendants(matching: .any)["connectivity.banner"].waitForExistence(timeout: 10))
+        capture("40-offline-banner")
+        let field = app.textFields["chat.composer"]
+        field.tap(); field.typeText("服务挂了还能发吗")
+        app.buttons["chat.send"].tap()
+        XCTAssertTrue(app.buttons["chat.composer.private"].waitForExistence(timeout: 5))
+        capture("41-offline-send-kept-draft")
+        app.buttons["chat.composer.private"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["chat.empty.subtitle"].waitForExistence(timeout: 5))
+        capture("42-private-new-conversation")
+        app.buttons["chat.send"].tap()
+        let label = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@",
+                                                                         "chat.model.")).firstMatch
+        XCTAssertTrue(label.waitForExistence(timeout: 8))
+        capture("43-private-answer")
+        app.buttons["modelPicker"].tap()
+        if app.buttons["changeModel"].waitForExistence(timeout: 3) {
+            app.buttons["changeModel"].tap()
+        }
+        capture("44-model-picker-private")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.08)).tap()
+        openSidebar(app)
+        XCTAssertTrue(app.descendants(matching: .any)["chat.history.filter"].waitForExistence(timeout: 5))
+        capture("45-sidebar-filter")
+        app.buttons["chat.account"].tap()
+        XCTAssertTrue(app.buttons["settings.providers"].waitForExistence(timeout: 5))
+        capture("46-settings-models-storage")
+        app.buttons["settings.providers"].tap()
+        XCTAssertTrue(app.buttons["providers.add"].waitForExistence(timeout: 5))
+        capture("47-model-providers")
+        app.buttons["providers.add"].tap()
+        XCTAssertTrue(app.buttons["provider.test"].waitForExistence(timeout: 5))
+        capture("48-add-provider")
+        app.navigationBars.buttons.firstMatch.tap()
+        app.navigationBars.buttons.firstMatch.tap()
+        app.buttons["settings.defaultModel"].tap()
+        XCTAssertTrue(app.buttons["defaultModel.reset"].waitForExistence(timeout: 5))
+        capture("49-default-model")
+    }
+
+    @MainActor
+    func testTourWelcomeOwnModels() {
+        let app = launch("--synthetic-guest", "-guest.welcome-dismissed", "NO")
+        XCTAssertTrue(app.buttons["login.provider"].waitForExistence(timeout: 8))
+        capture("50-welcome-own-models")
+        app.buttons["login.provider"].tap()
+        XCTAssertTrue(app.buttons["provider.test"].waitForExistence(timeout: 5))
+        capture("51-welcome-add-provider")
+    }
+
     @MainActor
     func testTourDarkEnglish() {
         let app = launch("--synthetic-rich", "--synthetic-dark", language: "en")

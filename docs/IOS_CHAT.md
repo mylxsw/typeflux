@@ -1,9 +1,10 @@
 # iOS Ask client
 
 The iOS app is a SwiftUI chat client for Typeflux Ask. It uses the existing
-account and cloud conversation API and supports dictation through Apple Speech.
-It does not include a keyboard extension, local model inference, or a desktop
-tool executor.
+account and cloud conversation API, keeps a copy of cloud history on the device,
+and can also run entirely on the user's own model providers without an account.
+It supports dictation through Apple Speech. It does not include a keyboard
+extension, on-device model inference, or a desktop tool executor.
 
 ## Code ownership
 
@@ -88,11 +89,52 @@ phone, with one accent colour, one type scale and glass only on floating layers.
 Not yet available on iOS: renaming conversations and subscriptions (monthly plans
 are bought on the web; credit packs are bought in the app).
 
-The server owns cloud history and run state. Drafts and loaded history are held
-in memory; this first app does not promise offline history or draft recovery
-after process termination. Existing private Mac conversations remain local.
-There is no background execution guarantee: the app resumes observation when
-it becomes active, while the server owns any ongoing cloud work.
+## Offline use, private conversations and model choice (GUL-418)
+
+Design and plan: `docs/design/ios-offline-local-mode.md` and the interactive board
+`docs/design/ios-offline-local-mode.html`.
+
+- **Device copy of the cloud.** `ChatLocalStore` (SQLite, in `TypefluxChat`) keeps
+  the history list, the most recent 200 conversations in full, the model catalog,
+  the profile and credits for the signed-in account. Launch renders the copy first
+  and then refreshes. Cloud snapshots are saved only once a run has settled and only
+  move forward by revision; the first history page also removes conversations that
+  were deleted on another device. The copy lives in Caches (excluded from backups),
+  per server, and is removed on sign-out and account deletion. Settings → Storage
+  shows its size and can clear it.
+- **When Typeflux is unreachable.** Transport failures and gateway 5xx responses set
+  `ChatStore.connectivity` (`serviceUnavailable` or `offline`, also driven by
+  `NWPathMonitor`). The conversation and sidebar show a banner with Retry instead of
+  an error; history stays readable. A cloud message is never queued or replayed: its
+  draft stays, consent fails closed, and the composer offers to continue in a private
+  conversation when the user has a provider. Regaining the network refreshes. Network
+  errors never sign the user out.
+- **Drafts** (text and photo) are saved per conversation, and for the not-yet-started
+  conversation, in the device store, and restored after relaunch.
+- **Private conversations.** Settings → Model providers adds OpenAI, Anthropic,
+  Gemini, DeepSeek, OpenRouter, Qwen (DashScope), Moonshot, Ollama on the local
+  network, or any OpenAI-compatible address (`ChatProvider`, `ChatProviderClient`).
+  Keys are stored in the Keychain on this device only; requests go directly from the
+  phone, refuse redirects, and allow plain HTTP only to private addresses. The welcome
+  page offers “Use your own models” so the app works without an account. A
+  conversation's storage follows the model of its first message and never changes:
+  Typeflux Cloud models keep it in the cloud, the user's own models keep it only on
+  this iPhone (Application Support, included in backups). Private answers stream into
+  the same document shape (`ChatLocalConversation`), can be stopped, retried and
+  regenerated, and have no tools. The sidebar marks them with a lock and offers
+  All / Cloud / On this iPhone once both kinds exist.
+- **Model choice.** The picker lists Typeflux Cloud models and the user's own models.
+  “Use for new conversations” and Settings → Default model set the default
+  (`ask.model.default`); an automatic choice is upgraded when the catalog arrives,
+  a user's choice is never replaced. Reopening a conversation restores its model,
+  and answers show the model that wrote them (for cloud conversations, the latest
+  run's model; the server does not record the routed model per message).
+
+The server owns cloud history and run state; the device copy is only a cache.
+Existing private Mac conversations remain on the Mac and private iPhone
+conversations remain on the iPhone. There is no background execution guarantee:
+the app resumes observation when it becomes active, while the server owns any
+ongoing cloud work.
 
 ## API compatibility
 

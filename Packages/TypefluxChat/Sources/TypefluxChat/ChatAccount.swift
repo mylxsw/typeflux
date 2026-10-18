@@ -2,7 +2,7 @@ import Foundation
 
 /// The signed-in user as `/api/v1/me` returns it. Only fields the mobile account
 /// card shows are decoded, so new server fields never break sign-in.
-public struct ChatProfile: Decodable, Equatable, Sendable {
+public struct ChatProfile: Codable, Equatable, Sendable {
     public var id: String
     public var email: String
     public var name: String?
@@ -14,8 +14,8 @@ public struct ChatProfile: Decodable, Equatable, Sendable {
 }
 
 /// This billing period's credits from `/api/v1/usage/current-period/stats`.
-public struct ChatCreditUsage: Decodable, Equatable, Sendable {
-    public struct Credits: Decodable, Equatable, Sendable {
+public struct ChatCreditUsage: Codable, Equatable, Sendable {
+    public struct Credits: Codable, Equatable, Sendable {
         public var limit: Int
         public var used: Int
         public var remaining: Int
@@ -30,7 +30,7 @@ public struct ChatCreditUsage: Decodable, Equatable, Sendable {
     }
 
     /// Purchased credits: the web store or, on iOS, the App Store.
-    public struct Addon: Decodable, Equatable, Sendable {
+    public struct Addon: Codable, Equatable, Sendable {
         public var remaining: Int
 
         public init(remaining: Int) { self.remaining = remaining }

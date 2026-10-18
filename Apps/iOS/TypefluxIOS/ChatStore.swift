@@ -8,37 +8,61 @@ final class ChatStore {
     private(set) var email = ""
     private(set) var isAuthenticated = false
     private(set) var isLoading = false
-    private(set) var isLoadingConversation = false
-    private(set) var isSending = false
-    private(set) var conversations: [ChatConversationSummary] = []
-    private(set) var models: [ChatModel] = []
-    private(set) var conversation: ChatConversation?
-    private(set) var selectedID: String?
-    private(set) var hasMore = false
+    var isLoadingConversation = false
+    var isSending = false
+    var conversations: [ChatConversationSummary] = []
+    var models: [ChatModel] = []
+    var conversation: ChatConversation?
+    var selectedID: String?
+    var hasMore = false
     /// Account details for the sidebar and settings. Both are best-effort: a
     /// missing profile or usage endpoint never blocks chatting.
-    private(set) var profile: ChatProfile?
-    private(set) var creditUsage: ChatCreditUsage?
+    var profile: ChatProfile?
+    var creditUsage: ChatCreditUsage?
     var modelRef = "" {
         didSet { reasoningEffort = reasoningEffort.nearest(in: supportedReasoningLevels) }
     }
 
     private(set) var reasoningEffort: ChatReasoningEffort = .providerDefault
+    /// The model the store picked by itself for a new conversation; it may still be
+    /// replaced by a better default when the catalog arrives. A user's choice is not.
+    var automaticModelRef: String?
     var draft = ""
     var imageDataURL: String?
     var errorMessage: String?
     var infoMessage: String?
     /// The last send, regenerate or resume was refused because the account has no
     /// credits left. The conversation offers buying credits until this clears.
-    private(set) var creditsExhausted = false
+    var creditsExhausted = false
+
+    /// Whether Typeflux Cloud answered the last request. While it is not online,
+    /// history, the model catalog and the account card come from the device's copy.
+    var connectivity: ChatConnectivity = .online
+    /// When the device's copy of the cloud history was last refreshed.
+    var cloudSyncedAt: Date?
+    /// Conversations kept only on this device, answered by the user's own providers.
+    var localConversations: [ChatConversationSummary] = []
+    /// A cloud message could not be sent because Typeflux was unreachable; the draft
+    /// can continue in a new private conversation with the user's own model.
+    var offersLocalFallback = false
 
     let isSynthetic: Bool
     let deviceID: String
-    private let service: any ChatAPI
+    let library: ChatModelLibrary
+    let providerService: any ChatProviderService
+    /// The device's copy of cloud conversations, the catalog and account details.
+    let cache: ChatLocalStore?
+    /// Private conversations and every draft. This is the only copy of private conversations.
+    let localStore: ChatLocalStore?
+    let service: any ChatAPI
     private let credentials: any CredentialStore
-    private let reconnectDelay: Duration
+    let reconnectDelay: Duration
     /// The server's conversation page size; a shorter page means no more history.
-    private let historyPageSize: Int
+    let historyPageSize: Int
+    /// Streams answering private conversations, by conversation ID.
+    var localTasks: [String: Task<Void, Never>] = [:]
+    /// Private conversations deleted in this session; a late stream must not save them again.
+    var deletedLocalIDs: Set<String> = []
     var showsLogin = false
     var showsConsent = false
     var example: ChatExample?
@@ -47,14 +71,14 @@ final class ChatStore {
     private let consentDefaults: UserDefaults
     private var consentRevision = 0
     private var session: ChatSession?
-    private var accountGeneration = 0
-    private var selectionGeneration = 0
-    private var observationTask: Task<Void, Never>?
+    var accountGeneration = 0
+    var selectionGeneration = 0
+    var observationTask: Task<Void, Never>?
     private var refreshTask: Task<ChatSession, Error>?
-    private var isForeground = true
-    private var pendingRequest: ChatSendRequest?
-    private var activeSendID: String?
-    private var requiresConversationSnapshot = false
+    var isForeground = true
+    var pendingRequest: ChatSendRequest?
+    var activeSendID: String?
+    var requiresConversationSnapshot = false
 
     init(
         service: any ChatAPI,
@@ -63,8 +87,16 @@ final class ChatStore {
         isSynthetic: Bool = false,
         consentDefaults: UserDefaults = .standard,
         reconnectDelay: Duration = .milliseconds(500),
-        historyPageSize: Int = 50
+        historyPageSize: Int = 50,
+        library: ChatModelLibrary? = nil,
+        providerService: any ChatProviderService = ChatProviderClient(),
+        cache: ChatLocalStore? = try? .inMemory(),
+        localStore: ChatLocalStore? = try? .inMemory()
     ) {
+        self.library = library ?? .ephemeral()
+        self.providerService = providerService
+        self.cache = cache
+        self.localStore = localStore
         self.historyPageSize = max(1, historyPageSize)
         self.consentDefaults = consentDefaults
         self.service = service
@@ -75,12 +107,19 @@ final class ChatStore {
     }
 
     func restore() async {
+        await loadLocalHome()
         guard !isAuthenticated else { return }
         do {
-            guard let account = try credentials.load() else { return }
+            guard let account = try credentials.load() else {
+                adoptPreferredModelIfUnset()
+                await restoreDraft()
+                return
+            }
             email = account.email
             session = account.session
             isAuthenticated = true
+            // The device's copy is shown at once; the server refresh replaces it when it answers.
+            await loadCachedHome()
             await refreshHome()
             await loadDisclosure()
         } catch { errorMessage = Self.userMessage(for: error) }
@@ -114,6 +153,7 @@ final class ChatStore {
 
     func signOut() async {
         let token = session?.refreshToken
+        await forgetAccountData()
         resetAccount()
         do { try credentials.clear() } catch { errorMessage = Self.userMessage(for: error) }
         // Local state is gone before awaiting server revocation.
@@ -139,11 +179,14 @@ final class ChatStore {
             let catalog = try await authorized { [service] token in try await service.models(token: token) }
             try checkAccount(generation)
             models = catalog
-            if !models.contains(where: { $0.reference == modelRef }) {
-                modelRef = models.first?.reference ?? ""
-            }
+            markOnline()
+            await cacheHome(values, catalog: catalog, generation: generation)
+            adoptPreferredModelIfUnset()
             reasoningEffort = reasoningEffort.nearest(in: supportedReasoningLevels)
-        } catch { report(error, generation: generation) }
+        } catch {
+            guard !noteConnectivity(error, generation: generation) else { return }
+            report(error, generation: generation)
+        }
         await refreshAccountDetails()
     }
 
@@ -166,22 +209,38 @@ final class ChatStore {
             let additions = values.filter { !existing.contains($0.id) }
             conversations += additions
             hasMore = !additions.isEmpty && values.count >= historyPageSize
-        } catch { report(error, generation: generation) }
+            if let owner = cacheOwner {
+                try? await cache?.syncCloudPage(values, owner: owner, firstPage: false, complete: false)
+            }
+        } catch {
+            guard !noteConnectivity(error, generation: generation) else { return }
+            report(error, generation: generation)
+        }
     }
 
     func newConversation() {
         example = nil
         changeSelection(UUID().uuidString.lowercased())
+        Task { await restoreDraft() }
     }
 
     func select(_ id: String) async {
         changeSelection(id)
+        if isLocalConversation(id) {
+            await openLocal(id)
+            return
+        }
         requiresConversationSnapshot = true
+        await showCachedCopy(id)
         await reloadConversation()
+        if selectedID == id, modelRef == automaticModelRef {
+            restoreModel(conversation?.run?.modelRef)
+        }
+        await restoreDraft()
     }
 
     func reloadConversation(reportFailure: Bool = true) async {
-        guard let id = selectedID, isAuthenticated else { return }
+        guard let id = selectedID, isAuthenticated, !isLocalConversation(id) else { return }
         let generation = accountGeneration
         let selection = selectionGeneration
         isLoadingConversation = true
@@ -199,6 +258,10 @@ final class ChatStore {
             }
             startObservation()
         } catch {
+            // Without the server, the device's copy stays on screen; the banner explains why.
+            if noteConnectivity(error, generation: generation), conversation != nil {
+                return
+            }
             if reportFailure, selection == selectionGeneration {
                 report(error, generation: generation)
             }
@@ -207,6 +270,10 @@ final class ChatStore {
 
     func send() async {
         guard canAttemptSend else { return }
+        if sendsLocally {
+            await sendLocal()
+            return
+        }
         guard isAuthenticated else { showsLogin = true; return }
         let intendedDraft = draft
         let intendedImage = imageDataURL
@@ -225,6 +292,7 @@ final class ChatStore {
         activeSendID = request.id
         isSending = true
         errorMessage = nil
+        offersLocalFallback = false
         defer {
             if generation == accountGeneration, selection == selectionGeneration, activeSendID == request.id {
                 isSending = false
@@ -239,16 +307,22 @@ final class ChatStore {
             ) }
             guard generation == accountGeneration, selection == selectionGeneration else { return }
             clearSubmittedComposer(request, draft: submittedDraft)
+            discardNewDraft()
             pendingRequest = nil
             creditsExhausted = false
             accept(value)
             isSending = false
             activeSendID = nil
+            rememberModel(modelRef, for: id)
             startObservation()
             await refreshHome()
         } catch {
             if selection == selectionGeneration {
-                report(error, generation: generation)
+                if let issue = ChatConnectivity.classify(error), generation == accountGeneration {
+                    noteUnsent(issue)
+                } else {
+                    report(error, generation: generation)
+                }
                 // A transport failure can happen after the server accepted the message.
                 // Reloading never repeats a POST; the draft remains available for inspection.
                 if isAuthenticated {
@@ -266,6 +340,10 @@ final class ChatStore {
 
     func cancelRun() async {
         guard let value = conversation, let run = value.run, run.isActive else { return }
+        if isLocalConversation(value.id) {
+            localTasks[value.id]?.cancel()
+            return
+        }
         let generation = accountGeneration
         let selection = selectionGeneration
         do {
@@ -287,6 +365,9 @@ final class ChatStore {
         isForeground = foreground
         observationTask?.cancel()
         observationTask = nil
+        if !foreground {
+            await saveDraft()
+        }
         if foreground, isAuthenticated {
             await refreshHome()
             if conversation != nil {
@@ -308,10 +389,15 @@ extension ChatStore {
         if draft.utf8.count > 32000 {
             return "Keep messages under 32 KB."
         }
-        if isAuthenticated, !models.contains(where: { $0.reference == modelRef }) {
-            return "Choose an available cloud model. Refresh if the model list is empty."
+        if let storage = storageIssue {
+            return storage
         }
-        if isAuthenticated, hasConversationImages, selectedModel?.vision != true {
+        if canChooseModel, selectedModel == nil {
+            return isAuthenticated && models.isEmpty && library.models.isEmpty
+                ? "Choose an available cloud model. Refresh if the model list is empty."
+                : "Choose an available model."
+        }
+        if canChooseModel, hasConversationImages, selectedModel?.vision != true {
             if conversation?.messages.contains(where: \.hasImage) == true {
                 return "This conversation contains photos. Choose a model that supports photos."
             }
@@ -321,8 +407,8 @@ extension ChatStore {
     }
 
     var canSend: Bool {
-        isAuthenticated && hasAIConsent && !isSending && !isRunning && composerValidation == nil && !draft
-            .trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        (sendsLocally || (isAuthenticated && hasAIConsent)) && !isSending && !isRunning &&
+            composerValidation == nil && !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     var attachmentContext: String {
@@ -334,7 +420,7 @@ extension ChatStore {
     }
 
     var selectedModel: ChatModel? {
-        models.first { $0.reference == modelRef }
+        availableModels.first { $0.reference == modelRef }
     }
 
     var selectedModelID: String? {
@@ -351,9 +437,14 @@ extension ChatStore {
 
     @discardableResult
     func selectModel(_ model: ChatModel) -> Bool {
-        guard !isBusy, let available = models.first(where: { $0.reference == model.reference }),
-              !hasConversationImages || available.vision == true else { return false }
+        guard !isBusy, let available = availableModels.first(where: { $0.reference == model.reference }),
+              !hasConversationImages || available.vision == true,
+              allowsModel(available) else { return false }
         modelRef = available.reference
+        offersLocalFallback = false
+        if let id = selectedID, conversation?.messages.isEmpty == false {
+            rememberModel(available.reference, for: id)
+        }
         return true
     }
 
@@ -363,8 +454,8 @@ extension ChatStore {
     }
 }
 
-private extension ChatStore {
-    func clearSubmittedComposer(_ request: ChatSendRequest, draft submittedDraft: String) {
+extension ChatStore {
+    private func clearSubmittedComposer(_ request: ChatSendRequest, draft submittedDraft: String) {
         // A quote or another composer action can prepare a new draft while the
         // server is confirming this message. Only consume what this turn sent.
         if draft == submittedDraft {
@@ -375,7 +466,7 @@ private extension ChatStore {
         }
     }
 
-    func sendRequest(text: String) -> ChatSendRequest {
+    private func sendRequest(text: String) -> ChatSendRequest {
         let requestedModel = modelRef.isEmpty ? nil : modelRef
         let requestedEffort = reasoningEffort.requestValue(for: selectedModel)
         if let pendingRequest, pendingRequest.text == text, pendingRequest.image == imageDataURL,
@@ -386,7 +477,8 @@ private extension ChatStore {
                                modelRef: requestedModel, reasoningEffort: requestedEffort)
     }
 
-    private func changeSelection(_ id: String) {
+    func changeSelection(_ id: String) {
+        saveDraftInBackground()
         observationTask?.cancel()
         observationTask = nil
         selectionGeneration += 1
@@ -396,24 +488,27 @@ private extension ChatStore {
         isLoadingConversation = false
         draft = ""
         imageDataURL = nil
-        modelRef = models.first?.reference ?? ""
+        modelRef = preferredModelRef
+        automaticModelRef = modelRef
         reasoningEffort = .providerDefault
         errorMessage = nil
+        offersLocalFallback = false
         isSending = false
         pendingRequest = nil
         activeSendID = nil
         creditsExhausted = false
     }
 
-    private func accept(_ value: ChatConversation) {
+    func accept(_ value: ChatConversation) {
         guard value.id == selectedID else { return }
         if let current = conversation, value.revision < current.revision {
             return
         }
         conversation = value
+        cacheConversation(value)
     }
 
-    private func startObservation() {
+    func startObservation() {
         observationTask?.cancel()
         guard isForeground, let id = selectedID, isRunning, !isPausedForCredits else { return }
         let generation = accountGeneration
@@ -466,7 +561,7 @@ private extension ChatStore {
         return isRunning
     }
 
-    func observationIsCurrent(generation: Int, selection: Int) -> Bool {
+    private func observationIsCurrent(generation: Int, selection: Int) -> Bool {
         !Task.isCancelled && generation == accountGeneration && selection == selectionGeneration
     }
 
@@ -475,7 +570,7 @@ private extension ChatStore {
         accept(value)
     }
 
-    private func authorized<Value: Sendable>(_ operation: (String) async throws -> Value) async throws -> Value {
+    func authorized<Value: Sendable>(_ operation: (String) async throws -> Value) async throws -> Value {
         let generation = accountGeneration
         guard let current = session else { throw ChatAPIError.unauthorized }
         do {
@@ -535,12 +630,12 @@ private extension ChatStore {
         return fresh
     }
 
-    private func checkAccount(_ generation: Int) throws {
+    func checkAccount(_ generation: Int) throws {
         try Task.checkCancellation()
         guard generation == accountGeneration else { throw CancellationError() }
     }
 
-    private func resetAccount() {
+    func resetAccount() {
         infoMessage = nil
         disclosure = nil
         showsConsent = false
@@ -560,11 +655,17 @@ private extension ChatStore {
         hasMore = false
         profile = nil
         creditUsage = nil
+        connectivity = .online
+        cloudSyncedAt = nil
+        // The account's draft must not be saved as a device draft; callers that
+        // keep it (login, session expiry) restore it themselves.
+        draft = ""
+        imageDataURL = nil
         changeSelection(UUID().uuidString.lowercased())
         selectedID = nil
     }
 
-    private func report(_ error: Error, generation: Int, signInRejection: String? = nil) {
+    func report(_ error: Error, generation: Int, signInRejection: String? = nil) {
         guard generation == accountGeneration, !(error is CancellationError), !Task.isCancelled else { return }
         if case ChatAPIError.server(Self.creditsExhaustedCode, _) = error {
             creditsExhausted = true
@@ -616,10 +717,12 @@ extension ChatStore {
         if let value = try? await authorized({ [service] token in try await service.profile(token: token) }),
            generation == accountGeneration {
             profile = value
+            cacheValue(value, key: Self.profileCacheKey)
         }
         if let value = try? await authorized({ [service] token in try await service.creditUsage(token: token) }),
            generation == accountGeneration {
             creditUsage = value
+            cacheValue(value, key: Self.creditsCacheKey)
         }
     }
 
@@ -723,6 +826,9 @@ extension ChatStore {
     /// The assistant message that "Regenerate" replaces: the last answer, and only
     /// when no run is active.
     var regenerableMessageID: String? {
+        if let id = selectedID, isLocalConversation(id) {
+            return localRetryMessageID
+        }
         guard !isBusy, let messages = conversation?.messages,
               let answer = messages.lastIndex(where: { $0.role == "assistant" && !$0.text.isEmpty }),
               let question = messages.lastIndex(where: { $0.role == "user" }),
@@ -731,6 +837,10 @@ extension ChatStore {
     }
 
     func regenerate(messageID: String) async {
+        if let id = selectedID, isLocalConversation(id) {
+            await regenerateLocal(messageID: messageID)
+            return
+        }
         guard isAuthenticated, await ensureConsent() else { return }
         guard let value = conversation, regenerableMessageID == messageID, composerValidation == nil else { return }
         let generation = accountGeneration
@@ -760,12 +870,20 @@ extension ChatStore {
     }
 
     func deleteConversation(_ id: String) async {
+        if isLocalConversation(id) {
+            await deleteLocal(id)
+            return
+        }
         guard isAuthenticated else { return }
         let generation = accountGeneration
         do {
             try await authorized { [service] token in try await service.deleteConversation(id: id, token: token) }
             guard generation == accountGeneration else { return }
             conversations.removeAll { $0.id == id }
+            if let owner = cacheOwner {
+                try? await cache?.delete(id: id, owner: owner)
+                try? await localStore?.saveDraft(nil, id: id, owner: owner)
+            }
             if selectedID == id {
                 newConversation()
             }
@@ -776,7 +894,7 @@ extension ChatStore {
 extension ChatStore {
     var canAttemptSend: Bool {
         !isSending && !isRunning && !isCheckingConsent &&
-            (!isAuthenticated || composerValidation == nil) &&
+            (!(isAuthenticated || sendsLocally) || composerValidation == nil) &&
             !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
@@ -833,17 +951,24 @@ extension ChatStore {
         }
     }
 
-    func loadDisclosure() async {
-        guard isAuthenticated else { return }
+    /// Returns the outage when Typeflux could not be reached; consent then fails closed.
+    @discardableResult
+    func loadDisclosure() async -> ChatConnectivity? {
+        guard isAuthenticated else { return nil }
         let generation = accountGeneration
         do {
             let value = try await authorized { [service] token in try await service.aiDisclosure(token: token) }
             try checkAccount(generation)
             disclosure = value.isValid ? value : nil
+            return nil
         } catch {
-            if generation == accountGeneration {
-                disclosure = nil
+            guard generation == accountGeneration else { return nil }
+            disclosure = nil
+            let issue = ChatConnectivity.classify(error)
+            if let issue {
+                connectivity = issue
             }
+            return issue
         }
     }
 
@@ -853,8 +978,13 @@ extension ChatStore {
         defer { isCheckingConsent = false }
         let generation = accountGeneration
         let selection = selectionGeneration
-        await loadDisclosure()
+        let outage = await loadDisclosure()
         guard generation == accountGeneration, selection == selectionGeneration, isAuthenticated else { return false }
+        if let outage {
+            // Nothing can be sent anyway; explain the outage instead of asking for consent.
+            noteUnsent(outage)
+            return false
+        }
         if !hasAIConsent {
             showsConsent = true; return false
         }
@@ -874,6 +1004,7 @@ extension ChatStore {
             try await authorized { [service] token in try await service.deleteAccount(proof: proof, token: token) }
             try checkAccount(generation)
             revokeAIConsent()
+            await forgetAccountData()
             resetAccount()
             do { try credentials.clear() } catch {
                 errorMessage = "Your account was deleted, but local sign-in data could not be cleared."

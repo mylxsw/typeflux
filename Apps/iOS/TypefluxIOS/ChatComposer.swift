@@ -68,7 +68,7 @@ struct ChatComposer: View {
                     Link("Open Settings", destination: URL(string: UIApplication.openSettingsURLString)!)
                         .font(.footnote)
                 }
-                if error == store.errorMessage {
+                if error == store.errorMessage, !store.sendsLocally {
                     Button { Task { await store.reloadConversation() } } label: {
                         Image(systemName: "arrow.clockwise").font(.footnote)
                             .frame(width: 32, height: 32)
@@ -77,6 +77,16 @@ struct ChatComposer: View {
                 }
             }
             .padding(.leading, 8).padding(.bottom, 6)
+        }
+        if store.offersLocalFallback {
+            Button { store.continueInPrivateConversation() } label: {
+                Label("Continue privately with your own model", systemImage: "lock")
+                    .font(.footnote.weight(.semibold)).foregroundStyle(ChatTheme.purple)
+                    .frame(minHeight: 32)
+            }
+            .buttonStyle(.plain)
+            .padding(.leading, 8).padding(.bottom, 6)
+            .accessibilityIdentifier("chat.composer.private")
         }
     }
 
@@ -116,7 +126,7 @@ struct ChatComposer: View {
     private var controls: some View {
         HStack(spacing: 2) {
             attachMenu
-            if store.isAuthenticated {
+            if store.canChooseModel {
                 ChatModelPicker(store: store, maximumHeight: max(100, availableHeight - 170))
             } else {
                 Label("Sign in to send", systemImage: "lock")
@@ -133,7 +143,12 @@ struct ChatComposer: View {
 
     private var attachDisabled: Bool {
         store.isSending || store
-            .isRunning || isLoadingPhoto || (store.isAuthenticated && store.selectedModel?.vision != true)
+            .isRunning || isLoadingPhoto || (store.canChooseModel && store.selectedModel?.vision != true)
+    }
+
+    /// Private conversations use violet, like the Mac's private storage.
+    private var sendTint: Color {
+        store.sendsLocally ? ChatTheme.purple : ChatTheme.accent
     }
 
     private var attachMenu: some View {
@@ -201,8 +216,8 @@ struct ChatComposer: View {
                 }
                 .foregroundStyle(store.canAttemptSend ? Color.white : ChatTheme.tertiary)
                 .frame(width: 34, height: 34)
-                .background(store.canAttemptSend ? ChatTheme.accent : ChatTheme.strongFill, in: Circle())
-                .shadow(color: store.canAttemptSend ? ChatTheme.accent.opacity(0.35) : .clear, radius: 6, y: 3)
+                .background(store.canAttemptSend ? sendTint : ChatTheme.strongFill, in: Circle())
+                .shadow(color: store.canAttemptSend ? sendTint.opacity(0.35) : .clear, radius: 6, y: 3)
                 .frame(width: 40, height: 44).contentShape(Rectangle())
             }
             .buttonStyle(.plain)

@@ -20,6 +20,7 @@ struct LoginView: View {
 
     enum Route: Hashable {
         case email
+        case provider
     }
 
     var body: some View {
@@ -82,6 +83,19 @@ struct LoginView: View {
                             .buttonStyle(.plain)
                             .accessibilityIdentifier("login.email.open")
                             .disabled(store.isLoading)
+                            Button { path.append(.provider) } label: {
+                                Label("Use your own models", systemImage: "lock")
+                                    .font(.system(size: 16.5, weight: .semibold)).foregroundStyle(ChatTheme.purple)
+                                    .frame(maxWidth: .infinity, minHeight: 52)
+                                    .background(ChatTheme.purple.opacity(0.12), in: Capsule())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("login.provider")
+                            .disabled(store.isLoading)
+                            Text("No account needed. Conversations stay on this iPhone; your API key stays in its Keychain.")
+                                .font(.footnote).foregroundStyle(ChatTheme.secondary)
+                                .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
                             Button { dismiss() } label: {
                                 Text("Browse first").frame(maxWidth: .infinity, minHeight: 44)
                             }.accessibilityIdentifier("login.browse")
@@ -119,8 +133,17 @@ struct LoginView: View {
                 }
                 googleTask = nil
             }
-            .navigationDestination(for: Route.self) { _ in
-                ChatEmailLoginView(store: store)
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .email:
+                    ChatEmailLoginView(store: store)
+                case .provider:
+                    // Saving the first provider is enough to start: the welcome closes.
+                    ChatProviderEditor(store: store, existing: nil) { _ in
+                        store.showsLogin = false
+                        store.newConversation()
+                    }
+                }
             }
         }
     }

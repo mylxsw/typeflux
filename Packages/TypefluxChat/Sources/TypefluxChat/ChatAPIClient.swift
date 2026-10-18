@@ -275,7 +275,12 @@ public struct ChatAPIClient: ChatAPI {
         let (data, response) = try await session.data(for: request)
         try Task.checkCancellation()
         guard let http = response as? HTTPURLResponse else { throw ChatAPIError.invalidResponse }
-        return try ChatRequest.decode(data: data, statusCode: http.statusCode, decoder: decoder)
+        do {
+            return try ChatRequest.decode(data: data, statusCode: http.statusCode, decoder: decoder)
+        } catch ChatAPIError.invalidResponse where (500 ..< 600).contains(http.statusCode) {
+            // A proxy or load balancer answered instead of Typeflux: the service is down.
+            throw ChatAPIError.server(code: ChatConnectivity.serviceErrorCode(http.statusCode), message: nil)
+        }
     }
 
     private var clientHeaders: [String: String] {

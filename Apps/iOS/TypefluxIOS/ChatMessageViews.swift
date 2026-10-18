@@ -12,6 +12,7 @@ struct ChatTranscriptView: View {
     var quote: (String) -> Void
     var regenerate: (String) -> Void = { _ in }
     var report: ((ChatMessage) -> Void)?
+    var modelLabel: (ChatMessage) -> String? = { _ in nil }
 
     var body: some View {
         ForEach(ChatTranscript.items(conversation)) { item in
@@ -19,7 +20,8 @@ struct ChatTranscriptView: View {
             case let .message(message):
                 ChatMessageView(message: message, allowsQuote: allowsQuote,
                                 canRegenerate: message.id == regenerableMessageID,
-                                quote: quote, regenerate: regenerate, report: report)
+                                quote: quote, regenerate: regenerate, report: report,
+                                modelLabel: modelLabel(message))
             case let .activity(activity): ChatActivityView(activity: activity)
             }
         }
@@ -88,6 +90,7 @@ private struct ChatMessageView: View {
     let quote: (String) -> Void
     let regenerate: (String) -> Void
     let report: ((ChatMessage) -> Void)?
+    var modelLabel: String?
     @State private var copied = false
     @State private var selectingText = false
 
@@ -181,6 +184,14 @@ private struct ChatMessageView: View {
             } label: { actionIcon("ellipsis") }
                 .accessibilityLabel(NSLocalizedString("More actions", comment: "Message action"))
                 .accessibilityIdentifier("chat.more." + message.id)
+            if let modelLabel {
+                Spacer(minLength: 8)
+                Text(verbatim: modelLabel)
+                    .font(.system(size: 11.5)).foregroundStyle(ChatTheme.tertiary)
+                    .lineLimit(1).truncationMode(.middle)
+                    .accessibilityLabel(String(format: NSLocalizedString("Answered by %@", comment: ""), modelLabel))
+                    .accessibilityIdentifier("chat.model." + message.id)
+            }
         }
         .foregroundStyle(ChatTheme.tertiary).buttonStyle(.plain)
         .padding(.leading, -11).padding(.top, -6)

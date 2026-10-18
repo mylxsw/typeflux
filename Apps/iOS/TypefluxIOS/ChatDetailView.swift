@@ -60,7 +60,9 @@ struct ChatDetailView: View {
                                     editorFocused = true
                                 },
                                 regenerate: { id in Task { await store.regenerate(messageID: id) } },
-                                report: { reportedMessage = $0 }
+                                // Private answers never reach Typeflux, so there is nothing to report to it.
+                                report: store.sendsLocally ? nil : { reportedMessage = $0 },
+                                modelLabel: { store.modelLabel(for: $0) }
                             )
                         }
                         Color.clear.frame(height: 1).id("bottom")
@@ -78,7 +80,12 @@ struct ChatDetailView: View {
                         proxy.scrollTo("bottom", anchor: .bottom)
                     }
                 }
-                .safeAreaInset(edge: .top, spacing: 0) { topBar }
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    VStack(spacing: 0) {
+                        topBar
+                        ChatConnectivityBanner(store: store).padding(.horizontal, 16).padding(.bottom, 8)
+                    }
+                }
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     VStack(spacing: 0) {
                         if isEmpty, !editorFocused, geometry.size.height > 450, !store.needsCredits {
@@ -114,14 +121,14 @@ struct ChatDetailView: View {
                 editorFocused = false
                 onOpenSidebar()
             }
-            if !store.isAuthenticated {
+            if !store.isAuthenticated, store.library.models.isEmpty {
                 Label("Guest mode", systemImage: "person.crop.circle").font(.caption).foregroundStyle(.secondary)
                 Spacer()
                 Button { store.showsLogin = true } label: {
                     Text("Sign in").frame(minWidth: 44, minHeight: 44)
                 }.accessibilityIdentifier("guest.login")
             }
-            if store.isAuthenticated {
+            if store.isAuthenticated || !store.library.models.isEmpty {
                 if let conversation = store.conversation, !conversation.messages.isEmpty || store.isRunning {
                     titlePill(conversation)
                 } else {
@@ -163,8 +170,16 @@ struct ChatDetailView: View {
 
     private func titlePill(_ conversation: ChatConversation) -> some View {
         VStack(spacing: 1) {
-            Text(conversation.title.isEmpty ? NSLocalizedString("New conversation", comment: "") : conversation.title)
-                .font(.system(size: 14.5, weight: .semibold)).lineLimit(1)
+            HStack(spacing: 4) {
+                if store.conversationStorage == .local {
+                    Image(systemName: "lock.fill").font(.system(size: 10.5, weight: .semibold))
+                        .foregroundStyle(ChatTheme.purple)
+                        .accessibilityLabel(NSLocalizedString("Private conversation", comment: ""))
+                }
+                Text(conversation.title.isEmpty ? NSLocalizedString("New conversation", comment: "")
+                    : conversation.title)
+                    .font(.system(size: 14.5, weight: .semibold)).lineLimit(1)
+            }
             if let run = conversation.run {
                 HStack(spacing: 5) {
                     Circle().fill(runColor(run)).frame(width: 6, height: 6)
@@ -194,11 +209,14 @@ struct ChatDetailView: View {
         VStack(spacing: 0) {
             Spacer(minLength: 24)
             ChatOrb(size: 96).padding(.bottom, 22)
-            Text("What's on your mind?").font(.system(size: 25, weight: .semibold))
+            Text(store.sendsLocally ? "Ask privately" : "What's on your mind?")
+                .font(.system(size: 25, weight: .semibold))
                 .multilineTextAlignment(.center)
-            Text("Look at photos, translate, read the web")
+            Text(store.sendsLocally ? "Answered by your own model and kept only on this iPhone."
+                : "Look at photos, translate, read the web")
                 .font(.system(size: 14.5)).foregroundStyle(ChatTheme.secondary).multilineTextAlignment(.center)
-                .padding(.top, 8)
+                .padding(.top, 8).padding(.horizontal, 24)
+                .accessibilityIdentifier("chat.empty.subtitle")
             Spacer(minLength: 24)
         }
         .frame(maxWidth: .infinity)
@@ -209,7 +227,7 @@ struct ChatDetailView: View {
     private var suggestions: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 10) {
-                if !store.isAuthenticated {
+                if !store.canChooseModel {
                     ForEach(ChatExample.allCases) { example in
                         Button { store.example = example; editorFocused = false } label: {
                             VStack(alignment: .leading, spacing: 8) {

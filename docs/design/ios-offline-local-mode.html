@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="zh-Hans" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux iOS · 离线可用、本地模式与手动选模型 — 交互设计稿（GUL-418）</title>
+<style>
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Helvetica Neue", sans-serif;
+  --ease: cubic-bezier(.22, .9, .3, 1);
+}
+[data-theme="light"] {
+  color-scheme: light;
+  --page: #e4e6ee; --bg: #f5f5f7; --card: #ffffff; --glass: rgba(255,255,255,.80);
+  --text: rgba(0,0,0,.88); --text-2: rgba(60,60,67,.66); --text-3: rgba(60,60,67,.40);
+  --accent: #2e6ef0; --accent-text: #1b57d6; --accent-soft: #e6eefd;
+  --bubble: #e4edfd; --bubble-text: #10234d; --purple: #7d40f0; --local: #8a4fe0; --local-soft: #f1e9fd;
+  --fill: rgba(120,120,128,.10); --fill-2: rgba(120,120,128,.16);
+  --border: rgba(0,0,0,.08); --success: #30b158; --warn: #c27c00; --warn-soft: #fff4dc; --danger: #e5352b; --danger-soft: #fdeceb;
+  --shadow: 0 24px 60px rgba(30,30,60,.20), 0 2px 6px rgba(30,30,60,.10);
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0b0b10; --bg: #0f0f12; --card: #1c1c21; --glass: rgba(44,44,52,.78);
+  --text: rgba(255,255,255,.92); --text-2: rgba(235,235,245,.62); --text-3: rgba(235,235,245,.36);
+  --accent: #178cff; --accent-text: #8ebdff; --accent-soft: #15263e;
+  --bubble: #1e3357; --bubble-text: #e1ebff; --purple: #b58cff; --local: #c09bff; --local-soft: #2a2140;
+  --fill: rgba(120,120,128,.20); --fill-2: rgba(120,120,128,.28);
+  --border: rgba(255,255,255,.09); --success: #32d74b; --warn: #ffcc4d; --warn-soft: #3a2f12; --danger: #ff5a4f; --danger-soft: #3d1a18;
+  --shadow: 0 24px 60px rgba(0,0,0,.6), 0 2px 6px rgba(0,0,0,.4);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font-family: var(--font); font-size: 13px; color: var(--text); background: var(--page); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+input, textarea { font: inherit; color: inherit; }
+.hidden { display: none !important; }
+
+/* ---------- board ---------- */
+.board { display: grid; grid-template-columns: 220px 430px minmax(300px, 1fr); gap: 28px; max-width: 1360px; margin: 0 auto; padding: 22px 28px 48px; align-items: start; }
+header.top { max-width: 1360px; margin: 0 auto; padding: 22px 28px 0; }
+header.top h1 { font-size: 20px; margin: 0 0 6px; }
+header.top p { margin: 0; color: var(--text-2); line-height: 1.6; max-width: 980px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; margin-top: 14px; }
+.toolbar label { color: var(--text-2); margin-right: 6px; }
+.seg { display: inline-flex; background: var(--fill); border-radius: 9px; padding: 2px; }
+.seg button { padding: 5px 11px; border-radius: 7px; color: var(--text-2); }
+.seg button.on { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.12); font-weight: 600; }
+.reset { padding: 5px 11px; border-radius: 8px; background: var(--fill); }
+
+.index { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 4px; }
+.index h3, .notes h3 { margin: 4px 0 8px; font-size: 12px; color: var(--text-3); font-weight: 600; letter-spacing: .02em; }
+.index button { text-align: left; padding: 8px 10px; border-radius: 9px; color: var(--text-2); line-height: 1.35; }
+.index button b { display: block; color: var(--text); font-weight: 600; }
+.index button.on { background: var(--card); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+.notes { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 12px; }
+.note { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; line-height: 1.65; }
+.note h4 { margin: 0 0 6px; font-size: 14px; }
+.note ul { margin: 4px 0 0; padding-left: 18px; }
+.note li { margin: 2px 0; }
+.note code { background: var(--fill); border-radius: 4px; padding: 0 4px; font-size: 12px; }
+.note table { border-collapse: collapse; width: 100%; font-size: 12px; margin-top: 6px; }
+.note td, .note th { border-top: 1px solid var(--border); padding: 5px 4px; text-align: left; vertical-align: top; }
+.note th { color: var(--text-3); font-weight: 600; }
+
+/* ---------- phone ---------- */
+.phone { width: 402px; height: 860px; border-radius: 58px; padding: 12px; background: #1d1d22; box-shadow: var(--shadow); position: sticky; top: 16px; }
+.screen { position: relative; width: 100%; height: 100%; border-radius: 47px; overflow: hidden; background: var(--bg); display: flex; flex-direction: column; }
+.status { height: 50px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 30px 0 34px; font-weight: 600; font-size: 15px; z-index: 30; }
+.status .r { display: flex; gap: 6px; align-items: center; font-size: 12px; }
+.island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 122px; height: 35px; border-radius: 20px; background: #000; z-index: 40; }
+.home-ind { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 136px; height: 5px; border-radius: 3px; background: var(--text); opacity: .85; z-index: 60; }
+.body { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; }
+.scroll { flex: 1; overflow-y: auto; min-height: 0; scrollbar-width: none; }
+.scroll::-webkit-scrollbar { display: none; }
+
+.gbtn { width: 40px; height: 40px; border-radius: 50%; background: var(--glass); backdrop-filter: blur(18px); border: 1px solid var(--border); display: grid; place-items: center; font-size: 17px; flex: none; }
+.navbar { display: flex; align-items: center; gap: 8px; padding: 4px 14px 8px; z-index: 5; }
+.pill { flex: 1; min-width: 0; height: 40px; border-radius: 20px; background: var(--glass); backdrop-filter: blur(18px); border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 12px; }
+.pill b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.pill small { font-size: 10.5px; color: var(--text-2); white-space: nowrap; }
+.pill small.local { color: var(--local); }
+
+.banner { margin: 0 14px 8px; border-radius: 14px; padding: 9px 12px; display: flex; gap: 9px; align-items: flex-start; font-size: 12.5px; line-height: 1.45; }
+.banner.warn { background: var(--warn-soft); color: var(--text); }
+.banner.warn .ico { color: var(--warn); }
+.banner .ico { font-size: 15px; line-height: 1.2; }
+.banner .act { margin-left: auto; color: var(--accent-text); font-weight: 600; white-space: nowrap; }
+
+.msgs { padding: 6px 16px 16px; display: flex; flex-direction: column; gap: 14px; }
+.u { align-self: flex-end; max-width: 80%; background: var(--bubble); color: var(--bubble-text); padding: 9px 13px; border-radius: 19px; font-size: 15px; line-height: 1.45; }
+.a { font-size: 15px; line-height: 1.6; }
+.a p { margin: 0 0 6px; }
+.think { color: var(--text-2); font-size: 13px; margin-bottom: 4px; }
+.acts { display: flex; gap: 14px; align-items: center; color: var(--text-3); font-size: 13px; margin-top: 2px; }
+.mtag { margin-left: auto; font-size: 11.5px; color: var(--text-3); display: inline-flex; gap: 4px; align-items: center; }
+.mtag b { color: var(--text-2); font-weight: 500; }
+.typing { color: var(--text-2); font-size: 14px; }
+.typing::after { content: "▍"; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+.empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 0 30px 40px; text-align: center; }
+.orb { width: 84px; height: 84px; border-radius: 50%; background: conic-gradient(from 200deg, #2e6ef0, #8c5cf5, #ffb347, #2e6ef0); filter: blur(.4px); box-shadow: 0 0 40px rgba(46,110,240,.35); }
+.orb.local { background: conic-gradient(from 200deg, #8a4fe0, #c37cf5, #6aa6ff, #8a4fe0); box-shadow: 0 0 40px rgba(138,79,224,.35); }
+.empty h2 { margin: 0; font-size: 22px; }
+.empty p { margin: 0; color: var(--text-2); line-height: 1.5; font-size: 13.5px; }
+
+/* composer */
+.composer-wrap { padding: 0 12px 26px; z-index: 6; }
+.errcard { margin: 0 2px 8px; background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 12px 14px; box-shadow: 0 6px 20px rgba(0,0,0,.08); }
+.errcard .t { display: flex; gap: 8px; font-size: 13.5px; line-height: 1.45; }
+.errcard .t .ico { color: var(--danger); }
+.errcard .t.info .ico { color: var(--accent); }
+.errcard .btns { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.btn { height: 34px; padding: 0 14px; border-radius: 17px; background: var(--fill); font-weight: 600; font-size: 13px; }
+.btn.primary { background: var(--accent); color: #fff; }
+.btn.local { background: var(--local); color: #fff; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.composer { background: var(--glass); backdrop-filter: blur(22px); border: 1px solid var(--border); border-radius: 26px; padding: 10px 10px 8px 14px; box-shadow: 0 8px 26px rgba(0,0,0,.10); }
+.composer textarea { width: 100%; border: 0; outline: 0; background: transparent; resize: none; font-size: 15.5px; height: 44px; line-height: 1.4; }
+.crow { display: flex; align-items: center; gap: 6px; }
+.cbtn { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 17px; color: var(--text-2); }
+.chip { height: 32px; border-radius: 16px; background: var(--fill); padding: 0 10px; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; max-width: 200px; }
+.chip span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip .lk { color: var(--local); }
+.chip.warn { background: var(--warn-soft); }
+.send { margin-left: auto; width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 17px; font-weight: 700; }
+.send.local { background: var(--local); }
+.send:disabled { background: var(--fill-2); color: var(--text-3); }
+
+/* sheet */
+.scrim { position: absolute; inset: 0; background: rgba(0,0,0,.26); z-index: 20; animation: fade .2s var(--ease); }
+@keyframes fade { from { opacity: 0; } }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; max-height: 84%; background: var(--bg); border-radius: 30px 30px 0 0; z-index: 21; display: flex; flex-direction: column; animation: up .28s var(--ease); }
+@keyframes up { from { transform: translateY(40%); opacity: .4; } }
+.sheet .grab { width: 38px; height: 5px; border-radius: 3px; background: var(--fill-2); margin: 8px auto 4px; flex: none; }
+.sheet .sh { display: flex; align-items: center; padding: 6px 18px 10px; }
+.sheet .sh b { font-size: 17px; flex: 1; text-align: center; }
+.sheet .sh button { color: var(--accent-text); font-size: 15px; width: 60px; text-align: left; }
+.sheet .sh button.r { text-align: right; }
+.sheet .scroll { padding: 0 16px 34px; }
+
+.sec { font-size: 12.5px; color: var(--text-2); margin: 14px 6px 6px; display: flex; justify-content: space-between; }
+.group { background: var(--card); border-radius: 16px; overflow: hidden; }
+.row { display: flex; align-items: center; gap: 11px; padding: 11px 14px; min-height: 50px; border-top: 1px solid var(--border); width: 100%; text-align: left; }
+.group > .row:first-child, .group > :first-child .row { border-top: 0; }
+.row .lg { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-size: 13px; font-weight: 700; color: #fff; flex: none; }
+.row .tx { flex: 1; min-width: 0; }
+.row .tx b { display: block; font-weight: 500; font-size: 15px; }
+.row .tx small { display: block; color: var(--text-2); font-size: 12px; margin-top: 1px; line-height: 1.4; }
+.row .end { color: var(--text-3); font-size: 13px; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.row.dis { opacity: .42; cursor: not-allowed; }
+.row .chk { color: var(--accent); font-weight: 700; font-size: 16px; }
+.badge { font-size: 10.5px; padding: 1px 6px; border-radius: 6px; background: var(--fill); color: var(--text-2); font-weight: 600; }
+.badge.def { background: var(--accent-soft); color: var(--accent-text); }
+.badge.lk { background: var(--local-soft); color: var(--local); }
+.badge.ok { color: var(--success); }
+.badge.bad { color: var(--danger); background: var(--danger-soft); }
+.badge.wn { color: var(--warn); background: var(--warn-soft); }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.link { color: var(--accent-text); }
+.foot { font-size: 12px; color: var(--text-2); margin: 8px 8px 0; line-height: 1.5; }
+.mini { font-size: 12.5px; color: var(--accent-text); font-weight: 600; padding: 4px 8px; border-radius: 8px; background: var(--accent-soft); }
+
+/* sidebar */
+.side { position: absolute; top: 0; bottom: 0; left: 0; width: 318px; background: var(--bg); z-index: 22; border-right: 1px solid var(--border); display: flex; flex-direction: column; padding-top: 50px; animation: slide .28s var(--ease); box-shadow: 10px 0 30px rgba(0,0,0,.12); }
+@keyframes slide { from { transform: translateX(-60%); opacity: .4; } }
+.side .hd { display: flex; align-items: center; padding: 6px 16px 10px; }
+.side .hd b { font-size: 22px; flex: 1; }
+.search { margin: 0 14px 8px; height: 38px; border-radius: 12px; background: var(--fill); display: flex; align-items: center; padding: 0 12px; color: var(--text-3); gap: 6px; font-size: 15px; }
+.filter { margin: 0 14px 6px; }
+.filter .seg { display: flex; }
+.filter .seg button { flex: 1; }
+.hist { padding: 0 8px; }
+.hist .g { font-size: 12.5px; color: var(--text-3); padding: 12px 10px 4px; font-weight: 600; }
+.hist button { display: flex; width: 100%; align-items: center; gap: 8px; padding: 10px 10px; border-radius: 11px; font-size: 15px; text-align: left; }
+.hist button.on { background: var(--fill); }
+.hist button .lk { color: var(--local); font-size: 12px; flex: none; }
+.hist button span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hist button small { color: var(--text-3); font-size: 11px; }
+.acct { border-top: 1px solid var(--border); padding: 12px 16px 30px; display: flex; align-items: center; gap: 10px; }
+.av { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #6aa6ff, #8c5cf5); color: #fff; display: grid; place-items: center; font-weight: 700; }
+
+/* pages (settings / providers) */
+.page-hd { display: flex; align-items: center; padding: 4px 14px 6px; gap: 8px; }
+.page-hd b { flex: 1; text-align: center; font-size: 17px; }
+.page-hd .sp { width: 40px; }
+.page { padding: 0 16px 40px; }
+.big { font-size: 30px; font-weight: 700; margin: 4px 4px 8px; }
+.field { display: flex; align-items: center; gap: 10px; padding: 0 14px; min-height: 48px; border-top: 1px solid var(--border); }
+.field:first-child { border-top: 0; }
+.field label { width: 74px; color: var(--text-2); font-size: 14px; flex: none; }
+.field input { flex: 1; border: 0; outline: 0; background: transparent; font-size: 15px; min-width: 0; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ptype { background: var(--card); border-radius: 14px; padding: 12px 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; border: 1.5px solid transparent; }
+.ptype.on { border-color: var(--accent); }
+.ptype .lg { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; color: #fff; font-weight: 700; }
+.toggle { width: 44px; height: 26px; border-radius: 13px; background: var(--fill-2); position: relative; flex: none; transition: background .2s; }
+.toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: left .2s var(--ease); }
+.toggle.on { background: var(--success); }
+.toggle.on::after { left: 20px; }
+.spin { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--fill-2); border-top-color: var(--accent); border-radius: 50%; animation: rot .8s linear infinite; vertical-align: -2px; }
+@keyframes rot { to { transform: rotate(360deg); } }
+
+/* welcome */
+.welcome { flex: 1; display: flex; flex-direction: column; padding: 30px 26px 40px; }
+.welcome .hero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; }
+.welcome h2 { font-size: 28px; margin: 6px 0 0; }
+.welcome p { margin: 0; color: var(--text-2); line-height: 1.55; font-size: 15px; }
+.wbtn { height: 52px; border-radius: 26px; font-size: 16px; font-weight: 600; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; }
+.wbtn.apple { background: var(--text); color: var(--bg); }
+.wbtn.mail { background: var(--card); border: 1px solid var(--border); }
+.wbtn.local { background: var(--local-soft); color: var(--local); }
+.wsub { text-align: center; color: var(--text-3); font-size: 12px; margin-top: 10px; line-height: 1.5; }
+
+/* storage popover */
+.pop { position: absolute; left: 14px; right: 14px; bottom: 120px; background: var(--card); border-radius: 22px; z-index: 21; padding: 14px 16px; box-shadow: var(--shadow); animation: up .24s var(--ease); line-height: 1.55; font-size: 13.5px; }
+.pop h5 { margin: 0 0 6px; font-size: 15px; display: flex; gap: 6px; align-items: center; }
+
+.toast { position: absolute; left: 50%; top: 58px; transform: translateX(-50%); background: var(--glass); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 18px; padding: 8px 14px; z-index: 50; font-size: 13px; box-shadow: 0 6px 20px rgba(0,0,0,.12); white-space: nowrap; animation: fade .2s; }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Typeflux iOS · 离线可用、本地模式与手动选模型 <span style="color:var(--text-3);font-weight:500">GUL-418 交互设计稿</span></h1>
+  <p>手机里的界面都可以点：侧边栏、模型选择、设置、添加服务商、发送消息。用上方的开关模拟 <b>服务端不可用</b>、<b>设备无网络</b> 和 <b>未登录</b>，看每个页面怎么降级。方案正文见 <code>docs/design/ios-offline-local-mode.md</code>。</p>
+  <div class="toolbar">
+    <div><label>服务状态</label><span class="seg" id="tServer"><button data-v="online">在线</button><button data-v="down">服务不可用</button><button data-v="offline">设备无网络</button></span></div>
+    <div><label>账号</label><span class="seg" id="tAuth"><button data-v="in">已登录</button><button data-v="out">未登录</button></span></div>
+    <div><label>我的服务商</label><span class="seg" id="tProv"><button data-v="yes">已配置 DeepSeek</button><button data-v="no">未配置</button></span></div>
+    <div><label>主题</label><span class="seg" id="tTheme"><button data-v="light">浅色</button><button data-v="dark">深色</button></span></div>
+    <button class="reset" id="reset">重置</button>
+  </div>
+</header>
+
+<div class="board">
+  <nav class="index" id="index"></nav>
+  <div class="phone"><div class="screen" id="screen"></div></div>
+  <aside class="notes" id="notes"></aside>
+</div>
+
+<script>
+(() => {
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+const CLOUD = [
+  { id: 'auto', name: '自动', sub: 'Typeflux 推荐 · 由后台按负载与能力路由', logo: 'T', color: '#2e6ef0', mult: '1×', vision: true },
+  { id: 'gpt', name: 'GPT-5.2', sub: '400K 上下文', logo: 'G', color: '#10a37f', mult: '2×', vision: true },
+  { id: 'claude', name: 'Claude Sonnet 5.5', sub: '1M 上下文', logo: 'A', color: '#d97757', mult: '3×', vision: true },
+  { id: 'gemini', name: 'Gemini 3 Pro', sub: '1M 上下文', logo: 'G', color: '#4285f4', mult: '2×', vision: true },
+  { id: 'dsv', name: 'DeepSeek V4', sub: '128K 上下文', logo: 'D', color: '#4d6bfe', mult: '0.5×', vision: false },
+];
+const PTYPES = [
+  { id: 'openai', name: 'OpenAI', logo: 'O', color: '#10a37f', url: 'https://api.openai.com/v1', models: ['gpt-5.2', 'gpt-5.2-mini', 'o5'] },
+  { id: 'anthropic', name: 'Anthropic', logo: 'A', color: '#d97757', url: 'https://api.anthropic.com', models: ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5'] },
+  { id: 'gemini', name: 'Gemini', logo: 'G', color: '#4285f4', url: 'https://generativelanguage.googleapis.com', models: ['gemini-3-pro', 'gemini-3-flash'] },
+  { id: 'deepseek', name: 'DeepSeek', logo: 'D', color: '#4d6bfe', url: 'https://api.deepseek.com/v1', models: ['deepseek-chat', 'deepseek-reasoner'] },
+  { id: 'openrouter', name: 'OpenRouter', logo: 'R', color: '#6467f2', url: 'https://openrouter.ai/api/v1', models: ['openai/gpt-5.2', 'anthropic/claude-sonnet-5.5', 'qwen/qwen3-max'] },
+  { id: 'dashscope', name: '通义千问', logo: '通', color: '#615ced', url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', models: ['qwen3-max', 'qwen3-vl-plus'] },
+  { id: 'moonshot', name: 'Moonshot', logo: 'K', color: '#222', url: 'https://api.moonshot.cn/v1', models: ['kimi-k3', 'kimi-k3-thinking'] },
+  { id: 'ollama', name: 'Ollama 局域网', logo: '🦙', color: '#555', url: 'http://192.168.1.20:11434', models: ['qwen3:14b', 'llama4:8b', 'gemma3:12b'], lan: true },
+  { id: 'custom', name: '自定义兼容', logo: '+', color: '#8e8e93', url: '', models: ['my-model'] },
+];
+const SEED_PROVIDER = () => ({ id: 'p1', type: 'deepseek', name: 'DeepSeek', status: 'ok', models: [
+  { id: 'deepseek-chat', name: 'deepseek-chat', vision: false, on: true },
+  { id: 'deepseek-reasoner', name: 'deepseek-reasoner', vision: false, on: true, reasoning: true },
+] });
+
+const CLOUD_CONVS = [
+  { id: 'c1', title: 'WWDC 新 API 整理', group: '今天', storage: 'cloud', model: 'claude', messages: [
+    { r: 'u', t: '帮我整理一下今年 WWDC 和 SwiftUI 相关的新 API。' },
+    { r: 'a', t: '主要有三类变化：<br>1. <b>Liquid Glass</b>：<code>glassEffect()</code> 与 <code>GlassEffectContainer</code>；<br>2. 富文本编辑：<code>TextEditor</code> 支持 <code>AttributedString</code>；<br>3. 原生 <code>WebView</code> 与 <code>WebPage</code>。', think: '思考了 6 秒', model: 'claude' },
+  ] },
+  { id: 'c2', title: '周报润色', group: '今天', storage: 'cloud', model: 'auto', messages: [
+    { r: 'u', t: '把这段周报改得简洁一点：本周主要完成了登录模块的重构……' },
+    { r: 'a', t: '本周完成登录模块重构，修复 3 个线上问题，下周开始支付页联调。', model: 'auto', routed: 'DeepSeek V4' },
+  ] },
+  { id: 'c3', title: '上海三日行程', group: '昨天', storage: 'cloud', model: 'gpt', messages: [
+    { r: 'u', t: '帮我安排一个上海三日游。' }, { r: 'a', t: '第一天：外滩 → 南京路 → 豫园……', model: 'gpt' } ] },
+  { id: 'c4', title: 'Postgres 索引选择', group: '更早', storage: 'cloud', model: 'auto', messages: [
+    { r: 'u', t: 'pgvector 用 HNSW 还是 IVFFlat？' }, { r: 'a', t: '数据量在千万以内、对召回要求高时优先 HNSW……', model: 'auto', routed: 'Claude Sonnet 5.5' } ] },
+];
+const LOCAL_CONVS = () => [
+  { id: 'l1', title: '合同条款检查', group: '昨天', storage: 'local', model: 'p1:deepseek-reasoner', messages: [
+    { r: 'u', t: '这份租赁合同第 7 条有没有对我不利的地方？' },
+    { r: 'a', t: '第 7 条把维修责任全部放在承租方，建议补充“非人为损坏由出租方承担”。', think: '思考了 11 秒', model: 'p1:deepseek-reasoner' } ] },
+];
+
+const fresh = () => ({
+  screen: 'chat', server: 'online', signedIn: true, hasProvider: true,
+  providers: [SEED_PROVIDER()], localConvs: LOCAL_CONVS(), conv: null, model: 'auto', defaultModel: 'auto',
+  draft: '', error: null, overlay: null, filter: 'all', pickerFor: 'chat', form: null, toast: null, cacheCleared: false, welcomeShown: false,
+});
+let S = fresh();
+
+/* ---------- helpers ---------- */
+const cloudOK = () => S.signedIn && S.server === 'online';
+const isLocalRef = ref => ref && ref.includes(':');
+function modelInfo(ref) {
+  if (!ref) return null;
+  if (!isLocalRef(ref)) { const m = CLOUD.find(x => x.id === ref); return m && { ...m, kind: 'cloud' }; }
+  const [pid, mid] = ref.split(':');
+  const p = S.providers.find(x => x.id === pid); if (!p) return null;
+  const m = p.models.find(x => x.id === mid); if (!m) return null;
+  const t = PTYPES.find(x => x.id === p.type);
+  return { id: ref, name: m.name, provider: p.name, logo: t.logo, color: t.color, vision: m.vision, kind: 'local', lan: t.lan };
+}
+function modelIssue(ref) {
+  const m = modelInfo(ref);
+  if (!m) return '默认模型已不可用，请重新选择';
+  if (m.kind === 'cloud') {
+    if (!S.signedIn) return '登录后才能使用 Typeflux Cloud 模型';
+    if (S.server === 'offline') return '设备未联网';
+    if (S.server === 'down') return 'Typeflux 服务暂不可用';
+  } else if (S.server === 'offline' && !m.lan) return '设备未联网，无法连接 ' + m.provider;
+  return null;
+}
+const allConvs = () => [...(S.signedIn ? CLOUD_CONVS : []), ...S.localConvs];
+const convStorage = () => S.conv ? S.conv.storage : (isLocalRef(S.model) ? 'local' : 'cloud');
+function toast(t) { S.toast = t; render(); clearTimeout(toast.h); toast.h = setTimeout(() => { S.toast = null; render(); }, 1800); }
+function go(screen, extra = {}) { Object.assign(S, { screen, overlay: null }, extra); render(); }
+
+function ensureUsableModel() {
+  // Never silently replace a selection; only fall back when the user has nothing usable at all.
+  if (!S.signedIn && !isLocalRef(S.model)) {
+    const first = S.providers[0]?.models.find(m => m.on);
+    if (first) S.model = S.providers[0].id + ':' + first.id;
+  }
+}
+
+/* ---------- status bar & frame ---------- */
+function statusBar() {
+  const net = S.server === 'offline' ? '✈︎' : '5G ▮▮▮';
+  return `<div class="island"></div><div class="status"><span>9:41</span><span class="r">${net} <span>▭</span></span></div>`;
+}
+function serverBanner(where) {
+  if (S.server === 'online' || !S.signedIn) return '';
+  const msg = S.server === 'down'
+    ? 'Typeflux 服务暂不可用，正在显示本机副本。'
+    : '设备未联网，正在显示本机副本。';
+  const sub = where === 'chat' && S.conv && S.conv.storage === 'cloud' ? '<br><span style="color:var(--text-2)">离线副本 · 更新于 10:42</span>' : '';
+  return `<div class="banner warn"><span class="ico">⚠︎</span><span>${msg}${sub}</span><button class="act" data-a="retry">重试</button></div>`;
+}
+
+/* ---------- screens ---------- */
+function screenWelcome() {
+  return `${statusBar()}<div class="welcome"><div class="hero"><div class="orb"></div><h2>Typeflux</h2>
+    <p>随时随地提问，对话在 Mac、iPhone 与网页间同步。</p></div>
+    <button class="wbtn apple" data-a="signin"> 通过 Apple 登录</button>
+    <button class="wbtn mail" data-a="signin">✉︎ 邮箱登录</button>
+    <button class="wbtn local" data-a="useLocal">🔒 使用自己的模型（无需账号）</button>
+    <div class="wsub">使用自己的模型时，对话只保存在这台 iPhone，<br>API Key 存在钥匙串中，不会上传。</div>
+    <button class="wsub link" data-a="skip" style="width:100%">稍后再说</button></div>`;
+}
+
+function messageHTML(m) {
+  if (m.r === 'u') return `<div class="u">${m.t}</div>`;
+  if (m.typing) return `<div class="a"><div class="typing">正在回答</div></div>`;
+  const info = modelInfo(m.model);
+  let tag = '';
+  if (info) {
+    const name = info.kind === 'local' ? `${info.provider} · ${info.name}` : (m.model === 'auto' && m.routed ? `自动 → ${m.routed}` : info.name);
+    tag = `<span class="mtag">${info.kind === 'local' ? '<span style="color:var(--local)">🔒</span>' : ''}<b>${esc(name)}</b></span>`;
+  }
+  return `<div class="a">${m.think ? `<div class="think">${m.think} ›</div>` : ''}<p>${m.t}</p>
+    <div class="acts"><span>⧉</span><span>⇪</span><span>↻</span>${tag}</div></div>`;
+}
+
+function composer() {
+  const storage = convStorage();
+  const info = modelInfo(S.model);
+  const issue = modelIssue(S.model);
+  const local = storage === 'local';
+  const chipName = info ? (info.kind === 'local' ? info.name : info.name) : '选择模型';
+  let card = '';
+  if (S.error) {
+    card = `<div class="errcard"><div class="t"><span class="ico">⚠︎</span><span>${S.error.text}</span></div>
+      <div class="btns">${S.error.buttons.map(b => `<button class="btn ${b.cls || ''}" data-a="${b.a}">${b.t}</button>`).join('')}</div></div>`;
+  } else if (!S.signedIn && !S.providers.length) {
+    card = `<div class="errcard"><div class="t info"><span class="ico">ℹ︎</span><span>登录 Typeflux，或添加自己的大模型服务商后即可开始提问。</span></div>
+      <div class="btns"><button class="btn primary" data-a="signin">登录</button><button class="btn local" data-a="addProvider">添加服务商</button></div></div>`;
+  } else if (issue && !S.conv) {
+    card = `<div class="errcard"><div class="t"><span class="ico">⚠︎</span><span>当前模型「${esc(chipName)}」：${issue}。${S.providers.length ? '可以改用自己的模型继续。' : ''}</span></div>
+      <div class="btns"><button class="btn" data-a="openPicker">换个模型</button>${S.providers.length && !isLocalRef(S.model) ? '<button class="btn local" data-a="switchLocal">改用我的模型</button>' : ''}</div></div>`;
+  }
+  const canSend = S.draft.trim() && (S.signedIn || S.providers.length);
+  return `<div class="composer-wrap">${card}<div class="composer">
+    <textarea id="draft" placeholder="${local ? '提问，对话只存在这台 iPhone' : '随便问'}">${esc(S.draft)}</textarea>
+    <div class="crow"><button class="cbtn">＋</button>
+      <button class="chip" data-a="storage" title="存储位置">${local ? '<span class="lk">🔒</span>' : '☁︎'}</button>
+      <button class="chip ${issue ? 'warn' : ''}" data-a="openPicker">${info ? `<span class="lg" style="width:16px;height:16px;border-radius:4px;background:${info.color};color:#fff;font-size:9px;display:grid;place-items:center">${info.logo}</span>` : ''}<span>${esc(chipName)}</span>${issue ? '⚠︎' : '⌄'}</button>
+      <button class="cbtn" style="margin-left:auto">🎙</button>
+      <button class="send ${local ? 'local' : ''}" data-a="send" ${canSend ? '' : 'disabled'}>↑</button></div></div></div>`;
+}
+
+function screenChat() {
+  const c = S.conv;
+  const storage = convStorage();
+  let subtitle = c ? (c.storage === 'local' ? '<small class="local">🔒 仅存本机</small>' : (S.server === 'online' ? '<small>已完成</small>' : '<small>离线副本</small>')) : '';
+  const body = c
+    ? `<div class="scroll"><div class="msgs">${c.messages.map(messageHTML).join('')}</div></div>`
+    : `<div class="empty"><div class="orb ${storage === 'local' ? 'local' : ''}"></div><h2>${storage === 'local' ? '私密提问' : '有什么可以帮你？'}</h2>
+       <p>${storage === 'local' ? '使用你自己的服务商，对话只保存在这台 iPhone，不会同步。' : '对话保存在 Typeflux Cloud，并在本机保留副本，断网也能查看。'}</p></div>`;
+  return `${statusBar()}<div class="body">
+    <div class="navbar"><button class="gbtn" data-a="sidebar">☰</button>
+      <div class="pill"><b>${c ? esc(c.title) : '新对话'}</b>${subtitle}</div>
+      <button class="gbtn" data-a="newChat">✎</button></div>
+    ${serverBanner('chat')}${body}${composer()}</div>${overlay()}`;
+}
+
+function sidebar() {
+  const convs = allConvs();
+  const hasBoth = convs.some(x => x.storage === 'local') && convs.some(x => x.storage === 'cloud');
+  const shown = convs.filter(x => S.filter === 'all' || x.storage === S.filter);
+  const groups = ['今天', '昨天', '更早'];
+  let list = groups.map(g => {
+    const items = shown.filter(x => x.group === g); if (!items.length) return '';
+    return `<div class="g">${g}</div>` + items.map(x => `<button class="${S.conv && S.conv.id === x.id ? 'on' : ''}" data-a="open" data-id="${x.id}">
+      ${x.storage === 'local' ? '<span class="lk">🔒</span>' : ''}<span>${esc(x.title)}</span></button>`).join('');
+  }).join('');
+  if (!shown.length) list = `<div class="foot" style="padding:20px 10px">还没有对话。</div>`;
+  const offline = S.signedIn && S.server !== 'online'
+    ? `<div class="banner warn" style="margin:0 14px 6px"><span class="ico">⚠︎</span><span>${S.server === 'down' ? '服务暂不可用' : '未联网'} · 显示本机副本<br><span style="color:var(--text-2)">更新于 10:42 · 下拉重试</span></span></div>` : '';
+  const acct = S.signedIn
+    ? `<div class="acct"><div class="av">M</div><div style="flex:1"><b>mylxsw</b><div style="color:var(--text-2);font-size:12px">Pro · 1,240 积分${S.server !== 'online' ? ' · 缓存' : ''}</div></div><button class="gbtn" data-a="settings">⚙︎</button></div>`
+    : `<div class="acct"><div class="av" style="background:var(--local)">🔒</div><div style="flex:1"><b>本地模式</b><div style="color:var(--text-2);font-size:12px">登录后可同步云端对话</div></div><button class="gbtn" data-a="settings">⚙︎</button></div>`;
+  return `<div class="scrim" data-a="close"></div><div class="side"><div class="hd"><b>Typeflux</b><button class="gbtn" data-a="newChat">✎</button></div>
+    <div class="search">⌕ 搜索对话</div>
+    ${hasBoth ? `<div class="filter"><span class="seg">${[['all', '全部'], ['cloud', '☁︎ 云端'], ['local', '🔒 本机']].map(([v, t]) => `<button class="${S.filter === v ? 'on' : ''}" data-a="filter" data-v="${v}">${t}</button>`).join('')}</span></div>` : ''}
+    ${offline}<div class="scroll hist">${list}</div>${acct}</div>`;
+}
+
+function picker() {
+  const forDefault = S.pickerFor === 'default';
+  const started = !forDefault && S.conv;
+  const lockedKind = started ? S.conv.storage : null;
+  const cur = forDefault ? S.defaultModel : S.model;
+  const cloudReason = !S.signedIn ? '登录后可用' : S.server === 'down' ? '服务暂不可用' : S.server === 'offline' ? '设备未联网' : null;
+  const cloudRows = CLOUD.map(m => {
+    const lockedOut = lockedKind === 'local';
+    const dis = (!forDefault && cloudReason) || lockedOut || (!S.signedIn && forDefault);
+    const isDef = S.defaultModel === m.id;
+    return `<button class="row ${dis ? 'dis' : ''}" data-a="${dis ? 'noop' : 'pick'}" data-id="${m.id}">
+      <span class="lg" style="background:${m.color}">${m.logo}</span>
+      <span class="tx"><b>${m.name} ${isDef ? '<span class="badge def">默认</span>' : ''}</b><small>${m.sub}</small></span>
+      <span class="end">${m.vision ? '<span class="badge">图片</span>' : ''}<span class="badge">${m.mult}</span>${cur === m.id ? '<span class="chk">✓</span>' : ''}</span></button>`;
+  }).join('');
+  const mine = S.providers.map(p => {
+    const t = PTYPES.find(x => x.id === p.type);
+    const rows = p.models.filter(m => m.on).map(m => {
+      const ref = p.id + ':' + m.id;
+      const dis = lockedKind === 'cloud';
+      const isDef = S.defaultModel === ref;
+      return `<button class="row ${dis ? 'dis' : ''}" data-a="${dis ? 'noop' : 'pick'}" data-id="${ref}">
+        <span class="lg" style="background:${t.color}">${t.logo}</span>
+        <span class="tx"><b>${m.name} ${isDef ? '<span class="badge def">默认</span>' : ''}</b><small>${p.name}${m.reasoning ? ' · 推理' : ''} · 不含网页搜索</small></span>
+        <span class="end"><span class="badge lk">🔒 本机</span>${cur === ref ? '<span class="chk">✓</span>' : ''}</span></button>`;
+    }).join('');
+    return rows;
+  }).join('');
+  const lockNote = lockedKind ? `<div class="foot">这段对话${lockedKind === 'local' ? '只存在本机，只能在“我的服务商”的模型之间切换' : '保存在云端，只能在 Typeflux Cloud 模型之间切换'}。新建对话可以选择另一种。</div>` : '';
+  const setDefault = !forDefault && S.model !== S.defaultModel && modelInfo(S.model)
+    ? `<div style="display:flex;justify-content:flex-end;margin:10px 4px 0"><button class="mini" data-a="setDefault">将当前模型设为默认</button></div>` : '';
+  return `<div class="scrim" data-a="close"></div><div class="sheet"><div class="grab"></div>
+    <div class="sh"><button data-a="close">取消</button><b>${forDefault ? '默认模型' : '选择模型'}</b><button class="r" data-a="close">完成</button></div>
+    <div class="scroll">${lockNote}${setDefault}
+      <div class="sec"><span>Typeflux Cloud</span>${cloudReason ? `<span style="color:var(--warn)">${cloudReason}</span>` : '<span>积分倍率</span>'}</div>
+      <div class="group">${cloudRows}</div>
+      ${S.signedIn ? '' : `<div class="foot">Typeflux Cloud 模型需要登录。<button class="link" data-a="signin">登录</button></div>`}
+      <div class="sec"><span>我的服务商</span><span>对话仅存本机</span></div>
+      <div class="group">${mine || '<div class="row"><span class="tx"><small>还没有配置服务商。可以使用 OpenAI、Anthropic、DeepSeek 等自己的 API Key，或局域网里的 Ollama。</small></span></div>'}
+        <button class="row" data-a="addProvider"><span class="lg" style="background:var(--fill-2);color:var(--accent-text)">＋</span><span class="tx"><b class="link">添加服务商</b></span></button></div>
+      <div class="foot">选“自动”时由 Typeflux 后台选择模型，每条回答下方会显示实际使用的模型。</div>
+    </div></div>`;
+}
+
+function storagePop() {
+  const local = convStorage() === 'local';
+  const started = !!S.conv;
+  return `<div class="scrim" data-a="close" style="background:rgba(0,0,0,.08)"></div><div class="pop">
+    <h5>${local ? '<span style="color:var(--local)">🔒</span> 仅存本机' : '☁︎ 云端同步'}</h5>
+    <div style="color:var(--text-2)">${local
+      ? '使用你自己的服务商。对话只保存在这台 iPhone，不会上传到 Typeflux，也不会出现在 Mac 或网页上。'
+      : '对话保存在 Typeflux Cloud，在 Mac、iPhone 与网页间同步；本机保留副本，服务不可用时也能查看。'}</div>
+    <div class="foot" style="margin:8px 0 0">${started ? '对话开始后，存储位置不能更改。' : '存储位置由所选模型决定：选择“我的服务商”的模型即为仅存本机。'}</div></div>`;
+}
+
+function overlay() {
+  if (S.overlay === 'sidebar') return sidebar();
+  if (S.overlay === 'picker') return picker();
+  if (S.overlay === 'storage') return storagePop();
+  return '';
+}
+
+function screenSettings() {
+  const credits = S.signedIn ? `<div class="group">
+      <div class="row"><div class="av">M</div><span class="tx"><b>mylxsw</b><small>mylxsw@gmail.com · Pro</small></span></div>
+      <div class="row"><span class="tx"><b>本月积分</b><small>${S.server === 'online' ? '1,240 / 3,000' : '1,240 / 3,000 · 更新于 10:42'}</small></span></div>
+      <button class="row ${S.server !== 'online' ? 'dis' : ''}" data-a="${S.server !== 'online' ? 'noop' : 'noop'}"><span class="tx"><b class="link">购买积分</b>${S.server !== 'online' ? '<small>服务恢复后可购买；已完成的购买会在下次联网时到账</small>' : ''}</span><span class="end">›</span></button></div>`
+    : `<div class="group"><div class="row"><span class="tx"><b>登录 Typeflux</b><small>同步 Mac 上的对话，使用 Typeflux Cloud 模型。本地模式无需登录。</small></span><button class="btn primary" data-a="signin">登录</button></div></div>`;
+  const def = modelInfo(S.defaultModel);
+  return `${statusBar()}<div class="body"><div class="page-hd"><button class="gbtn" data-a="back">‹</button><b>设置</b><span class="sp"></span></div>
+    <div class="scroll page">${serverBanner()}${credits}
+    <div class="sec"><span>模型</span></div><div class="group">
+      <button class="row" data-a="defaultPicker"><span class="tx"><b>默认模型</b><small>新对话使用</small></span><span class="end">${def ? esc(def.kind === 'local' ? def.provider + ' · ' + def.name : def.name) : '<span class="badge wn">需重新选择</span>'} ›</span></button>
+      <button class="row" data-a="providers"><span class="tx"><b>模型服务商</b><small>Typeflux Cloud 与你自己的 API Key</small></span><span class="end">${S.providers.length ? S.providers.length + ' 个' : '未配置'} ›</span></button></div>
+    <div class="sec"><span>存储</span></div><div class="group">
+      <div class="row"><span class="tx"><b>云端对话本机副本</b><small>最近 200 段完整内容 · ${S.cacheCleared ? '0 MB' : '23.4 MB'}</small></span><button class="btn" data-a="clearCache" ${S.cacheCleared || !S.signedIn ? 'disabled' : ''}>清除</button></div>
+      <div class="row"><span class="tx"><b>本机对话</b><small>${S.localConvs.length} 段 · 只在这台 iPhone，参与 iCloud 备份</small></span><span class="end">🔒</span></div></div>
+    <div class="foot">清除副本不会删除云端对话，也不会删除本机对话。退出登录时自动清除该账号的副本。</div>
+    <div class="sec"><span>通用</span></div><div class="group">
+      <div class="row"><span class="tx"><b>外观</b></span><span class="end">自动 ›</span></div>
+      <div class="row"><span class="tx"><b>语言</b></span><span class="end">简体中文 ›</span></div>
+      <div class="row"><span class="tx"><b>AI 数据共享</b></span><span class="end">›</span></div></div>
+    ${S.signedIn ? `<div class="group" style="margin-top:22px"><button class="row" data-a="signout"><span class="tx"><b style="color:var(--danger)">退出登录</b><small>本机对话与服务商配置会保留</small></span></button></div>` : ''}
+    </div></div>${S.overlay === 'picker' ? picker() : ''}`;
+}
+
+function screenProviders() {
+  const cloudState = !S.signedIn ? ['未登录', 'var(--text-3)'] : S.server === 'online' ? ['在线', 'var(--success)'] : S.server === 'down' ? ['暂不可用', 'var(--warn)'] : ['未联网', 'var(--warn)'];
+  const rows = S.providers.map(p => {
+    const t = PTYPES.find(x => x.id === p.type);
+    const n = p.models.filter(m => m.on).length;
+    const st = S.server === 'offline' && !t.lan ? '<span class="badge wn">未联网</span>' : p.status === 'ok' ? '<span class="badge ok">● 可用</span>' : '<span class="badge bad">密钥无效</span>';
+    return `<button class="row" data-a="editProvider" data-id="${p.id}"><span class="lg" style="background:${t.color}">${t.logo}</span>
+      <span class="tx"><b>${esc(p.name)}</b><small>${n} 个模型 · ${esc(t.url.replace(/^https?:\/\//, ''))}</small></span><span class="end">${st} ›</span></button>`;
+  }).join('');
+  return `${statusBar()}<div class="body"><div class="page-hd"><button class="gbtn" data-a="settings">‹</button><b>模型服务商</b><span class="sp"></span></div>
+    <div class="scroll page">
+    <div class="sec"><span>Typeflux Cloud</span></div><div class="group">
+      <div class="row"><span class="lg" style="background:#2e6ef0">T</span><span class="tx"><b>Typeflux Cloud</b><small>${S.signedIn ? CLOUD.length + ' 个模型 · 由后台管理，按积分倍率计费' : '登录后可用'}</small></span>
+      <span class="end"><span class="dot" style="background:${cloudState[1]}"></span>${cloudState[0]}</span></div></div>
+    <div class="sec"><span>我的服务商</span><span>对话仅存本机</span></div><div class="group">${rows}
+      <button class="row" data-a="addProvider"><span class="lg" style="background:var(--fill-2);color:var(--accent-text)">＋</span><span class="tx"><b class="link">添加服务商</b></span></button></div>
+    <div class="foot">API Key 保存在本机钥匙串（仅此设备），不会上传到 Typeflux，也不会进入 iCloud 备份。请求直接从 iPhone 发往服务商，不跟随重定向。</div>
+    </div></div>`;
+}
+
+function screenAddProvider() {
+  const f = S.form;
+  const t = PTYPES.find(x => x.id === f.type);
+  const types = PTYPES.map(x => `<button class="ptype ${x.id === f.type ? 'on' : ''}" data-a="ptype" data-id="${x.id}"><span class="lg" style="background:${x.color}">${x.logo}</span>${x.name}</button>`).join('');
+  let models = '';
+  if (f.phase === 'testing') models = `<div class="foot"><span class="spin"></span> 正在连接 ${esc(t.name)} 并获取模型…</div>`;
+  if (f.phase === 'error') models = `<div class="errcard" style="margin-top:10px"><div class="t"><span class="ico">⚠︎</span><span>${f.err}</span></div></div>`;
+  if (f.phase === 'ok') models = `<div class="sec"><span>找到 ${f.models.length} 个模型</span><span>选择要显示的</span></div><div class="group">${f.models.map((m, i) => `
+      <div class="row"><span class="tx"><b>${esc(m.name)}</b><small><button class="link" data-a="mvision" data-i="${i}">${m.vision ? '✓ 支持图片' : '标记为支持图片'}</button></small></span>
+      <button class="toggle ${m.on ? 'on' : ''}" data-a="mtoggle" data-i="${i}"></button></div>`).join('')}</div>`;
+  const needsURL = t.id === 'ollama' || t.id === 'custom';
+  return `${statusBar()}<div class="body"><div class="page-hd"><button class="gbtn" data-a="providers">‹</button><b>${f.editing ? '编辑服务商' : '添加服务商'}</b><span class="sp"></span></div>
+    <div class="scroll page">
+    ${f.editing ? '' : `<div class="sec"><span>类型</span></div><div class="grid">${types}</div>`}
+    <div class="sec"><span>连接</span></div><div class="group">
+      <div class="field"><label>名称</label><input id="fName" value="${esc(f.name)}"></div>
+      <div class="field"><label>地址</label><input id="fURL" value="${esc(f.url)}" placeholder="${needsURL ? 'http://192.168.1.20:11434' : ''}" ${needsURL ? '' : 'readonly style="color:var(--text-2)"'}></div>
+      ${t.id === 'ollama' ? '' : `<div class="field"><label>API Key</label><input id="fKey" type="password" value="${esc(f.key)}" placeholder="sk-…"></div>`}</div>
+    <div class="foot">${t.lan ? '局域网地址只允许私有网段（192.168.x.x、10.x.x.x 等）；首次连接时 iOS 会请求“本地网络”权限。' : '预设地址不可修改；需要代理或自建网关请选“自定义兼容”。'}</div>
+    <div style="margin-top:14px"><button class="btn primary" style="width:100%;height:44px;border-radius:14px" data-a="test" ${f.phase === 'testing' ? 'disabled' : ''}>测试并获取模型</button></div>
+    ${models}
+    ${f.phase === 'ok' ? `<div style="margin-top:14px"><button class="btn local" style="width:100%;height:46px;border-radius:14px" data-a="saveProvider">保存</button></div>` : ''}
+    ${f.editing ? `<div class="group" style="margin-top:22px"><button class="row" data-a="deleteProvider"><span class="tx"><b style="color:var(--danger)">删除服务商</b><small>使用它的本机对话会保留，但需要换模型后才能继续</small></span></button></div>` : ''}
+    </div></div>`;
+}
+
+/* ---------- notes ---------- */
+const NOTES = {
+  welcome: `<div class="note"><h4>首次启动</h4>在原有 Apple / 邮箱登录下方加入<b>“使用自己的模型（无需账号）”</b>。点它直接进入“添加服务商”，保存后回到新对话，默认模型即为刚添加的模型。<ul><li>“稍后再说”沿用现有行为：进入新对话，发送时再提示登录或添加服务商。</li><li>登录后两种对话并存，本机对话不会被上传。</li></ul></div>`,
+  chat: `<div class="note"><h4>对话页</h4><ul>
+    <li>输入框里的 ☁︎ / 🔒 是<b>存储位置</b>，由所选模型决定；第一条消息发出后锁定。</li>
+    <li>模型芯片显示当前模型。模型不可用时变成黄色 ⚠︎，并在输入框上方说明原因，不静默替换。</li>
+    <li>每条回答右下角显示<b>实际使用的模型</b>（来自服务端消息的 <code>model_ref</code> / <code>model_id</code>）；选“自动”时显示“自动 → DeepSeek V4”。</li></ul></div>
+    <div class="note"><h4>服务不可用时（切换上方“服务不可用”试试）</h4><ul>
+    <li>顶部横条：“正在显示本机副本 · 重试”。</li>
+    <li>历史对话照常打开、复制、分享，标题下显示“离线副本”。</li>
+    <li>云端对话发送失败：<b>消息不排队、不自动补发</b>，草稿保留；可以重试，或“改用我的模型”把草稿带到新的本机对话。</li>
+    <li>本机对话不受影响。</li>
+    <li>网络错误不会导致退出登录；只有 401 且刷新失败才会。</li></ul></div>`,
+  sidebar: `<div class="note"><h4>侧边栏历史</h4><ul>
+    <li>启动时<b>先从本机副本渲染</b>，再后台刷新；离线时显示“显示本机副本 · 更新于 10:42”。</li>
+    <li>本机对话带 🔒。两种对话都存在时出现“全部 / 云端 / 本机”筛选（与 Mac 一致）。</li>
+    <li>未登录时只显示本机对话，底部账号区显示“本地模式”。</li>
+    <li>搜索在本机副本上进行，离线可用。</li></ul></div>
+    <div class="note"><h4>本机副本规则</h4><table><tr><th>项目</th><th>规则</th></tr>
+    <tr><td>范围</td><td>最近 200 段完整内容，更早只存标题</td></tr><tr><td>更新</td><td>按 revision 只增不减，服务端为准</td></tr>
+    <tr><td>清理</td><td>退出登录、注销账号时删除该账号副本</td></tr><tr><td>保护</td><td>文件保护 + 不进 iCloud 备份（本机对话除外）</td></tr></table></div>`,
+  picker: `<div class="note"><h4>模型选择</h4><ul>
+    <li>三组：<b>自动</b>（后台路由，保持默认）/ Typeflux Cloud 各模型 / 我的服务商。</li>
+    <li>“将当前模型设为默认”：新对话不再固定为目录第一项。设置 → 默认模型 可以随时改。</li>
+    <li>每段对话记住最后使用的模型，重新打开时恢复。</li>
+    <li>对话开始后另一组置灰：云端对话只能换云端模型，本机对话只能换自己的模型。</li>
+    <li>服务不可用或未登录时，云端组整体置灰并写明原因。</li></ul></div>`,
+  storage: `<div class="note"><h4>存储位置说明卡</h4>点输入框里的 ☁︎ / 🔒 打开。说明这段对话存在哪里、会不会同步；对话开始后只读。</div>`,
+  settings: `<div class="note"><h4>设置</h4><ul>
+    <li>新增“模型”分组：默认模型、模型服务商。</li>
+    <li>新增“存储”分组：云端副本占用与清除、本机对话数量。</li>
+    <li>积分在离线时显示缓存值与更新时间；购买入口置灰并说明原因（StoreKit 未完成的交易下次联网时仍会到账）。</li>
+    <li>退出登录保留本机对话与服务商配置。</li></ul></div>`,
+  providers: `<div class="note"><h4>模型服务商</h4><ul>
+    <li>Typeflux Cloud 显示连接状态（在线 / 暂不可用 / 未联网 / 未登录）。</li>
+    <li>自己的服务商显示模型数、地址与状态；密钥失效显示红色标签，点进去修改。</li>
+    <li>支持：OpenAI、Anthropic、Gemini、DeepSeek、OpenRouter、通义千问、Moonshot、Ollama（局域网）、自定义 OpenAI 兼容。</li></ul></div>`,
+  addProvider: `<div class="note"><h4>添加服务商</h4><ul>
+    <li>选类型 → 填 Key（预设类型地址自动填好）→ “测试并获取模型”→ 勾选要显示的模型 → 保存。</li>
+    <li>模型目录：OpenAI 兼容 <code>/models</code>，Anthropic / Gemini 原生目录，Ollama <code>/api/tags</code>。</li>
+    <li>图片能力未知时默认不标记，用户可以手动确认（与 Mac 一致）。</li>
+    <li>试一下：切到“设备无网络”再点测试；选 Ollama 看局域网提示。</li></ul></div>`,
+};
+const INDEX = [
+  ['welcome', '首次启动', '登录 / 使用自己的模型'],
+  ['chat', '对话', '存储位置、模型芯片、离线降级'],
+  ['sidebar', '侧边栏历史', '本机副本、云端 / 本机筛选'],
+  ['picker', '模型选择', '自动 / 云端 / 我的服务商、设为默认'],
+  ['settings', '设置', '默认模型、存储、离线积分'],
+  ['providers', '模型服务商', 'Cloud 状态与自己的服务商'],
+  ['addProvider', '添加服务商', '测试连接、选择模型'],
+];
+
+/* ---------- render ---------- */
+function currentKey() {
+  if (S.screen === 'chat' && S.overlay) return S.overlay;
+  if (S.screen === 'settings' && S.overlay === 'picker') return 'picker';
+  return S.screen;
+}
+function render() {
+  document.documentElement.dataset.theme = S.theme || 'light';
+  const sc = $('#screen');
+  const html = { welcome: screenWelcome, chat: screenChat, settings: screenSettings, providers: screenProviders, addProvider: screenAddProvider }[S.screen]();
+  sc.innerHTML = html + (S.toast ? `<div class="toast">${S.toast}</div>` : '') + '<div class="home-ind"></div>';
+  const key = currentKey();
+  $('#index').innerHTML = '<h3>页面</h3>' + INDEX.map(([k, t, d]) => `<button class="${k === key ? 'on' : ''}" data-go="${k}"><b>${t}</b>${d}</button>`).join('');
+  $('#notes').innerHTML = '<h3>当前页面说明</h3>' + (NOTES[key] || '');
+  setSeg('#tServer', S.server); setSeg('#tAuth', S.signedIn ? 'in' : 'out'); setSeg('#tProv', S.providers.length ? 'yes' : 'no'); setSeg('#tTheme', S.theme || 'light');
+  const d = $('#draft'); if (d) d.addEventListener('input', () => { S.draft = d.value; const b = $('[data-a="send"]'); if (b) b.disabled = !(S.draft.trim() && (S.signedIn || S.providers.length)); });
+}
+function setSeg(sel, v) { document.querySelectorAll(sel + ' button').forEach(b => b.classList.toggle('on', b.dataset.v === v)); }
+
+/* ---------- actions ---------- */
+function send() {
+  const text = S.draft.trim(); if (!text) return;
+  const ref = S.model;
+  const issue = modelIssue(ref);
+  const info = modelInfo(ref);
+  if (!S.signedIn && !S.providers.length) return;
+  if (issue) {
+    const buttons = [{ t: '重试', a: 'send', cls: 'primary' }];
+    if (info && info.kind === 'cloud' && S.providers.length && !S.conv) buttons.push({ t: '改用我的模型', a: 'switchLocal', cls: 'local' });
+    if (info && info.kind === 'cloud' && S.providers.length && S.conv) buttons.push({ t: '在本机新对话中继续', a: 'forkLocal', cls: 'local' });
+    S.error = { text: `${issue}，消息没有发出，草稿已保留。`, buttons };
+    render(); return;
+  }
+  S.error = null;
+  if (!S.conv) {
+    const storage = info.kind === 'local' ? 'local' : 'cloud';
+    S.conv = { id: 'n' + Date.now(), title: text.slice(0, 14), group: '今天', storage, model: ref, messages: [] };
+    if (storage === 'local') S.localConvs.unshift(S.conv); else CLOUD_CONVS.unshift(S.conv);
+  }
+  S.conv.model = ref;
+  S.conv.messages.push({ r: 'u', t: esc(text) });
+  const reply = { r: 'a', typing: true, model: ref };
+  S.conv.messages.push(reply);
+  S.draft = ''; render();
+  setTimeout(() => {
+    reply.typing = false;
+    reply.t = info.kind === 'local' ? `（${info.provider} 直连）这是由你自己的服务商回答的示例内容，对话只保存在这台 iPhone。` : '这是 Typeflux Cloud 的示例回答，对话已同步到云端并在本机保留副本。';
+    if (ref === 'auto') reply.routed = 'DeepSeek V4';
+    render();
+  }, 900);
+}
+
+document.addEventListener('click', e => {
+  const g = e.target.closest('[data-go]');
+  if (g) {
+    const k = g.dataset.go;
+    if (k === 'sidebar' || k === 'picker' || k === 'storage') { S.screen = 'chat'; S.overlay = k; S.pickerFor = 'chat'; render(); return; }
+    if (k === 'addProvider') { openForm(); return; }
+    go(k); return;
+  }
+  const seg = e.target.closest('.toolbar .seg button');
+  if (seg) {
+    const id = seg.parentElement.id, v = seg.dataset.v;
+    if (id === 'tServer') { S.server = v; S.error = null; }
+    if (id === 'tAuth') { S.signedIn = v === 'in'; if (!S.signedIn && S.conv && S.conv.storage === 'cloud') S.conv = null; ensureUsableModel(); if (S.signedIn && !isLocalRef(S.defaultModel) && !S.conv) S.model = S.defaultModel; S.error = null; }
+    if (id === 'tProv') {
+      if (v === 'yes' && !S.providers.length) { S.providers = [SEED_PROVIDER()]; S.localConvs = LOCAL_CONVS(); }
+      if (v === 'no') { S.providers = []; S.localConvs = []; if (S.conv && S.conv.storage === 'local') S.conv = null; if (isLocalRef(S.model)) S.model = 'auto'; if (isLocalRef(S.defaultModel)) S.defaultModel = 'auto'; }
+      S.error = null;
+    }
+    if (id === 'tTheme') S.theme = v;
+    render(); return;
+  }
+  const el = e.target.closest('[data-a]'); if (!el || !$('#screen').contains(el)) return;
+  const a = el.dataset.a, id = el.dataset.id;
+  switch (a) {
+    case 'sidebar': S.overlay = 'sidebar'; break;
+    case 'close': S.overlay = null; break;
+    case 'noop': return;
+    case 'newChat': S.conv = null; S.error = null; S.overlay = null; S.screen = 'chat'; S.model = modelInfo(S.defaultModel) && !(S.signedIn === false && !isLocalRef(S.defaultModel)) ? S.defaultModel : S.model; ensureUsableModel(); break;
+    case 'open': S.conv = allConvs().find(x => x.id === id); S.model = S.conv.model; S.error = null; S.overlay = null; break;
+    case 'filter': S.filter = el.dataset.v; break;
+    case 'openPicker': S.overlay = 'picker'; S.pickerFor = 'chat'; break;
+    case 'defaultPicker': S.overlay = 'picker'; S.pickerFor = 'default'; break;
+    case 'pick':
+      if (S.pickerFor === 'default') { S.defaultModel = id; S.overlay = null; render(); toast('已设为默认模型'); return; }
+      S.model = id; S.error = null; S.overlay = null; break;
+    case 'setDefault': S.defaultModel = S.model; render(); toast('已设为默认，新对话将使用它'); return;
+    case 'storage': S.overlay = 'storage'; break;
+    case 'send': send(); return;
+    case 'retry': toast(S.server === 'online' ? '已刷新' : '仍然无法连接 Typeflux'); return;
+    case 'switchLocal': {
+      const p = S.providers[0]; const m = p && p.models.find(x => x.on);
+      if (m) { S.model = p.id + ':' + m.id; S.error = null; }
+      break;
+    }
+    case 'forkLocal': {
+      const p = S.providers[0]; const m = p && p.models.find(x => x.on);
+      if (m) { const d = S.draft || ($('#draft') && $('#draft').value); S.conv = null; S.model = p.id + ':' + m.id; S.error = null; S.draft = d; render(); $('#draft').value = d; toast('已带上草稿，新的本机对话'); return; }
+      break;
+    }
+    case 'settings': S.screen = 'settings'; S.overlay = null; break;
+    case 'back': S.screen = 'chat'; S.overlay = null; break;
+    case 'providers': S.screen = 'providers'; S.overlay = null; break;
+    case 'addProvider': openForm(); return;
+    case 'editProvider': {
+      const p = S.providers.find(x => x.id === id); const t = PTYPES.find(x => x.id === p.type);
+      S.form = { editing: p.id, type: p.type, name: p.name, url: t.url, key: '••••••••••••', phase: 'ok', models: p.models.map(m => ({ ...m })) };
+      S.screen = 'addProvider'; break;
+    }
+    case 'ptype': { const t = PTYPES.find(x => x.id === id); S.form = { type: id, name: t.name, url: t.url, key: '', phase: 'idle', models: [] }; break; }
+    case 'test': {
+      readForm();
+      const t = PTYPES.find(x => x.id === S.form.type);
+      S.form.phase = 'testing'; render();
+      setTimeout(() => {
+        if (S.server === 'offline' && !t.lan) { S.form.phase = 'error'; S.form.err = `设备未联网，无法连接 ${t.name}。联网后再试。`; }
+        else if (!t.lan && !S.form.key) { S.form.phase = 'error'; S.form.err = '请填写 API Key。'; }
+        else if (!S.form.url) { S.form.phase = 'error'; S.form.err = '请填写服务地址。'; }
+        else { S.form.phase = 'ok'; S.form.models = t.models.map((m, i) => ({ id: m, name: m, on: i < 2, vision: /vl|gpt-5|claude|gemini/.test(m) })); }
+        render();
+      }, 800);
+      return;
+    }
+    case 'mtoggle': S.form.models[+el.dataset.i].on = !S.form.models[+el.dataset.i].on; break;
+    case 'mvision': S.form.models[+el.dataset.i].vision = !S.form.models[+el.dataset.i].vision; break;
+    case 'saveProvider': {
+      readForm();
+      const f = S.form;
+      if (!f.models.some(m => m.on)) { toast('至少选择一个模型'); return; }
+      if (f.editing) { const p = S.providers.find(x => x.id === f.editing); p.name = f.name; p.models = f.models; }
+      else {
+        const p = { id: 'p' + Date.now(), type: f.type, name: f.name || f.type, status: 'ok', models: f.models };
+        S.providers.push(p);
+        if (!S.signedIn || S.fromWelcome) { const m = f.models.find(x => x.on); S.defaultModel = p.id + ':' + m.id; S.model = S.defaultModel; S.conv = null; S.screen = 'chat'; S.fromWelcome = false; render(); toast('已添加，默认模型已设为 ' + m.name); return; }
+      }
+      S.screen = 'providers'; render(); toast('已保存'); return;
+    }
+    case 'deleteProvider': {
+      S.providers = S.providers.filter(x => x.id !== S.form.editing);
+      if (isLocalRef(S.defaultModel) && !modelInfo(S.defaultModel)) S.defaultModel = S.signedIn ? 'auto' : S.defaultModel;
+      S.screen = 'providers'; break;
+    }
+    case 'clearCache': S.cacheCleared = true; render(); toast('已清除云端副本'); return;
+    case 'signin': S.signedIn = true; S.screen = 'chat'; S.overlay = null; if (!S.conv && !isLocalRef(S.model)) S.model = S.defaultModel; render(); toast('已登录（演示）'); return;
+    case 'signout': S.signedIn = false; S.cacheCleared = false; if (S.conv && S.conv.storage === 'cloud') S.conv = null; ensureUsableModel(); S.screen = 'chat'; render(); toast('已退出，本机对话已保留'); return;
+    case 'useLocal': S.fromWelcome = true; openForm(); return;
+    case 'skip': S.screen = 'chat'; break;
+  }
+  render();
+});
+function openForm() { S.form = { type: 'deepseek', name: 'DeepSeek', url: PTYPES[3].url, key: '', phase: 'idle', models: [] }; S.screen = 'addProvider'; S.overlay = null; render(); }
+function readForm() { const n = $('#fName'), u = $('#fURL'), k = $('#fKey'); if (n) S.form.name = n.value; if (u) S.form.url = u.value; if (k) S.form.key = k.value; }
+$('#reset').onclick = () => { const theme = S.theme; S = fresh(); S.theme = theme; CLOUD_CONVS.splice(0, CLOUD_CONVS.length - 4); render(); };
+render();
+})();
+</script>
+</body>
+</html>

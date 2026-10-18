@@ -22,14 +22,25 @@
             if !arguments.contains("--synthetic-no-consent") {
                 defaults.set("preview|Preview Provider", forKey: "ai-consent." + userID)
             }
+            let library = ChatModelLibrary.ephemeral()
+            if arguments.contains("--synthetic-providers") {
+                try? library.save(provider, key: "sk-preview")
+            }
             return ChatStore(service: makeService(arguments: arguments, now: now, streamInterval: streamInterval),
                              credentials: PreviewCredentials(
                                  longEmail: arguments.contains("--synthetic-long-email"),
                                  guest: arguments.contains("--synthetic-guest")
                              ),
                              deviceID: "synthetic-device", isSynthetic: true, consentDefaults: defaults,
-                             historyPageSize: Scenario.resolve(arguments) == .history ? 5 : 50)
+                             historyPageSize: Scenario.resolve(arguments) == .history ? 5 : 50,
+                             library: library, providerService: PreviewProviderService())
         }
+
+        /// The user's own provider in previews: answers locally with fixed text.
+        nonisolated static let provider = ChatProvider(id: "preview-deepseek", kind: .deepSeek, models: [
+            ChatProviderModel(id: "deepseek-chat"),
+            ChatProviderModel(id: "deepseek-reasoner"),
+        ])
 
         static func makeService(arguments: [String] = [], now: Date = Date(),
                                 streamInterval: Duration? = nil) -> any ChatAPI {
@@ -50,7 +61,8 @@
             }
             return PreviewService(scenario: scenario, documents: documents, streamInterval: interval,
                                   outOfCredits: scenario == .paused || arguments.contains("--synthetic-no-credits"),
-                                  storeEnabled: !arguments.contains("--synthetic-no-store"))
+                                  storeEnabled: !arguments.contains("--synthetic-no-store"),
+                                  outage: arguments.contains("--synthetic-offline"))
         }
 
         /// A UUID like real accounts, so purchases can carry it as appAccountToken.
@@ -351,8 +363,21 @@
         private var addon = 0
         private var granted: Set<String> = []
 
+        /// `--synthetic-offline`: each endpoint answers once, then Typeflux is unreachable.
+        private let outage: Bool
+        private var served: Set<String> = []
+
+        private func reach(_ endpoint: String) throws {
+            guard outage else { return }
+            if served.contains(endpoint) {
+                throw URLError(.cannotConnectToHost)
+            }
+            served.insert(endpoint)
+        }
+
         init(scenario: SyntheticPreview.Scenario?, documents: [ChatConversation]?, streamInterval: Duration,
-             outOfCredits: Bool = false, storeEnabled: Bool = true) {
+             outOfCredits: Bool = false, storeEnabled: Bool = true, outage: Bool = false) {
+            self.outage = outage
             self.scenario = scenario
             self.streamInterval = streamInterval
             self.outOfCredits = outOfCredits
@@ -408,11 +433,13 @@
         func deleteAccount(proof _: ChatDeletionProof, token _: String) async throws {}
 
         func aiDisclosure(token _: String) async throws -> ChatAIDisclosure {
-            .init(version: "preview", providers: ["Preview Provider"])
+            try reach("disclosure")
+            return .init(version: "preview", providers: ["Preview Provider"])
         }
 
         func models(token _: String) async throws -> [ChatModel] {
-            [ChatModel(id: "preview", name: "MiniMax M3", vision: true,
+            try reach("models")
+            return [ChatModel(id: "preview", name: "MiniMax M3", vision: true,
                        pricing: ["multiplier": "1"], reasoning: true,
                        reasoningEfforts: ["low", "medium", "high", "max"],
                        contextWindowTokens: 1_000_000, maxOutputTokens: 64000),
@@ -514,6 +541,7 @@
         }
 
         func list(token _: String, offset: Int) async throws -> [ChatConversationSummary] {
+            try reach("list")
             let pageSize = scenario == .history ? 5 : documents.count
             return documents.dropFirst(max(0, offset)).prefix(pageSize).map {
                 ChatConversationSummary(id: $0.id, title: $0.title, updatedAt: $0.updatedAt)
@@ -521,7 +549,8 @@
         }
 
         func conversation(id: String, token _: String) async throws -> ChatConversation {
-            try documents[documentIndex(id)]
+            try reach("conversation")
+            return try documents[documentIndex(id)]
         }
 
         func send(conversationId: String, request: ChatSendRequest, token _: String) async throws -> ChatConversation {
@@ -600,6 +629,28 @@
                 throw ChatAPIError.server(code: "NOT_FOUND", message: "Synthetic conversation not found.")
             }
             return index
+        }
+    }
+
+    /// The user's own provider in previews: streams a fixed answer, never the network.
+    private struct PreviewProviderService: ChatProviderService {
+        func models(provider _: ChatProvider, apiKey _: String?) async throws -> [ChatProviderModel] {
+            [ChatProviderModel(id: "deepseek-chat", enabled: false), ChatProviderModel(id: "deepseek-reasoner",
+                                                                                       enabled: false)]
+        }
+
+        func stream(_: ChatProviderRequest) -> AsyncThrowingStream<ChatProviderEvent, Error> {
+            AsyncThrowingStream { continuation in
+                let task = Task {
+                    continuation.yield(.reasoning("The user wants a short private answer."))
+                    for chunk in ["这段对话只保存在这台 iPhone 上，", "由你自己配置的 DeepSeek 直接回答。"] {
+                        try? await Task.sleep(for: .milliseconds(300))
+                        continuation.yield(.text(chunk))
+                    }
+                    continuation.finish()
+                }
+                continuation.onTermination = { _ in task.cancel() }
+            }
         }
     }
 
