@@ -6,12 +6,14 @@ import XCTest
 final class DockVisibilityControllerTests: XCTestCase {
     func testShowsDockIconWhenFirstWindowAppears() {
         let app = FakeActivationPolicyController(initialPolicy: .accessory)
-        let controller = DockVisibilityController(app: app)
+        var iconRestorations = 0
+        let controller = DockVisibilityController(app: app) { iconRestorations += 1 }
 
         controller.setPresented(true, for: NSObject())
 
         XCTAssertEqual(app.currentActivationPolicy, .regular)
         XCTAssertEqual(app.appliedPolicies, [.regular])
+        XCTAssertEqual(iconRestorations, 1)
     }
 
     func testHidesDockIconWhenLastWindowCloses() {
@@ -42,7 +44,8 @@ final class DockVisibilityControllerTests: XCTestCase {
 
     func testIgnoresDuplicateVisibilityUpdates() {
         let app = FakeActivationPolicyController(initialPolicy: .accessory)
-        let controller = DockVisibilityController(app: app)
+        var iconRestorations = 0
+        let controller = DockVisibilityController(app: app) { iconRestorations += 1 }
         let token = NSObject()
 
         controller.setPresented(true, for: token)
@@ -51,6 +54,20 @@ final class DockVisibilityControllerTests: XCTestCase {
         controller.setPresented(false, for: token)
 
         XCTAssertEqual(app.appliedPolicies, [.regular, .accessory])
+        XCTAssertEqual(iconRestorations, 1)
+    }
+
+    func testRestoresIconWheneverDockTileReappears() {
+        let app = FakeActivationPolicyController(initialPolicy: .accessory)
+        var iconRestorations = 0
+        let controller = DockVisibilityController(app: app) { iconRestorations += 1 }
+        let token = NSObject()
+
+        controller.setPresented(true, for: token)
+        controller.setPresented(false, for: token)
+        controller.setPresented(true, for: token)
+
+        XCTAssertEqual(iconRestorations, 2)
     }
 }
 

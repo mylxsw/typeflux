@@ -2,6 +2,7 @@ import AppKit
 import ApplicationServices
 
 public enum TypefluxApplication {
+    @MainActor
     public static func run() {
         // Shared by SwiftPM and Xcode launchers, before relaunch or application DI.
         if let code = NativeSystemWorkerCommand.handleInvocation(arguments: Array(CommandLine.arguments.dropFirst())) {
@@ -10,22 +11,31 @@ public enum TypefluxApplication {
         DevLauncher.relaunchAsAppBundleIfNeeded()
 
         let app = NSApplication.shared
-        let delegate = AppDelegate()
+        let settingsStore = SettingsStore()
+        let delegate = AppDelegate(settingsStore: settingsStore)
         app.delegate = delegate
         app.setActivationPolicy(.accessory)
+        // Restore the chosen icon before AppKit registers the app with the Dock.
+        AppIconController.apply(settingsStore.appIconStyle)
         app.run()
     }
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private let settingsStore: SettingsStore
     private var appCoordinator: AppCoordinator?
     private var languageObserver: NSObjectProtocol?
     private var appearanceObserver: NSObjectProtocol?
     private var appIconObserver: NSObjectProtocol?
     private let termination = AppTerminationBarrier()
 
+    init(settingsStore: SettingsStore) {
+        self.settingsStore = settingsStore
+        super.init()
+    }
+
     func applicationDidFinishLaunching(_: Notification) {
-        let settingsStore = SettingsStore()
+        let settingsStore = self.settingsStore
         AppLocalization.shared.setLanguage(settingsStore.appLanguage)
         AppAppearance.apply(settingsStore.appearanceMode)
         AppIconController.apply(settingsStore.appIconStyle)

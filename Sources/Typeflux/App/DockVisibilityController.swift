@@ -16,13 +16,20 @@ extension NSApplication: ActivationPolicyControlling {
 }
 
 final class DockVisibilityController {
-    static let shared = DockVisibilityController(app: NSApplication.shared)
+    static let shared = DockVisibilityController(app: NSApplication.shared) {
+        // A new Dock tile can start with the bundle icon after a policy change.
+        DispatchQueue.main.async {
+            AppIconController.apply(SettingsStore().appIconStyle)
+        }
+    }
 
     private let app: ActivationPolicyControlling
+    private let onDockBecameVisible: () -> Void
     private var presentedWindowIDs = Set<ObjectIdentifier>()
 
-    init(app: ActivationPolicyControlling) {
+    init(app: ActivationPolicyControlling, onDockBecameVisible: @escaping () -> Void = {}) {
         self.app = app
+        self.onDockBecameVisible = onDockBecameVisible
     }
 
     func windowDidShow(_ window: NSWindow) {
@@ -51,5 +58,8 @@ final class DockVisibilityController {
         let targetPolicy: NSApplication.ActivationPolicy = presentedWindowIDs.isEmpty ? .accessory : .regular
         guard app.currentActivationPolicy != targetPolicy else { return }
         app.applyActivationPolicy(targetPolicy)
+        if targetPolicy == .regular, app.currentActivationPolicy == .regular {
+            onDockBecameVisible()
+        }
     }
 }
