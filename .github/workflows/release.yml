@@ -7,15 +7,35 @@ on:
   push:
     branches:
       - pre-release
+  workflow_dispatch: {}
 
 concurrency:
   group: release-${{ github.event.release.tag_name || github.ref }}
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
+  verify-apple-silicon-build:
+    runs-on: typeflux-macos-vm
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Add Homebrew tools to PATH
+        run: echo /opt/homebrew/bin >> "$GITHUB_PATH"
+
+      - name: Compile native Apple Silicon release
+        run: |
+          set -euo pipefail
+          test "$RUNNER_ARCH" = ARM64
+          swift build -c release --arch arm64
+          bin_dir="$(swift build -c release --arch arm64 --show-bin-path)"
+          test -f "$bin_dir/Typeflux"
+          lipo -archs "$bin_dir/Typeflux" | grep -qw arm64
+
   build-signed-macos-app:
     runs-on: macos-latest
     timeout-minutes: 180
@@ -59,8 +79,8 @@ jobs:
           restore-keys: |
             typeflux-bundled-models-${{ runner.os }}-
 
-      - name: Install create-dmg
-        run: brew install create-dmg
+      - name: Install packaging tools
+        run: brew install create-dmg cmake
 
       - name: Import Developer ID certificate
         env:
@@ -206,9 +226,11 @@ jobs:
           rm -f "$APPLE_CERTIFICATE_PATH"
 
   publish-release-artifacts:
-    needs: build-signed-macos-app
+    needs: [verify-apple-silicon-build, build-signed-macos-app]
     runs-on: macos-latest
     timeout-minutes: 45
+    permissions:
+      contents: write
     env:
       APP_NAME: Typeflux
       BUILD_DIR: .build/release
