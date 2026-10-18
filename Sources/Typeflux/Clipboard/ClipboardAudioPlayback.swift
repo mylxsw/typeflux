@@ -30,6 +30,10 @@ import TypefluxMediaProtocol
     private var pendingLoad: (URL, AskImagePresentationAccess)?
     private var command: (MediaPlaybackMessage.Kind, Double?)?
     private var commandRange: MediaPlaybackRange?
+    /// The latest requested speed/volume mix. It is coalesced, never queued, and re-sent after a reload.
+    private var desiredMix: MediaPlaybackMix?
+    private var mixPending = false
+    var mix: MediaPlaybackMix? { desiredMix }
     init(video: Bool = false, budget: AskToolPixelBudget = .shared, open: Open? = nil) {
         self.video = video; self.budget = budget
         self.open = open ?? { try await ClipboardPlaybackProcess.open($0, video: video) }
@@ -62,12 +66,11 @@ import TypefluxMediaProtocol
                 guard !Task.isCancelled, self?.permits(current) == true else { return }
                 self?.client = client
                 if let reservation { try client.retainPixels(reservation) }
-                var next: (MediaPlaybackMessage.Kind, Double?) = (.load, nil)
-                var range: MediaPlaybackRange?
+                var next = PlaybackRequest(kind: .load)
                 while !Task.isCancelled {
                     guard self?.permits(current) == true else { self?.stop(); return }
                     let state = try await withTaskCancellationHandler {
-                        try await client.request(next.0, fraction: next.1, range: range)
+                        try await client.request(next.kind, fraction: next.fraction, range: next.range, mix: next.mix)
                     } onCancel: { client.stop() }
                     try Task.checkCancellation()
                     try state.validate()
@@ -76,11 +79,11 @@ import TypefluxMediaProtocol
                     let image = try Self.image(state, budget: budget)
                     self?.image = image
                     self?.apply(state)
-                    if next.0 != .status { self?.isBusy = false }
+                    // A mix never marks the player busy, so its reply must not clear a queued command's busy state.
+                    if next.kind != .status, next.kind != .mix { self?.isBusy = false }
                     try await Task.sleep(for: .milliseconds(video && state.phase == .playing ? 33 : 250))
                     guard self?.permits(current) == true else { self?.stop(); return }
-                    range = self?.commandRange; self?.commandRange = nil
-                    next = self?.takeCommand() ?? (.status, nil)
+                    next = self?.nextRequest() ?? PlaybackRequest(kind: .status)
                 }
             } catch {
                 guard self?.generation == current else { return }
@@ -96,7 +99,25 @@ import TypefluxMediaProtocol
         else if pending != nil { clear() }
     }
     private func permits(_ current: UUID) -> Bool { current == generation && originalAccess?.allows() == true }
-    private func takeCommand() -> (MediaPlaybackMessage.Kind, Double?)? { defer { command = nil }; return command }
+    private struct PlaybackRequest {
+        var kind: MediaPlaybackMessage.Kind
+        var fraction: Double?
+        var range: MediaPlaybackRange?
+        var mix: MediaPlaybackMix?
+    }
+    /// An explicit command always goes first; a pending mix is sent only when nothing else waits.
+    private func nextRequest() -> PlaybackRequest {
+        defer { command = nil; commandRange = nil }
+        if let command { return PlaybackRequest(kind: command.0, fraction: command.1, range: commandRange) }
+        guard mixPending else { return PlaybackRequest(kind: .status) }
+        mixPending = false
+        return PlaybackRequest(kind: .mix, mix: desiredMix)
+    }
+    /// Recording preview only. `nil` forgets the mix so a different recording starts at normal speed.
+    func setMix(_ mix: MediaPlaybackMix?) {
+        guard video, mix.map({ (try? $0.validate()) != nil }) ?? true, mix != desiredMix else { return }
+        desiredMix = mix; mixPending = mix != nil
+    }
     private func apply(_ state: MediaPlaybackState) {
         isLoaded = true; isPlaying = state.phase == .playing
         volume = state.volume
@@ -162,7 +183,7 @@ import TypefluxMediaProtocol
         command = (kind, fraction); isBusy = true
     }
     private func clear() {
-        client?.stop(); client = nil; command = nil; commandRange = nil
+        client?.stop(); client = nil; command = nil; commandRange = nil; mixPending = desiredMix != nil
         isLoaded = false; isPlaying = false; isBusy = false; failed = false
         progress = 0; elapsed = 0; duration = 0; volume = 1; image = nil
     }

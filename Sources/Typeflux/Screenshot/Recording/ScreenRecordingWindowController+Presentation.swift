@@ -182,15 +182,29 @@ extension ScreenRecordingWindowController {
 
     func handleEditorKey(_ event: NSEvent) -> Bool {
         guard event.window === window, let model, model.state == .preview,
-              !(window?.firstResponder is NSTextView), event.modifierFlags.isDisjoint(with: [
-                  .command,
-                  .control,
-                  .option
-              ]) else { return false }
-        switch event.charactersIgnoringModifiers?.lowercased() {
+              !(window?.firstResponder is NSTextView) else { return false }
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if flags == [.command, .shift], event.charactersIgnoringModifiers?.lowercased() == "s" {
+            saveAs(); return true
+        }
+        guard flags.isDisjoint(with: [.command, .control, .option]) else { return false }
+        switch event.keyCode {
+        case 53: requestClose(); return true
+        case 123, 124:
+            let step = flags.contains(.shift) ? 1 : 1 / Double(model.frameRate)
+            model.seek(model.currentTime + (event.keyCode == 124 ? step : -step)); return true
+        default: return Self.performEditorCharacter(event.charactersIgnoringModifiers?.lowercased(), on: model)
+        }
+    }
+
+    /// Single-character editor shortcuts: Space, I/O trim points, [ ] speed.
+    static func performEditorCharacter(_ character: String?, on model: ScreenRecordingCoordinator) -> Bool {
+        switch character {
         case " ": model.togglePlayback()
         case "i": model.setTrimStart(model.currentTime)
         case "o": model.setTrimEnd(model.currentTime)
+        case "[": model.stepRate(by: -1)
+        case "]": model.stepRate(by: 1)
         default: return false
         }
         return true

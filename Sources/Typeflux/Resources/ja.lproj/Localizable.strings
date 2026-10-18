@@ -5180,8 +5180,6 @@
 
 "recording.keep30" = "最初の30秒を保持";
 
-"recording.keepRange" = "保持";
-
 "recording.later" = "後で";
 
 "recording.liveCamera" = "ライブ";
@@ -5210,13 +5208,9 @@
 
 "recording.selectionKeys" = "↩ 開始 · esc キャンセル · Tab 対象";
 
-"recording.selectionSeconds" = "· %.1f 秒";
-
 "recording.switchMP4" = "MP4 に変更";
 
 "recording.systemAudioScope" = "Typeflux の音声を除外。ウインドウ録画ではそのアプリの全音声を含みます。";
-
-"recording.timelineKeys" = "両端をドラッグしてトリム · I / O 開始・終了 · スペース 再生";
 
 "recording.unsaved" = "未保存の録画";
 
@@ -5983,3 +5977,41 @@
 
 "auth.account.subscriptionPrepaidHint" = "プリペイド会員です。自動更新はありません。";
 "auth.account.renewMembership" = "会員期間を延長";
+
+/* Recording editor: speed, audio tracks and trimming */
+"recording.trackNumber" = "トラック %d";
+"recording.kind.mp4" = "ビデオ";
+"recording.kind.gif" = "アニメ GIF";
+"recording.allTracksOff" = "すべての音声を除去（無音）";
+"recording.outputSeconds" = "長さ %.1f 秒";
+"recording.speed" = "再生と書き出しの速度";
+"recording.speedHint" = "プレビューはこの速度で再生され、保存するファイルにも適用されます。声の高さは保たれ、GIF の 30 秒制限は速度変更後の長さで判定します。";
+"recording.speed.normal" = "標準";
+"recording.speed.slow" = "スロー";
+"recording.speed.fast" = "早送り";
+"recording.tracks" = "音声トラック";
+"recording.tracksButton" = "トラック %d/%d";
+"recording.tracksHint" = "オフにしたトラックは保存されません。音量はプレビューと書き出しの両方に適用されます。";
+"recording.tracksAllOff" = "すべてのトラックがオフのため、無音のビデオとして保存されます。";
+"recording.includeTrack" = "%@ を保存";
+"recording.trackVolume" = "%@ の音量";
+"recording.fitSpeed" = "%@ に速める（%.1f 秒）";
+"recording.gifTooLongDetail" = "書き出しは %.1f 秒になり、縞模様の部分は保存されません。";
+"recording.inPoint" = "開始点";
+"recording.outPoint" = "終了点";
+"recording.setToPlayhead" = "再生位置に設定";
+"recording.keptSeconds" = "%.1f 秒を保持";
+"recording.ofTotal" = "/ 全 %.1f 秒";
+"recording.fullLength" = "（全体）";
+"recording.exportsAs" = "→ 書き出し %.1f 秒（%@）";
+"recording.saveTo" = "保存先";
+"recording.chooseFolder" = "別のフォルダを選択…";
+"recording.shortcuts" = "キーボードショートカット";
+"recording.key.play" = "保持範囲を再生／一時停止";
+"recording.key.in" = "開始点を再生位置に";
+"recording.key.out" = "終了点を再生位置に";
+"recording.key.frame" = "1 フレーム移動";
+"recording.key.second" = "1 秒移動";
+"recording.key.speed" = "遅く／速く";
+"recording.key.save" = "保存";
+"recording.key.close" = "閉じる（未保存なら確認）";

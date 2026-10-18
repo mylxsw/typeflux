@@ -5229,8 +5229,6 @@
 
 "recording.keep30" = "Keep first 30 seconds";
 
-"recording.keepRange" = "Keep";
-
 "recording.later" = "Later";
 
 "recording.liveCamera" = "Live";
@@ -5259,13 +5257,9 @@
 
 "recording.selectionKeys" = "↩ Start · esc Cancel · Tab Source";
 
-"recording.selectionSeconds" = "· %.1f s";
-
 "recording.switchMP4" = "Save as MP4";
 
 "recording.systemAudioScope" = "Excludes Typeflux audio. Window capture includes all audio from that app.";
-
-"recording.timelineKeys" = "Drag ends to trim · I / O set ends · Space play";
 
 "recording.unsaved" = "Unsaved recording";
 
@@ -6104,3 +6098,41 @@
 
 "auth.account.subscriptionPrepaidHint" = "Prepaid membership. No automatic renewal.";
 "auth.account.renewMembership" = "Renew membership";
+
+/* Recording editor: speed, audio tracks and trimming */
+"recording.trackNumber" = "Track %d";
+"recording.kind.mp4" = "Video";
+"recording.kind.gif" = "Animated GIF";
+"recording.allTracksOff" = "All audio removed (silent)";
+"recording.outputSeconds" = "%.1f s";
+"recording.speed" = "Playback and export speed";
+"recording.speedHint" = "The preview plays at this speed and the saved file uses it too. Voices keep their pitch; the GIF 30-second limit applies to the sped-up length.";
+"recording.speed.normal" = "Normal";
+"recording.speed.slow" = "Slower";
+"recording.speed.fast" = "Faster";
+"recording.tracks" = "Audio tracks";
+"recording.tracksButton" = "Tracks %d/%d";
+"recording.tracksHint" = "Tracks you turn off aren't saved. Volume applies to both the preview and the export.";
+"recording.tracksAllOff" = "Every track is off, so the video will be saved without sound.";
+"recording.includeTrack" = "Save %@";
+"recording.trackVolume" = "%@ volume";
+"recording.fitSpeed" = "Speed up to %@ (%.1f s)";
+"recording.gifTooLongDetail" = "The export would be %.1f s; the striped part won't be saved.";
+"recording.inPoint" = "In";
+"recording.outPoint" = "Out";
+"recording.setToPlayhead" = "Set to playhead";
+"recording.keptSeconds" = "Keeping %.1f s";
+"recording.ofTotal" = "of %.1f s";
+"recording.fullLength" = "(full length)";
+"recording.exportsAs" = "→ exports %.1f s (%@)";
+"recording.saveTo" = "Save to";
+"recording.chooseFolder" = "Choose Another Folder…";
+"recording.shortcuts" = "Keyboard shortcuts";
+"recording.key.play" = "Play or pause the kept range";
+"recording.key.in" = "Set the in point to the playhead";
+"recording.key.out" = "Set the out point to the playhead";
+"recording.key.frame" = "Move one frame";
+"recording.key.second" = "Move one second";
+"recording.key.speed" = "Slower / faster";
+"recording.key.save" = "Save";
+"recording.key.close" = "Close (asks if unsaved)";

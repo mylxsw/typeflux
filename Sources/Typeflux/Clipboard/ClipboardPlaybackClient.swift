@@ -7,11 +7,18 @@ protocol ClipboardPlaybackClient: Sendable {
     func stop()
     func retainPixels(_ reservation: AskToolPixelBudget.Lease) throws
     func request(_ kind: MediaPlaybackMessage.Kind, fraction: Double?, range: MediaPlaybackRange?) async throws -> MediaPlaybackState
+    func request(_ kind: MediaPlaybackMessage.Kind, fraction: Double?, range: MediaPlaybackRange?,
+                 mix: MediaPlaybackMix?) async throws -> MediaPlaybackState
 }
 extension ClipboardPlaybackClient {
     func request(_ kind: MediaPlaybackMessage.Kind, fraction: Double?, range: MediaPlaybackRange?) async throws -> MediaPlaybackState {
         guard range == nil else { throw MediaFailure.invalidProtocol }
         return try await request(kind, fraction: fraction)
+    }
+    func request(_ kind: MediaPlaybackMessage.Kind, fraction: Double?, range: MediaPlaybackRange?,
+                 mix: MediaPlaybackMix?) async throws -> MediaPlaybackState {
+        guard mix == nil else { throw MediaFailure.invalidProtocol }
+        return try await request(kind, fraction: fraction, range: range)
     }
 }
 
@@ -241,11 +248,15 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
         try await request(kind, fraction: fraction, range: nil)
     }
     func request(_ kind: MediaPlaybackMessage.Kind, fraction: Double?, range: MediaPlaybackRange?) async throws -> MediaPlaybackState {
+        try await request(kind, fraction: fraction, range: range, mix: nil)
+    }
+    func request(_ kind: MediaPlaybackMessage.Kind, fraction: Double?, range: MediaPlaybackRange?,
+                 mix: MediaPlaybackMix?) async throws -> MediaPlaybackState {
         let message = try lock.withLock {
             guard !busy, !lease.cancelled, !socket.isStopped, pool.permits(poolID) else { throw MediaFailure.unavailable }
             guard kind != .reply, kind != .failed else { throw MediaFailure.invalidProtocol }
             let request = MediaPlaybackMessage(id: id, sequence: sequence + 1,
-                kind: video && kind == .load ? .loadVideo : kind, fraction: fraction, range: range)
+                kind: video && kind == .load ? .loadVideo : kind, fraction: fraction, range: range, mix: mix)
             try request.validate()
             try retirement.beginRequest()
             busy = true; sequence += 1; return request

@@ -43,13 +43,13 @@ public enum MediaRecordingTimelineDecoder {
                 guard tracks.count <= 8 else { throw MediaFailure.tooLarge }
                 if tracks.isEmpty { result.audio = .absent }
                 else {
-                    result.waveform = try waveform(asset, tracks: tracks, duration: duration)
+                    (result.waveform, result.tracks) = try waveform(asset, tracks: tracks, duration: duration)
                     result.audio = .available
                 }
             } catch {
                 try Task.checkCancellation()
                 // A partial scan is never presented as the whole recording or as silence.
-                result.waveform = []; result.audio = .unavailable
+                result.waveform = []; result.tracks = []; result.audio = .unavailable
             }
             try Task.checkCancellation()
             var response = MediaResponse(id: request.id); response.timeline = result
@@ -58,10 +58,13 @@ public enum MediaRecordingTimelineDecoder {
         } onCancel: { asset.cancelLoading() }
     }
 
-    private static func waveform(_ asset: AVAsset, tracks: [AVAssetTrack], duration: Double) throws -> [Float] {
+    /// Returns the combined peaks plus one series per track; the PCM budget covers all tracks together.
+    private static func waveform(_ asset: AVAsset, tracks: [AVAssetTrack], duration: Double) throws -> ([Float], [[Float]]) {
         var accumulator = MediaRecordingPeaks(duration: duration)
+        var perTrack: [[Float]] = []
         let deadline = ContinuousClock.now.advanced(by: .seconds(20))
         for track in tracks {
+            var single = MediaRecordingPeaks(duration: duration)
             let reader = try AVAssetReader(asset: asset)
             let output = AVAssetReaderTrackOutput(track: track, outputSettings: [
                 AVFormatIDKey: kAudioFormatLinearPCM, AVLinearPCMIsFloatKey: true,
@@ -85,10 +88,12 @@ public enum MediaRecordingTimelineDecoder {
                 }
                 guard status == kCMBlockBufferNoErr else { throw MediaFailure.unreadable }
                 try accumulator.append(values, time: sample.presentationTimeStamp.seconds)
+                try single.append(values, time: sample.presentationTimeStamp.seconds)
             }
             guard reader.status == .completed else { throw MediaFailure.unreadable }
+            perTrack.append(single.peaks)
         }
-        return accumulator.peaks
+        return (accumulator.peaks, perTrack)
     }
 }
 

@@ -5,6 +5,8 @@ import TypefluxMediaProtocol
 struct ScreenRecordingPreviewMedia: @unchecked Sendable {
     var thumbnails: [CGImage] = []
     var waveform: [Float] = []
+    /// One waveform per source audio track, in file order.
+    var tracks: [[Float]] = []
     var size: CGSize = .zero
     var fps: Float = 0
     var fileBytes: Int64 = 0

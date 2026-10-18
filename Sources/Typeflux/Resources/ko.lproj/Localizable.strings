@@ -5180,8 +5180,6 @@
 
 "recording.keep30" = "처음 30초 유지";
 
-"recording.keepRange" = "유지";
-
 "recording.later" = "나중에";
 
 "recording.liveCamera" = "실시간";
@@ -5210,13 +5208,9 @@
 
 "recording.selectionKeys" = "↩ 시작 · esc 취소 · Tab 소스";
 
-"recording.selectionSeconds" = "· %.1f초";
-
 "recording.switchMP4" = "MP4로 변경";
 
 "recording.systemAudioScope" = "Typeflux 소리를 제외합니다. 창 녹화에는 해당 앱의 모든 소리가 포함됩니다.";
-
-"recording.timelineKeys" = "양 끝을 끌어 자르기 · I / O 시작·끝 · 스페이스 재생";
 
 "recording.unsaved" = "저장하지 않은 녹화";
 
@@ -5983,3 +5977,41 @@
 
 "auth.account.subscriptionPrepaidHint" = "선불 멤버십입니다. 자동 갱신되지 않습니다.";
 "auth.account.renewMembership" = "멤버십 연장";
+
+/* Recording editor: speed, audio tracks and trimming */
+"recording.trackNumber" = "트랙 %d";
+"recording.kind.mp4" = "비디오";
+"recording.kind.gif" = "움직이는 GIF";
+"recording.allTracksOff" = "모든 오디오 제거됨(무음)";
+"recording.outputSeconds" = "길이 %.1f초";
+"recording.speed" = "재생 및 내보내기 속도";
+"recording.speedHint" = "미리보기가 이 속도로 재생되고 저장 파일에도 적용됩니다. 음높이는 유지되며 GIF 30초 제한은 속도 변경 후 길이 기준입니다.";
+"recording.speed.normal" = "보통";
+"recording.speed.slow" = "느리게";
+"recording.speed.fast" = "빠르게";
+"recording.tracks" = "오디오 트랙";
+"recording.tracksButton" = "트랙 %d/%d";
+"recording.tracksHint" = "끈 트랙은 저장되지 않습니다. 음량은 미리보기와 내보내기에 모두 적용됩니다.";
+"recording.tracksAllOff" = "모든 트랙이 꺼져 있어 소리 없는 비디오로 저장됩니다.";
+"recording.includeTrack" = "%@ 저장";
+"recording.trackVolume" = "%@ 음량";
+"recording.fitSpeed" = "%@로 빠르게(%.1f초)";
+"recording.gifTooLongDetail" = "내보내기 길이가 %.1f초라서 줄무늬 부분은 저장되지 않습니다.";
+"recording.inPoint" = "시작점";
+"recording.outPoint" = "끝점";
+"recording.setToPlayhead" = "재생 위치로 설정";
+"recording.keptSeconds" = "%.1f초 유지";
+"recording.ofTotal" = "/ 전체 %.1f초";
+"recording.fullLength" = "(전체)";
+"recording.exportsAs" = "→ 내보내기 %.1f초(%@)";
+"recording.saveTo" = "저장 위치";
+"recording.chooseFolder" = "다른 폴더 선택…";
+"recording.shortcuts" = "키보드 단축키";
+"recording.key.play" = "유지 구간 재생/일시정지";
+"recording.key.in" = "시작점을 재생 위치로";
+"recording.key.out" = "끝점을 재생 위치로";
+"recording.key.frame" = "한 프레임 이동";
+"recording.key.second" = "1초 이동";
+"recording.key.speed" = "느리게/빠르게";
+"recording.key.save" = "저장";
+"recording.key.close" = "닫기(저장 안 했으면 확인)";

@@ -7,6 +7,11 @@ struct ScreenRecordingPreviewView: View {
     var close: () -> Void = {}
     var chooseDirectory: () -> Void = {}
     var saveAs: () -> Void = {}
+    @State private var showsShortcuts = false
+    @State private var showsSpeed = false
+    @State private var showsTracks = false
+    @State private var showsDestinations = false
+    @State private var stageHover = false
 
     var body: some View {
         Group {
@@ -17,148 +22,226 @@ struct ScreenRecordingPreviewView: View {
 
     private var content: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 5) {
-                TextField(L("recording.fileName"), text: $model.fileName).textFieldStyle(.plain)
-                    .font(.system(size: 13, weight: .semibold)).frame(width: min(
-                        420,
-                        max(
-                            120,
-                            (model.fileName as NSString).size(withAttributes: [.font: NSFont.systemFont(
-                                ofSize: 13,
-                                weight: .semibold
-                            )]).width + 12
-                        )
-                    ))
-                    .accessibilityIdentifier("recording.fileName")
-                Text("." + model.options.format.rawValue).foregroundStyle(StudioTheme.textTertiary)
-                Spacer()
-                ScreenRecordingPreviewVolume(playback: model.playback).frame(width: 85)
-                Picker(L("recording.format"), selection: $model.options.format) {
-                    Text("MP4").tag(ScreenRecordingFormat.mp4); Text("GIF").tag(ScreenRecordingFormat.gif)
-                }.pickerStyle(.segmented).labelsHidden().frame(width: 128)
-            }.padding(.leading, 78).padding(.trailing, 14).frame(height: 46).disabled(model.state == .exporting)
-            Divider()
-            ZStack {
-                ScreenRecordingPlayerView(playback: model.playback)
-                if !model.isPlaying, model.playback.isLoaded {
-                    Button(action: model.togglePlayback) {
-                        Image(systemName: "play.fill").font(.system(size: 22)).foregroundStyle(.white)
-                            .frame(width: 56, height: 56).background(.black.opacity(0.6), in: Circle())
-                    }.buttonStyle(.plain).accessibilityLabel(L("recording.play"))
-                }
-            }.frame(maxWidth: .infinity, maxHeight: .infinity).frame(minHeight: 200)
-                .background(.black).clipShape(RoundedRectangle(cornerRadius: 10))
-                .padding(.horizontal, 16).padding(.top, 14)
-            HStack(spacing: 10) {
-                Button(action: model.togglePlayback) {
-                    Image(systemName: model.isPlaying ? "pause.fill" : "play.fill")
-                        .frame(width: 30, height: 30).contentShape(Rectangle())
-                }
-                .buttonStyle(.plain).accessibilityLabel(L("recording.play")).disabled(!model.playback.isLoaded || model.playback.isBusy)
-                Text(ScreenRecordingLayout.preciseTime(model.currentTime) + " / " + ScreenRecordingLayout
-                    .preciseTime(model.duration))
-                    .font(.system(size: 12, design: .monospaced))
-                Spacer()
-                Text(L("recording.source." + model.sourceKind.rawValue) + " · " + model
-                    .audioSummary + (model.options.camera ? " · " + L("recording.camera") : ""))
-                    .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
-            }.padding(.horizontal, 16).padding(.top, 8).frame(height: 28)
-            ScreenRecordingTimelineView(model: model).frame(height: 104).padding(.horizontal, 16).padding(.top, 8)
-            HStack(spacing: 8) {
-                Image(systemName: "scissors")
-                Text(L("recording.keepRange"))
-                Text(ScreenRecordingLayout.preciseTime(model.trimStart) + " – " + ScreenRecordingLayout
-                    .preciseTime(model.trimEnd)).fontWeight(.semibold).monospacedDigit()
-                Text(L("recording.selectionSeconds", model.selectionDuration))
-                Button(L("recording.resetTrim"), action: model.resetTrim)
-                    .buttonStyle(AskWorkflowActionStyle(kind: .ghost, small: true))
-                Spacer()
-                Text(L("recording.timelineKeys")).foregroundStyle(StudioTheme.textTertiary).font(.system(size: 11))
-            }.font(.system(size: 12)).padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 8)
-            if model.options.format == .gif, model.selectionDuration > 30.01 {
-                HStack(spacing: 8) {
-                    Label(L("recording.gifTooLong"), systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(StudioTheme.warning)
-                    Spacer()
-                    Button(L("recording.keep30"), action: model.keepFirstGIFSegment)
-                    Button(L("recording.switchMP4")) { model.options.format = .mp4 }
-                }.buttonStyle(ModelActionStyle()).font(.system(size: 12)).padding(8).background(
-                    StudioTheme.warning.opacity(0.12),
-                    in: RoundedRectangle(cornerRadius: 8)
-                )
-                .padding(.horizontal, 16).padding(.bottom, 8)
+            header.frame(height: 46).disabled(model.state == .exporting)
+            stage
+            transport.padding(.horizontal, 14).frame(height: 40)
+            ScreenRecordingTimelineView(model: model).padding(.horizontal, 16).padding(.top, 4)
+            ScreenRecordingTrimBar(model: model).padding(.horizontal, 16).frame(height: 44)
+            if model.gifTooLong {
+                ScreenRecordingGIFLimitBanner(model: model).padding(.horizontal, 16).padding(.bottom, 8)
             }
             if let error = model.error {
                 Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(StudioTheme.danger)
-                    .font(.system(size: 12)).padding(.horizontal, 16).padding(.bottom, 8)
-            }
-            if model.sourceURL != nil {
-                Button(L("recording.revealOriginal"), action: model.revealOriginal).disabled(!model.canUsePreview)
-                    .font(.caption).padding(.bottom, 6)
-                if !model.playback.isLoaded, model.state == .preview {
-                    Button(L("recording.reloadPreview"), action: model.reloadPreviewPlayback)
-                        .disabled(!model.canUsePreview || model.playback.isBusy)
-                }
+                    .font(.system(size: 12)).frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 10).padding(.vertical, 7)
+                    .background(AskTheme.dangerSoft, in: RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 16).padding(.bottom, 8)
             }
             Divider()
-            footer.frame(height: 58).padding(.horizontal, 14)
+            footer.frame(height: 60).padding(.horizontal, 14)
         }.font(.system(size: 13)).foregroundStyle(StudioTheme.textPrimary).tint(AskTheme.accent)
             .askInWindowGlass(corner: 12, opaqueFill: AskTheme.surface, elevation: nil, placement: .floating)
             .ignoresSafeArea()
     }
 
+    // MARK: Header
+
+    private var header: some View {
+        HStack(spacing: 8) {
+            HStack(spacing: 2) {
+                TextField(L("recording.fileName"), text: $model.fileName).textFieldStyle(.plain)
+                    .font(.system(size: 13, weight: .semibold)).frame(width: fileNameWidth)
+                    .accessibilityIdentifier("recording.fileName")
+                Text("." + model.options.format.rawValue).foregroundStyle(StudioTheme.textTertiary)
+            }
+            .padding(.horizontal, 6).frame(height: 26)
+            .background(AskTheme.controlSurface.opacity(0.6), in: RoundedRectangle(cornerRadius: 6))
+            Label(sourceSummary, systemImage: model.sourceKind.symbol)
+                .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary).lineLimit(1)
+                .padding(.horizontal, 8).frame(height: 22).background(AskTheme.controlSurface, in: Capsule())
+            Spacer(minLength: 8)
+            Button { showsShortcuts.toggle() } label: {
+                Image(systemName: "keyboard").frame(width: 28, height: 28).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain).foregroundStyle(StudioTheme.textSecondary).help(L("recording.shortcuts"))
+            .accessibilityLabel(L("recording.shortcuts"))
+            .popover(isPresented: $showsShortcuts, arrowEdge: .bottom) { ScreenRecordingShortcutsView() }
+            Menu {
+                Button(L("recording.revealOriginal"), action: model.revealOriginal).disabled(model.sourceURL == nil)
+                Button(L("recording.reloadPreview"), action: model.reloadPreviewPlayback)
+                    .disabled(model.sourceURL == nil || model.playback.isBusy)
+                Divider()
+                Button(L("recording.shortcuts")) { showsShortcuts = true }
+            } label: { Image(systemName: "ellipsis.circle") }
+                .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                .accessibilityLabel(L("recording.more"))
+        }
+        .padding(.leading, 78).padding(.trailing, 14)
+    }
+
+    private var fileNameWidth: CGFloat {
+        let font = NSFont.systemFont(ofSize: 13, weight: .semibold)
+        return min(380, max(120, (model.fileName as NSString).size(withAttributes: [.font: font]).width + 12))
+    }
+
+    private var sourceSummary: String {
+        var parts = [L("recording.source." + model.sourceKind.rawValue)]
+        if model.options.camera { parts.append(L("recording.camera")) }
+        let size = model.media.size
+        if size.width > 0 { parts.append("\(Int(size.width)) × \(Int(size.height))") }
+        return parts.joined(separator: " · ")
+    }
+
+    // MARK: Stage
+
+    private var stage: some View {
+        ZStack {
+            ScreenRecordingPlayerView(playback: model.playback)
+            if model.playback.isLoaded {
+                Button(action: model.togglePlayback) {
+                    Image(systemName: "play.fill").font(.system(size: 22)).foregroundStyle(.white)
+                        .frame(width: 60, height: 60).background(.black.opacity(0.55), in: Circle())
+                }
+                .buttonStyle(.plain).accessibilityLabel(L("recording.play"))
+                .opacity(!model.isPlaying && stageHover ? 1 : 0)
+            } else if !model.playback.isBusy, model.state == .preview {
+                VStack(spacing: 10) {
+                    Button(L("recording.reloadPreview"), action: model.reloadPreviewPlayback)
+                    Button(L("recording.revealOriginal"), action: model.revealOriginal)
+                }
+                .buttonStyle(ModelActionStyle()).padding(.top, 60)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity).frame(minHeight: 180)
+        .background(.black).clipShape(RoundedRectangle(cornerRadius: 10))
+        .contentShape(Rectangle()).onTapGesture { if model.playback.isLoaded { model.togglePlayback() } }
+        .onHover { stageHover = $0 }
+        .padding(.horizontal, 16)
+    }
+
+    // MARK: Transport
+
+    private var transport: some View {
+        HStack(spacing: 8) {
+            Button(action: model.togglePlayback) {
+                Image(systemName: model.isPlaying ? "pause.fill" : "play.fill")
+                    .frame(width: 30, height: 30).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain).accessibilityLabel(L("recording.play"))
+            .disabled(!model.playback.isLoaded || model.playback.isBusy)
+            Text(ScreenRecordingLayout.preciseTime(model.currentTime)).font(.system(size: 12.5, design: .monospaced))
+                + Text(" / " + ScreenRecordingLayout.preciseTime(model.duration))
+                .font(.system(size: 12.5, design: .monospaced)).foregroundColor(StudioTheme.textTertiary)
+            Spacer()
+            Button { showsSpeed.toggle() } label: {
+                Label(ScreenRecordingEdit.rateTitle(model.edit.rate), systemImage: "speedometer")
+                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+            }
+            .buttonStyle(ScreenRecordingPillStyle(active: model.edit.rate != 1))
+            .help(L("recording.speed")).accessibilityLabel(L("recording.speed"))
+            .accessibilityValue(ScreenRecordingEdit.rateTitle(model.edit.rate))
+            .accessibilityIdentifier("recording.preview.speed")
+            .disabled(model.state != .preview)
+            .popover(isPresented: $showsSpeed, arrowEdge: .top) {
+                ScreenRecordingSpeedMenu(model: model) { showsSpeed = false }
+            }
+            audioControl
+        }
+    }
+
+    @ViewBuilder private var audioControl: some View {
+        let tracks = model.edit.tracks
+        if model.media.audio == .absent {
+            Label(L("recording.silent"), systemImage: "speaker.slash").font(.system(size: 12))
+                .foregroundStyle(StudioTheme.textTertiary).help(L("recording.noAudioTrack"))
+        } else if !tracks.isEmpty {
+            let gif = model.options.format == .gif
+            let kept = model.edit.includedTracks.count
+            Button { showsTracks.toggle() } label: {
+                Label(gif ? L("recording.gifSilent") : L("recording.tracksButton", kept, tracks.count),
+                      systemImage: gif || kept == 0 ? "speaker.slash" : "speaker.wave.2")
+                    .font(.system(size: 12))
+            }
+            .buttonStyle(ScreenRecordingPillStyle(active: !gif && kept < tracks.count))
+            .disabled(gif || model.state != .preview)
+            .accessibilityIdentifier("recording.preview.tracks")
+            .popover(isPresented: $showsTracks, arrowEdge: .top) { ScreenRecordingTrackMenu(model: model) }
+        }
+    }
+
+    // MARK: Footer
+
     private var footer: some View {
         HStack(spacing: 8) {
             Button(action: close) {
                 Label(L("recording.discard"), systemImage: "trash")
-                    .padding(.horizontal, 8).frame(height: 30).contentShape(Rectangle())
+                    .padding(.horizontal, 8).frame(height: SettingsControlMetrics.height).contentShape(Rectangle())
             }
             .buttonStyle(.plain).foregroundStyle(StudioTheme.danger)
             .accessibilityIdentifier("recording.preview.discard")
-            Text(model.options.format.rawValue
-                .uppercased() +
-                " · \(Int(model.previewOutputSize.width)) × \(Int(model.previewOutputSize.height)) · \(model.options.captureFPS) FPS · " +
-                L(
-                    "recording.estimated",
-                    ByteCountFormatter.string(fromByteCount: model.estimatedBytes, countStyle: .file)
-                ))
-                .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+            Divider().frame(height: 20)
+            Picker(L("recording.format"), selection: $model.options.format) {
+                Text("MP4").tag(ScreenRecordingFormat.mp4); Text("GIF").tag(ScreenRecordingFormat.gif)
+            }
+            .pickerStyle(.segmented).labelsHidden().frame(width: 108).disabled(model.state == .exporting)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(outputSpecs).font(.system(size: 12))
+                Text(model.exportSummary).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+            }
+            .lineLimit(1).truncationMode(.tail).layoutPriority(-1)
             Spacer(minLength: 2)
             if model.state == .exporting {
-                ScreenRecordingExportProgress(progress: model.progress, format: model.options.format).frame(
-                    width: 230,
-                    height: 30
-                )
+                ScreenRecordingExportProgress(progress: model.progress, format: model.options.format)
+                    .frame(width: 230, height: 30)
                 Button(L("recording.cancelExport"), action: model.cancelExport)
                     .accessibilityIdentifier("recording.preview.cancelExport")
             } else {
-                Button(action: chooseDirectory) {
-                    Label {
-                        Text(model.destinationDirectory.lastPathComponent)
-                            .lineLimit(1).truncationMode(.middle).frame(maxWidth: 110)
-                            .fixedSize(horizontal: true, vertical: false)
-                    } icon: { Image(systemName: "folder") }
-                }
-                .help(model.destinationDirectory.path)
-                .accessibilityIdentifier("recording.preview.directory")
+                destinationMenu
                 Button { model.export(copy: true) } label: { Label(L("recording.copy"), systemImage: "doc.on.doc") }
                     .disabled(!model.canExport)
                     .accessibilityIdentifier("recording.preview.copy")
-                Button(L("recording.saveAs"), action: saveAs).disabled(!model.canExport)
-                    .accessibilityIdentifier("recording.preview.saveAs")
                 Button { model.export() } label: {
                     HStack(spacing: 6) {
-                        Label(
-                            L("recording.saveFormat", model.options.format.rawValue.uppercased()),
-                            systemImage: "checkmark"
-                        )
+                        Label(L("recording.saveFormat", model.options.format.rawValue.uppercased()),
+                              systemImage: "checkmark")
                         Text("⌘S").font(.system(size: 11)).opacity(0.75)
                     }
-                }.buttonStyle(ModelActionStyle(primary: true)).disabled(!model.canExport)
-                    .accessibilityIdentifier("recording.preview.save")
-                    .keyboardShortcut("s", modifiers: .command)
+                }
+                .buttonStyle(ModelActionStyle(primary: true)).disabled(!model.canExport)
+                .help(model.gifTooLong ? L("recording.gifTooLong") : "")
+                .accessibilityIdentifier("recording.preview.save")
+                .keyboardShortcut("s", modifiers: .command)
             }
-        }.buttonStyle(ModelActionStyle())
+        }
+        .buttonStyle(ModelActionStyle())
+    }
+
+    private var outputSpecs: String {
+        let fps = model.options.captureFPS
+        return "\(Int(model.previewOutputSize.width)) × \(Int(model.previewOutputSize.height)) · \(fps) FPS · " +
+            L("recording.estimated", ByteCountFormatter.string(fromByteCount: model.estimatedBytes, countStyle: .file))
+    }
+
+    private var destinationMenu: some View {
+        let current = model.destinationDirectory.standardizedFileURL
+        return Button { showsDestinations.toggle() } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "folder")
+                Text(L("recording.saveTo") + " " + Self.folderName(current)).lineLimit(1).truncationMode(.middle)
+                Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold))
+            }
+            .frame(maxWidth: 190)
+        }
+        .help(current.path)
+        .accessibilityIdentifier("recording.preview.directory")
+        .popover(isPresented: $showsDestinations, arrowEdge: .top) {
+            ScreenRecordingDestinationMenu(model: model, current: current, chooseDirectory: chooseDirectory,
+                                           saveAs: saveAs) { showsDestinations = false }
+        }
+    }
+
+    static func folderName(_ url: URL) -> String {
+        FileManager.default.displayName(atPath: url.path)
     }
 }
 
@@ -170,24 +253,6 @@ struct ScreenRecordingPlayerView: View {
             if let image = playback.image { Image(nsImage: image).resizable().scaledToFit() }
             else { Text(L("recording.previewUnavailable")).font(.caption).foregroundStyle(.white).padding() }
         }
-    }
-}
-
-private struct ScreenRecordingPreviewVolume: View {
-    @ObservedObject var playback: ClipboardAudioPlayback
-    @State private var value = 1.0
-    @State private var interaction: UUID?
-    var body: some View {
-        HStack {
-            Image(systemName: "speaker.wave.2.fill")
-            Slider(value: $value, in: 0...1) { editing in
-                if editing { interaction = playback.interactionID }
-                else if let token = interaction {
-                    interaction = nil; playback.setVolume(value, interactionID: token)
-                }
-            }.accessibilityLabel(L("clipboard.video.volume"))
-        }.disabled(!playback.isLoaded || playback.isBusy)
-            .onChange(of: playback.volume) { if interaction == nil { value = $0 } }
     }
 }
 
