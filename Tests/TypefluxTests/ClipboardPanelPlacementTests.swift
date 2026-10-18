@@ -65,7 +65,11 @@ struct ClipboardPanelPlacementTests {
     }
 
     @Test func shortScreenRaisesClipboardToKeepTheBottomVisible() {
-        let small = NSRect(x: 0, y: 30, width: 1200, height: 650)
+        // The launcher's top edge is centred for its full height, so only a screen barely taller
+        // than the panel puts the panel's natural bottom below the margin.
+        let small = NSRect(x: 0, y: 30, width: 1200, height: 584)
+        let natural = AskLauncherPlacement.top(on: small) - AskMetrics.launcherGutter - size.height
+        #expect(natural < small.minY + AskLauncherPlacement.screenMargin)
         let clipboard = ClipboardPanelPlacement.frame(size: size, screen: small)
         #expect(clipboard.minY == small.minY + AskLauncherPlacement.screenMargin)
         #expect(clipboard.maxY <= small.maxY - AskLauncherPlacement.screenMargin)

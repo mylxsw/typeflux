@@ -55,6 +55,7 @@
 | 编辑后粘贴 | `⌘E`，在编辑浮层里编辑，`⌘↩` 粘贴，`Esc` 取消 | 右键菜单 |
 | 固定 / 取消固定 | `⌘P`（选中跟随卡片移动到新分组） | 右键菜单 |
 | 删除 | `⌘⌫`（搜索框为空时）；片段和批量删除先确认 | 右键菜单 |
+| 拖到其他应用 | — | 按住卡片拖到目标应用 |
 | 切换分类 | `Tab` / `⇧Tab` | 点分类 |
 | 暂停记录 | `⇧⌘P` | 顶栏按钮 |
 | 收起 | `Esc`：依次关闭预览 → 清空搜索 → 收起面板 | 点面板外部 |
@@ -79,7 +80,7 @@
 ## 7. 决定
 
 1. 默认样式：新用户（完成引导时尚未选择过）默认「卡片架」，已有用户保持「列表」，可在设置里切换。
-2. 「把卡片拖到其他应用」放到第二期。
+2. 「把卡片拖到其他应用」已实现，卡片架和列表的行都支持：按下后移动超过 4pt 开始拖动；文件拖出的是文件本身，存下的图片以 PNG 数据提供（不暴露存储路径，读取前校验仍是原来那个普通文件且不超过大小上限），文本和链接拖出的是文字（链接同时带 URL）。放到其他应用成功后面板收起，拖回面板本身不做任何事；原文件已丢失的条目不能拖。
 
 ## 8. 与设计稿的差异
 
@@ -89,3 +90,15 @@
 - **链接卡片**：没有网页预览图（剪贴板不联网抓取），显示链接图标、域名和完整 URL。
 - **来源应用按钮**：最多 8 个，按面板顺序（已固定、再按时间）取不重复的应用。
 
+
+## 9. 真机验证
+
+`ClipboardShelfLivePreviewHarness` 在真实桌面上弹出线上的 `ClipboardPanelController`，用示例数据（不读写真实的剪贴板历史和设置），并自己处理 AppKit 事件，所以可以用真实的鼠标和键盘操作它：
+
+```bash
+TYPEFLUX_CLIPBOARD_LIVE_PREVIEW=600 TYPEFLUX_CLIPBOARD_LIVE_CONTROL=/tmp/shelf-control \
+  make test SUITE="ClipboardShelfLivePreviewHarness"
+echo 'appearance light' > /tmp/shelf-control   # 也可以是 open / close / category voice / select 3 / query 验证码 / edit / quit
+```
+
+缩略图在 app 里由内置的媒体 helper 解码，测试进程里不会启动这个 helper，所以 harness 用 ImageIO / PDFKit 代替。

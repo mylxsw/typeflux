@@ -393,6 +393,11 @@ extension ClipboardPanelModel {
         select(index: 0)
     }
 
+    /// An entry dropped into another app was used, as if pasted, so the panel closes.
+    func dragEnded(accepted: Bool) {
+        if accepted { onDismiss?() }
+    }
+
     func moveToLast() {
         select(index: visibleEntries.count - 1)
     }

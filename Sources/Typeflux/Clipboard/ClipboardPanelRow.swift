@@ -17,6 +17,8 @@ struct ClipboardPanelRow: View, Equatable {
     var number: Int?
     var onClick: (Int) -> Void = { _ in }
     var onPerform: (ClipboardEntryAction) -> Void = { _ in }
+    /// Whether another app accepted the entry dragged out of the panel.
+    var onDragEnded: (Bool) -> Void = { _ in }
     var onHover: (Bool) -> Void = { _ in }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
@@ -56,7 +58,11 @@ struct ClipboardPanelRow: View, Equatable {
             }
         }
         .contentShape(Rectangle())
-        .overlay(ClipboardRowClickArea(onClick: onClick))
+        .overlay(ClipboardRowClickArea(
+            onClick: onClick,
+            dragItems: { [entry, isMissing] in ClipboardEntryDrag.items(for: entry, isMissing: isMissing) },
+            onDragEnded: onDragEnded
+        ))
         .accessibilityAction { onClick(1) }
         .onHover(perform: onHover)
         .contextMenu { ClipboardEntryContextMenu(entry: entry, isMissing: isMissing, onPerform: onPerform) }

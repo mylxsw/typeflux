@@ -43,16 +43,21 @@ final class ClipboardPanelNumberShortcutTests: XCTestCase {
             ))
             return controller.handleKeyDown(event)
         }
-        XCTAssertTrue(try press("2"))
-        XCTAssertEqual(pasted, ["text match"])
-        XCTAssertTrue(try press("2", repeatKey: true))
-        XCTAssertTrue(try press("9"))
-        XCTAssertFalse(try press("2", flags: []))
-        XCTAssertFalse(try press("2", flags: [.command, .shift]))
-        XCTAssertEqual(pasted, ["text match"])
-        model.category = .snippet
+        // The clipboard tab leaves voice results to the transcription tab.
         XCTAssertTrue(try press("1"))
         XCTAssertEqual(pasted, ["text match"])
+        XCTAssertTrue(try press("1", repeatKey: true))
+        XCTAssertTrue(try press("2"), "A number past the visible rows is consumed but pastes nothing")
+        XCTAssertTrue(try press("9"))
+        XCTAssertFalse(try press("1", flags: []))
+        XCTAssertFalse(try press("1", flags: [.command, .shift]))
+        XCTAssertEqual(pasted, ["text match"])
+        model.category = .voice
+        XCTAssertTrue(try press("1"))
+        XCTAssertEqual(pasted, ["text match", "voice match"])
+        model.category = .snippet
+        XCTAssertTrue(try press("1"))
+        XCTAssertEqual(pasted, ["text match", "voice match"])
     }
 
     @MainActor

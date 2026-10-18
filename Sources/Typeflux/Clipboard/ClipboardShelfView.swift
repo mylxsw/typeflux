@@ -25,6 +25,8 @@ struct ClipboardShelfView: View {
     static let cardSpacing: CGFloat = 12
 
     private static let railSpace = "ClipboardShelfView.rail"
+    /// The rail's leading edge, so scrolling back shows the first section title too.
+    private static let railStart = "ClipboardShelfView.railStart"
 
     @ObservedObject var thumbnails = ClipboardThumbnailSession()
     @ObservedObject var model: ClipboardPanelModel
@@ -44,7 +46,7 @@ struct ClipboardShelfView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ClipboardShelfTopBar(model: model, searchFocused: $searchFocused)
+            ClipboardShelfTopBar(model: model, thumbnails: thumbnails, searchFocused: $searchFocused)
             rail
             ClipboardShelfFooter(model: model)
         }
@@ -90,19 +92,22 @@ struct ClipboardShelfView: View {
         GeometryReader { geometry in
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: Self.cardSpacing) {
-                        ForEach(model.rows) { row in
-                            if let header = row.header {
-                                sectionLabel(header.title)
+                    HStack(spacing: 0) {
+                        Color.clear.frame(width: 0, height: 0).id(Self.railStart)
+                        LazyHStack(alignment: .top, spacing: Self.cardSpacing) {
+                            ForEach(model.rows) { row in
+                                if let header = row.header {
+                                    sectionLabel(header.title)
+                                }
+                                card(row)
+                                    .id(row.entry.id)
                             }
-                            card(row)
-                                .id(row.entry.id)
                         }
+                        .padding(.horizontal, 16)
+                        // Room for the selected card's lift and shadow.
+                        .padding(.top, 10)
+                        .padding(.bottom, 14)
                     }
-                    .padding(.horizontal, 16)
-                    // Room for the selected card's lift and shadow.
-                    .padding(.top, 10)
-                    .padding(.bottom, 14)
                 }
                 .coordinateSpace(name: Self.railSpace)
                 .overlay { if model.visibleEntries.isEmpty { emptyState } }
@@ -121,7 +126,7 @@ struct ClipboardShelfView: View {
                     reportSelectedCard()
                 }
                 .onChange(of: model.scrollToTopRequest) { _ in
-                    if let first = model.rows.first { proxy.scrollTo(first.id, anchor: .leading) }
+                    proxy.scrollTo(Self.railStart, anchor: .leading)
                 }
             }
         }
@@ -138,6 +143,7 @@ struct ClipboardShelfView: View {
             number: showingNumberHints ? model.shortcutNumber(at: index) : nil,
             onClick: { model.click(index: index, clickCount: $0) },
             onPerform: { model.perform($0, at: index) },
+            onDragEnded: { model.dragEnded(accepted: $0) },
             onHover: { hovering in
                 if hovering {
                     hoveredIndex = index
@@ -225,6 +231,8 @@ struct ClipboardShelfTopBar: View {
     static let appButtonLimit = 8
 
     @ObservedObject var model: ClipboardPanelModel
+    /// App icons load only with the panel's image access, granted through an entry from that app.
+    @ObservedObject var thumbnails: ClipboardThumbnailSession
     var searchFocused: FocusState<Bool>.Binding
 
     var body: some View {
@@ -315,6 +323,9 @@ struct ClipboardShelfTopBar: View {
                     }
                     .opacity(model.appFilter == nil || selected ? 1 : 0.55)
                     .contentShape(Rectangle())
+                    .environment(\.askContextImageAccess, thumbnails.access(
+                        for: model.entries.first { $0.snippet == nil && $0.sourceBundleID == app.bundleID }
+                    ))
                 }
                 .buttonStyle(.plain)
                 .help(L("clipboard.action.showOnlyApp", app.name))

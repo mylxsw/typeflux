@@ -20,6 +20,8 @@ struct ClipboardShelfCard: View, Equatable {
     var number: Int?
     var onClick: (Int) -> Void = { _ in }
     var onPerform: (ClipboardEntryAction) -> Void = { _ in }
+    /// Whether another app accepted the entry dragged out of the panel.
+    var onDragEnded: (Bool) -> Void = { _ in }
     var onHover: (Bool) -> Void = { _ in }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
@@ -54,7 +56,11 @@ struct ClipboardShelfCard: View, Equatable {
         .animation(.easeOut(duration: 0.12), value: isSelected)
         .animation(.easeOut(duration: 0.12), value: isHovered)
         .contentShape(Rectangle())
-        .overlay(ClipboardRowClickArea(onClick: onClick))
+        .overlay(ClipboardRowClickArea(
+            onClick: onClick,
+            dragItems: { [entry, isMissing] in ClipboardEntryDrag.items(for: entry, isMissing: isMissing) },
+            onDragEnded: onDragEnded
+        ))
         .onHover(perform: onHover)
         .contextMenu { ClipboardEntryContextMenu(entry: entry, isMissing: isMissing, onPerform: onPerform) }
         .modifier(AskLauncherShortcutBadge(
@@ -220,6 +226,9 @@ struct ClipboardShelfCardBody: View {
             .font(.system(size: 11.5, design: .monospaced))
             .lineLimit(10)
             .fixedSize(horizontal: true, vertical: false)
+            // Long lines run off the right edge instead of widening the card.
+            .frame(width: ClipboardShelfCard.width - 24, alignment: .topLeading)
+            .clipped()
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
