@@ -341,6 +341,8 @@ enum AskMetrics {
     static let launcherCardCorner: CGFloat = 16
     /// Height of every footer control: menus, context chips, microphone and send.
     static let composerControlHeight: CGFloat = 34
+    /// The storage lock sets the visual scale for the adjacent footer status icons.
+    static let footerStatusSymbolSize: CGFloat = 12.5
     /// Horizontal padding inside the footer's text menus (model, reasoning).
     static let composerControlPadding: CGFloat = 10
     static let bannerHeight: CGFloat = 32

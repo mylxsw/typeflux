@@ -358,7 +358,8 @@ struct AskStorageButton: View {
         let active = hovering || presented
         Button { presented.toggle() } label: {
             Image(systemName: kind.symbol)
-                .font(.system(size: 12.5, weight: kind != .cloud || active ? .semibold : .medium))
+                .font(.system(size: AskMetrics.footerStatusSymbolSize,
+                              weight: kind != .cloud || active ? .semibold : .medium))
                 .foregroundStyle(Self.iconColor(kind, active: active))
                 .frame(width: Self.size, height: Self.size)
                 .background(Self.wellFill(kind, active: active),

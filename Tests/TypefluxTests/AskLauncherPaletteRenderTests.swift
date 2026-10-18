@@ -128,25 +128,38 @@ struct AskLauncherPaletteRenderTests {
                 "Both composer variants omit the chevron")
     }
 
-    @Test func `icon-only shield has a readable visual size`() async throws {
+    @Test func `footer status icons match the storage lock height`() async throws {
         let size = NSSize(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
-        let bitmap = try await render(AskPermissionModeMenu(mode: .standard, compact: true, bare: true,
-                                                            onSelect: { _ in }),
-                                      size: size, appearance: .darkAqua)
-        var minY = Int.max
-        var maxY = -1
-        for y in 0 ..< bitmap.pixelsHigh {
-            for x in 0 ..< bitmap.pixelsWide {
-                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { continue }
-                if color.blueComponent - color.redComponent > 0.2 && color.blueComponent > color.greenComponent {
-                    minY = min(minY, y)
-                    maxY = max(maxY, y)
+        func blueHeight(_ view: some View) async throws -> CGFloat {
+            let bitmap = try await render(view, size: size, appearance: .darkAqua)
+            var minY = Int.max
+            var maxY = -1
+            for y in 0 ..< bitmap.pixelsHigh {
+                for x in 0 ..< bitmap.pixelsWide {
+                    guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { continue }
+                    if color.blueComponent - color.redComponent > 0.2 && color.blueComponent > color.greenComponent {
+                        minY = min(minY, y)
+                        maxY = max(maxY, y)
+                    }
                 }
             }
+            return CGFloat(try #require(maxY >= minY ? maxY - minY + 1 : nil))
+                * size.height / CGFloat(bitmap.pixelsHigh)
         }
-        let height = CGFloat(try #require(maxY >= minY ? maxY - minY + 1 : nil))
-            * size.height / CGFloat(bitmap.pixelsHigh)
-        #expect(height >= 15.5 && height <= 19, "The shield should read at roughly the camera icon's size")
+        let lock = try await blueHeight(
+            Image(systemName: "lock")
+                .font(.system(size: AskMetrics.footerStatusSymbolSize, weight: .semibold))
+                .foregroundStyle(StudioTheme.accent)
+        )
+        let shield = try await blueHeight(AskPermissionModeMenu(mode: .standard, compact: true, bare: true,
+                                                               onSelect: { _ in }))
+        let camera = try await blueHeight(AskIconChipFace(item: .init(kind: .screenshot,
+            systemImage: "camera.viewfinder", style: .active, title: "Screenshot")))
+        let brain = try await blueHeight(AskIconChipFace(item: .init(kind: .memory,
+            systemImage: "brain", style: .active, title: "Memory")))
+        for (name, height) in [("shield", shield), ("camera", camera), ("brain", brain)] {
+            #expect(abs(height - lock) <= 2, "\(name): \(height)pt versus lock: \(lock)pt")
+        }
     }
 
     @Test func `active and inactive switches have no background`() async throws {

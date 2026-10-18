@@ -31,7 +31,7 @@ struct AskPermissionModeMenu: View {
     /// image itself so the icon-only control can match its neighbors.
     static func toolbarImage(_ mode: AskPermissionMode) -> NSImage? {
         NSImage(systemSymbolName: mode.symbol, accessibilityDescription: L("ask.mode.title") + ": " + mode.title)?
-            .withSymbolConfiguration(.init(pointSize: 17, weight: .semibold))
+            .withSymbolConfiguration(.init(pointSize: AskMetrics.footerStatusSymbolSize, weight: .semibold))
     }
 
     /// Use the same symbol configuration for every menu row. SwiftUI's default

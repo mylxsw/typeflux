@@ -378,7 +378,8 @@ struct AskIconChipFace: View {
                 .opacity(hovering ? 0.85 : 1)
         } else {
             ZStack {
-                Image(systemName: Self.symbol(item)).font(.system(size: 15, weight: .regular))
+                Image(systemName: Self.symbol(item))
+                    .font(.system(size: AskMetrics.footerStatusSymbolSize, weight: .semibold))
                 if item.style == .unavailable {
                     Rectangle().frame(width: 20, height: 1.5).rotationEffect(.degrees(-45))
                 }
