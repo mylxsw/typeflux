@@ -2214,6 +2214,7 @@ struct AskComposer: View {
     private var launcherBar: some View {
         HStack(spacing: 4) {
             composerTools
+            modelMenu
             permissionModeMenu
             Rectangle().fill(AskTheme.launcherSeparator).frame(width: 1, height: 18).padding(.horizontal, 4)
             contextChips
@@ -2444,6 +2445,7 @@ struct AskComposer: View {
             if !launcher, !layout.condensedFooter, onToggleUsage != nil, let context = model.usageContext {
                 AskContextUsageButton(context: context) { onToggleUsage?() }
             }
+            modelMenu
             AskVoiceButton(voice: voice, contextID: contextID,
                            enabled: launcher || !model.isLoadingSelection,
                            shortcut: voiceShortcut)
@@ -2483,7 +2485,7 @@ struct AskComposer: View {
         .disabled(active || (!launcher && model.isLoadingSelection))
     }
 
-    /// Attach, where the conversation is kept, and the model: the same in both composers.
+    /// Attach and storage stay at the leading edge of both composers.
     @ViewBuilder private var composerTools: some View {
         AskAttachButton(model: model, launcher: launcher,
                         disabled: active || (!launcher && model.isLoadingSelection))
@@ -2491,6 +2493,9 @@ struct AskComposer: View {
         AskStorageButton(model: model, launcher: launcher)
             .disabled(active)
             .opacity(Self.recordingDim(active))
+    }
+
+    private var modelMenu: some View {
         AskModelMenu(library: model.modelLibrary, reference: Binding(
             get: { model.modelReference(launcher: launcher) },
             set: { model.selectModel($0, launcher: launcher) }

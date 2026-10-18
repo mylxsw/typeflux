@@ -110,9 +110,15 @@ extension AskComposerInteractionTests {
             }
         }
 
-        // Open the chip's menu: the chip sits in the composer footer, left of centre.
-        for x in stride(from: CGFloat(380), through: 560, by: 20) where !presenter.isShowing {
-            try click(NSPoint(x: x, y: 46), in: window)
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore() }
+        let modelPoint = try AskWorkspaceTestAccessibility.center(identifier: "ask.composer.model", in: window)
+        let permissionPoint = try AskWorkspaceTestAccessibility.center(identifier: "ask.composer.permissionMode", in: window)
+        let voicePoint = try AskWorkspaceTestAccessibility.center(identifier: "ask.composer.voice", in: window)
+        #expect(modelPoint.x > permissionPoint.x && modelPoint.x < voicePoint.x,
+                "The workspace model control sits in the right-side action group")
+        for _ in 0 ..< 3 where !presenter.isShowing {
+            try click(modelPoint, in: window)
             try await Task.sleep(for: .milliseconds(150))
         }
         #expect(presenter.isShowing, "the chip opened its glass menu")
