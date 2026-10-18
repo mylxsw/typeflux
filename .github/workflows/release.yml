@@ -88,6 +88,7 @@ jobs:
         env:
           APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          RUNNER_ENVIRONMENT: ${{ runner.environment }}
         run: |
           set -euo pipefail
 
@@ -110,6 +111,16 @@ jobs:
             -T /usr/bin/productbuild \
             -f pkcs12 \
             -k "$KEYCHAIN_PATH"
+
+          if [[ "$RUNNER_ENVIRONMENT" == self-hosted ]]; then
+            for certificate in DeveloperIDCA.cer DeveloperIDG2CA.cer; do
+              certificate_path="$RUNNER_TEMP/$certificate"
+              curl --fail --silent --show-error --location --retry 3 \
+                "https://www.apple.com/certificateauthority/$certificate" \
+                --output "$certificate_path"
+              security import "$certificate_path" -k "$KEYCHAIN_PATH"
+            done
+          fi
 
           if ! security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -q "Developer ID Application"; then
             echo "Error: no Developer ID Application signing identity was imported into the temporary keychain."
@@ -226,6 +237,7 @@ jobs:
 
           security delete-keychain "$KEYCHAIN_PATH" || true
           rm -f "$APPLE_CERTIFICATE_PATH"
+          rm -f "$RUNNER_TEMP/DeveloperIDCA.cer" "$RUNNER_TEMP/DeveloperIDG2CA.cer"
 
   publish-release-artifacts:
     needs: build-signed-macos-app
