@@ -717,7 +717,6 @@
 "history.keep.title" = "履歴を保存する";
 "history.keep.subtitle" = "Typeflux がこのデバイス上でローカルのディクテーション履歴を保存する期間を選択します。";
 "history.privacy.title" = "データは機密性を保ちます";
-"history.privacy.subtitle" = "音声ディクテーション履歴は、この Mac にのみ保存されます。自動クリーンアップにより、期限切れのローカル エントリとリンクされたオーディオ ファイルが削除されます。";
 "history.export.title" = "アーカイブをエクスポートする";
 "history.export.subtitle" = "履歴をマークダウンとしてダウンロードするか、現在のタイムラインをクリアします。";
 "history.empty" = "まだ履歴エントリがありません。";

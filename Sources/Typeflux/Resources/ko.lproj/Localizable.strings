@@ -717,7 +717,6 @@
 "history.keep.title" = "기록 보관";
 "history.keep.subtitle" = "Typeflux이 이 기기에서 로컬 받아쓰기 기록을 보관하는 기간을 선택하세요.";
 "history.privacy.title" = "귀하의 데이터는 비공개로 유지됩니다";
-"history.privacy.subtitle" = "음성 받아쓰기 기록은 이 Mac에만 저장됩니다. 자동 정리는 만료된 로컬 항목과 연결된 오디오 파일을 제거합니다.";
 "history.export.title" = "아카이브 내보내기";
 "history.export.subtitle" = "기록을 마크다운으로 다운로드하거나 현재 타임라인을 지웁니다.";
 "history.empty" = "아직 기록 항목이 없습니다.";

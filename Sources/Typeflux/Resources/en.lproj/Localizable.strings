@@ -723,7 +723,6 @@
 "history.keep.title" = "Keep history";
 "history.keep.subtitle" = "Choose how long Typeflux keeps local dictation history on this device.";
 "history.privacy.title" = "Your data stays private";
-"history.privacy.subtitle" = "Voice dictation history is only stored on this Mac. Auto-cleanup removes expired local entries and linked audio files.";
 "history.export.title" = "Export archive";
 "history.export.subtitle" = "Download your history as markdown or clear the current timeline.";
 "history.export.chooseDirectory" = "Choose Export Folder";

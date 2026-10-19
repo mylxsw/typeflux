@@ -721,7 +721,6 @@
 "history.keep.title" = "保留歷史";
 "history.keep.subtitle" = "選擇 Typeflux 在這台裝置上保留本地聽寫歷史的時間。";
 "history.privacy.title" = "你的資料保持私密";
-"history.privacy.subtitle" = "語音聽寫歷史只保存在這台 Mac 上。自動清理會移除過期本地記錄和關聯音訊檔。";
 "history.export.title" = "匯出封存";
 "history.export.subtitle" = "將歷史匯出為 Markdown，或清空目前時間線。";
 "history.export.chooseDirectory" = "選擇匯出資料夾";
