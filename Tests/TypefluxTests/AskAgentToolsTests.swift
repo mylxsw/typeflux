@@ -204,6 +204,7 @@ final class AskAgentToolsTests: XCTestCase {
     }
 
     func testHostCommandOnlyRunsThroughApprovedDispatch() async throws {
+        XCTAssertTrue(AskHostCommand.definition.description.contains("only when the user specifically requests an external browser"))
         XCTAssertEqual(try AskHostCommand.validated(["command": "printf ok"]).timeout,
                        AskHostCommand.defaultTimeout)
         for args: [String: Any] in [["command": ""], ["command": String(repeating: "x", count: 1201)],
