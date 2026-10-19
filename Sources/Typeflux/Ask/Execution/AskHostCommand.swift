@@ -22,8 +22,10 @@ struct AskHostCommand: Sendable {
         If web_browser is available, use its open or open_file action to preview web pages. \
         Use a shell open command for a web page only when the user specifically requests an external browser. \
         The client shows the exact command for approval in Strict and Standard modes; YOLO mode runs it automatically. \
-        Do not claim that a referenced script was inspected unless you read it. The command starts in the user's home folder, has no \
-        interactive terminal, and has a maximum runtime of 120 seconds. Check the exit status and output afterward.
+        Do not claim that a referenced script was inspected unless you read it. The command has no interactive terminal \
+        and a maximum runtime of 120 seconds. Its current directory is this conversation's workspace when available; \
+        create new projects under work/ by default unless the user requests another location. \
+        Otherwise it starts in the user's home folder. Check the exit status and output afterward.
         """, parameters: JSONValue(data: data))
     }
 
@@ -42,13 +44,16 @@ struct AskHostCommand: Sendable {
         return (command, timeout)
     }
 
-    func run(command: String, timeout: Int) async throws -> AskLocalToolOutput {
+    func run(command: String, timeout: Int, workingDirectory: URL? = nil) async throws -> AskLocalToolOutput {
         let home = NSHomeDirectory()
-        let directory = open(home, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
+        let directory = open(workingDirectory?.path ?? home, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
         guard directory >= 0 else { throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno)) }
         defer { close(directory) }
-        let environment = ["HOME": home, "USER": NSUserName(), "PATH": "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
-                           "LANG": "en_US.UTF-8", "LC_ALL": "en_US.UTF-8", "TMPDIR": NSTemporaryDirectory()]
+        var environment = ["HOME": home, "USER": NSUserName(),
+                           "PATH": "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+                           "LANG": "en_US.UTF-8", "LC_ALL": "en_US.UTF-8",
+                           "TMPDIR": workingDirectory?.appendingPathComponent(".typeflux/tmp").path ?? NSTemporaryDirectory()]
+        if let workingDirectory { environment["TYPEFLUX_WORKSPACE"] = workingDirectory.path }
         let result = try await ManagedProcess().run(.init(
             executable: "/bin/zsh", arguments: ["-f", "-c", command], environment: environment,
             directoryDescriptor: directory, timeout: TimeInterval(timeout), outputLimit: 30_000,

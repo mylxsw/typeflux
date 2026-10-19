@@ -99,7 +99,8 @@ struct AskAttachmentLoaderTests {
         let notes = dir.appendingPathComponent("notes.md")
         try "# Plan".write(to: notes, atomically: true, encoding: .utf8)
         let text = try AskAttachmentLoader.file(notes)
-        #expect(text == [AskAttachment(id: text[0].id, kind: .file, name: "notes.md", byteSize: 6, text: "# Plan")])
+        #expect(text == [AskAttachment(id: text[0].id, kind: .file, name: "notes.md", byteSize: 6,
+                                       text: "# Plan", localSourcePath: notes.standardizedFileURL.path)])
 
         let picture = dir.appendingPathComponent("shot.png")
         try AskAttachmentFixture.encode(AskAttachmentFixture.image(width: 20, height: 10), type: .png).write(to: picture)

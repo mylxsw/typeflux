@@ -25,6 +25,8 @@ struct AskAttachment: Codable, Equatable, Sendable, Identifiable {
     var pages: Int? = nil
     /// Absolute path of a folder.
     var path: String? = nil
+    /// Original local file, used only while the draft is on this Mac.
+    var localSourcePath: String? = nil
 
     /// Bytes this attachment adds to a request.
     var payloadBytes: Int { (image?.utf8.count ?? 0) + (text?.utf8.count ?? 0) + (path?.utf8.count ?? 0) }
@@ -154,16 +156,20 @@ enum AskAttachmentLoader {
         if type?.conforms(to: .pdf) == true || ext == "pdf" {
             guard size <= AskAttachmentLimits.maximumPDFBytes else { throw AskAttachmentError.tooLarge(name) }
             return try pdf(url, name: name, byteSize: size, worker: worker, authorization: authorization, isCancelled: isCancelled)
+                .map { var item = $0; item.localSourcePath = url.standardizedFileURL.path; return item }
         }
         if type?.conforms(to: .image) == true {
             guard size <= AskAttachmentLimits.maximumImageFileBytes else { throw AskAttachmentError.tooLarge(name) }
             return try media(.image, source: .file(url), name: name, byteSize: size, worker: worker, authorization: authorization, isCancelled: isCancelled)
+                .map { var item = $0; item.localSourcePath = url.standardizedFileURL.path; return item }
         }
         if textExtensions.contains(ext) || type?.conforms(to: .text) == true || type?.conforms(to: .sourceCode) == true {
             guard size <= AskAttachmentLimits.maximumTextFileBytes else { throw AskAttachmentError.tooLarge(name) }
             guard let data = try? Data(contentsOf: url) else { throw AskAttachmentError.unreadable(name) }
             guard let text = decodeText(data) else { throw AskAttachmentError.unreadable(name) }
-            return [textAttachment(text, name: name, byteSize: size)]
+            var item = textAttachment(text, name: name, byteSize: size)
+            item.localSourcePath = url.standardizedFileURL.path
+            return [item]
         }
         throw AskAttachmentError.unsupported(name)
     }

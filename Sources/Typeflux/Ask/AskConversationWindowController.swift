@@ -56,8 +56,10 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         self.settings = settings
         self.launcherInputSource = launcherInputSource
         conversationFrameAutosaveName = services?.frameAutosaveName ?? "AskConversationWorkspace"
+        let workspaces = services?.tools == nil ? AskConversationWorkspaceStore.shared : nil
         let tools = services?.tools ?? AskLocalTools(
             registry: registry, settings: settings,
+            workspaces: workspaces,
             screenObservation: AskScreenObservation(capturer: screenCapture, permission: screenCapturePermission)
         )
         let sandbox = tools.sandbox
@@ -82,7 +84,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                                     maxOutput: model?.maxOutputTokens ?? 4096,
                                     known: model?.contextWindowTokens != nil)
         }))
-        model = AskConversationModel(api: api, cache: cache, tools: tools,
+        model = AskConversationModel(api: api, cache: cache, tools: tools, workspaces: workspaces,
                                      capture: services?.capture ?? AskContextCapture(
                                          injector: injector, memory: AskMemoryProvider(settings: settings),
                                          permission: screenCapturePermission, capturer: screenCapture
