@@ -377,11 +377,13 @@ extension WorkflowController {
                 _ = VocabularyStore.incrementOccurrences(in: text)
                 scheduleAutomaticVocabularyObservation(for: text)
                 scheduleRecentInputMemoryObservation(for: text, deliveryConfirmed: true)
+                overlayController.showDeliveryConfirmation(characterCount: text.count)
                 return (method == .ax ? .inserted : .pasted, text)
             case .unconfirmed:
                 // Missing AX confirmation is common even after a successful paste.
                 // Keep the result recoverable without interrupting the user's editor.
                 scheduleRecentInputMemoryObservation(for: text, deliveryConfirmed: false)
+                overlayController.showDeliveryConfirmation(characterCount: text.count)
                 return (.unconfirmed, text)
             case .notApplied:
                 presentResultDialog(title: fallbackTitle, text: text)

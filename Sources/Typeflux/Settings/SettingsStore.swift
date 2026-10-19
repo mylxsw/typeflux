@@ -10,6 +10,7 @@ extension Notification.Name {
     static let appearanceModeDidChange = Notification.Name("SettingsStore.appearanceModeDidChange")
     static let appIconStyleDidChange = Notification.Name("SettingsStore.appIconStyleDidChange")
     static let interfaceStyleDidChange = Notification.Name("SettingsStore.interfaceStyleDidChange")
+    static let voiceCapsuleDidChange = Notification.Name("SettingsStore.voiceCapsuleDidChange")
     static let preferredMicrophoneDidChange = Notification.Name("SettingsStore.preferredMicrophoneDidChange")
     static let instantVoiceInputDidChange = Notification.Name("SettingsStore.instantVoiceInputDidChange")
     static let mouseVoiceInputDidChange = Notification.Name("SettingsStore.mouseVoiceInputDidChange")
@@ -209,6 +210,16 @@ final class SettingsStore {
             guard currentValue != newValue else { return }
             defaults.set(newValue.rawValue, forKey: "ui.overlayStyle")
             NotificationCenter.default.post(name: .interfaceStyleDidChange, object: self)
+        }
+    }
+
+    /// Placement and behavior of the recording capsule (Settings › Appearance).
+    var voiceCapsule: VoiceCapsulePreferences {
+        get { VoiceCapsulePreferences(defaults: defaults) }
+        set {
+            guard voiceCapsule != newValue else { return }
+            newValue.write(to: defaults)
+            NotificationCenter.default.post(name: .voiceCapsuleDidChange, object: self)
         }
     }
 
