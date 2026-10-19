@@ -3210,7 +3210,6 @@
 "agent.memory.subtitle" = "Notes Ask Anything keeps about you, given to new conversations as background.";
 "agent.search.section" = "Service and credentials";
 "agent.automation.permissions" = "System permissions";
-"agent.automation.permissions.hint" = "After granting access in System Settings, come back to Typeflux and the state refreshes.";
 "agent.automation.rule.confirm" = "Asks before every step";
 "agent.automation.rule.stop" = "You can stop it at any time";
 "agent.overview.attention.title" = "Needs attention";

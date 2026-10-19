@@ -76,8 +76,8 @@ extension AskToolsSettingsView {
     // MARK: - Computer and browser control
 
     @ViewBuilder var automationPane: some View {
-        capabilityHeader(.automation)
-        TFFormSection(title: L("agent.automation.permissions"), footnote: L("agent.automation.permissions.hint")) {
+        TFPaneHeader(systemImage: AgentCapability.automation.symbol, title: AgentCapability.automation.title)
+        TFFormSection(title: L("agent.automation.permissions")) {
             permissionRow(icon: "hand.tap", title: L("permission.accessibility.title"),
                           detail: L("agent.automation.accessibility"),
                           granted: accessibilityGranted, request: permissions.requestAccessibility)

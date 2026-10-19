@@ -3200,7 +3200,6 @@
 "agent.memory.subtitle" = "Ask가 기억하는 나에 대한 메모로, 새 대화에 배경 정보로 제공됩니다.";
 "agent.search.section" = "서비스 및 자격 증명";
 "agent.automation.permissions" = "시스템 권한";
-"agent.automation.permissions.hint" = "시스템 설정에서 허용한 뒤 Typeflux로 돌아오면 상태가 새로 고쳐집니다.";
 "agent.automation.rule.confirm" = "모든 단계 전에 확인";
 "agent.automation.rule.stop" = "언제든지 중지할 수 있음";
 "agent.overview.attention.title" = "확인 필요";

@@ -3207,7 +3207,6 @@
 "agent.memory.subtitle" = "隨便問記住的關於你的筆記，會作為背景資訊提供給新對話。";
 "agent.search.section" = "服務與憑證";
 "agent.automation.permissions" = "系統權限";
-"agent.automation.permissions.hint" = "在系統設定中授權後回到 Typeflux，狀態會自動更新。";
 "agent.automation.rule.confirm" = "每一步操作前確認";
 "agent.automation.rule.stop" = "可以隨時停止";
 "agent.overview.attention.title" = "需要處理";

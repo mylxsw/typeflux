@@ -3200,7 +3200,6 @@
 "agent.memory.subtitle" = "Ask が覚えているあなたについてのメモ。新しい会話に背景情報として渡されます。";
 "agent.search.section" = "サービスと認証情報";
 "agent.automation.permissions" = "システム権限";
-"agent.automation.permissions.hint" = "システム設定で許可したら Typeflux に戻ると状態が更新されます。";
 "agent.automation.rule.confirm" = "操作の前に毎回確認";
 "agent.automation.rule.stop" = "いつでも停止できます";
 "agent.overview.attention.title" = "対応が必要";
