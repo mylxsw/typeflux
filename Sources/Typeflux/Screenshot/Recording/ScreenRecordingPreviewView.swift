@@ -72,8 +72,14 @@ struct ScreenRecordingPreviewView: View {
                     .disabled(model.sourceURL == nil || model.playback.isBusy)
                 Divider()
                 Button(L("recording.shortcuts")) { showsShortcuts = true }
-            } label: { Image(systemName: "ellipsis.circle") }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
+            }
                 .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                .help(L("recording.more"))
                 .accessibilityLabel(L("recording.more"))
         }
         .padding(.leading, 78).padding(.trailing, 14)
@@ -174,10 +180,13 @@ struct ScreenRecordingPreviewView: View {
     private var footer: some View {
         HStack(spacing: 8) {
             Button(action: close) {
-                Label(L("recording.discard"), systemImage: "trash")
-                    .padding(.horizontal, 8).frame(height: SettingsControlMetrics.height).contentShape(Rectangle())
+                Image(systemName: "trash")
+                    .frame(width: 30, height: SettingsControlMetrics.height)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain).foregroundStyle(StudioTheme.danger)
+            .help(L("recording.discard"))
+            .accessibilityLabel(L("recording.discard"))
             .accessibilityIdentifier("recording.preview.discard")
             Divider().frame(height: 20)
             Picker(L("recording.format"), selection: $model.options.format) {

@@ -64,6 +64,8 @@ struct ScreenRecordingUIInteractionTests {
                         $0.value("accessibilityIdentifier") as? String == "recording.preview.discard"
                     })
                     #expect(discard.frame.height == SettingsControlMetrics.height)
+                    #expect(discard.frame.width == 30)
+                    #expect(discard.label == L("recording.discard"))
                     try discard.press()
                 }
             }
