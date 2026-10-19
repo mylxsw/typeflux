@@ -181,4 +181,64 @@ struct AskStorageColorTests {
     @Test func aMixedHistoryMarksLocalRowsWithANeutralLock() {
         #expect(fits(Row(local: true)).width > fits(Row(local: false)).width)
     }
+
+    // MARK: - Snapshots
+
+    /// Writes the workspace kept on this Mac, signed in and out, when
+    /// `TYPEFLUX_STORAGE_SNAPSHOTS` names a directory; otherwise it does nothing.
+    @Test func renderStorageSurfaces() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_STORAGE_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        let language = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(language) }
+        let size = NSSize(width: 1100, height: 720)
+
+        let f = try fixture()
+        defer { f.model.resetSession() }
+        await f.api.seed(.init(id: "a", title: "讲讲这一屏在做什么", revision: 1, updatedAt: Date(), messages: []))
+        await f.model.refreshHistory()
+        f.model.chooseStorage(.local, launcher: false)
+        f.model.draft.text = "帮我实现一个俄罗斯方块小游戏"
+        for dark in [false, true] {
+            try await render(AskConversationView(model: f.model), size: size, dark: dark,
+                             file: root.appendingPathComponent("local-new-\(dark ? "dark" : "light").png"))
+        }
+        f.model.submitDraft()
+        try await f.wait { f.model.busyIds.isEmpty && f.model.selected?.run?.status == "completed" }
+        for dark in [false, true] {
+            try await render(AskConversationView(model: f.model), size: size, dark: dark,
+                             file: root.appendingPathComponent("local-chat-\(dark ? "dark" : "light").png"))
+        }
+
+        let signedOut = try fixture(signedIn: false)
+        defer { signedOut.model.resetSession() }
+        for dark in [false, true] {
+            try await render(AskConversationView(model: signedOut.model), size: size, dark: dark,
+                             file: root.appendingPathComponent("signed-out-new-\(dark ? "dark" : "light").png"))
+        }
+    }
+
+    private func render<V: View>(_ view: V, size: NSSize, dark: Bool, file: URL) async throws {
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],
+                              backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        let hosting = NSHostingView(rootView: view.environment(\.askGlassMaterialOverride, .opaque)
+            .frame(width: size.width, height: size.height, alignment: .top))
+        hosting.sizingOptions = []
+        hosting.frame = NSRect(origin: .zero, size: size)
+        window.contentView = hosting
+        window.orderFront(nil)
+        defer { window.orderOut(nil); window.close() }
+        try await Task.sleep(for: .milliseconds(500))
+        hosting.layoutSubtreeIfNeeded()
+        let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
+        hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+        let png = try #require(bitmap.representation(using: .png, properties: [:]))
+        try png.write(to: file)
+        #expect(png.count > 2000)
+    }
 }
