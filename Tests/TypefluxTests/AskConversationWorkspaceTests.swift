@@ -54,6 +54,26 @@ struct AskConversationWorkspaceTests {
         #expect(try Data(contentsOf: generated) == Data([1, 2, 3]))
     }
 
+    @Test func discardingOnlyTheTemporaryWorkspaceCannotFollowLinksOrRecreateIt() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("ask-workspace-discard-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = AskConversationWorkspaceStore(rootURL: root.appendingPathComponent("workspaces"))
+        let temporary = try await store.ensure(owner: "owner", conversationId: "temporary")
+        let ordinary = try await store.ensure(owner: "owner", conversationId: "ordinary")
+        let external = root.appendingPathComponent("external.txt")
+        try Data("keep".utf8).write(to: external)
+        try FileManager.default.createSymbolicLink(at: temporary.appendingPathComponent("work/external.txt"),
+                                                    withDestinationURL: external)
+
+        try await store.discard(owner: "owner", conversationId: "temporary")
+        #expect(!FileManager.default.fileExists(atPath: temporary.path))
+        #expect(FileManager.default.fileExists(atPath: ordinary.path))
+        #expect(try Data(contentsOf: external) == Data("keep".utf8))
+        await #expect(throws: CancellationError.self) {
+            try await store.ensure(owner: "owner", conversationId: "temporary")
+        }
+    }
+
     @Test func commandStartsInTheProvidedWorkspace() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("ask-command-workspace-" + UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

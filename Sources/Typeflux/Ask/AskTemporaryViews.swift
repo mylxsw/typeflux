@@ -177,21 +177,3 @@ struct AskTemporaryHistoryRow: View {
         .help(L("ask.temporary.fact.history"))
     }
 }
-
-/// Under the new-conversation title: what a temporary conversation does not keep.
-struct AskTemporaryEmptyHint: View {
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: AskStorageKind.temporary.symbol)
-            Text(L("ask.temporary.empty"))
-        }
-        .font(.system(size: 12.5))
-        .foregroundStyle(AskTheme.temporaryTint)
-        .padding(.horizontal, 12)
-        .frame(minHeight: 28)
-        .background(AskTheme.temporaryFill, in: Capsule())
-        .overlay(Capsule().strokeBorder(AskTheme.temporaryTint.opacity(0.5),
-                                        style: StrokeStyle(lineWidth: 0.8, dash: AskTheme.temporaryDash)))
-        .accessibilityIdentifier("ask.empty.temporary")
-    }
-}

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Local files owned by a conversation. Deleting a chat never removes its workspace.
+/// Local files owned by a conversation. Ordinary chats retain their workspace.
 actor AskConversationWorkspaceStore {
     struct FileRecord: Codable, Equatable {
         var path: String?
@@ -13,6 +13,7 @@ actor AskConversationWorkspaceStore {
     static let shared = AskConversationWorkspaceStore()
 
     nonisolated let rootURL: URL
+    private var discardedConversations: Set<String> = []
     init(rootURL: URL = TypefluxDataDirectories.workspaces) {
         self.rootURL = rootURL
     }
@@ -27,6 +28,7 @@ actor AskConversationWorkspaceStore {
 
     @discardableResult
     func ensure(owner: String, conversationId: String) throws -> URL {
+        guard !discardedConversations.contains(owner + "\0" + conversationId) else { throw CancellationError() }
         let root = try AskSecureDirectory.openRoot(rootURL, privateRoot: false)
         let ownerKey = String(AskToolPolicy.digest(owner).dropFirst(7).prefix(16))
         let conversationKey = Self.conversationName(conversationId)
@@ -37,6 +39,18 @@ actor AskConversationWorkspaceStore {
         }
         _ = try chat.child(".typeflux").child("tmp", create: true, privateDirectory: true)
         return try chat.url
+    }
+
+    /// Remove only this conversation's directory. Mark it first so in-flight work
+    /// cannot recreate it after cleanup. Never follows links inside the workspace.
+    func discard(owner: String, conversationId: String) throws {
+        discardedConversations.insert(owner + "\0" + conversationId)
+        let directory = url(owner: owner, conversationId: conversationId)
+        guard FileManager.default.fileExists(atPath: directory.path) else { return }
+        let root = try AskSecureDirectory.openRoot(rootURL, create: false, privateRoot: false)
+        let ownerKey = String(AskToolPolicy.digest(owner).dropFirst(7).prefix(16))
+        let account = try root.child(ownerKey, privateDirectory: true)
+        try account.remove(Self.conversationName(conversationId))
     }
 
     /// Save original file bytes before dispatching the question. The local source

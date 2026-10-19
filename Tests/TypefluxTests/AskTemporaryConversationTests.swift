@@ -10,13 +10,13 @@ import Testing
 @MainActor
 struct AskTemporaryConversationTests {
     /// A signed-in fixture with one of the user's own models, so a temporary chat can run on this Mac too.
-    private func fixture(signedIn: Bool = true) throws -> (AskTestFixture, String) {
+    private func fixture(signedIn: Bool = true, workspaces: AskConversationWorkspaceStore? = nil) throws -> (AskTestFixture, String) {
         let suite = "ask-temporary-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))
         let profile = AskModelProfile(name: "My model", baseURL: "https://models.example/v1", model: "my-model")
         defaults.set(try JSONEncoder().encode([profile]), forKey: "llm.model.profiles")
         let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
-        let fixture = try AskTestFixture(localOnly: !signedIn, modelLibrary: library)
+        let fixture = try AskTestFixture(localOnly: !signedIn, modelLibrary: library, workspaces: workspaces)
         return (fixture, profile.reference)
     }
 
@@ -145,9 +145,14 @@ struct AskTemporaryConversationTests {
     }
 
     @Test func endingDeletesEveryCopyAndForgetsTheConversation() async throws {
-        let (fixture, _) = try fixture()
+        let workspaceRoot = FileManager.default.temporaryDirectory.appendingPathComponent("ask-temporary-workspaces-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: workspaceRoot) }
+        let workspaces = AskConversationWorkspaceStore(rootURL: workspaceRoot)
+        let (fixture, _) = try fixture(workspaces: workspaces)
         defer { fixture.model.resetSession() }
         let id = try await startTemporary(fixture)
+        let folder = try await workspaces.ensure(owner: fixture.sessionState.owner, conversationId: id)
+        try Data("temporary".utf8).write(to: folder.appendingPathComponent("work/notes.txt"))
         fixture.model.confirmTemporaryLeave = { .init(choice: .end) }
         await fixture.api.seed(.init(id: "other", title: "Other", revision: 1, updatedAt: Date(), messages: []))
         await fixture.model.select("other")
@@ -155,6 +160,7 @@ struct AskTemporaryConversationTests {
         #expect(fixture.model.temporaryConversation == nil)
         #expect(!fixture.model.isTemporary(id))
         try await eventually { await fixture.api.deletes.contains(id) }
+        try await eventually { !FileManager.default.fileExists(atPath: folder.path) }
         try await eventually { (try? await fixture.model.cache.load(id: id, owner: AskRoutedAPI.temporaryOwner)) == nil }
         #expect(await fixture.api.values[id] == nil)
         #expect(!fixture.model.conversations.contains { $0.id == id })
@@ -203,15 +209,20 @@ struct AskTemporaryConversationTests {
     // MARK: - Keeping
 
     @Test func keepingACloudChatListsItAndMovesItToTheAccount() async throws {
-        let (fixture, _) = try fixture()
+        let workspaceRoot = FileManager.default.temporaryDirectory.appendingPathComponent("ask-kept-workspaces-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: workspaceRoot) }
+        let workspaces = AskConversationWorkspaceStore(rootURL: workspaceRoot)
+        let (fixture, _) = try fixture(workspaces: workspaces)
         defer { fixture.model.resetSession() }
         let id = try await startTemporary(fixture)
+        let folder = try await workspaces.ensure(owner: fixture.sessionState.owner, conversationId: id)
         fixture.model.keepTemporaryConversation()
         try await fixture.wait { fixture.model.temporaryConversation == nil }
         #expect(await fixture.api.keeps == [id])
         #expect(fixture.model.conversations.first?.id == id)
         #expect(!fixture.model.isLocal(id))
         #expect(fixture.model.selectedId == id)
+        #expect(FileManager.default.fileExists(atPath: folder.path))
         #expect(fixture.model.commandFeedback == L("ask.temporary.kept.cloud"))
         #expect(try await fixture.cache.load(id: id, owner: fixture.sessionState.owner) != nil)
         #expect(try await fixture.model.cache.load(id: id, owner: AskRoutedAPI.temporaryOwner) == nil)
@@ -411,11 +422,28 @@ struct AskTemporaryConversationTests {
     }
 
     @Test func signingOutForgetsTheTemporaryChat() async throws {
-        let (fixture, _) = try fixture()
+        let workspaceRoot = FileManager.default.temporaryDirectory.appendingPathComponent("ask-signed-out-workspaces-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: workspaceRoot) }
+        let workspaces = AskConversationWorkspaceStore(rootURL: workspaceRoot)
+        let (fixture, _) = try fixture(workspaces: workspaces)
         let id = try await startTemporary(fixture)
+        let folder = try await workspaces.ensure(owner: fixture.sessionState.owner, conversationId: id)
         fixture.model.resetSession()
         #expect(fixture.model.temporaryConversation == nil)
         #expect(!fixture.model.isTemporary(id))
+        try await eventually { !FileManager.default.fileExists(atPath: folder.path) }
+    }
+
+    @Test func quittingWaitsForTemporaryWorkspaceRemoval() async throws {
+        let workspaceRoot = FileManager.default.temporaryDirectory.appendingPathComponent("ask-quitting-workspaces-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: workspaceRoot) }
+        let workspaces = AskConversationWorkspaceStore(rootURL: workspaceRoot)
+        let (fixture, _) = try fixture(workspaces: workspaces)
+        let id = try await startTemporary(fixture)
+        let folder = try await workspaces.ensure(owner: fixture.sessionState.owner, conversationId: id)
+        await fixture.model.discardTemporaryConversationForTermination()
+        #expect(!FileManager.default.fileExists(atPath: folder.path))
+        #expect(fixture.model.temporaryConversation == nil)
     }
 
     @Test func theDraftRemembersItIsTemporary() throws {
@@ -437,7 +465,6 @@ struct AskTemporaryConversationTests {
         }
         #expect(size(AskNewConversationMenu(model: fixture.model) {}).height > 100)
         #expect(size(AskTemporaryHistoryRow()).height >= 32)
-        #expect(size(AskTemporaryEmptyHint()).width > 100)
         #expect(size(AskTemporaryChip(model: fixture.model)).width > 40)
         #expect(size(AskLocalModeCard(status: .make(model: fixture.model, signedIn: true),
                                       onSignIn: {})).height > 120)

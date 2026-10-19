@@ -300,12 +300,14 @@ struct AskTestFixture {
     /// the session carries the local owner and no Cloud token.
     init(authenticated: Bool = true, localOnly: Bool = false, modelLibrary: AskModelLibrary? = nil,
          approvalReuseEnabled: Bool = false, captureOverride: (any AskContextCapturing)? = nil,
-         defaults: UserDefaults? = nil, automaticRecovery: Bool = false) throws {
+         defaults: UserDefaults? = nil, automaticRecovery: Bool = false,
+         workspaces: AskConversationWorkspaceStore? = nil) throws {
         root = FileManager.default.temporaryDirectory.appendingPathComponent("ask-tests-" + UUID().uuidString)
         cache = try AskConversationCache(url: root.appendingPathComponent("cache.sqlite"))
         // Signed in, calls route by token like the app: Cloud to `api`, this Mac to `localAPI`.
         let routed: any AskAPI = localOnly ? api : AskRoutedAPI(cloud: api, local: localAPI)
-        model = AskConversationModel(api: routed, cache: cache, tools: tools, capture: captureOverride ?? capture,
+        model = AskConversationModel(api: routed, cache: cache, tools: tools, workspaces: workspaces,
+                                     capture: captureOverride ?? capture,
                                      deviceId: "device", modelLibrary: modelLibrary ?? AskModelLibrary(defaults: UserDefaults(suiteName: "ask-library-test-" + UUID().uuidString)!, automaticallyLoadsCatalog: false),
                                      defaults: defaults ?? .standard,
                                      trustedApprovalPeer: approvalReuseEnabled ? .init(version: 1, capabilities: ["scoped_approval_v1"]) : nil,

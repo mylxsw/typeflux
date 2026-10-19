@@ -496,7 +496,6 @@ function feed(c) {
     return `<div class="feed"><div class="welcome">
       <div class="big">有什么想问的？</div>
       <div class="lines">随时按 <kbd>⌥ Space</kbd> 唤起 · 按住 <kbd>⌥(R)</kbd> 语音输入</div>
-      ${t ? `<div class="tline">${ic('temp', 'sm')}临时对话不会出现在历史记录里，也不会使用或更新记忆</div>` : ''}
     </div></div>`;
   }
   let html = '<div class="feed">';
@@ -605,7 +604,7 @@ function leaveModal() {
   if (S.modal !== 'leave') return '';
   return `<div class="scrim" data-act="modal-cancel"><div class="sheet sm" data-stop="1">
     <h3><span class="tcol">${ic('temp')}</span>结束这段临时对话？</h3>
-    <div class="body">内容不会被保存，结束后无法找回。想留着的话，可以先把它保留为普通对话（${S.temp && isCloudModel(S.temp.model) && S.signedIn ? '云端同步' : '仅存本机'}）。</div>
+    <div class="body">对话和工作区将被删除，无法恢复。</div>
     <div class="btns">
       <label class="check"><input type="checkbox" id="dontask" ${S.dontAsk ? 'checked' : ''}>不再询问</label><span class="sp"></span>
       <button class="btn" data-act="modal-keep">${ic('save', 'sm')} 保留这段对话…</button>

@@ -899,9 +899,6 @@ struct AskConversationView: View {
                             .padding(.bottom, 9)
                     }
                     if !layout.isShort { emptyHint }
-                    if model.isTemporaryComposer(launcher: false) {
-                        AskTemporaryEmptyHint().padding(.top, layout.isShort ? 4 : 12)
-                    }
                     if hasStatus {
                         statusColumn
                             .frame(maxWidth: AskMetrics.transcriptMaxWidth)

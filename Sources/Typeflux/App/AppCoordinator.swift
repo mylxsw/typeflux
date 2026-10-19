@@ -321,6 +321,7 @@ final class AppCoordinator {
     }
 
     func prepareForTermination() async {
+        await di.askConversationWindowController?.model.discardTemporaryConversationForTermination()
         workflowController?.clipboardAction.preventNewWork()
         di.askConversationWindowController?.model.clipboardAction.preventNewWork()
         moduleStartup?.cancel()

@@ -581,6 +581,13 @@ final class AskConversationModel: ObservableObject {
     }
 
     func resetSession() {
+        if let temporary = temporaryConversation, !keepingTemporaryIDs.contains(temporary.id), let workspaces {
+            let account = owner
+            Task {
+                do { try await workspaces.discard(owner: account, conversationId: temporary.id) }
+                catch { ErrorLogStore.shared.log("Ask temporary workspace cleanup failed: \(error.localizedDescription)") }
+            }
+        }
         releaseLauncherScreenshot()
         launcherIconCache.clear()
         workflowImageCopyTask?.cancel()
@@ -1895,14 +1902,16 @@ final class AskConversationModel: ObservableObject {
         return true
     }
 
-    /// Ends the temporary conversation: stops its run and removes every copy, here and
-    /// in Typeflux Cloud. Nothing of it can be found afterwards.
-    func discardTemporaryConversation() {
-        guard let temporary = temporaryConversation, let account = credentials() else { return }
+    /// Ends the temporary conversation: stops its run and removes its local
+    /// workspace, cache, and server copy.
+    @discardableResult
+    func discardTemporaryConversation() -> Task<Void, Never>? {
+        guard let temporary = temporaryConversation, let account = credentials(),
+              temporaryConversation?.id == temporary.id else { return nil }
         guard !keepingTemporaryIDs.contains(temporary.id) else {
             // Being kept: it is no longer this session's temporary conversation.
             temporaryConversation = nil
-            return
+            return nil
         }
         let id = temporary.id, route = account.temporary(cloud: temporary.cloud)
         let activeRun = snapshots[id]?.run.flatMap { $0.isActive ? $0.id : nil }
@@ -1926,11 +1935,29 @@ final class AskConversationModel: ObservableObject {
             draft.memory = capture.globalMemory() ?? AskMemory()
         }
         tools.cancelProjects(conversationId: id)
+        let workspaceCleanup: Task<Void, Never>? = workspaces.map { workspaces in
+            Task {
+                do { try await workspaces.discard(owner: route.account, conversationId: id) }
+                catch { ErrorLogStore.shared.log("Ask temporary workspace cleanup failed: \(error.localizedDescription)") }
+            }
+        }
         Task { [api, cache, tools] in
             if let activeRun { _ = try? await api.cancel(conversationId: id, runId: activeRun, token: route.token) }
             try? await api.delete(conversationId: id, token: route.token)
             try? await cache.delete(id: id, owner: route.owner)
             try? tools.deleteArtifacts(ownerId: route.account, conversationId: id)
+        }
+        return workspaceCleanup
+    }
+
+    func discardTemporaryConversationForTermination() async {
+        let temporary = temporaryConversation
+        let account = owner
+        let cleanup = discardTemporaryConversation()
+        await cleanup?.value
+        if cleanup == nil, let temporary, !keepingTemporaryIDs.contains(temporary.id), let workspaces {
+            do { try await workspaces.discard(owner: account, conversationId: temporary.id) }
+            catch { ErrorLogStore.shared.log("Ask temporary workspace cleanup failed: \(error.localizedDescription)") }
         }
     }
 
