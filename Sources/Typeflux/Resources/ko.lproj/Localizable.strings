@@ -6075,7 +6075,6 @@
 "voiceCapsule.screen.activeWindow" = "활성 윈도우가 있는 디스플레이";
 "voiceCapsule.screen.mouse" = "포인터가 있는 디스플레이";
 "voiceCapsule.screen.main" = "주 디스플레이";
-"voiceCapsule.state.handsFree" = "핸즈프리";
 "voiceCapsule.action.close" = "닫기";
 "voiceCapsule.accessibility.label" = "Typeflux 음성 입력";
 "voiceCapsule.settings.title" = "음성 입력 캡슐";

@@ -6075,7 +6075,6 @@
 "voiceCapsule.screen.activeWindow" = "作業中のウインドウがあるディスプレイ";
 "voiceCapsule.screen.mouse" = "ポインタがあるディスプレイ";
 "voiceCapsule.screen.main" = "メインディスプレイ";
-"voiceCapsule.state.handsFree" = "ハンズフリー";
 "voiceCapsule.action.close" = "閉じる";
 "voiceCapsule.accessibility.label" = "Typeflux 音声入力";
 "voiceCapsule.settings.title" = "音声入力カプセル";

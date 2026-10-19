@@ -6116,7 +6116,6 @@
 "voiceCapsule.screen.activeWindow" = "目前視窗所在的顯示器";
 "voiceCapsule.screen.mouse" = "滑鼠所在的顯示器";
 "voiceCapsule.screen.main" = "主顯示器";
-"voiceCapsule.state.handsFree" = "免持錄音中";
 "voiceCapsule.action.close" = "關閉";
 "voiceCapsule.accessibility.label" = "Typeflux 語音輸入";
 "voiceCapsule.settings.title" = "語音輸入膠囊";

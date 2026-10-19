@@ -6193,7 +6193,6 @@
 "voiceCapsule.screen.activeWindow" = "当前窗口所在的显示器";
 "voiceCapsule.screen.mouse" = "鼠标所在的显示器";
 "voiceCapsule.screen.main" = "主显示器";
-"voiceCapsule.state.handsFree" = "免提录音中";
 "voiceCapsule.action.close" = "关闭";
 "voiceCapsule.accessibility.label" = "Typeflux 语音输入";
 "voiceCapsule.settings.title" = "语音输入胶囊";

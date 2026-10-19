@@ -69,8 +69,9 @@ enum VoiceCapsuleCopy {
 
     static func state(for snapshot: VoiceCapsuleSnapshot) -> String {
         switch snapshot.phase {
-        case let .listening(handsFree):
-            handsFree ? L("voiceCapsule.state.handsFree") : L("overlay.recording.listening")
+        case .listening:
+            // Hands-free recording reads the same: the orb and the timer already show it.
+            L("overlay.recording.listening")
         case .processing:
             snapshot.statusText.isEmpty ? L("overlay.processing.thinking") : snapshot.statusText
         case .failure:

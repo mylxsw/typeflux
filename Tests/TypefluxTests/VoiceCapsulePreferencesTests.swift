@@ -72,7 +72,8 @@ struct VoiceCapsuleCopyTests {
             var snapshot = VoiceCapsuleSnapshot(phase: .listening(handsFree: false), targetAppName: "Notes")
             #expect(VoiceCapsuleCopy.subtitle(for: snapshot) == "Listening · Notes")
             snapshot.phase = .listening(handsFree: true)
-            #expect(VoiceCapsuleCopy.subtitle(for: snapshot) == "Hands-free · Notes")
+            // Hands-free recording is never called out; it reads like holding the shortcut.
+            #expect(VoiceCapsuleCopy.subtitle(for: snapshot) == "Listening · Notes")
             snapshot.phase = .processing
             #expect(VoiceCapsuleCopy.state(for: snapshot) == L("overlay.processing.thinking"))
             snapshot.statusText = "Polishing"

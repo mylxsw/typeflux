@@ -6193,7 +6193,6 @@
 "voiceCapsule.screen.activeWindow" = "Display with the active window";
 "voiceCapsule.screen.mouse" = "Display with the pointer";
 "voiceCapsule.screen.main" = "Main display";
-"voiceCapsule.state.handsFree" = "Hands-free";
 "voiceCapsule.action.close" = "Close";
 "voiceCapsule.accessibility.label" = "Typeflux voice input";
 "voiceCapsule.settings.title" = "Voice input capsule";
