@@ -402,16 +402,14 @@ struct VoiceCapsuleOverlayTests {
     @Test @MainActor
     func settingsSectionRendersEveryStyle() {
         for style in VoiceCapsuleStyle.allCases {
-            for badge in [false, true] {
-                var preferences = VoiceCapsulePreferences()
-                preferences.style = style
-                let section = VoiceCapsuleSettingsSection(preferences: .constant(preferences), hasNotchedDisplay: badge)
-                let host = NSHostingView(rootView: section.frame(width: 760))
-                #expect(host.fittingSize.height > 200)
-                let preview = NSHostingView(rootView: VoiceCapsuleStylePreview(style: style, showsBadge: badge))
-                #expect(preview.fittingSize.height == 100)
-                #expect(preview.fittingSize.width >= 112 && preview.fittingSize.width <= 160)
-            }
+            var preferences = VoiceCapsulePreferences()
+            preferences.style = style
+            let section = VoiceCapsuleSettingsSection(preferences: .constant(preferences))
+            let host = NSHostingView(rootView: section.frame(width: 760))
+            #expect(host.fittingSize.height > 200)
+            let preview = NSHostingView(rootView: VoiceCapsuleStylePreview(style: style))
+            #expect(preview.fittingSize.height == 100)
+            #expect(preview.fittingSize.width >= 112 && preview.fittingSize.width <= 160)
         }
         // The original capsule stays next to the three new styles.
         #expect(VoiceCapsuleStyle.allCases == [.bottomCapsule, .orbCapsule, .cornerCard, .notchIsland])
