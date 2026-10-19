@@ -216,6 +216,13 @@ enum AskActivity {
         }
     }
 
+    /// A waiting card's title: how far the plan has got, since the plan itself is
+    /// listed under the title; without a plan, that something waits.
+    static func attentionTitle(plan: [AskPlanItem]?) -> String {
+        guard let plan, !plan.isEmpty else { return L("ask.activity.attention") }
+        return L("ask.activity.plan", plan.filter { $0.status == "completed" }.count, plan.count)
+    }
+
     /// The quieter tail of the line: "Step 3" while working, "3 steps" once
     /// there was more than one, nothing for a single step. `runStep` is the run's
     /// own count, shared with the header, for the block that carries the run.

@@ -261,8 +261,13 @@ struct AskHarnessUITests {
                                           results: results, plan: nil, status: .done))
         #expect(plain <= AskActivityBlock.lineHeight + 1)
         #expect(fits(AskActivityBlock(group: group, results: results, plan: plan, status: .done, startsExpanded: true)) > collapsed)
-        #expect(fits(AskActivityBlock(group: group, results: results, plan: plan, status: .attention, startsExpanded: false))
-            < fits(AskActivityBlock(group: group, results: results, plan: plan, status: .attention)))
+        // A waiting card shows its plan and decision; the steps stay folded until opened.
+        let waiting = fits(AskActivityBlock(group: group, results: results, plan: plan, status: .attention))
+        #expect(waiting == fits(AskActivityBlock(group: group, results: results, plan: plan, status: .attention,
+                                                 startsExpanded: false)))
+        #expect(waiting < fits(AskActivityBlock(group: group, results: results, plan: plan, status: .attention,
+                                                startsExpanded: true)))
+        #expect(waiting > fits(AskActivityBlock(group: group, results: results, plan: nil, status: .attention)))
         #expect(fits(AskActivityBlock(group: group, results: results, plan: nil, status: .attention, approvalToolId: "c")) > collapsed)
         #expect(fits(AskActivityBlock(group: group, results: results, plan: nil, status: .failed, outputs: outputs)) > collapsed)
         #expect(fits(AskToolStepRow(call: calls[1], result: results[1])) > 10)

@@ -28,8 +28,9 @@ struct AskActivityBlock: View {
     /// The waiting card's corner: the glass card's, or the flat design's tighter one.
     private var cardCorner: CGFloat { style.usesGlass ? Self.corner : 10 }
 
-    /// Folded by default, even while working: the line itself names the step under way.
-    private var expanded: Bool { userExpanded ?? startsExpanded ?? (status == .attention) }
+    /// Folded by default, even while working: the line itself names the step under way,
+    /// and a waiting card already shows the plan and the decision.
+    private var expanded: Bool { userExpanded ?? startsExpanded ?? false }
 
     private var title: String { AskActivity.title(group, status: status, plan: plan, results: results) }
 
@@ -61,7 +62,7 @@ struct AskActivityBlock: View {
         VStack(alignment: .leading, spacing: 6) {
             traceLine
             if expanded {
-                content
+                content()
                     .padding(.leading, 12)
                     .overlay(alignment: .leading) { Rectangle().fill(AskTheme.border).frame(width: 2) }
                     .padding(.bottom, 4)
@@ -126,58 +127,70 @@ struct AskActivityBlock: View {
     private var card: some View {
         VStack(alignment: .leading, spacing: 0) {
             cardHeader
+            if let plan, !plan.isEmpty {
+                AskPlanList(items: plan).padding(.horizontal, 14).padding(.bottom, 10)
+            }
             if let approval {
-                approval.padding(.horizontal, 14).padding(.bottom, 14)
+                approval.padding(.horizontal, 8).padding(.bottom, 8)
             }
             if expanded {
                 Rectangle().fill(AskTheme.separator).frame(height: 1)
-                content.padding(.horizontal, 14).padding(.vertical, 12)
+                content(includesPlan: false).padding(.horizontal, 14).padding(.vertical, 12)
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: cardCorner, style: .continuous))
         // The card scrolls with the transcript, so it takes the glass card's
         // shape and hairline on an opaque surface: live glass belongs to the
-        // floating controls layer.
+        // floating controls layer. One neutral frame: the approval inside it
+        // carries the colour, so the card is not a box around a box.
         .askInWindowGlass(corner: cardCorner, opaqueFill: AskTheme.raisedSurface)
         .environment(\.askGlassMaterialOverride, .opaque)
-        .overlay(RoundedRectangle(cornerRadius: cardCorner, style: .continuous)
-            .strokeBorder(StudioTheme.warning.opacity(0.55)))
     }
 
     private var cardHeader: some View {
         Button(action: toggle) {
-            HStack(spacing: 10) {
-                Image(systemName: "exclamationmark").font(.system(size: 10, weight: .heavy))
-                    .foregroundStyle(.black)
-                    .frame(width: 20, height: 20)
-                    .background(StudioTheme.warning, in: Circle())
-                Text(title)
+            HStack(spacing: 8) {
+                Text(AskActivity.attentionTitle(plan: plan))
                     .font(.system(size: 13.5, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
                     .lineLimit(1)
-                Text(AskActivity.categorySummary(group.steps))
-                    .font(.system(size: 12))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .lineLimit(1)
+                    .truncationMode(.tail)
+                if plan?.isEmpty == false {
+                    HStack(spacing: 5) {
+                        Circle().fill(StudioTheme.warning).frame(width: 6, height: 6)
+                        Text(L("ask.run.attention"))
+                    }
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(StudioTheme.warning)
+                    .fixedSize()
+                }
                 Spacer(minLength: 6)
+                if !group.steps.isEmpty {
+                    Text(L("ask.activity.steps", group.steps.count))
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .fixedSize()
+                }
                 Image(systemName: "chevron.down")
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(StudioTheme.textTertiary)
                     .rotationEffect(.degrees(expanded ? 180 : 0))
             }
             .padding(.horizontal, 14)
-            .frame(height: 46)
+            .frame(height: 42)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(title)
+        .accessibilityLabel(plan?.isEmpty == false
+            ? AskActivity.attentionTitle(plan: plan) + ", " + L("ask.run.attention")
+            : AskActivity.attentionTitle(plan: plan))
         .accessibilityValue(L(expanded ? "ask.activity.expanded" : "ask.activity.collapsed"))
     }
 
-    private var content: some View {
+    private func content(includesPlan: Bool = true) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            if let plan, !plan.isEmpty {
+            if includesPlan, let plan, !plan.isEmpty {
                 AskPlanList(items: plan)
                 if !group.steps.isEmpty { Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.vertical, 2) }
             }
@@ -257,7 +270,15 @@ struct AskToolStepRow: View {
         if let path = AskApprovalPresentation.detail(call) { return path }
         let line = result?.resultText.split(whereSeparator: \.isNewline).first.map(String.init)?
             .trimmingCharacters(in: .whitespaces)
-        return line?.isEmpty == false ? line : nil
+        guard let line, !line.isEmpty else { return nil }
+        return exitSummary(line) ?? line
+    }
+
+    /// "Exit code: 0" in words: commands and code report how they ended.
+    static func exitSummary(_ line: String) -> String? {
+        let prefix = "Exit code: "
+        guard line.hasPrefix(prefix), let code = Int(line.dropFirst(prefix.count)) else { return nil }
+        return code == 0 ? L("ask.tool.exitSucceeded") : L("ask.tool.exitFailed", code)
     }
 
     var body: some View {
