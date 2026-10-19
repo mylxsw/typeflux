@@ -386,7 +386,7 @@ this Mac; signing in is optional. The design board is
   runs with the user's own model; device tools keep the same approval flow; history
   is stored as JSON under `~/Library/Application Support/Typeflux/AskLocal/`.
   It ports the system/memory/environment prompt, references, screen observations,
-  summaries after 28 messages, truncation detection, the 24-step limit, cancel,
+  summaries after 28 messages, truncation detection, the 100-step limit, cancel,
   retry, regenerate, expiry of interrupted runs and memory purge.
 - Engine-side tools: `update_plan` and `web_search` when the user configures
   Tavily, Brave or Cloudflare in Agent → Web Search. Local `web_fetch`

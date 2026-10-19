@@ -302,9 +302,11 @@ final class AskLocalEngineTests: XCTestCase {
         let engine = engine()
         var c = try await engine.send(conversationId: "loop", request: request(), token: "")
         var limitSeen = false
-        for _ in 0 ..< AskLocalEngine.maxSteps {
+        XCTAssertEqual(AskLocalEngine.maxSteps, 100)
+        for index in 0 ..< AskLocalEngine.maxSteps {
             c = try await answer(engine, c, calls: [call("update_plan", #"{"items":[{"step":"x","status":"pending"}]}"#)])
             limitSeen = limitSeen || c.messages.contains { $0.text.contains("Web tool limit") }
+            if index == 23 { XCTAssertEqual(c.run?.status, "waiting_inference", "The previous 24-step limit must not stop the run") }
             if c.run?.status != "waiting_inference" { break }
         }
         XCTAssertFalse(limitSeen, "Plan updates do not spend the web request quota")

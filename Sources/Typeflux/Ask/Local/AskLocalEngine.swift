@@ -28,7 +28,7 @@ struct AskLocalRecord: Codable, Equatable, Sendable {
 /// knows how to run, device tools use the usual approval flow, and conversations
 /// are stored as JSON files under Application Support.
 actor AskLocalEngine: AskAPI {
-    static let maxSteps = 24
+    static let maxSteps = 100
     static let maxMessages = 500
     static let maxToolCalls = 8
     static let maxBuiltinCalls = 16
