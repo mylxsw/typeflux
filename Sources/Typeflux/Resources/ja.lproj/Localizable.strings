@@ -2187,8 +2187,8 @@
 /* Ask attachments */
 "ask.attach.title" = "添付";
 "ask.attach.help" = "ファイル、画像、フォルダを添付（⌘U）。貼り付けやドラッグでも追加できます";
-"ask.attach.files" = "ファイル・画像を送信…";
-"ask.attach.folder" = "フォルダを選択…";
+"ask.attach.files" = "ファイル・画像を送信";
+"ask.attach.folder" = "フォルダを選択";
 "ask.attach.pickFiles" = "Ask に送るファイルや画像を選択";
 "ask.attach.pickFolders" = "この会話で Ask が読み取れるフォルダを選択";
 "ask.attach.add" = "追加";

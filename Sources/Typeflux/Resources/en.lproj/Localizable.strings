@@ -2197,8 +2197,8 @@
 /* Ask attachments */
 "ask.attach.title" = "Attach";
 "ask.attach.help" = "Attach files, images or a folder (⌘U). You can also paste or drop them here";
-"ask.attach.files" = "Send Files or Images…";
-"ask.attach.folder" = "Choose Folder…";
+"ask.attach.files" = "Send Files or Images";
+"ask.attach.folder" = "Choose Folder";
 "ask.attach.pickFiles" = "Choose files or images to send to Ask";
 "ask.attach.pickFolders" = "Choose a folder Ask can read in this conversation";
 "ask.attach.add" = "Add";
