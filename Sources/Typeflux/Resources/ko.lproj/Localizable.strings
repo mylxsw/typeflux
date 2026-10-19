@@ -2616,9 +2616,10 @@
 "agent.memory.search" = "메모 검색";
 "agent.memory.count" = "메모 %d개";
 "agent.memory.add" = "메모 추가";
+"agent.memory.addButton" = "추가";
 "agent.memory.save" = "저장";
 "agent.memory.emptyTitle" = "아직 메모가 없습니다";
-"agent.memory.emptyMessage" = "대화에서 '…기억해'라고 말하거나 여기에서 추가하세요. 호칭, 사용 언어, 업무 습관 등이 있습니다.";
+"agent.memory.emptyMessage" = "대화에서 '…기억해'라고 말하거나 '추가'를 누르세요.";
 "agent.memory.noMatch" = "일치하는 메모가 없습니다.";
 "agent.memory.removed" = "메모를 삭제했습니다";
 "agent.memory.historyNote" = "메모를 삭제해도 대화 기록은 삭제되지 않습니다. 필요하면 '기록'에서 삭제하세요.";

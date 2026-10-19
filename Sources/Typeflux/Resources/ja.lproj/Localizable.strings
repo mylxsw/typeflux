@@ -2616,9 +2616,10 @@
 "agent.memory.search" = "メモを検索";
 "agent.memory.count" = "%d 件のメモ";
 "agent.memory.add" = "メモを追加";
+"agent.memory.addButton" = "追加";
 "agent.memory.save" = "保存";
 "agent.memory.emptyTitle" = "メモはまだありません";
-"agent.memory.emptyMessage" = "会話で「…を覚えて」と伝えるか、ここで追加してください。呼び方、使う言語、仕事の習慣などです。";
+"agent.memory.emptyMessage" = "会話で「…を覚えて」と伝えるか、「追加」をクリックしてください。";
 "agent.memory.noMatch" = "一致するメモはありません。";
 "agent.memory.removed" = "メモを削除しました";
 "agent.memory.historyNote" = "メモを削除しても会話履歴は削除されません。必要なら「履歴」で削除してください。";

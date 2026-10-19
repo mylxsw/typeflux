@@ -2626,9 +2626,10 @@
 "agent.memory.search" = "搜索笔记";
 "agent.memory.count" = "%d 条笔记";
 "agent.memory.add" = "添加笔记";
+"agent.memory.addButton" = "添加";
 "agent.memory.save" = "保存";
 "agent.memory.emptyTitle" = "还没有笔记";
-"agent.memory.emptyMessage" = "在对话里说“记住……”，或在这里手动添加。例如你的称呼、常用语言、工作习惯。";
+"agent.memory.emptyMessage" = "对话中说“记住……”，或点击“添加”。";
 "agent.memory.noMatch" = "没有匹配的笔记。";
 "agent.memory.removed" = "已删除笔记";
 "agent.memory.historyNote" = "删除笔记不会删除对话历史；需要的话，请在「历史」中单独删除。";

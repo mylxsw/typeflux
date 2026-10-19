@@ -2626,9 +2626,10 @@
 "agent.memory.search" = "Search notes";
 "agent.memory.count" = "Notes: %d";
 "agent.memory.add" = "Add Note";
+"agent.memory.addButton" = "Add";
 "agent.memory.save" = "Save";
 "agent.memory.emptyTitle" = "No notes yet";
-"agent.memory.emptyMessage" = "Say “remember …” in a conversation, or add one here, such as how to address you, your language or your work habits.";
+"agent.memory.emptyMessage" = "Say “remember …” in a chat, or click Add.";
 "agent.memory.noMatch" = "No matching notes.";
 "agent.memory.removed" = "Note deleted";
 "agent.memory.historyNote" = "Deleting a note doesn't delete conversation history; remove that from History.";

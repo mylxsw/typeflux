@@ -2623,9 +2623,10 @@
 "agent.memory.search" = "搜尋筆記";
 "agent.memory.count" = "%d 則筆記";
 "agent.memory.add" = "新增筆記";
+"agent.memory.addButton" = "新增";
 "agent.memory.save" = "儲存";
 "agent.memory.emptyTitle" = "還沒有筆記";
-"agent.memory.emptyMessage" = "在對話中說「記住……」，或在這裡手動新增。例如你的稱呼、常用語言、工作習慣。";
+"agent.memory.emptyMessage" = "對話中說「記住……」，或點擊「新增」。";
 "agent.memory.noMatch" = "沒有符合的筆記。";
 "agent.memory.removed" = "已刪除筆記";
 "agent.memory.historyNote" = "刪除筆記不會刪除對話紀錄；如有需要，請在「歷史」中另外刪除。";

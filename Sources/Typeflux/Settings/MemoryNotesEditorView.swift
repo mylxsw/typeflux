@@ -19,7 +19,7 @@ struct MemoryNotesEditorView: View {
             HStack(spacing: TFMetrics.toolbarSpacing) {
                 TFSearchField(placeholder: L("agent.memory.search"), text: $query, resultCount: visibleNotes.count)
                 Spacer(minLength: 0)
-                TFButton(title: L("agent.memory.add"), systemImage: "plus", kind: .primary) {
+                TFButton(title: L("agent.memory.addButton"), systemImage: "plus", kind: .primary) {
                     query = ""
                     model.beginAdding()
                 }
