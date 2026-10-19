@@ -200,6 +200,15 @@ final class AskLocalTools: AskToolExecuting {
 
     func grantFolders(_ paths: [String], conversationId: String) { folderGrants.grant(paths, to: conversationId) }
 
+    /// Without host-command access, a browser preview must respect the same folder grants as `files`.
+    func validateBrowserLocalFile(_ args: [String: Any], conversationId: String) throws {
+        guard args["action"] as? String == "open_file" else { return }
+        let url = try AskEmbeddedBrowserTool.validatedLocalHTML(args["path"])
+        if settings?.askCodeExecutionEnabled != true {
+            _ = try fileTools(conversationId: conversationId).resolve(url.path)
+        }
+    }
+
     /// The bound browser, or a running Safari/Chrome when the question started elsewhere.
     func browserBundle(conversationId: String?) -> String? {
         // An existing conversation only controls the app it was bound to, which is gone after a restart.
@@ -390,6 +399,7 @@ final class AskLocalTools: AskToolExecuting {
             return try await executeAutomation(call.function.name, args: args, conversationId: conversationId)
         case AskEmbeddedBrowserTool.name:
             guard let embeddedBrowser else { throw AskLocalError.message(L("ask.tool.unavailable")) }
+            try validateBrowserLocalFile(args, conversationId: conversationId)
             return try await embeddedBrowser.execute(args, conversationId: conversationId)
         case "files":
             let files = fileTools(conversationId: conversationId)

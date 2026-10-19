@@ -16,7 +16,7 @@
 已实现，代码在 `Sources/Typeflux/Ask/Browser/`：
 
 - **面板**：`AskBrowserPanel`，包括标签栏、地址栏（输入网址或搜索词）、前进 / 后退 / 刷新、新建（无痕）标签页、在默认浏览器打开、复制链接、清除站点数据。面板可拖动调宽（宽度会记住），窗口窄时变成抽屉，顶栏地球按钮或 ⌘⇧B 切换。AI 使用浏览器时面板自动打开。
-- **持久化配置**：`AskBrowserWorkspace`。macOS 14+ 使用 `WKWebsiteDataStore(forIdentifier:)` 独立配置，macOS 13 退回默认存储；最多 8 个标签页；弹窗作为新标签页打开（保留 `window.opener`）；普通 `file:` / `javascript:` 及顶层 `data:` 导航被拒绝；不支持下载，会给出提示。`web_browser.open_file` 可以在审批后预览单个本地 HTML 文件，读取权限只限该文件，不包含同目录资源。
+- **持久化配置**：`AskBrowserWorkspace`。macOS 14+ 使用 `WKWebsiteDataStore(forIdentifier:)` 独立配置，macOS 13 退回默认存储；最多 8 个标签页；弹窗作为新标签页打开（保留 `window.opener`）；普通 `file:` / `javascript:` 及顶层 `data:` 导航被拒绝；不支持下载，会给出提示。`web_browser.open_file` 可以在审批后预览单个本地 HTML 文件，重复预览会刷新原标签页。读取权限只限该文件，不包含同目录资源；若宿主命令权限已关闭，还必须位于 Chat 已授权的文件夹内。
 - **工具**：新增 `web_browser`（`AskEmbeddedBrowserTool`），与现有、控制用户 Safari / Chrome 的 `browser` 工具并存。动作有 `tabs` / `new_tab` / `select_tab` / `close_tab` / `open` / `back` / `scroll` / `read` / `snapshot` / `screenshot` / `click` / `fill` / `wait` / `handoff`。
   - 观察和操作脚本复用 `AskBrowserExecutor` 的 JS，跑在隔离的 `WKContentWorld("typeflux.agent")` 中，页面脚本读不到观察状态。
   - `click` / `fill` 只接受最新快照里的 ref，`observation_id` 用过一次即作废；页面导航后旧观察失效。

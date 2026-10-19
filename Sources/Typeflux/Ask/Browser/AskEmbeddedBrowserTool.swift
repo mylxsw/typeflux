@@ -68,7 +68,8 @@ final class AskEmbeddedBrowserTool {
         Use Typeflux's built-in browser, shown beside this conversation, to open and visually check web pages, \
         especially pages you just built. Prefer it over a shell open command or the user's Safari/Chrome unless \
         the user specifically asks for an external browser. One action per call. tabs lists tabs; new_tab opens one (optionally at url); \
-        open_file opens a standalone local HTML file in a new tab using its absolute path (sibling files are not available); \
+        open_file opens a standalone local HTML file using its absolute path, reusing that file's tab on later calls. \
+        Sibling files are not available; if host commands are disabled, the file must be in a folder granted to Chat. \
         open navigates a tab to an http(s) url; read returns the page URL, title and visible text; snapshot lists \
         interactive elements with refs and returns an observation_id; screenshot returns an image of the page. \
         click and fill take a ref and the observation_id from the latest snapshot of that tab; observe again after \
@@ -249,11 +250,20 @@ final class AskEmbeddedBrowserTool {
     private func openFile(_ args: [String: Any], conversationId: String) async throws -> AskLocalToolOutput {
         let url = try Self.validatedLocalHTML(args["path"])
         try await workspace.waitUntilResumed(conversationId: conversationId)
-        let tab = try workspace.newTab(owner: .agent(conversationId: conversationId))
+        let previous = workspace.tabs.first {
+            $0.owner == .agent(conversationId: conversationId) && $0.url?.standardizedFileURL == url
+        }
+        let tab = try previous ?? workspace.newTab(owner: .agent(conversationId: conversationId))
+        observations[tab.id] = nil
+        workspace.select(tab)
         workspace.requestPresentation()
         workspace.beginActivity(L("ask.web.action.open"), conversationId: conversationId, tab: tab)
         tab.loadLocalHTML(url)
         try await tab.waitForLoad(timeout: loadTimeout)
+        guard tab.url?.standardizedFileURL == url, !tab.isLoading, tab.notice == nil else {
+            if previous == nil { workspace.close(tab) }
+            throw AskLocalError.message(tab.notice ?? "Local HTML preview did not finish loading.")
+        }
         return .init(content: "Opened local HTML in tab \(tab.number).\n" + pageSummary(tab))
     }
 

@@ -67,6 +67,7 @@ extension AskLocalTools {
             summary = request.command
         case AskEmbeddedBrowserTool.name:
             guard let embeddedBrowser else { throw AskLocalError.message(L("ask.tool.unavailable")) }
+            try validateBrowserLocalFile(args, conversationId: conversationId)
             definition = AskEmbeddedBrowserTool.definition
             let binding = try embeddedBrowser.binding(args)
             target = binding.target; summary = binding.summary; reusable = binding.reusable

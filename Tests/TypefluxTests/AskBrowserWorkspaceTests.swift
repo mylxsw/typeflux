@@ -183,4 +183,47 @@ final class AskBrowserWorkspaceTests: XCTestCase {
                                                        binding: binding, authorize: {})
         XCTAssertEqual(approved.content, output.content)
     }
+
+    func testLocalPreviewRespectsFolderAccessWhenHostCommandsAreDisabled() async throws {
+        let suite = UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = SettingsStore(defaults: defaults)
+        settings.askCodeExecutionEnabled = false
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("preview.html")
+        try "<h1>Preview</h1>".write(to: file, atomically: true, encoding: .utf8)
+        let tools = AskLocalTools(registry: MCPRegistry(), settings: settings)
+        let workspace = makeWorkspace()
+        tools.embeddedBrowser = AskEmbeddedBrowserTool(workspace: workspace)
+        let arguments = try JSONSerialization.data(withJSONObject: ["action": "open_file", "path": file.path])
+        let call = AskToolCall(id: "local", function: .init(name: "web_browser", arguments: String(decoding: arguments, as: UTF8.self)))
+
+        do {
+            _ = try await tools.approvalBinding(for: call, conversationId: "c")
+            XCTFail("The browser must not bypass disabled file access")
+        } catch {}
+        settings.askFileAccessFolders = [directory.path]
+        let binding = try await tools.approvalBinding(for: call, conversationId: "c")
+        XCTAssertEqual(binding.target.path, file.path)
+        settings.askFileAccessFolders = []
+        do {
+            _ = try await tools.executeApproved(call, conversationId: "c", binding: binding, authorize: {})
+            XCTFail("Revoking folder access must invalidate an earlier approval")
+        } catch {}
+        settings.askFileAccessFolders = [directory.path]
+        _ = try await tools.executeApproved(call, conversationId: "c", binding: binding, authorize: {})
+        XCTAssertEqual(workspace.selectedTab?.url?.standardizedFileURL, file.standardizedFileURL)
+        settings.askFileAccessFolders = []
+        do {
+            _ = try await tools.approvalBinding(for: call, conversationId: "c")
+            XCTFail("Removing folder access must revoke the preview")
+        } catch {}
+        settings.askCodeExecutionEnabled = true
+        let hostBinding = try await tools.approvalBinding(for: call, conversationId: "c")
+        XCTAssertEqual(hostBinding.target.path, file.path)
+        workspace.tabs.forEach { workspace.close($0) }
+    }
 }

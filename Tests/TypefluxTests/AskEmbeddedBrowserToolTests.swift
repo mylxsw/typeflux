@@ -74,6 +74,8 @@ final class AskEmbeddedBrowserToolTests: XCTestCase {
         let action = try XCTUnwrap(properties["action"] as? [String: Any])
         XCTAssertEqual(action["enum"] as? [String], AskEmbeddedBrowserTool.actions)
         XCTAssertEqual(AskEmbeddedBrowserTool.definition.name, "web_browser")
+        XCTAssertTrue(AskEmbeddedBrowserTool.definition.description.contains("Prefer it over a shell open command"))
+        XCTAssertTrue(AskEmbeddedBrowserTool.definition.description.contains("open_file opens a standalone local HTML file"))
     }
 
     func testOpenLocalStandaloneHTMLInBuiltInBrowser() async throws {
@@ -81,7 +83,11 @@ final class AskEmbeddedBrowserToolTests: XCTestCase {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let file = directory.appendingPathComponent("snake.html")
-        try "<html><head><title>Snake</title></head><body><canvas></canvas><h1>Ready</h1></body></html>"
+        try """
+        <html><head><title>Snake</title></head><body><canvas id="game" width="40" height="40"></canvas><h1>Ready</h1>
+        <script>document.querySelector('canvas').getContext('2d').fillRect(0,0,20,20);
+        document.querySelector('h1').textContent='Running';</script></body></html>
+        """
             .write(to: file, atomically: true, encoding: .utf8)
 
         let args: [String: Any] = ["action": "open_file", "path": file.path]
@@ -95,7 +101,7 @@ final class AskEmbeddedBrowserToolTests: XCTestCase {
         XCTAssertEqual(tab.url?.standardizedFileURL, file.standardizedFileURL)
         XCTAssertEqual(tab.title, "Snake")
         let observed = try await run(["action": "read"])
-        XCTAssertTrue(observed.content.contains("Ready"))
+        XCTAssertTrue(observed.content.contains("Running"), "Inline game JavaScript should run")
         let screenshot = try await run(["action": "screenshot"])
         XCTAssertTrue(screenshot.image?.hasPrefix("data:image/jpeg;base64,") == true)
 
@@ -107,6 +113,14 @@ final class AskEmbeddedBrowserToolTests: XCTestCase {
                        "A local preview must not grant navigation to sibling files")
         XCTAssertThrowsError(try AskEmbeddedBrowserTool.validatedLocalHTML(directory.appendingPathComponent("secret.txt").path))
         XCTAssertFalse(AskBrowserTab.allowsNavigation(to: sibling))
+
+        try "<html><head><title>Snake v2</title></head><body>Updated</body></html>"
+            .write(to: file, atomically: true, encoding: .utf8)
+        _ = try await run(args)
+        XCTAssertEqual(workspace.tabs.count, 1, "Repeated previews should refresh the existing tab")
+        XCTAssertEqual(workspace.selectedTab?.id, tab.id)
+        let updated = try await run(["action": "read"])
+        XCTAssertTrue(updated.content.contains("Updated"))
     }
 
     func testReadMarksContentUntrustedAndNotesPasswordFields() async throws {
