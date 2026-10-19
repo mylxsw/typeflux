@@ -167,7 +167,7 @@ struct NotchIslandCapsule: View {
                         .foregroundStyle(Color.white.opacity(0.42))
                         .opacity(snapshot.phase.isListening ? 1 : 0)
                     Spacer(minLength: 8)
-                    if snapshot.phase.showsRecordingControls {
+                    if snapshot.phase.isListening {
                         VoiceCapsulePillButton(title: L("common.cancel"), prominent: false, action: actions.cancel)
                         VoiceCapsulePillButton(title: L("common.done"), prominent: true, action: actions.confirm)
                     }

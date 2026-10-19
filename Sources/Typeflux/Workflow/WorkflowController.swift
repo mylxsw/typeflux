@@ -296,7 +296,7 @@ final class WorkflowController {
                     cancelCurrentProcessing(resetUI: true, reason: L("workflow.cancel.userCancelled"))
                 }
             },
-            onConfirm: { [weak self] in self?.confirmLockedRecording() }
+            onConfirm: { [weak self] in self?.confirmRecordingFromOverlay() }
         )
         self.overlayController.setResultDialogHandler(
             onCopy: { [weak self] in self?.copyLastResultFromDialog() }
@@ -1380,6 +1380,13 @@ final class WorkflowController {
 
     func confirmLockedRecording() {
         guard isRecording, recordingMode == .locked else { return }
+        finishRecordingFromCurrentMode()
+    }
+
+    /// The overlay's confirm control finishes the recording in either mode, so a live caption can be
+    /// committed with the pointer. A hold-to-talk release that follows is ignored: nothing is recording.
+    func confirmRecordingFromOverlay() {
+        guard isRecording else { return }
         finishRecordingFromCurrentMode()
     }
 

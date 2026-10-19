@@ -1316,7 +1316,7 @@ final class OverlayController {
     static let cardControlsHideDelay: TimeInterval = 0.25
 
     private func handleCapsuleHover(_ hovering: Bool) {
-        if model.skin.isCornerCard {
+        if model.skin.isCornerCard || model.skin == .bottomCapsule {
             revealCardControls(hovering)
             return
         }
@@ -1361,17 +1361,14 @@ final class OverlayController {
 
     static let completionDisplayDuration: TimeInterval = 1.4
 
-    /// Confirms delivered text in the corner card and notch island. The bottom capsule keeps
-    /// its quiet exit, so this does nothing there.
+    /// Briefly confirms delivered text: the orb turns green with "Inserted", then the capsule leaves.
     func showDeliveryConfirmation(characterCount: Int) {
         if !Thread.isMainThread {
             DispatchQueue.main.async { [weak self] in self?.showDeliveryConfirmation(characterCount: characterCount) }
             return
         }
         let preferences = settingsStore.voiceCapsule
-        guard preferences.style != .bottomCapsule,
-              let screen = placementScreen ?? Self.placementScreenGeometry(for: preferences.screen),
-              VoiceCapsuleLayout.skin(for: preferences, on: screen).isTopAnchored else { return }
+        guard placementScreen ?? Self.placementScreenGeometry(for: preferences.screen) != nil else { return }
         dismissWorkItem?.cancel()
         dismissWorkItem = nil
         stopProcessingProgress()
@@ -1415,7 +1412,8 @@ final class OverlayController {
         case .recordingHold:
             return OverlayMetrics(
                 size: recordingOverlaySize(baseWidth: 146, baseHeight: 112), anchor: .bottom, offset: Self.recordingWindowBottomInset,
-                interactive: false
+                // Accepts the pointer so hovering can reveal cancel and confirm.
+                interactive: true
             )
         case .recordingHoldPreview:
             let isExpanded = model.recordingPreviewExpanded
@@ -1424,7 +1422,7 @@ final class OverlayController {
                     baseWidth: isExpanded ? 428 : 146,
                     baseHeight: isExpanded ? LiveTranscriptPreviewLayout.expandedOverlayHeight : 112
                 ), anchor: .bottom, offset: Self.recordingWindowBottomInset,
-                interactive: false
+                interactive: true
             )
         case .recordingLocked:
             return OverlayMetrics(
@@ -1444,16 +1442,15 @@ final class OverlayController {
             return OverlayMetrics(
                 size: NSSize(width: processingOverlayWidth() + Self.shadowGutter * 2, height: 112), anchor: .bottom,
                 offset: Self.recordingWindowBottomInset,
-                interactive: false
+                interactive: true
             )
         case .processingPreview:
             return OverlayMetrics(
                 size: NSSize(width: 428, height: LiveTranscriptPreviewLayout.expandedOverlayHeight),
                 anchor: .bottom, offset: Self.recordingWindowBottomInset,
-                interactive: false
+                interactive: true
             )
         case .completed:
-            // Only top skins show a completion state; keep a harmless size otherwise.
             return OverlayMetrics(size: NSSize(width: 146, height: 112), anchor: .bottom,
                                   offset: Self.recordingWindowBottomInset, interactive: false)
         case .transcriptPreview, .notice, .failure, .personaPicker, .resultDialog:
@@ -1939,12 +1936,11 @@ private struct OverlayView: View {
     private var sharedContent: some View {
         switch model.presentation {
         case .recordingHold, .recordingHoldPreview, .recordingLocked, .recordingLockedPreview,
-             .processing, .processingPreview:
-            // Keep one structural identity while captions and controls change.
+             .processing, .processingPreview, .completed:
+            // Keep one structural identity while captions, controls and the result change.
             recordingMorphCapsule(
                 expanded: model.presentation.isRecording
-                    ? model.recordingPreviewExpanded : model.presentation == .processingPreview,
-                showControls: model.presentation.showsRecordingControls
+                    ? model.recordingPreviewExpanded : model.presentation == .processingPreview
             )
         case .transcriptPreview:
             previewCard
@@ -1956,9 +1952,6 @@ private struct OverlayView: View {
             personaPickerCard
         case .resultDialog:
             resultDialogCard
-        case .completed:
-            // Only the top skins draw completion.
-            EmptyView()
         }
     }
 
@@ -2003,23 +1996,23 @@ private struct OverlayView: View {
         }
     }
 
-    private func recordingMorphCapsule(expanded: Bool, showControls: Bool) -> some View {
-        MorphingRecordingCapsule(
-            text: model.detailText,
-            hintText: model.recordingHintText,
-            level: model.level,
-            expanded: expanded,
-            showControls: showControls,
-            isProcessing: model.presentation.isProcessing,
-            processingTitle: model.statusText.isEmpty ? L("overlay.processing.thinking") : model.statusText,
-            processingProgress: model.processingProgress,
-            onCancel: model.requestCancel,
-            onConfirm: model.requestConfirm
-        )
-        .fixedSize(horizontal: true, vertical: true)
-        .animation(reduceMotion ? nil : OverlayMotion.morph(scale: model.motionScale), value: expanded)
-        .animation(reduceMotion ? nil : OverlayMotion.morph(scale: model.motionScale), value: showControls)
-        .animation(reduceMotion ? nil : OverlayMotion.morph(scale: model.motionScale), value: model.presentation.isProcessing)
+    @ViewBuilder
+    private func recordingMorphCapsule(expanded: Bool) -> some View {
+        if let snapshot = model.voiceCapsuleSnapshot {
+            let revealed = model.cardControlsRevealed && !snapshot.phase.cardControls.isEmpty
+            MorphingRecordingCapsule(
+                snapshot: snapshot,
+                hintText: model.recordingHintText,
+                expanded: expanded,
+                controlsRevealed: revealed,
+                actions: model.voiceCapsuleActions
+            )
+            .fixedSize(horizontal: true, vertical: true)
+            .onHover { model.onCapsuleHoverChanged?($0) }
+            .animation(reduceMotion ? nil : OverlayMotion.morph(scale: model.motionScale), value: expanded)
+            .animation(reduceMotion ? nil : OverlayMotion.morph(scale: model.motionScale), value: revealed)
+            .animation(reduceMotion ? nil : OverlayMotion.morph(scale: model.motionScale), value: snapshot.phase)
+        }
     }
 
     private var previewCard: some View {
@@ -2619,39 +2612,32 @@ private struct RecordingHintBanner: View {
     }
 }
 
+/// The bottom capsule: the orb shows the voice, a slot on the right shows the timer or progress,
+/// and the controls appear there only while the pointer is over the capsule. One shape morphs
+/// between 78×35 at rest, 114×35 with listening controls and 360×103 with a live caption.
 private struct MorphingRecordingCapsule: View, Animatable {
-    let text: String
+    static let height = VoiceCapsuleLayout.bottomHeight
+
+    let snapshot: VoiceCapsuleSnapshot
     let hintText: String
-    let level: Float
     let expanded: Bool
-    let showControls: Bool
-    let isProcessing: Bool
-    let processingTitle: String
-    let processingProgress: CGFloat
-    let onCancel: () -> Void
-    let onConfirm: () -> Void
+    let controlsRevealed: Bool
+    let actions: VoiceCapsuleActions
     private var expansion: CGFloat
     private var controlsVisibility: CGFloat
     private var processingVisibility: CGFloat
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(
-        text: String, hintText: String, level: Float, expanded: Bool, showControls: Bool,
-        isProcessing: Bool, processingTitle: String, processingProgress: CGFloat,
-        onCancel: @escaping () -> Void, onConfirm: @escaping () -> Void
-    ) {
-        self.text = text
+    init(snapshot: VoiceCapsuleSnapshot, hintText: String, expanded: Bool, controlsRevealed: Bool,
+         actions: VoiceCapsuleActions) {
+        self.snapshot = snapshot
         self.hintText = hintText
-        self.level = level
         self.expanded = expanded
-        self.showControls = showControls
-        self.isProcessing = isProcessing
-        self.processingTitle = processingTitle
-        self.processingProgress = processingProgress
-        self.onCancel = onCancel
-        self.onConfirm = onConfirm
+        self.controlsRevealed = controlsRevealed
+        self.actions = actions
         expansion = expanded ? 1 : 0
-        controlsVisibility = showControls ? 1 : 0
-        processingVisibility = isProcessing ? 1 : 0
+        controlsVisibility = controlsRevealed ? 1 : 0
+        processingVisibility = snapshot.phase == .processing ? 1 : 0
     }
 
     var animatableData: AnimatablePair<CGFloat, AnimatablePair<CGFloat, CGFloat>> {
@@ -2666,26 +2652,23 @@ private struct MorphingRecordingCapsule: View, Animatable {
     var body: some View {
         let cornerRadius: CGFloat = 17.5 + 4.5 * expansion
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-        let recordingWidth: CGFloat = 78 + 36 * controlsVisibility
-        let processingWidth = OverlayMotion.processingWidth(for: processingTitle)
-        let compactWidth = recordingWidth + (processingWidth - recordingWidth) * processingVisibility
+        let compactWidth = VoiceCapsuleLayout.bottomCompactWidth(controlsVisibility: controlsVisibility,
+                                                                 processingVisibility: processingVisibility)
         let width = compactWidth + (360 - compactWidth) * expansion
-        let height = 35 + (LiveTranscriptPreviewLayout.expandedCapsuleHeight - 35) * expansion
+        let height = Self.height + (LiveTranscriptPreviewLayout.expandedCapsuleHeight - Self.height) * expansion
         // Reveal text only when there is room for its fixed-width viewport.
         let captionVisibility = max(0, min(1, (expansion - 0.9) / 0.1))
-        let recordingOpacity = max(0, 1 - processingVisibility / 0.35)
-        let processingOpacity = max(0, (processingVisibility - 0.35) / 0.65)
+        let controls = snapshot.phase.cardControls
 
         ZStack(alignment: .bottom) {
             Rectangle()
-                .fill(Color.white.opacity(0.22 * processingVisibility))
-                .frame(width: processingWidth * max(0, min(1, processingProgress)), height: 35)
-                .frame(width: processingWidth, height: 35, alignment: .leading)
-                .clipShape(Capsule(style: .continuous))
-                .animation(.linear(duration: 0.06), value: processingProgress)
+                .fill(Color.white.opacity(0.2 * processingVisibility))
+                .frame(width: width * max(0, min(1, snapshot.progress)), height: Self.height)
+                .frame(width: width, height: Self.height, alignment: .leading)
+                .animation(.linear(duration: 0.06), value: snapshot.progress)
                 .allowsHitTesting(false)
 
-            LiveTranscriptPreviewText(text: text)
+            LiveTranscriptPreviewText(text: snapshot.text)
                 .frame(width: 330, height: LiveTranscriptPreviewLayout.textViewportHeight, alignment: .topLeading)
                 .padding(.top, 12)
                 .padding(.bottom, 43)
@@ -2693,23 +2676,31 @@ private struct MorphingRecordingCapsule: View, Animatable {
                 .allowsHitTesting(expanded)
                 .accessibilityHidden(!expanded)
 
-            controlsRow
-                .frame(height: OverlayWaveformMetrics.maximumBarHeight)
-                .padding(.horizontal, 20 - 13 * controlsVisibility)
-                .padding(.bottom, 5.5)
-                .opacity(recordingOpacity)
-                .allowsHitTesting(!isProcessing)
-                .accessibilityHidden(isProcessing)
-
-            Text(processingTitle)
-                .font(.system(size: 12.5, weight: .semibold))
-                .foregroundStyle(Color.white.opacity(0.92))
-                .lineLimit(1)
-                .minimumScaleFactor(0.9)
-                .padding(.horizontal, 12)
-                .frame(width: processingWidth, height: 35)
-                .opacity(processingOpacity)
-                .accessibilityHidden(!isProcessing)
+            // Explicit gaps keep the resting row inside 78pt: 7 + orb 21 + timer + 9.
+            HStack(spacing: 0) {
+                VoiceCapsuleOrb(phase: snapshot.phase, level: snapshot.level, diameter: 21, showsRipples: true)
+                if snapshot.phase == .completed {
+                    Text(VoiceCapsuleCopy.state(for: snapshot))
+                        .font(.system(size: 11.5, weight: .semibold))
+                        .foregroundStyle(Color.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .padding(.leading, 6)
+                }
+                if captionVisibility > 0 {
+                    Text(VoiceCapsuleCopy.subtitle(for: snapshot))
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.white.opacity(0.62))
+                        .lineLimit(1)
+                        .padding(.leading, 8)
+                        .opacity(captionVisibility)
+                }
+                Spacer(minLength: 0)
+                slot(controls: controls)
+            }
+            .padding(.leading, 7)
+            .padding(.trailing, 9)
+            .frame(width: width, height: Self.height)
         }
         .frame(width: width, height: height, alignment: .bottom)
         .clipShape(shape)
@@ -2720,7 +2711,7 @@ private struct MorphingRecordingCapsule: View, Animatable {
                 tintOpacity: 0.045 + 0.015 * expansion,
                 strokeOpacity: 0.15,
                 lineWidth: 0.9,
-                interactive: showControls
+                interactive: controlsRevealed
             )
         )
         .shadow(color: Color.black.opacity(0.24), radius: 18, x: 0, y: 12)
@@ -2731,51 +2722,66 @@ private struct MorphingRecordingCapsule: View, Animatable {
             }
         }
         .environment(\.colorScheme, .dark)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(L("voiceCapsule.accessibility.label"))
+        // Hidden controls stay reachable for VoiceOver without hovering.
+        .accessibilityAction(named: L("common.cancel")) {
+            if controls.contains(.cancel) { actions.cancel() }
+        }
+        .accessibilityAction(named: L("common.done")) {
+            if controls.contains(.confirm) { actions.confirm() }
+        }
         // Geometry is interpolated once, above. Re-lay out children at each
         // intermediate size instead of animating their positions a second time.
         .transaction { $0.animation = nil }
     }
 
-    private var controlsRow: some View {
-        HStack(spacing: 7 * controlsVisibility) {
-            roundIconButton(systemName: "xmark", action: onCancel)
-                .frame(width: 24 * controlsVisibility)
-                .opacity(controlsVisibility)
-                .clipped()
-                .allowsHitTesting(showControls)
-                .accessibilityHidden(!showControls)
-
-            LevelWaveform(level: level, activeColor: Color.white.opacity(0.95))
-                .frame(width: 38, height: OverlayWaveformMetrics.maximumBarHeight)
-
-            roundIconButton(systemName: "checkmark", action: onConfirm, inverted: true)
-                .frame(width: 24 * controlsVisibility)
-                .opacity(controlsVisibility)
-                .clipped()
-                .allowsHitTesting(showControls)
-                .accessibilityHidden(!showControls)
+    /// The timer or progress at rest, the controls under the pointer, in the same place.
+    @ViewBuilder
+    private func slot(controls: [VoiceCapsuleCardControl]) -> some View {
+        if snapshot.phase != .completed {
+            let reveal = controls.isEmpty ? 0 : controlsVisibility
+            // The controls overlay the timer so they take no width until the capsule widens.
+            meta.opacity(1 - reveal).overlay(alignment: .trailing) {
+                HStack(spacing: 6) {
+                    if controls.contains(.cancel) {
+                        VoiceCapsuleRoundButton(systemName: "xmark", inverted: false,
+                                                accessibilityLabel: L("common.cancel"), action: actions.cancel)
+                    }
+                    if controls.contains(.confirm) {
+                        VoiceCapsuleRoundButton(systemName: "checkmark", inverted: true,
+                                                accessibilityLabel: L("common.done"), action: actions.confirm)
+                    }
+                }
+                .fixedSize()
+                .opacity(reveal)
+                .scaleEffect(reduceMotion ? 1 : 0.88 + 0.12 * reveal, anchor: .trailing)
+                .allowsHitTesting(controlsRevealed)
+                .accessibilityHidden(!controlsRevealed)
+            }
+            .frame(minWidth: 24, alignment: .trailing)
+            .padding(.leading, 6)
         }
     }
 
-    private func roundIconButton(
-        systemName: String, action: @escaping () -> Void, inverted: Bool = false
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: 12.5, weight: .semibold))
-                .foregroundStyle(inverted ? Color.black.opacity(0.9) : Color.white.opacity(0.96))
-                .frame(width: 24, height: 24)
-                .background(
-                    Circle()
-                        .fill(inverted ? Color.white.opacity(0.92) : Color.black.opacity(0.20))
-                )
-                .overlay(
-                    Circle()
-                        .stroke(Color.white.opacity(inverted ? 0.46 : 0.22), lineWidth: 0.8)
-                )
-                .shadow(color: Color.black.opacity(0.20), radius: 5, x: 0, y: 2)
+    @ViewBuilder
+    private var meta: some View {
+        switch snapshot.phase {
+        case .listening:
+            if let startedAt = snapshot.recordingStartedAt {
+                Text(timerInterval: startedAt ... Date.distantFuture, countsDown: false)
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundStyle(Color.white.opacity(0.7))
+                    .fixedSize()
+            }
+        case .processing:
+            Text(VoiceCapsuleCopy.percent(snapshot.progress))
+                .font(.system(size: 12, design: .monospaced))
+                .foregroundStyle(Color.white.opacity(0.8))
+                .fixedSize()
+        case .completed, .failure:
+            EmptyView()
         }
-        .buttonStyle(.plain)
     }
 }
 

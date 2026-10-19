@@ -9,7 +9,7 @@ import Testing
 struct VoiceCapsuleDesktopCaptureTests {
     private static let transcript = "明天下午三点跟设计团队过一下语音胶囊的新方案，然后把会议纪要发给大家"
 
-    @Test(arguments: [VoiceCapsuleStyle.cornerCard, .notchIsland]) @MainActor
+    @Test(arguments: [VoiceCapsuleStyle.cornerCard, .notchIsland, .bottomCapsule]) @MainActor
     func captureEveryState(style: VoiceCapsuleStyle) async throws {
         let directory = try #require(ProcessInfo.processInfo.environment["TYPEFLUX_CAPSULE_SCREENSHOT_DIR"])
         let language = AppLocalization.shared.language
@@ -40,13 +40,19 @@ struct VoiceCapsuleDesktopCaptureTests {
         controller.show()
         controller.updateLevel(0.55)
         try await shoot("1-listening")
+        if style == .bottomCapsule {
+            controller.simulateCapsuleHoverForTesting(true)
+            try await shoot("1b-listening-hover")
+            controller.simulateCapsuleHoverForTesting(false)
+            try await Task.sleep(for: .seconds(OverlayController.cardControlsHideDelay + 0.1))
+        }
         controller.updateRecordingPreviewText(String(Self.transcript.prefix(22)))
         controller.updateLevel(0.7)
         try await shoot("2-transcript")
         controller.showLockedRecording()
         controller.updateRecordingPreviewText(Self.transcript)
         try await shoot("3-handsfree")
-        if style == .cornerCard {
+        if style != .notchIsland {
             controller.simulateCapsuleHoverForTesting(true)
             try await shoot("3b-handsfree-hover")
             controller.simulateCapsuleHoverForTesting(false)
@@ -55,7 +61,7 @@ struct VoiceCapsuleDesktopCaptureTests {
         controller.showProcessing()
         controller.transitionToLLMPhase()
         try await shoot("4-processing")
-        if style == .cornerCard {
+        if style != .notchIsland {
             controller.simulateCapsuleHoverForTesting(true)
             try await shoot("4b-processing-hover")
             controller.simulateCapsuleHoverForTesting(false)
