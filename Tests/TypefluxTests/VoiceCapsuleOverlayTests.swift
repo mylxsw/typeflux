@@ -234,22 +234,48 @@ struct VoiceCapsuleOverlayTests {
     }
 
     @Test @MainActor
-    func bottomCapsuleKeepsItsQuietExit() async throws {
+    func bottomCapsuleRevealsControlsOnHoverAndConfirmsDelivery() async throws {
         let fixture = try Fixture(style: .bottomCapsule)
         defer { fixture.clean() }
         let controller = fixture.controller
-        controller.showDeliveryConfirmation(characterCount: 12)
-        #expect(controller.presentedWindow?.isVisible != true)
         controller.show()
+        controller.updateLevel(0.6)
+        let window = try #require(controller.presentedWindow)
         try await settle()
         #expect(controller.voiceCapsuleSkinForTesting == .bottomCapsule)
-        // A notch island that falls back to the bottom capsule behaves the same way.
-        let fallback = try Fixture(style: .notchIsland) { $0.notchFallback = .bottomCapsule }
-        defer { fallback.clean() }
-        if fallback.screen.hardwareNotch == nil {
-            fallback.controller.showDeliveryConfirmation(characterCount: 12)
-            #expect(fallback.controller.presentedWindow?.isVisible != true)
-        }
+        // The window keeps its original envelope and now accepts the pointer for hover.
+        #expect(window.frame.size == CGSize(width: 146, height: 112))
+        #expect(!window.ignoresMouseEvents)
+        try capture(window, name: "bottom-hold")
+
+        controller.simulateCapsuleHoverForTesting(true)
+        #expect(controller.cardControlsRevealedForTesting)
+        try await settle()
+        #expect(window.frame.size == CGSize(width: 146, height: 112))
+        try capture(window, name: "bottom-hold-hover")
+        controller.simulateCapsuleHoverForTesting(false)
+        try await Task.sleep(for: .seconds(OverlayController.cardControlsHideDelay + 0.15))
+        #expect(!controller.cardControlsRevealedForTesting)
+
+        controller.updateRecordingPreviewText("明天下午三点跟设计团队过一下语音胶囊的新方案")
+        try await settle()
+        try capture(window, name: "bottom-transcript")
+
+        controller.showProcessing()
+        controller.transitionToLLMPhase()
+        try await settle()
+        #expect(!window.ignoresMouseEvents)
+        try capture(window, name: "bottom-processing")
+
+        controller.dismissProcessingImmediatelyIfVisible()
+        controller.showDeliveryConfirmation(characterCount: 12)
+        try await settle()
+        #expect(window.isVisible)
+        #expect(controller.recordingPresentationForTesting == .completed)
+        #expect(controller.isCapsulePresentedForTesting)
+        try capture(window, name: "bottom-completed")
+        try await Task.sleep(for: .seconds(OverlayController.completionDisplayDuration + 0.4))
+        #expect(!window.isVisible)
     }
 
     @Test @MainActor
