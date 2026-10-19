@@ -21,7 +21,7 @@ struct AskFirstQuestionVisualTests {
         for (name, fixture) in [("signed-out", signedOut), ("signed-in", signedIn)] {
             try await render(VStack(spacing: 12) {
                 AskLocalModeCard(status: .make(model: fixture.model, signedIn: fixture.model.isSignedIn),
-                                 onOpenSearchSettings: {}, onSignIn: {})
+                                 onSignIn: {})
                 AskModelMenu(library: fixture.model.modelLibrary,
                              reference: .constant(fixture.model.modelReference(launcher: false)), compact: true,
                              cloudAvailable: fixture.model.cloudAvailable)

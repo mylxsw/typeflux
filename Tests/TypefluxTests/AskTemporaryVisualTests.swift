@@ -37,7 +37,7 @@ struct AskTemporaryVisualTests {
         }
         try await render(VStack(alignment: .leading, spacing: 16) {
             AskNewConversationMenu(model: fixture.model) {}
-            AskLocalModeCard(status: .make(model: fixture.model, signedIn: true), onOpenSearchSettings: {}, onSignIn: {})
+            AskLocalModeCard(status: .make(model: fixture.model, signedIn: true), onSignIn: {})
         }.padding(16).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).background(AskTheme.surface),
                          size: NSSize(width: 380, height: 560), dark: true,
                          file: root.appendingPathComponent("menu-and-card-dark.png"))

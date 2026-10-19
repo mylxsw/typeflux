@@ -594,13 +594,14 @@ struct AskConversationVisualTests {
                          appearance: .darkAqua, file: root.appendingPathComponent("storage-cloud-dark.png"))
         let source = "我的 Ollama"
         let cards: [(String, AskLocalModeStatus)] = [
-            ("choose", .init(source: source, searchConfigured: false, offersSignIn: false, changeable: true)),
-            ("locked-local", .init(source: source, searchConfigured: true, offersSignIn: false)),
-            ("locked-cloud", .init(source: source, searchConfigured: true, offersSignIn: false, local: false)),
-            ("signed-out", .init(source: source, searchConfigured: false, offersSignIn: true))
+            ("choose", .init(source: source, offersSignIn: false, changeable: true)),
+            ("locked-local", .init(source: source, offersSignIn: false)),
+            ("locked-cloud", .init(source: source, offersSignIn: false, local: false)),
+            ("signed-out", .init(source: source, offersSignIn: true, changeable: true,
+                                  choices: [.local, .temporary]))
         ]
         for (name, status) in cards {
-            try await render(AskLocalModeCard(status: status, onOpenSearchSettings: {}, onSignIn: {})
+            try await render(AskLocalModeCard(status: status, onSignIn: {})
                                 .background(AskTheme.surface),
                              size: NSSize(width: AskLocalModeCard.width, height: 380), appearance: .darkAqua,
                              file: root.appendingPathComponent("storage-card-\(name).png"), minimumPNGBytes: 3000)

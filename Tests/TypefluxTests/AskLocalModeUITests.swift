@@ -208,13 +208,13 @@ struct AskLocalModeUITests {
 
     @Test func localSurfacesRender() throws {
         let f = try localFixture([text, vision])
-        for status in [AskLocalModeStatus(source: "Ollama", searchConfigured: false, offersSignIn: true),
-                       AskLocalModeStatus(source: "Ollama", searchConfigured: true, offersSignIn: false),
-                       AskLocalModeStatus(source: "Ollama", searchConfigured: true, offersSignIn: false,
+        for status in [AskLocalModeStatus(source: "Ollama", offersSignIn: true),
+                       AskLocalModeStatus(source: "Ollama", offersSignIn: false),
+                       AskLocalModeStatus(source: "Ollama", offersSignIn: false,
                                           local: false, changeable: true),
-                       AskLocalModeStatus(source: "Ollama", searchConfigured: true, offersSignIn: false,
+                       AskLocalModeStatus(source: "Ollama", offersSignIn: false,
                                           local: false)] {
-            #expect(fits(AskLocalModeCard(status: status, onOpenSearchSettings: {}, onSignIn: {})).height > 80)
+            #expect(fits(AskLocalModeCard(status: status, onSignIn: {})).height > 80)
         }
         #expect(fits(AskCloudPromoCard(onSignIn: {}, onDismiss: {}), width: 236).height > 60)
         #expect(fits(AskLocalModeIdentity(model: f.model), width: 200).height == 40)

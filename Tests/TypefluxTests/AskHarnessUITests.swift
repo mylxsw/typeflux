@@ -306,14 +306,6 @@ struct AskHarnessUITests {
         cloud.model.approve(conversationId: id, allowed: false)
         try await cloud.wait { cloud.model.busyIds.isEmpty }
 
-        let local = try AskTestFixture(authenticated: false)
-        let search = AskSearchSettings(defaults: local.model.modelLibrary.settings.defaults)
-        let previous = search.provider
-        defer { search.provider = previous }
-        search.provider = .none
-        #expect(!AskLocalModeStatus.make(model: local.model, signedIn: false).searchConfigured)
-        search.provider = .brave
-        #expect(AskLocalModeStatus.make(model: local.model, signedIn: false).searchConfigured)
     }
 
     // MARK: - Settings and skills

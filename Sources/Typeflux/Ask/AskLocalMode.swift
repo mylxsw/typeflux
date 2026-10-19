@@ -5,7 +5,6 @@ import SwiftUI
 struct AskLocalModeStatus: Equatable {
     /// Where the conversation's model runs, e.g. "Ollama".
     var source: String
-    var searchConfigured: Bool
     /// Signed out: the card offers Typeflux Cloud.
     var offersSignIn: Bool
     /// The conversation is kept on this Mac rather than in Typeflux Cloud.
@@ -33,7 +32,6 @@ struct AskLocalModeStatus: Equatable {
         let changeable = offersChoice && model.canChooseStorage(launcher: launcher)
         let temporary = offersChoice && model.isTemporaryComposer(launcher: launcher)
         return .init(source: provider.map(sourceName) ?? L("ask.local.sourceNone"),
-                     searchConfigured: AskSearchSettings(defaults: library.settings.defaults).provider != .none,
                      offersSignIn: !signedIn,
                      local: model.storesLocally(launcher: launcher),
                      changeable: changeable,
@@ -121,12 +119,11 @@ struct AskHistoryFilterBar: View {
 }
 
 /// The card behind the composer's storage icon: where the conversation is kept,
-/// the choice while it has not started, what works here, and the way to the other kind.
+/// the choice while it has not started, and the way to the other kind.
 struct AskLocalModeCard: View {
     static let width: CGFloat = 330
 
     let status: AskLocalModeStatus
-    var onOpenSearchSettings: () -> Void
     var onSignIn: () -> Void
     var onOpenModelSettings: () -> Void = {}
     /// Picks where the new conversation is kept.
@@ -141,10 +138,11 @@ struct AskLocalModeCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 5) {
-                Label(L(status.kind.titleKey), systemImage: status.kind.symbol)
+                Label(L(status.changeable ? "ask.storage.card.title" : status.kind.titleKey),
+                      systemImage: status.changeable ? "tray.full" : status.kind.symbol)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
-                Text(L(status.summaryKey))
+                Text(L(status.changeable ? "ask.storage.card.changeHint" : status.summaryKey))
                     .font(.system(size: 11.5))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -191,31 +189,11 @@ struct AskLocalModeCard: View {
     }
 
     @ViewBuilder private var localDetails: some View {
-        VStack(spacing: 6) {
-            row(L("ask.local.card.source"), status.source, available: status.modelAvailable)
-            row(L("ask.local.card.readPages"), L("ask.local.card.available"))
-        }
         if let reason = status.modelReason {
             Text(reason).font(.system(size: 11)).foregroundStyle(StudioTheme.warning)
                 .fixedSize(horizontal: false, vertical: true)
             Button(L("ask.submission.models"), action: onOpenModelSettings)
                 .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
-        }
-        if !status.searchConfigured {
-            HStack(spacing: 8) {
-                Image(systemName: "info.circle").font(.system(size: 13)).foregroundStyle(StudioTheme.warning)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(L("ask.local.card.noSearch")).font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                    Text(L("ask.local.card.noSearchHint")).font(.system(size: 11))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                }
-                Spacer(minLength: 6)
-                Button(L("ask.local.card.configure"), action: onOpenSearchSettings)
-                    .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
-            }
-            .padding(.horizontal, 10).padding(.vertical, 8)
-            .background(StudioTheme.warning.opacity(0.1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         note(L("ask.storage.card.localNote"))
     }
@@ -270,10 +248,12 @@ struct AskLocalModeCard: View {
                     .frame(width: 26, height: 26)
                     .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(L(kind.titleKey))
+                    Text(L(kind == .local ? "ask.storage.card.localOption" : kind == .temporary
+                        ? "ask.temporary.title" : kind.titleKey))
                         .font(.system(size: 12.5, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
-                    Text(L(kind.detailKey))
+                    Text(L(kind == .local ? "ask.storage.card.localDetail" : kind == .temporary
+                        ? "ask.storage.card.temporaryDetail" : kind.detailKey))
                         .font(.system(size: 11))
                         .foregroundStyle(StudioTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -293,17 +273,6 @@ struct AskLocalModeCard: View {
         .buttonStyle(.plain)
         .accessibilityAddTraits(chosen ? .isSelected : [])
     }
-
-    private func row(_ label: String, _ value: String, available: Bool = true) -> some View {
-        HStack(spacing: 8) {
-            Text(label).foregroundStyle(StudioTheme.textSecondary).frame(width: 64, alignment: .leading)
-            Text(value).foregroundStyle(StudioTheme.textPrimary).lineLimit(1).truncationMode(.middle)
-            Spacer(minLength: 6)
-            Circle().fill(available ? StudioTheme.success : StudioTheme.warning).frame(width: 6, height: 6)
-                .accessibilityLabel(L(available ? "ask.local.card.available" : "ask.models.unavailable"))
-        }
-        .font(.system(size: 12))
-    }
 }
 
 /// Opens the storage card from any anchor and runs its actions.
@@ -315,10 +284,7 @@ private struct AskLocalModeMenu: ViewModifier {
 
     func body(content: Content) -> some View {
         content.askMenu(isPresented: $isPresented, glass: true) {
-            AskLocalModeCard(status: status, onOpenSearchSettings: {
-                isPresented = false
-                model.onOpenSettings?(.agent)
-            }, onSignIn: {
+            AskLocalModeCard(status: status, onSignIn: {
                 isPresented = false
                 model.onSignIn()
             }, onOpenModelSettings: {

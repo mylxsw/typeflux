@@ -296,11 +296,11 @@ struct AskConversationStorageTests {
         fixture.model.setStoresLocally(true, launcher: false)
         let local = AskLocalModeStatus.make(model: fixture.model, signedIn: true)
         #expect(local.local && local.source == "My model")
-        #expect(AskLocalModeStatus(source: "", searchConfigured: true, offersSignIn: false).summaryKey
+        #expect(AskLocalModeStatus(source: "", offersSignIn: false).summaryKey
             == "ask.storage.card.lockedLocal")
-        #expect(AskLocalModeStatus(source: "", searchConfigured: true, offersSignIn: false, local: false).summaryKey
+        #expect(AskLocalModeStatus(source: "", offersSignIn: false, local: false).summaryKey
             == "ask.storage.card.lockedCloud")
-        #expect(AskLocalModeStatus(source: "", searchConfigured: true, offersSignIn: true).summaryKey
+        #expect(AskLocalModeStatus(source: "", offersSignIn: true).summaryKey
             == "ask.local.card.body")
     }
 
@@ -322,7 +322,9 @@ struct AskConversationStorageTests {
 
     @Test func storageCopyExistsInEveryLanguage() throws {
         let keys = ["ask.storage.local", "ask.storage.cloud", "ask.storage.local.detail", "ask.storage.cloud.detail",
-                    "ask.storage.help", "ask.storage.card.choose", "ask.storage.card.lockedLocal",
+                    "ask.storage.help", "ask.storage.card.choose", "ask.storage.card.title",
+                    "ask.storage.card.changeHint", "ask.storage.card.localOption", "ask.storage.card.localDetail",
+                    "ask.storage.card.temporaryDetail", "ask.storage.card.lockedLocal",
                     "ask.storage.card.lockedCloud", "ask.storage.card.localNote", "ask.storage.card.cloudNote",
                     "ask.storage.newLocal", "ask.storage.newCloud", "ask.storage.locked", "ask.storage.signedOut",
                     "ask.history.filter", "ask.history.filter.all", "ask.history.filter.cloud",

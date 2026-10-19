@@ -131,10 +131,7 @@ struct AskTemporaryChip: View {
         .accessibilityIdentifier("ask.workspace.temporary")
         .askMenu(isPresented: $presented, glass: true) {
             AskLocalModeCard(status: .make(model: model, signedIn: model.isSignedIn),
-                             onOpenSearchSettings: {
-                                 presented = false
-                                 model.onOpenSettings?(.agent)
-                             }, onSignIn: {
+                             onSignIn: {
                                  presented = false
                                  model.onSignIn()
                              }, onChoose: { kind in

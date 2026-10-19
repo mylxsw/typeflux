@@ -440,7 +440,7 @@ struct AskTemporaryConversationTests {
         #expect(size(AskTemporaryEmptyHint()).width > 100)
         #expect(size(AskTemporaryChip(model: fixture.model)).width > 40)
         #expect(size(AskLocalModeCard(status: .make(model: fixture.model, signedIn: true),
-                                      onOpenSearchSettings: {}, onSignIn: {})).height > 120)
+                                      onSignIn: {})).height > 120)
         #expect(size(AskTemporarySettingsView(settings: fixture.model.modelLibrary.settings)).height > 40)
     }
 }
