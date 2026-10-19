@@ -92,9 +92,8 @@ struct AskAttachChoices: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            AskPopoverHeader(title: L("ask.attach.title"))
-            row("ask.attach.files", "ask.attach.files.caption", "paperclip", .files)
-            row("ask.attach.folder", "ask.attach.folder.caption", "folder", .folder)
+            row("ask.attach.files", "paperclip", .files)
+            row("ask.attach.folder", "folder", .folder)
             if sourceToRestore != nil || selectionLinesToRestore != nil {
                 Divider().padding(.vertical, 5)
                 if let sourceToRestore {
@@ -107,7 +106,7 @@ struct AskAttachChoices: View {
             }
         }
         .padding(.vertical, 6)
-        .frame(width: 280)
+        .frame(width: sourceToRestore == nil && selectionLinesToRestore == nil ? 250 : 280)
     }
 
     private func restoreRow(_ title: String, _ symbol: String, _ kind: AskCapturedContentKind) -> some View {
@@ -117,8 +116,8 @@ struct AskAttachChoices: View {
         .accessibilityIdentifier(kind == .source ? "ask.context.restore.source" : "ask.context.restore.selection")
     }
 
-    private func row(_ title: String, _ caption: String, _ symbol: String, _ choice: Choice) -> some View {
-        AskPopoverRow(title: L(title), caption: L(caption), selected: false,
+    private func row(_ title: String, _ symbol: String, _ choice: Choice) -> some View {
+        AskPopoverRow(title: L(title), selected: false,
                       action: { choose(choice) }, accessory: {
             Image(systemName: symbol).font(.system(size: 12, weight: .medium))
         })

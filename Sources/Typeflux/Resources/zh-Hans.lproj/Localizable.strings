@@ -2203,10 +2203,8 @@
 /* Ask attachments */
 "ask.attach.title" = "添加附件";
 "ask.attach.help" = "添加文件、图片或文件夹（⌘U），也可以直接粘贴或拖入";
-"ask.attach.files" = "文件或图片…";
-"ask.attach.files.caption" = "随提问发送给 AI";
-"ask.attach.folder" = "文件夹…";
-"ask.attach.folder.caption" = "本次对话按需读取，不整包上传";
+"ask.attach.files" = "发送文件或图片…";
+"ask.attach.folder" = "选择文件夹…";
 "ask.attach.pickFiles" = "选择要发给随便问的文件或图片";
 "ask.attach.pickFolders" = "选择随便问在本次对话中可以读取的文件夹";
 "ask.attach.add" = "添加";

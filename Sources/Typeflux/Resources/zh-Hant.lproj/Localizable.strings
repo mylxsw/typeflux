@@ -2200,10 +2200,8 @@
 /* Ask attachments */
 "ask.attach.title" = "新增附件";
 "ask.attach.help" = "新增檔案、圖片或資料夾（⌘U），也可以直接貼上或拖入";
-"ask.attach.files" = "檔案或圖片…";
-"ask.attach.files.caption" = "隨提問傳送給 AI";
-"ask.attach.folder" = "資料夾…";
-"ask.attach.folder.caption" = "本次對話按需讀取，不整包上傳";
+"ask.attach.files" = "傳送檔案或圖片…";
+"ask.attach.folder" = "選擇資料夾…";
 "ask.attach.pickFiles" = "選擇要傳給隨便問的檔案或圖片";
 "ask.attach.pickFolders" = "選擇隨便問在本次對話中可以讀取的資料夾";
 "ask.attach.add" = "新增";
