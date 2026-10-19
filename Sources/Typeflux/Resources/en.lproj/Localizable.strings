@@ -1949,7 +1949,7 @@
 "ask.memoryNotes.invalid" = "A note needs 1 to 300 characters.";
 "ask.memoryNotes.full" = "The memory is full; forget a note first.";
 "ask.memoryNotes.missing" = "No saved note has this id.";
-"ask.settings.folders.title" = "Folders Ask can read and edit";
+"ask.settings.folders.title" = "Folders Agent can read and edit";
 "ask.settings.folders.subtitle" = "The files tool only reaches these folders. Reading is approved once per conversation; every write asks.";
 "ask.settings.folders.empty" = "No folders yet.";
 "ask.settings.folders.add" = "Add Folder…";

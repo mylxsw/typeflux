@@ -1949,7 +1949,7 @@
 "ask.memoryNotes.invalid" = "笔记需要 1 到 300 个字符。";
 "ask.memoryNotes.full" = "记忆已满，请先删除一条笔记。";
 "ask.memoryNotes.missing" = "没有该 id 的笔记。";
-"ask.settings.folders.title" = "“随便问”可读写的文件夹";
+"ask.settings.folders.title" = "Agent 可读写的文件夹";
 "ask.settings.folders.subtitle" = "files 工具只能访问这些文件夹。读取可在对话内一次性允许，写入需要确认。";
 "ask.settings.folders.empty" = "尚未添加文件夹。";
 "ask.settings.folders.add" = "添加文件夹…";

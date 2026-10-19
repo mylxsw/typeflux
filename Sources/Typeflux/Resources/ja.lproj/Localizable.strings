@@ -1939,7 +1939,7 @@
 "ask.memoryNotes.invalid" = "メモは 1〜300 文字にしてください。";
 "ask.memoryNotes.full" = "メモリがいっぱいです。先にメモを削除してください。";
 "ask.memoryNotes.missing" = "この ID のメモはありません。";
-"ask.settings.folders.title" = "Ask が読み書きできるフォルダ";
+"ask.settings.folders.title" = "Agent が読み書きできるフォルダ";
 "ask.settings.folders.subtitle" = "files ツールはこれらのフォルダにのみアクセスします。読み取りは会話ごとに許可でき、書き込みは確認が必要です。";
 "ask.settings.folders.empty" = "フォルダはまだありません。";
 "ask.settings.folders.add" = "フォルダを追加…";

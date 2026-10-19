@@ -1946,7 +1946,7 @@
 "ask.memoryNotes.invalid" = "筆記需要 1 到 300 個字元。";
 "ask.memoryNotes.full" = "記憶已滿，請先刪除一則筆記。";
 "ask.memoryNotes.missing" = "沒有此 id 的筆記。";
-"ask.settings.folders.title" = "「隨便問」可讀寫的資料夾";
+"ask.settings.folders.title" = "Agent 可讀寫的資料夾";
 "ask.settings.folders.subtitle" = "files 工具只能存取這些資料夾。讀取可在對話內一次允許，寫入需要確認。";
 "ask.settings.folders.empty" = "尚未加入資料夾。";
 "ask.settings.folders.add" = "加入資料夾…";
