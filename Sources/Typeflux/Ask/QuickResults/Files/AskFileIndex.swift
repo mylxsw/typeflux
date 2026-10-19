@@ -140,9 +140,7 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     }
 
     static var defaultSnapshotURL: URL {
-        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support")
-        return support.appendingPathComponent("Typeflux", isDirectory: true).appendingPathComponent("file-index.bin")
+        TypefluxDataDirectories.data.appendingPathComponent("file-index.bin")
     }
 
 }

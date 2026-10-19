@@ -33,8 +33,7 @@ final class AskMemoryNoteStore: @unchecked Sendable {
     init(fileURL: URL? = nil, storage: any AskMemoryNoteFileStorage = LocalAskMemoryNoteFileStorage(),
          correctionsEnabled: Bool = false,
          onChange: @escaping @Sendable (String) -> Void = { _ in }) {
-        self.fileURL = fileURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Typeflux/ask-memory-notes.json")
+        self.fileURL = fileURL ?? TypefluxDataDirectories.data.appendingPathComponent("ask-memory-notes.json")
         self.storage = storage
         self.correctionsEnabled = correctionsEnabled
         self.onChange = onChange

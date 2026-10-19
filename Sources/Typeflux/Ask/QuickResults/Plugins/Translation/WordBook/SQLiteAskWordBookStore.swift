@@ -45,9 +45,7 @@ final class SQLiteAskWordBookStore: AskWordBookStoring, @unchecked Sendable {
 
     /// `~/Library/Application Support/Typeflux/word-book.sqlite`.
     static func defaultURL() -> URL {
-        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support")
-        return support.appendingPathComponent("Typeflux", isDirectory: true).appendingPathComponent("word-book.sqlite")
+        TypefluxDataDirectories.data.appendingPathComponent("word-book.sqlite")
     }
 
     deinit {

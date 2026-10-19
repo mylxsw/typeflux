@@ -10,6 +10,8 @@ public enum TypefluxApplication {
         }
         DevLauncher.relaunchAsAppBundleIfNeeded()
 
+        TypefluxDataDirectories.prepare()
+
         let app = NSApplication.shared
         let settingsStore = SettingsStore()
         let delegate = AppDelegate(settingsStore: settingsStore)

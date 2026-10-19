@@ -240,12 +240,12 @@ These files can be **downloaded from the internet** or **bundled inside the .app
 
 ## 8. File Storage Layout
 
-Local model-related files are stored under `~/Library/Application Support/Typeflux/`.
+Local model-related files are stored under `~/.typeflux/data/`. Existing installations move there on the first launch after upgrading; see [local data directory](DATA_DIRECTORY.md).
 Sherpa-ONNX runtime binaries are stored once under `LocalRuntimes/` and reused
 by every Sherpa-backed model. Model weights stay under `LocalModels/`:
 
 ```
-~/Library/Application Support/Typeflux/
+~/.typeflux/data/
 ├── LocalRuntimes/
 │   └── sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/
 │       ├── bin/sherpa-onnx-offline
@@ -281,7 +281,7 @@ Each model directory contains a `prepared.json` file that records the model's me
 {
     "model": "senseVoiceSmall",
     "modelIdentifier": "sensevoice-small",
-    "storagePath": "/Users/you/Library/Application Support/Typeflux/LocalModels/senseVoiceSmall/sensevoice-small",
+    "storagePath": "/Users/you/.typeflux/data/LocalModels/senseVoiceSmall/sensevoice-small",
     "source": "huggingFace",
     "preparedAt": "2026-05-02T10:30:00Z"
 }
@@ -321,7 +321,7 @@ bundled models. Once found, `LocalModelManager` copies the bundled model into
 `LocalModels/`, copies the bundled runtime into `LocalRuntimes/`, and links the
 model folder back to that shared runtime. This matters for auto-update: the
 `.app` bundle can be replaced by a smaller package later, while the durable
-runtime/model copy remains available in Application Support.
+runtime/model copy remains available in the Typeflux data directory.
 
 ---
 
@@ -479,7 +479,7 @@ This means: **even if you are on an airplane with no network, Typeflux can still
 
 5. **Lazy + Eager loading strategy**: WhisperKit begins warming up while the user is still speaking (eager), while Sherpa models require no warm-up since they run out-of-process. This strikes a balance between resource consumption and response speed.
 
-6. **Bundled + on-demand download**: The Full variant works out of the box; the Minimal variant downloads automatically on first use. Bundled assets are copied into durable Application Support storage, and model folders link to the shared runtime so downstream code can keep using one model-root path.
+6. **Bundled + on-demand download**: The Full variant works out of the box; the Minimal variant downloads automatically on first use. Bundled assets are copied into durable storage under `~/.typeflux/data`, and model folders link to the shared runtime so downstream code can keep using one model-root path.
 
 ---
 

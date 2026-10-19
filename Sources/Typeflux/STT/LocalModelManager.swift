@@ -195,15 +195,11 @@ final class LocalModelManager: LocalSTTModelManaging {
         self.analyticsReporter = analyticsReporter
         bundledModelLocator = BundledLocalModelLocator(bundledModelsRootURL: bundledModelsRootURL)
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        let base = applicationSupportURL
-            ?? fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
-                "Library/Application Support",
-                isDirectory: true
-            )
-        _modelsRootURL = base.appendingPathComponent("Typeflux/LocalModels", isDirectory: true)
-        _runtimesRootURL = base.appendingPathComponent("Typeflux/LocalRuntimes", isDirectory: true)
-        _legacyRuntimeURL = base.appendingPathComponent("Typeflux/STT/Runtime", isDirectory: true)
+        let base = applicationSupportURL.map { $0.appendingPathComponent("Typeflux", isDirectory: true) }
+            ?? TypefluxDataDirectories.data
+        _modelsRootURL = base.appendingPathComponent("LocalModels", isDirectory: true)
+        _runtimesRootURL = base.appendingPathComponent("LocalRuntimes", isDirectory: true)
+        _legacyRuntimeURL = base.appendingPathComponent("STT/Runtime", isDirectory: true)
         self.sherpaOnnxInstaller = sherpaOnnxInstaller ?? SherpaOnnxModelInstaller(
             fileManager: fileManager,
             sharedRuntimeStorageURL: _runtimesRootURL

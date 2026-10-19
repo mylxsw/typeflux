@@ -68,8 +68,7 @@ actor AskLocalEngine: AskAPI {
     }
 
     static var defaultDirectory: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Typeflux/AskLocal", isDirectory: true)
+        TypefluxDataDirectories.data.appendingPathComponent("AskLocal", isDirectory: true)
     }
 
     // MARK: - Storage

@@ -8,8 +8,7 @@ enum SemanticModel {
         URL(
             string: "https://huggingface.co/ggml-org/embeddinggemma-2-GGUF/resolve/bfcd298762cc34d0357ece5ebdd31791a3a374d8/embeddinggemma-2-Q8_0.gguf"
         )!
-    static let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        .appendingPathComponent("Typeflux/SemanticSearch", isDirectory: true)
+    static let directory = TypefluxDataDirectories.data.appendingPathComponent("SemanticSearch", isDirectory: true)
     static var modelURL: URL {
         directory.appendingPathComponent("embeddinggemma-2-Q8_0.gguf")
     }

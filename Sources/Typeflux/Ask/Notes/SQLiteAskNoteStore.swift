@@ -63,8 +63,7 @@ final class SQLiteAskNoteStore: AskNoteStoring, @unchecked Sendable {
 
     /// `~/Library/Application Support/Typeflux/notes.sqlite`.
     static func defaultURL() -> URL {
-        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return support.appendingPathComponent("Typeflux", isDirectory: true).appendingPathComponent("notes.sqlite")
+        TypefluxDataDirectories.data.appendingPathComponent("notes.sqlite")
     }
 
     deinit {

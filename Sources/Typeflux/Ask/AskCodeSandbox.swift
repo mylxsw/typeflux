@@ -30,8 +30,8 @@ struct AskCodeSandbox: Sendable {
     var allowProcessGroupExecution: Bool
 
     init(
-        baseDirectory: URL = FileManager.default.temporaryDirectory.appendingPathComponent(
-            "TypefluxAskSandbox-v2",
+        baseDirectory: URL = TypefluxDataDirectories.cache.appendingPathComponent(
+            "AskSandbox-v2",
             isDirectory: true
         ),
         readableDirectories: [URL] = [],

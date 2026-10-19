@@ -45,8 +45,7 @@ final class RecentInputMemoryStore: @unchecked Sendable {
         storage: any AskMemoryNoteFileStorage = LocalAskMemoryNoteFileStorage(),
         onChange: @escaping @Sendable (String) -> Void = { _ in }
     ) {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Typeflux", isDirectory: true)
+        let base = TypefluxDataDirectories.data
         self.fileURL = fileURL ?? base.appendingPathComponent("recent-input-memory.json")
         self.storage = storage
         self.soulStore = soulStore

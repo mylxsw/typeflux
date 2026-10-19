@@ -63,9 +63,7 @@ actor AskConversationCache: AskCaching {
     deinit { if let db { sqlite3_close(db) } }
 
     static func defaultURL() -> URL {
-        (FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support"))
-            .appendingPathComponent("Typeflux/ask_conversations.sqlite")
+        TypefluxDataDirectories.data.appendingPathComponent("ask_conversations.sqlite")
     }
 
     func save(_ conversation: AskConversation, owner: String) throws {

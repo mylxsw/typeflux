@@ -51,6 +51,10 @@ Fn ×2 → Ask → Release → Answer, edit, or action
 
 ## Features
 
+Local files, including skills and conversation workspaces, live under
+`~/.typeflux/`. See [local data directory](docs/DATA_DIRECTORY.md) for the
+layout and upgrade behavior.
+
 ### One-Click Voice Input
 Hold `Fn` to start, release to stop. No switching input methods, no clicking buttons — works in any text field across browsers, code editors, terminals, and native apps.
 

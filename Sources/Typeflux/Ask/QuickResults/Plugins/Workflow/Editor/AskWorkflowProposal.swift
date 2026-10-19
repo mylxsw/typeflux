@@ -152,7 +152,9 @@ struct AskWorkflowStaging: Sendable {
     var root: URL
 
     static func defaultRoot(home: String = NSHomeDirectory()) -> URL {
-        URL(fileURLWithPath: home).appendingPathComponent("Library/Caches/Typeflux/WorkflowDrafts", isDirectory: true)
+        let cache = home == NSHomeDirectory() ? TypefluxDataDirectories.cache
+            : URL(fileURLWithPath: home).appendingPathComponent(".typeflux/cache", isDirectory: true)
+        return cache.appendingPathComponent("WorkflowDrafts", isDirectory: true)
     }
 
     init(root: URL = AskWorkflowStaging.defaultRoot()) {

@@ -4,9 +4,7 @@ import Foundation
 
 /// Versioned, fixed-size icon pixels. No encoded image parser runs in the UI process.
 actor AskLauncherIconDiskCache {
-    static let shared = AskLauncherIconDiskCache(directory: (FileManager.default.urls(for: .cachesDirectory,
-        in: .userDomainMask).first ?? FileManager.default.temporaryDirectory)
-        .appendingPathComponent("Typeflux/LauncherIcons", isDirectory: true))
+    static let shared = AskLauncherIconDiskCache(directory: TypefluxDataDirectories.cache.appendingPathComponent("LauncherIcons", isDirectory: true))
 
     private static let edge = 56
     private static let stride = edge * 4

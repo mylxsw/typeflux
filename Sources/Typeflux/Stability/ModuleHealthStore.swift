@@ -30,9 +30,7 @@ final class ModuleHealthStore: @unchecked Sendable {
     }
 
     static func directory() -> URL {
-        (FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support"))
-            .appendingPathComponent("Typeflux/ModuleHealth", isDirectory: true)
+        TypefluxDataDirectories.data.appendingPathComponent("ModuleHealth", isDirectory: true)
     }
 
     /// Called only inside the supervisor's bounded detached factory task.

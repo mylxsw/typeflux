@@ -45,16 +45,25 @@ struct AskWorkflow: Equatable, Identifiable, Sendable {
     }
 
     static func root(home: String = NSHomeDirectory()) -> URL {
-        URL(fileURLWithPath: home).appendingPathComponent("Library/Application Support/Typeflux/Workflows", isDirectory: true)
+        directory(home: home, kind: .data).appendingPathComponent("Workflows", isDirectory: true)
     }
 
     static func dataDirectory(for id: String, home: String = NSHomeDirectory()) -> URL {
-        URL(fileURLWithPath: home).appendingPathComponent("Library/Application Support/Typeflux/WorkflowData/" + id,
-                                                          isDirectory: true)
+        directory(home: home, kind: .data).appendingPathComponent("WorkflowData/" + id, isDirectory: true)
     }
 
     static func cacheDirectory(for id: String, home: String = NSHomeDirectory()) -> URL {
-        URL(fileURLWithPath: home).appendingPathComponent("Library/Caches/Typeflux/Workflows/" + id, isDirectory: true)
+        directory(home: home, kind: .cache).appendingPathComponent("Workflows/" + id, isDirectory: true)
+    }
+
+    private enum DirectoryKind { case data, cache }
+
+    private static func directory(home: String, kind: DirectoryKind) -> URL {
+        if home == NSHomeDirectory() {
+            return kind == .data ? TypefluxDataDirectories.data : TypefluxDataDirectories.cache
+        }
+        let root = URL(fileURLWithPath: home).appendingPathComponent(".typeflux", isDirectory: true)
+        return root.appendingPathComponent(kind == .data ? "data" : "cache", isDirectory: true)
     }
 
     /// Reads one workflow folder. `trusted` is the hash the user confirmed, if any.

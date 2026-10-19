@@ -19,9 +19,7 @@ final class SQLiteCloudDataSyncStore {
     var isAvailable: Bool { db != nil && initializationError == nil }
 
     init(baseDirectory: URL? = nil) {
-        let directory = baseDirectory ?? FileManager.default.urls(
-            for: .applicationSupportDirectory, in: .userDomainMask
-        )[0].appendingPathComponent("Typeflux", isDirectory: true)
+        let directory = baseDirectory ?? TypefluxDataDirectories.data
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         } catch {

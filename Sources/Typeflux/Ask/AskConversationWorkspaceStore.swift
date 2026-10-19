@@ -13,8 +13,7 @@ actor AskConversationWorkspaceStore {
     static let shared = AskConversationWorkspaceStore()
 
     nonisolated let rootURL: URL
-    init(rootURL: URL = FileManager.default.homeDirectoryForCurrentUser
-        .appendingPathComponent("Documents/Typeflux/Workspaces", isDirectory: true)) {
+    init(rootURL: URL = TypefluxDataDirectories.workspaces) {
         self.rootURL = rootURL
     }
 

@@ -104,8 +104,7 @@ struct ClipboardUsageSection: View {
     }
 
     private func revealData() {
-        let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Typeflux", isDirectory: true)
+        let directory = TypefluxDataDirectories.data
         let database = directory.appendingPathComponent("clipboard.sqlite")
         NSWorkspace.shared.activateFileViewerSelecting([database])
     }

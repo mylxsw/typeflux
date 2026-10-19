@@ -16,8 +16,7 @@ final class AskWorkflowAuthoringStore {
             .appendingPathComponent("ChatWorkflowPreviews")), owner: @escaping () -> String) {
         self.workflows = workflows; self.owner = owner
         self.staging = staging
-        self.root = root ?? URL(fileURLWithPath: NSHomeDirectory())
-            .appendingPathComponent("Library/Application Support/Typeflux/WorkflowAuthoring")
+        self.root = root ?? TypefluxDataDirectories.data.appendingPathComponent("WorkflowAuthoring")
         // Previous-process leftovers only; live previews are owned by sessions.
         staging.prune()
     }

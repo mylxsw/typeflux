@@ -626,6 +626,6 @@ struct AskWorkflowProposalTests {
         #expect(!fileManager.fileExists(atPath: old.path) && fileManager.fileExists(atPath: folder.path))
         staging.remove(folder)
         #expect(!fileManager.fileExists(atPath: folder.path))
-        #expect(AskWorkflowStaging.defaultRoot(home: "/h").path == "/h/Library/Caches/Typeflux/WorkflowDrafts")
+        #expect(AskWorkflowStaging.defaultRoot(home: "/h").path == "/h/.typeflux/cache/WorkflowDrafts")
     }
 }

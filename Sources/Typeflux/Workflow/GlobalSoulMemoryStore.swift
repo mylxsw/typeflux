@@ -54,8 +54,7 @@ final class GlobalSoulMemoryStore: @unchecked Sendable {
     }
 
     init(fileURL: URL? = nil, onChange: @escaping @Sendable (String) -> Void = { _ in }) {
-        let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Typeflux", isDirectory: true)
+        let directory = TypefluxDataDirectories.data
         self.onChange = onChange
         self.fileURL = fileURL ?? directory.appendingPathComponent("global-soul-memory.json")
         state = (try? Data(contentsOf: self.fileURL)).flatMap { try? JSONDecoder().decode(State.self, from: $0) }

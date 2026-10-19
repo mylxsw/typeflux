@@ -83,9 +83,7 @@ final class CoreAudioRecorder: AudioRecorder, @unchecked Sendable {
         self.startupTimeout = startupTimeout
         self.outputDirectory =
             outputDirectory
-            ?? FileManager.default.urls(
-                for: .applicationSupportDirectory, in: .userDomainMask
-            )[0].appendingPathComponent("Typeflux/audio", isDirectory: true)
+            ?? TypefluxDataDirectories.data.appendingPathComponent("audio", isDirectory: true)
         if observeChanges { observeLifecycle() }
         if prepareImmediately { prepareIfAuthorized() }
     }

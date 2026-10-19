@@ -13,8 +13,7 @@ final class AskProjectWorkspace {
     static let maximumChangeBytes = 4 * 1024 * 1024
     let storageURL: URL
 
-    init(storageURL: URL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        .appendingPathComponent("Typeflux/AskProjects")) {
+    init(storageURL: URL = TypefluxDataDirectories.data.appendingPathComponent("AskProjects")) {
         self.storageURL = storageURL
     }
 

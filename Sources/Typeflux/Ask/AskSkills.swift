@@ -24,8 +24,7 @@ struct AskSkillLibrary: Sendable {
     var builtins: [AskSkill] = AskBuiltinSkills.all
 
     static var defaultDirectory: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Typeflux/Skills", isDirectory: true)
+        TypefluxDataDirectories.data.appendingPathComponent("Skills", isDirectory: true)
     }
 
     init(userDirectory: URL = AskSkillLibrary.defaultDirectory) {

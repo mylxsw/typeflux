@@ -20,8 +20,7 @@ struct ScreenRecordingFiles {
     var manager: FileManager = .default
 
     static var live: Self {
-        Self(root: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Typeflux/Recordings", isDirectory: true))
+        Self(root: TypefluxDataDirectories.data.appendingPathComponent("Recordings", isDirectory: true))
     }
 
     func createSession(options: ScreenRecordingOptions) throws -> URL {

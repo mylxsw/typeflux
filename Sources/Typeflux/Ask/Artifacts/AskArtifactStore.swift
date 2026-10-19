@@ -41,8 +41,7 @@ final class AskArtifactStore {
     var now: () -> Date
 
     init(
-        storageURL: URL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Typeflux/AskArtifacts"),
+        storageURL: URL = TypefluxDataDirectories.data.appendingPathComponent("AskArtifacts"),
         now: @escaping () -> Date = Date.init
     ) {
         self.storageURL = storageURL

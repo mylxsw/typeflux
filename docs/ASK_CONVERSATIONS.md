@@ -107,7 +107,7 @@ intact. An accessibility refresh action provides an alternative to the gesture.
   approval, and recovery. `AskAPIClient` uses the existing authenticated cloud
   transport; active conversations refresh once per second for streamed text.
 - `AskConversationCache` stores account-scoped snapshots, drafts and a tool
-  execution journal in SQLite under Application Support/Typeflux. Deleting a
+  execution journal in SQLite under `~/.typeflux/data`. Deleting a
   conversation removes its local draft and tool journal after cloud deletion.
 - `AskContextCapture` uses accessibility and ScreenCaptureKit. Missing screen
   permission leaves the question usable without an attachment. Screenshots are
@@ -325,8 +325,8 @@ with the run `running` and the desktop follows progress as before. Device tools:
 | Tool | What it does | Approval |
 | --- | --- | --- |
 | `files` | `list`, `read` (numbered lines, paging), `search`, `write`, `edit` (one unique snippet) inside folders authorized in Settings → Agent → File Access. Paths resolve through symlinks first; new files are checked through their nearest existing folder. Text only, 1 MB writes. | reads: read tier; writes: write tier |
-| `run_code` | Python, JavaScript (Node) or zsh under `sandbox-exec`: no network, no reads from the home folder, writes only in a per-conversation workspace in the temporary directory (pruned after seven days). 30 s default, 120 s max; output capped; the first new PNG/JPEG is attached. Interpreters under the home folder (pyenv, nvm) stay readable. Toggle in Settings. | write tier |
-| `skill` | Loads a built-in skill (`notebook`, `email-reply`, `meeting-notes`, `translate-polish`, `data-analysis`) or a user skill from `~/Library/Application Support/Typeflux/Skills/<name>/SKILL.md` (optional `name`/`description` front matter; a user skill replaces a built-in one). Only names and descriptions are in the tool definition. | none (app-provided instructions) |
+| `run_code` | Python, JavaScript (Node) or zsh under `sandbox-exec`: no network, no reads from the home folder, writes only in a per-conversation workspace under `~/.typeflux/cache/AskSandbox-v2` (pruned after seven days). 30 s default, 120 s max; output capped; the first new PNG/JPEG is attached. Interpreters under the home folder (pyenv, nvm) stay readable. Toggle in Settings. | write tier |
+| `skill` | Loads a built-in skill (`notebook`, `email-reply`, `meeting-notes`, `translate-polish`, `data-analysis`) or a user skill from `~/.typeflux/data/Skills/<name>/SKILL.md` (optional `name`/`description` front matter; a user skill replaces a built-in one). Only names and descriptions are in the tool definition. | none (app-provided instructions) |
 | `notebook` | The user's Markdown notebook (`notes.sqlite`): `search` (any of the keywords, tags too), `read` (one `heading`, paged by `offset`), `list`, `create`, `append` (optionally under a heading), `update` (`find` must occur once), `tag`, `delete` (to Recently Deleted). Offered with the built-in `notebook` skill while the notes window's Agent switch and the skill are on; notes with a hidden tag (default `私密`, `private`) do not exist for it. Text changes save the previous title and body atomically; undo preserves current metadata. Deleted notes are restored from Recently Deleted. | reads: read; changes: write; every call requires consent, including automatic modes |
 | `memory` | `list`, `remember`, `forget` explicit notes per account. Notes join the global memory of new conversations after the soul summary, within the 1,000-character budget, and can be removed in Settings. | list: read; changes: write |
 | `computer` | Adds `inspect` (accessibility tree of the target window with click coordinates), `double_click`, `right_click`, `drag`, `hotkey` (e.g. `cmd+shift+t`), more keys and `wait`. | read: screenshot/inspect/wait |
@@ -384,7 +384,7 @@ this Mac; signing in is optional. The design board is
 - `AskLocalEngine` mirrors the server's state machine: every model step is queued
   as a device inference (`waiting_inference`) that the existing custom-model path
   runs with the user's own model; device tools keep the same approval flow; history
-  is stored as JSON under `~/Library/Application Support/Typeflux/AskLocal/`.
+  is stored as JSON under `~/.typeflux/data/AskLocal/`.
   It ports the system/memory/environment prompt, references, screen observations,
   summaries after 28 messages, truncation detection, the Agent step setting
   (100 by default; choices 50, 100, 200, and 500), cancel,
