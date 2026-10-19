@@ -6155,3 +6155,9 @@
 "ask.stepLimit.remaining" = "还剩 %d 项：%@";
 "ask.stepLimit.end" = "结束";
 "ask.stepLimit.continue" = "继续";
+"ask.mermaid.showSource" = "查看源码";
+"ask.mermaid.showDiagram" = "查看图形";
+"ask.mermaid.renderFailed" = "图形未能渲染，下面显示原始代码。";
+"ask.mermaid.diagram" = "Mermaid 图形";
+"ask.mermaid.expand" = "展开图形";
+"ask.mermaid.collapse" = "收起图形";

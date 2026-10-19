@@ -6037,3 +6037,9 @@
 "ask.stepLimit.remaining" = "残り %d 件：%@";
 "ask.stepLimit.end" = "終了";
 "ask.stepLimit.continue" = "続ける";
+"ask.mermaid.showSource" = "ソースを表示";
+"ask.mermaid.showDiagram" = "図を表示";
+"ask.mermaid.renderFailed" = "図を描画できませんでした。以下に元のコードを表示します。";
+"ask.mermaid.diagram" = "Mermaid 図";
+"ask.mermaid.expand" = "図を展開";
+"ask.mermaid.collapse" = "図を折りたたむ";

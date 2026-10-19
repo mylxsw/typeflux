@@ -1394,7 +1394,8 @@ private struct AskMessageView: View {
                                  active: isStreaming && message.text.isEmpty)
             }
             if !message.text.isEmpty {
-                AskTranscriptText(text: message.text, onAsk: isStreaming ? nil : { text, question in
+                AskMermaidTranscript(text: message.text, isStreaming: isStreaming,
+                                     onAsk: isStreaming ? nil : { text, question in
                     onReference(AskReference(messageId: message.id, text: text, question: question))
                 }, onSaveNote: isStreaming ? nil : onSaveNote.map { save -> (String) -> Void in { save($0) } })
                 .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)

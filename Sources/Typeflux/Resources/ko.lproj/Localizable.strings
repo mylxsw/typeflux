@@ -6037,3 +6037,9 @@
 "ask.stepLimit.remaining" = "%d개 남음: %@";
 "ask.stepLimit.end" = "끝내기";
 "ask.stepLimit.continue" = "계속";
+"ask.mermaid.showSource" = "원본 보기";
+"ask.mermaid.showDiagram" = "다이어그램 보기";
+"ask.mermaid.renderFailed" = "다이어그램을 렌더링할 수 없어 원본 코드를 표시합니다.";
+"ask.mermaid.diagram" = "Mermaid 다이어그램";
+"ask.mermaid.expand" = "다이어그램 펼치기";
+"ask.mermaid.collapse" = "다이어그램 접기";

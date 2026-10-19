@@ -6155,3 +6155,9 @@
 "ask.stepLimit.remaining" = "%d left: %@";
 "ask.stepLimit.end" = "End";
 "ask.stepLimit.continue" = "Continue";
+"ask.mermaid.showSource" = "Show source";
+"ask.mermaid.showDiagram" = "Show diagram";
+"ask.mermaid.renderFailed" = "Could not render this diagram. Source is shown below.";
+"ask.mermaid.diagram" = "Mermaid diagram";
+"ask.mermaid.expand" = "Expand diagram";
+"ask.mermaid.collapse" = "Collapse diagram";
