@@ -34,6 +34,11 @@ private final class OverlayPanel: NSPanel {
     override var canBecomeKey: Bool {
         allowsKeyboardFocus
     }
+
+    /// The notch island hangs from the very top of the screen, over the menu bar.
+    override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
+        frameRect
+    }
 }
 
 private final class RoundedVisualEffectView: NSVisualEffectView {
@@ -74,7 +79,7 @@ private struct RoundedVisualEffectBlur: NSViewRepresentable {
     }
 }
 
-private struct LiquidGlassShapeBackground<S: InsettableShape>: View {
+struct LiquidGlassShapeBackground<S: InsettableShape>: View {
     @Environment(\.liquidGlassIntensity) private var intensity
     @Environment(\.interfaceStyle) private var interfaceStyle
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -320,6 +325,10 @@ final class OverlayController {
     private var window: NSPanel?
     var presentedWindow: NSWindow? { window }
     private var interfaceStyleObserver: NSObjectProtocol?
+    private var voiceCapsuleObserver: NSObjectProtocol?
+    /// The display chosen when the overlay appeared; it stays put until the overlay hides.
+    private var placementScreen: VoiceCapsuleScreenGeometry?
+    private var hoverWorkItem: DispatchWorkItem?
     private var keyWindowObserver: NSObjectProtocol?
     private var keyboardCaptureSuspended = false
     var keyboardCaptureSuspendedForTesting: Bool { keyboardCaptureSuspended }
@@ -369,6 +378,18 @@ final class OverlayController {
             model.glassIntensity = LiquidGlassIntensity(self.settingsStore.liquidGlassIntensity)
             if previousStyle != model.interfaceStyle { configureWindowAppearance() }
         }
+        voiceCapsuleObserver = NotificationCenter.default.addObserver(
+            forName: .voiceCapsuleDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self, window?.isVisible == true else { return }
+            placementScreen = nil
+            refreshWindow()
+        }
+        model.onCapsuleHoverChanged = { [weak self] hovering in
+            self?.handleCapsuleHover(hovering)
+        }
         keyWindowObserver = NotificationCenter.default.addObserver(
             forName: NSWindow.didBecomeKeyNotification,
             object: nil,
@@ -391,11 +412,13 @@ final class OverlayController {
         // transiently retain `self` under Swift's ownership lowering and abort destruction.
         // This also makes every AppKit/CoreGraphics registration visibly symmetric.
         let styleObserver = interfaceStyleObserver
+        let capsuleObserver = voiceCapsuleObserver
         let focusObserver = keyWindowObserver
         let queuedWork = [
             dismissWorkItem,
             pendingFrameAnimationWorkItem,
-            recordingHintAutoHideWorkItem
+            recordingHintAutoHideWorkItem,
+            hoverWorkItem
         ]
         let progressTask = processingProgressTask
         let tap = eventTap
@@ -428,6 +451,7 @@ final class OverlayController {
                 systemKeyRefs.forEach { UnregisterEventHotKey($0) }
                 if let systemKeyHandlerRef { RemoveEventHandler(systemKeyHandlerRef) }
                 if let styleObserver { NotificationCenter.default.removeObserver(styleObserver) }
+                if let capsuleObserver { NotificationCenter.default.removeObserver(capsuleObserver) }
                 if let focusObserver { NotificationCenter.default.removeObserver(focusObserver) }
             }
         }
@@ -485,6 +509,7 @@ final class OverlayController {
         dismissWorkItem = nil
         cancelRecordingHintAutoHide()
         ensureWindow()
+        beginCapsuleSessionIfNeeded()
         model.presentation = .recordingHold
         model.recordingPreviewExpanded = false
         model.statusText = L("overlay.recording.listening")
@@ -545,6 +570,7 @@ final class OverlayController {
         dismissWorkItem = nil
         cancelRecordingHintAutoHide()
         ensureWindow()
+        beginCapsuleSessionIfNeeded()
         keyboardCaptureSuspended = false
         model.presentation = .recordingLocked
         model.recordingPreviewExpanded = false
@@ -561,7 +587,8 @@ final class OverlayController {
 
         guard model.presentation.isRecording,
               dismissWorkItem == nil, window?.isVisible == true else { return }
-        let expanded = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let expanded = settingsStore.voiceCapsule.showsLivePreview
+            && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         // Keep the last text mounted while it fades out during collapse.
         if expanded { model.detailText = text }
         model.recordingPreviewExpanded = expanded
@@ -976,6 +1003,11 @@ final class OverlayController {
         model.recordingHintText = ""
         model.level = 0
         model.processingProgress = 0
+        model.recordingStartedAt = nil
+        model.capsuleHovered = false
+        hoverWorkItem?.cancel()
+        hoverWorkItem = nil
+        placementScreen = nil
         removeKeyMonitoring()
         removePickerSystemKeyCapture()
         removeMouseMonitoring()
@@ -1064,6 +1096,7 @@ final class OverlayController {
             }
         }
         let wasVisible = window.isVisible
+        resolvePlacement(windowVisible: wasVisible)
         positionWindow()
         configureWindowAppearance()
         // Always use orderFrontRegardless — never makeKeyAndOrderFront.
@@ -1114,6 +1147,7 @@ final class OverlayController {
     }
 
     private func windowChrome(for presentation: OverlayViewModel.Presentation) -> WindowChromeStyle? {
+        if model.drawsVoiceCapsuleSkin { return nil }
         let background = model.interfaceStyle == .classic
             ? NSColor.black
             : NSColor(calibratedRed: 0.13, green: 0.11, blue: 0.11, alpha: 0.96)
@@ -1131,7 +1165,8 @@ final class OverlayController {
     }
 
     private func positionWindow() {
-        guard let screen = NSScreen.main, let window else { return }
+        guard let window, let screen = placementScreen ?? NSScreen.main.map(VoiceCapsuleScreenGeometry.init(screen:))
+        else { return }
         let frame = screen.visibleFrame
         let metrics = metrics(for: model.presentation)
         let x: CGFloat
@@ -1147,6 +1182,19 @@ final class OverlayController {
         case .top:
             x = frame.midX - metrics.size.width / 2
             y = frame.maxY - metrics.offset - metrics.size.height
+        case .voiceCapsule:
+            let origin = VoiceCapsuleLayout.windowOrigin(windowSize: metrics.size, skin: model.skin, screen: screen)
+            x = origin.x
+            y = origin.y
+        case .belowCapsule:
+            // Notices follow a top skin: below the menu bar, under the island or in the card's corner.
+            y = frame.maxY - metrics.offset - metrics.size.height
+            switch model.skin {
+            case .cornerCard(.trailing): x = frame.maxX - VoiceCapsuleLayout.cardEdgeInset - metrics.size.width
+            case .cornerCard(.leading): x = frame.minX + VoiceCapsuleLayout.cardEdgeInset
+            case let .notchIsland(notch): x = notch.midX - metrics.size.width / 2
+            case .bottomCapsule: x = frame.midX - metrics.size.width / 2
+            }
         }
 
         let contentRect = NSRect(origin: NSPoint(x: x, y: y), size: metrics.size)
@@ -1192,6 +1240,136 @@ final class OverlayController {
         lastPositionedPresentation = model.presentation
     }
 
+    // MARK: - Voice capsule skins
+
+    /// Starts the timer and remembers the target app when a new recording session begins.
+    private func beginCapsuleSessionIfNeeded() {
+        if window?.isVisible == true, model.presentation.isRecording, dismissWorkItem == nil { return }
+        model.recordingStartedAt = Date()
+        model.capsuleHovered = false
+        let frontmost = NSWorkspace.shared.frontmostApplication
+        let isTypeflux = frontmost?.bundleIdentifier == Bundle.main.bundleIdentifier
+        model.targetAppName = settingsStore.voiceCapsule.showsTargetApp && !isTypeflux ? frontmost?.localizedName : nil
+    }
+
+    /// Chooses the display once per appearance and applies the notch fallback for it.
+    private func resolvePlacement(windowVisible: Bool) {
+        let preferences = settingsStore.voiceCapsule
+        if !windowVisible || placementScreen == nil {
+            placementScreen = Self.placementScreenGeometry(for: preferences.screen)
+        }
+        guard let screen = placementScreen else { return }
+        let skin = VoiceCapsuleLayout.skin(for: preferences, on: screen)
+        guard skin != model.skin else { return }
+        // Jump to the new anchor; morphing between anchors would sweep an envelope across the screen.
+        lastPositionedFrame = nil
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) { model.skin = skin }
+    }
+
+    static func placementScreenGeometry(for choice: VoiceCapsuleScreenChoice) -> VoiceCapsuleScreenGeometry? {
+        let screens = NSScreen.screens
+        let activeIndex = NSScreen.main.flatMap { main in screens.firstIndex { $0 == main } }
+        guard let index = VoiceCapsuleLayout.screenIndex(
+            for: choice, frames: screens.map(\.frame), mouseLocation: NSEvent.mouseLocation, activeIndex: activeIndex
+        ) else { return nil }
+        return VoiceCapsuleScreenGeometry(screen: screens[index])
+    }
+
+    private func voiceCapsuleMetrics(for presentation: OverlayViewModel.Presentation) -> OverlayMetrics? {
+        let skin = model.skin
+        switch presentation {
+        case .recordingHold, .recordingHoldPreview, .recordingLocked, .recordingLockedPreview,
+             .processing, .processingPreview, .completed:
+            let content = VoiceCapsuleLayout.contentSize(
+                for: skin, sizeClass: model.voiceCapsuleExpanded ? .expanded : .compact,
+                transcriptLines: model.voiceCapsuleTranscriptLines
+            )
+            return OverlayMetrics(
+                size: VoiceCapsuleLayout.windowSize(contentSize: content, skin: skin),
+                anchor: .voiceCapsule, offset: 0,
+                // Recording accepts the pointer for hover expansion and the hands-free buttons.
+                interactive: presentation.isRecording
+            )
+        case .failure:
+            let measured = NSHostingView(rootView: OverlayView(model: model)).fittingSize
+            return OverlayMetrics(size: NSSize(width: ceil(measured.width), height: ceil(measured.height)),
+                                  anchor: .voiceCapsule, offset: 0, interactive: true)
+        case .notice, .transcriptPreview:
+            let measured = NSHostingView(rootView: OverlayView(model: model)).fittingSize
+            return OverlayMetrics(
+                size: NSSize(width: ceil(measured.width), height: ceil(measured.height)),
+                anchor: .belowCapsule, offset: VoiceCapsuleLayout.cardTopSpacing,
+                interactive: presentation == .notice && Self.noticeIsInteractive(dismissible: model.noticeDismissible)
+            )
+        case .personaPicker, .resultDialog:
+            return nil
+        }
+    }
+
+    private func handleCapsuleHover(_ hovering: Bool) {
+        hoverWorkItem?.cancel()
+        hoverWorkItem = nil
+        let supportsHover = switch model.skin {
+        case .cornerCard: true
+        case .notchIsland: settingsStore.voiceCapsule.notchHoverExpands
+        case .bottomCapsule: false
+        }
+        guard !hovering || supportsHover else { return }
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self, model.capsuleHovered != hovering else { return }
+            guard !hovering || model.presentation.isRecording else { return }
+            model.capsuleHovered = hovering
+            // Never resurrect an overlay that is already on its way out.
+            if model.presentation.isRecording, dismissWorkItem == nil, window?.isVisible == true {
+                refreshWindow()
+            }
+        }
+        hoverWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + (hovering ? 0.15 : 0.4), execute: workItem)
+    }
+
+    static let completionDisplayDuration: TimeInterval = 1.4
+
+    /// Confirms delivered text in the corner card and notch island. The bottom capsule keeps
+    /// its quiet exit, so this does nothing there.
+    func showDeliveryConfirmation(characterCount: Int) {
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in self?.showDeliveryConfirmation(characterCount: characterCount) }
+            return
+        }
+        let preferences = settingsStore.voiceCapsule
+        guard preferences.style != .bottomCapsule,
+              let screen = placementScreen ?? Self.placementScreenGeometry(for: preferences.screen),
+              VoiceCapsuleLayout.skin(for: preferences, on: screen).isTopAnchored else { return }
+        dismissWorkItem?.cancel()
+        dismissWorkItem = nil
+        stopProcessingProgress()
+        cancelRecordingHintAutoHide()
+        ensureWindow()
+        model.presentation = .completed
+        model.completedCharacterCount = characterCount
+        model.recordingPreviewExpanded = false
+        model.capsuleHovered = false
+        model.recordingHintText = ""
+        refreshWindow()
+        // `dismiss(after:)` would replace the transition that fades the capsule in, so wait
+        // first and only leave if nothing else took over the overlay in the meantime.
+        let transitionID = visibilityTransitionID
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.completionDisplayDuration) { [weak self] in
+            guard let self, visibilityTransitionID == transitionID, model.presentation == .completed else { return }
+            dismiss(after: 0)
+        }
+    }
+
+    var voiceCapsuleSkinForTesting: VoiceCapsuleSkin { model.skin }
+    var isCapsulePresentedForTesting: Bool { model.isPresented }
+
+    func simulateCapsuleHoverForTesting(_ hovering: Bool) {
+        handleCapsuleHover(hovering)
+    }
+
     private func animateWindow(_ window: NSWindow, to targetFrame: NSRect, duration: TimeInterval) {
         NSAnimationContext.runAnimationGroup { context in
             context.duration = duration
@@ -1201,6 +1379,9 @@ final class OverlayController {
     }
 
     private func metrics(for presentation: OverlayViewModel.Presentation) -> OverlayMetrics {
+        if model.skin.isTopAnchored, let metrics = voiceCapsuleMetrics(for: presentation) {
+            return metrics
+        }
         switch presentation {
         case .recordingHold:
             return OverlayMetrics(
@@ -1242,6 +1423,10 @@ final class OverlayController {
                 anchor: .bottom, offset: Self.recordingWindowBottomInset,
                 interactive: false
             )
+        case .completed:
+            // Only top skins show a completion state; keep a harmless size otherwise.
+            return OverlayMetrics(size: NSSize(width: 146, height: 112), anchor: .bottom,
+                                  offset: Self.recordingWindowBottomInset, interactive: false)
         case .transcriptPreview, .notice, .failure, .personaPicker, .resultDialog:
             // Every non-capsule presentation owns its height through its content.
             // Keep native sizing disabled: capsule transitions still own their
@@ -1529,6 +1714,10 @@ private struct OverlayMetrics {
         case top
         case bottom
         case center
+        /// A top skin's own placement (`VoiceCapsuleLayout.windowOrigin`).
+        case voiceCapsule
+        /// Toasts below the menu bar, aligned with the current top skin.
+        case belowCapsule
     }
 
     let size: NSSize
@@ -1555,6 +1744,8 @@ final class OverlayViewModel: ObservableObject {
         case failure
         case personaPicker
         case resultDialog
+        /// Delivered text, shown briefly by the top skins only.
+        case completed
 
         var isRecordingPreview: Bool {
             self == .recordingHoldPreview || self == .recordingLockedPreview
@@ -1568,7 +1759,7 @@ final class OverlayViewModel: ObservableObject {
             self == .recordingLocked || self == .recordingLockedPreview
         }
 
-        var isCapsule: Bool { isRecording || isProcessing }
+        var isCapsule: Bool { isRecording || isProcessing || self == .completed }
 
         var isProcessing: Bool {
             self == .processing || self == .processingPreview
@@ -1596,6 +1787,12 @@ final class OverlayViewModel: ObservableObject {
     @Published var noticeDismissible = true
     @Published var interfaceStyle: InterfaceStyle = .liquidGlass
     @Published var glassIntensity = LiquidGlassIntensity()
+    @Published var skin: VoiceCapsuleSkin = .bottomCapsule
+    @Published var targetAppName: String?
+    @Published var recordingStartedAt: Date?
+    @Published var completedCharacterCount = 0
+    @Published var capsuleHovered = false
+    var onCapsuleHoverChanged: ((Bool) -> Void)?
     /// Stretches capsule motion durations; only rendering tests set it above 1.
     var motionScale: Double = 1
     var onDismissRequested: (() -> Void)?
@@ -1671,8 +1868,8 @@ private struct OverlayView: View {
                     .padding(containerPadding)
             }
         }
-        .scaleEffect(isHiddenCapsule && !reduceMotion ? 0.96 : 1, anchor: .bottom)
-        .offset(y: isHiddenCapsule && !reduceMotion ? 6 : 0)
+        .scaleEffect(isHiddenCapsule && !reduceMotion ? 0.96 : 1, anchor: model.skin.isTopAnchored ? .top : .bottom)
+        .offset(y: isHiddenCapsule && !reduceMotion ? (model.skin.isTopAnchored ? -6 : 6) : 0)
         .opacity(isHiddenCapsule ? 0 : 1)
         .environment(\.interfaceStyle, model.interfaceStyle)
         .environment(\.liquidGlassIntensity, model.glassIntensity)
@@ -1682,6 +1879,33 @@ private struct OverlayView: View {
 
     @ViewBuilder
     private var content: some View {
+        if model.drawsVoiceCapsuleSkin, let snapshot = model.voiceCapsuleSnapshot {
+            voiceCapsuleSkin(snapshot)
+        } else {
+            sharedContent
+        }
+    }
+
+    @ViewBuilder
+    private func voiceCapsuleSkin(_ snapshot: VoiceCapsuleSnapshot) -> some View {
+        Group {
+            switch model.skin {
+            case .cornerCard:
+                CornerCardCapsule(snapshot: snapshot, actions: model.voiceCapsuleActions)
+            case let .notchIsland(notch):
+                NotchIslandCapsule(snapshot: snapshot, notch: notch, actions: model.voiceCapsuleActions)
+            case .bottomCapsule:
+                EmptyView()
+            }
+        }
+        .fixedSize(horizontal: true, vertical: snapshot.phase == .failure)
+        .onHover { model.onCapsuleHoverChanged?($0) }
+        .animation(reduceMotion ? nil : OverlayMotion.morph(scale: model.motionScale), value: snapshot.showsBody)
+        .animation(reduceMotion ? nil : OverlayMotion.morph(scale: model.motionScale), value: snapshot.phase)
+    }
+
+    @ViewBuilder
+    private var sharedContent: some View {
         switch model.presentation {
         case .recordingHold, .recordingHoldPreview, .recordingLocked, .recordingLockedPreview,
              .processing, .processingPreview:
@@ -1701,28 +1925,38 @@ private struct OverlayView: View {
             personaPickerCard
         case .resultDialog:
             resultDialogCard
+        case .completed:
+            // Only the top skins draw completion.
+            EmptyView()
         }
     }
 
     private var usesWindowChrome: Bool {
+        if model.drawsVoiceCapsuleSkin { return false }
         switch model.presentation {
         case .transcriptPreview, .notice, .failure, .personaPicker, .resultDialog:
-            true
+            return true
         default:
-            false
+            return false
         }
     }
 
     private var contentAlignment: Alignment {
-        switch model.presentation {
+        if model.drawsVoiceCapsuleSkin { return .top }
+        return switch model.presentation {
         case .recordingHold, .recordingHoldPreview, .recordingLocked, .recordingLockedPreview,
-             .processing, .processingPreview, .notice, .transcriptPreview, .failure, .personaPicker, .resultDialog:
+             .processing, .processingPreview, .notice, .transcriptPreview, .failure, .personaPicker, .resultDialog,
+             .completed:
             .bottom
         }
     }
 
     private var containerPadding: EdgeInsets {
-        switch model.presentation {
+        if model.drawsVoiceCapsuleSkin {
+            let gutter = VoiceCapsuleLayout.gutter(for: model.skin)
+            return EdgeInsets(top: gutter.top, leading: gutter.left, bottom: gutter.bottom, trailing: gutter.right)
+        }
+        return switch model.presentation {
         case .recordingHold, .recordingLocked, .processing,
              .recordingHoldPreview, .recordingLockedPreview, .processingPreview:
             EdgeInsets(
@@ -1733,7 +1967,7 @@ private struct OverlayView: View {
             )
         case .transcriptPreview, .notice, .failure:
             EdgeInsets(top: 14, leading: 16, bottom: 14, trailing: 16)
-        case .personaPicker, .resultDialog:
+        case .personaPicker, .resultDialog, .completed:
             EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
         }
     }
@@ -2798,7 +3032,7 @@ private struct OverlayButton: View {
     }
 }
 
-private struct LevelWaveform: View {
+struct LevelWaveform: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let level: Float

@@ -119,6 +119,7 @@ final class StudioViewModel: ObservableObject {
     @Published var interfaceStyle: InterfaceStyle
     @Published var liquidGlassIntensity: Double
     @Published var launcherWindowMode: AskLauncherWindowMode
+    @Published var voiceCapsule: VoiceCapsulePreferences
     @Published var appLanguage: AppLanguage
     @Published var availableMicrophones: [AudioInputDevice] = []
     @Published var preferredMicrophoneID: String
@@ -372,6 +373,7 @@ final class StudioViewModel: ObservableObject {
         interfaceStyle = settingsStore.interfaceStyle
         liquidGlassIntensity = settingsStore.liquidGlassIntensity
         launcherWindowMode = settingsStore.askLauncherWindowMode
+        voiceCapsule = settingsStore.voiceCapsule
         appLanguage = settingsStore.appLanguage
         preferredMicrophoneID = settingsStore.preferredMicrophoneID
         instantVoiceInputEnabled = settingsStore.instantVoiceInputEnabled
@@ -1206,6 +1208,11 @@ final class StudioViewModel: ObservableObject {
     func setLauncherWindowMode(_ mode: AskLauncherWindowMode) {
         launcherWindowMode = mode
         settingsStore.askLauncherWindowMode = mode
+    }
+
+    func setVoiceCapsule(_ preferences: VoiceCapsulePreferences) {
+        voiceCapsule = preferences
+        settingsStore.voiceCapsule = preferences
     }
 
     func refreshAvailableMicrophones() {

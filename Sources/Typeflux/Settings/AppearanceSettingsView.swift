@@ -30,6 +30,9 @@ struct AppearanceSettingsView: View {
                     .padding(14)
                 }
             }
+            VoiceCapsuleSettingsSection(preferences: Binding(
+                get: { viewModel.voiceCapsule }, set: viewModel.setVoiceCapsule
+            ))
             TFFormSection {
                 LauncherWindowModeSetting(selection: Binding(
                     get: { viewModel.launcherWindowMode }, set: viewModel.setLauncherWindowMode
