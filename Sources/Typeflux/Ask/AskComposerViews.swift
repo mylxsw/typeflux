@@ -1551,8 +1551,7 @@ struct AskComposer: View {
         Group {
             if active {
                 // Recording takes the results' place at their height, so the panel stays put.
-                AskVoicePanel(live: voice.live, listening: listening, height: launcherResultsViewportHeight,
-                              token: contextToken)
+                AskVoicePanel(live: voice.live, listening: listening, height: launcherResultsViewportHeight)
             } else if model.launcherHistoryMode {
                 AskLauncherInputHistoryView(model: model, store: inputHistory,
                                             viewportHeight: launcherResultsViewportHeight)

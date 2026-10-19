@@ -163,7 +163,7 @@ private actor BadgeCalls {
             AskSourceContextDetails(draft: .constant(draft))
             AskLauncherContextPanel(draft: .constant(draft), screenshotState: .off, restored: false,
                 capturing: false, screenshotCapturing: false, setIncluded: { _, _ in }, recapture: {}, refreshTitle: "Refresh")
-            AskVoicePanel(live: AskVoiceLive(), listening: false, height: 140, token: token)
+            AskVoicePanel(live: AskVoiceLive(), listening: false, height: 140)
         }.padding(24).frame(width: 450, height: 720).background(.white)
             .environment(\.askContextImageAccess, access(scope))
             .environment(\.askNativeIconDecoder, { icon in await calls.append(icon); return raster }))
@@ -183,14 +183,14 @@ private actor BadgeCalls {
         }
         var ready: NSBitmapImageRep?
         for _ in 0..<200 {
-            let (rep, blue) = try capture(); if blue > 100, await calls.values.count == 8 { ready = rep; break }
+            let (rep, blue) = try capture(); if blue > 100, await calls.values.count == 7 { ready = rep; break }
             try await Task.sleep(for: .milliseconds(10))
         }
         let snapshot = try capture()
         try XCTUnwrap(snapshot.0.representation(using: .png, properties: [:])).write(to: folder().appendingPathComponent("context-native-icons.png"))
         let values = await calls.values
         XCTAssertNotNil(ready, "Visible fixture pixels: \(snapshot.1), decoder calls: \(values.count)")
-        XCTAssertEqual(values.count, 8)
+        XCTAssertEqual(values.count, 7)
         XCTAssertTrue(values.allSatisfy { $0.kind == .application && $0.value == "fixture.application" })
         scope.invalidate()
         for _ in 0..<100 { if try capture().1 == 0 { break }; try await Task.sleep(for: .milliseconds(10)) }
@@ -207,7 +207,7 @@ private actor BadgeCalls {
             AskSourceContextDetails(draft: .constant(draft))
             AskLauncherContextPanel(draft: .constant(draft), screenshotState: .off, restored: false,
                 capturing: false, screenshotCapturing: false, setIncluded: { _, _ in }, recapture: {}, refreshTitle: "Refresh")
-            AskVoicePanel(live: AskVoiceLive(), listening: false, height: 140, token: token)
+            AskVoicePanel(live: AskVoiceLive(), listening: false, height: 140)
         }.frame(width: 400, height: 600)
             .environment(\.askContextImageAccess, access(scope))
             .environment(\.askNativeIconDecoder, { icon in await calls.append(icon); return raster }))

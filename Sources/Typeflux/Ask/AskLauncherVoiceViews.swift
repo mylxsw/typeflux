@@ -107,13 +107,11 @@ struct AskLevelWaveform: View {
 }
 
 /// Takes the launcher's results area while recording, at the same height so
-/// the panel does not jump: the waveform, how to finish or cancel, a few things
-/// to say, and the context that goes along once the words are in.
+/// the panel does not jump: the waveform and how to finish or cancel.
 struct AskVoicePanel: View {
     @ObservedObject var live: AskVoiceLive
     var listening: Bool
     var height: CGFloat
-    var token: AskLauncherContext.Token?
 
     /// Below the starting points' height, so recording in an empty launcher keeps its size.
     static let minimumHeight: CGFloat = 140
@@ -126,14 +124,6 @@ struct AskVoicePanel: View {
                 Text(L(listening ? "ask.voice.panel.hint" : "ask.voice.panel.transcribing"))
                     .font(.system(size: 12))
                     .foregroundStyle(StudioTheme.textSecondary)
-                if listening {
-                    Text(L("ask.voice.panel.examples"))
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                }
-                if let token, (token.hasSource && !token.sourceOff) || token.screenshot == .attached {
-                    contextNote(token)
-                }
             }
             .multilineTextAlignment(.center)
             .padding(.horizontal, 20)
@@ -142,23 +132,5 @@ struct AskVoicePanel: View {
         .frame(height: height)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("ask.voice.panel")
-    }
-
-    private func contextNote(_ token: AskLauncherContext.Token) -> some View {
-        HStack(spacing: 6) {
-            AskApplicationIcon(bundleID: token.sourceOff ? nil : token.bundleID) { icon in
-                if let icon { Image(nsImage: icon).resizable().frame(width: 14, height: 14) }
-            }
-            if token.screenshot == .attached {
-                Image(systemName: "display").font(.system(size: 10))
-            }
-            Text(L("ask.voice.panel.context"))
-        }
-        .font(.system(size: 11.5))
-        .foregroundStyle(StudioTheme.textSecondary)
-        .padding(.horizontal, 10)
-        .frame(height: 24)
-        .background(AskTheme.hoverFill.opacity(0.6), in: Capsule())
-        .overlay(Capsule().strokeBorder(AskTheme.border, lineWidth: 0.5))
     }
 }
