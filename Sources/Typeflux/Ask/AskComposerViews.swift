@@ -227,9 +227,23 @@ struct AskComposer: View {
 
     private var draft: Binding<AskDraft> { launcher ? $model.launcherDraft : $model.draft }
     private var canSend: Bool { launcher ? model.canSendLauncher : model.canSend }
+    @Environment(\.askLauncherNumberHints) private var commandHeld
     private var launcherChatFallback: AskLauncherPrimaryAction {
         .chat(draft: model.launcherDraft, canSend: model.canSendLauncher,
               canOpen: model.canOpenChatFromLauncher, loadingAttachments: loadingAttachments)
+    }
+
+    private var launcherButtonOpensChat: Bool {
+        commandHeld && !model.launcherDraft.canSend && !plugins.isActive && !paletteOpen
+            && !model.launcherHistoryMode && model.workflowApproval == nil && quickActions == nil
+            && !active && !voice.isActive && !model.recordingIsActive()
+    }
+
+    private var launcherButtonAction: AskLauncherPrimaryAction {
+        launcherButtonOpensChat
+            ? .init(mode: .openChat, enabled: model.canOpenChatFromLauncher,
+                    disabledReason: L("ask.openChat.wait"))
+            : launcherPrimaryAction
     }
 
     /// Shared by the header, Return and the footer; local actions never depend on AI readiness.
@@ -309,6 +323,15 @@ struct AskComposer: View {
     }
 
     @State private var primaryActivationGate = AskLauncherActivationGate()
+
+    private func runLauncherButtonAction() {
+        if launcherButtonOpensChat {
+            guard launcherButtonAction.enabled, !launcherEditorIsComposing else { return }
+            openChat()
+        } else {
+            runLauncherPrimaryAction()
+        }
+    }
 
     private func runLauncherPrimaryAction() {
         if plugins.plugin?.id == AskTranslatePlugin.id, !launcherPluginInputIsCurrent,
@@ -2197,10 +2220,11 @@ struct AskComposer: View {
                     .accessibilityIdentifier("ask.launcher.featureWindow")
                     .modifier(AskLauncherShortcutBadge(key: "O", leadingInset: 24, topInset: -5))
                 }
-                let primary = launcherPrimaryAction
+                let primary = launcherButtonAction
                 AskLauncherOpenChatButton(mode: primary.mode, enabled: primary.enabled, waiting: primary.waiting,
                                          disabledReason: primary.disabledReason,
-                                         tint: storageTint, action: runLauncherPrimaryAction)
+                                         hintOverride: launcherButtonOpensChat ? primary.title + " · ⌘O" : nil,
+                                         tint: storageTint, action: runLauncherButtonAction)
             }
         }
         .padding(.horizontal, chrome.horizontalInset)

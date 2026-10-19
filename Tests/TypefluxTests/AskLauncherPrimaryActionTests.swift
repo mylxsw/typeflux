@@ -316,7 +316,11 @@ extension AskLauncherPrimaryActionTests {
 
     @Test func emptyHomeFollowsItsSelectionAndSimpleEmptyInputOpensChat() async throws {
         for simple in [false, true] {
-            let launcher = try await launch("") { $0.launcherWindowMode = simple ? .simple : .complete }
+            let apps = AskTestAppIndex(AskTestAppIndex.sample.entries)
+            let launcher = try await launch("", apps: apps) {
+                $0.launcherWindowMode = simple ? .simple : .complete
+                $0.modelLibrary.settings.askQuickAppSearchEnabled = true
+            }
             defer { launcher.close() }
             let model = launcher.fixture.model
             var opens = 0
@@ -327,6 +331,33 @@ extension AskLauncherPrimaryActionTests {
             #expect(opens == (simple ? 1 : 0))
             #expect(await launcher.fixture.api.sends.isEmpty)
         }
+    }
+
+    @Test func holdingCommandOnEmptyHomeTurnsTheButtonIntoOpenChat() async throws {
+        let apps = AskTestAppIndex(AskTestAppIndex.sample.entries)
+        let launcher = try await launch("", apps: apps) {
+            $0.launcherWindowMode = .complete
+            $0.modelLibrary.settings.askQuickAppSearchEnabled = true
+        }
+        defer { launcher.close() }
+        var opens = 0
+        launcher.fixture.model.onShowConversation = { opens += 1 }
+        let monitor = try #require(commandMonitor(in: launcher.window.contentView))
+        #expect(try element("ask.launcher.openChat", in: launcher.window).value("accessibilityValue") as? String == "return")
+
+        monitor.update(modifiers: .command, isKeyWindow: true)
+        try await Task.sleep(for: .milliseconds(50))
+        let button = try element("ask.launcher.openChat", in: launcher.window)
+        #expect(button.value("accessibilityLabel") as? String == L("ask.openChat"))
+        #expect(button.value("accessibilityValue") as? String == "bubble.left")
+        #expect(AskComposer(model: launcher.fixture.model, launcher: true).launcherPrimaryAction.mode.symbol == "return")
+        try await pressButton(in: launcher)
+        #expect(opens == 1 && launcher.opened.isEmpty)
+        #expect(await launcher.fixture.api.sends.isEmpty)
+
+        monitor.update(modifiers: [], isKeyWindow: true)
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(try element("ask.launcher.openChat", in: launcher.window).value("accessibilityValue") as? String == "return")
     }
 
     @Test func duplicateActivationsStillAllowAChangedTargetOrExplicitConfirmation() {
@@ -425,6 +456,12 @@ extension AskLauncherPrimaryActionTests {
             return nil
         }
         return walk(window)
+    }
+
+    private func commandMonitor(in view: NSView?) -> AskLauncherCommandMonitor.MonitorView? {
+        guard let view else { return nil }
+        if let monitor = view as? AskLauncherCommandMonitor.MonitorView { return monitor }
+        return view.subviews.lazy.compactMap { commandMonitor(in: $0) }.first
     }
 
     private func element(_ id: String, in window: NSWindow) throws -> Element { try #require(find(id, in: window)) }

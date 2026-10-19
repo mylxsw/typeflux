@@ -46,6 +46,7 @@ struct AskLauncherOpenChatButton: View {
     /// does not dim and brighten again on every keystroke, but not yet clickable.
     var waiting = false
     var disabledReason: String?
+    var hintOverride: String?
     var tint: Color = AskTheme.accent
     var action: () -> Void
     @State private var hovered = false
@@ -85,6 +86,10 @@ struct AskLauncherOpenChatButton: View {
         }
     }
 
+    private var hint: String {
+        enabled ? hintOverride ?? mode.hint : disabledReason ?? L("ask.launcher.action.unavailable")
+    }
+
     var body: some View {
         Button(action: action) {
             ZStack {
@@ -114,11 +119,11 @@ struct AskLauncherOpenChatButton: View {
             transaction.disablesAnimations = false
             transaction.animation = reduceMotion ? nil : Self.transition
         }
-        .help(enabled ? mode.hint : disabledReason ?? L("ask.launcher.action.unavailable"))
+        .help(hint)
         .accessibilityLabel(mode.title)
         .accessibilityIdentifier("ask.launcher.openChat")
         .accessibilityValue(mode.symbol)
-        .accessibilityHint(enabled ? mode.hint : disabledReason ?? L("ask.launcher.action.unavailable"))
+        .accessibilityHint(hint)
         .modifier(AskLauncherShortcutBadge(key: looksEnabled ? mode.shortcut : nil, leadingInset: 24, topInset: -5))
     }
 }
