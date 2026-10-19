@@ -60,6 +60,18 @@ enum VoiceCapsuleSizeClass: Equatable {
 
 /// Pure placement math for the corner card and notch island, so it can be tested without windows.
 enum VoiceCapsuleLayout {
+    // Bottom capsule: the original 78×35 pill, 114 wide while listening controls show.
+    static let bottomHeight: CGFloat = 35
+    static let bottomRestingWidth: CGFloat = 78
+    static let bottomControlsWidth: CGFloat = 114
+
+    /// Compact width for interpolated visibilities: listening controls widen the capsule,
+    /// processing keeps it at rest width (its only control replaces the percentage).
+    static func bottomCompactWidth(controlsVisibility: CGFloat, processingVisibility: CGFloat) -> CGFloat {
+        let controls = max(0, min(1, controlsVisibility)) * (1 - max(0, min(1, processingVisibility)))
+        return bottomRestingWidth + (bottomControlsWidth - bottomRestingWidth) * controls
+    }
+
     // Corner card.
     static let cardWidth: CGFloat = 372
     static let cardCompactHeight: CGFloat = 64

@@ -95,6 +95,16 @@ struct VoiceCapsuleLayoutTests {
         #expect(VoiceCapsuleSkin.notchIsland(notched.hardwareNotch!).isTopAnchored)
     }
 
+    @Test func bottomCapsuleKeepsTheOriginalSizes() {
+        #expect(VoiceCapsuleLayout.bottomCompactWidth(controlsVisibility: 0, processingVisibility: 0) == 78)
+        #expect(VoiceCapsuleLayout.bottomCompactWidth(controlsVisibility: 1, processingVisibility: 0) == 114)
+        #expect(VoiceCapsuleLayout.bottomCompactWidth(controlsVisibility: 0.5, processingVisibility: 0) == 96)
+        // Processing keeps the rest width; its single control replaces the percentage.
+        #expect(VoiceCapsuleLayout.bottomCompactWidth(controlsVisibility: 1, processingVisibility: 1) == 78)
+        #expect(VoiceCapsuleLayout.bottomCompactWidth(controlsVisibility: 3, processingVisibility: -1) == 114)
+        #expect(VoiceCapsuleLayout.bottomHeight == 35)
+    }
+
     @Test func cardSizes() {
         let skin = VoiceCapsuleSkin.cornerCard(.trailing)
         #expect(VoiceCapsuleLayout.contentSize(for: skin, sizeClass: .compact) == CGSize(width: 372, height: 64))

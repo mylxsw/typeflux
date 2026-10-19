@@ -256,12 +256,13 @@ struct OverlayTransitionRenderingTests {
             }
         }
 
-        let compactCenter = try #require(compact.waveformCenter)
-        let bottomOffset = CGFloat(compact.pixelsHigh) - compactCenter.y
+        // The bottom row (orb on the left, timer on the right) stays pinned while the caption
+        // opens and closes above it. It is intentionally not horizontally centered.
+        let compactRow = try #require(compact.bottomRowCenter)
+        let bottomOffset = CGFloat(compact.pixelsHigh) - compactRow.y
         for bitmap in [expanding, expanded, collapsing, collapsed].compactMap({ $0 }) {
-            let center = try #require(bitmap.waveformCenter)
-            #expect(abs(center.x - CGFloat(bitmap.pixelsWide) / 2) <= 2)
-            #expect(abs(CGFloat(bitmap.pixelsHigh) - center.y - bottomOffset) <= 2)
+            let row = try #require(bitmap.bottomRowCenter)
+            #expect(abs(CGFloat(bitmap.pixelsHigh) - row.y - bottomOffset) <= 2)
         }
 
         controller.updateRecordingPreviewText("Caption before processing")
@@ -437,7 +438,8 @@ private extension NSBitmapImageRep {
         return peak
     }
 
-    var waveformCenter: CGPoint? {
+    /// Center of the bright content (timer digits, orb highlight) in the capsule's bottom row band.
+    var bottomRowCenter: CGPoint? {
         var minX = pixelsWide
         var maxX = -1
         var minY = pixelsHigh
@@ -446,8 +448,8 @@ private extension NSBitmapImageRep {
         for y in max(0, pixelsHigh - Int(75 * scale)) ..< max(0, pixelsHigh - Int(40 * scale)) {
             for x in 0 ..< pixelsWide {
                 guard let color = colorAt(x: x, y: y)?.usingColorSpace(.sRGB),
-                      color.alphaComponent > 0.5, color.redComponent > 0.8,
-                      color.greenComponent > 0.8, color.blueComponent > 0.8 else { continue }
+                      color.alphaComponent > 0.5, color.redComponent > 0.6,
+                      color.greenComponent > 0.6, color.blueComponent > 0.6 else { continue }
                 minX = min(minX, x)
                 maxX = max(maxX, x)
                 minY = min(minY, y)
