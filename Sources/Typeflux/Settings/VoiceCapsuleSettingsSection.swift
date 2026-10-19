@@ -1,11 +1,8 @@
-import AppKit
 import SwiftUI
 
 /// Settings › Appearance › Voice input capsule: the capsule style plus the options that apply to it.
 struct VoiceCapsuleSettingsSection: View {
     @Binding var preferences: VoiceCapsulePreferences
-    /// Whether any connected display has a camera housing; decides the "This Mac" badge.
-    var hasNotchedDisplay: Bool = NSScreen.screens.contains { $0.safeAreaInsets.top > 0 }
 
     var body: some View {
         TFFormSection(title: L("voiceCapsule.settings.title"), footnote: L("voiceCapsule.settings.footnote")) {
@@ -14,7 +11,7 @@ struct VoiceCapsuleSettingsSection: View {
                     TFChoiceCard(title: style.displayName, isSelected: preferences.style == style) {
                         preferences.style = style
                     } preview: {
-                        VoiceCapsuleStylePreview(style: style, showsBadge: style == .notchIsland && hasNotchedDisplay)
+                        VoiceCapsuleStylePreview(style: style)
                     }
                     .accessibilityHint(style.detail)
                     .accessibilityIdentifier("settings.voiceCapsule.style." + style.rawValue)
@@ -72,7 +69,6 @@ struct VoiceCapsuleSettingsSection: View {
 /// A small schematic screen showing where each style appears.
 struct VoiceCapsuleStylePreview: View {
     let style: VoiceCapsuleStyle
-    var showsBadge = false
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -84,14 +80,6 @@ struct VoiceCapsuleStylePreview: View {
                 .frame(width: 88, height: 50)
                 .padding(.top, 28)
             capsule
-            if showsBadge {
-                HStack {
-                    Spacer()
-                    TFTag(text: L("voiceCapsule.notch.thisMac"), tint: TFColors.success)
-                }
-                .padding(.top, 14)
-                .padding(.trailing, 6)
-            }
         }
         // Four cards share the row, so the screen narrows before the cards overflow.
         .frame(minWidth: 112, maxWidth: 160)

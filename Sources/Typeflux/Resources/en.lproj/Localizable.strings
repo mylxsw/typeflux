@@ -6202,4 +6202,3 @@
 "voiceCapsule.showContext.detail" = "Show the app that receives the text on the card's second line.";
 "voiceCapsule.hoverExpand.title" = "Expand on hover";
 "voiceCapsule.hoverExpand.detail" = "Point at the island to see the full transcript and buttons.";
-"voiceCapsule.notch.thisMac" = "This Mac";

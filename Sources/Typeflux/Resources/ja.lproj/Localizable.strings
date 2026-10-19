@@ -6084,4 +6084,3 @@
 "voiceCapsule.showContext.detail" = "カードの 2 行目にテキストの入力先アプリを表示します。";
 "voiceCapsule.hoverExpand.title" = "ホバーで展開";
 "voiceCapsule.hoverExpand.detail" = "アイランドにポインタを合わせると文字起こし全体とボタンを表示します。";
-"voiceCapsule.notch.thisMac" = "この Mac";
