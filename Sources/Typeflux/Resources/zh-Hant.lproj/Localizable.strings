@@ -380,7 +380,6 @@
 "modelDomain.llm.subtitle" = "文字生成與改寫";
 
 "overlay.recording.listening" = "正在聆聽";
-"overlay.recording.personaHint" = "本次請求將使用%@人設進行處理";
 "overlay.ask.guidance" = "你可以詢問任何問題";
 "overlay.processing.transcribing" = "思考中";
 "overlay.processing.thinking" = "思考中";

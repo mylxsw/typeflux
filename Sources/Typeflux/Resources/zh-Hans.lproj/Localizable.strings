@@ -382,7 +382,6 @@
 "modelDomain.llm.subtitle" = "文本生成与改写";
 
 "overlay.recording.listening" = "正在聆听";
-"overlay.recording.personaHint" = "本次请求将使用%@人设进行处理";
 "overlay.ask.guidance" = "你可以询问任何问题";
 "overlay.processing.transcribing" = "思考中";
 "overlay.processing.thinking" = "思考中";

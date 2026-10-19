@@ -382,7 +382,6 @@
 "modelDomain.llm.subtitle" = "Large language model";
 
 "overlay.recording.listening" = "Listening";
-"overlay.recording.personaHint" = "This request will be processed with the %@ persona";
 "overlay.ask.guidance" = "Ask anything about the selected text";
 "overlay.processing.transcribing" = "Thinking";
 "overlay.processing.thinking" = "Thinking";
