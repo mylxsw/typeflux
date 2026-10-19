@@ -2443,6 +2443,12 @@
 /* Execution recovery */
 "ask.recovery.unknown" = "还不能确认这次处理的结果";
 "ask.recovery.unknownBody" = "Typeflux 无法确认这次处理是否完成。为避免做两遍，不会自动重复操作。";
+"ask.recovery.unknownToolBody" = "%@的结果未确认。请先检查实际效果。";
+"ask.recovery.tool.browser" = "浏览器操作";
+"ask.recovery.tool.computer" = "屏幕操作";
+"ask.recovery.tool.command" = "命令";
+"ask.recovery.tool.model" = "AI 回复";
+"ask.recovery.tool.other" = "这一步";
 "ask.recovery.checkBody" = "如果这次涉及发消息、改文件等操作，请先到对应的应用里看看是否已经完成。";
 "ask.recovery.endBody" = "停止后，Typeflux 不会继续这次任务，已经完成的操作不会撤销。之后可以回到对话里继续提问。";
 "ask.recovery.binding" = "请回到发送这条消息时使用的设备，登录当时的账户，再打开这段对话。";
@@ -6158,6 +6164,7 @@
 "ask.tool.exitFailed" = "运行失败（退出码 %d）";
 "ask.stepLimit.title" = "已运行 %d 步，要继续吗？";
 "ask.stepLimit.hint" = "继续后会接着完成剩下的步骤";
+"ask.stepLimit.planDone" = "计划步骤已完成，但还没有最终答复";
 "ask.stepLimit.remaining" = "还剩 %d 项：%@";
 "ask.stepLimit.end" = "结束";
 "ask.stepLimit.continue" = "继续";

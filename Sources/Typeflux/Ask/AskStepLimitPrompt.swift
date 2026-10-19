@@ -18,6 +18,7 @@ struct AskStepLimitPrompt: View {
     /// "1 left: check the result", or a plain hint when the run kept no plan.
     static func subtitle(plan: [AskPlanItem]?) -> String {
         let remaining = (plan ?? []).filter { $0.status != "completed" }
+        if let plan, !plan.isEmpty, remaining.isEmpty { return L("ask.stepLimit.planDone") }
         guard let next = remaining.first?.step.trimmingCharacters(in: .whitespacesAndNewlines), !next.isEmpty else {
             return L("ask.stepLimit.hint")
         }

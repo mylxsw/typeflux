@@ -2440,6 +2440,12 @@
 /* Execution recovery */
 "ask.recovery.unknown" = "還不能確認這次處理的結果";
 "ask.recovery.unknownBody" = "Typeflux 無法確認這次處理是否完成。為避免做兩遍，不會自動重複操作。";
+"ask.recovery.unknownToolBody" = "%@的結果未確認。請先檢查實際效果。";
+"ask.recovery.tool.browser" = "瀏覽器操作";
+"ask.recovery.tool.computer" = "螢幕操作";
+"ask.recovery.tool.command" = "命令";
+"ask.recovery.tool.model" = "AI 回覆";
+"ask.recovery.tool.other" = "這一步";
 "ask.recovery.checkBody" = "如果這次涉及傳訊息、修改檔案等操作，請先到對應的應用程式裡看看是否已經完成。";
 "ask.recovery.endBody" = "停止後，Typeflux 不會繼續這次任務，已經完成的操作不會撤銷。之後可以回到對話裡繼續提問。";
 "ask.recovery.binding" = "請回到傳送這則訊息時使用的裝置，登入當時的帳戶，再開啟這段對話。";
@@ -6078,6 +6084,7 @@
 "ask.tool.exitFailed" = "執行失敗（結束碼 %d）";
 "ask.stepLimit.title" = "已執行 %d 步，要繼續嗎？";
 "ask.stepLimit.hint" = "繼續後會接著完成剩下的步驟";
+"ask.stepLimit.planDone" = "計畫步驟已完成，但還沒有最終答覆";
 "ask.stepLimit.remaining" = "還剩 %d 項：%@";
 "ask.stepLimit.end" = "結束";
 "ask.stepLimit.continue" = "繼續";

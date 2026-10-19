@@ -112,6 +112,10 @@ struct AskExecutionEntry: Equatable, Sendable, Identifiable {
     var receipt: AskExecutionReceipt?
     var deleted = false
 
+    /// Reading the journal failed. This is a storage problem, not evidence
+    /// that any particular tool effect has an unknown outcome.
+    var readUnavailable: Bool { id == "unavailable" && audit == nil && receipt == nil }
+
     var unknown: Bool {
         receipt == nil || ["unknown", "timeout", "cancelled"].contains(receipt!.status)
     }

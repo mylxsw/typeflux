@@ -22,13 +22,13 @@ struct AskRecoveryRenderTests {
 
         let text = try render(AskRecoveryInspector(model: fixture.model), name: "inspect-unknown",
                               size: .init(width: 650, height: 720))
-        #expect(readable(text).contains(readable(localized("ask.recovery.checkBody"))))
-        #expect(text.contains(value.messages[0].text))
+        #expect(readable(text).contains(readable(fixture.model.recoveryPresentation.bodyText)))
+        #expect(!text.contains(value.messages[0].text))
         expectOneReturnButton(text, active: true)
         #expect(text.contains(localized("ask.recovery.option.stop")))
         #expect(text.contains(localized("ask.recovery.checkAndContinue")))
-        #expect(readable(text).contains(readable(localized("ask.recovery.option.checkBody"))))
-        #expect(!text.contains("browser"))
+        #expect(!readable(text).contains(readable(localized("ask.recovery.option.checkBody"))))
+        #expect(text.contains("browser action"))
         #expect(!text.contains("private"))
         #expect(!text.contains("approval"))
         #expect(!text.contains(String(audit.argumentsHash.prefix(12))))
@@ -47,7 +47,7 @@ struct AskRecoveryRenderTests {
                                size: .init(width: 650, height: 720))
         #expect(ended.contains(localized("ask.recovery.stopped")))
         expectOneReturnButton(ended, active: false)
-        #expect(readable(ended).contains(readable(localized("ask.recovery.followUpBody"))))
+        #expect(readable(ended).contains(readable(fixture.model.recoveryPresentation.bodyText)))
         #expect(!ended.contains("Write a new request"))
         #expect(!ended.contains(localized("ask.recovery.end")))
         #expect(!ended.contains(localized("ask.recovery.option.stop")))
@@ -234,7 +234,8 @@ struct AskRecoveryRenderTests {
                     "end", "followUpBody", "message", "stopped", "checkAndContinue", "details", "recommended",
                     "checkPrompt", "option.check", "option.checkBody", "option.refresh", "option.refreshBody",
                     "option.continue", "option.self", "option.stop", "timeline.unknown", "timeline.paused",
-                    "timeline.done"].map { "ask.recovery." + $0 }
+                    "timeline.done", "unknownToolBody", "tool.browser", "tool.computer",
+                    "tool.command", "tool.model", "tool.other"].map { "ask.recovery." + $0 }
         for language in AppLanguage.allCases {
             let path = try #require(language.bundleLocalizationCandidates.compactMap {
                 Bundle.module.path(forResource: $0, ofType: "lproj")
@@ -284,10 +285,16 @@ extension AskRecoveryRenderTests {
                     language: language,
                     size: .init(width: 340, height: 360)
                 )
-                for key in [item.card.presentation.titleKey, item.card.presentation.bodyKey, item.actionKey] {
+                for key in [item.card.presentation.titleKey, item.actionKey] {
                     #expect(readable(text).contains(readable(localized(key, language: language))),
                             "Missing or clipped \(key) in \(item.name), \(language.rawValue): \(text)")
                 }
+                let body = item.name == "unknown"
+                    ? String(format: localized("ask.recovery.unknownToolBody", language: language),
+                             localized("ask.recovery.tool.browser", language: language))
+                    : localized(item.card.presentation.bodyKey, language: language)
+                #expect(readable(text).contains(readable(body)),
+                        "Missing or clipped recovery body in \(item.name), \(language.rawValue): \(text)")
             }
         }
     }
@@ -314,10 +321,8 @@ extension AskRecoveryRenderTests {
                     size: .init(width: 360, height: 820)
                 )
                 let keys = [active ? "ask.recovery.unknown" : "ask.recovery.stopped",
-                            "ask.recovery.unknownBody", "ask.recovery.message",
-                            active ? "ask.recovery.checkBody" : "ask.recovery.followUpBody",
-                            active ? "ask.recovery.endBody" : "ask.recovery.option.checkBody", "ask.recovery.close"]
-                #expect(readable(text).contains(readable(value.messages[0].text)))
+                            "ask.recovery.close", "ask.recovery.option.check"]
+                #expect(!readable(text).contains(readable(value.messages[0].text)))
                 expectOneReturnButton(text, active: active, language: language)
                 let stop = readable(localized("ask.recovery.option.stop", language: language))
                 #expect(readable(text).contains(stop) == active)
@@ -364,13 +369,8 @@ extension AskRecoveryRenderTests {
             )
             let active = model.recoveryPresentation.active
             let titleKey = active ? model.recoveryPresentation.titleKey : "ask.recovery.stopped"
-            let keys = [titleKey, "ask.recovery.unknownBody", "ask.recovery.option.checkBody",
-                        active ? "ask.recovery.checkBody" : "ask.recovery.followUpBody",
-                        "ask.recovery.close", "ask.recovery.message"]
+            let keys = [titleKey, "ask.recovery.option.check", "ask.recovery.close"]
             expectOneReturnButton(text, active: active, language: .simplifiedChinese)
-            if let message = model.recoveryRequestText {
-                #expect(readable(text).contains(readable(message)))
-            }
             #expect(!text.contains("编写新请求"))
             for key in keys {
                 #expect(readable(text).contains(readable(localized(key, language: .simplifiedChinese))))

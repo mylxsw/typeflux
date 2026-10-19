@@ -2443,6 +2443,12 @@
 /* Execution recovery */
 "ask.recovery.unknown" = "We couldn't confirm the result";
 "ask.recovery.unknownBody" = "Typeflux couldn't confirm whether this work finished. To avoid doing it twice, it won't repeat the action automatically.";
+"ask.recovery.unknownToolBody" = "The result of %@ is unclear. Check what happened before continuing.";
+"ask.recovery.tool.browser" = "the browser action";
+"ask.recovery.tool.computer" = "the screen action";
+"ask.recovery.tool.command" = "the command";
+"ask.recovery.tool.model" = "the AI response";
+"ask.recovery.tool.other" = "this step";
 "ask.recovery.checkBody" = "If this involved sending a message or changing a file, check the relevant app to see whether it's already done.";
 "ask.recovery.endBody" = "Stopping prevents Typeflux from continuing this task. It won't undo anything already done. You can then return to the chat and ask another question.";
 "ask.recovery.binding" = "Return to the device you used to send this message, sign in to the same account, and open this conversation.";
@@ -6158,6 +6164,7 @@
 "ask.tool.exitFailed" = "Failed (exit code %d)";
 "ask.stepLimit.title" = "Ran %d steps. Keep going?";
 "ask.stepLimit.hint" = "Continuing picks up the remaining steps";
+"ask.stepLimit.planDone" = "The planned steps are done, but there is no final answer yet";
 "ask.stepLimit.remaining" = "%d left: %@";
 "ask.stepLimit.end" = "End";
 "ask.stepLimit.continue" = "Continue";

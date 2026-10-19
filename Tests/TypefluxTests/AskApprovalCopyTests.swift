@@ -252,7 +252,7 @@ struct AskApprovalCopyTests {
         #expect(!AskStepLimitPrompt.applies(run))
         #expect(AskStepLimitPrompt.title(steps: 0) == L("ask.stepLimit.title", 1))
         #expect(AskStepLimitPrompt.subtitle(plan: nil) == L("ask.stepLimit.hint"))
-        #expect(AskStepLimitPrompt.subtitle(plan: [AskPlanItem(step: "Write", status: "completed")]) == L("ask.stepLimit.hint"))
+        #expect(AskStepLimitPrompt.subtitle(plan: [AskPlanItem(step: "Write", status: "completed")]) == L("ask.stepLimit.planDone"))
         let plan = [AskPlanItem(step: "Write", status: "completed"), AskPlanItem(step: "Check", status: "in_progress"),
                     AskPlanItem(step: "Open", status: "pending")]
         #expect(AskStepLimitPrompt.subtitle(plan: plan) == L("ask.stepLimit.remaining", 2, "Check"))

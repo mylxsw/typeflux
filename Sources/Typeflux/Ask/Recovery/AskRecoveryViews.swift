@@ -24,7 +24,7 @@ struct AskRecoveryCard: View {
                         .font(.system(size: 13.5, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
                         .padding(.top, 5)
-                    Text(L(presentation.bodyKey))
+                    Text(presentation.bodyText)
                         .font(.system(size: 12.5))
                         .foregroundStyle(StudioTheme.textSecondary)
                         .lineSpacing(3)
@@ -136,9 +136,8 @@ struct AskRecoveryInspector: View {
     }
 
     var body: some View {
-        let timeline = AskRecoveryTimeline(run: model.selected?.run, unknown: presentation.unknown)
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 14) {
                 HStack(alignment: .top, spacing: 14) {
                     AskRecoverySymbol(presentation: presentation, size: 38)
                     VStack(alignment: .leading, spacing: 6) {
@@ -146,43 +145,17 @@ struct AskRecoveryInspector: View {
                                 ? "ask.recovery.stopped" : presentation.titleKey))
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(StudioTheme.textPrimary)
-                        Text(L(presentation.bodyKey))
+                        Text(presentation.bodyText)
                             .font(.system(size: 12.5))
                             .foregroundStyle(StudioTheme.textSecondary)
                             .lineSpacing(3)
                     }
                     .fixedSize(horizontal: false, vertical: true)
                 }
-                if let message = model.recoveryRequestText {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(L("ask.recovery.message"))
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                        Text(message)
-                            .font(.system(size: 13))
-                            .foregroundStyle(StudioTheme.textPrimary)
-                            .lineLimit(3)
-                            .textSelection(.enabled)
-                            .help(message)
-                    }
-                    .padding(.leading, 12)
-                    .overlay(alignment: .leading) { Rectangle().fill(AskTheme.border).frame(width: 2) }
-                    .padding(.leading, 52)
-                }
-                if !timeline.items.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(Array(timeline.items.enumerated()), id: \.offset) { _, item in
-                            AskRecoveryTimelineRow(item: item, unknown: presentation.unknown)
-                        }
-                    }
-                }
                 if !options.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(L("ask.recovery.inspect"))
-                            .font(.system(size: 11.5, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textTertiary)
                         ForEach(options, id: \.self) { option in
-                            AskRecoveryOptionCard(action: option, bodyKey: option.optionBodyKey(active: presentation.active),
+                            AskRecoveryOptionCard(action: option,
                                                   recommended: option == options.first,
                                                   selected: option == selected) { choice = option }
                         }
@@ -191,14 +164,14 @@ struct AskRecoveryInspector: View {
                 }
             }
             .padding(.horizontal, 22)
-            .padding(.top, 22)
-            .padding(.bottom, 16)
+            .padding(.top, 20)
+            .padding(.bottom, 14)
             Rectangle().fill(AskTheme.separator).frame(height: 1)
             footer
         }
         .frame(minWidth: 320, idealWidth: 480, maxWidth: 480, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
-        .background(AskTheme.popoverSurface.ignoresSafeArea())
+        .background(AskTheme.popoverSurface)
         .transaction {
             if reduceMotion {
                 $0.animation = nil; $0.disablesAnimations = true
@@ -269,7 +242,6 @@ private struct AskRecoveryTimelineRow: View {
 /// One radio choice: what happens, and what it costs.
 private struct AskRecoveryOptionCard: View {
     let action: AskRecoveryAction
-    let bodyKey: String
     let recommended: Bool
     let selected: Bool
     let choose: () -> Void
@@ -283,29 +255,22 @@ private struct AskRecoveryOptionCard: View {
                     .strokeBorder(selected ? tint : AskTheme.border, lineWidth: selected ? 5 : 1.5)
                     .frame(width: 16, height: 16)
                     .padding(.top, 1)
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 8) {
-                        Text(L(action.optionTitleKey))
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textPrimary)
-                        if recommended {
-                            Text(L("ask.recovery.recommended"))
-                                .font(.system(size: 10.5, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 6).padding(.vertical, 1)
-                                .background(AskTheme.accent, in: RoundedRectangle(cornerRadius: 5))
-                        }
+                HStack(spacing: 8) {
+                    Text(L(action.optionTitleKey))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                    if recommended {
+                        Text(L("ask.recovery.recommended"))
+                            .font(.system(size: 10.5, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6).padding(.vertical, 1)
+                            .background(AskTheme.accent, in: RoundedRectangle(cornerRadius: 5))
                     }
-                    Text(L(bodyKey))
-                        .font(.system(size: 12))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                        .lineSpacing(2)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.vertical, 10)
             .background(selected ? (action.isDestructive ? AskTheme.dangerSoft : AskTheme.accentSoft) : Color.clear,
                         in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)

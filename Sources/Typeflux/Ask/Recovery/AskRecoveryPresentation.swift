@@ -7,26 +7,36 @@ struct AskRecoveryPresentation: Equatable {
     let active: Bool
     let savedReceipts: Int
     let canContinue: Bool
+    let unknownTool: String?
 
     init(run: AskRun?, entries: [AskExecutionEntry], deviceId: String, local _: Bool) {
-        // A completed run is the authoritative result. An older local claim can
-        // outlive its acknowledgement, but it cannot make the finished answer
-        // uncertain or require the user to resume the task.
-        if run?.status == "completed" {
+        // A terminal run with no unacknowledged execution has no outstanding
+        // effect to inspect. Its own failure (for example the step limit) has a
+        // separate, more accurate status. Keep an actual missing receipt visible.
+        let currentEntries = entries.filter {
+            !$0.readUnavailable && ($0.audit == nil || $0.audit?.identity.runId == run?.id)
+        }
+        if let run, !run.isActive,
+           (run.status == "completed" ||
+            (run.recovery?.blocksExecution != true && currentEntries.allSatisfy {
+                $0.audit != nil && $0.receipt != nil && $0.acknowledged
+            })) {
             unknown = false
             otherDevice = false
             active = false
             savedReceipts = 0
             canContinue = false
+            unknownTool = nil
             return
         }
         // Keep historical evidence in the journal without treating an earlier
         // task's outcome as a problem with the user's current request.
-        let currentEntries = entries.filter { $0.audit == nil || $0.audit?.identity.runId == run?.id }
         // A credit pause stops before the model call, so it has its own card and
         // never reads as "we couldn't confirm the result".
         unknown = run?.isPausedForCredits != true
             && (run?.needsRecoveryInspection == true || currentEntries.contains { $0.needsInspection(run: run) })
+        unknownTool = currentEntries.first(where: { $0.needsInspection(run: run) })?.audit?.toolName
+            ?? run?.pending.first?.function.name
         otherDevice = run.map { $0.deviceId != deviceId } ?? false
         active = run?.isActive == true
         savedReceipts = currentEntries.filter { !$0.deleted && $0.receipt != nil && !$0.acknowledged }.count
@@ -64,6 +74,18 @@ struct AskRecoveryPresentation: Equatable {
             return "ask.recovery.savedBody"
         }
         return active ? "ask.recovery.activeBody" : "ask.recovery.finishedBody"
+    }
+
+    var bodyText: String {
+        guard unknown else { return L(bodyKey) }
+        let toolKey: String = switch unknownTool {
+        case "browser": "ask.recovery.tool.browser"
+        case "computer": "ask.recovery.tool.computer"
+        case "run_command": "ask.recovery.tool.command"
+        case "model": "ask.recovery.tool.model"
+        default: "ask.recovery.tool.other"
+        }
+        return L("ask.recovery.unknownToolBody", L(toolKey))
     }
 }
 

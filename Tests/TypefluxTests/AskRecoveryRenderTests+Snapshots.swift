@@ -19,14 +19,9 @@ extension AskRecoveryRenderTests {
             .map(String.init).joined()
     }
 
-    func expectOneReturnButton(_ text: String, active: Bool, language: AppLanguage = .english) {
+    func expectOneReturnButton(_ text: String, active _: Bool, language: AppLanguage = .english) {
         let label = readable(localized("ask.recovery.close", language: language))
-        let guidance = ["ask.recovery.unknownBody", "ask.recovery.checkBody",
-                        active ? "ask.recovery.endBody" : "ask.recovery.followUpBody"]
-        let mentionsInGuidance = guidance.reduce(0) { count, key in
-            count + readable(localized(key, language: language)).components(separatedBy: label).count - 1
-        }
-        #expect(readable(text).components(separatedBy: label).count - 1 == mentionsInGuidance + 1)
+        #expect(readable(text).components(separatedBy: label).count - 1 == 1)
     }
 
     func localized(_ key: String, language: AppLanguage = .english) -> String {

@@ -2433,6 +2433,12 @@
 /* Execution recovery */
 "ask.recovery.unknown" = "이번 작업의 결과를 확인할 수 없습니다";
 "ask.recovery.unknownBody" = "Typeflux가 이번 작업의 완료 여부를 확인할 수 없습니다. 두 번 실행하지 않도록 같은 작업을 자동으로 반복하지 않습니다.";
+"ask.recovery.unknownToolBody" = "%@의 결과를 확인할 수 없습니다. 계속하기 전에 실제 상태를 확인하세요.";
+"ask.recovery.tool.browser" = "브라우저 작업";
+"ask.recovery.tool.computer" = "화면 작업";
+"ask.recovery.tool.command" = "명령";
+"ask.recovery.tool.model" = "AI 응답";
+"ask.recovery.tool.other" = "이 단계";
 "ask.recovery.checkBody" = "메시지 전송이나 파일 수정 등이 포함된 작업이라면 해당 앱에서 이미 완료되었는지 먼저 확인하세요.";
 "ask.recovery.endBody" = "중지하면 Typeflux는 이번 작업을 더 이상 진행하지 않습니다. 이미 완료된 작업은 되돌리지 않습니다. 이후 대화로 돌아가 질문을 이어갈 수 있습니다.";
 "ask.recovery.binding" = "이 메시지를 보낼 때 사용한 기기에서 당시 계정으로 로그인한 뒤 이 대화를 여세요.";
@@ -6037,6 +6043,7 @@
 "ask.tool.exitFailed" = "실패(종료 코드 %d)";
 "ask.stepLimit.title" = "%d단계를 실행했습니다. 계속할까요?";
 "ask.stepLimit.hint" = "계속하면 남은 단계를 이어서 진행합니다";
+"ask.stepLimit.planDone" = "계획한 단계는 끝났지만 최종 답변은 아직 없습니다";
 "ask.stepLimit.remaining" = "%d개 남음: %@";
 "ask.stepLimit.end" = "끝내기";
 "ask.stepLimit.continue" = "계속";

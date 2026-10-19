@@ -341,6 +341,20 @@ struct AskConversationTests {
         #expect(try await fixture.cache.draft(key: "launcher", owner: AskRoutedAPI.localOwner) != nil)
     }
 
+    @Test func successfulDraftSaveDoesNotHideUnavailableExecutionJournal() async throws {
+        let fixture = try AskTestFixture(localOnly: true)
+        defer { fixture.model.resetSession() }
+        let value = AskRecoveryFixture.conversation()
+        await fixture.api.seed(value)
+        await fixture.model.select(value.id)
+        fixture.model.recoveryEntries[value.id] = [.init(id: "unavailable")]
+        fixture.model.error = L("ask.cache.failed")
+        fixture.model.draft.text = "Keep this question"
+        fixture.model.persistDrafts()
+        try await Task.sleep(for: .milliseconds(450))
+        #expect(fixture.model.error == L("ask.cache.failed"))
+    }
+
     @Test func pullRefreshKeepsSelectionDraftAndReadingPositionOnFailure() async throws {
         let f = try AskTestFixture()
         await f.api.seed(.init(id: "a", title: "A", revision: 1, updatedAt: Date(), messages: []))

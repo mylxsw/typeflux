@@ -250,7 +250,8 @@ struct AskChatRedesignVisualTests {
         let presentation = chat.model.recoveryPresentation
         let recovery = try await render(AskRecoveryCard(presentation: presentation).padding(20),
                                         name: "recovery-card-light", dark: false, size: .init(width: 760, height: 170))
-        for expected in [chinese(presentation.titleKey), chinese("ask.recovery.checkAndContinue"),
+        #expect(readable(recovery).contains(readable("还不能确认")))
+        for expected in [chinese("ask.recovery.checkAndContinue"),
                          chinese("ask.recovery.end"), chinese("ask.recovery.details")] {
             #expect(readable(recovery).contains(readable(expected)), "Missing \(expected) on the recovery card")
         }
@@ -267,10 +268,10 @@ struct AskChatRedesignVisualTests {
                                         name: "inspector-unknown-\(dark ? "dark" : "light")",
                                         dark: dark, size: .init(width: 560, height: 700))
             let flat = readable(text)
-            for expected in [chinese("ask.recovery.inspect"), chinese("ask.recovery.option.check"),
+            for expected in [chinese("ask.recovery.option.check"),
                              chinese("ask.recovery.option.self"), chinese("ask.recovery.option.stop"),
                              chinese("ask.recovery.recommended"), chinese("ask.recovery.close"),
-                             chinese("ask.recovery.checkAndContinue"), chinese("ask.recovery.timeline.done", 6)] {
+                             chinese("ask.recovery.checkAndContinue")] {
                 #expect(flat.contains(readable(expected)), "Missing \(expected)")
             }
         }

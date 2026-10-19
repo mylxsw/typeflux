@@ -2433,6 +2433,12 @@
 /* Execution recovery */
 "ask.recovery.unknown" = "今回の処理結果を確認できませんでした";
 "ask.recovery.unknownBody" = "Typeflux は今回の処理が完了したか確認できませんでした。二重に実行しないよう、自動で同じ操作を繰り返すことはありません。";
+"ask.recovery.unknownToolBody" = "%@の結果を確認できません。続ける前に実際の状態を確認してください。";
+"ask.recovery.tool.browser" = "ブラウザー操作";
+"ask.recovery.tool.computer" = "画面操作";
+"ask.recovery.tool.command" = "コマンド";
+"ask.recovery.tool.model" = "AI の応答";
+"ask.recovery.tool.other" = "この手順";
 "ask.recovery.checkBody" = "メッセージの送信やファイルの変更などを行った場合は、該当するアプリで完了しているか確認してください。";
 "ask.recovery.endBody" = "停止すると、Typeflux はこのタスクの続きを行いません。完了済みの操作は取り消されません。その後は会話に戻って質問を続けられます。";
 "ask.recovery.binding" = "このメッセージを送信したデバイスに戻り、そのときのアカウントでログインして、この会話を開いてください。";
@@ -6037,6 +6043,7 @@
 "ask.tool.exitFailed" = "失敗（終了コード %d）";
 "ask.stepLimit.title" = "%d ステップ実行しました。続けますか？";
 "ask.stepLimit.hint" = "続けると残りのステップを進めます";
+"ask.stepLimit.planDone" = "予定した手順は完了しましたが、最終回答はまだありません";
 "ask.stepLimit.remaining" = "残り %d 件：%@";
 "ask.stepLimit.end" = "終了";
 "ask.stepLimit.continue" = "続ける";

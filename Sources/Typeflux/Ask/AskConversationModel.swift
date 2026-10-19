@@ -751,7 +751,8 @@ final class AskConversationModel: ObservableObject {
                 if let id, self.owner == owner, !deletedConversationIDs.contains(id) {
                     try await cache.saveDraft(followUp, key: id, owner: followUpOwner)
                 }
-                if self.error == L("ask.cache.failed") { self.error = nil }
+                if self.error == L("ask.cache.failed"),
+                   !self.selectedRecoveryEntries.contains(where: \.readUnavailable) { self.error = nil }
             } catch is CancellationError {} catch { self.error = L("ask.cache.failed") }
         }
     }
@@ -933,7 +934,9 @@ final class AskConversationModel: ObservableObject {
             selected = snapshots[id] ?? latest; isLoadingSelection = false
             await refreshRecovery(selected ?? latest, route: current)
             guard generation == selectionGeneration, owner == current.account else { return }
-            switchToVisionModelIfNeeded(launcher: false); normalizeScreenshotChoices(); error = operationErrors[id]
+            switchToVisionModelIfNeeded(launcher: false); normalizeScreenshotChoices()
+            error = selectedRecoveryEntries.contains(where: \.readUnavailable)
+                ? L("ask.cache.failed") : operationErrors[id]
             queueDidSettle(id)
             // Observe active runs without resuming desktop tools or inference.
             if latest.run?.isActive == true, !busyIds.contains(id) {

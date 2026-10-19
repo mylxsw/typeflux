@@ -58,6 +58,23 @@ struct AskConversationView: View {
                 .onAppear { windowSize = geometry.size }
                 .onChange(of: geometry.size) { windowSize = $0 }
         }
+        .overlay {
+            if model.inspectingRecovery && model.hasRecoveryNotice {
+                ZStack {
+                    Color.black.opacity(0.48)
+                        .ignoresSafeArea()
+                        .accessibilityHidden(true)
+                    AskRecoveryInspector(model: model)
+                        .frame(maxWidth: 480)
+                        .background(AskTheme.popoverSurface,
+                                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .shadow(color: .black.opacity(0.28), radius: 24, y: 12)
+                        .padding(20)
+                        .accessibilityAddTraits(.isModal)
+                }
+            }
+        }
         // Measure the viewport, rather than the intrinsic width of its children.
         .ignoresSafeArea(.container, edges: .top)
         .onChange(of: model.selectedId) { _ in
@@ -194,7 +211,7 @@ struct AskConversationView: View {
     }
 
     private var hasDrawer: Bool { showsSidebarDrawer || layout.usageOverlay }
-    private var hasModal: Bool { hasDrawer || isSearching }
+    private var hasModal: Bool { hasDrawer || isSearching || model.inspectingRecovery }
 
     private var workspace: some View {
         ZStack(alignment: .topLeading) {
@@ -942,14 +959,6 @@ struct AskConversationView: View {
                 inspect: { model.inspectingRecovery = true },
                 perform: { model.performRecovery($0) }
             )
-            .sheet(isPresented: $model.inspectingRecovery) {
-                if #available(macOS 13.3, *) {
-                    AskRecoveryInspector(model: model)
-                        .presentationBackground(AskTheme.popoverSurface)
-                } else {
-                    AskRecoveryInspector(model: model)
-                }
-            }
         }
         if let change = model.visibleVisionSwitch {
             let library = model.modelLibrary
@@ -963,13 +972,15 @@ struct AskConversationView: View {
            !model.submissionIssues.values.contains(where: { $0.text == error }),
            !model.hasRecoveryNotice || error != L("ask.recovery.unknownBody") {
             let storageFailure = error == L("ask.cache.failed")
+            let recoveryReadFailure = model.selectedRecoveryEntries.contains(where: \.readUnavailable)
             AskBanner(
                 text: error,
                 tone: .warning,
-                actionTitle: storageFailure ? L("feedback.direct.title")
+                actionTitle: recoveryReadFailure ? L("ask.retry") : storageFailure ? L("feedback.direct.title")
                     : (model.selectionLoadFailed || !model.hasRecoveryNotice ? L("ask.retry") : nil),
                 action: {
-                    if storageFailure { model.onOpenFeedback?() }
+                    if recoveryReadFailure { model.retrySelection() }
+                    else if storageFailure { model.onOpenFeedback?() }
                     else if model.selectionLoadFailed { model.retrySelection() }
                     else { model.resume() }
                 },

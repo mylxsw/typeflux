@@ -3,10 +3,10 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask recovery sheet surface", .exclusiveUIState)
+@Suite("Ask recovery overlay surface", .exclusiveUIState)
 @MainActor
 struct AskRecoverySheetVisualTests {
-    @Test func `native sheet has no top or bottom background bands`() async throws {
+    @Test func `recovery uses one in-window panel without native sheet bands`() async throws {
         let previousLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
@@ -32,31 +32,20 @@ struct AskRecoverySheetVisualTests {
         window.makeKeyAndOrderFront(nil)
         defer { window.close() }
 
-        var sheet: NSWindow?
-        for _ in 0 ..< 50 {
-            sheet = window.attachedSheet
-            if sheet != nil { break }
-            try await Task.sleep(for: .milliseconds(20))
-        }
-        let content = try #require(sheet?.contentView)
-        content.layoutSubtreeIfNeeded()
-        let image = try #require(content.bitmapImageRepForCachingDisplay(in: content.bounds))
-        content.cacheDisplay(in: content.bounds, to: image)
+        try await Task.sleep(for: .milliseconds(150))
+        #expect(window.attachedSheet == nil)
+        hosting.layoutSubtreeIfNeeded()
+        let image = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
+        hosting.cacheDisplay(in: hosting.bounds, to: image)
         if let path = ProcessInfo.processInfo.environment["TYPEFLUX_RECOVERY_SHEET_IMAGE"],
            let data = image.representation(using: .png, properties: [:]) {
             try data.write(to: URL(fileURLWithPath: path))
         }
-        let x = 130
-        let top = try #require(image.colorAt(x: x, y: 12))
-        let topInside = try #require(image.colorAt(x: x, y: 65))
-        let bottom = try #require(image.colorAt(x: x, y: image.pixelsHigh - 13))
-        let bottomInside = try #require(image.colorAt(x: x, y: image.pixelsHigh - 66))
-        for (edge, inside) in [(top, topInside), (bottom, bottomInside)] {
-            let edge = try #require(edge.usingColorSpace(.deviceRGB))
-            let inside = try #require(inside.usingColorSpace(.deviceRGB))
-            #expect(abs(edge.redComponent - inside.redComponent) < 0.04)
-            #expect(abs(edge.greenComponent - inside.greenComponent) < 0.04)
-            #expect(abs(edge.blueComponent - inside.blueComponent) < 0.04)
-        }
+        let x = image.pixelsWide / 2 + 460
+        let top = try #require(image.colorAt(x: x, y: image.pixelsHigh / 2 - 105)?.usingColorSpace(.deviceRGB))
+        let bottom = try #require(image.colorAt(x: x, y: image.pixelsHigh / 2 + 105)?.usingColorSpace(.deviceRGB))
+        #expect(abs(top.redComponent - bottom.redComponent) < 0.04)
+        #expect(abs(top.greenComponent - bottom.greenComponent) < 0.04)
+        #expect(abs(top.blueComponent - bottom.blueComponent) < 0.04)
     }
 }

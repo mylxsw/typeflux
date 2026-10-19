@@ -85,6 +85,44 @@ struct AskRecoveryNoticePresentationTests {
                                     recovery: presentation) == .completed(steps: 1))
     }
 
+    @Test func `step limit with delivered receipts shows failure instead of unknown outcome`() {
+        var value = AskRecoveryFixture.conversation()
+        value.run?.status = "failed"
+        value.run?.steps = 24
+        value.run?.error = "Step limit reached"
+        value.run?.pending = []
+        value.run?.plan = [
+            .init(step: "Build", status: "completed"),
+            .init(step: "Open", status: "completed"),
+            .init(step: "Check", status: "completed")
+        ]
+        var audit = AskRecoveryFixture.audit(value)
+        audit.record(.acknowledged)
+        let receipt = AskExecutionReceipt.tool(.init(
+            runId: value.run!.id, deviceId: "device", toolCallId: "call",
+            content: "User denied this tool call", isError: true,
+            harness: .init(version: 1, outcome: .init(status: "denied"))
+        ))
+        let entry = AskExecutionEntry(id: audit.identity.key, audit: audit, receipt: receipt)
+        let presentation = AskRecoveryPresentation(run: value.run, entries: [entry], deviceId: "device", local: true)
+        #expect(!presentation.isVisible && !presentation.unknown)
+        #expect(AskRunPhase.resolve(run: value.run, busy: false, pendingApproval: false,
+                                    recovery: presentation) == .failed)
+    }
+
+    @Test func `unavailable journal shows storage failure without claiming an unknown operation`() {
+        var value = AskRecoveryFixture.conversation()
+        value.run?.status = "failed"
+        value.run?.pending = []
+        let unavailable = AskExecutionEntry(id: "unavailable")
+        #expect(unavailable.readUnavailable)
+        let presentation = AskRecoveryPresentation(run: value.run, entries: [unavailable],
+                                                   deviceId: "device", local: true)
+        #expect(!presentation.isVisible && !presentation.unknown)
+        #expect(AskRunPhase.resolve(run: value.run, busy: false, pendingApproval: false,
+                                    recovery: presentation) == .failed)
+    }
+
     @Test func `unknown current outcome and unreadable legacy record still need attention`() {
         var value = AskRecoveryFixture.conversation()
         value.run?.status = "cancelled"

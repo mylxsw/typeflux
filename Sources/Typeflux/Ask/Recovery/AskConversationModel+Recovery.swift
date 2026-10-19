@@ -65,6 +65,7 @@ extension AskConversationModel {
             }
             guard generation == recoveryGeneration, owner == route.account,
                   session()?.owner == route.account else { return }
+            let wasUnavailable = (recoveryEntries[value.id] ?? []).contains(where: \.readUnavailable)
             recoveryEntries[value.id] = entries.map { entry in
                 guard let identity = entry.audit?.identity else { return entry }
                 // Local history is shared on this Mac, execution authority is not.
@@ -73,6 +74,7 @@ extension AskConversationModel {
                 }
                 return entry
             }
+            if wasUnavailable, error == L("ask.cache.failed") { error = nil }
         } catch {
             guard generation == recoveryGeneration, owner == route.account else { return }
             // A failed read is not an empty journal and cannot authorize dispatch.
