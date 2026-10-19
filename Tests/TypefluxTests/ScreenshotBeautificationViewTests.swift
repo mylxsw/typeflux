@@ -9,6 +9,13 @@ final class ScreenshotBeautificationViewTests: XCTestCase {
         ScreenCaptureTestSupport.image(width: width, height: height, gray: 0.1)
     }
 
+    func testPanelFitsCommonScreenSizes() {
+        XCTAssertEqual(ScreenshotBeautificationView.size(for: CGSize(width: 1512, height: 982)),
+                       CGSize(width: 960, height: 720))
+        XCTAssertEqual(ScreenshotBeautificationView.size(for: CGSize(width: 1024, height: 768)),
+                       CGSize(width: 960, height: 696))
+    }
+
     private func perform(_ action: String, on object: NSObject) throws {
         let selector = NSSelectorFromString(action)
         XCTAssertTrue(object.responds(to: selector))

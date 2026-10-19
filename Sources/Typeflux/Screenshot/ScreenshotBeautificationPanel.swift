@@ -13,7 +13,7 @@ final class ScreenshotBeautificationPreview: ObservableObject {
 
     init(source: CGImage, scale: CGFloat, settings: ScreenshotBeautification) {
         // Preview work stays bounded even for scrolling captures. Keep its points-to-pixels ratio.
-        let ratio = min(1, 1000 / CGFloat(max(source.width, source.height)))
+        let ratio = min(1, 1600 / CGFloat(max(source.width, source.height)))
         if ratio < 1,
            let context = CGContext(data: nil, width: max(1, Int(CGFloat(source.width) * ratio)),
                                    height: max(1, Int(CGFloat(source.height) * ratio)), bitsPerComponent: 8,
@@ -58,7 +58,10 @@ final class ScreenshotBeautificationPanel: NSObject, NSWindowDelegate {
         var draft = settings
         draft.isEnabled = true
         let model = ScreenshotBeautificationPreview(source: source, scale: scale, settings: draft)
-        let panel = NSPanel(contentRect: CGRect(origin: .zero, size: ScreenshotBeautificationView.size),
+        let availableSize = parent.screen?.visibleFrame.size ?? NSScreen.main?.visibleFrame.size
+            ?? ScreenshotBeautificationView.size
+        let panelSize = ScreenshotBeautificationView.size(for: availableSize)
+        let panel = NSPanel(contentRect: CGRect(origin: .zero, size: panelSize),
                             styleMask: [.titled, .closable, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.title = L("screenshot.beautify.title")
         panel.titleVisibility = .hidden
@@ -68,7 +71,7 @@ final class ScreenshotBeautificationPanel: NSObject, NSWindowDelegate {
         panel.level = parent.level
         panel.isReleasedWhenClosed = false
         panel.delegate = self
-        panel.contentView = NSHostingView(rootView: ScreenshotBeautificationView(model: model,
+        panel.contentView = NSHostingView(rootView: ScreenshotBeautificationView(model: model, panelSize: panelSize,
             cancel: { [weak self] in self?.dismiss() }, apply: { [weak self] in
                 apply(model.settings.normalized)
                 self?.dismiss()
@@ -92,8 +95,13 @@ final class ScreenshotBeautificationPanel: NSObject, NSWindowDelegate {
 }
 
 struct ScreenshotBeautificationView: View {
-    static let size = CGSize(width: 820, height: 620)
+    static let size = CGSize(width: 960, height: 720)
+    static func size(for availableSize: CGSize) -> CGSize {
+        CGSize(width: min(size.width, max(760, availableSize.width - 48)),
+               height: min(size.height, max(560, availableSize.height - 72)))
+    }
     @ObservedObject var model: ScreenshotBeautificationPreview
+    var panelSize = Self.size
     let cancel: () -> Void
     let apply: () -> Void
 
@@ -101,9 +109,9 @@ struct ScreenshotBeautificationView: View {
         VStack(spacing: 0) {
             header
             preview
-                .padding(.horizontal, 32)
-                .padding(.top, 20)
-                .padding(.bottom, 28)
+                .padding(.horizontal, 24)
+                .padding(.top, 12)
+                .padding(.bottom, 16)
             VStack(spacing: 0) {
                 HStack(spacing: 24) {
                     palette
@@ -126,10 +134,10 @@ struct ScreenshotBeautificationView: View {
             .background(Color(white: 0.13), in: RoundedRectangle(cornerRadius: 16))
             .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.09)))
             .shadow(color: .black.opacity(0.2), radius: 16, y: 6)
-            .padding(.horizontal, 32)
-            .padding(.bottom, 24)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 16)
         }
-        .frame(width: Self.size.width, height: Self.size.height)
+        .frame(width: panelSize.width, height: panelSize.height)
         .background(Color(white: 0.075))
         .foregroundStyle(.white.opacity(0.9))
         .environment(\.colorScheme, .dark)
@@ -147,7 +155,7 @@ struct ScreenshotBeautificationView: View {
                 .font(.system(size: 11)).foregroundStyle(.white.opacity(0.6))
                 .accessibilityLabel(L("screenshot.beautify.enabled"))
         }
-        .padding(.horizontal, 32)
+        .padding(.horizontal, 24)
         .padding(.top, 10)
         .padding(.bottom, 6)
     }
@@ -190,21 +198,13 @@ struct ScreenshotBeautificationView: View {
                     }
                 }
             }
-            HStack(spacing: 10) {
-                ForEach([ScreenshotBeautification.Background.sky, .mint, .sunset, .lavender], id: \.self) {
-                    swatchButton($0, size: 42, radius: 9)
-                }
-            }
-            HStack(spacing: 10) {
-                ForEach([ScreenshotBeautification.Background.ocean, .peach, .graphite], id: \.self) {
-                    swatchButton($0, size: 42, radius: 9)
-                }
-            }
             let wallpapers = ScreenshotBeautification.Background.availableCases.filter { $0.wallpaperURL != nil }
-            if !wallpapers.isEmpty {
-                HStack(spacing: 10) {
-                    ForEach(wallpapers, id: \.self) { swatchButton($0, size: 42, radius: 9) }
-                }
+            let colors: [ScreenshotBeautification.Background] = [
+                .sky, .mint, .sunset, .lavender, .ocean, .peach, .graphite
+            ] + wallpapers
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(38), spacing: 7), count: 5),
+                      alignment: .leading, spacing: 7) {
+                ForEach(colors, id: \.self) { swatchButton($0, size: 32, radius: 7) }
             }
         }
     }

@@ -149,12 +149,12 @@ final class ScreenshotBeautificationTests: XCTestCase {
         let preview = ScreenshotBeautificationPreview(source: source(width: 200, height: 4000), scale: 2,
                                                       settings: settings)
         let image = try XCTUnwrap(preview.image)
-        XCTAssertEqual(image.width, 60)
-        XCTAssertEqual(image.height, 1010)
+        XCTAssertEqual(image.width, 96)
+        XCTAssertEqual(image.height, 1616)
         preview.settings.padding = 0
-        XCTAssertEqual(preview.image?.width, 50)
+        XCTAssertEqual(preview.image?.width, 80)
         preview.settings.isEnabled = false
-        XCTAssertEqual(preview.image?.height, 1000)
+        XCTAssertEqual(preview.image?.height, 1600)
         XCTAssertFalse(preview.failed)
         let invalid = ScreenshotBeautificationPreview(source: source(), scale: 0, settings: settings)
         XCTAssertTrue(invalid.failed)
