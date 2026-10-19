@@ -4639,7 +4639,6 @@
 "hotkeys.keyword.status.keywordDisabled" = "關鍵詞已停用";
 "hotkeys.keyword.add" = "新增";
 "hotkeys.keyword.delete" = "刪除";
-"hotkeys.keyword.empty" = "選取文字，按快速鍵即可執行關鍵詞。";
 "hotkeys.keyword.sheet.addTitle" = "新增快速鍵";
 "hotkeys.keyword.sheet.editTitle" = "編輯快速鍵";
 "hotkeys.keyword.sheet.keyword" = "關鍵詞";

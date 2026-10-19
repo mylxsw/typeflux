@@ -4653,7 +4653,6 @@
 "hotkeys.keyword.status.keywordDisabled" = "Keyword turned off";
 "hotkeys.keyword.add" = "Add";
 "hotkeys.keyword.delete" = "Delete";
-"hotkeys.keyword.empty" = "Select text and press a shortcut to run a keyword.";
 "hotkeys.keyword.sheet.addTitle" = "Add shortcut";
 "hotkeys.keyword.sheet.editTitle" = "Edit shortcut";
 "hotkeys.keyword.sheet.keyword" = "Keyword";

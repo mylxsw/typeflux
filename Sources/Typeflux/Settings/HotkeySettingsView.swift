@@ -137,25 +137,21 @@ struct HotkeySettingsView: View {
     }
 
     private var keywordEmptyState: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(L("hotkeys.keyword.empty")).font(.system(size: 13)).foregroundStyle(TFColors.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 8)], spacing: 8) {
-                ForEach(HotkeySettingsPresentation.templates(in: model.options)) { option in
-                    Button { add(option) } label: {
-                        HStack(spacing: 8) {
-                            KeywordHotkeyBadge(keyword: option.keyword.keyword)
-                            Text(option.name).lineLimit(1).layoutPriority(1)
-                            Spacer(minLength: 0)
-                            Image(systemName: "plus").foregroundStyle(TFColors.textSecondary)
-                        }
-                        .frame(maxWidth: .infinity)
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 8)], spacing: 8) {
+            ForEach(HotkeySettingsPresentation.templates(in: model.options)) { option in
+                Button { add(option) } label: {
+                    HStack(spacing: 8) {
+                        KeywordHotkeyBadge(keyword: option.keyword.keyword)
+                        Text(option.name).lineLimit(1).layoutPriority(1)
+                        Spacer(minLength: 0)
+                        Image(systemName: "plus").foregroundStyle(TFColors.textSecondary)
                     }
-                    .buttonStyle(TFButtonStyle(kind: .secondary))
-                    .help(L("hotkeys.recordAccessibility", option.name))
-                    .accessibilityLabel(L("hotkeys.recordAccessibility", option.name))
-                    .accessibilityIdentifier("hotkeys.keyword.template." + option.keyword.keyword)
+                    .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(TFButtonStyle(kind: .secondary))
+                .help(L("hotkeys.recordAccessibility", option.name))
+                .accessibilityLabel(L("hotkeys.recordAccessibility", option.name))
+                .accessibilityIdentifier("hotkeys.keyword.template." + option.keyword.keyword)
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 14)

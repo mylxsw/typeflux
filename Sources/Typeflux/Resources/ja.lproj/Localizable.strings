@@ -4632,7 +4632,6 @@
 "hotkeys.keyword.status.keywordDisabled" = "キーワードがオフです";
 "hotkeys.keyword.add" = "追加";
 "hotkeys.keyword.delete" = "削除";
-"hotkeys.keyword.empty" = "テキストを選択し、ショートカットでキーワードを実行。";
 "hotkeys.keyword.sheet.addTitle" = "ショートカットを追加";
 "hotkeys.keyword.sheet.editTitle" = "ショートカットを編集";
 "hotkeys.keyword.sheet.keyword" = "キーワード";

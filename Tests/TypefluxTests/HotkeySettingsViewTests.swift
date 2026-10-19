@@ -146,7 +146,9 @@ struct HotkeySettingsViewTests {
                              name: "hotkeys-empty-\(light ? "light" : "dark")", light: light) { window in
                 #expect(SettingsBehaviorTestSupport.contains(AppHotkeyAction.openChat.title, in: window))
                 #expect(SettingsBehaviorTestSupport.contains(BuiltInHotkey.activation.title, in: window))
-                #expect(SettingsBehaviorTestSupport.contains(L("hotkeys.keyword.empty"), in: window))
+                #expect(SettingsBehaviorTestSupport.elements(in: window).contains {
+                    ($0.value("accessibilityIdentifier") as? String)?.hasPrefix("hotkeys.keyword.template.") == true
+                })
             }
         }
 
@@ -167,7 +169,9 @@ struct HotkeySettingsViewTests {
             try await render(StudioView(viewModel: model, settingsPane: .hotkeys), size: NSSize(width: 1100, height: 1000),
                              name: "hotkeys-page-\(light ? "light" : "dark")", light: light) { window in
                 #expect(SettingsBehaviorTestSupport.contains(L("hotkeys.keyword.status.missing"), in: window))
-                #expect(!SettingsBehaviorTestSupport.contains(L("hotkeys.keyword.empty"), in: window))
+                #expect(!SettingsBehaviorTestSupport.elements(in: window).contains {
+                    ($0.value("accessibilityIdentifier") as? String)?.hasPrefix("hotkeys.keyword.template.") == true
+                })
             }
         }
     }

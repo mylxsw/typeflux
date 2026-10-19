@@ -4653,7 +4653,6 @@
 "hotkeys.keyword.status.keywordDisabled" = "关键词已停用";
 "hotkeys.keyword.add" = "添加";
 "hotkeys.keyword.delete" = "删除";
-"hotkeys.keyword.empty" = "选中文字，按快捷键即可运行关键词。";
 "hotkeys.keyword.sheet.addTitle" = "添加快捷键";
 "hotkeys.keyword.sheet.editTitle" = "编辑快捷键";
 "hotkeys.keyword.sheet.keyword" = "关键词";

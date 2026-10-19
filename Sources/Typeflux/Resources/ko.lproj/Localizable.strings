@@ -4632,7 +4632,6 @@
 "hotkeys.keyword.status.keywordDisabled" = "키워드 꺼짐";
 "hotkeys.keyword.add" = "추가";
 "hotkeys.keyword.delete" = "삭제";
-"hotkeys.keyword.empty" = "텍스트를 선택하고 단축키로 키워드를 실행하세요.";
 "hotkeys.keyword.sheet.addTitle" = "단축키 추가";
 "hotkeys.keyword.sheet.editTitle" = "단축키 편집";
 "hotkeys.keyword.sheet.keyword" = "키워드";
