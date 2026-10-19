@@ -2436,8 +2436,8 @@
 
 /* Execution recovery */
 "ask.recovery.unknown" = "今回の処理結果を確認できませんでした";
-"ask.recovery.unknownBody" = "Typeflux は今回の処理が完了したか確認できませんでした。二重に実行しないよう、自動で同じ操作を繰り返すことはありません。";
-"ask.recovery.unknownToolBody" = "%@の結果を確認できません。続ける前に実際の状態を確認してください。";
+"ask.recovery.unknownBody" = "直前の操作結果は不明です。Typeflux が重複実行せずに確認します。";
+"ask.recovery.unknownToolBody" = "%@の結果は不明です。Typeflux が先に確認します。";
 "ask.recovery.tool.browser" = "ブラウザー操作";
 "ask.recovery.tool.computer" = "画面操作";
 "ask.recovery.tool.command" = "コマンド";
@@ -2461,12 +2461,14 @@
 "ask.recovery.followUpBody" = "すでに完了していれば、やり直す必要はありません。まだ助けが必要な場合は、会話に戻り、何が未完了なのか Typeflux に伝えてください。";
 "ask.recovery.message" = "あなたのメッセージ";
 "ask.recovery.stopped" = "この先の処理を停止しました";
-"ask.recovery.checkAndContinue" = "確認して続行";
+"ask.recovery.checkAndContinue" = "再確認";
 "ask.recovery.details" = "詳細";
 "ask.recovery.recommended" = "おすすめ";
-"ask.recovery.checkPrompt" = "前のステップの結果は確認できていません。まず実際にどこまで完了したかを確認し（関連ファイルや対象アプリの状態など）、完了済みの操作は繰り返さずに不足分だけを行ってから、タスクを続けてください。";
-"ask.recovery.option.check" = "確認してから続行";
-"ask.recovery.option.checkBody" = "Typeflux がまずこのステップの実際の完了状況を確認し、不足分だけを行います。完了済みの操作は繰り返しません。";
+"ask.recovery.checkPrompt" = "前の操作結果を読み取り専用で確認してください。保存済みの記録とアクセス可能なファイルやアプリの状態を調べ、確認できた事実と不足する証拠を報告してください。操作の再実行、変更、作業の続行はしないでください。判断できない場合は、必要な具体的情報を示してください。";
+"ask.recovery.option.check" = "Typeflux に確認させる";
+"ask.recovery.option.checkBody" = "操作を繰り返さずに現在の状態を読み取り、不足する証拠を説明します。";
+"ask.recovery.readOnly" = "確認中は読み取りのみ可能です。この操作は実行されませんでした。";
+"ask.recovery.readOnlyUnavailable" = "安全な確認を開始できませんでした。後でもう一度お試しください。";
 "ask.recovery.option.refresh" = "進行状況を更新";
 "ask.recovery.option.refreshBody" = "この Mac に保存された処理結果を会話に反映します。同じ操作は繰り返しません。";
 "ask.recovery.option.continue" = "続行する";

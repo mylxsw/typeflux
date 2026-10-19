@@ -69,6 +69,21 @@ final class AskLocalEngineTests: XCTestCase {
         AskToolCall(id: id, type: "function", function: .init(name: name, arguments: args))
     }
 
+    func testRecoveryCheckRemainsReadOnlyAfterRestartAndRetry() async throws {
+        let id = UUID().uuidString.lowercased()
+        var input = request("Check the previous action")
+        input.recoveryCheck = true
+        let first = try await engine().send(conversationId: id, request: input, token: "")
+        XCTAssertEqual(first.run?.recoveryCheck, true)
+        let restarted = engine()
+        let loaded = try await restarted.conversation(id: id, token: "")
+        XCTAssertEqual(loaded.run?.recoveryCheck, true)
+        let cancelled = try await restarted.cancel(conversationId: id, runId: loaded.run!.id, token: "")
+        let retried = try await restarted.retry(conversationId: id, runId: cancelled.run!.id,
+                                                deviceId: device, modelRef: nil, token: "")
+        XCTAssertEqual(retried.run?.recoveryCheck, true)
+    }
+
     func testConversationRunsOnDeviceWithToolsAndPersists() async throws {
         let fixed = Date(timeIntervalSince1970: 1_790_870_400) // 2026-10-01 16:00 UTC, already Friday in Shanghai
         let engine = engine(now: { fixed })

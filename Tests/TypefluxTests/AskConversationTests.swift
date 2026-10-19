@@ -27,6 +27,8 @@ actor AskTestAPI: AskAPI {
     var failReceipts = false
     func setFailReceipts(_ value: Bool) { failReceipts = value }
     var failSend = false
+    var echoRecoveryCheck = true
+    func setEchoRecoveryCheck(_ value: Bool) { echoRecoveryCheck = value }
     var failList = false
     var failModels = false
     var cloudModels: [AskCloudModel] = [.init(id: "default", name: "Typeflux Cloud")]
@@ -91,6 +93,7 @@ actor AskTestAPI: AskAPI {
         value.messages.append(.init(id: UUID().uuidString, role: "assistant", text: nextTool == nil ? "This is the answer." : "I can inspect the current page.", toolCalls: nextTool.map { [$0] }, createdAt: Date()))
         value.run = .init(id: UUID().uuidString, deviceId: request.deviceId, status: nextTool == nil ? "completed" : "waiting_tool", steps: 1, updatedAt: Date(), tools: request.tools, pending: nextTool.map { [$0] } ?? [])
         value.run?.clientToolApproval = request.clientToolApproval
+        value.run?.recoveryCheck = echoRecoveryCheck ? request.recoveryCheck : nil
         value.run?.cloudTools = cloudToolDefinitions
         value.modelRef = request.modelRef
         if value.messages.count == 2 { value.memory = request.memory }
@@ -297,7 +300,7 @@ struct AskTestFixture {
     /// the session carries the local owner and no Cloud token.
     init(authenticated: Bool = true, localOnly: Bool = false, modelLibrary: AskModelLibrary? = nil,
          approvalReuseEnabled: Bool = false, captureOverride: (any AskContextCapturing)? = nil,
-         defaults: UserDefaults? = nil) throws {
+         defaults: UserDefaults? = nil, automaticRecovery: Bool = false) throws {
         root = FileManager.default.temporaryDirectory.appendingPathComponent("ask-tests-" + UUID().uuidString)
         cache = try AskConversationCache(url: root.appendingPathComponent("cache.sqlite"))
         // Signed in, calls route by token like the app: Cloud to `api`, this Mac to `localAPI`.
@@ -310,6 +313,7 @@ struct AskTestFixture {
                                          if localOnly { return (AskRoutedAPI.localOwner, "") }
                                          return authenticated ? (sessionState.owner, sessionState.token) : nil
                                      })
+        model.automaticRecoveryEnabled = automaticRecovery
         // Keep launcher results independent of this Mac's installed apps and files.
         model.appIndex = AskTestAppIndex([])
         model.fileIndex = AskTestFileIndex()

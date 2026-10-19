@@ -158,14 +158,14 @@ struct AskRecoveryActionTests {
         let unknown = presentation([unknownEntry])
         let actions = unknown.actions(canRetransmit: false, canContinue: false)
         #expect(actions == .init(primary: .checkAndContinue, stop: true, details: true))
-        #expect(unknown.options(canRetransmit: false, canContinue: false) == [.checkAndContinue, .selfCheck, .stop])
+        #expect(unknown.options(canRetransmit: false, canContinue: false) == [.checkAndContinue, .stop])
     }
 
     @Test func stoppedUnknownCannotBeStoppedAgain() {
         let stopped = presentation([unknownEntry], status: "cancelled")
         #expect(stopped.actions(canRetransmit: false, canContinue: false)
             == .init(primary: .checkAndContinue, stop: false, details: true))
-        #expect(stopped.options(canRetransmit: false, canContinue: false) == [.checkAndContinue, .selfCheck])
+        #expect(stopped.options(canRetransmit: false, canContinue: false) == [.checkAndContinue])
     }
 
     @Test func otherDeviceOffersNoAction() {

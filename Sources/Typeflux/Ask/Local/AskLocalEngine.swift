@@ -238,6 +238,7 @@ actor AskLocalEngine: AskAPI {
                        tools: request.tools, pending: [], modelRef: modelRef, reasoningEffort: request.reasoningEffort)
         c.run?.maxSteps = try Self.configuredMaxSteps(request.maxSteps)
         c.run?.clientToolApproval = request.clientToolApproval
+        c.run?.recoveryCheck = request.recoveryCheck
         record.conversation = c
         prepareRun(&record)
         return try await step(&record)
@@ -385,6 +386,7 @@ actor AskLocalEngine: AskAPI {
                                          budgetEnabled: run.budgetEnabled, budgetRootId: run.budgetRootId, budgetDeadline: run.budgetDeadline, budgetLimits: run.budgetLimits)
         record.conversation.run?.maxSteps = try Self.configuredMaxSteps(maxSteps ?? run.maxSteps)
         record.conversation.run?.clientToolApproval = true
+        record.conversation.run?.recoveryCheck = run.recoveryCheck
         prepareRun(&record)
         return try await step(&record)
     }
@@ -407,6 +409,7 @@ actor AskLocalEngine: AskAPI {
                        tools: request.tools ?? c.run?.tools ?? [], pending: [], modelRef: model, reasoningEffort: prompt.reasoningEffort)
         c.run?.maxSteps = try Self.configuredMaxSteps(request.maxSteps ?? record.conversation.run?.maxSteps)
         c.run?.clientToolApproval = request.clientToolApproval
+        c.run?.recoveryCheck = record.conversation.run?.recoveryCheck
         record.conversation = c
         prepareRun(&record)
         return try await step(&record)

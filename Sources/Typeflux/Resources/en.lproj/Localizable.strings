@@ -2446,8 +2446,8 @@
 
 /* Execution recovery */
 "ask.recovery.unknown" = "We couldn't confirm the result";
-"ask.recovery.unknownBody" = "Typeflux couldn't confirm whether this work finished. To avoid doing it twice, it won't repeat the action automatically.";
-"ask.recovery.unknownToolBody" = "The result of %@ is unclear. Check what happened before continuing.";
+"ask.recovery.unknownBody" = "The last action is still unclear. Typeflux will check it without repeating it.";
+"ask.recovery.unknownToolBody" = "The result of %@ is unclear. Typeflux will check it first.";
 "ask.recovery.tool.browser" = "the browser action";
 "ask.recovery.tool.computer" = "the screen action";
 "ask.recovery.tool.command" = "the command";
@@ -2471,12 +2471,14 @@
 "ask.recovery.followUpBody" = "If it's already done, there's no need to do it again. If you still need help, return to the chat and tell Typeflux what remains unfinished.";
 "ask.recovery.message" = "Your message";
 "ask.recovery.stopped" = "Further work has stopped";
-"ask.recovery.checkAndContinue" = "Check and continue";
+"ask.recovery.checkAndContinue" = "Check again";
 "ask.recovery.details" = "Learn more";
 "ask.recovery.recommended" = "Recommended";
-"ask.recovery.checkPrompt" = "The outcome of the previous step was not confirmed. First check how much of it actually finished (for example, look at the related files or the state in the app involved), do only what is still missing without repeating anything already done, then continue the task.";
-"ask.recovery.option.check" = "Check, then continue";
-"ask.recovery.option.checkBody" = "Typeflux first looks at how much of this step actually finished, then does only what is missing. Nothing already done is repeated.";
+"ask.recovery.checkPrompt" = "Read-only check of the previous action. Inspect the saved record and any accessible file or app state. Report what evidence confirms and what remains unknown. Do not repeat, modify, or continue the task. If you cannot tell, ask for the specific missing information.";
+"ask.recovery.option.check" = "Let Typeflux check";
+"ask.recovery.option.checkBody" = "Read the current state without repeating the action; explain any missing evidence.";
+"ask.recovery.readOnly" = "Recovery checks can only read state. This action was not run.";
+"ask.recovery.readOnlyUnavailable" = "The safe check could not start. Please try again later.";
 "ask.recovery.option.refresh" = "Refresh progress";
 "ask.recovery.option.refreshBody" = "Brings the results saved on this Mac into the conversation without doing the work again.";
 "ask.recovery.option.continue" = "Continue";

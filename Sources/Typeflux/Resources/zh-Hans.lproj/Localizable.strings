@@ -2446,8 +2446,8 @@
 
 /* Execution recovery */
 "ask.recovery.unknown" = "还不能确认这次处理的结果";
-"ask.recovery.unknownBody" = "Typeflux 无法确认这次处理是否完成。为避免做两遍，不会自动重复操作。";
-"ask.recovery.unknownToolBody" = "%@的结果未确认。请先检查实际效果。";
+"ask.recovery.unknownBody" = "上一步结果尚不明确。Typeflux 会先核对，不会重复操作。";
+"ask.recovery.unknownToolBody" = "%@的结果尚不明确。Typeflux 会先核对。";
 "ask.recovery.tool.browser" = "浏览器操作";
 "ask.recovery.tool.computer" = "屏幕操作";
 "ask.recovery.tool.command" = "命令";
@@ -2471,12 +2471,14 @@
 "ask.recovery.followUpBody" = "如果已经完成，就不用再做。若还需要帮助，返回对话后告诉 Typeflux 哪些事还没完成。";
 "ask.recovery.message" = "你的消息";
 "ask.recovery.stopped" = "后续处理已停止";
-"ask.recovery.checkAndContinue" = "检查并继续";
+"ask.recovery.checkAndContinue" = "重新核对";
 "ask.recovery.details" = "了解详情";
 "ask.recovery.recommended" = "推荐";
-"ask.recovery.checkPrompt" = "上一步的结果没有确认。请先检查它实际完成了多少（例如查看相关文件或对应应用里的状态），只补做缺失的部分，不要重复已经完成的操作，然后继续完成任务。";
-"ask.recovery.option.check" = "检查后继续";
-"ask.recovery.option.checkBody" = "Typeflux 先查看这一步实际完成了多少，只补做缺失的部分，不会重复已完成的操作。";
+"ask.recovery.checkPrompt" = "请只读核对上一操作的实际结果。查看已有记录和可访问的文件或应用状态，说明已确认的事实及仍缺的证据。不要重做、修改或继续执行任务；无法判断时，请说明需要什么具体信息。";
+"ask.recovery.option.check" = "让 Typeflux 核对";
+"ask.recovery.option.checkBody" = "只读取现状，不重复操作；仍无法判断时说明缺少什么证据。";
+"ask.recovery.readOnly" = "核对期间只允许读取现状，此操作没有执行。";
+"ask.recovery.readOnlyUnavailable" = "安全核对未能启动，请稍后重试。";
 "ask.recovery.option.refresh" = "刷新进度";
 "ask.recovery.option.refreshBody" = "把这台 Mac 上已保存的处理结果同步到对话，不会把操作再做一遍。";
 "ask.recovery.option.continue" = "继续处理";

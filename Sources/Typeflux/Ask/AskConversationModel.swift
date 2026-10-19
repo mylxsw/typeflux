@@ -350,6 +350,9 @@ final class AskConversationModel: ObservableObject {
     @Published var inspectingRecovery = false
     @Published var recoveryWorking = false
     var recoveryGeneration = UUID()
+    /// At most one automatic reconciliation per run in this process.
+    var automaticRecoveryAttempts: Set<String> = []
+    var automaticRecoveryEnabled = true
     /// What the latest `resume` of a credit-paused run reported, per conversation,
     /// until the account balance changes again.
     @Published var creditPauseDetails: [String: CloudCreditsExhaustedDetails] = [:]
@@ -414,6 +417,11 @@ final class AskConversationModel: ObservableObject {
     let remoteImageScope = AskRemoteImageScope()
     var selectionGeneration = UUID() { didSet { cancelAttachmentWork(launcher: false); remoteImageScope.invalidate(); conversationImageScope.invalidate() } }
     private var selectionObservation: Task<Void, Never>?
+
+    func stopSelectionObservation() {
+        selectionObservation?.cancel()
+        selectionObservation = nil
+    }
     private var draftSave: Task<Void, Never>?
     private var draftSaveConversationID: String?
     private var deletedConversationIDs: Set<String> = []
@@ -583,6 +591,7 @@ final class AskConversationModel: ObservableObject {
         quickSearch.results = nil
         recoveryGeneration = UUID(); recoveryWorking = false; inspectingRecovery = false
         recoveryEntries = [:]
+        automaticRecoveryAttempts = []
         capturedContentFeedbackTasks.values.forEach { $0.cancel() }
         capturedContentFeedbackTasks = [:]
         capturedContentChanges = [:]
@@ -944,7 +953,9 @@ final class AskConversationModel: ObservableObject {
             }
             updateSummary(selected ?? latest)
             scheduleTitle(selected ?? latest, route: current)
-            // Loading a conversation never resumes desktop tools automatically.
+            // Reconcile persisted results and inspect uncertain effects without
+            // replaying the original action.
+            await recoverWithoutUser()
         } catch {
             if generation == selectionGeneration, owner == current.account {
                 isLoadingSelection = false; selectionLoadFailed = true; self.error = error.localizedDescription
@@ -1014,17 +1025,17 @@ final class AskConversationModel: ObservableObject {
 
     /// Sends `text` as a follow-up in the selected conversation, leaving whatever
     /// the user is typing in the composer untouched.
-    func sendFollowUp(_ text: String) {
+    func sendFollowUp(_ text: String, recoveryCheck: Bool = false) {
         guard selected != nil else { return }
         var followUp = AskDraft.followUp
         followUp.text = text
-        submit(followUp, newConversation: false, clearsDraft: false)
+        submit(followUp, newConversation: false, clearsDraft: false, recoveryCheck: recoveryCheck)
     }
 
     /// `messageId` keeps a queued message's ID; `clearsDraft` is false when the queue
     /// sends on its own, so whatever the user is typing stays in the composer.
     private func submit(_ submitted: AskDraft, newConversation: Bool, messageId queuedId: String? = nil,
-                        clearsDraft: Bool = true, launcher: Bool = false) {
+                        clearsDraft: Bool = true, launcher: Bool = false, recoveryCheck: Bool = false) {
         guard submissionPreflights[launcher] == nil else { return }
         guard submitted.referencesWithinLimit, submitted.text.utf8.count <= 32000,
               (submitted.sentSelection?.utf8.count ?? 0) <= 64000,
@@ -1063,7 +1074,7 @@ final class AskConversationModel: ObservableObject {
             }
             submissionIssues[launcher] = nil
             submitValidated(submitted, modelRef: reference, local: local, newConversation: newConversation, messageId: queuedId,
-                            clearsDraft: clearsDraft, launcher: launcher, temporary: temporary)
+                            clearsDraft: clearsDraft, launcher: launcher, temporary: temporary, recoveryCheck: recoveryCheck)
             return
         }
         let id = newConversation ? UUID().uuidString.lowercased() : selected!.id
@@ -1093,7 +1104,7 @@ final class AskConversationModel: ObservableObject {
                 submissionIssues[launcher] = nil
                 busyIds.remove(id)
                 submitValidated(submitted, modelRef: reference, local: local, newConversation: newConversation, messageId: queuedId,
-                                clearsDraft: clearsDraft, launcher: launcher, temporary: temporary)
+                                clearsDraft: clearsDraft, launcher: launcher, temporary: temporary, recoveryCheck: recoveryCheck)
             } catch is CancellationError {} catch {
                 guard owner == account.account, session()?.owner == account.account, selectionGeneration == generation else { return }
                 let issue = modelSelectionIssue(reference, cloudAvailable: !token.isEmpty, hasImage: hasImage)
@@ -1126,7 +1137,8 @@ final class AskConversationModel: ObservableObject {
     }
 
     private func submitValidated(_ submitted: AskDraft, modelRef: String, local: Bool, newConversation: Bool, messageId queuedId: String? = nil,
-                                 clearsDraft: Bool = true, launcher: Bool = false, temporary: Bool = false) {
+                                 clearsDraft: Bool = true, launcher: Bool = false, temporary: Bool = false,
+                                 recoveryCheck: Bool = false) {
         guard let account = credentials() else { return }
         guard newConversation || selected != nil else { return }
         let id = newConversation ? UUID().uuidString.lowercased() : selected!.id
@@ -1149,7 +1161,10 @@ final class AskConversationModel: ObservableObject {
         var value = newConversation ? AskConversation(id: id, title: String(submitted.title.prefix(50)), revision: 0, updatedAt: Date(), messages: []) : selected!
         let messageId = queuedId ?? UUID().uuidString
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
-        request.maxSteps = modelLibrary.settings.askAgentMaxSteps
+        request.maxSteps = recoveryCheck ? min(modelLibrary.settings.askAgentMaxSteps, 20)
+            : modelLibrary.settings.askAgentMaxSteps
+        request.recoveryCheck = recoveryCheck ? true : nil
+        if recoveryCheck { request.imageResults = false }
         // A temporary conversation is never named: it has no place in history to be found by.
         request.titlePolicy = .init(enabled: modelLibrary.settings.askAutomaticTitles && !temporaryRun,
                                     modelRef: modelLibrary.settings.askTitleModelReference)
@@ -1188,12 +1203,19 @@ final class AskConversationModel: ObservableObject {
             do {
                 try await cache.save(value, owner: current.owner)
                 var request = request
-                request.tools = Self.offeredTools(await tools.definitions(conversationId: id), temporary: temporaryRun)
+                let offered = Self.offeredTools(await tools.definitions(conversationId: id), temporary: temporaryRun)
+                request.tools = recoveryCheck ? Self.recoveryObservationTools(offered) : offered
                 try Task.checkCancellation()
                 request.memory = request.memory?.usable(owner: current.account, invalidations: memoryInvalidations)
                 pendingSends[id] = request
                 let response = try await api.send(conversationId: id, request: request, token: current.token)
                 pendingSends[id] = nil
+                if recoveryCheck, response.run?.recoveryCheck != true {
+                    if let run = response.run, run.isActive {
+                        _ = try? await api.cancel(conversationId: id, runId: run.id, token: current.token)
+                    }
+                    throw AskLocalError.message(L("ask.recovery.readOnlyUnavailable"))
+                }
                 try await drive(response, current: current, screenshotConsentMessageID: submitted.includeScreenshot ? messageId : nil)
             } catch is CancellationError {} catch { await reportOperationError(error, id: id, owner: current.account) }
         }
@@ -1266,6 +1288,12 @@ final class AskConversationModel: ObservableObject {
                     request.memory = request.memory?.usable(owner: current.account, invalidations: memoryInvalidations)
                     response = try await api.send(conversationId: id, request: request, token: current.token)
                     pendingSends[id] = nil
+                    if request.recoveryCheck == true, response.run?.recoveryCheck != true {
+                        if let run = response.run, run.isActive {
+                            _ = try? await api.cancel(conversationId: id, runId: run.id, token: current.token)
+                        }
+                        throw AskLocalError.message(L("ask.recovery.readOnlyUnavailable"))
+                    }
                 } else if value.run == nil, let message = value.messages.last, message.role == "user" {
                     var request = AskSendRequest(clientToolApproval: true, id: message.id, deviceId: deviceId, text: message.text,
                                                  selection: message.selection, source: message.source, image: message.image,
@@ -1527,6 +1555,14 @@ final class AskConversationModel: ObservableObject {
                 result = persisted
             }
             if result == nil {
+                if run.recoveryCheck == true,
+                   toolRisk(call, cloudDefinition: run.approvalTool(for: call)) > .read {
+                    let failure = AskToolPreparationFailure(AskLocalError.message(L("ask.recovery.readOnly")))
+                    guard let rejected = try await rejectToolPreparation(failure, call: call, value: value,
+                                                                         identity: identity, current: current) else { return }
+                    value = try await deliverToolResult(rejected, identity: identity, current: current)
+                    continue
+                }
                 // Project and artifact scopes belong to the account, as `artifactAccess` reads them,
                 // not to the cache partition a private conversation uses.
                 tools.bindExecution(ownerId: current.account, conversationId: value.id, runId: run.id)
@@ -1922,6 +1958,13 @@ final class AskConversationModel: ObservableObject {
         temporary ? tools.filter { $0.name != "memory" } : tools
     }
 
+    /// Only offer tools with an observation action. The execution risk check in
+    /// `drive` still rejects mutating actions within these mixed-use tools.
+    static func recoveryObservationTools(_ tools: [AskToolDefinition]) -> [AskToolDefinition] {
+        let names: Set<String> = ["computer", "browser", "files", "project_files", "project_terminal", "web_browser"]
+        return tools.filter { names.contains($0.name) }
+    }
+
     /// Callers await this before their operation finishes, so a conversation never looks idle
     /// and resumable while its journal still lacks the execution that just failed.
     func reportOperationError(_ error: Error, id: String, owner expectedOwner: String) async {
@@ -1941,6 +1984,7 @@ final class AskConversationModel: ObservableObject {
         recoveringImages[id] = nil
         if controllingConversationId == id { controllingConversationId = nil; onControlChanged?(false) }
         queueDidSettle(id)
+        if selectedId == id { Task { await recoverWithoutUser() } }
     }
 
     private func recordInferenceUsage(_ usage: AskTokenUsage, id: String, owner expectedOwner: String) {
@@ -2038,7 +2082,12 @@ extension AskConversationModel {
     func resumeQueue() {
         guard let value = selected, !recoveryWorking else { return }
         let id = value.id
-        if value.run?.isActive == true, recoveryBlocksResume(value) {
+        if recoveryBlocksResume(value) {
+            guard value.run?.isActive == true else {
+                sendQueue.pause(id)
+                inspectingRecovery = true
+                return
+            }
             guard !recoveryPresentation.otherDevice else {
                 error = L("ask.recovery.binding")
                 return
@@ -2129,7 +2178,7 @@ extension AskConversationModel {
     func queueDidSettle(_ id: String) {
         guard let value = snapshots[id] ?? (selected?.id == id ? selected : nil) else { return }
         sendQueue.reconcile(id, transcript: value.messages, run: value.run)
-        if value.run?.isActive == true, recoveryBlocksResume(value) { sendQueue.pause(id); return }
+        if recoveryBlocksResume(value) { sendQueue.pause(id); return }
         guard selectedId == id, selected != nil, !isLoadingSelection, !busyIds.contains(id), pendingSends[id] == nil,
               value.run?.isActive != true, let next = sendQueue.next(for: id), !steeringIds.contains(next.id),
               let item = sendQueue.take(next.id, from: id) else { return }

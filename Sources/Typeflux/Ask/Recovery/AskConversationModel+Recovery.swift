@@ -50,6 +50,26 @@ extension AskConversationModel {
         }
     }
 
+    /// First reconcile facts already on disk, then start a read-only inspection
+    /// if the current run still has an uncertain effect. The user does not need
+    /// to understand or decide what a missing receipt means.
+    func recoverWithoutUser() async {
+        guard automaticRecoveryEnabled, let value = selected, let run = value.run, !isLoadingSelection,
+              !busyIds.contains(value.id), !recoveryWorking,
+              !selectedRecoveryEntries.contains(where: \.readUnavailable),
+              !recoveryPresentation.otherDevice, run.recoveryCheck != true else { return }
+        let key = value.id + "/" + run.id
+        if canRetransmitReceipts {
+            guard automaticRecoveryAttempts.insert(key + "/receipt").inserted else { return }
+            await retransmitSavedReceipts()
+            guard !canRetransmitReceipts else { return }
+        }
+        guard selectedId == value.id, selected?.run?.id == run.id,
+              recoveryPresentation.unknown,
+              automaticRecoveryAttempts.insert(key + "/inspect").inserted else { return }
+        await checkAndContinueRecovery()
+    }
+
     func refreshRecovery(_ value: AskConversation, route: AskRoute) async {
         let generation = recoveryGeneration
         do {
@@ -170,9 +190,8 @@ extension AskConversationModel {
         } catch { await reportOperationError(error, id: value.id, owner: current.account) }
     }
 
-    /// "Check and continue": ends the uncertain run when it is still active, then
-    /// starts a new one that first inspects what already happened. The uncertain
-    /// step itself is never replayed; the new run decides from what it finds.
+    /// End the uncertain run, then inspect observable state in a new read-only
+    /// run. Its tool policy is enforced at dispatch, including after a restart.
     func checkAndContinueRecovery() async {
         guard !recoveryWorking, let value = selected, !busyIds.contains(value.id),
               !recoveryPresentation.otherDevice else { return }
@@ -180,8 +199,9 @@ extension AskConversationModel {
             await endRecoveryRun()
             guard selectedId == value.id, selected?.run?.isActive == false else { return }
         }
+        stopSelectionObservation()
         inspectingRecovery = false
-        sendFollowUp(L("ask.recovery.checkPrompt"))
+        sendFollowUp(L("ask.recovery.checkPrompt"), recoveryCheck: true)
     }
 
     /// Runs the action the user picked on the recovery card or in the inspector.

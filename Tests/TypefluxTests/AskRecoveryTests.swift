@@ -224,6 +224,70 @@ struct AskRecoveryJournalTests {
 @Suite("Ask recovery interactions", .serialized, .exclusiveUIState)
 @MainActor
 struct AskRecoveryInteractionTests {
+    @Test func `uncertain claim starts a read-only check without user decision`() async throws {
+        let fixture = try AskTestFixture(automaticRecovery: true)
+        defer { fixture.model.resetSession() }
+        let value = AskRecoveryFixture.conversation()
+        let audit = AskRecoveryFixture.audit(value)
+        #expect(try await fixture.cache.claimExecution(audit, owner: "owner"))
+        await fixture.api.seed(value)
+        await fixture.model.select(value.id)
+        try await fixture.wait { fixture.model.selected?.run?.id != value.run?.id && fixture.model.busyIds.isEmpty }
+        let sends = await fixture.api.sends
+        #expect(sends.count == 1 && sends[0].recoveryCheck == true)
+        #expect(sends[0].imageResults == false)
+        #expect(sends[0].text == L("ask.recovery.checkPrompt"))
+        #expect(sends[0].tools.allSatisfy { AskConversationModel.recoveryObservationTools([$0]).count == 1 })
+        #expect(fixture.tools.executions == 0)
+        #expect(try await fixture.cache.execution(id: audit.identity.key, owner: "owner")?.receipt == nil)
+        #expect(!fixture.model.hasRecoveryNotice)
+    }
+
+    @Test func `automatic check refuses a new write before approval or dispatch`() async throws {
+        let fixture = try AskTestFixture(automaticRecovery: true)
+        defer { fixture.model.resetSession() }
+        let value = AskRecoveryFixture.conversation()
+        #expect(try await fixture.cache.claimExecution(AskRecoveryFixture.audit(value), owner: "owner"))
+        await fixture.api.seed(value)
+        await fixture.api.setTool(.init(id: "write", function: .init(name: "browser", arguments: #"{"action":"click"}"#)))
+        await fixture.model.select(value.id)
+        try await fixture.wait { fixture.model.selected?.run?.status == "completed" && fixture.model.busyIds.isEmpty }
+        let results = await fixture.api.results
+        #expect(results.count == 1)
+        #expect(results[0].harness?.outcome?.eventDispatched == false)
+        #expect(results[0].harness?.outcome?.safeStatus == .invalid)
+        #expect(fixture.tools.executions == 0 && fixture.model.pendingApprovals.isEmpty)
+    }
+
+    @Test func `saved receipt is delivered automatically without rerunning the tool`() async throws {
+        let fixture = try AskTestFixture(automaticRecovery: true)
+        defer { fixture.model.resetSession() }
+        let value = AskRecoveryFixture.conversation()
+        let audit = AskRecoveryFixture.audit(value)
+        #expect(try await fixture.cache.claimExecution(audit, owner: "owner"))
+        try await fixture.cache.saveReceipt(AskRecoveryFixture.receipt(value), identity: audit.identity, owner: "owner")
+        await fixture.api.seed(value)
+        await fixture.model.select(value.id)
+        #expect(await fixture.api.results.count == 1)
+        #expect(fixture.tools.executions == 0)
+        #expect(!fixture.model.hasRecoveryNotice)
+    }
+
+    @Test func `old server cannot turn a recovery check into an unrestricted run`() async throws {
+        let fixture = try AskTestFixture(automaticRecovery: true)
+        defer { fixture.model.resetSession() }
+        let value = AskRecoveryFixture.conversation()
+        #expect(try await fixture.cache.claimExecution(AskRecoveryFixture.audit(value), owner: "owner"))
+        await fixture.api.seed(value)
+        await fixture.api.setEchoRecoveryCheck(false)
+        await fixture.api.setTool(.init(id: "write", function: .init(name: "browser", arguments: #"{"action":"click"}"#)))
+        await fixture.model.select(value.id)
+        try await fixture.wait { fixture.model.busyIds.isEmpty && fixture.model.error != nil }
+        #expect(fixture.tools.executions == 0)
+        #expect(await fixture.api.results.isEmpty)
+        #expect(fixture.model.selected?.run?.status != "waiting_tool")
+    }
+
     @Test func `acknowledged failed inference clears stale recovery after observation`() async throws {
         let fixture = try AskTestFixture()
         var value = AskRecoveryFixture.conversation(model: true)
@@ -291,7 +355,7 @@ struct AskRecoveryInteractionTests {
 
     private func model(_ fixture: AskTestFixture, device: String = "device") throws -> AskConversationModel {
         let cache = try AskConversationCache(url: fixture.root.appendingPathComponent("cache.sqlite"))
-        return AskConversationModel(
+        let model = AskConversationModel(
             api: fixture.api,
             cache: cache,
             tools: fixture.tools,
@@ -300,6 +364,8 @@ struct AskRecoveryInteractionTests {
             modelLibrary: fixture.model.modelLibrary,
             session: { (fixture.sessionState.owner, "token") }
         )
+        model.automaticRecoveryEnabled = false
+        return model
     }
 
     @Test(arguments: [

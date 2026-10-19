@@ -64,11 +64,11 @@ struct AskRecoveryPresentation: Equatable {
     }
 
     var bodyKey: String {
-        if unknown {
-            return "ask.recovery.unknownBody"
-        }
         if otherDevice && (active || savedReceipts > 0) {
             return "ask.recovery.binding"
+        }
+        if unknown {
+            return "ask.recovery.unknownBody"
         }
         if savedReceipts > 0 {
             return "ask.recovery.savedBody"
@@ -77,6 +77,7 @@ struct AskRecoveryPresentation: Equatable {
     }
 
     var bodyText: String {
+        if otherDevice { return L(bodyKey) }
         guard unknown else { return L(bodyKey) }
         let toolKey: String = switch unknownTool {
         case "browser": "ask.recovery.tool.browser"
@@ -168,7 +169,6 @@ extension AskRecoveryPresentation {
         let actions = actions(canRetransmit: canRetransmit, canContinue: canContinue)
         var options: [AskRecoveryAction] = []
         if let primary = actions.primary { options.append(primary) }
-        if unknown, !otherDevice { options.append(.selfCheck) }
         if actions.stop { options.append(.stop) }
         return options
     }

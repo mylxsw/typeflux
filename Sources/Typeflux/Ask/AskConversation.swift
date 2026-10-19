@@ -52,6 +52,8 @@ struct AskMessage: Codable, Identifiable, Equatable, Sendable {
 
 struct AskRun: Codable, Equatable, Sendable {
     var clientToolApproval: Bool? = nil
+    /// A recovery inspection may observe state but cannot dispatch mutations.
+    var recoveryCheck: Bool? = nil
     var cloudTools: [AskToolDefinition]? = nil
 
     func approvalTool(for call: AskToolCall) -> AskToolDefinition? {
@@ -141,6 +143,7 @@ struct AskSendRequest: Codable, Equatable, Sendable {
     var maxSteps: Int? = nil
     var titlePolicy: AskTitlePolicy? = nil
     var clientToolApproval: Bool? = nil
+    var recoveryCheck: Bool? = nil
     var imageResults: Bool? = true
     var id: String
     var deviceId: String
