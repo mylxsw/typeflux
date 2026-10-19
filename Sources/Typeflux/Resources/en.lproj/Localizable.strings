@@ -5272,7 +5272,6 @@
 // Concurrent translation services
 "ask.translation.stack.addAI" = "Add AI translation";
 "ask.translation.stack.removeAI" = "Remove AI translation";
-"ask.translation.stack.local" = "On this Mac · installed languages";
 "ask.translation.stack.dictionary" = "Writes word cards";
 "ask.translation.stack.brief" = "Brief translations only";
 "ask.translation.stack.reorder" = "Drag to reorder";
@@ -5292,7 +5291,6 @@
 "ask.translation.stack.copyTranslation" = "Copy translation";
 "ask.translation.stack.copyBoth" = "Copy original + translation";
 "ask.translation.stack.hint" = "↩ Copy first · ⌘1–9 Copy result · ⌥↩ Insert · ⇥ Language";
-"ask.translation.stack.footnote" = "Enabled services translate concurrently in this order. Drag to reorder.\nThe first checked AI service writes word cards; other services give brief translations.\nOn-device translation and the word book stay on this Mac. AI and providers receive text only after Return or Regenerate. Keys stay in Keychain.";
 "ask.translation.stack.deviceTitle" = "On-device translation";
 "ask.translation.model.pickAgain" = "Pick again";
 

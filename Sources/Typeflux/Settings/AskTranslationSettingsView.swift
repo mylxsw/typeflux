@@ -24,7 +24,7 @@ struct AskTranslationSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
             AskTranslationPanelSettingsView(model: model)
-            TFFormSection(title: L("ask.translation.section.services"), footnote: L("ask.translation.stack.footnote")) {
+            TFFormSection(title: L("ask.translation.section.services")) {
                 TFButton(title: L("ask.translation.stack.addAI"), systemImage: "plus") { model.addAI() }
             } content: {
                 ForEach(Array(model.settings.services.enumerated()), id: \.element.id) { index, service in
@@ -50,9 +50,9 @@ struct AskTranslationSettingsView: View {
         }
     }
 
-    private func status(_ service: AskTranslationService) -> String {
+    private func status(_ service: AskTranslationService) -> String? {
         switch service.kind {
-        case .device: L("ask.translation.stack.local")
+        case .device: nil
         case .ai: L(service.id == model.settings.firstEnabledAI?.id ? "ask.translation.stack.dictionary" : "ask.translation.stack.brief")
         case let .provider(provider): L(configured(provider) ? "ask.translation.service.configured" : "ask.translation.service.notConfigured")
         }
@@ -72,10 +72,12 @@ struct AskTranslationSettingsView: View {
             Text(title(service)).font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(TFColors.textPrimary).opacity(service.enabled ? 1 : 0.55)
                 .lineLimit(1)
-            TFStatusLabel(text: status(service),
-                          level: service.provider.map(configured) == false ? .neutral : .success)
-                .opacity(service.enabled ? 1 : 0.55)
-                .lineLimit(1)
+            if let status = status(service) {
+                TFStatusLabel(text: status,
+                              level: service.provider.map(configured) == false ? .neutral : .success)
+                    .opacity(service.enabled ? 1 : 0.55)
+                    .lineLimit(1)
+            }
             Spacer(minLength: 8)
             HStack(spacing: TFMetrics.toolbarSpacing) { serviceControls(service) }
                 .tfControlSize(.small)

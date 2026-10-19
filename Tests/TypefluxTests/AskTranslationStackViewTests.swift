@@ -187,6 +187,13 @@ struct AskTranslationStackViewTests {
         defer { window.orderOut(nil); window.close() }
         try await Task.sleep(for: .milliseconds(80))
         host.layoutSubtreeIfNeeded()
+        if name.hasPrefix("settings-") {
+            let elements = SettingsBehaviorTestSupport.elements(in: host)
+            #expect(SettingsBehaviorTestSupport.contains(L("ask.translation.stack.deviceTitle"), in: host))
+            let removedCopy = ["On this Mac · installed languages", "不出本机 · 本机语言包",
+                               "Enabled services translate concurrently", "勾选的服务会同时翻译"]
+            #expect(!elements.contains { element in removedCopy.contains { element.text.contains($0) } })
+        }
         let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
         host.cacheDisplay(in: host.bounds, to: bitmap)
         let png = try #require(bitmap.representation(using: .png, properties: [:]))

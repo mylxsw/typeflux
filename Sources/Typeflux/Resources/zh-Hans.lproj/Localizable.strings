@@ -5272,7 +5272,6 @@
 // Concurrent translation services
 "ask.translation.stack.addAI" = "添加 AI 翻译";
 "ask.translation.stack.removeAI" = "删除 AI 翻译";
-"ask.translation.stack.local" = "不出本机 · 本机语言包";
 "ask.translation.stack.dictionary" = "负责单词卡";
 "ask.translation.stack.brief" = "仅简短译文";
 "ask.translation.stack.reorder" = "拖动排序";
@@ -5292,7 +5291,6 @@
 "ask.translation.stack.copyTranslation" = "复制译文";
 "ask.translation.stack.copyBoth" = "复制原文 + 译文";
 "ask.translation.stack.hint" = "↩ 复制第一项 · ⌘1–9 复制第 n 项 · ⌥↩ 插入 · ⇥ 换语言";
-"ask.translation.stack.footnote" = "勾选的服务会同时翻译，按这里的顺序显示；拖动调整顺序。\n勾选服务中排在最前的 AI 负责单词卡，其它服务只给出简短译文。\n本机翻译和单词本不出本机；AI 与服务商只在按 Return 或重新生成后发送。密钥只保存在钥匙串中。";
 "ask.translation.stack.deviceTitle" = "本机翻译";
 "ask.translation.model.pickAgain" = "重新选择";
 
