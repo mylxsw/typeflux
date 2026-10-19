@@ -7,6 +7,22 @@ import Testing
 @Suite(.exclusiveUIState)
 @MainActor
 struct ScreenRecordingUIInteractionTests {
+    @Test func `shortcut hints appear without moving their controls`() async throws {
+        for key in ["R", "Space", "⇧⌘Z"] {
+            func control(visible: Bool) -> some View {
+                Image(systemName: "rectangle")
+                    .frame(width: 30, height: 30)
+                    .modifier(EditorShortcutHint(key: key, visible: visible))
+                    .padding(10)
+            }
+            let idle = try await ScreenshotSnapshotSupport.bitmap(of: control(visible: false))
+            let held = try await ScreenshotSnapshotSupport.bitmap(of: control(visible: true))
+            #expect(idle.size == held.size)
+            #expect(idle.representation(using: .png, properties: [:]) !=
+                held.representation(using: .png, properties: [:]))
+        }
+    }
+
     @Test func `preview actions share control metrics and stay reachable in narrow windows`() async throws {
         _ = NSApplication.shared
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
@@ -293,7 +309,7 @@ struct ScreenRecordingUIInteractionTests {
         toast.showRecovery(source, open: {}, discard: {})
         await toast.model.task?.value
         let panel = try #require(toast.panel)
-        #expect(ScreenshotCaptureWindowPolicy.excludes(panel))
+        #expect(!ScreenshotCaptureWindowPolicy.excludes(panel))
         #expect(panel.isVisible)
         toast.hide()
         var copied: URL?

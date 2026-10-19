@@ -12,12 +12,14 @@ struct ScreenRecordingPreviewView: View {
     @State private var showsTracks = false
     @State private var showsDestinations = false
     @State private var stageHover = false
+    @State private var showsShortcutHints = false
 
     var body: some View {
         Group {
             if model.canUsePreview { content }
             else { Text(L("recording.previewUnavailable")).padding().frame(maxWidth: .infinity, maxHeight: .infinity) }
         }
+        .background(AskLauncherCommandMonitor { showsShortcutHints = $0 })
     }
 
     private var content: some View {
@@ -26,7 +28,8 @@ struct ScreenRecordingPreviewView: View {
             stage
             transport.padding(.horizontal, 14).frame(height: 40)
             ScreenRecordingTimelineView(model: model).padding(.horizontal, 16).padding(.top, 4)
-            ScreenRecordingTrimBar(model: model).padding(.horizontal, 16).frame(height: 44)
+            ScreenRecordingTrimBar(model: model, showsShortcutHints: showsShortcutHints)
+                .padding(.horizontal, 16).frame(height: 44)
             if model.gifTooLong {
                 ScreenRecordingGIFLimitBanner(model: model).padding(.horizontal, 16).padding(.bottom, 8)
             }
@@ -135,6 +138,9 @@ struct ScreenRecordingPreviewView: View {
             }
             .buttonStyle(.plain).accessibilityLabel(L("recording.play"))
             .disabled(!model.playback.isLoaded || model.playback.isBusy)
+            .modifier(EditorShortcutHint(key: model.state == .preview && model.playback.isLoaded &&
+                !model.playback.isBusy ? "Space" : nil,
+                                         visible: showsShortcutHints))
             Text(ScreenRecordingLayout.preciseTime(model.currentTime)).font(.system(size: 12.5, design: .monospaced))
                 + Text(" / " + ScreenRecordingLayout.preciseTime(model.duration))
                 .font(.system(size: 12.5, design: .monospaced)).foregroundColor(StudioTheme.textTertiary)
@@ -148,6 +154,8 @@ struct ScreenRecordingPreviewView: View {
             .accessibilityValue(ScreenRecordingEdit.rateTitle(model.edit.rate))
             .accessibilityIdentifier("recording.preview.speed")
             .disabled(model.state != .preview)
+            .modifier(EditorShortcutHint(key: model.state == .preview ? "[ ]" : nil,
+                                         visible: showsShortcutHints))
             .popover(isPresented: $showsSpeed, arrowEdge: .top) {
                 ScreenRecordingSpeedMenu(model: model) { showsSpeed = false }
             }
@@ -188,6 +196,8 @@ struct ScreenRecordingPreviewView: View {
             .help(L("recording.discard"))
             .accessibilityLabel(L("recording.discard"))
             .accessibilityIdentifier("recording.preview.discard")
+            .modifier(EditorShortcutHint(key: model.state == .preview ? "esc" : nil,
+                                         visible: showsShortcutHints))
             Divider().frame(height: 20)
             Picker(L("recording.format"), selection: $model.options.format) {
                 Text("MP4").tag(ScreenRecordingFormat.mp4); Text("GIF").tag(ScreenRecordingFormat.gif)
@@ -210,13 +220,11 @@ struct ScreenRecordingPreviewView: View {
                     .disabled(!model.canExport)
                     .accessibilityIdentifier("recording.preview.copy")
                 Button { model.export() } label: {
-                    HStack(spacing: 6) {
-                        Label(L("recording.saveFormat", model.options.format.rawValue.uppercased()),
-                              systemImage: "checkmark")
-                        Text("⌘S").font(.system(size: 11)).opacity(0.75)
-                    }
+                    Label(L("recording.saveFormat", model.options.format.rawValue.uppercased()),
+                          systemImage: "checkmark")
                 }
                 .buttonStyle(ModelActionStyle(primary: true)).disabled(!model.canExport)
+                .modifier(EditorShortcutHint(key: model.canExport ? "⌘S" : nil, visible: showsShortcutHints))
                 .help(model.gifTooLong ? L("recording.gifTooLong") : "")
                 .accessibilityIdentifier("recording.preview.save")
                 .keyboardShortcut("s", modifiers: .command)

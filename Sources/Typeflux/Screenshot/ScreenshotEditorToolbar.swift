@@ -271,6 +271,7 @@ final class ScreenshotToolbarHostingView: NSHostingView<AnyView> {
 struct ScreenshotEditorToolbar: View {
     let state: ScreenshotEditorToolbarModel.State
     let perform: (ScreenshotEditorToolbarModel.Action) -> Void
+    @State private var showsShortcutHints = false
 
     static let barHeight: CGFloat = 38
     static let rowSpacing: CGFloat = 6
@@ -302,12 +303,13 @@ struct ScreenshotEditorToolbar: View {
             }
         }
         .fixedSize()
+        .background(AskLauncherCommandMonitor { showsShortcutHints = $0 })
     }
 
     private var mainBar: some View {
         HStack(spacing: 2) {
             if state.showsScrollCapture {
-                iconButton("rectangle.expand.vertical", help: "\(L("screenshot.tool.scroll"))  S",
+                iconButton("rectangle.expand.vertical", help: "\(L("screenshot.tool.scroll"))  S", shortcut: "S",
                            isEnabled: state.canScrollCapture) { perform(.scrollCapture) }
                 iconButton("record.circle", help: L("recording.title"),
                            isEnabled: state.canScrollCapture) { perform(.record) }
@@ -318,13 +320,16 @@ struct ScreenshotEditorToolbar: View {
             ForEach(ScreenshotAnnotationTool.allCases, id: \.self) { tool in
                 iconButton(ScreenshotEditorToolbarModel.symbol(for: tool),
                            help: ScreenshotEditorToolbarModel.help(for: tool),
+                           shortcut: tool.shortcut,
                            isOn: state.tool == tool) { perform(.tool(tool)) }
             }
             separator
-            iconButton("arrow.uturn.backward", help: "\(L("screenshot.edit.undo"))  ⌘Z", isEnabled: state.canUndo) {
+            iconButton("arrow.uturn.backward", help: "\(L("screenshot.edit.undo"))  ⌘Z", shortcut: "⌘Z",
+                       isEnabled: state.canUndo) {
                 perform(.undo)
             }
-            iconButton("arrow.uturn.forward", help: "\(L("screenshot.edit.redo"))  ⇧⌘Z", isEnabled: state.canRedo) {
+            iconButton("arrow.uturn.forward", help: "\(L("screenshot.edit.redo"))  ⇧⌘Z", shortcut: "⇧⌘Z",
+                       isEnabled: state.canRedo) {
                 perform(.redo)
             }
             separator
@@ -349,21 +354,26 @@ struct ScreenshotEditorToolbar: View {
             }
             separator
             if state.showsPin {
-                iconButton("pin", help: "\(L("screenshot.tool.pin"))  F") { perform(.pin) }
+                iconButton("pin", help: "\(L("screenshot.tool.pin"))  F", shortcut: "F") { perform(.pin) }
                     .accessibilityIdentifier("screenshot.pin")
             }
             iconButton("square.and.arrow.down",
-                       help: "\(L("screenshot.edit.save"))  \(L("screenshot.key.space")) / ⌘S") { perform(.save) }
+                       help: "\(L("screenshot.edit.save"))  \(L("screenshot.key.space")) / ⌘S",
+                       shortcut: "⌘S") { perform(.save) }
             separator
             iconButton("ellipsis", help: L("screenshot.edit.more"), isOn: state.showsMoreMenu) {
                 perform(.toggleMoreMenu)
             }
             .accessibilityIdentifier("screenshot.more")
             separator
-            iconButton("xmark", help: "\(L("screenshot.edit.cancel"))  esc", tint: .red) { perform(.cancel) }
+            iconButton("xmark", help: "\(L("screenshot.edit.cancel"))  esc", shortcut: "esc", tint: .red) {
+                perform(.cancel)
+            }
                 .accessibilityLabel(L("screenshot.edit.cancel"))
                 .accessibilityIdentifier("screenshot.cancel")
-            iconButton("checkmark", help: "\(L("screenshot.edit.copy"))  ↩", tint: .green) { perform(.copy) }
+            iconButton("checkmark", help: "\(L("screenshot.edit.copy"))  ↩", shortcut: "↩", tint: .green) {
+                perform(.copy)
+            }
                 .accessibilityLabel(L("screenshot.edit.copy"))
                 .accessibilityIdentifier("screenshot.copy")
             if state.showsPin {
@@ -775,6 +785,8 @@ struct ScreenshotEditorToolbar: View {
         }
         .buttonStyle(.plain)
         .screenshotTooltip(ScreenshotEditorToolbarModel.help(for: color))
+        .modifier(EditorShortcutHint(key: ScreenshotAnnotationStyle.Color.presets.firstIndex(of: color)
+            .map { String(($0 + 1) % 10) }, visible: showsShortcutHints))
         .accessibilityLabel(ScreenshotEditorToolbarModel.help(for: color))
     }
 
@@ -817,7 +829,8 @@ struct ScreenshotEditorToolbar: View {
         .buttonStyle(.plain)
     }
 
-    private func iconButton(_ symbol: String, help: String, isOn: Bool = false, isEnabled: Bool = true,
+    private func iconButton(_ symbol: String, help: String, shortcut: String? = nil,
+                            isOn: Bool = false, isEnabled: Bool = true,
                             tint: Color? = nil,
                             action: @escaping () -> Void) -> some View {
         Button(action: action) {
@@ -832,6 +845,7 @@ struct ScreenshotEditorToolbar: View {
         .disabled(!isEnabled)
         .opacity(isEnabled ? 1 : 0.35)
         .screenshotTooltip(help)
+        .modifier(EditorShortcutHint(key: isEnabled ? shortcut : nil, visible: showsShortcutHints))
         .accessibilityLabel(help)
     }
 

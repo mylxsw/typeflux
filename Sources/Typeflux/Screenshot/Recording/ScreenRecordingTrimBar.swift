@@ -3,6 +3,7 @@ import SwiftUI
 /// In and out points with "set to playhead" buttons, plus the kept and exported lengths.
 struct ScreenRecordingTrimBar: View {
     @ObservedObject var model: ScreenRecordingCoordinator
+    var showsShortcutHints = false
 
     var body: some View {
         let trimmed = model.trimStart > 0.001 || model.trimEnd < model.duration - 0.001
@@ -48,6 +49,7 @@ struct ScreenRecordingTrimBar: View {
                 .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
             }
             .buttonStyle(.plain).help(L(key == "I" ? "recording.key.in" : "recording.key.out"))
+            .modifier(EditorShortcutHint(key: key, visible: showsShortcutHints && model.state == .preview))
         }
         .padding(.leading, 9).padding(.trailing, 6).frame(height: 28)
         .background(AskTheme.controlSurface.opacity(0.7), in: RoundedRectangle(cornerRadius: 7))
