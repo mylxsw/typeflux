@@ -2550,7 +2550,7 @@
 "agent.status.skills.count" = "%1$d of %2$d on";
 "agent.status.mcp.count" = "On: %d";
 "agent.status.mcp.none" = "None added";
-"agent.overview.ready" = "Ask can use %d capabilities now";
+"agent.overview.ready" = "Agent can use %d capabilities now";
 "agent.overview.allSet" = "Everything is set up";
 "agent.overview.needsAttention" = "%1$d to fix: %2$@";
 "agent.overview.notes" = "Saved notes: %d";

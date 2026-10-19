@@ -2540,7 +2540,7 @@
 "agent.status.skills.count" = "%2$d개 중 %1$d개 켜짐";
 "agent.status.mcp.count" = "%d개 켜짐";
 "agent.status.mcp.none" = "추가되지 않음";
-"agent.overview.ready" = "Ask가 지금 %d가지 기능을 사용할 수 있습니다";
+"agent.overview.ready" = "Agent가 지금 %d가지 기능을 사용할 수 있습니다";
 "agent.overview.allSet" = "모두 설정되었습니다";
 "agent.overview.needsAttention" = "확인할 항목 %1$d개: %2$@";
 "agent.overview.notes" = "메모 %d개 저장됨";

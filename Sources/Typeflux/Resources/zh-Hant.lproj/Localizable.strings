@@ -2547,7 +2547,7 @@
 "agent.status.skills.count" = "%1$d / %2$d 已啟用";
 "agent.status.mcp.count" = "%d 個已啟用";
 "agent.status.mcp.none" = "未新增";
-"agent.overview.ready" = "隨便問現在可以使用 %d 項能力";
+"agent.overview.ready" = "Agent 現在可以使用 %d 項能力";
 "agent.overview.allSet" = "一切就緒";
 "agent.overview.needsAttention" = "還有 %1$d 項需要處理：%2$@";
 "agent.overview.notes" = "記住了 %d 則筆記";
