@@ -2144,6 +2144,31 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         await waitForMainActorWork()
     }
 
+    func testOverlayConfirmFinishesHoldToTalkAndIgnoresTheLaterRelease() async {
+        let audioRecorder = MockProcessingAudioRecorder()
+        let controller = makeWorkflowController(audioRecorder: audioRecorder)
+        await controller.beginRecording(intent: .dictation, startLocked: false)
+        XCTAssertTrue(controller.isRecording)
+        XCTAssertEqual(controller.recordingMode, .holdToTalk)
+
+        // The hands-free-only entry point keeps ignoring hold-to-talk.
+        controller.confirmLockedRecording()
+        XCTAssertEqual(audioRecorder.stopCallCount, 0)
+
+        controller.confirmRecordingFromOverlay()
+        await audioRecorder.waitUntilStopCount(isAtLeast: 1)
+        XCTAssertEqual(audioRecorder.stopCallCount, 1)
+        await waitForMainActorWork()
+        XCTAssertFalse(controller.isRecording)
+
+        // Releasing the still-held shortcut afterwards must not start or stop anything.
+        controller.handlePressEnded()
+        controller.confirmRecordingFromOverlay()
+        await waitForMainActorWork()
+        XCTAssertEqual(audioRecorder.stopCallCount, 1)
+        await MainActor.run { controller.overlayController.dismissImmediately() }
+    }
+
     func testCancelProvisionalRecordingReleasesStartupWithoutSelectingMode() async {
         let audioRecorder = MockProcessingAudioRecorder()
         let controller = makeWorkflowController(audioRecorder: audioRecorder)

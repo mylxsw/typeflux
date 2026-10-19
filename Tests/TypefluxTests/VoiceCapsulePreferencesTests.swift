@@ -116,7 +116,7 @@ struct VoiceCapsuleCopyTests {
     }
 
     @Test func cardControlsDependOnThePhase() {
-        #expect(VoiceCapsulePhase.listening(handsFree: false).cardControls == [.cancel])
+        #expect(VoiceCapsulePhase.listening(handsFree: false).cardControls == [.cancel, .confirm])
         #expect(VoiceCapsulePhase.listening(handsFree: true).cardControls == [.cancel, .confirm])
         #expect(VoiceCapsulePhase.processing.cardControls == [.cancel])
         #expect(VoiceCapsulePhase.completed.cardControls.isEmpty)

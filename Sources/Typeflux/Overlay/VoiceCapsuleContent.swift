@@ -14,12 +14,12 @@ enum VoiceCapsulePhase: Equatable {
 
     var showsRecordingControls: Bool { self == .listening(handsFree: true) }
 
-    /// The corner card's hover controls. Holding the shortcut confirms on release, so it only
-    /// offers cancel; a finished or failed capsule has nothing to act on from the header.
+    /// The hover controls. Listening always offers confirm as well as cancel, so a live caption can be
+    /// committed with the pointer even while the shortcut is held; a finished or failed capsule has none.
     var cardControls: [VoiceCapsuleCardControl] {
         switch self {
-        case .listening(handsFree: true): [.cancel, .confirm]
-        case .listening(handsFree: false), .processing: [.cancel]
+        case .listening: [.cancel, .confirm]
+        case .processing: [.cancel]
         case .completed, .failure: []
         }
     }
