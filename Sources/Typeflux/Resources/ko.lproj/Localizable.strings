@@ -4659,7 +4659,6 @@
 "hotkeys.column.name" = "이름";
 
 "settings.list.itemCount" = "%d개 항목";
-"hotkeys.keyword.sheet.hint" = "선택한 텍스트로 실행하며, 선택이 없으면 입력을 기다립니다.";
 "hotkeys.keyword.sheet.record" = "단축키 기록";
 
 // Liquid Glass intensity

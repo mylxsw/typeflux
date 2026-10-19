@@ -252,10 +252,12 @@ struct HotkeySettingsViewTests {
                 try await SettingsBehaviorTestSupport.wait { window.attachedSheet != nil }
                 let sheet = try #require(window.attachedSheet)
                 try await SettingsBehaviorTestSupport.wait {
-                    SettingsBehaviorTestSupport.contains(L("hotkeys.keyword.sheet.hint"), in: sheet)
+                    SettingsBehaviorTestSupport.elements(in: sheet).contains {
+                        $0.role == NSAccessibility.Role.popUpButton.rawValue && $0.text.contains("rw")
+                    }
                 }
                 let picker = try #require(SettingsBehaviorTestSupport.elements(in: sheet).first {
-                    $0.value("accessibilityIdentifier") as? String == "hotkeys.keyword.sheet.keyword"
+                    $0.role == NSAccessibility.Role.popUpButton.rawValue
                 })
                 #expect(picker.text.contains("rw"))
                 #expect(store.keywordHotkeys.isEmpty)
@@ -304,7 +306,9 @@ struct HotkeySettingsViewTests {
                 try await SettingsBehaviorTestSupport.wait { window.attachedSheet != nil }
                 let sheet = try #require(window.attachedSheet)
                 try await SettingsBehaviorTestSupport.wait {
-                    SettingsBehaviorTestSupport.contains(L("hotkeys.keyword.sheet.hint"), in: sheet)
+                    SettingsBehaviorTestSupport.elements(in: sheet).contains {
+                        $0.value("accessibilityIdentifier") as? String == "hotkeys.keyword.sheet.keyword"
+                    }
                 }
                 #expect(!SettingsBehaviorTestSupport.contains(L("hotkeys.recording"), in: window.contentView!))
                 let save = try #require(SettingsBehaviorTestSupport.elements(in: sheet).first {
@@ -317,7 +321,7 @@ struct HotkeySettingsViewTests {
         }
     }
 
-    @Test func `keyword editor renders concise guidance and conflicts`() async throws {
+    @Test func `keyword editor renders picker and conflicts`() async throws {
         let previous = AppLocalization.shared.language
         if ProcessInfo.processInfo.environment["TYPEFLUX_SETTINGS_SNAPSHOTS"] != nil {
             AppLocalization.shared.setLanguage(.simplifiedChinese)
@@ -348,7 +352,9 @@ struct HotkeySettingsViewTests {
                              size: NSSize(width: 480, height: 300), name: "hotkeys-sheet-\(light ? "light" : "dark")",
                              light: light) { window in
                 #expect(SettingsBehaviorTestSupport.contains(L("hotkeys.keyword.sheet.takeKeys"), in: window))
-                #expect(SettingsBehaviorTestSupport.contains(L("hotkeys.keyword.sheet.hint"), in: window))
+                #expect(SettingsBehaviorTestSupport.elements(in: window).contains {
+                    $0.value("accessibilityIdentifier") as? String == "hotkeys.keyword.sheet.keyword"
+                })
             }
         }
         try await render(KeywordHotkeyEditorSheet(model: model, draft: KeywordHotkeyDraft(editing: owner), onDone: {}),

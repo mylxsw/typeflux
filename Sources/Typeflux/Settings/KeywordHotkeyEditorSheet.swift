@@ -20,9 +20,7 @@ struct KeywordHotkeyEditorSheet: View {
         VStack(alignment: .leading, spacing: 0) {
             Text(L(draft.isNew ? "hotkeys.keyword.sheet.addTitle" : "hotkeys.keyword.sheet.editTitle"))
                 .font(.system(size: 15, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
-                .padding(.horizontal, 22).padding(.top, 20).padding(.bottom, 6)
-            hint(L("hotkeys.keyword.sheet.hint"))
-                .padding(.horizontal, 22).padding(.bottom, 18)
+                .padding(.horizontal, 22).padding(.top, 20).padding(.bottom, 18)
             VStack(alignment: .leading, spacing: 14) {
                 field(L("hotkeys.keyword.sheet.keyword")) { keywordPicker }
                 field(L("hotkeys.keyword.sheet.shortcut")) { shortcutField }
@@ -36,25 +34,23 @@ struct KeywordHotkeyEditorSheet: View {
     }
 
     private var keywordPicker: some View {
-        Picker("", selection: Binding(
+        TFPopUpButton(title: L("hotkeys.keyword.sheet.keyword"), options: keywordOptions, selection: Binding(
             get: { selected?.id ?? "" },
             set: { id in
                 if let option = model.options.first(where: { $0.id == id }) {
                     draft.select(option)
                 }
             }
-        )) {
-            if selected == nil {
-                Text(draft.hotkey.keyword.isEmpty ? L("hotkeys.keyword.sheet.choose")
-                    : L("hotkeys.keyword.status.missing")).tag("")
-            }
-            ForEach(model.options) { option in
-                Text(optionLabel(option)).tag(option.id)
-            }
+        ), width: 348, identifier: "hotkeys.keyword.sheet.keyword")
+    }
+
+    private var keywordOptions: [TFOption<String>] {
+        var options = model.options.map { TFOption($0.id, optionLabel($0)) }
+        if selected == nil {
+            options.insert(TFOption("", draft.hotkey.keyword.isEmpty ? L("hotkeys.keyword.sheet.choose")
+                : L("hotkeys.keyword.status.missing")), at: 0)
         }
-        .labelsHidden().frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityLabel(L("hotkeys.keyword.sheet.keyword"))
-        .accessibilityIdentifier("hotkeys.keyword.sheet.keyword")
+        return options
     }
 
     private func optionLabel(_ option: KeywordHotkeyOption) -> String {

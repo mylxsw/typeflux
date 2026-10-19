@@ -4680,7 +4680,6 @@
 "hotkeys.column.name" = "Name";
 
 "settings.list.itemCount" = "Items: %d";
-"hotkeys.keyword.sheet.hint" = "Runs on selected text; otherwise waits for input.";
 "hotkeys.keyword.sheet.record" = "Record shortcut";
 
 // Liquid Glass intensity

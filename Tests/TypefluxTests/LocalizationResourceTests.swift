@@ -46,7 +46,7 @@ final class LocalizationResourceTests: XCTestCase {
 
     func testKeywordShortcutGuidanceExistsInEveryLanguage() throws {
         let keys = ["hotkeys.keyword.add", "hotkeys.keyword.sheet.addTitle",
-                    "hotkeys.keyword.sheet.editTitle", "hotkeys.keyword.sheet.hint",
+                    "hotkeys.keyword.sheet.editTitle",
                     "hotkeys.keyword.sheet.record", "hotkeys.keyword.sheet.shortcutHint"]
         for language in AppLanguage.allCases {
             let bundle = try localizationBundle(for: language)

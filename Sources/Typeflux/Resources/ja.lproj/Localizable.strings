@@ -4659,7 +4659,6 @@
 "hotkeys.column.name" = "名前";
 
 "settings.list.itemCount" = "%d 件";
-"hotkeys.keyword.sheet.hint" = "選択したテキストで実行。未選択なら入力を待ちます。";
 "hotkeys.keyword.sheet.record" = "ショートカットを記録";
 
 // Liquid Glass intensity

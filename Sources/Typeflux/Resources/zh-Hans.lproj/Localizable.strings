@@ -4680,7 +4680,6 @@
 "hotkeys.column.name" = "名称";
 
 "settings.list.itemCount" = "%d 项";
-"hotkeys.keyword.sheet.hint" = "运行选中文字；未选中时等待输入。";
 "hotkeys.keyword.sheet.record" = "录制快捷键";
 
 // Liquid Glass intensity
