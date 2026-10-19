@@ -422,6 +422,7 @@ struct SemanticFileServiceTests {
             }
             let view = SemanticFileSearchSettingsView(service: service, filesEnabled: true)
             try await Support.withWindow(view, width: 760, height: 560) { window, host in
+                #expect(Support.contains("Beta", in: host))
                 #expect(Support.contains(L("semantic.index.setup.download"), in: host))
                 #expect(Support.contains(L("semantic.enable.download"), in: host))
                 #expect(window.attachedSheet == nil)

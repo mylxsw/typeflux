@@ -2557,14 +2557,6 @@
 "agent.overview.notes" = "记住了 %d 条笔记";
 "agent.overview.fix" = "去处理";
 "agent.overview.storage.footnote" = "已经开始的对话不能更改存储位置。未登录时，所有对话都只保存在本机。";
-"agent.storage.cloud.models" = "可用云端模型、识图、深入研究、后台运行";
-"agent.storage.cloud.sync" = "多台设备同步对话";
-"agent.storage.cloud.search" = "联网搜索由 Typeflux Cloud 提供";
-"agent.storage.cloud.credits" = "云端模型用量计入额度";
-"agent.storage.local.private" = "对话不上传到 Typeflux Cloud";
-"agent.storage.local.models" = "只使用你在「模型」里配置的模型";
-"agent.storage.local.search" = "联网搜索需自备密钥（见「联网搜索」）";
-"agent.storage.local.limits" = "不能使用深入研究、后台运行和多设备同步";
 "agent.search.subtitle" = "用于本机对话。云端对话由 Typeflux Cloud 提供搜索，无需配置。密钥保存在钥匙串中。";
 "agent.search.off" = "关闭后，本机对话不能联网搜索；云端对话不受影响。";
 "agent.search.keyPlaceholder" = "保存在钥匙串中";

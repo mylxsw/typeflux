@@ -2547,14 +2547,6 @@
 "agent.overview.notes" = "메모 %d개 저장됨";
 "agent.overview.fix" = "확인하기";
 "agent.overview.storage.footnote" = "시작된 대화의 저장 위치는 바꿀 수 없습니다. 로그아웃 상태에서는 모든 대화가 이 Mac에만 저장됩니다.";
-"agent.storage.cloud.models" = "클라우드 모델, 이미지 인식, 심층 리서치, 백그라운드 실행";
-"agent.storage.cloud.sync" = "여러 기기에서 동기화";
-"agent.storage.cloud.search" = "웹 검색은 Typeflux Cloud가 제공";
-"agent.storage.cloud.credits" = "클라우드 모델 사용량은 크레딧에서 차감";
-"agent.storage.local.private" = "Typeflux Cloud에 업로드하지 않음";
-"agent.storage.local.models" = "'모델'에서 설정한 모델만 사용";
-"agent.storage.local.search" = "웹 검색에는 내 키가 필요(웹 검색 참고)";
-"agent.storage.local.limits" = "심층 리서치, 백그라운드 실행, 기기 동기화 사용 불가";
 "agent.search.subtitle" = "비공개 대화에 사용됩니다. 클라우드 대화는 설정 없이 Typeflux Cloud로 검색합니다. 키는 키체인에 저장됩니다.";
 "agent.search.off" = "끄면 비공개 대화에서 웹을 검색할 수 없습니다. 클라우드 대화에는 영향이 없습니다.";
 "agent.search.keyPlaceholder" = "키체인에 저장됩니다";

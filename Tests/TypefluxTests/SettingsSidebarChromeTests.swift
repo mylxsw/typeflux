@@ -188,6 +188,9 @@ struct SettingsSidebarChromeTests {
                 window.setFrameOrigin(NSPoint(x: 80, y: 80))
                 let host = try #require(window.contentView)
                 try await UI.wait { UI.contains(L("history.keep.title"), in: host) }
+                #expect(!UI.contains(
+                    "语音听写历史只保存在这台 Mac 上。自动清理会移除过期本地记录和关联音频文件。", in: host
+                ))
                 #expect(UI.contains(L("home.transcriptionHistory"), in: host))
                 #expect(!UI.elements(in: host).contains {
                     $0.value("accessibilityIdentifier") as? String == "studio.voiceInput.tab.history"

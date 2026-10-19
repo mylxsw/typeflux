@@ -7,15 +7,13 @@ extension AskToolsSettingsView {
         AgentOverviewSummary(statuses: statuses, noteCount: memoryNotes.notes.count) { status in
             navigate(to: status.capability)
         }
-        VStack(alignment: .leading, spacing: 6) {
-            TFSectionHeader(title: L("ask.settings.local.title"))
-            HStack(alignment: .top, spacing: 12) {
-                storageOption(local: false, symbol: "cloud",
-                              points: [(true, L("agent.storage.cloud.models")), (true, L("agent.storage.cloud.sync")),
-                                       (true, L("agent.storage.cloud.search")), (false, L("agent.storage.cloud.credits"))])
-                storageOption(local: true, symbol: "lock",
-                              points: [(true, L("agent.storage.local.private")), (true, L("agent.storage.local.models")),
-                                       (false, L("agent.storage.local.search")), (false, L("agent.storage.local.limits"))])
+        TFFormSection {
+            TFFormRow(title: L("ask.settings.local.title"), icon: "archivebox") {
+                TFPopUpButton(title: L("ask.settings.local.title"),
+                              options: [TFOption(false, Self.storageName(local: false), systemImage: "cloud"),
+                                        TFOption(true, Self.storageName(local: true), systemImage: "lock")],
+                              selection: Binding(get: { newConversationsStayLocal }, set: setNewConversationsStayLocal),
+                              width: TFMetrics.formControlWidth, identifier: "agent.settings.newConversationStorage")
             }
         }
         AskAgentStepSettingsView(settings: settings)
@@ -34,14 +32,6 @@ extension AskToolsSettingsView {
                     }
                 }
             }
-        }
-    }
-
-    private func storageOption(local: Bool, symbol: String, points: [(included: Bool, text: String)]) -> some View {
-        TFChoiceCard(title: Self.storageName(local: local), isSelected: newConversationsStayLocal == local) {
-            setNewConversationsStayLocal(local)
-        } preview: {
-            TFChecklist(systemImage: symbol, items: points)
         }
     }
 

@@ -33,6 +33,7 @@ struct SemanticFileSearchSettingsView: View {
                     .accessibilityHint(L("semantic.subtitle"))
                 SettingsDescriptionHint(detail: L("semantic.subtitle"), visible: isHovering)
                 TFTag(text: L("semantic.index.badge"))
+                TFTag(text: "Beta", tint: TFColors.accent)
                 Spacer(minLength: 8)
                 TFSwitch(title: L("semantic.title"), isOn: Binding(
                     get: { enabled },

@@ -2554,14 +2554,6 @@
 "agent.overview.notes" = "記住了 %d 則筆記";
 "agent.overview.fix" = "前往處理";
 "agent.overview.storage.footnote" = "已開始的對話無法變更儲存位置。未登入時，所有對話都只儲存在本機。";
-"agent.storage.cloud.models" = "可用雲端模型、識圖、深入研究、背景執行";
-"agent.storage.cloud.sync" = "多台裝置同步對話";
-"agent.storage.cloud.search" = "網路搜尋由 Typeflux Cloud 提供";
-"agent.storage.cloud.credits" = "雲端模型用量計入額度";
-"agent.storage.local.private" = "對話不上傳到 Typeflux Cloud";
-"agent.storage.local.models" = "只使用你在「模型」中設定的模型";
-"agent.storage.local.search" = "網路搜尋需自備金鑰（見「網路搜尋」）";
-"agent.storage.local.limits" = "無法使用深入研究、背景執行和多裝置同步";
 "agent.search.subtitle" = "用於本機對話。雲端對話由 Typeflux Cloud 提供搜尋，無需設定。金鑰儲存在鑰匙圈中。";
 "agent.search.off" = "關閉後，本機對話無法連網搜尋；雲端對話不受影響。";
 "agent.search.keyPlaceholder" = "儲存在鑰匙圈中";

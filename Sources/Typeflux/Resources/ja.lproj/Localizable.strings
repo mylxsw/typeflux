@@ -2547,14 +2547,6 @@
 "agent.overview.notes" = "%d 件のメモを記憶";
 "agent.overview.fix" = "対応する";
 "agent.overview.storage.footnote" = "開始した会話の保存先は変更できません。サインアウト中は、すべての会話がこの Mac に保存されます。";
-"agent.storage.cloud.models" = "クラウドモデル、画像認識、ディープリサーチ、バックグラウンド実行";
-"agent.storage.cloud.sync" = "デバイス間で同期";
-"agent.storage.cloud.search" = "Web 検索は Typeflux Cloud が提供";
-"agent.storage.cloud.credits" = "クラウドモデルの利用はクレジットを消費";
-"agent.storage.local.private" = "Typeflux Cloud にアップロードしない";
-"agent.storage.local.models" = "「モデル」で設定したモデルのみ使用";
-"agent.storage.local.search" = "Web 検索には自分のキーが必要（「Web 検索」を参照）";
-"agent.storage.local.limits" = "ディープリサーチ、バックグラウンド実行、同期は使えません";
 "agent.search.subtitle" = "プライベートな会話用です。クラウドの会話は設定不要で Typeflux Cloud が検索します。キーはキーチェーンに保存されます。";
 "agent.search.off" = "オフの場合、プライベートな会話では Web 検索できません。クラウドの会話には影響しません。";
 "agent.search.keyPlaceholder" = "キーチェーンに保存されます";

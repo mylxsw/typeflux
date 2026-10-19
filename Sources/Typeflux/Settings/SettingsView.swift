@@ -783,7 +783,7 @@ struct StudioView: View {
 
     private var historyContent: some View {
         VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
-            TFFormSection(footnote: L("history.privacy.subtitle")) {
+            TFFormSection {
                 TFFormRow(title: L("history.keep.title"), detail: L("history.keep.subtitle"), icon: "clock") {
                     TFPopUpButton(title: L("history.keep.title"),
                                   options: HistoryRetentionPolicy.allCases.map { TFOption($0, $0.title) },

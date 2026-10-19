@@ -2557,14 +2557,6 @@
 "agent.overview.notes" = "Saved notes: %d";
 "agent.overview.fix" = "Fix";
 "agent.overview.storage.footnote" = "A conversation's storage can't change once it starts. Signed out, every conversation stays on this Mac.";
-"agent.storage.cloud.models" = "Cloud models, image understanding, deep research and background runs";
-"agent.storage.cloud.sync" = "Synced across your devices";
-"agent.storage.cloud.search" = "Web search provided by Typeflux Cloud";
-"agent.storage.cloud.credits" = "Cloud model usage counts toward your credits";
-"agent.storage.local.private" = "Never uploaded to Typeflux Cloud";
-"agent.storage.local.models" = "Uses only the models you set up under Models";
-"agent.storage.local.search" = "Web search needs your own key (see Web Search)";
-"agent.storage.local.limits" = "No deep research, background runs or device sync";
 "agent.search.subtitle" = "For private conversations. Cloud conversations search through Typeflux Cloud with no setup. Keys are stored in the Keychain.";
 "agent.search.off" = "Off: private conversations can't search the web. Cloud conversations are not affected.";
 "agent.search.keyPlaceholder" = "Stored in the Keychain";
