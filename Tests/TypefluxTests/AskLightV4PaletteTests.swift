@@ -41,9 +41,9 @@ struct AskLightV4PaletteTests {
             (AskTheme.launcherKeyword, rgb(0, 0, 0, 0.06)),
             (AskTheme.switchOnFill, rgb(37, 99, 235, 0.10)),
             (AskTheme.switchOnEdge, rgb(37, 99, 235, 0.20)),
-            (AskTheme.privateTint, rgb(147, 51, 234)),
-            (AskTheme.privateFill, rgb(147, 51, 234, 0.10)),
-            (AskTheme.privateHeaderFill, rgb(147, 51, 234, 0.10)),
+            (AskTheme.privateTint, rgb(47, 122, 87)),
+            (AskTheme.privateFill, rgb(47, 122, 87, 0.10)),
+            (AskTheme.privateHeaderFill, rgb(47, 122, 87, 0.10)),
             (AskTheme.launcherShortcutFill, .white),
             (AskTheme.launcherShortcutEdge, rgb(15, 23, 42, 0.14)),
             (AskTheme.keycapSurface, .white),
@@ -73,9 +73,9 @@ struct AskLightV4PaletteTests {
             (AskTheme.launcherKeyword, rgb(56, 56, 56, 0.72)),
             (AskTheme.switchOnFill, calibrated(0.09, 0.55, 1, 0.22)),
             (AskTheme.switchOnEdge, calibrated(0.09, 0.55, 1, 0.35)),
-            (AskTheme.privateTint, Color(nsColor: .systemPurple)),
-            (AskTheme.privateFill, Color(nsColor: .systemPurple).opacity(0.13)),
-            (AskTheme.privateHeaderFill, Color(nsColor: .systemPurple).opacity(0.12)),
+            (AskTheme.privateTint, rgb(140, 201, 167)),
+            (AskTheme.privateFill, rgb(140, 201, 167, 0.12)),
+            (AskTheme.privateHeaderFill, rgb(140, 201, 167, 0.12)),
             (AskTheme.launcherShortcutFill, .clear), (AskTheme.launcherShortcutEdge, grey(0.07)),
             (AskTheme.keycapSurface, AskTheme.hoverFill),
             (AskTheme.noteQuestionSurface, AskTheme.hoverFill.opacity(0.6)),
@@ -90,15 +90,16 @@ struct AskLightV4PaletteTests {
         #expect(AskGlassPlacement.menu.frost(dark: true) == 0.90)
     }
 
-    @Test func `private colours render like the original system purple in dark`() async throws {
+    @Test func `storage colours keep their dark values under a light application`() async throws {
         let application = NSApplication.shared
         let appearance = application.appearance
         application.appearance = NSAppearance(named: .aqua)
         defer { application.appearance = appearance }
         let pairs: [(Color, Color)] = [
-            (AskTheme.privateTint, Color(nsColor: .systemPurple)),
-            (AskTheme.privateFill, Color(nsColor: .systemPurple).opacity(0.13)),
-            (AskTheme.privateHeaderFill, Color(nsColor: .systemPurple).opacity(0.12))
+            (AskTheme.privateTint, rgb(140, 201, 167)),
+            (AskTheme.privateFill, rgb(140, 201, 167, 0.12)),
+            (AskTheme.temporaryTint, rgb(229, 181, 103)),
+            (AskTheme.temporaryFill, rgb(229, 181, 103, 0.12))
         ]
         for (actual, expected) in pairs {
             let actualColor = try await render(actual.frame(width: 160, height: 60), style: .liquidGlass, dark: true)

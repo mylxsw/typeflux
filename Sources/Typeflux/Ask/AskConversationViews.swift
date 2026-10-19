@@ -668,6 +668,7 @@ struct AskConversationView: View {
             updatedAt: item.updatedAt,
             selected: model.selectedId == item.id,
             busy: model.busyIds.contains(item.id),
+            local: showsHistoryFilter && model.isLocal(item.id),
             selectionSpace: selectionSpace,
             onSelect: {
                 showsSidebarDrawer = false
@@ -787,6 +788,9 @@ struct AskConversationView: View {
         HStack(spacing: 8) {
             if model.selectedId != nil {
                 HStack(spacing: 10) {
+                    if let marked = model.markedStorage(launcher: false) {
+                        AskStorageTitleGlyph(kind: marked).padding(.trailing, -4)
+                    }
                     Text(headerTitle ?? model.selected?.title
                         ?? model.conversations.first(where: { $0.id == model.selectedId })?.title
                         ?? L("ask.new"))
@@ -819,8 +823,10 @@ struct AskConversationView: View {
                     .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             }
             Spacer(minLength: 8)
-            if model.isTemporaryComposer(launcher: false) {
-                AskTemporaryChip(model: model, showsTitle: layout.mainWidth >= 760)
+            switch model.markedStorage(launcher: false) {
+            case .temporary: AskTemporaryChip(model: model, showsTitle: layout.mainWidth >= 760)
+            case .local: AskLocalChip(model: model, showsTitle: layout.mainWidth >= 760)
+            case .cloud, nil: EmptyView()
             }
             if model.selectedId != nil || model.tools.browserWorkspace != nil {
                 HStack(spacing: 2) {
@@ -891,7 +897,9 @@ struct AskConversationView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     if !layout.isShort {
-                        AskEmptyStateOrb(voice: model.voiceInput).padding(.bottom, 20)
+                        AskEmptyStateOrb(voice: model.voiceInput,
+                                         palette: .init(marked: model.markedStorage(launcher: false)))
+                            .padding(.bottom, 20)
                     }
                     if !layout.isVeryShort {
                         Text(L("ask.empty")).font(.system(size: layout.isShort ? 20 : 26, weight: .bold))

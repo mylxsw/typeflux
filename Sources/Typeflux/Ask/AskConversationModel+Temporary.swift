@@ -29,6 +29,16 @@ enum AskStorageKind: Equatable, CaseIterable, Sendable {
     }
 
     var detailKey: String { titleKey + ".detail" }
+
+    /// The kind the window marks in colour, or nil when nothing needs telling apart:
+    /// Cloud is the quiet default, and signed out every conversation is on this Mac.
+    static func marked(_ kind: AskStorageKind, signedIn: Bool) -> AskStorageKind? {
+        switch kind {
+        case .temporary: .temporary
+        case .local: signedIn ? .local : nil
+        case .cloud: nil
+        }
+    }
 }
 
 /// What the user chose when leaving a temporary conversation that has messages.
@@ -80,6 +90,11 @@ extension AskConversationModel {
     func storageKind(launcher: Bool) -> AskStorageKind {
         if isTemporaryComposer(launcher: launcher) { return .temporary }
         return storesLocally(launcher: launcher) ? .local : .cloud
+    }
+
+    /// The storage kind the header, empty state and orb mark; see `AskStorageKind.marked`.
+    func markedStorage(launcher: Bool) -> AskStorageKind? {
+        AskStorageKind.marked(storageKind(launcher: launcher), signedIn: isSignedIn)
     }
 
     /// Only a conversation that has not started can choose; signed out, Cloud is not offered.

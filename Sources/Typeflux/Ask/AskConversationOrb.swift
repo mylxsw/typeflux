@@ -8,11 +8,13 @@ import SwiftUI
 struct AskConversationOrb: View {
     var size: CGFloat = 88
     var listening = false
+    var palette: AskOrbPalette = .brand
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
     @State private var clock = AskOrbClock()
 
     static let period: TimeInterval = 8
+    /// The brand palette, shown for Cloud and whenever nothing needs telling apart.
     static let colors: [Color] = [
         StudioTheme.dynamic(light: NSColor(srgbRed: 91 / 255, green: 141 / 255, blue: 239 / 255, alpha: 1),
                             dark: NSColor(srgbRed: 0.18, green: 0.42, blue: 1, alpha: 1)),
@@ -39,7 +41,8 @@ struct AskConversationOrb: View {
     }
 
     /// One cycle of the palette, twice over, so a gradient sliding by one cycle wraps seamlessly.
-    static let flowColors: [Color] = Array(colors.dropLast()) + colors
+    static func wrapped(_ colors: [Color]) -> [Color] { Array(colors.dropLast()) + colors }
+    static let flowColors: [Color] = wrapped(colors)
     /// How long one palette cycle is, in units of the drop's size.
     static let cycleLength = 2.4
 
@@ -89,7 +92,7 @@ struct AskConversationOrb: View {
     func drop(phase: Double, energy: Double) -> some View {
         let shape = AskFluidDropShape(phase: phase, wobble: Self.wobble(energy: energy))
         let axis = Self.flow(phase)
-        let fill = LinearGradient(colors: Self.flowColors, startPoint: axis.start, endPoint: axis.end)
+        let fill = LinearGradient(colors: palette.flowColors, startPoint: axis.start, endPoint: axis.end)
         return ZStack {
             // The glow: the same drop, blurred and set a little lower.
             shape.fill(fill)
@@ -159,9 +162,52 @@ final class AskOrbClock {
     }
 }
 
+/// The orb's colours: the brand drop, or the tint family of the storage kind the
+/// window marks (sage on this Mac, sand for a temporary conversation). Each palette's
+/// first and last stops match so the flowing gradient wraps seamlessly.
+enum AskOrbPalette: Equatable {
+    case brand, sage, sand
+
+    init(marked: AskStorageKind?) {
+        switch marked {
+        case .local: self = .sage
+        case .temporary: self = .sand
+        case .cloud, nil: self = .brand
+        }
+    }
+
+    var colors: [Color] {
+        switch self {
+        case .brand: AskConversationOrb.colors
+        case .sage: Self.sageColors
+        case .sand: Self.sandColors
+        }
+    }
+
+    var flowColors: [Color] {
+        switch self {
+        case .brand: AskConversationOrb.flowColors
+        case .sage: Self.sageFlow
+        case .sand: Self.sandFlow
+        }
+    }
+
+    static let sageColors = palette([(0x2F7A57, 0x5FB3A1), (0x4E9C7E, 0x8CC9A7), (0x6E9A4A, 0xC9DFA0),
+                                     (0x3E8A8C, 0x7CC4C2), (0x4E9C7E, 0xA8DCBC), (0x2F7A57, 0x5FB3A1)])
+    static let sandColors = palette([(0x93600F, 0xE5B567), (0xB9822E, 0xF2CF8A), (0xB5653A, 0xE89A6E),
+                                     (0xC99A45, 0xF3DDA6), (0xA86A12, 0xD9A07C), (0x93600F, 0xE5B567)])
+    private static let sageFlow = AskConversationOrb.wrapped(sageColors)
+    private static let sandFlow = AskConversationOrb.wrapped(sandColors)
+
+    private static func palette(_ stops: [(light: UInt32, dark: UInt32)]) -> [Color] {
+        stops.map { StudioTheme.dynamic(light: StudioTheme.rgb($0.light), dark: StudioTheme.rgb($0.dark)) }
+    }
+}
+
 /// The orb as the empty state shows it: it quickens while the new question is dictated.
 struct AskEmptyStateOrb: View {
     @ObservedObject var voice: AskVoiceInput
+    var palette: AskOrbPalette = .brand
 
     static let contextID = "chat:new"
 
@@ -170,7 +216,7 @@ struct AskEmptyStateOrb: View {
     }
 
     var body: some View {
-        AskConversationOrb(listening: Self.listening(phase: voice.phase, context: voice.context))
+        AskConversationOrb(listening: Self.listening(phase: voice.phase, context: voice.context), palette: palette)
     }
 }
 

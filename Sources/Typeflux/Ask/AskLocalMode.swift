@@ -231,7 +231,7 @@ struct AskLocalModeCard: View {
 
     static func tint(_ kind: AskStorageKind) -> Color {
         switch kind {
-        case .cloud: AskTheme.accent
+        case .cloud: AskTheme.cloudTint
         case .local: AskTheme.privateTint
         case .temporary: AskTheme.temporaryTint
         }
@@ -326,7 +326,7 @@ struct AskStorageButton: View {
             Image(systemName: kind.symbol)
                 .font(.system(size: AskMetrics.footerStatusSymbolSize,
                               weight: kind != .cloud || active ? .semibold : .medium))
-                .foregroundStyle(Self.iconColor(kind, active: active))
+                .foregroundStyle(Self.iconColor(kind, active: active, signedIn: model.isSignedIn))
                 .frame(width: Self.size, height: Self.size)
                 .background(Self.wellFill(kind, active: active),
                             in: RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -342,13 +342,14 @@ struct AskStorageButton: View {
                                    model: model, launcher: launcher))
     }
 
-    /// The private tint marks this Mac and teal a temporary conversation; hover or an
-    /// open menu brightens the cloud. The icon alone carries the state colour.
-    static func iconColor(_ kind: AskStorageKind, active: Bool) -> Color {
+    /// Sage marks this Mac and sand a temporary conversation; hover or an open menu
+    /// brightens a neutral icon. The icon alone carries the state colour. Signed out,
+    /// every conversation is kept on this Mac, so its lock stays neutral like the cloud.
+    static func iconColor(_ kind: AskStorageKind, active: Bool, signedIn: Bool = true) -> Color {
         switch kind {
-        case .local: AskTheme.privateTint
+        case .local where signedIn: AskTheme.privateTint
         case .temporary: AskTheme.temporaryTint
-        case .cloud: active ? StudioTheme.textPrimary : StudioTheme.textSecondary
+        case .cloud, .local: active ? StudioTheme.textPrimary : StudioTheme.textSecondary
         }
     }
 
@@ -380,5 +381,56 @@ struct AskLocalModeIdentity: View {
         .accessibilityLabel(L("ask.local.identity"))
         .accessibilityValue(Self.detail(source: status.source))
         .accessibilityHint(L("ask.location.local.help"))
+    }
+}
+
+/// The header's mark for a conversation kept on this Mac while signed in, beside the
+/// title like the temporary chip but with a thin solid edge: the conversation is kept,
+/// only somewhere else. A click opens the storage card.
+struct AskLocalChip: View {
+    @ObservedObject var model: AskConversationModel
+    var showsTitle = true
+    @Environment(\.interfaceStyle) private var style
+    @State private var presented = false
+
+    static let edgeOpacity = 0.35
+
+    var body: some View {
+        Button { presented.toggle() } label: {
+            HStack(spacing: 5) {
+                Image(systemName: AskStorageKind.local.symbol)
+                if showsTitle { Text(L(AskStorageKind.local.titleKey)) }
+            }
+            .font(.system(size: 12.5, weight: .medium))
+            .foregroundStyle(AskTheme.privateTint)
+            .lineLimit(1)
+            .fixedSize()
+            .padding(.horizontal, style.usesGlass ? 12 : 9)
+            .frame(height: style.ask.headerChipHeight)
+            .background(AskTheme.privateHeaderFill, in: Capsule())
+            .overlay(Capsule().strokeBorder(AskTheme.privateTint.opacity(Self.edgeOpacity), lineWidth: 0.8))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .help(L(AskStorageKind.local.detailKey))
+        .accessibilityLabel(L(AskStorageKind.local.titleKey))
+        .accessibilityHint(L("ask.storage.help"))
+        .accessibilityIdentifier("ask.workspace.local")
+        .modifier(AskLocalModeMenu(isPresented: $presented,
+                                   status: .make(model: model, signedIn: model.isSignedIn),
+                                   model: model))
+    }
+}
+
+/// The glyph before a conversation's title in the header: a lock on this Mac, an
+/// hourglass for a temporary conversation, nothing for the Cloud default.
+struct AskStorageTitleGlyph: View {
+    let kind: AskStorageKind
+
+    var body: some View {
+        Image(systemName: kind.symbol)
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(AskLocalModeCard.tint(kind))
+            .accessibilityLabel(L(kind.titleKey))
     }
 }

@@ -385,7 +385,7 @@ struct AskTemporaryConversationTests {
         #expect(AskStorageButton.wellFill(.temporary, active: true) == .clear)
         #expect(AskLocalModeCard.tint(.temporary) == AskTheme.temporaryTint)
         #expect(AskLocalModeCard.tint(.local) == AskTheme.privateTint)
-        #expect(AskLocalModeCard.tint(.cloud) == AskTheme.accent)
+        #expect(AskLocalModeCard.tint(.cloud) == AskTheme.cloudTint)
     }
 
     @Test func theLeaveDialogMapsItsButtons() {

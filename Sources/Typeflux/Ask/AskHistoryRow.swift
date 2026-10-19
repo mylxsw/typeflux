@@ -8,6 +8,9 @@ struct AskHistoryRow: View {
     let updatedAt: Date
     let selected: Bool
     let busy: Bool
+    /// Kept on this Mac while the list mixes it with Cloud conversations: a small
+    /// neutral lock tells it apart without colouring the row.
+    var local = false
     let selectionSpace: Namespace.ID
     var onSelect: () -> Void
     var onRename: (String) async throws -> Void = { _ in }
@@ -64,6 +67,13 @@ struct AskHistoryRow: View {
                     .foregroundStyle(Self.titleColor(selected: selected, hovering: hovering, glass: style.usesGlass))
                     .lineLimit(1)
                 Spacer(minLength: 4)
+            }
+            if local, editorTitle == nil {
+                Image(systemName: AskStorageKind.local.symbol)
+                    .font(.system(size: 9.5, weight: .medium))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .accessibilityLabel(L(AskStorageKind.local.titleKey))
+                    .accessibilityIdentifier("ask.history.localMark")
             }
             if savingTitle != nil {
                 ProgressView().controlSize(.mini)
