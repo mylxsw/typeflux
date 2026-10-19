@@ -329,6 +329,7 @@ final class OverlayController {
     /// The display chosen when the overlay appeared; it stays put until the overlay hides.
     private var placementScreen: VoiceCapsuleScreenGeometry?
     private var hoverWorkItem: DispatchWorkItem?
+    private var cardControlsHideWorkItem: DispatchWorkItem?
     private var keyWindowObserver: NSObjectProtocol?
     private var keyboardCaptureSuspended = false
     var keyboardCaptureSuspendedForTesting: Bool { keyboardCaptureSuspended }
@@ -418,7 +419,8 @@ final class OverlayController {
             dismissWorkItem,
             pendingFrameAnimationWorkItem,
             recordingHintAutoHideWorkItem,
-            hoverWorkItem
+            hoverWorkItem,
+            cardControlsHideWorkItem
         ]
         let progressTask = processingProgressTask
         let tap = eventTap
@@ -1005,8 +1007,11 @@ final class OverlayController {
         model.processingProgress = 0
         model.recordingStartedAt = nil
         model.capsuleHovered = false
+        model.cardControlsRevealed = false
         hoverWorkItem?.cancel()
         hoverWorkItem = nil
+        cardControlsHideWorkItem?.cancel()
+        cardControlsHideWorkItem = nil
         placementScreen = nil
         removeKeyMonitoring()
         removePickerSystemKeyCapture()
@@ -1289,8 +1294,8 @@ final class OverlayController {
             return OverlayMetrics(
                 size: VoiceCapsuleLayout.windowSize(contentSize: content, skin: skin),
                 anchor: .voiceCapsule, offset: 0,
-                // Recording accepts the pointer for hover expansion and the hands-free buttons.
-                interactive: presentation.isRecording
+                // Recording accepts the pointer for hover; the corner card also offers cancel while processing.
+                interactive: presentation.isRecording || (presentation.isProcessing && skin.isCornerCard)
             )
         case .failure:
             let measured = NSHostingView(rootView: OverlayView(model: model)).fittingSize
@@ -1308,13 +1313,18 @@ final class OverlayController {
         }
     }
 
+    static let cardControlsHideDelay: TimeInterval = 0.25
+
     private func handleCapsuleHover(_ hovering: Bool) {
+        if model.skin.isCornerCard {
+            revealCardControls(hovering)
+            return
+        }
         hoverWorkItem?.cancel()
         hoverWorkItem = nil
         let supportsHover = switch model.skin {
-        case .cornerCard: true
         case .notchIsland: settingsStore.voiceCapsule.notchHoverExpands
-        case .bottomCapsule: false
+        case .cornerCard, .bottomCapsule: false
         }
         guard !hovering || supportsHover else { return }
         let workItem = DispatchWorkItem { [weak self] in
@@ -1329,6 +1339,25 @@ final class OverlayController {
         hoverWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + (hovering ? 0.15 : 0.4), execute: workItem)
     }
+
+    /// The corner card keeps its size on hover; the pointer only reveals its controls.
+    /// They appear at once and linger briefly after the pointer leaves, so a pass across does not flicker.
+    private func revealCardControls(_ hovering: Bool) {
+        cardControlsHideWorkItem?.cancel()
+        cardControlsHideWorkItem = nil
+        if hovering {
+            model.cardControlsRevealed = true
+            return
+        }
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.model.cardControlsRevealed = false
+            self?.cardControlsHideWorkItem = nil
+        }
+        cardControlsHideWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.cardControlsHideDelay, execute: workItem)
+    }
+
+    var cardControlsRevealedForTesting: Bool { model.cardControlsRevealed }
 
     static let completionDisplayDuration: TimeInterval = 1.4
 
@@ -1792,6 +1821,8 @@ final class OverlayViewModel: ObservableObject {
     @Published var recordingStartedAt: Date?
     @Published var completedCharacterCount = 0
     @Published var capsuleHovered = false
+    /// The pointer is over the corner card, so its cancel/confirm controls are shown.
+    @Published var cardControlsRevealed = false
     var onCapsuleHoverChanged: ((Bool) -> Void)?
     /// Stretches capsule motion durations; only rendering tests set it above 1.
     var motionScale: Double = 1

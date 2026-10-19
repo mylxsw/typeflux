@@ -115,6 +115,35 @@ struct VoiceCapsuleCopyTests {
         }
     }
 
+    @Test func cardControlsDependOnThePhase() {
+        #expect(VoiceCapsulePhase.listening(handsFree: false).cardControls == [.cancel])
+        #expect(VoiceCapsulePhase.listening(handsFree: true).cardControls == [.cancel, .confirm])
+        #expect(VoiceCapsulePhase.processing.cardControls == [.cancel])
+        #expect(VoiceCapsulePhase.completed.cardControls.isEmpty)
+        #expect(VoiceCapsulePhase.failure.cardControls.isEmpty)
+        #expect(VoiceCapsuleSkin.cornerCard(.leading).isCornerCard)
+        #expect(!VoiceCapsuleSkin.bottomCapsule.isCornerCard)
+    }
+
+    @Test func ripplesSpreadWithTheVoice() {
+        let quiet = VoiceCapsuleOrb.ripple(for: 0.05)
+        #expect(quiet.inner.scale == 1 && quiet.inner.opacity == 0 && quiet.outer.opacity == 0)
+        let loud = VoiceCapsuleOrb.ripple(for: 1)
+        #expect(abs(loud.inner.scale - 1.32) < 0.001 && abs(loud.outer.scale - 1.6) < 0.001)
+        #expect(abs(loud.inner.opacity - 0.9) < 0.001 && abs(loud.outer.opacity - 0.45) < 0.001)
+    }
+
+    @Test func modelPassesHoverRevealToTheSnapshot() {
+        let model = OverlayViewModel()
+        model.skin = .cornerCard(.trailing)
+        model.presentation = .recordingLocked
+        #expect(model.voiceCapsuleSnapshot?.controlsRevealed == false)
+        model.cardControlsRevealed = true
+        #expect(model.voiceCapsuleSnapshot?.controlsRevealed == true)
+        // Revealing controls never expands the card.
+        #expect(!model.voiceCapsuleExpanded)
+    }
+
     @Test func phaseHelpersAndOrbResponse() {
         #expect(VoiceCapsulePhase.listening(handsFree: false).isListening)
         #expect(!VoiceCapsulePhase.processing.isListening)

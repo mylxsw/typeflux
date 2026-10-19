@@ -1,10 +1,14 @@
 import SwiftUI
 
 /// A Siri-like card below the menu bar: the orb, a title and live state, and the transcript
-/// when it expands. Always dark so it reads on any wallpaper.
+/// when it expands. Always dark so it reads on any wallpaper. The orb alone shows the voice;
+/// the controls appear in the timer's place only while the pointer is over the card.
 struct CornerCardCapsule: View {
     let snapshot: VoiceCapsuleSnapshot
     let actions: VoiceCapsuleActions
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    static let slotSize = CGSize(width: 64, height: 28)
 
     private var shape: RoundedRectangle {
         RoundedRectangle(cornerRadius: snapshot.showsBody ? 24 : VoiceCapsuleLayout.cardCompactHeight / 2,
@@ -35,6 +39,13 @@ struct CornerCardCapsule: View {
         .environment(\.colorScheme, .dark)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(L("voiceCapsule.accessibility.label"))
+        // Hidden controls stay reachable for VoiceOver without hovering.
+        .accessibilityAction(named: L("common.cancel")) {
+            if snapshot.phase.cardControls.contains(.cancel) { actions.cancel() }
+        }
+        .accessibilityAction(named: L("common.done")) {
+            if snapshot.phase.cardControls.contains(.confirm) { actions.confirm() }
+        }
     }
 
     private var background: some View {
@@ -46,61 +57,67 @@ struct CornerCardCapsule: View {
 
     private var header: some View {
         HStack(spacing: 12) {
-            VoiceCapsuleOrb(phase: snapshot.phase, level: snapshot.level, diameter: 40)
+            VoiceCapsuleOrb(phase: snapshot.phase, level: snapshot.level, diameter: 40, showsRipples: true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: VoiceCapsuleCopy.productName)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Color.white)
-                subtitle
+                Text(VoiceCapsuleCopy.subtitle(for: snapshot))
                     .font(.system(size: 12.5))
                     .foregroundStyle(Color.white.opacity(0.6))
                     .lineLimit(1)
-                    .monospacedDigit()
             }
             Spacer(minLength: 8)
-            accessory
+            slot
         }
         .padding(.leading, 12)
-        .padding(.trailing, 16)
+        .padding(.trailing, 14)
         .frame(height: VoiceCapsuleLayout.cardCompactHeight)
     }
 
-    @ViewBuilder
-    private var subtitle: some View {
-        let base = Text(VoiceCapsuleCopy.subtitle(for: snapshot))
-        if snapshot.phase.isListening, let startedAt = snapshot.recordingStartedAt {
-            base + Text(verbatim: " · ") + Text(timerInterval: startedAt ... Date.distantFuture, countsDown: false)
-        } else {
-            base
-        }
-    }
-
-    @ViewBuilder
-    private var accessory: some View {
-        switch snapshot.phase {
-        case .listening:
-            HStack(spacing: 8) {
-                if snapshot.phase.showsRecordingControls {
+    /// One fixed slot: the timer or progress at rest, the controls under the pointer. Its size never
+    /// changes, so the title does not move when the controls appear.
+    private var slot: some View {
+        let controls = snapshot.phase.cardControls
+        let revealed = snapshot.controlsRevealed && !controls.isEmpty
+        return ZStack(alignment: .trailing) {
+            meta
+                .opacity(revealed ? 0 : 1)
+                .offset(x: revealed && !reduceMotion ? 4 : 0)
+            HStack(spacing: 6) {
+                if controls.contains(.cancel) {
                     VoiceCapsuleRoundButton(systemName: "xmark", inverted: false,
                                             accessibilityLabel: L("common.cancel"), action: actions.cancel)
                 }
-                LevelWaveform(level: snapshot.level, activeColor: Color.white.opacity(0.95))
-                    .frame(width: 38, height: OverlayWaveformMetrics.maximumBarHeight)
-                if snapshot.phase.showsRecordingControls {
+                if controls.contains(.confirm) {
                     VoiceCapsuleRoundButton(systemName: "checkmark", inverted: true,
                                             accessibilityLabel: L("common.done"), action: actions.confirm)
                 }
             }
+            .opacity(revealed ? 1 : 0)
+            .scaleEffect(revealed || reduceMotion ? 1 : 0.88, anchor: .trailing)
+            .allowsHitTesting(revealed)
+            .accessibilityHidden(!revealed)
+        }
+        .frame(width: Self.slotSize.width, height: Self.slotSize.height, alignment: .trailing)
+        .animation(.easeOut(duration: 0.16), value: revealed)
+    }
+
+    @ViewBuilder
+    private var meta: some View {
+        switch snapshot.phase {
+        case .listening:
+            if let startedAt = snapshot.recordingStartedAt {
+                Text(timerInterval: startedAt ... Date.distantFuture, countsDown: false)
+                    .font(.system(size: 13, design: .monospaced))
+                    .foregroundStyle(Color.white.opacity(0.55))
+            }
         case .processing:
             Text(VoiceCapsuleCopy.percent(snapshot.progress))
-                .font(.system(size: 12, weight: .semibold))
-                .monospacedDigit()
-                .foregroundStyle(Color.white.opacity(0.75))
-        case .completed:
+                .font(.system(size: 13, design: .monospaced))
+                .foregroundStyle(Color.white.opacity(0.7))
+        case .completed, .failure:
             EmptyView()
-        case .failure:
-            VoiceCapsuleRoundButton(systemName: "xmark", inverted: false,
-                                    accessibilityLabel: L("voiceCapsule.action.close"), action: actions.dismiss)
         }
     }
 

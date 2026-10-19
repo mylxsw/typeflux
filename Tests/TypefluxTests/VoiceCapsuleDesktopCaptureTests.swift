@@ -46,9 +46,20 @@ struct VoiceCapsuleDesktopCaptureTests {
         controller.showLockedRecording()
         controller.updateRecordingPreviewText(Self.transcript)
         try await shoot("3-handsfree")
+        if style == .cornerCard {
+            controller.simulateCapsuleHoverForTesting(true)
+            try await shoot("3b-handsfree-hover")
+            controller.simulateCapsuleHoverForTesting(false)
+            try await Task.sleep(for: .seconds(OverlayController.cardControlsHideDelay + 0.1))
+        }
         controller.showProcessing()
         controller.transitionToLLMPhase()
         try await shoot("4-processing")
+        if style == .cornerCard {
+            controller.simulateCapsuleHoverForTesting(true)
+            try await shoot("4b-processing-hover")
+            controller.simulateCapsuleHoverForTesting(false)
+        }
         controller.dismissProcessingImmediatelyIfVisible()
         controller.showDeliveryConfirmation(characterCount: 35)
         try await Task.sleep(for: .milliseconds(500))

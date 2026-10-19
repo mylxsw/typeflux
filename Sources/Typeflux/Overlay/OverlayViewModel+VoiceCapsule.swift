@@ -50,6 +50,7 @@ extension OverlayViewModel {
             completedCharacterCount: completedCharacterCount,
             expanded: voiceCapsuleExpanded,
             transcriptLines: voiceCapsuleTranscriptLines,
+            controlsRevealed: cardControlsRevealed,
             failureActions: failureActions
         )
     }
