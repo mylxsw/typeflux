@@ -48,6 +48,10 @@ struct AskLauncherOpenChatButton: View {
     var disabledReason: String?
     var hintOverride: String?
     var tint: Color = AskTheme.accent
+    /// The symbol's colour while lit.
+    var ink: Color = .white
+    /// A lit coloured drop casts a glow of its own colour; a neutral one does not.
+    var glows = true
     var action: () -> Void
     @State private var hovered = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -72,7 +76,7 @@ struct AskLauncherOpenChatButton: View {
 
     private var foreground: Color {
         switch mode {
-        case .askAI: lit ? .white : StudioTheme.textTertiary
+        case .askAI: lit ? ink : StudioTheme.textTertiary
         case .openChat: StudioTheme.textSecondary
         case .execute: AskVoiceButton.Appearance.iconColor(phase: .idle, hovered: looksEnabled && hovered)
         }
@@ -111,7 +115,7 @@ struct AskLauncherOpenChatButton: View {
             .contentShape(Circle())
         }
         .buttonStyle(AskPressableStyle())
-        .shadow(color: lit ? tint.opacity(0.5) : tint.opacity(0), radius: 9, y: 3)
+        .shadow(color: lit && glows ? tint.opacity(0.5) : tint.opacity(0), radius: 9, y: 3)
         .opacity(mode != .openChat && mode != .askAI && !looksEnabled ? 0.45 : 1)
         .onHover { hovered = $0 }
         .disabled(!enabled)

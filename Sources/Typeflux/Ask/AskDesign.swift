@@ -42,37 +42,33 @@ enum AskTheme {
         light: NSColor(calibratedRed: 0.906, green: 0.937, blue: 1.0, alpha: 1),
         dark: NSColor(calibratedRed: 0.082, green: 0.149, blue: 0.243, alpha: 1)
     )
+    // Where a conversation is kept: Sky (Cloud), Sage (this Mac) and Sand (temporary,
+    // the hourglass). The three share one lightness and a low chroma so none of them
+    // shouts, and each clears 4.5:1 on the composer in both appearances. Colour only
+    // marks a storage that needs telling apart; the composer and send button stay neutral.
+
+    /// Marks Typeflux Cloud where the storage kinds are listed side by side.
+    static let cloudTint = storageColor(light: 0x1D4ED8, dark: 0x8EBDFF, alpha: 1)
     /// Marks conversations kept on this Mac (the lock icon, the header chip).
-    static let privateTint = privateColor(lightAlpha: 1, darkAlpha: 1)
-    static let privateFill = privateColor(lightAlpha: 0.10, darkAlpha: 0.13)
-    static let privateHeaderFill = privateColor(lightAlpha: 0.10, darkAlpha: 0.12)
-    /// Marks the temporary conversation (the hourglass, its dashed edges): teal, so it
-    /// reads apart from both the accent and the private purple.
-    static let temporaryTint = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 14 / 255, green: 143 / 255, blue: 166 / 255, alpha: 1),
-        dark: NSColor(srgbRed: 64 / 255, green: 200 / 255, blue: 224 / 255, alpha: 1)
-    )
-    static let temporaryFill = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 14 / 255, green: 143 / 255, blue: 166 / 255, alpha: 0.10),
-        dark: NSColor(srgbRed: 64 / 255, green: 200 / 255, blue: 224 / 255, alpha: 0.14)
-    )
+    static let privateTint = storageColor(light: 0x2F7A57, dark: 0x8CC9A7, alpha: 1)
+    static let privateFill = storageColor(light: 0x2F7A57, dark: 0x8CC9A7, alpha: 0.10, darkAlpha: 0.12)
+    static let privateHeaderFill = privateFill
+    /// Marks the temporary conversation (the hourglass, its dashed edges).
+    static let temporaryTint = storageColor(light: 0x93600F, dark: 0xE5B567, alpha: 1)
+    static let temporaryFill = storageColor(light: 0x93600F, dark: 0xE5B567, alpha: 0.10, darkAlpha: 0.12)
     /// The dash of an edge that means "not saved".
     static let temporaryDash: [CGFloat] = [5, 4]
+    /// How strongly a dashed temporary edge is drawn over its fill.
+    static let temporaryEdgeOpacity = 0.55
 
-    /// Resolve the system colour in the requested appearance before returning
-    /// it from a dynamic provider; a nested semantic colour can retain Aqua.
-    private static func privateColor(lightAlpha: CGFloat, darkAlpha: CGFloat) -> Color {
-        Color(nsColor: NSColor(name: nil) { appearance in
-            guard appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua else {
-                return NSColor(srgbRed: 147 / 255, green: 51 / 255, blue: 234 / 255, alpha: lightAlpha)
-            }
-            var resolved = NSColor.systemPurple
-            appearance.performAsCurrentDrawingAppearance {
-                resolved = (NSColor.systemPurple.usingColorSpace(.sRGB) ?? .systemPurple)
-                    .withAlphaComponent(darkAlpha)
-            }
-            return resolved
-        })
+    /// The send button: a neutral, high-contrast drop in every storage kind.
+    static let sendFill = StudioTheme.dynamic(light: StudioTheme.rgb(0x16171A), dark: StudioTheme.rgb(0xF2F2F3))
+    static let sendInk = StudioTheme.dynamic(light: .white, dark: StudioTheme.rgb(0x1C1C1E))
+
+    private static func storageColor(light: UInt32, dark: UInt32, alpha: CGFloat,
+                                     darkAlpha: CGFloat? = nil) -> Color {
+        StudioTheme.dynamic(light: StudioTheme.rgb(light, alpha: alpha),
+                            dark: StudioTheme.rgb(dark, alpha: darkAlpha ?? alpha))
     }
 
     static let accentText = StudioTheme.dynamic(
@@ -844,8 +840,11 @@ struct AskCapsuleButtonStyle: ButtonStyle {
 struct AskSendButton: View {
     static let size: CGFloat = 36
     var enabled: Bool
-    /// Lit in the private tint for a conversation kept on this Mac.
     var tint: Color = AskTheme.accent
+    /// The arrow's colour while lit.
+    var ink: Color = .white
+    /// A lit coloured drop casts a glow of its own colour; a neutral one does not.
+    var glows = true
     /// Unlit but still clickable while Return does something else, such as
     /// opening the launcher's highlighted application.
     var prominent = true
@@ -864,8 +863,8 @@ struct AskSendButton: View {
                 .contentShape(Circle())
         }
         .buttonStyle(AskPressableStyle())
-        .foregroundStyle(lit ? Color.white : enabled ? StudioTheme.textSecondary : StudioTheme.textTertiary)
-        // The only solid control in the composer: a lit accent drop when it can send,
+        .foregroundStyle(lit ? ink : enabled ? StudioTheme.textSecondary : StudioTheme.textTertiary)
+        // The only solid control in the composer: a lit drop when it can send,
         // a faint translucent well otherwise, so it sits on glass and opaque cards alike.
         .background(Circle().fill(lit ? tint : AskTheme.hoverFill))
         .overlay {
@@ -875,7 +874,7 @@ struct AskSendButton: View {
                     .allowsHitTesting(false)
             }
         }
-        .shadow(color: lit ? tint.opacity(0.5) : .clear, radius: 9, y: 3)
+        .shadow(color: lit && glows ? tint.opacity(0.5) : .clear, radius: 9, y: 3)
         // Launcher geometry stays fixed while its native window changes size.
         .scaleEffect(animatesEmphasis && !reduceMotion && !lit ? 0.94 : 1)
         .disabled(!enabled)

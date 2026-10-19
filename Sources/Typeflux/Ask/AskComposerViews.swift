@@ -1488,15 +1488,11 @@ struct AskComposer: View {
                     .strokeBorder(AskTheme.accent, lineWidth: dropTargeted ? 2 : 1.5)
                     .allowsHitTesting(false)
             } else if temporaryTint {
-                // A temporary conversation's edge is dashed: nothing here is saved.
+                // Only a temporary conversation changes the edge: nothing here is saved.
+                // Cloud and this Mac both keep the conversation, so their edge stays neutral.
                 RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
-                    .strokeBorder(AskTheme.temporaryTint.opacity(0.7),
+                    .strokeBorder(AskTheme.temporaryTint.opacity(AskTheme.temporaryEdgeOpacity),
                                   style: StrokeStyle(lineWidth: 1.2, dash: AskTheme.temporaryDash))
-                    .allowsHitTesting(false)
-            } else if privateTint {
-                // Signed in, a conversation kept on this Mac keeps a quiet private edge.
-                RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
-                    .strokeBorder(AskTheme.privateTint.opacity(0.45), lineWidth: 1)
                     .allowsHitTesting(false)
             }
         }
@@ -2224,7 +2220,8 @@ struct AskComposer: View {
                 AskLauncherOpenChatButton(mode: primary.mode, enabled: primary.enabled, waiting: primary.waiting,
                                          disabledReason: primary.disabledReason,
                                          hintOverride: launcherButtonOpensChat ? primary.title + " · ⌘O" : nil,
-                                         tint: storageTint, action: runLauncherButtonAction)
+                                         tint: AskTheme.sendFill, ink: AskTheme.sendInk, glows: false,
+                                         action: runLauncherButtonAction)
             }
         }
         .padding(.horizontal, chrome.horizontalInset)
@@ -2412,18 +2409,7 @@ struct AskComposer: View {
         return true
     }
 
-    /// Signed in, a conversation kept on this Mac is marked in the private tint; signed
-    /// out every conversation is, so nothing needs telling apart.
-    private var privateTint: Bool {
-        model.isSignedIn && model.storesLocally(launcher: launcher) && !temporaryTint
-    }
-
     private var temporaryTint: Bool { model.isTemporaryComposer(launcher: launcher) }
-
-    /// The send button takes the colour of where the conversation is kept.
-    private var storageTint: Color {
-        temporaryTint ? AskTheme.temporaryTint : privateTint ? AskTheme.privateTint : AskTheme.accent
-    }
 
     private var footer: some View {
         HStack(spacing: 4) {
@@ -2484,8 +2470,8 @@ struct AskComposer: View {
                     switch sendControl {
                     case .stop: AskStopButton { model.stop() }
                     case let .send(enabled):
-                        AskSendButton(enabled: enabled, tint: storageTint,
-                                      action: submit)
+                        AskSendButton(enabled: enabled, tint: AskTheme.sendFill, ink: AskTheme.sendInk,
+                                      glows: false, action: submit)
                     }
                 }
                 .accessibilityIdentifier("ask.composer.send")

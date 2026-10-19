@@ -120,7 +120,7 @@ struct AskTemporaryChip: View {
             .padding(.horizontal, style.usesGlass ? 12 : 9)
             .frame(height: style.ask.headerChipHeight)
             .background(AskTheme.temporaryFill, in: Capsule())
-            .overlay(Capsule().strokeBorder(AskTheme.temporaryTint.opacity(0.55),
+            .overlay(Capsule().strokeBorder(AskTheme.temporaryTint.opacity(AskTheme.temporaryEdgeOpacity),
                                             style: StrokeStyle(lineWidth: 0.8, dash: AskTheme.temporaryDash)))
             .contentShape(Capsule())
         }
@@ -169,7 +169,7 @@ struct AskTemporaryHistoryRow: View {
         .frame(height: 32)
         .background(AskTheme.temporaryFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .strokeBorder(AskTheme.temporaryTint.opacity(0.55),
+            .strokeBorder(AskTheme.temporaryTint.opacity(AskTheme.temporaryEdgeOpacity),
                           style: StrokeStyle(lineWidth: 1, dash: AskTheme.temporaryDash)))
         .padding(.bottom, 4)
         .accessibilityElement(children: .combine)
