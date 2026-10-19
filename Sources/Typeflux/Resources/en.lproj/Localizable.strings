@@ -1589,7 +1589,7 @@
 "ask.selection" = "Selected text";
 "ask.memory" = "Memory";
 "ask.memory.app" = "Memory · %@";
-"ask.memory.help" = "Sent once when this conversation starts: your global memory and recent text from the app you asked from. Remove it to ask without memory.";
+"ask.memory.help" = "Sent once when the conversation starts: your global memory and recent input from the app you asked from.";
 "ask.memory.pinned" = "This conversation uses the memory captured when it started.";
 "ask.selection.remove" = "Remove selected text";
 "ask.send" = "Send";

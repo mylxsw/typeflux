@@ -473,7 +473,7 @@ struct AskOverflowChip: View {
     }
 }
 
-/// The hover card: name, details, then what a click does.
+/// The hover card: name, relevant details, and an optional action hint.
 struct AskContextCard: View {
     let items: [AskContextItem]
     var screenshot: NSImage?
@@ -499,11 +499,12 @@ struct AskContextCard: View {
                         Text(L("ask.context.selection.source", source))
                             .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
                     }
-                    if let detail = item.detail {
+                    if !(item.kind == .screenshot && item.removable), let detail = item.detail {
                         Text(detail).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
                             .lineLimit(3)
                     }
-                    if let hint = item.hint {
+                    if item.kind != .memory && !(item.kind == .screenshot && item.removable),
+                       let hint = item.hint {
                         Text(hint).font(.system(size: 11, weight: .semibold)).foregroundStyle(AskTheme.accentText)
                             .padding(.top, 2)
                     }
