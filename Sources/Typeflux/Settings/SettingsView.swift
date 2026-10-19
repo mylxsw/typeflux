@@ -1353,8 +1353,7 @@ struct StudioView: View {
     @ViewBuilder private var agentMCPServersTabContent: some View {
         if viewModel.mcpServers.isEmpty {
             TFCard {
-                TFEmptyState(systemImage: "server.rack", title: L("agent.mcp.emptyTitle"),
-                             message: L("agent.mcp.emptyMessage")) {
+                TFEmptyState(systemImage: "server.rack", title: L("agent.mcp.emptyTitle")) {
                     TFButton(title: L("agent.mcp.addServer"), systemImage: "plus", kind: .primary) {
                         viewModel.beginAddMCPServer()
                         isMCPServerDialogPresented = true

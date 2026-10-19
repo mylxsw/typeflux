@@ -2585,7 +2585,6 @@
 "agent.skills.install.defaultBranch" = "デフォルト";
 "agent.skills.install.root" = "リポジトリのルート";
 "agent.mcp.emptyTitle" = "外部ツールに接続";
-"agent.mcp.emptyMessage" = "MCP サーバーを使うと、Notion の読み取り、データベースの照会、社内サービスの呼び出しなど、Ask が使えるツールやデータが増えます。サーバーはご自身で用意し、Typeflux が接続します。";
 "agent.mcp.emptyHint" = "ローカルコマンド（stdio）とリモート HTTP に対応し、Claude Desktop / Cursor の mcpServers 設定をインポートできます。";
 "agent.mcp.listHint" = "サーバーをクリックすると編集できます。有効なサーバーは会話で必要になったときに接続し、自動接続がオンなら Ask の起動時に接続します。";
 "agent.mcp.status.disabled" = "オフ";

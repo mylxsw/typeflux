@@ -2595,7 +2595,6 @@
 "agent.skills.install.defaultBranch" = "default";
 "agent.skills.install.root" = "repository root";
 "agent.mcp.emptyTitle" = "Connect external tools";
-"agent.mcp.emptyMessage" = "MCP servers give Ask more tools and data, such as reading Notion, querying a database or calling internal services. You provide the server; Typeflux connects to it.";
 "agent.mcp.emptyHint" = "Supports local commands (stdio) and remote HTTP, and imports the mcpServers JSON used by Claude Desktop and Cursor.";
 "agent.mcp.listHint" = "Click a server to edit it. Enabled servers connect when a conversation needs them; with auto-connect on, they connect when Ask starts.";
 "agent.mcp.status.disabled" = "Off";

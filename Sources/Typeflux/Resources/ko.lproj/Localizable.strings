@@ -2585,7 +2585,6 @@
 "agent.skills.install.defaultBranch" = "기본";
 "agent.skills.install.root" = "저장소 루트";
 "agent.mcp.emptyTitle" = "외부 도구 연결";
-"agent.mcp.emptyMessage" = "MCP 서버를 사용하면 Notion 읽기, 데이터베이스 조회, 사내 서비스 호출 등 Ask가 더 많은 도구와 데이터를 사용할 수 있습니다. 서버는 직접 준비하고 Typeflux가 연결합니다.";
 "agent.mcp.emptyHint" = "로컬 명령(stdio)과 원격 HTTP를 지원하며, Claude Desktop / Cursor에서 쓰는 mcpServers 설정을 가져올 수 있습니다.";
 "agent.mcp.listHint" = "서버를 클릭하면 편집할 수 있습니다. 켜진 서버는 대화에 필요할 때 연결되며, 자동 연결이 켜져 있으면 Ask 시작 시 연결됩니다.";
 "agent.mcp.status.disabled" = "꺼짐";

@@ -2595,7 +2595,6 @@
 "agent.skills.install.defaultBranch" = "默认分支";
 "agent.skills.install.root" = "仓库根目录";
 "agent.mcp.emptyTitle" = "连接外部工具";
-"agent.mcp.emptyMessage" = "MCP 服务器可以让随便问使用更多工具和数据，例如读取 Notion、查询数据库或调用公司内部服务。服务器由你提供，Typeflux 负责连接。";
 "agent.mcp.emptyHint" = "支持本地命令（stdio）和远程 HTTP 两种连接方式，可导入 Claude Desktop / Cursor 使用的 mcpServers 配置。";
 "agent.mcp.listHint" = "点击服务器可编辑。启用的服务器会在对话需要时连接；开启“自动连接”的会在随便问启动时连接。";
 "agent.mcp.status.disabled" = "已停用";
