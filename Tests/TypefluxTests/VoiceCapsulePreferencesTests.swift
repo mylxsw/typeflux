@@ -144,6 +144,35 @@ struct VoiceCapsuleCopyTests {
         }
     }
 
+    @Test func islandTranscriptFadesOnlyNearTheEnds() {
+        #expect(NotchIslandCapsule.contentOpacity(expansion: 0) == 0)
+        #expect(NotchIslandCapsule.contentOpacity(expansion: 0.55) == 0)
+        #expect(abs(NotchIslandCapsule.contentOpacity(expansion: 0.775) - 0.5) < 0.001)
+        #expect(abs(NotchIslandCapsule.contentOpacity(expansion: 1) - 1) < 0.001)
+        #expect(NotchIslandCapsule.contentOpacity(expansion: 2) == 1)
+    }
+
+    @Test @MainActor func islandInterpolatesItsGeometry() throws {
+        let notch = VoiceCapsuleNotchGeometry(midX: 0, width: 190, height: 32, isHardware: true)
+        let snapshot = VoiceCapsuleSnapshot(phase: .listening(handsFree: false), text: "Caption", expanded: true,
+                                            transcriptLines: 2)
+        var island = NotchIslandCapsule(snapshot: snapshot, notch: notch, actions: VoiceCapsuleActions())
+        let lines = VoiceCapsuleLayout.islandBodyHeight(lines: 2)
+        #expect(island.animatableData == AnimatablePair(1, lines))
+        // Halfway open: width and height sit between the compact and expanded sizes, centered.
+        island.animatableData = AnimatablePair(0.5, lines)
+        let view = NSHostingView(rootView: island)
+        let compactWidth: CGFloat = 190 + VoiceCapsuleLayout.earWidth * 2
+        let fillets = VoiceCapsuleLayout.islandFillet * 2
+        #expect(abs(view.fittingSize.width - ((compactWidth + 560) / 2 + fillets)) < 0.5)
+        // Layout rounds half points.
+        #expect(abs(view.fittingSize.height - (32 + lines / 2)) <= 1)
+        view.frame = NSRect(origin: .zero, size: view.fittingSize)
+        view.layoutSubtreeIfNeeded()
+        let bitmap = try #require(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+    }
+
     @Test func failureCountdownPausesAndResumes() {
         let start = Date(timeIntervalSinceReferenceDate: 1000)
         var countdown = OverlayFailureCountdown(total: 6, startedAt: start)

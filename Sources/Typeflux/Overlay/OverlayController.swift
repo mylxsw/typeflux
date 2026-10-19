@@ -1959,6 +1959,8 @@ private struct OverlayView: View {
         .onHover { model.onCapsuleHoverChanged?($0) }
         .animation(reduceMotion ? nil : OverlayMotion.morph(scale: model.motionScale), value: snapshot.showsBody)
         .animation(reduceMotion ? nil : OverlayMotion.morph(scale: model.motionScale), value: snapshot.phase)
+        // A caption that wraps onto another line grows the skin smoothly too.
+        .animation(reduceMotion ? nil : OverlayMotion.morph(scale: model.motionScale), value: snapshot.transcriptLines)
     }
 
     @ViewBuilder

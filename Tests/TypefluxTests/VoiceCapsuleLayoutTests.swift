@@ -122,7 +122,7 @@ struct VoiceCapsuleLayoutTests {
         let notch = notched.hardwareNotch!
         let skin = VoiceCapsuleSkin.notchIsland(notch)
         #expect(VoiceCapsuleLayout.contentSize(for: skin, sizeClass: .compact) == CGSize(width: 392, height: 37))
-        #expect(VoiceCapsuleLayout.contentSize(for: skin, sizeClass: .expanded) == CGSize(width: 560, height: 163))
+        #expect(VoiceCapsuleLayout.contentSize(for: skin, sizeClass: .expanded) == CGSize(width: 560, height: 154))
         #expect(VoiceCapsuleLayout.windowSize(contentSize: CGSize(width: 392, height: 37), skin: skin)
             == CGSize(width: 408, height: 37))
         // A wide housing keeps both ears when expanded.
@@ -151,10 +151,10 @@ struct VoiceCapsuleLayoutTests {
         // Header, transcript and padding; no key hint below the transcript.
         #expect(VoiceCapsuleLayout.cardExpandedHeight(lines: 1) == 106)
         #expect(VoiceCapsuleLayout.cardExpandedHeight(lines: 9) == VoiceCapsuleLayout.cardExpandedHeight)
-        #expect(VoiceCapsuleLayout.islandBodyHeight(lines: 0) == 80)
+        #expect(VoiceCapsuleLayout.islandBodyHeight(lines: 0) == 77)
         #expect(VoiceCapsuleLayout.contentSize(for: card, sizeClass: .expanded, transcriptLines: 2).height == 128)
         #expect(VoiceCapsuleLayout.contentSize(for: island, sizeClass: .expanded, transcriptLines: 1)
-            == CGSize(width: 560, height: 37 + 80))
+            == CGSize(width: 560, height: 37 + 77))
     }
 
     @Test func cornerCardSitsBelowTheMenuBarInEitherCorner() {

@@ -95,8 +95,8 @@ enum VoiceCapsuleLayout {
     static let earWidth: CGFloat = 96
     static let islandExpandedWidth: CGFloat = 560
     static let islandTranscriptWidth: CGFloat = islandExpandedWidth - 44
-    static let islandTranscriptFontSize: CGFloat = 15.5
-    static let islandTranscriptLineHeight: CGFloat = 23
+    static let islandTranscriptFontSize: CGFloat = 14
+    static let islandTranscriptLineHeight: CGFloat = 20
     /// Transcript lines, footer and padding below the ears.
     static func islandBodyHeight(lines: Int) -> CGFloat {
         57 + islandTranscriptLineHeight * CGFloat(clampedLines(lines))

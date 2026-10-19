@@ -35,32 +35,68 @@ struct NotchIslandShape: Shape {
 
 /// The capsule grown out of the camera housing. Compact: the orb and timer on the left ear,
 /// the waveform or progress on the right. Expanded: the transcript hangs below the menu bar.
-struct NotchIslandCapsule: View {
+///
+/// Size and corner radius are interpolated here, once, like the bottom capsule: the island stays
+/// centered on the notch every frame, and its content keeps the expanded layout while it is
+/// clipped, so nothing reflows or slides while the window resizes.
+struct NotchIslandCapsule: View, Animatable {
     let snapshot: VoiceCapsuleSnapshot
     let notch: VoiceCapsuleNotchGeometry
     let actions: VoiceCapsuleActions
+    private var expansion: CGFloat
+    private var bodyHeight: CGFloat
 
-    private var size: CGSize {
-        VoiceCapsuleLayout.contentSize(for: .notchIsland(notch), sizeClass: snapshot.showsBody ? .expanded : .compact,
-                                       transcriptLines: snapshot.transcriptLines)
+    init(snapshot: VoiceCapsuleSnapshot, notch: VoiceCapsuleNotchGeometry, actions: VoiceCapsuleActions) {
+        self.snapshot = snapshot
+        self.notch = notch
+        self.actions = actions
+        expansion = snapshot.showsBody ? 1 : 0
+        bodyHeight = VoiceCapsuleLayout.islandBodyHeight(lines: snapshot.transcriptLines)
     }
 
-    private var bottomRadius: CGFloat {
-        snapshot.showsBody ? 26 : min(16, notch.height * 0.55)
+    var animatableData: AnimatablePair<CGFloat, CGFloat> {
+        get { AnimatablePair(expansion, bodyHeight) }
+        set {
+            expansion = newValue.first
+            bodyHeight = newValue.second
+        }
+    }
+
+    private var compactSize: CGSize {
+        VoiceCapsuleLayout.contentSize(for: .notchIsland(notch), sizeClass: .compact)
+    }
+
+    private var expandedWidth: CGFloat {
+        VoiceCapsuleLayout.contentSize(for: .notchIsland(notch), sizeClass: .expanded).width
+    }
+
+    private var compactRadius: CGFloat { min(16, notch.height * 0.55) }
+
+    /// The transcript fades in over the last part of the opening and out over the first part of the
+    /// closing, so it is only legible while the island has room for it.
+    static func contentOpacity(expansion: CGFloat) -> CGFloat {
+        max(0, min(1, (expansion - 0.55) / 0.45))
     }
 
     var body: some View {
         let fillet = VoiceCapsuleLayout.islandFillet
-        let shape = NotchIslandShape(bottomRadius: bottomRadius, fillet: fillet)
+        let width = compactSize.width + (expandedWidth - compactSize.width) * expansion
+        let shape = NotchIslandShape(bottomRadius: compactRadius + (26 - compactRadius) * expansion, fillet: fillet)
         VStack(spacing: 0) {
             ears
-            if snapshot.showsBody {
-                bodySection.transition(.opacity)
+            if expansion > 0 {
+                bodySection
+                    // Lay the body out at its final width and clip it, instead of rewrapping each frame.
+                    .frame(width: expandedWidth, alignment: .topLeading)
+                    .frame(width: width, alignment: .top)
+                    .opacity(Self.contentOpacity(expansion: expansion))
+                    .allowsHitTesting(snapshot.showsBody)
+                    .accessibilityHidden(!snapshot.showsBody)
             }
         }
         .padding(.horizontal, fillet)
-        .frame(width: size.width + fillet * 2,
-               height: snapshot.phase == .failure ? nil : size.height, alignment: .top)
+        .frame(width: width + fillet * 2,
+               height: snapshot.phase == .failure ? nil : notch.height + bodyHeight * expansion, alignment: .top)
         .background(shape.fill(Color.black))
         .overlay(alignment: .bottom) {
             if snapshot.phase == .processing {
@@ -75,22 +111,21 @@ struct NotchIslandCapsule: View {
         .environment(\.colorScheme, .dark)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(L("voiceCapsule.accessibility.label"))
+        // Geometry is interpolated once, above. Re-lay out children at each intermediate
+        // size instead of animating their positions a second time.
+        .transaction { $0.animation = nil }
     }
 
     private var orbDiameter: CGFloat { max(14, min(20, notch.height - 10)) }
 
+    /// The same items compact and expanded, so the row never reflows while the island grows.
     private var ears: some View {
         HStack(spacing: 0) {
             HStack(spacing: 8) {
                 VoiceCapsuleOrb(phase: snapshot.phase, level: snapshot.level, diameter: orbDiameter)
-                if snapshot.showsBody {
-                    Text(verbatim: VoiceCapsuleCopy.productName)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Color.white)
-                }
                 if snapshot.phase.isListening, let startedAt = snapshot.recordingStartedAt {
                     Text(timerInterval: startedAt ... Date.distantFuture, countsDown: false)
-                        .font(.system(size: 12.5))
+                        .font(.system(size: 12))
                         .monospacedDigit()
                         .foregroundStyle(Color.white.opacity(0.55))
                 }
@@ -111,15 +146,13 @@ struct NotchIslandCapsule: View {
     @ViewBuilder
     private var rightStatus: some View {
         let text: String? = switch snapshot.phase {
-        case .listening: snapshot.showsBody ? VoiceCapsuleCopy.state(for: snapshot) : nil
-        case .processing: snapshot.showsBody
-            ? "\(VoiceCapsuleCopy.state(for: snapshot)) \(VoiceCapsuleCopy.percent(snapshot.progress))"
-            : VoiceCapsuleCopy.percent(snapshot.progress)
+        case .listening: nil
+        case .processing: VoiceCapsuleCopy.percent(snapshot.progress)
         case .failure: VoiceCapsuleCopy.state(for: snapshot)
         }
         if let text {
             Text(text)
-                .font(.system(size: 12.5))
+                .font(.system(size: 12))
                 .monospacedDigit()
                 .foregroundStyle(Color.white.opacity(0.62))
         }
@@ -143,7 +176,7 @@ struct NotchIslandCapsule: View {
         if snapshot.phase == .failure {
             VStack(alignment: .leading, spacing: 12) {
                 Text(snapshot.message)
-                    .font(.system(size: 13.5))
+                    .font(.system(size: 12.5))
                     .foregroundStyle(Color.white.opacity(0.85))
                     .lineSpacing(3)
                     .lineLimit(5)
