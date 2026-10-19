@@ -320,6 +320,28 @@ final class AskLocalEngineTests: XCTestCase {
         XCTAssertThrowsError(try AskLocalEngine.parsePlan(#"{"items":[{"step":" ","status":"pending"}]}"#))
     }
 
+    func testConfiguredStepLimitIsPinnedAndCanChangeOnRetry() async throws {
+        let engine = engine()
+        var sent = request()
+        sent.maxSteps = 200
+        var c = try await engine.send(conversationId: "configured", request: sent, token: "")
+        XCTAssertEqual(c.run?.maxSteps, 200)
+        c = try await answer(engine, c, content: "Partial", finish: "length")
+        c = try await engine.retry(conversationId: c.id, runId: c.run!.id, deviceId: device,
+                                   modelRef: nil, maxSteps: 500, token: "")
+        XCTAssertEqual(c.run?.maxSteps, 500)
+        c = try await answer(engine, c, content: "Done")
+        let reply = try XCTUnwrap(c.messages.last?.id)
+        c = try await engine.regenerate(conversationId: c.id,
+                                        request: AskRegenerateRequest(maxSteps: 50, messageId: reply, deviceId: device), token: "")
+        XCTAssertEqual(c.run?.maxSteps, 50)
+        var invalid = request()
+        invalid.maxSteps = 501
+        await assertThrows(L("ask.steps.invalid")) {
+            _ = try await engine.send(conversationId: "invalid-limit", request: invalid, token: "")
+        }
+    }
+
     func testWaitingInferenceRemainsReceiptableAndUnavailableFetchIsRejected() async throws {
         let clock = Clock()
         let engine = engine(now: { clock.now })

@@ -19,6 +19,7 @@ extension AskToolsSettingsView {
             }
             TFFootnote(text: L("agent.overview.storage.hint")).padding(.horizontal, 4)
         }
+        AskAgentStepSettingsView(settings: settings)
         AskTitleSettingsView(settings: settings)
         AskTemporarySettingsView(settings: settings)
         let attention = statuses.filter { $0.level == .attention }

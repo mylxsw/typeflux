@@ -412,6 +412,17 @@ struct AskConversationTests {
         #expect(f.tools.bound == [id])
     }
 
+    @Test func configuredAgentStepLimitIsSentWithNewRun() async throws {
+        let defaults = try #require(UserDefaults(suiteName: "ask-step-limit-" + UUID().uuidString))
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+        library.settings.askAgentMaxSteps = 200
+        let fixture = try AskTestFixture(modelLibrary: library)
+        fixture.model.launcherDraft.text = "Check the setting"
+        fixture.model.submitLauncher()
+        try await fixture.wait { fixture.model.busyIds.isEmpty }
+        #expect(await fixture.api.sends.first?.maxSteps == 200)
+    }
+
     @Test func authenticationAndRecordingDoNotSendOrLoseDraft() async throws {
         let f = try AskTestFixture(authenticated: false)
         f.model.launcherDraft.text = "Keep this"

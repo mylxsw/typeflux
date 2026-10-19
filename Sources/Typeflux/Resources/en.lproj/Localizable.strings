@@ -2312,6 +2312,11 @@
 "ask.temporary.fact.cloud" = "With a Cloud model, Typeflux Cloud keeps it for at most 24 hours to finish the run. Credits are charged as usual.";
 "ask.temporary.noMemory" = "Temporary chats do not use memory";
 "ask.temporary.settings.section" = "Temporary chats";
+"ask.steps.section" = "Agent runs";
+"ask.steps.limit" = "Maximum execution steps";
+"ask.steps.detail" = "Model replies allowed in one run";
+"ask.steps.footnote" = "New tasks, retries after failure, and regenerated answers use the latest setting. Active runs keep their limit. Higher limits can use more tokens and credits.";
+"ask.steps.invalid" = "Choose a step limit between 10 and 500.";
 "ask.temporary.settings.footnote" = "Temporary chats are never listed in history and never read or write memory.";
 "ask.temporary.settings.confirm" = "Confirm before leaving a temporary chat";
 "ask.temporary.settings.confirm.subtitle" = "Ask before a temporary chat with messages is ended by starting or opening another conversation";

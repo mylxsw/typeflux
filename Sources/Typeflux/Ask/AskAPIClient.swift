@@ -16,6 +16,7 @@ protocol AskAPI: Sendable {
     func result(conversationId: String, request: AskToolResultRequest, token: String) async throws -> AskConversation
     func cancel(conversationId: String, runId: String, token: String) async throws -> AskConversation
     func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, token: String) async throws -> AskConversation
+    func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, maxSteps: Int?, token: String) async throws -> AskConversation
     func regenerate(conversationId: String, request: AskRegenerateRequest, token: String) async throws -> AskConversation
     func steer(conversationId: String, request: AskSteerRequest, token: String) async throws -> AskConversation
     /// Continues a run paused for credits. A balance that is still empty throws
@@ -30,6 +31,9 @@ protocol AskAPI: Sendable {
 }
 
 extension AskAPI {
+    func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, maxSteps _: Int?, token: String) async throws -> AskConversation {
+        try await retry(conversationId: conversationId, runId: runId, deviceId: deviceId, modelRef: modelRef, token: token)
+    }
     func updateTitle(id: String, request: AskTitleRequest, token: String) async throws -> AskConversation {
         throw AskLocalError.message(L("ask.models.requestError"))
     }
@@ -139,9 +143,12 @@ struct AskAPIClient: AskAPI {
         return try await execute(path: "/\(conversationId)/cancel", method: "POST", body: AskCoding.encoder().encode(Request(runId: runId, partial: partial)), token: token)
     }
     func retry(conversationId: String, runId: String, deviceId: String, modelRef: String? = nil, token: String) async throws -> AskConversation {
+        try await retry(conversationId: conversationId, runId: runId, deviceId: deviceId, modelRef: modelRef, maxSteps: nil, token: token)
+    }
+    func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, maxSteps: Int?, token: String) async throws -> AskConversation {
         try await requireToolApproval(token: token)
-        struct Request: Encodable { var runId: String; var deviceId: String; var modelRef: String?; var clientToolApproval = true }
-        return try await execute(path: "/\(conversationId)/retry", method: "POST", body: AskCoding.encoder().encode(Request(runId: runId, deviceId: deviceId, modelRef: modelRef)), token: token)
+        struct Request: Encodable { var runId: String; var deviceId: String; var modelRef: String?; var maxSteps: Int?; var clientToolApproval = true }
+        return try await execute(path: "/\(conversationId)/retry", method: "POST", body: AskCoding.encoder().encode(Request(runId: runId, deviceId: deviceId, modelRef: modelRef, maxSteps: maxSteps)), token: token)
     }
     func regenerate(conversationId: String, request: AskRegenerateRequest, token: String) async throws -> AskConversation {
         if request.clientToolApproval == true { try await requireToolApproval(token: token) }

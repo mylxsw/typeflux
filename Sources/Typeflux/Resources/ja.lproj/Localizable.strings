@@ -2302,6 +2302,11 @@
 "ask.temporary.fact.cloud" = "クラウドモデルを使う場合、実行を完了するため Typeflux Cloud が最大24時間保持します。クレジットは通常どおり消費されます。";
 "ask.temporary.noMemory" = "一時的な会話ではメモリーを使いません";
 "ask.temporary.settings.section" = "一時的な会話";
+"ask.steps.section" = "Agent の実行";
+"ask.steps.limit" = "最大実行ステップ数";
+"ask.steps.detail" = "1 回の実行で許可するモデル応答の回数";
+"ask.steps.footnote" = "新しいタスク、失敗後の再試行、回答の再生成には最新の設定が適用されます。実行中のタスクは元の上限を維持します。上限を増やすと、トークンやクレジットの消費が増える場合があります。";
+"ask.steps.invalid" = "ステップ数は 10～500 の間で選択してください。";
 "ask.temporary.settings.footnote" = "一時的な会話は履歴に表示されず、メモリーの読み書きもしません。";
 "ask.temporary.settings.confirm" = "一時的な会話を離れる前に確認";
 "ask.temporary.settings.confirm.subtitle" = "内容のある一時的な会話を、別の会話の作成や表示で終了する前に確認します";

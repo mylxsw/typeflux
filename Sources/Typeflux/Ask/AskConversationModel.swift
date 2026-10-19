@@ -1149,6 +1149,7 @@ final class AskConversationModel: ObservableObject {
         var value = newConversation ? AskConversation(id: id, title: String(submitted.title.prefix(50)), revision: 0, updatedAt: Date(), messages: []) : selected!
         let messageId = queuedId ?? UUID().uuidString
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
+        request.maxSteps = modelLibrary.settings.askAgentMaxSteps
         // A temporary conversation is never named: it has no place in history to be found by.
         request.titlePolicy = .init(enabled: modelLibrary.settings.askAutomaticTitles && !temporaryRun,
                                     modelRef: modelLibrary.settings.askTitleModelReference)
@@ -1266,10 +1267,11 @@ final class AskConversationModel: ObservableObject {
                     response = try await api.send(conversationId: id, request: request, token: current.token)
                     pendingSends[id] = nil
                 } else if value.run == nil, let message = value.messages.last, message.role == "user" {
-                    let request = AskSendRequest(clientToolApproval: true, id: message.id, deviceId: deviceId, text: message.text,
+                    var request = AskSendRequest(clientToolApproval: true, id: message.id, deviceId: deviceId, text: message.text,
                                                  selection: message.selection, source: message.source, image: message.image,
                                                  tools: await tools.definitions(conversationId: id), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort, references: message.references,
                                                  attachments: message.attachments)
+                    request.maxSteps = modelLibrary.settings.askAgentMaxSteps
                     try await validateModel(
                         request.modelRef, token: current.token,
                         hasImage: request.sendsImage || value.messages.contains(where: { $0.hasImage })
@@ -1280,7 +1282,8 @@ final class AskConversationModel: ObservableObject {
                         retryModelRef, token: current.token,
                         hasImage: value.messages.contains(where: { $0.hasImage })
                     )
-                    response = try await api.retry(conversationId: id, runId: run.id, deviceId: deviceId, modelRef: retryModelRef, token: current.token)
+                    response = try await api.retry(conversationId: id, runId: run.id, deviceId: deviceId, modelRef: retryModelRef,
+                                                   maxSteps: modelLibrary.settings.askAgentMaxSteps, token: current.token)
                 } else {
                     response = try await api.conversation(id: id, token: current.token)
                 }
@@ -1355,7 +1358,8 @@ final class AskConversationModel: ObservableObject {
                     modelRef, token: current.token,
                     hasImage: value.messages.contains(where: { $0.hasImage })
                 )
-                let request = AskRegenerateRequest(clientToolApproval: true, messageId: messageId, deviceId: deviceId,
+                let request = AskRegenerateRequest(maxSteps: modelLibrary.settings.askAgentMaxSteps,
+                                                   clientToolApproval: true, messageId: messageId, deviceId: deviceId,
                                                    modelRef: modelRef, tools: definitions)
                 let response = try await api.regenerate(conversationId: id, request: request, token: current.token)
                 try await drive(response, current: current, screenshotConsentMessageID: screenshotConsent[id])

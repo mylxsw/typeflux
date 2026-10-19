@@ -236,6 +236,7 @@ actor AskLocalEngine: AskAPI {
         c.modelRef = modelRef
         c.run = AskRun(id: UUID().uuidString.lowercased(), deviceId: request.deviceId, status: "running", steps: 0, updatedAt: now(),
                        tools: request.tools, pending: [], modelRef: modelRef, reasoningEffort: request.reasoningEffort)
+        c.run?.maxSteps = try Self.configuredMaxSteps(request.maxSteps)
         c.run?.clientToolApproval = request.clientToolApproval
         record.conversation = c
         prepareRun(&record)
@@ -368,7 +369,11 @@ actor AskLocalEngine: AskAPI {
         return record.conversation
     }
 
-    func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, token _: String) async throws -> AskConversation {
+    func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, token: String) async throws -> AskConversation {
+        try await retry(conversationId: conversationId, runId: runId, deviceId: deviceId, modelRef: modelRef, maxSteps: nil, token: token)
+    }
+
+    func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, maxSteps: Int?, token _: String) async throws -> AskConversation {
         var record = try record(conversationId)
         guard let run = record.conversation.run, run.id == runId, run.deviceId == deviceId else { throw conflict() }
         if run.isActive || run.status == "completed" { return record.conversation }
@@ -378,6 +383,7 @@ actor AskLocalEngine: AskAPI {
                                          tools: run.tools, pending: [], modelRef: model,
                                          reasoningEffort: model == run.modelRef ? run.reasoningEffort : nil,
                                          budgetEnabled: run.budgetEnabled, budgetRootId: run.budgetRootId, budgetDeadline: run.budgetDeadline, budgetLimits: run.budgetLimits)
+        record.conversation.run?.maxSteps = try Self.configuredMaxSteps(maxSteps ?? run.maxSteps)
         record.conversation.run?.clientToolApproval = true
         prepareRun(&record)
         return try await step(&record)
@@ -399,6 +405,7 @@ actor AskLocalEngine: AskAPI {
         c.modelRef = model
         c.run = AskRun(id: UUID().uuidString.lowercased(), deviceId: request.deviceId, status: "running", steps: 0, updatedAt: now(),
                        tools: request.tools ?? c.run?.tools ?? [], pending: [], modelRef: model, reasoningEffort: prompt.reasoningEffort)
+        c.run?.maxSteps = try Self.configuredMaxSteps(request.maxSteps ?? record.conversation.run?.maxSteps)
         c.run?.clientToolApproval = request.clientToolApproval
         record.conversation = c
         prepareRun(&record)
@@ -406,6 +413,12 @@ actor AskLocalEngine: AskAPI {
     }
 
     // MARK: - Run
+
+    static func configuredMaxSteps(_ requested: Int?) throws -> Int {
+        guard let requested else { return maxSteps }
+        guard (10 ... 500).contains(requested) else { throw AskLocalError.message(L("ask.steps.invalid")) }
+        return requested
+    }
 
     /// Only the user's own models run locally; Typeflux Cloud models need the Cloud service.
     /// The typed question, or the first attachment's name when only files were sent.
@@ -466,7 +479,7 @@ actor AskLocalEngine: AskAPI {
         record.conversation.memory = record.conversation.memory?.usable(at: now())
         if record.conversation.run?.status == "running" { deliverSteering(&record) }
         guard let run = record.conversation.run else { return record.conversation }
-        guard run.steps < Self.maxSteps + (run.extraSteps ?? 0) else { return try fail(&record, L("ask.local.stepLimit")) }
+        guard run.steps < (run.maxSteps ?? Self.maxSteps) + (run.extraSteps ?? 0) else { return try fail(&record, L("ask.local.stepLimit")) }
         let c = record.conversation
         let through = c.summaryThrough ?? 0
         if run.budgetEnabled != true, c.messages.count - through > Self.summarizeAfter {

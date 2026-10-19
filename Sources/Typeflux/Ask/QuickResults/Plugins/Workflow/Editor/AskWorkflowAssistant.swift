@@ -111,7 +111,7 @@ final class AskWorkflowAssistant: ObservableObject {
         seenMessages.insert(messageID)
         items.append(.user(id: messageID, text: shown ?? text))
         remember()
-        let request = AskSendRequest(
+        var request = AskSendRequest(
             id: messageID,
             deviceId: dependencies.deviceId,
             text: text,
@@ -122,6 +122,7 @@ final class AskWorkflowAssistant: ObservableObject {
             modelRef: model,
             skills: [AskWorkflowAuthorSkill.use]
         )
+        request.maxSteps = SettingsStore(defaults: dependencies.defaults).askAgentMaxSteps
         let conversation = conversationID ?? ""
         isBusy = true
         let current = UUID()

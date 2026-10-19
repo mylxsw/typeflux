@@ -160,7 +160,7 @@ struct AskAPIClientTests {
         let envelope = Data("{\"code\":\"OK\",\"data\":".utf8) + encoded + Data("}".utf8)
         await stub.configure(payload: envelope)
         #expect(try await api.conversation(id: "c", token: "t").id == "c")
-        let send = AskSendRequest(id: "m", deviceId: "device", text: "Question", tools: [])
+        let send = AskSendRequest(maxSteps: 200, id: "m", deviceId: "device", text: "Question", tools: [])
         #expect(try await api.send(conversationId: "c", request: send, token: "t").revision == 2)
         let result = AskToolResultRequest(runId: "run", deviceId: "device", toolCallId: "call", content: "observed", isError: false)
         _ = try await api.result(conversationId: "c", request: result, token: "t")
@@ -275,6 +275,18 @@ struct AskAPIClientTests {
         #expect(body["run_id"] as? String == "run")
         #expect(body["device_id"] as? String == "device")
         #expect(body["model_ref"] as? String == reference)
+    }
+
+    @Test func retryEncodesConfiguredStepLimit() async throws {
+        let stub = AskHTTPStub()
+        let value = AskConversation(id: "c", title: "Question", revision: 2, updatedAt: Date(), messages: [])
+        await stub.configure(payload: Data("{\"code\":\"OK\",\"data\":".utf8) + (try AskCoding.encoder().encode(value)) + Data("}".utf8))
+        let api: any AskAPI = client(stub)
+        _ = try await api.retry(conversationId: "c", runId: "run", deviceId: "device", modelRef: nil, maxSteps: 500, token: "t")
+        let request = try #require(await stub.requests.last)
+        let data = try #require(request.httpBody)
+        let body = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect(body["max_steps"] as? Int == 500)
     }
 
     @Test(arguments: [401, 409, 413])

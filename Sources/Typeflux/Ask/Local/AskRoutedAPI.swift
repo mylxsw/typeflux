@@ -46,7 +46,10 @@ struct AskRoutedAPI: AskAPI {
         try await api(token).cancel(conversationId: conversationId, runId: runId, token: token)
     }
     func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, token: String) async throws -> AskConversation {
-        try await api(token).retry(conversationId: conversationId, runId: runId, deviceId: deviceId, modelRef: modelRef, token: token)
+        try await retry(conversationId: conversationId, runId: runId, deviceId: deviceId, modelRef: modelRef, maxSteps: nil, token: token)
+    }
+    func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, maxSteps: Int?, token: String) async throws -> AskConversation {
+        try await api(token).retry(conversationId: conversationId, runId: runId, deviceId: deviceId, modelRef: modelRef, maxSteps: maxSteps, token: token)
     }
     func regenerate(conversationId: String, request: AskRegenerateRequest, token: String) async throws -> AskConversation {
         try await api(token).regenerate(conversationId: conversationId, request: request, token: token)

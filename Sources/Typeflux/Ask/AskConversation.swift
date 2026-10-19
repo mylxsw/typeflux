@@ -64,6 +64,8 @@ struct AskRun: Codable, Equatable, Sendable {
     var status: String
     var error: String?
     var steps: Int
+    /// Maximum model replies pinned when this run started; nil for older runs.
+    var maxSteps: Int? = nil
     var updatedAt: Date
     var tools: [AskToolDefinition]
     var pending: [AskToolCall]
@@ -136,6 +138,7 @@ struct AskConversation: Codable, Identifiable, Equatable, Sendable {
 typealias AskConversationSummary = ChatConversationSummary
 
 struct AskSendRequest: Codable, Equatable, Sendable {
+    var maxSteps: Int? = nil
     var titlePolicy: AskTitlePolicy? = nil
     var clientToolApproval: Bool? = nil
     var imageResults: Bool? = true
@@ -178,6 +181,7 @@ extension AskSendRequest {
 /// The model and tools are optional: the server falls back to the conversation's
 /// current model and the previous run's toolset.
 struct AskRegenerateRequest: Codable, Equatable, Sendable {
+    var maxSteps: Int? = nil
     var clientToolApproval: Bool? = nil
     var messageId: String
     var deviceId: String

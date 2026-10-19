@@ -2312,6 +2312,11 @@
 "ask.temporary.fact.cloud" = "使用云端模型时，Typeflux Cloud 最多保留 24 小时以完成运行，credits 照常计费。";
 "ask.temporary.noMemory" = "临时对话不使用记忆";
 "ask.temporary.settings.section" = "临时对话";
+"ask.steps.section" = "Agent 运行";
+"ask.steps.limit" = "最大执行步数";
+"ask.steps.detail" = "单次运行最多允许的模型回复次数";
+"ask.steps.footnote" = "新任务、失败后继续和重新生成会使用最新设置；正在运行的任务保持原上限。上限越高，可能消耗越多 Token 和积分。";
+"ask.steps.invalid" = "请选择 10 到 500 之间的步数。";
 "ask.temporary.settings.footnote" = "临时对话不会出现在历史记录里，也不会读取或写入记忆。";
 "ask.temporary.settings.confirm" = "离开临时对话前确认";
 "ask.temporary.settings.confirm.subtitle" = "临时对话里有内容时，新建或打开其他对话前先询问";
