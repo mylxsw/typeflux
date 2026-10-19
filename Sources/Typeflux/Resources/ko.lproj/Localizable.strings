@@ -1652,9 +1652,7 @@
 "ask.voice.recognizing" = "인식 중…";
 "ask.voice.cancel" = "녹음 취소 (esc)";
 "ask.voice.panel.hint" = "단축키를 놓거나 ■ 를 눌러 종료 · esc 로 취소";
-"ask.voice.panel.examples" = "“Warp 열어 줘”, “12 곱하기 7” 처럼 말해도 됩니다";
 "ask.voice.panel.transcribing" = "텍스트로 변환하는 중 · esc 로 취소";
-"ask.voice.panel.context" = "종료 후 함께 전송";
 "ask.context.token.help" = "질문과 함께 보내는 컨텍스트 (⌘K)";
 "ask.context.panel.selection" = "선택한 텍스트";
 "ask.context.panel.useApp" = "현재 앱 사용 (%@)";
@@ -2196,11 +2194,9 @@
 "ask.attach.title" = "첨부";
 "ask.attach.help" = "파일, 이미지 또는 폴더 첨부(⌘U). 붙여넣거나 끌어다 놓을 수도 있습니다";
 "ask.attach.files" = "파일 또는 이미지…";
-"ask.attach.files.caption" = "이미지, 텍스트, 코드 또는 PDF";
+"ask.attach.files.caption" = "질문과 함께 AI에 전송";
 "ask.attach.folder" = "폴더…";
-"ask.attach.folder.caption" = "이 대화에서 읽을 수 있으며 업로드되지 않음";
-"ask.attach.clipboard" = "클립보드 이미지 붙여넣기";
-"ask.attach.clipboard.caption" = "클립보드의 스크린샷 또는 이미지";
+"ask.attach.folder.caption" = "이 대화에서 필요할 때 읽고, 폴더 전체는 업로드하지 않음";
 "ask.attach.pickFiles" = "Ask에 보낼 파일이나 이미지 선택";
 "ask.attach.pickFolders" = "이 대화에서 Ask가 읽을 수 있는 폴더 선택";
 "ask.attach.add" = "추가";

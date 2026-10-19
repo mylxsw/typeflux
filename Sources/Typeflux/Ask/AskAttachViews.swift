@@ -2,8 +2,8 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// The composer's "+" control: pick files and images, a folder, or the image
-/// on the clipboard. Pasting and dropping reach the same place without it.
+/// The composer's "+" control: pick files and images to send, or grant
+/// read-only access to a folder. Pasting and dropping work in the editor.
 struct AskAttachButton: View {
     @ObservedObject var model: AskConversationModel
     var launcher: Bool
@@ -26,8 +26,7 @@ struct AskAttachButton: View {
         .accessibilityLabel(L("ask.attach.title"))
         .accessibilityIdentifier("ask.composer.attach")
         .askMenu(isPresented: $expanded, glass: true) {
-            AskAttachChoices(clipboardHasImage: AskAttachmentSource.canRead(from: .general),
-                             sourceToRestore: sourceToRestore, selectionLinesToRestore: selectionLinesToRestore,
+            AskAttachChoices(sourceToRestore: sourceToRestore, selectionLinesToRestore: selectionLinesToRestore,
                              restoreEnabled: !model.capturing,
                              restore: { kind in
                                  expanded = false
@@ -37,7 +36,6 @@ struct AskAttachButton: View {
                 switch choice {
                 case .files: model.pickAttachments(folders: false, launcher: launcher)
                 case .folder: model.pickAttachments(folders: true, launcher: launcher)
-                case .clipboard: model.addAttachments(AskAttachmentSource.read(from: .general), launcher: launcher)
                 }
             })
         }
@@ -84,9 +82,8 @@ struct AskSlashShortcut: View {
 }
 
 struct AskAttachChoices: View {
-    enum Choice { case files, folder, clipboard }
+    enum Choice { case files, folder }
 
-    var clipboardHasImage: Bool
     var sourceToRestore: String?
     var selectionLinesToRestore: Int?
     var restoreEnabled = true
@@ -98,8 +95,6 @@ struct AskAttachChoices: View {
             AskPopoverHeader(title: L("ask.attach.title"))
             row("ask.attach.files", "ask.attach.files.caption", "paperclip", .files)
             row("ask.attach.folder", "ask.attach.folder.caption", "folder", .folder)
-            row("ask.attach.clipboard", "ask.attach.clipboard.caption", "doc.on.clipboard", .clipboard,
-                enabled: clipboardHasImage)
             if sourceToRestore != nil || selectionLinesToRestore != nil {
                 Divider().padding(.vertical, 5)
                 if let sourceToRestore {
@@ -122,10 +117,9 @@ struct AskAttachChoices: View {
         .accessibilityIdentifier(kind == .source ? "ask.context.restore.source" : "ask.context.restore.selection")
     }
 
-    private func row(_ title: String, _ caption: String, _ symbol: String,
-                     _ choice: Choice, enabled: Bool = true) -> some View {
+    private func row(_ title: String, _ caption: String, _ symbol: String, _ choice: Choice) -> some View {
         AskPopoverRow(title: L(title), caption: L(caption), selected: false,
-                      enabled: enabled, action: { choose(choice) }, accessory: {
+                      action: { choose(choice) }, accessory: {
             Image(systemName: symbol).font(.system(size: 12, weight: .medium))
         })
     }

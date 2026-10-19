@@ -1662,9 +1662,7 @@
 "ask.voice.recognizing" = "Recognizing…";
 "ask.voice.cancel" = "Cancel recording (esc)";
 "ask.voice.panel.hint" = "Release the shortcut or click ■ to finish · esc to cancel";
-"ask.voice.panel.examples" = "You can also say “Open Warp” or “What is 12 times 7”";
 "ask.voice.panel.transcribing" = "Turning your words into text · esc to cancel";
-"ask.voice.panel.context" = "Sent along when you finish";
 "ask.context.token.help" = "Context sent with the question (⌘K)";
 "ask.context.panel.selection" = "Selected text";
 "ask.context.panel.useApp" = "Use the current app (%@)";
@@ -2206,11 +2204,9 @@
 "ask.attach.title" = "Attach";
 "ask.attach.help" = "Attach files, images or a folder (⌘U). You can also paste or drop them here";
 "ask.attach.files" = "Files or Images…";
-"ask.attach.files.caption" = "Images, text, code or PDF";
+"ask.attach.files.caption" = "Sent to AI with your question";
 "ask.attach.folder" = "Folder…";
-"ask.attach.folder.caption" = "Readable in this conversation, never uploaded";
-"ask.attach.clipboard" = "Paste Image from Clipboard";
-"ask.attach.clipboard.caption" = "A screenshot or image on the clipboard";
+"ask.attach.folder.caption" = "Read as needed; not uploaded as a whole";
 "ask.attach.pickFiles" = "Choose files or images to send to Ask";
 "ask.attach.pickFolders" = "Choose a folder Ask can read in this conversation";
 "ask.attach.add" = "Add";

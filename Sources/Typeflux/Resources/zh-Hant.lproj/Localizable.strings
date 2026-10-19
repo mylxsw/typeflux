@@ -1659,9 +1659,7 @@
 "ask.voice.recognizing" = "正在辨識…";
 "ask.voice.cancel" = "取消錄音（esc）";
 "ask.voice.panel.hint" = "放開快捷鍵或點 ■ 結束 · esc 取消";
-"ask.voice.panel.examples" = "也可以說「打開 Warp」「算一下 12 乘 7」";
 "ask.voice.panel.transcribing" = "說完了，正在轉成文字 · esc 取消";
-"ask.voice.panel.context" = "結束後一起傳送";
 "ask.context.token.help" = "隨問題傳送的上下文（⌘K）";
 "ask.context.panel.selection" = "選取的文字";
 "ask.context.panel.useApp" = "使用目前的應用程式（%@）";
@@ -2203,11 +2201,9 @@
 "ask.attach.title" = "新增附件";
 "ask.attach.help" = "新增檔案、圖片或資料夾（⌘U），也可以直接貼上或拖入";
 "ask.attach.files" = "檔案或圖片…";
-"ask.attach.files.caption" = "圖片、文字、程式碼或 PDF";
+"ask.attach.files.caption" = "隨提問傳送給 AI";
 "ask.attach.folder" = "資料夾…";
-"ask.attach.folder.caption" = "本次對話可讀取，不會上傳";
-"ask.attach.clipboard" = "貼上剪貼簿圖片";
-"ask.attach.clipboard.caption" = "剪貼簿裡的截圖或圖片";
+"ask.attach.folder.caption" = "本次對話按需讀取，不整包上傳";
 "ask.attach.pickFiles" = "選擇要傳給隨便問的檔案或圖片";
 "ask.attach.pickFolders" = "選擇隨便問在本次對話中可以讀取的資料夾";
 "ask.attach.add" = "新增";

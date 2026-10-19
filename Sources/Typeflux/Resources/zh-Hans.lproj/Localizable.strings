@@ -1662,9 +1662,7 @@
 "ask.voice.recognizing" = "正在识别…";
 "ask.voice.cancel" = "取消录音（esc）";
 "ask.voice.panel.hint" = "松开快捷键或点 ■ 结束 · esc 取消";
-"ask.voice.panel.examples" = "也可以说「打开 Warp」「算一下 12 乘 7」";
 "ask.voice.panel.transcribing" = "说完了，正在转成文字 · esc 取消";
-"ask.voice.panel.context" = "结束后一起发送";
 "ask.context.token.help" = "随问题发送的上下文（⌘K）";
 "ask.context.panel.selection" = "选中文字";
 "ask.context.panel.useApp" = "使用当前应用（%@）";
@@ -2206,11 +2204,9 @@
 "ask.attach.title" = "添加附件";
 "ask.attach.help" = "添加文件、图片或文件夹（⌘U），也可以直接粘贴或拖入";
 "ask.attach.files" = "文件或图片…";
-"ask.attach.files.caption" = "图片、文本、代码或 PDF";
+"ask.attach.files.caption" = "随提问发送给 AI";
 "ask.attach.folder" = "文件夹…";
-"ask.attach.folder.caption" = "本次对话可读取，不会上传";
-"ask.attach.clipboard" = "粘贴剪贴板图片";
-"ask.attach.clipboard.caption" = "剪贴板里的截图或图片";
+"ask.attach.folder.caption" = "本次对话按需读取，不整包上传";
 "ask.attach.pickFiles" = "选择要发给随便问的文件或图片";
 "ask.attach.pickFolders" = "选择随便问在本次对话中可以读取的文件夹";
 "ask.attach.add" = "添加";

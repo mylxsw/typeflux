@@ -1652,9 +1652,7 @@
 "ask.voice.recognizing" = "認識中…";
 "ask.voice.cancel" = "録音をキャンセル（esc）";
 "ask.voice.panel.hint" = "ショートカットを離すか ■ で終了 · esc でキャンセル";
-"ask.voice.panel.examples" = "「Warp を開いて」「12 かける 7 は」とも言えます";
 "ask.voice.panel.transcribing" = "文字に変換しています · esc でキャンセル";
-"ask.voice.panel.context" = "終了後に一緒に送信";
 "ask.context.token.help" = "質問と一緒に送るコンテキスト（⌘K）";
 "ask.context.panel.selection" = "選択したテキスト";
 "ask.context.panel.useApp" = "現在のアプリを使う（%@）";
@@ -2196,11 +2194,9 @@
 "ask.attach.title" = "添付";
 "ask.attach.help" = "ファイル、画像、フォルダを添付（⌘U）。貼り付けやドラッグでも追加できます";
 "ask.attach.files" = "ファイルまたは画像…";
-"ask.attach.files.caption" = "画像、テキスト、コード、PDF";
+"ask.attach.files.caption" = "質問と一緒に AI に送信";
 "ask.attach.folder" = "フォルダ…";
-"ask.attach.folder.caption" = "この会話で読み取り可能、アップロードされません";
-"ask.attach.clipboard" = "クリップボードの画像を貼り付け";
-"ask.attach.clipboard.caption" = "クリップボードのスクリーンショットや画像";
+"ask.attach.folder.caption" = "会話中に必要に応じて読み取り、丸ごとは送信しません";
 "ask.attach.pickFiles" = "Ask に送るファイルや画像を選択";
 "ask.attach.pickFolders" = "この会話で Ask が読み取れるフォルダを選択";
 "ask.attach.add" = "追加";

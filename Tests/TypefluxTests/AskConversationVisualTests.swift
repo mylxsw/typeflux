@@ -138,7 +138,7 @@ struct AskConversationVisualTests {
                                 .background(Color(nsColor: .windowBackgroundColor)),
                              size: NSSize(width: 380, height: 250), appearance: appearance,
                              file: root.appendingPathComponent("captured-selection-details-\(name).png"), minimumPNGBytes: 4000)
-            try await render(AskAttachChoices(clipboardHasImage: false, sourceToRestore: "Safari", selectionLinesToRestore: 2) { _ in }
+            try await render(AskAttachChoices(sourceToRestore: "Safari", selectionLinesToRestore: 2) { _ in }
                                 .background(Color(nsColor: .windowBackgroundColor)),
                              size: NSSize(width: 300, height: 290), appearance: appearance,
                              file: root.appendingPathComponent("captured-restore-\(name).png"), minimumPNGBytes: 4000)
