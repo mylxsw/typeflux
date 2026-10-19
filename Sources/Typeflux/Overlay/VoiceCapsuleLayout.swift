@@ -45,6 +45,11 @@ enum VoiceCapsuleSkin: Equatable {
     case notchIsland(VoiceCapsuleNotchGeometry)
 
     var isTopAnchored: Bool { self != .bottomCapsule }
+
+    var isCornerCard: Bool {
+        if case .cornerCard = self { return true }
+        return false
+    }
 }
 
 /// The capsule phases that change a top skin's size.

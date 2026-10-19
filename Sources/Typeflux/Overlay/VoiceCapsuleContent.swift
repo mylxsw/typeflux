@@ -13,6 +13,21 @@ enum VoiceCapsulePhase: Equatable {
     }
 
     var showsRecordingControls: Bool { self == .listening(handsFree: true) }
+
+    /// The corner card's hover controls. Holding the shortcut confirms on release, so it only
+    /// offers cancel; a finished or failed capsule has nothing to act on from the header.
+    var cardControls: [VoiceCapsuleCardControl] {
+        switch self {
+        case .listening(handsFree: true): [.cancel, .confirm]
+        case .listening(handsFree: false), .processing: [.cancel]
+        case .completed, .failure: []
+        }
+    }
+}
+
+enum VoiceCapsuleCardControl: Equatable {
+    case cancel
+    case confirm
 }
 
 /// Everything a top-anchored capsule needs to render one frame. The overlay model owns the
@@ -32,6 +47,8 @@ struct VoiceCapsuleSnapshot {
     var expanded = false
     /// Lines the transcript area shows (1...3); the window is sized for the same count.
     var transcriptLines = VoiceCapsuleLayout.maxTranscriptLines
+    /// The pointer is over the corner card, so its controls replace the timer.
+    var controlsRevealed = false
     var failureActions: [OverlayFailureAction] = []
     var failureAccent = Color(red: 1.0, green: 0.56, blue: 0.28)
 
@@ -91,6 +108,8 @@ struct VoiceCapsuleOrb: View {
     let phase: VoiceCapsulePhase
     let level: Float
     let diameter: CGFloat
+    /// Rings that spread with the voice; the corner card's only level indicator.
+    var showsRipples = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private static let colors: [Color] = [
@@ -111,7 +130,28 @@ struct VoiceCapsuleOrb: View {
             orb(angle: animates ? angle(at: context.date) : .zero)
         }
         .frame(width: diameter, height: diameter)
+        .background { if showsRipples && !reduceMotion { ripples } }
         .accessibilityHidden(true)
+    }
+
+    /// Scale and opacity of the inner and outer ripple for a recorder level.
+    static func ripple(for level: Float) -> (inner: (scale: CGFloat, opacity: Double), outer: (scale: CGFloat, opacity: Double)) {
+        let response = Self.response(for: level)
+        return ((1 + 0.32 * response, Double(0.9 * response)), (1 + 0.6 * response, Double(0.45 * response)))
+    }
+
+    @ViewBuilder
+    private var ripples: some View {
+        if phase.isListening {
+            let ripple = Self.ripple(for: level)
+            ZStack {
+                Circle().strokeBorder(Color(red: 0.59, green: 0.55, blue: 1.0).opacity(0.55), lineWidth: 1.5)
+                    .scaleEffect(ripple.inner.scale).opacity(ripple.inner.opacity)
+                Circle().strokeBorder(Color(red: 0.59, green: 0.55, blue: 1.0).opacity(0.55), lineWidth: 1.5)
+                    .scaleEffect(ripple.outer.scale).opacity(ripple.outer.opacity)
+            }
+            .animation(.linear(duration: 0.09), value: level)
+        }
     }
 
     private func angle(at date: Date) -> Angle {

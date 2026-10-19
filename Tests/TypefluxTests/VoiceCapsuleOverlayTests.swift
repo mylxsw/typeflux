@@ -70,7 +70,8 @@ struct VoiceCapsuleOverlayTests {
         controller.transitionToLLMPhase()
         try await settle()
         #expect(window.frame.size == compact.size)
-        #expect(window.ignoresMouseEvents)
+        // The corner card still accepts the pointer while processing so hover can offer cancel.
+        #expect(!window.ignoresMouseEvents)
         try capture(window, name: "corner-processing")
 
         controller.dismissProcessingImmediatelyIfVisible()
@@ -165,6 +166,40 @@ struct VoiceCapsuleOverlayTests {
     }
 
     @Test @MainActor
+    func hoveringTheCornerCardRevealsControlsWithoutResizing() async throws {
+        let fixture = try Fixture(style: .cornerCard)
+        defer { fixture.clean() }
+        let controller = fixture.controller
+        controller.showLockedRecording()
+        controller.updateRecordingPreviewText("A short transcript")
+        let window = try #require(controller.presentedWindow)
+        try await settle()
+        let frame = window.frame
+        #expect(!controller.cardControlsRevealedForTesting)
+
+        controller.simulateCapsuleHoverForTesting(true)
+        #expect(controller.cardControlsRevealedForTesting)
+        try await settle()
+        #expect(window.frame == frame)
+        try capture(window, name: "corner-handsfree-hover")
+
+        // A brief exit and return keeps the controls up.
+        controller.simulateCapsuleHoverForTesting(false)
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(controller.cardControlsRevealedForTesting)
+        controller.simulateCapsuleHoverForTesting(true)
+        controller.simulateCapsuleHoverForTesting(false)
+        try await Task.sleep(for: .seconds(OverlayController.cardControlsHideDelay + 0.15))
+        #expect(!controller.cardControlsRevealedForTesting)
+        #expect(window.frame == frame)
+
+        // Hiding the overlay clears the hover state for the next session.
+        controller.simulateCapsuleHoverForTesting(true)
+        controller.dismissImmediately()
+        #expect(!controller.cardControlsRevealedForTesting)
+    }
+
+    @Test @MainActor
     func hoverExpandsTheIslandOnlyWhenAllowed() async throws {
         for allowsHover in [true, false] {
             let fixture = try Fixture(style: .notchIsland) { $0.notchHoverExpands = allowsHover }
@@ -238,11 +273,11 @@ struct VoiceCapsuleOverlayTests {
         let phases: [VoiceCapsulePhase] = [.listening(handsFree: false), .listening(handsFree: true), .processing,
                                             .completed, .failure]
         for phase in phases {
-            for expanded in [false, true] {
+            for (expanded, revealed) in [(false, false), (true, false), (false, true), (true, true)] {
                 let snapshot = VoiceCapsuleSnapshot(
                     phase: phase, text: expanded ? "Live transcript" : "", level: 0.5, progress: 0.62,
                     statusText: "", message: "Timed out", targetAppName: "Notes", recordingStartedAt: started,
-                    completedCharacterCount: 3, expanded: expanded,
+                    completedCharacterCount: 3, expanded: expanded, controlsRevealed: revealed,
                     failureActions: [OverlayFailureAction(title: "Retry", isRetry: true, handler: {})]
                 )
                 let card = NSHostingView(rootView: CornerCardCapsule(snapshot: snapshot, actions: VoiceCapsuleActions()))
