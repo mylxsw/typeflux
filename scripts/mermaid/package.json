@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "dependencies": {
+    "mermaid": "11.12.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.10"
+  }
+}

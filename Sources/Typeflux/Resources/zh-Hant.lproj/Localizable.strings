@@ -6081,3 +6081,9 @@
 "ask.stepLimit.remaining" = "還剩 %d 項：%@";
 "ask.stepLimit.end" = "結束";
 "ask.stepLimit.continue" = "繼續";
+"ask.mermaid.showSource" = "檢視原始碼";
+"ask.mermaid.showDiagram" = "檢視圖形";
+"ask.mermaid.renderFailed" = "無法繪製圖形，下方顯示原始程式碼。";
+"ask.mermaid.diagram" = "Mermaid 圖形";
+"ask.mermaid.expand" = "展開圖形";
+"ask.mermaid.collapse" = "收合圖形";
