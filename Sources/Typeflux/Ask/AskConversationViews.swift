@@ -17,6 +17,8 @@ struct AskConversationView: View {
     @State private var restoredTranscript: String?
     @State private var isSearching = false
     @State private var collapsedGroups: Set<String> = []
+    /// The run whose step-limit prompt the user ended, so it stays dismissed.
+    @State private var endedStepLimitRunId: String?
     /// Which conversations the sidebar lists while some are kept on this Mac.
     @State private var historyFilter = AskHistoryFilter.all
     @State private var searchHover = false
@@ -909,7 +911,13 @@ struct AskConversationView: View {
     /// Whether `statusArea` shows anything, so an empty one adds no gap to the transcript.
     private var hasStatus: Bool {
         model.visibleVisionSwitch != nil || model.error != nil || model.imageRecoveryTarget != nil
-            || stoppedRun || resumable || model.hasRecoveryNotice || creditPaused
+            || (stoppedRun && !stepLimitEnded) || resumable || model.hasRecoveryNotice || creditPaused
+    }
+
+    /// The selected run stopped at the step limit and the user chose to end it there.
+    private var stepLimitEnded: Bool {
+        guard let run = model.selected?.run else { return false }
+        return AskStepLimitPrompt.applies(run) && endedStepLimitRunId == run.id
     }
 
     /// The selected run waits for credits; its card replaces the generic resume hint.
@@ -972,6 +980,13 @@ struct AskConversationView: View {
             AskImageRecoveryCard(model: model, target: target)
                 .id(target.id)
         } else if stoppedRun, !model.hasRecoveryNotice, let value = model.selected,
+                  !model.recoveryBlocksResume(value), let run = value.run, AskStepLimitPrompt.applies(run) {
+            if endedStepLimitRunId != run.id {
+                AskStepLimitPrompt(steps: run.steps, plan: run.plan,
+                                   onEnd: { endedStepLimitRunId = run.id },
+                                   onContinue: { model.resume() })
+            }
+        } else if stoppedRun, !model.hasRecoveryNotice, let value = model.selected,
                   !model.recoveryBlocksResume(value), let run = value.run {
             AskBanner(text: run.error ?? L("ask.cancelled"), tone: .info,
                       systemImage: "arrow.clockwise",
@@ -1022,11 +1037,20 @@ struct AskConversationView: View {
             call: call, risk: model.approvalRisk(id) ?? .destructive,
             mcpServer: model.mcpServerName(of: call),
             targetSummary: model.approvalTarget(id),
+            reason: Self.approvalReason(call, messages: model.selected?.messages ?? []),
             canAllowForConversation: model.canAllowForConversation(id),
             embedded: embedded,
             onDeny: { model.approve(conversationId: id, allowed: false, expectedApprovalID: approvalID) },
             onAllowForConversation: { model.approveForConversation(id, expectedApprovalID: approvalID) },
             onAllow: { model.approve(conversationId: id, allowed: true, expectedApprovalID: approvalID) })
+    }
+
+    /// The narration the model wrote with the call awaiting approval: why it wants the step.
+    static func approvalReason(_ call: AskToolCall, messages: [AskMessage]) -> String? {
+        let text = messages.last { message in
+            message.role == "assistant" && (message.toolCalls ?? []).contains { $0.id == call.id }
+        }?.text
+        return text?.isEmpty == false ? text : nil
     }
 
     /// When a transcript row first appeared: its message's time, or its first step's.

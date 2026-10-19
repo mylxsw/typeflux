@@ -65,6 +65,51 @@ struct AskHarnessVisualTests {
         }
     }
 
+    @Test func renderPlainLanguageApprovals() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        _ = NSApplication.shared
+        let previous = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previous) }
+        let write = call("w", "files", #"{"action":"write","path":"/tmp/typeflux-snapshot/snake.html","content":"<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n<title>贪吃蛇</title>\n</head>\n</html>\n"}"#)
+        let check = call("k", "run_command", #"{"command":"cd ~/Downloads && awk '/<script>/{f=1;next} /<\\/script>/{f=0} f' snake.html > /tmp/snake-check.js && node --check /tmp/snake-check.js && echo \"JS_SYNTAX_OK\""}"#)
+        let screen = call("s", "computer", #"{"action":"screenshot","display":5}"#)
+        let remove = call("r", "run_command", #"{"command":"rm -rf ~/Downloads/snake-old"}"#)
+        let edit = call("e", "files", #"{"action":"edit","path":"/tmp/typeflux-snapshot/snake.html","old_text":"bg.addColorStop(0, '#0c1720');","new_text":"bg.addColorStop(0, '#10222c');"}"#)
+        let plan = [AskPlanItem(step: "编写单文件贪吃蛇游戏", status: "completed"),
+                    AskPlanItem(step: "校验脚本语法并检查文件", status: "in_progress"),
+                    AskPlanItem(step: "在浏览器打开并截图确认界面", status: "pending")]
+        let now = Date()
+        let group = AskActivityGroup(id: "g", messages: [
+            AskMessage(id: "a1", role: "assistant", text: "游戏文件写好了，接下来检查脚本有没有语法错误。", toolCalls: [check], createdAt: now),
+        ])
+        for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+            let suffix = appearance == .aqua ? "light" : "dark"
+            let waiting = VStack(alignment: .leading, spacing: 20) {
+                AskActivityBlock(group: group, results: [], plan: plan, status: .attention, approvalToolId: "k",
+                                 approval: AnyView(AskApprovalCard(call: check, risk: .destructive,
+                                                                   reason: "游戏文件写好了，接下来检查脚本有没有语法错误。",
+                                                                   embedded: true, onDeny: {}, onAllow: {})))
+                AskStepLimitPrompt(steps: 24, plan: plan, onEnd: {}, onContinue: {})
+            }.padding(24).frame(width: 760, height: 560, alignment: .top).background(AskTheme.monoSurface)
+            try await render(waiting, size: .init(width: 760, height: 560), appearance: appearance,
+                             file: root.appendingPathComponent("plain-approval-run-\(suffix).png"))
+            let cards = VStack(alignment: .leading, spacing: 16) {
+                AskApprovalCard(call: write, risk: .write, reason: "先把完整的游戏写成一个网页文件，双击就能在浏览器里玩。",
+                                canAllowForConversation: true, onDeny: {}, onAllow: {})
+                AskApprovalCard(call: edit, risk: .write, reason: "截图里背景偏暗，把背景渐变调亮一些。", onDeny: {}, onAllow: {})
+                AskApprovalCard(call: screen, risk: .read, targetSummary: "display:5", reason: "游戏已在浏览器中打开，截一张图确认显示正常。",
+                                canAllowForConversation: true, onDeny: {}, onAllow: {})
+                AskApprovalCard(call: remove, risk: .destructive, targetSummary: "rm -rf ~/Downloads/snake-old",
+                                reason: "按你的要求清理旧版本。", onDeny: {}, onAllow: {})
+            }.padding(24).frame(width: 760, height: 900, alignment: .top).background(AskTheme.monoSurface)
+            try await render(cards, size: .init(width: 760, height: 900), appearance: appearance,
+                             file: root.appendingPathComponent("plain-approval-cards-\(suffix).png"))
+        }
+    }
+
     @Test func renderAgentHarnessSurfaces() async throws {
         guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
         let root = URL(fileURLWithPath: directory)
