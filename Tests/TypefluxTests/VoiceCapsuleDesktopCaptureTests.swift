@@ -9,7 +9,7 @@ import Testing
 struct VoiceCapsuleDesktopCaptureTests {
     private static let transcript = "明天下午三点跟设计团队过一下语音胶囊的新方案，然后把会议纪要发给大家"
 
-    @Test(arguments: [VoiceCapsuleStyle.cornerCard, .notchIsland, .bottomCapsule]) @MainActor
+    @Test(arguments: VoiceCapsuleStyle.allCases) @MainActor
     func captureEveryState(style: VoiceCapsuleStyle) async throws {
         let directory = try #require(ProcessInfo.processInfo.environment["TYPEFLUX_CAPSULE_SCREENSHOT_DIR"])
         let language = AppLocalization.shared.language
@@ -40,7 +40,7 @@ struct VoiceCapsuleDesktopCaptureTests {
         controller.show()
         controller.updateLevel(0.55)
         try await shoot("1-listening")
-        if style == .bottomCapsule {
+        if style == .orbCapsule {
             controller.simulateCapsuleHoverForTesting(true)
             try await shoot("1b-listening-hover")
             controller.simulateCapsuleHoverForTesting(false)
@@ -52,7 +52,7 @@ struct VoiceCapsuleDesktopCaptureTests {
         controller.showLockedRecording()
         controller.updateRecordingPreviewText(Self.transcript)
         try await shoot("3-handsfree")
-        if style != .notchIsland {
+        if style == .orbCapsule || style == .cornerCard {
             controller.simulateCapsuleHoverForTesting(true)
             try await shoot("3b-handsfree-hover")
             controller.simulateCapsuleHoverForTesting(false)
@@ -61,22 +61,26 @@ struct VoiceCapsuleDesktopCaptureTests {
         controller.showProcessing()
         controller.transitionToLLMPhase()
         try await shoot("4-processing")
-        if style != .notchIsland {
+        if style == .orbCapsule || style == .cornerCard {
             controller.simulateCapsuleHoverForTesting(true)
             try await shoot("4b-processing-hover")
             controller.simulateCapsuleHoverForTesting(false)
         }
-        controller.dismissProcessingImmediatelyIfVisible()
-        controller.showDeliveryConfirmation(characterCount: 35)
-        try await Task.sleep(for: .milliseconds(500))
-        let completed = URL(fileURLWithPath: directory).appendingPathComponent("\(style.rawValue)-5-completed.png").path
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-        process.arguments = ["-x", "-m", completed]
-        try process.run()
-        process.waitUntilExit()
-        try await Task.sleep(for: .seconds(1.5))
         controller.showRetryableFailure(message: "网络连接超时，录音已保存。你可以重试，或稍后在历史记录中找回原文。")
-        try await shoot("6-failure")
+        try await shoot("5-failure-retry")
+        controller.showTimeoutFailure(timeoutSeconds: 30)
+        try await shoot("6-failure-timeout")
+        controller.showFailure(message: "麦克风启动失败：没有找到可用的输入设备。请在「系统设置 › 隐私与安全性」中检查麦克风权限。")
+        try await shoot("7-failure-plain")
+        controller.showFailureWithActions(
+            title: "免费云端额度已用完",
+            message: "本月的免费云端额度已经用完。升级套餐可以继续使用云端转写与润色，也可以切换到其他模型。",
+            tone: .billing,
+            actions: [
+                OverlayFailureAction(title: "升级套餐", isRetry: false, trailingSystemImage: "arrow.up.right", handler: {}),
+                OverlayFailureAction(title: "切换其他模型", isRetry: false, style: .text, handler: {})
+            ]
+        )
+        try await shoot("8-failure-billing")
     }
 }

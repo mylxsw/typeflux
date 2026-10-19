@@ -41,10 +41,12 @@ struct VoiceCapsuleScreenGeometry: Equatable {
 /// The shape and placement a capsule uses on one screen, after notch fallback.
 enum VoiceCapsuleSkin: Equatable {
     case bottomCapsule
+    /// Bottom placement and window metrics, drawn with the orb and hover controls.
+    case orbCapsule
     case cornerCard(VoiceCapsuleCornerEdge)
     case notchIsland(VoiceCapsuleNotchGeometry)
 
-    var isTopAnchored: Bool { self != .bottomCapsule }
+    var isTopAnchored: Bool { self != .bottomCapsule && self != .orbCapsule }
 
     var isCornerCard: Bool {
         if case .cornerCard = self { return true }
@@ -78,9 +80,9 @@ enum VoiceCapsuleLayout {
     static let cardTranscriptWidth: CGFloat = cardWidth - 36
     static let cardTranscriptFontSize: CGFloat = 15
     static let cardTranscriptLineHeight: CGFloat = 22
-    /// Header, transcript lines, hint and padding.
+    /// Header, transcript lines and padding.
     static func cardExpandedHeight(lines: Int) -> CGFloat {
-        cardCompactHeight + 46 + cardTranscriptLineHeight * CGFloat(clampedLines(lines))
+        cardCompactHeight + 20 + cardTranscriptLineHeight * CGFloat(clampedLines(lines))
     }
 
     static var cardExpandedHeight: CGFloat { cardExpandedHeight(lines: maxTranscriptLines) }
@@ -114,7 +116,7 @@ enum VoiceCapsuleLayout {
     /// How many lines `text` wraps to in the skin's transcript area, between 1 and `maxTranscriptLines`.
     static func transcriptLines(for skin: VoiceCapsuleSkin, text: String) -> Int {
         switch skin {
-        case .bottomCapsule:
+        case .bottomCapsule, .orbCapsule:
             maxTranscriptLines
         case .cornerCard:
             lineCount(text, width: cardTranscriptWidth, fontSize: cardTranscriptFontSize)
@@ -151,6 +153,8 @@ enum VoiceCapsuleLayout {
         switch preferences.style {
         case .bottomCapsule:
             return .bottomCapsule
+        case .orbCapsule:
+            return .orbCapsule
         case .cornerCard:
             return .cornerCard(preferences.cornerEdge)
         case .notchIsland:
@@ -176,7 +180,7 @@ enum VoiceCapsuleLayout {
         for skin: VoiceCapsuleSkin, sizeClass: VoiceCapsuleSizeClass, transcriptLines: Int = maxTranscriptLines
     ) -> CGSize {
         switch skin {
-        case .bottomCapsule:
+        case .bottomCapsule, .orbCapsule:
             return .zero
         case .cornerCard:
             return CGSize(width: cardWidth, height: sizeClass == .compact
@@ -196,7 +200,7 @@ enum VoiceCapsuleLayout {
     /// Padding between the window edge and the visible shape.
     static func gutter(for skin: VoiceCapsuleSkin) -> NSEdgeInsets {
         switch skin {
-        case .bottomCapsule:
+        case .bottomCapsule, .orbCapsule:
             NSEdgeInsets()
         case .cornerCard:
             cardGutter
@@ -215,7 +219,7 @@ enum VoiceCapsuleLayout {
     static func windowOrigin(windowSize: CGSize, skin: VoiceCapsuleSkin, screen: VoiceCapsuleScreenGeometry) -> CGPoint {
         let inset = gutter(for: skin)
         switch skin {
-        case .bottomCapsule:
+        case .bottomCapsule, .orbCapsule:
             return CGPoint(x: screen.visibleFrame.midX - windowSize.width / 2, y: screen.visibleFrame.minY)
         case let .cornerCard(edge):
             // Below the menu bar, or below the screen top when the menu bar is hidden.

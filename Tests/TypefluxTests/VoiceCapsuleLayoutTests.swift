@@ -55,6 +55,7 @@ struct VoiceCapsuleLayoutTests {
 
     @Test func bottomAndCornerStylesIgnoreTheNotch() {
         #expect(VoiceCapsuleLayout.skin(for: preferences(.bottomCapsule), on: notched) == .bottomCapsule)
+        #expect(VoiceCapsuleLayout.skin(for: preferences(.orbCapsule), on: notched) == .orbCapsule)
         #expect(VoiceCapsuleLayout.skin(for: preferences(.cornerCard, edge: .leading), on: notched) == .cornerCard(.leading))
         #expect(VoiceCapsuleLayout.skin(for: preferences(.cornerCard), on: external) == .cornerCard(.trailing))
     }
@@ -91,6 +92,7 @@ struct VoiceCapsuleLayoutTests {
 
     @Test func topAnchoredSkins() {
         #expect(!VoiceCapsuleSkin.bottomCapsule.isTopAnchored)
+        #expect(!VoiceCapsuleSkin.orbCapsule.isTopAnchored)
         #expect(VoiceCapsuleSkin.cornerCard(.trailing).isTopAnchored)
         #expect(VoiceCapsuleSkin.notchIsland(notched.hardwareNotch!).isTopAnchored)
     }
@@ -108,10 +110,12 @@ struct VoiceCapsuleLayoutTests {
     @Test func cardSizes() {
         let skin = VoiceCapsuleSkin.cornerCard(.trailing)
         #expect(VoiceCapsuleLayout.contentSize(for: skin, sizeClass: .compact) == CGSize(width: 372, height: 64))
-        #expect(VoiceCapsuleLayout.contentSize(for: skin, sizeClass: .expanded) == CGSize(width: 372, height: 176))
+        #expect(VoiceCapsuleLayout.contentSize(for: skin, sizeClass: .expanded) == CGSize(width: 372, height: 150))
         #expect(VoiceCapsuleLayout.windowSize(contentSize: CGSize(width: 372, height: 64), skin: skin)
             == CGSize(width: 420, height: 100))
         #expect(VoiceCapsuleLayout.contentSize(for: .bottomCapsule, sizeClass: .expanded) == .zero)
+        #expect(VoiceCapsuleLayout.contentSize(for: .orbCapsule, sizeClass: .compact) == .zero)
+        #expect(VoiceCapsuleLayout.gutter(for: .orbCapsule).left == 0)
     }
 
     @Test func islandSizesGrowFromTheNotch() {
@@ -141,12 +145,14 @@ struct VoiceCapsuleLayoutTests {
         #expect(VoiceCapsuleLayout.transcriptLines(for: island, text: medium)
             < VoiceCapsuleLayout.transcriptLines(for: card, text: medium))
         #expect(VoiceCapsuleLayout.transcriptLines(for: .bottomCapsule, text: "x") == 3)
+        #expect(VoiceCapsuleLayout.transcriptLines(for: .orbCapsule, text: "x") == 3)
         #expect(VoiceCapsuleLayout.lineCount("x", width: 0, fontSize: 15) == 1)
 
-        #expect(VoiceCapsuleLayout.cardExpandedHeight(lines: 1) == 132)
+        // Header, transcript and padding; no key hint below the transcript.
+        #expect(VoiceCapsuleLayout.cardExpandedHeight(lines: 1) == 106)
         #expect(VoiceCapsuleLayout.cardExpandedHeight(lines: 9) == VoiceCapsuleLayout.cardExpandedHeight)
         #expect(VoiceCapsuleLayout.islandBodyHeight(lines: 0) == 80)
-        #expect(VoiceCapsuleLayout.contentSize(for: card, sizeClass: .expanded, transcriptLines: 2).height == 154)
+        #expect(VoiceCapsuleLayout.contentSize(for: card, sizeClass: .expanded, transcriptLines: 2).height == 128)
         #expect(VoiceCapsuleLayout.contentSize(for: island, sizeClass: .expanded, transcriptLines: 1)
             == CGSize(width: 560, height: 37 + 80))
     }
@@ -177,6 +183,8 @@ struct VoiceCapsuleLayoutTests {
         let origin = VoiceCapsuleLayout.windowOrigin(windowSize: CGSize(width: 100, height: 40), skin: .bottomCapsule,
                                                      screen: notched)
         #expect(origin == CGPoint(x: 706, y: 70))
+        #expect(VoiceCapsuleLayout.windowOrigin(windowSize: CGSize(width: 100, height: 40), skin: .orbCapsule,
+                                                screen: notched) == origin)
     }
 
     @Test func screenChoice() {

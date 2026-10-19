@@ -72,17 +72,14 @@ struct VoiceCapsuleCopyTests {
             var snapshot = VoiceCapsuleSnapshot(phase: .listening(handsFree: false), targetAppName: "Notes")
             #expect(VoiceCapsuleCopy.subtitle(for: snapshot) == "Listening · Notes")
             snapshot.phase = .listening(handsFree: true)
-            #expect(VoiceCapsuleCopy.subtitle(for: snapshot) == "Hands-free · Notes")
+            // Hands-free recording is never called out; it reads like holding the shortcut.
+            #expect(VoiceCapsuleCopy.subtitle(for: snapshot) == "Listening · Notes")
             snapshot.phase = .processing
             #expect(VoiceCapsuleCopy.state(for: snapshot) == L("overlay.processing.thinking"))
             snapshot.statusText = "Polishing"
             #expect(VoiceCapsuleCopy.subtitle(for: snapshot) == "Polishing · Notes")
-            snapshot.phase = .completed
-            snapshot.completedCharacterCount = 35
-            #expect(VoiceCapsuleCopy.subtitle(for: snapshot) == "Inserted · Notes · 35 characters")
-            snapshot.completedCharacterCount = 0
             snapshot.targetAppName = nil
-            #expect(VoiceCapsuleCopy.subtitle(for: snapshot) == "Inserted")
+            #expect(VoiceCapsuleCopy.subtitle(for: snapshot) == "Polishing")
             snapshot.phase = .failure
             snapshot.statusText = ""
             snapshot.targetAppName = "Notes"
@@ -92,10 +89,8 @@ struct VoiceCapsuleCopyTests {
         }
     }
 
-    @Test func hintsAndPercentages() {
+    @Test func percentages() {
         withEnglish {
-            #expect(VoiceCapsuleCopy.hint(for: .listening(handsFree: false)) == "Release the shortcut to insert")
-            #expect(VoiceCapsuleCopy.hint(for: .listening(handsFree: true)).hasPrefix("Press the shortcut again"))
             #expect(VoiceCapsuleCopy.percent(0.624) == "62%")
             #expect(VoiceCapsuleCopy.percent(-1) == "0%")
             #expect(VoiceCapsuleCopy.percent(3) == "100%")
@@ -119,10 +114,76 @@ struct VoiceCapsuleCopyTests {
         #expect(VoiceCapsulePhase.listening(handsFree: false).cardControls == [.cancel, .confirm])
         #expect(VoiceCapsulePhase.listening(handsFree: true).cardControls == [.cancel, .confirm])
         #expect(VoiceCapsulePhase.processing.cardControls == [.cancel])
-        #expect(VoiceCapsulePhase.completed.cardControls.isEmpty)
         #expect(VoiceCapsulePhase.failure.cardControls.isEmpty)
         #expect(VoiceCapsuleSkin.cornerCard(.leading).isCornerCard)
         #expect(!VoiceCapsuleSkin.bottomCapsule.isCornerCard)
+        #expect(!VoiceCapsuleSkin.orbCapsule.isCornerCard)
+    }
+
+    @Test func failureFooterPlacesEveryAction() {
+        withEnglish {
+            func action(_ title: String, _ style: OverlayFailureAction.Style) -> OverlayFailureAction {
+                OverlayFailureAction(title: title, isRetry: false, style: style, handler: {})
+            }
+            // Nothing to do: only the dismiss key.
+            let plain = OverlayFailureFooterLayout(actions: [])
+            #expect(plain.linkIndex == nil && plain.pillIndices.isEmpty)
+            #expect(plain.hint == "Esc to close")
+            // One action: Return runs it, so the hint names it.
+            let retry = OverlayFailureFooterLayout(actions: [action("Retry", .primary)])
+            #expect(retry.pillIndices == [0] && retry.hint == "⏎ Retry · Esc to close")
+            // Two pills take the row; the primary one goes last.
+            let login = OverlayFailureFooterLayout(actions: [action("Log in", .primary), action("Configure", .secondary)])
+            #expect(login.pillIndices == [1, 0] && login.hint == nil && login.linkIndex == nil)
+            // A text action becomes the link on the left.
+            let billing = OverlayFailureFooterLayout(actions: [action("Upgrade", .primary), action("Switch model", .text)])
+            #expect(billing.linkIndex == 1 && billing.pillIndices == [0] && billing.hint == nil)
+            // Only the first text action is a link; another one falls back to a pill.
+            let twoLinks = OverlayFailureFooterLayout(actions: [action("A", .text), action("B", .text)])
+            #expect(twoLinks.linkIndex == 0 && twoLinks.pillIndices == [1])
+        }
+    }
+
+    @Test func failureCountdownPausesAndResumes() {
+        let start = Date(timeIntervalSinceReferenceDate: 1000)
+        var countdown = OverlayFailureCountdown(total: 6, startedAt: start)
+        #expect(!countdown.isPaused && countdown.fraction(at: start) == 1)
+        #expect(abs(countdown.remaining(at: start.addingTimeInterval(1.5)) - 4.5) < 0.001)
+        countdown = countdown.paused(at: start.addingTimeInterval(3))
+        #expect(countdown.isPaused && abs(countdown.remaining - 3) < 0.001)
+        // Time does not run while paused, and pausing twice changes nothing.
+        #expect(abs(countdown.fraction(at: start.addingTimeInterval(60)) - 0.5) < 0.001)
+        #expect(countdown.paused(at: start.addingTimeInterval(60)) == countdown)
+        countdown = countdown.resumed(at: start.addingTimeInterval(10))
+        #expect(countdown.resumed(at: start.addingTimeInterval(20)) == countdown)
+        #expect(abs(countdown.remaining(at: start.addingTimeInterval(11)) - 2) < 0.001)
+        #expect(countdown.remaining(at: start.addingTimeInterval(99)) == 0)
+        #expect(OverlayFailureCountdown(total: 0, startedAt: start).fraction(at: start) == 0)
+    }
+
+    @Test @MainActor func failureCardRendersEveryTone() throws {
+        let actions = [
+            OverlayFailureAction(title: "Upgrade", isRetry: false, trailingSystemImage: "arrow.up.right", handler: {}),
+            OverlayFailureAction(title: "Configure", isRetry: false, style: .secondary, handler: {}),
+            OverlayFailureAction(title: "Switch model", isRetry: false, style: .text, handler: {})
+        ]
+        let tones: [OverlayFailureTone] = [.error, .timeout, .billing]
+        for tone in tones {
+            for (actionCount, countdown) in [(0, OverlayFailureCountdown(total: 6, startedAt: Date())), (1, nil), (3, nil)] {
+                let card = OverlayFailureCard(
+                    title: "Processing failed", message: String(repeating: "The network timed out. ", count: 3),
+                    tone: tone, actions: Array(actions.prefix(actionCount)), countdown: countdown,
+                    onAction: { _ in }, onDismiss: {}
+                )
+                let view = NSHostingView(rootView: card)
+                #expect(abs(view.fittingSize.width - OverlayFailureCard.width) < 0.5)
+                #expect(view.fittingSize.height > 90 && view.fittingSize.height < 200)
+                view.frame = NSRect(origin: .zero, size: view.fittingSize)
+                view.layoutSubtreeIfNeeded()
+                let bitmap = try #require(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+                view.cacheDisplay(in: view.bounds, to: bitmap)
+            }
+        }
     }
 
     @Test func ripplesSpreadWithTheVoice() {
@@ -179,9 +240,10 @@ struct VoiceCapsuleCopyTests {
         #expect(model.voiceCapsulePhase == .processing && model.voiceCapsuleExpanded)
         model.presentation = .processing
         #expect(!model.voiceCapsuleExpanded)
-        model.presentation = .completed
-        #expect(model.voiceCapsulePhase == .completed && model.presentation.isCapsule)
         model.presentation = .failure
+        #expect(!model.presentation.isCapsule)
+        model.failureCountdown = OverlayFailureCountdown(total: 6, startedAt: Date())
+        #expect(model.voiceCapsuleSnapshot?.failureCountdown != nil)
         model.detailText = "Network timed out"
         #expect(model.voiceCapsuleSnapshot?.message == "Network timed out")
         #expect(model.voiceCapsuleSnapshot?.text == "")

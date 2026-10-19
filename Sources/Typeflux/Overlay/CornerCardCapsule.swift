@@ -31,6 +31,8 @@ struct CornerCardCapsule: View {
         .overlay(alignment: .bottom) {
             if snapshot.phase == .processing {
                 VoiceCapsuleProgressBar(progress: snapshot.progress)
+            } else if let countdown = snapshot.failureCountdown {
+                OverlayFailureCountdownBar(countdown: countdown)
             }
         }
         .clipShape(shape)
@@ -116,7 +118,7 @@ struct CornerCardCapsule: View {
             Text(VoiceCapsuleCopy.percent(snapshot.progress))
                 .font(.system(size: 13, design: .monospaced))
                 .foregroundStyle(Color.white.opacity(0.7))
-        case .completed, .failure:
+        case .failure:
             EmptyView()
         }
     }
@@ -144,18 +146,11 @@ struct CornerCardCapsule: View {
             .padding(.horizontal, 18)
             .padding(.bottom, 14)
         } else {
-            VStack(alignment: .leading, spacing: 10) {
-                VoiceCapsuleTranscript(text: snapshot.text, fontSize: VoiceCapsuleLayout.cardTranscriptFontSize,
-                                       lineHeight: VoiceCapsuleLayout.cardTranscriptLineHeight,
-                                       lineCount: snapshot.transcriptLines, placeholder: L("voiceCapsule.placeholder"))
-                Text(VoiceCapsuleCopy.hint(for: snapshot.phase))
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(Color.white.opacity(0.45))
-                    .lineLimit(1)
-                    .opacity(snapshot.phase.isListening ? 1 : 0)
-            }
-            .padding(.horizontal, 18)
-            .padding(.top, 2)
+            VoiceCapsuleTranscript(text: snapshot.text, fontSize: VoiceCapsuleLayout.cardTranscriptFontSize,
+                                   lineHeight: VoiceCapsuleLayout.cardTranscriptLineHeight,
+                                   lineCount: snapshot.transcriptLines)
+                .padding(.horizontal, 18)
+                .padding(.top, 2)
         }
     }
 }

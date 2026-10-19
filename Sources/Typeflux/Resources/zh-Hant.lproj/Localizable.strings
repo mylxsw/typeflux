@@ -380,11 +380,12 @@
 "modelDomain.llm.subtitle" = "文字生成與改寫";
 
 "overlay.recording.listening" = "正在聆聽";
-"overlay.recording.personaHint" = "本次請求將使用%@人設進行處理";
 "overlay.ask.guidance" = "你可以詢問任何問題";
 "overlay.processing.transcribing" = "思考中";
 "overlay.processing.thinking" = "思考中";
 "overlay.failure.title" = "處理失敗";
+"overlay.failure.hint.primary" = "⏎ %@ · Esc 關閉";
+"overlay.failure.hint.dismiss" = "Esc 關閉";
 "overlay.timeout.title" = "處理逾時";
 "overlay.timeout.message" = "處理時間超過 %d 秒，請重試。";
 "overlay.notice.title" = "提示";
@@ -6094,6 +6095,8 @@
 /* Voice input capsule styles */
 "voiceCapsule.style.bottomCapsule" = "底部膠囊";
 "voiceCapsule.style.bottomCapsule.detail" = "螢幕底部置中，輕巧不打擾，適合所有顯示器。";
+"voiceCapsule.style.orbCapsule" = "光球膠囊";
+"voiceCapsule.style.orbCapsule.detail" = "與底部膠囊相同的位置和大小，以光球顯示聲音，懸停時才顯示按鈕。";
 "voiceCapsule.style.cornerCard" = "頂角卡片";
 "voiceCapsule.style.cornerCard.detail" = "像 Siri 一樣出現在選單列下方，狀態與轉寫一目了然。";
 "voiceCapsule.style.notchIsland" = "瀏海島";
@@ -6112,13 +6115,7 @@
 "voiceCapsule.screen.activeWindow" = "目前視窗所在的顯示器";
 "voiceCapsule.screen.mouse" = "滑鼠所在的顯示器";
 "voiceCapsule.screen.main" = "主顯示器";
-"voiceCapsule.state.handsFree" = "免持錄音中";
-"voiceCapsule.state.completed" = "已插入";
-"voiceCapsule.state.characterCount" = "%d 字";
-"voiceCapsule.hint.hold" = "放開快捷鍵插入";
-"voiceCapsule.hint.handsFree" = "再按一次快捷鍵完成 · Esc 取消";
 "voiceCapsule.action.close" = "關閉";
-"voiceCapsule.placeholder" = "請開始說話…";
 "voiceCapsule.accessibility.label" = "Typeflux 語音輸入";
 "voiceCapsule.settings.title" = "語音輸入膠囊";
 "voiceCapsule.settings.footnote" = "下次出現膠囊時生效。";

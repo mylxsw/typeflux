@@ -9,8 +9,6 @@ extension OverlayViewModel {
             .listening(handsFree: presentation.showsRecordingControls)
         case .processing, .processingPreview:
             .processing
-        case .completed:
-            .completed
         case .failure:
             .failure
         case .transcriptPreview, .notice, .personaPicker, .resultDialog:
@@ -47,11 +45,11 @@ extension OverlayViewModel {
             message: phase == .failure ? detailText : "",
             targetAppName: targetAppName,
             recordingStartedAt: recordingStartedAt,
-            completedCharacterCount: completedCharacterCount,
             expanded: voiceCapsuleExpanded,
             transcriptLines: voiceCapsuleTranscriptLines,
             controlsRevealed: cardControlsRevealed,
-            failureActions: failureActions
+            failureActions: failureActions,
+            failureCountdown: phase == .failure ? failureCountdown : nil
         )
     }
 

@@ -382,11 +382,12 @@
 "modelDomain.llm.subtitle" = "文本生成与改写";
 
 "overlay.recording.listening" = "正在聆听";
-"overlay.recording.personaHint" = "本次请求将使用%@人设进行处理";
 "overlay.ask.guidance" = "你可以询问任何问题";
 "overlay.processing.transcribing" = "思考中";
 "overlay.processing.thinking" = "思考中";
 "overlay.failure.title" = "处理失败";
+"overlay.failure.hint.primary" = "⏎ %@ · Esc 关闭";
+"overlay.failure.hint.dismiss" = "Esc 关闭";
 "overlay.timeout.title" = "处理超时";
 "overlay.timeout.message" = "处理时间超过 %d 秒，请重试。";
 "overlay.notice.title" = "提示";
@@ -6171,6 +6172,8 @@
 /* Voice input capsule styles */
 "voiceCapsule.style.bottomCapsule" = "底部胶囊";
 "voiceCapsule.style.bottomCapsule.detail" = "屏幕底部居中，轻巧不打扰，适合所有显示器。";
+"voiceCapsule.style.orbCapsule" = "光球胶囊";
+"voiceCapsule.style.orbCapsule.detail" = "与底部胶囊同样的位置和大小，用光球显示声音，悬停时才显示按钮。";
 "voiceCapsule.style.cornerCard" = "顶角卡片";
 "voiceCapsule.style.cornerCard.detail" = "像 Siri 一样出现在菜单栏下方，状态与转写一目了然。";
 "voiceCapsule.style.notchIsland" = "刘海岛";
@@ -6189,13 +6192,7 @@
 "voiceCapsule.screen.activeWindow" = "当前窗口所在的显示器";
 "voiceCapsule.screen.mouse" = "鼠标所在的显示器";
 "voiceCapsule.screen.main" = "主显示器";
-"voiceCapsule.state.handsFree" = "免提录音中";
-"voiceCapsule.state.completed" = "已插入";
-"voiceCapsule.state.characterCount" = "%d 字";
-"voiceCapsule.hint.hold" = "松开快捷键插入";
-"voiceCapsule.hint.handsFree" = "再按一次快捷键完成 · Esc 取消";
 "voiceCapsule.action.close" = "关闭";
-"voiceCapsule.placeholder" = "请开始说话…";
 "voiceCapsule.accessibility.label" = "Typeflux 语音输入";
 "voiceCapsule.settings.title" = "语音输入胶囊";
 "voiceCapsule.settings.footnote" = "下次出现胶囊时生效。";

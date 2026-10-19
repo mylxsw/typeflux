@@ -40,8 +40,9 @@ struct OverlayTransitionRenderingTests {
         controller.showFailure(message: "Please try again.")
         _ = try await settledFrame(of: window, changingFrom: before3)
         let failureHeight = window.frame.height
-        #expect(window.frame.width == 372)
-        #expect(failureHeight < 180)
+        // The 360pt card plus room for its shadow; no brown window chrome behind it.
+        #expect(window.frame.width == OverlayFailureCard.width + 56)
+        #expect(failureHeight < 200)
         _ = try capture(window, name: "failure-short-\(style.rawValue)")
         let before4 = window.frame
         controller.showRetryableFailure(message: String(repeating: "A detailed failure remains scrollable.\n", count: 30))
@@ -256,13 +257,12 @@ struct OverlayTransitionRenderingTests {
             }
         }
 
-        // The bottom row (orb on the left, timer on the right) stays pinned while the caption
-        // opens and closes above it. It is intentionally not horizontally centered.
-        let compactRow = try #require(compact.bottomRowCenter)
-        let bottomOffset = CGFloat(compact.pixelsHigh) - compactRow.y
+        let compactCenter = try #require(compact.waveformCenter)
+        let bottomOffset = CGFloat(compact.pixelsHigh) - compactCenter.y
         for bitmap in [expanding, expanded, collapsing, collapsed].compactMap({ $0 }) {
-            let row = try #require(bitmap.bottomRowCenter)
-            #expect(abs(CGFloat(bitmap.pixelsHigh) - row.y - bottomOffset) <= 2)
+            let center = try #require(bitmap.waveformCenter)
+            #expect(abs(center.x - CGFloat(bitmap.pixelsWide) / 2) <= 2)
+            #expect(abs(CGFloat(bitmap.pixelsHigh) - center.y - bottomOffset) <= 2)
         }
 
         controller.updateRecordingPreviewText("Caption before processing")
@@ -438,8 +438,7 @@ private extension NSBitmapImageRep {
         return peak
     }
 
-    /// Center of the bright content (timer digits, orb highlight) in the capsule's bottom row band.
-    var bottomRowCenter: CGPoint? {
+    var waveformCenter: CGPoint? {
         var minX = pixelsWide
         var maxX = -1
         var minY = pixelsHigh
@@ -448,8 +447,8 @@ private extension NSBitmapImageRep {
         for y in max(0, pixelsHigh - Int(75 * scale)) ..< max(0, pixelsHigh - Int(40 * scale)) {
             for x in 0 ..< pixelsWide {
                 guard let color = colorAt(x: x, y: y)?.usingColorSpace(.sRGB),
-                      color.alphaComponent > 0.5, color.redComponent > 0.6,
-                      color.greenComponent > 0.6, color.blueComponent > 0.6 else { continue }
+                      color.alphaComponent > 0.5, color.redComponent > 0.8,
+                      color.greenComponent > 0.8, color.blueComponent > 0.8 else { continue }
                 minX = min(minX, x)
                 maxX = max(maxX, x)
                 minY = min(minY, y)

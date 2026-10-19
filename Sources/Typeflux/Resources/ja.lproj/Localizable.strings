@@ -378,11 +378,12 @@
 "modelDomain.llm.subtitle" = "大規模な言語モデル";
 
 "overlay.recording.listening" = "リスニング";
-"overlay.recording.personaHint" = "このリクエストは%@ペルソナで処理されます";
 "overlay.ask.guidance" = "選択したテキストについて何でも質問してください";
 "overlay.processing.transcribing" = "思考中";
 "overlay.processing.thinking" = "思考中";
 "overlay.failure.title" = "処理に失敗しました";
+"overlay.failure.hint.primary" = "⏎ %@ · Esc で閉じる";
+"overlay.failure.hint.dismiss" = "Esc で閉じる";
 "overlay.timeout.title" = "処理がタイムアウトしました";
 "overlay.timeout.message" = "処理に %d 秒以上かかりました。もう一度試してください。";
 "overlay.notice.title" = "お知らせ";
@@ -6053,6 +6054,8 @@
 /* Voice input capsule styles */
 "voiceCapsule.style.bottomCapsule" = "下部カプセル";
 "voiceCapsule.style.bottomCapsule.detail" = "画面下部の中央に表示。控えめで、どのディスプレイでも使えます。";
+"voiceCapsule.style.orbCapsule" = "オーブカプセル";
+"voiceCapsule.style.orbCapsule.detail" = "下部カプセルと同じ位置とサイズ。オーブで声を表示し、ポインタを重ねたときだけボタンを表示します。";
 "voiceCapsule.style.cornerCard" = "コーナーカード";
 "voiceCapsule.style.cornerCard.detail" = "Siri のようにメニューバーの下に表示し、状態と文字起こしをひと目で確認できます。";
 "voiceCapsule.style.notchIsland" = "ノッチアイランド";
@@ -6071,13 +6074,7 @@
 "voiceCapsule.screen.activeWindow" = "作業中のウインドウがあるディスプレイ";
 "voiceCapsule.screen.mouse" = "ポインタがあるディスプレイ";
 "voiceCapsule.screen.main" = "メインディスプレイ";
-"voiceCapsule.state.handsFree" = "ハンズフリー";
-"voiceCapsule.state.completed" = "挿入しました";
-"voiceCapsule.state.characterCount" = "%d 文字";
-"voiceCapsule.hint.hold" = "ショートカットを離すと挿入";
-"voiceCapsule.hint.handsFree" = "もう一度ショートカットで完了 · Esc でキャンセル";
 "voiceCapsule.action.close" = "閉じる";
-"voiceCapsule.placeholder" = "話しはじめてください…";
 "voiceCapsule.accessibility.label" = "Typeflux 音声入力";
 "voiceCapsule.settings.title" = "音声入力カプセル";
 "voiceCapsule.settings.footnote" = "次にカプセルが表示されたときに反映されます。";

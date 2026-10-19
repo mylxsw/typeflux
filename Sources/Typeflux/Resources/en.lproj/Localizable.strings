@@ -382,11 +382,12 @@
 "modelDomain.llm.subtitle" = "Large language model";
 
 "overlay.recording.listening" = "Listening";
-"overlay.recording.personaHint" = "This request will be processed with the %@ persona";
 "overlay.ask.guidance" = "Ask anything about the selected text";
 "overlay.processing.transcribing" = "Thinking";
 "overlay.processing.thinking" = "Thinking";
 "overlay.failure.title" = "Processing failed";
+"overlay.failure.hint.primary" = "⏎ %@ · Esc to close";
+"overlay.failure.hint.dismiss" = "Esc to close";
 "overlay.timeout.title" = "Processing timed out";
 "overlay.timeout.message" = "Processing took longer than %d seconds. Please try again.";
 "overlay.notice.title" = "Notice";
@@ -6171,6 +6172,8 @@
 /* Voice input capsule styles */
 "voiceCapsule.style.bottomCapsule" = "Bottom capsule";
 "voiceCapsule.style.bottomCapsule.detail" = "Centered above the bottom of the screen. Light and unobtrusive, on every display.";
+"voiceCapsule.style.orbCapsule" = "Orb Capsule";
+"voiceCapsule.style.orbCapsule.detail" = "The bottom capsule with the orb: same size and place, controls appear on hover.";
 "voiceCapsule.style.cornerCard" = "Corner card";
 "voiceCapsule.style.cornerCard.detail" = "Appears below the menu bar like Siri, with state and transcript at a glance.";
 "voiceCapsule.style.notchIsland" = "Notch island";
@@ -6189,13 +6192,7 @@
 "voiceCapsule.screen.activeWindow" = "Display with the active window";
 "voiceCapsule.screen.mouse" = "Display with the pointer";
 "voiceCapsule.screen.main" = "Main display";
-"voiceCapsule.state.handsFree" = "Hands-free";
-"voiceCapsule.state.completed" = "Inserted";
-"voiceCapsule.state.characterCount" = "%d characters";
-"voiceCapsule.hint.hold" = "Release the shortcut to insert";
-"voiceCapsule.hint.handsFree" = "Press the shortcut again to finish · Esc to cancel";
 "voiceCapsule.action.close" = "Close";
-"voiceCapsule.placeholder" = "Start speaking…";
 "voiceCapsule.accessibility.label" = "Typeflux voice input";
 "voiceCapsule.settings.title" = "Voice input capsule";
 "voiceCapsule.settings.footnote" = "Changes apply the next time the capsule appears.";

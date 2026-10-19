@@ -591,7 +591,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertFalse(WorkflowController.shouldRewriteTranscript(personaPrompt: nil, inputContext: nil))
     }
 
-    func testRecordingHintUsesPersonaName() {
+    func testRecordingHintDoesNotAnnounceThePersona() {
         let persona = PersonaProfile(name: "Meeting Notes", prompt: "Clean up dictation.")
         let controller = makeWorkflowController(configureSettings: { settingsStore in
             settingsStore.personaRewriteEnabled = true
@@ -605,8 +605,8 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             bundleIdentifier: nil
         )
 
-        XCTAssertEqual(hint.text, L("overlay.recording.personaHint", persona.name))
-        XCTAssertEqual(hint.autoHideAfter, WorkflowController.recordingHintAutoHideDelay)
+        XCTAssertNil(hint.text)
+        XCTAssertNil(hint.autoHideAfter)
     }
 
     func testRecordingHintIsEmptyWhenNoPersonaIsActive() {

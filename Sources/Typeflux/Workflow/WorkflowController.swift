@@ -48,7 +48,6 @@ final class WorkflowController {
     // still considered for analysis.
     static let automaticVocabularyEditRatioLimit: Double = 0.8
     static let localModelPreheatDebounce: Duration = .milliseconds(180)
-    static let recordingHintAutoHideDelay: TimeInterval = 3.0
     static let audioStartupMaxAttemptCount = 3
     // Bluetooth routes can need several seconds to publish a stable input format.
     // At the 250ms retry interval this allows about 2.75 seconds to settle.
@@ -1009,18 +1008,8 @@ final class WorkflowController {
         if intent == .askSelection {
             return RecordingHintPresentation(text: L("overlay.ask.guidance"), autoHideAfter: nil)
         }
-
-        guard let persona = recordingPersona(
-            appName: appName,
-            bundleIdentifier: bundleIdentifier
-        ) else {
-            return RecordingHintPresentation(text: nil, autoHideAfter: nil)
-        }
-
-        return RecordingHintPresentation(
-            text: L("overlay.recording.personaHint", persona.name),
-            autoHideAfter: Self.recordingHintAutoHideDelay
-        )
+        // Dictation does not announce the active persona above the capsule.
+        return RecordingHintPresentation(text: nil, autoHideAfter: nil)
     }
 
     func shouldOptimizeTypefluxASR(
