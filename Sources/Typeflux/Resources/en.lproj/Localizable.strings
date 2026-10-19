@@ -2385,7 +2385,6 @@
 "memory.search" = "Search source memories";
 "memory.correct" = "Correct memory";
 "memory.deleteSource" = "Delete source memory";
-"memory.boundaries" = "Deleting a source invalidates its captured memory for future injection. Ask’s memory chip only stops injection; tool-driven saving still requires approval. To delete conversation history, delete the conversation separately. Summaries and earlier replies may still contain derived text.";
 "memory.retention" = "Retention";
 "memory.keepRetention" = "Keep current retention";
 "memory.forever" = "Until deleted";
@@ -2396,7 +2395,6 @@
 "memory.correction" = "User correction";
 "memory.explicit" = "Explicit note";
 "memory.account" = "This account";
-"memory.recentScope" = "Recent input stays on this Mac, is isolated by account and application/page, and expires after 24 hours. Soul is an automatic account summary retained until deleted.";
 "memory.saveFailed" = "Could not save the memory change. Please retry.";
 
 // Run budget reservations and reconciliation.

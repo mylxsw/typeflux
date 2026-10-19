@@ -75,14 +75,6 @@ struct RecentInputMemoryManagementView: View {
                 }
                 .keyboardShortcut(.cancelAction)
             }
-            VStack(alignment: .leading, spacing: 4) {
-                Text(L("memory.recentScope"))
-                Text(L("memory.boundaries"))
-            }
-            .font(.system(size: 12))
-            .foregroundStyle(StudioTheme.textSecondary)
-            .multilineTextAlignment(.leading)
-            .fixedSize(horizontal: false, vertical: true)
             TFSearchField(placeholder: L("memory.search"), text: $query, placement: .container,
                           resultCount: viewModel.recentInputMemoryItems.filter {
                               TFSearchMatcher.matches(query, $0.text)
