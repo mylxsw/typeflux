@@ -394,6 +394,7 @@ final class AskConversationModel: ObservableObject {
     let api: any AskAPI
     let cache: any AskCaching
     let tools: any AskToolExecuting
+    let workspaces: AskConversationWorkspaceStore?
     private let capture: any AskContextCapturing
     let session: () -> (owner: String, token: String)?
     let deviceId: String
@@ -439,12 +440,14 @@ final class AskConversationModel: ObservableObject {
     static let memoryPurgePendingKey = "ask.memory.purgePending"
 
     init(api: any AskAPI, cache: any AskCaching, tools: any AskToolExecuting,
+         workspaces: AskConversationWorkspaceStore? = nil,
          capture: any AskContextCapturing, deviceId: String, modelLibrary: AskModelLibrary? = nil,
          defaults: UserDefaults = .standard,
          trustedApprovalPeer: AskHarnessContract? = nil, scopedApprovalEnabled: Bool = false,
          session: @escaping () -> (owner: String, token: String)?) {
         self.modelLibrary = modelLibrary ?? .shared
-        self.api = api; self.cache = AskTemporaryCache(base: cache); self.tools = tools; self.capture = capture
+        self.api = api; self.cache = AskTemporaryCache(base: cache); self.tools = tools
+        self.workspaces = workspaces; self.capture = capture
         self.deviceId = deviceId; self.session = session; self.defaults = defaults
         quickSearch.launcherIconCache = launcherIconCache
         memoryInvalidations = MemoryInvalidationStore(defaults: defaults)
@@ -1201,6 +1204,12 @@ final class AskConversationModel: ObservableObject {
             let monitor = monitorConversation(id: id, current: current)
             defer { monitor.cancel() }
             do {
+                if let workspaces {
+                    try await workspaces.captureInputs(submitted.attachments ?? [], image: request.image,
+                                                       messageId: messageId, owner: current.account,
+                                                       conversationId: id)
+                    try await workspaces.saveConversation(value, owner: current.account)
+                }
                 try await cache.save(value, owner: current.owner)
                 var request = request
                 let offered = Self.offeredTools(await tools.definitions(conversationId: id), temporary: temporaryRun)
@@ -1420,6 +1429,10 @@ final class AskConversationModel: ObservableObject {
             || snapshots[value.id]?.messages != value.messages || snapshots[value.id]?.run?.status != value.run?.status
             || snapshots[value.id]?.usage != value.usage {
             try await cache.save(value, owner: route.owner)
+            if let workspaces {
+                do { try await workspaces.saveConversation(value, owner: route.account) }
+                catch { ErrorLogStore.shared.log("Ask workspace conversation save failed: \(error.localizedDescription)") }
+            }
         }
         guard owner == route.account else { throw CancellationError() }
         // Recheck after the cache write: another delivery or optimistic send
@@ -1828,6 +1841,7 @@ final class AskConversationModel: ObservableObject {
         guard !busyIds.contains(id), let current = credentials(for: id) else { return }
         tools.cancelProjects(conversationId: id)
         do {
+            try await syncWorkspace(id, requireFresh: true)
             try await api.delete(conversationId: id, token: current.token)
             guard owner == current.account else { return }
             try tools.deleteArtifacts(ownerId: current.account, conversationId: id)

@@ -674,6 +674,7 @@ struct AskConversationView: View {
                 Task { await model.select(item.id) }
             },
             onRename: { try await model.renameConversation(item.id, title: $0) },
+            onOpenWorkspace: { Task { await model.openWorkspace(item.id) } },
             onDelete: { deleteId = item.id }
         )
     }
@@ -765,6 +766,7 @@ struct AskConversationView: View {
                     Label(L("ask.storage.local"), systemImage: "lock")
                 }
                 if let id = model.selectedId {
+                    Button(L("ask.workspace.openFolder")) { Task { await model.openWorkspace(id) } }
                     Button(L("ask.delete"), role: .destructive) { deleteId = id }
                 }
             } label: {
@@ -823,6 +825,9 @@ struct AskConversationView: View {
             if model.selectedId != nil || model.tools.browserWorkspace != nil {
                 HStack(spacing: 2) {
                     if model.selectedId != nil {
+                        AskHeaderIconButton(symbol: "folder", label: L("ask.workspace.openFolder"), shortcut: nil) {
+                            if let id = model.selectedId { Task { await model.openWorkspace(id) } }
+                        }
                         headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
                             .accessibilityIdentifier("ask.workspace.usage")
                     }

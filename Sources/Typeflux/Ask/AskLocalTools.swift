@@ -107,6 +107,7 @@ final class AskLocalTools: AskToolExecuting {
     let projects: AskProjectWorkspace
     /// Independent rollout gate; production composition leaves this disabled.
     let projectModeEnabled: Bool
+    let workspaces: AskConversationWorkspaceStore?
     var projectScopes: [String: AskProjectScope] = [:]
     let projectRuntime: AskProjectRuntime?
     var projectLeases: [String: AskProjectRuntimeLease] = [:]
@@ -130,6 +131,7 @@ final class AskLocalTools: AskToolExecuting {
          sandbox: AskCodeSandbox? = nil, skills: AskSkillLibrary = AskSkillLibrary(), notes: AskMemoryNoteStore = .shared,
          folderGrants: AskFolderGrants = AskFolderGrants(),
          projects: AskProjectWorkspace = AskProjectWorkspace(), projectModeEnabled: Bool = false,
+         workspaces: AskConversationWorkspaceStore? = nil,
          artifactStore: AskArtifactStore = AskArtifactStore(), artifactCreationEnabled: Bool = false,
          artifactPreviewEnabled: Bool = false,
          projectRuntime: AskProjectRuntime? = nil,
@@ -145,7 +147,7 @@ final class AskLocalTools: AskToolExecuting {
         self.artifactStore = artifactStore
         self.artifactCreationEnabled = artifactCreationEnabled
         self.artifactPreviewEnabled = artifactPreviewEnabled
-        self.projects = projects; self.projectModeEnabled = projectModeEnabled
+        self.projects = projects; self.projectModeEnabled = projectModeEnabled; self.workspaces = workspaces
         self.projectRuntime = projectRuntime
         self.sandbox = sandbox ?? AskCodeSandbox(readableDirectories: [skills.userDirectory])
     }
@@ -156,6 +158,10 @@ final class AskLocalTools: AskToolExecuting {
         for tool in ["browser", "computer"] {
             observationStore.invalidate(scope: observationScope(tool, conversationId: id))
         }
+    }
+
+    func workspaceURL(conversationId: String) -> URL? {
+        workspaces?.url(owner: owner(), conversationId: conversationId)
     }
 
     /// The user's notes, for the `notebook` tool; nil leaves the tool and its skill out.
@@ -193,7 +199,8 @@ final class AskLocalTools: AskToolExecuting {
 
     /// Settings folders plus the folders attached to this conversation.
     func fileTools(conversationId: String?) -> AskFileTools {
-        var roots = fileTools.roots
+        var roots = conversationId.flatMap { workspaceURL(conversationId: $0)?.path }.map { [$0] } ?? []
+        roots.append(contentsOf: fileTools.roots.filter { !roots.contains($0) })
         for path in conversationId.map(folderGrants.folders(for:)) ?? [] where !roots.contains(path) { roots.append(path) }
         return AskFileTools(roots: roots)
     }

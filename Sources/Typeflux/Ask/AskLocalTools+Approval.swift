@@ -167,7 +167,11 @@ extension AskLocalTools {
             let request = try AskHostCommand.validated(args)
             guard settings?.askCodeExecutionEnabled == true else { throw AskLocalError.message(L("ask.tool.unavailable")) }
             try authorize()
-            let output = try await AskHostCommand().run(command: request.command, timeout: request.timeout)
+            let directory: URL? = if let workspaces {
+                try await workspaces.ensure(owner: owner(), conversationId: conversationId)
+            } else { nil }
+            let output = try await AskHostCommand().run(command: request.command, timeout: request.timeout,
+                                                        workingDirectory: directory)
             do { try authorize(); try Task.checkCancellation() }
             catch { return AskTypedContent.withoutPreparedImages(output) }
             return output

@@ -11,6 +11,7 @@ struct AskHistoryRow: View {
     let selectionSpace: Namespace.ID
     var onSelect: () -> Void
     var onRename: (String) async throws -> Void = { _ in }
+    var onOpenWorkspace: () -> Void = {}
     var onDelete: () -> Void
     @State private var hovering = false
     @State private var editingTitle: String?
@@ -33,6 +34,7 @@ struct AskHistoryRow: View {
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityAction(named: Text(L("ask.title.rename"))) { beginRename() }
         .contextMenu {
+            Button(L("ask.workspace.openFolder"), action: onOpenWorkspace)
             Button(L("ask.title.rename"), action: beginRename).disabled(busy || savingTitle != nil)
             Button(L("ask.delete"), role: .destructive, action: onDelete).disabled(busy || savingTitle != nil)
         }

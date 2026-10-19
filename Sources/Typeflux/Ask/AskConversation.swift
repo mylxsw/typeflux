@@ -301,11 +301,16 @@ struct AskDraft: Codable, Equatable, Sendable {
     }
 
     func request(deviceId: String, tools: [AskToolDefinition], id: String = UUID().uuidString) -> AskSendRequest {
-        AskSendRequest(
+        let sentAttachments = attachments?.map { item -> AskAttachment in
+            var copy = item
+            copy.localSourcePath = nil
+            return copy
+        }
+        return AskSendRequest(
             id: id, deviceId: deviceId, text: text.trimmingCharacters(in: .whitespacesAndNewlines),
             selection: sentSelection, source: sentSource,
             image: includeScreenshot ? screenshot : nil, tools: tools, modelRef: modelRef, references: references,
-            attachments: attachments, mcpServers: mcpServers
+            attachments: sentAttachments, mcpServers: mcpServers
         )
     }
 

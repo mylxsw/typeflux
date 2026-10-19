@@ -1,6 +1,7 @@
 import Foundation
 
-/// File access for Ask, limited to folders the user authorized in Settings.
+/// File access for Ask, limited to its conversation workspace and folders the
+/// user authorized in Settings or attached to the conversation.
 /// Paths are resolved through symlinks before the check, so a link inside an
 /// authorized folder cannot reach outside it.
 struct AskFileTools: Sendable {
@@ -33,8 +34,9 @@ struct AskFileTools: Sendable {
             ]
         ]
         let description = """
-        Read and edit files in the folders the user authorized for Ask (nothing else is reachable):
+        Read and edit files in this conversation's workspace and the folders the user authorized for Ask:
         \(folders)
+        Relative paths start in this conversation's workspace. Create new projects under work/ by default. \
         list shows a folder; read returns numbered lines; search finds text in files under a folder; \
         write replaces a whole file; edit replaces one exact, unique snippet. Writes need user approval; \
         prefer edit for small changes and read the file first.

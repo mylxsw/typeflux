@@ -102,17 +102,30 @@ extension AskLocalTools {
                 "response_model": result.responseModel ?? "", "response_provider": result.responseProvider ?? "",
                 "usage": result.usage.flatMap { try? JSONSerialization.jsonObject(with: $0.data) } ?? [:]
             ]).data
-            do { try refs.append(artifactStore.publish(
-                files: [name: image.data, "generation.json": metadata],
-                entry: name,
-                scope: scope
-            )) } catch { incomplete = true }
+            do {
+                let ref = try artifactStore.publish(files: [name: image.data, "generation.json": metadata],
+                                                    entry: name, scope: scope)
+                refs.append(ref)
+                if let workspaces {
+                    _ = try await workspaces.saveOutput(image.data, name: name, owner: owner(),
+                                                        conversationId: conversationId)
+                    _ = try await workspaces.saveOutput(metadata, name: "generation.json", owner: owner(),
+                                                        conversationId: conversationId)
+                }
+            } catch { incomplete = true }
         }
         // An unavailable decoder does not discard paid output. A generic binary
         // artifact can be exported, but never enters an encoded-image UI parser.
         for (index, bytes) in result.unvalidatedImages.enumerated() {
             let name = "generated-unvalidated-\(index + 1).bin"
-            do { refs.append(try artifactStore.publish(files: [name: bytes], entry: name, scope: scope)) }
+            do {
+                let ref = try artifactStore.publish(files: [name: bytes], entry: name, scope: scope)
+                refs.append(ref)
+                if let workspaces {
+                    _ = try await workspaces.saveOutput(bytes, name: name, owner: owner(),
+                                                        conversationId: conversationId)
+                }
+            }
             catch { incomplete = true }
         }
         if !incomplete, !refs.isEmpty { try? retention.published(refs) }
@@ -122,7 +135,7 @@ extension AskLocalTools {
                                                    ? "The paid request outcome is unknown. A private recovery record is saved on this Mac; output retention may be incomplete. Do not repeat the request."
                                                    : incomplete
                                                    ? "Generation output is incomplete. Unvalidated binary artifacts can be saved without decoding. A private recovery record is retained on this Mac for this call; if saving failed, output retention may be incomplete. Do not repeat the paid request."
-                                                   : "Generated images are saved on this Mac until the conversation is deleted.",
+                                                   : "Generated images are saved in this conversation's workspace on this Mac.",
                                                recoveryID: retention.id, incomplete: incomplete)
         guard let text = try String(data: JSONEncoder().encode(receipt), encoding: .utf8) else {
             throw AskImageError.invalidResponse
