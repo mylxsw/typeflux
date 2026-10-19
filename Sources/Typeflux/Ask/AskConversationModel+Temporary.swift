@@ -92,7 +92,7 @@ extension AskConversationModel {
         return storesLocally(launcher: launcher) ? .local : .cloud
     }
 
-    /// The storage kind the header, empty state and orb mark; see `AskStorageKind.marked`.
+    /// The storage kind the header and the empty-state orb mark; see `AskStorageKind.marked`.
     func markedStorage(launcher: Bool) -> AskStorageKind? {
         AskStorageKind.marked(storageKind(launcher: launcher), signedIn: isSignedIn)
     }
