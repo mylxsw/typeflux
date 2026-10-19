@@ -194,7 +194,8 @@ struct AskWorkflowSettingsView: View {
 
     /// The pane title and its actions share a header, with a two-line fallback for narrow panes.
     private var header: some View {
-        TFPaneHeader(systemImage: LauncherSettingsPane.workflows.symbol, title: LauncherSettingsPane.workflows.title) {
+        TFPaneHeader(systemImage: LauncherSettingsPane.workflows.symbol,
+                     title: LauncherSettingsPane.workflows.title, badge: "Beta") {
             TFButton(title: L("ask.workflow.gallery.title"), systemImage: "square.grid.2x2") { showingGallery = true }
                 .accessibilityIdentifier("ask.workflow.gallery")
             maintenanceMenu

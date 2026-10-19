@@ -6,6 +6,7 @@ struct TFPaneHeader<Accessory: View>: View {
     let systemImage: String
     let title: String
     var subtitle: String?
+    var badge: String? = nil
     @ViewBuilder var accessory: Accessory
 
     var body: some View {
@@ -27,7 +28,10 @@ struct TFPaneHeader<Accessory: View>: View {
         HStack(alignment: .center, spacing: 14) {
             TFIconTile(systemImage: systemImage, tint: TFColors.accent, size: 40, style: .soft)
             VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(.system(size: 17, weight: .semibold)).foregroundStyle(TFColors.textPrimary)
+                HStack(spacing: 8) {
+                    Text(title).font(.system(size: 17, weight: .semibold)).foregroundStyle(TFColors.textPrimary)
+                    if let badge { TFTag(text: badge, tint: TFColors.accent) }
+                }
                 if let subtitle {
                     Text(subtitle).font(.system(size: 12.5)).foregroundStyle(TFColors.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -40,8 +44,8 @@ struct TFPaneHeader<Accessory: View>: View {
 }
 
 extension TFPaneHeader where Accessory == EmptyView {
-    init(systemImage: String, title: String, subtitle: String? = nil) {
-        self.init(systemImage: systemImage, title: title, subtitle: subtitle) { EmptyView() }
+    init(systemImage: String, title: String, subtitle: String? = nil, badge: String? = nil) {
+        self.init(systemImage: systemImage, title: title, subtitle: subtitle, badge: badge) { EmptyView() }
     }
 }
 
