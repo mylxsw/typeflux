@@ -93,7 +93,9 @@ struct VoiceCapsuleStylePreview: View {
                 .padding(.trailing, 6)
             }
         }
-        .frame(width: 160, height: 100)
+        // Four cards share the row, so the screen narrows before the cards overflow.
+        .frame(minWidth: 112, maxWidth: 160)
+        .frame(height: 100)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(StudioTheme.border) }
         .accessibilityHidden(true)
@@ -103,6 +105,16 @@ struct VoiceCapsuleStylePreview: View {
     private var capsule: some View {
         switch style {
         case .bottomCapsule:
+            VStack {
+                Spacer()
+                RoundedRectangle(cornerRadius: 5.5, style: .continuous)
+                    .fill(Color(red: 0.06, green: 0.06, blue: 0.08))
+                    .frame(width: 34, height: 11)
+                    .overlay { waveform }
+                    .shadow(color: Color.black.opacity(0.25), radius: 3, y: 2)
+                    .padding(.bottom, 8)
+            }
+        case .orbCapsule:
             VStack {
                 Spacer()
                 miniCapsule(width: 34, height: 11, radius: 5.5)
@@ -131,6 +143,15 @@ struct VoiceCapsuleStylePreview: View {
             .frame(width: width, height: height)
             .overlay(alignment: .leading) { orbDot.padding(.leading, height / 2 - 2.5) }
             .shadow(color: Color.black.opacity(0.25), radius: 3, y: 2)
+    }
+
+    /// The original capsule's level bars.
+    private var waveform: some View {
+        HStack(spacing: 1.5) {
+            ForEach([2.5, 4.5, 6, 4, 2.5], id: \.self) { height in
+                Capsule().fill(Color.white.opacity(0.9)).frame(width: 1.5, height: height)
+            }
+        }
     }
 
     private var orbDot: some View {

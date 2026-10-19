@@ -36,7 +36,7 @@ struct VoiceCapsuleOverlayTests {
     }
 
     @Test @MainActor
-    func cornerCardGrowsBelowTheMenuBarAndConfirmsDelivery() async throws {
+    func cornerCardGrowsBelowTheMenuBarAndLeavesWithoutAConfirmation() async throws {
         let language = AppLocalization.shared.language
         defer { AppLocalization.shared.setLanguage(language) }
         AppLocalization.shared.setLanguage(.simplifiedChinese)
@@ -74,14 +74,9 @@ struct VoiceCapsuleOverlayTests {
         #expect(!window.ignoresMouseEvents)
         try capture(window, name: "corner-processing")
 
+        // Delivered text needs no confirmation: the card simply leaves.
         controller.dismissProcessingImmediatelyIfVisible()
-        controller.showDeliveryConfirmation(characterCount: 35)
         try await settle()
-        #expect(controller.recordingPresentationForTesting == .completed)
-        #expect(window.isVisible)
-        #expect(controller.isCapsulePresentedForTesting)
-        try capture(window, name: "corner-completed")
-        try await Task.sleep(for: .seconds(OverlayController.completionDisplayDuration + 0.4))
         #expect(!window.isVisible)
     }
 
@@ -152,17 +147,6 @@ struct VoiceCapsuleOverlayTests {
         #expect(window.frame.maxY == fixture.screen.frame.maxY)
         #expect(window.frame.height > notch.height + 40)
         try capture(window, name: "notch-failure")
-
-        controller.dismissImmediately()
-        controller.showDeliveryConfirmation(characterCount: 35)
-        try await settle()
-        #expect(controller.recordingPresentationForTesting == .completed)
-        #expect(controller.isCapsulePresentedForTesting)
-        try capture(window, name: "notch-completed")
-        // A new recording during the confirmation keeps the overlay.
-        controller.show()
-        try await Task.sleep(for: .seconds(OverlayController.completionDisplayDuration + 0.3))
-        #expect(window.isVisible && controller.recordingPresentationForTesting == .recordingHold)
     }
 
     @Test @MainActor
@@ -234,48 +218,141 @@ struct VoiceCapsuleOverlayTests {
     }
 
     @Test @MainActor
-    func bottomCapsuleRevealsControlsOnHoverAndConfirmsDelivery() async throws {
-        let fixture = try Fixture(style: .bottomCapsule)
+    func orbCapsuleRevealsControlsOnHover() async throws {
+        let fixture = try Fixture(style: .orbCapsule)
         defer { fixture.clean() }
         let controller = fixture.controller
         controller.show()
         controller.updateLevel(0.6)
         let window = try #require(controller.presentedWindow)
         try await settle()
-        #expect(controller.voiceCapsuleSkinForTesting == .bottomCapsule)
-        // The window keeps its original envelope and now accepts the pointer for hover.
+        #expect(controller.voiceCapsuleSkinForTesting == .orbCapsule)
+        // The original envelope, accepting the pointer so hover can reveal the controls.
         #expect(window.frame.size == CGSize(width: 146, height: 112))
         #expect(!window.ignoresMouseEvents)
-        try capture(window, name: "bottom-hold")
+        try capture(window, name: "orb-hold")
 
         controller.simulateCapsuleHoverForTesting(true)
         #expect(controller.cardControlsRevealedForTesting)
         try await settle()
         #expect(window.frame.size == CGSize(width: 146, height: 112))
-        try capture(window, name: "bottom-hold-hover")
+        try capture(window, name: "orb-hold-hover")
         controller.simulateCapsuleHoverForTesting(false)
         try await Task.sleep(for: .seconds(OverlayController.cardControlsHideDelay + 0.15))
         #expect(!controller.cardControlsRevealedForTesting)
 
         controller.updateRecordingPreviewText("明天下午三点跟设计团队过一下语音胶囊的新方案")
         try await settle()
-        try capture(window, name: "bottom-transcript")
+        try capture(window, name: "orb-transcript")
 
         controller.showProcessing()
         controller.transitionToLLMPhase()
         try await settle()
         #expect(!window.ignoresMouseEvents)
-        try capture(window, name: "bottom-processing")
+        try capture(window, name: "orb-processing")
 
         controller.dismissProcessingImmediatelyIfVisible()
-        controller.showDeliveryConfirmation(characterCount: 12)
+        try await settle()
+        #expect(!window.isVisible)
+    }
+
+    @Test @MainActor
+    func classicCapsuleKeepsItsOriginalBehavior() async throws {
+        let fixture = try Fixture(style: .bottomCapsule)
+        defer { fixture.clean() }
+        let controller = fixture.controller
+        controller.show()
+        let window = try #require(controller.presentedWindow)
+        try await settle()
+        #expect(controller.voiceCapsuleSkinForTesting == .bottomCapsule)
+        #expect(window.frame.size == CGSize(width: 146, height: 112))
+        // Holding the shortcut leaves the pointer alone, and hovering reveals nothing.
+        #expect(window.ignoresMouseEvents)
+        controller.simulateCapsuleHoverForTesting(true)
+        #expect(!controller.cardControlsRevealedForTesting)
+
+        // Hands-free recording shows its buttons and takes clicks, as before.
+        controller.showLockedRecording()
+        try await settle()
+        #expect(!window.ignoresMouseEvents)
+
+        controller.showProcessing()
+        try await settle()
+        #expect(window.ignoresMouseEvents)
+        controller.dismissProcessingImmediatelyIfVisible()
+        try await settle()
+        #expect(!window.isVisible)
+    }
+
+    @Test(arguments: [VoiceCapsuleStyle.bottomCapsule, .orbCapsule]) @MainActor
+    func failureCardRisesFromTheCapsule(style: VoiceCapsuleStyle) async throws {
+        let fixture = try Fixture(style: style)
+        defer { fixture.clean() }
+        let controller = fixture.controller
+        controller.show()
+        let window = try #require(controller.presentedWindow)
+        try await settle()
+        let capsule = window.frame
+        controller.showRetryableFailure(message: "The network timed out. Your recording was saved.")
+        // The window morphs from the capsule's envelope; wait until it stops moving.
+        var previous = NSRect.zero
+        for _ in 0 ..< 20 where window.frame != previous {
+            previous = window.frame
+            try await Task.sleep(for: .milliseconds(150))
+        }
+        #expect(window.frame.width == OverlayFailureCard.width + 56)
+        #expect(window.frame.minY == capsule.minY)
+        #expect(abs(window.frame.midX - capsule.midX) <= 0.5)
+        // The card draws its own glass; the window has no chrome of its own.
+        #expect(window.contentView?.layer?.cornerRadius == 0)
+        #expect(!window.ignoresMouseEvents)
+        // A failure with an action waits for the user.
+        #expect(controller.failureCountdownForTesting == nil)
+        try capture(window, name: "\(style.rawValue)-failure")
+    }
+
+    @Test @MainActor
+    func failuresWithoutActionsLeaveOnTheirOwnUnlessHovered() async throws {
+        let fixture = try Fixture(style: .bottomCapsule)
+        defer { fixture.clean() }
+        let controller = fixture.controller
+        controller.failureAutoDismissDelay = 0.4
+        controller.showFailure(message: "No microphone was found.")
+        let window = try #require(controller.presentedWindow)
+        try await settle()
+        let countdown = try #require(controller.failureCountdownForTesting)
+        #expect(countdown.total == 0.4 && !countdown.isPaused)
+
+        // The pointer over the card holds it in place past the deadline.
+        controller.simulateCapsuleHoverForTesting(true)
+        #expect(controller.failureCountdownForTesting?.isPaused == true)
+        try await Task.sleep(for: .milliseconds(600))
+        #expect(window.isVisible)
+
+        // Leaving resumes the rest of the countdown.
+        controller.simulateCapsuleHoverForTesting(false)
+        #expect(controller.failureCountdownForTesting?.isPaused == false)
+        try await Task.sleep(for: .milliseconds(700))
+        #expect(!window.isVisible)
+        #expect(controller.failureCountdownForTesting == nil)
+
+        // A failure that replaces the timed one with an action stays.
+        controller.showFailure(message: "No microphone was found.")
+        controller.showRetryableFailure(message: "The network timed out.")
+        try await Task.sleep(for: .milliseconds(700))
+        #expect(window.isVisible)
+        #expect(controller.failureCountdownForTesting == nil)
+    }
+
+    @Test @MainActor
+    func timeoutFailuresUseTheirOwnTone() async throws {
+        let fixture = try Fixture(style: .orbCapsule)
+        defer { fixture.clean() }
+        fixture.controller.showTimeoutFailure(timeoutSeconds: 30)
+        let window = try #require(fixture.controller.presentedWindow)
         try await settle()
         #expect(window.isVisible)
-        #expect(controller.recordingPresentationForTesting == .completed)
-        #expect(controller.isCapsulePresentedForTesting)
-        try capture(window, name: "bottom-completed")
-        try await Task.sleep(for: .seconds(OverlayController.completionDisplayDuration + 0.4))
-        #expect(!window.isVisible)
+        try capture(window, name: "orb-timeout")
     }
 
     @Test @MainActor
@@ -297,14 +374,15 @@ struct VoiceCapsuleOverlayTests {
         let notch = VoiceCapsuleNotchGeometry(midX: 0, width: 190, height: 32, isHardware: true)
         let started = Date().addingTimeInterval(-7)
         let phases: [VoiceCapsulePhase] = [.listening(handsFree: false), .listening(handsFree: true), .processing,
-                                            .completed, .failure]
+                                            .failure]
         for phase in phases {
             for (expanded, revealed) in [(false, false), (true, false), (false, true), (true, true)] {
                 let snapshot = VoiceCapsuleSnapshot(
                     phase: phase, text: expanded ? "Live transcript" : "", level: 0.5, progress: 0.62,
                     statusText: "", message: "Timed out", targetAppName: "Notes", recordingStartedAt: started,
-                    completedCharacterCount: 3, expanded: expanded, controlsRevealed: revealed,
-                    failureActions: [OverlayFailureAction(title: "Retry", isRetry: true, handler: {})]
+                    expanded: expanded, controlsRevealed: revealed,
+                    failureActions: revealed ? [] : [OverlayFailureAction(title: "Retry", isRetry: true, handler: {})],
+                    failureCountdown: revealed ? OverlayFailureCountdown(total: 6, startedAt: started) : nil
                 )
                 let card = NSHostingView(rootView: CornerCardCapsule(snapshot: snapshot, actions: VoiceCapsuleActions()))
                 let island = NSHostingView(rootView: NotchIslandCapsule(snapshot: snapshot, notch: notch,
@@ -331,9 +409,12 @@ struct VoiceCapsuleOverlayTests {
                 let host = NSHostingView(rootView: section.frame(width: 760))
                 #expect(host.fittingSize.height > 200)
                 let preview = NSHostingView(rootView: VoiceCapsuleStylePreview(style: style, showsBadge: badge))
-                #expect(preview.fittingSize == CGSize(width: 160, height: 100))
+                #expect(preview.fittingSize.height == 100)
+                #expect(preview.fittingSize.width >= 112 && preview.fittingSize.width <= 160)
             }
         }
+        // The original capsule stays next to the three new styles.
+        #expect(VoiceCapsuleStyle.allCases == [.bottomCapsule, .orbCapsule, .cornerCard, .notchIsland])
     }
 
     // MARK: - Helpers

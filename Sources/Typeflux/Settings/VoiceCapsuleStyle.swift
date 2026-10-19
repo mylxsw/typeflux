@@ -5,6 +5,9 @@ import Foundation
 enum VoiceCapsuleStyle: String, CaseIterable, Codable {
     /// The original capsule, centered above the bottom of the screen.
     case bottomCapsule
+    /// The original capsule's place and size with the corner card's language: an orb with
+    /// ripples instead of the waveform, a timer, and controls only on hover.
+    case orbCapsule
     /// A Siri-like card below the menu bar, in a top corner.
     case cornerCard
     /// A black island that grows out of the MacBook camera housing.
@@ -13,6 +16,7 @@ enum VoiceCapsuleStyle: String, CaseIterable, Codable {
     var displayName: String {
         switch self {
         case .bottomCapsule: L("voiceCapsule.style.bottomCapsule")
+        case .orbCapsule: L("voiceCapsule.style.orbCapsule")
         case .cornerCard: L("voiceCapsule.style.cornerCard")
         case .notchIsland: L("voiceCapsule.style.notchIsland")
         }
@@ -21,6 +25,7 @@ enum VoiceCapsuleStyle: String, CaseIterable, Codable {
     var detail: String {
         switch self {
         case .bottomCapsule: L("voiceCapsule.style.bottomCapsule.detail")
+        case .orbCapsule: L("voiceCapsule.style.orbCapsule.detail")
         case .cornerCard: L("voiceCapsule.style.cornerCard.detail")
         case .notchIsland: L("voiceCapsule.style.notchIsland.detail")
         }

@@ -383,6 +383,8 @@
 "overlay.processing.transcribing" = "생각 중";
 "overlay.processing.thinking" = "생각 중";
 "overlay.failure.title" = "처리 실패";
+"overlay.failure.hint.primary" = "⏎ %@ · Esc로 닫기";
+"overlay.failure.hint.dismiss" = "Esc로 닫기";
 "overlay.timeout.title" = "처리 시간이 초과되었습니다.";
 "overlay.timeout.message" = "처리하는 데 %d초 이상이 걸렸습니다. 다시 시도해 주세요.";
 "overlay.notice.title" = "공지사항";
@@ -6053,6 +6055,8 @@
 /* Voice input capsule styles */
 "voiceCapsule.style.bottomCapsule" = "하단 캡슐";
 "voiceCapsule.style.bottomCapsule.detail" = "화면 하단 중앙에 표시됩니다. 가볍고 방해가 적으며 모든 디스플레이에서 사용할 수 있습니다.";
+"voiceCapsule.style.orbCapsule" = "오브 캡슐";
+"voiceCapsule.style.orbCapsule.detail" = "하단 캡슐과 같은 위치와 크기에 오브로 음성을 표시하고, 마우스를 올렸을 때만 버튼을 보여 줍니다.";
 "voiceCapsule.style.cornerCard" = "코너 카드";
 "voiceCapsule.style.cornerCard.detail" = "Siri처럼 메뉴 막대 아래에 나타나 상태와 받아쓰기를 한눈에 보여 줍니다.";
 "voiceCapsule.style.notchIsland" = "노치 아일랜드";
@@ -6072,12 +6076,7 @@
 "voiceCapsule.screen.mouse" = "포인터가 있는 디스플레이";
 "voiceCapsule.screen.main" = "주 디스플레이";
 "voiceCapsule.state.handsFree" = "핸즈프리";
-"voiceCapsule.state.completed" = "입력됨";
-"voiceCapsule.state.characterCount" = "%d자";
-"voiceCapsule.hint.hold" = "단축키를 놓으면 입력";
-"voiceCapsule.hint.handsFree" = "단축키를 한 번 더 눌러 완료 · Esc로 취소";
 "voiceCapsule.action.close" = "닫기";
-"voiceCapsule.placeholder" = "말씀해 주세요…";
 "voiceCapsule.accessibility.label" = "Typeflux 음성 입력";
 "voiceCapsule.settings.title" = "음성 입력 캡슐";
 "voiceCapsule.settings.footnote" = "다음에 캡슐이 나타날 때 적용됩니다.";

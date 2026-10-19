@@ -4,7 +4,6 @@ import SwiftUI
 enum VoiceCapsulePhase: Equatable {
     case listening(handsFree: Bool)
     case processing
-    case completed
     case failure
 
     var isListening: Bool {
@@ -15,12 +14,12 @@ enum VoiceCapsulePhase: Equatable {
     var showsRecordingControls: Bool { self == .listening(handsFree: true) }
 
     /// The hover controls. Listening always offers confirm as well as cancel, so a live caption can be
-    /// committed with the pointer even while the shortcut is held; a finished or failed capsule has none.
+    /// committed with the pointer even while the shortcut is held; a failed capsule has none.
     var cardControls: [VoiceCapsuleCardControl] {
         switch self {
         case .listening: [.cancel, .confirm]
         case .processing: [.cancel]
-        case .completed, .failure: []
+        case .failure: []
         }
     }
 }
@@ -43,14 +42,14 @@ struct VoiceCapsuleSnapshot {
     var message: String = ""
     var targetAppName: String?
     var recordingStartedAt: Date?
-    var completedCharacterCount: Int = 0
     var expanded = false
     /// Lines the transcript area shows (1...3); the window is sized for the same count.
     var transcriptLines = VoiceCapsuleLayout.maxTranscriptLines
     /// The pointer is over the corner card, so its controls replace the timer.
     var controlsRevealed = false
     var failureActions: [OverlayFailureAction] = []
-    var failureAccent = Color(red: 1.0, green: 0.56, blue: 0.28)
+    /// Runs while a failure without actions waits to leave on its own.
+    var failureCountdown: OverlayFailureCountdown?
 
     /// Shows the transcript area; a failure always shows its message.
     var showsBody: Bool { expanded || phase == .failure }
@@ -74,8 +73,6 @@ enum VoiceCapsuleCopy {
             handsFree ? L("voiceCapsule.state.handsFree") : L("overlay.recording.listening")
         case .processing:
             snapshot.statusText.isEmpty ? L("overlay.processing.thinking") : snapshot.statusText
-        case .completed:
-            L("voiceCapsule.state.completed")
         case .failure:
             snapshot.statusText.isEmpty ? L("overlay.failure.title") : snapshot.statusText
         }
@@ -87,23 +84,16 @@ enum VoiceCapsuleCopy {
         if let app = snapshot.targetAppName, !app.isEmpty, snapshot.phase != .failure {
             parts.append(app)
         }
-        if snapshot.phase == .completed, snapshot.completedCharacterCount > 0 {
-            parts.append(L("voiceCapsule.state.characterCount", snapshot.completedCharacterCount))
-        }
         return parts.joined(separator: " · ")
     }
 
     static func percent(_ progress: CGFloat) -> String {
         "\(Int((max(0, min(1, progress)) * 100).rounded()))%"
     }
-
-    static func hint(for phase: VoiceCapsulePhase) -> String {
-        phase.showsRecordingControls ? L("voiceCapsule.hint.handsFree") : L("voiceCapsule.hint.hold")
-    }
 }
 
 /// The Typeflux orb: a slowly turning color field that swells with the input level,
-/// then turns green or orange for the result.
+/// then turns orange for a failure.
 struct VoiceCapsuleOrb: View {
     let phase: VoiceCapsulePhase
     let level: Float
@@ -165,10 +155,6 @@ struct VoiceCapsuleOrb: View {
         return ZStack {
             Circle().fill(Color(red: 0.035, green: 0.035, blue: 0.07))
             switch phase {
-            case .completed:
-                Circle().fill(Color(red: 0.12, green: 0.62, blue: 0.30))
-                Image(systemName: "checkmark").font(.system(size: diameter * 0.42, weight: .bold))
-                    .foregroundStyle(Color.white)
             case .failure:
                 Circle().fill(Color(red: 0.76, green: 0.25, blue: 0.05))
                 Image(systemName: "exclamationmark").font(.system(size: diameter * 0.44, weight: .bold))
@@ -197,17 +183,16 @@ struct VoiceCapsuleTranscript: View {
     let fontSize: CGFloat
     let lineHeight: CGFloat
     let lineCount: Int
-    let placeholder: String
     private let bottomID = "voice-capsule-transcript-bottom"
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(text.isEmpty ? placeholder : text)
+                    Text(text)
                         .font(.system(size: fontSize, weight: .regular))
                         .lineSpacing(max(0, lineHeight - fontSize * 1.2))
-                        .foregroundStyle(Color.white.opacity(text.isEmpty ? 0.45 : 0.96))
+                        .foregroundStyle(Color.white.opacity(0.96))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .fixedSize(horizontal: false, vertical: true)
                     Color.clear.frame(height: 1).id(bottomID)
@@ -252,19 +237,25 @@ struct VoiceCapsuleRoundButton: View {
 struct VoiceCapsulePillButton: View {
     let title: String
     let prominent: Bool
+    var systemImage: String?
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Text(title)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(prominent ? Color.black : Color.white)
-                .lineLimit(1)
-                .padding(.horizontal, 11)
-                .frame(height: 26)
-                .background(Capsule().fill(prominent ? Color.white : Color.white.opacity(0.12)))
-                .overlay(Capsule().stroke(Color.white.opacity(prominent ? 0 : 0.2), lineWidth: 0.8))
-                .contentShape(Capsule())
+            HStack(spacing: 5) {
+                Text(title)
+                if let systemImage {
+                    Image(systemName: systemImage).font(.system(size: 10.5, weight: .semibold))
+                }
+            }
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(prominent ? Color.black : Color.white)
+            .lineLimit(1)
+            .padding(.horizontal, 12)
+            .frame(height: 26)
+            .background(Capsule().fill(prominent ? Color.white : Color.white.opacity(0.12)))
+            .overlay(Capsule().stroke(Color.white.opacity(prominent ? 0 : 0.18), lineWidth: 0.8))
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -304,19 +295,13 @@ struct VoiceCapsuleProgressBar: View {
     }
 }
 
-/// The failure footer: the controller's actions plus a close button.
+/// The failure footer of the top skins: the shared failure footer plus a close pill.
 struct VoiceCapsuleFailureActions: View {
     let snapshot: VoiceCapsuleSnapshot
     let actions: VoiceCapsuleActions
 
     var body: some View {
-        HStack(spacing: 6) {
-            VoiceCapsulePillButton(title: L("voiceCapsule.action.close"), prominent: false, action: actions.dismiss)
-            ForEach(Array(snapshot.failureActions.enumerated()), id: \.offset) { index, action in
-                VoiceCapsulePillButton(title: action.title, prominent: action.isRetry || action.style == .primary) {
-                    actions.failureAction(index)
-                }
-            }
-        }
+        OverlayFailureFooter(actions: snapshot.failureActions, onClose: actions.dismiss,
+                             onAction: actions.failureAction)
     }
 }

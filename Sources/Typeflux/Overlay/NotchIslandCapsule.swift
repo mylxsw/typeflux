@@ -66,6 +66,9 @@ struct NotchIslandCapsule: View {
             if snapshot.phase == .processing {
                 VoiceCapsuleProgressBar(progress: snapshot.progress)
                     .padding(.horizontal, fillet + 18)
+            } else if let countdown = snapshot.failureCountdown {
+                OverlayFailureCountdownBar(countdown: countdown)
+                    .padding(.horizontal, fillet + 18)
             }
         }
         .clipShape(shape)
@@ -112,7 +115,7 @@ struct NotchIslandCapsule: View {
         case .processing: snapshot.showsBody
             ? "\(VoiceCapsuleCopy.state(for: snapshot)) \(VoiceCapsuleCopy.percent(snapshot.progress))"
             : VoiceCapsuleCopy.percent(snapshot.progress)
-        case .completed, .failure: VoiceCapsuleCopy.state(for: snapshot)
+        case .failure: VoiceCapsuleCopy.state(for: snapshot)
         }
         if let text {
             Text(text)
@@ -130,7 +133,7 @@ struct NotchIslandCapsule: View {
                 .frame(width: 32, height: max(12, notch.height - 12))
         case .processing:
             VoiceCapsuleProgressRing(progress: snapshot.progress)
-        case .completed, .failure:
+        case .failure:
             EmptyView()
         }
     }
@@ -159,14 +162,10 @@ struct NotchIslandCapsule: View {
             VStack(alignment: .leading, spacing: 0) {
                 VoiceCapsuleTranscript(text: snapshot.text, fontSize: VoiceCapsuleLayout.islandTranscriptFontSize,
                                        lineHeight: VoiceCapsuleLayout.islandTranscriptLineHeight,
-                                       lineCount: snapshot.transcriptLines, placeholder: L("voiceCapsule.placeholder"))
+                                       lineCount: snapshot.transcriptLines)
                 Spacer(minLength: 6)
                 HStack(spacing: 6) {
-                    Text(VoiceCapsuleCopy.hint(for: snapshot.phase))
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(Color.white.opacity(0.42))
-                        .opacity(snapshot.phase.isListening ? 1 : 0)
-                    Spacer(minLength: 8)
+                    Spacer(minLength: 0)
                     if snapshot.phase.isListening {
                         VoiceCapsulePillButton(title: L("common.cancel"), prominent: false, action: actions.cancel)
                         VoiceCapsulePillButton(title: L("common.done"), prominent: true, action: actions.confirm)
