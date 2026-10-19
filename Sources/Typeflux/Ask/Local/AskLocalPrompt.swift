@@ -37,7 +37,8 @@ enum AskLocalPrompt {
         return text + "</user_memory>"
     }
 
-    static func environment(localDate: String, timeZone: String?, locale: String?, webTools: [String], plan: Bool) -> String {
+    static func environment(localDate: String, timeZone: String?, locale: String?, webTools: [String],
+                            desktopTools: [String] = [], plan: Bool) -> String {
         var text = "<environment>\nToday's date: " + localDate + (timeZone.map { ", time zone " + $0 } ?? " (UTC)") + ".\n"
         if let locale { text += "Device locale: " + locale + ". Still reply in the language of the user's message.\n" }
         text += "The user is on Typeflux for macOS; this conversation runs on their Mac with their own model.\n"
@@ -47,6 +48,13 @@ enum AskLocalPrompt {
         }
         if plan { text += "For tasks with three or more steps, keep a short plan with update_plan and update it as steps finish.\n" }
         text += "Desktop tools (computer, browser and device tools) run one at a time under the client permission mode; request one desktop action per call and check its result before the next.\n"
+        if desktopTools.contains("web_browser") {
+            text += "For opening and visually checking web pages, including pages you just built, prefer web_browser in the conversation window. " +
+                "Use its screenshot or read action to verify the result. Do not use a shell open command or the external browser tool " +
+                "unless the user asks for their own browser or the built-in browser cannot handle the task. " +
+                "For a standalone local HTML file, use web_browser open_file with its absolute path; " +
+                "for an HTTP(S) preview use web_browser open. Then inspect the page with screenshot.\n"
+        }
         return text + "</environment>"
     }
 
@@ -165,7 +173,8 @@ enum AskLocalPrompt {
         }
         let web = tools.map(\.name).filter { ["web_fetch", "web_search"].contains($0) }
         messages.append(["role": "system", "content": environment(localDate: record.localDate ?? "", timeZone: record.timeZone, locale: record.locale,
-                                                                   webTools: web, plan: tools.contains { $0.name == "update_plan" })])
+                                                                   webTools: web, desktopTools: tools.map(\.name),
+                                                                   plan: tools.contains { $0.name == "update_plan" })])
         let cut = max(0, min(c.summaryThrough ?? 0, c.messages.count))
         messages += self.messages(Array(c.messages[cut...]), typedContentEnabled: record.typedContentEnabled == true)
         var payload: [String: Any] = ["model": c.run?.modelRef ?? "", "messages": messages]

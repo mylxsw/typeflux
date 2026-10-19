@@ -208,6 +208,11 @@ final class AskRoutedAPITests: XCTestCase {
         let env = AskLocalPrompt.environment(localDate: "2026-10-02 (Friday)", timeZone: nil, locale: nil, webTools: [], plan: false)
         XCTAssertTrue(env.contains("2026-10-02 (Friday) (UTC)."))
         XCTAssertFalse(env.contains("Web tools"))
+        let browserEnv = AskLocalPrompt.environment(localDate: "2026-10-02", timeZone: nil, locale: nil,
+                                                     webTools: [], desktopTools: ["web_browser"], plan: false)
+        XCTAssertTrue(browserEnv.contains("prefer web_browser"))
+        XCTAssertTrue(browserEnv.contains("web_browser open_file"))
+        XCTAssertFalse(env.contains("web_browser open_file"))
         let messages = AskLocalPrompt.messages([
             AskMessage(id: "1", role: "user", text: "Q", selection: "sel", source: "Safari", image: "data:image/jpeg;base64,YQ==", createdAt: Date(),
                        references: [AskReference(messageId: "m", text: "quoted", question: "why")]),

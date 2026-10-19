@@ -286,6 +286,11 @@ enum AskTheme {
         case "update_plan": return L("ask.tool.update_plan")
         case AskEmbeddedBrowserTool.name:
             let action = args["action"] as? String ?? ""
+            if action == "open_file" {
+                let filename = (args["path"] as? String).map { ($0 as NSString).lastPathComponent }
+                let title = L("ask.web.action.open")
+                return filename.map { title + " · " + $0 } ?? title
+            }
             let title = AskEmbeddedBrowserTool.actions.contains(action)
                 ? L("ask.web.action." + action) : L("ask.tool.web_browser")
             let host = (args["url"] as? String).flatMap { URL(string: $0)?.host }

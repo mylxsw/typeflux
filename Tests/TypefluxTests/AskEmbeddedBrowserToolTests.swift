@@ -76,6 +76,39 @@ final class AskEmbeddedBrowserToolTests: XCTestCase {
         XCTAssertEqual(AskEmbeddedBrowserTool.definition.name, "web_browser")
     }
 
+    func testOpenLocalStandaloneHTMLInBuiltInBrowser() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("snake.html")
+        try "<html><head><title>Snake</title></head><body><canvas></canvas><h1>Ready</h1></body></html>"
+            .write(to: file, atomically: true, encoding: .utf8)
+
+        let args: [String: Any] = ["action": "open_file", "path": file.path]
+        let binding = try tool.binding(args)
+        XCTAssertEqual(binding.target.path, file.path)
+        XCTAssertFalse(binding.reusable)
+        XCTAssertEqual(tool.risk(args), .write)
+        let opened = try await run(args)
+        XCTAssertTrue(opened.content.contains("Opened local HTML in tab 1"))
+        let tab = try XCTUnwrap(workspace.selectedTab)
+        XCTAssertEqual(tab.url?.standardizedFileURL, file.standardizedFileURL)
+        XCTAssertEqual(tab.title, "Snake")
+        let observed = try await run(["action": "read"])
+        XCTAssertTrue(observed.content.contains("Ready"))
+        let screenshot = try await run(["action": "screenshot"])
+        XCTAssertTrue(screenshot.image?.hasPrefix("data:image/jpeg;base64,") == true)
+
+        let sibling = directory.appendingPathComponent("sibling.html")
+        try "<h1>Other file</h1>".write(to: sibling, atomically: true, encoding: .utf8)
+        tab.webView.loadFileURL(sibling, allowingReadAccessTo: sibling)
+        try await tab.waitForLoad(timeout: .seconds(1))
+        XCTAssertEqual(tab.url?.standardizedFileURL, file.standardizedFileURL,
+                       "A local preview must not grant navigation to sibling files")
+        XCTAssertThrowsError(try AskEmbeddedBrowserTool.validatedLocalHTML(directory.appendingPathComponent("secret.txt").path))
+        XCTAssertFalse(AskBrowserTab.allowsNavigation(to: sibling))
+    }
+
     func testReadMarksContentUntrustedAndNotesPasswordFields() async throws {
         try await loadFixture()
         let output = try await run(["action": "read"])

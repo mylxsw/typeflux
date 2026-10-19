@@ -10,7 +10,7 @@ import WebKit
 final class AskEmbeddedBrowserTool {
     nonisolated static let name = "web_browser"
     static let contentWorld = WKContentWorld.world(name: "typeflux.agent")
-    nonisolated static let actions = ["tabs", "new_tab", "select_tab", "close_tab", "open", "back", "scroll", "read",
+    nonisolated static let actions = ["tabs", "new_tab", "open_file", "select_tab", "close_tab", "open", "back", "scroll", "read",
                                       "snapshot", "screenshot", "click", "fill", "wait", "handoff"]
 
     struct Element: Equatable {
@@ -52,6 +52,7 @@ final class AskEmbeddedBrowserTool {
                 "action": ["type": "string", "enum": actions],
                 "tab": ["type": "integer", "description": "Tab number from tabs; defaults to the tab you last used."],
                 "url": ["type": "string"],
+                "path": ["type": "string", "description": "Absolute path of a standalone local .html or .htm file for open_file."],
                 "observation_id": ["type": "string"],
                 "ref": ["type": "string"],
                 "text": ["type": "string"],
@@ -64,8 +65,10 @@ final class AskEmbeddedBrowserTool {
             "additionalProperties": false
         ]
         let description = """
-        Use Typeflux's built-in browser, shown beside this conversation, where the user is signed in to their own \
-        sites and watches every step. One action per call. tabs lists tabs; new_tab opens one (optionally at url); \
+        Use Typeflux's built-in browser, shown beside this conversation, to open and visually check web pages, \
+        especially pages you just built. Prefer it over a shell open command or the user's Safari/Chrome unless \
+        the user specifically asks for an external browser. One action per call. tabs lists tabs; new_tab opens one (optionally at url); \
+        open_file opens a standalone local HTML file in a new tab using its absolute path (sibling files are not available); \
         open navigates a tab to an http(s) url; read returns the page URL, title and visible text; snapshot lists \
         interactive elements with refs and returns an observation_id; screenshot returns an image of the page. \
         click and fill take a ref and the observation_id from the latest snapshot of that tab; observe again after \
@@ -96,7 +99,7 @@ final class AskEmbeddedBrowserTool {
     /// The site whose permission governs this call.
     func governingHost(_ args: [String: Any]) -> String? {
         switch action(args) {
-        case "open", "new_tab": destinationHost(args)
+        case "open", "new_tab", "open_file": destinationHost(args)
         default: targetTab(args)?.host
         }
     }
@@ -104,6 +107,7 @@ final class AskEmbeddedBrowserTool {
     func risk(_ args: [String: Any]) -> AskToolRisk {
         let action = action(args)
         if action == "new_tab", args["url"] == nil { return .none }
+        if action == "open_file" { return .write }
         let element = (args["ref"] as? String).flatMap { ref in
             targetTab(args).flatMap { observations[$0.id]?.elements[ref] }
         }
@@ -115,6 +119,11 @@ final class AskEmbeddedBrowserTool {
     func binding(_ args: [String: Any]) throws -> Binding {
         let action = action(args)
         guard Self.actions.contains(action) else { throw AskLocalError.message(L("ask.tool.invalid")) }
+        if action == "open_file" {
+            let url = try Self.validatedLocalHTML(args["path"])
+            return Binding(target: AskLocalTools.fileApprovalTarget(url.path),
+                           summary: "Open local HTML in built-in browser: " + url.path, reusable: false)
+        }
         let tab = targetTab(args)
         let host = governingHost(args)
         let version = tab.map { "\($0.number):\($0.generation):\($0.url?.absoluteString ?? "")" } ?? "none"
@@ -148,6 +157,7 @@ final class AskEmbeddedBrowserTool {
         case "tabs": return .init(content: tabList(conversationId: conversationId))
         case "handoff": return try await handoff(args)
         case "new_tab": return try await newTab(args, conversationId: conversationId)
+        case "open_file": return try await openFile(args, conversationId: conversationId)
         default: break
         }
         guard let tab = targetTab(args) else {
@@ -221,6 +231,30 @@ final class AskEmbeddedBrowserTool {
             throw AskLocalError.message(L("ask.web.invalidURL"))
         }
         return url
+    }
+
+    static func validatedLocalHTML(_ value: Any?) throws -> URL {
+        guard let path = value as? String, path.hasPrefix("/"), path.utf8.count <= 4096 else {
+            throw AskLocalError.message(L("ask.tool.invalid"))
+        }
+        let url = URL(fileURLWithPath: path).resolvingSymlinksInPath().standardizedFileURL
+        guard ["html", "htm"].contains(url.pathExtension.lowercased()),
+              let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]),
+              values.isRegularFile == true, let size = values.fileSize, size <= 4 * 1024 * 1024 else {
+            throw AskLocalError.message(L("ask.tool.invalid"))
+        }
+        return url
+    }
+
+    private func openFile(_ args: [String: Any], conversationId: String) async throws -> AskLocalToolOutput {
+        let url = try Self.validatedLocalHTML(args["path"])
+        try await workspace.waitUntilResumed(conversationId: conversationId)
+        let tab = try workspace.newTab(owner: .agent(conversationId: conversationId))
+        workspace.requestPresentation()
+        workspace.beginActivity(L("ask.web.action.open"), conversationId: conversationId, tab: tab)
+        tab.loadLocalHTML(url)
+        try await tab.waitForLoad(timeout: loadTimeout)
+        return .init(content: "Opened local HTML in tab \(tab.number).\n" + pageSummary(tab))
     }
 
     private func newTab(_ args: [String: Any], conversationId: String) async throws -> AskLocalToolOutput {

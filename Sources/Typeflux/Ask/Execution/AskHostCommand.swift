@@ -19,6 +19,7 @@ struct AskHostCommand: Sendable {
         let data = try! JSONSerialization.data(withJSONObject: schema, options: .sortedKeys)
         return .init(name: "run_command", description: """
         Run one shell command on the user's Mac with their normal account access. Use only when the task requires a command. \
+        If web_browser is available, use its open or open_file action to preview web pages; do not use a shell open command for that. \
         The client shows the exact command for approval in Strict and Standard modes; YOLO mode runs it automatically. \
         Do not claim that a referenced script was inspected unless you read it. The command starts in the user's home folder, has no \
         interactive terminal, and has a maximum runtime of 120 seconds. Check the exit status and output afterward.

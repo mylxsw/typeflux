@@ -189,6 +189,8 @@ struct AskHarnessUITests {
         #expect(AskTheme.toolTitle(call("m", "mcp_delete_issue")) == "MCP · delete_issue")
         #expect(AskTheme.toolTitle(call("m", "mcp_delete_issue"), mcpServer: "Linear") == "Linear · delete_issue")
         #expect(AskTheme.toolTitle(call("b", "browser", ["action": "read"])) == L("ask.tool.browser") + " · " + L("ask.action.read"))
+        #expect(AskTheme.toolTitle(call("w", "web_browser", ["action": "open_file", "path": "/tmp/snake.html"]))
+            == L("ask.web.action.open") + " · snake.html")
         #expect(AskTheme.toolTitle(call("x", "custom")) == "custom")
         #expect(AskPresentation.toolSymbol(call("m", "mcp_delete_issue")) == "point.3.connected.trianglepath.dotted")
     }

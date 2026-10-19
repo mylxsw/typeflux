@@ -16,7 +16,7 @@
 已实现，代码在 `Sources/Typeflux/Ask/Browser/`：
 
 - **面板**：`AskBrowserPanel`，包括标签栏、地址栏（输入网址或搜索词）、前进 / 后退 / 刷新、新建（无痕）标签页、在默认浏览器打开、复制链接、清除站点数据。面板可拖动调宽（宽度会记住），窗口窄时变成抽屉，顶栏地球按钮或 ⌘⇧B 切换。AI 使用浏览器时面板自动打开。
-- **持久化配置**：`AskBrowserWorkspace`。macOS 14+ 使用 `WKWebsiteDataStore(forIdentifier:)` 独立配置，macOS 13 退回默认存储；最多 8 个标签页；弹窗作为新标签页打开（保留 `window.opener`）；`file:` / `javascript:` 及顶层 `data:` 导航被拒绝；不支持下载，会给出提示。
+- **持久化配置**：`AskBrowserWorkspace`。macOS 14+ 使用 `WKWebsiteDataStore(forIdentifier:)` 独立配置，macOS 13 退回默认存储；最多 8 个标签页；弹窗作为新标签页打开（保留 `window.opener`）；普通 `file:` / `javascript:` 及顶层 `data:` 导航被拒绝；不支持下载，会给出提示。`web_browser.open_file` 可以在审批后预览单个本地 HTML 文件，读取权限只限该文件，不包含同目录资源。
 - **工具**：新增 `web_browser`（`AskEmbeddedBrowserTool`），与现有、控制用户 Safari / Chrome 的 `browser` 工具并存。动作有 `tabs` / `new_tab` / `select_tab` / `close_tab` / `open` / `back` / `scroll` / `read` / `snapshot` / `screenshot` / `click` / `fill` / `wait` / `handoff`。
   - 观察和操作脚本复用 `AskBrowserExecutor` 的 JS，跑在隔离的 `WKContentWorld("typeflux.agent")` 中，页面脚本读不到观察状态。
   - `click` / `fill` 只接受最新快照里的 ref，`observation_id` 用过一次即作废；页面导航后旧观察失效。
@@ -132,7 +132,7 @@ sequenceDiagram
 - **写操作分级**：站点权限为 `ask` 时每次写操作都要确认；为 `act` 时普通点击不再询问，但**高风险操作永远需要确认**：提交含密码或支付字段的表单、按钮文案命中「支付 / 购买 / 发送 / 删除 / 转账 / Pay / Buy / Send / Delete」、上传文件、下载、离开当前站点打开新域名。
 - **凭据**：观察结果里 `type=password`、`autocomplete=cc-*` / `one-time-code` 的字段值一律置空；`fill` 拒绝向这些字段写入；交接期间不截图。账号密码只由用户在页面里输入。
 - **云端对话**：网页内容会作为工具结果发给 Typeflux Cloud 的模型。第一次使用时明确告知用户，站点权限面板里也写清楚。私密对话（本机模式）只发给用户自己配置的模型。
-- **隔离**：独立数据存储；页面 world 不注册任何 `WKScriptMessageHandler`；禁止 `file://`；`window.open` / OAuth 弹窗在 `WKUIDelegate.createWebViewWith` 里作为新标签打开（必须使用传入的 configuration，保住 `window.opener`）；`mailto:` 等外部协议先询问用户；下载需要确认，并且只保存到「下载」目录。
+- **隔离**：独立数据存储；页面 world 不注册任何 `WKScriptMessageHandler`；普通 `file://` 导航禁止，`open_file` 审批后只允许进入选定的 HTML 文件；`window.open` / OAuth 弹窗在 `WKUIDelegate.createWebViewWith` 里作为新标签打开（必须使用传入的 configuration，保住 `window.opener`）；`mailto:` 等外部协议先询问用户；下载需要确认，并且只保存到「下载」目录。
 - **日志**：URL 只记录 host，不记录 query 和 fragment（里面可能有 token）。
 
 ## 已知限制与对策（需在 P0 做技术验证）

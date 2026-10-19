@@ -31,6 +31,8 @@ final class AskBrowserTab: NSObject, ObservableObject, Identifiable, WKNavigatio
     private(set) var generation = 0
     /// Opens `window.open` and `target=_blank` pages as new tabs.
     var openPopup: ((WKWebViewConfiguration) -> WKWebView?)?
+    /// A single approved local HTML document. Its read access does not extend to the parent folder.
+    private var allowedLocalURL: URL?
     private var observations: [NSKeyValueObservation] = []
 
     init(number: Int, configuration: WKWebViewConfiguration, isPrivate: Bool, owner: Owner) {
@@ -73,7 +75,14 @@ final class AskBrowserTab: NSObject, ObservableObject, Identifiable, WKNavigatio
 
     func load(_ url: URL) {
         notice = nil
+        allowedLocalURL = nil
         webView.load(URLRequest(url: url))
+    }
+
+    func loadLocalHTML(_ url: URL) {
+        notice = nil
+        allowedLocalURL = url.standardizedFileURL
+        webView.loadFileURL(url, allowingReadAccessTo: url)
     }
 
     func close() {
@@ -107,6 +116,9 @@ final class AskBrowserTab: NSObject, ObservableObject, Identifiable, WKNavigatio
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
                  decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void) {
         let url = navigationAction.request.url
+        if url?.isFileURL == true, url?.standardizedFileURL == allowedLocalURL {
+            decisionHandler(.allow); return
+        }
         if Self.allowsNavigation(to: url) {
             // Top-level data: URLs are a phishing vector; frames may still use them.
             if url?.scheme?.lowercased() == "data", navigationAction.targetFrame?.isMainFrame != false {
@@ -131,6 +143,7 @@ final class AskBrowserTab: NSObject, ObservableObject, Identifiable, WKNavigatio
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        if webView.url?.isFileURL != true { allowedLocalURL = nil }
         generation += 1
     }
 
