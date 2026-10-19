@@ -37,12 +37,17 @@ struct TiledImageTextRecognizer: ImageTextRecognizing {
             guard image.width <= 16384, image.height <= 65536, image.width <= 64_000_000 / image.height
             else { throw MediaFailure.tooLarge }
         }
-        guard case let .image(image) = source, image.height > bandHeight else {
+        guard bandHeight > 0, bandHeight <= 65536, overlap >= 0, overlap < bandHeight else { throw MediaFailure.invalidProtocol }
+        guard case let .image(image) = source else {
             return try await read(source)
         }
-        guard bandHeight > 0, bandHeight <= 65536, overlap >= 0, overlap < bandHeight else { throw MediaFailure.invalidProtocol }
-        guard (image.height - overlap + bandHeight - overlap - 1) / (bandHeight - overlap) <= 32 else { throw MediaFailure.tooLarge }
-        let bands = ImageTiling.bands(imageHeight: image.height, height: bandHeight, overlap: overlap)
+        let safeHeight = Self.safeBandHeight(width: image.width, requested: bandHeight)
+        guard safeHeight > 0 else { throw MediaFailure.tooLarge }
+        if image.height <= safeHeight { return try await read(source) }
+        let safeOverlap = min(overlap, safeHeight / 4)
+        guard (image.height - safeOverlap + safeHeight - safeOverlap - 1) / (safeHeight - safeOverlap) <= 32
+        else { throw MediaFailure.tooLarge }
+        let bands = ImageTiling.bands(imageHeight: image.height, height: safeHeight, overlap: safeOverlap)
         guard bands.count <= 32 else { throw MediaFailure.tooLarge }
         var bytes = 0, count = 0
         var results: [(band: ImageTiling.Band, text: RecognizedText)] = []
@@ -61,6 +66,11 @@ struct TiledImageTextRecognizer: ImageTextRecognizing {
         let result = ImageTiling.merge(results, imageSize: CGSize(width: image.width, height: image.height))
         try check()
         return result
+    }
+
+    static func safeBandHeight(width: Int, requested: Int) -> Int {
+        guard width > 0, requested > 0 else { return 0 }
+        return min(requested, 16_000_000 / width)
     }
 }
 

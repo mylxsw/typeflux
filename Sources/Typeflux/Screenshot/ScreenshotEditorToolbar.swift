@@ -279,11 +279,20 @@ struct ScreenshotEditorToolbar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Self.rowSpacing) {
+            if let notice = state.backgroundNoticeKey {
+                Label(L(notice), systemImage: "exclamationmark.triangle.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14).padding(.vertical, 11)
+                    .frame(minWidth: 360, alignment: .leading)
+                    .background(Color.red.opacity(0.92), in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(.white.opacity(0.35)))
+            }
             mainBar
-            if let notice = state.isRemovingBackground ? "screenshot.background.processing" : state.backgroundNoticeKey {
+            if state.isRemovingBackground {
                 HStack(spacing: 6) {
-                    if state.isRemovingBackground { ProgressView().controlSize(.small) }
-                    Text(L(notice))
+                    ProgressView().controlSize(.small)
+                    Text(L("screenshot.background.processing"))
                         .font(.system(size: 12))
                 }
                 .padding(8)

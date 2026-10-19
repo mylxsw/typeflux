@@ -5753,6 +5753,12 @@
 "screenshot.beautify.background.mint" = "민트";
 "screenshot.beautify.background.sunset" = "노을";
 "screenshot.beautify.background.lavender" = "라벤더";
+"screenshot.beautify.background.ocean" = "오션";
+"screenshot.beautify.background.peach" = "피치";
+"screenshot.beautify.background.graphite" = "그라파이트";
+"screenshot.beautify.background.sonoma" = "macOS 소노마";
+"screenshot.beautify.background.macBlue" = "Mac 블루";
+"screenshot.beautify.background.radialSkyBlue" = "방사형 하늘색";
 
 // Screenshot background removal
 "screenshot.background.remove" = "배경 제거";

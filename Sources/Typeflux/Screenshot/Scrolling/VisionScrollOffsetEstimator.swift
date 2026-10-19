@@ -3,11 +3,17 @@ import Foundation
 import TypefluxMediaProtocol
 
 protocol ScrollFrameRegistering: Sendable {
+    var canSkipWhenLocallyAligned: Bool { get }
     func verticalShifts(from previous: CGImage, to current: CGImage) async throws -> [Int]
+}
+
+extension ScrollFrameRegistering {
+    var canSkipWhenLocallyAligned: Bool { false }
 }
 
 /// Read-only candidates from the disposable child; the stitcher still checks every overlap.
 struct VisionScrollOffsetEstimator: ScrollFrameRegistering {
+    var canSkipWhenLocallyAligned: Bool { true }
     private static let admission = AskToolPixelBudget(limit: 2)
     var worker: MediaWorker = .frameRegistration
 

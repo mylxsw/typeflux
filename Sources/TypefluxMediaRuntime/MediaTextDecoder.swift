@@ -71,9 +71,10 @@ public enum MediaTextDecoder {
             let matches = MediaSensitiveText.matches(in: candidate.string)
             regionCount += matches.count
             guard matches.count <= 128, regionCount <= 4096 else { throw MediaFailure.tooLarge }
-            let regions = try matches.map { match -> MediaTextRecognition.Region in
+            let regions = matches.compactMap { match -> MediaTextRecognition.Region? in
                 guard let range = Range(match.range, in: candidate.string),
-                      let box = try candidate.boundingBox(for: range)?.boundingBox else { throw MediaFailure.unavailable }
+                      let box = try? candidate.boundingBox(for: range)?.boundingBox,
+                      MediaTextRecognition.valid(topLeft(box)) else { return nil }
                 return .init(kind: match.kind, range: match.range, box: topLeft(box))
             }
             lines.append(.init(text: candidate.string, confidence: candidate.confidence,

@@ -1,9 +1,11 @@
 import AppKit
 import Foundation
+import OSLog
 
 /// Routes explicit entry points and safe write-back through DI-owned system services.
 @MainActor
 final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
+    private let ocrLogger = Logger(subsystem: "ai.gulu.app.typeflux", category: "ScreenshotOCR")
     let model: AskTranslationPanelModel
     let controller: AskTranslationPanelController
     private let injector: any TextInjector
@@ -135,6 +137,7 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
                 entryTask = nil
             } catch {
                 guard let self, generation == current, !Task.isCancelled, controller.isPresented else { return }
+                ocrLogger.error("Screenshot OCR failed: \(String(describing: error))")
                 model.notice = L("ask.translation.panel.recognitionFailed")
                 entryTask = nil
             }

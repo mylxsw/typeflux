@@ -270,6 +270,13 @@ final class ScreenshotEditorOverlayTests: XCTestCase {
         state.showsOptions = true
         let twoRows = size(state)
         XCTAssertGreaterThan(twoRows.height, oneRow.height + ScreenshotEditorToolbar.rowSpacing)
+        state.showsOptions = false
+        state.backgroundNoticeKey = "screenshot.background.noSubject"
+        let errorNotice = size(state)
+        XCTAssertGreaterThan(errorNotice.height, oneRow.height + 30)
+        XCTAssertGreaterThanOrEqual(errorNotice.width, 360)
+        state.backgroundNoticeKey = nil
+        state.showsOptions = true
         state.showsMosaicOptions = true
         state.mosaicShape = .brush
         XCTAssertGreaterThan(size(state).height, oneRow.height)

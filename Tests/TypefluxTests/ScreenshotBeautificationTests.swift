@@ -66,6 +66,20 @@ final class ScreenshotBeautificationTests: XCTestCase {
         }
     }
 
+    func testInstalledMacOSWallpapersCanBeUsedAsBackgrounds() throws {
+        for background in ScreenshotBeautification.Background.allCases where background.wallpaperURL != nil {
+            let installed = FileManager.default.isReadableFile(atPath: try XCTUnwrap(background.wallpaperURL).path)
+            XCTAssertEqual(ScreenshotBeautification.Background.availableCases.contains(background), installed)
+            guard installed else { continue }
+            let thumbnail = try XCTUnwrap(ScreenshotBeautificationRenderer.wallpaper(background, maxDimension: 128))
+            XCTAssertLessThanOrEqual(max(thumbnail.width, thumbnail.height), 128)
+            var style = settings
+            style.background = background
+            let image = try ScreenshotBeautificationRenderer.render(source(), scale: 1, settings: style)
+            XCTAssertEqual(try pixel(image, 1, 1)[3], 255)
+        }
+    }
+
     func testShadowDrawsOutsideTheScreenshotAndCanBeRemoved() throws {
         var style = settings
         style.padding = 40

@@ -1,9 +1,26 @@
 import AppKit
+import ImageIO
 
 /// Presentation around the flattened screenshot; all lengths are in the source display's points.
 struct ScreenshotBeautification: Equatable {
     enum Background: String, CaseIterable {
         case transparent, white, charcoal, sky, mint, sunset, lavender
+        case ocean, peach, graphite, sonoma, macBlue, radialSkyBlue
+
+        var wallpaperURL: URL? {
+            let name: String
+            switch self {
+            case .sonoma: name = "Sonoma.heic"
+            case .macBlue: name = "Mac Blue.heic"
+            case .radialSkyBlue: name = "Radial Sky Blue.heic"
+            default: return nil
+            }
+            return URL(fileURLWithPath: "/System/Library/Desktop Pictures").appendingPathComponent(name)
+        }
+
+        static var availableCases: [Self] {
+            allCases.filter { $0.wallpaperURL.map { FileManager.default.isReadableFile(atPath: $0.path) } ?? true }
+        }
 
         var colors: [CGColor] {
             switch self {
@@ -14,6 +31,12 @@ struct ScreenshotBeautification: Equatable {
             case .mint: [Self.color(0xC3EF96), Self.color(0x66D3F6)]
             case .sunset: [Self.color(0xFF737D), Self.color(0xFFD18B)]
             case .lavender: [Self.color(0x9267D9), Self.color(0xEABDEB)]
+            case .ocean: [Self.color(0x0A284F), Self.color(0x2596A6)]
+            case .peach: [Self.color(0xF7B99A), Self.color(0xF4DBB8)]
+            case .graphite: [Self.color(0x202633), Self.color(0x677383)]
+            case .sonoma: [Self.color(0x5A7891), Self.color(0xC59C76)]
+            case .macBlue: [Self.color(0x112B70), Self.color(0x69A8E5)]
+            case .radialSkyBlue: [Self.color(0x183B78), Self.color(0x78C8F0)]
             }
         }
 
@@ -44,6 +67,32 @@ struct ScreenshotBeautification: Equatable {
 
 /// The preview and every output use the same compositor, after annotations and redactions are flattened.
 enum ScreenshotBeautificationRenderer {
+    private final class CachedWallpaper: @unchecked Sendable {
+        let image: CGImage
+        init(_ image: CGImage) { self.image = image }
+    }
+
+    private static let wallpapers: NSCache<NSString, CachedWallpaper> = {
+        let cache = NSCache<NSString, CachedWallpaper>()
+        cache.totalCostLimit = 120 * 1024 * 1024
+        return cache
+    }()
+
+    static func wallpaper(_ background: ScreenshotBeautification.Background, maxDimension: Int) -> CGImage? {
+        guard let url = background.wallpaperURL, FileManager.default.isReadableFile(atPath: url.path) else { return nil }
+        let size = maxDimension <= 128 ? 128 : maxDimension <= 1200 ? 1200 : 4096
+        let key = "\(url.path):\(size)" as NSString
+        if let cached = wallpapers.object(forKey: key) { return cached.image }
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary),
+              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                  kCGImageSourceCreateThumbnailFromImageAlways: true,
+                  kCGImageSourceCreateThumbnailWithTransform: true,
+                  kCGImageSourceThumbnailMaxPixelSize: size
+              ] as CFDictionary) else { return nil }
+        wallpapers.setObject(CachedWallpaper(image), forKey: key, cost: image.width * image.height * 4)
+        return image
+    }
+
     static func canvasSize(for imageSize: CGSize, scale: CGFloat,
                            settings: ScreenshotBeautification) throws -> CGSize {
         guard scale.isFinite, scale > 0 else { throw ScreenshotExportError.encodingFailed }
@@ -71,7 +120,14 @@ enum ScreenshotBeautificationRenderer {
         context.scaleBy(x: 1, y: -1)
         let canvas = CGRect(x: 0, y: 0, width: width, height: height)
         let colors = settings.background.colors
-        if colors.count == 1 {
+        if let wallpaper = wallpaper(settings.background, maxDimension: Int(max(width, height))) {
+            let factor = max(width / CGFloat(wallpaper.width), height / CGFloat(wallpaper.height))
+            let imageRect = CGRect(x: (width - CGFloat(wallpaper.width) * factor) / 2,
+                                   y: (height - CGFloat(wallpaper.height) * factor) / 2,
+                                   width: CGFloat(wallpaper.width) * factor,
+                                   height: CGFloat(wallpaper.height) * factor)
+            ScreenshotRenderer.drawImage(wallpaper, in: imageRect, context: context)
+        } else if colors.count == 1 {
             context.setFillColor(colors[0])
             context.fill(canvas)
         } else if let first = colors.first,

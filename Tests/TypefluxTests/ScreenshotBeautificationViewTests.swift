@@ -40,7 +40,7 @@ final class ScreenshotBeautificationViewTests: XCTestCase {
         }
         let firstLabel = L("screenshot.beautify.background.transparent")
         try await SettingsBehaviorTestSupport.wait { control(firstLabel) != nil }
-        for background in ScreenshotBeautification.Background.allCases {
+        for background in ScreenshotBeautification.Background.availableCases {
             let label = L("screenshot.beautify.background.\(background.rawValue)")
             try perform("accessibilityPerformPress", on: XCTUnwrap(control(label)))
             try await SettingsBehaviorTestSupport.wait {

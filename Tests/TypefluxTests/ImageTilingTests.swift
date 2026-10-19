@@ -223,6 +223,15 @@ final class ImageTilingTests: XCTestCase {
         XCTAssertEqual(base.urls.count, 1)
     }
 
+    func testWideScreenshotBandsStayWithinNativeOCRPixelLimit() {
+        XCTAssertEqual(TiledImageTextRecognizer.safeBandHeight(width: 5000, requested: 4000), 3200)
+        XCTAssertEqual(TiledImageTextRecognizer.safeBandHeight(width: 2000, requested: 4000), 4000)
+        XCTAssertEqual(TiledImageTextRecognizer.safeBandHeight(width: 0, requested: 4000), 0)
+        let bands = ImageTiling.bands(imageHeight: 5000, height: 3200, overlap: 200)
+        XCTAssertTrue(bands.allSatisfy { 5000 * $0.height <= 16_000_000 })
+        XCTAssertEqual(bands.last?.end, 5000)
+    }
+
     func testTheTiledRecognizerStopsWhenCancelled() async {
         let base = RecordingRecognizer()
         let recognizer = TiledImageTextRecognizer(base: base, bandHeight: 100, overlap: 10)

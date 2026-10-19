@@ -195,6 +195,17 @@ struct ScreenshotBeautificationView: View {
                     swatchButton($0, size: 42, radius: 9)
                 }
             }
+            HStack(spacing: 10) {
+                ForEach([ScreenshotBeautification.Background.ocean, .peach, .graphite], id: \.self) {
+                    swatchButton($0, size: 42, radius: 9)
+                }
+            }
+            let wallpapers = ScreenshotBeautification.Background.availableCases.filter { $0.wallpaperURL != nil }
+            if !wallpapers.isEmpty {
+                HStack(spacing: 10) {
+                    ForEach(wallpapers, id: \.self) { swatchButton($0, size: 42, radius: 9) }
+                }
+            }
         }
     }
 
@@ -259,6 +270,8 @@ struct ScreenshotBeautificationView: View {
     private func swatch(_ background: ScreenshotBeautification.Background) -> some View {
         if background == .transparent {
             ScreenshotTransparencyGrid()
+        } else if let image = ScreenshotBeautificationRenderer.wallpaper(background, maxDimension: 128) {
+            Image(decorative: image, scale: 1).resizable().scaledToFill()
         } else {
             LinearGradient(colors: background.colors.map { Color(cgColor: $0) }, startPoint: .topLeading,
                            endPoint: .bottomTrailing)

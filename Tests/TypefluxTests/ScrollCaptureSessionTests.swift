@@ -760,7 +760,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
         XCTAssertEqual(results.count, 1)
     }
 
-    func testManagedRegistrationRecoveryDoesNotCaptureScrollOrFinishAgain() async throws {
+    func testAlignedFramesSkipManagedRegistrationEvenAcrossRecovery() async throws {
         let root = try AskAttachmentFixture.directory(); defer { try? FileManager.default.removeItem(at: root) }
         let calls = ScrollHealthCalls()
         let worker = MediaWorker(executable: URL(fileURLWithPath: "/usr/bin/true"), timeout: 3, requiresLifecycle: true, run: { p, _ in
@@ -774,7 +774,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
         let registry = ModuleRegistry([module.registration]); try await registry.start(.frameRegistration)
         let session = makeSession(estimator: VisionScrollOffsetEstimator(worker: worker))
         await start(session); await settle(session, 0); await settle(session, 100)
-        XCTAssertGreaterThan(calls.count, 0)
+        XCTAssertEqual(calls.count, 0, "Aligned frames should not wait for the native helper")
         await registry.disable(.frameRegistration)
         let before = calls.count
         await settle(session, 180)

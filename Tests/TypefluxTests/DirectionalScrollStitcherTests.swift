@@ -2,6 +2,18 @@ import CoreGraphics
 @testable import Typeflux
 import XCTest
 
+private actor CountingScrollRegistration: ScrollFrameRegistering {
+    nonisolated var canSkipWhenLocallyAligned: Bool { true }
+    private var calls = 0
+
+    func verticalShifts(from previous: CGImage, to current: CGImage) async throws -> [Int] {
+        calls += 1
+        return []
+    }
+
+    func callCount() -> Int { calls }
+}
+
 final class DirectionalScrollStitcherTests: XCTestCase {
     private typealias Fixtures = ScrollCaptureFixtures
 
@@ -93,6 +105,23 @@ final class DirectionalScrollStitcherTests: XCTestCase {
         XCTAssertEqual(stitcher.segments.count, 1)
         _ = stitcher.add(frame(page, 120, axis: .vertical), expectedShift: 120)
         XCTAssertEqual(stitcher.height, 320)
+    }
+
+    func testAlignedFramesUpdateWithoutNativeRegistrationAndDoubtfulFramesRetry() async throws {
+        let page = Fixtures.page()
+        let registration = CountingScrollRegistration()
+        var stitcher = DirectionalScrollStitcher()
+        _ = try await stitcher.addPreparingOffsets(page.frame(offset: 0, scrollingHeight: 200),
+                                                    registration: registration)
+        let outcome = try await stitcher.addPreparingOffsets(page.frame(offset: 100, scrollingHeight: 200),
+                                                              registration: registration)
+        XCTAssertEqual(outcome, .appended(rows: 100, suspicious: false))
+        let fastCalls = await registration.callCount()
+        XCTAssertEqual(fastCalls, 0)
+        let noise = try XCTUnwrap(ScrollFrame(image: Fixtures.noise(width: page.width, height: 200, seed: 99)))
+        _ = try await stitcher.addPreparingOffsets(noise, registration: registration)
+        let retryCalls = await registration.callCount()
+        XCTAssertEqual(retryCalls, 1)
     }
 
     func testTransposeKeepsColorAndOrientationAndIsReversible() throws {

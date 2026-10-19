@@ -5753,6 +5753,12 @@
 "screenshot.beautify.background.mint" = "ミント";
 "screenshot.beautify.background.sunset" = "夕焼け";
 "screenshot.beautify.background.lavender" = "ラベンダー";
+"screenshot.beautify.background.ocean" = "オーシャン";
+"screenshot.beautify.background.peach" = "ピーチ";
+"screenshot.beautify.background.graphite" = "グラファイト";
+"screenshot.beautify.background.sonoma" = "macOS Sonoma";
+"screenshot.beautify.background.macBlue" = "Mac ブルー";
+"screenshot.beautify.background.radialSkyBlue" = "ラジアル・スカイブルー";
 
 // Screenshot background removal
 "screenshot.background.remove" = "背景を削除";

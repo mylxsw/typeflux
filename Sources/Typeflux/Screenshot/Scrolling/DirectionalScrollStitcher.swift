@@ -125,6 +125,21 @@ struct DirectionalScrollStitcher: @unchecked Sendable {
     mutating func addPreparingOffsets(_ frame: ScrollFrame, expectedShift: Int? = nil,
                                      registration: (any ScrollFrameRegistering)?) async throws -> ScrollStitcher.Outcome {
         try Task.checkCancellation()
+        // The row signatures usually identify the overlap without a helper process. Keep the
+        // native registration path for frames that the local check cannot align.
+        if registration?.canSkipWhenLocallyAligned != false {
+            var local = self
+            let localOutcome = local.add(frame, expectedShift: expectedShift)
+            let needsRegistration: Bool
+            switch localOutcome {
+            case .unaligned, .appended(_, true): needsRegistration = true
+            default: needsRegistration = false
+            }
+            if registration == nil || !needsRegistration {
+                self = local
+                return localOutcome
+            }
+        }
         var vertical: [Int] = [], horizontal: [Int] = []
         if let registration {
             func proposals(_ pair: (CGImage, CGImage)?) async throws -> [Int] {

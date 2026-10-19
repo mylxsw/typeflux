@@ -5864,6 +5864,12 @@
 "screenshot.beautify.background.mint" = "Mint";
 "screenshot.beautify.background.sunset" = "Sunset";
 "screenshot.beautify.background.lavender" = "Lavender";
+"screenshot.beautify.background.ocean" = "Ocean";
+"screenshot.beautify.background.peach" = "Peach";
+"screenshot.beautify.background.graphite" = "Graphite";
+"screenshot.beautify.background.sonoma" = "macOS Sonoma";
+"screenshot.beautify.background.macBlue" = "Mac Blue";
+"screenshot.beautify.background.radialSkyBlue" = "Radial Sky Blue";
 
 // Screenshot background removal
 "screenshot.background.remove" = "Remove Background";

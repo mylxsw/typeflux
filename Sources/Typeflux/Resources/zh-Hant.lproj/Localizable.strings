@@ -5787,6 +5787,12 @@
 "screenshot.beautify.background.mint" = "薄荷";
 "screenshot.beautify.background.sunset" = "日落";
 "screenshot.beautify.background.lavender" = "薰衣草";
+"screenshot.beautify.background.ocean" = "深海";
+"screenshot.beautify.background.peach" = "蜜桃";
+"screenshot.beautify.background.graphite" = "石墨";
+"screenshot.beautify.background.sonoma" = "macOS 索諾瑪";
+"screenshot.beautify.background.macBlue" = "Mac 藍色";
+"screenshot.beautify.background.radialSkyBlue" = "放射天藍";
 
 // Screenshot background removal
 "screenshot.background.remove" = "去背景";
