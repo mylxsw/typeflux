@@ -326,6 +326,7 @@ struct AskConversationStorageTests {
                     "ask.storage.card.changeHint", "ask.storage.card.localOption", "ask.storage.card.localDetail",
                     "ask.storage.card.temporaryDetail", "ask.storage.card.lockedLocal",
                     "ask.storage.card.lockedCloud", "ask.storage.card.localNote", "ask.storage.card.cloudNote",
+                    "ask.local.card.body",
                     "ask.storage.newLocal", "ask.storage.newCloud", "ask.storage.locked", "ask.storage.signedOut",
                     "ask.history.filter", "ask.history.filter.all", "ask.history.filter.cloud",
                     "ask.history.filter.local"]

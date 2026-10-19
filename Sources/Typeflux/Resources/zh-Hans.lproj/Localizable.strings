@@ -2068,7 +2068,7 @@
 "ask.location.local" = "本机";
 "ask.location.local.help" = "“随便问”在这台 Mac 上使用你自己的模型运行，对话保存在本机。";
 "ask.local.sourceNone" = "未选择模型";
-"ask.local.card.body" = "没有登录 Typeflux Cloud，所有对话都只保存在这台 Mac 上，使用你自己配置的模型。";
+"ask.local.card.body" = "对话保存在这台 Mac，使用你配置的模型。";
 "ask.local.card.cloudQuestion" = "想用云端模型？";
 "ask.local.identity" = "未登录";
 "ask.local.identity.detail" = "%@ · 对话仅存本机";

@@ -598,7 +598,8 @@ struct AskConversationVisualTests {
             ("locked-local", .init(source: source, offersSignIn: false)),
             ("locked-cloud", .init(source: source, offersSignIn: false, local: false)),
             ("signed-out", .init(source: source, offersSignIn: true, changeable: true,
-                                  choices: [.local, .temporary]))
+                                  choices: [.local, .temporary])),
+            ("sidebar-signed-out", .init(source: source, offersSignIn: true))
         ]
         for (name, status) in cards {
             try await render(AskLocalModeCard(status: status, onSignIn: {})

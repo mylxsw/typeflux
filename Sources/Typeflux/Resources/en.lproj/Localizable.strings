@@ -2068,7 +2068,7 @@
 "ask.location.local" = "This Mac";
 "ask.location.local.help" = "Ask runs on this Mac with your own models. Conversations stay on this Mac.";
 "ask.local.sourceNone" = "No model selected";
-"ask.local.card.body" = "You are not signed in to Typeflux Cloud, so every conversation stays on this Mac and uses the models you set up.";
+"ask.local.card.body" = "Conversations stay on this Mac and use your configured models.";
 "ask.local.card.cloudQuestion" = "Want Cloud models?";
 "ask.local.identity" = "Not signed in";
 "ask.local.identity.detail" = "%@ · Stays on this Mac";

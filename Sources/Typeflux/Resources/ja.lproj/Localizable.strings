@@ -2058,7 +2058,7 @@
 "ask.location.local" = "このMac";
 "ask.location.local.help" = "Ask はこのMacで自分のモデルを使って実行され、会話はこのMacに保存されます。";
 "ask.local.sourceNone" = "モデル未選択";
-"ask.local.card.body" = "Typeflux Cloud にサインインしていないため、すべての会話はこのMacに保存され、設定したモデルを使います。";
+"ask.local.card.body" = "会話はこの Mac に保存され、設定したモデルを使います。";
 "ask.local.card.cloudQuestion" = "クラウドのモデルを使いますか？";
 "ask.local.identity" = "未サインイン";
 "ask.local.identity.detail" = "%@ · このMacに保存";
