@@ -22,7 +22,7 @@ struct AskTitleSettingsView: View {
     }
 
     var body: some View {
-        TFFormSection(title: L("ask.title.section"), footnote: L("ask.title.cost")) {
+        TFFormSection(title: L("ask.title.section")) {
             TFFormRow(title: L("ask.title.enabled"), detail: L("ask.title.enabled.subtitle"), icon: "pencil.line") {
                 TFSwitch(title: L("ask.title.enabled"), isOn: $enabled)
             }

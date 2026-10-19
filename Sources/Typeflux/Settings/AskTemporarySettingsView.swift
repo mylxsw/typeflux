@@ -6,7 +6,7 @@ struct AskTemporarySettingsView: View {
     @State private var confirmLeaving = true
 
     var body: some View {
-        TFFormSection(title: L("ask.temporary.settings.section"), footnote: L("ask.temporary.settings.footnote")) {
+        TFFormSection(title: L("ask.temporary.settings.section")) {
             TFFormRow(title: L("ask.temporary.settings.confirm"), detail: L("ask.temporary.settings.confirm.subtitle"),
                       icon: AskStorageKind.temporary.symbol) {
                 TFSwitch(title: L("ask.temporary.settings.confirm"), isOn: $confirmLeaving)

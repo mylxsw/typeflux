@@ -2304,9 +2304,7 @@
 "ask.steps.section" = "Agent の実行";
 "ask.steps.limit" = "最大実行ステップ数";
 "ask.steps.detail" = "1 回の実行で許可するモデル応答の回数";
-"ask.steps.footnote" = "新しいタスク、失敗後の再試行、回答の再生成には最新の設定が適用されます。実行中のタスクは元の上限を維持します。上限を増やすと、トークンやクレジットの消費が増える場合があります。";
 "ask.steps.invalid" = "ステップ数は 10～500 の間で選択してください。";
-"ask.temporary.settings.footnote" = "一時的な会話は履歴に表示されず、メモリーの読み書きもしません。";
 "ask.temporary.settings.confirm" = "一時的な会話を離れる前に確認";
 "ask.temporary.settings.confirm.subtitle" = "内容のある一時的な会話を、別の会話の作成や表示で終了する前に確認します";
 "ask.new.cloud" = "新しい会話";
@@ -2548,7 +2546,6 @@
 "agent.overview.needsAttention" = "対応が必要な項目 %1$d 件：%2$@";
 "agent.overview.notes" = "%d 件のメモを記憶";
 "agent.overview.fix" = "対応する";
-"agent.overview.storage.hint" = "会話ごとに、新規メニューや入力欄で変更できます。";
 "agent.overview.storage.footnote" = "開始した会話の保存先は変更できません。サインアウト中は、すべての会話がこの Mac に保存されます。";
 "agent.storage.cloud.models" = "クラウドモデル、画像認識、ディープリサーチ、バックグラウンド実行";
 "agent.storage.cloud.sync" = "デバイス間で同期";

@@ -2314,9 +2314,7 @@
 "ask.steps.section" = "Agent 运行";
 "ask.steps.limit" = "最大执行步数";
 "ask.steps.detail" = "单次运行最多允许的模型回复次数";
-"ask.steps.footnote" = "新任务、失败后继续和重新生成会使用最新设置；正在运行的任务保持原上限。上限越高，可能消耗越多 Token 和积分。";
 "ask.steps.invalid" = "请选择 10 到 500 之间的步数。";
-"ask.temporary.settings.footnote" = "临时对话不会出现在历史记录里，也不会读取或写入记忆。";
 "ask.temporary.settings.confirm" = "离开临时对话前确认";
 "ask.temporary.settings.confirm.subtitle" = "临时对话里有内容时，新建或打开其他对话前先询问";
 "ask.new.cloud" = "新对话";
@@ -2558,7 +2556,6 @@
 "agent.overview.needsAttention" = "还有 %1$d 项需要处理：%2$@";
 "agent.overview.notes" = "记住了 %d 条笔记";
 "agent.overview.fix" = "去处理";
-"agent.overview.storage.hint" = "每个对话开始前，仍可在新建菜单或输入框里改选。";
 "agent.overview.storage.footnote" = "已经开始的对话不能更改存储位置。未登录时，所有对话都只保存在本机。";
 "agent.storage.cloud.models" = "可用云端模型、识图、深入研究、后台运行";
 "agent.storage.cloud.sync" = "多台设备同步对话";
@@ -4050,7 +4047,6 @@
 "ask.title.model" = "标题生成模型";
 "ask.title.model.subtitle" = "自动：云端聊天使用后台配置的标题模型，本地聊天使用原聊天模型。";
 "ask.title.auto" = "自动";
-"ask.title.cost" = "自动生成 Cloud 标题不消耗 credits；自有服务商按其规则计费。选择服务商后，标题所需的聊天片段会发送给它。";
 "ask.title.rename" = "重命名";
 "ask.title.invalid" = "请输入 1–60 个字符的单行标题。";
 

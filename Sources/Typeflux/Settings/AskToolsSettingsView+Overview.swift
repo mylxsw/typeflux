@@ -17,7 +17,6 @@ extension AskToolsSettingsView {
                               points: [(true, L("agent.storage.local.private")), (true, L("agent.storage.local.models")),
                                        (false, L("agent.storage.local.search")), (false, L("agent.storage.local.limits"))])
             }
-            TFFootnote(text: L("agent.overview.storage.hint")).padding(.horizontal, 4)
         }
         AskAgentStepSettingsView(settings: settings)
         AskTitleSettingsView(settings: settings)

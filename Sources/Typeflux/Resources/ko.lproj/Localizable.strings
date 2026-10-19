@@ -2304,9 +2304,7 @@
 "ask.steps.section" = "Agent 실행";
 "ask.steps.limit" = "최대 실행 단계";
 "ask.steps.detail" = "한 번의 실행에서 허용하는 모델 응답 횟수";
-"ask.steps.footnote" = "새 작업, 실패 후 재시도, 답변 다시 생성에는 최신 설정이 적용됩니다. 실행 중인 작업은 기존 한도를 유지합니다. 한도를 높이면 토큰과 크레딧 사용량이 늘 수 있습니다.";
 "ask.steps.invalid" = "단계 수는 10에서 500 사이로 선택하세요.";
-"ask.temporary.settings.footnote" = "임시 대화는 기록에 표시되지 않으며 메모리를 읽거나 쓰지 않습니다.";
 "ask.temporary.settings.confirm" = "임시 대화를 떠나기 전에 확인";
 "ask.temporary.settings.confirm.subtitle" = "내용이 있는 임시 대화를 다른 대화를 만들거나 열어 끝내기 전에 묻습니다";
 "ask.new.cloud" = "새 대화";
@@ -2548,7 +2546,6 @@
 "agent.overview.needsAttention" = "확인할 항목 %1$d개: %2$@";
 "agent.overview.notes" = "메모 %d개 저장됨";
 "agent.overview.fix" = "확인하기";
-"agent.overview.storage.hint" = "대화마다 새로 만들기 메뉴나 입력란에서 바꿀 수 있습니다.";
 "agent.overview.storage.footnote" = "시작된 대화의 저장 위치는 바꿀 수 없습니다. 로그아웃 상태에서는 모든 대화가 이 Mac에만 저장됩니다.";
 "agent.storage.cloud.models" = "클라우드 모델, 이미지 인식, 심층 리서치, 백그라운드 실행";
 "agent.storage.cloud.sync" = "여러 기기에서 동기화";

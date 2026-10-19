@@ -2311,9 +2311,7 @@
 "ask.steps.section" = "Agent 執行";
 "ask.steps.limit" = "最大執行步數";
 "ask.steps.detail" = "單次執行最多允許的模型回覆次數";
-"ask.steps.footnote" = "新任務、失敗後繼續和重新產生會使用最新設定；執行中的任務維持原上限。上限越高，可能耗用越多 Token 和點數。";
 "ask.steps.invalid" = "請選擇 10 到 500 之間的步數。";
-"ask.temporary.settings.footnote" = "臨時對話不會出現在歷史紀錄裡，也不會讀取或寫入記憶。";
 "ask.temporary.settings.confirm" = "離開臨時對話前確認";
 "ask.temporary.settings.confirm.subtitle" = "臨時對話裡有內容時，新增或開啟其他對話前先詢問";
 "ask.new.cloud" = "新對話";
@@ -2555,7 +2553,6 @@
 "agent.overview.needsAttention" = "還有 %1$d 項需要處理：%2$@";
 "agent.overview.notes" = "記住了 %d 則筆記";
 "agent.overview.fix" = "前往處理";
-"agent.overview.storage.hint" = "每個對話開始前，仍可在新增選單或輸入框中改選。";
 "agent.overview.storage.footnote" = "已開始的對話無法變更儲存位置。未登入時，所有對話都只儲存在本機。";
 "agent.storage.cloud.models" = "可用雲端模型、識圖、深入研究、背景執行";
 "agent.storage.cloud.sync" = "多台裝置同步對話";
