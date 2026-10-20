@@ -20,6 +20,36 @@ final class FeedbackAPIServiceTests: XCTestCase {
         XCTAssertNil(dict?["imageURLs"])
     }
 
+    func testCreateFeedbackRequestEncodesAttachments() throws {
+        let attachment = FeedbackAttachmentPayload(
+            url: "https://cdn.example/rec.mp4", filename: "rec.mp4", contentType: "video/mp4",
+            sizeBytes: 2048, kind: "video"
+        )
+        let request = CreateFeedbackRequest(content: "Video", attachments: [attachment])
+
+        let data = try JSONEncoder().encode(request)
+        let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        let encoded = try XCTUnwrap((dict?["attachments"] as? [[String: Any]])?.first)
+
+        XCTAssertEqual(encoded["url"] as? String, "https://cdn.example/rec.mp4")
+        XCTAssertEqual(encoded["filename"] as? String, "rec.mp4")
+        XCTAssertEqual(encoded["content_type"] as? String, "video/mp4")
+        XCTAssertEqual(encoded["size_bytes"] as? Int, 2048)
+        XCTAssertEqual(encoded["kind"] as? String, "video")
+        XCTAssertEqual(dict?["image_urls"] as? [String], [])
+    }
+
+    func testAttachmentMarkdownEmbedsImagesAndLinksOtherFiles() {
+        func payload(_ name: String, kind: String) -> FeedbackAttachmentPayload {
+            FeedbackAttachmentPayload(
+                url: "https://cdn.example/\(name)", filename: name, contentType: "x", sizeBytes: 1, kind: kind
+            )
+        }
+        XCTAssertEqual(payload("a.jpg", kind: "image").markdown, "![a.jpg](https://cdn.example/a.jpg)")
+        XCTAssertEqual(payload("a.mp4", kind: "video").markdown, "[a.mp4](https://cdn.example/a.mp4)")
+        XCTAssertEqual(payload("a[1].log", kind: "file").markdown, "[a(1).log](https://cdn.example/a[1].log)")
+    }
+
     func testSubmitPostsFeedbackToCloudEndpoint() async throws {
         let session = FeedbackStubSession()
         await session.setHandler { request in
@@ -33,6 +63,7 @@ final class FeedbackAPIServiceTests: XCTestCase {
             XCTAssertEqual(dict?["content"] as? String, "Please fix this")
             XCTAssertEqual(dict?["contact"] as? String, "user@example.com")
             XCTAssertEqual(dict?["image_urls"] as? [String], ["https://cdn.example/image.jpg"])
+            XCTAssertEqual((dict?["attachments"] as? [[String: Any]])?.count, 1)
 
             let payload = Data(#"{"code":"OK","data":{"id":"feedback-1","status":"pending"}}"#.utf8)
             return (payload, Self.httpResponse(url: request.url!, status: 200))
@@ -43,6 +74,10 @@ final class FeedbackAPIServiceTests: XCTestCase {
             content: "  Please fix this  ",
             contact: " user@example.com ",
             imageURLs: ["https://cdn.example/image.jpg"],
+            attachments: [FeedbackAttachmentPayload(
+                url: "https://cdn.example/image.jpg", filename: "image.jpg", contentType: "image/jpeg",
+                sizeBytes: 5, kind: "image"
+            )],
             token: "token-1",
             executor: executor
         )
@@ -98,7 +133,7 @@ final class FeedbackAPIServiceTests: XCTestCase {
         }
         let executor = makeExecutor(session: session)
 
-        let target = try await FeedbackAPIService.createImageUploadTarget(
+        let target = try await FeedbackAPIService.createUploadTarget(
             filename: "screen.jpg",
             contentType: "image/jpeg",
             sizeBytes: 123,
@@ -123,7 +158,7 @@ final class FeedbackAPIServiceTests: XCTestCase {
         }
         let executor = makeExecutor(session: session)
 
-        let target = try await FeedbackAPIService.createImageUploadTarget(
+        let target = try await FeedbackAPIService.createUploadTarget(
             filename: "screen.jpg",
             contentType: "image/jpeg",
             sizeBytes: 123,
@@ -145,7 +180,7 @@ final class FeedbackAPIServiceTests: XCTestCase {
         let executor = makeExecutor(session: session)
 
         do {
-            _ = try await FeedbackAPIService.createImageUploadTarget(
+            _ = try await FeedbackAPIService.createUploadTarget(
                 filename: "screen.jpg",
                 contentType: "image/jpeg",
                 sizeBytes: 123,
@@ -177,7 +212,7 @@ final class FeedbackAPIServiceTests: XCTestCase {
             return (Data(), Self.httpResponse(url: request.url!, status: 204))
         }
 
-        try await FeedbackAPIService.uploadImage(
+        try await FeedbackAPIService.uploadFile(
             data: Data("image-data".utf8),
             filename: "screen.jpg",
             contentType: "image/jpeg",
@@ -212,7 +247,7 @@ final class FeedbackAPIServiceTests: XCTestCase {
             return (Data(), Self.httpResponse(url: request.url!, status: 200))
         }
 
-        try await FeedbackAPIService.uploadImage(
+        try await FeedbackAPIService.uploadFile(
             data: Data("image-data".utf8),
             filename: "screen.jpg",
             contentType: "image/jpeg",
@@ -246,7 +281,7 @@ final class FeedbackAPIServiceTests: XCTestCase {
         }
 
         do {
-            try await FeedbackAPIService.uploadImage(
+            try await FeedbackAPIService.uploadFile(
                 data: Data("image-data".utf8),
                 filename: "screen.jpg",
                 contentType: "image/jpeg",
@@ -286,7 +321,7 @@ final class FeedbackAPIServiceTests: XCTestCase {
         }
 
         let task = Task {
-            try await FeedbackAPIService.uploadImage(
+            try await FeedbackAPIService.uploadFile(
                 data: Data("image-data".utf8),
                 filename: "screen.jpg",
                 contentType: "image/jpeg",
@@ -545,7 +580,7 @@ extension FeedbackAPIServiceTests {
             baseURLs: [baseURL, URL(string: "https://api-fallback.example")!]
         )
 
-        let target = try await FeedbackAPIService.createImageUploadTarget(
+        let target = try await FeedbackAPIService.createUploadTarget(
             filename: "screen.png",
             contentType: "image/png",
             sizeBytes: 9,
@@ -555,7 +590,7 @@ extension FeedbackAPIServiceTests {
         XCTAssertEqual(target.type, "bounded_proxy_put")
         XCTAssertEqual(target.issuingAPIBaseURL?.host, "api-fallback.example")
 
-        try await FeedbackAPIService.uploadImage(
+        try await FeedbackAPIService.uploadFile(
             data: Data("png-bytes".utf8),
             filename: "screen.png",
             contentType: "image/png",
@@ -592,14 +627,14 @@ extension FeedbackAPIServiceTests {
             baseURLs: [baseURL, URL(string: "https://api-fallback.example")!]
         )
 
-        let target = try await FeedbackAPIService.createImageUploadTarget(
+        let target = try await FeedbackAPIService.createUploadTarget(
             filename: "screen.png", contentType: "image/png", sizeBytes: 9, token: "token-1", executor: executor
         )
         XCTAssertEqual(target.issuingAPIBaseURL?.host, "api-fallback.example")
         XCTAssertEqual(target.trustedAPIBaseURLs.map(\.host), ["api.example", "api-fallback.example"])
         XCTAssertTrue(try FeedbackAPIService.resolveUploadURL(for: target).isAPIOrigin)
 
-        try await FeedbackAPIService.uploadImage(
+        try await FeedbackAPIService.uploadFile(
             data: Data("png-bytes".utf8), filename: "screen.png", contentType: "image/png",
             to: target, token: "token-1", session: session
         )
@@ -616,7 +651,7 @@ extension FeedbackAPIServiceTests {
         target.trustedAPIBaseURLs = [baseURL, URL(string: "https://api-fallback.example")!]
 
         do {
-            try await FeedbackAPIService.uploadImage(
+            try await FeedbackAPIService.uploadFile(
                 data: Data("png".utf8), filename: "screen.png", contentType: "image/png",
                 to: target, token: "token-1", session: session
             )
@@ -651,7 +686,7 @@ extension FeedbackAPIServiceTests {
             return (Data(), Self.httpResponse(url: request.url!, status: 204))
         }
 
-        try await FeedbackAPIService.uploadImage(
+        try await FeedbackAPIService.uploadFile(
             data: Data("png".utf8),
             filename: "screen.png",
             contentType: "image/png",
@@ -670,7 +705,7 @@ extension FeedbackAPIServiceTests {
             return (Data(), Self.httpResponse(url: request.url!, status: 204))
         }
 
-        try await FeedbackAPIService.uploadImage(
+        try await FeedbackAPIService.uploadFile(
             data: Data("webp".utf8),
             filename: "screen.webp",
             contentType: "image/webp",
@@ -687,7 +722,7 @@ extension FeedbackAPIServiceTests {
             return (Data(), Self.httpResponse(url: request.url!, status: 204))
         }
 
-        try await FeedbackAPIService.uploadImage(
+        try await FeedbackAPIService.uploadFile(
             data: Data("png".utf8),
             filename: "screen.png",
             contentType: "image/png",
@@ -705,7 +740,7 @@ extension FeedbackAPIServiceTests {
             return (Data(), Self.httpResponse(url: request.url!, status: 200))
         }
 
-        try await FeedbackAPIService.uploadImage(
+        try await FeedbackAPIService.uploadFile(
             data: Data("png".utf8),
             filename: "screen.png",
             contentType: "image/png",
@@ -738,7 +773,7 @@ extension FeedbackAPIServiceTests {
 
         for target in unsafeTargets {
             do {
-                try await FeedbackAPIService.uploadImage(
+                try await FeedbackAPIService.uploadFile(
                     data: Data("png".utf8),
                     filename: "screen.png",
                     contentType: "image/png",
@@ -769,7 +804,7 @@ extension FeedbackAPIServiceTests {
                 return (body, Self.httpResponse(url: request.url!, status: status))
             }
             do {
-                try await FeedbackAPIService.uploadImage(
+                try await FeedbackAPIService.uploadFile(
                     data: Data("png".utf8),
                     filename: "screen.png",
                     contentType: "image/png",
@@ -790,7 +825,7 @@ extension FeedbackAPIServiceTests {
             (Data(), Self.httpResponse(url: request.url!, status: 401))
         }
         do {
-            try await FeedbackAPIService.uploadImage(
+            try await FeedbackAPIService.uploadFile(
                 data: Data("png".utf8),
                 filename: "screen.png",
                 contentType: "image/png",

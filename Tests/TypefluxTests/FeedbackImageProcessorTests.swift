@@ -17,6 +17,39 @@ final class FeedbackImageProcessorTests: XCTestCase {
         XCTAssertLessThanOrEqual(max(rep.pixelsWide, rep.pixelsHigh), FeedbackImageProcessor.maxPixelDimension)
     }
 
+    func testPrepareImageDataCompressesPastedScreenshots() throws {
+        let url = try makeTemporaryPNG(width: 2000, height: 1000)
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let data = try Data(contentsOf: url)
+
+        let prepared = try FeedbackImageProcessor.prepare(imageData: data, filename: "screenshot-1.png")
+
+        XCTAssertEqual(prepared.filename, "screenshot-1.jpg")
+        XCTAssertEqual(prepared.kind, .image)
+        XCTAssertLessThanOrEqual(Int64(prepared.data.count), FeedbackAttachmentPolicy.maxImageBytes)
+        XCTAssertNotNil(prepared.thumbnail)
+    }
+
+    func testPrepareKeepsGIFsUnchanged() throws {
+        let png = try Data(contentsOf: makeTemporaryPNG(width: 20, height: 20))
+        let prepared = try FeedbackImageProcessor.prepare(imageData: png, filename: "anim.gif")
+
+        XCTAssertEqual(prepared.filename, "anim.gif")
+        XCTAssertEqual(prepared.contentType, "image/gif")
+        XCTAssertEqual(prepared.data, png)
+    }
+
+    func testPrepareRejectsDataThatIsNotAnImage() {
+        XCTAssertThrowsError(try FeedbackImageProcessor.prepare(imageData: Data("nope".utf8), filename: "x.png"))
+        XCTAssertThrowsError(try FeedbackImageProcessor.prepare(url: URL(fileURLWithPath: "/nonexistent/x.png")))
+    }
+
+    func testPrepareNamesImagesWithoutABaseName() throws {
+        let png = try Data(contentsOf: makeTemporaryPNG(width: 20, height: 20))
+        let prepared = try FeedbackImageProcessor.prepare(imageData: png, filename: ".png")
+        XCTAssertTrue(prepared.filename.hasSuffix(".jpg"))
+    }
+
     private func makeTemporaryPNG(width: Int, height: Int) throws -> URL {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("typeflux-feedback-image-\(UUID().uuidString)", isDirectory: true)

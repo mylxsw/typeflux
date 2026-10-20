@@ -1,8 +1,8 @@
 # 问题反馈：独立窗口 + 富文本正文 + 附件（GUL-427）
 
-> 状态：设计稿，待评审。配套可交互设计稿：`docs/design/feedback-window.html`。参数：`?theme=dark|light`，`?state=empty|editing|uploading|failed|toolarge|limit|submitting|error|success`。截图在 `docs/design/feedback-window/`，文件名为 `<深浅>-<状态>.png`。
+> 状态：已确认并实现（GUL-427）。配套可交互设计稿：`docs/design/feedback-window.html`。参数：`?theme=dark|light`，`?state=empty|editing|uploading|failed|toolarge|limit|submitting|error|success`。截图在 `docs/design/feedback-window/`，文件名为 `<深浅>-<状态>.png`。
 >
-> 这一阶段只出设计，不改代码。
+> 实现见 `Sources/Typeflux/Feedback/`；服务端改动见 typeflux-api 的对应 PR。
 
 ## 修改记录
 
@@ -86,8 +86,19 @@
 - 50 MB 视频走预签名直传对象存储（现有 presigned 流程），不经 API 进程中转。
 - 反馈提交接受 `attachments`，总数上限 6；生成 GitHub Issue 时按 Markdown 原样渲染。
 
-## 8. 待确认
+## 8. 实现说明与定稿
 
-1. 文本 / 日志 5 MB、docx 10 MB、附件总数 6 个，这几个数是否合适。
-2. 视频压缩规格定 720p H.264 是否可以；是否需要限制原始视频时长（例如 10 分钟），避免压缩耗时太长。
-3. 「截图」按钮是否也要提供「录屏」入口（应用已有录屏功能）。本稿未加。
+待确认的三项已按设计稿的建议定稿：
+
+1. 文本 / 日志 / Markdown ≤ 5 MB，docx ≤ 10 MB，附件合计 ≤ 6 个。
+2. 视频压缩为 720p H.264（mp4）；原始视频时长上限 10 分钟，超过时直接提示，不开始压缩。
+3. 暂不加「录屏」入口，只保留「截图」。
+
+实现上的取舍：
+
+- 「截图」调用系统 `screencapture -i`：隐藏窗口、框选区域、结果插入正文。它和应用自带截图使用同一项「屏幕录制」权限，不接入应用自己的截图编辑器。
+- 正文是 TextKit 1 的 `NSTextView`，附件块是 `NSTextAttachmentCell` 子类；列表符号和引用竖线由自定义 `NSLayoutManager` 绘制，不写入文本，所以选择、删除、序列化都看不到它们。
+- 草稿只保存在内存里（窗口关闭后保留，退出应用后丢弃）。
+- 图片、视频压缩后才检查大小；GIF 不压缩，超过 3 MB 直接拒绝。
+- 提交时 `content` 里的图片和文件链接已在原位置；`image_urls` 继续发送图片地址以兼容旧服务端，新服务端发现正文已包含这些地址时不再重复追加。
+- 服务端上传仍走现有的单次使用 PUT 票据（经 API 转发），没有改成对象存储预签名直传；视频的读取超时放宽到 10 分钟。
