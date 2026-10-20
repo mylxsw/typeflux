@@ -608,7 +608,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private func installClickMonitors() {
         if clickMonitor == nil {
             clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-                guard let self, !self.model.recordingIsActive() else { return }
+                guard let self, self.model.allowsLauncherOutsideDismissal else { return }
                 self.dismissLauncher()
             }
         }
@@ -620,7 +620,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                    self.model.onMoveTranslationToPanel?(self.model.plugins, { self.dismissLauncher() }) == true {
                     return nil
                 }
-                if let self, event.window != self.launcher, event.window == self.conversationWindow, !self.model.recordingIsActive() { self.dismissLauncher() }
+                if let self, event.window != self.launcher, event.window == self.conversationWindow,
+                   self.model.allowsLauncherOutsideDismissal { self.dismissLauncher() }
                 return event
             }
         }

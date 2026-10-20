@@ -23,7 +23,7 @@ private final class WorkflowAuthorityGate: @unchecked Sendable {
     func release() { condition.withLock { held = false; condition.broadcast() } }
 }
 
-@Suite("Workflow image original consumer authority", .serialized)
+@Suite("Workflow image original consumer authority", .serialized, .exclusiveUIState)
 @MainActor struct WorkflowImageAuthorityTests {
     private func file(_ root: URL) throws -> URL {
         let file = root.appendingPathComponent("private.bytes"); try workflowAuthorityPNG.write(to: file); return file

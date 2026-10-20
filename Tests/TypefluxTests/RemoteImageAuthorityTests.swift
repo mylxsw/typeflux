@@ -28,7 +28,7 @@ private struct RemoteAuthorityTransport: AskImageTransport {
     func send(_ request: URLRequest, limit: Int) async throws -> Data { try await read(request, limit) }
 }
 
-@Suite("Remote image original presentation authority", .serialized)
+@Suite("Remote image original presentation authority", .serialized, .exclusiveUIState)
 @MainActor struct RemoteImageAuthorityTests {
     private let asset = AskGeneratedImage(assetId: "original", url: "https://private.invalid/original?signed=fixture")
     private func worker(_ state: RemoteAuthorityState, held: RemoteAuthorityGate? = nil) -> MediaWorker {

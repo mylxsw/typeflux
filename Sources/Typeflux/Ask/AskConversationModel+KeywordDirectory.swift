@@ -122,7 +122,8 @@ extension AskConversationModel {
                 secondLanguage: settings.askTranslationSecondLanguage ?? AskTranslationLanguages.defaultSecond(for: language)
             )
             let detail = keyword.pluginID == AskCalendarPlugin.id
-                ? AskCalendarPlugin.summary(language: language) : summary
+                ? AskCalendarPlugin.summary(language: language)
+                : keyword.pluginID == AskTerminalCommandPlugin.id ? L("ask.settings.keywords.kind.terminal.hint") : summary
             return AskPrefixPlugin.Entry(keyword: keyword, title: title, detail: detail, symbol: plugin.symbol)
         }
         let available = plugins.availableKeywords

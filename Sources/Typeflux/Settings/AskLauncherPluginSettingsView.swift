@@ -113,6 +113,12 @@ struct AskLauncherPluginSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             toolbar
+            let conflicts = AskTerminalCommandPlugin.conflicts(in: list.keywords, workflows: workflowEntries)
+            if !conflicts.isEmpty {
+                Text(L("terminal.command.keywordConflict", conflicts.joined(separator: ", ")))
+                    .font(.system(size: 12)).foregroundStyle(TFColors.textSecondary)
+                    .accessibilityIdentifier("terminal.command.keywordConflict")
+            }
             listCard
             Text(L("ask.settings.keywords.listFootnote"))
                 .font(.system(size: 12)).foregroundStyle(TFColors.textTertiary).padding(.horizontal, 4)
@@ -182,7 +188,7 @@ struct AskLauncherPluginSettingsView: View {
 
     private var addButton: some View {
         TFMenuButton(title: L("ask.settings.keywords.add"), systemImage: "plus", kind: .primary,
-                     actions: [AskKeywordKind.translate, .prompt, .web, .system].map { kind in
+                     actions: [AskKeywordKind.translate, .prompt, .web, .terminal, .system].map { kind in
                          .action(kind.title, systemImage: kind.symbol) {
                              editing = AskKeywordSheetItem(draft: AskKeywordDraft(adding: kind))
                          }

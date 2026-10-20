@@ -181,7 +181,8 @@ final class AskPluginSession: ObservableObject {
         let options = keyword.options.merging(overrides) { $1 }
         var next: AskPluginRequest?
         if !trimmed.isEmpty {
-            next = AskPluginRequest(text: trimmed, origin: .argument, keyword: keyword, options: options,
+            let argument = plugin.preservesInputWhitespace ? text : trimmed
+            next = AskPluginRequest(text: argument, origin: .argument, keyword: keyword, options: options,
                                     interfaceLanguage: language, selection: selected)
         } else if let selected {
             next = AskPluginRequest(text: selected, origin: .selection, keyword: keyword, options: options,
@@ -208,7 +209,7 @@ final class AskPluginSession: ObservableObject {
             let plan = await plugin.plan(next)
             guard let self, !Task.isCancelled, current == self.generation else { return }
             self.plannedFor = next
-            let runNow = runWhenPlanned || self.pendingRun
+            let runNow = (runWhenPlanned || self.pendingRun) && plugin.id != AskTerminalCommandPlugin.id
             self.pendingRun = false
             if plan.mode == .live || runNow {
                 self.set(\.phase, .running(plan))
@@ -228,7 +229,7 @@ final class AskPluginSession: ObservableObject {
     /// Return: runs a ready or failed request. False when there is nothing to run.
     @discardableResult
     func run() -> Bool {
-        guard let request, let plugin else { return false }
+        guard let request, let plugin, plugin.id != AskTerminalCommandPlugin.id else { return false }
         if plugin.id == AskTranslatePlugin.id, !AskTranslatePlugin.opensWordBook(request.options), !isPlanCurrent {
             pendingRun = true
             return true

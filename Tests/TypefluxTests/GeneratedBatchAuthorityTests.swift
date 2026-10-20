@@ -20,7 +20,7 @@ private final class GeneratedBatchGate: @unchecked Sendable {
     func release() { condition.withLock { held = false; condition.broadcast() } }
 }
 
-@Suite("Generated response original batch authority", .serialized)
+@Suite("Generated response original batch authority", .serialized, .exclusiveUIState)
 @MainActor struct GeneratedBatchAuthorityTests {
     private let bytes = Data([1, 2, 3])
     private let scope = AskProjectScope(ownerId: "owner", conversationId: "conversation", runId: "run")

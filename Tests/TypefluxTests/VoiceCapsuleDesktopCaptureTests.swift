@@ -4,8 +4,7 @@ import Testing
 
 /// Opt-in: shows each top-skin state on the real desktop and saves a full-screen capture.
 /// Run with `TYPEFLUX_CAPSULE_SCREENSHOT_DIR=/path` on a machine with screen recording access.
-@Suite(.serialized, .exclusiveUIState,
-       .enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_CAPSULE_SCREENSHOT_DIR"] != nil))
+@Suite(.serialized, .exclusiveUIState, .enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_CAPSULE_SCREENSHOT_DIR"] != nil))
 struct VoiceCapsuleDesktopCaptureTests {
     private static let transcript = "明天下午三点跟设计团队过一下语音胶囊的新方案，然后把会议纪要发给大家"
 

@@ -100,6 +100,7 @@ struct AskKeywordEditorSheet: View {
         case .kill: "kill"
         case .emoji: "emoji"
         case .calendar: "cal"
+        case .terminal: "cmd"
         case .system: ""
         case .workflow: ""
         }
@@ -216,6 +217,16 @@ struct AskKeywordEditorSheet: View {
             hint(L("emoji.summary"))
         case .calendar:
             CalendarKeywordSettingsView(options: $draft.calendarOptions)
+        case .terminal:
+            field(L("terminal.command.application")) {
+                Picker("", selection: $draft.terminal) {
+                    ForEach(TerminalApplication.allCases, id: \.self) { terminal in
+                        Text(terminal.title).tag(terminal)
+                    }
+                }.labelsHidden()
+                .accessibilityIdentifier("terminal.command.application")
+                hint(L("ask.settings.keywords.kind.terminal.hint"))
+            }
         case .system:
             field(L("ask.system.title")) {
                 Picker("", selection: $draft.systemCommand) {
@@ -239,7 +250,7 @@ struct AskKeywordEditorSheet: View {
                 .padding(.horizontal, 8).frame(height: 22)
                 .background(ModelVisualStyle.accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 6))
                 .lineLimit(1)
-            Text(draft.kind == .web ? "swift actor" : "hello world").font(.system(size: 13))
+            Text(draft.kind == .terminal ? "pwd" : draft.kind == .web ? "swift actor" : "hello world").font(.system(size: 13))
                 .foregroundStyle(StudioTheme.textPrimary)
             Spacer(minLength: 0)
         }

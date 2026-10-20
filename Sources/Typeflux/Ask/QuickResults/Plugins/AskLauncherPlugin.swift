@@ -18,6 +18,7 @@ protocol AskLauncherPlugin: Sendable {
     var runsWithoutInput: Bool { get }
     /// Whether captured text may supply the argument when the editor is empty.
     var usesSelectionInput: Bool { get }
+    var preservesInputWhitespace: Bool { get }
     /// A lone keyword defaults to entering its local feature on Return.
     var entersOnReturn: Bool { get }
     /// What the editor says while the keyword is active.
@@ -38,6 +39,7 @@ extension AskLauncherPlugin {
     var optionName: String? { nil }
     var runsWithoutInput: Bool { false }
     var usesSelectionInput: Bool { true }
+    var preservesInputWhitespace: Bool { false }
     var entersOnReturn: Bool { false }
 }
 
@@ -110,6 +112,8 @@ struct AskPluginAction: Equatable, Sendable {
         case openChat
         case emoji(EmojiAction)
         case systemCommand(AskSystemCommand)
+        case terminalCommand(TerminalCommandRequest)
+        case terminalAutomationSettings
         case openSettings
         /// Opens the usage guide, searching for this text when it is not empty (`help 截图`).
         case openHelp(query: String)

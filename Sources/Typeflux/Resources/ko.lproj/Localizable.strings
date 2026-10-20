@@ -6141,3 +6141,23 @@
 "ask.settings.keywords.kind.quickAsk.hint" = "런처에서 질문하고 채팅에서 대화를 이어가세요.";
 
 "ask.usage.contextShared" = "남은 컨텍스트는 이후 입력, 추론, 응답이 함께 사용합니다. 출력 예약량은 예산 추정치이며 이미 사용한 공간이 아닙니다.";
+
+// Launcher terminal commands
+"terminal.command.title" = "터미널 명령";
+"terminal.command.placeholder" = "셸 명령 입력";
+"terminal.command.empty" = "먼저 명령을 입력하세요";
+"terminal.command.tooLarge" = "명령이 16 KiB를 초과합니다";
+"terminal.command.singleLine" = "제어 문자 없이 한 줄 명령을 입력하세요";
+"terminal.command.invalidTerminal" = "키워드 설정에서 Terminal 또는 iTerm2를 선택하세요";
+"terminal.command.runIn" = "%@에서 실행";
+"terminal.command.directory" = "새 창 · 디렉터리는 터미널 설정을 따름";
+"terminal.command.run" = "실행";
+"terminal.command.copy" = "명령 복사";
+"terminal.command.pressReturn" = "Return을 눌러 터미널로 명령 전송";
+"terminal.command.notInstalled" = "선택한 터미널이 설치되지 않았습니다. 키워드 설정에서 다시 선택하세요.";
+"terminal.command.permissionDenied" = "시스템 설정 → 개인정보 보호 및 보안 → 자동화에서 Typeflux의 터미널 제어를 허용하세요.";
+"terminal.command.unavailable" = "터미널을 준비하지 못했습니다. 설정을 확인하세요.";
+"terminal.command.uncertain" = "명령이 이미 전달되었을 수 있습니다. 다시 실행하기 전에 터미널을 확인하세요. 자동 재전송하지 않았습니다.";
+"terminal.command.application" = "터미널 앱";
+"ask.settings.keywords.kind.terminal.hint" = "새 로컬 셸 창에서 한 줄 명령을 실행합니다. 터미널 설정을 따르며 Typeflux 기록에는 저장하지 않습니다.";
+"terminal.command.keywordConflict" = "사용 중인 터미널 키워드: %@. 기존 항목을 유지합니다. 다른 터미널 명령 키워드를 추가하세요.";

@@ -6182,3 +6182,23 @@
 "ask.settings.keywords.kind.quickAsk.hint" = "在啟動器中提問和查看回答，進入聊天繼續追問。";
 
 "ask.usage.contextShared" = "剩餘上下文由後續輸入、思考和回覆共享。輸出預留是預算估計，不是已消耗的上下文。";
+
+// Launcher terminal commands
+"terminal.command.title" = "終端命令";
+"terminal.command.placeholder" = "輸入 Shell 命令";
+"terminal.command.empty" = "請先輸入命令";
+"terminal.command.tooLarge" = "命令超過 16 KiB";
+"terminal.command.singleLine" = "請輸入單行命令，不要包含控制字元";
+"terminal.command.invalidTerminal" = "請在關鍵字設定中選擇 Terminal 或 iTerm2";
+"terminal.command.runIn" = "在 %@ 中執行";
+"terminal.command.directory" = "新增視窗 · 目錄依終端設定";
+"terminal.command.run" = "執行";
+"terminal.command.copy" = "複製命令";
+"terminal.command.pressReturn" = "按 Return 將此命令交給終端";
+"terminal.command.notInstalled" = "所選終端未安裝，請在關鍵字設定中重新選擇。";
+"terminal.command.permissionDenied" = "請在系統設定 → 隱私權與安全性 → 自動化中允許 Typeflux 控制此終端。";
+"terminal.command.unavailable" = "無法準備所選終端，請檢查其設定後重試。";
+"terminal.command.uncertain" = "命令可能已交給終端。再次執行前請先檢查終端；未自動重送。";
+"terminal.command.application" = "終端應用程式";
+"ask.settings.keywords.kind.terminal.hint" = "在新的本機 Shell 視窗執行單行命令，沿用終端設定與目錄。Typeflux 不儲存命令歷史。";
+"terminal.command.keywordConflict" = "終端命令觸發詞已被占用：%@。已保留原入口，可新增「終端命令」關鍵字另行指定。";

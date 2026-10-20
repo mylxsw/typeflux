@@ -1,0 +1,156 @@
+{
+  "base_commit": "b5831042f1818e817c8e43165518a6fe7a54824f",
+  "metric": "changed executable-line coverage (LCOV DA records)",
+  "profile": "single final build; no cross-build profile merging",
+  "covered": 319,
+  "executable": 352,
+  "percent": 90.62,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskComposerViews.swift",
+      "covered": 15,
+      "executable": 16,
+      "uncovered": [
+        793
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+KeywordDirectory.swift",
+      "covered": 2,
+      "executable": 2,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+LauncherInputHistory.swift",
+      "covered": 4,
+      "executable": 4,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+Plugins.swift",
+      "covered": 11,
+      "executable": 15,
+      "uncovered": [
+        272,
+        273,
+        274,
+        275
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel.swift",
+      "covered": 3,
+      "executable": 3,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationWindowController.swift",
+      "covered": 0,
+      "executable": 3,
+      "uncovered": [
+        611,
+        623,
+        624
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskKeyword.swift",
+      "covered": 4,
+      "executable": 4,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskLauncherPlugin.swift",
+      "covered": 1,
+      "executable": 1,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginSession.swift",
+      "covered": 4,
+      "executable": 4,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Help/HelpKeywordsPage.swift",
+      "covered": 1,
+      "executable": 1,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskKeywordDraft.swift",
+      "covered": 7,
+      "executable": 7,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskKeywordEditorSheet.swift",
+      "covered": 12,
+      "executable": 12,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskKeywordListComponents.swift",
+      "covered": 1,
+      "executable": 1,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskKeywordListPresentation.swift",
+      "covered": 10,
+      "executable": 10,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskLauncherPluginSettingsView.swift",
+      "covered": 7,
+      "executable": 7,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+TerminalCommands.swift",
+      "covered": 54,
+      "executable": 60,
+      "uncovered": [
+        45,
+        46,
+        47,
+        48,
+        49,
+        50
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Terminal/AskTerminalCommandPlugin.swift",
+      "covered": 82,
+      "executable": 82,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Terminal/TerminalCommandDispatcher.swift",
+      "covered": 101,
+      "executable": 120,
+      "uncovered": [
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        79,
+        80,
+        81,
+        82,
+        83,
+        85,
+        86,
+        87
+      ]
+    }
+  ]
+}
