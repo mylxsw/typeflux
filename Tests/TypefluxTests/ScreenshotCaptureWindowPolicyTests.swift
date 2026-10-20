@@ -56,26 +56,33 @@ struct ScreenshotCaptureWindowPolicyTests {
     }
 
     @Test func capturePanelsAreExcluded() {
-        let panels: [NSPanel] = [ScreenshotOverlayPanel(frame: frame), ScreenshotFloatingPanel(frame: frame),
-                                 ScreenshotPinPanel(frame: frame)]
+        let panels: [NSPanel] = [ScreenshotOverlayPanel(frame: frame), ScreenshotFloatingPanel(frame: frame)]
         defer { panels.forEach { $0.close() } }
         #expect(panels.allSatisfy { ScreenshotCaptureWindowPolicy.excludes($0) })
     }
 
-    @Test func captureNoticesAreExcluded() {
+    @Test func noticesAndCompletedPinsRemainCapturable() {
         let panel = NSPanel(contentRect: frame, styleMask: [.titled], backing: .buffered, defer: false)
         panel.isReleasedWhenClosed = false
         defer { panel.close() }
         for identifier in [ScreenshotCaptureWindowPolicy.toastIdentifier,
                            ScreenshotCaptureWindowPolicy.tooltipIdentifier,
-                           ScreenshotCaptureWindowPolicy.permissionIdentifier] {
+                           ScreenshotCaptureWindowPolicy.permissionIdentifier,
+                           ScreenshotCaptureWindowPolicy.recordingToastIdentifier] {
             panel.identifier = identifier
-            #expect(ScreenshotCaptureWindowPolicy.excludes(panel))
+            #expect(!ScreenshotCaptureWindowPolicy.excludes(panel))
         }
         panel.identifier = nil
         #expect(!ScreenshotCaptureWindowPolicy.excludes(panel))
-        panel.identifier = ScreenshotCaptureWindowPolicy.recordingToastIdentifier
-        #expect(!ScreenshotCaptureWindowPolicy.excludes(panel))
+        let pin = ScreenshotPinPanel(frame: frame)
+        defer { pin.close() }
+        #expect(!ScreenshotCaptureWindowPolicy.excludes(pin))
+        // Native modal windows have no app-specific identifier. Avoid initializing
+        // file dialogs here: their out-of-process service needs an application event loop.
+        let dialog = NSAlert().window
+        dialog.isReleasedWhenClosed = false
+        #expect(!ScreenshotCaptureWindowPolicy.excludes(dialog))
+        dialog.close()
     }
 
     @Test func `screenshot tooltips stay above the capture overlay and hide on exit`() throws {
@@ -96,6 +103,91 @@ struct ScreenshotCaptureWindowPolicyTests {
         #expect(panel.isVisible)
         controller.hide(owner: owner)
         #expect(!panel.isVisible)
+        controller.show(text: "App tooltip", screenFrame: frame, yOffset: 10, owner: owner)
+        #expect(!ScreenshotCaptureWindowPolicy.excludes(panel))
+        #expect(!ScreenshotCaptureWindowPolicy.excludedWindowIDs().contains(CGWindowID(panel.windowNumber)))
+    }
+
+}
+
+extension ScreenshotCaptureWindowPolicyTests {
+    @Test func capturePanelsAcceptInputDuringAModalDialog() throws {
+        let alert = NSAlert()
+        alert.messageText = "Keep this dialog open while capturing"
+        let modal = alert.window
+        modal.isReleasedWhenClosed = false
+        let session = NSApp.beginModalSession(for: modal)
+        let recording = ScreenRecordingWindowController()
+        let panels = [ScreenshotOverlayPanel(frame: frame), ScreenshotFloatingPanel(frame: frame, becomesKey: true),
+                      recording.makePanel(frame: frame), ScreenshotPinPanel(frame: frame)]
+        defer {
+            NSApp.endModalSession(session)
+            panels.forEach { $0.close() }
+            modal.close()
+            recording.hide()
+        }
+        for panel in panels {
+            let probe = ModalInputProbe(frame: CGRect(origin: .zero, size: frame.size))
+            panel.contentView = probe
+            panel.makeKeyAndOrderFront(nil)
+            panel.makeFirstResponder(probe)
+            #expect(panel.worksWhenModal)
+            let mouse = try #require(NSEvent.mouseEvent(
+                with: .leftMouseDown, location: CGPoint(x: 30, y: 30), modifierFlags: [], timestamp: 0,
+                windowNumber: panel.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1
+            ))
+            let key = try #require(NSEvent.keyEvent(
+                with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
+                windowNumber: panel.windowNumber, context: nil, characters: "a", charactersIgnoringModifiers: "a",
+                isARepeat: false, keyCode: 0
+            ))
+            // SwiftPM's helper owns the outer application loop. Dispatch native events
+            // in the active modal session without starting a competing AppKit loop.
+            NSApp.sendEvent(mouse)
+            NSApp.sendEvent(key)
+            #expect(probe.receivedMouse)
+            #expect(probe.receivedKey)
+            #expect(NSApp.modalWindow === modal, "Capturing must not dismiss the source dialog")
+            panel.orderOut(nil)
+        }
+    }
+
+    private final class ModalInputProbe: NSView {
+        var receivedMouse = false
+        var receivedKey = false
+        override var acceptsFirstResponder: Bool { true }
+        override func mouseDown(with _: NSEvent) { receivedMouse = true }
+        override func keyDown(with _: NSEvent) { receivedKey = true }
+    }
+
+    @Test func auxiliaryCapturePanelsWorkWhileTheSourceIsModal() throws {
+        let parent = ScreenshotOverlayPanel(frame: frame)
+        let beauty = ScreenshotBeautificationPanel()
+        let guide = ScreenshotPermissionGuideController()
+        defer { beauty.dismiss(); guide.dismiss(); parent.close() }
+        parent.orderFrontRegardless()
+        beauty.present(source: ScreenCaptureTestSupport.image(width: 80, height: 40), scale: 1,
+                       settings: .init(), over: parent, apply: { _ in })
+        #expect(try #require(beauty.panel).worksWhenModal)
+        beauty.dismiss()
+        guide.show(actions: .init(openSettings: {}, recheck: { false }, restart: {}, later: {}))
+        #expect(try #require(guide.window).worksWhenModal)
+    }
+
+    @Test func recordingCanSelectSmallOwnAppPopupsAndCapsules() {
+        let layer = NSWindow.Level.statusBar.rawValue
+        #expect(ScreenRecordingCoordinator.isSelectableWindow(layer: layer, size: CGSize(width: 180, height: 32),
+                                                              isOwnApplication: true))
+        #expect(!ScreenRecordingCoordinator.isSelectableWindow(layer: layer, size: CGSize(width: 180, height: 32),
+                                                               isOwnApplication: false))
+        #expect(ScreenRecordingCoordinator.isSelectableWindow(layer: 0, size: CGSize(width: 300, height: 200),
+                                                              isOwnApplication: false))
+        #expect(!ScreenRecordingCoordinator.isSelectableWindow(layer: 0, size: CGSize(width: 50, height: 50),
+                                                               isOwnApplication: false))
+        for size in [CGSize.zero, CGSize(width: -1, height: 10), CGSize(width: 10, height: 0),
+                     CGSize(width: CGFloat.infinity, height: 10), CGSize(width: 10, height: CGFloat.nan)] {
+            #expect(!ScreenRecordingCoordinator.isSelectableWindow(layer: layer, size: size, isOwnApplication: true))
+        }
     }
 
     @Test func onlyVisibleCaptureControlsAreListed() {
@@ -165,7 +257,7 @@ struct ScreenshotCaptureWindowPolicyTests {
     }
 
     @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_REAL_SCREEN_CAPTURE_TESTS"] == "1"),
-          arguments: ["page", "launcher", "recording-preview", "recording-toast"])
+          arguments: ["page", "launcher", "recording-preview", "recording-toast", "screenshot-toast", "permission", "tooltip", "pin"])
     func realCaptureKeepsAppPagePixelsBehindCaptureControls(_ kind: String) async throws {
         let isLauncher = kind == "launcher"
         let isRecordingToast = kind == "recording-toast"
@@ -174,13 +266,16 @@ struct ScreenshotCaptureWindowPolicyTests {
         let screen = try #require(NSScreen.screens.first)
         let area = screen.visibleFrame
         let pageFrame = CGRect(x: area.midX - 120, y: area.midY - 90, width: 240, height: 180)
-        let page: NSWindow = isLauncher || isRecordingToast
+        let page: NSWindow = kind == "pin" ? ScreenshotPinPanel(frame: pageFrame) : isLauncher || isRecordingToast
             ? NSPanel(contentRect: pageFrame, styleMask: [.borderless, .nonactivatingPanel],
                       backing: .buffered, defer: false)
             : NSWindow(contentRect: pageFrame, styleMask: [.borderless], backing: .buffered, defer: false)
         page.identifier = isLauncher ? TypefluxWindowIdentity.askLauncherWindowIdentifier :
             (isRecordingToast ? ScreenshotCaptureWindowPolicy.recordingToastIdentifier :
                 (kind == "recording-preview" ? ScreenRecordingWindowController.previewIdentifier : nil))
+        if kind == "screenshot-toast" { page.identifier = ScreenshotCaptureWindowPolicy.toastIdentifier }
+        if kind == "permission" { page.identifier = ScreenshotCaptureWindowPolicy.permissionIdentifier }
+        if kind == "tooltip" { page.identifier = ScreenshotCaptureWindowPolicy.tooltipIdentifier }
         (page as? NSPanel)?.hidesOnDeactivate = false
         page.isReleasedWhenClosed = false
         page.title = "Typeflux screenshot regression test"

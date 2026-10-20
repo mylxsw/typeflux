@@ -32,6 +32,7 @@ final class ScreenshotPinPanel: NSPanel {
         backgroundColor = .clear
         hasShadow = true
         hidesOnDeactivate = false
+        worksWhenModal = true
         isReleasedWhenClosed = false
         isMovableByWindowBackground = true
         becomesKeyOnlyIfNeeded = true

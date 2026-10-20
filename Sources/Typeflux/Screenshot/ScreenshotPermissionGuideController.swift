@@ -62,6 +62,7 @@ final class ScreenshotPermissionGuideController: ScreenshotPermissionGuidePresen
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.isReleasedWhenClosed = false
         panel.hidesOnDeactivate = false
+        panel.worksWhenModal = true
         return panel
     }
 }
