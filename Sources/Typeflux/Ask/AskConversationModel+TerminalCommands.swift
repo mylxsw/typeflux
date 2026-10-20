@@ -14,6 +14,15 @@ extension AskConversationModel {
     /// Called only by the composer's explicit user action, never by plugin.run.
     func submitTerminalCommand(_ request: TerminalCommandRequest, completed: @escaping () -> Void) {
         guard !terminalCommandSending, currentTerminalCommand(request) else { return }
+        if request.builtin != nil {
+            // Nothing to authorize: the command runs in Typeflux's own window, which
+            // takes keyboard focus once the launcher has gone.
+            let services = terminalRunnerServices
+            finishPluginResult()
+            completed()
+            terminalRunner.present(request, services: services)
+            return
+        }
         terminalCommandSending = true
         let presentation = launcherPresentationID
         let generation = plugins.resultGeneration
@@ -50,6 +59,11 @@ extension AskConversationModel {
                 }
             }
         }
+    }
+
+    var terminalRunnerServices: TerminalRunnerServices {
+        TerminalRunnerServices(deliverText: deliverText, notifyUser: notifyUser, passiveNotice: passiveNotice,
+                               dispatcher: terminalCommandDispatcher)
     }
 
     func currentTerminalCommand(_ request: TerminalCommandRequest) -> Bool {

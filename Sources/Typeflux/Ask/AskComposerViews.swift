@@ -992,7 +992,9 @@ struct AskComposer: View {
         case .shiftTab: _ = plugins.cycle(-1, selection: selection, text: text, language: language)
         case .enter: if display.asksAI { askAIFromPlugin() } else { runPluginMain() }
         case .commandEnter:
-            if display.offersAskAI || plugins.failure?.askAIAction != nil { askAIFromPlugin() }
+            if model.isTerminalCommandMode {
+                if let action = pluginShortcutAction(nil, shortcut: .commandEnter) { performPluginAction(action) }
+            } else if display.offersAskAI || plugins.failure?.askAIAction != nil { askAIFromPlugin() }
         case .optionEnter, .commandR, .commandD, .shiftCommandC, .commandS, .commandB, .commandO:
             let shortcut: AskPluginAction.Shortcut = switch key {
             case .optionEnter: .optionEnter

@@ -285,6 +285,7 @@ struct AskPluginResultsView: View {
             if let action = plan.action(for: .enter) {
                 if case .openChat = action.kind { return "" }
                 parts = [L("ask.plugin.hint.action", action.title),
+                         plan.action(for: .commandEnter).map { L("ask.plugin.hint.commandEnter", $0.title) },
                          plan.action(for: .commandC).map { L("ask.plugin.hint.copy", $0.title) },
                          option, askAI]
             } else {
@@ -808,6 +809,7 @@ struct AskPluginResultsView: View {
         switch shortcut {
         case .enter: "↩"
         case .optionEnter: "⌥↩"
+        case .commandEnter: "⌘↩"
         case .commandR: "⌘R"
         case .commandD: "⌘D"
         case .commandC: "⌘C"

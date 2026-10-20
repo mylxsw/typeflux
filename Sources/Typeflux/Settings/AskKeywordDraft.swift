@@ -26,10 +26,15 @@ struct AskKeywordDraft: Equatable {
     var systemCommand: AskSystemCommand = .toggleBluetooth
     var calendarOptions: [String: String] = [:]
     var terminal: TerminalApplication = .terminal
+    /// Terminal command: what Return does; ⌘↩ does the other.
+    var runner: TerminalRunner = .builtin
+    var terminalSettings = TerminalRunSettings()
 
     init(editing keyword: AskKeyword) {
         original = keyword
         terminal = TerminalApplication.configured(in: keyword.options) ?? .terminal
+        runner = TerminalRunSettings.runner(in: keyword.options)
+        terminalSettings = TerminalRunSettings(options: keyword.options)
         calendarOptions = keyword.options
         systemCommand = AskSystemCommand(pluginID: keyword.pluginID) ?? .toggleBluetooth
         kind = AskKeywordKind(pluginID: keyword.pluginID) ?? .prompt
@@ -216,6 +221,8 @@ struct AskKeywordDraft: Equatable {
             options = calendarOptions
         case .terminal:
             options[AskTerminalCommandPlugin.terminalOption] = terminal.rawValue
+            options[TerminalRunSettings.runnerOption] = runner == .builtin ? nil : runner.rawValue
+            terminalSettings.write(into: &options)
         case .apps, .files, .semanticFiles, .tabs, .bookmarks, .chat, .quickAsk, .prefix, .setting, .history, .clip, .emoji,
              .kill, .system, .workflow:
             break

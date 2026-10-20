@@ -35,7 +35,8 @@ let package = Package(
         .package(url: "https://github.com/argmaxinc/WhisperKit.git", from: "0.9.0"),
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.28.2"),
         .package(url: "https://github.com/grpc/grpc-swift.git", from: "1.26.0"),
-        .package(url: "https://github.com/doggy8088/opencc-swift.git", branch: "main")
+        .package(url: "https://github.com/doggy8088/opencc-swift.git", branch: "main"),
+        .package(url: "https://github.com/migueldeicaza/SwiftTerm.git", exact: "1.10.1")
     ],
     targets: [
         .target(name: "TypefluxMediaProtocol"),
@@ -62,7 +63,8 @@ let package = Package(
                 .product(name: "Markdown", package: "swift-markdown"),
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),
                 .product(name: "GRPC", package: "grpc-swift"),
-                .product(name: "OpenCCSwift", package: "opencc-swift")
+                .product(name: "OpenCCSwift", package: "opencc-swift"),
+                .product(name: "SwiftTerm", package: "SwiftTerm")
             ],
             path: "Sources/Typeflux",
             exclude: [

@@ -185,6 +185,8 @@ struct AskPluginAction: Equatable, Sendable {
 
     enum Shortcut: Equatable, Sendable {
         case enter, optionEnter, commandR, commandD, commandC, shiftCommandC, commandE, commandS, commandB, commandO
+        /// The other way to run a terminal command; elsewhere ⌘↩ asks the AI.
+        case commandEnter
         /// ⇥ on a result whose plugin has no options to cycle through.
         case tab
     }

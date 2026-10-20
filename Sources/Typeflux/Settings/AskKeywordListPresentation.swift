@@ -258,9 +258,12 @@ enum AskKeywordListPresentation {
         case .kill: return L("ask.settings.keywords.kind.kill.hint")
         case .emoji: return L("emoji.summary")
         case .calendar, .terminal:
-            return keyword.pluginID == AskTerminalCommandPlugin.id
-                ? L("terminal.command.runIn", TerminalApplication.configured(in: keyword.options)?.title ?? "?")
-                : L("ask.settings.keywords.kind.calendar.hint")
+            guard keyword.pluginID == AskTerminalCommandPlugin.id else { return L("ask.settings.keywords.kind.calendar.hint") }
+            let external = L("terminal.command.runIn", TerminalApplication.configured(in: keyword.options)?.title ?? "?")
+            guard TerminalRunSettings.runner(in: keyword.options) == .builtin else { return external }
+            let finish = TerminalRunSettings(options: keyword.options).finish
+            return [L("terminal.runner.runBuiltin"), L("terminal.runner.finish.\(finish.rawValue)"),
+                    "⌘↩ " + external].joined(separator: " · ")
         case .system:
             return L("ask.settings.keywords.kind.system.hint")
         case .workflow, nil:

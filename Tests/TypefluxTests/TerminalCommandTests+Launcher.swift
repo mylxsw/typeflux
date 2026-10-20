@@ -202,13 +202,15 @@ extension TerminalCommandTests {
         ">"
     ]) func `actual launcher requires return and esc clears input`(word: String) async throws {
         let dispatcher = TestTerminalDispatcher()
+        let runner = TestTerminalRunner()
         let launcher = try await AskQuickResultsInteractionTests.Launcher(text: word + " pwd", prepare: {
             $0.terminalCommandDispatcher = dispatcher
+            $0.terminalRunner = runner
         })
         defer { launcher.close() }
         let model = launcher.fixture.model
         try await AskQuickSearchSessionTests.wait { model.plugins.isPlanCurrent }
-        #expect(dispatcher.requests.isEmpty)
+        #expect(dispatcher.requests.isEmpty && runner.requests.isEmpty)
         if let path = ProcessInfo.processInfo.environment["TYPEFLUX_TERMINAL_SNAPSHOTS"], word == "cmd",
            let view = launcher.window.contentView {
             view.layoutSubtreeIfNeeded()
@@ -219,9 +221,8 @@ extension TerminalCommandTests {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
             try png.write(to: folder.appendingPathComponent("terminal-launcher.png"))
         }
-        try await launcher.press(36, .command)
         try await launcher.press(15, .command)
-        #expect(dispatcher.requests.isEmpty)
+        #expect(dispatcher.requests.isEmpty && runner.requests.isEmpty)
         #expect(await launcher.fixture.api.sends.isEmpty)
         try await launcher.press(53)
         #expect(model.launcherDraft.text.isEmpty && !model.plugins.isActive)
@@ -229,9 +230,52 @@ extension TerminalCommandTests {
         model.launcherDraft.text = word + " pwd"
         try await AskQuickSearchSessionTests.wait { model.plugins.isPlanCurrent }
         try await launcher.press(36)
+        try await AskQuickSearchSessionTests.wait { !runner.requests.isEmpty }
+        #expect(runner.requests == [.init(command: "pwd", terminal: .terminal, builtin: TerminalRunSettings())])
+        #expect(dispatcher.requests.isEmpty && dispatcher.authorizations.isEmpty)
+        #expect(launcher.dismissed == 1 && !model.plugins.isActive)
+        #expect(model.launcherInputHistory.history.entries.isEmpty)
+    }
+
+    @Test func `command return runs the other way`() async throws {
+        let dispatcher = TestTerminalDispatcher()
+        let runner = TestTerminalRunner()
+        let launcher = try await AskQuickResultsInteractionTests.Launcher(text: "cmd pwd", prepare: {
+            $0.terminalCommandDispatcher = dispatcher
+            $0.terminalRunner = runner
+        })
+        defer { launcher.close() }
+        let model = launcher.fixture.model
+        try await AskQuickSearchSessionTests.wait { model.plugins.isPlanCurrent }
+        try await launcher.press(36, .command)
         try await AskQuickSearchSessionTests.wait { !dispatcher.requests.isEmpty }
         #expect(dispatcher.requests == [.init(command: "pwd", terminal: .terminal)])
-        #expect(launcher.dismissed == 1)
+        #expect(runner.requests.isEmpty && launcher.dismissed == 1)
+        #expect(await launcher.fixture.api.sends.isEmpty)
+    }
+
+    @Test func `built-in submission validates the snapshot and needs no consent`() async throws {
+        let fixture = try AskTestFixture()
+        let model = fixture.model
+        defer { model.resetSession() }
+        let dispatcher = TestTerminalDispatcher()
+        let runner = TestTerminalRunner()
+        model.terminalCommandDispatcher = dispatcher
+        model.terminalRunner = runner
+        _ = try await prepare(model, command: "ls -la", terminal: .iterm)
+        let builtin = TerminalCommandRequest(command: "ls -la", terminal: .iterm, builtin: TerminalRunSettings())
+        var forged = builtin
+        forged.builtin = TerminalRunSettings(directory: "/etc")
+        model.submitTerminalCommand(forged) { Issue.record("Forged settings ran") }
+        #expect(runner.requests.isEmpty)
+        var completed = 0
+        model.submitTerminalCommand(builtin) { completed += 1 }
+        #expect(runner.requests == [builtin] && completed == 1)
+        #expect(dispatcher.authorizations.isEmpty && !model.terminalCommandSending && !model.plugins.isActive)
+        let services = try #require(runner.services.first)
+        #expect((services.dispatcher as? TestTerminalDispatcher) === dispatcher)
+        model.submitTerminalCommand(builtin) { completed += 1 }
+        #expect(runner.requests.count == 1 && completed == 1)
     }
 
     @Test func `repeated return and marked text never dispatch`() async throws {
