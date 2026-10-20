@@ -147,9 +147,8 @@
 "settings.output.opencc.config.s2tw" = "간체 → 번체";
 "settings.output.opencc.config.s2hk" = "간체 → 번체 (홍콩)";
 "settings.output.opencc.config.t2s" = "번체 → 간체";
-"settings.audio" = "오디오";
 "settings.general.app.title" = "앱";
-"settings.general.voiceTrigger.title" = "음성 입력 방식";
+"settings.general.voiceInput.title" = "음성 입력";
 "settings.general.memory.title" = "메모리 및 어휘";
 "settings.general.screenshot.title" = "스크린샷";
 "settings.general.updatesAndData.title" = "업데이트 및 데이터";

@@ -53,7 +53,7 @@ struct HotkeySettingsViewTests {
                             $0.value("accessibilityIdentifier") as? String == identifier
                         })
                     }
-                    let controlTitles = ["settings.general.app.title", "settings.general.voiceTrigger.title",
+                    let controlTitles = ["settings.general.app.title", "settings.instantVoiceInput.title",
                                          "settings.general.screenshot.title", "settings.shortcuts.screenshot.saveLocation.title"]
                     for title in controlTitles {
                         #expect(SettingsBehaviorTestSupport.contains(L(title), in: window))

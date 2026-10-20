@@ -139,9 +139,8 @@
 "settings.appearance.subtitle" = "在浅色、深色或跟随系统主题之间切换整个界面。";
 "settings.language.title" = "界面语言";
 "settings.language.subtitle" = "选择 Typeflux 界面的显示语言。";
-"settings.audio" = "音频";
 "settings.general.app.title" = "应用";
-"settings.general.voiceTrigger.title" = "语音输入方式";
+"settings.general.voiceInput.title" = "语音输入";
 "settings.general.memory.title" = "记忆与词汇";
 "settings.general.screenshot.title" = "截图";
 "settings.general.updatesAndData.title" = "更新与数据";

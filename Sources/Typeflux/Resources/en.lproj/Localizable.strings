@@ -147,9 +147,8 @@
 "settings.output.opencc.config.s2tw" = "Simplified → Traditional";
 "settings.output.opencc.config.s2hk" = "Simplified → Traditional (Hong Kong)";
 "settings.output.opencc.config.t2s" = "Traditional → Simplified";
-"settings.audio" = "Audio";
 "settings.general.app.title" = "App";
-"settings.general.voiceTrigger.title" = "Voice Input Triggers";
+"settings.general.voiceInput.title" = "Voice Input";
 "settings.general.memory.title" = "Memory and Vocabulary";
 "settings.general.screenshot.title" = "Screenshots";
 "settings.general.updatesAndData.title" = "Updates and Data";

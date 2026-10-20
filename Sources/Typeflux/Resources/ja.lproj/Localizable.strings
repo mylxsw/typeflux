@@ -147,9 +147,8 @@
 "settings.output.opencc.config.s2tw" = "簡体字 → 繁體字";
 "settings.output.opencc.config.s2hk" = "簡体字 → 繁體字（香港）";
 "settings.output.opencc.config.t2s" = "繁體字 → 簡体字";
-"settings.audio" = "オーディオ";
 "settings.general.app.title" = "アプリ";
-"settings.general.voiceTrigger.title" = "音声入力の起動方法";
+"settings.general.voiceInput.title" = "音声入力";
 "settings.general.memory.title" = "メモリと語彙";
 "settings.general.screenshot.title" = "スクリーンショット";
 "settings.general.updatesAndData.title" = "アップデートとデータ";

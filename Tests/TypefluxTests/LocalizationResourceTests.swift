@@ -29,16 +29,19 @@ final class LocalizationResourceTests: XCTestCase {
             let table = try XCTUnwrap(PropertyListSerialization.propertyList(from: Data(contentsOf: tableURL),
                                                                              options: [],
                                                                              format: nil) as? [String: String])
-            for key in ["settings.general.app.title", "settings.general.voiceTrigger.title",
+            for key in ["settings.general.app.title", "settings.general.voiceInput.title",
                         "settings.general.memory.title", "settings.general.screenshot.title"] {
                 XCTAssertFalse(try XCTUnwrap(table[key], "Missing \(key) in \(language.rawValue)").isEmpty)
             }
+            XCTAssertNil(table["settings.general.voiceTrigger.title"])
+            XCTAssertNil(table["settings.audio"])
             for key in ["settings.shortcuts.quickInput.title", "settings.shortcuts.quickInput.subtitle",
                         "overlay.recording.quickInputHint", "settings.inputAndCapture.title",
                         "settings.shortcuts.launcherPosition.reset"] {
                 XCTAssertNil(table[key], "\(key) should be removed from \(language.rawValue)")
             }
             if language == .simplifiedChinese {
+                XCTAssertEqual(table["settings.general.voiceInput.title"], "语音输入")
                 XCTAssertEqual(table["settings.general.memory.title"], "记忆与词汇")
             }
         }

@@ -714,7 +714,7 @@ struct StudioView: View {
         }
     }
 
-    /// General settings, grouped by app startup, voice input, audio, text output, memory,
+    /// General settings, grouped by app startup, voice input, text output, memory,
     /// screenshots, and updates and data.
     private var generalSettingsPage: some View {
         VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
@@ -723,7 +723,7 @@ struct StudioView: View {
                               isOn: Binding(get: { viewModel.launchAtLogin }, set: viewModel.setLaunchAtLogin))
             }
 
-            TFFormSection(title: L("settings.general.voiceTrigger.title")) {
+            TFFormSection(title: L("settings.general.voiceInput.title")) {
                 settingSwitch(L("settings.instantVoiceInput.title"), detail: L("settings.instantVoiceInput.subtitle"),
                               badge: "Beta",
                               isOn: Binding(get: { viewModel.instantVoiceInputEnabled },
@@ -745,9 +745,7 @@ struct StudioView: View {
                         )
                     }
                 }
-            }
-
-            TFFormSection(title: L("settings.audio")) {
+                TFDivider.form
                 TFFormRow(title: L("settings.microphone.title"), detail: L("settings.microphone.subtitle")) {
                     TFPopUpButton(
                         title: L("settings.microphone.title"),
