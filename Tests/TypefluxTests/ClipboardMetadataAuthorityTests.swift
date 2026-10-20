@@ -20,7 +20,7 @@ private final class MetadataSourceGate: @unchecked Sendable {
     func release() { condition.withLock { held = false; condition.broadcast() } }
 }
 
-@Suite("Clipboard metadata original batch authority", .serialized)
+@Suite("Clipboard metadata original batch authority", .serialized, .exclusiveUIState)
 @MainActor struct ClipboardMetadataAuthorityTests {
     private func file(_ root: URL) throws -> URL {
         let url = root.appendingPathComponent("private.bytes"); try Data([1, 2, 3]).write(to: url); return url

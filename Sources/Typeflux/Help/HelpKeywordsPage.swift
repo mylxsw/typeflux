@@ -200,6 +200,7 @@ struct HelpKeywordDetail: View {
     }
 
     static func exampleArgument(_ keyword: HelpKeyword) -> String? {
+        if keyword.keyword.pluginID == AskTerminalCommandPlugin.id { return "pwd" }
         let kind: String? = switch keyword.keyword.pluginID {
         case AskTranslatePlugin.id: AskTranslatePlugin.opensWordBook(keyword.keyword.options) ? "word" : "translate"
         case AskPromptPlugin.id: "text"

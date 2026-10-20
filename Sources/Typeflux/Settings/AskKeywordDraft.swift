@@ -25,9 +25,11 @@ struct AskKeywordDraft: Equatable {
     var engine: AskWebSearchPlugin.Engine?
     var systemCommand: AskSystemCommand = .toggleBluetooth
     var calendarOptions: [String: String] = [:]
+    var terminal: TerminalApplication = .terminal
 
     init(editing keyword: AskKeyword) {
         original = keyword
+        terminal = TerminalApplication.configured(in: keyword.options) ?? .terminal
         calendarOptions = keyword.options
         systemCommand = AskSystemCommand(pluginID: keyword.pluginID) ?? .toggleBluetooth
         kind = AskKeywordKind(pluginID: keyword.pluginID) ?? .prompt
@@ -84,7 +86,7 @@ struct AskKeywordDraft: Equatable {
                     ?? L("ask.settings.keywords.sheet.webNamePlaceholder")
             }
         case .translate, .apps, .files, .semanticFiles, .tabs, .bookmarks, .chat, .quickAsk, .prefix, .setting, .history, .clip, .emoji,
-             .calendar, .kill, .system, .workflow:
+             .calendar, .terminal, .kill, .system, .workflow:
             ""
         }
     }
@@ -125,6 +127,7 @@ struct AskKeywordDraft: Equatable {
         case .kill: L("ask.plugin.kill.title")
         case .emoji: L("emoji.title")
         case .calendar: L("calendar.title")
+        case .terminal: L("terminal.command.title")
         case .system:
             systemCommand.title
         case .workflow:
@@ -175,7 +178,7 @@ struct AskKeywordDraft: Equatable {
         case .web:
             AskWebSearchPlugin.problem(with: url)
         case .translate, .apps, .files, .semanticFiles, .tabs, .bookmarks, .chat, .quickAsk, .prefix, .setting, .history, .clip, .emoji,
-             .calendar, .kill, .system, .workflow:
+             .calendar, .terminal, .kill, .system, .workflow:
             nil
         }
     }
@@ -211,6 +214,8 @@ struct AskKeywordDraft: Equatable {
             }
         case .calendar:
             options = calendarOptions
+        case .terminal:
+            options[AskTerminalCommandPlugin.terminalOption] = terminal.rawValue
         case .apps, .files, .semanticFiles, .tabs, .bookmarks, .chat, .quickAsk, .prefix, .setting, .history, .clip, .emoji,
              .kill, .system, .workflow:
             break

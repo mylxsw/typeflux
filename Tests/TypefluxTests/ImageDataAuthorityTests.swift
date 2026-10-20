@@ -23,7 +23,7 @@ private final class ImageDataAuthorityGate: @unchecked Sendable {
     func release() { condition.withLock { held = false; condition.broadcast() } }
 }
 
-@Suite("Read-only image data original authority", .serialized)
+@Suite("Read-only image data original authority", .serialized, .exclusiveUIState)
 @MainActor struct ImageDataAuthorityTests {
     private let original = Data([1, 2, 3])
     private func worker(_ state: ImageDataAuthorityState, gate: ImageDataAuthorityGate? = nil) -> MediaWorker {

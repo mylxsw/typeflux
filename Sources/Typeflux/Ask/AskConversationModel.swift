@@ -42,6 +42,8 @@ final class AskConversationModel: ObservableObject {
     var launcherSearchEntriesCache: (key: LauncherSearchEntriesKey, entries: [AskLauncherSearchEntry])?
     var browserSearch: any AskBrowserSearching = AskBrowserSearchService()
     var systemCommandRunner = AskSystemCommandRunner()
+    var terminalCommandDispatcher: any TerminalCommandDispatching = TerminalCommandDispatcher()
+    @Published var terminalCommandSending = false
     var confirmSystemCommand: (AskSystemCommand) -> Bool = AskSystemCommandConfirmation.confirm
     var appIndex: any AskAppSearching = AskAppIndex.shared
     var launcherHomeFallbackKeywordIDs: [String] = []
@@ -1005,6 +1007,7 @@ final class AskConversationModel: ObservableObject {
 
     func submitLauncher(recordInput: Bool = true) {
         if plugins.keyword?.pluginID == AskQuickAskPlugin.id { submitQuickAsk(); return }
+        guard !isTerminalCommandMode, !isTerminalCommandInput(launcherDraft.text) else { return }
         if consumeModeCommand(launcher: true) { return }
         normalizeScreenshotChoices()
         guard canSendLauncher else { return }

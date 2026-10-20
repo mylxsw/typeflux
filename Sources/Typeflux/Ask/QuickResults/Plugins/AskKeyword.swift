@@ -69,8 +69,10 @@ enum AskKeywordMatcher {
             let rest = text.dropFirst(word.count)
             guard let first = rest.first else { return .hint(candidate.keyword) }
             guard separators.contains(first) else { continue }
-            let argument = rest.dropFirst().drop(while: { $0 == " " || $0 == "\u{3000}" })
-            return .active(candidate.keyword, argument: String(argument))
+            let argument = rest.dropFirst()
+            let preserved = candidate.keyword.pluginID == AskTerminalCommandPlugin.id
+            let text = preserved ? argument : argument.drop(while: { $0 == " " || $0 == "\u{3000}" })
+            return .active(candidate.keyword, argument: String(text))
         }
         return nil
     }

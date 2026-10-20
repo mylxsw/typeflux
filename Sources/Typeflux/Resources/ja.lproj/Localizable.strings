@@ -6141,3 +6141,23 @@
 "ask.settings.keywords.kind.quickAsk.hint" = "ランチャーで質問し、チャットで会話を続けます。";
 
 "ask.usage.contextShared" = "残りのコンテキストは次の入力・思考・回答で共有されます。出力予約量は予算の見積もりで、使用済みの容量ではありません。";
+
+// Launcher terminal commands
+"terminal.command.title" = "ターミナルコマンド";
+"terminal.command.placeholder" = "シェルコマンドを入力";
+"terminal.command.empty" = "コマンドを入力してください";
+"terminal.command.tooLarge" = "コマンドが16 KiBを超えています";
+"terminal.command.singleLine" = "制御文字を含まない1行のコマンドを入力してください";
+"terminal.command.invalidTerminal" = "キーワード設定でTerminalまたはiTerm2を選択してください";
+"terminal.command.runIn" = "%@で実行";
+"terminal.command.directory" = "新規ウインドウ · ディレクトリはターミナル設定に従う";
+"terminal.command.run" = "実行";
+"terminal.command.copy" = "コマンドをコピー";
+"terminal.command.pressReturn" = "Returnでコマンドをターミナルに送信";
+"terminal.command.notInstalled" = "選択したターミナルがありません。キーワード設定で選び直してください。";
+"terminal.command.permissionDenied" = "システム設定 → プライバシーとセキュリティ → オートメーションでターミナルの操作を許可してください。";
+"terminal.command.unavailable" = "ターミナルを準備できませんでした。設定を確認してください。";
+"terminal.command.uncertain" = "コマンドは送信済みの可能性があります。再実行前にターミナルを確認してください。自動再送はしていません。";
+"terminal.command.application" = "ターミナルアプリ";
+"ask.settings.keywords.kind.terminal.hint" = "新しいローカルシェルで1行のコマンドを実行します。ターミナルの設定を使い、Typefluxの履歴には保存しません。";
+"terminal.command.keywordConflict" = "ターミナルのキーワードが使用済みです：%@。既存の項目は保持されます。別のキーワードを追加してください。";

@@ -28,7 +28,7 @@ private actor ToolBatchCustomNormalizer {
     func normalize(_ data: Data, _ type: MediaImageType) -> String { calls += 1; return toolBatchURL }
 }
 
-@Suite("Tool projection original batch authority", .serialized)
+@Suite("Tool projection original batch authority", .serialized, .exclusiveUIState)
 @MainActor struct ToolBatchAuthorityTests {
     private var blocks: [MCPContentBlock] {
         [1, 2].map { .init(type: "image", data: Data([UInt8($0)]).base64EncodedString(), mimeType: "image/png") }

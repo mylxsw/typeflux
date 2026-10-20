@@ -4,8 +4,7 @@ import Testing
 
 /// Opt-in: records the notch island growing a caption and closing again, for frame-by-frame review.
 /// Run with `TYPEFLUX_NOTCH_MOTION_DIR=/path` on a machine with screen recording access.
-@Suite(.serialized, .exclusiveUIState,
-       .enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_NOTCH_MOTION_DIR"] != nil))
+@Suite(.serialized, .exclusiveUIState, .enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_NOTCH_MOTION_DIR"] != nil))
 struct NotchIslandMotionRecordingTests {
     @Test @MainActor
     func recordCaptionOpeningAndClosing() async throws {

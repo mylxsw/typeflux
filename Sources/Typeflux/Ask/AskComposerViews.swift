@@ -772,11 +772,13 @@ struct AskComposer: View {
                                                     selection: draft.wrappedValue.sentSelection,
                                                     usesSelection: plugin.usesSelectionInput, output: plugins.output)
             return AskPluginDisplay(hint: nil, title: plugin.title, symbol: plugin.symbol, optionName: plugin.optionName,
-                                    phase: plugins.phase, previous: plugins.previous, partial: plugins.partial,
+                                    phase: model.terminalCommandSending && plugin.id == AskTerminalCommandPlugin.id
+                                        ? plugins.plan.map { .running($0) } ?? plugins.phase : plugins.phase,
+                                    previous: plugins.previous, partial: plugins.partial,
                                     comparing: plugins.comparing, highlighted: asks ? pluginHighlight : 0,
                                     offersAskAI: asks && ![AskKillAppPlugin.id, AskSystemMonitorPlugin.id,
                                                           AskSystemInfoPlugin.id, AskEmojiPlugin.id,
-                                                          AskCalendarPlugin.id, AskQuickAskPlugin.id].contains(plugin.id),
+                                                          AskCalendarPlugin.id, AskQuickAskPlugin.id, AskTerminalCommandPlugin.id].contains(plugin.id),
                                     savesNoteWhenDone: plugins.savesNoteWhenDone,
                                     systemMonitor: plugin.id == AskSystemMonitorPlugin.id,
                                     systemInfo: plugin.id == AskSystemInfoPlugin.id,
@@ -788,7 +790,7 @@ struct AskComposer: View {
         if quickSearch.presentation?.features.isEmpty != false,
            let hint = plugins.hint, let plugin = plugins.plugin(for: hint) {
             return AskPluginDisplay(hint: hint, title: plugin.title, symbol: plugin.symbol, phase: .waiting,
-                                    highlighted: pluginHighlight)
+                                    highlighted: pluginHighlight, offersAskAI: plugin.id != AskTerminalCommandPlugin.id)
         }
         return nil
     }
@@ -885,6 +887,10 @@ struct AskComposer: View {
     }
 
     private func performPluginAction(_ action: AskPluginAction) {
+        if case let .terminalCommand(request) = action.kind {
+            model.submitTerminalCommand(request, completed: onDismiss)
+            return
+        }
         if case .fileAction = action.kind {
             guard let outcome = model.performPluginFileAction(action) else { return }
             switch outcome {
@@ -927,6 +933,12 @@ struct AskComposer: View {
         } else {
             model.askAIFromPlugin()
         }
+    }
+
+    private func pluginShortcutAction(_ output: AskPluginOutput?, shortcut: AskPluginAction.Shortcut) -> AskPluginAction? {
+        if let action = output?.action(for: shortcut) ?? plugins.failure?.action(for: shortcut) { return action }
+        guard model.isTerminalCommandMode, plugins.isPlanCurrent else { return nil }
+        return plugins.plan?.action(for: shortcut)
     }
 
     /// Keys in keyword mode, see `docs/design/ask-launcher-keyword-plugins.md` §5.5.
@@ -995,7 +1007,7 @@ struct AskComposer: View {
             let usesPartial = plugins.currentOutput?.translation != nil && shortcut != .commandR
             let offering = usesPartial || [.commandS, .commandO].contains(key) ? plugins.currentOutput : plugins.output
             // ⇧⌘C, ⌘S, ⌘B and ⌘O fall through to the editor when the result offers nothing for them.
-            guard let action = offering?.action(for: shortcut) ?? plugins.failure?.action(for: shortcut) else {
+            guard let action = pluginShortcutAction(offering, shortcut: shortcut) else {
                 return ![.shiftCommandC, .commandS, .commandB, .commandO].contains(key)
             }
             // ⇧⌘C copies and stays, like ⌘C.
@@ -1908,6 +1920,7 @@ struct AskComposer: View {
             model.stopQuickAsk()
             model.quickAsk?.restoreOnPresentation = false
         }
+        if model.isTerminalCommandMode { draft.wrappedValue.text = "" }
         plugins.deactivate()
         // The question is already in its conversation. Do not reinterpret it as another keyword.
         if answeredQuickAsk { draft.wrappedValue.text = "" }

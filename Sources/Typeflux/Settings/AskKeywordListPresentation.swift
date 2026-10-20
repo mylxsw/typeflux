@@ -3,8 +3,10 @@ import Foundation
 /// What a launcher keyword reaches: one of the built-in plugins or a workflow.
 enum AskKeywordKind: String, CaseIterable, Sendable {
     case translate, prompt, web, apps, files, semanticFiles, tabs, bookmarks, chat, quickAsk, prefix, setting, history, clip,
-         emoji, calendar, kill, system, workflow
+         emoji, calendar, terminal, kill, system, workflow
 
+    // One branch per built-in capability keeps keyword classification explicit.
+    // swiftlint:disable:next cyclomatic_complexity
     init?(pluginID: String) {
         switch pluginID {
         case AskTranslatePlugin.id: self = .translate
@@ -24,6 +26,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case AskClipboardPlugin.id: self = .clip
         case AskEmojiPlugin.id: self = .emoji
         case AskCalendarPlugin.id: self = .calendar
+        case AskTerminalCommandPlugin.id: self = .terminal
         default:
             if AskSystemCommand(pluginID: pluginID) != nil { self = .system; return }
             guard pluginID.hasPrefix(AskWorkflowPlugin.idPrefix) else { return nil }
@@ -54,6 +57,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .kill: AskKillAppPlugin.id
         case .emoji: AskEmojiPlugin.id
         case .calendar: AskCalendarPlugin.id
+        case .terminal: AskTerminalCommandPlugin.id
         case .system, .workflow: nil
         }
     }
@@ -77,6 +81,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .kill: L("ask.plugin.kill.title")
         case .emoji: L("emoji.title")
         case .calendar: L("calendar.title")
+        case .terminal: L("terminal.command.title")
         case .system: L("ask.system.title")
         case .workflow: L("ask.settings.keywords.kind.workflow")
         }
@@ -106,6 +111,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .kill: "xmark.app"
         case .emoji: "face.smiling"
         case .calendar: "calendar"
+        case .terminal: "terminal"
         case .system: "terminal"
         case .workflow: "point.3.connected.trianglepath.dotted"
         }
@@ -189,6 +195,7 @@ enum AskKeywordListPresentation {
         case .kill: L("ask.plugin.kill.title")
         case .emoji: L("emoji.title")
         case .calendar: L("calendar.title")
+        case .terminal: L("terminal.command.title")
         case .system:
             AskSystemCommand(pluginID: keyword.pluginID)?.title ?? keyword.keyword
         case .workflow, nil:
@@ -250,7 +257,10 @@ enum AskKeywordListPresentation {
             return L("ask.settings.keywords.kind.clip.hint")
         case .kill: return L("ask.settings.keywords.kind.kill.hint")
         case .emoji: return L("emoji.summary")
-        case .calendar: return L("ask.settings.keywords.kind.calendar.hint")
+        case .calendar, .terminal:
+            return keyword.pluginID == AskTerminalCommandPlugin.id
+                ? L("terminal.command.runIn", TerminalApplication.configured(in: keyword.options)?.title ?? "?")
+                : L("ask.settings.keywords.kind.calendar.hint")
         case .system:
             return L("ask.settings.keywords.kind.system.hint")
         case .workflow, nil:
@@ -308,7 +318,7 @@ enum AskKeywordSection: String, CaseIterable {
         case .prompt: [.prompt]
         case .search: [.web, .apps, .files, .semanticFiles, .tabs, .bookmarks, .emoji]
         case .typeflux: [.chat, .quickAsk, .prefix, .setting, .history, .clip, .calendar]
-        case .system: [.kill, .system]
+        case .system: [.terminal, .kill, .system]
         }
     }
 

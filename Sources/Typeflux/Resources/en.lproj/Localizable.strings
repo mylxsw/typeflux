@@ -6259,3 +6259,23 @@
 "ask.settings.keywords.kind.quickAsk.hint" = "Ask in the launcher and continue in Chat.";
 
 "ask.usage.contextShared" = "Unused context is shared by future input, reasoning and replies. The output reserve is a budget estimate, not context already used.";
+
+// Launcher terminal commands
+"terminal.command.title" = "Terminal Command";
+"terminal.command.placeholder" = "Enter a shell command";
+"terminal.command.empty" = "Enter a command first";
+"terminal.command.tooLarge" = "Command exceeds 16 KiB";
+"terminal.command.singleLine" = "Use one line without control characters";
+"terminal.command.invalidTerminal" = "Choose Terminal or iTerm2 in keyword settings";
+"terminal.command.runIn" = "Run in %@";
+"terminal.command.directory" = "New window · directory follows terminal settings";
+"terminal.command.run" = "Run";
+"terminal.command.copy" = "Copy Command";
+"terminal.command.pressReturn" = "Press Return to send this command to your terminal";
+"terminal.command.notInstalled" = "The selected terminal is not installed. Choose another in keyword settings.";
+"terminal.command.permissionDenied" = "Allow Typeflux to control this terminal in System Settings → Privacy & Security → Automation.";
+"terminal.command.unavailable" = "Could not prepare the selected terminal. Check its settings and try again.";
+"terminal.command.uncertain" = "The command may already have reached the terminal. Check it before running again; it was not replayed.";
+"terminal.command.application" = "Terminal Application";
+"ask.settings.keywords.kind.terminal.hint" = "Run a single-line command in a new local shell window. Uses terminal configuration and directory; commands are not saved in Typeflux history.";
+"terminal.command.keywordConflict" = "Terminal command keywords already in use: %@. Existing entries are preserved; add a Terminal Command keyword to choose another.";

@@ -6259,3 +6259,23 @@
 "ask.settings.keywords.kind.quickAsk.hint" = "在启动器中提问和查看回答，进入聊天继续追问。";
 
 "ask.usage.contextShared" = "剩余上下文由后续输入、思考和回复共享。输出预留是预算估计，不是已消耗的上下文。";
+
+// Launcher terminal commands
+"terminal.command.title" = "终端命令";
+"terminal.command.placeholder" = "输入 Shell 命令";
+"terminal.command.empty" = "请先输入命令";
+"terminal.command.tooLarge" = "命令超过 16 KiB";
+"terminal.command.singleLine" = "请输入单行命令，不要包含控制字符";
+"terminal.command.invalidTerminal" = "请在关键字设置中选择 Terminal 或 iTerm2";
+"terminal.command.runIn" = "在 %@ 中运行";
+"terminal.command.directory" = "新建窗口 · 目录跟随终端配置";
+"terminal.command.run" = "运行";
+"terminal.command.copy" = "复制命令";
+"terminal.command.pressReturn" = "按回车将此命令交给终端";
+"terminal.command.notInstalled" = "所选终端未安装，请在关键字设置中重新选择。";
+"terminal.command.permissionDenied" = "请在系统设置 → 隐私与安全性 → 自动化中允许 Typeflux 控制此终端。";
+"terminal.command.unavailable" = "无法准备所选终端，请检查其设置后重试。";
+"terminal.command.uncertain" = "命令可能已交给终端。再次运行前请先检查终端；未自动重发。";
+"terminal.command.application" = "终端应用";
+"ask.settings.keywords.kind.terminal.hint" = "在新的本地 Shell 窗口执行单行命令，沿用终端配置与目录。Typeflux 不保存命令历史。";
+"terminal.command.keywordConflict" = "终端命令触发词已被占用：%@。已保留原入口，可添加“终端命令”关键字另行指定。";

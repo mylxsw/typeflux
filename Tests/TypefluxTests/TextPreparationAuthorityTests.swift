@@ -21,7 +21,7 @@ private final class TextPreparationGate: @unchecked Sendable {
     func release() { condition.withLock { held = false; condition.broadcast() } }
 }
 
-@Suite("Text recognition preparation authority", .serialized)
+@Suite("Text recognition preparation authority", .serialized, .exclusiveUIState)
 @MainActor struct TextPreparationAuthorityTests {
     private func image() throws -> CGImage {
         let context = try #require(CGContext(data: nil, width: 8, height: 4, bitsPerComponent: 8,

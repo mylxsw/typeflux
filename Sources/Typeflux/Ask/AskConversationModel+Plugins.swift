@@ -1,3 +1,4 @@
+import AppKit
 import AVFoundation
 import Foundation
 
@@ -27,6 +28,7 @@ enum AskPluginRegistry {
         AskSystemMonitorPlugin.id,
         AskSystemInfoPlugin.id,
         AskCalendarPlugin.id,
+        AskTerminalCommandPlugin.id,
         AskEmojiPlugin.id
     ] + AskSystemCommand.allCases.map(\.id)
 
@@ -44,6 +46,7 @@ enum AskPluginRegistry {
                     + AskSystemMonitorPlugin.keywords
                     + AskSystemInfoPlugin.keywords
                     + AskCalendarPlugin.keywords
+                    + AskTerminalCommandPlugin.keywords
                     + AskEmojiPlugin.keywords
                     + AskSystemCommand.allCases.map {
                         AskKeyword(keyword: $0.defaultKeyword, pluginID: $0.id)
@@ -236,6 +239,7 @@ extension AskConversationModel {
             AskSystemMonitorPlugin(),
             AskSystemInfoPlugin(),
             AskCalendarPlugin(),
+            AskTerminalCommandPlugin(),
             AskEmojiPlugin(usage: { [weak self] in self?.emojiUsage.value ?? EmojiUsage() })
         ] + AskSystemCommand.allCases.map { AskSystemCommandPlugin(command: $0) } + workflowPlugins()
     }
@@ -264,6 +268,14 @@ extension AskConversationModel {
             // Recording and starring are sequenced in one admitted task below.
         } else { plugins.settleWordBook() }
         switch action.kind {
+        case .terminalAutomationSettings:
+            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation") {
+                NSWorkspace.shared.open(url)
+            }
+            return .stay
+        case .terminalCommand:
+            // Only a user action in the composer may dispatch a terminal command.
+            return .stay
         case .fileAction:
             guard let outcome = performPluginFileAction(action) else { return .stay }
             if outcome == .close { finishPluginResult(); return .close }
@@ -527,6 +539,7 @@ extension AskConversationModel {
     /// ⌘↩ in keyword mode: the AI gets the plugin's prompt about its result, or
     /// the typed text (the selection rides along with the draft as always).
     func askAIFromPlugin(_ prompt: String? = nil) {
+        guard !isTerminalCommandMode else { return }
         let argument = launcherDraft.text.trimmingCharacters(in: .whitespacesAndNewlines)
         let text = prompt ??
             (argument.isEmpty ? plugins.plugin.map { L("ask.plugin.askAI.selection", $0.title) } ?? "" : argument)
@@ -550,6 +563,10 @@ extension AskConversationModel {
 
     /// Closing folds the keyword into its text after input history has recorded it.
     func foldLauncherKeyword() {
+        if isTerminalCommandMode || isTerminalCommandInput(launcherDraft.text) {
+            plugins.deactivate()
+            launcherDraft.text = ""
+        }
         releaseLauncherScreenshot()
         launcherClipboardPreview = nil
         answerWorkflowApproval(false)

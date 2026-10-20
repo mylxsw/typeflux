@@ -30,7 +30,7 @@ private actor TiledCustomReader: ImageTextRecognizing {
     }
 }
 
-@Suite("Tiled text original batch authority", .serialized)
+@Suite("Tiled text original batch authority", .serialized, .exclusiveUIState)
 @MainActor struct TiledTextAuthorityTests {
     private func image(height: Int = 10) throws -> CGImage {
         let context = try #require(CGContext(data: nil, width: 8, height: height, bitsPerComponent: 8,
