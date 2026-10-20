@@ -1,4 +1,5 @@
 import Foundation
+import CoreAudio
 @testable import Typeflux
 import XCTest
 
@@ -67,6 +68,93 @@ final class SettingsStoreAudioTests: XCTestCase {
         }
         XCTAssertEqual(viewModel.preferredMicrophoneID, "external-microphone")
     }
+
+    func testSelectingBluetoothMicrophoneOffersInstantInputWithoutEnablingIt() throws {
+        let suiteName = "SettingsStoreAudioTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = SettingsStore(defaults: defaults)
+        let devices = AudioSettingsDeviceManager()
+        let viewModel = StudioViewModel(settingsStore: store, historyStore: AudioSettingsHistoryStore(),
+                                        initialSection: .settings, audioDeviceManager: devices)
+
+        viewModel.setPreferredMicrophoneID("bluetooth")
+
+        XCTAssertTrue(viewModel.isInstantVoiceInputSuggestionPresented)
+        XCTAssertFalse(store.instantVoiceInputEnabled)
+        viewModel.isInstantVoiceInputSuggestionPresented = false
+        viewModel.suggestInstantVoiceInputForCurrentMicrophoneIfNeeded()
+        XCTAssertFalse(viewModel.isInstantVoiceInputSuggestionPresented)
+        viewModel.setInstantVoiceInputEnabled(true)
+        XCTAssertTrue(store.instantVoiceInputEnabled)
+    }
+
+    func testExistingBluetoothSelectionOffersSuggestionWhenSettingsOpens() throws {
+        let suiteName = "SettingsStoreAudioTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = SettingsStore(defaults: defaults)
+        store.preferredMicrophoneID = "bluetooth"
+        let viewModel = StudioViewModel(settingsStore: store, historyStore: AudioSettingsHistoryStore(),
+                                        initialSection: .settings, audioDeviceManager: AudioSettingsDeviceManager())
+
+        viewModel.suggestInstantVoiceInputForCurrentMicrophoneIfNeeded()
+
+        XCTAssertTrue(viewModel.isInstantVoiceInputSuggestionPresented)
+        XCTAssertFalse(store.instantVoiceInputEnabled)
+    }
+
+    func testSuggestionSkipsBuiltInAutomaticAndAlreadyEnabled() throws {
+        let suiteName = "SettingsStoreAudioTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = SettingsStore(defaults: defaults)
+        let devices = AudioSettingsDeviceManager()
+        let viewModel = StudioViewModel(settingsStore: store, historyStore: AudioSettingsHistoryStore(),
+                                        initialSection: .settings, audioDeviceManager: devices)
+
+        viewModel.setPreferredMicrophoneID("built-in")
+        XCTAssertFalse(viewModel.isInstantVoiceInputSuggestionPresented)
+        viewModel.setPreferredMicrophoneID("")
+        XCTAssertFalse(viewModel.isInstantVoiceInputSuggestionPresented)
+        store.instantVoiceInputEnabled = true
+        viewModel.setInstantVoiceInputEnabled(true)
+        viewModel.setPreferredMicrophoneID("bluetooth")
+        XCTAssertFalse(viewModel.isInstantVoiceInputSuggestionPresented)
+    }
+
+    func testInstantInputPolicyIgnoresBuiltInInputEvenWhenEnabled() throws {
+        let suiteName = "SettingsStoreAudioTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = SettingsStore(defaults: defaults)
+        let devices = AudioSettingsDeviceManager()
+        store.instantVoiceInputEnabled = true
+
+        store.preferredMicrophoneID = "built-in"
+        XCTAssertFalse(InstantVoiceInputPolicy.isEffective(settings: store, devices: devices))
+        store.preferredMicrophoneID = "bluetooth"
+        XCTAssertTrue(InstantVoiceInputPolicy.isEffective(settings: store, devices: devices))
+        store.preferredMicrophoneID = ""
+        XCTAssertFalse(InstantVoiceInputPolicy.isEffective(settings: store, devices: devices))
+    }
+}
+
+private final class AudioSettingsDeviceManager: AudioDeviceManaging {
+    func availableInputDevices() -> [AudioInputDevice] {
+        [AudioInputDevice(id: "built-in", name: "Built-in"),
+         AudioInputDevice(id: "bluetooth", name: "Bluetooth")]
+    }
+
+    func resolveInputDeviceID(for uniqueID: String) -> AudioDeviceID? {
+        ["built-in": 1, "bluetooth": 2][uniqueID]
+    }
+
+    func defaultInputDeviceID() -> AudioDeviceID? { 2 }
+    func automaticRecordingInputDeviceID() -> AudioDeviceID? { 1 }
+    func observeDefaultInputDeviceChanges(_: @escaping @Sendable () -> Void) -> AudioInputDeviceChangeObservation? { nil }
+    func isBluetoothInputDevice(_ deviceID: AudioDeviceID) -> Bool { deviceID == 2 }
+    func isBuiltInInputDevice(_ deviceID: AudioDeviceID) -> Bool { deviceID == 1 }
 }
 
 private final class AudioSettingsHistoryStore: HistoryStore {

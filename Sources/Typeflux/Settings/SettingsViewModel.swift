@@ -123,6 +123,8 @@ final class StudioViewModel: ObservableObject {
     @Published var availableMicrophones: [AudioInputDevice] = []
     @Published var preferredMicrophoneID: String
     @Published var instantVoiceInputEnabled: Bool
+    @Published var isInstantVoiceInputSuggestionPresented = false
+    private var lastSuggestedMicrophoneID: String?
     @Published var mouseVoiceInputEnabled: Bool
     @Published var mouseVoiceActivationStyle: MouseVoiceActivationStyle
     @Published var muteSystemOutputDuringRecording: Bool
@@ -280,7 +282,7 @@ final class StudioViewModel: ObservableObject {
     private let modelManager: OllamaModelManaging
     private let localModelManager: LocalSTTModelManaging
     private let notificationService: LocalNotificationSending
-    private let audioDeviceManager: AudioDeviceManager
+    private let audioDeviceManager: AudioDeviceManaging
     private let onRetryHistory: (HistoryRecord) -> Void
     private let historyRefreshQueue = DispatchQueue(label: "typeflux.settings.history-refresh", qos: .userInitiated)
     private var historyObserver: NSObjectProtocol?
@@ -312,7 +314,7 @@ final class StudioViewModel: ObservableObject {
         onRetryHistory: @escaping (HistoryRecord) -> Void = { _ in },
         modelManager: OllamaModelManaging = OllamaLocalModelManager(),
         localModelManager: LocalSTTModelManaging = LocalModelManager(),
-        audioDeviceManager: AudioDeviceManager = AudioDeviceManager(),
+        audioDeviceManager: AudioDeviceManaging = AudioDeviceManager(),
         notificationService: LocalNotificationSending = NoopLocalNotificationService(),
         audioPreviewPlayer: HistoryAudioPreviewPlaying? = nil,
         modelLibrary: AskModelLibrary? = nil
@@ -532,8 +534,8 @@ final class StudioViewModel: ObservableObject {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                availableMicrophones = audioDeviceManager.availableInputDevices()
-                preferredMicrophoneID = settingsStore.preferredMicrophoneID
+                availableMicrophones = self.audioDeviceManager.availableInputDevices()
+                preferredMicrophoneID = self.settingsStore.preferredMicrophoneID
             }
         }
         appearanceObserver = NotificationCenter.default.addObserver(
@@ -1227,8 +1229,20 @@ final class StudioViewModel: ObservableObject {
     }
 
     func setPreferredMicrophoneID(_ id: String) {
+        guard preferredMicrophoneID != id else { return }
         preferredMicrophoneID = id
         settingsStore.preferredMicrophoneID = id
+        suggestInstantVoiceInputForCurrentMicrophoneIfNeeded()
+    }
+
+    func suggestInstantVoiceInputForCurrentMicrophoneIfNeeded() {
+        let id = preferredMicrophoneID
+        guard !instantVoiceInputEnabled, !id.isEmpty, lastSuggestedMicrophoneID != id,
+              let deviceID = audioDeviceManager.resolveInputDeviceID(for: id),
+              audioDeviceManager.isBluetoothInputDevice(deviceID)
+        else { return }
+        lastSuggestedMicrophoneID = id
+        isInstantVoiceInputSuggestionPresented = true
     }
 
     func setMuteSystemOutputDuringRecording(_ value: Bool) {

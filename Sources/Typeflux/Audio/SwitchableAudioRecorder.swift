@@ -16,7 +16,9 @@ final class SwitchableAudioRecorder: AudioRecorder {
             useCoreAudio: {
                 // The legacy path owns the optional warm microphone / pre-roll behavior.
                 Self.usesCoreAudio(
-                    instantVoiceInputEnabled: settingsStore.instantVoiceInputEnabled,
+                    instantVoiceInputEnabled: InstantVoiceInputPolicy.isEffective(
+                        settings: settingsStore, devices: audioDeviceManager
+                    ),
                     override: ProcessInfo.processInfo.environment["TYPEFLUX_AUDIO_CAPTURE"]
                 )
             },

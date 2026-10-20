@@ -19,6 +19,7 @@ protocol AudioDeviceManaging {
     /// `AutomaticInputDeviceSelector`).
     func automaticRecordingInputDeviceID() -> AudioDeviceID?
     func isBluetoothInputDevice(_ deviceID: AudioDeviceID) -> Bool
+    func isBuiltInInputDevice(_ deviceID: AudioDeviceID) -> Bool
 }
 
 extension AudioDeviceManaging {
@@ -27,6 +28,10 @@ extension AudioDeviceManaging {
     }
 
     func isBluetoothInputDevice(_: AudioDeviceID) -> Bool {
+        false
+    }
+
+    func isBuiltInInputDevice(_: AudioDeviceID) -> Bool {
         false
     }
 }
@@ -143,6 +148,10 @@ final class AudioDeviceManager: AudioDeviceManaging {
 
     func isBluetoothInputDevice(_ deviceID: AudioDeviceID) -> Bool {
         transportType(for: deviceID).map(AutomaticInputDeviceSelector.isBluetooth) ?? false
+    }
+
+    func isBuiltInInputDevice(_ deviceID: AudioDeviceID) -> Bool {
+        transportType(for: deviceID) == kAudioDeviceTransportTypeBuiltIn
     }
 
     private func transportType(for deviceID: AudioDeviceID) -> UInt32? {

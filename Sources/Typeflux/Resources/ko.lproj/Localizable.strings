@@ -156,7 +156,10 @@
 "settings.microphone.subtitle" = "받아쓰기에 사용되는 장치를 선택하세요. 자동은 현재 macOS 기본 입력을 따르지만, 첫 단어가 잘리지 않도록 블루투스 헤드셋 대신 Mac 내장 또는 유선 마이크를 사용합니다.";
 "settings.microphone.automatic" = "자동";
 "settings.instantVoiceInput.title" = "바로 말하기";
-"settings.instantVoiceInput.subtitle" = "다음에 바로 말할 수 있도록 사용 후에도 마이크를 준비 상태로 유지합니다. 마이크는 최대 15분 동안 켜져 있습니다.";
+"settings.instantVoiceInput.subtitle" = "다음 입력을 더 빨리 시작할 수 있도록 사용 후 마이크를 최대 15분 동안 준비 상태로 유지합니다. 내장 마이크에서는 적용되지 않습니다.";
+"settings.instantVoiceInput.suggestion.title" = "Bluetooth 마이크에 바로 말하기를 켤까요?";
+"settings.instantVoiceInput.suggestion.message" = "Bluetooth 마이크는 녹음을 시작할 때 약 100ms 이상의 지연이 생길 수 있습니다. 켜면 첫 녹음 후 마이크를 최대 15분 동안 준비 상태로 유지해 다음 입력을 더 빨리 시작할 수 있습니다.";
+"settings.instantVoiceInput.suggestion.enable" = "바로 말하기 켜기";
 "settings.mouseVoice.title" = "마우스 음성 입력";
 "settings.mouseVoice.subtitle" = "입력란에서 약 0.8초 동안 움직이지 않고 길게 누르면 포인터 근처에 마이크가 표시됩니다. 텍스트 선택이나 이른 드래그에는 작동하지 않습니다.";
 "settings.mouseVoice.activation.title" = "실행 방식";

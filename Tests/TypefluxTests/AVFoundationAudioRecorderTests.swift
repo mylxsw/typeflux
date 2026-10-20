@@ -267,7 +267,7 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
         settingsStore.instantVoiceInputEnabled = true
         let recorder = AVFoundationAudioRecorder(
             settingsStore: settingsStore,
-            audioDeviceManager: MockAudioDeviceManager(defaultInputDeviceID: nil),
+            audioDeviceManager: MockAudioDeviceManager(defaultInputDeviceID: 7),
             instantVoiceInputIdleTimeout: 0.05
         )
 
@@ -304,11 +304,33 @@ final class AVFoundationAudioRecorderTests: XCTestCase {
         settingsStore.instantVoiceInputEnabled = true
         let recorder = AVFoundationAudioRecorder(
             settingsStore: settingsStore,
-            audioDeviceManager: MockAudioDeviceManager(defaultInputDeviceID: nil)
+            audioDeviceManager: MockAudioDeviceManager(defaultInputDeviceID: 7)
         )
         recorder.beginInstantVoiceInputWarmWindowForTesting()
 
         settingsStore.instantVoiceInputEnabled = false
+
+        XCTAssertFalse(recorder.instantVoiceInputWarmWindowIsActiveForTesting)
+    }
+
+    func testSelectingBuiltInMicrophoneCancelsActiveWarmWindow() throws {
+        let suiteName = "AVFoundationAudioRecorderTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let settingsStore = SettingsStore(defaults: defaults)
+        settingsStore.instantVoiceInputEnabled = true
+        let recorder = AVFoundationAudioRecorder(
+            settingsStore: settingsStore,
+            audioDeviceManager: MockAudioDeviceManager(
+                resolvedInputDeviceIDs: ["built-in": 8],
+                defaultInputDeviceID: 7,
+                builtInDeviceIDs: [8]
+            )
+        )
+        recorder.beginInstantVoiceInputWarmWindowForTesting()
+        XCTAssertTrue(recorder.instantVoiceInputWarmWindowIsActiveForTesting)
+
+        settingsStore.preferredMicrophoneID = "built-in"
 
         XCTAssertFalse(recorder.instantVoiceInputWarmWindowIsActiveForTesting)
     }
@@ -835,18 +857,21 @@ private final class MockAudioDeviceManager: AudioDeviceManaging {
     private let resolvedInputDeviceIDs: [String: AudioDeviceID]
     private let defaultInputDevice: AudioDeviceID?
     private let automaticInputDevice: AudioDeviceID?
+    private let builtInDeviceIDs: Set<AudioDeviceID>
     private var defaultInputDeviceChangeHandler: (@Sendable () -> Void)?
 
     init(
         devices: [AudioInputDevice] = [],
         resolvedInputDeviceIDs: [String: AudioDeviceID] = [:],
         defaultInputDeviceID: AudioDeviceID? = nil,
-        automaticInputDeviceID: AudioDeviceID? = nil
+        automaticInputDeviceID: AudioDeviceID? = nil,
+        builtInDeviceIDs: Set<AudioDeviceID> = []
     ) {
         self.devices = devices
         self.resolvedInputDeviceIDs = resolvedInputDeviceIDs
         defaultInputDevice = defaultInputDeviceID
         automaticInputDevice = automaticInputDeviceID ?? defaultInputDeviceID
+        self.builtInDeviceIDs = builtInDeviceIDs
     }
 
     func automaticRecordingInputDeviceID() -> AudioDeviceID? {
@@ -863,6 +888,10 @@ private final class MockAudioDeviceManager: AudioDeviceManaging {
 
     func defaultInputDeviceID() -> AudioDeviceID? {
         defaultInputDevice
+    }
+
+    func isBuiltInInputDevice(_ deviceID: AudioDeviceID) -> Bool {
+        builtInDeviceIDs.contains(deviceID)
     }
 
     func observeDefaultInputDeviceChanges(

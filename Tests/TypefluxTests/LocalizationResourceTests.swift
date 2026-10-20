@@ -174,7 +174,10 @@ final class LocalizationResourceTests: XCTestCase {
     func testInstantVoiceInputExplainsBenefitAndMicrophoneTradeoffInEveryLanguage() throws {
         let keys = [
             "settings.instantVoiceInput.title",
-            "settings.instantVoiceInput.subtitle"
+            "settings.instantVoiceInput.subtitle",
+            "settings.instantVoiceInput.suggestion.title",
+            "settings.instantVoiceInput.suggestion.message",
+            "settings.instantVoiceInput.suggestion.enable"
         ]
 
         for language in AppLanguage.allCases {

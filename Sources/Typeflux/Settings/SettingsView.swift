@@ -351,6 +351,17 @@ struct StudioView: View {
                 }
             }
         )
+        .alert(
+            L("settings.instantVoiceInput.suggestion.title"),
+            isPresented: $viewModel.isInstantVoiceInputSuggestionPresented
+        ) {
+            Button(L("settings.instantVoiceInput.suggestion.enable")) {
+                viewModel.setInstantVoiceInputEnabled(true)
+            }
+            Button(L("common.cancel"), role: .cancel) {}
+        } message: {
+            Text(L("settings.instantVoiceInput.suggestion.message"))
+        }
         .sheet(isPresented: $isMCPServerDialogPresented) {
             mcpServerDialog
         }
@@ -842,6 +853,7 @@ struct StudioView: View {
                                             set: viewModel.setAnalyticsSharingEnabled))
             }
         }
+        .onAppear { viewModel.suggestInstantVoiceInputForCurrentMicrophoneIfNeeded() }
     }
 
     /// A form row whose only control is a switch.

@@ -148,7 +148,10 @@
 "settings.microphone.subtitle" = "选择听写使用的输入设备。自动模式会跟随当前 macOS 默认输入设备；若默认设备是蓝牙耳机，则改用 Mac 自带或有线麦克风，避免开头丢字。";
 "settings.microphone.automatic" = "自动";
 "settings.instantVoiceInput.title" = "按键即说";
-"settings.instantVoiceInput.subtitle" = "使用后让麦克风保持就绪，缩短下次启动等待。麦克风最多继续开启 15 分钟。";
+"settings.instantVoiceInput.subtitle" = "使用后让麦克风保持就绪，缩短下次启动等待，最多继续开启 15 分钟。使用内置麦克风时不生效。";
+"settings.instantVoiceInput.suggestion.title" = "使用蓝牙麦克风时开启按键即说？";
+"settings.instantVoiceInput.suggestion.message" = "蓝牙麦克风启动录音时通常会多等约 100 毫秒或更久。开启后，首次录音结束时麦克风会保持就绪最多 15 分钟，让后续输入更快。";
+"settings.instantVoiceInput.suggestion.enable" = "开启按键即说";
 "settings.mouseVoice.title" = "鼠标语音输入";
 "settings.mouseVoice.subtitle" = "在输入框内静止长按约 0.8 秒，在鼠标附近显示麦克风。选中文本或提前拖动时不会触发。";
 "settings.mouseVoice.activation.title" = "触发方式";

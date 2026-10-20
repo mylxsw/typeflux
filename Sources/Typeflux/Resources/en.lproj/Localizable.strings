@@ -156,7 +156,10 @@
 "settings.microphone.subtitle" = "Pick the device used for dictation. Automatic follows the current macOS default input, but prefers the Mac's built-in or a wired microphone over a Bluetooth headset so the first words are not lost.";
 "settings.microphone.automatic" = "Automatic";
 "settings.instantVoiceInput.title" = "Speak Immediately";
-"settings.instantVoiceInput.subtitle" = "Keeps the microphone ready after use to reduce startup delay. The microphone remains on for up to 15 minutes.";
+"settings.instantVoiceInput.subtitle" = "Keeps the microphone ready for up to 15 minutes after use to reduce startup delay. Has no effect with the built-in microphone.";
+"settings.instantVoiceInput.suggestion.title" = "Enable Speak Immediately for this Bluetooth microphone?";
+"settings.instantVoiceInput.suggestion.message" = "Starting a Bluetooth microphone can add around 100 ms or more of delay. After your first recording, Speak Immediately keeps the microphone ready for up to 15 minutes so later input starts faster.";
+"settings.instantVoiceInput.suggestion.enable" = "Enable Speak Immediately";
 "settings.mouseVoice.title" = "Mouse Voice Input";
 "settings.mouseVoice.subtitle" = "Hold still in a text field for about 0.8 seconds to reveal a nearby microphone. Text selection and early dragging do not trigger it.";
 "settings.mouseVoice.activation.title" = "Activation Method";
