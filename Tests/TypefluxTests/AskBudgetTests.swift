@@ -156,7 +156,7 @@ final class AskBudgetTests: XCTestCase {
         ]
         let trimmed = try AskContextPlanner.plan(image, limits: .init(window: 8000))
         XCTAssertTrue(trimmed.trimmed)
-        XCTAssertEqual(trimmed.outputReserve, 2000)
+        XCTAssertEqual(trimmed.outputReserve, 4096)
         for role in ["user", "system", "tool"] {
             XCTAssertThrowsError(try AskContextPlanner.plan(
                 ["messages": [[
@@ -173,5 +173,18 @@ final class AskBudgetTests: XCTestCase {
         XCTAssertThrowsError(try AskContextPlanner.plan([:], limits: .init(window: 0)))
         XCTAssertEqual(AskContextPlanner.excerpt("short", size: 100), "short")
         XCTAssertFalse(AskContextPlanner.excerpt(String(repeating: "𐀀", count: 100), size: 61).contains("�"))
+    }
+
+    func testOutputUsesModelCapabilityAndActualRemainingContext() throws {
+        let payload: [String: Any] = ["messages": [["role": "user", "content": "Question"]]]
+        let large = try AskContextPlanner.plan(payload, limits: .init(window: 1_000_000, maxOutput: 262_144, known: true))
+        XCTAssertEqual(large.outputReserve, 262_144)
+        XCTAssertEqual(large.payload["max_tokens"] as? Int, 262_144)
+        let crowded = try AskContextPlanner.plan(payload, limits: .init(window: 4096, maxOutput: 4096, known: true))
+        XCTAssertEqual(crowded.outputReserve, 4096 - crowded.inputTokens - 256)
+        XCTAssertGreaterThan(crowded.outputReserve, 4096 / 4)
+        XCTAssertFalse(crowded.trimmed)
+        let explicit = try AskContextPlanner.plan(["messages": [], "max_tokens": 128], limits: .init())
+        XCTAssertEqual(explicit.outputReserve, 128)
     }
 }

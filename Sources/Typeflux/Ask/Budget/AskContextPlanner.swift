@@ -31,21 +31,29 @@ enum AskContextPlanner {
     }
 
     static func plan(_ payload: [String: Any], limits: AskContextLimits) throws -> AskContextPlan {
-        guard (512 ... 10_000_000).contains(limits.window), (1 ... 128_000).contains(limits.maxOutput),
+        guard (512 ... 10_000_000).contains(limits.window), (1 ... limits.window).contains(limits.maxOutput),
               (1 ... 1_000_000).contains(limits.imageTokens),
               JSONSerialization.isValidJSONObject(payload) else { throw AskBudgetError.invalid }
         var copy = payload
-        let output = min(payload["max_tokens"] as? Int ?? limits.maxOutput, limits.maxOutput, limits.window / 4)
+        let output = min(payload["max_tokens"] as? Int ?? limits.maxOutput, limits.maxOutput)
         guard output > 0 else { throw AskBudgetError.invalid }
         copy["max_tokens"] = output
-        let available = limits.window - output - 256
         var plan = AskContextPlan(
             payload: copy,
             inputTokens: weight(copy, imageTokens: limits.imageTokens),
             outputReserve: output,
             capacity: limits.window
         )
-        if plan.inputTokens <= available {
+        func fit() -> Bool {
+            plan.inputTokens = weight(copy, imageTokens: limits.imageTokens)
+            let remaining = limits.window - plan.inputTokens - 256
+            guard remaining > 0 else { return false }
+            plan.outputReserve = min(output, remaining)
+            copy["max_tokens"] = plan.outputReserve
+            plan.payload = copy
+            return true
+        }
+        if fit() {
             return plan
         }
         var messages = copy["messages"] as? [[String: Any]] ?? []
@@ -55,7 +63,7 @@ enum AskContextPlanner {
             copy["messages"] = messages
             plan.inputTokens = weight(copy, imageTokens: limits.imageTokens)
             plan.payload = copy
-            if plan.inputTokens <= available {
+            if fit() {
                 return plan
             }
         }
@@ -73,7 +81,7 @@ enum AskContextPlanner {
         copy["messages"] = messages
         plan.payload = copy
         plan.inputTokens = weight(copy, imageTokens: limits.imageTokens)
-        guard plan.inputTokens <= available else { throw AskBudgetError.reached("context_capacity") }
+        guard fit() else { throw AskBudgetError.reached("context_capacity") }
         return plan
     }
 
