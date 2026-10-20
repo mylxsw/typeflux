@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Edits or adds one launcher keyword. The fields follow the keyword's kind; nothing
@@ -218,15 +219,7 @@ struct AskKeywordEditorSheet: View {
         case .calendar:
             CalendarKeywordSettingsView(options: $draft.calendarOptions)
         case .terminal:
-            field(L("terminal.command.application")) {
-                Picker("", selection: $draft.terminal) {
-                    ForEach(TerminalApplication.allCases, id: \.self) { terminal in
-                        Text(terminal.title).tag(terminal)
-                    }
-                }.labelsHidden()
-                .accessibilityIdentifier("terminal.command.application")
-                hint(L("ask.settings.keywords.kind.terminal.hint"))
-            }
+            terminalFields
         case .system:
             field(L("ask.system.title")) {
                 Picker("", selection: $draft.systemCommand) {
@@ -239,6 +232,72 @@ struct AskKeywordEditorSheet: View {
         case .apps, .files, .semanticFiles, .tabs, .bookmarks, .chat, .quickAsk, .prefix, .setting, .history, .clip, .workflow:
             EmptyView()
         }
+    }
+
+    @ViewBuilder private var terminalFields: some View {
+        field(L("terminal.runner.settings.runner")) {
+            Picker("", selection: $draft.runner) {
+                Text(L("terminal.runner.builtin")).tag(TerminalRunner.builtin)
+                Text(L("terminal.runner.external")).tag(TerminalRunner.external)
+            }
+            .pickerStyle(.segmented).labelsHidden().fixedSize()
+            .accessibilityIdentifier("terminal.runner.settings.runner")
+            hint(L("ask.settings.keywords.kind.terminal.hint"))
+        }
+        field(L("terminal.command.application")) {
+            Picker("", selection: $draft.terminal) {
+                ForEach(TerminalApplication.allCases, id: \.self) { terminal in
+                    Text(terminal.title).tag(terminal)
+                }
+            }.labelsHidden().fixedSize()
+            .accessibilityIdentifier("terminal.command.application")
+        }
+        field(L("terminal.runner.settings.finish")) {
+            Picker("", selection: $draft.terminalSettings.finish) {
+                Text(L("terminal.runner.finish.auto")).tag(TerminalFinishPolicy.auto)
+                Text(L("terminal.runner.finish.keep")).tag(TerminalFinishPolicy.keep)
+                Text(L("terminal.runner.finish.close")).tag(TerminalFinishPolicy.close)
+            }
+            .pickerStyle(.segmented).labelsHidden().fixedSize()
+            .accessibilityIdentifier("terminal.runner.settings.finish")
+            hint(L("terminal.runner.finish.\(draft.terminalSettings.finish.rawValue).hint"))
+        }
+        field(L("terminal.runner.settings.shell")) {
+            Picker("", selection: $draft.terminalSettings.shell) {
+                Text(L("terminal.runner.shell.interactive")).tag(TerminalShellProfile.interactive)
+                Text(L("terminal.runner.shell.login")).tag(TerminalShellProfile.login)
+            }
+            .pickerStyle(.segmented).labelsHidden().fixedSize()
+            .accessibilityIdentifier("terminal.runner.settings.shell")
+            hint(L("terminal.runner.shell.\(draft.terminalSettings.shell.rawValue).hint",
+                   TerminalShellLaunch.supportedShell(TerminalShellLaunch.accountShell())))
+        }
+        field(L("terminal.runner.settings.directory")) {
+            HStack(spacing: 8) {
+                TextField(TerminalRunSettings.defaultDirectory, text: $draft.terminalSettings.directory)
+                    .textFieldStyle(ModelFieldStyle())
+                    .accessibilityIdentifier("terminal.runner.settings.directory")
+                Button(L("terminal.runner.settings.chooseDirectory"), action: chooseDirectory)
+                    .buttonStyle(ModelActionStyle())
+            }
+        }
+        field(L("terminal.runner.settings.window")) {
+            Toggle(L("terminal.runner.settings.pinned"), isOn: $draft.terminalSettings.pinned)
+                .toggleStyle(.checkbox).font(.system(size: 12.5))
+            Toggle(L("terminal.runner.settings.notify"), isOn: $draft.terminalSettings.notifies)
+                .toggleStyle(.checkbox).font(.system(size: 12.5))
+        }
+    }
+
+    private func chooseDirectory() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.directoryURL = URL(fileURLWithPath: TerminalRunSettings.expand(draft.terminalSettings.directory,
+                                                                             home: NSHomeDirectory()))
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        draft.terminalSettings.directory = TerminalRunSettings.abbreviate(url.path, home: NSHomeDirectory())
     }
 
     /// The keyword as the launcher will show it, with sample text after it.

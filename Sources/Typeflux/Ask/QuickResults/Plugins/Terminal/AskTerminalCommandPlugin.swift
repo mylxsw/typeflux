@@ -19,7 +19,20 @@ enum TerminalApplication: String, CaseIterable, Sendable {
 
 struct TerminalCommandRequest: Equatable, Sendable {
     var command: String
+    /// The external terminal app, which also offers to run a built-in command again.
     var terminal: TerminalApplication
+    /// Set to run the command in Typeflux's own terminal window instead of `terminal`.
+    var builtin: TerminalRunSettings?
+
+    init(command: String, terminal: TerminalApplication, builtin: TerminalRunSettings? = nil) {
+        self.command = command
+        self.terminal = terminal
+        self.builtin = builtin
+    }
+
+    var runner: TerminalRunner {
+        builtin == nil ? .external : .builtin
+    }
 
     static let maximumBytes = 16 * 1024
 
@@ -40,7 +53,7 @@ struct TerminalCommandRequest: Equatable, Sendable {
 }
 
 /// Planning never executes a command. Only the launcher's explicit submit action
-/// can hand the immutable request to the terminal dispatcher.
+/// can hand the immutable request to the built-in terminal or the terminal dispatcher.
 struct AskTerminalCommandPlugin: AskLauncherPlugin {
     static let id = "terminalCommand"
     static let terminalOption = "terminal"
@@ -98,12 +111,27 @@ struct AskTerminalCommandPlugin: AskLauncherPlugin {
         guard problem == nil, let terminal = TerminalApplication.configured(in: request.options) else {
             return .init(mode: .onSubmit, title: problem ?? L("terminal.command.invalidTerminal"))
         }
-        let command = TerminalCommandRequest(command: request.text, terminal: terminal)
-        return .init(mode: .onSubmit, title: L("terminal.command.runIn", terminal.title),
-                     meta: [.init(text: request.text), .init(text: L("terminal.command.directory"))],
+        let runner = TerminalRunSettings.runner(in: request.options)
+        let settings = TerminalRunSettings(options: request.options)
+        func command(_ runner: TerminalRunner) -> TerminalCommandRequest {
+            .init(command: request.text, terminal: terminal, builtin: runner == .builtin ? settings : nil)
+        }
+        func title(_ runner: TerminalRunner) -> String {
+            runner == .builtin ? L("terminal.runner.runBuiltin") : L("terminal.command.runIn", terminal.title)
+        }
+        let detail = runner == .builtin
+            ? L("terminal.runner.planDetail", settings.directory,
+                settings.shell == .interactive ? L("terminal.runner.shell.interactive")
+                    : L("terminal.runner.shell.login"))
+            : L("terminal.command.directory")
+        return .init(mode: .onSubmit, title: title(runner),
+                     meta: [.init(text: request.text), .init(text: detail)],
                      actions: [
-                         .init(kind: .terminalCommand(command), title: L("terminal.command.run"),
+                         .init(kind: .terminalCommand(command(runner)), title: L("terminal.command.run"),
                                symbol: "terminal", shortcut: .enter),
+                         .init(kind: .terminalCommand(command(runner.other)), title: title(runner.other),
+                               symbol: runner.other == .builtin ? "terminal" : "arrow.up.forward.app",
+                               shortcut: .commandEnter),
                          .init(kind: .copy(request.text), title: L("terminal.command.copy"),
                                symbol: "doc.on.doc", shortcut: .commandC),
                          .init(kind: .terminalAutomationSettings, title: L("ask.browser.automationSettings"),

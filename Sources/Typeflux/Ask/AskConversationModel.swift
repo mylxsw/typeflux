@@ -43,6 +43,8 @@ final class AskConversationModel: ObservableObject {
     var browserSearch: any AskBrowserSearching = AskBrowserSearchService()
     var systemCommandRunner = AskSystemCommandRunner()
     var terminalCommandDispatcher: any TerminalCommandDispatching = TerminalCommandDispatcher()
+    /// Opens the built-in terminal windows; tests record the requests instead.
+    var terminalRunner: any TerminalRunnerPresenting = TerminalRunnerCenter.shared
     @Published var terminalCommandSending = false
     var confirmSystemCommand: (AskSystemCommand) -> Bool = AskSystemCommandConfirmation.confirm
     var appIndex: any AskAppSearching = AskAppIndex.shared
