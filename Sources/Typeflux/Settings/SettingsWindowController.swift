@@ -55,7 +55,6 @@ final class SettingsWindowController: NSObject {
         initialSection: StudioSection = .settings,
         initialModelDomain: StudioModelDomain? = nil,
         launcherPane: LauncherSettingsPane? = nil,
-        presentFeedback: Bool = false,
         modelManager: OllamaModelManaging = OllamaLocalModelManager(),
         localModelManager: LocalSTTModelManaging = LocalModelManager(),
         notificationService: LocalNotificationSending = NoopLocalNotificationService(),
@@ -72,7 +71,6 @@ final class SettingsWindowController: NSObject {
                 viewModel?.navigate(to: initialSection)
             }
             if let initialModelDomain { viewModel?.selectModelPageTab(ModelPageTab(domain: initialModelDomain)) }
-            if presentFeedback { viewModel?.directFeedbackRequestID = UUID() }
             refreshAppearance()
             DockVisibilityController.shared.windowDidShow(window)
             window.makeKeyAndOrderFront(nil)
@@ -93,7 +91,6 @@ final class SettingsWindowController: NSObject {
         )
         if let initialModelDomain { viewModel.selectModelPageTab(ModelPageTab(domain: initialModelDomain)) }
         AppLocalization.shared.setLanguage(viewModel.appLanguage)
-        if presentFeedback { viewModel.directFeedbackRequestID = UUID() }
         let moduleHealth = ModuleHealthSettingsModel(registry: moduleRegistry)
         moduleHealthModel = moduleHealth
         let view = StudioView(viewModel: viewModel, launcherPane: launcherPane ?? .basics, moduleHealth: moduleHealth)

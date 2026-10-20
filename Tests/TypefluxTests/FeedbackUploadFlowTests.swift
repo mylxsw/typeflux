@@ -69,14 +69,21 @@ final class FeedbackUploadFlowTests: XCTestCase {
 
     func testSubmissionUsesImagesFromTheSameSignIn() throws {
         let images = [
-            FeedbackImageAttachment(filename: "a.png", state: .uploaded("https://cdn/a"), uploadOwner: .session(3)),
-            FeedbackImageAttachment(filename: "b.png", state: .uploading),
-            FeedbackImageAttachment(filename: "c.png", state: .failed("x"))
+            FeedbackAttachment(
+                filename: "a.png", sizeBytes: 10, state: .uploaded("https://cdn/a"), uploadOwner: .session(3)
+            ),
+            FeedbackAttachment(filename: "b.png", state: .uploading),
+            FeedbackAttachment(filename: "c.png", state: .failed("x"))
         ]
 
-        let urls = try FeedbackUploadFlow.submissionImageURLs(for: images, submittingAs: .session(3))
+        let payloads = try FeedbackUploadFlow.submissionAttachments(for: images, submittingAs: .session(3))
 
-        XCTAssertEqual(urls, ["https://cdn/a"])
+        XCTAssertEqual(payloads, [
+            FeedbackAttachmentPayload(
+                url: "https://cdn/a", filename: "a.png", contentType: "image/jpeg", sizeBytes: 10, kind: "image"
+            )
+        ])
+        XCTAssertEqual(FeedbackUploadFlow.imageURLs(of: payloads), ["https://cdn/a"])
     }
 
     func testSubmissionRefusesImagesFromAnotherSignIn() {
@@ -85,14 +92,14 @@ final class FeedbackUploadFlowTests: XCTestCase {
         let current = Self.uploaded("c", owner: .session(4))
 
         XCTAssertThrowsError(
-            try FeedbackUploadFlow.submissionImageURLs(for: [stale, anonymous, current], submittingAs: .session(4))
+            try FeedbackUploadFlow.submissionAttachments(for: [stale, anonymous, current], submittingAs: .session(4))
         ) { error in
-            let expected = FeedbackUploadOwnerError(staleImageIDs: [stale.id, anonymous.id])
+            let expected = FeedbackUploadOwnerError(staleAttachmentIDs: [stale.id, anonymous.id])
             XCTAssertEqual(error as? FeedbackUploadOwnerError, expected)
             XCTAssertFalse(error.localizedDescription.isEmpty)
         }
         // After logout the account's image cannot go out anonymously either.
-        XCTAssertThrowsError(try FeedbackUploadFlow.submissionImageURLs(for: [current], submittingAs: .anonymous))
+        XCTAssertThrowsError(try FeedbackUploadFlow.submissionAttachments(for: [current], submittingAs: .anonymous))
     }
 
     func testOwnerFollowsTheCredential() {
@@ -105,15 +112,15 @@ final class FeedbackUploadFlowTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private static let image = PreparedFeedbackImage(
+    private static let image = PreparedFeedbackFile(
         data: Data("png".utf8),
         filename: "screen.png",
         contentType: "image/png",
         thumbnail: NSImage(size: NSSize(width: 1, height: 1))
     )
 
-    private static func uploaded(_ name: String, owner: FeedbackUploadOwner) -> FeedbackImageAttachment {
-        FeedbackImageAttachment(filename: "\(name).png", state: .uploaded("https://cdn/\(name)"), uploadOwner: owner)
+    private static func uploaded(_ name: String, owner: FeedbackUploadOwner) -> FeedbackAttachment {
+        FeedbackAttachment(filename: "\(name).png", state: .uploaded("https://cdn/\(name)"), uploadOwner: owner)
     }
 
     private static func executor(_ session: UploadStubSession) -> CloudRequestExecutor {

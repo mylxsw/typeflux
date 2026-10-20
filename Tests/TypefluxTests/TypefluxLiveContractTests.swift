@@ -242,7 +242,7 @@ final class TypefluxLiveContractTests: XCTestCase {
     func testAccountFeedbackUploadUsesTheIssuingOriginAndSameBearer() async throws {
         let login = try await AuthAPIService.login(email: email, password: password)
         let png = LivePNG.onePixel
-        let target = try await FeedbackAPIService.createImageUploadTarget(
+        let target = try await FeedbackAPIService.createUploadTarget(
             filename: "live.png", contentType: "image/png", sizeBytes: Int64(png.count), token: login.accessToken
         )
         XCTAssertEqual(target.type, FeedbackAPIService.apiProxyUploadType)
@@ -251,12 +251,12 @@ final class TypefluxLiveContractTests: XCTestCase {
         XCTAssertTrue(resolved.isAPIOrigin)
         print("LIVE upload target: url=\(target.url) method=\(target.method) headers=\(target.headers) max=\(target.maxSizeBytes)")
 
-        try await FeedbackAPIService.uploadImage(
+        try await FeedbackAPIService.uploadFile(
             data: png, filename: "live.png", contentType: "image/png", to: target, token: login.accessToken
         )
         // A target is single-use.
         let duplicate = await capture {
-            try await FeedbackAPIService.uploadImage(
+            try await FeedbackAPIService.uploadFile(
                 data: png, filename: "live.png", contentType: "image/png", to: target, token: login.accessToken
             )
         }
@@ -274,38 +274,38 @@ final class TypefluxLiveContractTests: XCTestCase {
         let png = LivePNG.onePixel
 
         // Declared size must match the body exactly.
-        let small = try await FeedbackAPIService.createImageUploadTarget(
+        let small = try await FeedbackAPIService.createUploadTarget(
             filename: "a.png", contentType: "image/png", sizeBytes: Int64(png.count - 1), token: login.accessToken
         )
         let falseSize = await capture {
-            try await FeedbackAPIService.uploadImage(
+            try await FeedbackAPIService.uploadFile(
                 data: png, filename: "a.png", contentType: "image/png", to: small, token: login.accessToken
             )
         }
         assertUploadRejected(falseSize, status: 413, code: "PAYLOAD_TOO_LARGE")
 
         // Another account's bearer cannot claim this account's target.
-        let owned = try await FeedbackAPIService.createImageUploadTarget(
+        let owned = try await FeedbackAPIService.createUploadTarget(
             filename: "b.png", contentType: "image/png", sizeBytes: Int64(png.count), token: login.accessToken
         )
         let wrongOwner = await capture {
-            try await FeedbackAPIService.uploadImage(
+            try await FeedbackAPIService.uploadFile(
                 data: png, filename: "b.png", contentType: "image/png", to: owned, token: other.accessToken
             )
         }
         assertUploadRejected(wrongOwner, status: 409, code: "FEEDBACK_UPLOAD_UNAVAILABLE")
         let missingBearer = await capture {
-            try await FeedbackAPIService.uploadImage(
+            try await FeedbackAPIService.uploadFile(
                 data: png, filename: "b.png", contentType: "image/png", to: owned, token: nil
             )
         }
         assertUploadRejected(missingBearer, status: 409, code: "FEEDBACK_UPLOAD_UNAVAILABLE")
 
         // Anonymous feedback still works without any bearer.
-        let anonymous = try await FeedbackAPIService.createImageUploadTarget(
+        let anonymous = try await FeedbackAPIService.createUploadTarget(
             filename: "c.png", contentType: "image/png", sizeBytes: Int64(png.count), token: nil
         )
-        try await FeedbackAPIService.uploadImage(
+        try await FeedbackAPIService.uploadFile(
             data: png, filename: "c.png", contentType: "image/png", to: anonymous, token: nil
         )
         print("LIVE false-size: \(String(describing: falseSize))")
@@ -325,7 +325,7 @@ final class TypefluxLiveContractTests: XCTestCase {
             throw XCTSkip("Set TYPEFLUX_LIVE_FAILOVER_API_URL to run the canonical upload origin check")
         }
         let png = LivePNG.onePixel
-        let image = PreparedFeedbackImage(
+        let image = PreparedFeedbackFile(
             data: png, filename: "live.png", contentType: "image/png", thumbnail: NSImage(size: .zero)
         )
         let executor = CloudRequestExecutor(
@@ -340,7 +340,7 @@ final class TypefluxLiveContractTests: XCTestCase {
         // it receives the bearer and accepts the ticket B issued.
         let uploadCredentialValue = await state.validSessionCredential()
         let uploadCredential = try XCTUnwrap(uploadCredentialValue)
-        let target = try await FeedbackAPIService.createImageUploadTarget(
+        let target = try await FeedbackAPIService.createUploadTarget(
             filename: "probe.png", contentType: "image/png", sizeBytes: Int64(png.count),
             token: uploadCredential.accessToken, executor: executor
         )
@@ -359,8 +359,8 @@ final class TypefluxLiveContractTests: XCTestCase {
 
         // Step 1+2: the Settings upload flow (ticket from B, PUT on A).
         let imageURL = try await FeedbackUploadFlow.upload(image, credential: uploadCredential, executor: executor)
-        let attachment = FeedbackImageAttachment(
-            filename: "live.png", state: .uploaded(imageURL),
+        let attachment = FeedbackAttachment(
+            filename: "live.png", sizeBytes: Int64(png.count), state: .uploaded(imageURL),
             uploadOwner: FeedbackUploadOwner(uploadCredential)
         )
 
@@ -371,12 +371,13 @@ final class TypefluxLiveContractTests: XCTestCase {
         let submitCredential = try XCTUnwrap(submitCredentialValue)
         XCTAssertNotEqual(submitCredential.accessToken, uploadCredential.accessToken)
         XCTAssertEqual(submitCredential.session, uploadCredential.session)
-        let urls = try FeedbackUploadFlow.submissionImageURLs(
+        let payloads = try FeedbackUploadFlow.submissionAttachments(
             for: [attachment], submittingAs: FeedbackUploadOwner(submitCredential)
         )
+        let urls = FeedbackUploadFlow.imageURLs(of: payloads)
         XCTAssertEqual(urls, [imageURL])
         let feedback = try await FeedbackAPIService.submit(
-            content: "GUL-296 live canonical upload check", contact: nil, imageURLs: urls,
+            content: "GUL-296 live canonical upload check", contact: nil, imageURLs: urls, attachments: payloads,
             token: submitCredential.accessToken, executor: executor
         )
         XCTAssertFalse(feedback.id.isEmpty)
@@ -389,9 +390,9 @@ final class TypefluxLiveContractTests: XCTestCase {
         let otherCredential = try XCTUnwrap(otherCredentialValue)
         XCTAssertNotEqual(otherCredential.session, uploadCredential.session)
         XCTAssertThrowsError(
-            try FeedbackUploadFlow.submissionImageURLs(for: [attachment], submittingAs: FeedbackUploadOwner(otherCredential))
+            try FeedbackUploadFlow.submissionAttachments(for: [attachment], submittingAs: FeedbackUploadOwner(otherCredential))
         ) { error in
-            XCTAssertEqual((error as? FeedbackUploadOwnerError)?.staleImageIDs, [attachment.id])
+            XCTAssertEqual((error as? FeedbackUploadOwnerError)?.staleAttachmentIDs, [attachment.id])
         }
     }
 

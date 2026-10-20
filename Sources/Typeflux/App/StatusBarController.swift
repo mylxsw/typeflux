@@ -710,21 +710,13 @@ final class StatusBarController: NSObject {
         showFeedback(destination)
     }
 
-    /// Both feedback menus use this route, including the existing direct feedback form.
+    /// Both feedback menus use this route; direct feedback opens its own window.
     func showFeedback(_ destination: FeedbackDestination) {
         if destination != .direct {
             if let url = destination.url { onOpenFeedbackURL(url) }
             return
         }
-        SettingsWindowController.shared.show(
-            settingsStore: settingsStore,
-            historyStore: historyStore,
-            presentFeedback: true,
-            modelManager: modelManager,
-            localModelManager: localModelManager,
-            notificationService: notificationService,
-            onRetryHistory: onRetryHistory
-        )
+        FeedbackWindowController.shared.show(settingsStore: settingsStore)
     }
 
     @objc private func checkUpdates() {

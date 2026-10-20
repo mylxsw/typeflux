@@ -1,28 +1,53 @@
 import AppKit
 import Foundation
 
-struct PreparedFeedbackImage: Equatable {
+/// A file ready to upload: images and videos after compression, other files as they are.
+struct PreparedFeedbackFile: Equatable {
     let data: Data
     let filename: String
     let contentType: String
-    let thumbnail: NSImage
+    var kind: FeedbackAttachmentKind = .image
+    var thumbnail: NSImage?
+    var durationSeconds: Double?
 
-    static func == (lhs: PreparedFeedbackImage, rhs: PreparedFeedbackImage) -> Bool {
+    static func == (lhs: PreparedFeedbackFile, rhs: PreparedFeedbackFile) -> Bool {
         lhs.data == rhs.data
             && lhs.filename == rhs.filename
             && lhs.contentType == rhs.contentType
+            && lhs.kind == rhs.kind
     }
 }
 
 enum FeedbackImageProcessor {
     static let maxPixelDimension = 1600
     static let jpegCompression: CGFloat = 0.78
+    /// Qualities tried in turn when the first JPEG is still over the size limit.
+    static let fallbackCompressions: [CGFloat] = [0.6, 0.45, 0.3]
 
-    static func prepare(url: URL) throws -> PreparedFeedbackImage {
-        guard let sourceImage = NSImage(contentsOf: url),
+    static func prepare(url: URL) throws -> PreparedFeedbackFile {
+        let data: Data
+        do {
+            data = try Data(contentsOf: url, options: .mappedIfSafe)
+        } catch {
+            throw FeedbackAPIError.networkError(L("feedback.error.invalidImage"))
+        }
+        return try prepare(imageData: data, filename: url.lastPathComponent)
+    }
+
+    /// Compresses image bytes (a picked file or a pasted screenshot) to a JPEG within the
+    /// image size limit. GIFs are passed through unchanged so they stay animated.
+    static func prepare(imageData: Data, filename: String) throws -> PreparedFeedbackFile {
+        guard let sourceImage = NSImage(data: imageData),
               let sourceRep = bitmapRepresentation(for: sourceImage)
         else {
             throw FeedbackAPIError.networkError(L("feedback.error.invalidImage"))
+        }
+
+        if (filename as NSString).pathExtension.lowercased() == "gif" {
+            return PreparedFeedbackFile(
+                data: imageData, filename: filename, contentType: "image/gif",
+                kind: .image, thumbnail: sourceImage
+            )
         }
 
         guard let resizedRep = resizedBitmapRepresentation(
@@ -30,20 +55,27 @@ enum FeedbackImageProcessor {
             pixelsWide: sourceRep.pixelsWide,
             pixelsHigh: sourceRep.pixelsHigh
         ),
-            let data = resizedRep.representation(
+            var data = resizedRep.representation(
                 using: .jpeg,
                 properties: [.compressionFactor: jpegCompression]
             )
         else {
             throw FeedbackAPIError.networkError(L("feedback.error.invalidImage"))
         }
+        for quality in fallbackCompressions where Int64(data.count) > FeedbackAttachmentPolicy.maxImageBytes {
+            guard let smaller = resizedRep.representation(
+                using: .jpeg, properties: [.compressionFactor: quality]
+            ) else { break }
+            data = smaller
+        }
         let thumbnail = NSImage(size: resizedRep.size)
         thumbnail.addRepresentation(resizedRep)
 
-        return PreparedFeedbackImage(
+        return PreparedFeedbackFile(
             data: data,
-            filename: jpegFilename(from: url),
+            filename: jpegFilename(from: filename),
             contentType: "image/jpeg",
+            kind: .image,
             thumbnail: thumbnail
         )
     }
@@ -103,8 +135,8 @@ enum FeedbackImageProcessor {
         return rep
     }
 
-    private static func jpegFilename(from url: URL) -> String {
-        let baseName = url.deletingPathExtension().lastPathComponent
+    private static func jpegFilename(from filename: String) -> String {
+        let baseName = ((filename as NSString).deletingPathExtension as String)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return "\(baseName.isEmpty ? "feedback-image" : baseName).jpg"
     }
