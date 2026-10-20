@@ -1,0 +1,22 @@
+{
+  "covered": 7,
+  "executable": 7,
+  "percentage": 100.0,
+  "files": {
+    "Sources/Typeflux/Ask/AskComposerViews.swift": {
+      "covered": 1,
+      "executable": 1,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskLauncherPlugin.swift": {
+      "covered": 1,
+      "executable": 1,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Terminal/AskTerminalCommandPlugin.swift": {
+      "covered": 5,
+      "executable": 5,
+      "uncovered": []
+    }
+  }
+}

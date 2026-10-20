@@ -85,8 +85,12 @@ struct AskTerminalCommandPlugin: AskLauncherPlugin {
         L("terminal.command.placeholder")
     }
 
-    func chipDetail(for keyword: AskKeyword, language _: AppLanguage) -> String? {
-        TerminalApplication.configured(in: keyword.options)?.title
+    func inputChipTitle(for keyword: AskKeyword) -> String {
+        keyword.keyword
+    }
+
+    func chipDetail(for _: AskKeyword, language _: AppLanguage) -> String? {
+        nil
     }
 
     func plan(_ request: AskPluginRequest) async -> AskPluginPlan {

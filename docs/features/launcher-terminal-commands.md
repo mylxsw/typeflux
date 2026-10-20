@@ -55,3 +55,6 @@ Authorization finishes before the current input, keyword settings and launcher
 presentation are checked again for dispatch. User authorization time is separate
 from the 15-second Apple Event timeout. App launch on first use can also open the
 terminal's own default window; the command always targets a new session.
+
+The input prefix shows the terminal icon and the configured keyword (normally `cmd`).
+The selected Terminal/iTerm2 target appears in the execution row rather than the prefix.
