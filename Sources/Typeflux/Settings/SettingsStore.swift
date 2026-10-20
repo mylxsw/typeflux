@@ -330,13 +330,13 @@ final class SettingsStore {
     }
 
     var analyticsSharingEnabled: Bool {
-        get { defaults.object(forKey: "analytics.sharingEnabled") as? Bool ?? true }
+        get { defaults.object(forKey: "analytics.sharingEnabled") as? Bool ?? false }
         set {
-            guard analyticsSharingEnabled != newValue else { return }
-            defaults.set(newValue, forKey: "analytics.sharingEnabled")
             if !newValue {
                 defaults.removeObject(forKey: "analytics.pendingEvents")
             }
+            guard analyticsSharingEnabled != newValue else { return }
+            defaults.set(newValue, forKey: "analytics.sharingEnabled")
             NotificationCenter.default.post(name: .analyticsSharingDidChange, object: defaults)
         }
     }
@@ -983,7 +983,7 @@ final class SettingsStore {
     }
 
     var automaticVocabularyCollectionEnabled: Bool {
-        get { defaults.object(forKey: "vocabulary.automaticCollection.enabled") as? Bool ?? true }
+        get { defaults.object(forKey: "vocabulary.automaticCollection.enabled") as? Bool ?? false }
         set { defaults.set(newValue, forKey: "vocabulary.automaticCollection.enabled") }
     }
 

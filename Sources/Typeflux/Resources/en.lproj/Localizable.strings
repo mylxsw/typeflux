@@ -156,7 +156,7 @@
 "settings.microphone.subtitle" = "Pick the device used for dictation. Automatic follows the current macOS default input, but prefers the Mac's built-in or a wired microphone over a Bluetooth headset so the first words are not lost.";
 "settings.microphone.automatic" = "Automatic";
 "settings.instantVoiceInput.title" = "Speak Immediately";
-"settings.instantVoiceInput.subtitle" = "Shortens microphone startup time, so you can speak as soon as you press the shortcut without missing anything. The microphone stays on for 15 minutes after use.";
+"settings.instantVoiceInput.subtitle" = "Keeps the microphone ready after use to reduce startup delay. The microphone remains on for up to 15 minutes.";
 "settings.mouseVoice.title" = "Mouse Voice Input";
 "settings.mouseVoice.subtitle" = "Hold still in a text field for about 0.8 seconds to reveal a nearby microphone. Text selection and early dragging do not trigger it.";
 "settings.mouseVoice.activation.title" = "Activation Method";
@@ -178,8 +178,8 @@
 "settings.advanced.voiceProcessingTimeout.option" = "%d seconds";
 "settings.advanced.autoUpdate.title" = "Automatic Updates";
 "settings.advanced.autoUpdate.subtitle" = "Automatically check for and install updates every 3 hours.";
-"settings.analyticsSharing.title" = "Share anonymous usage analytics";
-"settings.analyticsSharing.subtitle" = "Help improve Typeflux by sharing anonymous app and model download events. Voice and text content is never collected.";
+"settings.analyticsSharing.title" = "Share usage data";
+"settings.analyticsSharing.subtitle" = "Sends feature use, durations, outcomes, model downloads, and a client identifier to Typeflux. Signed-in requests may be associated with your account. Voice and entered text are not included.";
 "settings.permissionStatus.title" = "Permission Status";
 "settings.permissionStatus.subtitle" = "Review the macOS permissions Typeflux depends on, then grant access where needed.";
 
@@ -929,20 +929,20 @@
 "settings.models.builtInDefaultModel" = "Built-in default model";
 "settings.models.builtInDefaultProfile" = "Built-in default profile";
 "settings.models.card.whisper.summary" = "OpenAI-hosted speech transcription with built-in model defaults.";
-"settings.models.card.freeSTT.summary" = "Choose from code-configured free speech-to-text models. No endpoint or API key is entered manually.";
-"settings.models.card.localSTT.summary" = "Run WhisperKit, SenseVoice, FunASR, or Qwen3-ASR locally through the native Swift runtime.";
-"settings.models.card.multimodal.summary" = "Send audio directly to a multimodal model. Transcription and persona rewriting happen in a single API call for a faster end-to-end path.";
-"settings.models.card.aliCloud.summary" = "Real-time streaming recognition via DashScope with low-latency WebSocket streaming.";
-"settings.models.card.doubao.summary" = "Low-latency streaming recognition through Doubao Speech Recognition 2.0 with ByteDance's native binary WebSocket protocol.";
+"settings.models.card.freeSTT.summary" = "Use an available free speech model without entering an API key.";
+"settings.models.card.localSTT.summary" = "Transcribe speech on this Mac. Download a model before first use.";
+"settings.models.card.multimodal.summary" = "Use the selected multimodal model to transcribe and rewrite audio in one step.";
+"settings.models.card.aliCloud.summary" = "Send audio to Alibaba Cloud for real-time transcription.";
+"settings.models.card.doubao.summary" = "Send audio to Doubao for real-time transcription.";
 "settings.models.card.googleCloud.summary" = "Real-time streaming recognition through Google Cloud Speech-to-Text.";
 "settings.models.card.groq.summary" = "Fast Whisper transcription via Groq's inference endpoint with whisper-large-v3-turbo as the default model.";
-"settings.models.card.soniox.summary" = "Real-time streaming recognition via Soniox V5 with high accuracy across 60+ languages and low-latency WebSocket streaming.";
+"settings.models.card.soniox.summary" = "Send audio to Soniox for real-time transcription in many languages.";
 "settings.models.card.typefluxOfficial.summary" = "Typeflux's built-in speech recognition service. Sign in with your Typeflux account to use it — no extra API keys required.";
 "settings.models.card.typefluxCloud.summary" = "Typeflux's built-in LLM service. Sign in with your Typeflux account to use it — no extra API keys required.";
 "settings.models.card.ollama.summary" = "Runs rewrite and edit commands locally, with optional automatic model preparation.";
-"settings.models.card.openAICompatible.summary" = "Connect remote chat-completions providers for persona rewriting and editing workflows.";
+"settings.models.card.openAICompatible.summary" = "Connect your own model service for rewriting and editing.";
 "settings.models.card.custom.summary" = "Configure any compatible endpoint manually with your own base URL, model, and API key.";
-"settings.models.card.freeModel.summary" = "Pick from the free model list configured in code.";
+"settings.models.card.freeModel.summary" = "Choose from the available free text models.";
 "settings.models.card.openRouter.summary" = "OpenRouter's unified OpenAI-compatible API with a prefilled official endpoint and flexible model routing.";
 "settings.models.card.openAI.summary" = "OpenAI-hosted models with a fixed endpoint and built-in model suggestions.";
 "settings.models.card.anthropic.summary" = "Claude models through Anthropic's native Messages API with a simplified API key setup.";
@@ -954,11 +954,11 @@
 "settings.models.card.minimax.summary" = "MiniMax models through its OpenAI-compatible endpoint, with separate international and China API URLs.";
 "settings.models.card.grok.summary" = "Grok models through xAI's OpenAI-compatible endpoint.";
 "settings.models.card.xiaomi.summary" = "Xiaomi MiMo mimo-v2 models through Xiaomi's OpenAI-compatible endpoint.";
-"settings.models.card.openCodeZen.summary" = "Curated premium models optimized for coding — GPT, Claude, Gemini, Qwen, GLM & more via the OpenCode Zen gateway.";
-"settings.models.card.openCodeGo.summary" = "Low-cost open-source coding models — DeepSeek, Qwen, GLM, Kimi, MiniMax & more. First month $5, then $10/mo.";
+"settings.models.card.openCodeZen.summary" = "Pay-as-you-go access to coding models through OpenCode Zen. Check OpenCode for current pricing.";
+"settings.models.card.openCodeGo.summary" = "Subscription access to coding models. Check OpenCode for current pricing and available models.";
 "settings.models.badge.free" = "Free";
-"settings.models.freeSTT.hint" = "Free speech models are managed in code. Users can only pick from the configured model list.";
-"settings.models.freeSTT.noSources" = "No free speech model source is configured yet. Add an implementation under Sources/Typeflux/STT/FreeModels.";
+"settings.models.freeSTT.hint" = "Choose from the free speech models currently available. No API key is needed.";
+"settings.models.freeSTT.noSources" = "No free speech model is available right now. Choose another speech model.";
 "settings.models.freeSTT.availableSources" = "Configured Speech Sources";
 "settings.models.freeSTT.validation.emptyModel" = "Select a free speech model before testing or saving.";
 "settings.models.freeSTT.validation.unsupportedModel" = "The free speech model \"%@\" is not registered in code.";
@@ -1101,9 +1101,9 @@
 "settings.models.deleteDialog.title" = "Delete %@?";
 "settings.models.deleteDialog.message" = "Model files will be deleted. You'll need to re-download before next use.";
 "settings.advanced.autoVocabulary.title" = "Auto-add corrected vocabulary";
-"settings.advanced.autoVocabulary.subtitle" = "After voice input is inserted, watch the current field for 30 seconds. If you manually correct a term, the app can ask the model whether it should be added to your vocabulary automatically.";
+"settings.advanced.autoVocabulary.subtitle" = "After dictation, checks changes to the current field for up to 30 seconds. The selected text model decides whether corrected terms should be added to your vocabulary.";
 "settings.advanced.recentInputMemory.title" = "Recent input memory";
-"settings.advanced.recentInputMemory.subtitle" = "Applies to all apps when enabled. Keeps short final inputs for 24 hours to improve later wording. Used excerpts are sent to the selected model service.";
+"settings.advanced.recentInputMemory.subtitle" = "Keeps final inputs for up to 24 hours across apps. Relevant excerpts are sent to the selected model when used.";
 "settings.advanced.recentInputMemory.clearApp" = "Clear";
 "settings.advanced.recentInputMemory.clearAll" = "Clear all memory";
 "settings.advanced.recentInputMemory.manage" = "Manage memory";
@@ -1114,7 +1114,7 @@
 "settings.advanced.recentInputMemory.appEnabled" = "Enable memory";
 "settings.advanced.recentInputMemory.deleteItem" = "Delete this memory";
 "settings.advanced.globalSoul.title" = "Global long-term memory";
-"settings.advanced.globalSoul.subtitle" = "Also enables short-term memory. Update SOUL with the selected text model after 20 confirmed final inputs, or before the 4-hour cleanup if at least 5 remain. The batch and current SOUL are sent to that model service.";
+"settings.advanced.globalSoul.subtitle" = "Uses confirmed inputs to build long-term memory across apps. Turning this off does not delete saved memory; use Manage memory to clear it.";
 "settings.advanced.globalSoul.manage" = "Global SOUL";
 "settings.advanced.globalSoul.empty" = "No global memory yet";
 "settings.advanced.globalSoul.delete" = "Delete global memory";
@@ -2279,7 +2279,7 @@
 "ask.storage.card.lockedLocal" = "This conversation is kept only on this Mac and is never uploaded to Typeflux Cloud. A conversation that has started cannot change where it is kept.";
 "ask.storage.card.lockedCloud" = "This conversation is synced to Typeflux Cloud. A conversation that has started cannot change where it is kept.";
 "ask.storage.card.localNote" = "Online API models still send requests to their providers.";
-"ask.storage.card.cloudNote" = "Use Cloud models and your own models, with image understanding, web search and research, synced across your devices. Cloud models count toward your quota.";
+"ask.storage.card.cloudNote" = "The chat is stored in Typeflux Cloud and syncs across your devices.";
 "ask.storage.newLocal" = "New private conversation";
 "ask.storage.newCloud" = "New Cloud conversation";
 "ask.storage.temporary" = "Temporary";
@@ -2300,7 +2300,7 @@
 "ask.temporary.fact.history" = "Never appears in history, search or on your other devices";
 "ask.temporary.fact.memory" = "Does not use or update memory";
 "ask.temporary.fact.end" = "Chat and workspace deleted when it ends";
-"ask.temporary.fact.cloud" = "With a Cloud model, Typeflux Cloud keeps it for at most 24 hours to finish the run. Credits are charged as usual.";
+"ask.temporary.fact.cloud" = "Cloud models: Typeflux Cloud keeps the run for up to 24 hours; credits are charged as usual.";
 "ask.temporary.noMemory" = "Temporary chats do not use memory";
 "ask.temporary.settings.section" = "Temporary chats";
 "ask.steps.section" = "Agent runs";
@@ -2524,7 +2524,7 @@
 "agent.capability.files.title" = "File Access";
 "agent.capability.files.summary" = "Reads and edits folders you allow; edits are confirmed first.";
 "agent.capability.code.title" = "Command Execution";
-"agent.capability.code.summary" = "Runs commands on this Mac; Strict and Standard ask first, YOLO runs automatically.";
+"agent.capability.code.summary" = "Runs commands on this Mac. Whether confirmation is required depends on the current chat's tool permission.";
 "agent.capability.automation.title" = "Computer & Browser";
 "agent.capability.automation.summary" = "Looks at the screen, clicks and types to finish tasks in apps and web pages.";
 "agent.capability.skills.summary" = "Instructions for specific tasks, loaded when needed.";
@@ -2534,7 +2534,7 @@
 "agent.status.search.incomplete" = "Setup incomplete";
 "agent.status.files.count" = "Folders: %d";
 "agent.status.files.none" = "No folders";
-"agent.status.code.on" = "On · asks each time";
+"agent.status.code.on" = "On";
 "agent.status.code.off" = "Off";
 "agent.status.automation.ready" = "Asks before each action";
 "agent.status.automation.missing" = "Permissions missing";
@@ -4873,12 +4873,12 @@
 "models.tab.local" = "Local models";
 
 // Website login connection diagnostics.
-"auth.web.invalidResponse" = "The login service returned an unexpected response. Check that the App and API use the same website address.";
-"auth.web.networkUnavailable" = "Cannot connect to the login service. Check the API address and that Docker is running.";
-"auth.web.transportBlocked" = "macOS blocked HTTP for this App build. Rebuild with the development launcher and the HTTP origin configured.";
-"auth.web.endpointUnavailable" = "The login endpoint is unavailable. Check the API version, Web auth configuration and /api proxy.";
-"auth.web.requestRejected" = "The login request was rejected. Check the development/production client and callback configuration.";
-"auth.web.serviceUnavailable" = "The login service is unavailable. Check the API and database, then try again.";
+"auth.web.invalidResponse" = "The sign-in service returned an unexpected response. Start sign-in again; if this continues, contact support.";
+"auth.web.networkUnavailable" = "Cannot reach the sign-in service. Check your connection, then try again.";
+"auth.web.transportBlocked" = "This app build cannot connect to the sign-in service. Update Typeflux or contact support.";
+"auth.web.endpointUnavailable" = "Sign-in is temporarily unavailable. Try again later; if this continues, contact support.";
+"auth.web.requestRejected" = "The sign-in request was not accepted. Start sign-in again; if this continues, contact support.";
+"auth.web.serviceUnavailable" = "The sign-in service is temporarily unavailable. Try again later.";
 "auth.web.rateLimited" = "Too many login attempts. Wait a moment and try again.";
 
 /* Screen recording */
@@ -6279,3 +6279,14 @@
 "terminal.command.application" = "Terminal Application";
 "ask.settings.keywords.kind.terminal.hint" = "Run a single-line command in a new local shell window. Uses terminal configuration and directory; commands are not saved in Typeflux history.";
 "terminal.command.keywordConflict" = "Terminal command keywords already in use: %@. Existing entries are preserved; add a Terminal Command keyword to choose another.";
+
+// Visible disclosure and action copy.
+"settings.analyticsSharing.notice" = "Sends usage events and a client identifier; signed-in requests may be linked to your account. No voice or entered text.";
+"settings.instantVoiceInput.notice" = "After use, the microphone remains on for up to 15 minutes.";
+"settings.advanced.autoVocabulary.notice" = "Sends this dictation, corrected fragments, and existing vocabulary to the selected text model for review.";
+"settings.advanced.recentInputMemory.notice" = "Keeps final inputs for up to 24 hours; sends relevant excerpts to the selected model when used.";
+"settings.advanced.globalSoul.notice" = "Also enables recent input memory. Saved inputs are sent to the selected model when long-term memory is updated.";
+"ask.storage.card.onlineModelNotice" = "The selected online model sends requests to its service provider.";
+"agent.search.cloudflare.testCharge" = "Testing sends one billable Cloudflare search.";
+"auth.web.retry" = "Start sign-in again";
+"ask.storage.card.cloudCostNotice" = "Cloud model use counts toward your credits.";

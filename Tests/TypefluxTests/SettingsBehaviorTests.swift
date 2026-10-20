@@ -191,6 +191,25 @@ private final class SettingsBehaviorHistoryStore: HistoryStore {
 }
 
 extension SettingsBehaviorTests {
+    @Test func importantSettingDisclosuresStayVisibleWithoutHover() async throws {
+        try await RenderedUI.withFixture { settings in
+            let model = makeModel(settings)
+            for language in [AppLanguage.simplifiedChinese, .english] {
+                model.setAppLanguage(language)
+                for width: CGFloat in [720, 1100] {
+                    try await RenderedUI.withWindow(StudioView(viewModel: model), width: width, height: 1200) { _, host in
+                        try await RenderedUI.wait { RenderedUI.contains(L("settings.analyticsSharing.notice"), in: host) }
+                        for key in ["settings.instantVoiceInput.notice", "settings.advanced.autoVocabulary.notice",
+                                    "settings.advanced.recentInputMemory.notice", "settings.advanced.globalSoul.notice"] {
+                            #expect(RenderedUI.contains(L(key), in: host), "Missing visible disclosure: \(key)")
+                        }
+                        try RenderedUI.snapshot(host, name: "settings-disclosures-\(language.rawValue)-\(Int(width))")
+                    }
+                }
+            }
+        }
+    }
+
     @Test func narrowSettingsKeepStyleControlsInsideTheWindow() async throws {
         try await RenderedUI.withFixture { settings in
             let model = makeModel(settings)

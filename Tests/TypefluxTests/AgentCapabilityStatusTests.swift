@@ -39,6 +39,7 @@ final class AgentCapabilityStatusTests: XCTestCase {
                                        mcpServerCount: 2, enabledMCPServerCount: 0)
         XCTAssertEqual(status(.files, inputs).label, L("agent.status.files.count", 2))
         XCTAssertEqual(status(.codeExecution, inputs).level, .ready)
+        XCTAssertEqual(status(.codeExecution, inputs).label, L("agent.status.code.on"))
         XCTAssertEqual(status(.automation, inputs).level, .attention, "Both permissions are needed")
         XCTAssertEqual(status(.skills, inputs).label, L("agent.status.skills.count", 3, 4))
         XCTAssertEqual(status(.mcpServers, inputs).level, .off, "Servers exist but all are off")

@@ -726,12 +726,14 @@ struct StudioView: View {
                               isOn: Binding(get: { viewModel.autoUpdateEnabled }, set: viewModel.setAutoUpdateEnabled))
                 TFDivider.form
                 settingSwitch(L("settings.analyticsSharing.title"), detail: L("settings.analyticsSharing.subtitle"),
+                              visibleDetail: L("settings.analyticsSharing.notice"),
                               isOn: Binding(get: { viewModel.analyticsSharingEnabled },
                                             set: viewModel.setAnalyticsSharingEnabled))
             }
 
             TFFormSection(title: L("settings.general.voiceTrigger.title")) {
                 settingSwitch(L("settings.instantVoiceInput.title"), detail: L("settings.instantVoiceInput.subtitle"),
+                              visibleDetail: L("settings.instantVoiceInput.notice"),
                               badge: "Beta",
                               isOn: Binding(get: { viewModel.instantVoiceInputEnabled },
                                             set: viewModel.setInstantVoiceInputEnabled))
@@ -819,11 +821,13 @@ struct StudioView: View {
             TFFormSection(title: L("settings.general.memory.title")) {
                 settingSwitch(L("settings.advanced.autoVocabulary.title"),
                               detail: L("settings.advanced.autoVocabulary.subtitle"),
+                              visibleDetail: L("settings.advanced.autoVocabulary.notice"),
                               isOn: Binding(get: { viewModel.automaticVocabularyCollectionEnabled },
                                             set: viewModel.setAutomaticVocabularyCollectionEnabled))
                 TFDivider.form
                 TFFormRow(title: L("settings.advanced.recentInputMemory.title"),
-                          detail: L("settings.advanced.recentInputMemory.subtitle")) {
+                          detail: L("settings.advanced.recentInputMemory.subtitle"),
+                          valueText: L("settings.advanced.recentInputMemory.notice")) {
                     TFButton(title: L("settings.advanced.recentInputMemory.manage"), kind: .link) {
                         isRecentInputMemoryManagerPresented = true
                     }
@@ -834,6 +838,7 @@ struct StudioView: View {
                 .onAppear { viewModel.refreshRecentInputMemoryApplications() }
                 TFDivider.form
                 settingSwitch(L("settings.advanced.globalSoul.title"), detail: L("settings.advanced.globalSoul.subtitle"),
+                              visibleDetail: L("settings.advanced.globalSoul.notice"),
                               isOn: Binding(get: { viewModel.globalSoulMemoryEnabled },
                                             set: viewModel.setGlobalSoulMemoryEnabled))
             }
@@ -845,9 +850,9 @@ struct StudioView: View {
     }
 
     /// A form row whose only control is a switch.
-    private func settingSwitch(_ title: String, detail: String, badge: String? = nil,
+    private func settingSwitch(_ title: String, detail: String, visibleDetail: String? = nil, badge: String? = nil,
                                isOn: Binding<Bool>) -> some View {
-        TFFormRow(title: title, detail: detail, badge: badge) {
+        TFFormRow(title: title, detail: detail, valueText: visibleDetail, badge: badge) {
             TFSwitch(title: title, isOn: isOn)
         }
     }

@@ -5,6 +5,11 @@ struct WebLoginView: View {
     @ObservedObject private var localization = AppLocalization.shared
     let onDismiss: () -> Void
 
+    private var primaryActionTitle: String {
+        if case .failed = coordinator.phase { return L("auth.web.retry") }
+        return L("auth.web.continue")
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             Image(systemName: "person.crop.circle.badge.checkmark")
@@ -28,7 +33,7 @@ struct WebLoginView: View {
                 Button(L("auth.web.reopen")) { coordinator.reopen() }
             }
             if !coordinator.isBusy {
-                Button(L("auth.web.continue")) { Task { await coordinator.start() } }
+                Button(primaryActionTitle) { Task { await coordinator.start() } }
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.defaultAction)
                     .accessibilityIdentifier("webLoginStart")

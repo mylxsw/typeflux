@@ -171,14 +171,8 @@ final class LocalizationResourceTests: XCTestCase {
     func testInstantVoiceInputExplainsBenefitAndMicrophoneTradeoffInEveryLanguage() throws {
         let keys = [
             "settings.instantVoiceInput.title",
-            "settings.instantVoiceInput.subtitle"
-        ]
-        let expectedSubtitles: [AppLanguage: String] = [
-            .english: "Shortens microphone startup time, so you can speak as soon as you press the shortcut without missing anything. The microphone stays on for 15 minutes after use.",
-            .simplifiedChinese: "缩短麦克风启动耗时，按下快捷键就能直接说话，不漏任何内容。使用后麦克风会保持启用 15 分钟。",
-            .traditionalChinese: "縮短麥克風啟動時間，按下快速鍵就能直接說話，不漏掉任何內容。使用後麥克風會保持啟用 15 分鐘。",
-            .japanese: "マイクの起動時間を短縮し、ショートカットを押したらすぐに話せます。話した内容を最初から漏らさず記録します。使用後はマイクが15分間オンになります。",
-            .korean: "마이크 시작 시간을 줄여 단축키를 누르자마자 말해도 모든 내용을 빠짐없이 녹음합니다. 사용 후 마이크는 15분 동안 켜진 상태를 유지합니다."
+            "settings.instantVoiceInput.subtitle",
+            "settings.instantVoiceInput.notice"
         ]
 
         for language in AppLanguage.allCases {
@@ -189,12 +183,12 @@ final class LocalizationResourceTests: XCTestCase {
                 XCTAssertFalse(localized.isEmpty)
             }
 
-            let subtitle = bundle.localizedString(
-                forKey: "settings.instantVoiceInput.subtitle",
-                value: nil,
-                table: nil
-            )
-            XCTAssertEqual(subtitle, try XCTUnwrap(expectedSubtitles[language]))
+            let subtitle = bundle.localizedString(forKey: "settings.instantVoiceInput.subtitle", value: nil, table: nil)
+            let notice = bundle.localizedString(forKey: "settings.instantVoiceInput.notice", value: nil, table: nil)
+            XCTAssertTrue(subtitle.contains("15") && notice.contains("15"), language.rawValue)
+            for overpromise in ["without missing anything", "不漏任何", "不漏掉任何", "漏らさず", "빠짐없이"] {
+                XCTAssertFalse(subtitle.contains(overpromise), "Overpromise in \(language.rawValue)")
+            }
         }
 
         let chineseBundle = try localizationBundle(for: .simplifiedChinese)
@@ -489,6 +483,21 @@ extension LocalizationResourceTests {
 }
 
 extension LocalizationResourceTests {
+    func testEveryClientLanguageContainsTheSameKeysAsEnglish() throws {
+        func table(for language: AppLanguage) throws -> [String: String] {
+            let bundle = try localizationBundle(for: language)
+            let url = try XCTUnwrap(bundle.url(forResource: "Localizable", withExtension: "strings"))
+            return try XCTUnwrap(PropertyListSerialization.propertyList(from: Data(contentsOf: url),
+                options: [], format: nil) as? [String: String])
+        }
+
+        let englishKeys = Set(try table(for: .english).keys)
+        for language in AppLanguage.allCases {
+            let localized = try table(for: language)
+            XCTAssertEqual(Set(localized.keys), englishKeys, "Incomplete strings for \(language.rawValue)")
+        }
+    }
+
     func testScreenshotEditorCopyExistsInEveryLanguage() throws {
         var keys = ScreenshotAnnotationTool.allCases.map { "screenshot.tool.\($0.rawValue)" }
         keys += ["undo", "redo", "cancel", "save", "copy", "color", "size", "fontSize", "counterSize", "opacity",

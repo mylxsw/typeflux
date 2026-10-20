@@ -148,7 +148,7 @@
 "settings.microphone.subtitle" = "选择听写使用的输入设备。自动模式会跟随当前 macOS 默认输入设备；若默认设备是蓝牙耳机，则改用 Mac 自带或有线麦克风，避免开头丢字。";
 "settings.microphone.automatic" = "自动";
 "settings.instantVoiceInput.title" = "按键即说";
-"settings.instantVoiceInput.subtitle" = "缩短麦克风启动耗时，按下快捷键就能直接说话，不漏任何内容。使用后麦克风会保持启用 15 分钟。";
+"settings.instantVoiceInput.subtitle" = "使用后让麦克风保持就绪，缩短下次启动等待。麦克风最多继续开启 15 分钟。";
 "settings.mouseVoice.title" = "鼠标语音输入";
 "settings.mouseVoice.subtitle" = "在输入框内静止长按约 0.8 秒，在鼠标附近显示麦克风。选中文本或提前拖动时不会触发。";
 "settings.mouseVoice.activation.title" = "触发方式";
@@ -170,8 +170,8 @@
 "settings.advanced.voiceProcessingTimeout.option" = "%d 秒";
 "settings.advanced.autoUpdate.title" = "自动更新";
 "settings.advanced.autoUpdate.subtitle" = "每 3 小时自动检查并安装新版本。";
-"settings.analyticsSharing.title" = "共享匿名使用情况分析";
-"settings.analyticsSharing.subtitle" = "共享匿名应用与模型下载事件，帮助改进 Typeflux。绝不会采集语音和文本内容。";
+"settings.analyticsSharing.title" = "共享使用数据";
+"settings.analyticsSharing.subtitle" = "向 Typeflux 发送功能使用情况、时长、结果、模型下载记录和客户端标识。登录后发送的请求可能与账号关联。不包含语音或输入的文字。";
 "settings.permissionStatus.title" = "权限状态";
 "settings.permissionStatus.subtitle" = "查看 Typeflux 依赖的 macOS 权限，并在需要时完成授权。";
 "settings.output.title" = "输出";
@@ -929,20 +929,20 @@
 "settings.models.builtInDefaultModel" = "内置默认模型";
 "settings.models.builtInDefaultProfile" = "内置默认配置";
 "settings.models.card.whisper.summary" = "使用 OpenAI 官方语音转写服务，并内置默认模型。";
-"settings.models.card.freeSTT.summary" = "从代码中配置好的免费语音转写模型里选择，用户不需要手动填写接口或密钥。";
-"settings.models.card.localSTT.summary" = "通过原生 Swift 运行时在本地运行 WhisperKit、SenseVoice、FunASR 或 Qwen3-ASR。";
-"settings.models.card.multimodal.summary" = "音频直接发送给多模态模型，在一次 API 调用内完成转写和人设改写。";
-"settings.models.card.aliCloud.summary" = "通过 DashScope 执行实时流式识别，低延迟 WebSocket 传输。";
-"settings.models.card.doubao.summary" = "通过豆包语音识别 2.0 和字节原生二进制 WebSocket 协议进行低延迟流式识别。";
+"settings.models.card.freeSTT.summary" = "选择可用的免费语音模型，无需填写 API Key。";
+"settings.models.card.localSTT.summary" = "在这台 Mac 上转写语音；首次使用前需要下载模型。";
+"settings.models.card.multimodal.summary" = "用所选多模态模型一步完成语音转写和改写。";
+"settings.models.card.aliCloud.summary" = "将音频发送给阿里云，实时转写。";
+"settings.models.card.doubao.summary" = "将音频发送给豆包，实时转写。";
 "settings.models.card.googleCloud.summary" = "通过 Google Cloud Speech-to-Text 执行实时流式语音识别。";
 "settings.models.card.groq.summary" = "通过 Groq 推理接口进行高速 Whisper 转写，默认模型为 whisper-large-v3-turbo。";
-"settings.models.card.soniox.summary" = "通过 Soniox V5 进行实时流式语音识别，支持 60+ 种语言，低延迟 WebSocket 连接。";
+"settings.models.card.soniox.summary" = "将音频发送给 Soniox，实时转写多种语言。";
 "settings.models.card.typefluxOfficial.summary" = "Typeflux 内置语音识别服务。登录 Typeflux 账号即可使用，无需额外的 API 密钥。";
 "settings.models.card.typefluxCloud.summary" = "Typeflux 内置大语言模型服务。登录 Typeflux 账号即可使用，无需额外的 API 密钥。";
 "settings.models.card.ollama.summary" = "本地执行改写和编辑任务，并可选自动准备模型。";
-"settings.models.card.openAICompatible.summary" = "接入远程 chat-completions 提供方，完成人设改写和编辑工作流。";
+"settings.models.card.openAICompatible.summary" = "连接你自己的模型服务，用于改写和编辑。";
 "settings.models.card.custom.summary" = "手动配置任意兼容端点，自定义 Base URL、模型和 API Key。";
-"settings.models.card.freeModel.summary" = "从代码中配置好的免费模型列表中选择可用模型。";
+"settings.models.card.freeModel.summary" = "从可用的免费文本模型中选择。";
 "settings.models.card.openRouter.summary" = "使用 OpenRouter 统一的 OpenAI 兼容 API，预填官方地址，并支持灵活选择与路由模型。";
 "settings.models.card.openAI.summary" = "使用 OpenAI 官方托管模型，内置固定地址和常用模型建议。";
 "settings.models.card.anthropic.summary" = "通过 Anthropic 原生 Messages API 使用 Claude 模型，只需填写 API Key。";
@@ -954,11 +954,11 @@
 "settings.models.card.minimax.summary" = "通过 MiniMax 的 OpenAI 兼容端点使用其模型，并提供国际版与中国版 URL 选择。";
 "settings.models.card.grok.summary" = "通过 xAI 的 OpenAI 兼容端点使用 Grok 模型。";
 "settings.models.card.xiaomi.summary" = "通过小米 MiMo 的 OpenAI 兼容端点使用 mimo-v2 系列模型。";
-"settings.models.card.openCodeZen.summary" = "精选优质模型，专为编程优化——通过 OpenCode Zen 网关使用 GPT、Claude、Gemini、Qwen、GLM 等模型。";
-"settings.models.card.openCodeGo.summary" = "低成本开源编程模型——DeepSeek、Qwen、GLM、Kimi、MiniMax 等。首月 $5，之后 $10/月。";
+"settings.models.card.openCodeZen.summary" = "通过 OpenCode Zen 按用量使用编程模型；最新价格请查看官网。";
+"settings.models.card.openCodeGo.summary" = "订阅后使用编程模型；价格和可用模型请以 OpenCode 官网为准。";
 "settings.models.badge.free" = "免费";
-"settings.models.freeSTT.hint" = "免费语音模型由代码配置管理，用户只能从已配置的模型列表中选择。";
-"settings.models.freeSTT.noSources" = "当前还没有配置任何免费语音模型源。请在 Sources/Typeflux/STT/FreeModels 下添加实现。";
+"settings.models.freeSTT.hint" = "从当前可用的免费语音模型中选择，无需填写 API Key。";
+"settings.models.freeSTT.noSources" = "目前没有可用的免费语音模型。请选择其他语音模型。";
 "settings.models.freeSTT.availableSources" = "已配置语音来源";
 "settings.models.freeSTT.validation.emptyModel" = "请先选择免费语音模型，再进行保存或测试。";
 "settings.models.freeSTT.validation.unsupportedModel" = "免费语音模型“%@”尚未在代码配置中注册。";
@@ -1101,9 +1101,9 @@
 "settings.models.deleteDialog.title" = "删除 %@？";
 "settings.models.deleteDialog.message" = "模型文件将被删除，下次使用时需要重新下载。";
 "settings.advanced.autoVocabulary.title" = "自动添加修正生词";
-"settings.advanced.autoVocabulary.subtitle" = "语音输入插入后，继续监听当前输入框 30 秒。如果你手动修正了某个词，应用会调用模型判断是否应自动加入生词本。";
+"settings.advanced.autoVocabulary.subtitle" = "语音输入后，最多检查当前输入框的修改 30 秒。由所选文本模型判断改正的词是否加入生词本。";
 "settings.advanced.recentInputMemory.title" = "近期输入记忆";
-"settings.advanced.recentInputMemory.subtitle" = "开启后适用于所有应用。保存最近 24 小时内的简短最终输入，用于优化后续表达；使用时会发送给当前模型服务。";
+"settings.advanced.recentInputMemory.subtitle" = "跨应用保存最多 24 小时的最终输入；使用时会将相关片段发送给所选模型。";
 "settings.advanced.recentInputMemory.clearApp" = "清除";
 "settings.advanced.recentInputMemory.clearAll" = "清除全部记忆";
 "settings.advanced.recentInputMemory.manage" = "管理记忆";
@@ -1114,7 +1114,7 @@
 "settings.advanced.recentInputMemory.appEnabled" = "启用记忆";
 "settings.advanced.recentInputMemory.deleteItem" = "删除这条记忆";
 "settings.advanced.globalSoul.title" = "全局长期记忆";
-"settings.advanced.globalSoul.subtitle" = "开启时也会启用短期记忆。累计 20 条已确认的最终输入，或临近 4 小时清理且至少有 5 条时，用当前文本模型更新 SOUL；该批输入和现有 SOUL 会发送给模型服务。";
+"settings.advanced.globalSoul.subtitle" = "根据已确认的输入整理跨应用长期记忆。关闭功能不会删除已保存的记忆；可在“管理记忆”中清除。";
 "settings.advanced.globalSoul.manage" = "全局 SOUL";
 "settings.advanced.globalSoul.empty" = "暂无全局记忆";
 "settings.advanced.globalSoul.delete" = "删除全局记忆";
@@ -2279,7 +2279,7 @@
 "ask.storage.card.lockedLocal" = "这段对话只保存在这台 Mac 上，不会上传到 Typeflux Cloud。已经开始的对话不能更改存储位置。";
 "ask.storage.card.lockedCloud" = "这段对话已同步到 Typeflux Cloud。已经开始的对话不能更改存储位置。";
 "ask.storage.card.localNote" = "使用在线 API 模型时，请求仍会发送给模型服务商。";
-"ask.storage.card.cloudNote" = "可使用云端模型和你自己的模型，支持识图、联网搜索和深入研究，并在多台设备间同步。云端模型的用量计入额度。";
+"ask.storage.card.cloudNote" = "对话保存在 Typeflux Cloud，并在设备间同步。";
 "ask.storage.newLocal" = "新建私密对话";
 "ask.storage.newCloud" = "新建云端对话";
 "ask.storage.temporary" = "临时";
@@ -2300,7 +2300,7 @@
 "ask.temporary.fact.history" = "不会出现在历史记录、搜索和其他设备上";
 "ask.temporary.fact.memory" = "不读取也不更新记忆";
 "ask.temporary.fact.end" = "结束后删除对话和工作区";
-"ask.temporary.fact.cloud" = "使用云端模型时，Typeflux Cloud 最多保留 24 小时以完成运行，credits 照常计费。";
+"ask.temporary.fact.cloud" = "云端模型：Typeflux Cloud 最多保留本次运行 24 小时，并照常扣除额度。";
 "ask.temporary.noMemory" = "临时对话不使用记忆";
 "ask.temporary.settings.section" = "临时对话";
 "ask.steps.section" = "Agent 运行";
@@ -2524,7 +2524,7 @@
 "agent.capability.files.title" = "文件访问";
 "agent.capability.files.summary" = "读写你授权的文件夹，写入前会确认。";
 "agent.capability.code.title" = "命令执行";
-"agent.capability.code.summary" = "在这台 Mac 上执行命令；严格、标准模式先确认，YOLO 模式自动执行。";
+"agent.capability.code.summary" = "在这台 Mac 上执行命令；是否需要确认由当前对话的工具权限决定。";
 "agent.capability.automation.title" = "操作电脑与浏览器";
 "agent.capability.automation.summary" = "看屏幕、点击、输入，替你完成网页和应用里的操作。";
 "agent.capability.skills.summary" = "特定任务的做事方法，需要时自动加载。";
@@ -2534,7 +2534,7 @@
 "agent.status.search.incomplete" = "待完成配置";
 "agent.status.files.count" = "%d 个文件夹";
 "agent.status.files.none" = "未授权文件夹";
-"agent.status.code.on" = "已开启 · 每次确认";
+"agent.status.code.on" = "已开启";
 "agent.status.code.off" = "已关闭";
 "agent.status.automation.ready" = "每次操作前询问";
 "agent.status.automation.missing" = "缺少系统权限";
@@ -4873,12 +4873,12 @@
 "models.tab.local" = "本地模型";
 
 // Website login connection diagnostics.
-"auth.web.invalidResponse" = "登录服务返回的数据不符合预期，请检查 App 与 API 配置的官网地址是否一致。";
-"auth.web.networkUnavailable" = "无法连接登录服务，请检查 API 地址及 Docker 是否已启动。";
-"auth.web.transportBlocked" = "macOS 阻止了此 App 的 HTTP 请求，请配置 HTTP 地址后通过开发启动脚本重新构建。";
-"auth.web.endpointUnavailable" = "登录接口不可用，请检查 API 版本、网页登录配置及 /api 代理。";
-"auth.web.requestRejected" = "登录请求被拒绝，请检查开发/正式客户端及回调地址配置。";
-"auth.web.serviceUnavailable" = "登录服务暂不可用，请检查 API 和数据库后重试。";
+"auth.web.invalidResponse" = "登录服务返回了无法识别的结果。请重新发起登录；若持续出现，请联系支持。";
+"auth.web.networkUnavailable" = "无法连接登录服务。请检查网络后重试。";
+"auth.web.transportBlocked" = "当前应用版本无法连接登录服务。请更新 Typeflux 或联系支持。";
+"auth.web.endpointUnavailable" = "登录服务暂时不可用。请稍后重试；若持续出现，请联系支持。";
+"auth.web.requestRejected" = "登录请求未被接受。请重新发起登录；若持续出现，请联系支持。";
+"auth.web.serviceUnavailable" = "登录服务暂时不可用。请稍后重试。";
 "auth.web.rateLimited" = "登录尝试过于频繁，请稍后重试。";
 
 /* Screen recording */
@@ -6266,16 +6266,27 @@
 "terminal.command.empty" = "请先输入命令";
 "terminal.command.tooLarge" = "命令超过 16 KiB";
 "terminal.command.singleLine" = "请输入单行命令，不要包含控制字符";
-"terminal.command.invalidTerminal" = "请在关键字设置中选择 Terminal 或 iTerm2";
+"terminal.command.invalidTerminal" = "请在关键词设置中选择 Terminal 或 iTerm2";
 "terminal.command.runIn" = "在 %@ 中运行";
 "terminal.command.directory" = "新建窗口 · 目录跟随终端配置";
 "terminal.command.run" = "运行";
 "terminal.command.copy" = "复制命令";
 "terminal.command.pressReturn" = "按回车将此命令交给终端";
-"terminal.command.notInstalled" = "所选终端未安装，请在关键字设置中重新选择。";
+"terminal.command.notInstalled" = "所选终端未安装，请在关键词设置中重新选择。";
 "terminal.command.permissionDenied" = "请在系统设置 → 隐私与安全性 → 自动化中允许 Typeflux 控制此终端。";
 "terminal.command.unavailable" = "无法准备所选终端，请检查其设置后重试。";
 "terminal.command.uncertain" = "命令可能已交给终端。再次运行前请先检查终端；未自动重发。";
 "terminal.command.application" = "终端应用";
 "ask.settings.keywords.kind.terminal.hint" = "在新的本地 Shell 窗口执行单行命令，沿用终端配置与目录。Typeflux 不保存命令历史。";
-"terminal.command.keywordConflict" = "终端命令触发词已被占用：%@。已保留原入口，可添加“终端命令”关键字另行指定。";
+"terminal.command.keywordConflict" = "终端命令触发词已被占用：%@。已保留原入口，可添加“终端命令”关键词另行指定。";
+
+// Visible disclosure and action copy.
+"settings.analyticsSharing.notice" = "发送使用事件和客户端标识；登录后可能与账号关联。不包含语音或输入的文字。";
+"settings.instantVoiceInput.notice" = "使用后，麦克风最多继续开启 15 分钟。";
+"settings.advanced.autoVocabulary.notice" = "判断时会将本次听写、修正片段和已有词汇发送给所选文本模型。";
+"settings.advanced.recentInputMemory.notice" = "保存最多 24 小时的最终输入；使用时将相关片段发送给所选模型。";
+"settings.advanced.globalSoul.notice" = "开启后也会启用近期输入记忆；更新长期记忆时会将保存的输入发送给所选模型。";
+"ask.storage.card.onlineModelNotice" = "当前在线模型会将请求发送给模型服务商。";
+"agent.search.cloudflare.testCharge" = "测试会发起一次计费的 Cloudflare 搜索。";
+"auth.web.retry" = "重新发起登录";
+"ask.storage.card.cloudCostNotice" = "云端模型的使用会扣除额度。";

@@ -13,6 +13,10 @@ struct AskLocalModeStatus: Equatable {
     var changeable = false
     var modelAvailable = true
     var modelReason: String? = nil
+    /// Describes the selected model, independently of where the chat is stored.
+    var usesCloudModel = false
+    var usesOnlineModel = false
+    var usesCustomModel = false
     /// The conversation is temporary: in no history list and gone once left.
     var temporary = false
     /// The kinds the card offers while `changeable`; Cloud needs a session.
@@ -36,6 +40,10 @@ struct AskLocalModeStatus: Equatable {
                      local: model.storesLocally(launcher: launcher),
                      changeable: changeable,
                      modelAvailable: reason == nil, modelReason: reason,
+                     usesCloudModel: provider?.isCloud == true,
+                     usesOnlineModel: provider?.remote != nil && provider?.remote != .custom,
+                     usesCustomModel: provider?.isOllama == false
+                         && (provider?.remote == nil || provider?.remote == .custom),
                      temporary: temporary,
                      choices: changeable ? (signedIn ? [.cloud, .local, .temporary] : [.local, .temporary]) : [])
     }
@@ -195,11 +203,24 @@ struct AskLocalModeCard: View {
             Button(L("ask.submission.models"), action: onOpenModelSettings)
                 .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
         }
-        note(L("ask.storage.card.localNote"))
+        if status.usesOnlineModel {
+            fact("network", L("ask.storage.card.onlineModelNotice"))
+        } else if status.usesCustomModel {
+            fact("network", L("ask.storage.card.localNote"))
+        }
     }
 
     private var cloudDetails: some View {
-        note(L("ask.storage.card.cloudNote"))
+        VStack(alignment: .leading, spacing: 6) {
+            fact("cloud", L("ask.storage.card.cloudNote"))
+            if status.usesCloudModel {
+                fact("creditcard", L("ask.storage.card.cloudCostNotice"))
+            } else if status.usesOnlineModel {
+                fact("network", L("ask.storage.card.onlineModelNotice"))
+            } else if status.usesCustomModel {
+                fact("network", L("ask.storage.card.localNote"))
+            }
+        }
     }
 
     /// What a temporary conversation leaves behind: nothing in history or memory,
@@ -209,7 +230,13 @@ struct AskLocalModeCard: View {
             fact("clock.arrow.circlepath", L("ask.temporary.fact.history"))
             fact("brain", L("ask.temporary.fact.memory"))
             fact("xmark.bin", L("ask.temporary.fact.end"))
-            if !status.offersSignIn { note(L("ask.temporary.fact.cloud")) }
+            if status.usesCloudModel {
+                fact("creditcard", L("ask.temporary.fact.cloud"))
+            } else if status.usesOnlineModel {
+                fact("network", L("ask.storage.card.onlineModelNotice"))
+            } else if status.usesCustomModel {
+                fact("network", L("ask.storage.card.localNote"))
+            }
         }
     }
 
@@ -220,13 +247,6 @@ struct AskLocalModeCard: View {
             Text(text).font(.system(size: 12)).foregroundStyle(StudioTheme.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-    }
-
-    private func note(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 11))
-            .foregroundStyle(StudioTheme.textTertiary)
-            .fixedSize(horizontal: false, vertical: true)
     }
 
     static func tint(_ kind: AskStorageKind) -> Color {

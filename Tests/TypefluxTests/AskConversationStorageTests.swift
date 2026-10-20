@@ -292,10 +292,12 @@ struct AskConversationStorageTests {
         let (fixture, _) = try fixture()
         let cloud = AskLocalModeStatus.make(model: fixture.model, signedIn: true)
         #expect(!cloud.local && cloud.changeable && !cloud.offersSignIn)
+        #expect(cloud.usesCloudModel && cloud.usesOnlineModel)
         #expect(cloud.summaryKey == "ask.storage.card.choose")
         fixture.model.setStoresLocally(true, launcher: false)
         let local = AskLocalModeStatus.make(model: fixture.model, signedIn: true)
         #expect(local.local && local.source == "My model")
+        #expect(!local.usesCloudModel && local.usesCustomModel)
         #expect(AskLocalModeStatus(source: "", offersSignIn: false).summaryKey
             == "ask.storage.card.lockedLocal")
         #expect(AskLocalModeStatus(source: "", offersSignIn: false, local: false).summaryKey

@@ -211,8 +211,12 @@ final class SettingsStoreTests: XCTestCase {
 
     // MARK: - Analytics Sharing
 
-    func testAnalyticsSharingDefaultsToEnabledAndPersists() {
+    func testAnalyticsSharingDefaultsToDisabledAndPersistsOptIn() {
+        XCTAssertFalse(store.analyticsSharingEnabled)
+
+        store.analyticsSharingEnabled = true
         XCTAssertTrue(store.analyticsSharingEnabled)
+        XCTAssertTrue(SettingsStore(defaults: defaults).analyticsSharingEnabled)
 
         store.analyticsSharingEnabled = false
 
@@ -581,8 +585,8 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertTrue(store.useAppleSpeechFallback)
     }
 
-    func testDefaultAutomaticVocabularyCollectionEnabled() {
-        XCTAssertTrue(store.automaticVocabularyCollectionEnabled)
+    func testDefaultAutomaticVocabularyCollectionDisabled() {
+        XCTAssertFalse(store.automaticVocabularyCollectionEnabled)
     }
 
     func testSetAutomaticVocabularyCollectionDisabled() {
@@ -1066,8 +1070,8 @@ extension SettingsStoreTests {
 
     // MARK: - automaticVocabularyCollectionEnabled
 
-    func testAutomaticVocabularyCollectionEnabledDefaultIsTrue() {
-        XCTAssertTrue(store.automaticVocabularyCollectionEnabled)
+    func testAutomaticVocabularyCollectionEnabledDefaultIsFalse() {
+        XCTAssertFalse(store.automaticVocabularyCollectionEnabled)
     }
 
     func testAutomaticVocabularyCollectionEnabledToggle() {

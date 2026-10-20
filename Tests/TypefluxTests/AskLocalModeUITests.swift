@@ -185,6 +185,7 @@ struct AskLocalModeUITests {
         let f = try localFixture([text])
         let signedOut = AskLocalModeStatus.make(model: f.model, signedIn: false)
         #expect(signedOut.source == "Ollama")
+        #expect(!signedOut.usesOnlineModel && !signedOut.usesCustomModel)
         #expect(signedOut.offersSignIn)
         #expect(!AskLocalModeStatus.make(model: f.model, signedIn: true).offersSignIn)
         f.model.draft.modelRef = "custom:missing"

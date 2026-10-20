@@ -154,6 +154,9 @@ struct AgentSearchForm: View {
 
     private var testBar: some View {
         VStack(alignment: .leading, spacing: 10) {
+            if provider == .cloudflare {
+                TFFieldMessage(text: L("agent.search.cloudflare.testCharge"), tone: .hint)
+            }
             HStack(spacing: TFMetrics.toolbarSpacing) {
                 TFButton(title: L(connection.testing ? "ask.settings.search.cloudflare.testing"
                              : "ask.settings.search.cloudflare.test"),
