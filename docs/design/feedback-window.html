@@ -1,279 +1,333 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark" data-style="glass">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Typeflux 问题反馈：独立窗口 + 富文本正文（GUL-427）</title>
 <style>
-  :root { --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
-          --mono: ui-monospace, "SF Mono", Menlo, monospace; }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; }
-  body { font-family: var(--font); background: #0b0b0d; color: #eee; display: flex; flex-direction: column; align-items: center; padding: 14px; gap: 10px; }
-  body.light { background: #d9dde4; color: #111; }
+/* Tokens and control recipes are copied from docs/design/settings-search-unification.html (the
+   component library spec, TF* in Sources/Typeflux/UI/Components). Nothing here adds a new size,
+   radius or color: every control below names the TF component it stands for. */
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Helvetica Neue", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --spring: cubic-bezier(.34, 1.56, .64, 1);
+  --accent: #0a84ff; --accent-rgb: 10,132,255; --accent-hover: #2b95ff; --green: #30d158;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0b0b10; --win-bg: #1c1c21; --win-glass: rgba(28,28,33,.72); --sidebar-tint: rgba(44,44,52,.55);
+  --text: rgba(255,255,255,.92); --text-2: rgba(235,235,245,.62); --text-3: rgba(235,235,245,.38);
+  --sep: rgba(255,255,255,.08); --hover: rgba(255,255,255,.06); --press: rgba(255,255,255,.11);
+  --card: rgba(255,255,255,.045); --card-border: rgba(255,255,255,.07);
+  --control: rgba(255,255,255,.075); --control-border: rgba(255,255,255,.10); --raised: #48484f;
+  --accent-soft: rgba(10,132,255,.22); --danger: #ff453a; --danger-rgb: 255,69,58; --warning: #eb803d; --success: #29c76e;
+  --glass-fill: rgba(44,44,52,.42); --glass-strong: rgba(38,38,44,.86);
+  --glass-rim-a: rgba(255,255,255,.40); --glass-rim-b: rgba(255,255,255,.12); --glass-hi: rgba(255,255,255,.12);
+  --glass-shadow: 0 12px 34px rgba(0,0,0,.38), 0 1px 2px rgba(0,0,0,.35);
+  --ambient-a: rgba(10,132,255,.16); --ambient-b: rgba(124,58,237,.12); --win-border: rgba(255,255,255,.12);
+}
+[data-theme="light"] {
+  color-scheme: light;
+  --page: #e9ebf0; --win-bg: #f6f6f8; --win-glass: rgba(246,246,248,.74); --sidebar-tint: rgba(255,255,255,.6);
+  --text: rgba(0,0,0,.86); --text-2: rgba(60,60,67,.68); --text-3: rgba(60,60,67,.42);
+  --sep: rgba(0,0,0,.08); --hover: rgba(0,0,0,.045); --press: rgba(0,0,0,.085);
+  --card: #ffffff; --card-border: rgba(0,0,0,.07);
+  --control: rgba(0,0,0,.045); --control-border: rgba(0,0,0,.07); --raised: #ffffff;
+  --accent-soft: rgba(10,132,255,.14); --danger: #ff3b30; --danger-rgb: 255,59,48; --accent-hover: #0077ed; --warning: #d97706; --success: #16a34a;
+  --glass-fill: rgba(255,255,255,.55); --glass-strong: rgba(255,255,255,.9);
+  --glass-rim-a: rgba(255,255,255,.95); --glass-rim-b: rgba(255,255,255,.55); --glass-hi: rgba(255,255,255,.7);
+  --glass-shadow: 0 10px 30px rgba(30,30,60,.14), 0 1px 2px rgba(30,30,60,.12);
+  --ambient-a: rgba(10,132,255,.10); --ambient-b: rgba(168,85,247,.08); --win-border: rgba(0,0,0,.10);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font: 13px/1.45 var(--font); -webkit-font-smoothing: antialiased; background: var(--page); color: var(--text); display: flex; flex-direction: column; align-items: center; padding: 14px; gap: 10px; }
+button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+input { font: inherit; color: inherit; }
+svg.i { width: 15px; height: 15px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 
-  /* ---------- prototype controls (not part of the product) ---------- */
-  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 12px; width: 1280px; }
-  .seg { display: inline-flex; padding: 2px; border-radius: 8px; background: rgba(127,127,127,.18); }
-  .seg button, .cbtn { border: 0; background: transparent; color: inherit; font: inherit; padding: 4px 10px; border-radius: 6px; cursor: pointer; opacity: .7; }
-  .seg button.on { background: rgba(127,127,127,.38); opacity: 1; }
-  .cbtn { background: rgba(127,127,127,.22); opacity: 1; }
-  .controls label { display: inline-flex; gap: 5px; align-items: center; cursor: pointer; }
-  .hint { opacity: .6; }
-  .notes { width: 1280px; font-size: 12px; line-height: 1.7; opacity: .78; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 24px; }
-  .notes b { font-weight: 600; }
+/* ---------- prototype controls (not part of the product) ---------- */
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 12px; width: 1280px; }
+.pill { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--hover); box-shadow: inset 0 0 0 .5px var(--sep); }
+.pill button { height: 24px; padding: 0 11px; border-radius: 999px; color: var(--text-2); font-size: 12px; }
+.pill button.on { background: var(--accent); color: #fff; }
+.controls label { display: inline-flex; gap: 5px; align-items: center; cursor: pointer; color: var(--text-2); }
+.hint { color: var(--text-3); }
+.notes { width: 1280px; font-size: 12px; line-height: 1.7; color: var(--text-2); display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 24px; }
+.notes b { color: var(--text); font-weight: 600; }
+.notes code { font-family: var(--mono); font-size: 11px; }
 
-  /* ---------- fake desktop (1280 × 800 screen) ---------- */
-  .screen { width: 1280px; height: 800px; border-radius: 12px; position: relative; overflow: hidden; flex: none; user-select: none;
-            background: radial-gradient(1200px 600px at 20% 10%, #3b4f7d, transparent 60%),
-                        radial-gradient(900px 600px at 90% 90%, #6d3b6f, transparent 60%), #1b2133; }
-  body.light .screen { background: radial-gradient(1200px 600px at 20% 10%, #9fc0f5, transparent 60%),
-                        radial-gradient(900px 600px at 90% 90%, #f0b7d3, transparent 60%), #c9d4ea; }
-  .menubar { height: 26px; display: flex; align-items: center; gap: 18px; padding: 0 14px; font-size: 13px; color: #fff; position: relative; z-index: 50;
-             background: rgba(20,20,24,.35); backdrop-filter: blur(20px); }
-  body.light .menubar { color: #111; background: rgba(255,255,255,.4); }
-  .menubar b { font-weight: 600; }
-  .menubar .right { margin-left: auto; display: flex; gap: 14px; align-items: center; opacity: .9; }
-  .menubar .tf { cursor: pointer; padding: 1px 6px; border-radius: 4px; }
-  .menubar .tf:hover, .menubar .tf.on { background: rgba(255,255,255,.22); }
-  body.light .menubar .tf:hover, body.light .menubar .tf.on { background: rgba(0,0,0,.1); }
-  .tfmenu { position: absolute; top: 28px; right: 120px; width: 210px; padding: 5px; border-radius: 10px; z-index: 60; display: none; font-size: 13px;
-            background: rgba(40,40,44,.86); backdrop-filter: blur(30px); color: #eee; border: .5px solid rgba(255,255,255,.16); box-shadow: 0 10px 30px rgba(0,0,0,.4); }
-  body.light .tfmenu { background: rgba(246,246,248,.9); color: #111; border-color: rgba(0,0,0,.12); }
-  .tfmenu.on { display: block; }
-  .tfmenu div { padding: 4px 10px; border-radius: 5px; cursor: default; display: flex; justify-content: space-between; }
-  .tfmenu div.sep { height: 1px; padding: 0; margin: 4px 8px; background: rgba(127,127,127,.3); }
-  .tfmenu div.item:hover { background: #0a84ff; color: #fff; }
-  .tfmenu div.sub { padding-left: 22px; }
-  .tfmenu span { opacity: .55; }
+/* ---------- fake desktop (1280 × 800 screen) ---------- */
+.screen { width: 1280px; height: 800px; border-radius: 12px; position: relative; overflow: hidden; flex: none; user-select: none;
+          background: radial-gradient(1200px 600px at 20% 10%, #3b4f7d, transparent 60%), radial-gradient(900px 600px at 90% 90%, #6d3b6f, transparent 60%), #1b2133; }
+[data-theme="light"] .screen { background: radial-gradient(1200px 600px at 20% 10%, #9fc0f5, transparent 60%), radial-gradient(900px 600px at 90% 90%, #f0b7d3, transparent 60%), #c9d4ea; }
+.menubar { height: 26px; display: flex; align-items: center; gap: 18px; padding: 0 14px; font-size: 13px; color: #fff; position: relative; z-index: 50; background: rgba(20,20,24,.35); backdrop-filter: blur(20px); }
+[data-theme="light"] .menubar { color: #111; background: rgba(255,255,255,.4); }
+.menubar b { font-weight: 600; }
+.menubar .right { margin-left: auto; display: flex; gap: 14px; align-items: center; opacity: .9; }
+.menubar .tf { cursor: pointer; padding: 1px 6px; border-radius: 4px; }
+.menubar .tf:hover, .menubar .tf.on { background: rgba(127,127,127,.3); }
 
-  /* ---------- tokens: StudioTheme (dark / light) ---------- */
-  .win { --win: #1f1f21; --surface: rgba(255,255,255,.045); --control: #2a2a2d; --control2: #323236; --line: rgba(255,255,255,.115);
-         --line2: rgba(255,255,255,.07); --text: #eeeeee; --text2: #b8b8b8; --text3: #8a8a8e; --placeholder: #66666a;
-         --accent: #178cff; --accentSoft: rgba(23,140,255,.16); --danger: #ff5f57; --dangerSoft: rgba(255,95,87,.14); --success: #30d158;
-         --hover: rgba(255,255,255,.07); --press: rgba(255,255,255,.12); --shadow: 0 28px 80px rgba(0,0,0,.55), 0 0 0 .5px rgba(0,0,0,.6); }
-  body.light .win { --win: #f6f6f8; --surface: #ffffff; --control: #ffffff; --control2: #f3f4f6; --line: rgba(15,23,42,.10);
-         --line2: rgba(15,23,42,.06); --text: #1d1d1f; --text2: #515154; --text3: #86868b; --placeholder: #a1a1a6;
-         --accent: #2563eb; --accentSoft: rgba(37,99,235,.10); --danger: #e5484d; --dangerSoft: rgba(229,72,77,.10); --success: #1f9d55;
-         --hover: rgba(0,0,0,.05); --press: rgba(0,0,0,.09); --shadow: 0 24px 70px rgba(0,0,0,.22), 0 0 0 .5px rgba(0,0,0,.14); }
+/* Native NSMenu look (menu bar menu and the "其他方式" TFMenuButton menu). */
+.nsmenu { position: absolute; min-width: 200px; padding: 5px; border-radius: 12px; z-index: 60; display: none; font-size: 13px; }
+.nsmenu.on { display: block; }
+.mi { min-height: 26px; border-radius: 7px; padding: 3px 10px 3px 8px; display: flex; align-items: center; gap: 6px; white-space: nowrap; cursor: default; }
+.mi .n { margin-left: auto; padding-left: 16px; color: var(--text-3); font-size: 11.5px; }
+.mi:hover { background: var(--accent); color: #fff; } .mi:hover .n { color: rgba(255,255,255,.8); }
+.mhead { font-size: 11px; font-weight: 600; color: var(--text-3); padding: 6px 8px 2px; }
+.msep { height: .5px; background: var(--sep); margin: 5px 6px; }
 
-  .win { position: absolute; border-radius: 12px; overflow: hidden; background: var(--win); color: var(--text); box-shadow: var(--shadow);
-         border: .5px solid var(--line); display: flex; flex-direction: column; }
-  .win.inactive { filter: saturate(.85); }
-  .lights { display: flex; gap: 8px; flex: none; } .lights i { width: 12px; height: 12px; border-radius: 6px; display: block; position: relative; }
-  .lights i.r { background: #ff5f57; } .lights i.y { background: #febc2e; } .lights i.g { background: #28c840; }
-  .win.inactive .lights i { background: rgba(127,127,127,.35); }
-  .lights:hover i.r::after { content: "×"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; line-height: 12px; color: rgba(0,0,0,.6); font-weight: 700; }
-  .lights i.g.off { background: rgba(127,127,127,.35); }
+/* ---------- liquid glass (spec recipe) ---------- */
+.glass { position: relative; background: var(--glass-fill); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%); box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi); isolation: isolate; }
+.glass::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(155deg, var(--glass-rim-a) 0%, rgba(255,255,255,0) 34%, rgba(255,255,255,0) 64%, var(--glass-rim-b) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; z-index: 2; }
+.glass > * { position: relative; z-index: 3; }
+.glass.strong { background: var(--glass-strong); }
+[data-style="classic"] .glass { background: var(--win-bg); backdrop-filter: none; -webkit-backdrop-filter: none; }
 
-  /* ---------- background: the settings window (simplified) ---------- */
-  #settings { left: 40px; top: 60px; width: 760px; height: 560px; flex-direction: row; }
-  #settings .side { width: 200px; padding: 16px 10px; background: rgba(127,127,127,.06); border-right: .5px solid var(--line2); display: flex; flex-direction: column; gap: 4px; }
-  #settings .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; margin: 22px 6px 14px; }
-  #settings .brand small { font-weight: 400; font-size: 10px; color: var(--text3); }
-  #settings .nav { font-size: 13px; padding: 7px 10px; border-radius: 8px; color: var(--text2); }
-  #settings .nav.on { background: var(--hover); color: var(--accent); }
-  #settings .main { flex: 1; padding: 30px 26px; overflow: hidden; }
-  #settings h1 { margin: 0 0 18px; font-size: 22px; }
-  #settings .tabs { display: flex; gap: 18px; font-size: 13px; color: var(--text2); border-bottom: .5px solid var(--line2); padding-bottom: 8px; margin-bottom: 18px; }
-  #settings .tabs .on { color: var(--text); font-weight: 600; }
-  #settings .grp { border-radius: 12px; background: var(--surface); border: .5px solid var(--line2); margin-bottom: 14px; }
-  #settings .row { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-size: 13px; border-bottom: .5px solid var(--line2); }
-  #settings .row:last-child { border-bottom: 0; }
-  #settings .tg { width: 32px; height: 18px; border-radius: 9px; background: rgba(127,127,127,.35); position: relative; }
-  #settings .tg::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 7px; background: #fff; }
-  #settings .tg.on { background: var(--accent); } #settings .tg.on::after { left: 16px; }
-  #settings .fbbtn { color: var(--accent); cursor: pointer; }
-  #settings .titlebar { position: absolute; left: 0; right: 0; top: 0; height: 40px; display: flex; align-items: center; padding: 0 14px; }
+/* ---------- TFButton: capsules, L 36 / R 30 / S 24 ---------- */
+.btn { --h: 30px; --px: 14px; --fs: 13px; --ic: 12px; --gap: 6px;
+  height: var(--h); padding: 0 var(--px); border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; gap: var(--gap);
+  font-size: var(--fs); font-weight: 500; white-space: nowrap; flex: none; position: relative;
+  background-color: var(--control); box-shadow: inset 0 0 0 .5px var(--control-border); color: var(--text);
+  transition: transform .25s var(--spring), background-color .15s, box-shadow .15s; outline: none; }
+.btn:not(.icon):not(.s):not(.link) { min-width: 64px; }
+.btn svg.i { width: var(--ic); height: var(--ic); stroke-width: 2; }
+.btn.l { --h: 36px; --px: 18px; --fs: 14px; --ic: 14px; --gap: 7px; font-weight: 600; }
+.btn.s { --h: 24px; --px: 10px; --fs: 12px; --ic: 11px; --gap: 5px; }
+.btn.icon { width: var(--h); padding: 0; }
+.btn:hover { background-image: linear-gradient(var(--hover), var(--hover)); }
+.btn:active { background-image: linear-gradient(var(--press), var(--press)); transform: scale(.97); }
+.btn.primary { background-color: var(--accent); color: #fff; font-weight: 600; box-shadow: none; }
+.btn.primary:hover { background-color: var(--accent-hover); background-image: none; }
+.btn.primary:active { background-image: linear-gradient(rgba(0,0,0,.12), rgba(0,0,0,.12)); }
+.btn.plain { background-color: transparent; box-shadow: none; color: var(--text-2); }
+.btn.plain:hover, .btn.plain.on { color: var(--text); }
+.btn.plain.on { background-image: linear-gradient(var(--press), var(--press)); }
+.btn.link { background: none !important; box-shadow: none; color: var(--accent); padding: 0 4px; }
+.btn.link:hover { opacity: .78; }
+.btn.glass-b { background-color: var(--glass-fill); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%); color: #fff;
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 0 0 .5px var(--glass-rim-b), 0 4px 14px rgba(0,0,0,.22); }
+[data-theme="dark"] .btn.glass-b, .media .btn.glass-b { background-color: rgba(30,30,34,.55); color: #fff; }
+[data-style="classic"] .media .btn.glass-b { background-color: rgba(30,30,34,.82); backdrop-filter: none; }
+.btn.danger { color: var(--danger); }
+.btn:focus-visible { box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3.5px rgba(var(--accent-rgb), .30); }
+.btn.primary:focus-visible { box-shadow: 0 0 0 1px var(--win-bg), 0 0 0 3.5px rgba(var(--accent-rgb), .45); }
+.btn[disabled] { opacity: .45; pointer-events: none; }
+.btn.is-loading { pointer-events: none; }
+.btn .chev { width: 10px !important; height: 10px !important; stroke-width: 2.4 !important; color: inherit; opacity: .8; }
+.spin { width: var(--ic); height: var(--ic); border-radius: 50%; border: 1.6px solid currentColor; border-right-color: transparent; animation: spin .8s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .btn:active { transform: none !important; } }
 
-  /* ---------- the feedback window ---------- */
-  #fb { width: 600px; height: 660px; left: 600px; top: 84px; min-width: 520px; min-height: 560px; z-index: 20; }
-  #fb.hidden { display: none; }
-  #fb.capturing { opacity: 0; pointer-events: none; transition: opacity .12s; }
-  .fbtitle { height: 52px; flex: none; display: flex; align-items: center; padding: 0 16px; gap: 12px; cursor: grab; position: relative; }
-  .fbtitle:active { cursor: grabbing; }
-  .fbtitle .t { position: absolute; left: 0; right: 0; text-align: center; font-size: 13px; font-weight: 600; pointer-events: none; }
-  .fbtitle .t span { color: var(--text3); font-weight: 400; margin-left: 6px; font-size: 12px; }
-  .fbbody { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; padding: 0 20px 16px; }
-  .intro { font-size: 12.5px; color: var(--text2); line-height: 1.55; margin-top: -4px; }
-  .intro kbd, .meta kbd, .ftr kbd { font: 11px var(--font); padding: 0 5px; border-radius: 4px; background: var(--control2); border: .5px solid var(--line); color: var(--text2); }
-  .restored { display: none; align-items: center; gap: 8px; font-size: 12px; color: var(--text2); background: var(--accentSoft); border-radius: 8px; padding: 7px 10px; }
-  .restored.on { display: flex; }
-  .restored a { color: var(--accent); cursor: pointer; margin-left: auto; }
+/* TFKeyCap(.hint) */
+kbd { font-family: var(--font); font-size: 10.5px; font-weight: 500; color: var(--text-3); padding: 0 5px; border-radius: 5px; box-shadow: inset 0 0 0 .5px var(--sep); background: var(--hover); line-height: 17px; display: inline-block; }
 
-  /* editor */
-  .editor { flex: 1; min-height: 0; display: flex; flex-direction: column; border-radius: 10px; background: var(--control); border: 1px solid var(--line); position: relative;
-            transition: border-color .12s, box-shadow .12s; }
-  .editor.focus { border-color: color-mix(in srgb, var(--accent) 70%, transparent); box-shadow: 0 0 0 3px var(--accentSoft); }
-  .editor.drag { border-color: var(--accent); border-style: dashed; }
-  .toolbar { height: 38px; flex: none; display: flex; align-items: center; gap: 2px; padding: 0 6px; border-bottom: .5px solid var(--line2); }
-  .tb { width: 28px; height: 26px; border-radius: 6px; display: grid; place-items: center; color: var(--text2); cursor: pointer; border: 0; background: transparent; padding: 0; position: relative; }
-  .tb:hover { background: var(--hover); color: var(--text); }
-  .tb.on { background: var(--press); color: var(--text); }
-  .tb:disabled { opacity: .35; cursor: default; background: transparent; }
-  .tb svg { width: 16px; height: 16px; }
-  .tb[data-tip]:hover::after { content: attr(data-tip); position: absolute; top: 30px; left: 50%; transform: translateX(-50%); white-space: nowrap; z-index: 5;
-                       font-size: 11px; padding: 3px 7px; border-radius: 5px; background: rgba(20,20,22,.92); color: #fff; pointer-events: none; }
-  .tbsep { width: 1px; height: 16px; background: var(--line); margin: 0 5px; }
-  .tbwide { width: auto; padding: 0 8px; gap: 5px; display: inline-flex; align-items: center; font-size: 12px; font-family: var(--font); }
-  .tbspacer { flex: 1; }
+/* ---------- windows ---------- */
+.win { position: absolute; border-radius: 16px; overflow: hidden; background: var(--win-bg); color: var(--text);
+       box-shadow: 0 0 0 .5px var(--win-border), 0 30px 80px rgba(0,0,0,.35); display: flex; flex-direction: column; }
+/* AskWindowBackdrop: glass samples the desktop; classic is opaque. */
+[data-style="glass"] .win { background: var(--win-glass); -webkit-backdrop-filter: blur(50px) saturate(1.5); backdrop-filter: blur(50px) saturate(1.5); }
+.win::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background: radial-gradient(600px 400px at 10% 0%, var(--ambient-a), transparent 70%), radial-gradient(500px 360px at 90% 100%, var(--ambient-b), transparent 70%); }
+[data-style="classic"] .win::after { display: none; }
+.win > * { position: relative; z-index: 1; }
+.traffic { display: flex; gap: 8px; flex: none; } .traffic i { width: 12px; height: 12px; border-radius: 50%; display: block; position: relative; }
+.traffic i.r { background: #ff5f57; } .traffic i.y { background: #febc2e; } .traffic i.g { background: #28c840; }
+.win.inactive .traffic i, .traffic i.off { background: var(--press); }
+.traffic:hover i.r::after { content: "×"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; line-height: 12px; color: rgba(0,0,0,.6); font-weight: 700; }
 
-  .content { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 14px 16px; font-size: 13.5px; line-height: 1.65; outline: 0; color: var(--text); user-select: text; cursor: text; word-break: break-word; }
-  .content.empty::before { content: attr(data-placeholder); color: var(--placeholder); white-space: pre-line; pointer-events: none; position: absolute; }
-  .content p { margin: 0 0 6px; }
-  .content h3 { font-size: 15px; margin: 6px 0 6px; font-weight: 600; }
-  .content ul, .content ol { margin: 0 0 6px; padding-left: 22px; }
-  .content blockquote { margin: 0 0 6px; padding: 2px 0 2px 10px; border-left: 3px solid var(--line); color: var(--text2); }
-  .content code { font: 12.5px var(--mono); padding: 1px 4px; border-radius: 4px; background: var(--control2); }
-  .content pre { font: 12.5px/1.55 var(--mono); padding: 8px 10px; border-radius: 6px; background: var(--control2); margin: 0 0 6px; white-space: pre-wrap; }
-  .content a { color: var(--accent); }
-  .content::-webkit-scrollbar { width: 8px; } .content::-webkit-scrollbar-thumb { background: rgba(127,127,127,.35); border-radius: 4px; }
+/* background: settings window (context only) */
+#settings { left: 40px; top: 60px; width: 760px; height: 560px; flex-direction: row; }
+#settings .sidebar { width: 196px; flex: none; margin: 10px 0 10px 10px; border-radius: 14px; padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; background: var(--sidebar-tint); }
+#settings .traffic { padding: 2px 6px 16px; }
+#settings .brand { display: flex; align-items: center; gap: 8px; font-weight: 650; font-size: 14px; padding: 0 8px 14px; }
+#settings .brand small { color: var(--text-3); font-weight: 500; font-size: 10px; }
+#settings .nav { height: 30px; display: flex; align-items: center; padding: 0 10px; border-radius: 7px; font-size: 13px; }
+#settings .nav.on { background: var(--accent-soft); font-weight: 600; }
+#settings .main { flex: 1; padding: 26px 28px 0; overflow: hidden; }
+#settings h1 { font-size: 22px; margin: 0 0 12px; font-weight: 650; }
+#settings .utabs { display: flex; gap: 22px; border-bottom: .5px solid var(--sep); margin-bottom: 16px; }
+#settings .utab { height: 32px; line-height: 32px; font-size: 13px; font-weight: 500; color: var(--text-2); }
+#settings .utab.on { color: var(--text); font-weight: 600; box-shadow: inset 0 -2px 0 var(--accent); }
+#settings .form { background: var(--card); border-radius: 12px; box-shadow: inset 0 0 0 .5px var(--card-border); margin-bottom: 16px; }
+#settings .frow { min-height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-size: 13px; }
+#settings .frow + .frow { box-shadow: inset 0 .5px 0 var(--sep); }
+#settings .sw { width: 30px; height: 18px; border-radius: 999px; background: var(--press); position: relative; }
+#settings .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+#settings .sw.on { background: var(--green); } #settings .sw.on::after { transform: translateX(12px); }
 
-  /* inline attachment blocks: image / video (media) and file (card) */
-  .att { display: block; position: relative; width: fit-content; max-width: 100%; margin: 6px 0 8px; cursor: default; user-select: none; }
-  .att.sel { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .media { border-radius: 8px; overflow: hidden; border: .5px solid var(--line); box-shadow: 0 1px 3px rgba(0,0,0,.18); background: var(--control2); }
-  .media img, .media video { display: block; max-width: 100%; max-height: 220px; }
-  .video video, .video img { width: 360px; height: 203px; object-fit: cover; max-height: none; }
-  .video .play { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 20px; display: grid; place-items: center;
-                 background: rgba(0,0,0,.55); backdrop-filter: blur(8px); color: #fff; cursor: pointer; }
-  .video .play svg { width: 16px; height: 16px; margin-left: 2px; }
-  .video .dur { position: absolute; right: 6px; bottom: 6px; font-size: 10.5px; color: #fff; background: rgba(0,0,0,.6); padding: 1px 6px; border-radius: 4px; font-variant-numeric: tabular-nums; }
-  .att .ops { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; opacity: 0; transition: opacity .1s; z-index: 2; }
-  .att:hover .ops, .att.sel .ops { opacity: 1; }
-  .att .ops button { width: 24px; height: 24px; border-radius: 6px; border: 0; display: grid; place-items: center; cursor: pointer; color: #fff; background: rgba(0,0,0,.62); backdrop-filter: blur(8px); }
-  .att .ops button:hover { background: rgba(0,0,0,.8); }
-  .att .ops svg { width: 13px; height: 13px; }
-  .media .ov { position: absolute; inset: 0; display: none; place-items: center; align-content: center; gap: 8px; color: #fff; font-size: 12px; font-weight: 500; text-align: center; padding: 0 24px; line-height: 1.5; }
-  .media.busy .ov { display: grid; background: rgba(0,0,0,.66); }
-  .media.failed .ov, .media.rejected .ov { display: grid; background: rgba(120,20,16,.84); }
-  .media.busy .dur, .media.failed .dur, .media.rejected .dur { display: none; }
-  .media.busy .play, .media.failed .play, .media.rejected .play { display: none; }
-  .ring { width: 26px; height: 26px; border-radius: 50%; background: conic-gradient(#fff var(--p, 0%), rgba(255,255,255,.25) 0); -webkit-mask: radial-gradient(circle, transparent 9px, #000 10px); mask: radial-gradient(circle, transparent 9px, #000 10px); justify-self: center; }
-  .retry { justify-self: center; border: 0; border-radius: 6px; padding: 4px 10px; font: 12px var(--font); background: rgba(255,255,255,.92); color: #b3261e; cursor: pointer; }
-  .media .size { position: absolute; left: 6px; bottom: 6px; font-size: 10.5px; color: #fff; background: rgba(0,0,0,.6); padding: 1px 6px; border-radius: 4px; opacity: 0; max-width: calc(100% - 70px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .media:hover .size, .video .size { opacity: 1; }
-  .media.busy .size, .media.failed .size, .media.rejected .size { opacity: 0; }
+/* ---------- the feedback window ---------- */
+#fb { width: 600px; height: 680px; left: 600px; top: 70px; z-index: 20; }
+#fb.hidden { display: none; }
+#fb.capturing { opacity: 0; pointer-events: none; transition: opacity .12s; }
+.fbtitle { height: 52px; flex: none; display: flex; align-items: center; padding: 0 20px; cursor: grab; }
+.fbtitle:active { cursor: grabbing; }
+.fbbody { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; padding: 0 24px 16px; }
 
-  .file { display: flex; align-items: center; gap: 10px; width: 320px; padding: 8px 36px 8px 8px; border-radius: 9px; background: var(--control2); border: .5px solid var(--line); overflow: hidden; }
-  .file .ico { width: 34px; height: 40px; flex: none; border-radius: 5px; display: grid; place-items: end center; padding-bottom: 5px; font-size: 8.5px; font-weight: 700; letter-spacing: .3px;
-               background: var(--control); border: .5px solid var(--line); color: var(--text2); position: relative; }
-  .file .ico::before { content: ""; position: absolute; top: 7px; left: 7px; right: 7px; height: 14px; background: repeating-linear-gradient(var(--line) 0 1.5px, transparent 1.5px 4px); }
-  .file .info { min-width: 0; flex: 1; }
-  .file .fname { font-size: 12.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
-  .file .fsub { font-size: 11px; color: var(--text3); margin-top: 2px; display: flex; gap: 6px; align-items: center; }
-  .file .fsub a { color: var(--accent); cursor: pointer; }
-  .file .bar { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--accent); width: var(--p, 0%); transition: width .12s; display: none; }
-  .file.busy .bar { display: block; }
-  .file.failed, .file.rejected { border-color: color-mix(in srgb, var(--danger) 55%, transparent); }
-  .file.failed .fsub, .file.rejected .fsub { color: var(--danger); }
-  .file .ops { top: 50%; transform: translateY(-50%); opacity: 1; }
-  .file .ops button { background: transparent; color: var(--text3); }
-  .file .ops button:hover { background: var(--hover); color: var(--text); }
-  .file .ops [data-op="preview"] { display: none; }
+/* TFPaneHeader */
+.phead { display: flex; align-items: center; gap: 14px; }
+.tile { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex: none; }
+.tile svg { width: 15px; height: 15px; stroke-width: 2; }
+.tile.soft { background: rgba(var(--accent-rgb), .15); color: var(--accent); }
+.tile.neutral { background: var(--control); color: var(--text-2); }
+.tile.lg { width: 40px; height: 40px; border-radius: 10px; } .tile.lg svg { width: 21px; height: 21px; }
+.phead .tt { font-size: 17px; font-weight: 600; line-height: 1.3; }
+.phead .st { font-size: 12.5px; color: var(--text-2); margin-top: 3px; }
 
-  .dropmask { position: absolute; inset: 38px 0 0 0; display: none; place-items: center; font-size: 13px; color: var(--accent); background: color-mix(in srgb, var(--control) 80%, transparent); pointer-events: none; border-radius: 0 0 10px 10px; }
-  .editor.drag .dropmask { display: grid; }
+/* TFNotice */
+.notice { display: none; align-items: flex-start; gap: 8px; font-size: 12.5px; line-height: 1.5; padding: 9px 12px; border-radius: 8px; }
+.notice.on { display: flex; }
+.notice svg { width: 14px; height: 14px; flex: none; margin-top: 2px; stroke-width: 2; }
+.notice .tx { flex: 1; }
+.notice.info { background: rgba(var(--accent-rgb), .10); color: var(--text-2); } .notice.info svg { color: var(--accent); }
+.notice.danger { background: rgba(var(--danger-rgb), .10); color: var(--danger); }
+.notice .btn.link { height: 18px; font-size: 12.5px; }
 
-  .meta { height: 30px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 12px; border-top: .5px solid var(--line2); font-size: 11.5px; color: var(--text3); }
-  .meta .count { margin-left: auto; font-variant-numeric: tabular-nums; }
-  .meta .warn { color: var(--danger); }
+/* Editor = TFTextArea chrome (radius 10, control fill, 0.5pt border, TF focus ring) */
+.editor { flex: 1; min-height: 0; display: flex; flex-direction: column; border-radius: 10px; background: var(--control); box-shadow: inset 0 0 0 .5px var(--control-border); position: relative; transition: box-shadow .18s; }
+.editor.focus { box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3.5px rgba(var(--accent-rgb), .30); }
+.editor.drag { box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3.5px rgba(var(--accent-rgb), .30); }
+/* Toolbar row: .tfControlSize(.small) — 24pt plain icon buttons, TFDivider between groups. */
+.toolbar { height: 36px; flex: none; display: flex; align-items: center; gap: 2px; padding: 0 6px; box-shadow: inset 0 -.5px 0 var(--sep); }
+/* An 11pt SF Symbol fills roughly a 14px box; these outline paths carry their own padding. */
+.toolbar .btn svg.i, .att .btn.s svg.i { width: 14px; height: 14px; stroke-width: 1.8; }
+.vsep { width: .5px; height: 14px; background: var(--sep); margin: 0 6px; flex: none; }
+.tbspacer { flex: 1; }
 
-  /* contact */
-  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
-  .field label span { font-weight: 400; color: var(--text3); }
-  .input { height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border-radius: 8px; background: var(--control); border: 1px solid var(--line); }
-  .input:focus-within { border-color: color-mix(in srgb, var(--accent) 70%, transparent); box-shadow: 0 0 0 3px var(--accentSoft); }
-  .input svg { width: 15px; height: 15px; color: var(--text3); flex: none; }
-  .input input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: 13px var(--font); }
-  .input input::placeholder { color: var(--placeholder); }
+.content { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 12px 14px; font-size: 13px; line-height: 1.6; outline: 0; color: var(--text); user-select: text; cursor: text; word-break: break-word; }
+.content.empty::before { content: attr(data-placeholder); color: var(--text-3); white-space: pre-line; pointer-events: none; position: absolute; }
+.content p { margin: 0 0 6px; }
+.content h3 { font-size: 15px; margin: 6px 0; font-weight: 600; }
+.content ul, .content ol { margin: 0 0 6px; padding-left: 22px; }
+.content blockquote { margin: 0 0 6px; padding: 1px 0 1px 10px; box-shadow: inset 2px 0 0 var(--sep); color: var(--text-2); }
+.content code { font: 12px var(--mono); padding: 1px 4px; border-radius: 5px; background: var(--hover); box-shadow: inset 0 0 0 .5px var(--sep); }
+.content pre { font: 12px/1.55 var(--mono); padding: 8px 10px; border-radius: 8px; background: var(--hover); box-shadow: inset 0 0 0 .5px var(--sep); margin: 0 0 6px; white-space: pre-wrap; }
+.content a { color: var(--accent); }
+.content::-webkit-scrollbar { width: 8px; } .content::-webkit-scrollbar-thumb { background: var(--press); border-radius: 4px; }
 
-  .error { display: none; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 1.5; color: var(--danger); background: var(--dangerSoft); border-radius: 8px; padding: 8px 10px; }
-  .error.on { display: flex; }
-  .error svg { width: 14px; height: 14px; flex: none; margin-top: 2px; }
+/* Inline attachment blocks */
+.att { display: block; position: relative; width: fit-content; max-width: 100%; margin: 6px 0 8px; cursor: default; user-select: none; }
+.att.sel { box-shadow: 0 0 0 1px var(--accent), 0 0 0 3.5px rgba(var(--accent-rgb), .30); }
+.media { border-radius: 8px; overflow: hidden; box-shadow: inset 0 0 0 .5px var(--card-border); background: var(--card); }
+.media.sel { box-shadow: 0 0 0 1px var(--accent), 0 0 0 3.5px rgba(var(--accent-rgb), .30); }
+.media img, .media video { display: block; max-width: 100%; max-height: 220px; }
+.video video, .video img { width: 360px; height: 203px; object-fit: cover; max-height: none; }
+.video .play { position: absolute; left: 50%; top: 50%; margin: -18px 0 0 -18px; }
+.att .ops { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; opacity: 0; transition: opacity .1s; z-index: 4; }
+.att:hover .ops, .att.sel .ops { opacity: 1; }
+/* TFTag-sized captions on media (16pt capsules). */
+.cap16 { position: absolute; bottom: 6px; height: 16px; padding: 0 6px; border-radius: 999px; font-size: 10.5px; font-weight: 500; line-height: 16px; color: #fff; background: rgba(0,0,0,.55); font-variant-numeric: tabular-nums; white-space: nowrap; z-index: 3; }
+.media .size { left: 6px; opacity: 0; } .media:hover .size, .video .size { opacity: 1; }
+.video .dur { right: 6px; }
+.media.busy .cap16, .media.failed .cap16, .media.rejected .cap16, .media.busy .play, .media.failed .play, .media.rejected .play { display: none; }
+.media .ov { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #fff; font-size: 12px; text-align: center; padding: 0 28px; line-height: 1.5; z-index: 2; }
+.media.busy .ov { display: flex; background: rgba(0,0,0,.6); }
+.media.failed .ov, .media.rejected .ov { display: flex; background: rgba(0,0,0,.72); }
+.media .ov .em { color: #ff8a80; font-weight: 600; }
+.media .ov .sub { color: rgba(255,255,255,.7); font-size: 11px; }
+/* TFMeter: 6pt capsule progress */
+.meter { width: 120px; height: 6px; border-radius: 999px; background: var(--control); position: relative; overflow: hidden; flex: none; }
+.media .meter { background: rgba(255,255,255,.22); }
+.meter i { position: absolute; left: 0; top: 0; bottom: 0; width: var(--p, 0%); border-radius: inherit; background: var(--accent); transition: width .12s; }
+/* File = TFListRow inside a card surface: 28pt neutral icon tile, 13 semibold title, 11.5 subtitle. */
+.file { display: flex; align-items: center; gap: 10px; width: 340px; min-height: 52px; padding: 8px 8px 8px 12px; border-radius: 8px; background: var(--card); box-shadow: inset 0 0 0 .5px var(--card-border); }
+.file .info { min-width: 0; flex: 1; }
+.file .fname { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file .fsub { font-size: 11.5px; color: var(--text-2); margin-top: 1px; display: flex; gap: 8px; align-items: center; }
+.file .fsub .em { color: var(--danger); }
+.file .ops { position: static; opacity: 1; }
+.file .ops [data-op="preview"] { display: none; }
 
-  /* footer */
-  .ftr { height: 56px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 20px; border-top: .5px solid var(--line2); }
-  .ftr .other { font-size: 12px; color: var(--text3); display: flex; gap: 6px; align-items: center; }
-  .ftr .other a { color: var(--text2); cursor: pointer; text-decoration: none; }
-  .ftr .other a:hover { color: var(--accent); }
-  .ftr .sp { flex: 1; }
-  .btn { height: 28px; padding: 0 14px; border-radius: 7px; font: 13px var(--font); cursor: pointer; border: .5px solid var(--line); background: var(--control2); color: var(--text); display: inline-flex; align-items: center; gap: 6px; }
-  .btn:hover { filter: brightness(1.08); }
-  .btn.primary { background: var(--accent); color: #fff; border-color: transparent; font-weight: 500; min-width: 84px; justify-content: center; }
-  .btn.primary kbd { background: rgba(255,255,255,.2); border: 0; color: #fff; padding: 0 4px; }
-  .btn:disabled { opacity: .45; cursor: default; filter: none; }
-  .spin { width: 13px; height: 13px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; animation: rot .7s linear infinite; }
-  @keyframes rot { to { transform: rotate(360deg); } }
-  .win.submitting .content, .win.submitting .input input { opacity: .6; pointer-events: none; }
-  .win.submitting .toolbar { opacity: .5; pointer-events: none; }
+.dropmask { position: absolute; inset: 36px 0 30px 0; display: none; align-items: center; justify-content: center; font-size: 13px; color: var(--accent); background: var(--accent-soft); pointer-events: none; }
+.editor.drag .dropmask { display: flex; }
+/* Footnote row: 11pt textTertiary, monospaced digits for the count. */
+.meta { height: 30px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 12px; box-shadow: inset 0 .5px 0 var(--sep); font-size: 11px; color: var(--text-3); }
+.meta .count { margin-left: auto; font-variant-numeric: tabular-nums; }
+.meta .warn { color: var(--danger); }
+/* TFFieldMessage(.warning) */
+.fmsg { display: none; font-size: 11.5px; color: var(--warning); margin-top: -8px; }
+.fmsg.on { display: block; }
 
-  /* success */
-  .done { display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 0 40px 40px; }
-  .win.success .done { display: flex; }
-  .win.success .fbbody, .win.success .ftr { display: none; }
-  .done .ok { width: 52px; height: 52px; border-radius: 26px; display: grid; place-items: center; background: color-mix(in srgb, var(--success) 16%, transparent); color: var(--success); }
-  .done .ok svg { width: 26px; height: 26px; }
-  .done h2 { margin: 6px 0 0; font-size: 17px; font-weight: 600; }
-  .done p { margin: 0; font-size: 12.5px; color: var(--text2); line-height: 1.6; max-width: 360px; }
-  .done .row { display: flex; gap: 8px; margin-top: 10px; }
+/* TFLabeledField + TFTextFieldStyle */
+.lfield { display: flex; align-items: center; gap: 14px; }
+.lfield label { width: 72px; flex: none; font-size: 13px; color: var(--text-2); }
+.tfield { flex: 1; height: 30px; border-radius: 8px; padding: 0 10px; border: 0; outline: 0; background: var(--control); box-shadow: inset 0 0 0 .5px var(--control-border); font-size: 13px; transition: box-shadow .18s; }
+.tfield::placeholder { color: var(--text-3); }
+.tfield:focus { box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3.5px rgba(var(--accent-rgb), .30); }
 
-  .resize { position: absolute; right: 0; bottom: 0; width: 16px; height: 16px; cursor: nwse-resize; z-index: 3; }
+/* Sheet footer: one link / menu on the left, [取消] [主要] on the right, regular size. */
+.ftr { height: 62px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 24px; box-shadow: inset 0 .5px 0 var(--sep); }
+.ftr .sp { flex: 1; }
+.anchor { position: relative; display: inline-flex; }
+.anchor .nsmenu { bottom: calc(100% + 5px); left: 0; }
 
-  /* link popover */
-  .linkpop { position: absolute; z-index: 10; display: none; gap: 6px; align-items: center; padding: 6px; border-radius: 9px; background: var(--win); border: .5px solid var(--line); box-shadow: 0 10px 30px rgba(0,0,0,.3); }
-  .linkpop.on { display: flex; }
-  .linkpop input { width: 240px; height: 26px; border-radius: 6px; border: 1px solid var(--line); background: var(--control); color: var(--text); padding: 0 8px; font: 12.5px var(--font); outline: 0; }
+.win.submitting .content, .win.submitting .tfield { opacity: .6; pointer-events: none; }
+.win.submitting .toolbar { opacity: .45; pointer-events: none; }
 
-  /* image preview (Quick Look style) */
-  .preview { position: absolute; inset: 26px 0 0 0; z-index: 40; display: none; place-items: center; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); }
-  .preview.on { display: grid; }
-  .preview img { max-width: 80%; max-height: 80%; border-radius: 10px; box-shadow: 0 30px 80px rgba(0,0,0,.6); }
-  .preview .cap { position: absolute; bottom: 24px; color: #fff; font-size: 12px; opacity: .8; }
+/* TFEmptyState (large): 44pt tile, 14 semibold title, 12.5 message, one primary + one link. */
+.done { display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px; padding: 0 40px 52px; color: var(--text-2); }
+.win.success .done { display: flex; }
+.win.success .fbbody, .win.success .ftr { display: none; }
+.done .ic { width: 44px; height: 44px; border-radius: 12px; background: var(--hover); display: flex; align-items: center; justify-content: center; color: var(--success); margin-bottom: 4px; }
+.done .ic svg { width: 22px; height: 22px; stroke-width: 2.2; }
+.done b { color: var(--text); font-size: 14px; font-weight: 600; }
+.done p { margin: 0; font-size: 12.5px; max-width: 360px; }
+.done .acts { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
 
-  /* region capture overlay */
-  .capture { position: absolute; inset: 26px 0 0 0; z-index: 45; display: none; cursor: crosshair; background: rgba(0,0,0,.28); }
-  .capture.on { display: block; }
-  .capture .tip { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 12.5px; padding: 6px 12px; border-radius: 8px; background: rgba(0,0,0,.65); }
-  .capture .rect { position: absolute; border: 1.5px solid #fff; box-shadow: 0 0 0 9999px rgba(0,0,0,.25); display: none; }
-  .capture .rect span { position: absolute; top: -22px; left: 0; font-size: 11px; color: #fff; background: rgba(0,0,0,.65); padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+.resize { position: absolute; right: 0; bottom: 0; width: 16px; height: 16px; cursor: nwse-resize; z-index: 5; }
 
-  .toast { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); font-size: 12.5px; padding: 8px 14px; border-radius: 10px; z-index: 70;
-           background: rgba(30,30,32,.9); color: #fff; opacity: 0; transition: opacity .2s; pointer-events: none; }
-  .toast.on { opacity: 1; }
+/* Link entry: TFMenuPanel (glass, radius 12, 5pt padding) with a 30pt field and a regular button. */
+.linkpop { position: absolute; z-index: 10; display: none; gap: 6px; align-items: center; padding: 5px; border-radius: 12px; }
+.linkpop.on { display: flex; }
+.linkpop .tfield { width: 260px; flex: none; }
+
+/* Quick Look style preview and the region capture overlay (system surfaces). */
+.preview { position: absolute; inset: 26px 0 0 0; z-index: 40; display: none; place-items: center; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); }
+.preview.on { display: grid; }
+.preview img, .preview video { max-width: 80%; max-height: 80%; border-radius: 12px; box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+.preview .cap { position: absolute; bottom: 24px; color: #fff; font-size: 12px; opacity: .8; }
+.capture { position: absolute; inset: 26px 0 0 0; z-index: 45; display: none; cursor: crosshair; background: rgba(0,0,0,.28); }
+.capture.on { display: block; }
+.capture .tip { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 12px; height: 30px; line-height: 30px; padding: 0 14px; border-radius: 999px; background: rgba(30,30,34,.7); backdrop-filter: blur(20px); }
+.capture .rect { position: absolute; border: 1.5px solid #fff; box-shadow: 0 0 0 9999px rgba(0,0,0,.25); display: none; }
+.capture .rect span { position: absolute; top: -22px; left: 0; font-size: 11px; color: #fff; background: rgba(0,0,0,.65); padding: 0 6px; height: 16px; line-height: 16px; border-radius: 999px; white-space: nowrap; }
 </style>
 </head>
 <body>
 
 <div class="controls">
-  <div class="seg" id="themeSeg"><button data-v="dark" class="on">深色</button><button data-v="light">浅色</button></div>
-  <div class="seg" id="stateSeg">
+  <div class="pill" id="themeSeg"><button data-v="dark" class="on">深色</button><button data-v="light">浅色</button></div>
+  <div class="pill" id="styleSeg"><button data-v="glass" class="on">Liquid Glass</button><button data-v="classic">经典</button></div>
+  <div class="pill" id="stateSeg">
     <button data-v="empty" class="on">空白</button>
     <button data-v="editing">编辑中</button>
     <button data-v="uploading">压缩 / 上传中</button>
     <button data-v="failed">上传失败</button>
     <button data-v="toolarge">视频过大</button>
     <button data-v="limit">附件已满</button>
+    <button data-v="restored">恢复草稿</button>
     <button data-v="submitting">提交中</button>
     <button data-v="error">提交失败</button>
     <button data-v="success">已提交</button>
   </div>
   <label><input type="checkbox" id="failNext"> 下一个上传失败</label>
-  <button class="cbtn" id="reopen">从菜单栏打开反馈</button>
 </div>
 <div class="controls">
   <span class="hint">模拟添加：</span>
-  <div class="seg" id="demoSeg">
+  <div class="pill" id="demoSeg">
     <button data-v="shot">截图 2.1 MB</button>
     <button data-v="bigimg">大图 9.6 MB</button>
-    <button data-v="video">录屏 .mov 148 MB</button>
-    <button data-v="hugevideo">长录屏 .mov 620 MB</button>
-    <button data-v="log">typeflux.log 860 KB</button>
+    <button data-v="video">录屏 148 MB</button>
+    <button data-v="hugevideo">长录屏 620 MB</button>
+    <button data-v="log">typeflux.log</button>
     <button data-v="biglog">大日志 12 MB</button>
-    <button data-v="docx">说明.docx 1.4 MB</button>
+    <button data-v="docx">说明.docx</button>
     <button data-v="zip">logs.zip</button>
   </div>
-  <span class="hint">也可以真实粘贴 / 拖入 / 选择文件 · 拖标题栏移动 · 右下角调整大小 · ⌘B / ⌘I / ⌘K · ⌘↩ 提交 · esc 关闭</span>
+  <span class="hint">也可以真实粘贴 / 拖入 / 选择文件 · 拖动标题栏移动 · 右下角调整大小 · ⌘↩ 提交 · esc 关闭</span>
 </div>
 
 <div class="screen" id="screen">
@@ -281,40 +335,36 @@
     <b></b><b>Typeflux</b><span>文件</span><span>编辑</span><span>窗口</span>
     <div class="right"><span class="tf" id="tfIcon">∞</span><span>周二 10:24</span></div>
   </div>
-  <div class="tfmenu" id="tfmenu">
-    <div class="item">打开启动器 <span>⌥Space</span></div>
-    <div class="item">设置… <span>⌘,</span></div>
-    <div class="sep"></div>
-    <div>问题反馈</div>
-    <div class="item sub" data-act="direct">直接反馈…</div>
-    <div class="item sub">发邮件反馈问题</div>
-    <div class="item sub">GitHub 提 Issue</div>
-    <div class="sep"></div>
-    <div class="item">退出 Typeflux <span>⌘Q</span></div>
+  <div class="nsmenu glass strong" id="tfmenu" style="top:30px;right:120px">
+    <div class="mi">打开启动器<span class="n">⌥Space</span></div>
+    <div class="mi">设置…<span class="n">⌘,</span></div>
+    <div class="msep"></div>
+    <div class="mhead">问题反馈</div>
+    <div class="mi" data-act="direct">直接反馈…</div>
+    <div class="mi">发邮件反馈问题</div>
+    <div class="mi">GitHub 提 Issue</div>
+    <div class="msep"></div>
+    <div class="mi">退出 Typeflux<span class="n">⌘Q</span></div>
   </div>
 
-  <!-- background window: settings -->
+  <!-- background: settings window, already on the component library (context only) -->
   <div class="win inactive" id="settings">
-    <div class="titlebar"><div class="lights"><i class="r"></i><i class="y"></i><i class="g"></i></div></div>
-    <div class="side">
+    <div class="sidebar">
+      <div class="traffic"><i class="r"></i><i class="y"></i><i class="g"></i></div>
       <div class="brand">∞ Typeflux <small>1.0.0</small></div>
       <div class="nav">语音输入</div><div class="nav">模型</div><div class="nav">Agent</div><div class="nav">启动器</div><div class="nav on">设置</div>
     </div>
     <div class="main">
       <h1>设置</h1>
-      <div class="tabs"><span class="on">通用</span><span>外观</span><span>权限</span><span>快捷键</span><span>高级设置</span></div>
-      <div class="grp">
-        <div class="row">开机自动启动<i class="tg"></i></div>
-        <div class="row">自动检查更新<i class="tg on"></i></div>
-        <div class="row">共享匿名使用数据<i class="tg on"></i></div>
+      <div class="utabs"><span class="utab on">通用</span><span class="utab">外观</span><span class="utab">权限</span><span class="utab">快捷键</span><span class="utab">高级设置</span></div>
+      <div class="form">
+        <div class="frow">开机自动启动<i class="sw"></i></div>
+        <div class="frow">自动检查更新<i class="sw on"></i></div>
+        <div class="frow">问题反馈<button class="btn s" id="settingsFb">直接反馈</button></div>
       </div>
-      <div class="grp">
-        <div class="row">按住说话<i class="tg"></i></div>
-        <div class="row">问题反馈<span class="fbbtn" id="settingsFb">直接反馈…</span></div>
-      </div>
-      <div class="grp">
-        <div class="row">自动添加修正生词<i class="tg on"></i></div>
-        <div class="row">近期输入记忆<i class="tg on"></i></div>
+      <div class="form">
+        <div class="frow">自动添加修正生词<i class="sw on"></i></div>
+        <div class="frow">近期输入记忆<i class="sw on"></i></div>
       </div>
     </div>
   </div>
@@ -322,77 +372,93 @@
   <!-- the feedback window -->
   <div class="win" id="fb">
     <div class="fbtitle" id="fbTitle">
-      <div class="lights"><i class="r" id="closeBtn" title="关闭（保留草稿）"></i><i class="y"></i><i class="g off"></i></div>
-      <div class="t">问题反馈</div>
+      <div class="traffic"><i class="r" id="closeBtn" title="关闭（保留草稿）"></i><i class="y"></i><i class="g off"></i></div>
     </div>
 
     <div class="fbbody">
-      <div class="intro">说说遇到的问题或想法。</div>
-      <div class="restored" id="restored">已恢复上次未提交的内容 <a id="discard">清空重写</a></div>
+      <!-- TFPaneHeader -->
+      <div class="phead">
+        <div class="tile soft lg"><svg class="i" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M12 8v4.5M12 15.6v.1"/></svg></div>
+        <div><div class="tt">问题反馈</div><div class="st">说说遇到的问题或想法。</div></div>
+      </div>
+
+      <!-- TFNotice(.info) -->
+      <div class="notice info" id="restored">
+        <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.8v.1"/></svg>
+        <span class="tx">已恢复上次未提交的内容。</span><button class="btn link" id="discard">清空重写</button>
+      </div>
 
       <div class="editor" id="editor">
         <div class="toolbar" id="toolbar">
-          <button class="tb" data-cmd="bold" data-tip="粗体 ⌘B"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4.5 2.8h4.2a2.6 2.6 0 0 1 0 5.2H4.5zM4.5 8h4.9a2.6 2.6 0 0 1 0 5.2H4.5z"/></svg></button>
-          <button class="tb" data-cmd="italic" data-tip="斜体 ⌘I"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 2.8 6 13.2M7 2.8h5M4 13.2h5"/></svg></button>
-          <button class="tb" data-cmd="strikeThrough" data-tip="删除线 ⇧⌘X"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 8h11M11 4.6c-.4-1.1-1.6-1.8-3-1.8-1.8 0-3 .9-3 2.3 0 .9.5 1.5 1.5 1.9M5 11.3c.4 1.2 1.6 1.9 3.1 1.9 1.9 0 3.2-1 3.2-2.4 0-.5-.1-.9-.4-1.2"/></svg></button>
-          <span class="tbsep"></span>
-          <button class="tb" data-block="h3" data-tip="小标题"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 3v10M10 3v10M3 8h7M12.5 9.5l1.5-1v4.7"/></svg></button>
-          <button class="tb" data-cmd="insertUnorderedList" data-tip="项目列表"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 4h8M6 8h8M6 12h8"/><circle cx="2.8" cy="4" r=".9" fill="currentColor"/><circle cx="2.8" cy="8" r=".9" fill="currentColor"/><circle cx="2.8" cy="12" r=".9" fill="currentColor"/></svg></button>
-          <button class="tb" data-cmd="insertOrderedList" data-tip="编号列表（复现步骤）"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4h7.5M6.5 8h7.5M6.5 12h7.5M2 2.8l1-.6v3.4M1.9 7.3c.2-.5.6-.7 1-.7.5 0 .9.3.9.8 0 .7-1.9 1.6-1.9 2.2h1.9"/></svg></button>
-          <button class="tb" data-block="blockquote" data-tip="引用"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 3v10M6.5 5h7M6.5 8h7M6.5 11h5"/></svg></button>
-          <button class="tb" data-code data-tip="代码 / 日志"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 4.5 2 8l3.5 3.5M10.5 4.5 14 8l-3.5 3.5"/></svg></button>
-          <button class="tb" data-link data-tip="链接 ⌘K"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6.8 9.2a2.8 2.8 0 0 0 4 0l2-2a2.8 2.8 0 0 0-4-4l-.7.7M9.2 6.8a2.8 2.8 0 0 0-4 0l-2 2a2.8 2.8 0 0 0 4 4l.7-.7"/></svg></button>
+          <button class="btn plain s icon" data-cmd="bold" title="粗体 ⌘B" aria-label="粗体"><svg class="i" viewBox="0 0 24 24"><path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z"/></svg></button>
+          <button class="btn plain s icon" data-cmd="italic" title="斜体 ⌘I" aria-label="斜体"><svg class="i" viewBox="0 0 24 24"><path d="M14 5 10 19M10 5h7M7 19h7"/></svg></button>
+          <button class="btn plain s icon" data-cmd="strikeThrough" title="删除线 ⇧⌘X" aria-label="删除线"><svg class="i" viewBox="0 0 24 24"><path d="M4 12h16M16 7c-.6-1.4-2-2.2-4-2.2-2.4 0-4 1.2-4 3 0 1 .5 1.7 1.4 2.2M8 16.5c.6 1.6 2.2 2.6 4.2 2.6 2.5 0 4.2-1.3 4.2-3.1 0-.6-.2-1.1-.5-1.5"/></svg></button>
+          <span class="vsep"></span>
+          <button class="btn plain s icon" data-block="h3" title="小标题" aria-label="小标题"><svg class="i" viewBox="0 0 24 24"><path d="M5 5v14M14 5v14M5 12h9M18 13l2-1.3V19"/></svg></button>
+          <button class="btn plain s icon" data-cmd="insertUnorderedList" title="项目列表" aria-label="项目列表"><svg class="i" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg></button>
+          <button class="btn plain s icon" data-cmd="insertOrderedList" title="编号列表" aria-label="编号列表"><svg class="i" viewBox="0 0 24 24"><path d="M10 6h10M10 12h10M10 18h10M4 5l1.5-1v5M3.8 13.5c.3-.6.8-.9 1.4-.9.7 0 1.2.4 1.2 1 0 1-2.6 2-2.6 3h2.6"/></svg></button>
+          <button class="btn plain s icon" data-block="blockquote" title="引用" aria-label="引用"><svg class="i" viewBox="0 0 24 24"><path d="M5 5v14M9 8h10M9 12h10M9 16h7"/></svg></button>
+          <button class="btn plain s icon" data-code title="代码" aria-label="代码"><svg class="i" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5M16 7l5 5-5 5"/></svg></button>
+          <button class="btn plain s icon" data-link title="链接 ⌘K" aria-label="链接"><svg class="i" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></button>
           <span class="tbspacer"></span>
-          <button class="tb tbwide" id="addFile" data-tip="图片、视频、txt / log / md / docx"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="m13.2 7.6-5 5a3.3 3.3 0 0 1-4.7-4.7l5.4-5.4a2.2 2.2 0 0 1 3.1 3.1l-5.3 5.3a1.1 1.1 0 0 1-1.6-1.6l4.8-4.8"/></svg>添加文件</button>
-          <button class="tb tbwide" id="shot" data-tip="隐藏窗口并截取屏幕区域"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2.5 5.5v-2a1 1 0 0 1 1-1h2M10.5 2.5h2a1 1 0 0 1 1 1v2M13.5 10.5v2a1 1 0 0 1-1 1h-2M5.5 13.5h-2a1 1 0 0 1-1-1v-2"/><circle cx="8" cy="8" r="2"/></svg>截图</button>
+          <button class="btn plain s" id="addFile" title="图片、视频、txt / log / md / docx"><svg class="i" viewBox="0 0 24 24"><path d="m20 11.5-7.6 7.6a5 5 0 0 1-7-7l8-8a3.3 3.3 0 0 1 4.7 4.6l-8 8a1.7 1.7 0 0 1-2.4-2.4l7.2-7.1"/></svg>添加文件</button>
+          <button class="btn plain s" id="shot" title="隐藏窗口，截取屏幕区域"><svg class="i" viewBox="0 0 24 24"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><circle cx="12" cy="12" r="3"/></svg>截图</button>
           <input type="file" id="file" accept="image/png,image/jpeg,image/gif,image/heic,image/webp,video/mp4,video/quicktime,.mov,.mp4,.m4v,.txt,.log,.md,.docx" multiple hidden>
         </div>
         <div class="content empty" id="content" contenteditable="true" spellcheck="false"
              data-placeholder="遇到了什么问题？例如：按下快捷键后没有开始转写，重启应用后还是一样。&#10;&#10;如果方便，写下复现步骤，再贴一张截图或附上一段录屏。"></div>
-        <div class="dropmask">松开以添加附件 · 图片 ≤ 3 MB · 视频 ≤ 50 MB（自动压缩）</div>
+        <div class="dropmask">松开以添加附件</div>
         <div class="meta" id="meta">
-          <span id="metaHint">支持 Markdown 快捷输入：<kbd>-</kbd> 列表 · <kbd>1.</kbd> 步骤 · <kbd>&gt;</kbd> 引用</span>
+          <span id="metaHint"></span>
           <span class="count" id="count">附件 0/6</span>
         </div>
-        <div class="linkpop" id="linkpop"><input id="linkInput" placeholder="粘贴链接，回车确认"><button class="btn" id="linkOk">添加</button></div>
+        <div class="linkpop glass strong" id="linkpop"><input class="tfield" id="linkInput" placeholder="粘贴链接"><button class="btn primary" id="linkOk">添加</button></div>
+      </div>
+      <!-- TFFieldMessage(.warning): why a file was not added -->
+      <div class="fmsg" id="fmsg"></div>
+
+      <!-- TFLabeledField + TFTextFieldStyle -->
+      <div class="lfield">
+        <label for="contact">联系方式</label>
+        <input class="tfield" id="contact" value="mylxsw@gmail.com" placeholder="邮箱或其他联系方式（可选）">
       </div>
 
-      <div class="field">
-        <label for="contact">联系方式 <span>（可选）</span></label>
-        <div class="input">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3.5" width="12" height="9" rx="2"/><path d="m2.5 4.5 5.5 4 5.5-4"/></svg>
-          <input id="contact" value="mylxsw@gmail.com" placeholder="邮箱或其他联系方式">
-        </div>
+      <!-- TFNotice(.danger) -->
+      <div class="notice danger" id="error">
+        <svg class="i" viewBox="0 0 24 24"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.1"/></svg>
+        <span class="tx">提交反馈失败。请检查网络后重试，内容不会丢失。</span>
       </div>
-
-      <div class="error" id="error"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zm0 3a.8.8 0 0 0-.8.8v3.4a.8.8 0 0 0 1.6 0V5.3A.8.8 0 0 0 8 4.5zm0 6.1a.9.9 0 1 0 0 1.8.9.9 0 0 0 0-1.8z"/></svg><span id="errorText">提交反馈失败。请检查网络后重试，内容不会丢失。</span></div>
     </div>
 
+    <!-- Sheet footer -->
     <div class="ftr">
-      <div class="other">其他方式：<a>发邮件</a>·<a>GitHub Issue</a></div>
+      <div class="anchor">
+        <button class="btn link" id="otherBtn">其他反馈方式<svg class="i chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="nsmenu glass strong" id="otherMenu"><div class="mi">发邮件反馈问题</div><div class="mi">GitHub 提 Issue</div></div>
+      </div>
       <span class="sp"></span>
       <button class="btn" id="cancel">取消</button>
-      <button class="btn primary" id="submit" disabled><span id="submitLabel">提交</span><kbd>⌘↩</kbd></button>
+      <button class="btn primary" id="submit" disabled title="提交 ⌘↩"><span id="submitSpin"></span>提交</button>
     </div>
 
+    <!-- TFEmptyState, large -->
     <div class="done">
-      <div class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></div>
-      <h2>反馈已提交，谢谢</h2>
-      <p id="doneText">我们会尽快查看。如有进展，会发邮件到 mylxsw@gmail.com。</p>
-      <div class="row"><button class="btn" id="again">再写一条</button><button class="btn primary" id="finish">完成</button></div>
+      <div class="ic"><svg class="i" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></div>
+      <b>反馈已提交，谢谢</b>
+      <p id="doneText">我们会尽快查看。</p>
+      <div class="acts"><button class="btn primary l" id="finish">完成</button><button class="btn link" id="again">再写一条</button></div>
     </div>
     <div class="resize" id="resize"></div>
   </div>
 
-  <div class="preview" id="preview"><img id="previewImg" alt=""><video id="previewVideo" controls style="display:none;max-width:80%;max-height:80%;border-radius:10px"></video><div class="cap">空格或 esc 关闭</div></div>
+  <div class="preview" id="preview"><img id="previewImg" alt=""><video id="previewVideo" controls style="display:none"></video><div class="cap">空格或 esc 关闭</div></div>
   <div class="capture" id="capture"><div class="tip">拖动选择截图区域 · esc 取消</div><div class="rect" id="rect"><span id="rectSize"></span></div></div>
-  <div class="toast" id="toast"></div>
 </div>
 
 <div class="notes">
-  <div><b>独立窗口</b>：普通 NSWindow（不是设置里的 sheet），菜单栏、使用指南、设置三个入口都直接打开它，不再先打开设置。单实例：再次打开只是前置。可拖动、可调整大小（最小 520 × 560），记住位置；能被 ⇧⌘4 / 空格 单独截取。关闭窗口保留草稿，下次打开恢复。</div>
-  <div><b>富文本正文</b>：粗体、斜体、删除线、小标题、列表、编号步骤、引用、代码、链接；支持 Markdown 快捷输入。附件作为正文里的块插入：⌘V 粘贴截图或在访达里复制的文件、拖入、「添加文件」、或点「截图」隐藏窗口截取区域。粘贴的富文本只保留上述格式。</div>
-  <div><b>附件</b>：最多 6 个。图片先压缩（最长边 1600、JPEG），压缩后须 ≤ 3 MB；视频先压缩（720p H.264），压缩后须 ≤ 50 MB；文档只收 txt / log / md（≤ 5 MB）和 docx（≤ 10 MB），不压缩。类型不支持或超限时不插入并提示原因；视频压缩后仍超限会留在原位标红，只能移除。提交时正文转为 Markdown，附件以链接留在原位置。</div>
+  <div><b>组件对应</b>：标题区 <code>TFPaneHeader</code>；编辑器外框 <code>TFTextArea</code>（圆角 10）；格式工具条 <code>.tfControlSize(.small)</code> 下的 <code>TFButton(.plain, iconOnly)</code>，组间 <code>TFDivider</code>；联系方式 <code>TFLabeledField</code> + <code>TFTextFieldStyle</code>；提示 <code>TFNotice</code> / <code>TFFieldMessage</code>；底栏 <code>TFMenuButton(.link)</code> + <code>TFButton</code> 次要 / 主要；成功页 <code>TFEmptyState</code>。</div>
+  <div><b>附件块</b>：文件是 <code>TFListRow</code> 样式（28pt <code>TFIconTile(.neutral)</code>、13pt 半粗标题、11.5pt 副标题、尾部小号无边框按钮）；图片 / 视频缩略图圆角 8，悬浮在画面上的按钮用 <code>TFButton(.glass)</code>；进度用 <code>TFMeter</code>；时长、大小是 16pt 胶囊。</div>
+  <div><b>窗口</b>：普通 NSWindow，背景 <code>AskWindowBackdrop</code>，跟随「设置 › 界面风格」（Liquid Glass / 经典）和深浅色；单实例，可拖动、调整大小（最小 520 × 560），记住位置，能单独截图；关闭保留草稿。</div>
 </div>
 
 <script>
@@ -422,7 +488,7 @@
   let seq = 0;
 
   /* ---------- mock media ---------- */
-  function makeShot(w, h, label, hue, dark = !document.body.classList.contains("light")) {
+  function makeShot(w, h, label, hue, dark = document.documentElement.dataset.theme !== "light") {
     const c = document.createElement("canvas"); c.width = w * 2; c.height = h * 2;
     const g = c.getContext("2d"); g.scale(2, 2);
     g.fillStyle = dark ? "#1c1c1e" : "#f5f5f7"; g.fillRect(0, 0, w, h);
@@ -456,14 +522,14 @@
     else if (states.includes("compressing")) hint.textContent = "正在压缩视频，完成后自动上传…";
     else if (busy) hint.textContent = "附件上传中，完成后即可提交…";
     else if (n >= MAX_ATTACHMENTS) hint.textContent = "已达到 6 个附件上限";
-    else hint.innerHTML = '图片 ≤ 3 MB · 视频 ≤ 50 MB（自动压缩）· txt / log / md / docx';
+    else hint.textContent = "图片 ≤ 3 MB · 视频 ≤ 50 MB（自动压缩）· txt / log / md / docx";
     const submitting = fb.classList.contains("submitting");
     $("submit").disabled = submitting || !hasText || busy || broken;
     updateToolbarState();
   }
 
   function updateToolbarState() {
-    document.querySelectorAll(".tb[data-cmd]").forEach((b) => {
+    document.querySelectorAll("#toolbar [data-cmd]").forEach((b) => {
       try { b.classList.toggle("on", document.queryCommandState(b.dataset.cmd) && document.activeElement === content); } catch (_) {}
     });
   }
@@ -486,10 +552,18 @@
     const s = getSelection(); s.removeAllRanges(); s.addRange(r2);
   }
 
-  const OPS = `<div class="ops">
-      <button data-op="preview" title="预览"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9"/></svg></button>
-      <button data-op="remove" title="移除"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m4 4 8 8M12 4l-8 8"/></svg></button>
+  const ICON = {
+    expand: '<svg class="i" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7"/></svg>',
+    close: '<svg class="i" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg>',
+    play: '<svg class="i" viewBox="0 0 24 24" style="fill:currentColor;stroke:none"><path d="M8 5v14l11-7z"/></svg>',
+    doc: '<svg class="i" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>',
+  };
+  // Media float glass buttons over the picture; files use small plain buttons at the row end.
+  const MEDIA_OPS = `<div class="ops">
+      <button class="btn glass-b s icon" data-op="preview" title="预览" aria-label="预览">${ICON.expand}</button>
+      <button class="btn glass-b s icon" data-op="remove" title="移除" aria-label="移除">${ICON.close}</button>
     </div>`;
+  const FILE_OPS = `<div class="ops"><button class="btn plain s icon" data-op="remove" title="移除" aria-label="移除">${ICON.close}</button></div>`;
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
   function attachmentBlock(a) {
@@ -498,17 +572,17 @@
     el.contentEditable = "false"; el.dataset.id = id; el.style.margin = "6px 0 8px";
     if (a.kind === "image") {
       el.className = "att media image";
-      el.innerHTML = `<img src="${a.src}" alt="">${OPS}<div class="ov"></div><span class="size"></span>`;
+      el.innerHTML = `<img src="${a.src}" alt="">${MEDIA_OPS}<div class="ov"></div><span class="cap16 size"></span>`;
     } else if (a.kind === "video") {
       el.className = "att media video";
       const poster = a.src ? `<video src="${a.src}" muted preload="metadata"></video>` : `<img src="${a.poster}" alt="">`;
-      el.innerHTML = `${poster}<span class="play" data-op="preview"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9-5.5z"/></svg></span>
-        ${OPS}<div class="ov"></div><span class="size"></span><span class="dur">${a.duration ? fmtDur(a.duration) : ""}</span>`;
+      el.innerHTML = `${poster}<button class="btn glass-b l icon play" data-op="preview" title="播放" aria-label="播放">${ICON.play}</button>
+        ${MEDIA_OPS}<div class="ov"></div><span class="cap16 size"></span><span class="cap16 dur">${a.duration ? fmtDur(a.duration) : ""}</span>`;
       if (a.src) el.querySelector("video").addEventListener("loadedmetadata", (e) => { el.querySelector(".dur").textContent = fmtDur(e.target.duration || 0); });
     } else {
       el.className = "att file";
-      el.innerHTML = `<div class="ico">${esc(ext(a.name).toUpperCase())}</div>
-        <div class="info"><div class="fname">${esc(a.name)}</div><div class="fsub"></div></div>${OPS}<div class="bar"></div>`;
+      el.innerHTML = `<div class="tile neutral">${ICON.doc}</div>
+        <div class="info"><div class="fname">${esc(a.name)}</div><div class="fsub"></div></div>${FILE_OPS}`;
     }
     atts.set(id, { ...a, state: "uploading" });
     return el;
@@ -521,22 +595,21 @@
     el.classList.toggle("failed", a.state === "failed");
     el.classList.toggle("rejected", a.state === "rejected");
     const p = Math.round(a.p || 0);
-    const sizeText = a.kind === "video" && a.finalSize ? `${fmt(a.size)} → ${fmt(a.finalSize)}`
-                   : fmt(a.finalSize || a.size);
+    const meter = `<span class="meter"><i style="--p:${p}%"></i></span>`;
     if (a.kind === "file") {
-      const sub = el.querySelector(".fsub"); el.querySelector(".bar").style.setProperty("--p", p + "%");
-      if (a.state === "uploading") sub.textContent = `上传中 ${p}% · ${fmt(a.size)}`;
-      else if (a.state === "failed") sub.innerHTML = `上传失败 · <a data-op="retry">重试</a>`;
+      const sub = el.querySelector(".fsub");
+      if (a.state === "uploading") sub.innerHTML = `${meter}<span>上传中 ${p}%</span>`;
+      else if (a.state === "failed") sub.innerHTML = `<span class="em">上传失败</span><button class="btn link" data-op="retry" style="height:16px;font-size:11.5px">重试</button>`;
       else sub.textContent = `${fmt(a.size)} · ${DOC_LABEL[ext(a.name)] || "文件"}`;
       return;
     }
     const ov = el.querySelector(".ov");
-    if (a.state === "compressing") ov.innerHTML = `<div class="ring" style="--p:${p}%"></div><div>压缩中 ${p}%<br><span style="opacity:.75;font-weight:400">${fmt(a.size)} · 转为 720p</span></div>`;
-    else if (a.state === "uploading") ov.innerHTML = `<div class="ring" style="--p:${p}%"></div><div>上传中 ${p}%</div>`;
-    else if (a.state === "failed") ov.innerHTML = '<div>上传失败</div><button class="retry" data-op="retry">重试</button>';
-    else if (a.state === "rejected") ov.innerHTML = `<div>压缩后仍有 ${fmt(a.finalSize)}，超过 50 MB 上限<br><span style="opacity:.8;font-weight:400">请剪短后重新添加</span></div>`;
+    if (a.state === "compressing") ov.innerHTML = `${meter}<div>压缩中 ${p}%<div class="sub">${fmt(a.size)} · 转为 720p</div></div>`;
+    else if (a.state === "uploading") ov.innerHTML = `${meter}<div>上传中 ${p}%</div>`;
+    else if (a.state === "failed") ov.innerHTML = '<div class="em">上传失败</div><button class="btn glass-b s" data-op="retry">重试</button>';
+    else if (a.state === "rejected") ov.innerHTML = `<div class="em">压缩后仍有 ${fmt(a.finalSize)}，超过 50 MB 上限</div><div class="sub">请剪短后重新添加</div>`;
     else ov.innerHTML = "";
-    el.querySelector(".size").textContent = sizeText;
+    el.querySelector(".size").textContent = a.kind === "video" && a.finalSize ? `${fmt(a.size)} → ${fmt(a.finalSize)}` : fmt(a.finalSize || a.size);
   }
 
   // Simulated pipeline: video compress -> upload; image compress is instant; files upload as-is.
@@ -575,7 +648,7 @@
     if (ok.length && room <= 0) refused.push("最多添加 6 个附件");
     else if (ok.length > room) refused.push(`最多 6 个附件，已添加前 ${room} 个`);
     ok.slice(0, Math.max(0, room)).forEach((a) => { const el = attachmentBlock(a); insertBlock(el); run(el); });
-    if (refused.length) toast(refused[0] + (refused.length > 1 ? `（另有 ${refused.length - 1} 个未添加）` : ""));
+    if (refused.length) fieldMessage(refused[0] + (refused.length > 1 ? `（另有 ${refused.length - 1} 个未添加）` : ""));
     content.focus(); refresh();
   }
 
@@ -619,7 +692,8 @@
     zip: () => ({ kind: null, name: "logs.zip", size: 3 * MB }),
   };
   document.querySelectorAll("#demoSeg button").forEach((b) => b.onclick = () => {
-    if (fb.classList.contains("hidden") || fb.classList.contains("success")) openWindow();
+    if (fb.classList.contains("success")) resetForm();
+    if (fb.classList.contains("hidden")) openWindow();
     content.focus(); addAttachments([DEMOS[b.dataset.v]()]);
   });
 
@@ -649,15 +723,15 @@
   $("preview").onclick = (e) => { if (e.target.tagName !== "VIDEO") closePreview(); };
 
   /* ---------- formatting ---------- */
-  document.querySelectorAll(".tb[data-cmd]").forEach((b) => b.addEventListener("mousedown", (e) => {
+  document.querySelectorAll("#toolbar [data-cmd]").forEach((b) => b.addEventListener("mousedown", (e) => {
     e.preventDefault(); content.focus(); document.execCommand(b.dataset.cmd); refresh();
   }));
-  document.querySelectorAll(".tb[data-block]").forEach((b) => b.addEventListener("mousedown", (e) => {
+  document.querySelectorAll("#toolbar [data-block]").forEach((b) => b.addEventListener("mousedown", (e) => {
     e.preventDefault(); content.focus();
     const cur = document.queryCommandValue("formatBlock").toLowerCase();
     document.execCommand("formatBlock", false, cur === b.dataset.block ? "p" : b.dataset.block); refresh();
   }));
-  document.querySelector(".tb[data-code]").addEventListener("mousedown", (e) => {
+  document.querySelector("#toolbar [data-code]").addEventListener("mousedown", (e) => {
     e.preventDefault(); content.focus();
     const text = getSelection().toString();
     if (text && !text.includes("\n")) document.execCommand("insertHTML", false, `<code>${esc(text)}</code>&nbsp;`);
@@ -676,12 +750,12 @@
   function applyLink() {
     const url = $("linkInput").value.trim(); $("linkpop").classList.remove("on");
     content.focus(); const s = getSelection(); s.removeAllRanges(); if (savedRange) s.addRange(savedRange);
-    if (!/^https?:\/\//i.test(url)) { if (url) toast("请输入以 http:// 或 https:// 开头的链接"); return; }
+    if (!/^https?:\/\//i.test(url)) { if (url) fieldMessage("请输入以 http:// 或 https:// 开头的链接"); return; }
     if (s.toString()) document.execCommand("createLink", false, url);
     else document.execCommand("insertHTML", false, `<a href="${esc(url)}">${esc(url)}</a>&nbsp;`);
     refresh();
   }
-  document.querySelector(".tb[data-link]").addEventListener("mousedown", (e) => { e.preventDefault(); content.focus(); openLink(); });
+  document.querySelector("#toolbar [data-link]").addEventListener("mousedown", (e) => { e.preventDefault(); content.focus(); openLink(); });
   $("linkOk").onclick = applyLink;
   $("linkInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); applyLink(); } if (e.key === "Escape") { e.stopPropagation(); $("linkpop").classList.remove("on"); content.focus(); } });
 
@@ -759,7 +833,6 @@
     if (fb.classList.contains("submitting")) return;
     fb.classList.add("hidden");
     if (fb.classList.contains("success")) resetForm(true);
-    else if (hasDraft()) toast("已保留草稿，下次打开时恢复");
   }
   function openWindow() {
     $("tfmenu").classList.remove("on"); $("tfIcon").classList.remove("on");
@@ -772,7 +845,9 @@
   $("cancel").onclick = closeWindow;
   $("finish").onclick = closeWindow;
   $("again").onclick = () => { resetForm(); content.focus(); };
-  $("reopen").onclick = openWindow;
+  $("otherBtn").onclick = (e) => { e.stopPropagation(); $("otherMenu").classList.toggle("on"); };
+  document.addEventListener("click", () => $("otherMenu").classList.remove("on"));
+  $("otherMenu").onclick = () => $("otherMenu").classList.remove("on");
   $("settingsFb").onclick = (e) => { e.stopPropagation(); openWindow(); };
   $("tfIcon").onclick = () => { $("tfmenu").classList.toggle("on"); $("tfIcon").classList.toggle("on"); };
   document.querySelector('[data-act="direct"]').onclick = openWindow;
@@ -782,9 +857,9 @@
   function submit() {
     if ($("submit").disabled) return;
     fb.classList.add("submitting"); $("error").classList.remove("on");
-    $("submitLabel").innerHTML = '<span class="spin"></span>'; refresh();
+    setLoading(true); refresh();
     setTimeout(() => {
-      fb.classList.remove("submitting"); $("submitLabel").textContent = "提交";
+      fb.classList.remove("submitting"); setLoading(false);
       const c = $("contact").value.trim();
       $("doneText").textContent = c ? `我们会尽快查看。如有进展，会通过 ${c} 联系你。` : "我们会尽快查看。";
       fb.classList.add("success"); $("restored").classList.remove("on");
@@ -803,7 +878,10 @@
     if (e.metaKey && e.key === "Enter") { e.preventDefault(); submit(); }
   });
 
-  function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("on"), 2400); }
+  // TFFieldMessage(.warning) under the editor; it clears itself after a few seconds.
+  function fieldMessage(msg) { const m = $("fmsg"); m.textContent = msg; m.classList.add("on"); clearTimeout(m._h); m._h = setTimeout(() => m.classList.remove("on"), 6000); }
+  // TFButton(isLoading:): the spinner takes the leading icon slot; the button keeps its width.
+  function setLoading(on) { $("submitSpin").innerHTML = on ? '<span class="spin"></span>' : ""; $("submit").classList.toggle("is-loading", on); }
 
   /* ---------- states ---------- */
   function resetForm(keepHidden = false) {
@@ -811,7 +889,7 @@
     content.innerHTML = ""; $("contact").value = "mylxsw@gmail.com";
     fb.classList.remove("success", "submitting"); if (!keepHidden) fb.classList.remove("hidden");
     $("error").classList.remove("on"); $("restored").classList.remove("on");
-    $("submitLabel").textContent = "提交"; refresh();
+    $("fmsg").classList.remove("on"); setLoading(false); refresh();
   }
   const SAMPLE = `<p>按住 fn 说话后，<b>松开没有插入文字</b>，菜单栏图标一直在转圈。</p>
     <p>复现步骤：</p><ol><li>在备忘录里新建一条笔记</li><li>按住 fn 说一句话后松开</li><li>等待约 10 秒，仍然没有文字</li></ol>`;
@@ -822,7 +900,7 @@
     resetForm();
     if (s === "empty") { content.focus(); return; }
     content.innerHTML = SAMPLE;
-    if (s === "editing") {
+    if (s === "editing" || s === "restored") {
       sample("shot", { state: "uploaded", finalSize: 1.2 * MB });
       content.insertAdjacentHTML("beforeend", "<p>录了一段屏，日志也附上了：</p>");
       sample("video", { state: "uploaded", finalSize: 38 * MB });
@@ -834,12 +912,13 @@
       sample("log", { state: "uploading", p: 64 });
     }
     if (s === "failed") { sample("shot", { state: "uploaded", finalSize: 1.2 * MB }); sample("video", { state: "failed", finalSize: 38 * MB }); sample("docx", { state: "failed" }); }
-    if (s === "toolarge") { sample("hugevideo", { state: "rejected", finalSize: 161 * MB }); setTimeout(() => toast("「typeflux-full.log」有 12 MB，超过 5 MB 上限"), 300); }
+    if (s === "toolarge") { sample("hugevideo", { state: "rejected", finalSize: 161 * MB }); fieldMessage("「typeflux-full.log」有 12 MB，超过 5 MB 上限"); }
     if (s === "limit") { ["shot", "bigimg", "video", "log", "docx", "shot"].forEach((d) => sample(d, { state: "uploaded", finalSize: d === "video" ? 38 * MB : d === "bigimg" ? 2.4 * MB : d === "shot" ? 1.2 * MB : undefined })); }
     if (s === "submitting" || s === "error" || s === "success") { sample("shot", { state: "uploaded", finalSize: 1.2 * MB }); sample("log", { state: "uploaded" }); }
     content.insertAdjacentHTML("beforeend", "<p><br></p>");
     refresh();
-    if (s === "submitting") { fb.classList.add("submitting"); $("submitLabel").innerHTML = '<span class="spin"></span>'; refresh(); }
+    if (s === "submitting") { fb.classList.add("submitting"); setLoading(true); refresh(); }
+    if (s === "restored") $("restored").classList.add("on");
     if (s === "error") $("error").classList.add("on");
     if (s === "success") { $("doneText").textContent = "我们会尽快查看。如有进展，会通过 mylxsw@gmail.com 联系你。"; fb.classList.add("success"); }
   }
@@ -849,11 +928,13 @@
     seg.querySelectorAll("button").forEach((b) => b.onclick = () => { seg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); fn(b.dataset.v); });
     return (v) => seg.querySelector(`[data-v="${v}"]`)?.click();
   }
-  const pickTheme = bindSeg("themeSeg", (v) => { document.body.classList.toggle("light", v === "light"); });
+  const pickTheme = bindSeg("themeSeg", (v) => { document.documentElement.dataset.theme = v; });
+  const pickStyle = bindSeg("styleSeg", (v) => { document.documentElement.dataset.style = v; });
   const pickState = bindSeg("stateSeg", setState);
 
   const q = new URLSearchParams(location.search);
   pickTheme(q.get("theme") || "dark");
+  pickStyle(q.get("style") || "glass");
   pickState(q.get("state") || "empty");
   focusWin(fb);
 })();

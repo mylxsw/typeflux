@@ -1,10 +1,21 @@
 # 问题反馈：独立窗口 + 富文本正文 + 附件（GUL-427）
 
-> 状态：设计稿，待评审。配套可交互设计稿：`docs/design/feedback-window.html`。参数：`?theme=dark|light`，`?state=empty|editing|uploading|failed|toolarge|limit|submitting|error|success`。截图在 `docs/design/feedback-window/`，文件名为 `<深浅>-<状态>.png`。
+> 状态：设计稿，待评审。配套可交互设计稿：`docs/design/feedback-window.html`。参数：`?theme=dark|light`，`?style=glass|classic`，`?state=empty|editing|uploading|failed|toolarge|limit|restored|submitting|error|success`。截图在 `docs/design/feedback-window/`，文件名为 `<深浅>-<界面风格>-<状态>.png`。
+>
+> 所有控件都来自组件库（`Sources/Typeflux/UI/Components/`，规范见 `docs/design/settings-search-unification.md`），对应关系见 §9。
 >
 > 这一阶段只出设计，不改代码。
 
 ## 修改记录
+
+**第 3 版（按 UI 规范和组件库重做）**：上一版的控件是自绘的，没有按规范来：按钮是 28pt、圆角 7 的方块，提交按钮里塞了快捷键键帽；格式按钮是 28 × 26 的圆角方块，用自绘的悬停提示；联系方式输入框 34pt、1pt 边框，还加了图标；焦点环 3pt；底栏左侧放了两个链接；成功页、提示条、进度环都是自己画的；颜色是手调的近似值；也没有区分 Liquid Glass 和经典界面风格。这一版：
+
+- 尺寸只用 24 / 30 / 36 三档，能点的是胶囊，输入框圆角 8，编辑器圆角 10，焦点环统一为 1pt accent + 3.5pt 30% 外圈，边框 0.5pt；颜色取规范设计稿里的 `StudioTheme` 映射。
+- 标题区用 `TFPaneHeader`；格式工具条是小号无边框圆形图标按钮（`TFButton(.plain, iconOnly)`），提示改用系统 `.help()`；联系方式改为 `TFLabeledField` + `TFTextFieldStyle`。
+- 底栏按 Sheet 规则：左边只放一个 `TFMenuButton(.link)`「其他反馈方式」（菜单里是发邮件和 GitHub），右边 `[取消] [提交]`；提交中用按钮自带的加载态，⌘↩ 写在 `.help()` 里。
+- 提示统一：恢复草稿用 `TFNotice(.info)`，提交失败用 `TFNotice(.danger)`，文件被拒用编辑器下方的 `TFFieldMessage(.warning)`，不再弹 toast。成功页用 `TFEmptyState`（大号主要按钮「完成」+ 链接「再写一条」）。
+- 附件：文件块按 `TFListRow` 排（`TFIconTile(.neutral)`、13pt 半粗标题、11.5pt 副标题、尾部小号无边框按钮）；进度用 `TFMeter`；图片、视频上的按钮用玻璃按钮；时长和大小是 16pt 胶囊。
+- 窗口背景用 `AskWindowBackdrop`，跟随「设置 › 界面风格」切换 Liquid Glass / 经典。
 
 **第 2 版（评审意见）**：顶部说明只保留「说说遇到的问题或想法。」，去掉粘贴截图和拖入文件的文案；去掉联系方式下方的提示文字。
 
@@ -20,20 +31,20 @@
 - 改为独立的普通 `NSWindow`（单实例，由 `FeedbackWindowController` 持有），不再依附设置窗口。菜单栏、使用指南、设置三个入口都直接打开它；已打开时只前置。
 - 带红绿灯，标题栏可拖动；可调整大小，最小 520 × 560，默认 600 × 660，记住位置和大小。窗口层级为普通级别，所以 ⇧⌘4 + 空格可以单独截取它，也可以和其他窗口并排。
 - esc、⌘W、取消、红色按钮都是关闭。**关闭保留草稿**（正文、附件、已上传结果），下次打开恢复，并在顶部提示「已恢复上次未提交的内容 · 清空重写」；提交成功或主动清空后才丢弃。提交过程中不能关闭。
-- 外观只用 `StudioTheme` 现有 token：窗口底色、`controlSurface` 输入区、`border` 描边、`accent` 只用于焦点环、主按钮和链接；深浅色都支持。
+- 背景用 `AskWindowBackdrop`，和笔记本、使用指南窗口一致，跟随「设置 › 界面风格」（Liquid Glass / 经典）和深浅色。控件全部来自组件库（§9）。
 
 ## 3. 布局
 
 自上而下：
 
-1. 52pt 标题栏：红绿灯 + 居中标题「问题反馈」。
-2. 一行说明：「说说遇到的问题或想法。」（粘贴、拖入的用法由正文占位文字和工具栏提示说明，不在这里重复。）
+1. 52pt 标题行：只有红绿灯，可拖动。
+2. `TFPaneHeader`：40pt 强调色图标块 +「问题反馈」+ 说明「说说遇到的问题或想法。」（粘贴、拖入的用法由正文占位文字和工具栏提示说明，不在这里重复。）
 3. **编辑器**（占满剩余高度）：工具栏 / 正文 / 状态行。
-4. 联系方式（可选）：带邮件图标的单行输入，登录时默认填账号邮箱；下方不加说明文字。
-5. 提交失败时的红色提示条（内容不丢）。
-6. 底栏：左侧「其他方式：发邮件 · GitHub Issue」（复用 `FeedbackDestination`），右侧「取消」「提交 ⌘↩」。
+4. 联系方式：`TFLabeledField`「联系方式」+ 30pt 输入框，占位「邮箱或其他联系方式（可选）」，登录时默认填账号邮箱；下方不加说明文字。
+5. 提交失败时的 `TFNotice(.danger)`（内容不丢）。
+6. 底栏：左侧链接样式的菜单按钮「其他反馈方式 ⌄」（菜单项复用 `FeedbackDestination` 的发邮件、GitHub），右侧「取消」「提交」，⌘↩ 提交。
 
-提交成功后窗口内容换成成功页：对勾、「反馈已提交，谢谢」、会通过哪个联系方式回复；按钮「再写一条」「完成」。不再只弹 toast。
+提交成功后窗口内容换成 `TFEmptyState`：对勾、「反馈已提交，谢谢」、会通过哪个联系方式回复；大号主要按钮「完成」+ 链接「再写一条」。不再只弹 toast。
 
 ## 4. 富文本正文
 
@@ -63,10 +74,10 @@
 
 **块的样式与状态**：
 
-- 图片：缩略图，最高 220pt；悬停显示「预览」「移除」和压缩后大小。
-- 视频：16:9 封面 + 播放按钮 + 时长；点击用 Quick Look 风格的预览播放。
-- 文件：卡片，左侧类型图标（TXT / LOG / MD / DOCX），名称、大小和类型；上传时底部细进度条。
-- 状态：压缩中 / 上传中（进度环或进度条）→ 已上传；上传失败（红色，「重试」）；超限（红色，只能移除）。
+- 图片：缩略图，圆角 8，最高 220pt；悬停显示玻璃按钮「预览」「移除」和压缩后大小（16pt 胶囊）。
+- 视频：16:9 封面 + 36pt 玻璃播放按钮 + 时长胶囊；点击用 Quick Look 风格的预览播放。
+- 文件：`TFListRow` 样式的一行：28pt `TFIconTile(.neutral)`、文件名（13pt 半粗）、「大小 · 类型」（11.5pt），尾部小号无边框「移除」按钮；上传时副标题换成 `TFMeter` + 百分比。
+- 状态：压缩中 / 上传中（`TFMeter` + 文字）→ 已上传；上传失败（红字 +「重试」）；超限（红字，只能移除）。文件被拒（类型不支持、超限）时不插入，在编辑器下方用 `TFFieldMessage(.warning)` 说明原因。
 - 单击选中块，Delete 删除；再次单击图片或视频打开预览。
 - 编辑器底部状态行：平时显示规则「图片 ≤ 3 MB · 视频 ≤ 50 MB（自动压缩）· txt / log / md / docx」和「附件 n/6」；有压缩、上传、失败、超限时换成对应说明。
 
@@ -91,3 +102,25 @@
 1. 文本 / 日志 5 MB、docx 10 MB、附件总数 6 个，这几个数是否合适。
 2. 视频压缩规格定 720p H.264 是否可以；是否需要限制原始视频时长（例如 10 分钟），避免压缩耗时太长。
 3. 「截图」按钮是否也要提供「录屏」入口（应用已有录屏功能）。本稿未加。
+
+## 9. 组件对应
+
+| 位置 | 组件 | 规格 |
+|------|------|------|
+| 标题区 | `TFPaneHeader` | 40pt soft 图标块，17pt 半粗标题，12.5pt 说明 |
+| 恢复草稿 / 提交失败 | `TFNotice(.info)` / `TFNotice(.danger)` | 圆角 8，12.5pt；恢复草稿带链接按钮「清空重写」 |
+| 编辑器外框 | `TFTextArea` 的外观 | 圆角 10，`controlSurface` + 0.5pt 边框，TF 焦点环；拖入时同样显示焦点环 |
+| 格式工具条 | `TFButton(.plain, iconOnly: true)`，`.tfControlSize(.small)`，组间 `TFDivider` | 24pt 圆形，`.help()` 写名称和快捷键，激活时叠加按下色 |
+| 添加文件 / 截图 | `TFButton(.plain)` 小号带图标 | 24pt 胶囊 |
+| 状态行 | 脚注样式 | 11pt `textTertiary`，数量用等宽数字 |
+| 文件被拒 | `TFFieldMessage(.warning)` | 11.5pt，放在编辑器下方 |
+| 文件附件 | `TFListRow` 排法 + `TFIconTile(.neutral)` + `TFMeter` | 最小 52pt 高，尾部 24pt 无边框按钮 |
+| 图片 / 视频上的按钮 | `TFButton(.glass, iconOnly: true)` | 小号 24pt；视频播放按钮大号 36pt |
+| 时长 / 大小 | `TFTag` 尺寸 | 16pt 胶囊，10.5pt |
+| 联系方式 | `TFLabeledField` + `TFTextFieldStyle` | 30pt，圆角 8 |
+| 其他反馈方式 | `TFMenuButton`（`.link`）+ 原生 `NSMenu` | 标准 30pt |
+| 取消 / 提交 | `TFButton(.secondary)` / `TFButton(.primary, isLoading:)` | 标准 30pt，最小宽 64pt，右对齐 |
+| 成功页 | `TFEmptyState` | 44pt 图标块；大号主要按钮 + 链接 |
+| 链接输入 | `TFMenuPanel` 外观 | 玻璃，圆角 12，内边距 5；30pt 输入框 + 标准主要按钮 |
+
+组件库里没有现成的：富文本编辑区（`NSTextView` + 附件 cell）和附件块本身。它们只用上表里的组件和 `TFMetrics` / `TFColors`，不新增尺寸、圆角或颜色。
