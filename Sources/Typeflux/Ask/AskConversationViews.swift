@@ -566,17 +566,22 @@ struct AskConversationView: View {
     }
 
     private var historyList: some View {
-        let items = visibleConversations
+        let now = Date()
+        let calendar = Calendar.current
+        let items = AskHistoryPeriod.ordered(visibleConversations, now: now, calendar: calendar)
         return ScrollView {
             LazyVStack(spacing: 2) {
                 if model.isTemporaryComposer(launcher: false) {
                     AskTemporaryHistoryRow().padding(.top, 4)
                 }
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                    if index == 0 || historyGroup(items[index - 1].updatedAt) != historyGroup(item.updatedAt) {
-                        groupHeader(historyGroup(item.updatedAt), first: index == 0)
+                    let period = AskHistoryPeriod.period(for: item.updatedAt, now: now, calendar: calendar)
+                    let title = L(period.titleKey)
+                    if index == 0 || AskHistoryPeriod.period(for: items[index - 1].updatedAt, now: now,
+                                                             calendar: calendar) != period {
+                        groupHeader(title, first: index == 0)
                     }
-                    if !collapsedGroups.contains(historyGroup(item.updatedAt)) {
+                    if !collapsedGroups.contains(title) {
                         historyRow(item)
                     }
                 }
@@ -678,12 +683,6 @@ struct AskConversationView: View {
             onOpenWorkspace: { Task { await model.openWorkspace(item.id) } },
             onDelete: { deleteId = item.id }
         )
-    }
-
-    private func historyGroup(_ date: Date) -> String {
-        if Calendar.current.isDateInToday(date) { return L("ask.today") }
-        if Calendar.current.isDateInYesterday(date) { return L("ask.yesterday") }
-        return L("ask.earlier")
     }
 
     // MARK: - Content
