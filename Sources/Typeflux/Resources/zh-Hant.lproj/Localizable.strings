@@ -6131,3 +6131,18 @@
 "ask.failure.interrupted" = "模型回應中斷，現有內容已保留。請重試以繼續處理。";
 "ask.failure.empty" = "模型未產生最終回答。請重試或選擇其他模型。";
 "ask.failure.request" = "模型請求失敗，現有內容已保留。請重試或選擇其他模型。";
+
+// Inline launcher questions
+"ask.quickAsk.title" = "快速提問";
+"ask.quickAsk.placeholder" = "輸入問題，直接在這裡獲得回答";
+"ask.quickAsk.thinking" = "正在思考…";
+"ask.quickAsk.bottom" = "最新回答";
+"ask.quickAsk.stop" = "停止";
+"ask.quickAsk.copy" = "複製";
+"ask.quickAsk.followUp" = "繼續追問";
+"ask.quickAsk.open" = "在聊天中開啟";
+"ask.quickAsk.new" = "新問題";
+"ask.quickAsk.send" = "提問";
+"ask.quickAsk.hint" = "↵ 提問 · ⇧↵ 換行 · ⌘O 在聊天中開啟";
+"ask.quickAsk.advanced" = "請在聊天中使用附件、技能或工具。";
+"ask.settings.keywords.kind.quickAsk.hint" = "在啟動器中提問和查看回答，進入聊天繼續追問。";

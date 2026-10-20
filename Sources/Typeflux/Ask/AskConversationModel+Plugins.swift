@@ -12,6 +12,7 @@ enum AskPluginRegistry {
         AskFileSearchPlugin.id,
         AskSemanticFileSearchPlugin.id,
         AskOpenChatPlugin.id,
+        AskQuickAskPlugin.id,
         AskPrefixPlugin.id,
         AskSettingsPlugin.id,
         AskHelpPlugin.id,
@@ -34,7 +35,7 @@ enum AskPluginRegistry {
             .addingEnglishNames(AskKeywordAliases
                 .consolidate(AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin
                     .keywords + AskAppSearchPlugin.keywords + AskFileSearchPlugin.keywords + AskSemanticFileSearchPlugin.keywords
-                    + AskOpenChatPlugin.keywords + AskPrefixPlugin
+                    + AskOpenChatPlugin.keywords + AskQuickAskPlugin.keywords + AskPrefixPlugin
                     .keywords + AskSettingsPlugin.keywords + AskHelpPlugin.keywords + AskHistoryPlugin.keywords + AskClipboardPlugin
                     .keywords + AskNotesPlugin.keywords + AskScreenshotPlugin.keywords
                     + AskScreenshotTextPlugin.keywords
@@ -211,6 +212,7 @@ extension AskConversationModel {
                 settings: { [weak settings] in settings?.askLauncherSearchSettings ?? AskLauncherSearchSettings() }
             ),
             AskOpenChatPlugin(),
+            AskQuickAskPlugin(),
             AskPrefixPlugin(entries: { [weak self] language in
                 self?.launcherKeywordDirectory(language: language) ?? []
             }),

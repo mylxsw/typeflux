@@ -10,7 +10,7 @@ extension AskKeywordKind {
         case .apps, .files, .semanticFiles: Color.teal
         case .tabs: Color.orange
         case .bookmarks: Color.blue
-        case .chat: Color.blue
+        case .chat, .quickAsk: Color.blue
         case .prefix: Color.indigo
         case .setting: Color.gray
         case .history: Color.blue

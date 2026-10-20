@@ -6090,3 +6090,18 @@
 "ask.failure.interrupted" = "モデルの応答が中断されました。生成済みの内容は保存されています。再試行して続行してください。";
 "ask.failure.empty" = "モデルが最終回答を生成しませんでした。再試行するか、別のモデルを選択してください。";
 "ask.failure.request" = "モデルへのリクエストが失敗しました。生成済みの内容は保存されています。再試行するか、別のモデルを選択してください。";
+
+// Inline launcher questions
+"ask.quickAsk.title" = "クイック質問";
+"ask.quickAsk.placeholder" = "質問を入力すると、ここに回答が表示されます";
+"ask.quickAsk.thinking" = "考え中…";
+"ask.quickAsk.bottom" = "最新の回答";
+"ask.quickAsk.stop" = "停止";
+"ask.quickAsk.copy" = "コピー";
+"ask.quickAsk.followUp" = "続けて質問";
+"ask.quickAsk.open" = "チャットで開く";
+"ask.quickAsk.new" = "新しい質問";
+"ask.quickAsk.send" = "質問する";
+"ask.quickAsk.hint" = "↵ 質問 · ⇧↵ 改行 · ⌘O チャットで開く";
+"ask.quickAsk.advanced" = "添付ファイル、スキル、ツールはチャットで使用してください。";
+"ask.settings.keywords.kind.quickAsk.hint" = "ランチャーで質問し、チャットで会話を続けます。";

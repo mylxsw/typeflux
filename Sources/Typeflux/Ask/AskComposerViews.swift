@@ -260,6 +260,8 @@ struct AskComposer: View {
                               reason: palette.highlightedCommand?.disabledReason)
         } else if model.workflowApproval != nil {
             action = .confirm(L("ask.workflow.approval.allow"))
+        } else if plugins.keyword?.pluginID == AskQuickAskPlugin.id {
+            action = .confirm(L("ask.quickAsk.send"), enabled: model.canSubmitQuickAsk)
         } else if let display = pluginDisplay {
             if display.calendar {
                 let calendar = launcherCalendar
@@ -774,7 +776,7 @@ struct AskComposer: View {
                                     comparing: plugins.comparing, highlighted: asks ? pluginHighlight : 0,
                                     offersAskAI: asks && ![AskKillAppPlugin.id, AskSystemMonitorPlugin.id,
                                                           AskSystemInfoPlugin.id, AskEmojiPlugin.id,
-                                                          AskCalendarPlugin.id].contains(plugin.id),
+                                                          AskCalendarPlugin.id, AskQuickAskPlugin.id].contains(plugin.id),
                                     savesNoteWhenDone: plugins.savesNoteWhenDone,
                                     systemMonitor: plugin.id == AskSystemMonitorPlugin.id,
                                     systemInfo: plugin.id == AskSystemInfoPlugin.id,
@@ -797,12 +799,14 @@ struct AskComposer: View {
         let text = draft.wrappedValue.text
         let previousHint = plugins.hint
         if let argument = plugins.detect(in: text) {
+            if plugins.keyword?.pluginID == AskQuickAskPlugin.id, model.quickAsk?.handedOff == true { model.quickAsk = nil }
             pluginHighlight = 0
             pluginReserve = 0
             draft.wrappedValue.text = argument
             return true
         }
         if plugins.isActive {
+            if plugins.keyword?.pluginID == AskQuickAskPlugin.id, model.quickAsk?.handedOff == true { model.quickAsk = nil }
             plugins.update(text: text, selection: draft.wrappedValue.sentSelection, language: AppLocalization.shared.language)
             if quickResults != nil { quickResults = nil; quickReserve = 0 }
             reportHeight()
@@ -826,6 +830,7 @@ struct AskComposer: View {
     /// Return on the plugin's row: run it (or do what its plan offers, like opening
     /// a search), or use its result.
     private func runPluginMain() {
+        if plugins.keyword?.pluginID == AskQuickAskPlugin.id { model.submitQuickAsk(); return }
         if AskFileSearchPlugin.showsFileResults(for: plugins.keyword?.pluginID), plugins.isPlanCurrent,
            let action = plugins.currentOutput?.action(for: .enter) {
             performPluginAction(action); return
@@ -941,6 +946,13 @@ struct AskComposer: View {
             default: return false
             }
             return true
+        }
+        if plugins.keyword?.pluginID == AskQuickAskPlugin.id {
+            switch key {
+            case .enter, .commandEnter: model.submitQuickAsk(); return true
+            case .commandO: Task { await model.openQuickAskInChat() }; return true
+            default: return false
+            }
         }
         if plugins.plugin?.id == AskEmojiPlugin.id, !plugins.isPlanCurrent { return true }
         switch key {
@@ -1105,6 +1117,7 @@ struct AskComposer: View {
 
     var launcherCanOpenFeatureWindow: Bool {
         guard plugins.isActive, !active, !voice.isActive, model.workflowApproval == nil else { return false }
+        if plugins.keyword?.pluginID == AskQuickAskPlugin.id { return model.quickAsk?.persisted == true }
         if pluginDisplay?.calendar == true || pluginDisplay?.systemMonitor == true { return true }
         // `sys` carries only its filter as output: there is no result to move into a window.
         if pluginDisplay?.systemInfo == true { return false }
@@ -1118,6 +1131,9 @@ struct AskComposer: View {
 
     private func openLauncherFeatureWindow() {
         guard launcherCanOpenFeatureWindow, !launcherEditorIsComposing else { return }
+        if plugins.keyword?.pluginID == AskQuickAskPlugin.id {
+            Task { await model.openQuickAskInChat() }; return
+        }
         if pluginDisplay?.calendar == true { _ = calendarKey(.commandO); return }
         if pluginDisplay?.systemMonitor == true { _ = systemMonitorKey(.commandO); return }
         performPluginAction(.init(kind: .openInWindow, title: L("ask.plugin.action.openInWindow"),
@@ -1170,7 +1186,8 @@ struct AskComposer: View {
     }
 
     private var pluginHeight: CGFloat {
-        pluginDisplay.map { AskLauncherHeightReserve.holding(pluginReserve, content: AskPluginResultsView.height(for: $0)) } ?? 0
+        if plugins.keyword?.pluginID == AskQuickAskPlugin.id { return 300 }
+        return pluginDisplay.map { AskLauncherHeightReserve.holding(pluginReserve, content: AskPluginResultsView.height(for: $0)) } ?? 0
     }
 
     /// The launcher offers its starting points until something is typed. They
@@ -1531,7 +1548,7 @@ struct AskComposer: View {
     private var showsFeatureBar: Bool {
         !active && plugins.isActive && pluginDisplay != nil
             && pluginDisplay?.systemMonitor != true && pluginDisplay?.systemInfo != true
-            && pluginDisplay?.calendar != true
+            && pluginDisplay?.calendar != true && plugins.keyword?.pluginID != AskQuickAskPlugin.id
     }
 
     private var showsChatBar: Bool {
@@ -1579,6 +1596,10 @@ struct AskComposer: View {
                                        viewportHeight: launcherResultsViewportHeight,
                                        onHistory: model.openLauncherInputHistory)
                     .disabled(active)
+            } else if plugins.keyword?.pluginID == AskQuickAskPlugin.id {
+                AskQuickAskView(model: model, viewport: model.launcherViewport, chrome: launcherChromeHeight,
+                                available: availableHeight.map { $0 + AskMetrics.launcherGutter * 2 },
+                                natural: launcherResultsViewportHeight, onSubmit: runLauncherPrimaryAction)
             } else if let pluginDisplay, pluginDisplay.systemMonitor {
                 SystemMonitorLauncherView(store: model.systemMonitorWindow.store, model: model.systemMonitor,
                                           filter: draft.wrappedValue.text,
@@ -1817,6 +1838,9 @@ struct AskComposer: View {
     }
 
     private func openChat() {
+        if plugins.keyword?.pluginID == AskQuickAskPlugin.id, model.quickAsk?.conversationId != nil {
+            Task { await model.openQuickAskInChat() }; return
+        }
         Task { await model.openChatFromLauncher() }
     }
 
@@ -1859,7 +1883,7 @@ struct AskComposer: View {
         let step = AskLauncherEscape.resolve(.init(
             quickLook: AskQuickLook.shared.isVisible, menu: AskGlassMenuPresenter.shared.isShowing || contextPanelOpen,
             actions: quickActions != nil, approval: model.workflowApproval != nil,
-            running: plugins.isRunning, keyword: plugins.isActive
+            running: plugins.isRunning || (plugins.keyword?.pluginID == AskQuickAskPlugin.id && model.quickAskRunning), keyword: plugins.isActive
         ))
         switch step {
         case .closeQuickLook: AskQuickLook.shared.close()
@@ -1868,7 +1892,9 @@ struct AskComposer: View {
             AskGlassMenuPresenter.shared.hide()
         case .closeActions: quickActions = nil
         case .declineApproval: model.answerWorkflowApproval(false)
-        case .cancelRun: _ = plugins.cancelRun()
+        case .cancelRun:
+            if plugins.keyword?.pluginID == AskQuickAskPlugin.id { model.stopQuickAsk() }
+            else { _ = plugins.cancelRun() }
         case .exitKeyword: exitKeyword()
         case .closeLauncher: return false
         }
@@ -1877,7 +1903,14 @@ struct AskComposer: View {
 
     /// Leaves keyword mode, keeping the text typed after the keyword as plain launcher text.
     private func exitKeyword() {
+        let answeredQuickAsk = plugins.keyword?.pluginID == AskQuickAskPlugin.id && model.quickAsk?.conversationId != nil
+        if plugins.keyword?.pluginID == AskQuickAskPlugin.id {
+            model.stopQuickAsk()
+            model.quickAsk?.restoreOnPresentation = false
+        }
         plugins.deactivate()
+        // The question is already in its conversation. Do not reinterpret it as another keyword.
+        if answeredQuickAsk { draft.wrappedValue.text = "" }
         pluginHighlight = 0
         pluginReserve = 0
         refreshQuickResults()
@@ -2344,6 +2377,7 @@ struct AskComposer: View {
 
     private var launcherSecondaryHint: String {
         if !active, model.launcherHistoryMode { return L("ask.inputHistory.hint") }
+        if !active, plugins.keyword?.pluginID == AskQuickAskPlugin.id { return L("ask.quickAsk.hint") }
         if !active, let pluginDisplay { return AskPluginResultsView.hint(for: pluginDisplay) }
         if !active, showsLauncherSuggestions, let item = highlightedHomeItem {
             let hint = AskLauncherSuggestions.hint(for: item, hasContext: contextToken != nil)
