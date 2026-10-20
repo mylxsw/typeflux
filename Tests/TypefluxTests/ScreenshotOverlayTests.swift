@@ -323,6 +323,17 @@ final class ScreenshotOverlayTests: XCTestCase {
         XCTAssertGreaterThan(selectionEdge.redComponent, 0.9)
         XCTAssertGreaterThan(selectionEdge.greenComponent, 0.9)
         XCTAssertGreaterThan(selectionEdge.blueComponent, 0.9)
+        let guide = try XCTUnwrap(bitmap.colorAt(x: Int(25 * scale), y: Int(100 * scale)))
+        XCTAssertGreaterThan(guide.redComponent, 0.9)
+        XCTAssertGreaterThan(guide.greenComponent, 0.9)
+        XCTAssertGreaterThan(guide.blueComponent, 0.9)
+        let handle = try XCTUnwrap(bitmap.colorAt(x: Int(23 * scale), y: Int(140 * scale)))
+        XCTAssertEqual(handle.redComponent, handle.greenComponent, accuracy: 0.02)
+        XCTAssertEqual(handle.greenComponent, handle.blueComponent, accuracy: 0.02)
+        let loupeCenter = try XCTUnwrap(bitmap.colorAt(x: Int(170 * scale), y: Int(165 * scale)))
+        XCTAssertGreaterThan(loupeCenter.redComponent, 0.9)
+        XCTAssertGreaterThan(loupeCenter.greenComponent, 0.9)
+        XCTAssertGreaterThan(loupeCenter.blueComponent, 0.9)
         // The loupe's dark body is drawn where it was placed.
         XCTAssertGreaterThan(bitmap.colorAt(x: Int(200 * scale), y: Int(130 * scale))?.alphaComponent ?? 0, 0.5)
 

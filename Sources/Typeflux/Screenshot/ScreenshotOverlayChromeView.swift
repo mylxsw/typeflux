@@ -156,9 +156,9 @@ final class ScreenshotOverlayChromeView: NSView {
             let center = ScreenshotSelection.point(for: handle, in: rect)
             let frame = CGRect(x: center.x - Self.handleSize / 2, y: center.y - Self.handleSize / 2,
                                width: Self.handleSize, height: Self.handleSize)
-            context.setFillColor(NSColor.white.cgColor)
+            context.setFillColor(NSColor.black.withAlphaComponent(0.65).cgColor)
             context.fillEllipse(in: frame)
-            context.setStrokeColor(Self.accent.cgColor)
+            context.setStrokeColor(Self.frameColor.cgColor)
             context.setLineWidth(1.5)
             context.strokeEllipse(in: frame)
         }
@@ -166,14 +166,21 @@ final class ScreenshotOverlayChromeView: NSView {
 
     private func drawGuides(through point: CGPoint, in context: CGContext) {
         context.saveGState()
-        context.setStrokeColor(Self.accent.withAlphaComponent(0.7).cgColor)
-        context.setLineWidth(1)
         context.setLineDash(phase: 0, lengths: [4, 4])
         context.move(to: CGPoint(x: bounds.minX, y: point.y + 0.5))
         context.addLine(to: CGPoint(x: bounds.maxX, y: point.y + 0.5))
         context.move(to: CGPoint(x: point.x + 0.5, y: bounds.minY))
         context.addLine(to: CGPoint(x: point.x + 0.5, y: bounds.maxY))
+        let guides = context.path
+        context.setStrokeColor(NSColor.black.withAlphaComponent(0.65).cgColor)
+        context.setLineWidth(3)
         context.strokePath()
+        if let guides {
+            context.addPath(guides)
+            context.setStrokeColor(Self.frameColor.cgColor)
+            context.setLineWidth(1)
+            context.strokePath()
+        }
         context.restoreGState()
     }
 
@@ -199,9 +206,7 @@ final class ScreenshotOverlayChromeView: NSView {
         }
         let center = CGRect(x: grid.minX + CGFloat(ScreenshotMagnifier.columns / 2) * cell,
                             y: grid.minY + CGFloat(ScreenshotMagnifier.rows / 2) * cell, width: cell, height: cell)
-        context.setStrokeColor(Self.accent.cgColor)
-        context.setLineWidth(1.5)
-        context.stroke(center)
+        drawFrame(center, width: 1.5, in: context)
         let caption = [loupe.coordinates, loupe.color].filter { !$0.isEmpty }
         for (index, line) in caption.enumerated() {
             (line as NSString).draw(at: CGPoint(x: grid.minX + 8, y: grid.maxY + 4 + CGFloat(index) * 15),
