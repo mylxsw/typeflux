@@ -121,14 +121,7 @@ final class StatusBarController: NSObject {
     }
 
     private static func presentInstantVoiceInputSuggestion() -> Bool {
-        let alert = NSAlert()
-        alert.alertStyle = .informational
-        alert.messageText = L("settings.instantVoiceInput.suggestion.title")
-        alert.informativeText = L("settings.instantVoiceInput.suggestion.message")
-        alert.addButton(withTitle: L("settings.instantVoiceInput.suggestion.enable"))
-        alert.addButton(withTitle: L("common.cancel"))
-        NSApp.activate(ignoringOtherApps: true)
-        return alert.runModal() == .alertFirstButtonReturn
+        InstantVoiceInputSuggestionPresenter.present()
     }
 
     func start() {

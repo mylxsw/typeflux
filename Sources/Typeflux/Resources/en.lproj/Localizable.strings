@@ -157,8 +157,8 @@
 "settings.microphone.automatic" = "Automatic";
 "settings.instantVoiceInput.title" = "Speak Immediately";
 "settings.instantVoiceInput.subtitle" = "Keeps the microphone ready for up to 15 minutes after use to reduce startup delay. Has no effect with the built-in microphone.";
-"settings.instantVoiceInput.suggestion.title" = "Enable Speak Immediately for this Bluetooth microphone?";
-"settings.instantVoiceInput.suggestion.message" = "Starting a Bluetooth microphone can add over 100 ms of delay.\n\nWhen enabled, it stays ready for up to 15 minutes after recording, so the next input starts faster.";
+"settings.instantVoiceInput.suggestion.title" = "Start Bluetooth recordings faster";
+"settings.instantVoiceInput.suggestion.message" = "Starting a recording with a Bluetooth headset microphone may take a moment.\n\nEnable Speak Immediately to start your next recording faster.";
 "settings.instantVoiceInput.suggestion.enable" = "Enable Speak Immediately";
 "settings.mouseVoice.title" = "Mouse Voice Input";
 "settings.mouseVoice.subtitle" = "Hold still in a text field for about 0.8 seconds to reveal a nearby microphone. Text selection and early dragging do not trigger it.";
