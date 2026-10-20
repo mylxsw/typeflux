@@ -13,12 +13,12 @@ struct ModuleHealthSettingsView: View {
         }
     }
 
-    private var summaryDetail: String {
+    private var summaryDetail: String? {
         switch model.summaryKey {
         case "settings.services.summaryUnavailable": L("settings.services.summaryUnavailableDetail")
         case "settings.services.summaryRecovering": L("settings.services.recoveringDetail")
         case "settings.services.summaryUnknown": L("settings.services.summaryUnknownDetail")
-        default: L("settings.services.summaryHealthyDetail")
+        default: nil
         }
     }
 

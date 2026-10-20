@@ -363,7 +363,7 @@ struct ModuleHealthSettingsTests {
                 }
                 #expect(!UI.contains(L("settings.services.notebook"), in: host))
                 #expect(!UI.contains(L("settings.services.retry"), in: host))
-                #expect(UI.contains(L("settings.services.summaryHealthyDetail"), in: host))
+                #expect(!UI.contains(L("settings.services.summaryHealthyDetail"), in: host))
                 try UI.snapshot(host, name: "service-health-healthy")
                 try UI.button(L("settings.services.diagnostics"), in: host).press()
                 try await UI.wait { UI.contains(L("settings.services.notebook"), in: host) }
