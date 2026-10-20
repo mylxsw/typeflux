@@ -106,6 +106,25 @@ struct TerminalCommandTests {
         #expect(TerminalApplication.terminal.bundleID == "com.apple.Terminal")
     }
 
+    @Test func `input prefix stays compact and keeps full capability titles elsewhere`() async {
+        let plugin: any AskLauncherPlugin = AskTerminalCommandPlugin()
+        for word in ["cmd", ">", "shell"] {
+            for terminal in TerminalApplication.allCases {
+                let keyword = AskKeyword(keyword: word, pluginID: plugin.id,
+                                         options: [AskTerminalCommandPlugin.terminalOption: terminal.rawValue])
+                #expect(plugin.inputChipTitle(for: keyword) == word)
+                #expect(plugin.chipDetail(for: keyword, language: .english) == nil)
+                #expect(AskConversationModel.chipTitle(plugin: plugin, keyword: keyword, language: .english) == plugin
+                    .title)
+                let plan = await plugin.plan(.init(text: "pwd", origin: .argument, keyword: keyword,
+                                                   options: keyword.options, interfaceLanguage: .english))
+                #expect(plan.title == L("terminal.command.runIn", terminal.title))
+            }
+        }
+        let other: any AskLauncherPlugin = AskQuickAskPlugin()
+        #expect(other.inputChipTitle(for: other.defaultKeywords[0]) == other.title)
+    }
+
     @Test func `planning and plugin run cannot execute`() async throws {
         let plugin = AskTerminalCommandPlugin()
         for terminal in TerminalApplication.allCases {
@@ -117,7 +136,7 @@ struct TerminalCommandTests {
                 terminal: terminal
             )))
             #expect(plan.action(for: .commandC)?.kind == .copy(request.text))
-            #expect(plugin.chipDetail(for: request.keyword, language: .english) == "Terminal")
+            #expect(plugin.chipDetail(for: request.keyword, language: .english) == nil)
             #expect(plugin.nextOptions(after: plan, request: request, step: 1) == nil)
             do {
                 _ = try await plugin.run(request, plan: plan) { _ in }

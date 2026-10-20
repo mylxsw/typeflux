@@ -2204,7 +2204,7 @@ struct AskComposer: View {
                     if plugin.id == AskCalendarPlugin.id {
                         CalendarKeywordChip(model: model.calendarLauncher)
                     } else {
-                        AskKeywordChip(title: plugin.title, symbol: plugin.symbol,
+                        AskKeywordChip(title: plugin.inputChipTitle(for: keyword), symbol: plugin.symbol,
                                        detail: plugin.chipDetail(for: keyword,
                                                                  language: AppLocalization.shared.language),
                                        tint: plugin.keywordColor)

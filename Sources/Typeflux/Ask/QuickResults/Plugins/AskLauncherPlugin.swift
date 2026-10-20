@@ -23,6 +23,8 @@ protocol AskLauncherPlugin: Sendable {
     var entersOnReturn: Bool { get }
     /// What the editor says while the keyword is active.
     func placeholder(selectionLines: Int?) -> String
+    /// Compact title in the input prefix; full capability names remain in settings and results.
+    func inputChipTitle(for keyword: AskKeyword) -> String
     /// A keyword's preset for its chip, e.g. "Japanese" for `fyja`; nil for none.
     func chipDetail(for keyword: AskKeyword, language: AppLanguage) -> String?
     /// What running `request` will do, and whether it may run while typing.
@@ -35,6 +37,7 @@ protocol AskLauncherPlugin: Sendable {
 }
 
 extension AskLauncherPlugin {
+    func inputChipTitle(for _: AskKeyword) -> String { title }
     var keywordColor: Color { AskTheme.accent }
     var optionName: String? { nil }
     var runsWithoutInput: Bool { false }
