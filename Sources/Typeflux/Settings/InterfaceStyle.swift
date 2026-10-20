@@ -70,6 +70,8 @@ struct InterfaceStyleRoot: ViewModifier {
         content.environment(\.interfaceStyle, observer.style)
             .environment(\.liquidGlassIntensity, observer.glassIntensity)
             .environment(\.interfaceAppearanceObserver, observer)
+            // Custom windows scroll normally without permanent system scrollbar tracks.
+            .scrollIndicators(.never)
     }
 }
 

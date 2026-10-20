@@ -279,12 +279,13 @@ final class AskFilePreviewController: AskImageScopeObserver {
         panel.onOrderOut = { [weak self] in
             if self?.isVisible == true { self?.dismissNow() }
         }
+        let preview = AskFilePreviewView(state: state).scrollIndicators(.never)
         if let style {
-            let hosting = NSHostingView(rootView: AskFilePreviewView(state: state).interfaceStyle(following: style))
+            let hosting = NSHostingView(rootView: preview.interfaceStyle(following: style))
             hosting.sizingOptions = []
             panel.contentView = hosting
         } else {
-            let hosting = NSHostingView(rootView: AskFilePreviewView(state: state))
+            let hosting = NSHostingView(rootView: preview)
             hosting.sizingOptions = []
             panel.contentView = hosting
         }

@@ -236,7 +236,7 @@ struct AskMarkdownEditor: NSViewRepresentable {
         view.setAccessibilityIdentifier("ask.notes.editor")
         Self.highlight(view)
         controller.textView = view
-        let scroll = NSScrollView()
+        let scroll = TFOverlayScrollView()
         scroll.drawsBackground = false
         scroll.hasVerticalScroller = !growsWithText
         scroll.autohidesScrollers = true

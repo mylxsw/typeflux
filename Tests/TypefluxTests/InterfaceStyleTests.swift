@@ -14,6 +14,33 @@ struct InterfaceStyleTests {
         return (SettingsStore(defaults: defaults), defaults)
     }
 
+    @Test func windowStyleKeepsLongListsScrollableWithoutAVisibleTrack() throws {
+        _ = NSApplication.shared
+        let (settings, _) = store()
+        let observer = InterfaceStyleObserver(settings: settings)
+        let root = VStack {
+            ScrollView(.vertical, showsIndicators: true) {
+                VStack { ForEach(0..<40) { Text("Row \($0)") } }
+            }
+        }
+        .interfaceStyle(following: observer)
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 240, height: 160),
+                              styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        let host = NSHostingView(rootView: root)
+        window.contentView = host
+        window.orderFront(nil)
+        defer { window.close() }
+        host.layoutSubtreeIfNeeded()
+        func scrollView(in view: NSView) -> NSScrollView? {
+            if let scroll = view as? NSScrollView { return scroll }
+            return view.subviews.lazy.compactMap(scrollView).first
+        }
+        let scroll = try #require(scrollView(in: host))
+        #expect(!scroll.hasVerticalScroller)
+        #expect((scroll.documentView?.bounds.height ?? 0) > scroll.contentView.bounds.height)
+    }
+
     // MARK: - Materials
 
     @Test func classicIsOpaqueOnEverySystem() {

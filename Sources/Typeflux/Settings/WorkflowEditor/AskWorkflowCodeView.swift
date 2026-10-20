@@ -22,8 +22,9 @@ struct AskWorkflowCodeView: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> NSScrollView {
-        let scrollView = NSScrollView()
+        let scrollView = TFOverlayScrollView()
         scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers = true
         scrollView.borderType = .noBorder
         let textView = AskWorkflowTextView(frame: .zero)
         textView.minSize = .zero

@@ -282,7 +282,7 @@ private struct AskAnswerWindowView: View {
                     .frame(height: AskAnswerWindowController.Metrics.titleBarInsetHeight)
 
                 VStack(alignment: .leading, spacing: AskAnswerWindowController.Metrics.sectionSpacing) {
-                    ScrollView(.vertical, showsIndicators: true) {
+                    ScrollView(.vertical, showsIndicators: false) {
                         VStack(alignment: .leading, spacing: AskAnswerWindowController.Metrics.sectionSpacing) {
                             promptSection
                             answerSection

@@ -52,6 +52,8 @@ struct AskComposerResponsiveTests {
         #expect(editor.selectedRange() == selection)
         #expect(editor.string == state.text)
         #expect(scroll.hasVerticalScroller)
+        #expect(scroll.autohidesScrollers)
+        #expect(scroll.scrollerStyle == .overlay)
 
         window.setContentSize(NSSize(width: 600, height: 500))
         state.maximumHeight = 148

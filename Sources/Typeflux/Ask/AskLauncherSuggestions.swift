@@ -132,7 +132,7 @@ struct AskLauncherSuggestions: View {
         VStack(spacing: 0) {
             Rectangle().fill(AskTheme.launcherSeparator).frame(height: 1).padding(.horizontal, 12)
             ScrollViewReader { proxy in
-                ScrollView(.vertical, showsIndicators: true) {
+                ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 0) {
                         ForEach(Array(sections.enumerated()), id: \.offset) { _, section in
                             sectionView(section, items: items, numbers: numbers, current: current)

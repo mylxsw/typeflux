@@ -52,6 +52,7 @@ struct ScreenshotSensitiveInfoPanel: View {
                     ForEach(state.rows) { row in rowView(row) }
                 }
             }
+            .scrollIndicators(.never)
             .frame(height: min(CGFloat(state.rows.count) * 30, Self.maximumListHeight))
             Button { perform(.applyAll) } label: {
                 Text(L("screenshot.sensitive.applyAll")).font(.system(size: 12.5, weight: .semibold))

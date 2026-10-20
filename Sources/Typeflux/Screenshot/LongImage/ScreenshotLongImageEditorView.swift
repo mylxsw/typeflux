@@ -27,7 +27,7 @@ final class ScreenshotLongImageEditorView: NSView {
     static let zoomFactor: CGFloat = 1.25
 
     let canvas: ScreenshotLongImageCanvas
-    let scrollView = NSScrollView()
+    let scrollView = TFOverlayScrollView()
     let minimap = ScreenshotLongImageMinimapView()
     private let info = NSTextField(labelWithString: "")
     private(set) var toolbar: ScreenshotToolbarHostingView?
@@ -45,7 +45,6 @@ final class ScreenshotLongImageEditorView: NSView {
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = true
         scrollView.autohidesScrollers = true
-        scrollView.scrollerStyle = .overlay
         scrollView.allowsMagnification = true
         scrollView.maxMagnification = Self.maxMagnification
         addSubview(scrollView)

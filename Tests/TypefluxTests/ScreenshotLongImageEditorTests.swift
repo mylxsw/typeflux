@@ -256,6 +256,7 @@ final class ScreenshotLongImageEditorTests: XCTestCase {
         defer { controller.dismiss() }
         let view = try XCTUnwrap(controller.editorView)
         XCTAssertTrue(view.scrollView.hasHorizontalScroller)
+        XCTAssertEqual(view.scrollView.scrollerStyle, .overlay)
         view.scrollView.setMagnification(1, centeredAt: CGPoint(x: 0, y: 100))
         let before = view.canvas.visibleRect.maxX
         view.show(centeredAt: CGPoint(x: 1800, y: 100))

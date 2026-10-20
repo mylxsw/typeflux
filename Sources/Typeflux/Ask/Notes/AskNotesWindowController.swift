@@ -89,7 +89,8 @@ final class AskNotesWindowController: NSObject, NSWindowDelegate {
         window.titlebarSeparatorStyle = .none
         window.identifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.notes")
         let root = AskNotesView(model: model) { [weak window] in window?.performClose(nil) }
-        let content = interfaceStyle.map { AnyView(root.interfaceStyle(following: $0)) } ?? AnyView(root)
+        let content = interfaceStyle.map { AnyView(root.interfaceStyle(following: $0)) }
+            ?? AnyView(root.scrollIndicators(.never))
         let hosting = TransparentAskHostingView(rootView: content)
         hosting.sizingOptions = []
         window.contentView = hosting

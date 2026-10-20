@@ -47,9 +47,10 @@ struct AskComposerTextView: NSViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
     func makeNSView(context: Context) -> NSScrollView {
-        let scroll = NSScrollView()
+        let scroll = TFOverlayScrollView()
         scroll.drawsBackground = false
         scroll.hasVerticalScroller = true
+        scroll.autohidesScrollers = true
         let editor = Editor()
         editor.identifier = NSUserInterfaceItemIdentifier("ask.composer")
         editor.isRichText = false

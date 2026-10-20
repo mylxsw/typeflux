@@ -518,10 +518,10 @@ struct AskNoteDetailView: View {
     private var formatBar: some View {
         ViewThatFits(in: .horizontal) {
             formatButtons
-            ScrollView(.horizontal, showsIndicators: true) {
+            ScrollView(.horizontal, showsIndicators: false) {
                 formatButtons
             }
-            // Leave room for a legacy horizontal scrollbar as well as overlay scrollbars.
+            // Preserve the toolbar height when its controls need horizontal scrolling.
             .frame(height: 52)
             .accessibilityIdentifier("ask.notes.formatScroll")
         }
