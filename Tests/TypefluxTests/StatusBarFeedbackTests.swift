@@ -28,22 +28,16 @@ struct StatusBarFeedbackTests {
     }
 
     @Test(arguments: InterfaceStyle.allCases)
-    func `menu feedback opens and reopens the existing form`(style: InterfaceStyle) async throws {
+    func `menu feedback opens its own window and reopens it`(style: InterfaceStyle) async throws {
         try await UI.withFixture { settings in
             settings.interfaceStyle = style
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
             defer { try? FileManager.default.removeItem(at: directory) }
-            let windowController = SettingsWindowController.shared
-            windowController.window?.close()
-            let previousLibrary = windowController.modelLibrary
-            windowController.modelLibrary = AskModelLibrary(
-                defaults: settings.defaults,
-                automaticallyLoadsCatalog: false
-            )
-            defer {
-                windowController.window?.close()
-                windowController.modelLibrary = previousLibrary
-            }
+            let settingsWindow = SettingsWindowController.shared
+            settingsWindow.window?.close()
+            let feedback = FeedbackWindowController.shared
+            feedback.window?.close()
+            defer { feedback.window?.close() }
             let controller = StatusBarController(
                 appState: AppStateStore(), settingsStore: settings,
                 historyStore: FileHistoryStore(baseDir: directory)
@@ -61,21 +55,17 @@ struct StatusBarFeedbackTests {
             )
             guide.show(query: "")
             defer { guide.dismiss() }
-            // Exercise first presentation, the existing window, and a newly recreated window.
+            // The first presentation, the already open window, and a window opened again after closing.
             for attempt in 0 ..< 3 {
                 if attempt == 1 { guide.model.openFeedback(.direct) }
                 else { feedbackMenu.performActionForItem(at: 0) }
-                let window = try #require(windowController.window)
-                try await UI.wait { window.attachedSheet != nil }
-                let sheet = try #require(window.attachedSheet)
-                let host = try #require(sheet.contentView)
-                try await UI.wait { UI.contains(L("feedback.direct.title"), in: host) }
-                #expect(UI.contains(L("feedback.direct.contentLabel"), in: host))
-                #expect(UI.contains(L("feedback.direct.submit"), in: host))
+                let window = try #require(feedback.window)
+                try await UI.wait { window.isVisible }
+                #expect(window.title == L("feedback.direct.title"))
+                #expect(window.attachedSheet == nil)
+                #expect(settingsWindow.window?.isVisible != true, "feedback must not open Settings")
                 #expect(guide.isPresented && guide.model.isPresented)
-                try UI.button(L("common.cancel"), in: host).press()
-                try await UI.wait { window.attachedSheet == nil }
-                if attempt == 1 { window.close() }
+                if attempt != 1 { window.performClose(nil) }
             }
         }
     }

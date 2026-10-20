@@ -1,11 +1,12 @@
 # GUL-430 validation
 
-Implemented on baseline `6a4b2028`. No production provider requests or billable model calls were used during validation: cloud/local APIs are scripted fixtures. Screenshots render the production SwiftUI/AppKit launcher with synthetic conversation content.
+Implemented on baseline `6a4b2028`, then merged `origin/main` at `50b2b8cd` and revalidated the overlapping localization resources and Quick Ask behavior. No production provider requests or billable model calls were used during validation: cloud/local APIs are scripted fixtures. Screenshots render the production SwiftUI/AppKit launcher with synthetic conversation content.
 
 ## Results
 
 - 193 distinct test methods across 17 focused suites have passing results after targeted repairs/retries (25 Quick Ask methods and 168 existing regression methods).
-- Final run: `TYPEFLUX_ASK_SNAPSHOTS="$PWD/docs/validation/gul-430" make coverage SUITE="AskQuickAskTests"` — 25 passed, 51.77 seconds total, including 32.06 seconds of build preparation; test execution reported 5.051 seconds.
+- Pre-merge final run: `TYPEFLUX_ASK_SNAPSHOTS="$PWD/docs/validation/gul-430" make coverage SUITE="AskQuickAskTests"` — 25 passed, 51.77 seconds total, including 32.06 seconds of build preparation; test execution reported 5.051 seconds.
+- Post-merge run: `TYPEFLUX_ASK_SNAPSHOTS="$PWD/docs/validation/gul-430" make coverage SUITE="AskQuickAskTests LocalizationResourceTests"` — all 50 methods passed (25 Quick Ask and 25 localization checks), 243.96 seconds total, including 234.14 seconds of build/discovery and 9.81 seconds of test execution. This brings the distinct passing scope to 218 methods across 18 suites.
 - Changed executable-line coverage: **306 / 328 = 93.29%**, measured from the final binary's own coverage profile. This is changed production Swift line coverage, not whole-project or branch coverage. `changed-line-coverage.json` contains the per-file counts and uncovered lines. Tests and localization resources are excluded from executable-line totals. Profiles from earlier binaries were not used for this figure.
 - Light/dark launcher renders inspected: action buttons remain visible at a 420-point host height, Markdown/code is readable, and conversation content stays in the launcher.
 - `git diff --check` passes.

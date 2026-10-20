@@ -187,13 +187,6 @@ struct StudioView: View {
     @State private var isMCPServerDialogPresented = false
     @State private var mcpServerPendingDeletion: MCPServerConfig?
     @State private var showingClearHistoryConfirmation = false
-    @State private var isDirectFeedbackPresented = false
-    @State private var feedbackContent = ""
-    @State private var feedbackContact = ""
-    @State private var feedbackImages: [FeedbackImageAttachment] = []
-    @State private var feedbackImageUploadTasks: [FeedbackImageAttachment.ID: Task<Void, Never>] = [:]
-    @State private var isSubmittingFeedback = false
-    @State private var feedbackSubmissionError: String?
     @State private var agentPane: AgentSettingsPane
     @StateObject private var interfaceStyleObserver: InterfaceStyleObserver
     @State private var launcherPane: LauncherSettingsPane
@@ -303,10 +296,6 @@ struct StudioView: View {
         .onReceive(NotificationCenter.default.publisher(for: .authDidLogin)) { _ in
             Task { await refreshSidebarAccountStatus() }
         }
-        .onReceive(viewModel.$directFeedbackRequestID.compactMap { $0 }.receive(on: RunLoop.main)) { _ in
-            viewModel.directFeedbackRequestID = nil
-            openDirectFeedback()
-        }
         .onReceive(viewModel.$settingsPaneRequest.compactMap { $0 }) { pane in
             settingsPane = pane
         }
@@ -401,175 +390,6 @@ struct StudioView: View {
         } message: {
             Text(L("history.clearDialog.message"))
         }
-        .sheet(
-            isPresented: $isDirectFeedbackPresented,
-            onDismiss: cancelAllFeedbackImageUploads
-        ) {
-            directFeedbackSheet
-        }
-    }
-
-    private var directFeedbackSheet: some View {
-        DirectFeedbackSheet(
-            content: $feedbackContent,
-            contact: $feedbackContact,
-            images: $feedbackImages,
-            isSubmitting: isSubmittingFeedback,
-            errorMessage: feedbackSubmissionError,
-            onAddImages: selectFeedbackImages,
-            onRemoveImage: removeFeedbackImage,
-            onCancel: {
-                cancelAllFeedbackImageUploads()
-                isDirectFeedbackPresented = false
-            },
-            onSubmit: submitDirectFeedback
-        )
-    }
-
-    private func openDirectFeedback() {
-        guard !isDirectFeedbackPresented else { return }
-        cancelAllFeedbackImageUploads()
-        feedbackContent = ""
-        feedbackContact = authState.userProfile?.email ?? ""
-        feedbackImages = []
-        feedbackImageUploadTasks = [:]
-        feedbackSubmissionError = nil
-        isSubmittingFeedback = false
-        isDirectFeedbackPresented = true
-    }
-
-    private func submitDirectFeedback() {
-        let content = feedbackContent
-        let contact = feedbackContact
-        isSubmittingFeedback = true
-        feedbackSubmissionError = nil
-
-        Task { @MainActor in
-            do {
-                let credential = await authState.validSessionCredential()
-                let imageURLs: [String]
-                do {
-                    imageURLs = try FeedbackUploadFlow.submissionImageURLs(
-                        for: feedbackImages,
-                        submittingAs: FeedbackUploadOwner(credential)
-                    )
-                } catch let error as FeedbackUploadOwnerError {
-                    // Never attach another sign-in's uploads; the user removes
-                    // and re-adds them under the current account.
-                    for id in error.staleImageIDs {
-                        updateFeedbackImage(id: id) { $0.state = .failed(error.localizedDescription) }
-                    }
-                    throw error
-                }
-                _ = try await FeedbackAPIService.submit(
-                    content: content,
-                    contact: contact,
-                    imageURLs: imageURLs,
-                    token: credential?.accessToken
-                )
-                isSubmittingFeedback = false
-                isDirectFeedbackPresented = false
-                feedbackContent = ""
-                feedbackContact = ""
-                feedbackImages = []
-                viewModel.showToast(L("feedback.toast.submitted"))
-            } catch {
-                isSubmittingFeedback = false
-                feedbackSubmissionError = error.localizedDescription
-            }
-        }
-    }
-
-    private func selectFeedbackImages() {
-        let remainingSlots = max(0, 4 - feedbackImages.count)
-        guard remainingSlots > 0 else { return }
-
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        panel.allowedContentTypes = [.jpeg, .png, .webP, .gif]
-
-        guard panel.runModal() == .OK else { return }
-        let selectedURLs = Array(panel.urls.prefix(remainingSlots))
-        for url in selectedURLs {
-            enqueueFeedbackImageUpload(from: url)
-        }
-    }
-
-    private func removeFeedbackImage(id: FeedbackImageAttachment.ID) {
-        feedbackImageUploadTasks.removeValue(forKey: id)?.cancel()
-        feedbackImages.removeAll { $0.id == id }
-    }
-
-    private func enqueueFeedbackImageUpload(from url: URL) {
-        let id = UUID()
-        feedbackImages.append(
-            FeedbackImageAttachment(
-                id: id,
-                filename: url.lastPathComponent,
-                state: .preparing
-            )
-        )
-
-        let task = Task.detached(priority: .utility) {
-            do {
-                try Task.checkCancellation()
-                let prepared = try FeedbackImageProcessor.prepare(url: url)
-                try Task.checkCancellation()
-                await updateFeedbackImage(id: id) { image in
-                    image.filename = prepared.filename
-                    image.thumbnail = prepared.thumbnail
-                    image.state = .uploading
-                }
-                try Task.checkCancellation()
-
-                // The ticket and the PUT carry the same account token; the
-                // image remembers which sign-in uploaded it.
-                let credential = await AuthState.shared.validSessionCredential()
-                let imageURL = try await FeedbackUploadFlow.upload(prepared, credential: credential)
-
-                await updateFeedbackImage(id: id) { image in
-                    image.state = .uploaded(imageURL)
-                    image.uploadOwner = FeedbackUploadOwner(credential)
-                }
-            } catch is CancellationError {
-                await clearFeedbackImageUploadTask(id: id)
-                return
-            } catch {
-                guard !Task.isCancelled else {
-                    await clearFeedbackImageUploadTask(id: id)
-                    return
-                }
-                await updateFeedbackImage(id: id) { image in
-                    image.state = .failed(error.localizedDescription)
-                }
-            }
-            await clearFeedbackImageUploadTask(id: id)
-        }
-        feedbackImageUploadTasks[id] = task
-    }
-
-    @MainActor
-    private func updateFeedbackImage(
-        id: FeedbackImageAttachment.ID,
-        mutate: (inout FeedbackImageAttachment) -> Void
-    ) {
-        guard let index = feedbackImages.firstIndex(where: { $0.id == id }) else {
-            return
-        }
-        mutate(&feedbackImages[index])
-    }
-
-    @MainActor
-    private func clearFeedbackImageUploadTask(id: FeedbackImageAttachment.ID) {
-        feedbackImageUploadTasks.removeValue(forKey: id)
-    }
-
-    @MainActor
-    private func cancelAllFeedbackImageUploads() {
-        feedbackImageUploadTasks.values.forEach { $0.cancel() }
-        feedbackImageUploadTasks = [:]
     }
 
     private func handleAccountAction() {

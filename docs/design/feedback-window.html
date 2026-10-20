@@ -1,0 +1,943 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark" data-style="glass">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux 问题反馈：独立窗口 + 富文本正文（GUL-427）</title>
+<style>
+/* Tokens and control recipes are copied from docs/design/settings-search-unification.html (the
+   component library spec, TF* in Sources/Typeflux/UI/Components). Nothing here adds a new size,
+   radius or color: every control below names the TF component it stands for. */
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Helvetica Neue", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --spring: cubic-bezier(.34, 1.56, .64, 1);
+  --accent: #0a84ff; --accent-rgb: 10,132,255; --accent-hover: #2b95ff; --green: #30d158;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0b0b10; --win-bg: #1c1c21; --win-glass: rgba(28,28,33,.72); --sidebar-tint: rgba(44,44,52,.55);
+  --text: rgba(255,255,255,.92); --text-2: rgba(235,235,245,.62); --text-3: rgba(235,235,245,.38);
+  --sep: rgba(255,255,255,.08); --hover: rgba(255,255,255,.06); --press: rgba(255,255,255,.11);
+  --card: rgba(255,255,255,.045); --card-border: rgba(255,255,255,.07);
+  --control: rgba(255,255,255,.075); --control-border: rgba(255,255,255,.10); --raised: #48484f;
+  --accent-soft: rgba(10,132,255,.22); --danger: #ff453a; --danger-rgb: 255,69,58; --warning: #eb803d; --success: #29c76e;
+  --glass-fill: rgba(44,44,52,.42); --glass-strong: rgba(38,38,44,.86);
+  --glass-rim-a: rgba(255,255,255,.40); --glass-rim-b: rgba(255,255,255,.12); --glass-hi: rgba(255,255,255,.12);
+  --glass-shadow: 0 12px 34px rgba(0,0,0,.38), 0 1px 2px rgba(0,0,0,.35);
+  --ambient-a: rgba(10,132,255,.16); --ambient-b: rgba(124,58,237,.12); --win-border: rgba(255,255,255,.12);
+}
+[data-theme="light"] {
+  color-scheme: light;
+  --page: #e9ebf0; --win-bg: #f6f6f8; --win-glass: rgba(246,246,248,.74); --sidebar-tint: rgba(255,255,255,.6);
+  --text: rgba(0,0,0,.86); --text-2: rgba(60,60,67,.68); --text-3: rgba(60,60,67,.42);
+  --sep: rgba(0,0,0,.08); --hover: rgba(0,0,0,.045); --press: rgba(0,0,0,.085);
+  --card: #ffffff; --card-border: rgba(0,0,0,.07);
+  --control: rgba(0,0,0,.045); --control-border: rgba(0,0,0,.07); --raised: #ffffff;
+  --accent-soft: rgba(10,132,255,.14); --danger: #ff3b30; --danger-rgb: 255,59,48; --accent-hover: #0077ed; --warning: #d97706; --success: #16a34a;
+  --glass-fill: rgba(255,255,255,.55); --glass-strong: rgba(255,255,255,.9);
+  --glass-rim-a: rgba(255,255,255,.95); --glass-rim-b: rgba(255,255,255,.55); --glass-hi: rgba(255,255,255,.7);
+  --glass-shadow: 0 10px 30px rgba(30,30,60,.14), 0 1px 2px rgba(30,30,60,.12);
+  --ambient-a: rgba(10,132,255,.10); --ambient-b: rgba(168,85,247,.08); --win-border: rgba(0,0,0,.10);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font: 13px/1.45 var(--font); -webkit-font-smoothing: antialiased; background: var(--page); color: var(--text); display: flex; flex-direction: column; align-items: center; padding: 14px; gap: 10px; }
+button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+input { font: inherit; color: inherit; }
+svg.i { width: 15px; height: 15px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- prototype controls (not part of the product) ---------- */
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 12px; width: 1280px; }
+.pill { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--hover); box-shadow: inset 0 0 0 .5px var(--sep); }
+.pill button { height: 24px; padding: 0 11px; border-radius: 999px; color: var(--text-2); font-size: 12px; }
+.pill button.on { background: var(--accent); color: #fff; }
+.controls label { display: inline-flex; gap: 5px; align-items: center; cursor: pointer; color: var(--text-2); }
+.hint { color: var(--text-3); }
+.notes { width: 1280px; font-size: 12px; line-height: 1.7; color: var(--text-2); display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 24px; }
+.notes b { color: var(--text); font-weight: 600; }
+.notes code { font-family: var(--mono); font-size: 11px; }
+
+/* ---------- fake desktop (1280 × 800 screen) ---------- */
+.screen { width: 1280px; height: 800px; border-radius: 12px; position: relative; overflow: hidden; flex: none; user-select: none;
+          background: radial-gradient(1200px 600px at 20% 10%, #3b4f7d, transparent 60%), radial-gradient(900px 600px at 90% 90%, #6d3b6f, transparent 60%), #1b2133; }
+[data-theme="light"] .screen { background: radial-gradient(1200px 600px at 20% 10%, #9fc0f5, transparent 60%), radial-gradient(900px 600px at 90% 90%, #f0b7d3, transparent 60%), #c9d4ea; }
+.menubar { height: 26px; display: flex; align-items: center; gap: 18px; padding: 0 14px; font-size: 13px; color: #fff; position: relative; z-index: 50; background: rgba(20,20,24,.35); backdrop-filter: blur(20px); }
+[data-theme="light"] .menubar { color: #111; background: rgba(255,255,255,.4); }
+.menubar b { font-weight: 600; }
+.menubar .right { margin-left: auto; display: flex; gap: 14px; align-items: center; opacity: .9; }
+.menubar .tf { cursor: pointer; padding: 1px 6px; border-radius: 4px; }
+.menubar .tf:hover, .menubar .tf.on { background: rgba(127,127,127,.3); }
+
+/* Native NSMenu look (menu bar menu and the "其他方式" TFMenuButton menu). */
+.nsmenu { position: absolute; min-width: 200px; padding: 5px; border-radius: 12px; z-index: 60; display: none; font-size: 13px; }
+.nsmenu.on { display: block; }
+.mi { min-height: 26px; border-radius: 7px; padding: 3px 10px 3px 8px; display: flex; align-items: center; gap: 6px; white-space: nowrap; cursor: default; }
+.mi .n { margin-left: auto; padding-left: 16px; color: var(--text-3); font-size: 11.5px; }
+.mi:hover { background: var(--accent); color: #fff; } .mi:hover .n { color: rgba(255,255,255,.8); }
+.mhead { font-size: 11px; font-weight: 600; color: var(--text-3); padding: 6px 8px 2px; }
+.msep { height: .5px; background: var(--sep); margin: 5px 6px; }
+
+/* ---------- liquid glass (spec recipe) ---------- */
+.glass { position: relative; background: var(--glass-fill); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%); box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi); isolation: isolate; }
+.glass::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(155deg, var(--glass-rim-a) 0%, rgba(255,255,255,0) 34%, rgba(255,255,255,0) 64%, var(--glass-rim-b) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; z-index: 2; }
+.glass > * { position: relative; z-index: 3; }
+.glass.strong { background: var(--glass-strong); }
+[data-style="classic"] .glass { background: var(--win-bg); backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+/* ---------- TFButton: capsules, L 36 / R 30 / S 24 ---------- */
+.btn { --h: 30px; --px: 14px; --fs: 13px; --ic: 12px; --gap: 6px;
+  height: var(--h); padding: 0 var(--px); border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; gap: var(--gap);
+  font-size: var(--fs); font-weight: 500; white-space: nowrap; flex: none; position: relative;
+  background-color: var(--control); box-shadow: inset 0 0 0 .5px var(--control-border); color: var(--text);
+  transition: transform .25s var(--spring), background-color .15s, box-shadow .15s; outline: none; }
+.btn:not(.icon):not(.s):not(.link) { min-width: 64px; }
+.btn svg.i { width: var(--ic); height: var(--ic); stroke-width: 2; }
+.btn.l { --h: 36px; --px: 18px; --fs: 14px; --ic: 14px; --gap: 7px; font-weight: 600; }
+.btn.s { --h: 24px; --px: 10px; --fs: 12px; --ic: 11px; --gap: 5px; }
+.btn.icon { width: var(--h); padding: 0; }
+.btn:hover { background-image: linear-gradient(var(--hover), var(--hover)); }
+.btn:active { background-image: linear-gradient(var(--press), var(--press)); transform: scale(.97); }
+.btn.primary { background-color: var(--accent); color: #fff; font-weight: 600; box-shadow: none; }
+.btn.primary:hover { background-color: var(--accent-hover); background-image: none; }
+.btn.primary:active { background-image: linear-gradient(rgba(0,0,0,.12), rgba(0,0,0,.12)); }
+.btn.plain { background-color: transparent; box-shadow: none; color: var(--text-2); }
+.btn.plain:hover, .btn.plain.on { color: var(--text); }
+.btn.plain.on { background-image: linear-gradient(var(--press), var(--press)); }
+.btn.link { background: none !important; box-shadow: none; color: var(--accent); padding: 0 4px; }
+.btn.link:hover { opacity: .78; }
+.btn.glass-b { background-color: var(--glass-fill); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%); color: #fff;
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 0 0 .5px var(--glass-rim-b), 0 4px 14px rgba(0,0,0,.22); }
+[data-theme="dark"] .btn.glass-b, .media .btn.glass-b { background-color: rgba(30,30,34,.55); color: #fff; }
+[data-style="classic"] .media .btn.glass-b { background-color: rgba(30,30,34,.82); backdrop-filter: none; }
+.btn.danger { color: var(--danger); }
+.btn:focus-visible { box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3.5px rgba(var(--accent-rgb), .30); }
+.btn.primary:focus-visible { box-shadow: 0 0 0 1px var(--win-bg), 0 0 0 3.5px rgba(var(--accent-rgb), .45); }
+.btn[disabled] { opacity: .45; pointer-events: none; }
+.btn.is-loading { pointer-events: none; }
+.btn .chev { width: 10px !important; height: 10px !important; stroke-width: 2.4 !important; color: inherit; opacity: .8; }
+.spin { width: var(--ic); height: var(--ic); border-radius: 50%; border: 1.6px solid currentColor; border-right-color: transparent; animation: spin .8s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .btn:active { transform: none !important; } }
+
+/* TFKeyCap(.hint) */
+kbd { font-family: var(--font); font-size: 10.5px; font-weight: 500; color: var(--text-3); padding: 0 5px; border-radius: 5px; box-shadow: inset 0 0 0 .5px var(--sep); background: var(--hover); line-height: 17px; display: inline-block; }
+
+/* ---------- windows ---------- */
+.win { position: absolute; border-radius: 16px; overflow: hidden; background: var(--win-bg); color: var(--text);
+       box-shadow: 0 0 0 .5px var(--win-border), 0 30px 80px rgba(0,0,0,.35); display: flex; flex-direction: column; }
+/* AskWindowBackdrop: glass samples the desktop; classic is opaque. */
+[data-style="glass"] .win { background: var(--win-glass); -webkit-backdrop-filter: blur(50px) saturate(1.5); backdrop-filter: blur(50px) saturate(1.5); }
+.win::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background: radial-gradient(600px 400px at 10% 0%, var(--ambient-a), transparent 70%), radial-gradient(500px 360px at 90% 100%, var(--ambient-b), transparent 70%); }
+[data-style="classic"] .win::after { display: none; }
+.win > * { position: relative; z-index: 1; }
+.traffic { display: flex; gap: 8px; flex: none; } .traffic i { width: 12px; height: 12px; border-radius: 50%; display: block; position: relative; }
+.traffic i.r { background: #ff5f57; } .traffic i.y { background: #febc2e; } .traffic i.g { background: #28c840; }
+.win.inactive .traffic i, .traffic i.off { background: var(--press); }
+.traffic:hover i.r::after { content: "×"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; line-height: 12px; color: rgba(0,0,0,.6); font-weight: 700; }
+
+/* background: settings window (context only) */
+#settings { left: 40px; top: 60px; width: 760px; height: 560px; flex-direction: row; }
+#settings .sidebar { width: 196px; flex: none; margin: 10px 0 10px 10px; border-radius: 14px; padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; background: var(--sidebar-tint); }
+#settings .traffic { padding: 2px 6px 16px; }
+#settings .brand { display: flex; align-items: center; gap: 8px; font-weight: 650; font-size: 14px; padding: 0 8px 14px; }
+#settings .brand small { color: var(--text-3); font-weight: 500; font-size: 10px; }
+#settings .nav { height: 30px; display: flex; align-items: center; padding: 0 10px; border-radius: 7px; font-size: 13px; }
+#settings .nav.on { background: var(--accent-soft); font-weight: 600; }
+#settings .main { flex: 1; padding: 26px 28px 0; overflow: hidden; }
+#settings h1 { font-size: 22px; margin: 0 0 12px; font-weight: 650; }
+#settings .utabs { display: flex; gap: 22px; border-bottom: .5px solid var(--sep); margin-bottom: 16px; }
+#settings .utab { height: 32px; line-height: 32px; font-size: 13px; font-weight: 500; color: var(--text-2); }
+#settings .utab.on { color: var(--text); font-weight: 600; box-shadow: inset 0 -2px 0 var(--accent); }
+#settings .form { background: var(--card); border-radius: 12px; box-shadow: inset 0 0 0 .5px var(--card-border); margin-bottom: 16px; }
+#settings .frow { min-height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-size: 13px; }
+#settings .frow + .frow { box-shadow: inset 0 .5px 0 var(--sep); }
+#settings .sw { width: 30px; height: 18px; border-radius: 999px; background: var(--press); position: relative; }
+#settings .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+#settings .sw.on { background: var(--green); } #settings .sw.on::after { transform: translateX(12px); }
+
+/* ---------- the feedback window ---------- */
+#fb { width: 600px; height: 680px; left: 600px; top: 70px; z-index: 20; }
+#fb.hidden { display: none; }
+#fb.capturing { opacity: 0; pointer-events: none; transition: opacity .12s; }
+.fbtitle { height: 52px; flex: none; display: flex; align-items: center; padding: 0 20px; cursor: grab; }
+.fbtitle:active { cursor: grabbing; }
+.fbbody { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; padding: 0 24px 16px; }
+
+/* TFPaneHeader */
+.phead { display: flex; align-items: center; gap: 14px; }
+.tile { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex: none; }
+.tile svg { width: 15px; height: 15px; stroke-width: 2; }
+.tile.soft { background: rgba(var(--accent-rgb), .15); color: var(--accent); }
+.tile.neutral { background: var(--control); color: var(--text-2); }
+.tile.lg { width: 40px; height: 40px; border-radius: 10px; } .tile.lg svg { width: 21px; height: 21px; }
+.phead .tt { font-size: 17px; font-weight: 600; line-height: 1.3; }
+.phead .st { font-size: 12.5px; color: var(--text-2); margin-top: 3px; }
+
+/* TFNotice */
+.notice { display: none; align-items: flex-start; gap: 8px; font-size: 12.5px; line-height: 1.5; padding: 9px 12px; border-radius: 8px; }
+.notice.on { display: flex; }
+.notice svg { width: 14px; height: 14px; flex: none; margin-top: 2px; stroke-width: 2; }
+.notice .tx { flex: 1; }
+.notice.info { background: rgba(var(--accent-rgb), .10); color: var(--text-2); } .notice.info svg { color: var(--accent); }
+.notice.danger { background: rgba(var(--danger-rgb), .10); color: var(--danger); }
+.notice .btn.link { height: 18px; font-size: 12.5px; }
+
+/* Editor = TFTextArea chrome (radius 10, control fill, 0.5pt border, TF focus ring) */
+.editor { flex: 1; min-height: 0; display: flex; flex-direction: column; border-radius: 10px; background: var(--control); box-shadow: inset 0 0 0 .5px var(--control-border); position: relative; transition: box-shadow .18s; }
+.editor.focus { box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3.5px rgba(var(--accent-rgb), .30); }
+.editor.drag { box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3.5px rgba(var(--accent-rgb), .30); }
+/* Toolbar row: .tfControlSize(.small) — 24pt plain icon buttons, TFDivider between groups. */
+.toolbar { height: 36px; flex: none; display: flex; align-items: center; gap: 2px; padding: 0 6px; box-shadow: inset 0 -.5px 0 var(--sep); }
+/* An 11pt SF Symbol fills roughly a 14px box; these outline paths carry their own padding. */
+.toolbar .btn svg.i, .att .btn.s svg.i { width: 14px; height: 14px; stroke-width: 1.8; }
+.vsep { width: .5px; height: 14px; background: var(--sep); margin: 0 6px; flex: none; }
+.tbspacer { flex: 1; }
+
+.content { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 12px 14px; font-size: 13px; line-height: 1.6; outline: 0; color: var(--text); user-select: text; cursor: text; word-break: break-word; }
+.content.empty::before { content: attr(data-placeholder); color: var(--text-3); white-space: pre-line; pointer-events: none; position: absolute; }
+.content p { margin: 0 0 6px; }
+.content h3 { font-size: 15px; margin: 6px 0; font-weight: 600; }
+.content ul, .content ol { margin: 0 0 6px; padding-left: 22px; }
+.content blockquote { margin: 0 0 6px; padding: 1px 0 1px 10px; box-shadow: inset 2px 0 0 var(--sep); color: var(--text-2); }
+.content code { font: 12px var(--mono); padding: 1px 4px; border-radius: 5px; background: var(--hover); box-shadow: inset 0 0 0 .5px var(--sep); }
+.content pre { font: 12px/1.55 var(--mono); padding: 8px 10px; border-radius: 8px; background: var(--hover); box-shadow: inset 0 0 0 .5px var(--sep); margin: 0 0 6px; white-space: pre-wrap; }
+.content a { color: var(--accent); }
+.content::-webkit-scrollbar { width: 8px; } .content::-webkit-scrollbar-thumb { background: var(--press); border-radius: 4px; }
+
+/* Inline attachment blocks */
+.att { display: block; position: relative; width: fit-content; max-width: 100%; margin: 6px 0 8px; cursor: default; user-select: none; }
+.att.sel { box-shadow: 0 0 0 1px var(--accent), 0 0 0 3.5px rgba(var(--accent-rgb), .30); }
+.media { border-radius: 8px; overflow: hidden; box-shadow: inset 0 0 0 .5px var(--card-border); background: var(--card); }
+.media.sel { box-shadow: 0 0 0 1px var(--accent), 0 0 0 3.5px rgba(var(--accent-rgb), .30); }
+.media img, .media video { display: block; max-width: 100%; max-height: 220px; }
+.video video, .video img { width: 360px; height: 203px; object-fit: cover; max-height: none; }
+.video .play { position: absolute; left: 50%; top: 50%; margin: -18px 0 0 -18px; }
+.att .ops { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; opacity: 0; transition: opacity .1s; z-index: 4; }
+.att:hover .ops, .att.sel .ops { opacity: 1; }
+/* TFTag-sized captions on media (16pt capsules). */
+.cap16 { position: absolute; bottom: 6px; height: 16px; padding: 0 6px; border-radius: 999px; font-size: 10.5px; font-weight: 500; line-height: 16px; color: #fff; background: rgba(0,0,0,.55); font-variant-numeric: tabular-nums; white-space: nowrap; z-index: 3; }
+.media .size { left: 6px; opacity: 0; } .media:hover .size, .video .size { opacity: 1; }
+.video .dur { right: 6px; }
+.media.busy .cap16, .media.failed .cap16, .media.rejected .cap16, .media.busy .play, .media.failed .play, .media.rejected .play { display: none; }
+.media .ov { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #fff; font-size: 12px; text-align: center; padding: 0 28px; line-height: 1.5; z-index: 2; }
+.media.busy .ov { display: flex; background: rgba(0,0,0,.6); }
+.media.failed .ov, .media.rejected .ov { display: flex; background: rgba(0,0,0,.72); }
+.media .ov .em { color: #ff8a80; font-weight: 600; }
+.media .ov .sub { color: rgba(255,255,255,.7); font-size: 11px; }
+/* TFMeter: 6pt capsule progress */
+.meter { width: 120px; height: 6px; border-radius: 999px; background: var(--control); position: relative; overflow: hidden; flex: none; }
+.media .meter { background: rgba(255,255,255,.22); }
+.meter i { position: absolute; left: 0; top: 0; bottom: 0; width: var(--p, 0%); border-radius: inherit; background: var(--accent); transition: width .12s; }
+/* File = TFListRow inside a card surface: 28pt neutral icon tile, 13 semibold title, 11.5 subtitle. */
+.file { display: flex; align-items: center; gap: 10px; width: 340px; min-height: 52px; padding: 8px 8px 8px 12px; border-radius: 8px; background: var(--card); box-shadow: inset 0 0 0 .5px var(--card-border); }
+.file .info { min-width: 0; flex: 1; }
+.file .fname { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file .fsub { font-size: 11.5px; color: var(--text-2); margin-top: 1px; display: flex; gap: 8px; align-items: center; }
+.file .fsub .em { color: var(--danger); }
+.file .ops { position: static; opacity: 1; }
+.file .ops [data-op="preview"] { display: none; }
+
+.dropmask { position: absolute; inset: 36px 0 30px 0; display: none; align-items: center; justify-content: center; font-size: 13px; color: var(--accent); background: var(--accent-soft); pointer-events: none; }
+.editor.drag .dropmask { display: flex; }
+/* Footnote row: 11pt textTertiary, monospaced digits for the count. */
+.meta { height: 30px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 12px; box-shadow: inset 0 .5px 0 var(--sep); font-size: 11px; color: var(--text-3); }
+.meta .count { margin-left: auto; font-variant-numeric: tabular-nums; }
+.meta .warn { color: var(--danger); }
+/* TFFieldMessage(.warning) */
+.fmsg { display: none; font-size: 11.5px; color: var(--warning); margin-top: -8px; }
+.fmsg.on { display: block; }
+
+/* TFLabeledField + TFTextFieldStyle */
+.lfield { display: flex; align-items: center; gap: 14px; }
+.lfield label { width: 72px; flex: none; font-size: 13px; color: var(--text-2); }
+.tfield { flex: 1; height: 30px; border-radius: 8px; padding: 0 10px; border: 0; outline: 0; background: var(--control); box-shadow: inset 0 0 0 .5px var(--control-border); font-size: 13px; transition: box-shadow .18s; }
+.tfield::placeholder { color: var(--text-3); }
+.tfield:focus { box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 3.5px rgba(var(--accent-rgb), .30); }
+
+/* Sheet footer: one link / menu on the left, [取消] [主要] on the right, regular size. */
+.ftr { height: 62px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 24px; box-shadow: inset 0 .5px 0 var(--sep); }
+.ftr .sp { flex: 1; }
+.anchor { position: relative; display: inline-flex; }
+.anchor .nsmenu { bottom: calc(100% + 5px); left: 0; }
+
+.win.submitting .content, .win.submitting .tfield { opacity: .6; pointer-events: none; }
+.win.submitting .toolbar { opacity: .45; pointer-events: none; }
+
+/* TFEmptyState (large): 44pt tile, 14 semibold title, 12.5 message, one primary + one link. */
+.done { display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px; padding: 0 40px 52px; color: var(--text-2); }
+.win.success .done { display: flex; }
+.win.success .fbbody, .win.success .ftr { display: none; }
+.done .ic { width: 44px; height: 44px; border-radius: 12px; background: var(--hover); display: flex; align-items: center; justify-content: center; color: var(--success); margin-bottom: 4px; }
+.done .ic svg { width: 22px; height: 22px; stroke-width: 2.2; }
+.done b { color: var(--text); font-size: 14px; font-weight: 600; }
+.done p { margin: 0; font-size: 12.5px; max-width: 360px; }
+.done .acts { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+
+.resize { position: absolute; right: 0; bottom: 0; width: 16px; height: 16px; cursor: nwse-resize; z-index: 5; }
+
+/* Link entry: TFMenuPanel (glass, radius 12, 5pt padding) with a 30pt field and a regular button. */
+.linkpop { position: absolute; z-index: 10; display: none; gap: 6px; align-items: center; padding: 5px; border-radius: 12px; }
+.linkpop.on { display: flex; }
+.linkpop .tfield { width: 260px; flex: none; }
+
+/* Quick Look style preview and the region capture overlay (system surfaces). */
+.preview { position: absolute; inset: 26px 0 0 0; z-index: 40; display: none; place-items: center; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); }
+.preview.on { display: grid; }
+.preview img, .preview video { max-width: 80%; max-height: 80%; border-radius: 12px; box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+.preview .cap { position: absolute; bottom: 24px; color: #fff; font-size: 12px; opacity: .8; }
+.capture { position: absolute; inset: 26px 0 0 0; z-index: 45; display: none; cursor: crosshair; background: rgba(0,0,0,.28); }
+.capture.on { display: block; }
+.capture .tip { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 12px; height: 30px; line-height: 30px; padding: 0 14px; border-radius: 999px; background: rgba(30,30,34,.7); backdrop-filter: blur(20px); }
+.capture .rect { position: absolute; border: 1.5px solid #fff; box-shadow: 0 0 0 9999px rgba(0,0,0,.25); display: none; }
+.capture .rect span { position: absolute; top: -22px; left: 0; font-size: 11px; color: #fff; background: rgba(0,0,0,.65); padding: 0 6px; height: 16px; line-height: 16px; border-radius: 999px; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <div class="pill" id="themeSeg"><button data-v="dark" class="on">深色</button><button data-v="light">浅色</button></div>
+  <div class="pill" id="styleSeg"><button data-v="glass" class="on">Liquid Glass</button><button data-v="classic">经典</button></div>
+  <div class="pill" id="stateSeg">
+    <button data-v="empty" class="on">空白</button>
+    <button data-v="editing">编辑中</button>
+    <button data-v="uploading">压缩 / 上传中</button>
+    <button data-v="failed">上传失败</button>
+    <button data-v="toolarge">视频过大</button>
+    <button data-v="limit">附件已满</button>
+    <button data-v="restored">恢复草稿</button>
+    <button data-v="submitting">提交中</button>
+    <button data-v="error">提交失败</button>
+    <button data-v="success">已提交</button>
+  </div>
+  <label><input type="checkbox" id="failNext"> 下一个上传失败</label>
+</div>
+<div class="controls">
+  <span class="hint">模拟添加：</span>
+  <div class="pill" id="demoSeg">
+    <button data-v="shot">截图 2.1 MB</button>
+    <button data-v="bigimg">大图 9.6 MB</button>
+    <button data-v="video">录屏 148 MB</button>
+    <button data-v="hugevideo">长录屏 620 MB</button>
+    <button data-v="log">typeflux.log</button>
+    <button data-v="biglog">大日志 12 MB</button>
+    <button data-v="docx">说明.docx</button>
+    <button data-v="zip">logs.zip</button>
+  </div>
+  <span class="hint">也可以真实粘贴 / 拖入 / 选择文件 · 拖动标题栏移动 · 右下角调整大小 · ⌘↩ 提交 · esc 关闭</span>
+</div>
+
+<div class="screen" id="screen">
+  <div class="menubar">
+    <b></b><b>Typeflux</b><span>文件</span><span>编辑</span><span>窗口</span>
+    <div class="right"><span class="tf" id="tfIcon">∞</span><span>周二 10:24</span></div>
+  </div>
+  <div class="nsmenu glass strong" id="tfmenu" style="top:30px;right:120px">
+    <div class="mi">打开启动器<span class="n">⌥Space</span></div>
+    <div class="mi">设置…<span class="n">⌘,</span></div>
+    <div class="msep"></div>
+    <div class="mhead">问题反馈</div>
+    <div class="mi" data-act="direct">直接反馈…</div>
+    <div class="mi">发邮件反馈问题</div>
+    <div class="mi">GitHub 提 Issue</div>
+    <div class="msep"></div>
+    <div class="mi">退出 Typeflux<span class="n">⌘Q</span></div>
+  </div>
+
+  <!-- background: settings window, already on the component library (context only) -->
+  <div class="win inactive" id="settings">
+    <div class="sidebar">
+      <div class="traffic"><i class="r"></i><i class="y"></i><i class="g"></i></div>
+      <div class="brand">∞ Typeflux <small>1.0.0</small></div>
+      <div class="nav">语音输入</div><div class="nav">模型</div><div class="nav">Agent</div><div class="nav">启动器</div><div class="nav on">设置</div>
+    </div>
+    <div class="main">
+      <h1>设置</h1>
+      <div class="utabs"><span class="utab on">通用</span><span class="utab">外观</span><span class="utab">权限</span><span class="utab">快捷键</span><span class="utab">高级设置</span></div>
+      <div class="form">
+        <div class="frow">开机自动启动<i class="sw"></i></div>
+        <div class="frow">自动检查更新<i class="sw on"></i></div>
+        <div class="frow">问题反馈<button class="btn s" id="settingsFb">直接反馈</button></div>
+      </div>
+      <div class="form">
+        <div class="frow">自动添加修正生词<i class="sw on"></i></div>
+        <div class="frow">近期输入记忆<i class="sw on"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- the feedback window -->
+  <div class="win" id="fb">
+    <div class="fbtitle" id="fbTitle">
+      <div class="traffic"><i class="r" id="closeBtn" title="关闭（保留草稿）"></i><i class="y"></i><i class="g off"></i></div>
+    </div>
+
+    <div class="fbbody">
+      <!-- TFPaneHeader -->
+      <div class="phead">
+        <div class="tile soft lg"><svg class="i" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M12 8v4.5M12 15.6v.1"/></svg></div>
+        <div><div class="tt">问题反馈</div><div class="st">说说遇到的问题或想法。</div></div>
+      </div>
+
+      <!-- TFNotice(.info) -->
+      <div class="notice info" id="restored">
+        <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.8v.1"/></svg>
+        <span class="tx">已恢复上次未提交的内容。</span><button class="btn link" id="discard">清空重写</button>
+      </div>
+
+      <div class="editor" id="editor">
+        <div class="toolbar" id="toolbar">
+          <button class="btn plain s icon" data-cmd="bold" title="粗体 ⌘B" aria-label="粗体"><svg class="i" viewBox="0 0 24 24"><path d="M7 5h6a3.5 3.5 0 0 1 0 7H7zM7 12h7a3.5 3.5 0 0 1 0 7H7z"/></svg></button>
+          <button class="btn plain s icon" data-cmd="italic" title="斜体 ⌘I" aria-label="斜体"><svg class="i" viewBox="0 0 24 24"><path d="M14 5 10 19M10 5h7M7 19h7"/></svg></button>
+          <button class="btn plain s icon" data-cmd="strikeThrough" title="删除线 ⇧⌘X" aria-label="删除线"><svg class="i" viewBox="0 0 24 24"><path d="M4 12h16M16 7c-.6-1.4-2-2.2-4-2.2-2.4 0-4 1.2-4 3 0 1 .5 1.7 1.4 2.2M8 16.5c.6 1.6 2.2 2.6 4.2 2.6 2.5 0 4.2-1.3 4.2-3.1 0-.6-.2-1.1-.5-1.5"/></svg></button>
+          <span class="vsep"></span>
+          <button class="btn plain s icon" data-block="h3" title="小标题" aria-label="小标题"><svg class="i" viewBox="0 0 24 24"><path d="M5 5v14M14 5v14M5 12h9M18 13l2-1.3V19"/></svg></button>
+          <button class="btn plain s icon" data-cmd="insertUnorderedList" title="项目列表" aria-label="项目列表"><svg class="i" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg></button>
+          <button class="btn plain s icon" data-cmd="insertOrderedList" title="编号列表" aria-label="编号列表"><svg class="i" viewBox="0 0 24 24"><path d="M10 6h10M10 12h10M10 18h10M4 5l1.5-1v5M3.8 13.5c.3-.6.8-.9 1.4-.9.7 0 1.2.4 1.2 1 0 1-2.6 2-2.6 3h2.6"/></svg></button>
+          <button class="btn plain s icon" data-block="blockquote" title="引用" aria-label="引用"><svg class="i" viewBox="0 0 24 24"><path d="M5 5v14M9 8h10M9 12h10M9 16h7"/></svg></button>
+          <button class="btn plain s icon" data-code title="代码" aria-label="代码"><svg class="i" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5M16 7l5 5-5 5"/></svg></button>
+          <button class="btn plain s icon" data-link title="链接 ⌘K" aria-label="链接"><svg class="i" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></button>
+          <span class="tbspacer"></span>
+          <button class="btn plain s" id="addFile" title="图片、视频、txt / log / md / docx"><svg class="i" viewBox="0 0 24 24"><path d="m20 11.5-7.6 7.6a5 5 0 0 1-7-7l8-8a3.3 3.3 0 0 1 4.7 4.6l-8 8a1.7 1.7 0 0 1-2.4-2.4l7.2-7.1"/></svg>添加文件</button>
+          <button class="btn plain s" id="shot" title="隐藏窗口，截取屏幕区域"><svg class="i" viewBox="0 0 24 24"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><circle cx="12" cy="12" r="3"/></svg>截图</button>
+          <input type="file" id="file" accept="image/png,image/jpeg,image/gif,image/heic,image/webp,video/mp4,video/quicktime,.mov,.mp4,.m4v,.txt,.log,.md,.docx" multiple hidden>
+        </div>
+        <div class="content empty" id="content" contenteditable="true" spellcheck="false"
+             data-placeholder="遇到了什么问题？例如：按下快捷键后没有开始转写，重启应用后还是一样。&#10;&#10;如果方便，写下复现步骤，再贴一张截图或附上一段录屏。"></div>
+        <div class="dropmask">松开以添加附件</div>
+        <div class="meta" id="meta">
+          <span id="metaHint"></span>
+          <span class="count" id="count">附件 0/6</span>
+        </div>
+        <div class="linkpop glass strong" id="linkpop"><input class="tfield" id="linkInput" placeholder="粘贴链接"><button class="btn primary" id="linkOk">添加</button></div>
+      </div>
+      <!-- TFFieldMessage(.warning): why a file was not added -->
+      <div class="fmsg" id="fmsg"></div>
+
+      <!-- TFLabeledField + TFTextFieldStyle -->
+      <div class="lfield">
+        <label for="contact">联系方式</label>
+        <input class="tfield" id="contact" value="mylxsw@gmail.com" placeholder="邮箱或其他联系方式（可选）">
+      </div>
+
+      <!-- TFNotice(.danger) -->
+      <div class="notice danger" id="error">
+        <svg class="i" viewBox="0 0 24 24"><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.3v.1"/></svg>
+        <span class="tx">提交反馈失败。请检查网络后重试，内容不会丢失。</span>
+      </div>
+    </div>
+
+    <!-- Sheet footer -->
+    <div class="ftr">
+      <div class="anchor">
+        <button class="btn link" id="otherBtn">其他反馈方式<svg class="i chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="nsmenu glass strong" id="otherMenu"><div class="mi">发邮件反馈问题</div><div class="mi">GitHub 提 Issue</div></div>
+      </div>
+      <span class="sp"></span>
+      <button class="btn" id="cancel">取消</button>
+      <button class="btn primary" id="submit" disabled title="提交 ⌘↩"><span id="submitSpin"></span>提交</button>
+    </div>
+
+    <!-- TFEmptyState, large -->
+    <div class="done">
+      <div class="ic"><svg class="i" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></div>
+      <b>反馈已提交，谢谢</b>
+      <p id="doneText">我们会尽快查看。</p>
+      <div class="acts"><button class="btn primary l" id="finish">完成</button><button class="btn link" id="again">再写一条</button></div>
+    </div>
+    <div class="resize" id="resize"></div>
+  </div>
+
+  <div class="preview" id="preview"><img id="previewImg" alt=""><video id="previewVideo" controls style="display:none"></video><div class="cap">空格或 esc 关闭</div></div>
+  <div class="capture" id="capture"><div class="tip">拖动选择截图区域 · esc 取消</div><div class="rect" id="rect"><span id="rectSize"></span></div></div>
+</div>
+
+<div class="notes">
+  <div><b>组件对应</b>：标题区 <code>TFPaneHeader</code>；编辑器外框 <code>TFTextArea</code>（圆角 10）；格式工具条 <code>.tfControlSize(.small)</code> 下的 <code>TFButton(.plain, iconOnly)</code>，组间 <code>TFDivider</code>；联系方式 <code>TFLabeledField</code> + <code>TFTextFieldStyle</code>；提示 <code>TFNotice</code> / <code>TFFieldMessage</code>；底栏 <code>TFMenuButton(.link)</code> + <code>TFButton</code> 次要 / 主要；成功页 <code>TFEmptyState</code>。</div>
+  <div><b>附件块</b>：文件是 <code>TFListRow</code> 样式（28pt <code>TFIconTile(.neutral)</code>、13pt 半粗标题、11.5pt 副标题、尾部小号无边框按钮）；图片 / 视频缩略图圆角 8，悬浮在画面上的按钮用 <code>TFButton(.glass)</code>；进度用 <code>TFMeter</code>；时长、大小是 16pt 胶囊。</div>
+  <div><b>窗口</b>：普通 NSWindow，背景 <code>AskWindowBackdrop</code>，跟随「设置 › 界面风格」（Liquid Glass / 经典）和深浅色；单实例，可拖动、调整大小（最小 520 × 640），记住位置，能单独截图；关闭保留草稿。</div>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const screen = $("screen"), fb = $("fb"), settings = $("settings"), content = $("content"), editor = $("editor");
+
+  /* ---------- attachment rules ---------- */
+  const MB = 1024 * 1024, KB = 1024;
+  const MAX_ATTACHMENTS = 6;
+  const IMAGE_LIMIT = 3 * MB, VIDEO_LIMIT = 50 * MB;
+  const DOC_LIMITS = { txt: 5 * MB, log: 5 * MB, md: 5 * MB, docx: 10 * MB };
+  const IMAGE_EXT = ["png", "jpg", "jpeg", "gif", "heic", "webp"], VIDEO_EXT = ["mov", "mp4", "m4v"];
+  const DOC_LABEL = { txt: "文本", log: "日志", md: "Markdown", docx: "Word 文档" };
+  const ext = (name) => (name.split(".").pop() || "").toLowerCase();
+  function classify(name, type = "") {
+    const e = ext(name);
+    if (type.startsWith("image/") || IMAGE_EXT.includes(e)) return "image";
+    if (type.startsWith("video/") || VIDEO_EXT.includes(e)) return "video";
+    if (DOC_LIMITS[e]) return "file";
+    return null;
+  }
+  const fmt = (n) => n >= MB ? String(+(n / MB).toFixed(n >= 10 * MB ? 0 : 1)) + " MB" : Math.max(1, Math.round(n / KB)) + " KB";
+  const fmtDur = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+
+  const atts = new Map(); // id -> { kind, state: compressing|uploading|uploaded|failed|rejected, timer, ... }
+  let seq = 0;
+
+  /* ---------- mock media ---------- */
+  function makeShot(w, h, label, hue, dark = document.documentElement.dataset.theme !== "light") {
+    const c = document.createElement("canvas"); c.width = w * 2; c.height = h * 2;
+    const g = c.getContext("2d"); g.scale(2, 2);
+    g.fillStyle = dark ? "#1c1c1e" : "#f5f5f7"; g.fillRect(0, 0, w, h);
+    g.fillStyle = dark ? "#2a2a2d" : "#e6e6ea"; g.fillRect(0, 0, w, 24);
+    ["#ff5f57", "#febc2e", "#28c840"].forEach((col, i) => { g.fillStyle = col; g.beginPath(); g.arc(14 + i * 16, 12, 4.5, 0, 7); g.fill(); });
+    g.fillStyle = `hsl(${hue} 70% 55%)`; g.fillRect(16, 40, w * .34, 12);
+    g.fillStyle = dark ? "#3a3a3e" : "#d5d5da";
+    for (let i = 0; i < 5; i++) g.fillRect(16, 64 + i * 16, (w - 40) * (0.5 + ((i * 37) % 50) / 100), 8);
+    g.fillStyle = `hsl(${hue} 70% 55% / .18)`; g.strokeStyle = `hsl(${hue} 80% 55%)`; g.lineWidth = 2;
+    g.beginPath(); g.roundRect(w * .55, h * .42, w * .38, h * .42, 8); g.fill(); g.stroke();
+    g.fillStyle = dark ? "#eee" : "#222"; g.font = "600 12px -apple-system, PingFang SC, sans-serif";
+    g.fillText(label, w * .58, h * .42 + 22);
+    return c.toDataURL("image/png");
+  }
+
+  /* ---------- editor helpers ---------- */
+  const attCount = () => content.querySelectorAll(".att").length;
+  function refresh() {
+    const hasText = content.innerText.replace(/​/g, "").trim().length > 0;
+    content.classList.toggle("empty", !hasText && attCount() === 0);
+    const n = attCount();
+    const states = [...atts.values()].map((u) => u.state);
+    const busy = states.some((x) => x === "compressing" || x === "uploading");
+    const broken = states.some((x) => x === "failed" || x === "rejected");
+    $("count").textContent = `附件 ${n}/${MAX_ATTACHMENTS}`;
+    $("count").classList.toggle("warn", broken);
+    $("addFile").disabled = $("shot").disabled = n >= MAX_ATTACHMENTS;
+    const hint = $("metaHint");
+    if (states.includes("rejected")) hint.innerHTML = '<span class="warn">有附件超过大小上限，请移除后再提交</span>';
+    else if (states.includes("failed")) hint.innerHTML = '<span class="warn">有附件上传失败，请重试或移除后再提交</span>';
+    else if (states.includes("compressing")) hint.textContent = "正在压缩视频，完成后自动上传…";
+    else if (busy) hint.textContent = "附件上传中，完成后即可提交…";
+    else if (n >= MAX_ATTACHMENTS) hint.textContent = "已达到 6 个附件上限";
+    else hint.textContent = "图片 ≤ 3 MB · 视频 ≤ 50 MB（自动压缩）· txt / log / md / docx";
+    const submitting = fb.classList.contains("submitting");
+    $("submit").disabled = submitting || !hasText || busy || broken;
+    updateToolbarState();
+  }
+
+  function updateToolbarState() {
+    document.querySelectorAll("#toolbar [data-cmd]").forEach((b) => {
+      try { b.classList.toggle("on", document.queryCommandState(b.dataset.cmd) && document.activeElement === content); } catch (_) {}
+    });
+  }
+
+  function insertBlock(node) {
+    const sel = getSelection();
+    if (!sel.rangeCount || !content.contains(sel.anchorNode)) {
+      content.appendChild(node);
+    } else {
+      const r = sel.getRangeAt(0); r.deleteContents();
+      // Attachments are block-level: insert after the block that holds the caret.
+      let block = r.startContainer.nodeType === 3 ? r.startContainer.parentNode : r.startContainer;
+      while (block && block !== content && block.parentNode !== content) block = block.parentNode;
+      if (!block || block === content) content.appendChild(node); else block.after(node);
+    }
+    if (!node.nextSibling || node.nextSibling.classList?.contains("att")) {
+      const p = document.createElement("p"); p.innerHTML = "<br>"; node.after(p);
+    }
+    const r2 = document.createRange(); r2.setStart(node.nextSibling, 0); r2.collapse(true);
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r2);
+  }
+
+  const ICON = {
+    expand: '<svg class="i" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7"/></svg>',
+    close: '<svg class="i" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg>',
+    play: '<svg class="i" viewBox="0 0 24 24" style="fill:currentColor;stroke:none"><path d="M8 5v14l11-7z"/></svg>',
+    doc: '<svg class="i" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>',
+  };
+  // Media float glass buttons over the picture; files use small plain buttons at the row end.
+  const MEDIA_OPS = `<div class="ops">
+      <button class="btn glass-b s icon" data-op="preview" title="预览" aria-label="预览">${ICON.expand}</button>
+      <button class="btn glass-b s icon" data-op="remove" title="移除" aria-label="移除">${ICON.close}</button>
+    </div>`;
+  const FILE_OPS = `<div class="ops"><button class="btn plain s icon" data-op="remove" title="移除" aria-label="移除">${ICON.close}</button></div>`;
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+  function attachmentBlock(a) {
+    const id = "att" + (++seq);
+    const el = document.createElement("figure");
+    el.contentEditable = "false"; el.dataset.id = id; el.style.margin = "6px 0 8px";
+    if (a.kind === "image") {
+      el.className = "att media image";
+      el.innerHTML = `<img src="${a.src}" alt="">${MEDIA_OPS}<div class="ov"></div><span class="cap16 size"></span>`;
+    } else if (a.kind === "video") {
+      el.className = "att media video";
+      const poster = a.src ? `<video src="${a.src}" muted preload="metadata"></video>` : `<img src="${a.poster}" alt="">`;
+      el.innerHTML = `${poster}<button class="btn glass-b l icon play" data-op="preview" title="播放" aria-label="播放">${ICON.play}</button>
+        ${MEDIA_OPS}<div class="ov"></div><span class="cap16 size"></span><span class="cap16 dur">${a.duration ? fmtDur(a.duration) : ""}</span>`;
+      if (a.src) el.querySelector("video").addEventListener("loadedmetadata", (e) => { el.querySelector(".dur").textContent = fmtDur(e.target.duration || 0); });
+    } else {
+      el.className = "att file";
+      el.innerHTML = `<div class="tile neutral">${ICON.doc}</div>
+        <div class="info"><div class="fname">${esc(a.name)}</div><div class="fsub"></div></div>${FILE_OPS}`;
+    }
+    atts.set(id, { ...a, state: "uploading" });
+    return el;
+  }
+
+  // Renders one attachment's state into its block.
+  function paint(el) {
+    const a = atts.get(el.dataset.id); if (!a) return;
+    el.classList.toggle("busy", a.state === "compressing" || a.state === "uploading");
+    el.classList.toggle("failed", a.state === "failed");
+    el.classList.toggle("rejected", a.state === "rejected");
+    const p = Math.round(a.p || 0);
+    const meter = `<span class="meter"><i style="--p:${p}%"></i></span>`;
+    if (a.kind === "file") {
+      const sub = el.querySelector(".fsub");
+      if (a.state === "uploading") sub.innerHTML = `${meter}<span>上传中 ${p}%</span>`;
+      else if (a.state === "failed") sub.innerHTML = `<span class="em">上传失败</span><button class="btn link" data-op="retry" style="height:16px;font-size:11.5px">重试</button>`;
+      else sub.textContent = `${fmt(a.size)} · ${DOC_LABEL[ext(a.name)] || "文件"}`;
+      return;
+    }
+    const ov = el.querySelector(".ov");
+    if (a.state === "compressing") ov.innerHTML = `${meter}<div>压缩中 ${p}%<div class="sub">${fmt(a.size)} · 转为 720p</div></div>`;
+    else if (a.state === "uploading") ov.innerHTML = `${meter}<div>上传中 ${p}%</div>`;
+    else if (a.state === "failed") ov.innerHTML = '<div class="em">上传失败</div><button class="btn glass-b s" data-op="retry">重试</button>';
+    else if (a.state === "rejected") ov.innerHTML = `<div class="em">压缩后仍有 ${fmt(a.finalSize)}，超过 50 MB 上限</div><div class="sub">请剪短后重新添加</div>`;
+    else ov.innerHTML = "";
+    el.querySelector(".size").textContent = a.kind === "video" && a.finalSize ? `${fmt(a.size)} → ${fmt(a.finalSize)}` : fmt(a.finalSize || a.size);
+  }
+
+  // Simulated pipeline: video compress -> upload; image compress is instant; files upload as-is.
+  function run(el, { forceFail = false, instant = null } = {}) {
+    const a = atts.get(el.dataset.id); if (a.timer) clearInterval(a.timer);
+    if (instant) { Object.assign(a, instant); paint(el); refresh(); return; }
+    const fail = forceFail || $("failNext").checked;
+    if (fail) $("failNext").checked = false;
+    if (a.kind === "image" && !a.finalSize) a.finalSize = a.size > IMAGE_LIMIT ? Math.min(2.6 * MB, a.size * 0.22) : Math.round(a.size * 0.55);
+    a.state = a.kind === "video" && !a.finalSize ? "compressing" : "uploading"; a.p = 0;
+    const tick = () => {
+      a.p += a.state === "compressing" ? 3 + Math.random() * 5 : 6 + Math.random() * (a.kind === "video" ? 4 : 10);
+      if (a.state === "compressing" && a.p >= 100) {
+        a.finalSize = Math.round(a.size * 0.26);
+        if (a.finalSize > VIDEO_LIMIT) { clearInterval(a.timer); a.state = "rejected"; paint(el); refresh(); return; }
+        a.state = "uploading"; a.p = 0;
+      } else if (a.state === "uploading" && fail && a.p > 55) { clearInterval(a.timer); a.state = "failed"; paint(el); refresh(); return; }
+      else if (a.state === "uploading" && a.p >= 100) { clearInterval(a.timer); a.state = "uploaded"; paint(el); refresh(); return; }
+      paint(el);
+    };
+    a.timer = setInterval(tick, 140); paint(el); refresh();
+  }
+
+  // Checks type and size before anything is inserted; returns a reason when refused.
+  function precheck(a) {
+    if (!a.kind) return `不支持「${a.name}」：仅支持图片、视频，以及 txt / log / md / docx`;
+    if (a.kind === "image" && ext(a.name) === "gif" && a.size > IMAGE_LIMIT) return `「${a.name}」有 ${fmt(a.size)}，动图无法压缩到 3 MB 以内`;
+    if (a.kind === "file" && a.size > DOC_LIMITS[ext(a.name)]) return `「${a.name}」有 ${fmt(a.size)}，超过 ${fmt(DOC_LIMITS[ext(a.name)])} 上限`;
+    return null;
+  }
+
+  function addAttachments(items) {
+    const refused = [];
+    const ok = items.filter((a) => { const why = precheck(a); if (why) refused.push(why); return !why; });
+    const room = MAX_ATTACHMENTS - attCount();
+    if (ok.length && room <= 0) refused.push("最多添加 6 个附件");
+    else if (ok.length > room) refused.push(`最多 6 个附件，已添加前 ${room} 个`);
+    ok.slice(0, Math.max(0, room)).forEach((a) => { const el = attachmentBlock(a); insertBlock(el); run(el); });
+    if (refused.length) fieldMessage(refused[0] + (refused.length > 1 ? `（另有 ${refused.length - 1} 个未添加）` : ""));
+    content.focus(); refresh();
+  }
+
+  function filesToItems(files) {
+    return Promise.all([...files].map((f) => new Promise((res) => {
+      const kind = classify(f.name || "", f.type);
+      const base = { kind, name: f.name || "粘贴的图片.png", size: f.size };
+      if (kind === "image") { const r = new FileReader(); r.onload = () => res({ ...base, src: r.result }); r.readAsDataURL(f); }
+      else if (kind === "video") res({ ...base, src: URL.createObjectURL(f) });
+      else res(base);
+    })));
+  }
+
+  /* ---------- paste / drop / pick ---------- */
+  content.addEventListener("paste", async (e) => {
+    const files = [...(e.clipboardData?.files || [])];
+    if (files.length) { e.preventDefault(); addAttachments(await filesToItems(files)); return; }
+    // Rich text is reduced to the supported formats; this prototype keeps plain text only.
+    const text = e.clipboardData?.getData("text/plain");
+    if (text != null) { e.preventDefault(); document.execCommand("insertText", false, text); }
+  });
+  let dragDepth = 0;
+  editor.addEventListener("dragenter", (e) => { if ([...e.dataTransfer.types].includes("Files")) { dragDepth++; editor.classList.add("drag"); } });
+  editor.addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; editor.classList.remove("drag"); } });
+  editor.addEventListener("dragover", (e) => e.preventDefault());
+  editor.addEventListener("drop", async (e) => {
+    e.preventDefault(); dragDepth = 0; editor.classList.remove("drag");
+    addAttachments(await filesToItems(e.dataTransfer.files));
+  });
+  $("addFile").onclick = () => $("file").click();
+  $("file").onchange = async (e) => { addAttachments(await filesToItems(e.target.files)); e.target.value = ""; };
+
+  const DEMOS = {
+    shot: () => ({ kind: "image", name: "截图 2026-10-20 10.24.png", size: 2.1 * MB, src: makeShot(420, 240, "转写一直在转圈", 210) }),
+    bigimg: () => ({ kind: "image", name: "Retina 截图.png", size: 9.6 * MB, src: makeShot(480, 260, "5K 显示器截图", 160) }),
+    video: () => ({ kind: "video", name: "录屏 2026-10-20 10.31.mov", size: 148 * MB, duration: 42, poster: makeShot(360, 203, "录屏：按住 fn 无反应", 280) }),
+    hugevideo: () => ({ kind: "video", name: "录屏 2026-10-20 11.02.mov", size: 620 * MB, duration: 318, poster: makeShot(360, 203, "长录屏 5 分钟", 20) }),
+    log: () => ({ kind: "file", name: "typeflux-2026-10-20.log", size: 860 * KB }),
+    biglog: () => ({ kind: "file", name: "typeflux-full.log", size: 12 * MB }),
+    docx: () => ({ kind: "file", name: "复现说明.docx", size: 1.4 * MB }),
+    zip: () => ({ kind: null, name: "logs.zip", size: 3 * MB }),
+  };
+  document.querySelectorAll("#demoSeg button").forEach((b) => b.onclick = () => {
+    if (fb.classList.contains("success")) resetForm();
+    if (fb.classList.contains("hidden")) openWindow();
+    content.focus(); addAttachments([DEMOS[b.dataset.v]()]);
+  });
+
+  /* ---------- attachment interactions ---------- */
+  content.addEventListener("click", (e) => {
+    const fig = e.target.closest(".att");
+    content.querySelectorAll(".att.sel").forEach((x) => x !== fig && x.classList.remove("sel"));
+    if (!fig) return;
+    const op = e.target.closest("[data-op]")?.dataset.op;
+    if (op === "remove") { removeAttachment(fig); return; }
+    if (op === "retry") { run(fig); return; }
+    if (op === "preview" || (fig.classList.contains("sel") && fig.classList.contains("media"))) { openPreview(fig); return; }
+    fig.classList.add("sel");
+  });
+  function removeAttachment(fig) {
+    const a = atts.get(fig.dataset.id); if (a?.timer) clearInterval(a.timer);
+    atts.delete(fig.dataset.id); fig.remove(); refresh();
+  }
+  function openPreview(fig) {
+    const a = atts.get(fig.dataset.id); if (!a || a.kind === "file") return;
+    const img = $("previewImg"), vid = $("previewVideo");
+    if (a.kind === "video" && a.src) { img.style.display = "none"; vid.style.display = "block"; vid.src = a.src; vid.play().catch(() => {}); }
+    else { vid.style.display = "none"; vid.pause(); img.style.display = "block"; img.src = a.src || a.poster; }
+    $("preview").classList.add("on");
+  }
+  function closePreview() { $("preview").classList.remove("on"); $("previewVideo").pause(); }
+  $("preview").onclick = (e) => { if (e.target.tagName !== "VIDEO") closePreview(); };
+
+  /* ---------- formatting ---------- */
+  document.querySelectorAll("#toolbar [data-cmd]").forEach((b) => b.addEventListener("mousedown", (e) => {
+    e.preventDefault(); content.focus(); document.execCommand(b.dataset.cmd); refresh();
+  }));
+  document.querySelectorAll("#toolbar [data-block]").forEach((b) => b.addEventListener("mousedown", (e) => {
+    e.preventDefault(); content.focus();
+    const cur = document.queryCommandValue("formatBlock").toLowerCase();
+    document.execCommand("formatBlock", false, cur === b.dataset.block ? "p" : b.dataset.block); refresh();
+  }));
+  document.querySelector("#toolbar [data-code]").addEventListener("mousedown", (e) => {
+    e.preventDefault(); content.focus();
+    const text = getSelection().toString();
+    if (text && !text.includes("\n")) document.execCommand("insertHTML", false, `<code>${esc(text)}</code>&nbsp;`);
+    else document.execCommand("formatBlock", false, "pre");
+    refresh();
+  });
+  let savedRange = null;
+  function openLink() {
+    const sel = getSelection(); if (!sel.rangeCount) return;
+    savedRange = sel.getRangeAt(0).cloneRange();
+    const rect = savedRange.getBoundingClientRect(), base = editor.getBoundingClientRect();
+    const pop = $("linkpop"); pop.style.left = Math.max(8, Math.min((rect.left || base.left + 40) - base.left, base.width - 330)) + "px";
+    pop.style.top = ((rect.bottom || base.top + 60) - base.top + 6) + "px";
+    pop.classList.add("on"); $("linkInput").value = ""; $("linkInput").focus();
+  }
+  function applyLink() {
+    const url = $("linkInput").value.trim(); $("linkpop").classList.remove("on");
+    content.focus(); const s = getSelection(); s.removeAllRanges(); if (savedRange) s.addRange(savedRange);
+    if (!/^https?:\/\//i.test(url)) { if (url) fieldMessage("请输入以 http:// 或 https:// 开头的链接"); return; }
+    if (s.toString()) document.execCommand("createLink", false, url);
+    else document.execCommand("insertHTML", false, `<a href="${esc(url)}">${esc(url)}</a>&nbsp;`);
+    refresh();
+  }
+  document.querySelector("#toolbar [data-link]").addEventListener("mousedown", (e) => { e.preventDefault(); content.focus(); openLink(); });
+  $("linkOk").onclick = applyLink;
+  $("linkInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); applyLink(); } if (e.key === "Escape") { e.stopPropagation(); $("linkpop").classList.remove("on"); content.focus(); } });
+
+  // Markdown shortcuts at the start of a line: "- ", "* ", "1. ", "> ", "## ".
+  content.addEventListener("input", (e) => {
+    if (e.inputType === "insertText" && e.data === " ") {
+      const sel = getSelection(); const node = sel.anchorNode;
+      if (node && node.nodeType === 3 && !node.previousSibling) {
+        const key = node.textContent.slice(0, sel.anchorOffset).replace(/ /g, " ").trimEnd();
+        const map = { "-": "insertUnorderedList", "*": "insertUnorderedList", "1.": "insertOrderedList", ">": "blockquote", "##": "h3" };
+        if (map[key]) {
+          node.textContent = node.textContent.slice(sel.anchorOffset);
+          const r = document.createRange(); r.setStart(node, 0); r.collapse(true); sel.removeAllRanges(); sel.addRange(r);
+          if (map[key].startsWith("insert")) document.execCommand(map[key]); else document.execCommand("formatBlock", false, map[key]);
+        }
+      }
+    }
+    refresh();
+  });
+  content.addEventListener("keydown", (e) => {
+    if (e.key === "Backspace" || e.key === "Delete") {
+      const sel = content.querySelector(".att.sel"); if (sel) { e.preventDefault(); removeAttachment(sel); }
+    }
+    if (e.metaKey && e.key.toLowerCase() === "k") { e.preventDefault(); openLink(); }
+  });
+  content.addEventListener("focus", () => editor.classList.add("focus"));
+  content.addEventListener("blur", () => editor.classList.remove("focus"));
+  document.addEventListener("selectionchange", updateToolbarState);
+
+  /* ---------- region screenshot ---------- */
+  let capStart = null;
+  $("shot").onclick = () => { fb.classList.add("capturing"); setTimeout(() => $("capture").classList.add("on"), 140); };
+  const cap = $("capture"), rect = $("rect");
+  cap.addEventListener("mousedown", (e) => { const b = cap.getBoundingClientRect(); capStart = { x: e.clientX - b.left, y: e.clientY - b.top }; rect.style.display = "block"; drawRect(e); });
+  cap.addEventListener("mousemove", (e) => capStart && drawRect(e));
+  function drawRect(e) {
+    const b = cap.getBoundingClientRect(); const x = e.clientX - b.left, y = e.clientY - b.top;
+    const l = Math.min(x, capStart.x), t = Math.min(y, capStart.y), w = Math.abs(x - capStart.x), h = Math.abs(y - capStart.y);
+    Object.assign(rect.style, { left: l + "px", top: t + "px", width: w + "px", height: h + "px" });
+    $("rectSize").textContent = `${Math.round(w * 2)} × ${Math.round(h * 2)}`;
+  }
+  cap.addEventListener("mouseup", () => {
+    if (!capStart) return;
+    const w = parseFloat(rect.style.width), h = parseFloat(rect.style.height);
+    endCapture();
+    if (w > 20 && h > 20) addAttachments([{ kind: "image", name: "截图.png", size: Math.round(w * h * 16), src: makeShot(Math.max(240, Math.min(w, 520)), Math.max(150, Math.min(h, 320)), "区域截图", 210) }]);
+  });
+  function endCapture() { capStart = null; rect.style.display = "none"; cap.classList.remove("on"); fb.classList.remove("capturing"); content.focus(); }
+
+  /* ---------- window: drag / resize / focus / close ---------- */
+  let z = 20;
+  function focusWin(w) { [fb, settings].forEach((x) => x.classList.toggle("inactive", x !== w)); w.style.zIndex = ++z; }
+  settings.addEventListener("mousedown", () => focusWin(settings));
+  fb.addEventListener("mousedown", () => focusWin(fb));
+  function drag(e, onMove) {
+    const up = () => { removeEventListener("mousemove", onMove); removeEventListener("mouseup", up); };
+    addEventListener("mousemove", onMove); addEventListener("mouseup", up);
+  }
+  $("fbTitle").addEventListener("mousedown", (e) => {
+    if (e.target.closest(".lights")) return;
+    const sx = e.clientX, sy = e.clientY, ox = fb.offsetLeft, oy = fb.offsetTop;
+    drag(e, (ev) => {
+      const b = screen.getBoundingClientRect();
+      fb.style.left = Math.max(-fb.offsetWidth + 120, Math.min(b.width - 120, ox + ev.clientX - sx)) + "px";
+      fb.style.top = Math.max(26, Math.min(b.height - 52, oy + ev.clientY - sy)) + "px";
+    });
+  });
+  $("resize").addEventListener("mousedown", (e) => {
+    e.preventDefault(); const sx = e.clientX, sy = e.clientY, ow = fb.offsetWidth, oh = fb.offsetHeight;
+    drag(e, (ev) => { fb.style.width = Math.max(520, ow + ev.clientX - sx) + "px"; fb.style.height = Math.max(560, oh + ev.clientY - sy) + "px"; });
+  });
+
+  function hasDraft() { return content.innerText.trim().length > 0 || attCount() > 0; }
+  function closeWindow() {
+    if (fb.classList.contains("submitting")) return;
+    fb.classList.add("hidden");
+    if (fb.classList.contains("success")) resetForm(true);
+  }
+  function openWindow() {
+    $("tfmenu").classList.remove("on"); $("tfIcon").classList.remove("on");
+    const wasHidden = fb.classList.contains("hidden");
+    fb.classList.remove("hidden"); focusWin(fb);
+    $("restored").classList.toggle("on", wasHidden && hasDraft());
+    if (!fb.classList.contains("success")) content.focus();
+  }
+  $("closeBtn").onclick = closeWindow;
+  $("cancel").onclick = closeWindow;
+  $("finish").onclick = closeWindow;
+  $("again").onclick = () => { resetForm(); content.focus(); };
+  $("otherBtn").onclick = (e) => { e.stopPropagation(); $("otherMenu").classList.toggle("on"); };
+  document.addEventListener("click", () => $("otherMenu").classList.remove("on"));
+  $("otherMenu").onclick = () => $("otherMenu").classList.remove("on");
+  $("settingsFb").onclick = (e) => { e.stopPropagation(); openWindow(); };
+  $("tfIcon").onclick = () => { $("tfmenu").classList.toggle("on"); $("tfIcon").classList.toggle("on"); };
+  document.querySelector('[data-act="direct"]').onclick = openWindow;
+  $("discard").onclick = () => { resetForm(); content.focus(); };
+
+  /* ---------- submit ---------- */
+  function submit() {
+    if ($("submit").disabled) return;
+    fb.classList.add("submitting"); $("error").classList.remove("on");
+    setLoading(true); refresh();
+    setTimeout(() => {
+      fb.classList.remove("submitting"); setLoading(false);
+      const c = $("contact").value.trim();
+      $("doneText").textContent = c ? `我们会尽快查看。如有进展，会通过 ${c} 联系你。` : "我们会尽快查看。";
+      fb.classList.add("success"); $("restored").classList.remove("on");
+    }, 1200);
+  }
+  $("submit").onclick = submit;
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if ($("preview").classList.contains("on")) { closePreview(); return; }
+      if ($("capture").classList.contains("on")) { endCapture(); return; }
+      if ($("linkpop").classList.contains("on")) { $("linkpop").classList.remove("on"); return; }
+      if (!fb.classList.contains("hidden")) closeWindow();
+    }
+    if (e.key === " " && $("preview").classList.contains("on")) { e.preventDefault(); closePreview(); }
+    if (e.metaKey && e.key === "Enter") { e.preventDefault(); submit(); }
+  });
+
+  // TFFieldMessage(.warning) under the editor; it clears itself after a few seconds.
+  function fieldMessage(msg) { const m = $("fmsg"); m.textContent = msg; m.classList.add("on"); clearTimeout(m._h); m._h = setTimeout(() => m.classList.remove("on"), 6000); }
+  // TFButton(isLoading:): the spinner takes the leading icon slot; the button keeps its width.
+  function setLoading(on) { $("submitSpin").innerHTML = on ? '<span class="spin"></span>' : ""; $("submit").classList.toggle("is-loading", on); }
+
+  /* ---------- states ---------- */
+  function resetForm(keepHidden = false) {
+    atts.forEach((a) => a.timer && clearInterval(a.timer)); atts.clear();
+    content.innerHTML = ""; $("contact").value = "mylxsw@gmail.com";
+    fb.classList.remove("success", "submitting"); if (!keepHidden) fb.classList.remove("hidden");
+    $("error").classList.remove("on"); $("restored").classList.remove("on");
+    $("fmsg").classList.remove("on"); setLoading(false); refresh();
+  }
+  const SAMPLE = `<p>按住 fn 说话后，<b>松开没有插入文字</b>，菜单栏图标一直在转圈。</p>
+    <p>复现步骤：</p><ol><li>在备忘录里新建一条笔记</li><li>按住 fn 说一句话后松开</li><li>等待约 10 秒，仍然没有文字</li></ol>`;
+  function sample(demo, state) {
+    const el = attachmentBlock(DEMOS[demo]()); content.appendChild(el); run(el, { instant: state }); return el;
+  }
+  function setState(s) {
+    resetForm();
+    if (s === "empty") { content.focus(); return; }
+    content.innerHTML = SAMPLE;
+    if (s === "editing" || s === "restored") {
+      sample("shot", { state: "uploaded", finalSize: 1.2 * MB });
+      content.insertAdjacentHTML("beforeend", "<p>录了一段屏，日志也附上了：</p>");
+      sample("video", { state: "uploaded", finalSize: 38 * MB });
+      sample("log", { state: "uploaded" });
+    }
+    if (s === "uploading") {
+      sample("shot", { state: "uploaded", finalSize: 1.2 * MB });
+      sample("video", { state: "compressing", p: 42 });
+      sample("log", { state: "uploading", p: 64 });
+    }
+    if (s === "failed") { sample("shot", { state: "uploaded", finalSize: 1.2 * MB }); sample("video", { state: "failed", finalSize: 38 * MB }); sample("docx", { state: "failed" }); }
+    if (s === "toolarge") { sample("hugevideo", { state: "rejected", finalSize: 161 * MB }); fieldMessage("「typeflux-full.log」有 12 MB，超过 5 MB 上限"); }
+    if (s === "limit") { ["shot", "bigimg", "video", "log", "docx", "shot"].forEach((d) => sample(d, { state: "uploaded", finalSize: d === "video" ? 38 * MB : d === "bigimg" ? 2.4 * MB : d === "shot" ? 1.2 * MB : undefined })); }
+    if (s === "submitting" || s === "error" || s === "success") { sample("shot", { state: "uploaded", finalSize: 1.2 * MB }); sample("log", { state: "uploaded" }); }
+    content.insertAdjacentHTML("beforeend", "<p><br></p>");
+    refresh();
+    if (s === "submitting") { fb.classList.add("submitting"); setLoading(true); refresh(); }
+    if (s === "restored") $("restored").classList.add("on");
+    if (s === "error") $("error").classList.add("on");
+    if (s === "success") { $("doneText").textContent = "我们会尽快查看。如有进展，会通过 mylxsw@gmail.com 联系你。"; fb.classList.add("success"); }
+  }
+
+  function bindSeg(id, fn) {
+    const seg = $(id);
+    seg.querySelectorAll("button").forEach((b) => b.onclick = () => { seg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); fn(b.dataset.v); });
+    return (v) => seg.querySelector(`[data-v="${v}"]`)?.click();
+  }
+  const pickTheme = bindSeg("themeSeg", (v) => { document.documentElement.dataset.theme = v; });
+  const pickStyle = bindSeg("styleSeg", (v) => { document.documentElement.dataset.style = v; });
+  const pickState = bindSeg("stateSeg", setState);
+
+  const q = new URLSearchParams(location.search);
+  pickTheme(q.get("theme") || "dark");
+  pickStyle(q.get("style") || "glass");
+  pickState(q.get("state") || "empty");
+  focusWin(fb);
+})();
+</script>
+</body>
+</html>

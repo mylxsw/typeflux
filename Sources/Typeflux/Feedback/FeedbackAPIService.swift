@@ -5,15 +5,22 @@ struct CreateFeedbackRequest: Encodable, Equatable {
     let content: String
     let contact: String?
     let imageURLs: [String]
+    let attachments: [FeedbackAttachmentPayload]
 
-    init(content: String, contact: String? = nil, imageURLs: [String] = []) {
+    init(
+        content: String,
+        contact: String? = nil,
+        imageURLs: [String] = [],
+        attachments: [FeedbackAttachmentPayload] = []
+    ) {
         self.content = content
         self.contact = contact
         self.imageURLs = imageURLs
+        self.attachments = attachments
     }
 
     enum CodingKeys: String, CodingKey {
-        case content, contact
+        case content, contact, attachments
         case imageURLs = "image_urls"
     }
 }
@@ -102,6 +109,7 @@ enum FeedbackAPIService {
         content: String,
         contact: String?,
         imageURLs: [String] = [],
+        attachments: [FeedbackAttachmentPayload] = [],
         token: String? = nil,
         executor: CloudRequestExecutor = CloudRequestExecutor()
     ) async throws -> FeedbackSubmissionResponse {
@@ -114,7 +122,7 @@ enum FeedbackAPIService {
         let request = CreateFeedbackRequest(
             content: trimmedContent,
             contact: trimmedContact?.isEmpty == false ? trimmedContact : nil,
-            imageURLs: imageURLs
+            imageURLs: imageURLs, attachments: attachments
         )
         let payload: Data
         do {
@@ -176,7 +184,7 @@ enum FeedbackAPIService {
         return responseData
     }
 
-    static func createImageUploadTarget(
+    static func createUploadTarget(
         filename: String,
         contentType: String,
         sizeBytes: Int64,
@@ -303,7 +311,7 @@ enum FeedbackAPIService {
         }
     }
 
-    static func uploadImage(
+    static func uploadFile(
         data: Data,
         filename: String,
         contentType: String,
@@ -316,7 +324,7 @@ enum FeedbackAPIService {
         let boundary = "Boundary-\(UUID().uuidString)"
         var request = URLRequest(url: url)
         request.httpMethod = target.method.isEmpty ? "POST" : target.method
-        request.timeoutInterval = 60
+        request.timeoutInterval = 300
         for (name, value) in target.headers where name.caseInsensitiveCompare("Authorization") != .orderedSame {
             request.setValue(value, forHTTPHeaderField: name)
         }
@@ -356,7 +364,7 @@ enum FeedbackAPIService {
                     ? "HTTP \(httpResponse.statusCode)"
                     : "HTTP \(httpResponse.statusCode): \(responseBody)"
                 logger.error(
-                    "Feedback image upload failed with HTTP \(httpResponse.statusCode, privacy: .public): \(responseBody, privacy: .public)"
+                    "Feedback file upload failed with HTTP \(httpResponse.statusCode, privacy: .public): \(responseBody, privacy: .public)"
                 )
                 throw FeedbackAPIError.serverError(code: "UPLOAD_FAILED", message: message)
             }
@@ -367,7 +375,7 @@ enum FeedbackAPIService {
         } catch let error as FeedbackAPIError {
             throw error
         } catch {
-            logger.error("Feedback image upload failed: \(error.localizedDescription)")
+            logger.error("Feedback file upload failed: \(error.localizedDescription)")
             throw FeedbackAPIError.networkError(error.localizedDescription)
         }
     }

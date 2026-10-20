@@ -6,19 +6,23 @@ import Testing
 @Suite(.exclusiveUIState)
 @MainActor
 struct ScreenRecordingNativeCaptureTests {
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_REAL_SCREEN_CAPTURE_TESTS"] == "1"))
-    func `native catalog and region recording exclude owned controls`() async throws {
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_REAL_SCREEN_CAPTURE_TESTS"] == "1"),
+          arguments: [false, true])
+    func `native catalog and region recording exclude owned controls`(popup: Bool) async throws {
         _ = NSApplication.shared
         let screen = try #require(NSScreen.main)
         let displayID = try #require((screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?
             .uint32Value)
-        let frame = CGRect(x: screen.visibleFrame.midX - 120, y: screen.visibleFrame.midY - 90, width: 240, height: 180)
+        let frame = CGRect(x: screen.visibleFrame.midX - 120, y: screen.visibleFrame.midY - 90,
+                           width: 240, height: popup ? 32 : 180)
         let page = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
         page.isReleasedWhenClosed = false; page.title = "Typeflux recording fixture"; page.backgroundColor = .green
-        page.identifier = ScreenRecordingWindowController.previewIdentifier
+        page.identifier = popup ? ScreenshotCaptureWindowPolicy.tooltipIdentifier :
+            ScreenRecordingWindowController.previewIdentifier
+        page.level = popup ? NSWindow.Level(rawValue: NSWindow.Level.statusBar.rawValue + 2) : .floating
         let control = NSPanel(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
         control.isReleasedWhenClosed = false; control.identifier = ScreenRecordingWindowController.identifier
-        control.level = .floating; control.backgroundColor = .red
+        control.level = .screenSaver; control.backgroundColor = .red
         page.orderFrontRegardless(); control.orderFrontRegardless()
         defer { page.close(); control.close() }
         try await Task.sleep(for: .milliseconds(200))
@@ -27,8 +31,13 @@ struct ScreenRecordingNativeCaptureTests {
         #expect(choices.contains { $0.target == .window(CGWindowID(page.windowNumber)) })
         #expect(!choices.contains { $0.target == .window(CGWindowID(control.windowNumber)) })
         let rect = ScreenCaptureGeometry.flipped(frame, primaryDisplayHeight: NSScreen.screens.first?.frame.height ?? 0)
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mov")
-        defer { try? FileManager.default.removeItem(at: url) }
+        // The encoder bounds the number of entries in its session directory.
+        // Use a private session instead of depending on the machine's shared temp directory.
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false,
+                                               attributes: [.posixPermissions: 0o700])
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("source.mov")
         let engine = NativeScreenRecordingEngine()
         #expect(engine.previewSession == nil && engine.audioLevel == 0)
         var options = ScreenRecordingOptions()

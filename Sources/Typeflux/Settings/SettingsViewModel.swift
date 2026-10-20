@@ -86,7 +86,6 @@ final class StudioViewModel: ObservableObject {
     private static let historyPageSize = 100
 
     /// Opens the existing feedback form from the menu bar, including on first presentation.
-    @Published var directFeedbackRequestID: UUID?
 
     @Published var currentSection: StudioSection
     /// The Voice Input tab last shown; the sidebar's Voice Input entry returns to it.
