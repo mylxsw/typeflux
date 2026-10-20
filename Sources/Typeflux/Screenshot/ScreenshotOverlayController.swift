@@ -10,6 +10,8 @@ final class ScreenshotOverlayPanel: NSPanel {
         backgroundColor = .black
         hasShadow = false
         hidesOnDeactivate = false
+        // Keep capture usable above alerts and open/save dialogs without dismissing them.
+        worksWhenModal = true
         isReleasedWhenClosed = false
         isMovable = false
         acceptsMouseMovedEvents = true

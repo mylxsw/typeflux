@@ -37,9 +37,11 @@ extension ScreenRecordingCoordinator {
                                              CGDisplayBounds(display.displayID).width
                                          ))
         }
-        let windows = content.windows.filter {
-            $0.isOnScreen && $0.windowLayer == 0 && $0.frame.width > 50 && $0.frame.height > 50
-                && !controls.contains($0.windowID) && $0.owningApplication != nil
+        let windows = content.windows.filter { window in
+            guard window.isOnScreen, !controls.contains(window.windowID),
+                  let application = window.owningApplication else { return false }
+            return isSelectableWindow(layer: window.windowLayer, size: window.frame.size,
+                                      isOwnApplication: application.processID == getpid())
         }.map { window in
             let screen = NSScreen.screens.first { screen in
                 ScreenCaptureGeometry.flipped(
@@ -59,5 +61,13 @@ extension ScreenRecordingCoordinator {
             guard case let .window(leftID) = left.target, case let .window(rightID) = right.target else { return false }
             return (order.firstIndex(of: leftID) ?? Int.max) < (order.firstIndex(of: rightID) ?? Int.max)
         }
+    }
+
+    /// Own app capsules and notices are valid sources even above normal windows or
+    /// below the size threshold used to omit other apps' utility surfaces.
+    static func isSelectableWindow(layer: Int, size: CGSize, isOwnApplication: Bool) -> Bool {
+        guard size.width.isFinite, size.height.isFinite else { return false }
+        if isOwnApplication { return size.width > 0 && size.height > 0 }
+        return layer == 0 && size.width > 50 && size.height > 50
     }
 }

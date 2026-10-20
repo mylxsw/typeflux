@@ -13,6 +13,7 @@ final class ScreenshotFloatingPanel: NSPanel {
         backgroundColor = .clear
         hasShadow = false
         hidesOnDeactivate = false
+        worksWhenModal = true
         isReleasedWhenClosed = false
         isMovable = false
         animationBehavior = .none

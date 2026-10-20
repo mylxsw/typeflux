@@ -146,6 +146,7 @@ final class ScreenRecordingWindowController: NSObject, NSWindowDelegate {
         panel.backgroundColor = .clear
         panel.isReleasedWhenClosed = false
         panel.hidesOnDeactivate = false
+        panel.worksWhenModal = true
         panel.hasShadow = false
         panel.level = NSWindow.Level(rawValue: NSWindow.Level.screenSaver.rawValue + (interactive ? 1 : 0))
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]

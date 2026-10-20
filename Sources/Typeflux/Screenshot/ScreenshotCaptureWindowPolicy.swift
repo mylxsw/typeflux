@@ -1,6 +1,7 @@
 import AppKit
 
-/// Capture controls should not cover the page being reported or feed back into a live capture.
+/// Only active capture controls are omitted. App content, notices and completed pins
+/// remain visible so an explicit capture can document them for feedback.
 enum ScreenshotCaptureWindowPolicy {
     static let toastIdentifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.screenshot-toast")
     static let tooltipIdentifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.tooltip")
@@ -9,10 +10,9 @@ enum ScreenshotCaptureWindowPolicy {
 
     @MainActor
     static func excludes(_ window: NSWindow) -> Bool {
-        window is ScreenshotOverlayPanel || window is ScreenshotFloatingPanel || window is ScreenshotPinPanel
-            || window.identifier == toastIdentifier
-            || window.identifier == tooltipIdentifier
-            || window.identifier == permissionIdentifier
+        window is ScreenshotOverlayPanel || window is ScreenshotFloatingPanel
+            // Capture tooltips use a higher level than ordinary app tooltips.
+            || (window.identifier == tooltipIdentifier && window.level.rawValue >= NSWindow.Level.screenSaver.rawValue)
             || window.identifier == ScreenRecordingWindowController.identifier
     }
 

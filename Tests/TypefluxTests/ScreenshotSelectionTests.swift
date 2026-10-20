@@ -336,3 +336,20 @@ private extension ScreenshotSelection {
         return mouseUp(at: CGPoint(x: rect.maxX, y: rect.maxY))
     }
 }
+
+extension ScreenshotSelectionTests {
+    func testOwnAppHighLevelPopupsAndSmallNoticesCanBeSelected() {
+        let frame = CGRect(x: 2020, y: 100, width: 180, height: 32)
+        var popup = window(1, frame, layer: 27)
+        popup.processID = ProcessInfo.processInfo.processIdentifier
+        let external = window(2, frame.offsetBy(dx: 300, dy: 0), layer: 27)
+        var sut = selection(windows: [popup, external])
+        let point = CGPoint(x: 150, y: 115)
+        sut.pointerMoved(to: point)
+        XCTAssertEqual(sut.hovered, CGRect(x: 100, y: 100, width: 180, height: 32))
+        _ = sut.mouseDown(at: point)
+        XCTAssertEqual(sut.mouseUp(at: point), .committed)
+        XCTAssertEqual(sut.rect, CGRect(x: 100, y: 100, width: 180, height: 32))
+        XCTAssertEqual(sut.windows.count, 1)
+    }
+}

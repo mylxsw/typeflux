@@ -37,8 +37,8 @@ struct ScreenshotSelection: Equatable {
     static let handleHitRadius: CGFloat = 6
     static let nudgeStep: CGFloat = 1
     static let largeNudgeStep: CGFloat = 10
-    /// Window levels that can be snapped to: normal, floating and modal windows, not
-    /// the Dock, menu bar or screen-wide overlays above them.
+    /// External window levels that can be snapped to. Own app popovers, capsules and
+    /// notices can sit above this range; capture controls are removed by the service.
     static let snappableLayers = 0 ..< 20
     static let excludedBundleIdentifiers: Set<String> = ["com.apple.dock", "com.apple.WindowManager"]
 
@@ -61,7 +61,8 @@ struct ScreenshotSelection: Equatable {
         self.scale = max(scale, 1)
         let local = CGRect(origin: .zero, size: displayFrame.size)
         self.windows = windows.compactMap { window -> CGRect? in
-            guard Self.snappableLayers.contains(window.layer),
+            guard window.processID == ProcessInfo.processInfo.processIdentifier
+                || Self.snappableLayers.contains(window.layer),
                   !Self.excludedBundleIdentifiers.contains(window.bundleIdentifier ?? ""),
                   !Self.isInvisibleOverlay(window, on: displayFrame) else { return nil }
             let clipped = window.frame.offsetBy(dx: -displayFrame.minX, dy: -displayFrame.minY)

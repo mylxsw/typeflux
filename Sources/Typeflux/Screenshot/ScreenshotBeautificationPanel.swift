@@ -70,6 +70,7 @@ final class ScreenshotBeautificationPanel: NSObject, NSWindowDelegate {
         panel.backgroundColor = NSColor(white: 0.075, alpha: 1)
         panel.level = parent.level
         panel.isReleasedWhenClosed = false
+        panel.worksWhenModal = true
         panel.delegate = self
         panel.contentView = NSHostingView(rootView: ScreenshotBeautificationView(model: model, panelSize: panelSize,
             cancel: { [weak self] in self?.dismiss() }, apply: { [weak self] in
