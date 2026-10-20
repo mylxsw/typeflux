@@ -179,7 +179,7 @@
 "settings.advanced.autoUpdate.title" = "Automatic Updates";
 "settings.advanced.autoUpdate.subtitle" = "Automatically check for and install updates every 3 hours.";
 "settings.analyticsSharing.title" = "Share usage data";
-"settings.analyticsSharing.subtitle" = "Sends feature use, durations, outcomes, model downloads, and a client identifier to Typeflux. Signed-in requests may be associated with your account. Voice and entered text are not included.";
+"settings.analyticsSharing.subtitle" = "Sends anonymous usage statistics to Typeflux, including feature use, durations, outcomes, and model downloads. Conversations, voice, and entered text are not included.";
 "settings.permissionStatus.title" = "Permission Status";
 "settings.permissionStatus.subtitle" = "Review the macOS permissions Typeflux depends on, then grant access where needed.";
 

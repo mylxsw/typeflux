@@ -171,7 +171,7 @@
 "settings.advanced.autoUpdate.title" = "自動更新";
 "settings.advanced.autoUpdate.subtitle" = "每 3 小時自動檢查並安裝新版本。";
 "settings.analyticsSharing.title" = "分享使用資料";
-"settings.analyticsSharing.subtitle" = "向 Typeflux 傳送功能使用情況、時長、結果、模型下載紀錄和用戶端識別碼。登入後的請求可能與帳號關聯。不包含語音或輸入的文字。";
+"settings.analyticsSharing.subtitle" = "向 Typeflux 傳送匿名使用統計資訊，包括功能使用情況、時長、結果和模型下載紀錄。不包含使用過程中的對話內容、語音或輸入文字。";
 "settings.permissionStatus.title" = "權限狀態";
 "settings.permissionStatus.subtitle" = "檢視 Typeflux 依賴的 macOS 權限，並在需要時完成授權。";
 "settings.output.title" = "輸出";

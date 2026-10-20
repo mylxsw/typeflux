@@ -171,7 +171,7 @@
 "settings.advanced.autoUpdate.title" = "自动更新";
 "settings.advanced.autoUpdate.subtitle" = "每 3 小时自动检查并安装新版本。";
 "settings.analyticsSharing.title" = "共享使用数据";
-"settings.analyticsSharing.subtitle" = "向 Typeflux 发送功能使用情况、时长、结果、模型下载记录和客户端标识。登录后发送的请求可能与账号关联。不包含语音或输入的文字。";
+"settings.analyticsSharing.subtitle" = "向 Typeflux 发送匿名使用统计信息，包括功能使用情况、时长、结果和模型下载记录。不包含使用过程中的对话内容、语音或输入文字。";
 "settings.permissionStatus.title" = "权限状态";
 "settings.permissionStatus.subtitle" = "查看 Typeflux 依赖的 macOS 权限，并在需要时完成授权。";
 "settings.output.title" = "输出";
