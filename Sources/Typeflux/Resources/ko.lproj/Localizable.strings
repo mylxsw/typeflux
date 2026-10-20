@@ -1727,8 +1727,8 @@
 "ask.models.privacy" = "Custom model keys stay on this Mac. Conversation history still syncs to Typeflux Cloud. Your API provider bills model usage.";
 "ask.models.deleteHint" = "Conversations using this model will need another model selected. They will not automatically switch to Cloud.";
 "ask.models.cancel" = "Cancel";
-"ask.models.askDefault" = "Ask default";
-"ask.models.makeDefault" = "Set as Ask default";
+"ask.models.askDefault" = "Agent 기본값";
+"ask.models.makeDefault" = "Agent 기본값으로 설정";
 "ask.models.isDefault" = "기본";
 "ask.models.supportsImages" = "이미지와 스크린샷 지원";
 "ask.models.compatible" = "Supports OpenAI-compatible APIs. Screenshots require vision support; tools require tool-calling support.";
@@ -1760,7 +1760,7 @@
 "models.sceneHint" = "Choose a provider and model for each application scenario";
 "models.fixedSpeech" = "Speech to text · one fixed model";
 "models.fixedRewrite" = "Rewrite, translate and commands · one fixed model";
-"models.askDefault" = "Ask · Default model";
+"models.askDefault" = "Agent 모델";
 "models.defaultHint" = "New chats start here. Switch models at any time in a conversation.";
 "models.configured" = "설정됨";
 "models.unconfigured" = "NOT CONFIGURED · UNAVAILABLE";
@@ -6188,7 +6188,7 @@
 "ask.title.model" = "보조 모델";
 "ask.title.model.subtitle" = "제목 생성과 대화 요약에 사용합니다. 자동은 로컬 대화 모델을 따르며 클라우드 요약은 서버 설정을 사용합니다.";
 "ask.title.rename" = "이름 바꾸기";
-"ask.title.section" = "보조 작업";
+"ask.title.section" = "대화 제목";
 "ask.translation.model.pickAgain" = "다시 선택";
 "ask.translation.panel.autoCopy" = "자동 복사";
 "ask.translation.panel.autoCopy.first" = "첫 번째 서비스";

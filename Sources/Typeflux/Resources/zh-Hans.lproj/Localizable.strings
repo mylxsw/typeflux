@@ -1737,8 +1737,8 @@
 "ask.models.privacy" = "自定义模型的密钥仅存于本机；对话历史仍会同步到 Typeflux Cloud。模型费用由 API 服务商收取。";
 "ask.models.deleteHint" = "使用此模型的对话将需要重新选择模型，不会自动切换到云端。";
 "ask.models.cancel" = "取消";
-"ask.models.askDefault" = "随便问默认";
-"ask.models.makeDefault" = "设为随便问默认";
+"ask.models.askDefault" = "Agent 默认";
+"ask.models.makeDefault" = "设为 Agent 默认";
 "ask.models.isDefault" = "默认";
 "ask.models.supportsImages" = "支持图片与截图";
 "ask.models.compatible" = "支持 OpenAI 兼容 API。截图需要模型支持视觉，工具调用需要对应能力。";
@@ -1770,7 +1770,7 @@
 "models.sceneHint" = "在这里决定每件事使用哪个服务商的哪个模型";
 "models.fixedSpeech" = "把说话转成文字 · 固定使用一个模型";
 "models.fixedRewrite" = "改写、翻译与指令 · 固定使用一个模型";
-"models.askDefault" = "随便问 · 默认模型";
+"models.askDefault" = "Agent 模型";
 "models.defaultHint" = "新对话从此模型开始，对话里可随时切换。";
 "models.configured" = "已配置";
 "models.unconfigured" = "未配置 · 暂不可用";
@@ -4025,7 +4025,7 @@
 "ask.capture.optIn" = "附带截图 · 开启后需要屏幕录制授权";
 
 // Conversation titles
-"ask.title.section" = "辅助任务";
+"ask.title.section" = "对话标题";
 "ask.title.enabled" = "自动生成聊天标题";
 "ask.title.enabled.subtitle" = "完成两轮回答后自动生成一次。";
 "ask.title.model" = "辅助模型";

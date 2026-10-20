@@ -52,6 +52,46 @@ struct ModelSettingsControlsTests {
         }
     }
 
+    @Test(arguments: [AppLanguage.english, .simplifiedChinese, .traditionalChinese, .japanese, .korean])
+    func `helper model is managed with model roles and preserves title preferences`(language: AppLanguage) async throws {
+        try await withModel { store, model in
+            model.setAppLanguage(language)
+            model.selectModelPageTab(.scenes)
+            store.askAutomaticTitles = false
+            store.askTitleModelReference = "custom:previous-helper"
+            let profile = AskModelProfile(name: "Helper fixture", baseURL: "https://fixture.invalid/v1", model: "helper")
+            try model.modelLibrary.save(profile, key: "fixture-key")
+            defer { KeychainTokenStore.deleteKeychainItem(account: "ask-model-" + profile.id) }
+            try await UI.withWindow(
+                ModelSettingsPage(viewModel: model, library: model.modelLibrary) { EmptyView() },
+                width: 920, height: 800
+            ) { _, host in
+                #expect(UI.contains(L("models.askDefault"), in: host))
+                #expect(UI.contains(L("ask.title.model"), in: host))
+                let popup = try #require(descendants(host).compactMap { $0 as? NSPopUpButton }
+                    .first { $0.accessibilityIdentifier() == "models.scene.auxiliary" })
+                try await UI.wait { popup.menu?.items.contains { $0.title == L("ask.models.unavailable") } == true }
+                #expect(store.askAuxiliaryModelReference == "custom:previous-helper")
+                let menu = try #require(popup.menu)
+                let automatic = try #require(menu.items.firstIndex { $0.title == L("ask.title.auto") })
+                menu.performActionForItem(at: automatic)
+                try await UI.wait { store.askAuxiliaryModelReference.isEmpty }
+                #expect(store.askTitleModelReference.isEmpty)
+                let helper = try #require(menu.items.firstIndex { $0.title.contains("Helper fixture") })
+                menu.performActionForItem(at: helper)
+                try await UI.wait { store.askAuxiliaryModelReference == profile.reference }
+                #expect(abs(popup.bounds.width - 240) < 1)
+                #expect(!store.askAutomaticTitles)
+                try UI.snapshot(host, name: "models-helper-\(language.rawValue)")
+            }
+            try await UI.withWindow(AskTitleSettingsView(settings: store)) { _, host in
+                #expect(UI.contains(L("ask.title.enabled"), in: host))
+                #expect(!UI.contains(L("ask.title.model"), in: host))
+                #expect(!store.askAutomaticTitles)
+            }
+        }
+    }
+
     @Test func `scene fields match settings menu height`() async throws {
         try await UI.withFixture { store in
             let library = AskModelLibrary(defaults: store.defaults, automaticallyLoadsCatalog: false)

@@ -1734,8 +1734,8 @@
 "ask.models.privacy" = "Custom model keys stay on this Mac. Conversation history still syncs to Typeflux Cloud. Your API provider bills model usage.";
 "ask.models.deleteHint" = "Conversations using this model will need another model selected. They will not automatically switch to Cloud.";
 "ask.models.cancel" = "Cancel";
-"ask.models.askDefault" = "Ask default";
-"ask.models.makeDefault" = "Set as Ask default";
+"ask.models.askDefault" = "Agent 預設";
+"ask.models.makeDefault" = "設為 Agent 預設";
 "ask.models.isDefault" = "預設";
 "ask.models.supportsImages" = "支援圖片與截圖";
 "ask.models.compatible" = "Supports OpenAI-compatible APIs. Screenshots require vision support; tools require tool-calling support.";
@@ -1767,7 +1767,7 @@
 "models.sceneHint" = "Choose a provider and model for each application scenario";
 "models.fixedSpeech" = "Speech to text · one fixed model";
 "models.fixedRewrite" = "Rewrite, translate and commands · one fixed model";
-"models.askDefault" = "Ask · Default model";
+"models.askDefault" = "Agent 模型";
 "models.defaultHint" = "New chats start here. Switch models at any time in a conversation.";
 "models.configured" = "已設定";
 "models.unconfigured" = "NOT CONFIGURED · UNAVAILABLE";
@@ -6221,7 +6221,7 @@
 "ask.title.model" = "輔助模型";
 "ask.title.model.subtitle" = "用於標題生成、上下文壓縮等輔助任務。自動時跟隨目前對話模型；雲端壓縮由後台統一設定。";
 "ask.title.rename" = "重新命名";
-"ask.title.section" = "輔助任務";
+"ask.title.section" = "對話標題";
 "ask.translation.model.pickAgain" = "重新選擇";
 "ask.translation.panel.autoCopy" = "自動複製";
 "ask.translation.panel.autoCopy.first" = "第一個服務";

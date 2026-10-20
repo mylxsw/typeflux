@@ -1737,8 +1737,8 @@
 "ask.models.privacy" = "Custom model keys stay on this Mac. Conversation history still syncs to Typeflux Cloud. Your API provider bills model usage.";
 "ask.models.deleteHint" = "Conversations using this model will need another model selected. They will not automatically switch to Cloud.";
 "ask.models.cancel" = "Cancel";
-"ask.models.askDefault" = "Ask default";
-"ask.models.makeDefault" = "Set as Ask default";
+"ask.models.askDefault" = "Agent default";
+"ask.models.makeDefault" = "Set as Agent default";
 "ask.models.isDefault" = "Default";
 "ask.models.supportsImages" = "Understands images and screenshots";
 "ask.models.compatible" = "Supports OpenAI-compatible APIs. Screenshots require vision support; tools require tool-calling support.";
@@ -1770,7 +1770,7 @@
 "models.sceneHint" = "Choose a provider and model for each application scenario";
 "models.fixedSpeech" = "Speech to text · one fixed model";
 "models.fixedRewrite" = "Rewrite, translate and commands · one fixed model";
-"models.askDefault" = "Ask · Default model";
+"models.askDefault" = "Agent Model";
 "models.defaultHint" = "New chats start here. Switch models at any time in a conversation.";
 "models.configured" = "Configured";
 "models.unconfigured" = "NOT CONFIGURED · UNAVAILABLE";
@@ -4025,7 +4025,7 @@
 "ask.capture.optIn" = "Attach screenshot · Requires screen recording access";
 
 // Conversation titles
-"ask.title.section" = "Auxiliary Tasks";
+"ask.title.section" = "Conversation Titles";
 "ask.title.enabled" = "Automatically name chats";
 "ask.title.enabled.subtitle" = "Generate once after two completed answers.";
 "ask.title.model" = "Auxiliary Model";

@@ -1727,8 +1727,8 @@
 "ask.models.privacy" = "Custom model keys stay on this Mac. Conversation history still syncs to Typeflux Cloud. Your API provider bills model usage.";
 "ask.models.deleteHint" = "Conversations using this model will need another model selected. They will not automatically switch to Cloud.";
 "ask.models.cancel" = "Cancel";
-"ask.models.askDefault" = "Ask default";
-"ask.models.makeDefault" = "Set as Ask default";
+"ask.models.askDefault" = "Agent の既定";
+"ask.models.makeDefault" = "Agent の既定に設定";
 "ask.models.isDefault" = "デフォルト";
 "ask.models.supportsImages" = "画像とスクリーンショットに対応";
 "ask.models.compatible" = "Supports OpenAI-compatible APIs. Screenshots require vision support; tools require tool-calling support.";
@@ -1760,7 +1760,7 @@
 "models.sceneHint" = "Choose a provider and model for each application scenario";
 "models.fixedSpeech" = "Speech to text · one fixed model";
 "models.fixedRewrite" = "Rewrite, translate and commands · one fixed model";
-"models.askDefault" = "Ask · Default model";
+"models.askDefault" = "Agent モデル";
 "models.defaultHint" = "New chats start here. Switch models at any time in a conversation.";
 "models.configured" = "設定済み";
 "models.unconfigured" = "NOT CONFIGURED · UNAVAILABLE";
@@ -6188,7 +6188,7 @@
 "ask.title.model" = "補助モデル";
 "ask.title.model.subtitle" = "タイトル生成やコンテキストの要約に使用します。自動ではローカルの会話モデルを使用し、クラウドの要約はサーバー設定に従います。";
 "ask.title.rename" = "名前を変更";
-"ask.title.section" = "補助タスク";
+"ask.title.section" = "会話タイトル";
 "ask.translation.model.pickAgain" = "選び直す";
 "ask.translation.panel.autoCopy" = "自動コピー";
 "ask.translation.panel.autoCopy.first" = "1 番目のサービス";

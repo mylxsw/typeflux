@@ -76,6 +76,8 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                 AskModelMenu(library: library, reference: $library.defaultReference, showsDefaultAction: false,
                              fieldStyle: true)
             }
+            TFDivider.formWithIcon
+            AuxiliaryModelSettingsRow(library: library)
         }
     }
 
