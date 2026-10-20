@@ -149,7 +149,6 @@ final class AppAnalyticsReporterTests: XCTestCase {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let settingsStore = SettingsStore(defaults: defaults)
-        settingsStore.analyticsSharingEnabled = true
         let appReporter = makeReporter(defaults: defaults, transport: FailingAnalyticsTransport())
         let reporter = SettingsAwareAnalyticsEventReporter(settingsStore: settingsStore, reporter: appReporter)
 
@@ -166,18 +165,17 @@ final class AppAnalyticsReporterTests: XCTestCase {
         XCTAssertEqual(queuedEvents(defaults: defaults).count, 1)
     }
 
-    func testSettingsAwareReporterStartsOffWithoutConsent() throws {
+    func testSettingsAwareReporterStartsEnabledByDefault() throws {
         let suite = "AppAnalyticsReporterTests-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
-        defaults.set(Data("old queue".utf8), forKey: "analytics.pendingEvents")
         let settingsStore = SettingsStore(defaults: defaults)
         let appReporter = makeReporter(defaults: defaults, transport: FailingAnalyticsTransport())
         let reporter = SettingsAwareAnalyticsEventReporter(settingsStore: settingsStore, reporter: appReporter)
 
         reporter.report(eventName: "app_login", properties: [:])
 
-        XCTAssertNil(defaults.object(forKey: "analytics.pendingEvents"))
+        XCTAssertEqual(queuedEvents(defaults: defaults).count, 1)
     }
 
     func testDisabledSettingsAwareReporterDoesNotUseTransport() async throws {

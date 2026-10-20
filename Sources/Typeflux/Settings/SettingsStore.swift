@@ -330,7 +330,7 @@ final class SettingsStore {
     }
 
     var analyticsSharingEnabled: Bool {
-        get { defaults.object(forKey: "analytics.sharingEnabled") as? Bool ?? false }
+        get { defaults.object(forKey: "analytics.sharingEnabled") as? Bool ?? true }
         set {
             if !newValue {
                 defaults.removeObject(forKey: "analytics.pendingEvents")
@@ -983,7 +983,7 @@ final class SettingsStore {
     }
 
     var automaticVocabularyCollectionEnabled: Bool {
-        get { defaults.object(forKey: "vocabulary.automaticCollection.enabled") as? Bool ?? false }
+        get { defaults.object(forKey: "vocabulary.automaticCollection.enabled") as? Bool ?? true }
         set { defaults.set(newValue, forKey: "vocabulary.automaticCollection.enabled") }
     }
 
