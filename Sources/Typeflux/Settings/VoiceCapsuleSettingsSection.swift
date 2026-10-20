@@ -5,7 +5,7 @@ struct VoiceCapsuleSettingsSection: View {
     @Binding var preferences: VoiceCapsulePreferences
 
     var body: some View {
-        TFFormSection(title: L("voiceCapsule.settings.title"), footnote: L("voiceCapsule.settings.footnote")) {
+        TFFormSection(title: L("voiceCapsule.settings.title")) {
             HStack(alignment: .top, spacing: 12) {
                 ForEach(VoiceCapsuleStyle.allCases, id: \.self) { style in
                     TFChoiceCard(title: style.displayName, isSelected: preferences.style == style) {

@@ -6068,7 +6068,6 @@
 "voiceCapsule.action.close" = "閉じる";
 "voiceCapsule.accessibility.label" = "Typeflux 音声入力";
 "voiceCapsule.settings.title" = "音声入力カプセル";
-"voiceCapsule.settings.footnote" = "次にカプセルが表示されたときに反映されます。";
 "voiceCapsule.livePreview.title" = "リアルタイム文字起こし";
 "voiceCapsule.livePreview.detail" = "話している間、認識中の文字をカプセルに表示します。";
 "voiceCapsule.showContext.title" = "入力先のアプリを表示";
@@ -6163,11 +6162,6 @@
 "terminal.command.keywordConflict" = "ターミナルのキーワードが使用済みです：%@。既存の項目は保持されます。別のキーワードを追加してください。";
 
 // Visible disclosure and action copy.
-"settings.analyticsSharing.notice" = "利用状況とクライアント識別子を送信します。ログイン中はアカウントと関連付けられる場合があります。音声や入力文は含みません。";
-"settings.instantVoiceInput.notice" = "使用後もマイクは最長 15 分間オンのままです。";
-"settings.advanced.autoVocabulary.notice" = "判断時には今回の音声入力、修正箇所、登録済みの語を選択したテキストモデルに送信します。";
-"settings.advanced.recentInputMemory.notice" = "確定した入力を最長 24 時間保存し、使用時に関連部分を選択したモデルに送信します。";
-"settings.advanced.globalSoul.notice" = "最近の入力メモリーも有効になります。長期メモリーの更新時に保存済みの入力を選択したモデルへ送信します。";
 "ask.storage.card.onlineModelNotice" = "選択中のオンラインモデルは、要求をモデル提供元へ送信します。";
 "agent.search.cloudflare.testCharge" = "テストでは有料の Cloudflare 検索が 1 回実行されます。";
 "auth.web.retry" = "ログインをやり直す";

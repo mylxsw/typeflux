@@ -6186,7 +6186,6 @@
 "voiceCapsule.action.close" = "关闭";
 "voiceCapsule.accessibility.label" = "Typeflux 语音输入";
 "voiceCapsule.settings.title" = "语音输入胶囊";
-"voiceCapsule.settings.footnote" = "下次出现胶囊时生效。";
 "voiceCapsule.livePreview.title" = "实时转写预览";
 "voiceCapsule.livePreview.detail" = "说话时在胶囊中展开显示正在识别的文字。";
 "voiceCapsule.showContext.title" = "显示目标应用";
@@ -6281,11 +6280,6 @@
 "terminal.command.keywordConflict" = "终端命令触发词已被占用：%@。已保留原入口，可添加“终端命令”关键词另行指定。";
 
 // Visible disclosure and action copy.
-"settings.analyticsSharing.notice" = "发送使用事件和客户端标识；登录后可能与账号关联。不包含语音或输入的文字。";
-"settings.instantVoiceInput.notice" = "使用后，麦克风最多继续开启 15 分钟。";
-"settings.advanced.autoVocabulary.notice" = "判断时会将本次听写、修正片段和已有词汇发送给所选文本模型。";
-"settings.advanced.recentInputMemory.notice" = "保存最多 24 小时的最终输入；使用时将相关片段发送给所选模型。";
-"settings.advanced.globalSoul.notice" = "开启后也会启用近期输入记忆；更新长期记忆时会将保存的输入发送给所选模型。";
 "ask.storage.card.onlineModelNotice" = "当前在线模型会将请求发送给模型服务商。";
 "agent.search.cloudflare.testCharge" = "测试会发起一次计费的 Cloudflare 搜索。";
 "auth.web.retry" = "重新发起登录";

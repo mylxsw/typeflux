@@ -6186,7 +6186,6 @@
 "voiceCapsule.action.close" = "Close";
 "voiceCapsule.accessibility.label" = "Typeflux voice input";
 "voiceCapsule.settings.title" = "Voice input capsule";
-"voiceCapsule.settings.footnote" = "Changes apply the next time the capsule appears.";
 "voiceCapsule.livePreview.title" = "Live transcript";
 "voiceCapsule.livePreview.detail" = "Expand the capsule to show the words being recognized while you speak.";
 "voiceCapsule.showContext.title" = "Show target app";
@@ -6281,11 +6280,6 @@
 "terminal.command.keywordConflict" = "Terminal command keywords already in use: %@. Existing entries are preserved; add a Terminal Command keyword to choose another.";
 
 // Visible disclosure and action copy.
-"settings.analyticsSharing.notice" = "Sends usage events and a client identifier; signed-in requests may be linked to your account. No voice or entered text.";
-"settings.instantVoiceInput.notice" = "After use, the microphone remains on for up to 15 minutes.";
-"settings.advanced.autoVocabulary.notice" = "Sends this dictation, corrected fragments, and existing vocabulary to the selected text model for review.";
-"settings.advanced.recentInputMemory.notice" = "Keeps final inputs for up to 24 hours; sends relevant excerpts to the selected model when used.";
-"settings.advanced.globalSoul.notice" = "Also enables recent input memory. Saved inputs are sent to the selected model when long-term memory is updated.";
 "ask.storage.card.onlineModelNotice" = "The selected online model sends requests to its service provider.";
 "agent.search.cloudflare.testCharge" = "Testing sends one billable Cloudflare search.";
 "auth.web.retry" = "Start sign-in again";

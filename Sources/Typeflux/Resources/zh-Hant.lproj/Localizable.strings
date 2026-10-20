@@ -6109,7 +6109,6 @@
 "voiceCapsule.action.close" = "關閉";
 "voiceCapsule.accessibility.label" = "Typeflux 語音輸入";
 "voiceCapsule.settings.title" = "語音輸入膠囊";
-"voiceCapsule.settings.footnote" = "下次出現膠囊時生效。";
 "voiceCapsule.livePreview.title" = "即時轉寫預覽";
 "voiceCapsule.livePreview.detail" = "說話時在膠囊中展開顯示正在辨識的文字。";
 "voiceCapsule.showContext.title" = "顯示目標應用程式";
@@ -6204,11 +6203,6 @@
 "terminal.command.keywordConflict" = "終端命令觸發詞已被占用：%@。已保留原入口，可新增「終端命令」關鍵詞另行指定。";
 
 // Visible disclosure and action copy.
-"settings.analyticsSharing.notice" = "傳送使用事件和用戶端識別碼；登入後可能與帳號關聯。不包含語音或輸入的文字。";
-"settings.instantVoiceInput.notice" = "使用後，麥克風最多繼續開啟 15 分鐘。";
-"settings.advanced.autoVocabulary.notice" = "判斷時會將本次聽寫、修正片段和現有詞彙傳送給所選文字模型。";
-"settings.advanced.recentInputMemory.notice" = "儲存最多 24 小時的最終輸入；使用時將相關片段傳送給所選模型。";
-"settings.advanced.globalSoul.notice" = "開啟後也會啟用近期輸入記憶；更新長期記憶時會將儲存的輸入傳送給所選模型。";
 "ask.storage.card.onlineModelNotice" = "目前的線上模型會將請求傳送給模型服務商。";
 "agent.search.cloudflare.testCharge" = "測試會發起一次計費的 Cloudflare 搜尋。";
 "auth.web.retry" = "重新開始登入";

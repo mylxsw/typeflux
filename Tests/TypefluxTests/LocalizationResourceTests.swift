@@ -171,8 +171,7 @@ final class LocalizationResourceTests: XCTestCase {
     func testInstantVoiceInputExplainsBenefitAndMicrophoneTradeoffInEveryLanguage() throws {
         let keys = [
             "settings.instantVoiceInput.title",
-            "settings.instantVoiceInput.subtitle",
-            "settings.instantVoiceInput.notice"
+            "settings.instantVoiceInput.subtitle"
         ]
 
         for language in AppLanguage.allCases {
@@ -184,8 +183,7 @@ final class LocalizationResourceTests: XCTestCase {
             }
 
             let subtitle = bundle.localizedString(forKey: "settings.instantVoiceInput.subtitle", value: nil, table: nil)
-            let notice = bundle.localizedString(forKey: "settings.instantVoiceInput.notice", value: nil, table: nil)
-            XCTAssertTrue(subtitle.contains("15") && notice.contains("15"), language.rawValue)
+            XCTAssertTrue(subtitle.contains("15"), language.rawValue)
             for overpromise in ["without missing anything", "不漏任何", "不漏掉任何", "漏らさず", "빠짐없이"] {
                 XCTAssertFalse(subtitle.contains(overpromise), "Overpromise in \(language.rawValue)")
             }

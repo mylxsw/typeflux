@@ -6068,7 +6068,6 @@
 "voiceCapsule.action.close" = "닫기";
 "voiceCapsule.accessibility.label" = "Typeflux 음성 입력";
 "voiceCapsule.settings.title" = "음성 입력 캡슐";
-"voiceCapsule.settings.footnote" = "다음에 캡슐이 나타날 때 적용됩니다.";
 "voiceCapsule.livePreview.title" = "실시간 받아쓰기";
 "voiceCapsule.livePreview.detail" = "말하는 동안 인식 중인 텍스트를 캡슐에 펼쳐 보여 줍니다.";
 "voiceCapsule.showContext.title" = "대상 앱 표시";
@@ -6163,11 +6162,6 @@
 "terminal.command.keywordConflict" = "사용 중인 터미널 키워드: %@. 기존 항목을 유지합니다. 다른 터미널 명령 키워드를 추가하세요.";
 
 // Visible disclosure and action copy.
-"settings.analyticsSharing.notice" = "사용 내역과 클라이언트 식별자를 전송합니다. 로그인 중에는 계정과 연결될 수 있습니다. 음성이나 입력한 텍스트는 포함하지 않습니다.";
-"settings.instantVoiceInput.notice" = "사용 후에도 마이크가 최대 15분 동안 켜져 있습니다.";
-"settings.advanced.autoVocabulary.notice" = "판단할 때 이번 받아쓰기 내용, 수정 부분 및 기존 단어를 선택한 텍스트 모델에 전송합니다.";
-"settings.advanced.recentInputMemory.notice" = "확정된 입력을 최대 24시간 저장하고, 사용할 때 관련 부분을 선택한 모델에 전송합니다.";
-"settings.advanced.globalSoul.notice" = "최근 입력 메모리도 켜집니다. 장기 메모리를 업데이트할 때 저장된 입력을 선택한 모델에 전송합니다.";
 "ask.storage.card.onlineModelNotice" = "선택한 온라인 모델은 요청을 모델 제공업체로 전송합니다.";
 "agent.search.cloudflare.testCharge" = "테스트하면 요금이 청구되는 Cloudflare 검색이 한 번 실행됩니다.";
 "auth.web.retry" = "로그인 다시 시작";
