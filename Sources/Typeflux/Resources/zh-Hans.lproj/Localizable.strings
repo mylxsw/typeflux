@@ -144,6 +144,7 @@
 "settings.general.voiceTrigger.title" = "语音输入方式";
 "settings.general.memory.title" = "记忆与词汇";
 "settings.general.screenshot.title" = "截图";
+"settings.general.updatesAndData.title" = "更新与数据";
 "settings.microphone.title" = "麦克风";
 "settings.microphone.subtitle" = "选择听写使用的输入设备。自动模式会跟随当前 macOS 默认输入设备；若默认设备是蓝牙耳机，则改用 Mac 自带或有线麦克风，避免开头丢字。";
 "settings.microphone.automatic" = "自动";

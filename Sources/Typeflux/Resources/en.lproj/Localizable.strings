@@ -152,6 +152,7 @@
 "settings.general.voiceTrigger.title" = "Voice Input Triggers";
 "settings.general.memory.title" = "Memory and Vocabulary";
 "settings.general.screenshot.title" = "Screenshots";
+"settings.general.updatesAndData.title" = "Updates and Data";
 "settings.microphone.title" = "Microphone";
 "settings.microphone.subtitle" = "Pick the device used for dictation. Automatic follows the current macOS default input, but prefers the Mac's built-in or a wired microphone over a Bluetooth headset so the first words are not lost.";
 "settings.microphone.automatic" = "Automatic";

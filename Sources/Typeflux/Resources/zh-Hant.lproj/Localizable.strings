@@ -144,6 +144,7 @@
 "settings.general.voiceTrigger.title" = "語音輸入方式";
 "settings.general.memory.title" = "記憶與詞彙";
 "settings.general.screenshot.title" = "截圖";
+"settings.general.updatesAndData.title" = "更新與資料";
 "settings.microphone.title" = "麥克風";
 "settings.microphone.subtitle" = "選擇聽寫使用的輸入裝置。自動模式會跟隨目前 macOS 預設輸入裝置；若預設裝置是藍牙耳機，則改用 Mac 內建或有線麥克風，避免開頭漏字。";
 "settings.microphone.automatic" = "自動";

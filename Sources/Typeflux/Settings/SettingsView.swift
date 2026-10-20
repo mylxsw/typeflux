@@ -714,20 +714,13 @@ struct StudioView: View {
         }
     }
 
-    /// General settings, grouped by what each setting affects: the app itself, how voice input
-    /// starts, the microphone, the text it produces, what it remembers and where screenshots go.
+    /// General settings, grouped by app startup, voice input, audio, text output, memory,
+    /// screenshots, and updates and data.
     private var generalSettingsPage: some View {
         VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
             TFFormSection(title: L("settings.general.app.title")) {
                 settingSwitch(L("settings.launchAtLogin.title"), detail: L("settings.launchAtLogin.subtitle"),
                               isOn: Binding(get: { viewModel.launchAtLogin }, set: viewModel.setLaunchAtLogin))
-                TFDivider.form
-                settingSwitch(L("settings.advanced.autoUpdate.title"), detail: L("settings.advanced.autoUpdate.subtitle"),
-                              isOn: Binding(get: { viewModel.autoUpdateEnabled }, set: viewModel.setAutoUpdateEnabled))
-                TFDivider.form
-                settingSwitch(L("settings.analyticsSharing.title"), detail: L("settings.analyticsSharing.subtitle"),
-                              isOn: Binding(get: { viewModel.analyticsSharingEnabled },
-                                            set: viewModel.setAnalyticsSharingEnabled))
             }
 
             TFFormSection(title: L("settings.general.voiceTrigger.title")) {
@@ -840,6 +833,15 @@ struct StudioView: View {
 
             TFFormSection(title: L("settings.general.screenshot.title")) {
                 screenshotSaveLocationSetting
+            }
+
+            TFFormSection(title: L("settings.general.updatesAndData.title")) {
+                settingSwitch(L("settings.advanced.autoUpdate.title"), detail: L("settings.advanced.autoUpdate.subtitle"),
+                              isOn: Binding(get: { viewModel.autoUpdateEnabled }, set: viewModel.setAutoUpdateEnabled))
+                TFDivider.form
+                settingSwitch(L("settings.analyticsSharing.title"), detail: L("settings.analyticsSharing.subtitle"),
+                              isOn: Binding(get: { viewModel.analyticsSharingEnabled },
+                                            set: viewModel.setAnalyticsSharingEnabled))
             }
         }
     }

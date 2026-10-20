@@ -152,6 +152,7 @@
 "settings.general.voiceTrigger.title" = "音声入力の起動方法";
 "settings.general.memory.title" = "メモリと語彙";
 "settings.general.screenshot.title" = "スクリーンショット";
+"settings.general.updatesAndData.title" = "アップデートとデータ";
 "settings.microphone.title" = "マイク";
 "settings.microphone.subtitle" = "ディクテーションに使用するデバイスを選択します。自動は現在の macOS デフォルト入力に従いますが、最初の言葉が欠けないよう Bluetooth ヘッドセットの代わりに Mac 内蔵または有線のマイクを使用します。";
 "settings.microphone.automatic" = "自動";
