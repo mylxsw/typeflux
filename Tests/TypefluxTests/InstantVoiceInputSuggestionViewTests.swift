@@ -15,7 +15,7 @@ struct InstantVoiceInputSuggestionViewTests {
             let view = InstantVoiceInputSuggestionView(
                 onEnable: { enabled = true }, onCancel: { cancelled = true }
             )
-            try await SettingsBehaviorTestSupport.withWindow(view, width: 520, height: 240) { _, host in
+            try await SettingsBehaviorTestSupport.withWindow(view, width: 440, height: 210) { _, host in
                 #expect(SettingsBehaviorTestSupport.contains(
                     L("settings.instantVoiceInput.suggestion.title"), in: host
                 ))

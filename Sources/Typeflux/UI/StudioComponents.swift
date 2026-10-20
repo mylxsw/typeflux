@@ -1125,16 +1125,25 @@ struct StudioButton: View {
     let title: String
     let systemImage: String?
     let variant: Variant
+    var isCompact: Bool = false
     var isDisabled: Bool = false
     var isLoading: Bool = false
     let action: () -> Void
+
+    private var horizontalInset: CGFloat {
+        variant == .ghost ? StudioTheme.Insets.none : (isCompact ? 12 : StudioTheme.Insets.buttonHorizontal)
+    }
+
+    private var verticalInset: CGFloat {
+        variant == .ghost ? StudioTheme.Insets.none : (isCompact ? 7 : StudioTheme.Insets.buttonVertical)
+    }
 
     var body: some View {
         StudioButtonChrome(
             variant: variant,
             isDisabled: isDisabled,
             isLoading: isLoading,
-            minWidth: variant == .ghost ? nil : StudioTheme.ControlSize.buttonMinWidth,
+            minWidth: variant == .ghost ? nil : (isCompact ? 72 : StudioTheme.ControlSize.buttonMinWidth),
             action: action
         ) {
             HStack(spacing: StudioTheme.Spacing.xSmall) {
@@ -1147,10 +1156,13 @@ struct StudioButton: View {
                         .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
                 }
                 Text(title)
-                    .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                    .font(.studioBody(
+                        isCompact ? StudioTheme.Typography.bodySmall : StudioTheme.Typography.body,
+                        weight: .semibold
+                    ))
             }
-            .padding(.horizontal, variant == .ghost ? StudioTheme.Insets.none : StudioTheme.Insets.buttonHorizontal)
-            .padding(.vertical, variant == .ghost ? StudioTheme.Insets.none : StudioTheme.Insets.buttonVertical)
+            .padding(.horizontal, horizontalInset)
+            .padding(.vertical, verticalInset)
             .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
         }
     }
