@@ -1,0 +1,864 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux 问题反馈：独立窗口 + 富文本正文（GUL-427）</title>
+<style>
+  :root { --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+          --mono: ui-monospace, "SF Mono", Menlo, monospace; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: var(--font); background: #0b0b0d; color: #eee; display: flex; flex-direction: column; align-items: center; padding: 14px; gap: 10px; }
+  body.light { background: #d9dde4; color: #111; }
+
+  /* ---------- prototype controls (not part of the product) ---------- */
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 12px; width: 1280px; }
+  .seg { display: inline-flex; padding: 2px; border-radius: 8px; background: rgba(127,127,127,.18); }
+  .seg button, .cbtn { border: 0; background: transparent; color: inherit; font: inherit; padding: 4px 10px; border-radius: 6px; cursor: pointer; opacity: .7; }
+  .seg button.on { background: rgba(127,127,127,.38); opacity: 1; }
+  .cbtn { background: rgba(127,127,127,.22); opacity: 1; }
+  .controls label { display: inline-flex; gap: 5px; align-items: center; cursor: pointer; }
+  .hint { opacity: .6; }
+  .notes { width: 1280px; font-size: 12px; line-height: 1.7; opacity: .78; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 24px; }
+  .notes b { font-weight: 600; }
+
+  /* ---------- fake desktop (1280 × 800 screen) ---------- */
+  .screen { width: 1280px; height: 800px; border-radius: 12px; position: relative; overflow: hidden; flex: none; user-select: none;
+            background: radial-gradient(1200px 600px at 20% 10%, #3b4f7d, transparent 60%),
+                        radial-gradient(900px 600px at 90% 90%, #6d3b6f, transparent 60%), #1b2133; }
+  body.light .screen { background: radial-gradient(1200px 600px at 20% 10%, #9fc0f5, transparent 60%),
+                        radial-gradient(900px 600px at 90% 90%, #f0b7d3, transparent 60%), #c9d4ea; }
+  .menubar { height: 26px; display: flex; align-items: center; gap: 18px; padding: 0 14px; font-size: 13px; color: #fff; position: relative; z-index: 50;
+             background: rgba(20,20,24,.35); backdrop-filter: blur(20px); }
+  body.light .menubar { color: #111; background: rgba(255,255,255,.4); }
+  .menubar b { font-weight: 600; }
+  .menubar .right { margin-left: auto; display: flex; gap: 14px; align-items: center; opacity: .9; }
+  .menubar .tf { cursor: pointer; padding: 1px 6px; border-radius: 4px; }
+  .menubar .tf:hover, .menubar .tf.on { background: rgba(255,255,255,.22); }
+  body.light .menubar .tf:hover, body.light .menubar .tf.on { background: rgba(0,0,0,.1); }
+  .tfmenu { position: absolute; top: 28px; right: 120px; width: 210px; padding: 5px; border-radius: 10px; z-index: 60; display: none; font-size: 13px;
+            background: rgba(40,40,44,.86); backdrop-filter: blur(30px); color: #eee; border: .5px solid rgba(255,255,255,.16); box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+  body.light .tfmenu { background: rgba(246,246,248,.9); color: #111; border-color: rgba(0,0,0,.12); }
+  .tfmenu.on { display: block; }
+  .tfmenu div { padding: 4px 10px; border-radius: 5px; cursor: default; display: flex; justify-content: space-between; }
+  .tfmenu div.sep { height: 1px; padding: 0; margin: 4px 8px; background: rgba(127,127,127,.3); }
+  .tfmenu div.item:hover { background: #0a84ff; color: #fff; }
+  .tfmenu div.sub { padding-left: 22px; }
+  .tfmenu span { opacity: .55; }
+
+  /* ---------- tokens: StudioTheme (dark / light) ---------- */
+  .win { --win: #1f1f21; --surface: rgba(255,255,255,.045); --control: #2a2a2d; --control2: #323236; --line: rgba(255,255,255,.115);
+         --line2: rgba(255,255,255,.07); --text: #eeeeee; --text2: #b8b8b8; --text3: #8a8a8e; --placeholder: #66666a;
+         --accent: #178cff; --accentSoft: rgba(23,140,255,.16); --danger: #ff5f57; --dangerSoft: rgba(255,95,87,.14); --success: #30d158;
+         --hover: rgba(255,255,255,.07); --press: rgba(255,255,255,.12); --shadow: 0 28px 80px rgba(0,0,0,.55), 0 0 0 .5px rgba(0,0,0,.6); }
+  body.light .win { --win: #f6f6f8; --surface: #ffffff; --control: #ffffff; --control2: #f3f4f6; --line: rgba(15,23,42,.10);
+         --line2: rgba(15,23,42,.06); --text: #1d1d1f; --text2: #515154; --text3: #86868b; --placeholder: #a1a1a6;
+         --accent: #2563eb; --accentSoft: rgba(37,99,235,.10); --danger: #e5484d; --dangerSoft: rgba(229,72,77,.10); --success: #1f9d55;
+         --hover: rgba(0,0,0,.05); --press: rgba(0,0,0,.09); --shadow: 0 24px 70px rgba(0,0,0,.22), 0 0 0 .5px rgba(0,0,0,.14); }
+
+  .win { position: absolute; border-radius: 12px; overflow: hidden; background: var(--win); color: var(--text); box-shadow: var(--shadow);
+         border: .5px solid var(--line); display: flex; flex-direction: column; }
+  .win.inactive { filter: saturate(.85); }
+  .lights { display: flex; gap: 8px; flex: none; } .lights i { width: 12px; height: 12px; border-radius: 6px; display: block; position: relative; }
+  .lights i.r { background: #ff5f57; } .lights i.y { background: #febc2e; } .lights i.g { background: #28c840; }
+  .win.inactive .lights i { background: rgba(127,127,127,.35); }
+  .lights:hover i.r::after { content: "×"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; line-height: 12px; color: rgba(0,0,0,.6); font-weight: 700; }
+  .lights i.g.off { background: rgba(127,127,127,.35); }
+
+  /* ---------- background: the settings window (simplified) ---------- */
+  #settings { left: 40px; top: 60px; width: 760px; height: 560px; flex-direction: row; }
+  #settings .side { width: 200px; padding: 16px 10px; background: rgba(127,127,127,.06); border-right: .5px solid var(--line2); display: flex; flex-direction: column; gap: 4px; }
+  #settings .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; margin: 22px 6px 14px; }
+  #settings .brand small { font-weight: 400; font-size: 10px; color: var(--text3); }
+  #settings .nav { font-size: 13px; padding: 7px 10px; border-radius: 8px; color: var(--text2); }
+  #settings .nav.on { background: var(--hover); color: var(--accent); }
+  #settings .main { flex: 1; padding: 30px 26px; overflow: hidden; }
+  #settings h1 { margin: 0 0 18px; font-size: 22px; }
+  #settings .tabs { display: flex; gap: 18px; font-size: 13px; color: var(--text2); border-bottom: .5px solid var(--line2); padding-bottom: 8px; margin-bottom: 18px; }
+  #settings .tabs .on { color: var(--text); font-weight: 600; }
+  #settings .grp { border-radius: 12px; background: var(--surface); border: .5px solid var(--line2); margin-bottom: 14px; }
+  #settings .row { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-size: 13px; border-bottom: .5px solid var(--line2); }
+  #settings .row:last-child { border-bottom: 0; }
+  #settings .tg { width: 32px; height: 18px; border-radius: 9px; background: rgba(127,127,127,.35); position: relative; }
+  #settings .tg::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 7px; background: #fff; }
+  #settings .tg.on { background: var(--accent); } #settings .tg.on::after { left: 16px; }
+  #settings .fbbtn { color: var(--accent); cursor: pointer; }
+  #settings .titlebar { position: absolute; left: 0; right: 0; top: 0; height: 40px; display: flex; align-items: center; padding: 0 14px; }
+
+  /* ---------- the feedback window ---------- */
+  #fb { width: 600px; height: 660px; left: 600px; top: 84px; min-width: 520px; min-height: 560px; z-index: 20; }
+  #fb.hidden { display: none; }
+  #fb.capturing { opacity: 0; pointer-events: none; transition: opacity .12s; }
+  .fbtitle { height: 52px; flex: none; display: flex; align-items: center; padding: 0 16px; gap: 12px; cursor: grab; position: relative; }
+  .fbtitle:active { cursor: grabbing; }
+  .fbtitle .t { position: absolute; left: 0; right: 0; text-align: center; font-size: 13px; font-weight: 600; pointer-events: none; }
+  .fbtitle .t span { color: var(--text3); font-weight: 400; margin-left: 6px; font-size: 12px; }
+  .fbbody { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; padding: 0 20px 16px; }
+  .intro { font-size: 12.5px; color: var(--text2); line-height: 1.55; margin-top: -4px; }
+  .intro kbd, .meta kbd, .ftr kbd { font: 11px var(--font); padding: 0 5px; border-radius: 4px; background: var(--control2); border: .5px solid var(--line); color: var(--text2); }
+  .restored { display: none; align-items: center; gap: 8px; font-size: 12px; color: var(--text2); background: var(--accentSoft); border-radius: 8px; padding: 7px 10px; }
+  .restored.on { display: flex; }
+  .restored a { color: var(--accent); cursor: pointer; margin-left: auto; }
+
+  /* editor */
+  .editor { flex: 1; min-height: 0; display: flex; flex-direction: column; border-radius: 10px; background: var(--control); border: 1px solid var(--line); position: relative;
+            transition: border-color .12s, box-shadow .12s; }
+  .editor.focus { border-color: color-mix(in srgb, var(--accent) 70%, transparent); box-shadow: 0 0 0 3px var(--accentSoft); }
+  .editor.drag { border-color: var(--accent); border-style: dashed; }
+  .toolbar { height: 38px; flex: none; display: flex; align-items: center; gap: 2px; padding: 0 6px; border-bottom: .5px solid var(--line2); }
+  .tb { width: 28px; height: 26px; border-radius: 6px; display: grid; place-items: center; color: var(--text2); cursor: pointer; border: 0; background: transparent; padding: 0; position: relative; }
+  .tb:hover { background: var(--hover); color: var(--text); }
+  .tb.on { background: var(--press); color: var(--text); }
+  .tb:disabled { opacity: .35; cursor: default; background: transparent; }
+  .tb svg { width: 16px; height: 16px; }
+  .tb[data-tip]:hover::after { content: attr(data-tip); position: absolute; top: 30px; left: 50%; transform: translateX(-50%); white-space: nowrap; z-index: 5;
+                       font-size: 11px; padding: 3px 7px; border-radius: 5px; background: rgba(20,20,22,.92); color: #fff; pointer-events: none; }
+  .tbsep { width: 1px; height: 16px; background: var(--line); margin: 0 5px; }
+  .tbwide { width: auto; padding: 0 8px; gap: 5px; display: inline-flex; align-items: center; font-size: 12px; font-family: var(--font); }
+  .tbspacer { flex: 1; }
+
+  .content { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 14px 16px; font-size: 13.5px; line-height: 1.65; outline: 0; color: var(--text); user-select: text; cursor: text; word-break: break-word; }
+  .content.empty::before { content: attr(data-placeholder); color: var(--placeholder); white-space: pre-line; pointer-events: none; position: absolute; }
+  .content p { margin: 0 0 6px; }
+  .content h3 { font-size: 15px; margin: 6px 0 6px; font-weight: 600; }
+  .content ul, .content ol { margin: 0 0 6px; padding-left: 22px; }
+  .content blockquote { margin: 0 0 6px; padding: 2px 0 2px 10px; border-left: 3px solid var(--line); color: var(--text2); }
+  .content code { font: 12.5px var(--mono); padding: 1px 4px; border-radius: 4px; background: var(--control2); }
+  .content pre { font: 12.5px/1.55 var(--mono); padding: 8px 10px; border-radius: 6px; background: var(--control2); margin: 0 0 6px; white-space: pre-wrap; }
+  .content a { color: var(--accent); }
+  .content::-webkit-scrollbar { width: 8px; } .content::-webkit-scrollbar-thumb { background: rgba(127,127,127,.35); border-radius: 4px; }
+
+  /* inline attachment blocks: image / video (media) and file (card) */
+  .att { display: block; position: relative; width: fit-content; max-width: 100%; margin: 6px 0 8px; cursor: default; user-select: none; }
+  .att.sel { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .media { border-radius: 8px; overflow: hidden; border: .5px solid var(--line); box-shadow: 0 1px 3px rgba(0,0,0,.18); background: var(--control2); }
+  .media img, .media video { display: block; max-width: 100%; max-height: 220px; }
+  .video video, .video img { width: 360px; height: 203px; object-fit: cover; max-height: none; }
+  .video .play { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 20px; display: grid; place-items: center;
+                 background: rgba(0,0,0,.55); backdrop-filter: blur(8px); color: #fff; cursor: pointer; }
+  .video .play svg { width: 16px; height: 16px; margin-left: 2px; }
+  .video .dur { position: absolute; right: 6px; bottom: 6px; font-size: 10.5px; color: #fff; background: rgba(0,0,0,.6); padding: 1px 6px; border-radius: 4px; font-variant-numeric: tabular-nums; }
+  .att .ops { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; opacity: 0; transition: opacity .1s; z-index: 2; }
+  .att:hover .ops, .att.sel .ops { opacity: 1; }
+  .att .ops button { width: 24px; height: 24px; border-radius: 6px; border: 0; display: grid; place-items: center; cursor: pointer; color: #fff; background: rgba(0,0,0,.62); backdrop-filter: blur(8px); }
+  .att .ops button:hover { background: rgba(0,0,0,.8); }
+  .att .ops svg { width: 13px; height: 13px; }
+  .media .ov { position: absolute; inset: 0; display: none; place-items: center; align-content: center; gap: 8px; color: #fff; font-size: 12px; font-weight: 500; text-align: center; padding: 0 24px; line-height: 1.5; }
+  .media.busy .ov { display: grid; background: rgba(0,0,0,.66); }
+  .media.failed .ov, .media.rejected .ov { display: grid; background: rgba(120,20,16,.84); }
+  .media.busy .dur, .media.failed .dur, .media.rejected .dur { display: none; }
+  .media.busy .play, .media.failed .play, .media.rejected .play { display: none; }
+  .ring { width: 26px; height: 26px; border-radius: 50%; background: conic-gradient(#fff var(--p, 0%), rgba(255,255,255,.25) 0); -webkit-mask: radial-gradient(circle, transparent 9px, #000 10px); mask: radial-gradient(circle, transparent 9px, #000 10px); justify-self: center; }
+  .retry { justify-self: center; border: 0; border-radius: 6px; padding: 4px 10px; font: 12px var(--font); background: rgba(255,255,255,.92); color: #b3261e; cursor: pointer; }
+  .media .size { position: absolute; left: 6px; bottom: 6px; font-size: 10.5px; color: #fff; background: rgba(0,0,0,.6); padding: 1px 6px; border-radius: 4px; opacity: 0; max-width: calc(100% - 70px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .media:hover .size, .video .size { opacity: 1; }
+  .media.busy .size, .media.failed .size, .media.rejected .size { opacity: 0; }
+
+  .file { display: flex; align-items: center; gap: 10px; width: 320px; padding: 8px 36px 8px 8px; border-radius: 9px; background: var(--control2); border: .5px solid var(--line); overflow: hidden; }
+  .file .ico { width: 34px; height: 40px; flex: none; border-radius: 5px; display: grid; place-items: end center; padding-bottom: 5px; font-size: 8.5px; font-weight: 700; letter-spacing: .3px;
+               background: var(--control); border: .5px solid var(--line); color: var(--text2); position: relative; }
+  .file .ico::before { content: ""; position: absolute; top: 7px; left: 7px; right: 7px; height: 14px; background: repeating-linear-gradient(var(--line) 0 1.5px, transparent 1.5px 4px); }
+  .file .info { min-width: 0; flex: 1; }
+  .file .fname { font-size: 12.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+  .file .fsub { font-size: 11px; color: var(--text3); margin-top: 2px; display: flex; gap: 6px; align-items: center; }
+  .file .fsub a { color: var(--accent); cursor: pointer; }
+  .file .bar { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--accent); width: var(--p, 0%); transition: width .12s; display: none; }
+  .file.busy .bar { display: block; }
+  .file.failed, .file.rejected { border-color: color-mix(in srgb, var(--danger) 55%, transparent); }
+  .file.failed .fsub, .file.rejected .fsub { color: var(--danger); }
+  .file .ops { top: 50%; transform: translateY(-50%); opacity: 1; }
+  .file .ops button { background: transparent; color: var(--text3); }
+  .file .ops button:hover { background: var(--hover); color: var(--text); }
+  .file .ops [data-op="preview"] { display: none; }
+
+  .dropmask { position: absolute; inset: 38px 0 0 0; display: none; place-items: center; font-size: 13px; color: var(--accent); background: color-mix(in srgb, var(--control) 80%, transparent); pointer-events: none; border-radius: 0 0 10px 10px; }
+  .editor.drag .dropmask { display: grid; }
+
+  .meta { height: 30px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 12px; border-top: .5px solid var(--line2); font-size: 11.5px; color: var(--text3); }
+  .meta .count { margin-left: auto; font-variant-numeric: tabular-nums; }
+  .meta .warn { color: var(--danger); }
+
+  /* contact */
+  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
+  .field label span { font-weight: 400; color: var(--text3); }
+  .input { height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border-radius: 8px; background: var(--control); border: 1px solid var(--line); }
+  .input:focus-within { border-color: color-mix(in srgb, var(--accent) 70%, transparent); box-shadow: 0 0 0 3px var(--accentSoft); }
+  .input svg { width: 15px; height: 15px; color: var(--text3); flex: none; }
+  .input input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: 13px var(--font); }
+  .input input::placeholder { color: var(--placeholder); }
+  .field .help { font-size: 11.5px; color: var(--text3); margin-top: 5px; }
+
+  .error { display: none; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 1.5; color: var(--danger); background: var(--dangerSoft); border-radius: 8px; padding: 8px 10px; }
+  .error.on { display: flex; }
+  .error svg { width: 14px; height: 14px; flex: none; margin-top: 2px; }
+
+  /* footer */
+  .ftr { height: 56px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 20px; border-top: .5px solid var(--line2); }
+  .ftr .other { font-size: 12px; color: var(--text3); display: flex; gap: 6px; align-items: center; }
+  .ftr .other a { color: var(--text2); cursor: pointer; text-decoration: none; }
+  .ftr .other a:hover { color: var(--accent); }
+  .ftr .sp { flex: 1; }
+  .btn { height: 28px; padding: 0 14px; border-radius: 7px; font: 13px var(--font); cursor: pointer; border: .5px solid var(--line); background: var(--control2); color: var(--text); display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: transparent; font-weight: 500; min-width: 84px; justify-content: center; }
+  .btn.primary kbd { background: rgba(255,255,255,.2); border: 0; color: #fff; padding: 0 4px; }
+  .btn:disabled { opacity: .45; cursor: default; filter: none; }
+  .spin { width: 13px; height: 13px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; animation: rot .7s linear infinite; }
+  @keyframes rot { to { transform: rotate(360deg); } }
+  .win.submitting .content, .win.submitting .input input { opacity: .6; pointer-events: none; }
+  .win.submitting .toolbar { opacity: .5; pointer-events: none; }
+
+  /* success */
+  .done { display: none; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 0 40px 40px; }
+  .win.success .done { display: flex; }
+  .win.success .fbbody, .win.success .ftr { display: none; }
+  .done .ok { width: 52px; height: 52px; border-radius: 26px; display: grid; place-items: center; background: color-mix(in srgb, var(--success) 16%, transparent); color: var(--success); }
+  .done .ok svg { width: 26px; height: 26px; }
+  .done h2 { margin: 6px 0 0; font-size: 17px; font-weight: 600; }
+  .done p { margin: 0; font-size: 12.5px; color: var(--text2); line-height: 1.6; max-width: 360px; }
+  .done .row { display: flex; gap: 8px; margin-top: 10px; }
+
+  .resize { position: absolute; right: 0; bottom: 0; width: 16px; height: 16px; cursor: nwse-resize; z-index: 3; }
+
+  /* link popover */
+  .linkpop { position: absolute; z-index: 10; display: none; gap: 6px; align-items: center; padding: 6px; border-radius: 9px; background: var(--win); border: .5px solid var(--line); box-shadow: 0 10px 30px rgba(0,0,0,.3); }
+  .linkpop.on { display: flex; }
+  .linkpop input { width: 240px; height: 26px; border-radius: 6px; border: 1px solid var(--line); background: var(--control); color: var(--text); padding: 0 8px; font: 12.5px var(--font); outline: 0; }
+
+  /* image preview (Quick Look style) */
+  .preview { position: absolute; inset: 26px 0 0 0; z-index: 40; display: none; place-items: center; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); }
+  .preview.on { display: grid; }
+  .preview img { max-width: 80%; max-height: 80%; border-radius: 10px; box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+  .preview .cap { position: absolute; bottom: 24px; color: #fff; font-size: 12px; opacity: .8; }
+
+  /* region capture overlay */
+  .capture { position: absolute; inset: 26px 0 0 0; z-index: 45; display: none; cursor: crosshair; background: rgba(0,0,0,.28); }
+  .capture.on { display: block; }
+  .capture .tip { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 12.5px; padding: 6px 12px; border-radius: 8px; background: rgba(0,0,0,.65); }
+  .capture .rect { position: absolute; border: 1.5px solid #fff; box-shadow: 0 0 0 9999px rgba(0,0,0,.25); display: none; }
+  .capture .rect span { position: absolute; top: -22px; left: 0; font-size: 11px; color: #fff; background: rgba(0,0,0,.65); padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+
+  .toast { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); font-size: 12.5px; padding: 8px 14px; border-radius: 10px; z-index: 70;
+           background: rgba(30,30,32,.9); color: #fff; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.on { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <div class="seg" id="themeSeg"><button data-v="dark" class="on">深色</button><button data-v="light">浅色</button></div>
+  <div class="seg" id="stateSeg">
+    <button data-v="empty" class="on">空白</button>
+    <button data-v="editing">编辑中</button>
+    <button data-v="uploading">压缩 / 上传中</button>
+    <button data-v="failed">上传失败</button>
+    <button data-v="toolarge">视频过大</button>
+    <button data-v="limit">附件已满</button>
+    <button data-v="submitting">提交中</button>
+    <button data-v="error">提交失败</button>
+    <button data-v="success">已提交</button>
+  </div>
+  <label><input type="checkbox" id="failNext"> 下一个上传失败</label>
+  <button class="cbtn" id="reopen">从菜单栏打开反馈</button>
+</div>
+<div class="controls">
+  <span class="hint">模拟添加：</span>
+  <div class="seg" id="demoSeg">
+    <button data-v="shot">截图 2.1 MB</button>
+    <button data-v="bigimg">大图 9.6 MB</button>
+    <button data-v="video">录屏 .mov 148 MB</button>
+    <button data-v="hugevideo">长录屏 .mov 620 MB</button>
+    <button data-v="log">typeflux.log 860 KB</button>
+    <button data-v="biglog">大日志 12 MB</button>
+    <button data-v="docx">说明.docx 1.4 MB</button>
+    <button data-v="zip">logs.zip</button>
+  </div>
+  <span class="hint">也可以真实粘贴 / 拖入 / 选择文件 · 拖标题栏移动 · 右下角调整大小 · ⌘B / ⌘I / ⌘K · ⌘↩ 提交 · esc 关闭</span>
+</div>
+
+<div class="screen" id="screen">
+  <div class="menubar">
+    <b></b><b>Typeflux</b><span>文件</span><span>编辑</span><span>窗口</span>
+    <div class="right"><span class="tf" id="tfIcon">∞</span><span>周二 10:24</span></div>
+  </div>
+  <div class="tfmenu" id="tfmenu">
+    <div class="item">打开启动器 <span>⌥Space</span></div>
+    <div class="item">设置… <span>⌘,</span></div>
+    <div class="sep"></div>
+    <div>问题反馈</div>
+    <div class="item sub" data-act="direct">直接反馈…</div>
+    <div class="item sub">发邮件反馈问题</div>
+    <div class="item sub">GitHub 提 Issue</div>
+    <div class="sep"></div>
+    <div class="item">退出 Typeflux <span>⌘Q</span></div>
+  </div>
+
+  <!-- background window: settings -->
+  <div class="win inactive" id="settings">
+    <div class="titlebar"><div class="lights"><i class="r"></i><i class="y"></i><i class="g"></i></div></div>
+    <div class="side">
+      <div class="brand">∞ Typeflux <small>1.0.0</small></div>
+      <div class="nav">语音输入</div><div class="nav">模型</div><div class="nav">Agent</div><div class="nav">启动器</div><div class="nav on">设置</div>
+    </div>
+    <div class="main">
+      <h1>设置</h1>
+      <div class="tabs"><span class="on">通用</span><span>外观</span><span>权限</span><span>快捷键</span><span>高级设置</span></div>
+      <div class="grp">
+        <div class="row">开机自动启动<i class="tg"></i></div>
+        <div class="row">自动检查更新<i class="tg on"></i></div>
+        <div class="row">共享匿名使用数据<i class="tg on"></i></div>
+      </div>
+      <div class="grp">
+        <div class="row">按住说话<i class="tg"></i></div>
+        <div class="row">问题反馈<span class="fbbtn" id="settingsFb">直接反馈…</span></div>
+      </div>
+      <div class="grp">
+        <div class="row">自动添加修正生词<i class="tg on"></i></div>
+        <div class="row">近期输入记忆<i class="tg on"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- the feedback window -->
+  <div class="win" id="fb">
+    <div class="fbtitle" id="fbTitle">
+      <div class="lights"><i class="r" id="closeBtn" title="关闭（保留草稿）"></i><i class="y"></i><i class="g off"></i></div>
+      <div class="t">问题反馈</div>
+    </div>
+
+    <div class="fbbody">
+      <div class="intro">说说遇到的问题或想法。截图后按 <kbd>⌘V</kbd> 直接粘贴到正文；录屏、日志等文件可以拖进来或点「添加文件」。</div>
+      <div class="restored" id="restored">已恢复上次未提交的内容 <a id="discard">清空重写</a></div>
+
+      <div class="editor" id="editor">
+        <div class="toolbar" id="toolbar">
+          <button class="tb" data-cmd="bold" data-tip="粗体 ⌘B"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4.5 2.8h4.2a2.6 2.6 0 0 1 0 5.2H4.5zM4.5 8h4.9a2.6 2.6 0 0 1 0 5.2H4.5z"/></svg></button>
+          <button class="tb" data-cmd="italic" data-tip="斜体 ⌘I"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 2.8 6 13.2M7 2.8h5M4 13.2h5"/></svg></button>
+          <button class="tb" data-cmd="strikeThrough" data-tip="删除线 ⇧⌘X"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 8h11M11 4.6c-.4-1.1-1.6-1.8-3-1.8-1.8 0-3 .9-3 2.3 0 .9.5 1.5 1.5 1.9M5 11.3c.4 1.2 1.6 1.9 3.1 1.9 1.9 0 3.2-1 3.2-2.4 0-.5-.1-.9-.4-1.2"/></svg></button>
+          <span class="tbsep"></span>
+          <button class="tb" data-block="h3" data-tip="小标题"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 3v10M10 3v10M3 8h7M12.5 9.5l1.5-1v4.7"/></svg></button>
+          <button class="tb" data-cmd="insertUnorderedList" data-tip="项目列表"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 4h8M6 8h8M6 12h8"/><circle cx="2.8" cy="4" r=".9" fill="currentColor"/><circle cx="2.8" cy="8" r=".9" fill="currentColor"/><circle cx="2.8" cy="12" r=".9" fill="currentColor"/></svg></button>
+          <button class="tb" data-cmd="insertOrderedList" data-tip="编号列表（复现步骤）"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4h7.5M6.5 8h7.5M6.5 12h7.5M2 2.8l1-.6v3.4M1.9 7.3c.2-.5.6-.7 1-.7.5 0 .9.3.9.8 0 .7-1.9 1.6-1.9 2.2h1.9"/></svg></button>
+          <button class="tb" data-block="blockquote" data-tip="引用"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 3v10M6.5 5h7M6.5 8h7M6.5 11h5"/></svg></button>
+          <button class="tb" data-code data-tip="代码 / 日志"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 4.5 2 8l3.5 3.5M10.5 4.5 14 8l-3.5 3.5"/></svg></button>
+          <button class="tb" data-link data-tip="链接 ⌘K"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6.8 9.2a2.8 2.8 0 0 0 4 0l2-2a2.8 2.8 0 0 0-4-4l-.7.7M9.2 6.8a2.8 2.8 0 0 0-4 0l-2 2a2.8 2.8 0 0 0 4 4l.7-.7"/></svg></button>
+          <span class="tbspacer"></span>
+          <button class="tb tbwide" id="addFile" data-tip="图片、视频、txt / log / md / docx"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="m13.2 7.6-5 5a3.3 3.3 0 0 1-4.7-4.7l5.4-5.4a2.2 2.2 0 0 1 3.1 3.1l-5.3 5.3a1.1 1.1 0 0 1-1.6-1.6l4.8-4.8"/></svg>添加文件</button>
+          <button class="tb tbwide" id="shot" data-tip="隐藏窗口并截取屏幕区域"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2.5 5.5v-2a1 1 0 0 1 1-1h2M10.5 2.5h2a1 1 0 0 1 1 1v2M13.5 10.5v2a1 1 0 0 1-1 1h-2M5.5 13.5h-2a1 1 0 0 1-1-1v-2"/><circle cx="8" cy="8" r="2"/></svg>截图</button>
+          <input type="file" id="file" accept="image/png,image/jpeg,image/gif,image/heic,image/webp,video/mp4,video/quicktime,.mov,.mp4,.m4v,.txt,.log,.md,.docx" multiple hidden>
+        </div>
+        <div class="content empty" id="content" contenteditable="true" spellcheck="false"
+             data-placeholder="遇到了什么问题？例如：按下快捷键后没有开始转写，重启应用后还是一样。&#10;&#10;如果方便，写下复现步骤，再贴一张截图或附上一段录屏。"></div>
+        <div class="dropmask">松开以添加附件 · 图片 ≤ 3 MB · 视频 ≤ 50 MB（自动压缩）</div>
+        <div class="meta" id="meta">
+          <span id="metaHint">支持 Markdown 快捷输入：<kbd>-</kbd> 列表 · <kbd>1.</kbd> 步骤 · <kbd>&gt;</kbd> 引用</span>
+          <span class="count" id="count">附件 0/6</span>
+        </div>
+        <div class="linkpop" id="linkpop"><input id="linkInput" placeholder="粘贴链接，回车确认"><button class="btn" id="linkOk">添加</button></div>
+      </div>
+
+      <div class="field">
+        <label for="contact">联系方式 <span>（可选）</span></label>
+        <div class="input">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3.5" width="12" height="9" rx="2"/><path d="m2.5 4.5 5.5 4 5.5-4"/></svg>
+          <input id="contact" value="mylxsw@gmail.com" placeholder="邮箱或其他联系方式">
+        </div>
+        <div class="help">只用于回复这条反馈。已登录时默认填写账号邮箱。</div>
+      </div>
+
+      <div class="error" id="error"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zm0 3a.8.8 0 0 0-.8.8v3.4a.8.8 0 0 0 1.6 0V5.3A.8.8 0 0 0 8 4.5zm0 6.1a.9.9 0 1 0 0 1.8.9.9 0 0 0 0-1.8z"/></svg><span id="errorText">提交反馈失败。请检查网络后重试，内容不会丢失。</span></div>
+    </div>
+
+    <div class="ftr">
+      <div class="other">其他方式：<a>发邮件</a>·<a>GitHub Issue</a></div>
+      <span class="sp"></span>
+      <button class="btn" id="cancel">取消</button>
+      <button class="btn primary" id="submit" disabled><span id="submitLabel">提交</span><kbd>⌘↩</kbd></button>
+    </div>
+
+    <div class="done">
+      <div class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></div>
+      <h2>反馈已提交，谢谢</h2>
+      <p id="doneText">我们会尽快查看。如有进展，会发邮件到 mylxsw@gmail.com。</p>
+      <div class="row"><button class="btn" id="again">再写一条</button><button class="btn primary" id="finish">完成</button></div>
+    </div>
+    <div class="resize" id="resize"></div>
+  </div>
+
+  <div class="preview" id="preview"><img id="previewImg" alt=""><video id="previewVideo" controls style="display:none;max-width:80%;max-height:80%;border-radius:10px"></video><div class="cap">空格或 esc 关闭</div></div>
+  <div class="capture" id="capture"><div class="tip">拖动选择截图区域 · esc 取消</div><div class="rect" id="rect"><span id="rectSize"></span></div></div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<div class="notes">
+  <div><b>独立窗口</b>：普通 NSWindow（不是设置里的 sheet），菜单栏、使用指南、设置三个入口都直接打开它，不再先打开设置。单实例：再次打开只是前置。可拖动、可调整大小（最小 520 × 560），记住位置；能被 ⇧⌘4 / 空格 单独截取。关闭窗口保留草稿，下次打开恢复。</div>
+  <div><b>富文本正文</b>：粗体、斜体、删除线、小标题、列表、编号步骤、引用、代码、链接；支持 Markdown 快捷输入。附件作为正文里的块插入：⌘V 粘贴截图或在访达里复制的文件、拖入、「添加文件」、或点「截图」隐藏窗口截取区域。粘贴的富文本只保留上述格式。</div>
+  <div><b>附件</b>：最多 6 个。图片先压缩（最长边 1600、JPEG），压缩后须 ≤ 3 MB；视频先压缩（720p H.264），压缩后须 ≤ 50 MB；文档只收 txt / log / md（≤ 5 MB）和 docx（≤ 10 MB），不压缩。类型不支持或超限时不插入并提示原因；视频压缩后仍超限会留在原位标红，只能移除。提交时正文转为 Markdown，附件以链接留在原位置。</div>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const screen = $("screen"), fb = $("fb"), settings = $("settings"), content = $("content"), editor = $("editor");
+
+  /* ---------- attachment rules ---------- */
+  const MB = 1024 * 1024, KB = 1024;
+  const MAX_ATTACHMENTS = 6;
+  const IMAGE_LIMIT = 3 * MB, VIDEO_LIMIT = 50 * MB;
+  const DOC_LIMITS = { txt: 5 * MB, log: 5 * MB, md: 5 * MB, docx: 10 * MB };
+  const IMAGE_EXT = ["png", "jpg", "jpeg", "gif", "heic", "webp"], VIDEO_EXT = ["mov", "mp4", "m4v"];
+  const DOC_LABEL = { txt: "文本", log: "日志", md: "Markdown", docx: "Word 文档" };
+  const ext = (name) => (name.split(".").pop() || "").toLowerCase();
+  function classify(name, type = "") {
+    const e = ext(name);
+    if (type.startsWith("image/") || IMAGE_EXT.includes(e)) return "image";
+    if (type.startsWith("video/") || VIDEO_EXT.includes(e)) return "video";
+    if (DOC_LIMITS[e]) return "file";
+    return null;
+  }
+  const fmt = (n) => n >= MB ? String(+(n / MB).toFixed(n >= 10 * MB ? 0 : 1)) + " MB" : Math.max(1, Math.round(n / KB)) + " KB";
+  const fmtDur = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+
+  const atts = new Map(); // id -> { kind, state: compressing|uploading|uploaded|failed|rejected, timer, ... }
+  let seq = 0;
+
+  /* ---------- mock media ---------- */
+  function makeShot(w, h, label, hue, dark = !document.body.classList.contains("light")) {
+    const c = document.createElement("canvas"); c.width = w * 2; c.height = h * 2;
+    const g = c.getContext("2d"); g.scale(2, 2);
+    g.fillStyle = dark ? "#1c1c1e" : "#f5f5f7"; g.fillRect(0, 0, w, h);
+    g.fillStyle = dark ? "#2a2a2d" : "#e6e6ea"; g.fillRect(0, 0, w, 24);
+    ["#ff5f57", "#febc2e", "#28c840"].forEach((col, i) => { g.fillStyle = col; g.beginPath(); g.arc(14 + i * 16, 12, 4.5, 0, 7); g.fill(); });
+    g.fillStyle = `hsl(${hue} 70% 55%)`; g.fillRect(16, 40, w * .34, 12);
+    g.fillStyle = dark ? "#3a3a3e" : "#d5d5da";
+    for (let i = 0; i < 5; i++) g.fillRect(16, 64 + i * 16, (w - 40) * (0.5 + ((i * 37) % 50) / 100), 8);
+    g.fillStyle = `hsl(${hue} 70% 55% / .18)`; g.strokeStyle = `hsl(${hue} 80% 55%)`; g.lineWidth = 2;
+    g.beginPath(); g.roundRect(w * .55, h * .42, w * .38, h * .42, 8); g.fill(); g.stroke();
+    g.fillStyle = dark ? "#eee" : "#222"; g.font = "600 12px -apple-system, PingFang SC, sans-serif";
+    g.fillText(label, w * .58, h * .42 + 22);
+    return c.toDataURL("image/png");
+  }
+
+  /* ---------- editor helpers ---------- */
+  const attCount = () => content.querySelectorAll(".att").length;
+  function refresh() {
+    const hasText = content.innerText.replace(/​/g, "").trim().length > 0;
+    content.classList.toggle("empty", !hasText && attCount() === 0);
+    const n = attCount();
+    const states = [...atts.values()].map((u) => u.state);
+    const busy = states.some((x) => x === "compressing" || x === "uploading");
+    const broken = states.some((x) => x === "failed" || x === "rejected");
+    $("count").textContent = `附件 ${n}/${MAX_ATTACHMENTS}`;
+    $("count").classList.toggle("warn", broken);
+    $("addFile").disabled = $("shot").disabled = n >= MAX_ATTACHMENTS;
+    const hint = $("metaHint");
+    if (states.includes("rejected")) hint.innerHTML = '<span class="warn">有附件超过大小上限，请移除后再提交</span>';
+    else if (states.includes("failed")) hint.innerHTML = '<span class="warn">有附件上传失败，请重试或移除后再提交</span>';
+    else if (states.includes("compressing")) hint.textContent = "正在压缩视频，完成后自动上传…";
+    else if (busy) hint.textContent = "附件上传中，完成后即可提交…";
+    else if (n >= MAX_ATTACHMENTS) hint.textContent = "已达到 6 个附件上限";
+    else hint.innerHTML = '图片 ≤ 3 MB · 视频 ≤ 50 MB（自动压缩）· txt / log / md / docx';
+    const submitting = fb.classList.contains("submitting");
+    $("submit").disabled = submitting || !hasText || busy || broken;
+    updateToolbarState();
+  }
+
+  function updateToolbarState() {
+    document.querySelectorAll(".tb[data-cmd]").forEach((b) => {
+      try { b.classList.toggle("on", document.queryCommandState(b.dataset.cmd) && document.activeElement === content); } catch (_) {}
+    });
+  }
+
+  function insertBlock(node) {
+    const sel = getSelection();
+    if (!sel.rangeCount || !content.contains(sel.anchorNode)) {
+      content.appendChild(node);
+    } else {
+      const r = sel.getRangeAt(0); r.deleteContents();
+      // Attachments are block-level: insert after the block that holds the caret.
+      let block = r.startContainer.nodeType === 3 ? r.startContainer.parentNode : r.startContainer;
+      while (block && block !== content && block.parentNode !== content) block = block.parentNode;
+      if (!block || block === content) content.appendChild(node); else block.after(node);
+    }
+    if (!node.nextSibling || node.nextSibling.classList?.contains("att")) {
+      const p = document.createElement("p"); p.innerHTML = "<br>"; node.after(p);
+    }
+    const r2 = document.createRange(); r2.setStart(node.nextSibling, 0); r2.collapse(true);
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r2);
+  }
+
+  const OPS = `<div class="ops">
+      <button data-op="preview" title="预览"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9"/></svg></button>
+      <button data-op="remove" title="移除"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m4 4 8 8M12 4l-8 8"/></svg></button>
+    </div>`;
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+  function attachmentBlock(a) {
+    const id = "att" + (++seq);
+    const el = document.createElement("figure");
+    el.contentEditable = "false"; el.dataset.id = id; el.style.margin = "6px 0 8px";
+    if (a.kind === "image") {
+      el.className = "att media image";
+      el.innerHTML = `<img src="${a.src}" alt="">${OPS}<div class="ov"></div><span class="size"></span>`;
+    } else if (a.kind === "video") {
+      el.className = "att media video";
+      const poster = a.src ? `<video src="${a.src}" muted preload="metadata"></video>` : `<img src="${a.poster}" alt="">`;
+      el.innerHTML = `${poster}<span class="play" data-op="preview"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9-5.5z"/></svg></span>
+        ${OPS}<div class="ov"></div><span class="size"></span><span class="dur">${a.duration ? fmtDur(a.duration) : ""}</span>`;
+      if (a.src) el.querySelector("video").addEventListener("loadedmetadata", (e) => { el.querySelector(".dur").textContent = fmtDur(e.target.duration || 0); });
+    } else {
+      el.className = "att file";
+      el.innerHTML = `<div class="ico">${esc(ext(a.name).toUpperCase())}</div>
+        <div class="info"><div class="fname">${esc(a.name)}</div><div class="fsub"></div></div>${OPS}<div class="bar"></div>`;
+    }
+    atts.set(id, { ...a, state: "uploading" });
+    return el;
+  }
+
+  // Renders one attachment's state into its block.
+  function paint(el) {
+    const a = atts.get(el.dataset.id); if (!a) return;
+    el.classList.toggle("busy", a.state === "compressing" || a.state === "uploading");
+    el.classList.toggle("failed", a.state === "failed");
+    el.classList.toggle("rejected", a.state === "rejected");
+    const p = Math.round(a.p || 0);
+    const sizeText = a.kind === "video" && a.finalSize ? `${fmt(a.size)} → ${fmt(a.finalSize)}`
+                   : fmt(a.finalSize || a.size);
+    if (a.kind === "file") {
+      const sub = el.querySelector(".fsub"); el.querySelector(".bar").style.setProperty("--p", p + "%");
+      if (a.state === "uploading") sub.textContent = `上传中 ${p}% · ${fmt(a.size)}`;
+      else if (a.state === "failed") sub.innerHTML = `上传失败 · <a data-op="retry">重试</a>`;
+      else sub.textContent = `${fmt(a.size)} · ${DOC_LABEL[ext(a.name)] || "文件"}`;
+      return;
+    }
+    const ov = el.querySelector(".ov");
+    if (a.state === "compressing") ov.innerHTML = `<div class="ring" style="--p:${p}%"></div><div>压缩中 ${p}%<br><span style="opacity:.75;font-weight:400">${fmt(a.size)} · 转为 720p</span></div>`;
+    else if (a.state === "uploading") ov.innerHTML = `<div class="ring" style="--p:${p}%"></div><div>上传中 ${p}%</div>`;
+    else if (a.state === "failed") ov.innerHTML = '<div>上传失败</div><button class="retry" data-op="retry">重试</button>';
+    else if (a.state === "rejected") ov.innerHTML = `<div>压缩后仍有 ${fmt(a.finalSize)}，超过 50 MB 上限<br><span style="opacity:.8;font-weight:400">请剪短后重新添加</span></div>`;
+    else ov.innerHTML = "";
+    el.querySelector(".size").textContent = sizeText;
+  }
+
+  // Simulated pipeline: video compress -> upload; image compress is instant; files upload as-is.
+  function run(el, { forceFail = false, instant = null } = {}) {
+    const a = atts.get(el.dataset.id); if (a.timer) clearInterval(a.timer);
+    if (instant) { Object.assign(a, instant); paint(el); refresh(); return; }
+    const fail = forceFail || $("failNext").checked;
+    if (fail) $("failNext").checked = false;
+    if (a.kind === "image" && !a.finalSize) a.finalSize = a.size > IMAGE_LIMIT ? Math.min(2.6 * MB, a.size * 0.22) : Math.round(a.size * 0.55);
+    a.state = a.kind === "video" && !a.finalSize ? "compressing" : "uploading"; a.p = 0;
+    const tick = () => {
+      a.p += a.state === "compressing" ? 3 + Math.random() * 5 : 6 + Math.random() * (a.kind === "video" ? 4 : 10);
+      if (a.state === "compressing" && a.p >= 100) {
+        a.finalSize = Math.round(a.size * 0.26);
+        if (a.finalSize > VIDEO_LIMIT) { clearInterval(a.timer); a.state = "rejected"; paint(el); refresh(); return; }
+        a.state = "uploading"; a.p = 0;
+      } else if (a.state === "uploading" && fail && a.p > 55) { clearInterval(a.timer); a.state = "failed"; paint(el); refresh(); return; }
+      else if (a.state === "uploading" && a.p >= 100) { clearInterval(a.timer); a.state = "uploaded"; paint(el); refresh(); return; }
+      paint(el);
+    };
+    a.timer = setInterval(tick, 140); paint(el); refresh();
+  }
+
+  // Checks type and size before anything is inserted; returns a reason when refused.
+  function precheck(a) {
+    if (!a.kind) return `不支持「${a.name}」：仅支持图片、视频，以及 txt / log / md / docx`;
+    if (a.kind === "image" && ext(a.name) === "gif" && a.size > IMAGE_LIMIT) return `「${a.name}」有 ${fmt(a.size)}，动图无法压缩到 3 MB 以内`;
+    if (a.kind === "file" && a.size > DOC_LIMITS[ext(a.name)]) return `「${a.name}」有 ${fmt(a.size)}，超过 ${fmt(DOC_LIMITS[ext(a.name)])} 上限`;
+    return null;
+  }
+
+  function addAttachments(items) {
+    const refused = [];
+    const ok = items.filter((a) => { const why = precheck(a); if (why) refused.push(why); return !why; });
+    const room = MAX_ATTACHMENTS - attCount();
+    if (ok.length && room <= 0) refused.push("最多添加 6 个附件");
+    else if (ok.length > room) refused.push(`最多 6 个附件，已添加前 ${room} 个`);
+    ok.slice(0, Math.max(0, room)).forEach((a) => { const el = attachmentBlock(a); insertBlock(el); run(el); });
+    if (refused.length) toast(refused[0] + (refused.length > 1 ? `（另有 ${refused.length - 1} 个未添加）` : ""));
+    content.focus(); refresh();
+  }
+
+  function filesToItems(files) {
+    return Promise.all([...files].map((f) => new Promise((res) => {
+      const kind = classify(f.name || "", f.type);
+      const base = { kind, name: f.name || "粘贴的图片.png", size: f.size };
+      if (kind === "image") { const r = new FileReader(); r.onload = () => res({ ...base, src: r.result }); r.readAsDataURL(f); }
+      else if (kind === "video") res({ ...base, src: URL.createObjectURL(f) });
+      else res(base);
+    })));
+  }
+
+  /* ---------- paste / drop / pick ---------- */
+  content.addEventListener("paste", async (e) => {
+    const files = [...(e.clipboardData?.files || [])];
+    if (files.length) { e.preventDefault(); addAttachments(await filesToItems(files)); return; }
+    // Rich text is reduced to the supported formats; this prototype keeps plain text only.
+    const text = e.clipboardData?.getData("text/plain");
+    if (text != null) { e.preventDefault(); document.execCommand("insertText", false, text); }
+  });
+  let dragDepth = 0;
+  editor.addEventListener("dragenter", (e) => { if ([...e.dataTransfer.types].includes("Files")) { dragDepth++; editor.classList.add("drag"); } });
+  editor.addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; editor.classList.remove("drag"); } });
+  editor.addEventListener("dragover", (e) => e.preventDefault());
+  editor.addEventListener("drop", async (e) => {
+    e.preventDefault(); dragDepth = 0; editor.classList.remove("drag");
+    addAttachments(await filesToItems(e.dataTransfer.files));
+  });
+  $("addFile").onclick = () => $("file").click();
+  $("file").onchange = async (e) => { addAttachments(await filesToItems(e.target.files)); e.target.value = ""; };
+
+  const DEMOS = {
+    shot: () => ({ kind: "image", name: "截图 2026-10-20 10.24.png", size: 2.1 * MB, src: makeShot(420, 240, "转写一直在转圈", 210) }),
+    bigimg: () => ({ kind: "image", name: "Retina 截图.png", size: 9.6 * MB, src: makeShot(480, 260, "5K 显示器截图", 160) }),
+    video: () => ({ kind: "video", name: "录屏 2026-10-20 10.31.mov", size: 148 * MB, duration: 42, poster: makeShot(360, 203, "录屏：按住 fn 无反应", 280) }),
+    hugevideo: () => ({ kind: "video", name: "录屏 2026-10-20 11.02.mov", size: 620 * MB, duration: 318, poster: makeShot(360, 203, "长录屏 5 分钟", 20) }),
+    log: () => ({ kind: "file", name: "typeflux-2026-10-20.log", size: 860 * KB }),
+    biglog: () => ({ kind: "file", name: "typeflux-full.log", size: 12 * MB }),
+    docx: () => ({ kind: "file", name: "复现说明.docx", size: 1.4 * MB }),
+    zip: () => ({ kind: null, name: "logs.zip", size: 3 * MB }),
+  };
+  document.querySelectorAll("#demoSeg button").forEach((b) => b.onclick = () => {
+    if (fb.classList.contains("hidden") || fb.classList.contains("success")) openWindow();
+    content.focus(); addAttachments([DEMOS[b.dataset.v]()]);
+  });
+
+  /* ---------- attachment interactions ---------- */
+  content.addEventListener("click", (e) => {
+    const fig = e.target.closest(".att");
+    content.querySelectorAll(".att.sel").forEach((x) => x !== fig && x.classList.remove("sel"));
+    if (!fig) return;
+    const op = e.target.closest("[data-op]")?.dataset.op;
+    if (op === "remove") { removeAttachment(fig); return; }
+    if (op === "retry") { run(fig); return; }
+    if (op === "preview" || (fig.classList.contains("sel") && fig.classList.contains("media"))) { openPreview(fig); return; }
+    fig.classList.add("sel");
+  });
+  function removeAttachment(fig) {
+    const a = atts.get(fig.dataset.id); if (a?.timer) clearInterval(a.timer);
+    atts.delete(fig.dataset.id); fig.remove(); refresh();
+  }
+  function openPreview(fig) {
+    const a = atts.get(fig.dataset.id); if (!a || a.kind === "file") return;
+    const img = $("previewImg"), vid = $("previewVideo");
+    if (a.kind === "video" && a.src) { img.style.display = "none"; vid.style.display = "block"; vid.src = a.src; vid.play().catch(() => {}); }
+    else { vid.style.display = "none"; vid.pause(); img.style.display = "block"; img.src = a.src || a.poster; }
+    $("preview").classList.add("on");
+  }
+  function closePreview() { $("preview").classList.remove("on"); $("previewVideo").pause(); }
+  $("preview").onclick = (e) => { if (e.target.tagName !== "VIDEO") closePreview(); };
+
+  /* ---------- formatting ---------- */
+  document.querySelectorAll(".tb[data-cmd]").forEach((b) => b.addEventListener("mousedown", (e) => {
+    e.preventDefault(); content.focus(); document.execCommand(b.dataset.cmd); refresh();
+  }));
+  document.querySelectorAll(".tb[data-block]").forEach((b) => b.addEventListener("mousedown", (e) => {
+    e.preventDefault(); content.focus();
+    const cur = document.queryCommandValue("formatBlock").toLowerCase();
+    document.execCommand("formatBlock", false, cur === b.dataset.block ? "p" : b.dataset.block); refresh();
+  }));
+  document.querySelector(".tb[data-code]").addEventListener("mousedown", (e) => {
+    e.preventDefault(); content.focus();
+    const text = getSelection().toString();
+    if (text && !text.includes("\n")) document.execCommand("insertHTML", false, `<code>${esc(text)}</code>&nbsp;`);
+    else document.execCommand("formatBlock", false, "pre");
+    refresh();
+  });
+  let savedRange = null;
+  function openLink() {
+    const sel = getSelection(); if (!sel.rangeCount) return;
+    savedRange = sel.getRangeAt(0).cloneRange();
+    const rect = savedRange.getBoundingClientRect(), base = editor.getBoundingClientRect();
+    const pop = $("linkpop"); pop.style.left = Math.max(8, Math.min((rect.left || base.left + 40) - base.left, base.width - 330)) + "px";
+    pop.style.top = ((rect.bottom || base.top + 60) - base.top + 6) + "px";
+    pop.classList.add("on"); $("linkInput").value = ""; $("linkInput").focus();
+  }
+  function applyLink() {
+    const url = $("linkInput").value.trim(); $("linkpop").classList.remove("on");
+    content.focus(); const s = getSelection(); s.removeAllRanges(); if (savedRange) s.addRange(savedRange);
+    if (!/^https?:\/\//i.test(url)) { if (url) toast("请输入以 http:// 或 https:// 开头的链接"); return; }
+    if (s.toString()) document.execCommand("createLink", false, url);
+    else document.execCommand("insertHTML", false, `<a href="${esc(url)}">${esc(url)}</a>&nbsp;`);
+    refresh();
+  }
+  document.querySelector(".tb[data-link]").addEventListener("mousedown", (e) => { e.preventDefault(); content.focus(); openLink(); });
+  $("linkOk").onclick = applyLink;
+  $("linkInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); applyLink(); } if (e.key === "Escape") { e.stopPropagation(); $("linkpop").classList.remove("on"); content.focus(); } });
+
+  // Markdown shortcuts at the start of a line: "- ", "* ", "1. ", "> ", "## ".
+  content.addEventListener("input", (e) => {
+    if (e.inputType === "insertText" && e.data === " ") {
+      const sel = getSelection(); const node = sel.anchorNode;
+      if (node && node.nodeType === 3 && !node.previousSibling) {
+        const key = node.textContent.slice(0, sel.anchorOffset).replace(/ /g, " ").trimEnd();
+        const map = { "-": "insertUnorderedList", "*": "insertUnorderedList", "1.": "insertOrderedList", ">": "blockquote", "##": "h3" };
+        if (map[key]) {
+          node.textContent = node.textContent.slice(sel.anchorOffset);
+          const r = document.createRange(); r.setStart(node, 0); r.collapse(true); sel.removeAllRanges(); sel.addRange(r);
+          if (map[key].startsWith("insert")) document.execCommand(map[key]); else document.execCommand("formatBlock", false, map[key]);
+        }
+      }
+    }
+    refresh();
+  });
+  content.addEventListener("keydown", (e) => {
+    if (e.key === "Backspace" || e.key === "Delete") {
+      const sel = content.querySelector(".att.sel"); if (sel) { e.preventDefault(); removeAttachment(sel); }
+    }
+    if (e.metaKey && e.key.toLowerCase() === "k") { e.preventDefault(); openLink(); }
+  });
+  content.addEventListener("focus", () => editor.classList.add("focus"));
+  content.addEventListener("blur", () => editor.classList.remove("focus"));
+  document.addEventListener("selectionchange", updateToolbarState);
+
+  /* ---------- region screenshot ---------- */
+  let capStart = null;
+  $("shot").onclick = () => { fb.classList.add("capturing"); setTimeout(() => $("capture").classList.add("on"), 140); };
+  const cap = $("capture"), rect = $("rect");
+  cap.addEventListener("mousedown", (e) => { const b = cap.getBoundingClientRect(); capStart = { x: e.clientX - b.left, y: e.clientY - b.top }; rect.style.display = "block"; drawRect(e); });
+  cap.addEventListener("mousemove", (e) => capStart && drawRect(e));
+  function drawRect(e) {
+    const b = cap.getBoundingClientRect(); const x = e.clientX - b.left, y = e.clientY - b.top;
+    const l = Math.min(x, capStart.x), t = Math.min(y, capStart.y), w = Math.abs(x - capStart.x), h = Math.abs(y - capStart.y);
+    Object.assign(rect.style, { left: l + "px", top: t + "px", width: w + "px", height: h + "px" });
+    $("rectSize").textContent = `${Math.round(w * 2)} × ${Math.round(h * 2)}`;
+  }
+  cap.addEventListener("mouseup", () => {
+    if (!capStart) return;
+    const w = parseFloat(rect.style.width), h = parseFloat(rect.style.height);
+    endCapture();
+    if (w > 20 && h > 20) addAttachments([{ kind: "image", name: "截图.png", size: Math.round(w * h * 16), src: makeShot(Math.max(240, Math.min(w, 520)), Math.max(150, Math.min(h, 320)), "区域截图", 210) }]);
+  });
+  function endCapture() { capStart = null; rect.style.display = "none"; cap.classList.remove("on"); fb.classList.remove("capturing"); content.focus(); }
+
+  /* ---------- window: drag / resize / focus / close ---------- */
+  let z = 20;
+  function focusWin(w) { [fb, settings].forEach((x) => x.classList.toggle("inactive", x !== w)); w.style.zIndex = ++z; }
+  settings.addEventListener("mousedown", () => focusWin(settings));
+  fb.addEventListener("mousedown", () => focusWin(fb));
+  function drag(e, onMove) {
+    const up = () => { removeEventListener("mousemove", onMove); removeEventListener("mouseup", up); };
+    addEventListener("mousemove", onMove); addEventListener("mouseup", up);
+  }
+  $("fbTitle").addEventListener("mousedown", (e) => {
+    if (e.target.closest(".lights")) return;
+    const sx = e.clientX, sy = e.clientY, ox = fb.offsetLeft, oy = fb.offsetTop;
+    drag(e, (ev) => {
+      const b = screen.getBoundingClientRect();
+      fb.style.left = Math.max(-fb.offsetWidth + 120, Math.min(b.width - 120, ox + ev.clientX - sx)) + "px";
+      fb.style.top = Math.max(26, Math.min(b.height - 52, oy + ev.clientY - sy)) + "px";
+    });
+  });
+  $("resize").addEventListener("mousedown", (e) => {
+    e.preventDefault(); const sx = e.clientX, sy = e.clientY, ow = fb.offsetWidth, oh = fb.offsetHeight;
+    drag(e, (ev) => { fb.style.width = Math.max(520, ow + ev.clientX - sx) + "px"; fb.style.height = Math.max(560, oh + ev.clientY - sy) + "px"; });
+  });
+
+  function hasDraft() { return content.innerText.trim().length > 0 || attCount() > 0; }
+  function closeWindow() {
+    if (fb.classList.contains("submitting")) return;
+    fb.classList.add("hidden");
+    if (fb.classList.contains("success")) resetForm(true);
+    else if (hasDraft()) toast("已保留草稿，下次打开时恢复");
+  }
+  function openWindow() {
+    $("tfmenu").classList.remove("on"); $("tfIcon").classList.remove("on");
+    const wasHidden = fb.classList.contains("hidden");
+    fb.classList.remove("hidden"); focusWin(fb);
+    $("restored").classList.toggle("on", wasHidden && hasDraft());
+    if (!fb.classList.contains("success")) content.focus();
+  }
+  $("closeBtn").onclick = closeWindow;
+  $("cancel").onclick = closeWindow;
+  $("finish").onclick = closeWindow;
+  $("again").onclick = () => { resetForm(); content.focus(); };
+  $("reopen").onclick = openWindow;
+  $("settingsFb").onclick = (e) => { e.stopPropagation(); openWindow(); };
+  $("tfIcon").onclick = () => { $("tfmenu").classList.toggle("on"); $("tfIcon").classList.toggle("on"); };
+  document.querySelector('[data-act="direct"]').onclick = openWindow;
+  $("discard").onclick = () => { resetForm(); content.focus(); };
+
+  /* ---------- submit ---------- */
+  function submit() {
+    if ($("submit").disabled) return;
+    fb.classList.add("submitting"); $("error").classList.remove("on");
+    $("submitLabel").innerHTML = '<span class="spin"></span>'; refresh();
+    setTimeout(() => {
+      fb.classList.remove("submitting"); $("submitLabel").textContent = "提交";
+      const c = $("contact").value.trim();
+      $("doneText").textContent = c ? `我们会尽快查看。如有进展，会通过 ${c} 联系你。` : "我们会尽快查看。";
+      fb.classList.add("success"); $("restored").classList.remove("on");
+    }, 1200);
+  }
+  $("submit").onclick = submit;
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if ($("preview").classList.contains("on")) { closePreview(); return; }
+      if ($("capture").classList.contains("on")) { endCapture(); return; }
+      if ($("linkpop").classList.contains("on")) { $("linkpop").classList.remove("on"); return; }
+      if (!fb.classList.contains("hidden")) closeWindow();
+    }
+    if (e.key === " " && $("preview").classList.contains("on")) { e.preventDefault(); closePreview(); }
+    if (e.metaKey && e.key === "Enter") { e.preventDefault(); submit(); }
+  });
+
+  function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("on"), 2400); }
+
+  /* ---------- states ---------- */
+  function resetForm(keepHidden = false) {
+    atts.forEach((a) => a.timer && clearInterval(a.timer)); atts.clear();
+    content.innerHTML = ""; $("contact").value = "mylxsw@gmail.com";
+    fb.classList.remove("success", "submitting"); if (!keepHidden) fb.classList.remove("hidden");
+    $("error").classList.remove("on"); $("restored").classList.remove("on");
+    $("submitLabel").textContent = "提交"; refresh();
+  }
+  const SAMPLE = `<p>按住 fn 说话后，<b>松开没有插入文字</b>，菜单栏图标一直在转圈。</p>
+    <p>复现步骤：</p><ol><li>在备忘录里新建一条笔记</li><li>按住 fn 说一句话后松开</li><li>等待约 10 秒，仍然没有文字</li></ol>`;
+  function sample(demo, state) {
+    const el = attachmentBlock(DEMOS[demo]()); content.appendChild(el); run(el, { instant: state }); return el;
+  }
+  function setState(s) {
+    resetForm();
+    if (s === "empty") { content.focus(); return; }
+    content.innerHTML = SAMPLE;
+    if (s === "editing") {
+      sample("shot", { state: "uploaded", finalSize: 1.2 * MB });
+      content.insertAdjacentHTML("beforeend", "<p>录了一段屏，日志也附上了：</p>");
+      sample("video", { state: "uploaded", finalSize: 38 * MB });
+      sample("log", { state: "uploaded" });
+    }
+    if (s === "uploading") {
+      sample("shot", { state: "uploaded", finalSize: 1.2 * MB });
+      sample("video", { state: "compressing", p: 42 });
+      sample("log", { state: "uploading", p: 64 });
+    }
+    if (s === "failed") { sample("shot", { state: "uploaded", finalSize: 1.2 * MB }); sample("video", { state: "failed", finalSize: 38 * MB }); sample("docx", { state: "failed" }); }
+    if (s === "toolarge") { sample("hugevideo", { state: "rejected", finalSize: 161 * MB }); setTimeout(() => toast("「typeflux-full.log」有 12 MB，超过 5 MB 上限"), 300); }
+    if (s === "limit") { ["shot", "bigimg", "video", "log", "docx", "shot"].forEach((d) => sample(d, { state: "uploaded", finalSize: d === "video" ? 38 * MB : d === "bigimg" ? 2.4 * MB : d === "shot" ? 1.2 * MB : undefined })); }
+    if (s === "submitting" || s === "error" || s === "success") { sample("shot", { state: "uploaded", finalSize: 1.2 * MB }); sample("log", { state: "uploaded" }); }
+    content.insertAdjacentHTML("beforeend", "<p><br></p>");
+    refresh();
+    if (s === "submitting") { fb.classList.add("submitting"); $("submitLabel").innerHTML = '<span class="spin"></span>'; refresh(); }
+    if (s === "error") $("error").classList.add("on");
+    if (s === "success") { $("doneText").textContent = "我们会尽快查看。如有进展，会通过 mylxsw@gmail.com 联系你。"; fb.classList.add("success"); }
+  }
+
+  function bindSeg(id, fn) {
+    const seg = $(id);
+    seg.querySelectorAll("button").forEach((b) => b.onclick = () => { seg.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b)); fn(b.dataset.v); });
+    return (v) => seg.querySelector(`[data-v="${v}"]`)?.click();
+  }
+  const pickTheme = bindSeg("themeSeg", (v) => { document.body.classList.toggle("light", v === "light"); });
+  const pickState = bindSeg("stateSeg", setState);
+
+  const q = new URLSearchParams(location.search);
+  pickTheme(q.get("theme") || "dark");
+  pickState(q.get("state") || "empty");
+  focusWin(fb);
+})();
+</script>
+</body>
+</html>
