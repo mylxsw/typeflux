@@ -22,6 +22,8 @@ actor AskTestAPI: AskAPI {
     var results: [AskToolResultRequest] = []
     var inferenceResults: [AskInferenceResult] = []
     var nextTool: AskToolCall?
+    var streamsOnSend = false
+    func setStreamsOnSend(_ value: Bool) { streamsOnSend = value }
     var cloudToolDefinitions: [AskToolDefinition] = []
     func setCloudTools(_ tools: [AskToolDefinition]) { cloudToolDefinitions = tools }
     var failReceipts = false
@@ -90,8 +92,10 @@ actor AskTestAPI: AskAPI {
         if value.messages.contains(where: { $0.id == request.id }) { return value }
         value.messages.append(.init(id: request.id, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), references: request.references,
                                     attachments: request.attachments, skills: request.skills, mcpServers: request.mcpServers))
-        value.messages.append(.init(id: UUID().uuidString, role: "assistant", text: nextTool == nil ? "This is the answer." : "I can inspect the current page.", toolCalls: nextTool.map { [$0] }, createdAt: Date()))
-        value.run = .init(id: UUID().uuidString, deviceId: request.deviceId, status: nextTool == nil ? "completed" : "waiting_tool", steps: 1, updatedAt: Date(), tools: request.tools, pending: nextTool.map { [$0] } ?? [])
+        if !streamsOnSend {
+            value.messages.append(.init(id: UUID().uuidString, role: "assistant", text: nextTool == nil ? "This is the answer." : "I can inspect the current page.", toolCalls: nextTool.map { [$0] }, createdAt: Date()))
+        }
+        value.run = .init(id: UUID().uuidString, deviceId: request.deviceId, status: streamsOnSend ? "running" : nextTool == nil ? "completed" : "waiting_tool", steps: 1, updatedAt: Date(), tools: request.tools, pending: nextTool.map { [$0] } ?? [])
         value.run?.clientToolApproval = request.clientToolApproval
         value.run?.recoveryCheck = echoRecoveryCheck ? request.recoveryCheck : nil
         value.run?.cloudTools = cloudToolDefinitions

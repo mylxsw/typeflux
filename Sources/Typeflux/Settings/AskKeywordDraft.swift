@@ -83,7 +83,7 @@ struct AskKeywordDraft: Equatable {
                 AskWebSearchPlugin.host(of: url).flatMap { $0.isEmpty ? nil : $0 }
                     ?? L("ask.settings.keywords.sheet.webNamePlaceholder")
             }
-        case .translate, .apps, .files, .semanticFiles, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .emoji,
+        case .translate, .apps, .files, .semanticFiles, .tabs, .bookmarks, .chat, .quickAsk, .prefix, .setting, .history, .clip, .emoji,
              .calendar, .kill, .system, .workflow:
             ""
         }
@@ -103,6 +103,7 @@ struct AskKeywordDraft: Equatable {
             }
         case .prompt, .web:
             title.trimmingCharacters(in: .whitespaces).isEmpty ? titlePlaceholder : title
+        case .quickAsk: L("ask.quickAsk.title")
         case .chat:
             L("ask.openChat")
         case .prefix:
@@ -173,7 +174,7 @@ struct AskKeywordDraft: Equatable {
                 ? L("ask.settings.keywords.sheet.promptRequired") : nil
         case .web:
             AskWebSearchPlugin.problem(with: url)
-        case .translate, .apps, .files, .semanticFiles, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .emoji,
+        case .translate, .apps, .files, .semanticFiles, .tabs, .bookmarks, .chat, .quickAsk, .prefix, .setting, .history, .clip, .emoji,
              .calendar, .kill, .system, .workflow:
             nil
         }
@@ -210,7 +211,7 @@ struct AskKeywordDraft: Equatable {
             }
         case .calendar:
             options = calendarOptions
-        case .apps, .files, .semanticFiles, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .emoji,
+        case .apps, .files, .semanticFiles, .tabs, .bookmarks, .chat, .quickAsk, .prefix, .setting, .history, .clip, .emoji,
              .kill, .system, .workflow:
             break
         }

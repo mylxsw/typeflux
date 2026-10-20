@@ -468,6 +468,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     }
 
     func dismissLauncher() {
+        model.dismissQuickAsk()
         model.setLauncherImagesVisible(false)
         filePreview.dismissNow()
         launcherHeightAnimator.stop()

@@ -2,7 +2,7 @@ import Foundation
 
 /// What a launcher keyword reaches: one of the built-in plugins or a workflow.
 enum AskKeywordKind: String, CaseIterable, Sendable {
-    case translate, prompt, web, apps, files, semanticFiles, tabs, bookmarks, chat, prefix, setting, history, clip,
+    case translate, prompt, web, apps, files, semanticFiles, tabs, bookmarks, chat, quickAsk, prefix, setting, history, clip,
          emoji, calendar, kill, system, workflow
 
     init?(pluginID: String) {
@@ -17,6 +17,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case AskBrowserSearchPlugin.tabsID: self = .tabs
         case AskBrowserSearchPlugin.bookmarksID: self = .bookmarks
         case AskOpenChatPlugin.id: self = .chat
+        case AskQuickAskPlugin.id: self = .quickAsk
         case AskPrefixPlugin.id: self = .prefix
         case AskSettingsPlugin.id: self = .setting
         case AskHistoryPlugin.id: self = .history
@@ -45,6 +46,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .tabs: AskBrowserSearchPlugin.tabsID
         case .bookmarks: AskBrowserSearchPlugin.bookmarksID
         case .chat: AskOpenChatPlugin.id
+        case .quickAsk: AskQuickAskPlugin.id
         case .prefix: AskPrefixPlugin.id
         case .setting: AskSettingsPlugin.id
         case .history: AskHistoryPlugin.id
@@ -67,6 +69,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .tabs: L("ask.browser.tabs")
         case .bookmarks: L("ask.browser.bookmarks")
         case .chat: L("ask.openChat")
+        case .quickAsk: L("ask.quickAsk.title")
         case .prefix: L("ask.plugin.prefix.title")
         case .setting: L("ask.plugin.setting.title")
         case .history: L("ask.plugin.history.title")
@@ -95,6 +98,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .tabs: "rectangle.on.rectangle"
         case .bookmarks: "bookmark"
         case .chat: "macwindow"
+        case .quickAsk: "bubble.left.and.text.bubble.right"
         case .prefix: "list.bullet.rectangle"
         case .setting: "gearshape"
         case .history: "clock.arrow.circlepath"
@@ -171,6 +175,7 @@ enum AskKeywordListPresentation {
             L("semantic.title")
         case .tabs: L("ask.browser.tabs")
         case .bookmarks: L("ask.browser.bookmarks")
+        case .quickAsk: L("ask.quickAsk.title")
         case .chat:
             L("ask.openChat")
         case .prefix:
@@ -232,6 +237,7 @@ enum AskKeywordListPresentation {
             return L(
                 "ask.settings.keywords.kind.\(keyword.pluginID == AskBrowserSearchPlugin.tabsID ? "tabs" : "bookmarks").hint"
             )
+        case .quickAsk: return L("ask.settings.keywords.kind.quickAsk.hint")
         case .chat:
             return L("ask.settings.keywords.kind.chat.hint")
         case .prefix:
@@ -301,7 +307,7 @@ enum AskKeywordSection: String, CaseIterable {
         case .translate: [.translate]
         case .prompt: [.prompt]
         case .search: [.web, .apps, .files, .semanticFiles, .tabs, .bookmarks, .emoji]
-        case .typeflux: [.chat, .prefix, .setting, .history, .clip, .calendar]
+        case .typeflux: [.chat, .quickAsk, .prefix, .setting, .history, .clip, .calendar]
         case .system: [.kill, .system]
         }
     }

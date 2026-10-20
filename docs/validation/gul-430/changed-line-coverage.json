@@ -1,0 +1,113 @@
+{
+  "covered": 306,
+  "executable": 328,
+  "percent": 93.29,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskComposerViews.swift",
+      "covered": 35,
+      "executable": 39,
+      "missing": [
+        833,
+        1841,
+        1842,
+        1843
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+LauncherInputHistory.swift",
+      "covered": 8,
+      "executable": 8,
+      "missing": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+OpenChat.swift",
+      "covered": 4,
+      "executable": 4,
+      "missing": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+Plugins.swift",
+      "covered": 2,
+      "executable": 2,
+      "missing": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel.swift",
+      "covered": 154,
+      "executable": 157,
+      "missing": [
+        2380,
+        2381,
+        2382
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationWindowController.swift",
+      "covered": 0,
+      "executable": 1,
+      "missing": [
+        471
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskQuickAskSession.swift",
+      "covered": 4,
+      "executable": 5,
+      "missing": [
+        5
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskQuickAskView.swift",
+      "covered": 72,
+      "executable": 83,
+      "missing": [
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        56,
+        57,
+        86,
+        87,
+        88
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskQuickAskPlugin.swift",
+      "covered": 15,
+      "executable": 15,
+      "missing": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskKeywordDraft.swift",
+      "covered": 4,
+      "executable": 4,
+      "missing": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskKeywordEditorSheet.swift",
+      "covered": 0,
+      "executable": 2,
+      "missing": [
+        95,
+        228
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskKeywordListComponents.swift",
+      "covered": 1,
+      "executable": 1,
+      "missing": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskKeywordListPresentation.swift",
+      "covered": 7,
+      "executable": 7,
+      "missing": []
+    }
+  ]
+}

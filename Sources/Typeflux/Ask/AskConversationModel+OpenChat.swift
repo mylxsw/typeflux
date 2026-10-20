@@ -10,6 +10,9 @@ extension AskConversationModel {
     /// edits or account changes during that await abort the handoff intact.
     @discardableResult
     func openChatFromLauncher() async -> Bool {
+        if plugins.keyword?.pluginID == AskQuickAskPlugin.id, quickAsk?.conversationId != nil {
+            return await openQuickAskInChat()
+        }
         guard canOpenChatFromLauncher else { confirm(L("ask.openChat.wait")); return false }
         isOpeningChat = true
         defer { isOpeningChat = false }
@@ -18,7 +21,7 @@ extension AskConversationModel {
         let generation = selectionGeneration
         let keyword = plugins.keyword
         var incoming = source
-        var otherPlugin = keyword.map { $0.pluginID != AskOpenChatPlugin.id } ?? false
+        var otherPlugin = keyword.map { ![AskOpenChatPlugin.id, AskQuickAskPlugin.id].contains($0.pluginID) } ?? false
         if keyword == nil {
             switch AskKeywordMatcher.match(source.text, keywords: launcherKeywords) {
             case let .hint(found) where found.pluginID == AskOpenChatPlugin.id: incoming.text = ""

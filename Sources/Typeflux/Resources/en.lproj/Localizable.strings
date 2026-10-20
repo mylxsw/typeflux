@@ -6242,3 +6242,18 @@
 "feedback.attachment.addHelp" = "Images, videos, txt, log, md or docx";
 "feedback.attachment.screenshotHelp" = "Hide this window and capture a screen region";
 "feedback.editor.link.apply" = "Add";
+
+// Inline launcher questions
+"ask.quickAsk.title" = "Quick Ask";
+"ask.quickAsk.placeholder" = "Ask a question and get an answer here";
+"ask.quickAsk.thinking" = "Thinking…";
+"ask.quickAsk.bottom" = "Latest answer";
+"ask.quickAsk.stop" = "Stop";
+"ask.quickAsk.copy" = "Copy";
+"ask.quickAsk.followUp" = "Continue asking";
+"ask.quickAsk.open" = "Open in Chat";
+"ask.quickAsk.new" = "New question";
+"ask.quickAsk.send" = "Ask";
+"ask.quickAsk.hint" = "↵ Ask · ⇧↵ New line · ⌘O Open in Chat";
+"ask.quickAsk.advanced" = "Open in Chat to use attachments, skills, or tools.";
+"ask.settings.keywords.kind.quickAsk.hint" = "Ask in the launcher and continue in Chat.";

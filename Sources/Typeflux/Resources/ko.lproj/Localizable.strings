@@ -6124,3 +6124,18 @@
 "feedback.attachment.addHelp" = "이미지, 동영상, txt / log / md / docx";
 "feedback.attachment.screenshotHelp" = "창을 숨기고 화면 영역 캡처";
 "feedback.editor.link.apply" = "추가";
+
+// Inline launcher questions
+"ask.quickAsk.title" = "빠른 질문";
+"ask.quickAsk.placeholder" = "질문을 입력하면 여기에서 답변을 받을 수 있습니다";
+"ask.quickAsk.thinking" = "생각 중…";
+"ask.quickAsk.bottom" = "최신 답변";
+"ask.quickAsk.stop" = "중지";
+"ask.quickAsk.copy" = "복사";
+"ask.quickAsk.followUp" = "계속 질문";
+"ask.quickAsk.open" = "채팅에서 열기";
+"ask.quickAsk.new" = "새 질문";
+"ask.quickAsk.send" = "질문하기";
+"ask.quickAsk.hint" = "↵ 질문 · ⇧↵ 줄바꿈 · ⌘O 채팅에서 열기";
+"ask.quickAsk.advanced" = "첨부 파일, 스킬 또는 도구는 채팅에서 사용하세요.";
+"ask.settings.keywords.kind.quickAsk.hint" = "런처에서 질문하고 채팅에서 대화를 이어가세요.";

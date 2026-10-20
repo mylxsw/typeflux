@@ -79,6 +79,14 @@ extension AskConversationModel {
     @discardableResult
     func resetLauncherForPresentation(at now: Date = Date()) -> Bool {
         if let current = session(), owner != current.owner { resetSession(); owner = current.owner }
+        if let quickAsk, quickAsk.owner == owner, quickAsk.restoreOnPresentation, !quickAsk.handedOff, quickAsk.conversationId != nil,
+           launcherKeywords.contains(where: { $0 == quickAsk.keyword && $0.enabled }) {
+            plugins.enter(quickAsk.keyword)
+            launcherDraft = quickAsk.submitted
+            launcherDismissedAt = nil
+            launcherPresentationID = UUID()
+            return true
+        }
         let retainedText = launcherDismissedAt.flatMap { dismissedAt in
             (0...60).contains(now.timeIntervalSince(dismissedAt)) ? launcherDraft.text : nil
         } ?? ""

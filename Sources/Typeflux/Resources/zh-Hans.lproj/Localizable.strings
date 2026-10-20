@@ -6242,3 +6242,18 @@
 "feedback.attachment.addHelp" = "图片、视频、txt / log / md / docx";
 "feedback.attachment.screenshotHelp" = "隐藏窗口，截取屏幕区域";
 "feedback.editor.link.apply" = "添加";
+
+// Inline launcher questions
+"ask.quickAsk.title" = "快速提问";
+"ask.quickAsk.placeholder" = "输入问题，直接在这里获得回答";
+"ask.quickAsk.thinking" = "正在思考…";
+"ask.quickAsk.bottom" = "最新回答";
+"ask.quickAsk.stop" = "停止";
+"ask.quickAsk.copy" = "复制";
+"ask.quickAsk.followUp" = "继续追问";
+"ask.quickAsk.open" = "在聊天中打开";
+"ask.quickAsk.new" = "新问题";
+"ask.quickAsk.send" = "提问";
+"ask.quickAsk.hint" = "↵ 提问 · ⇧↵ 换行 · ⌘O 在聊天中打开";
+"ask.quickAsk.advanced" = "请在聊天中使用附件、技能或工具。";
+"ask.settings.keywords.kind.quickAsk.hint" = "在启动器中提问和查看回答，进入聊天继续追问。";
