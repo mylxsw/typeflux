@@ -351,16 +351,8 @@ struct StudioView: View {
                 }
             }
         )
-        .alert(
-            L("settings.instantVoiceInput.suggestion.title"),
-            isPresented: $viewModel.isInstantVoiceInputSuggestionPresented
-        ) {
-            Button(L("settings.instantVoiceInput.suggestion.enable")) {
-                viewModel.setInstantVoiceInputEnabled(true)
-            }
-            Button(L("common.cancel"), role: .cancel) {}
-        } message: {
-            Text(L("settings.instantVoiceInput.suggestion.message"))
+        .sheet(isPresented: $viewModel.isInstantVoiceInputSuggestionPresented) {
+            instantVoiceInputSuggestionSheet
         }
         .sheet(isPresented: $isMCPServerDialogPresented) {
             mcpServerDialog
@@ -1451,6 +1443,47 @@ struct StudioView: View {
             ZStack {
                 Rectangle()
                     .fill(.ultraThinMaterial)
+                StudioTheme.modalSurface
+            }
+        )
+    }
+
+    private var instantVoiceInputSuggestionSheet: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text(L("settings.instantVoiceInput.suggestion.title"))
+                .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
+                .foregroundStyle(StudioTheme.textPrimary)
+
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(Array(L("settings.instantVoiceInput.suggestion.message")
+                    .components(separatedBy: "\n\n").enumerated()), id: \.offset) { _, paragraph in
+                    Text(paragraph)
+                        .font(.studioBody(StudioTheme.Typography.body))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            HStack {
+                Spacer()
+                StudioButton(title: L("common.cancel"), systemImage: nil, variant: .secondary) {
+                    viewModel.isInstantVoiceInputSuggestionPresented = false
+                }
+                StudioButton(
+                    title: L("settings.instantVoiceInput.suggestion.enable"),
+                    systemImage: nil, variant: .primary
+                ) {
+                    viewModel.setInstantVoiceInputEnabled(true)
+                    viewModel.isInstantVoiceInputSuggestionPresented = false
+                }
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(32)
+        .frame(width: 520)
+        .background(
+            ZStack {
+                Rectangle().fill(.ultraThinMaterial)
                 StudioTheme.modalSurface
             }
         )

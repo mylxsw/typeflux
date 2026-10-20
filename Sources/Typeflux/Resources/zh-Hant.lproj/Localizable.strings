@@ -150,7 +150,7 @@
 "settings.instantVoiceInput.title" = "按鍵即說";
 "settings.instantVoiceInput.subtitle" = "使用後讓麥克風保持就緒，縮短下次啟動等待，最多繼續開啟 15 分鐘。使用內建麥克風時不生效。";
 "settings.instantVoiceInput.suggestion.title" = "使用藍牙麥克風時開啟按鍵即說？";
-"settings.instantVoiceInput.suggestion.message" = "藍牙麥克風啟動錄音時通常會多等約 100 毫秒或更久。開啟後，首次錄音結束時麥克風會保持就緒最多 15 分鐘，讓後續輸入更快。";
+"settings.instantVoiceInput.suggestion.message" = "藍牙麥克風啟動錄音時可能多等 100 多毫秒。\n\n開啟後，麥克風會在錄音結束後保持就緒最多 15 分鐘，下次輸入更快。";
 "settings.instantVoiceInput.suggestion.enable" = "開啟按鍵即說";
 "settings.mouseVoice.title" = "滑鼠語音輸入";
 "settings.mouseVoice.subtitle" = "在輸入框內靜止長按約 0.8 秒，在滑鼠附近顯示麥克風。選取文字或提前拖動時不會觸發。";

@@ -290,6 +290,7 @@ final class StudioViewModel: ObservableObject {
     private var personaStoreObserver: NSObjectProtocol?
     private var hotkeySettingsObserver: NSObjectProtocol?
     private var preferredMicrophoneObserver: NSObjectProtocol?
+    private var instantVoiceInputObserver: NSObjectProtocol?
     private var appearanceObserver: NSObjectProtocol?
     private var appIconObserver: NSObjectProtocol?
     private var vocabularyObserver: NSObjectProtocol?
@@ -538,6 +539,16 @@ final class StudioViewModel: ObservableObject {
                 preferredMicrophoneID = self.settingsStore.preferredMicrophoneID
             }
         }
+        instantVoiceInputObserver = NotificationCenter.default.addObserver(
+            forName: .instantVoiceInputDidChange,
+            object: settingsStore,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                instantVoiceInputEnabled = self.settingsStore.instantVoiceInputEnabled
+            }
+        }
         appearanceObserver = NotificationCenter.default.addObserver(
             forName: .appearanceModeDidChange,
             object: settingsStore,
@@ -614,6 +625,9 @@ final class StudioViewModel: ObservableObject {
         }
         if let preferredMicrophoneObserver {
             NotificationCenter.default.removeObserver(preferredMicrophoneObserver)
+        }
+        if let instantVoiceInputObserver {
+            NotificationCenter.default.removeObserver(instantVoiceInputObserver)
         }
         if let appearanceObserver {
             NotificationCenter.default.removeObserver(appearanceObserver)
@@ -1237,9 +1251,10 @@ final class StudioViewModel: ObservableObject {
 
     func suggestInstantVoiceInputForCurrentMicrophoneIfNeeded() {
         let id = preferredMicrophoneID
-        guard !instantVoiceInputEnabled, !id.isEmpty, lastSuggestedMicrophoneID != id,
-              let deviceID = audioDeviceManager.resolveInputDeviceID(for: id),
-              audioDeviceManager.isBluetoothInputDevice(deviceID)
+        guard lastSuggestedMicrophoneID != id,
+              InstantVoiceInputPolicy.shouldSuggest(
+                  for: id, settings: settingsStore, devices: audioDeviceManager
+              )
         else { return }
         lastSuggestedMicrophoneID = id
         isInstantVoiceInputSuggestionPresented = true

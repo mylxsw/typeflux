@@ -167,6 +167,40 @@ struct StatusBarWordBookMenuTests {
     }
 
     @Test(arguments: [false, true])
+    func `menu Bluetooth selection asks before enabling instant input`(accepted: Bool) async throws {
+        let suite = "VoiceBluetoothMenu-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = SettingsStore(defaults: defaults)
+        let devices = MenuAudioDeviceManager()
+        devices.inputs = [AudioInputDevice(id: "built-in", name: "Mac Microphone"),
+                          AudioInputDevice(id: "bluetooth", name: "Bluetooth Headset")]
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(suite)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        var promptCount = 0
+        let controller = StatusBarController(
+            appState: AppStateStore(), settingsStore: settings,
+            historyStore: FileHistoryStore(baseDir: directory), audioDeviceManager: devices,
+            confirmInstantVoiceInput: {
+                promptCount += 1
+                return accepted
+            }
+        )
+        controller.start()
+        defer { controller.stop() }
+        let voiceMenu = try #require(controller.menu?.items.first { $0.title == L("menu.voiceInput") }?.submenu)
+        let microphoneMenu = try #require(voiceMenu.items.first { $0.title == L("settings.microphone.title") }?.submenu)
+        controller.menuWillOpen(microphoneMenu)
+        microphoneMenu.performActionForItem(at: 3)
+        try await SettingsBehaviorTestSupport.wait { promptCount == 1 }
+
+        #expect(settings.preferredMicrophoneID == "bluetooth")
+        #expect(settings.instantVoiceInputEnabled == accepted)
+        controller.menuWillOpen(microphoneMenu)
+        #expect(microphoneMenu.items[3].state == .on)
+    }
+
+    @Test(arguments: [false, true])
     func `opens the translation word book and reuses its window`(hasWords: Bool) throws {
         let originalLanguage = AppLocalization.shared.language
         defer { AppLocalization.shared.setLanguage(originalLanguage) }
@@ -218,7 +252,10 @@ private final class MenuAudioDeviceManager: AudioDeviceManaging {
     var inputs: [AudioInputDevice] = []
 
     func availableInputDevices() -> [AudioInputDevice] { inputs }
-    func resolveInputDeviceID(for _: String) -> AudioDeviceID? { nil }
+    func resolveInputDeviceID(for uniqueID: String) -> AudioDeviceID? {
+        uniqueID == "bluetooth" ? 2 : nil
+    }
+    func isBluetoothInputDevice(_ deviceID: AudioDeviceID) -> Bool { deviceID == 2 }
     func defaultInputDeviceID() -> AudioDeviceID? { nil }
     func observeDefaultInputDeviceChanges(
         _: @escaping @Sendable () -> Void

@@ -190,6 +190,10 @@ final class LocalizationResourceTests: XCTestCase {
 
             let subtitle = bundle.localizedString(forKey: "settings.instantVoiceInput.subtitle", value: nil, table: nil)
             XCTAssertTrue(subtitle.contains("15"), language.rawValue)
+            let suggestion = bundle.localizedString(
+                forKey: "settings.instantVoiceInput.suggestion.message", value: nil, table: nil
+            )
+            XCTAssertTrue(suggestion.contains("\n\n"), language.rawValue)
             for overpromise in ["without missing anything", "不漏任何", "不漏掉任何", "漏らさず", "빠짐없이"] {
                 XCTAssertFalse(subtitle.contains(overpromise), "Overpromise in \(language.rawValue)")
             }

@@ -1,6 +1,15 @@
 import Foundation
 
 enum InstantVoiceInputPolicy {
+    static func shouldSuggest(
+        for microphoneID: String, settings: SettingsStore, devices: AudioDeviceManaging
+    ) -> Bool {
+        guard !settings.instantVoiceInputEnabled, !microphoneID.isEmpty,
+              let deviceID = devices.resolveInputDeviceID(for: microphoneID)
+        else { return false }
+        return devices.isBluetoothInputDevice(deviceID)
+    }
+
     static func isEffective(settings: SettingsStore, devices: AudioDeviceManaging) -> Bool {
         guard settings.instantVoiceInputEnabled else { return false }
         let preferred = settings.preferredMicrophoneID

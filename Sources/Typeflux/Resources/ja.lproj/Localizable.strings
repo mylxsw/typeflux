@@ -158,7 +158,7 @@
 "settings.instantVoiceInput.title" = "すぐに話す";
 "settings.instantVoiceInput.subtitle" = "次回すぐに話せるよう、使用後もマイクを最長 15 分間待機状態にします。内蔵マイクでは動作しません。";
 "settings.instantVoiceInput.suggestion.title" = "Bluetooth マイクで「すぐに話す」を有効にしますか？";
-"settings.instantVoiceInput.suggestion.message" = "Bluetooth マイクは録音開始時に約 100 ミリ秒以上の遅延が生じることがあります。有効にすると、最初の録音後にマイクを最長 15 分間待機状態に保ち、次回からすばやく入力できます。";
+"settings.instantVoiceInput.suggestion.message" = "Bluetooth マイクは録音開始時に 100 ミリ秒以上遅れることがあります。\n\n有効にすると、録音後も最長 15 分間待機し、次回の入力をすばやく始められます。";
 "settings.instantVoiceInput.suggestion.enable" = "すぐに話すを有効にする";
 "settings.mouseVoice.title" = "マウス音声入力";
 "settings.mouseVoice.subtitle" = "入力欄で約0.8秒動かさずに長押しすると、ポインタの近くにマイクが表示されます。文字選択や早いドラッグでは起動しません。";

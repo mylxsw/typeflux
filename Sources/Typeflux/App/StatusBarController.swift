@@ -48,6 +48,8 @@ final class StatusBarController: NSObject {
     private let pinnedScreenshots: () -> (count: Int, clickThrough: Int)
     private let onRestorePinnedScreenshots: () -> Void
     private let onClosePinnedScreenshots: () -> Void
+    private let confirmInstantVoiceInput: @MainActor () -> Bool
+    private var suggestedMicrophoneIDs = Set<String>()
     private let activityCenter: BackgroundActivityCenter?
     private(set) lazy var activityWindow: BackgroundActivityWindowController? = activityCenter.map {
         BackgroundActivityWindowController(center: $0, settingsStore: settingsStore)
@@ -91,6 +93,7 @@ final class StatusBarController: NSObject {
         pinnedScreenshots: @escaping () -> (count: Int, clickThrough: Int) = { (0, 0) },
         onRestorePinnedScreenshots: @escaping () -> Void = {},
         onClosePinnedScreenshots: @escaping () -> Void = {},
+        confirmInstantVoiceInput: (@MainActor () -> Bool)? = nil,
         activityCenter: BackgroundActivityCenter? = nil
     ) {
         self.appState = appState
@@ -112,8 +115,20 @@ final class StatusBarController: NSObject {
         self.pinnedScreenshots = pinnedScreenshots
         self.onRestorePinnedScreenshots = onRestorePinnedScreenshots
         self.onClosePinnedScreenshots = onClosePinnedScreenshots
+        self.confirmInstantVoiceInput = confirmInstantVoiceInput ?? Self.presentInstantVoiceInputSuggestion
         self.activityCenter = activityCenter
         AppLocalization.shared.setLanguage(settingsStore.appLanguage)
+    }
+
+    private static func presentInstantVoiceInputSuggestion() -> Bool {
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        alert.messageText = L("settings.instantVoiceInput.suggestion.title")
+        alert.informativeText = L("settings.instantVoiceInput.suggestion.message")
+        alert.addButton(withTitle: L("settings.instantVoiceInput.suggestion.enable"))
+        alert.addButton(withTitle: L("common.cancel"))
+        NSApp.activate(ignoringOtherApps: true)
+        return alert.runModal() == .alertFirstButtonReturn
     }
 
     func start() {
@@ -688,7 +703,21 @@ final class StatusBarController: NSObject {
         guard id.isEmpty || audioDeviceManager.availableInputDevices().contains(where: { $0.id == id }) else {
             return
         }
+        guard settingsStore.preferredMicrophoneID != id else { return }
         settingsStore.preferredMicrophoneID = id
+        guard !suggestedMicrophoneIDs.contains(id),
+              InstantVoiceInputPolicy.shouldSuggest(for: id, settings: settingsStore, devices: audioDeviceManager)
+        else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.settingsStore.preferredMicrophoneID == id,
+                  !self.settingsStore.instantVoiceInputEnabled,
+                  !self.suggestedMicrophoneIDs.contains(id)
+            else { return }
+            self.suggestedMicrophoneIDs.insert(id)
+            if self.confirmInstantVoiceInput() {
+                self.settingsStore.instantVoiceInputEnabled = true
+            }
+        }
     }
 
     @objc private func toggleTextTransformation(_: NSMenuItem) {
