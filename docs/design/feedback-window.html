@@ -187,7 +187,6 @@
   .input svg { width: 15px; height: 15px; color: var(--text3); flex: none; }
   .input input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: 13px var(--font); }
   .input input::placeholder { color: var(--placeholder); }
-  .field .help { font-size: 11.5px; color: var(--text3); margin-top: 5px; }
 
   .error { display: none; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 1.5; color: var(--danger); background: var(--dangerSoft); border-radius: 8px; padding: 8px 10px; }
   .error.on { display: flex; }
@@ -328,7 +327,7 @@
     </div>
 
     <div class="fbbody">
-      <div class="intro">说说遇到的问题或想法。截图后按 <kbd>⌘V</kbd> 直接粘贴到正文；录屏、日志等文件可以拖进来或点「添加文件」。</div>
+      <div class="intro">说说遇到的问题或想法。</div>
       <div class="restored" id="restored">已恢复上次未提交的内容 <a id="discard">清空重写</a></div>
 
       <div class="editor" id="editor">
@@ -364,7 +363,6 @@
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3.5" width="12" height="9" rx="2"/><path d="m2.5 4.5 5.5 4 5.5-4"/></svg>
           <input id="contact" value="mylxsw@gmail.com" placeholder="邮箱或其他联系方式">
         </div>
-        <div class="help">只用于回复这条反馈。已登录时默认填写账号邮箱。</div>
       </div>
 
       <div class="error" id="error"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zm0 3a.8.8 0 0 0-.8.8v3.4a.8.8 0 0 0 1.6 0V5.3A.8.8 0 0 0 8 4.5zm0 6.1a.9.9 0 1 0 0 1.8.9.9 0 0 0 0-1.8z"/></svg><span id="errorText">提交反馈失败。请检查网络后重试，内容不会丢失。</span></div>
