@@ -7,7 +7,7 @@ COVERAGE_DIR="coverage-report"
 echo "Running tests with code coverage enabled..."
 python3 scripts/test_groups.py --coverage "$@"
 
-BIN_PATH=$(swift build --show-bin-path)
+BIN_PATH=$(swift build --build-system native --show-bin-path)
 
 # Find the .profdata file
 PROFDATA="${BIN_PATH}/codecov/default.profdata"

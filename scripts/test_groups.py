@@ -170,7 +170,7 @@ def test_filter(tests, inventory=None):
 def phase_command(mode, tests, workers, coverage=False, inventory=None):
     command = ["swift", "test", "--skip-build"]
     if coverage:
-        command.append("--enable-code-coverage")
+        command.extend(["--build-system", "native", "--enable-code-coverage"])
     if mode == "xctest":
         command.extend(["--disable-swift-testing", "--parallel", "--num-workers", str(workers)])
     elif mode == "swift-testing":
@@ -223,7 +223,7 @@ def main(argv=None):
     if args.skip_build:
         build_options.append("--skip-build")
     if args.coverage:
-        build_options.append("--enable-code-coverage")
+        build_options.extend(["--build-system", "native", "--enable-code-coverage"])
     try:
         environment = runtime.child_environment()
         environment["PWD"] = str(ROOT)
@@ -257,7 +257,14 @@ def run_scope(args, started, build_options, environment, files, tools, directory
         discovery, bundle, inputs, artifacts, fingerprints = runtime.prepare(
             ROOT, files, args, environment, directory, tools)
     else:
-        result = subprocess.run(["swift", "test", *build_options, "list"], cwd=ROOT, env=environment,
+        discovery_options = build_options
+        if args.coverage and not args.skip_build:
+            # Swift 6.4 test discovery can build an uninstrumented executable.
+            # Build coverage explicitly, then prevent discovery replacing it.
+            subprocess.run(["swift", "build", *build_options, "--build-tests"],
+                           cwd=ROOT, env=environment, check=True)
+            discovery_options = [*build_options, "--skip-build"]
+        result = subprocess.run(["swift", "test", *discovery_options, "list"], cwd=ROOT, env=environment,
                                 stdout=subprocess.PIPE, text=True, check=True)
         discovery = result.stdout
     sources = source_groups(ROOT / "Tests/TypefluxTests")

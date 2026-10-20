@@ -133,6 +133,11 @@ both frameworks enabled, so a framework migration cannot silently drop tests.
 
 `--workers N` limits batched XCTest processes only; it does not bound Swift Testing
 concurrency. `--serial` provides a same-scope baseline or diagnostic mode.
+Coverage explicitly builds an instrumented test executable with the native SwiftPM
+backend, then discovers and runs tests with `--skip-build`. Swift 6.4 discovery can
+otherwise replace it with an uninstrumented executable and leave no `codecov`
+profile even when all tests pass. The report uses that same backend and artifact
+path. Ordinary focused tests keep their existing runner and build backend.
 Coverage uses one serial phase to preserve one profile. Execution stops on the
 first failing phase, reports failure and never automatically retries; later
 phases must be reported as unexecuted when applicable.

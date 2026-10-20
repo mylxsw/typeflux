@@ -119,6 +119,8 @@ class TestGroupCommandTests(unittest.TestCase):
         stdout, stderr = io.StringIO(), io.StringIO()
         responses = [subprocess.CompletedProcess([], 0, stdout=discovery),
                      subprocess.CompletedProcess([], test_returncode)]
+        if "--coverage" in args and "--skip-build" not in args:
+            responses.insert(0, subprocess.CompletedProcess([], 0))
         with patch.object(GROUPING, "source_groups", return_value={
             "LogicTests": "unit", "DiskTests": "integration", "VisualTests": "ui",
             "SearchBenchmarkTests": "benchmark",
@@ -190,8 +192,13 @@ class TestGroupCommandTests(unittest.TestCase):
             result, calls, _, _ = self.invoke(["--from-env", "--coverage"])
         self.assertEqual(result, 0)
         self.assertIn("--enable-code-coverage", calls[0].args[0])
+        self.assertIn("--build-tests", calls[0].args[0])
+        self.assertIn("native", calls[0].args[0])
         self.assertIn("--enable-code-coverage", calls[1].args[0])
-        self.assertIn("--no-parallel", calls[1].args[0])
+        self.assertIn("--skip-build", calls[1].args[0])
+        self.assertIn("--enable-code-coverage", calls[2].args[0])
+        self.assertIn("--no-parallel", calls[2].args[0])
+        self.assertEqual(len(calls), 3)
         with patch.dict(os.environ, {"FILTER": "$(touch marker)"}, clear=True):
             result, calls, _, _ = self.invoke(["--from-env"])
         self.assertEqual(result, 1)
