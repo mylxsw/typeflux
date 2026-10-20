@@ -4022,11 +4022,11 @@
 "ask.capture.optIn" = "附带截图 · 开启后需要屏幕录制授权";
 
 // Conversation titles
-"ask.title.section" = "聊天标题";
+"ask.title.section" = "辅助任务";
 "ask.title.enabled" = "自动生成聊天标题";
 "ask.title.enabled.subtitle" = "完成两轮回答后自动生成一次。";
-"ask.title.model" = "标题生成模型";
-"ask.title.model.subtitle" = "自动：云端聊天使用后台配置的标题模型，本地聊天使用原聊天模型。";
+"ask.title.model" = "辅助模型";
+"ask.title.model.subtitle" = "用于标题生成、上下文压缩等辅助任务。自动时跟随当前对话模型；云端压缩由后台统一配置。";
 "ask.title.auto" = "自动";
 "ask.title.rename" = "重命名";
 "ask.title.invalid" = "请输入 1–60 个字符的单行标题。";

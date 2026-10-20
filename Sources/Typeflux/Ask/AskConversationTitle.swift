@@ -91,6 +91,11 @@ extension SettingsStore {
         get { defaults.object(forKey: "ask.title.enabled") as? Bool ?? true }
         set { defaults.set(newValue, forKey: "ask.title.enabled") }
     }
+    /// Shared with automatic titles; retaining the storage key migrates existing choices.
+    var askAuxiliaryModelReference: String {
+        get { defaults.string(forKey: "ask.title.model") ?? "" }
+        set { defaults.set(newValue, forKey: "ask.title.model") }
+    }
     var askTitleModelReference: String {
         get { defaults.string(forKey: "ask.title.model") ?? "" }
         set { defaults.set(newValue, forKey: "ask.title.model") }

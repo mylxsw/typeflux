@@ -83,6 +83,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             return AskContextLimits(window: model?.contextWindowTokens ?? 32768,
                                     maxOutput: model?.maxOutputTokens ?? 4096,
                                     known: model?.contextWindowTokens != nil)
+        }, summarize: { [modelLibrary] inference, run, device in
+            await AskAuxiliaryInference.complete(inference, run: run, device: device, library: modelLibrary)
         }))
         model = AskConversationModel(api: api, cache: cache, tools: tools, workspaces: workspaces,
                                      capture: services?.capture ?? AskContextCapture(

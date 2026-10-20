@@ -1189,6 +1189,7 @@ final class AskConversationModel: ObservableObject {
         // A temporary conversation is never named: it has no place in history to be found by.
         request.titlePolicy = .init(enabled: modelLibrary.settings.askAutomaticTitles && !temporaryRun,
                                     modelRef: modelLibrary.settings.askTitleModelReference)
+        request.auxiliaryModelRef = local ? modelLibrary.settings.askAuxiliaryModelReference : nil
         request.temporary = temporary ? true : nil
         request.clientToolApproval = true
         request.skills = skillUses(submitted.skills)
@@ -1536,10 +1537,8 @@ final class AskConversationModel: ObservableObject {
                     receipt = persisted
                 }
                 if receipt == nil {
-                    guard let reference = run.modelRef,
-                          let (provider, model) = modelLibrary.registry.resolve(reference) else {
-                        throw AskLocalError.message(L("ask.models.unavailable"))
-                    }
+                    let summaryReference = (inference.summaryThrough ?? 0) > 0
+                        ? (try? JSONSerialization.jsonObject(with: Data(inference.payload.utf8)) as? [String: Any])?["model"] as? String : nil
                     let audit = AskExecutionAudit(identity: identity, toolVersion: run.modelRef ?? "model", toolName: "model",
                                                   argumentsHash: AskToolPolicy.digest(inference.payload))
                     guard try await cache.claimExecution(audit, owner: current.owner) else { throw AskRecoveryError.unknown }
@@ -1549,6 +1548,10 @@ final class AskConversationModel: ObservableObject {
                           snapshots[value.id]?.run?.status == "waiting_inference",
                           snapshots[value.id]?.run?.inference?.id == inference.id else { return }
                     do {
+                        guard let reference = summaryReference ?? run.modelRef,
+                              let (provider, model) = modelLibrary.registry.resolve(reference) else {
+                            throw AskLocalError.message(L("ask.models.unavailable"))
+                        }
                         let hasImage = inference.payload.contains("image_url")
                         if let reason = modelLibrary.selectionReason(
                             model, provider: provider, hasImage: hasImage, loggedIn: !current.token.isEmpty
@@ -1574,6 +1577,7 @@ final class AskConversationModel: ObservableObject {
                     catch {
                         let progress = inferenceProgress[value.id]
                         receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: progress?.text ?? "", usage: inferenceUsage[inference.id], failed: true, reasoning: progress?.reasoning, reasoningMilliseconds: progress?.reasoningMilliseconds)
+                        if case AskStreamError.contextCapacity = error { receipt?.errorCode = "MODEL_CONTEXT_TOO_LONG" }
                     }
                     // Persist under the original binding even if logout/cancel raced completion.
                     try await cache.saveReceipt(.inference(receipt!), identity: identity, owner: current.owner)

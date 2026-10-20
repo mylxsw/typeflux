@@ -29,6 +29,17 @@ struct AskPermissionModeTests {
         }
     }
 
+    @Test func originalHistoryIsReadOnlyWithoutWeakeningUnknownToolApproval() throws {
+        let f = try AskTestFixture()
+        defer { f.model.resetSession() }
+        let definition = AskSemanticCompaction.historyTool
+        let risk = f.model.toolRisk(call(definition.name), cloudDefinition: definition)
+        #expect(risk == .read)
+        #expect(AskPermissionMode.standard.automaticallyAllows(risk))
+        #expect(!AskPermissionMode.strict.automaticallyAllows(risk))
+        #expect(f.model.toolRisk(call("unknown"), cloudDefinition: .init(name: "unknown", description: "", parameters: JSONValue(data: Data("{}".utf8)))) == .destructive)
+    }
+
     @Test func hostCommandApprovalFollowsMode() throws {
         let f = try AskTestFixture()
         defer { f.model.resetSession() }

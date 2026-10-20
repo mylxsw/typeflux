@@ -130,6 +130,9 @@ struct AskConversationTitleTests {
         let restored = SettingsStore(defaults: defaults)
         #expect(!restored.askAutomaticTitles)
         #expect(restored.askTitleModelReference == "custom:chosen")
+        #expect(restored.askAuxiliaryModelReference == "custom:chosen")
+        restored.askAuxiliaryModelReference = "custom:helper"
+        #expect(settings.askTitleModelReference == "custom:helper")
         let old = conversation()
         let decoded = try AskCoding.decoder().decode(AskConversation.self, from: AskCoding.encoder().encode(old))
         #expect(decoded.titleSource == nil)

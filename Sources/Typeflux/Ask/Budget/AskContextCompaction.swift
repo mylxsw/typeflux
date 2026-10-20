@@ -106,6 +106,8 @@ extension AskCustomInference {
             throw AskStreamError.invalidResponse
         }
         let window = body.removeValue(forKey: "typeflux_context_window") as? Int ?? 32768
+        let semantic = body.removeValue(forKey: "typeflux_semantic_context") as? Bool == true
+        if semantic { return try await send(AskLocalPrompt.json(body)) }
         body = AskContextCompaction.compact(body, window: window)
         for attempt in 0...2 {
             try Task.checkCancellation()

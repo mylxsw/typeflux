@@ -6221,10 +6221,10 @@
 "ask.title.enabled" = "自動命名對話";
 "ask.title.enabled.subtitle" = "完成兩次回答後產生一次標題。";
 "ask.title.invalid" = "標題須為 1–60 個字，且不能換行。";
-"ask.title.model" = "標題模型";
-"ask.title.model.subtitle" = "自動模式會為雲端對話使用雲端標題模型，為本機對話使用目前對話模型。";
+"ask.title.model" = "輔助模型";
+"ask.title.model.subtitle" = "用於標題生成、上下文壓縮等輔助任務。自動時跟隨目前對話模型；雲端壓縮由後台統一設定。";
 "ask.title.rename" = "重新命名";
-"ask.title.section" = "對話標題";
+"ask.title.section" = "輔助任務";
 "ask.translation.model.pickAgain" = "重新選擇";
 "ask.translation.panel.autoCopy" = "自動複製";
 "ask.translation.panel.autoCopy.first" = "第一個服務";

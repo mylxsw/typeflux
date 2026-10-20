@@ -78,7 +78,7 @@ extension AskConversationModel {
     func toolRisk(_ call: AskToolCall, cloudDefinition: AskToolDefinition?) -> AskToolRisk {
         guard cloudDefinition != nil else { return tools.risk(of: call) }
         switch call.function.name {
-        case "web_search", "web_fetch", "web_research": return .read
+        case "web_search", "web_fetch", "web_research", "read_conversation_history": return .read
         case "update_plan": return .none
         default: return .destructive
         }

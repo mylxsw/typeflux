@@ -79,7 +79,7 @@ extension AskLocalRecord {
         usage.version += 1
         usage.invocations.append(.init(deviceId: run.deviceId, budgetRootId: run.budgetRootId, usage: .init(
             id: inference.id, runId: run.id, messageId: inference.summaryThrough == nil ? run.assistantId : nil,
-            modelRef: run.modelRef ?? conversation.modelRef ?? "",
+            modelRef: ((try? JSONSerialization.jsonObject(with: Data(inference.payload.utf8))) as? [String: Any])?["model"] as? String ?? run.modelRef ?? conversation.modelRef ?? "",
             purpose: inference.summaryThrough == nil ? "answer" : "summary",
             createdAt: date, source: "unknown", status: "pending", version: usage.version
         )))

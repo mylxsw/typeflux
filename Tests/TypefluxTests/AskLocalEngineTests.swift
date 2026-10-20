@@ -302,7 +302,7 @@ final class AskLocalEngineTests: XCTestCase {
         let cut = try XCTUnwrap(c.run?.inference?.summaryThrough)
         XCTAssertEqual(c.messages[cut].role, "user")
         let summaryPayload = String(describing: try payload(c)["messages"] ?? "")
-        XCTAssertTrue(summaryPayload.contains("Summarize this conversation"))
+        XCTAssertTrue(summaryPayload.contains("compact handoff"))
         c = try await answer(engine, c, content: "Earlier: greetings.")
         XCTAssertEqual(c.summary, "Earlier: greetings.")
         XCTAssertEqual(c.summaryThrough, cut)
@@ -322,6 +322,8 @@ final class AskLocalEngineTests: XCTestCase {
         XCTAssertNotNil(c.run?.inference?.summaryThrough)
         let original = c.messages
         c = try await answer(engine, c, content: "", calls: [call("browser")], failed: true)
+        XCTAssertNotNil(c.run?.inference?.summaryThrough)
+        c = try await answer(engine, c, content: "", failed: true)
         XCTAssertEqual(c.run?.status, "waiting_inference")
         XCTAssertNil(c.run?.inference?.summaryThrough)
         XCTAssertNil(c.run?.error)
@@ -335,6 +337,9 @@ final class AskLocalEngineTests: XCTestCase {
         var limitSeen = false
         XCTAssertEqual(AskLocalEngine.maxSteps, 100)
         for index in 0 ..< AskLocalEngine.maxSteps {
+            while c.run?.inference?.summaryThrough != nil {
+                c = try await answer(engine, c, content: "The plan is in progress. Preserve confirmed tool outcomes and continue.")
+            }
             c = try await answer(engine, c, calls: [call("update_plan", #"{"items":[{"step":"x","status":"pending"}]}"#)])
             limitSeen = limitSeen || c.messages.contains { $0.text.contains("Web tool limit") }
             if index == 23 { XCTAssertEqual(c.run?.status, "waiting_inference", "The previous 24-step limit must not stop the run") }

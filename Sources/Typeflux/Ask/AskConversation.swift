@@ -51,6 +51,8 @@ struct AskMessage: Codable, Identifiable, Equatable, Sendable {
 }
 
 struct AskRun: Codable, Equatable, Sendable {
+    var contextRetries: Int? = nil
+    var contextInputTarget: Int? = nil
     var clientToolApproval: Bool? = nil
     /// A recovery inspection may observe state but cannot dispatch mutations.
     var recoveryCheck: Bool? = nil
@@ -130,6 +132,7 @@ struct AskPlanItem: Codable, Equatable, Sendable, Hashable {
 }
 
 struct AskConversation: Codable, Identifiable, Equatable, Sendable {
+    var auxiliaryModelRef: String? = nil
     var titleRevision: Int64? = nil
     var titlePolicy: AskTitlePolicy? = nil
     var titleSource: String? = nil
@@ -156,6 +159,7 @@ struct AskConversation: Codable, Identifiable, Equatable, Sendable {
 typealias AskConversationSummary = ChatConversationSummary
 
 struct AskSendRequest: Codable, Equatable, Sendable {
+    var auxiliaryModelRef: String? = nil
     var maxSteps: Int? = nil
     var titlePolicy: AskTitlePolicy? = nil
     var clientToolApproval: Bool? = nil

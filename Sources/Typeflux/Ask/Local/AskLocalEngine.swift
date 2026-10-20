@@ -3,6 +3,7 @@ import Foundation
 
 /// Engine-only state stored next to a local conversation.
 struct AskLocalRecord: Codable, Equatable, Sendable {
+    var summaryFallback: Bool?
     var summaryUnavailable: Bool?
     var contextLimits: AskContextLimits?
     var typedContentEnabled: Bool?
@@ -49,6 +50,18 @@ actor AskLocalEngine: AskAPI {
     let contextLimits: @Sendable (String) -> AskContextLimits
     let now: @Sendable () -> Date
     private var records: [String: AskLocalRecord] = [:]
+    private let summarize: (@Sendable (AskInference, String, String) async -> AskInferenceResult)?
+    private struct Preparation {
+        var id: String
+        var through: Int
+        var cut: Int
+        var prior: String?
+        var prefix: String
+        var fallback: Bool
+        var task: Task<AskInferenceResult, Never>
+        var result: AskInferenceResult?
+    }
+    private var summaries: [String: Preparation] = [:]
     /// Temporary conversations: kept in memory only and never listed.
     private var temporaryIDs: Set<String> = []
     private var loaded = false
@@ -57,7 +70,9 @@ actor AskLocalEngine: AskAPI {
          now: @escaping @Sendable () -> Date = { Date() }, typedContentEnabled: Bool = false,
          budgetEnabled: Bool = false, budgetLimits: AskBudgetResources = .standard,
          contextLimits: @escaping @Sendable (String) -> AskContextLimits = { _ in .init() },
+         summarize: (@Sendable (AskInference, String, String) async -> AskInferenceResult)? = nil,
          prepareImages: @escaping @Sendable ([AskMessage]) async -> [AskMessage] = { await AskTypedContent.prepareHistory($0) }) {
+        self.summarize = summarize
         self.prepareImages = prepareImages
         self.budgetEnabled = budgetEnabled
         self.budgetLimits = budgetLimits
@@ -99,6 +114,19 @@ actor AskLocalEngine: AskAPI {
     }
 
     private func save(_ record: inout AskLocalRecord) throws {
+        // A helper may report usage while image preparation is suspended. Merge
+        // those receipts without replacing the foreground conversation snapshot.
+        if let latest = records[record.conversation.id]?.localUsage {
+            for item in latest.invocations {
+                let usage = item.usage
+                if record.localUsage?.invocations.contains(where: { $0.usage.id == usage.id }) == true {
+                    if usage.status != "pending" {
+                        _ = record.settleUsage(.init(runId: usage.runId, deviceId: item.deviceId,
+                            inferenceId: usage.id, content: "", usage: usage.tokens))
+                    }
+                }
+            }
+        }
         try refreshBudget(&record)
         record.conversation.revision += 1
         record.conversation.updatedAt = now()
@@ -178,6 +206,7 @@ actor AskLocalEngine: AskAPI {
         loadAll()
         let id = AskConversationID.canonical(conversationId)
         guard Self.validID(id) else { return }
+        summaries.removeValue(forKey: id)?.task.cancel()
         records[id] = nil
         if temporaryIDs.remove(id) == nil { try? FileManager.default.removeItem(at: file(id)) }
     }
@@ -233,6 +262,7 @@ actor AskLocalEngine: AskAPI {
                                      image: request.image, createdAt: now(), reasoningEffort: request.reasoningEffort, references: request.references,
                                      attachments: request.attachments, skills: request.skills, mcpServers: request.mcpServers))
         c.titlePolicy = request.titlePolicy ?? c.titlePolicy
+        c.auxiliaryModelRef = request.auxiliaryModelRef
         c.modelRef = modelRef
         c.run = AskRun(id: UUID().uuidString.lowercased(), deviceId: request.deviceId, status: "running", steps: 0, updatedAt: now(),
                        tools: request.tools, pending: [], modelRef: modelRef, reasoningEffort: request.reasoningEffort)
@@ -295,8 +325,16 @@ actor AskLocalEngine: AskAPI {
         record.lastInferenceId = request.inferenceId
         record.conversation.run?.inference = nil
         if (inference.summaryThrough ?? 0) > 0,
-           request.failed || request.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !request.toolCalls.isEmpty || request.finishReason == "length" {
-            record.summaryUnavailable = true
+           request.failed || request.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !request.toolCalls.isEmpty || request.finishReason == "length" || request.content.utf8.count > 64000 {
+            if record.summaryFallback != true { record.summaryFallback = true } else { record.summaryUnavailable = true }
+            record.conversation.run?.status = "running"
+            return try await step(&record)
+        }
+        if request.failed, request.errorCode == "MODEL_CONTEXT_TOO_LONG", request.content.isEmpty,
+           request.reasoning?.isEmpty != false, request.toolCalls.isEmpty, (run.contextRetries ?? 0) < 2 {
+            record.conversation.run?.contextRetries = (run.contextRetries ?? 0) + 1
+            record.conversation.run?.contextInputTarget = 1
+            record.summaryUnavailable = nil
             record.conversation.run?.status = "running"
             return try await step(&record)
         }
@@ -312,8 +350,10 @@ actor AskLocalEngine: AskAPI {
             }
             record.conversation.summary = request.content
             record.conversation.summaryThrough = cut
+            record.conversation.run?.contextInputTarget = nil
             return try await step(&record)
         }
+        record.conversation.run?.contextRetries = nil
         record.conversation.run?.reasoning = request.reasoning
         record.conversation.run?.reasoningMilliseconds = request.reasoningMilliseconds
         return try await applyCompletion(&record, content: request.content, calls: request.toolCalls, finishReason: request.finishReason)
@@ -339,6 +379,7 @@ actor AskLocalEngine: AskAPI {
     func cancel(conversationId: String, runId: String, partial: AskInferenceResult?, token _: String) async throws -> AskConversation {
         var record = try record(conversationId)
         guard let run = record.conversation.run, run.id == runId else { throw conflict() }
+        summaries.removeValue(forKey: AskConversationID.canonical(conversationId))?.task.cancel()
         guard run.isActive else { return record.conversation }
         if let partial, partial.runId == run.id, run.status == "waiting_inference",
            let inference = run.inference, inference.id == partial.inferenceId, partial.deviceId == run.deviceId {
@@ -459,6 +500,8 @@ actor AskLocalEngine: AskAPI {
             record.contextLimits = contextLimits(record.conversation.run?.modelRef ?? "")
         }
         // Messages left from an earlier run were taken back by the device.
+        record.summaryUnavailable = nil
+        record.summaryFallback = nil
         record.steering = nil
         record.builtinTools = [Self.planTool] + webTools.definitions()
         let deviceNames = Set(record.conversation.run?.tools.map(\.name) ?? [])
@@ -471,6 +514,100 @@ actor AskLocalEngine: AskAPI {
         formatter.timeZone = zone
         formatter.dateFormat = "yyyy-MM-dd (EEEE)"
         record.localDate = formatter.string(from: now())
+    }
+
+    private func summaryPrefix(_ c: AskConversation, cut: Int) -> String {
+        let encoder = AskCoding.encoder()
+        encoder.outputFormatting = .sortedKeys
+        return AskToolPolicy.digest(String(decoding: (try? encoder.encode(Array(c.messages.prefix(cut)))) ?? Data(), as: UTF8.self))
+    }
+
+    private func backgroundSummary(_ record: inout AskLocalRecord) async throws -> Bool {
+        guard let summarize, record.summaryUnavailable != true, let run = record.conversation.run else { return false }
+        let id = record.conversation.id
+        let window = record.contextLimits?.window ?? 32768
+        let hard = AskContextCompaction.weight(AskLocalPrompt.payload(conversation: record.conversation, record: record, tools: allTools(record))) >= window * 80 / 100 || (run.contextInputTarget ?? 0) > 0
+        if var preparation = summaries[id] {
+            let valid = preparation.cut <= record.conversation.messages.count
+                && preparation.through == (record.conversation.summaryThrough ?? 0)
+                && preparation.prior == record.conversation.summary
+                && preparation.prefix == summaryPrefix(record.conversation, cut: preparation.cut)
+            if !valid {
+                preparation.task.cancel(); summaries[id] = nil
+            } else {
+                if hard, preparation.result == nil {
+                    try save(&record)
+                    _ = await preparation.task.value
+                    try Task.checkCancellation()
+                    guard let latest = records[id], latest.conversation.run?.id == run.id,
+                          latest.conversation.run?.status == record.conversation.run?.status else { throw conflict() }
+                    record = latest
+                    preparation = summaries[id] ?? preparation
+                }
+                guard let result = preparation.result else { return true }
+                summaries[id] = nil
+                if !result.failed, !result.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                   result.toolCalls.isEmpty, result.finishReason != "length", result.content.utf8.count <= 64000 {
+                    record.conversation.summary = result.content
+                    record.conversation.summaryThrough = preparation.cut
+                    record.conversation.run?.contextInputTarget = nil
+                } else if preparation.fallback { record.summaryUnavailable = true }
+                else { record.summaryFallback = true }
+                return false
+            }
+        }
+        guard !hard, let cut = AskSemanticCompaction.boundary(record.conversation, record: record, tools: allTools(record)) else { return false }
+        let reference = AskSemanticCompaction.model(record.conversation, fallback: record.summaryFallback == true)
+        let limits = contextLimits(reference)
+        var payload = AskLocalPrompt.summaryPayload(conversation: record.conversation, through: cut,
+            model: reference, window: limits.window, output: max(1, min(4096, limits.maxOutput, (record.contextLimits?.window ?? 32768) * 5 / 100)))
+        let end = payload.removeValue(forKey: "typeflux_summary_through") as? Int ?? cut
+        payload["typeflux_context_window"] = limits.window
+        payload["typeflux_semantic_context"] = true
+        payload["typeflux_deadline"] = min(now().addingTimeInterval(90), run.budgetDeadline ?? .distantFuture).timeIntervalSince1970
+        if run.budgetEnabled == true { payload["typeflux_budget"] = true }
+        let inference = AskInference(id: UUID().uuidString.lowercased(), payload: AskLocalPrompt.json(payload), summaryThrough: end)
+        if run.budgetEnabled == true {
+            guard let plan = try? AskContextPlanner.plan(payload, limits: limits) else { return false }
+            try reserveBudget(record, operationId: inference.id, callId: inference.id, kind: "model",
+                              resources: .init(tokens: Int64(plan.inputTokens + plan.outputReserve), operations: 1))
+        }
+        record.startUsage(inference, at: now())
+        try save(&record)
+        let frozen = record
+        let task = Task { [weak self] in
+            let receipt = await summarize(inference, run.id, run.deviceId)
+            await self?.finishSummary(frozen, receipt: receipt)
+            return receipt
+        }
+        summaries[id] = Preparation(id: inference.id, through: record.conversation.summaryThrough ?? 0,
+            cut: end, prior: record.conversation.summary, prefix: summaryPrefix(record.conversation, cut: end),
+            fallback: record.summaryFallback == true, task: task)
+        return true
+    }
+
+    private func finishSummary(_ frozen: AskLocalRecord, receipt: AskInferenceResult) {
+        let id = frozen.conversation.id
+        // Budget settlement remains bound to the original root, even after cancellation.
+        try? settleInference(frozen, receipt)
+        guard var latest = records[id] else { return }
+        _ = latest.settleUsage(receipt)
+        if let prepared = summaries[id], prepared.id == receipt.inferenceId,
+           latest.conversation.run?.status == "completed", !receipt.failed,
+           !receipt.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+           receipt.toolCalls.isEmpty, receipt.finishReason != "length", receipt.content.utf8.count <= 64000,
+           (latest.conversation.summaryThrough ?? 0) == prepared.through,
+           latest.conversation.summary == prepared.prior,
+           prepared.cut <= latest.conversation.messages.count,
+           summaryPrefix(latest.conversation, cut: prepared.cut) == prepared.prefix {
+            latest.conversation.summary = receipt.content
+            latest.conversation.summaryThrough = prepared.cut
+            latest.conversation.revision += 1
+            summaries[id] = nil
+        }
+        try? persist(latest)
+        guard summaries[id]?.id == receipt.inferenceId else { return }
+        summaries[id]?.result = receipt
     }
 
     private func allTools(_ record: AskLocalRecord) -> [AskToolDefinition] {
@@ -486,18 +623,25 @@ actor AskLocalEngine: AskAPI {
 
     /// Queues the next on-device inference: a summary when the history is long, otherwise the answer.
     private func step(_ record: inout AskLocalRecord) async throws -> AskConversation {
+        let skipSummary = try await backgroundSummary(&record)
         record.conversation.memory = record.conversation.memory?.usable(at: now())
         if record.conversation.run?.status == "running" { deliverSteering(&record) }
         guard let run = record.conversation.run else { return record.conversation }
         guard run.steps < (run.maxSteps ?? Self.maxSteps) + (run.extraSteps ?? 0) else { return try fail(&record, L("ask.local.stepLimit")) }
+        if record.conversation.summary != nil, !record.builtinTools.contains(where: { $0.name == AskSemanticCompaction.historyTool.name }) {
+            record.builtinTools.append(AskSemanticCompaction.historyTool)
+            let deviceNames = Set(record.conversation.run?.tools.map(\.name) ?? [])
+            record.conversation.run?.cloudTools = record.builtinTools.filter { !deviceNames.contains($0.name) }
+        }
         let c = record.conversation
-        let through = c.summaryThrough ?? 0
-        if run.budgetEnabled != true, record.summaryUnavailable != true, c.messages.count - through > Self.summarizeAfter {
-            var cut = c.messages.count - Self.keepRecent
-            while cut > through, c.messages[cut].role != "user" { cut -= 1 }
-            if cut > through {
-                return try queue(&record, payload: AskLocalPrompt.summaryPayload(conversation: c, through: cut), summaryThrough: cut)
-            }
+        if !skipSummary, record.summaryUnavailable != true,
+           let cut = AskSemanticCompaction.boundary(c, record: record, tools: allTools(record)) {
+            let model = AskSemanticCompaction.model(c, fallback: record.summaryFallback == true)
+            let limits = contextLimits(model)
+            let payload = AskLocalPrompt.summaryPayload(conversation: c, through: cut, model: model,
+                                                        window: limits.window, output: max(1, min(4096, limits.maxOutput, (record.contextLimits?.window ?? 32768) * 5 / 100)))
+            let end = payload["typeflux_summary_through"] as? Int ?? cut
+            return try queue(&record, payload: payload, summaryThrough: end)
         }
         record.conversation.run?.assistantId = UUID().uuidString.lowercased()
         record.conversation.run?.preview = nil
@@ -521,10 +665,13 @@ actor AskLocalEngine: AskAPI {
 
     private func queue(_ record: inout AskLocalRecord, payload: [String: Any], summaryThrough: Int?) throws -> AskConversation {
         let id = UUID().uuidString.lowercased()
-        var bounded = AskContextCompaction.compact(payload, window: (record.contextLimits ?? .init()).window)
+        var payload = payload
+        payload.removeValue(forKey: "typeflux_summary_through")
+        let limits = summaryThrough != nil ? contextLimits(payload["model"] as? String ?? "") : (record.contextLimits ?? .init())
+        var bounded = summaryThrough != nil ? payload : AskContextCompaction.compact(payload, window: limits.window)
         if record.conversation.run?.budgetEnabled == true {
             do {
-                let plan = try AskContextPlanner.plan(payload, limits: record.contextLimits ?? .init())
+                let plan = try AskContextPlanner.plan(payload, limits: limits)
                 bounded = plan.payload
                 try reserveBudget(record, operationId: id, callId: id, kind: "model",
                                   resources: .init(tokens: Int64(plan.inputTokens + plan.outputReserve), operations: 1))
@@ -535,13 +682,13 @@ actor AskLocalEngine: AskAPI {
             } catch { return try stopBudget(&record, error: error) }
         }
         if record.conversation.run?.budgetEnabled != true {
-            let limits = record.contextLimits ?? .init()
             record.conversation.contextUsage = .init(modelRef: record.conversation.run?.modelRef ?? "",
                 inputTokens: AskContextCompaction.weight(bounded), outputReserve: bounded["max_tokens"] as? Int ?? 0,
                 capacity: limits.known ? limits.window : nil, summarized: record.conversation.summary != nil || AskContextCompaction.weight(bounded) < AskContextCompaction.weight(payload),
                 estimated: true, trimmed: AskContextCompaction.weight(bounded) < AskContextCompaction.weight(payload))
         }
-        bounded["typeflux_context_window"] = (record.contextLimits ?? .init()).window
+        bounded["typeflux_context_window"] = limits.window
+        bounded["typeflux_semantic_context"] = true
         record.conversation.run?.status = "waiting_inference"
         record.conversation.run?.inference = AskInference(id: id, payload: AskLocalPrompt.json(bounded), summaryThrough: summaryThrough)
         if let inference = record.conversation.run?.inference { record.startUsage(inference, at: now()) }
@@ -599,7 +746,7 @@ actor AskLocalEngine: AskAPI {
             do { try reserveBudgetTool(record, call: call) } catch { return try stopBudget(&record, error: error) }
             try save(&record)
             let runId = record.conversation.run?.id
-            let result = await executeBuiltin(call, cloudCalls: record.cloudCalls, budgeted: record.conversation.run?.budgetEnabled == true)
+            let result = await executeBuiltin(call, conversation: record.conversation, cloudCalls: record.cloudCalls, budgeted: record.conversation.run?.budgetEnabled == true)
             try settleBudgetTool(record, callId: call.id)
             guard var latest = records[record.conversation.id] else {
                 throw AskLocalError.message(L("ask.local.notFound"))
@@ -617,7 +764,7 @@ actor AskLocalEngine: AskAPI {
             record.conversation.messages.append(AskMessage(id: UUID().uuidString, role: "tool", text: result.text,
                                                            toolCallId: call.id, isError: result.isError, createdAt: now()))
             record.conversation.run?.pending.removeFirst()
-            if call.function.name != "update_plan" { record.cloudCalls += 1 }
+            if call.function.name != "update_plan", call.function.name != "read_conversation_history" { record.cloudCalls += 1 }
         }
         if let call = record.conversation.run?.pending.first {
             do { try reserveBudgetTool(record, call: call) } catch { return try stopBudget(&record, error: error) }
@@ -635,11 +782,15 @@ actor AskLocalEngine: AskAPI {
         var plan: [AskPlanItem]?
     }
 
-    private func executeBuiltin(_ call: AskToolCall, cloudCalls: Int, budgeted: Bool) async -> BuiltinResult {
-        guard call.function.name == "update_plan" || cloudCalls < Self.maxBuiltinCalls else {
+    private func executeBuiltin(_ call: AskToolCall, conversation: AskConversation, cloudCalls: Int, budgeted: Bool) async -> BuiltinResult {
+        guard ["update_plan", "read_conversation_history"].contains(call.function.name) || cloudCalls < Self.maxBuiltinCalls else {
             return BuiltinResult(
                 text: "Web tool limit for this request reached. Answer with the information gathered so far.",
                 isError: true)
+        }
+        if call.function.name == AskSemanticCompaction.historyTool.name {
+            do { return BuiltinResult(text: try AskSemanticCompaction.readHistory(conversation, arguments: call.function.arguments), isError: false) }
+            catch { return BuiltinResult(text: "Invalid original message index, offset or limit.", isError: true) }
         }
         if call.function.name == "update_plan" {
             do {

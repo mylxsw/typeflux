@@ -6188,10 +6188,10 @@
 "ask.title.enabled" = "チャット名を自動生成";
 "ask.title.enabled.subtitle" = "回答が 2 回完了した後に一度だけ生成します。";
 "ask.title.invalid" = "タイトルは改行なしの 1～60 文字にしてください。";
-"ask.title.model" = "タイトル用モデル";
-"ask.title.model.subtitle" = "「自動」はクラウドチャットではクラウドのタイトル用モデル、ローカルチャットでは会話モデルを使います。";
+"ask.title.model" = "補助モデル";
+"ask.title.model.subtitle" = "タイトル生成やコンテキストの要約に使用します。自動ではローカルの会話モデルを使用し、クラウドの要約はサーバー設定に従います。";
 "ask.title.rename" = "名前を変更";
-"ask.title.section" = "チャットのタイトル";
+"ask.title.section" = "補助タスク";
 "ask.translation.model.pickAgain" = "選び直す";
 "ask.translation.panel.autoCopy" = "自動コピー";
 "ask.translation.panel.autoCopy.first" = "1 番目のサービス";

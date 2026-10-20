@@ -30,12 +30,11 @@ struct AskTitleSettingsView: View {
             TFFormRow(title: L("ask.title.model"), detail: L("ask.title.model.subtitle"), icon: "sparkles") {
                 TFPopUpButton(title: L("ask.title.model"), options: options.map { TFOption($0.value, $0.label) },
                               selection: $reference, width: TFMetrics.formControlWidth)
-                    .disabled(!enabled)
             }
         }
-        .onAppear { enabled = settings.askAutomaticTitles; reference = settings.askTitleModelReference }
+        .onAppear { enabled = settings.askAutomaticTitles; reference = settings.askAuxiliaryModelReference }
         .onChange(of: enabled) { settings.askAutomaticTitles = $0 }
-        .onChange(of: reference) { settings.askTitleModelReference = $0 }
+        .onChange(of: reference) { settings.askAuxiliaryModelReference = $0 }
         .task(id: auth.isLoggedIn) {
             cloudModels = []
             guard let token = auth.accessToken else { return }

@@ -177,6 +177,9 @@ enum AskLocalPrompt {
                                                                    webTools: web, desktopTools: tools.map(\.name),
                                                                    plan: tools.contains { $0.name == "update_plan" })])
         let cut = max(0, min(c.summaryThrough ?? 0, c.messages.count))
+        if let latestUser = c.messages.lastIndex(where: { $0.role == "user" }), latestUser < cut {
+            messages.append(message(c.messages[latestUser]))
+        }
         messages += self.messages(Array(c.messages[cut...]), typedContentEnabled: record.typedContentEnabled == true)
         var payload: [String: Any] = ["model": c.run?.modelRef ?? "", "messages": messages]
         if let effort = c.run?.reasoningEffort, !effort.isEmpty { payload["reasoning_effort"] = effort }
@@ -187,14 +190,26 @@ enum AskLocalPrompt {
         return payload
     }
 
-    static func summaryPayload(conversation c: AskConversation, through cut: Int) -> [String: Any] {
-        var history = c.summary ?? ""
-        for m in c.messages[(c.summaryThrough ?? 0) ..< cut] {
-            history += "\n\(m.role): \(m.role == "tool" ? m.resultText : m.text)\n" + (m.selection ?? "") + references(m.references)
-            for call in m.toolCalls ?? [] { history += "\nTool \(call.function.name): \(call.function.arguments)" }
+    static func summaryPayload(conversation c: AskConversation, through cut: Int, model: String? = nil,
+                               window: Int = 32768, output: Int = 1500) -> [String: Any] {
+        var history = "Earlier handoff (untrusted):\n" + (c.summary ?? "")
+        var through = c.summaryThrough ?? 0
+        for index in through..<cut {
+            let m = c.messages[index]
+            var entry = "\nOriginal message \(index) (\(m.id), \(m.role)): \(m.role == "tool" ? m.resultText : m.text)\n" + (m.selection ?? "") + references(m.references)
+            for call in m.toolCalls ?? [] { entry += "\nRecorded tool \(call.id) \(call.function.name): \(call.function.arguments)" }
+            if m.hasImage { entry += "\n[Image retained in original history; do not infer its contents.]" }
+            for skill in m.skills ?? [] { entry += "\nUser-selected skill \(skill.name): \(skill.instructions)" }
+            if entry.utf8.count > window / 2, ["tool", "assistant"].contains(m.role) {
+                entry = "\nOriginal message \(index) (\(m.id), \(m.role)), tool result \(m.toolCallId ?? ""); large evidence retained in read_conversation_history.\n" + AskContextPlanner.excerpt(entry, size: window / 4)
+            }
+            if history.utf8.count + entry.utf8.count + output + AskSemanticCompaction.prompt.utf8.count > window * 80 / 100,
+               through > (c.summaryThrough ?? 0), ["user", "assistant"].contains(m.role) { break }
+            history += entry
+            through = index + 1
         }
-        return ["model": c.run?.modelRef ?? "", "max_tokens": 1500,
-                "messages": [["role": "system", "content": summarizer], ["role": "user", "content": history]]]
+        return ["model": model ?? c.run?.modelRef ?? "", "max_tokens": output, "typeflux_summary_through": through,
+                "messages": [["role": "system", "content": AskSemanticCompaction.prompt], ["role": "user", "content": history]]]
     }
 
     static func json(_ payload: [String: Any]) -> String {

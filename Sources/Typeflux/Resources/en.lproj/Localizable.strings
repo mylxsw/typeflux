@@ -4022,11 +4022,11 @@
 "ask.capture.optIn" = "Attach screenshot · Requires screen recording access";
 
 // Conversation titles
-"ask.title.section" = "Chat titles";
+"ask.title.section" = "Auxiliary Tasks";
 "ask.title.enabled" = "Automatically name chats";
 "ask.title.enabled.subtitle" = "Generate once after two completed answers.";
-"ask.title.model" = "Title model";
-"ask.title.model.subtitle" = "Automatic uses the Cloud title model for Cloud chats and the conversation model for local chats.";
+"ask.title.model" = "Auxiliary Model";
+"ask.title.model.subtitle" = "Used for titles, context summaries, and other helper tasks. Automatic follows the conversation model locally; cloud summaries use the server configuration.";
 "ask.title.auto" = "Automatic";
 "ask.title.rename" = "Rename";
 "ask.title.invalid" = "Use a single-line title of 1–60 characters.";
