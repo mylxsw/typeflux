@@ -1916,7 +1916,7 @@
 "ask.usage.reserve" = "輸出預算預留";
 "ask.usage.capacity" = "模型容量";
 "ask.usage.remaining" = "剩餘上下文空間";
-"ask.usage.summarized" = "較早內容已摘要，原始記錄仍可查看；摘要呼叫計入消耗。";
+"ask.usage.summarized" = "較早上下文已壓縮，原始記錄仍可查看；若使用模型產生摘要，該呼叫計入消耗。";
 "ask.usage.highHelp" = "上下文接近上限，更多輸入、思考或回覆可能需要摘要。必要時減少附件或建立新對話。";
 "ask.usage.estimated" = "包含估算用量，實際 token 可能不同。";
 "ask.usage.cachedHelp" = "命中快取的輸入 token 在 Typeflux Cloud 按輸入價格的 1/10 計費。";

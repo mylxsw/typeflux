@@ -108,6 +108,8 @@ extension AskCustomInference {
         }
         let (data, response) = try await session.data(for: request)
         try Task.checkCancellation()
+        if let status = (response as? HTTPURLResponse)?.statusCode,
+           AskContextCompaction.isRejection(status: status, data: data) { throw AskStreamError.contextCapacity }
         guard let response = response as? HTTPURLResponse, (200 ..< 300).contains(response.statusCode),
               data.count <= 2_000_000,
               let result = try JSONSerialization.jsonObject(with: data) as? [String: Any]

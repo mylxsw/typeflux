@@ -9,7 +9,10 @@ struct ResponsesStream {
         guard !finished, let body = try JSONSerialization.jsonObject(with: Data(data.utf8)) as? [String: Any],
               let type = body["type"] as? String else { throw AskStreamError.invalidResponse }
         switch type {
-        case "error", "response.failed": throw AskStreamError.requestFailed
+        case "error", "response.failed":
+            if progress.text.isEmpty, progress.reasoning.isEmpty, calls.isEmpty,
+               AskContextCompaction.isRejection(status: 400, data: Data(data.utf8)) { throw AskStreamError.contextCapacity }
+            throw AskStreamError.requestFailed
         case "response.output_text.delta": progress.text += body["delta"] as? String ?? ""
         case "response.reasoning_summary_text.delta": progress.reasoning += body["delta"] as? String ?? ""
         case "response.output_item.added":

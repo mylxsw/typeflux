@@ -3,6 +3,7 @@ import Foundation
 
 /// Engine-only state stored next to a local conversation.
 struct AskLocalRecord: Codable, Equatable, Sendable {
+    var summaryUnavailable: Bool?
     var contextLimits: AskContextLimits?
     var typedContentEnabled: Bool?
     var conversation: AskConversation
@@ -293,6 +294,12 @@ actor AskLocalEngine: AskAPI {
         record.settleUsage(request)
         record.lastInferenceId = request.inferenceId
         record.conversation.run?.inference = nil
+        if (inference.summaryThrough ?? 0) > 0,
+           request.failed || request.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !request.toolCalls.isEmpty || request.finishReason == "length" {
+            record.summaryUnavailable = true
+            record.conversation.run?.status = "running"
+            return try await step(&record)
+        }
         if request.failed {
             record.conversation.run?.preview = request.content
             record.conversation.run?.reasoning = request.reasoning
@@ -440,6 +447,7 @@ actor AskLocalEngine: AskAPI {
 
     private func prepareRun(_ record: inout AskLocalRecord) {
         record.typedContentEnabled = typedContentEnabled
+        record.contextLimits = contextLimits(record.conversation.run?.modelRef ?? "")
         if budgetEnabled || record.conversation.run?.budgetEnabled == true {
             record.conversation.run?.budgetEnabled = true
             if record.conversation.run?.budgetRootId == nil {
@@ -484,7 +492,7 @@ actor AskLocalEngine: AskAPI {
         guard run.steps < (run.maxSteps ?? Self.maxSteps) + (run.extraSteps ?? 0) else { return try fail(&record, L("ask.local.stepLimit")) }
         let c = record.conversation
         let through = c.summaryThrough ?? 0
-        if run.budgetEnabled != true, c.messages.count - through > Self.summarizeAfter {
+        if run.budgetEnabled != true, record.summaryUnavailable != true, c.messages.count - through > Self.summarizeAfter {
             var cut = c.messages.count - Self.keepRecent
             while cut > through, c.messages[cut].role != "user" { cut -= 1 }
             if cut > through {
@@ -513,7 +521,7 @@ actor AskLocalEngine: AskAPI {
 
     private func queue(_ record: inout AskLocalRecord, payload: [String: Any], summaryThrough: Int?) throws -> AskConversation {
         let id = UUID().uuidString.lowercased()
-        var bounded = payload
+        var bounded = AskContextCompaction.compact(payload, window: (record.contextLimits ?? .init()).window)
         if record.conversation.run?.budgetEnabled == true {
             do {
                 let plan = try AskContextPlanner.plan(payload, limits: record.contextLimits ?? .init())
@@ -526,6 +534,14 @@ actor AskLocalEngine: AskAPI {
                     outputReserve: plan.outputReserve, capacity: plan.capacity, summarized: record.conversation.summary != nil, estimated: true, trimmed: plan.trimmed)
             } catch { return try stopBudget(&record, error: error) }
         }
+        if record.conversation.run?.budgetEnabled != true {
+            let limits = record.contextLimits ?? .init()
+            record.conversation.contextUsage = .init(modelRef: record.conversation.run?.modelRef ?? "",
+                inputTokens: AskContextCompaction.weight(bounded), outputReserve: bounded["max_tokens"] as? Int ?? 0,
+                capacity: limits.known ? limits.window : nil, summarized: record.conversation.summary != nil || AskContextCompaction.weight(bounded) < AskContextCompaction.weight(payload),
+                estimated: true, trimmed: AskContextCompaction.weight(bounded) < AskContextCompaction.weight(payload))
+        }
+        bounded["typeflux_context_window"] = (record.contextLimits ?? .init()).window
         record.conversation.run?.status = "waiting_inference"
         record.conversation.run?.inference = AskInference(id: id, payload: AskLocalPrompt.json(bounded), summaryThrough: summaryThrough)
         if let inference = record.conversation.run?.inference { record.startUsage(inference, at: now()) }

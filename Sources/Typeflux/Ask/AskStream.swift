@@ -2,7 +2,7 @@ import Foundation
 import TypefluxChat
 
 enum AskStreamError: Error {
-    case invalidResponse, requestFailed
+    case invalidResponse, requestFailed, contextCapacity
     /// The provider refused the request itself (HTTP 400/422), e.g. an unsupported parameter.
     case rejected
 }
@@ -55,7 +55,11 @@ struct AskProviderStream {
             finished = true; return
         }
         guard let body = try JSONSerialization.jsonObject(with: Data(data.utf8)) as? [String: Any],
-              body["error"] == nil else { throw AskStreamError.invalidResponse }
+              body["error"] == nil else {
+            if progress.text.isEmpty, progress.reasoning.isEmpty, progress.toolCalls.isEmpty,
+               AskContextCompaction.isRejection(status: 400, data: Data(data.utf8)) { throw AskStreamError.contextCapacity }
+            throw AskStreamError.invalidResponse
+        }
         progress.usage = AskTokenUsage.parse(body, style: style, previous: progress.usage)
         switch style {
         case .responses: break
@@ -231,6 +235,13 @@ extension AskCustomInference {
         let (bytes, response) = try await session.bytes(for: request)
         guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else {
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            var data = Data()
+            for try await byte in bytes {
+                try Task.checkCancellation()
+                if data.count >= 65536 { break }
+                data.append(byte)
+            }
+            if AskContextCompaction.isRejection(status: status, data: data) { throw AskStreamError.contextCapacity }
             throw AskReasoningRequest.isRejection(status: status) ? AskStreamError.rejected : AskStreamError.requestFailed
         }
         var frame = AskSSEFrame()

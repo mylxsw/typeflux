@@ -1909,7 +1909,7 @@
 "ask.usage.reserve" = "出力予算の予約量";
 "ask.usage.capacity" = "モデル容量";
 "ask.usage.remaining" = "残りのコンテキスト容量";
-"ask.usage.summarized" = "以前の内容は要約済みです。元の記録は引き続き閲覧でき、要約呼び出しも使用量に含まれます。";
+"ask.usage.summarized" = "以前のコンテキストは圧縮済みです。元の記録は引き続き閲覧できます。モデルによる要約を使用した場合、その呼び出しは使用量に含まれます。";
 "ask.usage.highHelp" = "コンテキストが上限に近づいています。追加入力・思考・回答には要約が必要になる場合があります。必要に応じて添付を減らすか、新しい会話を開始してください。";
 "ask.usage.estimated" = "推定使用量を含みます。実際の token 数は異なる場合があります。";
 "ask.usage.cachedHelp" = "キャッシュされた入力トークンは Typeflux Cloud で入力料金の 1/10 で課金されます。";

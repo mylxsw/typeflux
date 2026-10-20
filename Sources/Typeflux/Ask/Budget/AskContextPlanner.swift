@@ -22,19 +22,21 @@ enum AskContextPlanner {
     /// Cloud orchestration cannot know a custom provider's current window. The
     /// device validates it before dispatch without increasing the reservation.
     static func devicePayload(_ raw: String, model: RegisteredModel, budgeted: Bool) throws -> String {
-        guard budgeted else { return raw }
         guard let payload = try JSONSerialization.jsonObject(with: Data(raw.utf8)) as? [String: Any]
         else { throw AskBudgetError.invalid }
         let limits = AskContextLimits(window: model.contextWindowTokens ?? 32768,
                                       maxOutput: model.maxOutputTokens ?? 4096, known: model.contextWindowTokens != nil)
-        return try AskLocalPrompt.json(plan(payload, limits: limits).payload)
+        var projected = AskContextCompaction.compact(payload, window: limits.window)
+        if budgeted { projected = try plan(projected, limits: limits).payload }
+        projected["typeflux_context_window"] = limits.window
+        return AskLocalPrompt.json(projected)
     }
 
     static func plan(_ payload: [String: Any], limits: AskContextLimits) throws -> AskContextPlan {
         guard (512 ... 10_000_000).contains(limits.window), (1 ... limits.window).contains(limits.maxOutput),
               (1 ... 1_000_000).contains(limits.imageTokens),
               JSONSerialization.isValidJSONObject(payload) else { throw AskBudgetError.invalid }
-        var copy = payload
+        var copy = AskContextCompaction.compact(payload, window: limits.window)
         let output = min(payload["max_tokens"] as? Int ?? limits.maxOutput, limits.maxOutput)
         guard output > 0 else { throw AskBudgetError.invalid }
         copy["max_tokens"] = output
@@ -42,7 +44,8 @@ enum AskContextPlanner {
             payload: copy,
             inputTokens: weight(copy, imageTokens: limits.imageTokens),
             outputReserve: output,
-            capacity: limits.window
+            capacity: limits.window,
+            trimmed: Self.weight(copy, imageTokens: limits.imageTokens) < Self.weight(payload, imageTokens: limits.imageTokens)
         )
         func fit() -> Bool {
             plan.inputTokens = weight(copy, imageTokens: limits.imageTokens)
@@ -55,6 +58,12 @@ enum AskContextPlanner {
         }
         if fit() {
             return plan
+        }
+        for target in [limits.window * 30 / 100, limits.window * 10 / 100] {
+            let projected = AskContextCompaction.compact(copy, window: limits.window, target: target)
+            plan.trimmed = plan.trimmed || Self.weight(projected, imageTokens: limits.imageTokens) < Self.weight(copy, imageTokens: limits.imageTokens)
+            copy = projected
+            if fit() { return plan }
         }
         var messages = copy["messages"] as? [[String: Any]] ?? []
         for size in [4096, 1024, 256] {

@@ -145,7 +145,10 @@ final class AskBudgetTests: XCTestCase {
         let plan = try AskContextPlanner.plan(payload, limits: .init(window: 16000, maxOutput: 2048, known: true))
         XCTAssertTrue(plan.trimmed)
         XCTAssertLessThanOrEqual(plan.inputTokens + plan.outputReserve + 256, 16000)
-        XCTAssertEqual((plan.payload["messages"] as? [[String: Any]])?.count, messages.count)
+        let projected = try XCTUnwrap(plan.payload["messages"] as? [[String: Any]])
+        XCTAssertLessThan(projected.count, messages.count)
+        XCTAssertEqual(projected.last?["tool_call_id"] as? String, "call")
+        XCTAssertTrue(String(describing: projected).contains("Compare sources"))
         XCTAssertEqual(messages[3]["content"] as? String, String(repeating: "巨", count: 50000))
         let image: [String: Any] = [
             "messages": [[

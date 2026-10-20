@@ -131,7 +131,8 @@ final class AskLocalBudgetTests: XCTestCase {
     func testDeviceRechecksRegisteredWindowWithoutIncreasingOutput() throws {
         let raw = #"{"messages":[{"role":"user","content":"Question"}],"max_tokens":2048,"typeflux_budget":true}"#
         let model = RegisteredModel(id: "test", name: "Test", contextWindowTokens: 4096, maxOutputTokens: 512)
-        XCTAssertEqual(try AskContextPlanner.devicePayload(raw, model: model, budgeted: false), raw)
+        let automatic = try AskContextPlanner.devicePayload(raw, model: model, budgeted: false)
+        XCTAssertTrue(automatic.contains("typeflux_context_window"))
         let bounded = try AskContextPlanner.devicePayload(raw, model: model, budgeted: true)
         let body = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(bounded.utf8)) as? [String: Any])
         XCTAssertEqual(body["max_tokens"] as? Int, 512)

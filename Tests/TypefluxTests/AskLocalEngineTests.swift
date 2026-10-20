@@ -142,7 +142,8 @@ final class AskLocalEngineTests: XCTestCase {
     }
 
     func testLegacyReopenedTypedReceiptPreparesWithoutRepeatingTool() async throws {
-        let engine = engine()
+        let engine = AskLocalEngine(directory: directory, webTools: AskLocalWebTools(resolve: { _ in [] }),
+            prepareImages: { await AskTypedContent.prepareHistory($0, normalize: { try await AskToolImageNormalizer(worker: MediaWorker(timeout: 3)).normalize($0, type: $1) }) })
         var c = try await engine.send(conversationId: "image-legacy", request: request(), token: "")
         c = try await answer(engine, c, calls: [call("browser", #"{"action":"read"}"#, id: "typed")])
         let raw = AskTypedContent.json(["type": "image", "mimeType": "image/jpeg", "data": try AskTypedContentTests.image()])
@@ -302,15 +303,30 @@ final class AskLocalEngineTests: XCTestCase {
         XCTAssertEqual(c.messages[cut].role, "user")
         let summaryPayload = String(describing: try payload(c)["messages"] ?? "")
         XCTAssertTrue(summaryPayload.contains("Summarize this conversation"))
-        // A summary with tool calls is rejected; a valid one is kept and the answer is queued.
-        var bad = try await answer(engine, c, content: "", calls: [call("browser")])
-        XCTAssertEqual(bad.run?.error, L("ask.local.badSummary"))
-        bad = try await engine.retry(conversationId: "long", runId: bad.run!.id, deviceId: device, modelRef: nil, token: "")
-        c = try await answer(engine, bad, content: "Earlier: greetings.")
+        c = try await answer(engine, c, content: "Earlier: greetings.")
         XCTAssertEqual(c.summary, "Earlier: greetings.")
         XCTAssertEqual(c.summaryThrough, cut)
         XCTAssertNil(c.run?.inference?.summaryThrough)
         XCTAssertTrue(String(describing: try payload(c)["messages"] ?? "").contains("Previous conversation summary"))
+    }
+
+    func testFailedSummaryAutomaticallyFallsBackWithoutExecutingItsTools() async throws {
+        let engine = engine()
+        var c = try await engine.send(conversationId: "fallback", request: request("q0"), token: "")
+        c = try await answer(engine, c, content: "a0")
+        for index in 1...14 {
+            c = try await engine.send(conversationId: "fallback", request: request("q\(index)"), token: "")
+            if c.run?.inference?.summaryThrough != nil { break }
+            c = try await answer(engine, c, content: "a\(index)")
+        }
+        XCTAssertNotNil(c.run?.inference?.summaryThrough)
+        let original = c.messages
+        c = try await answer(engine, c, content: "", calls: [call("browser")], failed: true)
+        XCTAssertEqual(c.run?.status, "waiting_inference")
+        XCTAssertNil(c.run?.inference?.summaryThrough)
+        XCTAssertNil(c.run?.error)
+        XCTAssertTrue(c.run?.pending.isEmpty == true)
+        XCTAssertEqual(c.messages, original)
     }
 
     func testStepAndBuiltinLimits() async throws {

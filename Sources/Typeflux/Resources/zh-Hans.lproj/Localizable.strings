@@ -1919,7 +1919,7 @@
 "ask.usage.reserve" = "输出预算预留";
 "ask.usage.capacity" = "模型容量";
 "ask.usage.remaining" = "剩余上下文空间";
-"ask.usage.summarized" = "较早内容已摘要，原始记录仍可查看；摘要调用计入消耗。";
+"ask.usage.summarized" = "较早上下文已压缩，原始记录仍可查看；若使用模型生成摘要，该调用计入消耗。";
 "ask.usage.highHelp" = "上下文接近上限，更多输入、思考或回复可能需要摘要。必要时减少附件或新建对话。";
 "ask.usage.estimated" = "包含估算用量，实际 token 可能不同。";
 "ask.usage.cachedHelp" = "命中缓存的输入 token 在 Typeflux Cloud 按输入价格的 1/10 计费。";

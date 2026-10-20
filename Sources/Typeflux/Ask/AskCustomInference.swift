@@ -33,8 +33,14 @@ struct AskCustomInference: Sendable {
     var session: URLSession = .init(configuration: .ephemeral, delegate: AskModelRedirectPolicy(), delegateQueue: nil)
 
     func complete(profile: AskModelProfile, key: String, payload: String, onUsage: (@Sendable (AskTokenUsage) async -> Void)? = nil, onProgress: (@Sendable (AskStreamProgress) async -> Void)? = nil) async throws -> (String, [AskToolCall]) {
+        try await recoveringContext(payload: payload) { projected in
+            try await completeProfileAttempt(profile: profile, key: key, payload: projected, onUsage: onUsage, onProgress: onProgress)
+        }
+    }
+
+    func completeProfileAttempt(profile: AskModelProfile, key: String, payload: String, onUsage: (@Sendable (AskTokenUsage) async -> Void)?, onProgress: (@Sendable (AskStreamProgress) async -> Void)?) async throws -> (String, [AskToolCall]) {
         if let style = profile.apiStyle, style != .openAICompatible {
-            return try await complete(
+            return try await completeProviderAttempt(
                 provider: .init(id: "endpoint:" + profile.id, name: profile.name, apiStyle: style),
                 connection: .init(provider: .custom, baseURL: profile.baseURL, model: profile.model,
                                   apiKey: key, apiStyle: style),
@@ -84,6 +90,8 @@ struct AskCustomInference: Sendable {
         try Task.checkCancellation()
         guard let response = response as? HTTPURLResponse, (200 ..< 300).contains(response.statusCode),
               data.count <= 2_000_000 else {
+            if let status = (response as? HTTPURLResponse)?.statusCode,
+               AskContextCompaction.isRejection(status: status, data: data) { throw AskStreamError.contextCapacity }
             if let status = (response as? HTTPURLResponse)?.statusCode, AskReasoningRequest.isRejection(status: status) {
                 throw AskStreamError.rejected
             }

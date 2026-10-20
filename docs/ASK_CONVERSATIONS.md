@@ -703,3 +703,23 @@ design board is `docs/design/ask-reasoning-effort.html`.
   liquid fill drawn with `TimelineView` + `Canvas` (`AskLiquidFill`) that reaches
   the end of the track at the top level and turns violet at `max`. Reduced motion
   keeps the particles still. `/think` lists Auto plus the model's levels.
+
+### Automatic context recovery
+
+Ask checks estimated input occupancy before each model request. At 80% it
+compresses the older request projection toward 60%, preserving original stored
+messages and the newest complete tool round. The device uses the registered
+model capacity for cloud custom-model bridges as well as private conversations;
+planning metadata never reaches the provider. Historical extracts explicitly
+mark incomplete evidence and omitted images. This local fallback does not depend
+on another model and adds no summary charge. Existing model-generated summaries
+remain supported, but a failed, empty or truncated summary automatically falls
+back to projection compaction.
+
+Explicit context admission failures trigger up to two smaller requests for Chat
+Completions, Responses, Anthropic and Gemini, including streaming admission.
+Cancellation and errors after partial output are not replayed. Compaction never
+re-executes a completed tool or changes an approval. Quota, network and output
+limit errors keep their separate recovery semantics. An individual current
+request or required schema exceeding the model window is irreducible without
+changing the task and still fails safely; compaction is not unlimited memory.

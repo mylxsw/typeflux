@@ -4,6 +4,14 @@ import Foundation
 extension AskCustomInference {
     func complete(provider: RegisteredProvider, connection: SettingsStore.TextLLMConfiguration,
                   payload: String, onUsage: (@Sendable (AskTokenUsage) async -> Void)? = nil, onProgress: (@Sendable (AskStreamProgress) async -> Void)? = nil) async throws -> (String, [AskToolCall]) {
+        try await recoveringContext(payload: payload) { projected in
+            try await completeProviderAttempt(provider: provider, connection: connection, payload: projected, onUsage: onUsage, onProgress: onProgress)
+        }
+    }
+
+    func completeProviderAttempt(provider: RegisteredProvider, connection: SettingsStore.TextLLMConfiguration,
+                                 payload: String, onUsage: (@Sendable (AskTokenUsage) async -> Void)?,
+                                 onProgress: (@Sendable (AskStreamProgress) async -> Void)?) async throws -> (String, [AskToolCall]) {
         if connection.effectiveAPIStyle == .unsupported { throw AskStreamError.invalidResponse }
         if connection.effectiveAPIStyle == .responses {
             return try await completeResponses(connection: connection, payload: payload,
@@ -14,7 +22,7 @@ extension AskCustomInference {
             if provider.isOllama, !endpoint.trimmingCharacters(in: CharacterSet(charactersIn: "/")).hasSuffix("/v1") {
                 endpoint = endpoint.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/v1"
             }
-            return try await complete(profile: .init(name: provider.name, baseURL: endpoint, model: connection.model),
+            return try await completeProfileAttempt(profile: .init(name: provider.name, baseURL: endpoint, model: connection.model),
                                       key: connection.apiKey, payload: payload, onUsage: onUsage, onProgress: onProgress)
         }
         try AskModelProfile(name: provider.name, baseURL: connection.baseURL, model: connection.model).validate()
@@ -61,6 +69,8 @@ extension AskCustomInference {
         try Task.checkCancellation()
         guard let response = response as? HTTPURLResponse, (200 ..< 300).contains(response.statusCode),
               data.count <= 2_000_000 else {
+            if let status = (response as? HTTPURLResponse)?.statusCode,
+               AskContextCompaction.isRejection(status: status, data: data) { throw AskStreamError.contextCapacity }
             if let status = (response as? HTTPURLResponse)?.statusCode, AskReasoningRequest.isRejection(status: status) {
                 throw AskStreamError.rejected
             }
