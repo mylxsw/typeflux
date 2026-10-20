@@ -3,6 +3,7 @@ import Foundation
 /// Window geometry never changes the user's sidebar preference. Panels yield
 /// space independently of height, which controls only the density of content.
 struct AskWorkspaceLayout: Equatable {
+    static let defaultWindowSize = CGSize(width: 1165, height: 886)
     static let minimumWindowSize = CGSize(width: 360, height: 280)
     static let comfortableContentWidth: CGFloat = 600
 

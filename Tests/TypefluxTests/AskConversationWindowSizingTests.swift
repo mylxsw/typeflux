@@ -5,6 +5,20 @@ import Testing
 @Suite("Ask conversation window sizing", .serialized, .exclusiveUIState)
 @MainActor
 struct AskConversationWindowSizingTests {
+    @Test func firstPresentationUsesTheReferenceSizeWhenItFitsTheScreen() throws {
+        let fixture = try WindowFixture()
+        defer { fixture.close() }
+        let window = try fixture.show()
+        let screen = try #require(window.screen ?? NSScreen.main)
+        let available = window.contentRect(forFrameRect: screen.visibleFrame).size
+        let expected = AskWorkspaceLayout.defaultWindowSize
+
+        if available.width >= expected.width && available.height >= expected.height {
+            #expect(window.contentView?.bounds.size == expected)
+            #expect(window.frame.size == expected)
+        }
+    }
+
     @Test func supportedNarrowAndShortViewportsRemainAtTheRequestedSize() async throws {
         let fixture = try WindowFixture()
         defer { fixture.close() }
