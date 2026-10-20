@@ -6083,3 +6083,10 @@
 "voiceCapsule.showContext.detail" = "카드 두 번째 줄에 텍스트가 입력될 앱을 표시합니다.";
 "voiceCapsule.hoverExpand.title" = "호버 시 펼치기";
 "voiceCapsule.hoverExpand.detail" = "아일랜드에 포인터를 올리면 전체 받아쓰기와 버튼을 표시합니다.";
+
+// Model response recovery
+"ask.failure.outputLimit" = "모델이 출력 한도에 도달했습니다. 생성된 내용은 저장되었습니다. 나머지 답변을 요청하거나 다른 모델을 선택하세요.";
+"ask.failure.timeout" = "모델 응답 시간이 초과되었습니다. 생성된 내용은 저장되었습니다. 다시 시도하거나 응답이 빠른 모델을 선택하세요.";
+"ask.failure.interrupted" = "모델 응답이 중단되었습니다. 생성된 내용은 저장되었습니다. 다시 시도하여 계속하세요.";
+"ask.failure.empty" = "모델이 최종 답변을 생성하지 않았습니다. 다시 시도하거나 다른 모델을 선택하세요.";
+"ask.failure.request" = "모델 요청이 실패했습니다. 생성된 내용은 저장되었습니다. 다시 시도하거나 다른 모델을 선택하세요.";

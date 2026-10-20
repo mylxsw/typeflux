@@ -6124,3 +6124,10 @@
 "voiceCapsule.showContext.detail" = "在卡片副標題顯示文字將插入的應用程式。";
 "voiceCapsule.hoverExpand.title" = "懸停展開";
 "voiceCapsule.hoverExpand.detail" = "滑鼠移到瀏海島上時展開完整轉寫和操作按鈕。";
+
+// Model response recovery
+"ask.failure.outputLimit" = "模型已達到單次輸出上限，現有內容已保留。繼續處理可請求剩餘回答，也可以切換模型。";
+"ask.failure.timeout" = "模型回應逾時，現有內容已保留。請重試或選擇回應更快的模型。";
+"ask.failure.interrupted" = "模型回應中斷，現有內容已保留。請重試以繼續處理。";
+"ask.failure.empty" = "模型未產生最終回答。請重試或選擇其他模型。";
+"ask.failure.request" = "模型請求失敗，現有內容已保留。請重試或選擇其他模型。";

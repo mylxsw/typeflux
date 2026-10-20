@@ -6201,3 +6201,10 @@
 "voiceCapsule.showContext.detail" = "Show the app that receives the text on the card's second line.";
 "voiceCapsule.hoverExpand.title" = "Expand on hover";
 "voiceCapsule.hoverExpand.detail" = "Point at the island to see the full transcript and buttons.";
+
+// Model response recovery
+"ask.failure.outputLimit" = "The model reached its output limit. Existing content was saved. Continue to request the remaining answer, or select another model.";
+"ask.failure.timeout" = "The model response timed out. Existing content was saved. Retry or choose a faster model.";
+"ask.failure.interrupted" = "The model response was interrupted. Existing content was saved. Retry to continue.";
+"ask.failure.empty" = "The model did not produce a final answer. Retry or choose another model.";
+"ask.failure.request" = "The model request failed. Existing content was saved. Retry or choose another model.";

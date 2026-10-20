@@ -6201,3 +6201,10 @@
 "voiceCapsule.showContext.detail" = "在卡片副标题显示文字将插入的应用。";
 "voiceCapsule.hoverExpand.title" = "悬停展开";
 "voiceCapsule.hoverExpand.detail" = "鼠标移到刘海岛上时展开完整转写和操作按钮。";
+
+// Model response recovery
+"ask.failure.outputLimit" = "模型已达到单次输出上限，现有内容已保留。继续处理可请求剩余回答，也可以切换模型。";
+"ask.failure.timeout" = "模型响应超时，现有内容已保留。请重试或选择响应更快的模型。";
+"ask.failure.interrupted" = "模型响应中断，现有内容已保留。请重试以继续处理。";
+"ask.failure.empty" = "模型未生成最终回答。请重试或选择其他模型。";
+"ask.failure.request" = "模型请求失败，现有内容已保留。请重试或选择其他模型。";

@@ -1009,7 +1009,7 @@ struct AskConversationView: View {
             }
         } else if stoppedRun, !model.hasRecoveryNotice, let value = model.selected,
                   !model.recoveryBlocksResume(value), let run = value.run {
-            AskBanner(text: run.error ?? L("ask.cancelled"), tone: .info,
+            AskBanner(text: run.failureLocalizationKey.map { L($0) } ?? run.error ?? L("ask.cancelled"), tone: .info,
                       systemImage: "arrow.clockwise",
                       actionTitle: L("ask.resume"), action: { model.resume() })
         } else if resumable, !model.hasRecoveryNotice, model.error == nil {

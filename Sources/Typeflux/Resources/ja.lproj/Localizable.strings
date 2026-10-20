@@ -6083,3 +6083,10 @@
 "voiceCapsule.showContext.detail" = "カードの 2 行目にテキストの入力先アプリを表示します。";
 "voiceCapsule.hoverExpand.title" = "ホバーで展開";
 "voiceCapsule.hoverExpand.detail" = "アイランドにポインタを合わせると文字起こし全体とボタンを表示します。";
+
+// Model response recovery
+"ask.failure.outputLimit" = "モデルが出力上限に達しました。生成済みの内容は保存されています。続きを依頼するか、別のモデルを選択してください。";
+"ask.failure.timeout" = "モデルの応答がタイムアウトしました。生成済みの内容は保存されています。再試行するか、応答の速いモデルを選択してください。";
+"ask.failure.interrupted" = "モデルの応答が中断されました。生成済みの内容は保存されています。再試行して続行してください。";
+"ask.failure.empty" = "モデルが最終回答を生成しませんでした。再試行するか、別のモデルを選択してください。";
+"ask.failure.request" = "モデルへのリクエストが失敗しました。生成済みの内容は保存されています。再試行するか、別のモデルを選択してください。";

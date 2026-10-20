@@ -65,6 +65,22 @@ struct AskRun: Codable, Equatable, Sendable {
     var deviceId: String
     var status: String
     var error: String?
+    var errorCode: String? = nil
+
+    var failureLocalizationKey: String? {
+        switch errorCode {
+        case "MODEL_OUTPUT_LIMIT": return "ask.failure.outputLimit"
+        case "MODEL_TIMEOUT": return "ask.failure.timeout"
+        case "MODEL_STREAM_INTERRUPTED": return "ask.failure.interrupted"
+        case "MODEL_EMPTY_RESPONSE": return "ask.failure.empty"
+        case "MODEL_REQUEST_FAILED": return "ask.failure.request"
+        default:
+            if error == "The answer reached the output limit and was cut off; retry or ask to continue" {
+                return "ask.failure.outputLimit"
+            }
+            return nil
+        }
+    }
     var steps: Int
     /// Maximum model replies pinned when this run started; nil for older runs.
     var maxSteps: Int? = nil
