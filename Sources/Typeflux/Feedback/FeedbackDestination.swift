@@ -16,15 +16,6 @@ enum FeedbackDestination: String, CaseIterable, Identifiable {
         }
     }
 
-    /// The short label in the feedback window's footer.
-    var shortTitle: String {
-        switch self {
-        case .direct: L("sidebar.feedback.directOption")
-        case .email: L("feedback.footer.email")
-        case .github: L("feedback.footer.github")
-        }
-    }
-
     /// Direct feedback is presented in the app; external choices open their own apps.
     var url: URL? {
         switch self {

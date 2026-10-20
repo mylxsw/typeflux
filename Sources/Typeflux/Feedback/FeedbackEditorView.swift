@@ -8,6 +8,14 @@ final class FeedbackToolbarState: ObservableObject {
     @Published var italic = false
     @Published var strikethrough = false
     @Published var block: FeedbackBlockFormat?
+    /// The link popover under the toolbar's link button (also opened with ⌘K).
+    @Published var isLinkEntryPresented = false
+
+    /// Opens the link entry when text is selected; a link needs text to sit on.
+    func requestLinkEntry(in textView: FeedbackTextView?) {
+        guard let textView, textView.selectedRange().length > 0 else { return }
+        isLinkEntryPresented = true
+    }
 }
 
 /// The rich text editor of the feedback body.
@@ -39,9 +47,8 @@ struct FeedbackEditorView: NSViewRepresentable {
         textView.onImageData = { [weak model] data in
             model?.addImageData(data, filename: Self.screenshotName())
         }
-        textView.onLinkRequest = { [weak textView] in
-            guard let textView else { return }
-            Self.promptForLink(in: textView)
+        textView.onLinkRequest = { [weak textView, weak toolbar] in
+            toolbar?.requestLinkEntry(in: textView)
         }
         scrollView.documentView = textView
         model.editor.textView = textView
@@ -58,25 +65,6 @@ struct FeedbackEditorView: NSViewRepresentable {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd-HHmmss"
         return "screenshot-\(formatter.string(from: Date())).png"
-    }
-
-    /// Asks for a link target and applies it to the selection; only http and https are accepted.
-    @MainActor
-    static func promptForLink(in textView: FeedbackTextView) {
-        guard textView.selectedRange().length > 0 else { return }
-        let alert = NSAlert()
-        alert.messageText = L("feedback.editor.link.title")
-        alert.informativeText = L("feedback.editor.link.message")
-        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 280, height: 24))
-        field.placeholderString = "https://"
-        alert.accessoryView = field
-        alert.addButton(withTitle: L("common.ok"))
-        alert.addButton(withTitle: L("common.cancel"))
-        alert.window.initialFirstResponder = field
-        guard alert.runModal() == .alertFirstButtonReturn else { return }
-        let text = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        // An empty field removes the link.
-        textView.applyLink(text.isEmpty ? nil : FeedbackRichText.normalizedLinkURL(text))
     }
 
     @MainActor
@@ -137,7 +125,8 @@ struct FeedbackEditorView: NSViewRepresentable {
                 as? FeedbackTextAttachment else { return }
             let frame = cellFrame.insetBy(dx: 0, dy: 4)
             let click = textView.convert(textView.window?.mouseLocationOutsideOfEventStream ?? .zero, from: nil)
-            if FeedbackAttachmentCell.removeButtonRect(in: frame).insetBy(dx: -4, dy: -4).contains(click) {
+            let kind = model.attachment(id: attachment.attachmentID)?.kind ?? .file
+            if FeedbackAttachmentCell.removeButtonRect(in: frame, kind: kind).insetBy(dx: -4, dy: -4).contains(click) {
                 model.remove(id: attachment.attachmentID)
             } else if case .failed = model.attachment(id: attachment.attachmentID)?.state {
                 model.retry(id: attachment.attachmentID)

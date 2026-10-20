@@ -53,11 +53,23 @@ struct FeedbackAttachmentCellTests {
         #expect(FeedbackAttachmentCell.formattedDuration(-3) == "0:00")
     }
 
-    @Test func `the remove button sits in the top right corner`() {
+    @Test func `the remove button is a small circle on pictures and at the end of file rows`() {
         let frame = NSRect(x: 10, y: 20, width: 300, height: 100)
-        let button = FeedbackAttachmentCell.removeButtonRect(in: frame)
-        #expect(button.maxX < frame.maxX && button.minY > frame.minY)
-        #expect(frame.contains(button))
+        for kind in [FeedbackAttachmentKind.image, .video] {
+            let button = FeedbackAttachmentCell.removeButtonRect(in: frame, kind: kind)
+            #expect(button.size == NSSize(width: TFControlSize.small.height, height: TFControlSize.small.height))
+            #expect(button.maxX < frame.maxX && button.minY > frame.minY && button.midY < frame.midY)
+            #expect(frame.contains(button))
+        }
+        let row = FeedbackAttachmentCell.removeButtonRect(in: frame, kind: .file)
+        #expect(row.midY == frame.midY && row.maxX < frame.maxX && frame.contains(row))
+    }
+
+    @Test func `only failed and refused states are errors`() {
+        #expect(FeedbackAttachmentState.failed("x").isError && FeedbackAttachmentState.rejected("x").isError)
+        for state in [FeedbackAttachmentState.preparing(progress: 0.5), .uploading, .uploaded("u")] {
+            #expect(!state.isError)
+        }
     }
 
     @Test(arguments: [FeedbackAttachmentKind.image, .video, .file])

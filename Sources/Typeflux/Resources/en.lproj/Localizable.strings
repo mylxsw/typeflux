@@ -70,8 +70,6 @@
 
 "feedback.direct.title" = "Send feedback";
 "feedback.direct.contentPlaceholder" = "Describe what happened or what you would like to improve.\nPaste a screenshot with ⌘V or drop files here.";
-"feedback.direct.contactLabel" = "Contact (optional)";
-"feedback.direct.contactPlaceholder" = "Email or other contact";
 "feedback.direct.submit" = "Submit";
 "feedback.error.emptyContent" = "Please enter feedback content.";
 "feedback.error.invalidImage" = "Unable to read this image.";
@@ -6223,9 +6221,6 @@
 "feedback.status.rejected" = "Remove the attachment that is over its limit to submit.";
 "feedback.draft.restored" = "Restored your unsent feedback.";
 "feedback.draft.clear" = "Clear and start over";
-"feedback.footer.other" = "Other ways:";
-"feedback.footer.email" = "Email";
-"feedback.footer.github" = "GitHub Issue";
 "feedback.success.title" = "Feedback sent. Thank you!";
 "feedback.success.replyTo" = "We will reply to %@.";
 "feedback.success.another" = "Write another";
@@ -6240,3 +6235,10 @@
 "feedback.editor.link" = "Link (⌘K)";
 "feedback.editor.link.title" = "Add link";
 "feedback.editor.link.message" = "Enter an http or https address. Leave it empty to remove the link.";
+"feedback.footer.otherMenu" = "Other ways to reach us";
+"feedback.direct.contactField" = "Contact";
+"feedback.direct.contactFieldPlaceholder" = "Email or other contact (optional)";
+"feedback.direct.submitHelp" = "Submit (⌘↩)";
+"feedback.attachment.addHelp" = "Images, videos, txt, log, md or docx";
+"feedback.attachment.screenshotHelp" = "Hide this window and capture a screen region";
+"feedback.editor.link.apply" = "Add";

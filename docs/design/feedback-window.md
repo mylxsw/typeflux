@@ -29,7 +29,7 @@
 ## 2. 窗口
 
 - 改为独立的普通 `NSWindow`（单实例，由 `FeedbackWindowController` 持有），不再依附设置窗口。菜单栏、使用指南、设置三个入口都直接打开它；已打开时只前置。
-- 带红绿灯，标题栏可拖动；可调整大小，最小 520 × 560，默认 600 × 660，记住位置和大小。窗口层级为普通级别，所以 ⇧⌘4 + 空格可以单独截取它，也可以和其他窗口并排。
+- 带红绿灯，标题栏可拖动；可调整大小，最小 520 × 640，默认 600 × 720（都含 52pt 标题行），记住位置和大小。窗口层级为普通级别，所以 ⇧⌘4 + 空格可以单独截取它，也可以和其他窗口并排。
 - esc、⌘W、取消、红色按钮都是关闭。**关闭保留草稿**（正文、附件、已上传结果），下次打开恢复，并在顶部提示「已恢复上次未提交的内容 · 清空重写」；提交成功或主动清空后才丢弃。提交过程中不能关闭。
 - 背景用 `AskWindowBackdrop`，和笔记本、使用指南窗口一致，跟随「设置 › 界面风格」（Liquid Glass / 经典）和深浅色。控件全部来自组件库（§9）。
 
@@ -135,3 +135,5 @@
 | 链接输入 | `TFMenuPanel` 外观 | 玻璃，圆角 12，内边距 5；30pt 输入框 + 标准主要按钮 |
 
 组件库里没有现成的：富文本编辑区（`NSTextView` + 附件 cell）和附件块本身。它们只用上表里的组件和 `TFMetrics` / `TFColors`，不新增尺寸、圆角或颜色。
+
+实现截图：`docs/design/feedback-window/impl-dark-editing.png`、`impl-light-editing.png`（经典界面风格，由 `FeedbackWindowControllerTests` 生成：`TYPEFLUX_FEEDBACK_SNAPSHOT_DIR=<目录>`；`FeedbackWindowRenderTests` 另外渲染编辑中和已提交两种状态：`TYPEFLUX_FEEDBACK_SNAPSHOTS=<目录>`）。

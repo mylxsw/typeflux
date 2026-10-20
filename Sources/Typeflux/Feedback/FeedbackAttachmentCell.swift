@@ -22,9 +22,16 @@ final class FeedbackAttachmentCell: NSTextAttachmentCell {
     static let videoSize = NSSize(width: 320, height: 180)
     static let fileSize = NSSize(width: 360, height: 56)
 
-    /// The remove button's hit area inside a block drawn in `frame`.
-    static func removeButtonRect(in frame: NSRect) -> NSRect {
-        NSRect(x: frame.maxX - 30, y: frame.minY + 8, width: 22, height: 22)
+    /// The remove button's hit area inside a block drawn in `frame`: a 24pt circle in the top
+    /// right corner of a picture, or at the end of a file row.
+    static func removeButtonRect(in frame: NSRect, kind: FeedbackAttachmentKind) -> NSRect {
+        let side = TFControlSize.small.height
+        switch kind {
+        case .image, .video:
+            return NSRect(x: frame.maxX - side - 6, y: frame.minY + 6, width: side, height: side)
+        case .file:
+            return NSRect(x: frame.maxX - side - 8, y: frame.midY - side / 2, width: side, height: side)
+        }
     }
 
     static func size(for attachment: FeedbackAttachment?) -> NSSize {
@@ -64,197 +71,256 @@ final class FeedbackAttachmentCell: NSTextAttachmentCell {
     override func draw(withFrame cellFrame: NSRect, in _: NSView?) {
         guard let attachment = provider(attachmentID) else { return }
         let frame = cellFrame.insetBy(dx: 0, dy: 4)
-        let radius: CGFloat = 10
-        let clip = NSBezierPath(roundedRect: frame, xRadius: radius, yRadius: radius)
+        let shape = NSBezierPath(roundedRect: frame, xRadius: Self.cornerRadius, yRadius: Self.cornerRadius)
 
         NSGraphicsContext.saveGraphicsState()
-        clip.addClip()
+        shape.addClip()
         switch attachment.kind {
         case .image: drawImage(attachment, in: frame)
         case .video: drawVideo(attachment, in: frame)
         case .file: drawFile(attachment, in: frame)
         }
-        drawStateOverlay(attachment, in: frame)
+        if attachment.kind != .file {
+            drawMediaState(attachment, in: frame)
+        }
         NSGraphicsContext.restoreGraphicsState()
 
-        let isError = switch attachment.state {
-        case .failed, .rejected: true
-        default: false
-        }
-        (isError ? NSColor.systemRed : NSColor.separatorColor).setStroke()
-        clip.lineWidth = isError ? 1.5 : 1
-        clip.stroke()
+        // A hairline like every card; a failed or refused file gets a red edge.
+        let isError = attachment.kind == .file && attachment.state.isError
+        let stroke = NSBezierPath(
+            roundedRect: frame.insetBy(dx: 0.25, dy: 0.25), xRadius: Self.cornerRadius, yRadius: Self.cornerRadius
+        )
+        stroke.lineWidth = isError ? 1 : TFMetrics.borderWidth
+        (isError ? Palette.danger : Palette.border).setStroke()
+        stroke.stroke()
 
-        drawRemoveButton(in: frame)
+        drawRemoveButton(in: Self.removeButtonRect(in: frame, kind: attachment.kind), onPicture: attachment.kind != .file)
+    }
+
+    /// Blocks use the field radius; they sit inside the 10pt text area.
+    static let cornerRadius = TFMetrics.fieldCornerRadius
+
+    /// The component library's colors as AppKit colors; they follow the appearance.
+    private enum Palette {
+        static var card: NSColor { NSColor(TFColors.card) }
+        static var control: NSColor { NSColor(TFColors.control) }
+        static var border: NSColor { NSColor(TFColors.border) }
+        static var accent: NSColor { NSColor(TFColors.accent) }
+        static var danger: NSColor { NSColor(TFColors.danger) }
+        static var textPrimary: NSColor { NSColor(TFColors.textPrimary) }
+        static var textSecondary: NSColor { NSColor(TFColors.textSecondary) }
+        static var textTertiary: NSColor { NSColor(TFColors.textTertiary) }
+        /// Error text on the dark scrim over a picture.
+        static let dangerOnScrim = NSColor(calibratedRed: 1, green: 0.54, blue: 0.5, alpha: 1)
     }
 
     // MARK: - Kinds
 
     private func drawImage(_ attachment: FeedbackAttachment, in frame: NSRect) {
-        NSColor.controlBackgroundColor.setFill()
+        Palette.card.setFill()
         frame.fill()
         attachment.thumbnail?.draw(
             in: frame, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil
         )
         if attachment.state.isReady, attachment.sizeBytes > 0 {
-            drawChip(FeedbackAttachmentPolicy.formattedSize(attachment.sizeBytes), at: frame, trailingBottom: true)
+            drawTag(FeedbackAttachmentPolicy.formattedSize(attachment.sizeBytes), in: frame, trailing: false,
+                    sharesRow: false)
         }
     }
 
     private func drawVideo(_ attachment: FeedbackAttachment, in frame: NSRect) {
-        NSColor.black.withAlphaComponent(0.85).setFill()
+        NSColor.black.setFill()
         frame.fill()
         attachment.thumbnail?.draw(
-            in: frame, from: .zero, operation: .sourceOver, fraction: 0.9, respectFlipped: true, hints: nil
+            in: frame, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil
         )
-        let diameter: CGFloat = 44
-        let circle = NSRect(
-            x: frame.midX - diameter / 2,
-            y: frame.midY - diameter / 2,
-            width: diameter,
-            height: diameter
-        )
-        NSColor.black.withAlphaComponent(0.55).setFill()
-        NSBezierPath(ovalIn: circle).fill()
-        let triangle = NSBezierPath()
-        triangle.move(to: NSPoint(x: circle.minX + 17, y: circle.minY + 13))
-        triangle.line(to: NSPoint(x: circle.minX + 17, y: circle.maxY - 13))
-        triangle.line(to: NSPoint(x: circle.maxX - 12, y: circle.midY))
-        triangle.close()
-        NSColor.white.setFill()
-        triangle.fill()
         guard attachment.state.isReady else { return }
-        var caption = attachment.filename
-        if let duration = attachment.durationSeconds {
-            caption += " · " + Self.formattedDuration(duration)
+        // The 36pt glass play button of a large icon-only TFButton.
+        let side = TFControlSize.large.height
+        let circle = NSRect(x: frame.midX - side / 2, y: frame.midY - side / 2, width: side, height: side)
+        Self.scrimColor.setFill()
+        NSBezierPath(ovalIn: circle).fill()
+        drawSymbol("play.fill", size: TFControlSize.large.iconSize, color: .white,
+                   centeredIn: circle.offsetBy(dx: 1, dy: 0))
+        let hasDuration = attachment.durationSeconds != nil
+        if attachment.sizeBytes > 0 {
+            drawTag(FeedbackAttachmentPolicy.formattedSize(attachment.sizeBytes), in: frame, trailing: false,
+                    sharesRow: hasDuration)
         }
-        drawChip(caption, at: frame, trailingBottom: false)
+        if let duration = attachment.durationSeconds {
+            drawTag(Self.formattedDuration(duration), in: frame, trailing: true, sharesRow: attachment.sizeBytes > 0)
+        }
     }
 
+    /// A `TFListRow`: 28pt neutral icon tile, 13pt semibold name, 11.5pt detail line.
     private func drawFile(_ attachment: FeedbackAttachment, in frame: NSRect) {
-        NSColor.controlBackgroundColor.setFill()
+        Palette.card.setFill()
         frame.fill()
-        let badge = NSRect(x: frame.minX + 12, y: frame.midY - 17, width: 34, height: 34)
-        NSColor.controlAccentColor.withAlphaComponent(0.16).setFill()
-        NSBezierPath(roundedRect: badge, xRadius: 8, yRadius: 8).fill()
-        let ext = (attachment.filename as NSString).pathExtension.uppercased()
-        let badgeAttributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 9, weight: .bold), .foregroundColor: NSColor.controlAccentColor
-        ]
-        let badgeSize = (ext as NSString).size(withAttributes: badgeAttributes)
-        (ext as NSString).draw(
-            at: NSPoint(x: badge.midX - badgeSize.width / 2, y: badge.midY - badgeSize.height / 2),
-            withAttributes: badgeAttributes
-        )
-        let textX = badge.maxX + 10
-        let textWidth = frame.maxX - textX - 40
+        let tileSide = TFMetrics.iconTileSize
+        let tile = NSRect(x: frame.minX + TFMetrics.rowHorizontalPadding, y: frame.midY - tileSide / 2,
+                          width: tileSide, height: tileSide)
+        Palette.control.setFill()
+        NSBezierPath(roundedRect: tile, xRadius: TFMetrics.iconTileCornerRadius,
+                     yRadius: TFMetrics.iconTileCornerRadius).fill()
+        drawSymbol("doc.text", size: tileSide * 0.54, color: Palette.textSecondary, centeredIn: tile)
+
+        let textX = tile.maxX + 10
+        let textWidth = frame.maxX - textX - TFControlSize.small.height - 16
         (attachment.filename as NSString).draw(
-            in: NSRect(x: textX, y: frame.minY + 10, width: textWidth, height: 18),
+            in: NSRect(x: textX, y: frame.midY - 18, width: textWidth, height: 18),
             withAttributes: [
-                .font: NSFont.systemFont(ofSize: 12.5, weight: .medium), .foregroundColor: NSColor.labelColor,
+                .font: NSFont.systemFont(ofSize: 13, weight: .semibold), .foregroundColor: Palette.textPrimary,
                 .paragraphStyle: Self.truncatingStyle
             ]
         )
-        let detail = attachment.sizeBytes > 0 ? FeedbackAttachmentPolicy.formattedSize(attachment.sizeBytes) : " "
-        (detail as NSString).draw(
-            in: NSRect(x: textX, y: frame.minY + 29, width: textWidth, height: 16),
-            withAttributes: [.font: NSFont.systemFont(ofSize: 11), .foregroundColor: NSColor.secondaryLabelColor]
-        )
+        let detailFrame = NSRect(x: textX, y: frame.midY + 2, width: textWidth, height: 16)
+        let detailAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 11.5), .paragraphStyle: Self.truncatingStyle
+        ]
+        switch attachment.state {
+        case let .preparing(progress):
+            drawMeter(progress, at: NSPoint(x: textX, y: detailFrame.midY - 3), track: Palette.control)
+            (Self.progressLabel(attachment) as NSString).draw(
+                in: detailFrame.offsetBy(dx: Self.meterWidth + 8, dy: 0).insetBy(dx: 0, dy: 0),
+                withAttributes: detailAttributes.merging([.foregroundColor: Palette.textSecondary]) { $1 }
+            )
+        case .uploading:
+            drawMeter(nil, at: NSPoint(x: textX, y: detailFrame.midY - 3), track: Palette.control)
+            (L("feedback.attachment.state.uploading") as NSString).draw(
+                in: detailFrame.offsetBy(dx: Self.meterWidth + 8, dy: 0),
+                withAttributes: detailAttributes.merging([.foregroundColor: Palette.textSecondary]) { $1 }
+            )
+        case let .failed(reason):
+            (L("feedback.attachment.state.failed") + " · " + reason as NSString).draw(
+                in: detailFrame, withAttributes: detailAttributes.merging([.foregroundColor: Palette.danger]) { $1 }
+            )
+        case let .rejected(reason):
+            (reason as NSString).draw(
+                in: detailFrame, withAttributes: detailAttributes.merging([.foregroundColor: Palette.danger]) { $1 }
+            )
+        case .uploaded:
+            let detail = attachment.sizeBytes > 0 ? FeedbackAttachmentPolicy.formattedSize(attachment.sizeBytes) : ""
+            (detail as NSString).draw(
+                in: detailFrame,
+                withAttributes: detailAttributes.merging([.foregroundColor: Palette.textSecondary]) { $1 }
+            )
+        }
     }
 
     // MARK: - State
 
-    private func drawStateOverlay(_ attachment: FeedbackAttachment, in frame: NSRect) {
+    /// Over a picture: a dark scrim with a `TFMeter` and the progress, or the error text.
+    private func drawMediaState(_ attachment: FeedbackAttachment, in frame: NSRect) {
         let message: String
+        var isError = false
+        var progress: Double??
         switch attachment.state {
-        case let .preparing(progress):
-            let label = attachment
-                .kind == .video ? L("feedback.attachment.state.compressing") : L("feedback.attachment.state.preparing")
-            message = progress.map { "\(label) \(Int(($0 * 100).rounded()))%" } ?? label
-            drawProgressBar(progress, in: frame)
+        case let .preparing(value):
+            message = Self.progressLabel(attachment)
+            progress = .some(value)
         case .uploading:
             message = L("feedback.attachment.state.uploading")
-            drawProgressBar(nil, in: frame)
+            progress = .some(nil)
         case let .failed(reason):
             message = L("feedback.attachment.state.failed") + " · " + reason
+            isError = true
         case let .rejected(reason):
             message = reason
+            isError = true
         case .uploaded:
             return
         }
-        let isError = switch attachment.state {
-        case .failed, .rejected: true
-        default: false
+        NSColor.black.withAlphaComponent(isError ? 0.72 : 0.6).setFill()
+        frame.fill()
+        let textWidth = min(frame.width - 48, 280)
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 12, weight: isError ? .semibold : .medium),
+            .foregroundColor: isError ? Palette.dangerOnScrim : NSColor.white,
+            .paragraphStyle: Self.centeredWrappingStyle
+        ]
+        let textHeight = (message as NSString).boundingRect(
+            with: NSSize(width: textWidth, height: 60), options: [.usesLineFragmentOrigin], attributes: attributes
+        ).height.rounded(.up)
+        let meterGap: CGFloat = progress == nil ? 0 : 6 + 8
+        let top = frame.midY - (textHeight + meterGap) / 2
+        if let progress {
+            drawMeter(progress, at: NSPoint(x: frame.midX - Self.meterWidth / 2, y: top),
+                      track: NSColor.white.withAlphaComponent(0.22))
         }
-        // Errors on media can need two lines; the file card is short, so its message stays on one.
-        let wraps = isError && attachment.kind != .file
-        let bandHeight: CGFloat = wraps ? 42 : 30
-        let band = NSRect(x: frame.minX, y: frame.maxY - bandHeight, width: frame.width, height: bandHeight)
-        if isError || attachment.kind != .file {
-            (isError ? NSColor.systemRed.withAlphaComponent(0.82) : NSColor.black.withAlphaComponent(0.45)).setFill()
-            band.fill()
-        } else {
-            NSColor.controlBackgroundColor.withAlphaComponent(0.7).setFill()
-            frame.fill()
-        }
-        let color: NSColor = attachment.kind == .file && !isError ? .labelColor : .white
         (message as NSString).draw(
-            in: NSRect(x: band.minX + 10, y: band.minY + 6, width: band.width - 46, height: bandHeight - 10),
-            withAttributes: [
-                .font: NSFont.systemFont(ofSize: 11.5, weight: .medium), .foregroundColor: color,
-                .paragraphStyle: wraps ? Self.wrappingStyle : Self.truncatingStyle
-            ]
+            in: NSRect(x: frame.midX - textWidth / 2, y: top + meterGap, width: textWidth, height: textHeight),
+            withAttributes: attributes
         )
     }
 
-    private func drawProgressBar(_ progress: Double?, in frame: NSRect) {
-        let track = NSRect(x: frame.minX, y: frame.maxY - 3, width: frame.width, height: 3)
-        NSColor.black.withAlphaComponent(0.2).setFill()
-        track.fill()
-        NSColor.controlAccentColor.setFill()
-        let fraction = progress.map { max(0.02, min(1, $0)) } ?? 0.35
-        NSRect(x: track.minX, y: track.minY, width: track.width * fraction, height: track.height).fill()
+    private static func progressLabel(_ attachment: FeedbackAttachment) -> String {
+        guard case let .preparing(progress) = attachment.state else { return "" }
+        let label = attachment.kind == .video
+            ? L("feedback.attachment.state.compressing") : L("feedback.attachment.state.preparing")
+        return progress.map { "\(label) \(Int(($0 * 100).rounded()))%" } ?? label
     }
 
-    private func drawChip(_ text: String, at frame: NSRect, trailingBottom: Bool) {
+    static let meterWidth: CGFloat = 120
+    private static let scrimColor = NSColor.black.withAlphaComponent(0.55)
+
+    /// A `TFMeter`: a 6pt capsule track with the accent fill. Unknown progress shows a third.
+    private func drawMeter(_ progress: Double?, at origin: NSPoint, track: NSColor) {
+        let height: CGFloat = 6
+        let bar = NSRect(x: origin.x, y: origin.y, width: Self.meterWidth, height: height)
+        track.setFill()
+        NSBezierPath(roundedRect: bar, xRadius: height / 2, yRadius: height / 2).fill()
+        let fraction = progress.map { max(0.04, min(1, $0)) } ?? 0.35
+        Palette.accent.setFill()
+        let fill = NSRect(x: bar.minX, y: bar.minY, width: bar.width * fraction, height: height)
+        NSBezierPath(roundedRect: fill, xRadius: height / 2, yRadius: height / 2).fill()
+    }
+
+    /// A 16pt capsule caption (the `TFTag` size) in a bottom corner of a picture. Two captions on
+    /// one row split the width.
+    private func drawTag(_ text: String, in frame: NSRect, trailing: Bool, sharesRow: Bool) {
         let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 10.5, weight: .medium), .foregroundColor: NSColor.white
+            .font: NSFont.monospacedDigitSystemFont(ofSize: 10.5, weight: .medium), .foregroundColor: NSColor.white
         ]
         let size = (text as NSString).size(withAttributes: attributes)
-        let width = min(size.width + 14, frame.width - 24)
-        let chip = NSRect(
-            x: trailingBottom ? frame.maxX - width - 8 : frame.minX + 8,
-            y: frame.maxY - 26, width: width, height: 18
-        )
-        NSColor.black.withAlphaComponent(0.55).setFill()
-        NSBezierPath(roundedRect: chip, xRadius: 9, yRadius: 9).fill()
+        let height = TFMetrics.tagHeight
+        let available = sharesRow ? frame.width / 2 - 9 : frame.width - 12
+        let width = min(size.width.rounded(.up) + 12, available)
+        let tag = NSRect(x: trailing ? frame.maxX - width - 6 : frame.minX + 6,
+                         y: frame.maxY - height - 6, width: width, height: height)
+        Self.scrimColor.setFill()
+        NSBezierPath(roundedRect: tag, xRadius: height / 2, yRadius: height / 2).fill()
         (text as NSString).draw(
-            in: NSRect(x: chip.minX + 7, y: chip.minY + 2, width: chip.width - 14, height: 14),
+            in: NSRect(x: tag.minX + 6, y: tag.midY - size.height / 2, width: tag.width - 12, height: size.height),
             withAttributes: attributes.merging([.paragraphStyle: Self.truncatingStyle]) { $1 }
         )
     }
 
-    private func drawRemoveButton(in frame: NSRect) {
-        let rect = Self.removeButtonRect(in: frame)
-        NSColor.black.withAlphaComponent(0.55).setFill()
-        NSBezierPath(ovalIn: rect).fill()
-        let cross = NSBezierPath()
-        let inset: CGFloat = 7
-        cross.move(to: NSPoint(x: rect.minX + inset, y: rect.minY + inset))
-        cross.line(to: NSPoint(x: rect.maxX - inset, y: rect.maxY - inset))
-        cross.move(to: NSPoint(x: rect.maxX - inset, y: rect.minY + inset))
-        cross.line(to: NSPoint(x: rect.minX + inset, y: rect.maxY - inset))
-        cross.lineWidth = 1.6
-        cross.lineCapStyle = .round
-        NSColor.white.setStroke()
-        cross.stroke()
+    /// A small icon-only button: glass-like over a picture, plain at the end of a file row.
+    private func drawRemoveButton(in rect: NSRect, onPicture: Bool) {
+        if onPicture {
+            Self.scrimColor.setFill()
+            NSBezierPath(ovalIn: rect).fill()
+        }
+        drawSymbol("xmark", size: TFControlSize.small.iconSize, color: onPicture ? .white : Palette.textTertiary,
+                   centeredIn: rect)
+    }
+
+    private func drawSymbol(_ name: String, size: CGFloat, color: NSColor, centeredIn rect: NSRect) {
+        let configuration = NSImage.SymbolConfiguration(pointSize: size, weight: .semibold)
+            .applying(NSImage.SymbolConfiguration(paletteColors: [color]))
+        guard let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+            .withSymbolConfiguration(configuration) else { return }
+        let target = NSRect(x: rect.midX - image.size.width / 2, y: rect.midY - image.size.height / 2,
+                            width: image.size.width, height: image.size.height)
+        image.draw(in: target, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
     }
 
     // MARK: - Helpers
 
-    private static let wrappingStyle: NSParagraphStyle = {
+    private static let centeredWrappingStyle: NSParagraphStyle = {
         let style = NSMutableParagraphStyle()
         style.lineBreakMode = .byWordWrapping
+        style.alignment = .center
         return style
     }()
 

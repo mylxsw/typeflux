@@ -75,6 +75,30 @@ struct FeedbackTextViewTests {
 
     // MARK: - Code
 
+    @Test func `the current link follows the selection`() {
+        let view = makeView("open the docs")
+        #expect(view.currentLinkURL == nil)
+        view.setSelectedRange(NSRange(location: 9, length: 4))
+        #expect(view.currentLinkURL == nil)
+        view.applyLink(URL(string: "https://example.com/docs"))
+        #expect(view.currentLinkURL == URL(string: "https://example.com/docs"))
+        view.setSelectedRange(NSRange(location: 0, length: 4))
+        #expect(view.currentLinkURL == nil)
+    }
+
+    @Test func `the link entry opens only for selected text`() {
+        let view = makeView("text")
+        let state = FeedbackToolbarState()
+        state.requestLinkEntry(in: nil)
+        #expect(!state.isLinkEntryPresented)
+        view.setSelectedRange(NSRange(location: 4, length: 0))
+        state.requestLinkEntry(in: view)
+        #expect(!state.isLinkEntryPresented)
+        view.setSelectedRange(NSRange(location: 0, length: 4))
+        state.requestLinkEntry(in: view)
+        #expect(state.isLinkEntryPresented)
+    }
+
     @Test func `code is inline on one line and a block across lines`() {
         let view = makeView("one two\nthree")
         view.setSelectedRange(NSRange(location: 4, length: 3))

@@ -119,6 +119,11 @@ final class FeedbackWindowModel: ObservableObject {
         return L("feedback.status.rules")
     }
 
+    /// The status line names a failed or oversized attachment rather than the rules.
+    var isStatusLineWarning: Bool {
+        attachments.contains(where: \.state.isError)
+    }
+
     var attachmentCountText: String {
         "\(attachments.count)/\(FeedbackAttachmentPolicy.maxAttachmentCount)"
     }

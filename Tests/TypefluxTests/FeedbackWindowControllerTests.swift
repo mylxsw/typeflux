@@ -30,7 +30,10 @@ struct FeedbackWindowControllerTests {
             #expect(window.level == .normal)
             #expect(window.contentMinSize == FeedbackWindowView.minimumSize)
             #expect(window.contentView != nil)
-            try await UI.wait { UI.contains(L("feedback.direct.intro"), in: window.contentView!) }
+            // The pane header reads its title and subtitle as one combined label.
+            try await UI.wait {
+                UI.elements(in: window.contentView!).contains { $0.label.contains(L("feedback.direct.intro")) }
+            }
             #expect(UI.contains(L("feedback.attachment.add"), in: window.contentView!))
             #expect(UI.contains(L("feedback.direct.submit"), in: window.contentView!))
             #expect(UI.contains("me@example.com", in: window.contentView!))

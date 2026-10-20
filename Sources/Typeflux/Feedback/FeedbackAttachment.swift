@@ -23,6 +23,14 @@ enum FeedbackAttachmentState: Equatable {
         }
     }
 
+    /// Failed or refused: shown in red and blocking the submission until removed or retried.
+    var isError: Bool {
+        switch self {
+        case .failed, .rejected: true
+        case .preparing, .uploading, .uploaded: false
+        }
+    }
+
     var isBlockingSubmit: Bool {
         switch self {
         case .uploaded: false

@@ -70,8 +70,6 @@
 
 "feedback.direct.title" = "문제 피드백";
 "feedback.direct.contentPlaceholder" = "무슨 일이 있었는지, 어떻게 개선되면 좋을지 적어 주세요.\n⌘V로 스크린샷을 붙여 넣거나 파일을 여기로 끌어다 놓을 수 있습니다.";
-"feedback.direct.contactLabel" = "연락처(선택 사항)";
-"feedback.direct.contactPlaceholder" = "이메일 또는 기타 연락처";
 "feedback.direct.submit" = "제출";
 "feedback.error.emptyContent" = "피드백 내용을 입력하세요.";
 "feedback.error.invalidImage" = "이 이미지를 읽을 수 없습니다.";
@@ -6105,9 +6103,6 @@
 "feedback.status.rejected" = "제한을 넘은 첨부를 제거하면 제출할 수 있습니다.";
 "feedback.draft.restored" = "제출하지 않은 내용을 복원했습니다.";
 "feedback.draft.clear" = "지우고 다시 쓰기";
-"feedback.footer.other" = "다른 방법:";
-"feedback.footer.email" = "이메일";
-"feedback.footer.github" = "GitHub Issue";
 "feedback.success.title" = "피드백을 보냈습니다. 감사합니다";
 "feedback.success.replyTo" = "%@(으)로 답변드리겠습니다.";
 "feedback.success.another" = "하나 더 쓰기";
@@ -6122,3 +6117,10 @@
 "feedback.editor.link" = "링크 (⌘K)";
 "feedback.editor.link.title" = "링크 추가";
 "feedback.editor.link.message" = "http 또는 https 주소를 입력하세요. 비워 두면 링크를 제거합니다.";
+"feedback.footer.otherMenu" = "다른 문의 방법";
+"feedback.direct.contactField" = "연락처";
+"feedback.direct.contactFieldPlaceholder" = "이메일 또는 기타 연락처(선택)";
+"feedback.direct.submitHelp" = "제출(⌘↩)";
+"feedback.attachment.addHelp" = "이미지, 동영상, txt / log / md / docx";
+"feedback.attachment.screenshotHelp" = "창을 숨기고 화면 영역 캡처";
+"feedback.editor.link.apply" = "추가";

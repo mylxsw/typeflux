@@ -85,6 +85,13 @@ extension FeedbackTextView {
 
     // MARK: - Links
 
+    /// The link on the selected text, so the link entry can show and edit it.
+    var currentLinkURL: URL? {
+        let range = selectedRange()
+        guard range.length > 0, let storage = textStorage, range.location < storage.length else { return nil }
+        return storage.attribute(.link, at: range.location, effectiveRange: nil) as? URL
+    }
+
     func applyLink(_ url: URL?) {
         let range = selectedRange()
         guard range.length > 0, let storage = textStorage else { return }

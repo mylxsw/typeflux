@@ -70,8 +70,6 @@
 
 "feedback.direct.title" = "問題回饋";
 "feedback.direct.contentPlaceholder" = "寫下發生了什麼，或你希望怎麼改進。\n可以用 ⌘V 貼上截圖，或把檔案拖到這裡。";
-"feedback.direct.contactLabel" = "聯絡方式（選填）";
-"feedback.direct.contactPlaceholder" = "電子郵件或其他聯絡方式";
 "feedback.direct.submit" = "提交";
 "feedback.error.emptyContent" = "請輸入回饋內容。";
 "feedback.error.invalidImage" = "無法讀取這張圖片。";
@@ -6146,9 +6144,6 @@
 "feedback.status.rejected" = "請移除超出限制的附件後再提交。";
 "feedback.draft.restored" = "已恢復上次未提交的內容。";
 "feedback.draft.clear" = "清空重寫";
-"feedback.footer.other" = "其他方式：";
-"feedback.footer.email" = "寄電子郵件";
-"feedback.footer.github" = "GitHub Issue";
 "feedback.success.title" = "回饋已提交，謝謝";
 "feedback.success.replyTo" = "我們會透過 %@ 回覆你。";
 "feedback.success.another" = "再寫一則";
@@ -6163,3 +6158,10 @@
 "feedback.editor.link" = "連結 (⌘K)";
 "feedback.editor.link.title" = "新增連結";
 "feedback.editor.link.message" = "輸入 http 或 https 位址；留空則移除連結。";
+"feedback.footer.otherMenu" = "其他回饋方式";
+"feedback.direct.contactField" = "聯絡方式";
+"feedback.direct.contactFieldPlaceholder" = "電子郵件或其他聯絡方式（選填）";
+"feedback.direct.submitHelp" = "提交（⌘↩）";
+"feedback.attachment.addHelp" = "圖片、影片、txt / log / md / docx";
+"feedback.attachment.screenshotHelp" = "隱藏視窗，擷取螢幕區域";
+"feedback.editor.link.apply" = "新增";

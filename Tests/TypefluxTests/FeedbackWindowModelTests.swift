@@ -200,10 +200,12 @@ struct FeedbackWindowModelTests {
         }
         #expect(!fixture.model.canSubmit)
         #expect(fixture.model.statusLine == L("feedback.status.rejected"))
+        #expect(fixture.model.isStatusLineWarning)
         let id = fixture.model.attachments[0].id
         fixture.model.remove(id: id)
         #expect(fixture.model.attachments.isEmpty && fixture.textView.attachmentIDs.isEmpty)
         #expect(fixture.model.canSubmit)
+        #expect(!fixture.model.isStatusLineWarning)
     }
 
     @Test func `an oversized compressed image is rejected`() async throws {
@@ -234,6 +236,7 @@ struct FeedbackWindowModelTests {
             }
         }
         #expect(fixture.model.statusLine.contains("a.log"))
+        #expect(fixture.model.isStatusLineWarning)
         #expect(!fixture.model.canSubmit)
 
         fixture.services.uploadError = nil

@@ -11,6 +11,8 @@ final class FeedbackWindowController: NSObject, NSWindowDelegate {
     let model: FeedbackWindowModel
     private(set) var window: NSWindow?
     private var settingsStore: SettingsStore?
+    /// Follows Settings › Interface Style, like the notebook and usage guide windows.
+    private lazy var interfaceStyleObserver = InterfaceStyleObserver(settings: settingsStore ?? SettingsStore())
     private var isCapturing = false
     private let captureRegion: () async -> Data?
 
@@ -44,6 +46,8 @@ final class FeedbackWindowController: NSObject, NSWindowDelegate {
         applyAppearance(to: window)
         DockVisibilityController.shared.windowDidShow(window)
         window.makeKeyAndOrderFront(nil)
+        // AppKit can recalculate content limits when the unified toolbar first attaches.
+        window.contentMinSize = FeedbackWindowView.minimumSize
         NSApp.activate(ignoringOtherApps: true)
         model.editor.focus()
     }
@@ -70,21 +74,34 @@ final class FeedbackWindowController: NSObject, NSWindowDelegate {
     private func makeWindow() -> NSWindow {
         let window = NSWindow(
             contentRect: NSRect(origin: .zero, size: FeedbackWindowView.defaultSize),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
+        // Translucent like the notebook window, so Liquid Glass shows the desktop behind it.
+        window.isOpaque = false
+        window.backgroundColor = .clear
         window.title = L("feedback.direct.title")
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        // An empty unified toolbar gives the title bar the 52pt height of the other windows.
+        window.toolbar = NSToolbar(identifier: "ai.gulu.app.typeflux.feedback.toolbar")
+        window.toolbarStyle = .unified
+        window.titlebarSeparatorStyle = .none
         window.identifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.feedback")
         window.isReleasedWhenClosed = false
         window.delegate = self
-        window.contentMinSize = FeedbackWindowView.minimumSize
         let root = FeedbackWindowView(
             model: model,
             onClose: { [weak self] in self?.close() },
             onCaptureScreenshot: { [weak self] in self?.captureScreenshot() }
         )
-        window.contentView = NSHostingView(rootView: root)
+        .interfaceStyle(following: interfaceStyleObserver)
+        let hosting = TransparentAskHostingView(rootView: AnyView(root))
+        // The window owns its minimum, like the word book window; the view must not add the title bar inset.
+        hosting.sizingOptions = []
+        window.contentView = hosting
+        window.contentMinSize = FeedbackWindowView.minimumSize
         if !window.setFrameUsingName(Self.frameAutosaveName) {
             window.setContentSize(FeedbackWindowView.defaultSize)
             window.center()

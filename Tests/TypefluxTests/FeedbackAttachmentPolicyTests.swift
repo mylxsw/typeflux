@@ -97,7 +97,10 @@ struct FeedbackAttachmentPolicyTests {
     @Test func `every language defines the feedback strings`() {
         let keys = [
             "feedback.direct.intro", "feedback.attachment.add", "feedback.attachment.error.tooLarge",
-            "feedback.status.rules", "feedback.success.title", "feedback.editor.link.title", "feedback.footer.other"
+            "feedback.status.rules", "feedback.success.title", "feedback.editor.link.title",
+            "feedback.footer.otherMenu", "feedback.direct.contactField", "feedback.direct.contactFieldPlaceholder",
+            "feedback.direct.submitHelp", "feedback.attachment.addHelp", "feedback.attachment.screenshotHelp",
+            "feedback.editor.link.apply"
         ]
         for language in AppLanguage.allCases {
             for key in keys {

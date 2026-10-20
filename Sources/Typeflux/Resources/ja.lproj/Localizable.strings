@@ -70,8 +70,6 @@
 
 "feedback.direct.title" = "フィードバック";
 "feedback.direct.contentPlaceholder" = "何が起きたか、どう改善したいかを書いてください。\n⌘V でスクリーンショットを貼り付けるか、ファイルをここにドラッグできます。";
-"feedback.direct.contactLabel" = "連絡先（任意）";
-"feedback.direct.contactPlaceholder" = "メールアドレスまたは連絡先";
 "feedback.direct.submit" = "送信";
 "feedback.error.emptyContent" = "フィードバック内容を入力してください。";
 "feedback.error.invalidImage" = "この画像を読み込めません。";
@@ -6105,9 +6103,6 @@
 "feedback.status.rejected" = "上限を超えた添付を削除すると送信できます。";
 "feedback.draft.restored" = "送信していない内容を復元しました。";
 "feedback.draft.clear" = "消して書き直す";
-"feedback.footer.other" = "その他の方法：";
-"feedback.footer.email" = "メール";
-"feedback.footer.github" = "GitHub Issue";
 "feedback.success.title" = "フィードバックを送信しました。ありがとうございます";
 "feedback.success.replyTo" = "%@ にご返信します。";
 "feedback.success.another" = "もう1件書く";
@@ -6122,3 +6117,10 @@
 "feedback.editor.link" = "リンク (⌘K)";
 "feedback.editor.link.title" = "リンクを追加";
 "feedback.editor.link.message" = "http または https のアドレスを入力してください。空にするとリンクを削除します。";
+"feedback.footer.otherMenu" = "その他の連絡方法";
+"feedback.direct.contactField" = "連絡先";
+"feedback.direct.contactFieldPlaceholder" = "メールアドレスまたは連絡先（任意）";
+"feedback.direct.submitHelp" = "送信（⌘↩）";
+"feedback.attachment.addHelp" = "画像、動画、txt / log / md / docx";
+"feedback.attachment.screenshotHelp" = "ウインドウを隠して画面の一部をキャプチャ";
+"feedback.editor.link.apply" = "追加";
