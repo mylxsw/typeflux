@@ -166,15 +166,15 @@ struct AskUsagePanel: View {
         return options
     }
 
-    /// Leads with the answer to "will the next message still fit", not with a
-    /// percentage. The bar shows used input against what is left.
+    /// Unused context is shared by future input, reasoning and replies.
+    /// A budget reservation is future work, not context already consumed.
     private func contextCard(_ context: AskContextUsage) -> some View {
         card {
             cardLabel(L("ask.usage.remaining")) {
-                Text(L(context.capacity == nil ? "ask.usage.capacityUnknown"
+                Text(L(context.remaining == nil ? "ask.usage.capacityUnknown"
                        : context.isHigh ? "ask.usage.high" : "ask.usage.available"))
                     .font(.system(size: 10.5, weight: .medium))
-                    .foregroundStyle(context.isHigh ? StudioTheme.warning : StudioTheme.success)
+                    .foregroundStyle(context.remaining == nil ? StudioTheme.textSecondary : context.isHigh ? StudioTheme.warning : StudioTheme.success)
             }
             figure(context.remaining.map { "≈ " + AccountUsageDisplayFormatter.count(Int64($0)) } ?? "—",
                    unit: "tokens")
@@ -192,6 +192,7 @@ struct AskUsagePanel: View {
                 }
                 Spacer(minLength: 0)
             }
+            help("ask.usage.contextShared")
             if context.summarized { help("ask.usage.summarized") }
             if context.isHigh { help("ask.usage.highHelp") }
         }

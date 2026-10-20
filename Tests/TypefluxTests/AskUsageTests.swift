@@ -95,15 +95,34 @@ struct AskUsageTests {
 
     @Test func contextReserveAndUnknownCapacity() {
         var context = AskContextUsage(modelRef: "cloud:daily", inputTokens: 31_200, outputReserve: 8192, capacity: 128_000, summarized: false)
-        #expect(context.remaining == 88_608)
+        #expect(context.remaining == 96_800)
         #expect(context.fraction == 0.24375)
         #expect(!context.isHigh)
         context.inputTokens = 123_000
         #expect(context.isHigh)
-        #expect(context.remaining == 0)
+        #expect(context.remaining == 5000)
         context.capacity = nil
         #expect(context.fraction == nil)
         #expect(context.remaining == nil)
+    }
+
+    @Test func outputReservationDoesNotConsumeRemainingContext() {
+        var context = AskContextUsage(modelRef: "cloud:auto", inputTokens: 23_700,
+                                      outputReserve: 180_844, capacity: 204_800, summarized: false)
+        #expect(context.remaining == 181_100)
+        #expect(!context.isHigh)
+        context.outputReserve = 0
+        #expect(context.remaining == 181_100)
+        context.outputReserve = 204_800
+        #expect(context.remaining == 181_100)
+        context.inputTokens = 204_544
+        #expect(context.remaining == 256)
+        #expect(context.isHigh)
+        context.inputTokens = 205_000
+        #expect(context.remaining == 0)
+        #expect(context.isHigh)
+        context.capacity = 0
+        #expect(context.remaining == nil && context.fraction == nil && !context.isHigh)
     }
 
     @Test func usageOnlyUpdatesSurviveSSEAndCache() async throws {

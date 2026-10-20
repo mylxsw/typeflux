@@ -1,3 +1,5 @@
+import AppKit
+import SwiftUI
 import Foundation
 import Testing
 @testable import Typeflux
@@ -110,5 +112,34 @@ struct AskUsageDetailsTests {
         await fixture.api.seed(value)
         await fixture.model.select(value.id, reload: true)
         #expect(fixture.model.hasUsageRecords)
+    }
+    @Test func contextCardRendersNormalNearFullAndUnknownCapacity() async throws {
+        _ = NSApplication.shared
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        let reference = fixture.model.modelReference(launcher: false)
+        for (index, values) in [(23_700, Optional(204_800)), (204_544, Optional(204_800)), (23_700, nil)].enumerated() {
+            let (input, capacity) = values
+            var value = AskConversation(id: "context-card-\(index)", title: "Synthetic", revision: 1,
+                                        updatedAt: Date(), messages: [])
+            value.contextUsage = .init(modelRef: reference, inputTokens: input, outputReserve: 180_844,
+                                       capacity: capacity, summarized: false)
+            await fixture.api.seed(value)
+            await fixture.model.select(value.id, reload: true)
+            let context = try #require(fixture.model.usageContext)
+            #expect(context.remaining == capacity.map { $0 - input })
+            let host = NSHostingView(rootView: AskUsagePanel(model: fixture.model, runId: .constant(nil), close: {})
+                .frame(width: 420, height: 600))
+            let window = NSWindow(contentRect: NSRect(x: -10000, y: -10000, width: 420, height: 600),
+                                  styleMask: [.borderless], backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.contentView = host
+            defer { window.close() }
+            host.frame = NSRect(x: 0, y: 0, width: 420, height: 600)
+            host.layoutSubtreeIfNeeded()
+            let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            #expect(bitmap.pixelsWide > 0 && bitmap.pixelsHigh > 0)
+        }
     }
 }

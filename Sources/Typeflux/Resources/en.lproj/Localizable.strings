@@ -1916,11 +1916,11 @@
 "ask.usage.high" = "Near limit";
 "ask.usage.available" = "Space available";
 "ask.usage.inputEstimate" = "Estimated input";
-"ask.usage.reserve" = "Output reserve";
+"ask.usage.reserve" = "Output budget reserve";
 "ask.usage.capacity" = "Model capacity";
-"ask.usage.remaining" = "Remaining input space";
+"ask.usage.remaining" = "Remaining context space";
 "ask.usage.summarized" = "Earlier context was summarized. Original messages remain available; summary calls count toward usage.";
-"ask.usage.highHelp" = "Insufficient output reserve. The next request will attempt summarization; if still too large, reduce input or start a new conversation.";
+"ask.usage.highHelp" = "Context is nearly full. More input, reasoning or output may require summarization. Reduce attachments or start a new conversation if needed.";
 "ask.usage.estimated" = "Includes estimated usage; actual token counts may differ.";
 "ask.usage.cachedHelp" = "Cached input tokens are billed by Typeflux Cloud at 1/10 of the input rate.";
 "ask.usage.scopeHelp" = "Includes answers, tool decisions and summaries. Repeated history counts again on each request.";
@@ -6257,3 +6257,5 @@
 "ask.quickAsk.hint" = "↵ Ask · ⇧↵ New line · ⌘O Open in Chat";
 "ask.quickAsk.advanced" = "Open in Chat to use attachments, skills, or tools.";
 "ask.settings.keywords.kind.quickAsk.hint" = "Ask in the launcher and continue in Chat.";
+
+"ask.usage.contextShared" = "Unused context is shared by future input, reasoning and replies. The output reserve is a budget estimate, not context already used.";

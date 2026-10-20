@@ -1916,11 +1916,11 @@
 "ask.usage.high" = "接近上限";
 "ask.usage.available" = "空间充足";
 "ask.usage.inputEstimate" = "预计输入";
-"ask.usage.reserve" = "输出预留";
+"ask.usage.reserve" = "输出预算预留";
 "ask.usage.capacity" = "模型容量";
-"ask.usage.remaining" = "剩余输入空间";
+"ask.usage.remaining" = "剩余上下文空间";
 "ask.usage.summarized" = "较早内容已摘要，原始记录仍可查看；摘要调用计入消耗。";
-"ask.usage.highHelp" = "输出预留空间不足，下次发送将尝试摘要；仍超限时需缩减输入或新建对话。";
+"ask.usage.highHelp" = "上下文接近上限，更多输入、思考或回复可能需要摘要。必要时减少附件或新建对话。";
 "ask.usage.estimated" = "包含估算用量，实际 token 可能不同。";
 "ask.usage.cachedHelp" = "命中缓存的输入 token 在 Typeflux Cloud 按输入价格的 1/10 计费。";
 "ask.usage.scopeHelp" = "包含回答、工具决策与摘要。每次重复发送的历史都会再次计入输入。";
@@ -6257,3 +6257,5 @@
 "ask.quickAsk.hint" = "↵ 提问 · ⇧↵ 换行 · ⌘O 在聊天中打开";
 "ask.quickAsk.advanced" = "请在聊天中使用附件、技能或工具。";
 "ask.settings.keywords.kind.quickAsk.hint" = "在启动器中提问和查看回答，进入聊天继续追问。";
+
+"ask.usage.contextShared" = "剩余上下文由后续输入、思考和回复共享。输出预留是预算估计，不是已消耗的上下文。";

@@ -1906,11 +1906,11 @@
 "ask.usage.high" = "上限に近づいています";
 "ask.usage.available" = "空き容量あり";
 "ask.usage.inputEstimate" = "推定入力";
-"ask.usage.reserve" = "出力予約枠";
+"ask.usage.reserve" = "出力予算の予約量";
 "ask.usage.capacity" = "モデル容量";
-"ask.usage.remaining" = "残りの入力容量";
+"ask.usage.remaining" = "残りのコンテキスト容量";
 "ask.usage.summarized" = "以前の内容は要約済みです。元の記録は引き続き閲覧でき、要約呼び出しも使用量に含まれます。";
-"ask.usage.highHelp" = "出力予約枠が不足しています。次回送信時に要約を試みます。上限を超える場合は入力を減らすか新しい会話を開始してください。";
+"ask.usage.highHelp" = "コンテキストが上限に近づいています。追加入力・思考・回答には要約が必要になる場合があります。必要に応じて添付を減らすか、新しい会話を開始してください。";
 "ask.usage.estimated" = "推定使用量を含みます。実際の token 数は異なる場合があります。";
 "ask.usage.cachedHelp" = "キャッシュされた入力トークンは Typeflux Cloud で入力料金の 1/10 で課金されます。";
 "ask.usage.scopeHelp" = "回答、ツール判断、要約を含みます。再送した履歴は毎回入力に計上されます。";
@@ -6139,3 +6139,5 @@
 "ask.quickAsk.hint" = "↵ 質問 · ⇧↵ 改行 · ⌘O チャットで開く";
 "ask.quickAsk.advanced" = "添付ファイル、スキル、ツールはチャットで使用してください。";
 "ask.settings.keywords.kind.quickAsk.hint" = "ランチャーで質問し、チャットで会話を続けます。";
+
+"ask.usage.contextShared" = "残りのコンテキストは次の入力・思考・回答で共有されます。出力予約量は予算の見積もりで、使用済みの容量ではありません。";

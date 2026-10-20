@@ -113,9 +113,9 @@ struct AskContextUsage: Codable, Equatable, Sendable {
     var summarized: Bool
     var estimated: Bool? = nil
     var trimmed: Bool? = nil
-    var remaining: Int? { capacity.flatMap { $0 > 0 ? max(0, $0 - inputTokens - outputReserve) : nil } }
+    var remaining: Int? { capacity.flatMap { $0 > 0 ? max(0, $0 - max(0, inputTokens)) : nil } }
     var fraction: Double? { capacity.flatMap { $0 > 0 ? Double(inputTokens) / Double($0) : nil } }
-    var isHigh: Bool { remaining == 0 }
+    var isHigh: Bool { fraction.map { $0 >= 0.9 } ?? false }
 }
 
 struct AskUsageInvocation: Codable, Equatable, Identifiable, Sendable {
