@@ -319,6 +319,10 @@ final class ScreenshotOverlayTests: XCTestCase {
         let bitmap = try XCTUnwrap(chrome.bitmapImageRepForCachingDisplay(in: chrome.bounds))
         chrome.cacheDisplay(in: chrome.bounds, to: bitmap)
         let scale = CGFloat(bitmap.pixelsWide) / chrome.bounds.width
+        let selectionEdge = try XCTUnwrap(bitmap.colorAt(x: Int(19 * scale), y: Int(100 * scale)))
+        XCTAssertGreaterThan(selectionEdge.redComponent, 0.9)
+        XCTAssertGreaterThan(selectionEdge.greenComponent, 0.9)
+        XCTAssertGreaterThan(selectionEdge.blueComponent, 0.9)
         // The loupe's dark body is drawn where it was placed.
         XCTAssertGreaterThan(bitmap.colorAt(x: Int(200 * scale), y: Int(130 * scale))?.alphaComponent ?? 0, 0.5)
 
@@ -326,7 +330,10 @@ final class ScreenshotOverlayTests: XCTestCase {
         let hovered = try XCTUnwrap(chrome.bitmapImageRepForCachingDisplay(in: chrome.bounds))
         chrome.cacheDisplay(in: chrome.bounds, to: hovered)
         // The hovered window's outline, and nothing in the middle of it.
-        XCTAssertGreaterThan(hovered.colorAt(x: Int(11 * scale), y: Int(35 * scale))?.alphaComponent ?? 0, 0.5)
+        let hoveredEdge = try XCTUnwrap(hovered.colorAt(x: Int(11 * scale), y: Int(35 * scale)))
+        XCTAssertGreaterThan(hoveredEdge.redComponent, 0.9)
+        XCTAssertGreaterThan(hoveredEdge.greenComponent, 0.9)
+        XCTAssertGreaterThan(hoveredEdge.blueComponent, 0.9)
         XCTAssertEqual(hovered.colorAt(x: Int(35 * scale), y: Int(50 * scale))?.alphaComponent ?? 1, 0)
     }
 

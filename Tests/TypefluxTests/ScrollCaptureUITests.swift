@@ -260,6 +260,14 @@ final class ScrollCaptureUITests: XCTestCase {
             view.cacheDisplay(in: view.bounds, to: bitmap)
             XCTAssertEqual(try XCTUnwrap(bitmap.colorAt(x: 0, y: 0)).alphaComponent, 1, accuracy: 0.01)
         }
+        let outline = ScrollCaptureOutlineView(frame: CGRect(x: 0, y: 0, width: 20, height: 20))
+        let bitmap = try XCTUnwrap(outline.bitmapImageRepForCachingDisplay(in: outline.bounds))
+        outline.cacheDisplay(in: outline.bounds, to: bitmap)
+        let scale = CGFloat(bitmap.pixelsWide) / outline.bounds.width
+        let edge = try XCTUnwrap(bitmap.colorAt(x: Int(scale), y: Int(10 * scale)))
+        XCTAssertGreaterThan(edge.redComponent, 0.9)
+        XCTAssertGreaterThan(edge.greenComponent, 0.9)
+        XCTAssertGreaterThan(edge.blueComponent, 0.9)
     }
 
     // MARK: Driver

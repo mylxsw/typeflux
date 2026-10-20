@@ -27,6 +27,7 @@ final class ScreenshotOverlayChromeView: NSView {
     }
 
     static let accent = NSColor(srgbRed: 0x2F / 255, green: 0x8C / 255, blue: 0xFF / 255, alpha: 1)
+    static let frameColor = NSColor.white
     static let handleSize: CGFloat = 8
     static let pillHeight: CGFloat = 22
 
@@ -48,20 +49,25 @@ final class ScreenshotOverlayChromeView: NSView {
         guard let context = NSGraphicsContext.current?.cgContext else { return }
         if let pointer = model.pointer { drawGuides(through: pointer, in: context) }
         if let hovered = model.hovered {
-            context.setStrokeColor(Self.accent.cgColor)
-            context.setLineWidth(3)
-            context.stroke(hovered.insetBy(dx: 1.5, dy: 1.5))
+            drawFrame(hovered.insetBy(dx: 1.5, dy: 1.5), width: 3, in: context)
         }
         if let selection = model.selection {
-            context.setStrokeColor(Self.accent.cgColor)
-            context.setLineWidth(1.5)
-            context.stroke(selection.insetBy(dx: -0.75, dy: -0.75))
+            drawFrame(selection.insetBy(dx: -0.75, dy: -0.75), width: 1.5, in: context)
             if model.handles { drawHandles(around: selection, in: context) }
         }
         if let label = model.sizeLabel, let frame = Self.sizeLabelFrame(for: model, in: bounds) {
             drawPill(label, in: frame)
         }
         if let loupe = model.loupe { drawLoupe(loupe, in: context) }
+    }
+
+    private func drawFrame(_ rect: CGRect, width: CGFloat, in context: CGContext) {
+        context.setStrokeColor(NSColor.black.withAlphaComponent(0.65).cgColor)
+        context.setLineWidth(width + 2)
+        context.stroke(rect)
+        context.setStrokeColor(Self.frameColor.cgColor)
+        context.setLineWidth(width)
+        context.stroke(rect)
     }
 
     /// Only the moving guides span the display. The frame, label and loupe invalidate

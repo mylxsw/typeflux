@@ -134,7 +134,7 @@ enum ScreenshotSnapshotSupport {
         context.fill(CGRect(x: 0, y: 0, width: width, height: height))
         let region = CGRect(x: margin, y: margin, width: screenSize.width, height: screenSize.height)
         ScreenshotRenderer.drawImage(marked, in: region, context: context)
-        context.setStrokeColor(ScreenshotOverlayChromeView.accent.cgColor)
+        context.setStrokeColor(ScreenshotOverlayChromeView.frameColor.cgColor)
         context.setLineWidth(1.5)
         context.stroke(region)
         extra?(context)

@@ -21,9 +21,12 @@ final class ScrollCaptureFillView: NSView {
 /// The region's outline; lets every event through to the app under it.
 final class ScrollCaptureOutlineView: NSView {
     override func draw(_ dirtyRect: NSRect) {
-        ScreenshotOverlayChromeView.accent.setStroke()
         let path = NSBezierPath(rect: bounds.insetBy(dx: ScrollCaptureLayout.outlineWidth / 2,
                                                      dy: ScrollCaptureLayout.outlineWidth / 2))
+        NSColor.black.withAlphaComponent(0.65).setStroke()
+        path.lineWidth = ScrollCaptureLayout.outlineWidth + 2
+        path.stroke()
+        ScreenshotOverlayChromeView.frameColor.setStroke()
         path.lineWidth = ScrollCaptureLayout.outlineWidth
         path.stroke()
     }
