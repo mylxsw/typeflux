@@ -125,10 +125,10 @@ struct VoiceCapsuleCopyTests {
             func action(_ title: String, _ style: OverlayFailureAction.Style) -> OverlayFailureAction {
                 OverlayFailureAction(title: title, isRetry: false, style: style, handler: {})
             }
-            // Nothing to do: only the dismiss key.
+            // A failure without actions has no footer hint.
             let plain = OverlayFailureFooterLayout(actions: [])
             #expect(plain.linkIndex == nil && plain.pillIndices.isEmpty)
-            #expect(plain.hint == "Esc to close")
+            #expect(plain.hint == nil)
             // One action: Return runs it, so the hint names it.
             let retry = OverlayFailureFooterLayout(actions: [action("Retry", .primary)])
             #expect(retry.pillIndices == [0] && retry.hint == "⏎ Retry · Esc to close")
@@ -206,7 +206,8 @@ struct VoiceCapsuleCopyTests {
                 )
                 let view = NSHostingView(rootView: card)
                 #expect(abs(view.fittingSize.width - OverlayFailureCard.width) < 0.5)
-                #expect(view.fittingSize.height > 90 && view.fittingSize.height < 200)
+                let height = view.fittingSize.height
+                #expect(height > (actionCount == 0 ? 70 : 90) && height < 200)
                 view.frame = NSRect(origin: .zero, size: view.fittingSize)
                 view.layoutSubtreeIfNeeded()
                 let bitmap = try #require(view.bitmapImageRepForCachingDisplay(in: view.bounds))

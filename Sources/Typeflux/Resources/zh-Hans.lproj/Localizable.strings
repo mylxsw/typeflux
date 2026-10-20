@@ -382,7 +382,6 @@
 "overlay.processing.thinking" = "思考中";
 "overlay.failure.title" = "处理失败";
 "overlay.failure.hint.primary" = "⏎ %@ · Esc 关闭";
-"overlay.failure.hint.dismiss" = "Esc 关闭";
 "overlay.timeout.title" = "处理超时";
 "overlay.timeout.message" = "处理时间超过 %d 秒，请重试。";
 "overlay.notice.title" = "提示";

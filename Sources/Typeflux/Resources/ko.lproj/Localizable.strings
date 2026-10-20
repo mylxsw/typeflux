@@ -378,7 +378,6 @@
 "overlay.processing.thinking" = "생각 중";
 "overlay.failure.title" = "처리 실패";
 "overlay.failure.hint.primary" = "⏎ %@ · Esc로 닫기";
-"overlay.failure.hint.dismiss" = "Esc로 닫기";
 "overlay.timeout.title" = "처리 시간이 초과되었습니다.";
 "overlay.timeout.message" = "처리하는 데 %d초 이상이 걸렸습니다. 다시 시도해 주세요.";
 "overlay.notice.title" = "공지사항";

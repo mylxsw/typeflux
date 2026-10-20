@@ -382,7 +382,6 @@
 "overlay.processing.thinking" = "Thinking";
 "overlay.failure.title" = "Processing failed";
 "overlay.failure.hint.primary" = "⏎ %@ · Esc to close";
-"overlay.failure.hint.dismiss" = "Esc to close";
 "overlay.timeout.title" = "Processing timed out";
 "overlay.timeout.message" = "Processing took longer than %d seconds. Please try again.";
 "overlay.notice.title" = "Notice";

@@ -378,7 +378,6 @@
 "overlay.processing.thinking" = "思考中";
 "overlay.failure.title" = "処理に失敗しました";
 "overlay.failure.hint.primary" = "⏎ %@ · Esc で閉じる";
-"overlay.failure.hint.dismiss" = "Esc で閉じる";
 "overlay.timeout.title" = "処理がタイムアウトしました";
 "overlay.timeout.message" = "処理に %d 秒以上かかりました。もう一度試してください。";
 "overlay.notice.title" = "お知らせ";

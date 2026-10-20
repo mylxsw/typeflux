@@ -42,7 +42,7 @@ struct OverlayFailureCountdown: Equatable {
 
 /// Where each failure action goes in the footer: the first text action becomes a link on the left,
 /// the others become pills with the primary ones last. With room to spare the left side reminds
-/// the user of the keys instead.
+/// the user of the action key instead.
 struct OverlayFailureFooterLayout: Equatable {
     var linkIndex: Int?
     var pillIndices: [Int]
@@ -60,7 +60,7 @@ struct OverlayFailureFooterLayout: Equatable {
             // Return runs the first action (`OverlayController.handleKeyCode`).
             hint = L("overlay.failure.hint.primary", first.title)
         } else {
-            hint = L("overlay.failure.hint.dismiss")
+            hint = nil
         }
     }
 }
@@ -112,12 +112,15 @@ struct OverlayFailureCard: View {
             .padding(.leading, 46)
             .padding(.trailing, 18)
             .padding(.top, 8)
+            .padding(.bottom, actions.isEmpty ? 12 : 0)
 
-            OverlayFailureFooter(actions: actions, onAction: onAction)
-                .frame(minHeight: 26)
-                .padding(.leading, 46)
-                .padding(.trailing, 12)
-                .padding(.vertical, 12)
+            if !actions.isEmpty {
+                OverlayFailureFooter(actions: actions, onAction: onAction)
+                    .frame(minHeight: 26)
+                    .padding(.leading, 46)
+                    .padding(.trailing, 12)
+                    .padding(.vertical, 12)
+            }
         }
         .frame(width: Self.width, alignment: .leading)
         .background(
