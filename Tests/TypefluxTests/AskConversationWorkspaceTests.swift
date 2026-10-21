@@ -29,6 +29,82 @@ struct AskConversationWorkspaceTests {
         #expect(records.contains { $0.originalPath == source.path })
     }
 
+    @Test func namesByChatStartAndCreatesOnlyNeededDirectories() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = AskConversationWorkspaceStore(rootURL: root)
+        let date = try #require(ISO8601DateFormatter().date(from: "2026-10-20T05:06:07Z"))
+        let id = UUID().uuidString
+        var chat = AskConversation(id: id, title: "Chat", revision: 1, updatedAt: date.addingTimeInterval(86400),
+            messages: [.init(id: "first", role: "user", text: "Hello", createdAt: date)])
+        try await store.saveConversation(chat, owner: "owner")
+        let folder = store.url(owner: "owner", conversationId: id)
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd/HHmmss"
+        #expect(folder.path.hasSuffix(formatter.string(from: date) + "-" + id.lowercased()))
+        #expect(try FileManager.default.contentsOfDirectory(atPath: folder.path) == [".typeflux"])
+        try await store.captureInputs([], image: nil, messageId: "empty", owner: "owner", conversationId: id)
+        #expect(!FileManager.default.fileExists(atPath: folder.appendingPathComponent("inputs").path))
+        let output = try await store.saveOutput(Data([1]), name: "a.png", owner: "owner", conversationId: id)
+        #expect(output.deletingLastPathComponent().lastPathComponent == "outputs")
+        #expect(!FileManager.default.fileExists(atPath: folder.appendingPathComponent("work").path))
+        chat.updatedAt = Date()
+        chat.revision += 1
+        try await store.saveConversation(chat, owner: "owner")
+        let reopened = AskConversationWorkspaceStore(rootURL: root)
+        #expect(try await reopened.ensure(owner: "owner", conversationId: id) == folder)
+        let other = try await reopened.ensure(owner: "another-owner", conversationId: id, createdAt: date)
+        #expect(other != folder)
+    }
+
+    @Test func migratesLegacyWorkspaceAndPreservesNonemptyFolders() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = AskConversationWorkspaceStore(rootURL: root)
+        let id = UUID().uuidString.lowercased()
+        let account = String(AskToolPolicy.digest("owner").dropFirst(7).prefix(16))
+        let legacy = root.appendingPathComponent(account).appendingPathComponent(id)
+        let secure = try AskSecureDirectory.openRoot(legacy)
+        for name in ["inputs", "outputs", "work", ".typeflux"] {
+            _ = try secure.child(name, create: true, privateDirectory: true)
+        }
+        try Data("keep".utf8).write(to: legacy.appendingPathComponent("inputs/original.txt"))
+        let date = Date(timeIntervalSince1970: 1700000000)
+        let chat = AskConversation(id: id, title: "Old", revision: 1, updatedAt: Date(),
+            messages: [.init(id: "first", role: "user", text: "Hello", createdAt: date)])
+        try AskCoding.encoder().encode(chat).write(to: legacy.appendingPathComponent(".typeflux/conversation.json"))
+        let migrated = try await store.ensure(owner: "owner", conversationId: id)
+        #expect(!FileManager.default.fileExists(atPath: legacy.path))
+        #expect(try Data(contentsOf: migrated.appendingPathComponent("inputs/original.txt")) == Data("keep".utf8))
+        #expect(!FileManager.default.fileExists(atPath: migrated.appendingPathComponent("outputs").path))
+        #expect(!FileManager.default.fileExists(atPath: migrated.appendingPathComponent("work").path))
+        #expect(store.url(owner: "owner", conversationId: id) == migrated)
+        try await store.discard(owner: "owner", conversationId: id)
+        #expect(!FileManager.default.fileExists(atPath: migrated.path))
+    }
+
+    @Test func migrationNeverOverwritesAConflictingDestination() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = AskConversationWorkspaceStore(rootURL: root)
+        let id = UUID().uuidString.lowercased()
+        let date = Date(timeIntervalSince1970: 1700000000)
+        let destination = try await store.ensure(owner: "owner", conversationId: id, createdAt: date)
+        try Data("new".utf8).write(to: destination.appendingPathComponent("new.txt"))
+        let legacy = destination.deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent(id)
+        _ = try AskSecureDirectory.openRoot(legacy)
+        try Data("old".utf8).write(to: legacy.appendingPathComponent("old.txt"))
+        let reopened = AskConversationWorkspaceStore(rootURL: root)
+        await #expect(throws: (any Error).self) {
+            try await reopened.ensure(owner: "owner", conversationId: id, createdAt: date)
+        }
+        #expect(try Data(contentsOf: legacy.appendingPathComponent("old.txt")) == Data("old".utf8))
+        #expect(try Data(contentsOf: destination.appendingPathComponent("new.txt")) == Data("new".utf8))
+    }
+
     @Test func draftSourcePathDoesNotReachTheModelRequest() throws {
         var draft = AskDraft()
         draft.attachments = [AskAttachment(kind: .file, name: "secret.txt", text: "safe",
@@ -45,6 +121,7 @@ struct AskConversationWorkspaceTests {
         defer { try? FileManager.default.removeItem(at: root) }
         let store = AskConversationWorkspaceStore(rootURL: root)
         let folder = try await store.ensure(owner: "owner", conversationId: "chat")
+        try FileManager.default.createDirectory(at: folder.appendingPathComponent("work"), withIntermediateDirectories: true)
         let userFile = folder.appendingPathComponent("work/user-notes.txt")
         try Data("keep this".utf8).write(to: userFile)
         let generated = try await store.saveOutput(Data([1, 2, 3]), name: "diagram.png",
@@ -62,6 +139,7 @@ struct AskConversationWorkspaceTests {
         let ordinary = try await store.ensure(owner: "owner", conversationId: "ordinary")
         let external = root.appendingPathComponent("external.txt")
         try Data("keep".utf8).write(to: external)
+        try FileManager.default.createDirectory(at: temporary.appendingPathComponent("work"), withIntermediateDirectories: true)
         try FileManager.default.createSymbolicLink(at: temporary.appendingPathComponent("work/external.txt"),
                                                     withDestinationURL: external)
 
@@ -78,8 +156,9 @@ struct AskConversationWorkspaceTests {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("ask-command-workspace-" + UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let result = try await AskHostCommand().run(command: "pwd", timeout: 5, workingDirectory: directory)
+        let result = try await AskHostCommand().run(command: "pwd; mktemp", timeout: 5, workingDirectory: directory)
         #expect(!result.isError)
         #expect(result.content.contains(directory.path))
+        #expect(FileManager.default.fileExists(atPath: directory.appendingPathComponent(".typeflux/tmp").path))
     }
 }

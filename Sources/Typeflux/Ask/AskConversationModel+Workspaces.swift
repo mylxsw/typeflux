@@ -12,7 +12,6 @@ extension AskConversationModel {
     @discardableResult
     func syncWorkspace(_ id: String, requireFresh: Bool = false) async throws -> URL? {
         guard let workspaces, let route = credentials(for: id) else { return nil }
-        let directory = try await workspaces.ensure(owner: route.account, conversationId: id)
         var snapshot: AskConversation?
         if requireFresh {
             snapshot = try await api.conversation(id: id, token: route.token)
@@ -22,13 +21,13 @@ extension AskConversationModel {
             if snapshot == nil { snapshot = try await api.conversation(id: id, token: route.token) }
         }
         if let snapshot {
+            try await workspaces.saveConversation(snapshot, owner: route.account)
             for message in snapshot.messages where message.role == "user" {
                 try await workspaces.captureInputs(message.attachments ?? [], image: message.image,
                                                    messageId: message.id, owner: route.account,
                                                    conversationId: id)
             }
-            try await workspaces.saveConversation(snapshot, owner: route.account)
         }
-        return directory
+        return try await workspaces.ensure(owner: route.account, conversationId: id)
     }
 }

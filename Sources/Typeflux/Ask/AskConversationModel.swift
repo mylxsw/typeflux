@@ -1229,10 +1229,10 @@ final class AskConversationModel: ObservableObject {
             defer { monitor.cancel() }
             do {
                 if let workspaces {
+                    try await workspaces.saveConversation(value, owner: current.account)
                     try await workspaces.captureInputs(submitted.attachments ?? [], image: request.image,
                                                        messageId: messageId, owner: current.account,
                                                        conversationId: id)
-                    try await workspaces.saveConversation(value, owner: current.account)
                 }
                 try await cache.save(value, owner: current.owner)
                 if inline, quickAsk?.conversationId == id { quickAsk?.persisted = true }

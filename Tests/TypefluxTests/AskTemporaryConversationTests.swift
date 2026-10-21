@@ -152,6 +152,7 @@ struct AskTemporaryConversationTests {
         defer { fixture.model.resetSession() }
         let id = try await startTemporary(fixture)
         let folder = try await workspaces.ensure(owner: fixture.sessionState.owner, conversationId: id)
+        try FileManager.default.createDirectory(at: folder.appendingPathComponent("work"), withIntermediateDirectories: true)
         try Data("temporary".utf8).write(to: folder.appendingPathComponent("work/notes.txt"))
         fixture.model.confirmTemporaryLeave = { .init(choice: .end) }
         await fixture.api.seed(.init(id: "other", title: "Other", revision: 1, updatedAt: Date(), messages: []))

@@ -45,6 +45,11 @@ struct AskHostCommand: Sendable {
     }
 
     func run(command: String, timeout: Int, workingDirectory: URL? = nil) async throws -> AskLocalToolOutput {
+        if let workingDirectory {
+            _ = try AskSecureDirectory.openRoot(workingDirectory, privateRoot: false)
+                .child(".typeflux", create: true, privateDirectory: true)
+                .child("tmp", create: true, privateDirectory: true)
+        }
         let home = NSHomeDirectory()
         let directory = open(workingDirectory?.path ?? home, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
         guard directory >= 0 else { throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno)) }
