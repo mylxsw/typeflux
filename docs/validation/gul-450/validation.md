@@ -53,3 +53,42 @@ Passed both parameters in **80.60 s** total wall time, including rebuild/discove
 Correction-only changed executable-line coverage is **32/32 (100%)**, relative to PR head `fbbcc0c4`, intersecting added/modified production lines with counted non-gap LLVM segments. This is line coverage, not branch coverage or project-wide coverage. The initial failed test command left raw profiles instead of `default.profdata`; these were merged manually with `xcrun llvm-profdata merge -sparse` and exported before the test-only fix. The failed attempt to copy nonexistent default.profdata was preparation only and ran no tests. Both initial and retry profiles/LLVM exports are preserved, avoiding counter-layout mismatch from merging changed test functions. The production file was identical across both runs. See `review/changed-coverage.json` and the new issue evidence attachment for raw logs, profiles and timing.
 
 `git diff --check` passed. Existing compiler warnings are retained in raw logs. External services/adapters and GitHub CI results remain unclaimed; no CI wait or merge was performed.
+
+
+## Pre-admission Stop correction (2026-10-21)
+
+This section supersedes the previous correction's admission-only ownership rule. The architecture owner's first-submission reproduction is retained as `acceptanceStopBeforeRunAdmission` and passes. Go PR #153 is accepted and merged; this correction updates Swift PR #690 only.
+
+Local ownership is registered synchronously with Task creation for model preflight, Send, Retry, Regenerate and credit Resume. It records the account and original optional run, keyed by the conversation's operation generation, separately from its admitted run scope. Stop cancels matching owned work and revokes approvals immediately even with a nil run or suspended preparation/dispatch. Project-tool cancellation requires an admitted matching scope. Pre-admission cancellation does not fetch a new run to cancel remotely. Pending request evidence remains available when dispatch outcome is unknown.
+
+Admission, response handling and operation-owned observers validate cancellation and generation; a late response cannot enter drive, overwrite a replacement operation or start recovery/model/tool work. The latest generation remains after task completion to fence delayed Stop responses; active ownership/run scopes clear on completion, replacement, temporary discard and session reset. Quick Ask delegates both its optimistic-conversation and preflight Stop paths through the same ownership checks. Existing account/run/binding checks still gate remote cancellation. Local Task cancellation never reports remote success.
+
+Final self-review found a further suspension window inside `accept`: cache/workspace persistence could finish after cancellation and publish the old response. Added cancellation and optional operation validation before acceptance and after persistence, with a deterministic gated-cache regression. That test deliberately lets the cache ignore cancellation until released and verifies that the response is not published. All affected driver and observer acceptance calls carry their operation generation.
+
+### Local commands and results
+
+```sh
+make coverage SUITE="AskAgentBindingInteractionTests AskConversationTests AskScopedApprovalTests AskRecoveryInteractionTests AskQuickAskTests AskModelSelectionTests"
+```
+
+**97 methods in six suites passed**, no skips. Total command wall **570.04 s**, including first-use dependency checkout/build (**529.83 s**), discovery, execution and coverage rendering. Swift Testing execution: 9.219 s. New parameterized cases cover preflight/preparation/send cancellation without releasing the gate, same-turn Retry/Regenerate/Resume, account/operation replacement and Quick Ask. Existing admitted-run, unsupported-run, suspended-read, approval and recovery cases also passed. Initial correction coverage was 89/105 (84.76%), so only uncovered command callers were supplemented:
+
+```sh
+make coverage FILTER="AskRegenerateTests/(regenerateReplacesTheAnswerInsteadOfAskingAgain|regenerateSurfacesFailuresWithoutLosingTheAnswer)|AskCreditPauseTests/(continueResumesThePinnedRunAndFinishesIt|stillEmptyBalanceKeepsThePauseAndRefreshesTheAccount|otherResumeFailuresAreReported)|AskTemporaryConversationTests/endingFromTheHeaderNeedsNoConfirmation"
+```
+
+**Six methods passed**, no skips, **44.84 s** wall including reusable-build verification (**27.60 s**); test execution 0.187 s. Coverage reached 101/105 before the final persistence correction. After that code/test change, only the affected cancellation/conversation scope and direct Quick Ask Stop caller were revalidated:
+
+```sh
+make coverage FILTER="AskAgentBindingInteractionTests|AskConversationTests|AskQuickAskTests/stopDelegatesBeforeRunAdmission"
+```
+
+**37 methods in three suites passed**, no skips, **285.21 s** wall including incremental rebuild (**246.25 s**); test execution 4.396 s. No failed tests or failed build/runner attempts in this correction. The final persistence test passed in 0.124 s. No full unit/UI execution, external model/tool services, GitHub CI wait or merge.
+
+### Final changed-code coverage and limits
+
+**110/115 = 95.65%**, relative to `313c80e8b125ba94d79c2c223f475b91bcd80dda`. Denominator: unique counted LLVM LCOV DA lines intersected with added/modified production Swift lines; tests/resources excluded. This includes executable delimiters LLVM reports and is line coverage, not branch or project-wide coverage. Initial, supplement and final profiles are merged against the final binary. The new `accept` signature is covered by the final pass only; unchanged function counter layouts are reused, with no merge diagnostics. Raw per-pass profiles/exports and final merged LCOV/JSON, binary/source hashes, command logs, timings and correction patch are attached to the issue. See `pre-admission/changed-coverage.json` for the exact denominator and counts.
+
+Uncovered changed lines: legacy nil-run Resume reconstruction's pre-send check; the new operation argument on drive's budget-expiry acceptance; registerOperation's takeover of an existing preflight reservation. The replacement regressions exercise completed/reset operation generations and late Stop fencing, rather than that reservation-takeover branch. These paths were self-reviewed but are not claimed tested by this correction. Actual external remote cancellation/completion, network transport abort guarantees, full UI behavior and alternate engines remain unverified. A transport that ignores cancellation may return later; the tests verify cancellation is observed before gate release and the late result cannot continue the cancelled operation.
+
+Deep self-review checked the complete submission-to-drive chain, nil-run/unsupported/mismatched run boundaries, owner and operation fencing after awaits, grants/approval release, observer admission, late errors, pending-request evidence, scope cleanup, actor isolation and documentation. Fixed the persistence-window issue found during this review and verified it with the gated-cache regression. No new dependency, permission, localization string, screen or broad process cancellation. `git diff --check` passed. Architecture and final acceptance remain with Arch/GPT-Astra.

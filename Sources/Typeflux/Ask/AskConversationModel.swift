@@ -408,6 +408,12 @@ final class AskConversationModel: ObservableObject {
     var titleRetryAfter: [String: Date] = [:]
     private var operations: [String: Task<Void, Never>] = [:]
     private var operationIds: [String: UUID] = [:]
+    private var operationGenerations: [String: UUID] = [:]
+    private struct OperationOwner {
+        let account: String
+        let initialRunId: String?
+    }
+    private var operationOwners: [UUID: OperationOwner] = [:]
     private var operationRuns: [UUID: AskProjectScope] = [:]
     private var approvals: [String: CheckedContinuation<String?, Never>] = [:]
     private var approvalRequests: [String: (id: UUID, request: AskApprovalRequest)] = [:]
@@ -618,7 +624,7 @@ final class AskConversationModel: ObservableObject {
         historyErrorTask?.cancel(); historyRefreshError = nil
         pullRefreshID = nil; isRefreshingHistory = false
         titleTasks.values.forEach { $0.cancel() }; titleTasks = [:]; titleRetryAfter = [:]
-        operations.values.forEach { $0.cancel() }; operations = [:]; operationIds = [:]; operationRuns = [:]
+        operations.values.forEach { $0.cancel() }; operations = [:]; operationIds = [:]; operationGenerations = [:]; operationRuns = [:]; operationOwners = [:]
         submissionPreflights = [:]; submissionIssues = [:]
         approvals.values.forEach { $0.resume(returning: nil) }; approvals = [:]; approvalRequests = [:]; approvalStore.reset()
         inferenceUsage = [:]
@@ -1102,7 +1108,7 @@ final class AskConversationModel: ObservableObject {
         let generation = selectionGeneration
         let operationId = UUID()
         submissionPreflights[launcher] = operationId
-        busyIds.insert(id); operationIds[id] = operationId
+        busyIds.insert(id); registerOperation(id, operationId: operationId, account: account.account)
         operations[id] = Task { [weak self] in
             guard let self else { return }
             var handled = false
@@ -1116,6 +1122,7 @@ final class AskConversationModel: ObservableObject {
                 finishOperation(id, operationId: operationId)
             }
             do {
+                try checkOperation(id, operationId: operationId, account: account.account)
                 try await validateModel(reference, token: token, hasImage: hasImage)
                 try Task.checkCancellation()
                 guard owner == account.account, session()?.owner == account.account else { return }
@@ -1126,7 +1133,8 @@ final class AskConversationModel: ObservableObject {
                 submitValidated(submitted, modelRef: reference, local: local, newConversation: newConversation, messageId: queuedId,
                                 clearsDraft: clearsDraft, launcher: launcher, temporary: temporary, recoveryCheck: recoveryCheck, quickAskGeneration: quickAskGeneration)
             } catch is CancellationError {} catch {
-                guard owner == account.account, session()?.owner == account.account,
+                guard !Task.isCancelled, operationIds[id] == operationId,
+                      owner == account.account, session()?.owner == account.account,
                       quickAskGeneration.map({ self.quickAsk?.generation == $0 }) ?? (selectionGeneration == generation) else { return }
                 let issue = modelSelectionIssue(reference, cloudAvailable: !token.isEmpty, hasImage: hasImage)
                     ?? AskSubmissionIssue(text: error.localizedDescription, offersModels: true)
@@ -1223,13 +1231,14 @@ final class AskConversationModel: ObservableObject {
         // A queued message sending on its own must not bring the window forward.
         if clearsDraft && !inline { onShowConversation?() }
         persistDrafts()
-        let operationId = UUID(); operationIds[id] = operationId
+        let operationId = UUID(); registerOperation(id, operationId: operationId, account: current.account)
         operations[id] = Task { [weak self] in
             guard let self else { return }
             defer { finishOperation(id, operationId: operationId) }
-            let monitor = monitorConversation(id: id, current: current)
+            let monitor = monitorConversation(id: id, current: current, operationId: operationId)
             defer { monitor.cancel() }
             do {
+                try checkOperation(id, operationId: operationId, account: current.account)
                 if let workspaces {
                     try await workspaces.captureInputs(submitted.attachments ?? [], image: request.image,
                                                        messageId: messageId, owner: current.account,
@@ -1241,10 +1250,11 @@ final class AskConversationModel: ObservableObject {
                 var request = request
                 let offered = inline ? [] : Self.offeredTools(await tools.definitions(conversationId: id), temporary: temporaryRun)
                 request.tools = inline ? [] : recoveryCheck ? Self.recoveryObservationTools(offered) : offered
-                try Task.checkCancellation()
+                try checkOperation(id, operationId: operationId, account: current.account)
                 request.memory = request.memory?.usable(owner: current.account, invalidations: memoryInvalidations)
                 pendingSends[id] = request
                 let response = try await api.send(conversationId: id, request: request, token: current.token)
+                try checkOperation(id, operationId: operationId, account: current.account)
                 pendingSends[id] = nil
                 if recoveryCheck, response.run?.recoveryCheck != true {
                     if let run = response.run, run.isActive {
@@ -1252,8 +1262,11 @@ final class AskConversationModel: ObservableObject {
                     }
                     throw AskLocalError.message(L("ask.recovery.readOnlyUnavailable"))
                 }
-                try await drive(response, current: current, screenshotConsentMessageID: submitted.includeScreenshot ? messageId : nil, allowsTools: !inline)
-            } catch is CancellationError {} catch { await reportOperationError(error, id: id, owner: current.account) }
+                try await drive(response, current: current, operationId: operationId, screenshotConsentMessageID: submitted.includeScreenshot ? messageId : nil, allowsTools: !inline)
+            } catch is CancellationError {} catch {
+                guard !Task.isCancelled, operationIds[id] == operationId else { return }
+                await reportOperationError(error, id: id, owner: current.account)
+            }
         }
     }
 
@@ -1264,6 +1277,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     private func validateModel(_ reference: String?, token: String, hasImage: Bool = false) async throws {
+        try Task.checkCancellation()
         let reference = reference ?? "cloud:default"
         if token.isEmpty, reference.hasPrefix("cloud:") {
             throw AskSubmissionIssue(text: L("ask.local.modelRequired"), offersModels: true, offersSignIn: !isSignedIn)
@@ -1309,12 +1323,13 @@ final class AskConversationModel: ObservableObject {
             if let target = imageRecoveryTarget { recoveringImages[id] = target }
         }
         busyIds.insert(id); submissionIssues[false] = nil; error = nil; operationErrors[id] = nil
-        let operationId = UUID(); operationIds[id] = operationId
+        let operationId = UUID(); registerOperation(id, operationId: operationId, account: current.account)
         operations[id] = Task { [weak self] in
             guard let self else { return }; defer { finishOperation(id, operationId: operationId) }
-            let monitor = monitorConversation(id: id, current: current)
+            let monitor = monitorConversation(id: id, current: current, operationId: operationId)
             defer { monitor.cancel() }
             do {
+                try checkOperation(id, operationId: operationId, account: current.account)
                 _ = await tools.definitions(conversationId: id)
                 let response: AskConversation
                 if var request = pendingSends[id] {
@@ -1323,7 +1338,9 @@ final class AskConversationModel: ObservableObject {
                         hasImage: request.sendsImage || value.messages.contains(where: { $0.hasImage })
                     )
                     request.memory = request.memory?.usable(owner: current.account, invalidations: memoryInvalidations)
+                    try checkOperation(id, operationId: operationId, account: current.account)
                     response = try await api.send(conversationId: id, request: request, token: current.token)
+                    try checkOperation(id, operationId: operationId, account: current.account)
                     pendingSends[id] = nil
                     if request.recoveryCheck == true, response.run?.recoveryCheck != true {
                         if let run = response.run, run.isActive {
@@ -1341,19 +1358,25 @@ final class AskConversationModel: ObservableObject {
                         request.modelRef, token: current.token,
                         hasImage: request.sendsImage || value.messages.contains(where: { $0.hasImage })
                     )
+                    try checkOperation(id, operationId: operationId, account: current.account)
                     response = try await api.send(conversationId: id, request: request, token: current.token)
                 } else if let run = value.run, ["failed", "cancelled"].contains(run.status) {
                     try await validateModel(
                         retryModelRef, token: current.token,
                         hasImage: value.messages.contains(where: { $0.hasImage })
                     )
+                    try checkOperation(id, operationId: operationId, account: current.account)
                     response = try await api.retry(conversationId: id, runId: run.id, deviceId: deviceId, modelRef: retryModelRef,
                                                    maxSteps: modelLibrary.settings.askAgentMaxSteps, token: current.token)
                 } else {
+                    try checkOperation(id, operationId: operationId, account: current.account)
                     response = try await api.conversation(id: id, token: current.token)
                 }
-                try await drive(response, current: current, screenshotConsentMessageID: screenshotConsent[id])
-            } catch is CancellationError {} catch { await reportOperationError(error, id: id, owner: current.account) }
+                try await drive(response, current: current, operationId: operationId, screenshotConsentMessageID: screenshotConsent[id])
+            } catch is CancellationError {} catch {
+                guard !Task.isCancelled, operationIds[id] == operationId else { return }
+                await reportOperationError(error, id: id, owner: current.account)
+            }
         }
     }
 
@@ -1366,19 +1389,23 @@ final class AskConversationModel: ObservableObject {
         selectionObservation?.cancel(); selectionObservation = nil
         let id = value.id
         busyIds.insert(id); submissionIssues[false] = nil; error = nil; operationErrors[id] = nil; creditPauseDetails[id] = nil
-        let operationId = UUID(); operationIds[id] = operationId
+        let operationId = UUID(); registerOperation(id, operationId: operationId, account: current.account)
         operations[id] = Task { [weak self] in
             guard let self else { return }; defer { finishOperation(id, operationId: operationId) }
-            let monitor = monitorConversation(id: id, current: current)
+            let monitor = monitorConversation(id: id, current: current, operationId: operationId)
             defer { monitor.cancel() }
             do {
+                try checkOperation(id, operationId: operationId, account: current.account)
                 let response = try await api.resume(conversationId: id, runId: run.id, token: current.token)
-                try await drive(response, current: current, screenshotConsentMessageID: screenshotConsent[id])
+                try await drive(response, current: current, operationId: operationId, screenshotConsentMessageID: screenshotConsent[id])
             } catch is CancellationError {} catch let exhausted as CloudCreditsExhaustedError {
-                guard owner == current.account else { return }
+                guard !Task.isCancelled, operationIds[id] == operationId, owner == current.account else { return }
                 creditPauseDetails[id] = exhausted.details ?? CloudCreditsExhaustedDetails()
                 onCreditsExhausted?()
-            } catch { await reportOperationError(error, id: id, owner: current.account) }
+            } catch {
+                guard !Task.isCancelled, operationIds[id] == operationId else { return }
+                await reportOperationError(error, id: id, owner: current.account)
+            }
         }
     }
 
@@ -1413,13 +1440,14 @@ final class AskConversationModel: ObservableObject {
         let id = value.id
         let modelRef = modelReference(launcher: false)
         busyIds.insert(id); submissionIssues[false] = nil; error = nil; operationErrors[id] = nil
-        let operationId = UUID(); operationIds[id] = operationId
+        let operationId = UUID(); registerOperation(id, operationId: operationId, account: current.account)
         operations[id] = Task { [weak self] in
             guard let self else { return }
             defer { finishOperation(id, operationId: operationId) }
-            let monitor = monitorConversation(id: id, current: current)
+            let monitor = monitorConversation(id: id, current: current, operationId: operationId)
             defer { monitor.cancel() }
             do {
+                try checkOperation(id, operationId: operationId, account: current.account)
                 let definitions = await tools.definitions(conversationId: id)
                 try await validateModel(
                     modelRef, token: current.token,
@@ -1428,9 +1456,13 @@ final class AskConversationModel: ObservableObject {
                 let request = AskRegenerateRequest(maxSteps: modelLibrary.settings.askAgentMaxSteps,
                                                    clientToolApproval: true, messageId: messageId, deviceId: deviceId,
                                                    modelRef: modelRef, tools: definitions)
+                try checkOperation(id, operationId: operationId, account: current.account)
                 let response = try await api.regenerate(conversationId: id, request: request, token: current.token)
-                try await drive(response, current: current, screenshotConsentMessageID: screenshotConsent[id])
-            } catch is CancellationError {} catch { await reportOperationError(error, id: id, owner: current.account) }
+                try await drive(response, current: current, operationId: operationId, screenshotConsentMessageID: screenshotConsent[id])
+            } catch is CancellationError {} catch {
+                guard !Task.isCancelled, operationIds[id] == operationId else { return }
+                await reportOperationError(error, id: id, owner: current.account)
+            }
         }
     }
 
@@ -1446,8 +1478,9 @@ final class AskConversationModel: ObservableObject {
         return value
     }
 
-    func accept(_ value: AskConversation, route: AskRoute) async throws {
+    func accept(_ value: AskConversation, route: AskRoute, operationId: UUID? = nil) async throws {
         try Task.checkCancellation()
+        if let operationId { try checkOperation(value.id, operationId: operationId, account: route.account) }
         guard owner == route.account, session()?.owner == route.account,
               !deletedConversationIDs.contains(value.id) else { throw CancellationError() }
         if let previous = snapshots[value.id], !value.isNewer(than: previous) { return }
@@ -1464,7 +1497,9 @@ final class AskConversationModel: ObservableObject {
                 catch { ErrorLogStore.shared.log("Ask workspace conversation save failed: \(error.localizedDescription)") }
             }
         }
-        guard owner == route.account else { throw CancellationError() }
+        try Task.checkCancellation()
+        if let operationId { try checkOperation(value.id, operationId: operationId, account: route.account) }
+        guard owner == route.account, session()?.owner == route.account else { throw CancellationError() }
         // Recheck after the cache write: another delivery or optimistic send
         // may have advanced the state while this task was suspended.
         if let latest = snapshots[value.id], !value.isNewer(than: latest) { return }
@@ -1497,18 +1532,21 @@ final class AskConversationModel: ObservableObject {
         } else { conversations.insert(summary, at: 0) }
     }
 
-    private func drive(_ initial: AskConversation, current: AskRoute,
+    private func drive(_ initial: AskConversation, current: AskRoute, operationId: UUID,
                        screenshotConsentMessageID: String?, allowsTools: Bool = true) async throws {
+        try checkOperation(initial.id, operationId: operationId, account: current.account)
         defer {
-            if Task.isCancelled, let run = initial.run,
-               (try? AskAgentBinding.resolve((snapshots[initial.id] ?? initial).run?.agentBinding)) != nil {
-                tools.cancelProjectRun(.init(ownerId: current.account, conversationId: initial.id, runId: run.id))
+            if Task.isCancelled, let scope = operationRuns[operationId],
+               owner == scope.ownerId, session()?.owner == scope.ownerId,
+               operationGenerations[initial.id] == operationId, snapshots[initial.id]?.run?.id == scope.runId,
+               (try? AskAgentBinding.resolve(snapshots[initial.id]?.run?.agentBinding)) != nil {
+                tools.cancelProjectRun(scope)
             }
         }
         var value = initial
         while true {
             value = sanitizedMemory(value, account: current.account, local: current.token.isEmpty)
-            try await accept(value, route: current)
+            try await accept(value, route: current, operationId: operationId)
             value = sanitizedMemory(value, account: current.account, local: current.token.isEmpty)
             // A monitor can have advanced while this response was in flight.
             if let latest = snapshots[value.id] { value = latest }
@@ -1518,7 +1556,8 @@ final class AskConversationModel: ObservableObject {
                 throw AskLocalError.message(L("ask.tool.otherDevice"))
             }
             _ = try AskAgentBinding.resolve(run.agentBinding)
-            if run.deviceId == deviceId, let operationId = operationIds[value.id] {
+            try checkOperation(value.id, operationId: operationId, account: current.account)
+            if run.deviceId == deviceId {
                 operationRuns[operationId] = .init(ownerId: current.account, conversationId: value.id, runId: run.id)
             }
             guard !run.needsRecoveryInspection else { throw AskRecoveryError.unknown }
@@ -1532,12 +1571,12 @@ final class AskConversationModel: ObservableObject {
             guard run.deviceId == deviceId else { throw AskLocalError.message(L("ask.tool.otherDevice")) }
             if run.budgetEnabled == true, let deadline = run.budgetDeadline, Date() >= deadline {
                 value = try await api.cancel(conversationId: value.id, runId: run.id, token: current.token)
-                try await accept(value, route: current)
+                try await accept(value, route: current, operationId: operationId)
                 throw AskLocalError.message(L("ask.budget.stopped", L("ask.budget.reason.duration")))
             }
             if !allowsTools, run.status == "waiting_tool" {
                 let stopped = try await api.cancel(conversationId: value.id, runId: run.id, token: current.token)
-                try await accept(stopped, route: current)
+                try await accept(stopped, route: current, operationId: operationId)
                 throw AskLocalError.message(L("ask.quickAsk.advanced"))
             }
             tools.bindExecution(ownerId: current.account, conversationId: value.id, runId: run.id)
@@ -1668,7 +1707,7 @@ final class AskConversationModel: ObservableObject {
                                                              outcome: .init(status: "denied")))
                 if cloudDefinition != nil { result?.approveExecution = false }
                 let latest = try await api.conversation(id: value.id, token: current.token)
-                try await accept(latest, route: current)
+                try await accept(latest, route: current, operationId: operationId)
                 guard snapshots[value.id]?.run?.id == run.id, snapshots[value.id]?.run?.status == "waiting_tool",
                       snapshots[value.id]?.run?.pending.first == call else {
                     approvalStore.revoke(conversation: value.id)
@@ -1864,30 +1903,41 @@ final class AskConversationModel: ObservableObject {
     }
 
     func stop(id: String? = nil) {
-        guard let id = id ?? selected?.id, let current = credentials(for: id) else { return }
-        guard let capturedRun = snapshots[id]?.run else { return }
+        let preflight = submissionPreflights[false] ?? submissionPreflights[true]
+        let preflightId = operationIds.first(where: { $0.value == preflight })?.key
+        guard let id = id ?? selected?.id ?? preflightId, let current = credentials(for: id) else { return }
+        let capturedRun = snapshots[id]?.run
         let operationId = operationIds[id]
-        // A captured handle belongs to this account and device. Interrupt host work
-        // immediately, even when the remote snapshot is unavailable or unsupported.
-        let scope = AskProjectScope(ownerId: current.account, conversationId: id, runId: capturedRun.id)
-        if capturedRun.deviceId == deviceId, let operationId, operationRuns[operationId] == scope,
+        let generation = operationGenerations[id]
+        let admittedScope = operationId.flatMap { operationRuns[$0] }
+        // Task ownership exists before a run is admitted. A snapshot alone never
+        // authorizes interruption of an unrelated or replacement operation.
+        if let operationId, let operationOwner = operationOwners[operationId],
+           operationOwner.account == current.account,
+           admittedScope.map({ $0.ownerId == current.account && $0.runId == capturedRun?.id
+               && capturedRun?.deviceId == deviceId }) ?? (operationOwner.initialRunId == capturedRun?.id),
            let operation = operations[id] {
             permissionModes[id] = .standard
             operation.cancel()
-            tools.cancelProjectRun(scope)
+            if let admittedScope { tools.cancelProjectRun(admittedScope) }
             approvalStore.revoke(conversation: id)
             approve(conversationId: id, allowed: false)
             if controllingConversationId == id { controllingConversationId = nil; onControlChanged?(false) }
+            // A command awaiting its response has no admitted remote run to stop.
+            // Keep pending request evidence: dispatch may already have succeeded.
+            if admittedScope == nil { return }
         }
+        guard let capturedRun else { return }
         Task {
             do {
                 let value = try await api.conversation(id: id, token: current.token)
                 guard owner == current.account, session()?.owner == current.account,
                       let run = value.run, run.id == capturedRun.id, run.deviceId == capturedRun.deviceId,
                       snapshots[id]?.run?.id == capturedRun.id,
-                      operationIds[id] == nil || operationIds[id] == operationId else { throw CancellationError() }
+                      operationGenerations[id] == generation else { throw CancellationError() }
                 _ = try AskAgentBinding.resolve(capturedRun.agentBinding)
                 _ = try AskAgentBinding.resolve(run.agentBinding)
+                guard operationId == nil || admittedScope?.runId == run.id else { throw CancellationError() }
                 var partial: AskInferenceResult?
                 if let inference = run.inference, inference.id == progressInferenceIDs[id],
                    let progress = inferenceProgress[id], run.deviceId == deviceId {
@@ -1897,11 +1947,12 @@ final class AskConversationModel: ObservableObject {
                 }
                 let stopped = try await api.cancel(conversationId: id, runId: run.id, partial: partial, token: current.token)
                 guard owner == current.account, session()?.owner == current.account,
-                      snapshots[id]?.run?.id == capturedRun.id else { return }
+                      snapshots[id]?.run?.id == capturedRun.id, operationGenerations[id] == generation else { return }
                 pendingSends[id] = nil
                 try await accept(stopped, route: current)
             } catch {
-                guard session()?.owner == current.account, snapshots[id]?.run?.id == capturedRun.id else { return }
+                guard session()?.owner == current.account, snapshots[id]?.run?.id == capturedRun.id,
+                      operationGenerations[id] == generation else { return }
                 await reportOperationError(error, id: id, owner: current.account)
             }
         }
@@ -1979,7 +2030,9 @@ final class AskConversationModel: ObservableObject {
         let id = temporary.id, route = account.temporary(cloud: temporary.cloud)
         let activeRun = snapshots[id]?.run.flatMap { $0.isActive ? $0.id : nil }
         temporaryConversation = nil
-        operations[id]?.cancel(); operations[id] = nil; operationIds[id] = nil
+        operations[id]?.cancel(); operations[id] = nil
+        if let operationId = operationIds[id] { operationRuns[operationId] = nil; operationOwners[operationId] = nil }
+        operationIds[id] = nil
         approvals[id]?.resume(returning: nil); approvals[id] = nil; approvalRequests[id] = nil
         approvalStore.revoke(conversation: id)
         busyIds.remove(id); pendingSends[id] = nil; pendingApprovals[id] = nil; operationErrors[id] = nil
@@ -2081,8 +2134,25 @@ final class AskConversationModel: ObservableObject {
         }
     }
 
+    private func registerOperation(_ id: String, operationId: UUID, account: String) {
+        if let previous = operationIds[id] {
+            operations[id]?.cancel()
+            operationOwners[previous] = nil; operationRuns[previous] = nil
+        }
+        operationIds[id] = operationId
+        operationGenerations[id] = operationId
+        operationOwners[operationId] = .init(account: account, initialRunId: snapshots[id]?.run?.id)
+    }
+
+    private func checkOperation(_ id: String, operationId: UUID, account: String) throws {
+        try Task.checkCancellation()
+        guard owner == account, session()?.owner == account,
+              operationIds[id] == operationId, operationOwners[operationId]?.account == account,
+              operations[id]?.isCancelled != true else { throw CancellationError() }
+    }
+
     private func finishOperation(_ id: String, operationId: UUID) {
-        operationRuns[operationId] = nil
+        operationRuns[operationId] = nil; operationOwners[operationId] = nil
         guard operationIds[id] == operationId else { return }
         operationIds[id] = nil
         busyIds.remove(id); operations[id] = nil; pendingApprovals[id] = nil
@@ -2102,20 +2172,21 @@ final class AskConversationModel: ObservableObject {
         inferenceProgress[id] = progress
     }
 
-    private func monitorConversation(id: String, current: AskRoute) -> Task<Void, Never> {
+    private func monitorConversation(id: String, current: AskRoute, operationId: UUID? = nil) -> Task<Void, Never> {
         Task { [weak self] in
             while !Task.isCancelled {
                 do {
                     guard let self, owner == current.account else { return }
+                    if let operationId { try checkOperation(id, operationId: operationId, account: current.account) }
                     try await api.observe(id: id, token: current.token) { [weak self] value in
                         guard let self else { throw CancellationError() }
-                        try await self.acceptObserved(value, current: current)
+                        try await self.acceptObserved(value, current: current, operationId: operationId)
                     }
                 } catch is CancellationError { return }
                 catch {
                     // Compatibility with an older server, and recovery after transport loss.
                     if let self, let value = try? await api.conversation(id: id, token: current.token) {
-                        try? await acceptObserved(value, current: current)
+                        try? await acceptObserved(value, current: current, operationId: operationId)
                     }
                 }
                 do { try await Task.sleep(for: .seconds(1)) } catch { return }
@@ -2123,10 +2194,11 @@ final class AskConversationModel: ObservableObject {
         }
     }
 
-    private func acceptObserved(_ value: AskConversation, current: AskRoute) async throws {
+    private func acceptObserved(_ value: AskConversation, current: AskRoute, operationId: UUID?) async throws {
+        if let operationId { try checkOperation(value.id, operationId: operationId, account: current.account) }
         guard owner == current.account else { throw CancellationError() }
         if let pending = pendingSends[value.id], !value.messages.contains(where: { $0.id == pending.id }) { return }
-        try await accept(value, route: current)
+        try await accept(value, route: current, operationId: operationId)
         if value.run?.isActive == false {
             approve(conversationId: value.id, allowed: false)
             throw CancellationError()
@@ -2361,7 +2433,7 @@ extension AskConversationModel {
             stop(id: id)
         } else if let operation = submissionPreflights[true],
                   let id = operationIds.first(where: { $0.value == operation })?.key {
-            operations[id]?.cancel()
+            stop(id: id)
             submissionPreflights[true] = nil
         }
     }

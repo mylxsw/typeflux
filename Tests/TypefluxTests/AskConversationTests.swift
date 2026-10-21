@@ -29,15 +29,20 @@ actor AskTestAPI: AskAPI {
     func setCloudTools(_ tools: [AskToolDefinition]) { cloudToolDefinitions = tools }
     var failReceipts = false
     func setFailReceipts(_ value: Bool) { failReceipts = value }
+    var beforeSend: (@Sendable () async -> Void)?
+    func setBeforeSend(_ action: (@Sendable () async -> Void)?) { beforeSend = action }
     var failSend = false
     var echoRecoveryCheck = true
     func setEchoRecoveryCheck(_ value: Bool) { echoRecoveryCheck = value }
     var failList = false
+    var beforeModels: (@Sendable () async -> Void)?
+    func setBeforeModels(_ action: (@Sendable () async -> Void)?) { beforeModels = action }
     var failModels = false
     var cloudModels: [AskCloudModel] = [.init(id: "default", name: "Typeflux Cloud")]
     func setCloudModels(_ values: [AskCloudModel]) { cloudModels = values }
     func setFailModels(_ value: Bool) { failModels = value }
     func models(token: String) async throws -> [AskCloudModel] {
+        await beforeModels?()
         if failModels { throw AskLocalError.message("Offline") }
         return cloudModels
     }
@@ -89,6 +94,7 @@ actor AskTestAPI: AskAPI {
     func send(conversationId: String, request: AskSendRequest, token: String) async throws -> AskConversation {
         if failSend { throw AskLocalError.message("Network unavailable") }
         sends.append(request)
+        await beforeSend?()
         if values[conversationId] == nil, request.temporary == true { temporaryIDs.insert(conversationId) }
         var value = values[conversationId] ?? AskConversation(id: conversationId, title: request.text, revision: 0, updatedAt: Date(), messages: [])
         if value.messages.contains(where: { $0.id == request.id }) { return value }
@@ -254,12 +260,14 @@ final class AskTestTools: AskToolExecuting {
     }
     var grantedFolders: [String: [String]] = [:]
     func grantFolders(_ paths: [String], conversationId: String) { grantedFolders[conversationId, default: []] += paths }
+    var beforeDefinitions: (() async -> Void)?
     var definitionRequests: [String?] = []
     func risk(of call: AskToolCall) -> AskToolRisk {
         call.function.name.hasPrefix("danger") ? .destructive : AskLocalTools.builtinRisk(call)
     }
     func definitions(conversationId: String?) async -> [AskToolDefinition] {
         definitionRequests.append(conversationId)
+        await beforeDefinitions?()
         return AskLocalTools.builtins
     }
     func execute(_ call: AskToolCall, conversationId: String) async throws -> AskLocalToolOutput {
@@ -312,12 +320,12 @@ struct AskTestFixture {
     init(authenticated: Bool = true, localOnly: Bool = false, modelLibrary: AskModelLibrary? = nil,
          approvalReuseEnabled: Bool = false, captureOverride: (any AskContextCapturing)? = nil,
          defaults: UserDefaults? = nil, automaticRecovery: Bool = false,
-         workspaces: AskConversationWorkspaceStore? = nil) throws {
+         workspaces: AskConversationWorkspaceStore? = nil, cacheOverride: (any AskCaching)? = nil) throws {
         root = FileManager.default.temporaryDirectory.appendingPathComponent("ask-tests-" + UUID().uuidString)
         cache = try AskConversationCache(url: root.appendingPathComponent("cache.sqlite"))
         // Signed in, calls route by token like the app: Cloud to `api`, this Mac to `localAPI`.
         let routed: any AskAPI = localOnly ? api : AskRoutedAPI(cloud: api, local: localAPI)
-        model = AskConversationModel(api: routed, cache: cache, tools: tools, workspaces: workspaces,
+        model = AskConversationModel(api: routed, cache: cacheOverride ?? cache, tools: tools, workspaces: workspaces,
                                      capture: captureOverride ?? capture,
                                      deviceId: "device", modelLibrary: modelLibrary ?? AskModelLibrary(defaults: UserDefaults(suiteName: "ask-library-test-" + UUID().uuidString)!, automaticallyLoadsCatalog: false),
                                      defaults: defaults ?? .standard,
