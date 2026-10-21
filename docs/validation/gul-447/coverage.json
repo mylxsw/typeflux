@@ -1,0 +1,14 @@
+[
+  {
+    "name": "ChatAppIcon.swift",
+    "coveredLines": 55,
+    "executableLines": 55,
+    "lineCoverage": 1
+  },
+  {
+    "name": "ChatAppIconView.swift",
+    "coveredLines": 150,
+    "executableLines": 162,
+    "lineCoverage": 0.9259259259259259
+  }
+]

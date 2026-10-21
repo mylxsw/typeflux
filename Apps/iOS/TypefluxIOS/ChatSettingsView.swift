@@ -12,6 +12,7 @@ struct ChatSettingsView: View {
     @State private var settingsOpenFailed = false
     @State private var confirmingSignOut = false
     @State private var cachedBytes = 0
+    @State private var appIcon = ChatAppIconController()
 
     /// The model new conversations start with; without a chosen default, the one picked for them.
     private var defaultModelName: String {
@@ -105,6 +106,22 @@ struct ChatSettingsView: View {
                                 appearanceChoices.padding(.horizontal, 16).padding(.bottom, 12)
                             }
                         }
+                        divider
+                        NavigationLink { ChatAppIconView(controller: appIcon) } label: {
+                            row(symbol: "app.fill", tint: ChatTheme.purple, title: "App icon") {
+                                HStack(spacing: 5) {
+                                    if let selected = appIcon.selected {
+                                        Image(selected.previewName).resizable().scaledToFit()
+                                            .frame(width: 28, height: 28)
+                                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                                            .accessibilityHidden(true)
+                                    }
+                                    chevron
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("settings.appIcon")
                         divider
                         Button(action: openSystemSettings) {
                             row(symbol: "globe", tint: ChatTheme.accent, title: "Language") {
