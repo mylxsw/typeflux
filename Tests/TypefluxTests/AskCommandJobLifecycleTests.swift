@@ -73,6 +73,79 @@ struct AskCommandJobLifecycleTests {
         await store.shutdown()
     }
 
+    @Test(arguments: [false, true])
+    func `logout and offline Stop keep original run evidence after restart`(offlineStop: Bool) async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("job-reset-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let count = AskCommandJobTests.Count()
+        var clock = Date(), hooks = AskCommandJobStore.Hooks()
+        hooks.now = { clock }
+        hooks.run = { request in
+            count.increment(); request.onStarted?()
+            return .init(termination: .exited(0), exitCode: 0, stdout: "", stderr: "", outputTruncated: false)
+        }
+        let defaults = try #require(UserDefaults(suiteName: root.lastPathComponent))
+        defer { defaults.removePersistentDomain(forName: root.lastPathComponent) }
+        weak var previousStore: AskCommandJobStore?
+        func completeAndCancel() async throws -> (String, String) {
+            let store = try AskCommandJobStore(root: root, hooks: hooks)
+            previousStore = store
+            let tools = makeTools(store, defaults: defaults)
+            let fixture = try AskTestFixture(defaults: defaults, toolsOverride: tools)
+            defer { fixture.model.resetSession(); try? FileManager.default.removeItem(at: fixture.root) }
+            // Seed an already observed active run without starting an unrelated drive/title task.
+            fixture.model.owner = "owner"
+            var value = AskRecoveryFixture.conversation()
+            let run = "active-run"
+            value.run?.id = run; value.run?.status = "running"; value.run?.pending = []
+            try await fixture.model.accept(value, route: .init(account: "owner", owner: "owner", token: "token"))
+            tools.bindExecution(ownerId: "owner", conversationId: value.id, runId: run,
+                                deviceId: "device", persistent: true)
+            let scope = try tools.commandScope(value.id)
+            let original = try await store.start(.init(action: "start", command: "printf ok"), scope: scope,
+                                                 invocationID: "call", deadline: nil, workspace: { nil }, authorize: {})
+            await store.waitForCompletion(original.jobId)
+            if offlineStop {
+                await fixture.api.failGet(value.id)
+                fixture.model.stop(id: value.id)
+                // Verify local cancellation immediately, independently of the failed network request.
+            } else {
+                fixture.model.resetSession()
+            }
+            do {
+                _ = try await store.start(.init(action: "start", command: "printf ok"), scope: scope,
+                                          invocationID: "new", deadline: nil, workspace: { nil }, authorize: {})
+                Issue.record("Local cancellation must immediately revoke admission")
+            } catch AskCommandJobError.unavailable {}
+            await store.shutdown()
+            return (value.id, run)
+        }
+        let (conversation, run) = try await completeAndCancel()
+        // Stop's error reporting can still be finishing its asynchronous cache read.
+        // Observe actual reference release before reopening the exclusively locked store.
+        for _ in 0 ..< 1000 {
+            if previousStore == nil { break }
+            await Task.yield()
+        }
+        try #require(previousStore == nil)
+        clock = clock.addingTimeInterval(86401)
+        let reopened = try AskCommandJobStore(root: root, hooks: hooks)
+        let scope = reopened.bind(owner: "owner", conversation: conversation, run: run,
+                                  device: "device", persistent: true)
+        do {
+            _ = try await reopened.start(.init(action: "start", command: "printf ok"), scope: scope,
+                                         invocationID: "call", deadline: nil, workspace: { nil }, authorize: {})
+            Issue.record("Local cancellation must not permit replay after restart")
+        } catch AskCommandJobError.unavailable {}
+        do {
+            _ = try await reopened.start(.init(action: "start", command: "different"), scope: scope,
+                                         invocationID: "call", deadline: nil, workspace: { nil }, authorize: {})
+            Issue.record("Changed arguments must still conflict")
+        } catch AskCommandJobError.conflict {}
+        #expect(count.count == 1)
+        await reopened.shutdown()
+    }
+
     @Test func `observer only settlement cannot cancel replacement run`() async throws {
         let gate = AskCommandJobTests.Gate()
         var hooks = AskCommandJobStore.Hooks()
@@ -113,6 +186,9 @@ struct AskCommandJobLifecycleTests {
         )
         // A late explicit cancellation of an older admitted run cannot cancel the replacement.
         tools.cancelProjectRun(.init(ownerId: "owner", conversationId: value.id, runId: "old"))
+        tools.observeCommandRun(ownerId: "owner", conversationId: value.id, runId: "old", active: false)
+        tools.observeCommandRun(ownerId: "other", conversationId: value.id, runId: nil, active: false)
+        tools.observeCommandRun(ownerId: "owner", conversationId: value.id, runId: nil, active: true)
         #expect(try store.status(status.jobId, scope: scope).state != "stopping")
         value.run?.id = "new"; value.run?.status = "completed"; value.revision += 10
         let route = AskRoute(account: "owner", owner: "owner", token: "token")

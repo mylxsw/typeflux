@@ -146,11 +146,10 @@ final class AskCommandJobStore {
                 $0.record.run == run && $0.record.device == device && $0.record.admissionRetired == true
         }
         bindings[conversation] = Binding(scope: scope, persistent: persistent, revoked: retired)
-        // A trusted replacement retires loaded evidence too; no binding on reopen
-        // by itself is not evidence that the originating run has ended.
-        for entry in entries.values where entry.record.owner != owner ||
-            (entry.record.conversation == conversation &&
-                (entry.record.run != run || entry.record.device != device)) {
+        // Only trusted admission of a different run in this owner's conversation
+        // proves supersession. Account/device changes cannot release recovered fences.
+        for entry in entries.values where entry.record.owner == owner &&
+            entry.record.conversation == conversation && entry.record.run != run {
             retire(entry)
         }
         prune()
@@ -334,7 +333,6 @@ extension AskCommandJobStore {
             (current && entry.scope == nil && entry.record.owner == scope.owner &&
                 entry.record.conversation == scope.conversation && entry.record.run == scope.run &&
                 entry.record.device == scope.device) {
-            retire(entry)
             if entry.record.live { cancel(entry) }
         }
     }
@@ -344,12 +342,15 @@ extension AskCommandJobStore {
         cancelRun(scope)
     }
 
-    func observeRun(owner: String, conversation: String, run: String?, active: Bool) {
-        guard let scope = bindings[conversation]?.scope, scope.owner == owner else { return }
-        // Terminal callbacks refer to their original run, never a replacement.
-        if run == nil || (!active && scope.run == run) {
-            cancelRun(scope)
+    /// Trusted host proof of terminal settlement, independent of local task cancellation.
+    /// Match the exact run even before a binding has been restored after restart.
+    func retireRun(owner: String, conversation: String, run: String) {
+        cancelRun(owner: owner, conversation: conversation, run: run)
+        for entry in entries.values where entry.record.owner == owner &&
+            entry.record.conversation == conversation && entry.record.run == run {
+            retire(entry)
         }
+        prune()
     }
 
     func cancelAll(conversation: String? = nil) {

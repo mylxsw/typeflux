@@ -662,7 +662,7 @@ extension AskCommandJobTests {
         do { _ = try await start(store, scope, id: "still-full"); XCTFail("Expiry must not release protected capacity")
         } catch AskCommandJobError.capacity {}
         XCTAssertEqual(count.count, 128)
-        store.cancelRun(scope)
+        store.retireRun(owner: scope.owner, conversation: scope.conversation, run: scope.run)
         // Rebinding the same revoked run must not restore admission to reclaim space.
         let revoked = bind(store)
         do { _ = try await start(store, revoked, id: "revoked"); XCTFail("Expected unavailable")
@@ -705,13 +705,125 @@ extension AskCommandJobTests {
         do { _ = try await start(reopened, rebound, command: "different"); XCTFail("Expected conflict")
         } catch AskCommandJobError.conflict {}
         XCTAssertEqual(count.count, 1)
-        reopened.cancelRun(rebound)
+        reopened.retireRun(owner: rebound.owner, conversation: rebound.conversation, run: rebound.run)
         let next = bind(reopened, run: "next", persistent: true)
         let value = try await start(reopened, next)
         await reopened.waitForCompletion(value.jobId)
         XCTAssertEqual(count.count, 2)
         XCTAssertThrowsError(try secure.readFile(original.jobId + ".json",
                                                 limit: AskCommandJobStore.maximumRecordBytes))
+        await reopened.shutdown()
+    }
+
+    func testLocalCancellationAndAccountDeviceChangesPreservePersistentFences() async throws {
+        for transition in ["cancelAll", "cancelRun", "account", "device", "unbound-account", "unbound-device"] {
+            let directory = root(), count = Count()
+            var clock = Date(), hooks = countingHooks(count)
+            hooks.now = { clock }
+            var store: AskCommandJobStore? = try AskCommandJobStore(root: directory, hooks: hooks)
+            let scope = try bind(XCTUnwrap(store), persistent: true)
+            let original = try await start(XCTUnwrap(store), scope)
+            await store?.waitForCompletion(original.jobId)
+            if transition.hasPrefix("unbound-") {
+                await store?.shutdown(); store = nil
+                store = try AskCommandJobStore(root: directory, hooks: hooks)
+            }
+            switch transition {
+            case "cancelAll": store?.cancelAll()
+            case "cancelRun": store?.cancelRun(scope)
+            case "account", "unbound-account":
+                _ = try bind(XCTUnwrap(store), owner: "other", persistent: true)
+            default: _ = try bind(XCTUnwrap(store), device: "other", persistent: true)
+            }
+            // No positive terminal proof, including when the original binding was not restored.
+            await store?.shutdown(); store = nil
+            clock = clock.addingTimeInterval(86401)
+            let reopened = try AskCommandJobStore(root: directory, hooks: hooks)
+            let rebound = bind(reopened, persistent: true)
+            do { _ = try await start(reopened, rebound); XCTFail("Replayed after \(transition)")
+            } catch AskCommandJobError.unavailable {}
+            do { _ = try await start(reopened, rebound, command: "different"); XCTFail("Expected conflict")
+            } catch AskCommandJobError.conflict {}
+            XCTAssertEqual(count.count, 1, transition)
+            let secure = try AskSecureDirectory.openRoot(directory)
+            let record = try JSONDecoder().decode(AskCommandJobStore.Record.self, from:
+                secure.readFile(original.jobId + ".json", limit: AskCommandJobStore.maximumRecordBytes))
+            XCTAssertEqual(record.admissionRetired, false, transition)
+            XCTAssertEqual(record.outputRetention, .expired)
+            await reopened.shutdown()
+        }
+    }
+
+    func testVerifiedRetirementWithoutBindingReclaimsOnlyExactRun() async throws {
+        let directory = root(), count = Count()
+        var clock = Date(), hooks = countingHooks(count)
+        hooks.now = { clock }
+        var store: AskCommandJobStore? = try AskCommandJobStore(root: directory, hooks: hooks)
+        let old = try bind(XCTUnwrap(store), persistent: true)
+        let original = try await start(XCTUnwrap(store), old)
+        await store?.waitForCompletion(original.jobId)
+        await store?.shutdown(); store = nil
+        clock = clock.addingTimeInterval(86401)
+        let reopened = try AskCommandJobStore(root: directory, hooks: hooks)
+        let secure = try AskSecureDirectory.openRoot(directory)
+        reopened.retireRun(owner: "other", conversation: old.conversation, run: old.run)
+        XCTAssertNoThrow(try secure.readFile(original.jobId + ".json", limit: AskCommandJobStore.maximumRecordBytes))
+        // A verified terminal identity must work even with no current binding.
+        reopened.retireRun(owner: old.owner, conversation: old.conversation, run: old.run)
+        XCTAssertThrowsError(try secure.readFile(original.jobId + ".json", limit: AskCommandJobStore.maximumRecordBytes))
+        let next = bind(reopened, run: "next", persistent: true)
+        let replacement = try await start(reopened, next)
+        await reopened.waitForCompletion(replacement.jobId)
+        reopened.retireRun(owner: old.owner, conversation: old.conversation, run: old.run)
+        let duplicate = try await start(reopened, next)
+        XCTAssertEqual(duplicate.jobId, replacement.jobId)
+        XCTAssertEqual(count.count, 2)
+        clock = clock.addingTimeInterval(86401)
+        do { _ = try await start(reopened, next); XCTFail("Stale terminal observation released replacement")
+        } catch AskCommandJobError.unavailable {}
+        XCTAssertEqual(count.count, 2)
+        await reopened.shutdown()
+    }
+
+    func testVerifiedTerminalRetirementPersistsBeforePayloadExpires() async throws {
+        let directory = root(), count = Count()
+        var clock = Date(), hooks = countingHooks(count)
+        hooks.now = { clock }
+        var store: AskCommandJobStore? = try AskCommandJobStore(root: directory, hooks: hooks)
+        let scope = try bind(XCTUnwrap(store), persistent: true)
+        let original = try await start(XCTUnwrap(store), scope)
+        await store?.waitForCompletion(original.jobId)
+        store?.retireRun(owner: scope.owner, conversation: scope.conversation, run: scope.run)
+        let secure = try AskSecureDirectory.openRoot(directory)
+        let record = try JSONDecoder().decode(AskCommandJobStore.Record.self, from:
+            secure.readFile(original.jobId + ".json", limit: AskCommandJobStore.maximumRecordBytes))
+        XCTAssertEqual(record.admissionRetired, true)
+        XCTAssertEqual(record.outputRetention, .retained)
+        XCTAssertEqual(try store?.status(original.jobId, scope: scope).state, "exited")
+        await store?.shutdown(); store = nil
+        clock = clock.addingTimeInterval(86401)
+        let reopened = try AskCommandJobStore(root: directory, hooks: hooks)
+        XCTAssertThrowsError(try secure.readFile(original.jobId + ".json", limit: AskCommandJobStore.maximumRecordBytes))
+        await reopened.shutdown()
+    }
+
+    func testTrueSupersessionReclaimsExpiredFencesAcrossDevicesAfterReopen() async throws {
+        let directory = root(), count = Count()
+        var clock = Date(), hooks = countingHooks(count)
+        hooks.now = { clock }
+        var store: AskCommandJobStore? = try AskCommandJobStore(root: directory, hooks: hooks)
+        let scope = try bind(XCTUnwrap(store), persistent: true)
+        let original = try await start(XCTUnwrap(store), scope)
+        await store?.waitForCompletion(original.jobId)
+        await store?.shutdown(); store = nil
+        clock = clock.addingTimeInterval(86401)
+        let reopened = try AskCommandJobStore(root: directory, hooks: hooks)
+        let next = bind(reopened, run: "next", device: "other", persistent: true)
+        let replacement = try await start(reopened, next)
+        await reopened.waitForCompletion(replacement.jobId)
+        let secure = try AskSecureDirectory.openRoot(directory)
+        XCTAssertThrowsError(try secure.readFile(original.jobId + ".json", limit: AskCommandJobStore.maximumRecordBytes))
+        XCTAssertEqual(count.count, 2)
         await reopened.shutdown()
     }
 

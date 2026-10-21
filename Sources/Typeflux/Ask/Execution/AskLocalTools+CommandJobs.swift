@@ -79,7 +79,12 @@ extension AskLocalTools {
     }
 
     func observeCommandRun(ownerId: String, conversationId: String, runId: String?, active: Bool) {
-        commandJobs?.observeRun(owner: ownerId, conversation: conversationId, run: runId, active: active)
+        if let runId {
+            if !active { commandJobs?.retireRun(owner: ownerId, conversation: conversationId, run: runId) }
+        } else if !active, let scope = try? commandJobs?.scope(owner: ownerId, conversation: conversationId) {
+            // Stop is immediate and may be offline; no terminal run identity was verified.
+            commandJobs?.cancelRun(scope)
+        }
     }
 
     func shutdownCommandJobs() async {
