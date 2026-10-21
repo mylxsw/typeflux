@@ -202,5 +202,17 @@ final class AskContextCapture: AskContextCapturing {
 
 enum AskLocalError: LocalizedError {
     case message(String)
-    var errorDescription: String? { if case let .message(text) = self { return text }; return nil }
+    case implementationUnavailable
+
+    var code: String? {
+        if case .implementationUnavailable = self { return AskAgentBinding.errorCode }
+        return nil
+    }
+
+    var errorDescription: String? {
+        switch self {
+        case let .message(text): return text
+        case .implementationUnavailable: return L("ask.implementationUnavailable")
+        }
+    }
 }

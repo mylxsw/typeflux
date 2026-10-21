@@ -14,6 +14,7 @@ extension AskConversationModel {
         guard let run = snapshots[value.id]?.run, run.id == identity.runId,
               run.deviceId == identity.deviceId, run.status == "waiting_tool",
               !run.needsRecoveryInspection, run.pending.first == call else { return nil }
+        _ = try AskAgentBinding.resolve(run.agentBinding)
         let receipt = AskToolResultRequest(
             runId: identity.runId, deviceId: identity.deviceId, toolCallId: call.id,
             content: L("ask.tool.notExecuted", failure.message), isError: true,

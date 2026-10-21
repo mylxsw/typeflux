@@ -98,7 +98,7 @@ actor AskLocalEngine: AskAPI {
             if let data = try? Data(contentsOf: file), var record = try? decoder.decode(AskLocalRecord.self, from: data) {
                 // A persisted engine step may have dispatched a built-in request before exit.
                 // Inspect/cancel it; never infer that a fresh process can safely repeat it.
-                if record.conversation.run?.status == "running" {
+                if (try? AskAgentBinding.resolve(record.conversation.run?.agentBinding)) != nil, record.conversation.run?.status == "running" {
                     record.conversation.run?.recovery = .init(state: "unknown_outcome", sequence: record.conversation.revision)
                 }
                 records[record.conversation.id] = record
@@ -152,6 +152,7 @@ actor AskLocalEngine: AskAPI {
         loadAll()
         let id = AskConversationID.canonical(id)
         guard Self.validID(id), var record = records[id] else { throw AskLocalError.message(L("ask.local.notFound")) }
+        guard (try? AskAgentBinding.resolve(record.conversation.run?.agentBinding)) != nil else { return record }
         record.conversation.memory = record.conversation.memory?.usable(at: now())
         if record.conversation.memory == nil, let payload = record.conversation.run?.inference?.payload {
             record.conversation.run?.inference?.payload = AskMemory.removingInjection(from: payload)
@@ -248,6 +249,7 @@ actor AskLocalEngine: AskAPI {
         var record = records[id] ?? AskLocalRecord(conversation: AskConversation(
             id: id, title: String(Self.title(request).prefix(50)),
             revision: 0, updatedAt: now(), messages: []))
+        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
         if record.conversation.messages.contains(where: { $0.id == request.id }) { return record.conversation }
         if record.conversation.run?.isActive == true { throw AskLocalError.message(L("ask.local.busy")) }
         guard record.conversation.messages.count < Self.maxMessages else { throw AskLocalError.message(L("ask.local.full")) }
@@ -277,6 +279,7 @@ actor AskLocalEngine: AskAPI {
     func result(conversationId: String, request: AskToolResultRequest, token _: String) async throws -> AskConversation {
         var record = try record(conversationId)
         guard let run = record.conversation.run, run.id == request.runId, run.deviceId == request.deviceId else { throw conflict() }
+        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
         if record.conversation.messages.contains(where: { $0.role == "tool" && $0.toolCallId == request.toolCallId }) { return record.conversation }
         guard run.status == "waiting_tool", run.pending.first?.id == request.toolCallId else { throw conflict() }
         if run.clientToolApproval == true, let call = run.pending.first, isBuiltin(call, record) {
@@ -306,6 +309,10 @@ actor AskLocalEngine: AskAPI {
         guard token.isEmpty else { throw conflict() }
         var record = try record(conversationId)
         guard let run = record.conversation.run else { throw conflict() }
+        if (try? AskAgentBinding.resolve(run.agentBinding)) == nil {
+            guard (run.id == request.runId && run.deviceId == request.deviceId) || record.localUsage?.contains(request) == true else { throw conflict() }
+            _ = try AskAgentBinding.resolve(run.agentBinding)
+        }
         if run.budgetEnabled == true {
             let root = record.localUsage?.budgetRoot(for: request)
             if record.localUsage?.contains(request) != true || root == run.budgetRootId {
@@ -372,6 +379,15 @@ actor AskLocalEngine: AskAPI {
         throw conflict()
     }
 
+    func resume(conversationId: String, runId: String, token _: String) async throws -> AskConversation {
+        let value = try record(conversationId)
+        if (try? AskAgentBinding.resolve(value.conversation.run?.agentBinding)) == nil {
+            guard value.conversation.run?.id == runId else { throw conflict() }
+            _ = try AskAgentBinding.resolve(value.conversation.run?.agentBinding)
+        }
+        return value.conversation
+    }
+
     func cancel(conversationId: String, runId: String, token: String) async throws -> AskConversation {
         try await cancel(conversationId: conversationId, runId: runId, partial: nil, token: token)
     }
@@ -379,6 +395,7 @@ actor AskLocalEngine: AskAPI {
     func cancel(conversationId: String, runId: String, partial: AskInferenceResult?, token _: String) async throws -> AskConversation {
         var record = try record(conversationId)
         guard let run = record.conversation.run, run.id == runId else { throw conflict() }
+        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
         summaries.removeValue(forKey: AskConversationID.canonical(conversationId))?.task.cancel()
         guard run.isActive else { return record.conversation }
         if let partial, partial.runId == run.id, run.status == "waiting_inference",
@@ -399,6 +416,10 @@ actor AskLocalEngine: AskAPI {
     /// Queues a message for the active run; the model reads it at the next step boundary.
     func steer(conversationId: String, request: AskSteerRequest, token _: String) async throws -> AskConversation {
         var record = try record(conversationId)
+        if (try? AskAgentBinding.resolve(record.conversation.run?.agentBinding)) == nil {
+            guard record.conversation.run?.id == request.runId else { throw conflict() }
+            _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
+        }
         if record.conversation.messages.contains(where: { $0.id == request.id }) { return record.conversation }
         guard let run = record.conversation.run, run.isActive, run.id == request.runId else { throw conflict() }
         let hasQuestion = !request.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -424,6 +445,7 @@ actor AskLocalEngine: AskAPI {
     func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, maxSteps: Int?, token _: String) async throws -> AskConversation {
         var record = try record(conversationId)
         guard let run = record.conversation.run, run.id == runId, run.deviceId == deviceId else { throw conflict() }
+        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
         if run.isActive || run.status == "completed" { return record.conversation }
         let model = try Self.localModel(modelRef ?? run.modelRef)
         record.conversation.modelRef = model
@@ -441,6 +463,7 @@ actor AskLocalEngine: AskAPI {
     func regenerate(conversationId: String, request: AskRegenerateRequest, token _: String) async throws -> AskConversation {
         var record = try record(conversationId)
         var c = record.conversation
+        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
         if c.run?.isActive == true { throw conflict() }
         guard let index = c.messages.firstIndex(where: { $0.id == request.messageId && $0.role == "assistant" }),
               !c.messages[(index + 1)...].contains(where: { $0.role == "user" }) else { throw AskLocalError.message(L("ask.local.regenerateLatest")) }
@@ -487,6 +510,7 @@ actor AskLocalEngine: AskAPI {
     private func conflict() -> AskLocalError { .message(L("ask.local.conflict")) }
 
     private func prepareRun(_ record: inout AskLocalRecord) {
+        record.conversation.run?.agentBinding = .default
         record.typedContentEnabled = typedContentEnabled
         record.contextLimits = contextLimits(record.conversation.run?.modelRef ?? "")
         if budgetEnabled || record.conversation.run?.budgetEnabled == true {
@@ -541,6 +565,7 @@ actor AskLocalEngine: AskAPI {
                     try Task.checkCancellation()
                     guard let latest = records[id], latest.conversation.run?.id == run.id,
                           latest.conversation.run?.status == record.conversation.run?.status else { throw conflict() }
+                    _ = try AskAgentBinding.resolve(latest.conversation.run?.agentBinding)
                     record = latest
                     preparation = summaries[id] ?? preparation
                 }
@@ -589,8 +614,9 @@ actor AskLocalEngine: AskAPI {
     private func finishSummary(_ frozen: AskLocalRecord, receipt: AskInferenceResult) {
         let id = frozen.conversation.id
         // Budget settlement remains bound to the original root, even after cancellation.
+        guard var latest = records[id],
+              (try? AskAgentBinding.resolve(latest.conversation.run?.agentBinding)) != nil else { return }
         try? settleInference(frozen, receipt)
-        guard var latest = records[id] else { return }
         _ = latest.settleUsage(receipt)
         if let prepared = summaries[id], prepared.id == receipt.inferenceId,
            latest.conversation.run?.status == "completed", !receipt.failed,
@@ -623,6 +649,7 @@ actor AskLocalEngine: AskAPI {
 
     /// Queues the next on-device inference: a summary when the history is long, otherwise the answer.
     private func step(_ record: inout AskLocalRecord) async throws -> AskConversation {
+        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
         let skipSummary = try await backgroundSummary(&record)
         record.conversation.memory = record.conversation.memory?.usable(at: now())
         if record.conversation.run?.status == "running" { deliverSteering(&record) }
@@ -657,13 +684,15 @@ actor AskLocalEngine: AskAPI {
             promptConversation.messages = await prepareImages(promptConversation.messages)
             try Task.checkCancellation()
             // Cancellation, deletion, steering and privacy changes may have advanced the record.
-            guard records[record.conversation.id]?.conversation.revision == revision else { throw conflict() }
+            guard let latest = records[record.conversation.id], latest.conversation.revision == revision else { throw conflict() }
+            _ = try AskAgentBinding.resolve(latest.conversation.run?.agentBinding)
         }
         return try queue(&record, payload: AskLocalPrompt.payload(conversation: promptConversation, record: record, tools: allTools(record)),
                          summaryThrough: nil)
     }
 
     private func queue(_ record: inout AskLocalRecord, payload: [String: Any], summaryThrough: Int?) throws -> AskConversation {
+        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
         let id = UUID().uuidString.lowercased()
         var payload = payload
         payload.removeValue(forKey: "typeflux_summary_through")
@@ -697,6 +726,7 @@ actor AskLocalEngine: AskAPI {
     }
 
     private func applyCompletion(_ record: inout AskLocalRecord, content: String, calls: [AskToolCall], finishReason: String?) async throws -> AskConversation {
+        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
         if finishReason == "length" {
             record.conversation.run?.preview = content
             return try fail(&record, L("ask.local.truncated"))
@@ -735,6 +765,7 @@ actor AskLocalEngine: AskAPI {
 
     /// Runs leading built-in calls here, then hands device calls to the device or starts the next step.
     private func continueTools(_ record: inout AskLocalRecord) async throws -> AskConversation {
+        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
         while let call = record.conversation.run?.pending.first, isBuiltin(call, record) {
             if record.conversation.run?.clientToolApproval == true, record.approvedCloudCallId != call.id {
                 record.conversation.run?.status = "waiting_tool"
@@ -747,10 +778,11 @@ actor AskLocalEngine: AskAPI {
             try save(&record)
             let runId = record.conversation.run?.id
             let result = await executeBuiltin(call, conversation: record.conversation, cloudCalls: record.cloudCalls, budgeted: record.conversation.run?.budgetEnabled == true)
-            try settleBudgetTool(record, callId: call.id)
             guard var latest = records[record.conversation.id] else {
                 throw AskLocalError.message(L("ask.local.notFound"))
             }
+            _ = try AskAgentBinding.resolve(latest.conversation.run?.agentBinding)
+            try settleBudgetTool(record, callId: call.id)
             try refreshBudget(&latest)
             // Cancellation or a replacement run wins over a late tool result.
             guard latest.conversation.run?.id == runId,
@@ -825,6 +857,7 @@ actor AskLocalEngine: AskAPI {
     }
 
     func fail(_ record: inout AskLocalRecord, _ reason: String) throws -> AskConversation {
+        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
         keepPartial(&record)
         closePending(&record, reason: reason)
         record.conversation.run?.status = "failed"

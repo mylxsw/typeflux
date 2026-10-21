@@ -6525,3 +6525,5 @@
 "ring.error.automation" = "시스템 설정 → 개인정보 보호 및 보안 → 자동화에서 Typeflux가 System Events를 제어하도록 허용하세요.";
 
 "settings.trigger.title" = "실행 키";
+
+"ask.implementationUnavailable" = "이 버전에서는 이 작업을 계속할 수 없습니다. 앱 또는 서비스를 업데이트한 후 다시 시도하세요.";

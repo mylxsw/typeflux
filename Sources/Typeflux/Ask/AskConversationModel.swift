@@ -1068,6 +1068,7 @@ final class AskConversationModel: ObservableObject {
             return
         }
         guard newConversation || selected != nil else { return }
+        if !newConversation, let selected, !admitAgentCommand(selected) { return }
         let temporary = newConversation && submitted.temporary == true
         let requested = submitted.modelRef ?? (newConversation ? modelLibrary.defaultReference
                                                : selected?.modelRef ?? "cloud:default")
@@ -1290,6 +1291,7 @@ final class AskConversationModel: ObservableObject {
         selectionObservation?.cancel(); selectionObservation = nil
         guard let value = selected, !busyIds.contains(value.id),
               let current = credentials(for: value.id) else { return }
+        guard admitAgentCommand(value) else { return }
         if canRetransmitReceipts {
             Task { await retransmitSavedReceipts() }
             return
@@ -1359,6 +1361,7 @@ final class AskConversationModel: ObservableObject {
     func resumeCreditPause() {
         guard let value = selected, let run = value.run, run.isPausedForCredits, !busyIds.contains(value.id),
               let current = credentials(for: value.id) else { return }
+        guard admitAgentCommand(value) else { return }
         selectionObservation?.cancel(); selectionObservation = nil
         let id = value.id
         busyIds.insert(id); submissionIssues[false] = nil; error = nil; operationErrors[id] = nil; creditPauseDetails[id] = nil
@@ -1404,6 +1407,7 @@ final class AskConversationModel: ObservableObject {
         selectionObservation?.cancel(); selectionObservation = nil
         guard let value = selected, !busyIds.contains(value.id),
               let current = credentials(for: value.id) else { return }
+        guard admitAgentCommand(value) else { return }
         guard !recoveryBlocksResume(value) else { inspectingRecovery = true; return }
         let id = value.id
         let modelRef = modelReference(launcher: false)
@@ -1495,7 +1499,8 @@ final class AskConversationModel: ObservableObject {
     private func drive(_ initial: AskConversation, current: AskRoute,
                        screenshotConsentMessageID: String?, allowsTools: Bool = true) async throws {
         defer {
-            if Task.isCancelled, let run = initial.run {
+            if Task.isCancelled, let run = initial.run,
+               (try? AskAgentBinding.resolve((snapshots[initial.id] ?? initial).run?.agentBinding)) != nil {
                 tools.cancelProjectRun(.init(ownerId: current.account, conversationId: initial.id, runId: run.id))
             }
         }
@@ -1507,6 +1512,11 @@ final class AskConversationModel: ObservableObject {
             // A monitor can have advanced while this response was in flight.
             if let latest = snapshots[value.id] { value = latest }
             guard let run = value.run, run.isActive else { return }
+            if (try? AskAgentBinding.resolve(run.agentBinding)) == nil,
+               run.deviceId != deviceId, ["waiting_tool", "waiting_inference"].contains(run.status) {
+                throw AskLocalError.message(L("ask.tool.otherDevice"))
+            }
+            _ = try AskAgentBinding.resolve(run.agentBinding)
             guard !run.needsRecoveryInspection else { throw AskRecoveryError.unknown }
             // Pending calls stay pending while credits are out; only `resume` continues.
             if run.isPausedForCredits { return }
@@ -1549,6 +1559,7 @@ final class AskConversationModel: ObservableObject {
                     guard snapshots[value.id]?.run?.id == run.id,
                           snapshots[value.id]?.run?.status == "waiting_inference",
                           snapshots[value.id]?.run?.inference?.id == inference.id else { return }
+                    _ = try AskAgentBinding.resolve(snapshots[value.id]?.run?.agentBinding)
                     do {
                         guard let reference = summaryReference ?? run.modelRef,
                               let (provider, model) = modelLibrary.registry.resolve(reference) else {
@@ -1661,6 +1672,7 @@ final class AskConversationModel: ObservableObject {
                 }
                 try Task.checkCancellation()
                 guard session()?.owner == current.account else { throw CancellationError() }
+                _ = try AskAgentBinding.resolve(snapshots[value.id]?.run?.agentBinding)
                 let audit = AskExecutionAudit(identity: identity, toolVersion: binding.toolVersion, toolName: call.function.name,
                                               argumentsHash: request.context.argumentsHash,
                                               approvalId: grantID, approvedAt: grantID == nil ? nil : approvalStore.now())
@@ -1681,12 +1693,14 @@ final class AskConversationModel: ObservableObject {
                                                                       cloudDefinition: currentCloudDefinition)
                         try Task.checkCancellation()
                         guard session()?.owner == current.account else { throw CancellationError() }
+                        _ = try AskAgentBinding.resolve(snapshots[value.id]?.run?.agentBinding)
                         guard bindingNow == request.binding,
                               approvalStore.consume(grantID, for: request) else {
                             throw AskLocalError.message(L("ask.approval.changed"))
                         }
                         tools.setExecutionDeadline(run.budgetEnabled == true ? run.budgetDeadline : nil, conversationId: value.id)
                         let authorize = { [self] in
+                            _ = try AskAgentBinding.resolve(self.snapshots[identity.conversationId]?.run?.agentBinding)
                             try Task.checkCancellation()
                             if run.budgetEnabled == true, let deadline = run.budgetDeadline, Date() >= deadline {
                                 throw AskLocalError.message(L("ask.budget.stopped", L("ask.budget.reason.duration")))
@@ -1847,16 +1861,19 @@ final class AskConversationModel: ObservableObject {
 
     func stop(id: String? = nil) {
         guard let id = id ?? selected?.id, let current = credentials(for: id) else { return }
-        permissionModes[id] = .standard
-        tools.cancelProjects(conversationId: id)
-        operations[id]?.cancel()
-        approvalStore.revoke(conversation: id)
-        approve(conversationId: id, allowed: false)
-        if controllingConversationId == id { controllingConversationId = nil; onControlChanged?(false) }
         Task {
             do {
                 let value = try await api.conversation(id: id, token: current.token)
                 guard let run = value.run else { return }
+                guard session()?.owner == current.account else { throw CancellationError() }
+                _ = try AskAgentBinding.resolve(run.agentBinding)
+                permissionModes[id] = .standard
+                tools.cancelProjects(conversationId: id)
+                operations[id]?.cancel()
+                approvalStore.revoke(conversation: id)
+                approve(conversationId: id, allowed: false)
+                if controllingConversationId == id { controllingConversationId = nil; onControlChanged?(false) }
+
                 var partial: AskInferenceResult?
                 if let inference = run.inference, inference.id == progressInferenceIDs[id],
                    let progress = inferenceProgress[id], run.deviceId == deviceId {
@@ -2206,6 +2223,7 @@ extension AskConversationModel {
     func steerQueued(_ itemId: String) {
         guard let value = selected, let current = credentials(for: value.id), let run = value.run, run.isActive,
               !recoveryBlocksResume(value), !steeringIds.contains(itemId), sendQueue.messages(value.id).contains(where: { $0.id == itemId }) else { return }
+        guard admitAgentCommand(value) else { return }
         if sendQueue.isEditing(value.id, itemId: itemId) { saveQueuedEdit(advancing: false) }
         guard let latest = sendQueue.messages(value.id).first(where: { $0.id == itemId }) else { return }
         let id = value.id

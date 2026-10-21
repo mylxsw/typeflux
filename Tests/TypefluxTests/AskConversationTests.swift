@@ -222,6 +222,8 @@ actor AskTestAPI: AskAPI {
 
 @MainActor
 final class AskTestTools: AskToolExecuting {
+    var cancelledConversations: [String?] = []
+    func cancelProjects(conversationId: String?) { cancelledConversations.append(conversationId) }
     var executions = 0
     /// Set to show the embedded browser in the window under test.
     var browserWorkspace: AskBrowserWorkspace?
