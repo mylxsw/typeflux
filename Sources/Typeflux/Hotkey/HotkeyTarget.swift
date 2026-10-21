@@ -37,6 +37,8 @@ enum AppHotkeyAction: String, CaseIterable, Codable, Sendable {
     case openWordBook
     case openStudio
     case openHelp
+    /// Hold to open the ring at the pointer; releasing runs the slice under it.
+    case ring
 
     var title: String {
         L("hotkeys.action.\(rawValue).title")
