@@ -181,7 +181,7 @@ final class AskConversationModel: ObservableObject {
     @Published var reasoningEffort: AskReasoningEffort = .providerDefault
     let modelLibrary: AskModelLibrary
     private var inferenceUsage: [String: AskTokenUsage] = [:]
-    var customInference = AskCustomInference()
+    var customInference: any AskModelCompleting
     @Published private(set) var inferenceProgress: [String: AskStreamProgress] = [:]
     private var progressInferenceIDs: [String: String] = [:]
 
@@ -456,7 +456,9 @@ final class AskConversationModel: ObservableObject {
          capture: any AskContextCapturing, deviceId: String, modelLibrary: AskModelLibrary? = nil,
          defaults: UserDefaults = .standard,
          trustedApprovalPeer: AskHarnessContract? = nil, scopedApprovalEnabled: Bool = false,
-         session: @escaping () -> (owner: String, token: String)?) {
+         session: @escaping () -> (owner: String, token: String)?,
+         modelClient: any AskModelCompleting = AskCustomInference()) {
+        self.customInference = modelClient
         self.modelLibrary = modelLibrary ?? .shared
         self.api = api; self.cache = AskTemporaryCache(base: cache); self.tools = tools
         self.workspaces = workspaces; self.capture = capture

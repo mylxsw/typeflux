@@ -28,7 +28,7 @@ final class AskWorkflowAssistant: ObservableObject {
         var session: () -> (owner: String, token: String)
         var deviceId: String
         var modelLibrary: AskModelLibrary
-        var inference = AskCustomInference()
+        var inference: any AskModelCompleting = AskCustomInference()
         /// New conversations stay on this Mac by the user's choice.
         var prefersLocal: () -> Bool = { false }
         var defaults: UserDefaults = .standard
@@ -282,6 +282,7 @@ extension AskWorkflowAssistant {
         do {
             let (text, calls) = try await dependencies.inference.complete(
                 provider: provider, connection: library.connection(provider, model: model), payload: payload,
+                onUsage: nil,
                 onProgress: { [weak self] progress in await self?.showProgress(progress.text, generation: current) }
             )
             receipt = AskInferenceResult(runId: run.id, deviceId: dependencies.deviceId, inferenceId: inference.id,

@@ -1,0 +1,10 @@
+Baseline: 3256b06c03cd22b9c069853912954b8d1d07f8fc (main after PR #694)
+Denominator: added/modified production lines with LLVM DA records; excludes declarations, comments and tests.
+Sources/Typeflux/Ask/AskConversationModel+Title.swift: 3/3; uncovered: []
+Sources/Typeflux/Ask/AskConversationModel.swift: 2/2; uncovered: []
+Sources/Typeflux/Ask/AskConversationWindowController.swift: 8/8; uncovered: []
+Sources/Typeflux/Ask/AskCustomInference.swift: 0/0; uncovered: []
+Sources/Typeflux/Ask/AskModelCompleting.swift: 0/0; uncovered: []
+Sources/Typeflux/Ask/Local/AskAuxiliaryInference.swift: 1/1; uncovered: []
+Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowAssistant.swift: 2/2; uncovered: []
+Changed executable line coverage: 16/16 = 100.00%

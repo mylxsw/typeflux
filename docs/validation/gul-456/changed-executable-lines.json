@@ -1,0 +1,51 @@
+{
+  "Sources/Typeflux/Ask/AskConversationModel+Title.swift": {
+    "sha256": "1bc4bcf5929b4f73aebd2159a594c8fc3bfa1a3060ea13dce08dfa7cc9841b11",
+    "lines": [
+      40,
+      41,
+      42
+    ]
+  },
+  "Sources/Typeflux/Ask/AskConversationModel.swift": {
+    "sha256": "eea777c23bc8778b0b59cb27ae03cc43772563aefc827225af5e13a595a715c3",
+    "lines": [
+      460,
+      461
+    ]
+  },
+  "Sources/Typeflux/Ask/AskConversationWindowController.swift": {
+    "sha256": "fbabd430ce18b3c95efac75671caa8742dedae096f8f7cdc516164c20e43f970",
+    "lines": [
+      47,
+      57,
+      58,
+      62,
+      63,
+      64,
+      65,
+      66
+    ]
+  },
+  "Sources/Typeflux/Ask/AskCustomInference.swift": {
+    "sha256": "399244ef787308f416fec0d4365ba2d2c54cbf296ae5bc559665811ce09d7eec",
+    "lines": []
+  },
+  "Sources/Typeflux/Ask/AskModelCompleting.swift": {
+    "sha256": "b45327bd91cdce030ba4d6e0620eb6a2358f8731394be67fc0dc163e380d5092",
+    "lines": []
+  },
+  "Sources/Typeflux/Ask/Local/AskAuxiliaryInference.swift": {
+    "sha256": "36d8232259dc33f53eec8c6dc4bfebb54433d35401f04de4b2c42b0ea9bf1ac3",
+    "lines": [
+      19
+    ]
+  },
+  "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowAssistant.swift": {
+    "sha256": "522b1e991a2730d9d9b25ae186c2821ba56dc8f416b87e91a8e99ef082f9a393",
+    "lines": [
+      31,
+      285
+    ]
+  }
+}

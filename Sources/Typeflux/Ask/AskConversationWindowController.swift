@@ -43,7 +43,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
     /// Keeps production composition testable without opening workspace windows.
     static func makeAPI(settings: SettingsStore, modelLibrary: AskModelLibrary,
-                        cloud: any AskAPI = AskAPIClient(), local: (any AskAPI)? = nil) -> AskApplicationAPI {
+                        cloud: any AskAPI = AskAPIClient(), local: (any AskAPI)? = nil,
+                        modelClient: any AskModelCompleting = AskCustomInference()) -> AskApplicationAPI {
         let search = AskSearchSettings(defaults: settings.defaults)
         return AskApplicationAPI.routed(
             cloud: cloud, local: local ?? AskLocalEngine(webTools: AskLocalWebTools(searchProvider: {
@@ -53,9 +54,16 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             return AskContextLimits(window: model?.contextWindowTokens ?? 32768,
                                     maxOutput: model?.maxOutputTokens ?? 4096,
                                     known: model?.contextWindowTokens != nil)
-        }, summarize: { [modelLibrary] inference, run, device in
-            await AskAuxiliaryInference.complete(inference, run: run, device: device, library: modelLibrary)
-        }))
+        }, summarize: makeSummary(modelLibrary: modelLibrary, modelClient: modelClient)))
+    }
+
+    /// Retains the host transport for auxiliary invocations in both production and isolated composition.
+    static func makeSummary(modelLibrary: AskModelLibrary, modelClient: any AskModelCompleting)
+        -> @Sendable (AskInference, String, String) async -> AskInferenceResult {
+        { [modelLibrary, modelClient] inference, run, device in
+            await AskAuxiliaryInference.complete(inference, run: run, device: device,
+                                                 library: modelLibrary, client: modelClient)
+        }
     }
 
     init(settings: SettingsStore, injector: TextInjector, registry: MCPRegistry, modelLibrary: AskModelLibrary,

@@ -1,0 +1,17 @@
+Sources/Typeflux/LLM/ResponsesLLMClient.swift:22:                         session: URLSession = AskCustomInference().session) async throws -> (String, [AskToolCall]) {
+Sources/Typeflux/LLM/ResponsesLLMClient.swift:51:                       session: URLSession = AskCustomInference().session) async throws -> String {
+Sources/Typeflux/LLM/ResponsesLLMClient.swift:80:extension AskCustomInference {
+Sources/Typeflux/Ask/AskModelCompleting.swift:4:    func complete(provider: RegisteredProvider, connection: SettingsStore.TextLLMConfiguration,
+Sources/Typeflux/Ask/Budget/AskContextCompaction.swift:101:extension AskCustomInference {
+Sources/Typeflux/Settings/ProviderModelsView.swift:322:                _ = try await AskCustomInference().complete(
+Sources/Typeflux/Ask/AskConversationWindowController.swift:47:                        modelClient: any AskModelCompleting = AskCustomInference()) -> AskApplicationAPI {
+Sources/Typeflux/Ask/AskConversationModel.swift:460:         modelClient: any AskModelCompleting = AskCustomInference()) {
+Sources/Typeflux/Ask/AskConversationModel.swift:1625:                        let (text, calls) = try await customInference.complete(provider: provider,
+Sources/Typeflux/Ask/AskStream.swift:231:extension AskCustomInference {
+Sources/Typeflux/Ask/AskProviderInference.swift:4:extension AskCustomInference {
+Sources/Typeflux/Ask/AskProviderInference.swift:5:    func complete(provider: RegisteredProvider, connection: SettingsStore.TextLLMConfiguration,
+Sources/Typeflux/Ask/AskConversationModel+Title.swift:39:                    let (text, calls) = try await customInference.complete(provider: provider,
+Sources/Typeflux/Ask/AskCustomInference.swift:33:struct AskCustomInference: AskModelCompleting {
+Sources/Typeflux/Ask/Local/AskAuxiliaryInference.swift:19:                                    library: AskModelLibrary, client: any AskModelCompleting = AskCustomInference()) async -> AskInferenceResult {
+Sources/Typeflux/Ask/Local/AskAuxiliaryInference.swift:28:            let (text, calls) = try await client.complete(provider: provider,
+Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowAssistant.swift:31:        var inference: any AskModelCompleting = AskCustomInference()

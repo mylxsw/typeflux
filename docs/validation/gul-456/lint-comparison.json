@@ -1,0 +1,19 @@
+{
+  "command": "swiftlint lint --quiet --reporter json <changed production files>; baseline copies from git show HEAD:<file> with same root config",
+  "baseline_diagnostics": 145,
+  "current_diagnostics": 144,
+  "added_rule_counts": [],
+  "removed_rule_counts": [
+    [
+      [
+        "Typeflux/Ask/AskConversationModel+Title.swift",
+        "line_length",
+        "Warning"
+      ],
+      1
+    ]
+  ],
+  "baseline_exit": 2,
+  "current_exit": 2,
+  "wall_seconds": 0.77
+}
