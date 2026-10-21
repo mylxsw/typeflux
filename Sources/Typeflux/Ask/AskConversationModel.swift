@@ -408,6 +408,7 @@ final class AskConversationModel: ObservableObject {
     var titleRetryAfter: [String: Date] = [:]
     private var operations: [String: Task<Void, Never>] = [:]
     private var operationIds: [String: UUID] = [:]
+    private var operationRuns: [UUID: AskProjectScope] = [:]
     private var approvals: [String: CheckedContinuation<String?, Never>] = [:]
     private var approvalRequests: [String: (id: UUID, request: AskApprovalRequest)] = [:]
     let approvalStore = AskApprovalStore()
@@ -617,7 +618,7 @@ final class AskConversationModel: ObservableObject {
         historyErrorTask?.cancel(); historyRefreshError = nil
         pullRefreshID = nil; isRefreshingHistory = false
         titleTasks.values.forEach { $0.cancel() }; titleTasks = [:]; titleRetryAfter = [:]
-        operations.values.forEach { $0.cancel() }; operations = [:]; operationIds = [:]
+        operations.values.forEach { $0.cancel() }; operations = [:]; operationIds = [:]; operationRuns = [:]
         submissionPreflights = [:]; submissionIssues = [:]
         approvals.values.forEach { $0.resume(returning: nil) }; approvals = [:]; approvalRequests = [:]; approvalStore.reset()
         inferenceUsage = [:]
@@ -1517,6 +1518,9 @@ final class AskConversationModel: ObservableObject {
                 throw AskLocalError.message(L("ask.tool.otherDevice"))
             }
             _ = try AskAgentBinding.resolve(run.agentBinding)
+            if run.deviceId == deviceId, let operationId = operationIds[value.id] {
+                operationRuns[operationId] = .init(ownerId: current.account, conversationId: value.id, runId: run.id)
+            }
             guard !run.needsRecoveryInspection else { throw AskRecoveryError.unknown }
             // Pending calls stay pending while credits are out; only `resume` continues.
             if run.isPausedForCredits { return }
@@ -1861,19 +1865,29 @@ final class AskConversationModel: ObservableObject {
 
     func stop(id: String? = nil) {
         guard let id = id ?? selected?.id, let current = credentials(for: id) else { return }
+        guard let capturedRun = snapshots[id]?.run else { return }
+        let operationId = operationIds[id]
+        // A captured handle belongs to this account and device. Interrupt host work
+        // immediately, even when the remote snapshot is unavailable or unsupported.
+        let scope = AskProjectScope(ownerId: current.account, conversationId: id, runId: capturedRun.id)
+        if capturedRun.deviceId == deviceId, let operationId, operationRuns[operationId] == scope,
+           let operation = operations[id] {
+            permissionModes[id] = .standard
+            operation.cancel()
+            tools.cancelProjectRun(scope)
+            approvalStore.revoke(conversation: id)
+            approve(conversationId: id, allowed: false)
+            if controllingConversationId == id { controllingConversationId = nil; onControlChanged?(false) }
+        }
         Task {
             do {
                 let value = try await api.conversation(id: id, token: current.token)
-                guard let run = value.run else { return }
-                guard session()?.owner == current.account else { throw CancellationError() }
+                guard owner == current.account, session()?.owner == current.account,
+                      let run = value.run, run.id == capturedRun.id, run.deviceId == capturedRun.deviceId,
+                      snapshots[id]?.run?.id == capturedRun.id,
+                      operationIds[id] == nil || operationIds[id] == operationId else { throw CancellationError() }
+                _ = try AskAgentBinding.resolve(capturedRun.agentBinding)
                 _ = try AskAgentBinding.resolve(run.agentBinding)
-                permissionModes[id] = .standard
-                tools.cancelProjects(conversationId: id)
-                operations[id]?.cancel()
-                approvalStore.revoke(conversation: id)
-                approve(conversationId: id, allowed: false)
-                if controllingConversationId == id { controllingConversationId = nil; onControlChanged?(false) }
-
                 var partial: AskInferenceResult?
                 if let inference = run.inference, inference.id == progressInferenceIDs[id],
                    let progress = inferenceProgress[id], run.deviceId == deviceId {
@@ -1882,9 +1896,14 @@ final class AskConversationModel: ObservableObject {
                                                  reasoningMilliseconds: progress.reasoningMilliseconds)
                 }
                 let stopped = try await api.cancel(conversationId: id, runId: run.id, partial: partial, token: current.token)
-                if owner == current.account { pendingSends[id] = nil }
+                guard owner == current.account, session()?.owner == current.account,
+                      snapshots[id]?.run?.id == capturedRun.id else { return }
+                pendingSends[id] = nil
                 try await accept(stopped, route: current)
-            } catch { await reportOperationError(error, id: id, owner: current.account) }
+            } catch {
+                guard session()?.owner == current.account, snapshots[id]?.run?.id == capturedRun.id else { return }
+                await reportOperationError(error, id: id, owner: current.account)
+            }
         }
     }
 
@@ -2063,6 +2082,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     private func finishOperation(_ id: String, operationId: UUID) {
+        operationRuns[operationId] = nil
         guard operationIds[id] == operationId else { return }
         operationIds[id] = nil
         busyIds.remove(id); operations[id] = nil; pendingApprovals[id] = nil

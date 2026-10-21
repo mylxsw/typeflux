@@ -21,6 +21,7 @@ actor AskTestAPI: AskAPI {
     var retryModels: [String?] = []
     var results: [AskToolResultRequest] = []
     var inferenceResults: [AskInferenceResult] = []
+    var cancellations: [String] = []
     var nextTool: AskToolCall?
     var streamsOnSend = false
     func setStreamsOnSend(_ value: Bool) { streamsOnSend = value }
@@ -82,6 +83,7 @@ actor AskTestAPI: AskAPI {
         if failGets.contains(id) { throw AskLocalError.message("Offline") }
         guard let value = values[id] else { throw AskLocalError.message("Not found") }
         if held.contains(id) { await withCheckedContinuation { waiting[id, default: []].append($0) } }
+        if failGets.contains(id) { throw AskLocalError.message("Offline") }
         return value
     }
     func send(conversationId: String, request: AskSendRequest, token: String) async throws -> AskConversation {
@@ -152,6 +154,7 @@ actor AskTestAPI: AskAPI {
         return value
     }
     func cancel(conversationId: String, runId: String, token: String) async throws -> AskConversation {
+        cancellations.append(runId)
         var value = try await conversation(id: conversationId, token: token)
         value.run?.status = "cancelled"; value.run?.pending = []; value.revision += 1; values[conversationId] = value
         return value
@@ -222,6 +225,8 @@ actor AskTestAPI: AskAPI {
 
 @MainActor
 final class AskTestTools: AskToolExecuting {
+    var cancelledRuns: [AskProjectScope] = []
+    func cancelProjectRun(_ scope: AskProjectScope) { cancelledRuns.append(scope) }
     var cancelledConversations: [String?] = []
     func cancelProjects(conversationId: String?) { cancelledConversations.append(conversationId) }
     var executions = 0
