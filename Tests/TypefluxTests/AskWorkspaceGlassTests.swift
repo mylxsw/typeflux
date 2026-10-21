@@ -128,19 +128,15 @@ struct AskWorkspaceGlassTests {
         #expect(layout.usageWidth == AskMetrics.usagePanelWidth)
     }
 
-    @Test func selectedHistoryTitleTakesTheAccentOnGlass() {
-        #expect(AskHistoryRow.titleColor(selected: true, hovering: false, glass: true)
-            == AskTheme.accent)
-        #expect(AskHistoryRow.titleColor(selected: true, hovering: false, glass: false)
+    @Test func historyTitleKeepsItsNormalColorAndHoverFeedback() {
+        #expect(AskHistoryRow.titleColor(hovering: true)
             == StudioTheme.textPrimary)
-        #expect(AskHistoryRow.titleColor(selected: false, hovering: true, glass: true)
-            == StudioTheme.textPrimary)
-        #expect(AskHistoryRow.titleColor(selected: false, hovering: false, glass: true)
+        #expect(AskHistoryRow.titleColor(hovering: false)
             == StudioTheme.textSecondary)
     }
 
-    @Test func libraryShelvesAndSettingsMarkTheirSelectionLikeTheConversationSidebar() {
-        // Glass: the accent title in every sidebar.
+    @Test func libraryShelvesAndSettingsKeepTheirSelectionColors() {
+        // Glass: the accent title in library and settings sidebars.
         for light in [false, true] {
             #expect(AskNotesShelfRow.titleColor(active: true, hovering: false, glass: true, light: light)
                 == AskTheme.accent)

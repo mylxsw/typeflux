@@ -64,7 +64,7 @@ struct AskHistoryRow: View {
             } else {
                 Text(savingTitle ?? title)
                     .font(.system(size: 13, weight: selected ? .semibold : .regular))
-                    .foregroundStyle(Self.titleColor(selected: selected, hovering: hovering, glass: style.usesGlass))
+                    .foregroundStyle(Self.titleColor(hovering: hovering))
                     .lineLimit(1)
                 Spacer(minLength: 4)
             }
@@ -89,7 +89,7 @@ struct AskHistoryRow: View {
         .frame(height: style.ask.sidebarRowHeight)
         .frame(maxWidth: .infinity, alignment: .leading)
         // White selection rises gently above the quiet light sidebar. Dark
-        // glass lifts it with a neutral wash, leaving the accent to the title;
+        // glass lifts it with a neutral wash while the title keeps its normal color;
         // classic keeps its source-list selection.
         .background {
             let shape = RoundedRectangle(cornerRadius: style.ask.sidebarRowCorner, style: .continuous)
@@ -115,11 +115,9 @@ struct AskHistoryRow: View {
         .contentShape(RoundedRectangle(cornerRadius: style.ask.sidebarRowCorner, style: .continuous))
     }
 
-    /// Glass marks the open conversation by its title in the accent; classic
-    /// keeps the primary text.
-    static func titleColor(selected: Bool, hovering: Bool, glass: Bool) -> Color {
-        AskSidebarSelection.titleColor(selected: selected, hovering: hovering, glass: glass,
-                                       accent: AskTheme.accent)
+    /// Selection is conveyed by the background and font weight, not the title color.
+    static func titleColor(hovering: Bool) -> Color {
+        hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary
     }
 
     private func beginRename() {

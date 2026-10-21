@@ -27,8 +27,8 @@ enum AskNotesStyle {
     }
 }
 
-/// How every sidebar marks its selected row: the conversation history, the
-/// library shelves and Settings. Glass puts the accent on the title over a
+/// How library shelves and Settings mark their selected rows.
+/// Glass puts the accent on the title over a
 /// neutral pill; classic keeps the primary text on its source-list selection.
 enum AskSidebarSelection {
     static func titleColor(selected: Bool, hovering: Bool, glass: Bool,
