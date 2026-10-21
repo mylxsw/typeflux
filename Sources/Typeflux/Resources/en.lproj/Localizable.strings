@@ -2458,7 +2458,8 @@
 "ask.recovery.checkPrompt" = "Read-only check of the previous action. Inspect the saved record and any accessible file or app state. Report what evidence confirms and what remains unknown. Do not repeat, modify, or continue the task. If you cannot tell, ask for the specific missing information.";
 "ask.recovery.option.check" = "Let Typeflux check";
 "ask.recovery.option.checkBody" = "Read the current state without repeating the action; explain any missing evidence.";
-"ask.recovery.readOnly" = "Recovery checks can only read state. This action was not run.";
+"ask.recovery.approvalChanged" = "The previous approval is no longer valid. Inspect or end the old run, then start a new request.";
+"ask.recovery.readOnly" = "Recovery checks can only read the current state. Start a new request to make changes.";
 "ask.recovery.readOnlyUnavailable" = "The safe check could not start. Please try again later.";
 "ask.recovery.option.refresh" = "Refresh progress";
 "ask.recovery.option.refreshBody" = "Brings the results saved on this Mac into the conversation without doing the work again.";

@@ -2448,7 +2448,8 @@
 "ask.recovery.checkPrompt" = "前の操作結果を読み取り専用で確認してください。保存済みの記録とアクセス可能なファイルやアプリの状態を調べ、確認できた事実と不足する証拠を報告してください。操作の再実行、変更、作業の続行はしないでください。判断できない場合は、必要な具体的情報を示してください。";
 "ask.recovery.option.check" = "Typeflux に確認させる";
 "ask.recovery.option.checkBody" = "操作を繰り返さずに現在の状態を読み取り、不足する証拠を説明します。";
-"ask.recovery.readOnly" = "確認中は読み取りのみ可能です。この操作は実行されませんでした。";
+"ask.recovery.approvalChanged" = "以前の承認は無効です。現状を確認するか以前の実行を終了してから、新しい依頼を開始してください。";
+"ask.recovery.readOnly" = "復旧時の確認では現在の状態の読み取りのみ可能です。変更するには新しい依頼を開始してください。";
 "ask.recovery.readOnlyUnavailable" = "安全な確認を開始できませんでした。後でもう一度お試しください。";
 "ask.recovery.option.refresh" = "進行状況を更新";
 "ask.recovery.option.refreshBody" = "この Mac に保存された処理結果を会話に反映します。同じ操作は繰り返しません。";

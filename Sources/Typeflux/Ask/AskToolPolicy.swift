@@ -136,3 +136,42 @@ final class AskApprovalStore {
     func revoke(conversation: String) { grants = grants.filter { $0.value.scope.conversationId != conversation } }
     func reset() { grants.removeAll() }
 }
+
+/// Intrinsic observation effects owned by the host, independent of approval presentation.
+enum AskRecoveryObservation {
+    static let actions: [String: Set<String>] = [
+        "computer": ["screenshot", "inspect", "wait"],
+        "browser": ["read", "snapshot"],
+        "web_browser": ["read", "snapshot", "screenshot", "tabs", "wait"],
+        "files": ["list", "read", "search"],
+        "project_files": ["list", "read", "review"],
+        "project_terminal": ["status", "output"]
+    ]
+
+    static func permits(_ call: AskToolCall) -> Bool {
+        guard let data = call.function.arguments.data(using: .utf8),
+              let arguments = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return false }
+        if ["web_search", "web_fetch"].contains(call.function.name) { return true }
+        guard let action = arguments["action"] as? String else { return false }
+        return actions[call.function.name]?.contains(action) == true
+    }
+
+    static func offered(_ tools: [AskToolDefinition]) -> [AskToolDefinition] {
+        tools.compactMap { tool in
+            guard let allowed = actions[tool.name],
+                  var schema = try? JSONSerialization.jsonObject(with: tool.parameters.data) as? [String: Any],
+                  var properties = schema["properties"] as? [String: [String: Any]],
+                  var action = properties["action"],
+                  let names = action["enum"] as? [String] else { return nil }
+            let observations = names.filter { allowed.contains($0) }
+            guard !observations.isEmpty else { return nil }
+            action["enum"] = observations
+            properties["action"] = action
+            schema["properties"] = properties
+            guard let data = try? JSONSerialization.data(withJSONObject: schema, options: .sortedKeys) else { return nil }
+            var filtered = tool
+            filtered.parameters = JSONValue(data: data)
+            return filtered
+        }
+    }
+}

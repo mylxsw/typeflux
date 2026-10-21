@@ -2455,7 +2455,8 @@
 "ask.recovery.checkPrompt" = "請只讀核對上一操作的實際結果。查看已有紀錄和可存取的檔案或應用程式狀態，說明已確認的事實及仍缺的證據。不要重做、修改或繼續執行任務；無法判斷時，請說明需要什麼具體資訊。";
 "ask.recovery.option.check" = "讓 Typeflux 核對";
 "ask.recovery.option.checkBody" = "只讀取現況，不重複操作；仍無法判斷時說明缺少什麼證據。";
-"ask.recovery.readOnly" = "核對期間只允許讀取現況，此操作沒有執行。";
+"ask.recovery.approvalChanged" = "先前的核准已失效。請核對現況或結束舊任務，再發起新請求。";
+"ask.recovery.readOnly" = "核對期間只允許讀取現況。如需更改，請發起新請求。";
 "ask.recovery.readOnlyUnavailable" = "安全核對未能啟動，請稍後重試。";
 "ask.recovery.option.refresh" = "重新整理進度";
 "ask.recovery.option.refreshBody" = "把這台 Mac 上已儲存的處理結果同步到對話，不會把操作再做一遍。";

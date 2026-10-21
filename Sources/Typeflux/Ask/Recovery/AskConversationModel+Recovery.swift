@@ -117,6 +117,7 @@ extension AskConversationModel {
         guard !recoveryWorking, let value = selected, !busyIds.contains(value.id),
               let current = credentials(for: value.id) else { return }
         let generation = recoveryGeneration
+        let operation = operationGenerations[value.id]
         recoveryWorking = true
         defer {
             if generation == recoveryGeneration {
@@ -125,18 +126,24 @@ extension AskConversationModel {
         }
         do {
             let latest = try await api.conversation(id: value.id, token: current.token)
+            guard generation == recoveryGeneration, operationGenerations[value.id] == operation,
+                  session()?.owner == current.account else { throw CancellationError() }
             _ = try AskAgentBinding.resolve(latest.run?.agentBinding)
             try await accept(latest, route: current)
+            guard generation == recoveryGeneration, operationGenerations[value.id] == operation,
+                  session()?.owner == current.account else { throw CancellationError() }
             await refreshRecovery(latest, route: current)
             for entry in recoveryEntries[value.id] ?? [] where !entry.acknowledged {
                 try Task.checkCancellation()
-                guard generation == recoveryGeneration, session()?.owner == current.account,
+                guard generation == recoveryGeneration, operationGenerations[value.id] == operation,
+                      session()?.owner == current.account,
                       selectedId == value.id else { throw CancellationError() }
                 guard let response = try await transmit(
                     entry,
                     latest: latest,
                     current: current,
-                    generation: generation
+                    generation: generation,
+                    operation: operation
                 ) else { continue }
                 try await cache.recordExecution(id: entry.id, event: .acknowledged, owner: current.owner)
                 try await accept(response, route: current)
@@ -152,17 +159,20 @@ extension AskConversationModel {
         _ entry: AskExecutionEntry,
         latest: AskConversation,
         current: AskRoute,
-        generation: UUID
+        generation: UUID,
+        operation: UUID?
     ) async throws -> AskConversation? {
         guard let identity = entry.audit?.identity, identity.owner == current.account,
               identity.conversationId == latest.id, identity.deviceId == deviceId,
               entry.permits(identity), let receipt = entry.receipt else { return nil }
         try await cache.recordExecution(id: entry.id, event: .retransmitting, owner: current.owner)
-        guard generation == recoveryGeneration, session()?.owner == current.account else { throw CancellationError() }
+        guard generation == recoveryGeneration, operationGenerations[latest.id] == operation,
+              session()?.owner == current.account else { throw CancellationError() }
         switch receipt {
         case let .tool(request):
-            guard latest.run?.id == identity.runId, latest.run?.deviceId == deviceId else { return nil }
-            return try await api.result(conversationId: latest.id, request: request, token: current.token)
+            guard request.approveExecution == true ||
+                    (latest.run?.id == identity.runId && latest.run?.deviceId == deviceId) else { return nil }
+            return try await sendToolResult(request, identity: identity, current: current, operationId: operation)
         case let .inference(request):
             // A known old inference may settle usage without restoring its content.
             return try await api.inferenceResult(conversationId: latest.id, request: request, token: current.token)

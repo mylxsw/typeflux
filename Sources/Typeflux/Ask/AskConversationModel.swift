@@ -408,7 +408,7 @@ final class AskConversationModel: ObservableObject {
     var titleRetryAfter: [String: Date] = [:]
     private var operations: [String: Task<Void, Never>] = [:]
     private var operationIds: [String: UUID] = [:]
-    private var operationGenerations: [String: UUID] = [:]
+    var operationGenerations: [String: UUID] = [:]
     private struct OperationOwner {
         let account: String
         let conversationId: String
@@ -1659,11 +1659,11 @@ final class AskConversationModel: ObservableObject {
             }
             if result == nil {
                 if run.recoveryCheck == true,
-                   toolRisk(call, cloudDefinition: run.approvalTool(for: call)) > .read {
+                   !AskRecoveryObservation.permits(call) {
                     let failure = AskToolPreparationFailure(AskLocalError.message(L("ask.recovery.readOnly")))
                     guard let rejected = try await rejectToolPreparation(failure, call: call, value: value,
                                                                          identity: identity, current: current) else { return }
-                    value = try await deliverToolResult(rejected, identity: identity, current: current)
+                    value = try await deliverToolResult(rejected, identity: identity, current: current, operationId: operationId)
                     continue
                 }
                 // Project and artifact scopes belong to the account, as `artifactAccess` reads them,
@@ -1677,7 +1677,7 @@ final class AskConversationModel: ObservableObject {
                 } catch let failure as AskToolPreparationFailure {
                     guard let rejected = try await rejectToolPreparation(failure, call: call, value: value,
                                                                          identity: identity, current: current) else { return }
-                    value = try await deliverToolResult(rejected, identity: identity, current: current)
+                    value = try await deliverToolResult(rejected, identity: identity, current: current, operationId: operationId)
                     continue
                 }
                 try Task.checkCancellation()
@@ -1746,7 +1746,11 @@ final class AskConversationModel: ObservableObject {
                         tools.setExecutionDeadline(run.budgetEnabled == true ? run.budgetDeadline : nil, conversationId: value.id)
                         let authorize = { [self] in
                             _ = try AskAgentBinding.resolve(self.snapshots[identity.conversationId]?.run?.agentBinding)
-                            try Task.checkCancellation()
+                            try self.checkOperation(identity.conversationId, operationId: operationId, account: current.account)
+                            if self.snapshots[identity.conversationId]?.run?.recoveryCheck == true,
+                               !AskRecoveryObservation.permits(call) {
+                                throw AskLocalError.message(L("ask.recovery.readOnly"))
+                            }
                             if run.budgetEnabled == true, let deadline = run.budgetDeadline, Date() >= deadline {
                                 throw AskLocalError.message(L("ask.budget.stopped", L("ask.budget.reason.duration")))
                             }
@@ -1797,7 +1801,7 @@ final class AskConversationModel: ObservableObject {
                 }
                 try await cache.saveReceipt(.tool(result!), identity: identity, owner: current.owner)
             }
-            value = try await deliverToolResult(result!, identity: identity, current: current)
+            value = try await deliverToolResult(result!, identity: identity, current: current, operationId: operationId)
         }
     }
 
@@ -2119,11 +2123,9 @@ final class AskConversationModel: ObservableObject {
         temporary ? tools.filter { $0.name != "memory" } : tools
     }
 
-    /// Only offer tools with an observation action. The execution risk check in
-    /// `drive` still rejects mutating actions within these mixed-use tools.
+    /// Offer the same host-owned observation actions enforced at dispatch.
     static func recoveryObservationTools(_ tools: [AskToolDefinition]) -> [AskToolDefinition] {
-        let names: Set<String> = ["computer", "browser", "files", "project_files", "project_terminal", "web_browser"]
-        return tools.filter { names.contains($0.name) }
+        AskRecoveryObservation.offered(tools)
     }
 
     /// Callers await this before their operation finishes, so a conversation never looks idle

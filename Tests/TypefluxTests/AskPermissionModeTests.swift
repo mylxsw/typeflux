@@ -125,7 +125,7 @@ struct AskPermissionModeTests {
         #expect(f.tools.executions == 1)
         #expect(await f.api.sends.count == 1)
         #expect(f.model.sendQueue.messages( f.model.selectedId ?? "").isEmpty)
-        f.model.stop()
+        f.model.resetSession()
         #expect(f.model.permissionMode(launcher: false) == .standard)
     }
 

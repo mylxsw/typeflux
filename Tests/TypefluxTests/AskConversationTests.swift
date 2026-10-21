@@ -89,7 +89,7 @@ actor AskTestAPI: AskAPI {
         guard let value = values[id] else { throw AskLocalError.message("Not found") }
         if held.contains(id) { await withCheckedContinuation { waiting[id, default: []].append($0) } }
         if failGets.contains(id) { throw AskLocalError.message("Offline") }
-        return value
+        return values[id] ?? value
     }
     func send(conversationId: String, request: AskSendRequest, token: String) async throws -> AskConversation {
         if failSend { throw AskLocalError.message("Network unavailable") }
@@ -152,6 +152,7 @@ actor AskTestAPI: AskAPI {
         if failReceipts { throw URLError(.notConnectedToInternet) }
         inferenceResults.append(request)
         var value = try await conversation(id: conversationId, token: token)
+        guard value.run?.id == request.runId else { return value }
         value.messages.append(.init(id: UUID().uuidString, role: "assistant", text: request.content, toolCalls: request.toolCalls, createdAt: Date()))
         value.run?.status = request.failed ? "failed" : "completed"
         value.run?.inference = nil
@@ -262,8 +263,9 @@ final class AskTestTools: AskToolExecuting {
     func grantFolders(_ paths: [String], conversationId: String) { grantedFolders[conversationId, default: []] += paths }
     var beforeDefinitions: (() async -> Void)?
     var definitionRequests: [String?] = []
+    var riskOverride: AskToolRisk?
     func risk(of call: AskToolCall) -> AskToolRisk {
-        call.function.name.hasPrefix("danger") ? .destructive : AskLocalTools.builtinRisk(call)
+        riskOverride ?? (call.function.name.hasPrefix("danger") ? .destructive : AskLocalTools.builtinRisk(call))
     }
     func definitions(conversationId: String?) async -> [AskToolDefinition] {
         definitionRequests.append(conversationId)

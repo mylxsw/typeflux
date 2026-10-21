@@ -30,19 +30,66 @@ extension AskConversationModel {
     }
 
     func deliverToolResult(_ result: AskToolResultRequest, identity: AskExecutionIdentity,
-                           current: AskRoute) async throws -> AskConversation {
-        try Task.checkCancellation()
-        guard session()?.owner == current.account else { throw CancellationError() }
-        if result.approveExecution == true {
-            guard let approval = cloudApprovals[identity.key],
-                  approvalStore.validateDispatch(approval.id, for: approval.request) else {
-                throw AskLocalError.message(L("ask.approval.changed"))
-            }
-        }
-        let response = try await api.result(conversationId: identity.conversationId,
-                                            request: result, token: current.token)
+                           current: AskRoute, operationId: UUID? = nil) async throws -> AskConversation {
+        let response = try await sendToolResult(result, identity: identity, current: current, operationId: operationId)
         try await acknowledgeExecution(identity, response: response, current: current)
         cloudApprovals[identity.key] = nil
         return response
+    }
+
+    /// Transport only. A saved approval is an execution intent and needs live authority;
+    /// completed receipts can reconcile their original execution without another grant.
+    func sendToolResult(_ result: AskToolResultRequest, identity: AskExecutionIdentity,
+                        current: AskRoute, operationId: UUID? = nil) async throws -> AskConversation {
+        let generation = recoveryGeneration
+        let operation = operationId ?? operationGenerations[identity.conversationId]
+        func checkCurrent() throws {
+            try Task.checkCancellation()
+            guard session()?.owner == current.account, identity.owner == current.account,
+                  identity.deviceId == deviceId,
+                  recoveryGeneration == generation,
+                  operationGenerations[identity.conversationId] == operation else { throw CancellationError() }
+        }
+        try checkCurrent()
+        guard AskExecutionReceipt.tool(result).matches(identity) else { throw AskRecoveryError.unknown }
+        if result.approveExecution == true {
+            let latest = try await api.conversation(id: identity.conversationId, token: current.token)
+            try checkCurrent()
+            try await accept(latest, route: current)
+            try checkCurrent()
+            guard let snapshot = snapshots[identity.conversationId] else { throw AskRecoveryError.unknown }
+            if snapshot.messages.contains(where: {
+                $0.role == "tool" && $0.toolCallId == identity.callId &&
+                    ($0.runId == identity.runId || ($0.runId == nil && snapshot.run?.id == identity.runId))
+            }) { return snapshot }
+            guard let run = snapshot.run, run.id == identity.runId, run.deviceId == identity.deviceId,
+                  String(run.steps) == identity.stepId, run.budgetRootId == identity.rootId,
+                  run.status == "waiting_tool", !run.needsRecoveryInspection,
+                  let call = run.pending.first, call.id == identity.callId,
+                  let definition = run.approvalTool(for: call),
+                  let approval = cloudApprovals[identity.key],
+                  approval.request.context.ownerId == identity.owner,
+                  approval.request.context.conversationId == identity.conversationId,
+                  approval.request.context.runId == identity.runId,
+                  approval.request.context.stepId == identity.stepId,
+                  approval.request.context.toolCallId == identity.callId,
+                  approval.request.context.toolName == call.function.name,
+                  approval.request.context.argumentsHash == AskToolPolicy.digest(call.function.arguments) else {
+                throw AskLocalError.message(L("ask.recovery.approvalChanged"))
+            }
+            _ = try AskAgentBinding.resolve(run.agentBinding)
+            if run.recoveryCheck == true, !AskRecoveryObservation.permits(call) {
+                throw AskLocalError.message(L("ask.recovery.readOnly"))
+            }
+            let binding = try await preparedToolBinding(call, conversationId: snapshot.id, cloudDefinition: definition)
+            try checkCurrent()
+            guard snapshots[snapshot.id]?.run == run,
+                  binding == approval.request.binding,
+                  approvalStore.validateDispatch(approval.id, for: approval.request) else {
+                throw AskLocalError.message(L("ask.recovery.approvalChanged"))
+            }
+        }
+        return try await api.result(conversationId: identity.conversationId,
+                                    request: result, token: current.token)
     }
 }

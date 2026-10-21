@@ -221,6 +221,10 @@ final class AskEmbeddedBrowserToolTests: XCTestCase {
         workspace.policy.set(.act, for: "fixture.invalid")
         XCTAssertEqual(tool.risk(["action": "snapshot"]), .read)
         XCTAssertEqual(tool.risk(["action": "click", "ref": unread]), .read)
+        for action in ["click", "fill", "open", "new_tab", "select_tab", "close_tab", "handoff"] {
+            let call = AskToolCall(id: "trusted", function: .init(name: "web_browser", arguments: "{\"action\":\"\(action)\"}"))
+            XCTAssertFalse(AskRecoveryObservation.permits(call), action)
+        }
         XCTAssertEqual(tool.risk(["action": "click", "ref": pay]), .destructive)
         XCTAssertEqual(tool.risk(["action": "open", "url": "https://elsewhere.invalid/"]), .write,
                        "Opening another site follows that site's permission")
