@@ -43,6 +43,8 @@ actor AskLocalEngine: AskAPI {
 
     private let promptBuilder: any AskPromptBuilding
     let directory: URL
+    private let snapshotStore: any AskLocalSnapshotStoring
+    let budgetStore: any AskBudgetJournaling
     private let prepareImages: @Sendable ([AskMessage]) async -> [AskMessage]
     private let typedContentEnabled: Bool
     private let builtinTools: any AskBuiltinToolHosting
@@ -74,7 +76,9 @@ actor AskLocalEngine: AskAPI {
          summarize: (@Sendable (AskInference, String, String) async -> AskInferenceResult)? = nil,
          prepareImages: @escaping @Sendable ([AskMessage]) async -> [AskMessage] = { await AskTypedContent.prepareHistory($0) },
          promptBuilder: any AskPromptBuilding = DefaultAskPromptBuilder(),
-         builtinTools: (any AskBuiltinToolHosting)? = nil) {
+         builtinTools: (any AskBuiltinToolHosting)? = nil,
+         snapshotStore: (any AskLocalSnapshotStoring)? = nil,
+         budgetStore: (any AskBudgetJournaling)? = nil) {
         self.promptBuilder = promptBuilder
         self.summarize = summarize
         self.prepareImages = prepareImages
@@ -83,6 +87,8 @@ actor AskLocalEngine: AskAPI {
         self.contextLimits = contextLimits
         self.typedContentEnabled = typedContentEnabled
         self.directory = directory
+        self.snapshotStore = snapshotStore ?? FileAskLocalSnapshotStore(directory: directory)
+        self.budgetStore = budgetStore ?? AskBudgetStore(directory: directory)
         self.builtinTools = builtinTools ?? DefaultAskBuiltinToolHost(webTools: webTools)
         self.now = now
     }
@@ -96,10 +102,9 @@ actor AskLocalEngine: AskAPI {
     private func loadAll() {
         guard !loaded else { return }
         loaded = true
-        let files = (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? []
         let decoder = AskCoding.decoder()
-        for file in files where file.pathExtension == "json" {
-            if let data = try? Data(contentsOf: file), var record = try? decoder.decode(AskLocalRecord.self, from: data) {
+        for data in snapshotStore.loadSnapshots() {
+            if var record = try? decoder.decode(AskLocalRecord.self, from: data) {
                 // A persisted engine step may have dispatched a built-in request before exit.
                 // Inspect/cancel it; never infer that a fresh process can safely repeat it.
                 if (try? AskAgentBinding.resolve(record.conversation.run?.agentBinding)) != nil, record.conversation.run?.status == "running" {
@@ -110,11 +115,9 @@ actor AskLocalEngine: AskAPI {
         }
     }
 
-    private func file(_ id: String) -> URL { directory.appendingPathComponent(id + ".json") }
-
     /// Conversation IDs become file names, so only plain identifiers are accepted.
     static func validID(_ id: String) -> Bool {
-        !id.isEmpty && id.count <= 128 && id.allSatisfy { ($0.isASCII && ($0.isLetter || $0.isNumber)) || $0 == "-" || $0 == "_" }
+        AskStorageIdentifier.isValid(id)
     }
 
     private func save(_ record: inout AskLocalRecord) throws {
@@ -142,8 +145,7 @@ actor AskLocalEngine: AskAPI {
     /// A temporary conversation never reaches the disk.
     private func persist(_ record: AskLocalRecord) throws {
         if !temporaryIDs.contains(record.conversation.id) {
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            try AskCoding.encoder().encode(record).write(to: file(record.conversation.id), options: [.atomic, .completeFileProtection])
+            try snapshotStore.writeSnapshot(AskCoding.encoder().encode(record), id: record.conversation.id)
         }
         var retained = record
         for index in retained.conversation.messages.indices { retained.conversation.messages[index].harness?.outcome?.preparedImages = [:] }
@@ -213,7 +215,7 @@ actor AskLocalEngine: AskAPI {
         guard Self.validID(id) else { return }
         summaries.removeValue(forKey: id)?.task.cancel()
         records[id] = nil
-        if temporaryIDs.remove(id) == nil { try? FileManager.default.removeItem(at: file(id)) }
+        if temporaryIDs.remove(id) == nil { try? snapshotStore.removeSnapshot(id: id) }
     }
 
     /// Keeps a temporary conversation as an ordinary one stored on this Mac.

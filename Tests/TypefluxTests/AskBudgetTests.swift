@@ -114,7 +114,7 @@ final class AskBudgetTests: XCTestCase {
         let initial = controller(), now = now
         _ = try store.update(conversation: "c", root: "run", initial: initial) { _ in }
         DispatchQueue.concurrentPerform(iterations: 30) { index in
-            _ = try? store.update(conversation: "c", root: "run") { budget in
+            _ = try? AskBudgetStore(directory: directory).update(conversation: "c", root: "run") { budget in
                 let id = String(index)
                 try budget.reserve(
                     .init(operationId: id, stepId: "1", callId: id, kind: "web", reserved: .init(webRequests: 1)),
@@ -130,6 +130,52 @@ final class AskBudgetTests: XCTestCase {
         XCTAssertThrowsError(try store.update(conversation: "../escape", root: "run") { _ in })
         XCTAssertThrowsError(try store.update(conversation: "c", root: "missing") { _ in })
         XCTAssertThrowsError(try store.update(conversation: "c", root: "different", initial: initial) { _ in })
+    }
+
+    func testJournalContractFailuresAndDurableThrowingStop() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store: any AskBudgetJournaling = AskBudgetStore(directory: directory)
+        let initial = controller()
+        for (conversation, root) in [("../escape", "run"), ("c", "../escape"), ("", "run"), ("c", "")] {
+            XCTAssertThrowsError(try store.update(conversation: conversation, root: root, initial: initial) { _ in })
+            XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
+        }
+        XCTAssertThrowsError(try store.update(conversation: "c", root: "run", initial: nil) { _ in })
+        let file = directory.appendingPathComponent("Budgets/c/run.json")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
+        _ = try store.update(conversation: "c", root: "run", initial: initial) { _ in }
+        let before = try Data(contentsOf: file)
+        XCTAssertThrowsError(try store.update(conversation: "c", root: "run", initial: nil) { $0.version = 99 })
+        XCTAssertEqual(try Data(contentsOf: file), before)
+        XCTAssertThrowsError(try store.update(conversation: "c", root: "run", initial: nil) { value in
+            try value.reserve(reservation("denied", .init(tokens: 1001)), at: now)
+        })
+        var recovered = try store.update(conversation: "c", root: "run", initial: nil) { _ in }
+        XCTAssertEqual(recovered.stopReason, "tokens")
+        XCTAssertTrue(recovered.reservations.isEmpty)
+        try Data("corrupt".utf8).write(to: file)
+        var called = false
+        XCTAssertThrowsError(try store.update(conversation: "c", root: "run", initial: initial) { _ in called = true })
+        XCTAssertFalse(called)
+        XCTAssertEqual(try Data(contentsOf: file), Data("corrupt".utf8))
+        recovered.version = 99
+        try AskCoding.encoder().encode(recovered).write(to: file)
+        XCTAssertThrowsError(try store.update(conversation: "c", root: "run", initial: nil) { _ in called = true })
+        XCTAssertFalse(called)
+        try FileManager.default.removeItem(at: file)
+        _ = try store.update(conversation: "c", root: "run", initial: initial) { value in
+            try value.reserve(reservation(), at: now)
+            try value.start("op", at: now)
+        }
+        let settled = try store.update(conversation: "c", root: "run", initial: nil) { value in
+            try value.settle("op", actual: .init(tokens: 20), source: "provider", tokensFinal: true, costFinal: true)
+        }
+        let repeated = try AskBudgetStore(directory: directory).update(conversation: "c", root: "run") { value in
+            try value.settle("op", actual: .init(tokens: 20), source: "provider", tokensFinal: true, costFinal: true)
+        }
+        XCTAssertEqual(repeated.revision, settled.revision)
+        XCTAssertEqual(repeated.occupied.tokens, 20)
     }
 
     func testContextPlannerPreservesToolsGoalsRefusalsAndHandlesImages() throws {
