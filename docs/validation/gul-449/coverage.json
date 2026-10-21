@@ -1,0 +1,33 @@
+[
+  {
+    "file": "Apps/iOS/TypefluxIOS/ChatModelPicker.swift",
+    "covered": 1,
+    "executable": 1,
+    "uncovered": []
+  },
+  {
+    "file": "Apps/iOS/TypefluxIOS/ChatProviderViews.swift",
+    "covered": 55,
+    "executable": 61,
+    "uncovered": [
+      398,
+      399,
+      400,
+      401,
+      402,
+      405
+    ]
+  },
+  {
+    "file": "Apps/iOS/TypefluxIOS/ChatStore+Offline.swift",
+    "covered": 12,
+    "executable": 12,
+    "uncovered": []
+  },
+  {
+    "file": "Apps/iOS/TypefluxIOS/ChatStore.swift",
+    "covered": 3,
+    "executable": 3,
+    "uncovered": []
+  }
+]

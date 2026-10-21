@@ -88,7 +88,7 @@ final class ChatFlowTests: XCTestCase {
         app.buttons["changeModel"].tap()
         app.buttons["model-standard-preview"].tap()
         XCTAssertFalse(app.descendants(matching: .any)["reasoningSlider"].exists)
-        XCTAssertTrue(app.staticTexts["This model does not offer reasoning levels and answers in its own way."].exists)
+        XCTAssertTrue(app.staticTexts["Not supported"].exists)
         app.buttons["changeModel"].tap()
         app.buttons["model-preview"].tap()
         app.buttons["resetReasoning"].coordinate(withNormalizedOffset: CGVector(dx: -1, dy: -3)).tap()

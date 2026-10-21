@@ -429,3 +429,5 @@
 "Unable to change app icon" = "无法更换应用图标";
 "Please try again. Your current app icon is unchanged." = "请重试。当前应用图标未更改。";
 "appIcon.primary" = "默认图标";
+
+"Not supported" = "不支持";

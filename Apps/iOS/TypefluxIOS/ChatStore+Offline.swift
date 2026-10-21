@@ -20,7 +20,23 @@ extension ChatStore {
         return "account:" + (account.isEmpty ? "unknown" : account)
     }
 
-    /// Shown above the conversation and in the sidebar while Typeflux is unreachable.
+    nonisolated static let connectivityDismissalKey = "connectivity.notice.dismissedAt"
+
+    func dismissConnectivityNotice(at date: Date = Date()) {
+        connectivityNoticeDismissedAt = date
+        if !isSynthetic {
+            noticeDefaults.set(date, forKey: Self.connectivityDismissalKey)
+        }
+    }
+
+    func showsConnectivityNotice(at date: Date) -> Bool {
+        guard connectivityNotice != nil else { return false }
+        guard let dismissed = connectivityNoticeDismissedAt else { return true }
+        // A backward clock change must not suppress the notice indefinitely.
+        return date < dismissed || date.timeIntervalSince(dismissed) >= 24 * 60 * 60
+    }
+
+    /// Shown above the conversation while Typeflux is unreachable.
     var connectivityNotice: String? {
         guard isAuthenticated else { return nil }
         switch connectivity {

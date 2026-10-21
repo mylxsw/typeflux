@@ -12,11 +12,6 @@ struct ChatModelPicker: View {
         let shown = store.reasoningEffort.nearest(in: store.supportedReasoningLevels)
         Button { expanded = true } label: {
             HStack(spacing: 6) {
-                if store.sendsLocally {
-                    Image(systemName: "lock.fill").font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(ChatTheme.purple)
-                        .accessibilityLabel(NSLocalizedString("Private conversation", comment: ""))
-                }
                 if let model = store.selectedModel {
                     ChatModelLogo(model: model, size: 16)
                 }
@@ -159,7 +154,7 @@ struct ChatModelEffortCard: View {
             }
             if store.supportedReasoningLevels.isEmpty {
                 Text(NSLocalizedString(
-                    "This model does not offer reasoning levels and answers in its own way.",
+                    "Not supported",
                     comment: ""
                 ))
                 .font(.system(size: 13))

@@ -37,7 +37,6 @@ struct ChatSidebar: View {
                 .padding(.horizontal, 4).padding(.bottom, 4)
                 .accessibilityIdentifier("chat.history.filter")
             }
-            ChatConnectivityBanner(store: store).padding(.horizontal, 4).padding(.bottom, 4)
             List {
                 if !store.isAuthenticated {
                     guestRow(symbol: "person.crop.circle.badge.plus", tint: ChatTheme.accentText,
