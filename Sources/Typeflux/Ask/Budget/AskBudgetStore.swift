@@ -3,12 +3,14 @@ import Foundation
 
 /// A separate atomic journal prevents stale conversation saves from discarding
 /// late usage. The advisory file lock also serializes two engine instances.
-struct AskBudgetStore: Sendable {
+struct AskBudgetStore: AskBudgetJournaling {
     var directory: URL
 
     func update(conversation: String, root: String, initial: AskBudgetController? = nil,
                 _ change: (inout AskBudgetController) throws -> Void) throws -> AskBudgetController {
-        guard AskLocalEngine.validID(conversation), AskLocalEngine.validID(root) else { throw AskBudgetError.invalid }
+        guard AskStorageIdentifier.isValid(conversation), AskStorageIdentifier.isValid(root) else {
+            throw AskBudgetError.invalid
+        }
         let folder = directory.appendingPathComponent("Budgets").appendingPathComponent(conversation)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let lock = open(folder.appendingPathComponent(root + ".lock").path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)

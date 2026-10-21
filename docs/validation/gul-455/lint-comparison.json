@@ -1,0 +1,61 @@
+{
+  "command": "swiftlint lint --use-stdin --reporter json --quiet (each baseline/current source; repository config)",
+  "baseline": "307ae12f",
+  "wall_seconds": 3.226515125017613,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskStorageIdentifier.swift",
+      "base": {},
+      "current": {},
+      "added_rule_counts": {}
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Budget/AskBudgetJournaling.swift",
+      "base": {},
+      "current": {},
+      "added_rule_counts": {}
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Budget/AskBudgetStore.swift",
+      "base": {},
+      "current": {},
+      "added_rule_counts": {}
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Local/AskLocalEngine+Budget.swift",
+      "base": {},
+      "current": {},
+      "added_rule_counts": {}
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Local/AskLocalEngine.swift",
+      "base": {
+        "cyclomatic_complexity": 2,
+        "function_body_length": 2,
+        "function_parameter_count": 1,
+        "identifier_name": 4,
+        "line_length": 59,
+        "optional_data_string_conversion": 1,
+        "statement_position": 1,
+        "type_body_length": 1
+      },
+      "current": {
+        "cyclomatic_complexity": 2,
+        "function_body_length": 2,
+        "function_parameter_count": 1,
+        "identifier_name": 4,
+        "line_length": 56,
+        "optional_data_string_conversion": 1,
+        "statement_position": 1,
+        "type_body_length": 1
+      },
+      "added_rule_counts": {}
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Local/AskLocalSnapshotStore.swift",
+      "base": {},
+      "current": {},
+      "added_rule_counts": {}
+    }
+  ]
+}

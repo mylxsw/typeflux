@@ -1,0 +1,10 @@
+Export command: ['xcrun', 'llvm-cov', 'export', '/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-455-61bce2fa7d76/workdir/typeflux/.build/arm64-apple-macosx/debug/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests', '-instr-profile=/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-455-61bce2fa7d76/workdir/typeflux/.build/arm64-apple-macosx/debug/codecov/default.profdata', '-format=lcov', '/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-455-61bce2fa7d76/workdir/typeflux/Sources/Typeflux/Ask/AskStorageIdentifier.swift', '/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-455-61bce2fa7d76/workdir/typeflux/Sources/Typeflux/Ask/Budget/AskBudgetJournaling.swift', '/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-455-61bce2fa7d76/workdir/typeflux/Sources/Typeflux/Ask/Budget/AskBudgetStore.swift', '/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-455-61bce2fa7d76/workdir/typeflux/Sources/Typeflux/Ask/Local/AskLocalEngine+Budget.swift', '/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-455-61bce2fa7d76/workdir/typeflux/Sources/Typeflux/Ask/Local/AskLocalEngine.swift', '/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-455-61bce2fa7d76/workdir/typeflux/Sources/Typeflux/Ask/Local/AskLocalSnapshotStore.swift']
+Baseline: 307ae12f (main after PR #693)
+Denominator: added/modified production lines with LLVM DA records; excludes declarations, comments and tests.
+Sources/Typeflux/Ask/AskStorageIdentifier.swift: 4/4; uncovered: []
+Sources/Typeflux/Ask/Budget/AskBudgetJournaling.swift: 0/0; uncovered: []
+Sources/Typeflux/Ask/Budget/AskBudgetStore.swift: 3/3; uncovered: []
+Sources/Typeflux/Ask/Local/AskLocalEngine+Budget.swift: 1/1; uncovered: []
+Sources/Typeflux/Ask/Local/AskLocalEngine.swift: 8/8; uncovered: []
+Sources/Typeflux/Ask/Local/AskLocalSnapshotStore.swift: 20/20; uncovered: []
+Changed executable line coverage: 36/36 = 100.00%

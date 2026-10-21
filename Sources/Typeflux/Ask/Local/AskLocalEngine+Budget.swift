@@ -7,7 +7,7 @@ extension AskLocalEngine {
         guard let root = run.budgetRootId, let deadline = run.budgetDeadline,
               let limits = run.budgetLimits else { throw AskBudgetError.invalid }
         let initial = AskBudgetController(runId: root, limits: limits, deadline: deadline)
-        return try AskBudgetStore(directory: directory).update(
+        return try budgetStore.update(
             conversation: record.conversation.id,
             root: root,
             initial: initial
