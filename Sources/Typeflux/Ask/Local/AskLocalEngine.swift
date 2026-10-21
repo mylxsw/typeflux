@@ -3,6 +3,7 @@ import Foundation
 
 /// Engine-only state stored next to a local conversation.
 struct AskLocalRecord: Codable, Equatable, Sendable {
+    var agentRoutes: AskRunRouteArchive?
     var summaryFallback: Bool?
     var summaryUnavailable: Bool?
     var contextLimits: AskContextLimits?
@@ -29,7 +30,7 @@ struct AskLocalRecord: Codable, Equatable, Sendable {
 /// on-device inference (`waiting_inference`) that the conversation model already
 /// knows how to run, device tools use the usual approval flow, and conversations
 /// are stored as JSON files under Application Support.
-actor AskLocalEngine: AskAPI {
+actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     static let maxSteps = 100
     static let maxMessages = 500
     static let maxToolCalls = 8
@@ -143,13 +144,25 @@ actor AskLocalEngine: AskAPI {
 
     /// Metering can arrive after a run ends without changing content or activity dates.
     /// A temporary conversation never reaches the disk.
-    private func persist(_ record: AskLocalRecord) throws {
+    func persist(_ record: AskLocalRecord) throws {
+        var record = record
+        let cached = records[record.conversation.id]
+        record.agentRoutes = try AskRunRouteArchive.merging(cached: cached?.agentRoutes, incoming: record.agentRoutes,
+            previous: cached?.conversation.run, current: record.conversation.run)
         if !temporaryIDs.contains(record.conversation.id) {
             try snapshotStore.writeSnapshot(AskCoding.encoder().encode(record), id: record.conversation.id)
         }
         var retained = record
         for index in retained.conversation.messages.indices { retained.conversation.messages[index].harness?.outcome?.preparedImages = [:] }
         records[record.conversation.id] = retained
+    }
+
+    func runRoute(conversationId: String, runId: String) async throws -> AskRunRouteLookup {
+        loadAll()
+        let id = AskConversationID.canonical(conversationId)
+        guard Self.validID(id), let value = records[id] else { throw AskLocalError.message(L("ask.local.notFound")) }
+        guard AskStorageIdentifier.isValid(runId) else { throw conflict() }
+        return AskRunRouteArchive.lookup(archive: value.agentRoutes, current: value.conversation.run, runID: runId)
     }
 
     func isTemporary(_ id: String) -> Bool { temporaryIDs.contains(AskConversationID.canonical(id)) }
@@ -221,7 +234,10 @@ actor AskLocalEngine: AskAPI {
     /// Keeps a temporary conversation as an ordinary one stored on this Mac.
     func keep(conversationId: String, token _: String) async throws -> AskConversation {
         let value = try record(conversationId)
-        if temporaryIDs.remove(value.conversation.id) != nil { try persist(value) }
+        if temporaryIDs.remove(value.conversation.id) != nil {
+            do { try persist(value) }
+            catch { temporaryIDs.insert(value.conversation.id); throw error }
+        }
         return value.conversation
     }
 
@@ -891,5 +907,31 @@ actor AskLocalEngine: AskAPI {
 
     static func parsePlan(_ arguments: String) throws -> [AskPlanItem] {
         try AskBuiltinPlan.parse(arguments)
+    }
+}
+
+extension AskLocalRecord {
+    private enum CodingKeys: String, CodingKey {
+        case agentRoutes, summaryFallback, summaryUnavailable, contextLimits, typedContentEnabled, conversation
+        case timeZone, locale, localDate, builtinTools, lastInferenceId, localUsage, cloudCalls, approvedCloudCallId, steering
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        agentRoutes = values.contains(.agentRoutes) ? try values.decode(AskRunRouteArchive.self, forKey: .agentRoutes) : nil
+        summaryFallback = try values.decodeIfPresent(Bool.self, forKey: .summaryFallback)
+        summaryUnavailable = try values.decodeIfPresent(Bool.self, forKey: .summaryUnavailable)
+        contextLimits = try values.decodeIfPresent(AskContextLimits.self, forKey: .contextLimits)
+        typedContentEnabled = try values.decodeIfPresent(Bool.self, forKey: .typedContentEnabled)
+        conversation = try values.decode(AskConversation.self, forKey: .conversation)
+        timeZone = try values.decodeIfPresent(String.self, forKey: .timeZone)
+        locale = try values.decodeIfPresent(String.self, forKey: .locale)
+        localDate = try values.decodeIfPresent(String.self, forKey: .localDate)
+        builtinTools = try values.decode([AskToolDefinition].self, forKey: .builtinTools)
+        lastInferenceId = try values.decodeIfPresent(String.self, forKey: .lastInferenceId)
+        localUsage = try values.decodeIfPresent(AskLocalUsage.self, forKey: .localUsage)
+        cloudCalls = try values.decode(Int.self, forKey: .cloudCalls)
+        approvedCloudCallId = try values.decodeIfPresent(String.self, forKey: .approvedCloudCallId)
+        steering = try values.decodeIfPresent([AskMessage].self, forKey: .steering)
     }
 }
