@@ -24,15 +24,16 @@ struct AskLocalApprovalTests {
         let settings = SettingsStore(defaults: UserDefaults(suiteName: UUID().uuidString)!)
         settings.askFileAccessFolders = [root.path]
         let tools = AskLocalTools(registry: registry(), settings: settings)
-        let read = try call("files", ["action": "read", "path": "./link"])
+        let linkedRead = try call("files", ["action": "read", "path": "./link"])
+        await #expect(throws: (any Error).self) { try await tools.approvalBinding(for: linkedRead, conversationId: "c") }
+        let read = try call("files", ["action": "read", "path": "./first.txt"])
         let approved = try await tools.approvalBinding(for: read, conversationId: "c")
         #expect(approved.target.path == first.resolvingSymlinksInPath().path)
         #expect(approved.allowsReuse)
         var authorizations = 0
         let result = try await tools.executeApproved(read, conversationId: "c", binding: approved) { authorizations += 1 }
         #expect(result.content.contains("first")); #expect(authorizations == 1)
-        try FileManager.default.removeItem(at: link)
-        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: second)
+        try Data("changed".utf8).write(to: first)
         await #expect(throws: (any Error).self) { try await tools.executeApproved(read, conversationId: "c", binding: approved, authorize: {}) }
         let write = try call("files", ["action": "write", "path": "created.txt", "content": "new"])
         let writeBinding = try await tools.approvalBinding(for: write, conversationId: "c")

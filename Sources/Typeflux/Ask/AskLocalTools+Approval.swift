@@ -145,12 +145,7 @@ extension AskLocalTools {
             return try await executeAutomation(call.function.name, args: args, conversationId: conversationId,
                                                approved: binding.target, authorize: authorize)
         case "files":
-            let files = fileTools(conversationId: conversationId)
-            return try await Task.detached(priority: .userInitiated) {
-                let path = try files.resolve(args["path"] as? String ?? "", forWriting: args["action"] as? String == "write").path
-                guard Self.fileApprovalTarget(path) == binding.target else { throw AskLocalError.message(L("ask.approval.changed")) }
-                return .init(content: try files.execute(args))
-            }.value
+            return try await executeFiles(args, conversationId: conversationId, approved: binding.target)
         case AskNotebookTool.name:
             // Recheck after authorization too; a setting or note may have changed while consent was pending.
             guard var tool = notebookTool, try await tool.approvalTarget(args) == binding.target else {

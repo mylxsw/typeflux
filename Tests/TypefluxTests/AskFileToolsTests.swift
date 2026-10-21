@@ -38,9 +38,9 @@ final class AskFileToolsTests: XCTestCase {
 
         XCTAssertTrue(try tools.execute(["action": "write", "path": "new/dir/file.md", "content": "hello"]).hasPrefix("Created"))
         XCTAssertEqual(try String(contentsOf: root.appendingPathComponent("new/dir/file.md")), "hello")
-        XCTAssertTrue(try tools.write("new/dir/file.md", content: "hello again").hasPrefix("Replaced"))
+        XCTAssertTrue(try tools.write("new/dir/file.md", content: "hello again", expectedVersion: tools.readPage("new/dir/file.md").version).hasPrefix("Replaced"))
 
-        XCTAssertTrue(try tools.execute(["action": "edit", "path": "docs/notes.txt", "old_text": "gamma", "new_text": "delta"]).hasPrefix("Edited"))
+        XCTAssertTrue(try tools.execute(["action": "edit", "path": "docs/notes.txt", "old_text": "gamma", "new_text": "delta", "expected_version": try tools.readPage("docs/notes.txt").version]).hasPrefix("Edited"))
         XCTAssertTrue(try String(contentsOf: root.appendingPathComponent("docs/notes.txt")).contains("delta"))
     }
 
@@ -63,24 +63,24 @@ final class AskFileToolsTests: XCTestCase {
         try Data([0x00, 0x01, 0x02]).write(to: root.appendingPathComponent("blob.bin"))
         XCTAssertThrowsError(try tools.read("blob.bin", offset: 0, limit: nil))
         try "x x".write(to: root.appendingPathComponent("dup.txt"), atomically: true, encoding: .utf8)
-        XCTAssertThrowsError(try tools.edit("dup.txt", old: "x", new: "y")) { error in
+        XCTAssertThrowsError(try tools.edit("dup.txt", old: "x", new: "y", expectedVersion: tools.readPage("dup.txt").version)) { error in
             XCTAssertTrue(error.localizedDescription.contains("2"))
         }
-        XCTAssertThrowsError(try tools.edit("dup.txt", old: "z", new: "y"))
+        XCTAssertThrowsError(try tools.edit("dup.txt", old: "z", new: "y", expectedVersion: tools.readPage("dup.txt").version))
         XCTAssertThrowsError(try tools.write("big.txt", content: String(repeating: "a", count: AskFileTools.maximumWriteBytes + 1)))
         for args: [String: Any] in [["action": "search", "path": "."], ["action": "write", "path": "a"], ["action": "edit", "path": "a"], ["action": "drop", "path": "a"]] {
             XCTAssertThrowsError(try tools.execute(args))
         }
         let long = (0 ..< 5000).map { "line \($0) " + String(repeating: "x", count: 30) }.joined(separator: "\n")
         try long.write(to: root.appendingPathComponent("long.txt"), atomically: true, encoding: .utf8)
-        XCTAssertTrue(try tools.read("long.txt", offset: 0, limit: nil).contains("[truncated at line"))
+        XCTAssertTrue(try tools.read("long.txt", offset: 0, limit: nil).contains("Continuation:"))
         let many = root.appendingPathComponent("many")
         try FileManager.default.createDirectory(at: many, withIntermediateDirectories: true)
         for index in 0 ..< (AskFileTools.maximumListEntries + 2) {
             FileManager.default.createFile(atPath: many.appendingPathComponent("f\(index)").path, contents: Data("needle".utf8))
         }
-        XCTAssertTrue(try tools.list("many").contains("[2 more entries]"))
-        XCTAssertTrue(try tools.search("many", pattern: "needle").hasSuffix("[more matches omitted]"))
+        XCTAssertTrue(try tools.list("many").contains("Partial listing"))
+        XCTAssertTrue(try tools.search("many", pattern: "needle").contains("Partial search"))
         try FileManager.default.createDirectory(at: root.appendingPathComponent("empty"), withIntermediateDirectories: true)
         XCTAssertTrue(try tools.list("empty").hasSuffix("(empty)"))
     }
@@ -96,15 +96,15 @@ final class AskFileToolsTests: XCTestCase {
     }
 
     func testExtremePagingAndBinaryBeyondInitialChunk() throws {
-        XCTAssertTrue(try tools.read("docs/notes.txt", offset: 1, limit: Int.max).contains("2\tBeta line"))
-        XCTAssertFalse(try tools.read("docs/notes.txt", offset: Int.max, limit: Int.max).contains("alpha"))
-        XCTAssertTrue(try tools.read("docs/notes.txt", offset: Int.min, limit: Int.min).contains("1\talpha"))
+        XCTAssertThrowsError(try tools.read("docs/notes.txt", offset: 1, limit: Int.max))
+        XCTAssertThrowsError(try tools.read("docs/notes.txt", offset: Int.max, limit: Int.max))
+        XCTAssertThrowsError(try tools.read("docs/notes.txt", offset: Int.min, limit: Int.min))
         try (Data(repeating: 65, count: 9000) + Data([0])).write(to: root.appendingPathComponent("late-binary"))
         XCTAssertThrowsError(try tools.read("late-binary", offset: 0, limit: 1))
         try Data([0xff, 0xfe]).write(to: root.appendingPathComponent("utf16"))
         XCTAssertThrowsError(try tools.read("utf16", offset: 0, limit: 1))
         try FileManager.default.createSymbolicLink(at: root.appendingPathComponent("leak.txt"), withDestinationURL: outside.appendingPathComponent("secret.txt"))
-        XCTAssertEqual(try tools.search(".", pattern: "secret"), "No matches.")
+        XCTAssertTrue(try tools.search(".", pattern: "secret").contains("No matches in the inspected portion."))
     }
 }
 

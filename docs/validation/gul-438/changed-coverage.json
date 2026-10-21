@@ -1,0 +1,79 @@
+{
+  "base": "151b334206180a762a2cf1ce80d176d457aba31b",
+  "head": "62730ae06f39603f0bff46b0bf9f30c95798efa3",
+  "files": {
+    "Sources/Typeflux/Ask/AskFileAccess.swift": {
+      "covered": 172,
+      "executable": 177,
+      "missed_lines": [
+        61,
+        62,
+        63,
+        179,
+        216
+      ],
+      "sha256": "5c3c0887709fce9aab1ccaa543538df78ada39a50d07da5e5bf353dcf0186e58"
+    },
+    "Sources/Typeflux/Ask/AskFileMutation.swift": {
+      "covered": 137,
+      "executable": 142,
+      "missed_lines": [
+        110,
+        111,
+        112,
+        113,
+        147
+      ],
+      "sha256": "0553ee3b14b1cfe15bea180e0d83a72e7a10430e7c7fb8a9477bb95a38e649ab"
+    },
+    "Sources/Typeflux/Ask/AskFileRead.swift": {
+      "covered": 166,
+      "executable": 167,
+      "missed_lines": [
+        112
+      ],
+      "sha256": "4287d224f0a25e815846b7336dbdb62db2361da87a8bec633ac2f9be9dfc88f3"
+    },
+    "Sources/Typeflux/Ask/AskFileTools.swift": {
+      "covered": 76,
+      "executable": 79,
+      "missed_lines": [
+        93,
+        97,
+        116
+      ],
+      "sha256": "864b3086b9ceb296036f79987cd795d7e88e17b8f1e10ea112c32ac18de4539c"
+    },
+    "Sources/Typeflux/Ask/AskFileTraversal.swift": {
+      "covered": 166,
+      "executable": 169,
+      "missed_lines": [
+        15,
+        22,
+        119
+      ],
+      "sha256": "aa66a1727516b75c93b414e51ac4c494294770461038c87580db709c294d83d0"
+    },
+    "Sources/Typeflux/Ask/AskLocalTools+Approval.swift": {
+      "covered": 1,
+      "executable": 1,
+      "missed_lines": [],
+      "sha256": "7a1361311f4a53ca9181801f8a4a15cd456e7dadc595efe06fee815f7430280e"
+    },
+    "Sources/Typeflux/Ask/AskLocalTools+Files.swift": {
+      "covered": 37,
+      "executable": 37,
+      "missed_lines": [],
+      "sha256": "f805033373bb6606fae996ae44fe12375398762843f044377c76a16c67177765"
+    },
+    "Sources/Typeflux/Ask/AskLocalTools.swift": {
+      "covered": 2,
+      "executable": 2,
+      "missed_lines": [],
+      "sha256": "f81ac163777dc452f2cff502745549a5084cab11a8c778d79371df9ba124fa31"
+    }
+  },
+  "covered": 757,
+  "executable": 774,
+  "percent": 97.80361757105943
+}
