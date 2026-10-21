@@ -13,7 +13,6 @@ extension Notification.Name {
     static let voiceCapsuleDidChange = Notification.Name("SettingsStore.voiceCapsuleDidChange")
     static let preferredMicrophoneDidChange = Notification.Name("SettingsStore.preferredMicrophoneDidChange")
     static let instantVoiceInputDidChange = Notification.Name("SettingsStore.instantVoiceInputDidChange")
-    static let mouseVoiceInputDidChange = Notification.Name("SettingsStore.mouseVoiceInputDidChange")
     static let agentConfigurationDidChange = Notification.Name("SettingsStore.agentConfigurationDidChange")
     static let localOptimizationDidEnable = Notification.Name("SettingsStore.localOptimizationDidEnable")
     static let analyticsSharingDidChange = Notification.Name("SettingsStore.analyticsSharingDidChange")
@@ -93,25 +92,6 @@ enum VoiceProcessingTimeout: Int, CaseIterable, Identifiable {
     }
 }
 
-enum MouseVoiceActivationStyle: String, CaseIterable, Identifiable {
-    case dragRelease
-    case hoverDwell
-    case click
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .dragRelease:
-            L("settings.mouseVoice.activation.dragRelease")
-        case .hoverDwell:
-            L("settings.mouseVoice.activation.hoverDwell")
-        case .click:
-            L("settings.mouseVoice.activation.click")
-        }
-    }
-}
-
 final class SettingsStore {
     struct TextLLMConfiguration {
         let provider: LLMRemoteProvider
@@ -133,6 +113,16 @@ final class SettingsStore {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         migrateTranslationHotkeys()
+        removeRetiredMouseVoicePreferences()
+    }
+
+    /// Mouse voice input was replaced by the ring; its preferences have no reader any more.
+    static let retiredMouseVoiceKeys = ["mouseVoice.enabled", "mouseVoice.smartHandle.enabled", "mouseVoice.activationStyle"]
+
+    private func removeRetiredMouseVoicePreferences() {
+        for key in Self.retiredMouseVoiceKeys where defaults.object(forKey: key) != nil {
+            defaults.removeObject(forKey: key)
+        }
     }
 
     var appLanguage: AppLanguage {
@@ -260,35 +250,6 @@ final class SettingsStore {
             guard instantVoiceInputEnabled != newValue else { return }
             defaults.set(newValue, forKey: "audio.recording.instantVoiceInput")
             NotificationCenter.default.post(name: .instantVoiceInputDidChange, object: self)
-        }
-    }
-
-    var mouseVoiceInputEnabled: Bool {
-        get {
-            if let value = defaults.object(forKey: "mouseVoice.enabled") as? Bool {
-                return value
-            }
-            // Keep the prototype preference when upgrading from the first implementation.
-            return defaults.object(forKey: "mouseVoice.smartHandle.enabled") as? Bool ?? true
-        }
-        set {
-            guard mouseVoiceInputEnabled != newValue else { return }
-            defaults.set(newValue, forKey: "mouseVoice.enabled")
-            NotificationCenter.default.post(name: .mouseVoiceInputDidChange, object: self)
-        }
-    }
-
-    var mouseVoiceActivationStyle: MouseVoiceActivationStyle {
-        get {
-            guard let rawValue = defaults.string(forKey: "mouseVoice.activationStyle") else {
-                return .dragRelease
-            }
-            return MouseVoiceActivationStyle(rawValue: rawValue) ?? .dragRelease
-        }
-        set {
-            guard mouseVoiceActivationStyle != newValue else { return }
-            defaults.set(newValue.rawValue, forKey: "mouseVoice.activationStyle")
-            NotificationCenter.default.post(name: .mouseVoiceInputDidChange, object: self)
         }
     }
 

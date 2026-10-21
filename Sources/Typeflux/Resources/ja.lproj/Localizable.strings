@@ -160,15 +160,6 @@
 "settings.instantVoiceInput.suggestion.title" = "Bluetooth マイクの録音開始を速く";
 "settings.instantVoiceInput.suggestion.message" = "Bluetooth ヘッドセットのマイクは、録音開始まで少し時間がかかることがあります。\n\n「すぐに話す」を有効にすると、次回の録音をより速く始められます。";
 "settings.instantVoiceInput.suggestion.enable" = "すぐに話すを有効にする";
-"settings.mouseVoice.title" = "マウス音声入力";
-"settings.mouseVoice.subtitle" = "入力欄で約0.8秒動かさずに長押しすると、ポインタの近くにマイクが表示されます。文字選択や早いドラッグでは起動しません。";
-"settings.mouseVoice.activation.title" = "起動方法";
-"settings.mouseVoice.activation.subtitle" = "ポインタがマイクボタンに入った後、録音開始を確定する方法を選びます。";
-"settings.mouseVoice.activation.dragRelease" = "ドラッグして離す";
-"settings.mouseVoice.activation.hoverDwell" = "ホバーで充填";
-"settings.mouseVoice.activation.click" = "クリックで確定";
-"mouseVoice.handle.start" = "音声入力を開始";
-"mouseVoice.handle.stop" = "音声入力を終了";
 "settings.mute.title" = "録音中にミュートする";
 "settings.mute.subtitle" = "録音中にシステム出力を一時的にミュートして、マイクに漏れるフィードバックやシステム音を軽減します。";
 "settings.permissions" = "権限";

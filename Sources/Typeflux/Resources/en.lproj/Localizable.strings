@@ -160,15 +160,6 @@
 "settings.instantVoiceInput.suggestion.title" = "Start Bluetooth recordings faster";
 "settings.instantVoiceInput.suggestion.message" = "Starting a recording with a Bluetooth headset microphone may take a moment.\n\nEnable Speak Immediately to start your next recording faster.";
 "settings.instantVoiceInput.suggestion.enable" = "Enable Speak Immediately";
-"settings.mouseVoice.title" = "Mouse Voice Input";
-"settings.mouseVoice.subtitle" = "Hold still in a text field for about 0.8 seconds to reveal a nearby microphone. Text selection and early dragging do not trigger it.";
-"settings.mouseVoice.activation.title" = "Activation Method";
-"settings.mouseVoice.activation.subtitle" = "Choose how to confirm recording after the pointer enters the microphone button.";
-"settings.mouseVoice.activation.dragRelease" = "Drag In and Release";
-"settings.mouseVoice.activation.hoverDwell" = "Hover to Fill";
-"settings.mouseVoice.activation.click" = "Click to Confirm";
-"mouseVoice.handle.start" = "Start voice input";
-"mouseVoice.handle.stop" = "Stop voice input";
 "settings.mute.title" = "Mute During Recording";
 "settings.mute.subtitle" = "Temporarily mute the system output while recording to reduce feedback or system sounds leaking into the microphone.";
 "settings.permissions" = "Permissions";
