@@ -1,0 +1,33 @@
+{
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/Local/AskLocalEngine.swift",
+      "covered": 15,
+      "executable": 16,
+      "uncovered": [
+        75
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Local/AskLocalPrompt.swift",
+      "covered": 3,
+      "executable": 3,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Local/AskSemanticCompaction.swift",
+      "covered": 6,
+      "executable": 6,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Local/AskPromptBuilder.swift",
+      "covered": 96,
+      "executable": 96,
+      "uncovered": []
+    }
+  ],
+  "covered": 120,
+  "executable": 121,
+  "percent": 99.17355371900827
+}

@@ -43,11 +43,16 @@ enum AskSemanticCompaction {
     """
 
     static func boundary(_ c: AskConversation, record: AskLocalRecord, tools: [AskToolDefinition]) -> Int? {
+        boundary(c, payload: AskLocalPrompt.payload(conversation: c, record: record, tools: tools), limits: record.contextLimits)
+    }
+
+    /// Production callers provide the payload from their injected builder.
+    static func boundary(_ c: AskConversation, payload: [String: Any], limits: AskContextLimits?) -> Int? {
         let through = c.summaryThrough ?? 0
         guard c.messages.count >= 3 else { return nil }
-        let window = record.contextLimits?.window ?? 32768
-        let weight = AskContextCompaction.weight(AskLocalPrompt.payload(conversation: c, record: record, tools: tools))
-        let legacy = record.contextLimits?.known != true && c.messages.count - through > 28
+        let window = limits?.window ?? 32768
+        let weight = AskContextCompaction.weight(payload)
+        let legacy = limits?.known != true && c.messages.count - through > 28
         guard (c.run?.contextInputTarget ?? 0) > 0 || weight >= window * 65 / 100 || legacy else { return nil }
         var latest = c.messages.count - 1
         while latest > 0, c.messages[latest].role == "tool" { latest -= 1 }

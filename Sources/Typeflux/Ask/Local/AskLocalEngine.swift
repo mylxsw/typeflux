@@ -41,6 +41,7 @@ actor AskLocalEngine: AskAPI {
     static let keepRecent = 12
     static let staleAfter: TimeInterval = 10 * 60
 
+    private let promptBuilder: any AskPromptBuilding
     let directory: URL
     private let prepareImages: @Sendable ([AskMessage]) async -> [AskMessage]
     private let typedContentEnabled: Bool
@@ -71,7 +72,9 @@ actor AskLocalEngine: AskAPI {
          budgetEnabled: Bool = false, budgetLimits: AskBudgetResources = .standard,
          contextLimits: @escaping @Sendable (String) -> AskContextLimits = { _ in .init() },
          summarize: (@Sendable (AskInference, String, String) async -> AskInferenceResult)? = nil,
-         prepareImages: @escaping @Sendable ([AskMessage]) async -> [AskMessage] = { await AskTypedContent.prepareHistory($0) }) {
+         prepareImages: @escaping @Sendable ([AskMessage]) async -> [AskMessage] = { await AskTypedContent.prepareHistory($0) },
+         promptBuilder: any AskPromptBuilding = DefaultAskPromptBuilder()) {
+        self.promptBuilder = promptBuilder
         self.summarize = summarize
         self.prepareImages = prepareImages
         self.budgetEnabled = budgetEnabled
@@ -550,7 +553,8 @@ actor AskLocalEngine: AskAPI {
         guard let summarize, record.summaryUnavailable != true, let run = record.conversation.run else { return false }
         let id = record.conversation.id
         let window = record.contextLimits?.window ?? 32768
-        let hard = AskContextCompaction.weight(AskLocalPrompt.payload(conversation: record.conversation, record: record, tools: allTools(record))) >= window * 80 / 100 || (run.contextInputTarget ?? 0) > 0
+        let prompt = promptBuilder.conversation(promptInput(record.conversation, record))
+        let hard = AskContextCompaction.weight(prompt) >= window * 80 / 100 || (run.contextInputTarget ?? 0) > 0
         if var preparation = summaries[id] {
             let valid = preparation.cut <= record.conversation.messages.count
                 && preparation.through == (record.conversation.summaryThrough ?? 0)
@@ -581,11 +585,11 @@ actor AskLocalEngine: AskAPI {
                 return false
             }
         }
-        guard !hard, let cut = AskSemanticCompaction.boundary(record.conversation, record: record, tools: allTools(record)) else { return false }
+        guard !hard, let cut = AskSemanticCompaction.boundary(record.conversation, payload: prompt, limits: record.contextLimits) else { return false }
         let reference = AskSemanticCompaction.model(record.conversation, fallback: record.summaryFallback == true)
         let limits = contextLimits(reference)
-        var payload = AskLocalPrompt.summaryPayload(conversation: record.conversation, through: cut,
-            model: reference, window: limits.window, output: max(1, min(4096, limits.maxOutput, (record.contextLimits?.window ?? 32768) * 5 / 100)))
+        var payload = promptBuilder.summary(.init(conversation: record.conversation, through: cut,
+            model: reference, window: limits.window, output: max(1, min(4096, limits.maxOutput, (record.contextLimits?.window ?? 32768) * 5 / 100))))
         let end = payload.removeValue(forKey: "typeflux_summary_through") as? Int ?? cut
         payload["typeflux_context_window"] = limits.window
         payload["typeflux_semantic_context"] = true
@@ -636,6 +640,11 @@ actor AskLocalEngine: AskAPI {
         summaries[id]?.result = receipt
     }
 
+    private func promptInput(_ conversation: AskConversation, _ record: AskLocalRecord) -> AskConversationPromptInput {
+        .init(conversation: conversation, tools: allTools(record), localDate: record.localDate ?? "",
+              timeZone: record.timeZone, locale: record.locale, typedContentEnabled: record.typedContentEnabled == true)
+    }
+
     private func allTools(_ record: AskLocalRecord) -> [AskToolDefinition] {
         let device = record.conversation.run?.tools ?? []
         let deviceNames = Set(device.map(\.name))
@@ -662,11 +671,11 @@ actor AskLocalEngine: AskAPI {
         }
         let c = record.conversation
         if !skipSummary, record.summaryUnavailable != true,
-           let cut = AskSemanticCompaction.boundary(c, record: record, tools: allTools(record)) {
+           let cut = AskSemanticCompaction.boundary(c, payload: promptBuilder.conversation(promptInput(c, record)), limits: record.contextLimits) {
             let model = AskSemanticCompaction.model(c, fallback: record.summaryFallback == true)
             let limits = contextLimits(model)
-            let payload = AskLocalPrompt.summaryPayload(conversation: c, through: cut, model: model,
-                                                        window: limits.window, output: max(1, min(4096, limits.maxOutput, (record.contextLimits?.window ?? 32768) * 5 / 100)))
+            let payload = promptBuilder.summary(.init(conversation: c, through: cut, model: model,
+                                                        window: limits.window, output: max(1, min(4096, limits.maxOutput, (record.contextLimits?.window ?? 32768) * 5 / 100))))
             let end = payload["typeflux_summary_through"] as? Int ?? cut
             return try queue(&record, payload: payload, summaryThrough: end)
         }
@@ -687,7 +696,7 @@ actor AskLocalEngine: AskAPI {
             guard let latest = records[record.conversation.id], latest.conversation.revision == revision else { throw conflict() }
             _ = try AskAgentBinding.resolve(latest.conversation.run?.agentBinding)
         }
-        return try queue(&record, payload: AskLocalPrompt.payload(conversation: promptConversation, record: record, tools: allTools(record)),
+        return try queue(&record, payload: promptBuilder.conversation(promptInput(promptConversation, record)),
                          summaryThrough: nil)
     }
 
