@@ -1,0 +1,26 @@
+{
+  "base": "17f06a87680a968f4c33dc81c3f3973a2ab316f7",
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/Local/AskBuiltinPlan.swift",
+      "covered": 22,
+      "executable": 22,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Local/AskBuiltinToolHost.swift",
+      "covered": 39,
+      "executable": 39,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Local/AskLocalEngine.swift",
+      "covered": 7,
+      "executable": 7,
+      "uncovered": []
+    }
+  ],
+  "covered": 68,
+  "executable": 68,
+  "percent": 100.0
+}
