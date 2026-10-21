@@ -212,3 +212,48 @@ struct AskConversationTitleTests {
         }
     }
 }
+
+
+extension AskConversationTitleTests {
+    @Test func localTitleUsesRetainedModelPortAndRejectsToolCalls() async throws {
+        KeychainTokenStore.useInMemoryStoreForTesting = true
+        defer { KeychainTokenStore.useInMemoryStoreForTesting = false }
+        for tools in [false, true] {
+            let suite = "title-port-" + UUID().uuidString
+            let defaults = try #require(UserDefaults(suiteName: suite))
+            let root = FileManager.default.temporaryDirectory.appendingPathComponent(suite)
+            defer { defaults.removePersistentDomain(forName: suite); try? FileManager.default.removeItem(at: root) }
+            let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+            let profile = AskModelProfile(name: "Title", baseURL: "https://example.invalid/v1", model: "synthetic-title")
+            try library.save(profile, key: "synthetic-title-key")
+            defer { KeychainTokenStore.deleteKeychainItem(account: "ask-model-" + profile.id) }
+            library.settings.askTitleModelReference = profile.reference
+            library.settings.askAutomaticTitles = true
+            let fake = RecordingAskModelClient()
+            if tools { await fake.setTools([.init(id: "bad-title", type: "function", function: .init(name: "read", arguments: "{}"))]) }
+            let api = TitleTestAPI()
+            let cache = try AskConversationCache(url: root.appendingPathComponent("cache.sqlite"))
+            let model = AskConversationModel(api: api, cache: cache, tools: AskTestTools(), capture: AskTestCapture(),
+                                            deviceId: "device", modelLibrary: library, defaults: defaults,
+                                            session: { ("owner", "") }, modelClient: fake)
+            defer { model.resetSession() }
+            _ = model.credentials()
+            var value = conversation()
+            value.modelRef = profile.reference
+            value.run = .init(id: "completed", deviceId: "device", status: "completed", steps: 1,
+                              updatedAt: Date(), tools: [], pending: [])
+            await api.seed(value)
+            let route = try #require(model.credentials(for: value.id))
+            try await model.accept(value, route: route)
+            for task in Array(model.titleTasks.values) { await task.value }
+            let invocation = try #require(await fake.invocations.first)
+            #expect(!invocation.hasUsage && !invocation.hasProgress)
+            #expect(invocation.connection.model == "synthetic-title")
+            #expect(invocation.payload.contains("Design chat titles"))
+            let requests = await api.requests
+            #expect(requests.map(\.action) == ["claim", tools ? "fail" : "complete"])
+            let final = try await api.conversation(id: value.id, token: "")
+            #expect(final.title == (tools ? value.title : "Synthetic answer"))
+        }
+    }
+}

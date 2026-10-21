@@ -1,0 +1,7 @@
+TypefluxTests.AskModelCompletingTests/`auxiliary and factory summary capture injected instance and failed receipts`()
+TypefluxTests.AskModelCompletingTests/`background engine uses factory summary closure and collects held task`()
+TypefluxTests.AskModelCompletingTests/`binding ownership and missing model never reach transport`()
+TypefluxTests.AskModelCompletingTests/`conversation and foreground summary preserve prepared input callbacks and receipt replay`()
+TypefluxTests.AskModelCompletingTests/`held completion cannot publish after cancellation replacement or account change`()
+TypefluxTests.AskModelCompletingTests/`workflow cancellation rejects held progress and late reply`()
+TypefluxTests.AskModelCompletingTests/`workflow uses injected client without changing usage semantics`()

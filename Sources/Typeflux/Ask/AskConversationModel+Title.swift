@@ -37,7 +37,9 @@ extension AskConversationModel {
                                                   "typeflux_deadline": Date().addingTimeInterval(20).timeIntervalSince1970]
                     let data = try JSONSerialization.data(withJSONObject: payload)
                     let (text, calls) = try await customInference.complete(provider: provider,
-                        connection: modelLibrary.connection(provider, model: model), payload: String(decoding: data, as: UTF8.self))
+                        connection: modelLibrary.connection(provider, model: model),
+                        payload: String(decoding: data, as: UTF8.self),
+                        onUsage: nil, onProgress: nil)
                     guard calls.isEmpty else { throw AskLocalError.message(L("ask.models.requestError")) }
                     let title = try AskConversationTitle.clean(text)
                     // A follow-up may have started during inference. Wait without

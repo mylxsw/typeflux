@@ -30,7 +30,7 @@ final class AskModelRedirectPolicy: NSObject, URLSessionTaskDelegate, @unchecked
     }
 }
 
-struct AskCustomInference: Sendable {
+struct AskCustomInference: AskModelCompleting {
     var session: URLSession = .init(configuration: .ephemeral, delegate: AskModelRedirectPolicy(), delegateQueue: nil)
 
     func complete(profile: AskModelProfile, key: String, payload: String, onUsage: (@Sendable (AskTokenUsage) async -> Void)? = nil, onProgress: (@Sendable (AskStreamProgress) async -> Void)? = nil) async throws -> (String, [AskToolCall]) {

@@ -16,7 +16,7 @@ private actor AskAuxiliaryCapture {
 
 enum AskAuxiliaryInference {
     @MainActor static func complete(_ inference: AskInference, run: String, device: String,
-                                    library: AskModelLibrary, client: AskCustomInference = .init()) async -> AskInferenceResult {
+                                    library: AskModelLibrary, client: any AskModelCompleting = AskCustomInference()) async -> AskInferenceResult {
         let capture = AskAuxiliaryCapture()
         do {
             guard let body = try JSONSerialization.jsonObject(with: Data(inference.payload.utf8)) as? [String: Any],
