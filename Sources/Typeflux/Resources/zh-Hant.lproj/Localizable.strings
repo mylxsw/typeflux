@@ -152,15 +152,6 @@
 "settings.instantVoiceInput.suggestion.title" = "讓藍牙麥克風啟動更快";
 "settings.instantVoiceInput.suggestion.message" = "使用藍牙耳機麥克風時，開始錄音可能會有短暫延遲。\n\n開啟「按鍵即說」後，再次錄音會更快開始。";
 "settings.instantVoiceInput.suggestion.enable" = "開啟按鍵即說";
-"settings.mouseVoice.title" = "滑鼠語音輸入";
-"settings.mouseVoice.subtitle" = "在輸入框內靜止長按約 0.8 秒，在滑鼠附近顯示麥克風。選取文字或提前拖動時不會觸發。";
-"settings.mouseVoice.activation.title" = "觸發方式";
-"settings.mouseVoice.activation.subtitle" = "選擇滑鼠進入麥克風按鈕後如何確認開始錄音。";
-"settings.mouseVoice.activation.dragRelease" = "拖入後放開";
-"settings.mouseVoice.activation.hoverDwell" = "懸停蓄力";
-"settings.mouseVoice.activation.click" = "點擊確認";
-"mouseVoice.handle.start" = "開始語音輸入";
-"mouseVoice.handle.stop" = "結束語音輸入";
 "settings.mute.title" = "錄音時靜音";
 "settings.mute.subtitle" = "錄音期間暫時靜音系統輸出，減少回聲或系統聲音進入麥克風。";
 "settings.permissions" = "權限";

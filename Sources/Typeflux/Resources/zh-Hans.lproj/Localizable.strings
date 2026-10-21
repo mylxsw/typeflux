@@ -152,15 +152,6 @@
 "settings.instantVoiceInput.suggestion.title" = "让蓝牙麦克风启动更快";
 "settings.instantVoiceInput.suggestion.message" = "使用蓝牙耳机麦克风时，开始录音可能会有短暂延迟。\n\n开启「按键即说」后，再次录音会更快开始。";
 "settings.instantVoiceInput.suggestion.enable" = "开启按键即说";
-"settings.mouseVoice.title" = "鼠标语音输入";
-"settings.mouseVoice.subtitle" = "在输入框内静止长按约 0.8 秒，在鼠标附近显示麦克风。选中文本或提前拖动时不会触发。";
-"settings.mouseVoice.activation.title" = "触发方式";
-"settings.mouseVoice.activation.subtitle" = "选择鼠标进入麦克风按钮后如何确认开始录音。";
-"settings.mouseVoice.activation.dragRelease" = "拖入后松开";
-"settings.mouseVoice.activation.hoverDwell" = "悬停蓄力";
-"settings.mouseVoice.activation.click" = "点击确认";
-"mouseVoice.handle.start" = "开始语音输入";
-"mouseVoice.handle.stop" = "结束语音输入";
 "settings.mute.title" = "录音时静音";
 "settings.mute.subtitle" = "录音期间临时静音系统输出，减少回声或系统声音串入麦克风。";
 "settings.permissions" = "权限";

@@ -160,15 +160,6 @@
 "settings.instantVoiceInput.suggestion.title" = "Bluetooth 마이크 녹음 더 빠르게 시작하기";
 "settings.instantVoiceInput.suggestion.message" = "Bluetooth 헤드셋 마이크는 녹음을 시작할 때 잠시 지연될 수 있습니다.\n\n‘바로 말하기’를 켜면 다음 녹음을 더 빠르게 시작할 수 있습니다.";
 "settings.instantVoiceInput.suggestion.enable" = "바로 말하기 켜기";
-"settings.mouseVoice.title" = "마우스 음성 입력";
-"settings.mouseVoice.subtitle" = "입력란에서 약 0.8초 동안 움직이지 않고 길게 누르면 포인터 근처에 마이크가 표시됩니다. 텍스트 선택이나 이른 드래그에는 작동하지 않습니다.";
-"settings.mouseVoice.activation.title" = "실행 방식";
-"settings.mouseVoice.activation.subtitle" = "포인터가 마이크 버튼에 들어간 뒤 녹음 시작을 확인하는 방법을 선택합니다.";
-"settings.mouseVoice.activation.dragRelease" = "끌어 놓기";
-"settings.mouseVoice.activation.hoverDwell" = "호버 채우기";
-"settings.mouseVoice.activation.click" = "클릭 확인";
-"mouseVoice.handle.start" = "음성 입력 시작";
-"mouseVoice.handle.stop" = "음성 입력 종료";
 "settings.mute.title" = "녹음 중 음소거";
 "settings.mute.subtitle" = "녹음하는 동안 일시적으로 시스템 출력을 음소거하여 피드백이나 시스템 사운드가 마이크에 새는 것을 줄입니다.";
 "settings.permissions" = "권한";

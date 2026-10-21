@@ -5,6 +5,23 @@ import XCTest
 
 @MainActor
 final class SettingsStoreAudioTests: XCTestCase {
+    func testRetiredMouseVoicePreferencesAreRemovedOnLoad() throws {
+        let suiteName = "SettingsStoreAudioTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set(true, forKey: "mouseVoice.enabled")
+        defaults.set(false, forKey: "mouseVoice.smartHandle.enabled")
+        defaults.set("hoverDwell", forKey: "mouseVoice.activationStyle")
+        defaults.set(true, forKey: "audio.recording.instantVoiceInput")
+
+        _ = SettingsStore(defaults: defaults)
+
+        for key in SettingsStore.retiredMouseVoiceKeys {
+            XCTAssertNil(defaults.object(forKey: key), key)
+        }
+        XCTAssertTrue(defaults.bool(forKey: "audio.recording.instantVoiceInput"))
+    }
+
     func testInstantVoiceInputIsDisabledByDefault() throws {
         let suiteName = "SettingsStoreAudioTests-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))

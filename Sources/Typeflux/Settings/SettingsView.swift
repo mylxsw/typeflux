@@ -738,23 +738,6 @@ struct StudioView: View {
                               isOn: Binding(get: { viewModel.instantVoiceInputEnabled },
                                             set: viewModel.setInstantVoiceInputEnabled))
                 TFDivider.form
-                settingSwitch(L("settings.mouseVoice.title"), detail: L("settings.mouseVoice.subtitle"), badge: "Beta",
-                              isOn: Binding(get: { viewModel.mouseVoiceInputEnabled },
-                                            set: viewModel.setMouseVoiceInputEnabled))
-                if viewModel.mouseVoiceInputEnabled {
-                    TFDivider.form
-                    TFFormRow(title: L("settings.mouseVoice.activation.title"),
-                              detail: L("settings.mouseVoice.activation.subtitle")) {
-                        TFPopUpButton(
-                            title: L("settings.mouseVoice.activation.title"),
-                            options: MouseVoiceActivationStyle.allCases.map { TFOption($0, $0.displayName) },
-                            selection: Binding(get: { viewModel.mouseVoiceActivationStyle },
-                                               set: viewModel.setMouseVoiceActivationStyle),
-                            width: TFMetrics.formControlWidth
-                        )
-                    }
-                }
-                TFDivider.form
                 TFFormRow(title: L("settings.microphone.title"), detail: L("settings.microphone.subtitle")) {
                     TFPopUpButton(
                         title: L("settings.microphone.title"),
