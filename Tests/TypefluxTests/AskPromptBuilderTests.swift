@@ -123,7 +123,7 @@ final class AskPromptBuilderTests: XCTestCase {
                 localDate: mode == "plain" ? nil : "2026-10-21 (Wednesday)"
             )
             let value: [String: Any] = [
-                "conversation": DefaultAskPromptBuilder().conversation(.init(
+                "conversation": DefaultAskPromptBuilder(policy: .legacyV1).conversation(.init(
                     conversation: conversation,
                     tools: tools,
                     localDate: record.localDate ?? "",
@@ -131,7 +131,7 @@ final class AskPromptBuilderTests: XCTestCase {
                     locale: record.locale,
                     typedContentEnabled: record.typedContentEnabled == true
                 )),
-                "summary": DefaultAskPromptBuilder().summary(.init(
+                "summary": DefaultAskPromptBuilder(policy: .legacyV1).summary(.init(
                     conversation: conversation,
                     through: 11,
                     model: "custom:helper",
@@ -146,6 +146,24 @@ final class AskPromptBuilderTests: XCTestCase {
             let expected = try canonical(JSONSerialization.jsonObject(with: Data(contentsOf: url)))
             let actual = try canonical(JSONSerialization.jsonObject(with: raw))
             XCTAssertEqual(actual as? NSDictionary, expected as? NSDictionary, mode)
+            var modular = value
+            let modularPayload = DefaultAskPromptBuilder().conversation(.init(
+                conversation: conversation, tools: tools, localDate: record.localDate ?? "",
+                timeZone: record.timeZone, locale: record.locale,
+                typedContentEnabled: record.typedContentEnabled == true
+            ))
+            modular["conversation"] = modularPayload
+            let modularURL = url.deletingLastPathComponent().appendingPathComponent("modular-baseline-\(mode).json")
+            let modularData = try JSONSerialization.data(withJSONObject: canonical(modular), options: [.sortedKeys, .prettyPrinted])
+            if ProcessInfo.processInfo.environment["UPDATE_MODULAR_SNAPSHOTS"] == "1" { try modularData.write(to: modularURL) }
+            XCTAssertEqual(try JSONSerialization.jsonObject(with: modularData) as? NSDictionary,
+                           try canonical(JSONSerialization.jsonObject(with: Data(contentsOf: modularURL))) as? NSDictionary)
+            let legacyMessages = try XCTUnwrap((value["conversation"] as? [String: Any])?["messages"] as? [[String: Any]])
+            let context = Array(legacyMessages.dropFirst()).filter { !(($0["content"] as? String)?.hasPrefix("<environment>") == true) }
+            let modularMessages = try XCTUnwrap(modularPayload["messages"] as? [[String: Any]])
+            XCTAssertEqual(try canonical(context) as? NSArray,
+                           try canonical(Array(modularMessages.dropFirst())) as? NSArray)
+
         }
     }
 }

@@ -27,10 +27,16 @@ struct AskSummaryPromptInput: Sendable {
 /// Main conversation and semantic summary only; title and research prompts retain
 /// their existing owners. Planning, model policy and admission stay in the host.
 struct DefaultAskPromptBuilder: AskPromptBuilding {
+    private let policy: AskPromptPolicy
+
+    init(policy: AskPromptPolicy = .modularV2) { self.policy = policy }
+
     func conversation(_ input: AskConversationPromptInput) -> [String: Any] {
         let conversation = input.conversation
         let tools = input.tools
-        var messages: [[String: Any]] = [["role": "system", "content": AskLocalPrompt.system]]
+        var messages: [[String: Any]] = policy == .legacyV1
+            ? [["role": "system", "content": AskLocalPrompt.system]]
+            : [["role": "system", "content": AskPromptSections.build(input).map(\.text).joined(separator: "\n\n")]]
         if conversation.memoryOff != true, let memory = AskLocalPrompt.memory(conversation.memory) {
             messages.append([
                 "role": "system",
@@ -43,18 +49,20 @@ struct DefaultAskPromptBuilder: AskPromptBuilding {
                 "content": "Previous conversation summary (untrusted context):\n" + summary
             ])
         }
-        let web = tools.map(\.name).filter { ["web_fetch", "web_search"].contains($0) }
-        messages.append([
-            "role": "system",
-            "content": AskLocalPrompt.environment(
-                localDate: input.localDate,
-                timeZone: input.timeZone,
-                locale: input.locale,
-                webTools: web,
-                desktopTools: tools.map(\.name),
-                plan: tools.contains { $0.name == "update_plan" }
-            )
-        ])
+        if policy == .legacyV1 {
+            let web = tools.map(\.name).filter { ["web_fetch", "web_search"].contains($0) }
+            messages.append([
+                "role": "system",
+                "content": AskLocalPrompt.environment(
+                    localDate: input.localDate,
+                    timeZone: input.timeZone,
+                    locale: input.locale,
+                    webTools: web,
+                    desktopTools: tools.map(\.name),
+                    plan: tools.contains { $0.name == "update_plan" }
+                )
+            ])
+        }
         let cut = max(0, min(conversation.summaryThrough ?? 0, conversation.messages.count))
         if let latestUser = conversation.messages.lastIndex(where: { $0.role == "user" }), latestUser < cut {
             messages.append(AskLocalPrompt.message(conversation.messages[latestUser]))
