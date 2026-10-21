@@ -6525,3 +6525,5 @@
 "ring.error.automation" = "请在「系统设置 → 隐私与安全性 → 自动化」中允许 Typeflux 控制「系统事件」。";
 
 "settings.trigger.title" = "触发键";
+
+"ask.implementationUnavailable" = "此版本无法继续此任务。请更新应用或服务后重试。";

@@ -6525,3 +6525,5 @@
 "ring.error.automation" = "Allow Typeflux to control System Events in System Settings → Privacy & Security → Automation.";
 
 "settings.trigger.title" = "Trigger Key";
+
+"ask.implementationUnavailable" = "This version cannot continue this task. Update the app or service, then try again.";

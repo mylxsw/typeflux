@@ -1,0 +1,20 @@
+{
+  "baseline": "1a1f4af6c0c46aa48b0886e3f451f208f5a40ed5",
+  "file": "Sources/Typeflux/Ask/AskConversationModel.swift",
+  "method": "Unique counted LLVM LCOV DA lines intersected with added/modified production lines. Tests excluded; line coverage, not branch coverage.",
+  "covered": 9,
+  "total": 9,
+  "percent": 100.0,
+  "uncovered": [],
+  "counts": {
+    "1912": 32,
+    "1913": 14,
+    "1914": 14,
+    "1915": 32,
+    "1916": 32,
+    "1917": 32,
+    "1919": 32,
+    "1920": 32,
+    "2146": 136
+  }
+}

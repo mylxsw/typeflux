@@ -125,6 +125,7 @@ extension AskConversationModel {
         }
         do {
             let latest = try await api.conversation(id: value.id, token: current.token)
+            _ = try AskAgentBinding.resolve(latest.run?.agentBinding)
             try await accept(latest, route: current)
             await refreshRecovery(latest, route: current)
             for entry in recoveryEntries[value.id] ?? [] where !entry.acknowledged {
@@ -172,6 +173,7 @@ extension AskConversationModel {
     func endRecoveryRun() async {
         guard !recoveryWorking, let value = selected, let run = value.run, run.isActive,
               !busyIds.contains(value.id), let current = credentials(for: value.id) else { return }
+        guard admitAgentCommand(value) else { return }
         let generation = recoveryGeneration
         recoveryWorking = true
         defer {
@@ -195,6 +197,7 @@ extension AskConversationModel {
     func checkAndContinueRecovery() async {
         guard !recoveryWorking, let value = selected, !busyIds.contains(value.id),
               !recoveryPresentation.otherDevice else { return }
+        guard admitAgentCommand(value) else { return }
         if value.run?.isActive == true {
             await endRecoveryRun()
             guard selectedId == value.id, selected?.run?.isActive == false else { return }

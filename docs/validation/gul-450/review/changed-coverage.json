@@ -1,0 +1,8 @@
+{
+  "baseline": "fbbcc0c46861796c3b95833155c6da2aca17f648",
+  "covered": 32,
+  "total": 32,
+  "percent": 100.0,
+  "uncovered": [],
+  "method": "Added/modified production lines intersect counted non-gap LLVM segments in the initial focused pass (maximum segment count per line). Production was unchanged in the passing single-method retry. This is line coverage, not branch coverage."
+}

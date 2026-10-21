@@ -1,0 +1,63 @@
+{
+  "metric": "Added/modified Swift lines intersecting counted LLVM segments; gap/non-counted regions, tests and resources excluded; original scope and retry profiles combined for unchanged production functions.",
+  "covered": 130,
+  "total": 137,
+  "pct": 94.89,
+  "files": {
+    "Sources/Typeflux/Ask/AskAgentBinding.swift": {
+      "covered": 49,
+      "executable_changed_lines": 49,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/AskContextCapture.swift": {
+      "covered": 10,
+      "executable_changed_lines": 10,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/AskConversation.swift": {
+      "covered": 1,
+      "executable_changed_lines": 2,
+      "uncovered": [
+        75
+      ]
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+AgentBinding.swift": {
+      "covered": 9,
+      "executable_changed_lines": 9,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/AskConversationModel.swift": {
+      "covered": 23,
+      "executable_changed_lines": 25,
+      "uncovered": [
+        1517,
+        2226
+      ]
+    },
+    "Sources/Typeflux/Ask/Local/AskLocalEngine.swift": {
+      "covered": 32,
+      "executable_changed_lines": 36,
+      "uncovered": [
+        387,
+        568,
+        617,
+        618
+      ]
+    },
+    "Sources/Typeflux/Ask/Recovery/AskConversationModel+Recovery.swift": {
+      "covered": 3,
+      "executable_changed_lines": 3,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/Recovery/AskConversationModel+ToolFailure.swift": {
+      "covered": 1,
+      "executable_changed_lines": 1,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Networking/TypefluxCloudServerErrorMessage.swift": {
+      "covered": 2,
+      "executable_changed_lines": 2,
+      "uncovered": []
+    }
+  }
+}

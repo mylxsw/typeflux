@@ -14,6 +14,8 @@ enum TypefluxCloudServerErrorMessage {
         let normalizedCode = normalized(code)
 
         switch normalizedCode {
+        case "AGENT_IMPLEMENTATION_UNAVAILABLE":
+            return "ask.implementationUnavailable"
         case "AUTH_INVALID_CREDENTIALS":
             return "cloud.error.authInvalidCredentials"
         case "AUTH_USER_EXISTS":

@@ -51,6 +51,7 @@ struct AskMessage: Codable, Identifiable, Equatable, Sendable {
 }
 
 struct AskRun: Codable, Equatable, Sendable {
+    var agentBinding: AskAgentBinding? = nil
     var contextRetries: Int? = nil
     var contextInputTarget: Int? = nil
     var clientToolApproval: Bool? = nil
@@ -71,6 +72,7 @@ struct AskRun: Codable, Equatable, Sendable {
 
     var failureLocalizationKey: String? {
         switch errorCode {
+        case AskAgentBinding.errorCode: return "ask.implementationUnavailable"
         case "MODEL_OUTPUT_LIMIT": return "ask.failure.outputLimit"
         case "MODEL_TIMEOUT": return "ask.failure.timeout"
         case "MODEL_STREAM_INTERRUPTED": return "ask.failure.interrupted"

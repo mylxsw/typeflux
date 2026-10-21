@@ -6525,3 +6525,5 @@
 "ring.error.automation" = "「システム設定 → プライバシーとセキュリティ → オートメーション」で、Typeflux による「System Events」の制御を許可してください。";
 
 "settings.trigger.title" = "起動キー";
+
+"ask.implementationUnavailable" = "このバージョンではこのタスクを続行できません。アプリまたはサービスを更新してから、もう一度お試しください。";

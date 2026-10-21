@@ -15,7 +15,7 @@ final class AskHarnessContractTests: XCTestCase {
 
     func testFixtureManifest() throws {
         let manifest = try JSONDecoder().decode([String: String].self, from: fixture("manifest"))
-        XCTAssertEqual(manifest.count, 7)
+        XCTAssertEqual(manifest.count, 8)
         for (name, expected) in manifest {
             let data = try Data(contentsOf: fixtures.appendingPathComponent(name))
             XCTAssertEqual(SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined(), expected, name)

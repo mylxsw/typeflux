@@ -1,0 +1,166 @@
+[
+  {
+    "id": "missing",
+    "run": {},
+    "supported": true
+  },
+  {
+    "id": "null",
+    "run": {
+      "agent_binding": null
+    },
+    "supported": true
+  },
+  {
+    "id": "default",
+    "run": {
+      "agent_binding": {
+        "id": "typeflux.default",
+        "version": 1
+      }
+    },
+    "supported": true
+  },
+  {
+    "id": "extension",
+    "run": {
+      "agent_binding": {
+        "id": "typeflux.default",
+        "version": 1,
+        "future": {
+          "enabled": true
+        }
+      }
+    },
+    "supported": true
+  },
+  {
+    "id": "unknown-id",
+    "run": {
+      "agent_binding": {
+        "id": "future.engine",
+        "version": 1
+      }
+    },
+    "supported": false
+  },
+  {
+    "id": "unknown-version",
+    "run": {
+      "agent_binding": {
+        "id": "typeflux.default",
+        "version": 2
+      }
+    },
+    "supported": false
+  },
+  {
+    "id": "empty-id",
+    "run": {
+      "agent_binding": {
+        "id": "",
+        "version": 1
+      }
+    },
+    "supported": false
+  },
+  {
+    "id": "zero-version",
+    "run": {
+      "agent_binding": {
+        "id": "typeflux.default",
+        "version": 0
+      }
+    },
+    "supported": false
+  },
+  {
+    "id": "negative-version",
+    "run": {
+      "agent_binding": {
+        "id": "typeflux.default",
+        "version": -1
+      }
+    },
+    "supported": false
+  },
+  {
+    "id": "missing-version",
+    "run": {
+      "agent_binding": {
+        "id": "typeflux.default"
+      }
+    },
+    "supported": false
+  },
+  {
+    "id": "null-version",
+    "run": {
+      "agent_binding": {
+        "id": "typeflux.default",
+        "version": null
+      }
+    },
+    "supported": false
+  },
+  {
+    "id": "wrong-id-type",
+    "run": {
+      "agent_binding": {
+        "id": 42,
+        "version": 1
+      }
+    },
+    "supported": false
+  },
+  {
+    "id": "wrong-version-type",
+    "run": {
+      "agent_binding": {
+        "id": "typeflux.default",
+        "version": "1"
+      }
+    },
+    "supported": false
+  },
+  {
+    "id": "fractional-version",
+    "run": {
+      "agent_binding": {
+        "id": "typeflux.default",
+        "version": 1.5
+      }
+    },
+    "supported": false
+  },
+  {
+    "id": "scalar",
+    "run": {
+      "agent_binding": true
+    },
+    "supported": false
+  },
+  {
+    "id": "array",
+    "run": {
+      "agent_binding": [
+        true,
+        1.5,
+        "text",
+        null,
+        {}
+      ]
+    },
+    "supported": false
+  },
+  {
+    "id": "integral-number",
+    "run": {
+      "agent_binding": {
+        "id": "typeflux.default",
+        "version": 1.0
+      }
+    },
+    "supported": true
+  }
+]

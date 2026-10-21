@@ -18,6 +18,22 @@ struct AskQuickAskTests {
         #expect(f.model.quickAskAnswer == "This is the answer.")
     }
 
+    @Test(arguments: [false, true])
+    func stopDelegatesBeforeRunAdmission(preflight: Bool) async throws {
+        let f = try AskTestFixture()
+        defer { f.model.resetSession() }
+        prepare(f)
+        if preflight { f.model.launcherDraft.modelRef = "cloud:chosen" }
+        f.model.submitQuickAsk()
+        #expect((f.model.quickAsk?.conversationId == nil) == preflight)
+        f.model.stopQuickAsk()
+        try await f.wait { f.model.busyIds.isEmpty }
+        #expect(f.model.quickAsk?.stopped == true)
+        #expect(await f.api.sends.isEmpty)
+        #expect(await f.api.cancellations.isEmpty)
+        #expect(f.tools.cancelledRuns.isEmpty)
+    }
+
     @Test func keywordIsExplicitConfigurableAndDoesNotStealWorkflows() async throws {
         let plugin = AskQuickAskPlugin()
         #expect(plugin.entersOnReturn && !plugin.usesSelectionInput && !plugin.runsWithoutInput)
