@@ -13,6 +13,8 @@ extension AskLocalTools {
             defaults: settings?.defaults, grants: folderGrants,
             conversationId: conversationId, root: selected.root
         )
+        let cancellation = AskFileCancellation()
+        files.cancellation = cancellation
         files.hooks = fileOperationHooks
         let injectedCheck = files.hooks.validateGrant
         files.hooks.validateGrant = {
@@ -34,6 +36,7 @@ extension AskLocalTools {
             try await worker.value
         } onCancel: {
             worker.cancel()
+            cancellation.cancel()
         }
     }
 }

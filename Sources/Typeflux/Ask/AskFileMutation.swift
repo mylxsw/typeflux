@@ -4,7 +4,7 @@ import Foundation
 extension AskFileTools {
     /// One process-wide gate also covers aliases/overlapping grants for the same target.
     /// NSFileCoordinator supplies cooperation with editors outside Typeflux.
-    private static let mutationLock = NSLock()
+    private static let mutationGate = AskFileMutationGate()
 
     func mutate(_ path: String, expectedVersion: String?, content: String?,
                 replacement: (String, String)?) throws -> String {
@@ -17,9 +17,25 @@ extension AskFileTools {
         guard replacement?.0.isEmpty != true else { throw AskFileAccess.error(L("ask.tool.invalid")) }
         let location = try AskFileAccess.location(path, roots: roots)
         guard !location.parts.isEmpty else { throw AskFileAccess.denied }
-        Self.mutationLock.lock(); defer { Self.mutationLock.unlock() }
-        try Task.checkCancellation()
+        let cancellation = cancellation ?? AskFileCancellation()
+        try Self.mutationGate.enter(cancellation: cancellation) { try hooks.onEvent?("gateWait") }
+        defer { Self.mutationGate.leave() }
+        return try cancellation.observingTask {
+            try coordinatedMutation(location, expectedVersion: expectedVersion, content: content,
+                                    replacement: replacement, cancellation: cancellation)
+        }
+    }
+
+    private func coordinatedMutation(_ location: AskFileAccess.Location, expectedVersion: String?,
+                                     content: String?, replacement: (String, String)?,
+                                     cancellation: AskFileCancellation) throws -> String {
+        try hooks.onEvent?("beforeCoordinatorRegistration")
+        try cancellation.check()
         let coordinator = NSFileCoordinator(filePresenter: nil)
+        try cancellation.register(coordinator)
+        defer { cancellation.unregister() }
+        try hooks.onEvent?("coordinationWait")
+        try cancellation.check()
         var coordinationError: NSError?
         var result: Result<String, Error>?
         coordinator.coordinate(
@@ -28,7 +44,9 @@ extension AskFileTools {
             error: &coordinationError
         ) { _ in
             result = Result {
-                try Task.checkCancellation()
+                try cancellation.check()
+                try hooks.onEvent?("accessor")
+                try validatePreparation(cancellation)
                 let access = try AskFileAccess(
                     location,
                     createParents: content != nil,
@@ -50,8 +68,10 @@ extension AskFileTools {
                 let originalDigest = original.map(AskFileAccess.digest)
                 try hooks.onEvent?("prepared")
                 let output = try Self.mutationOutput(original: original, content: content, replacement: replacement)
-                try Task.checkCancellation()
+                try cancellation.check()
                 let temporary = ".typeflux-write-" + UUID().uuidString
+                try hooks.onEvent?("createStaging")
+                try validatePreparation(cancellation)
                 let staging = openat(
                     access.parent.descriptor,
                     temporary,
@@ -86,7 +106,7 @@ extension AskFileTools {
                 // Cancellation observed here leaves the destination unchanged. After
                 // commit, return its receipt even if cancellation arrives concurrently.
                 try hooks.onEvent?("commit")
-                try Task.checkCancellation()
+                try cancellation.check()
                 let status = access.initial == nil
                     ? renameatx_np(
                         access.parent.descriptor,
@@ -107,10 +127,16 @@ extension AskFileTools {
         if let result {
             return try result.get()
         }
+        try cancellation.check()
         if let coordinationError {
             throw coordinationError
         }
         throw AskFileAccess.denied
+    }
+
+    private func validatePreparation(_ cancellation: AskFileCancellation) throws {
+        try hooks.validateGrant?()
+        try cancellation.check()
     }
 
     private static func mutationOutput(original: Data?, content: String?,

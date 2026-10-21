@@ -110,10 +110,16 @@ final class AskFileAccess {
          allowMissing: Bool = false, hooks: AskFileTools.Hooks = .init()) throws {
         self.location = location
         self.hooks = hooks
+        try Task.checkCancellation()
+        try hooks.validateGrant?()
         root = try Self.openRoot(location.root)
         rootIdentity = try Self.identity(root.descriptor)
         var walked = root
         for part in location.parts.dropLast() {
+            if createParents {
+                try hooks.onEvent?("createParent")
+                try hooks.validateGrant?()
+            }
             try Task.checkCancellation()
             walked = try walked.child(part, create: createParents)
         }

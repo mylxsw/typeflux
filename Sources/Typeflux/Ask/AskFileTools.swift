@@ -22,6 +22,7 @@ struct AskFileTools: Sendable {
 
     var roots: [String]
     var hooks = Hooks()
+    var cancellation: AskFileCancellation?
 
     var resolvedRoots: [URL] {
         roots.map { URL(fileURLWithPath: AskProjectFileAccess.normalizedRoot($0)) }

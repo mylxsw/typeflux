@@ -198,3 +198,358 @@ final class AskFileDispatchTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: root.appendingPathComponent("file")), "editor update")
     }
 }
+
+/// Values inspected by the test actor and the synchronous descriptor worker.
+private final class FileEventState: @unchecked Sendable {
+    private let lock = NSLock()
+    private var events: [String] = []
+    private var revoked = false
+
+    func record(_ event: String) {
+        lock.lock(); defer { lock.unlock() }
+        events.append(event)
+    }
+
+    func count(_ event: String) -> Int {
+        lock.lock(); defer { lock.unlock() }
+        return events.filter { $0 == event }.count
+    }
+
+    func revoke() {
+        lock.lock(); defer { lock.unlock() }
+        revoked = true
+    }
+
+    func validate() throws {
+        lock.lock(); defer { lock.unlock() }
+        if revoked {
+            throw AskFileAccess.denied
+        }
+    }
+}
+
+/// An editor that keeps ownership until the test explicitly relinquishes it.
+/// Its request callback proves the coordinator is already waiting in Foundation.
+private final class HeldFilePresenter: NSObject, NSFilePresenter, @unchecked Sendable {
+    let presentedItemURL: URL?
+    let presentedItemOperationQueue = OperationQueue()
+    let requested: XCTestExpectation
+    private let lock = NSLock()
+    private var pending: (@Sendable ((@Sendable () -> Void)?) -> Void)?
+    private var released = false
+
+    init(url: URL, requested: XCTestExpectation) {
+        presentedItemURL = url
+        self.requested = requested
+        super.init()
+        presentedItemOperationQueue.maxConcurrentOperationCount = 1
+    }
+
+    func relinquishPresentedItem(toWriter writer: @escaping @Sendable ((@Sendable () -> Void)?) -> Void) {
+        lock.lock()
+        let alreadyReleased = released
+        if !alreadyReleased {
+            pending = writer
+        }
+        lock.unlock()
+        requested.fulfill()
+        if alreadyReleased {
+            writer(nil)
+        }
+    }
+
+    func release() {
+        lock.lock()
+        released = true
+        let writer = pending
+        pending = nil
+        lock.unlock()
+        writer?(nil)
+    }
+}
+
+extension AskFileDispatchTests {
+    /// Direct calls and both real host entry points must finish B before A is
+    /// released. Timeouts measure failures; they never establish test ordering.
+    func testCancelledGateWaitDoesNotDependOnSameOrUnrelatedWriter() async throws {
+        for dispatch in 1 ... 2 {
+            for path in ["file", "new/nested/file"] {
+                let (root, host, _) = try fixture()
+                defer { try? FileManager.default.removeItem(at: root) }
+                var first = AskFileTools(roots: [root.path])
+                let version = try first.readPage("file").version
+                let held = expectation(description: "writer A owns gate")
+                let suspension = FileSuspension("prepared", entered: held)
+                defer { suspension.release() }
+                first.hooks.onEvent = { try suspension.visit($0) }
+                let writerA = Task.detached { [first] in
+                    try first.write("file", content: "first", expectedVersion: version)
+                }
+                await fulfillment(of: [held], timeout: 10)
+                let waiting = expectation(description: "B is waiting for occupied gate")
+                let completed = expectation(description: "cancelled B joined before A release")
+                let state = FileEventState()
+                var second = AskFileTools(roots: [root.path])
+                second.hooks.onEvent = { event in
+                    state.record(event)
+                    if event == "gateWait" {
+                        waiting.fulfill()
+                    }
+                }
+                host.fileOperationHooks = second.hooks
+                let request = try call("write", path: path, extra: path == "file"
+                    ? ["content": "second", "expected_version": version] : ["content": "second"])
+                let binding = dispatch == 2 ? try await host.approvalBinding(for: request, conversationId: "c") : nil
+                let writerB = Task {
+                    defer { completed.fulfill() }
+                    do {
+                        if let binding {
+                            _ = try await host.executeApproved(
+                                request,
+                                conversationId: "c",
+                                binding: binding,
+                                authorize: {}
+                            )
+                        } else {
+                            _ = try await host.execute(request, conversationId: "c")
+                        }
+                        XCTFail("Cancelled B must fail")
+                    } catch { XCTAssertTrue(error is CancellationError, "\(error)") }
+                }
+                await fulfillment(of: [waiting], timeout: 10)
+                writerB.cancel()
+                await fulfillment(of: [completed], timeout: 5)
+                XCTAssertEqual(state.count("accessor"), 0)
+                XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("new").path))
+                XCTAssertEqual(try String(contentsOf: root.appendingPathComponent("file")), "original")
+                suspension.release()
+                _ = try await writerA.value
+                await writerB.value
+                XCTAssertEqual(state.count("accessor"), 0)
+                _ = try AskFileTools(roots: [root.path]).write("after", content: "ok")
+            }
+        }
+    }
+
+    func testDirectSynchronousTaskCancellationWhileGateWaits() async throws {
+        let (root, _, _) = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let held = expectation(description: "A holds gate")
+        let suspension = FileSuspension("prepared", entered: held)
+        defer { suspension.release() }
+        var first = AskFileTools(roots: [root.path])
+        first.hooks.onEvent = { try suspension.visit($0) }
+        let writerA = Task.detached { [first] in try first.write("a", content: "a") }
+        await fulfillment(of: [held], timeout: 10)
+        let waiting = expectation(description: "direct B waits")
+        let completed = expectation(description: "direct B finishes before A")
+        var second = AskFileTools(roots: [root.path])
+        second.hooks.onEvent = {
+            if $0 == "gateWait" {
+                waiting.fulfill()
+            }
+        }
+        let writerB = Task.detached { [second] in
+            defer { completed.fulfill() }
+            do { _ = try second.write("b", content: "b"); XCTFail("Must cancel") }
+            catch { XCTAssertTrue(error is CancellationError) }
+        }
+        await fulfillment(of: [waiting], timeout: 10)
+        writerB.cancel()
+        await fulfillment(of: [completed], timeout: 5)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("b").path))
+        suspension.release()
+        _ = try await writerA.value
+        await writerB.value
+    }
+
+    private func holdEditor(_ target: URL, suspension: FileSuspension) -> Task<Void, Error> {
+        Task.detached {
+            let coordinator = NSFileCoordinator(filePresenter: nil)
+            var failure: NSError?
+            var result: Result<Void, Error>?
+            coordinator.coordinate(writingItemAt: target, options: .forReplacing, error: &failure) { _ in
+                result = Result { try suspension.visit("editor") }
+            }
+            if let failure {
+                throw failure
+            }
+            try XCTUnwrap(result).get()
+        }
+    }
+
+    func testCancelledCoordinationWaitJoinsBeforeEditorRelease() async throws {
+        for dispatch in 0 ... 2 {
+            let (root, host, _) = try fixture()
+            defer { try? FileManager.default.removeItem(at: root) }
+            let waiting = expectation(description: "Foundation asks editor A to relinquish for B")
+            let completed = expectation(description: "B joined before editor release")
+            let presenter = HeldFilePresenter(url: root.appendingPathComponent("file"), requested: waiting)
+            NSFileCoordinator.addFilePresenter(presenter)
+            defer {
+                presenter.release()
+                NSFileCoordinator.removeFilePresenter(presenter)
+            }
+            let state = FileEventState()
+            var files = AskFileTools(roots: [root.path])
+            let version = try files.readPage("file").version
+            files.hooks.onEvent = { state.record($0) }
+            host.fileOperationHooks = files.hooks
+            let request = try call("write", extra: ["content": "new", "expected_version": version])
+            let binding = dispatch == 2 ? try await host.approvalBinding(for: request, conversationId: "c") : nil
+            let direct = dispatch == 0 ? Task.detached { [files] in
+                defer { completed.fulfill() }
+                do { _ = try files.write("file", content: "new", expectedVersion: version); XCTFail("Must cancel") }
+                catch { XCTAssertTrue(error is CancellationError, "\(error)") }
+            } : nil
+            let owner = dispatch != 0 ? Task {
+                defer { completed.fulfill() }
+                do {
+                    if let binding {
+                        _ = try await host.executeApproved(
+                            request,
+                            conversationId: "c",
+                            binding: binding,
+                            authorize: {}
+                        )
+                    } else {
+                        _ = try await host.execute(request, conversationId: "c")
+                    }
+                    XCTFail("Must cancel")
+                } catch { XCTAssertTrue(error is CancellationError, "\(error)") }
+            } : nil
+            await fulfillment(of: [waiting], timeout: 10)
+            direct?.cancel(); owner?.cancel()
+            await fulfillment(of: [completed], timeout: 5)
+            XCTAssertEqual(state.count("accessor"), 0)
+            XCTAssertEqual(try String(contentsOf: root.appendingPathComponent("file")), "original")
+            presenter.release()
+            NSFileCoordinator.removeFilePresenter(presenter)
+            await direct?.value; await owner?.value
+            XCTAssertEqual(state.count("accessor"), 0)
+            _ = try AskFileTools(roots: [root.path]).write("file", content: "after", expectedVersion: version)
+        }
+    }
+
+    func testHostCancellationBeforeCoordinatorRegistrationHasNoEffects() async throws {
+        for approved in [false, true] {
+            let (root, host, _) = try fixture()
+            defer { try? FileManager.default.removeItem(at: root) }
+            let request = try call("write", path: "new/nested/file", extra: ["content": "new"])
+            let binding = approved ? try await host.approvalBinding(for: request, conversationId: "c") : nil
+            let entered = expectation(description: "before registration")
+            let suspension = FileSuspension("beforeCoordinatorRegistration", entered: entered)
+            defer { suspension.release() }
+            host.fileOperationHooks.onEvent = { try suspension.visit($0) }
+            let owner = Task {
+                if let binding {
+                    return try await host.executeApproved(request, conversationId: "c", binding: binding, authorize: {})
+                }
+                return try await host.execute(request, conversationId: "c")
+            }
+            await fulfillment(of: [entered], timeout: 10)
+            owner.cancel(); suspension.release()
+            do { _ = try await owner.value; XCTFail("Must cancel before registration") }
+            catch { XCTAssertTrue(error is CancellationError) }
+            XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("new").path))
+            _ = try AskFileTools(roots: [root.path]).write("after", content: "ok")
+        }
+        let controller = AskFileCancellation()
+        controller.cancel()
+        XCTAssertThrowsError(try controller.register(NSFileCoordinator(filePresenter: nil))) {
+            XCTAssertTrue($0 is CancellationError)
+        }
+        controller.unregister()
+    }
+
+    func testRevokedGrantPrecedesEveryPreparationBoundary() async throws {
+        let (root, host, _) = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        var files = AskFileTools(roots: [root.path])
+        files.hooks.validateGrant = { throw AskFileAccess.denied }
+        XCTAssertThrowsError(try files.write("new/nested/file", content: "new"))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("new").path))
+        // The trusted host's injected validator must run before preparation too.
+        host.fileOperationHooks = files.hooks
+        for approved in [false, true] {
+            let request = try call("write", path: "new/nested/file", extra: ["content": "new"])
+            let binding = approved ? try await host.approvalBinding(for: request, conversationId: "c") : nil
+            do {
+                if let binding {
+                    _ = try await host.executeApproved(request, conversationId: "c", binding: binding, authorize: {})
+                } else {
+                    _ = try await host.execute(request, conversationId: "c")
+                }
+                XCTFail("Already revoked authority must be refused")
+            } catch {}
+            XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("new").path))
+        }
+        for boundary in ["createParent", "createStaging"] {
+            let state = FileEventState()
+            files.hooks.validateGrant = { try state.validate() }
+            files.hooks.onEvent = { event in
+                if event == boundary {
+                    state.revoke()
+                }
+            }
+            XCTAssertThrowsError(try files.write("new/nested/file", content: "new"))
+            if boundary == "createParent" {
+                XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("new").path))
+            } else {
+                XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("new/nested").path))
+                XCTAssertEqual(
+                    try FileManager.default.contentsOfDirectory(atPath: root.appendingPathComponent("new/nested").path),
+                    []
+                )
+            }
+        }
+        _ = try AskFileTools(roots: [root.path]).write("new/nested/file", content: "authorized")
+        XCTAssertEqual(try String(contentsOf: root.appendingPathComponent("new/nested/file")), "authorized")
+    }
+
+    func testRevokedGrantAfterGateOrCoordinationWaitCreatesNoParents() async throws {
+        for coordination in [false, true] {
+            for approved in [false, true] {
+                let (root, host, defaults) = try fixture()
+                defer { try? FileManager.default.removeItem(at: root) }
+                let request = try call("write", path: "new/nested/file", extra: ["content": "new"])
+                let binding = approved ? try await host.approvalBinding(for: request, conversationId: "c") : nil
+                let held = expectation(description: "A held")
+                let suspension = FileSuspension(coordination ? "editor" : "prepared", entered: held)
+                defer { suspension.release() }
+                let first: Task<Void, Error>
+                if coordination {
+                    first = holdEditor(root.appendingPathComponent("new/nested/file"), suspension: suspension)
+                } else {
+                    var files = AskFileTools(roots: [root.path])
+                    files.hooks.onEvent = { try suspension.visit($0) }
+                    first = Task.detached { [files] in _ = try files.write("a", content: "a") }
+                }
+                await fulfillment(of: [held], timeout: 10)
+                let waiting = expectation(description: "B queued")
+                host.fileOperationHooks.onEvent = {
+                    if $0 == (coordination ? "coordinationWait" : "gateWait") {
+                        waiting.fulfill()
+                    }
+                }
+                let owner = Task {
+                    if let binding {
+                        return try await host.executeApproved(
+                            request,
+                            conversationId: "c",
+                            binding: binding,
+                            authorize: {}
+                        )
+                    }
+                    return try await host.execute(request, conversationId: "c")
+                }
+                await fulfillment(of: [waiting], timeout: 10)
+                defaults.set([], forKey: "ask.fileAccessFolders")
+                suspension.release()
+                try await first.value
+                do { _ = try await owner.value; XCTFail("Queued authority must be revalidated") } catch {}
+                XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("new").path))
+            }
+        }
+    }
+}
