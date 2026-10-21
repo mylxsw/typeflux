@@ -33,7 +33,8 @@ enum AskScreenshotAttachments {
                 }
                 let name = rects.count == 1 ? L("screenshot.ask.attachmentName")
                     : L("screenshot.ask.attachmentPart", index + 1, rects.count)
-                items.append(AskAttachment(kind: .image, name: name, byteSize: dataURL.utf8.count, image: dataURL))
+                items.append(AskAttachment(kind: .image, name: name, byteSize: dataURL.utf8.count, image: dataURL,
+                                          screenshot: true))
             }
             return .success(items)
         }

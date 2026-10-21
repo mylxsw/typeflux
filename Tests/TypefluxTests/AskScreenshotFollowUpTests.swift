@@ -203,10 +203,12 @@ struct AskScreenshotFollowUpTests {
         #expect(one.count == 1)
         #expect(one[0].kind == .image && one[0].name == L("screenshot.ask.attachmentName"))
         #expect(one[0].image?.hasPrefix("data:image/jpeg;base64,") == true)
+        #expect(one[0].screenshot == true)
 
         let long = try AskScreenshotAttachments.make(image(width: 600, height: 5000)).get()
         #expect(long.count == 3)
         #expect(long.map(\.name) == (1 ... 3).map { L("screenshot.ask.attachmentPart", $0, 3) })
+        #expect(long.allSatisfy { $0.screenshot == true })
         #expect(long.reduce(0) { $0 + $1.payloadBytes } <= AskAttachmentLimits.maximumPayloadBytes)
 
         #expect(AskScreenshotAttachments.make(image(width: 600, height: 40000)) == .failure(.tooLong(22)))

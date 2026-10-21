@@ -27,6 +27,8 @@ struct AskAttachment: Codable, Equatable, Sendable, Identifiable {
     var path: String? = nil
     /// Original local file, used only while the draft is on this Mac.
     var localSourcePath: String? = nil
+    /// A screenshot (or one piece of a long one), so the launcher can say so. Never sent.
+    var screenshot: Bool? = nil
 
     /// Bytes this attachment adds to a request.
     var payloadBytes: Int { (image?.utf8.count ?? 0) + (text?.utf8.count ?? 0) + (path?.utf8.count ?? 0) }

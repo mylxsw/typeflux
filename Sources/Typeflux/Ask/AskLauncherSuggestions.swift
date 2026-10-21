@@ -174,6 +174,8 @@ struct AskLauncherSuggestions: View {
             let rows = AskLauncherHome.numberedRows(sections)
             guard rows.indices.contains(number - 1) else { return false }
             onPick(.row(rows[number - 1]))
+        case .tab:
+            return false
         }
         return true
     }
@@ -366,12 +368,14 @@ struct AskLauncherHomeKeyMonitor: NSViewRepresentable {
         case vertical(Int)
         case horizontal(Int)
         case number(Int)
+        case tab
     }
 
     var onKey: (Key) -> Bool
 
     static let leftKeyCode: UInt16 = 123
     static let rightKeyCode: UInt16 = 124
+    static let tabKeyCode: UInt16 = 48
 
     /// The key an event stands for, or nil for every other key.
     static func key(keyCode: UInt16, modifiers: NSEvent.ModifierFlags, characters: String?) -> Key? {
@@ -384,6 +388,7 @@ struct AskLauncherHomeKeyMonitor: NSViewRepresentable {
         switch keyCode {
         case leftKeyCode: return .horizontal(-1)
         case rightKeyCode: return .horizontal(1)
+        case tabKeyCode: return .tab
         default: return nil
         }
     }
