@@ -125,6 +125,7 @@ struct AskToolPreparationTests {
                                                 tools: f.tools, capture: f.base.capture, deviceId: "device",
                                                 modelLibrary: f.base.model.modelLibrary,
                                                 session: { ("owner", "token") })
+        reopened.automaticRecoveryEnabled = false
         defer { reopened.resetSession() }
         f.tools.computerExecutor.writesEnabled = true
         await f.base.api.setFailReceipts(false)

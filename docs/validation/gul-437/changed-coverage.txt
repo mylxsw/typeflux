@@ -1,0 +1,5 @@
+Sources/Typeflux/Ask/AskConversationModel.swift: 10/11 (90.91%)
+Sources/Typeflux/Ask/AskToolPolicy.swift: 25/25 (100.00%)
+Sources/Typeflux/Ask/Recovery/AskConversationModel+Recovery.swift: 14/14 (100.00%)
+Sources/Typeflux/Ask/Recovery/AskConversationModel+ToolFailure.swift: 53/53 (100.00%)
+TOTAL: 102/103 (99.03%)
