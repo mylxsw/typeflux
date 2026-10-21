@@ -96,6 +96,7 @@ final class AskLocalTools: AskToolExecuting {
     let sandbox: AskCodeSandbox
     let skills: AskSkillLibrary
     private let notes: AskMemoryNoteStore
+    var fileOperationHooks = AskFileTools.Hooks()
     let folderGrants: AskFolderGrants
     let artifactStore: AskArtifactStore
     var imageGenerator: any AskImageGenerating = AskImageGenerationService()
@@ -409,9 +410,7 @@ final class AskLocalTools: AskToolExecuting {
             try validateBrowserLocalFile(args, conversationId: conversationId)
             return try await embeddedBrowser.execute(args, conversationId: conversationId)
         case "files":
-            let files = fileTools(conversationId: conversationId)
-            let output = try await Task.detached(priority: .userInitiated) { try files.execute(args) }.value
-            return .init(content: output)
+            return try await executeFiles(args, conversationId: conversationId)
         case "run_code":
             guard settings?.askCodeExecutionEnabled == true,
                   let language = (args["language"] as? String).flatMap(AskCodeSandbox.Language.init(rawValue:)),
