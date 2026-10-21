@@ -5,6 +5,30 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
+/// Supplies the tracking area SwiftUI needs without moving the user's pointer.
+private final class HelpRowHoverEvent: NSEvent {
+    private let area: NSTrackingArea
+    private let point: NSPoint
+    private let targetWindowNumber: Int
+    private let eventType: NSEvent.EventType
+
+    init(area: NSTrackingArea, point: NSPoint, window: NSWindow, inside: Bool) {
+        self.area = area
+        self.point = point
+        targetWindowNumber = window.windowNumber
+        eventType = inside ? .mouseEntered : .mouseExited
+        super.init()
+    }
+
+    required init?(coder: NSCoder) { nil }
+
+    override var trackingArea: NSTrackingArea? { area }
+    override var locationInWindow: NSPoint { point }
+    override var windowNumber: Int { targetWindowNumber }
+    override var type: NSEvent.EventType { eventType }
+    override var timestamp: TimeInterval { ProcessInfo.processInfo.systemUptime }
+}
+
 /// What the model's sources return, changed by the tests.
 final class HelpModelTestState {
     var keywords: [AskKeyword] = [HelpCatalogTests.translate, HelpCatalogTests.polish,
@@ -69,6 +93,81 @@ struct HelpGuideModelTests {
     func settle() async {
         for _ in 0 ..< 5 { await Task.yield() }
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+    }
+
+    @Test(arguments: InterfaceStyle.allCases, [false, true])
+    func `row descriptions use independent settings popovers`(style: InterfaceStyle, selectable: Bool) async throws {
+        let ui = SettingsBehaviorTestSupport.self
+        let detail = "A long description that should remain available without adding a second line to the guide row."
+        var selections = 0
+        try await ui.withFixture { _ in
+            let row = HelpRow(symbol: "keyboard", title: "Guide item", detail: detail,
+                              action: selectable ? { selections += 1 } : nil) {
+                HelpKeycaps(keys: ["⌘", "K"])
+            }
+            let plain = HelpRow(symbol: "keyboard", title: "Guide item") {
+                HelpKeycaps(keys: ["⌘", "K"])
+            }
+            func height(_ view: some View) -> CGFloat {
+                let host = NSHostingView(rootView: view.environment(\.interfaceStyle, style).frame(width: 500))
+                host.layoutSubtreeIfNeeded()
+                return host.fittingSize.height
+            }
+            #expect(abs(height(row) - height(plain)) < 0.5, "Descriptions must not add a line to list rows")
+            try await ui.withWindow(row.environment(\.interfaceStyle, style), width: 500, height: 100) { window, host in
+                window.setFrameOrigin(NSPoint(x: 80, y: 80))
+                #expect(!ui.elements(in: host).contains {
+                    $0.role == NSAccessibility.Role.staticText.rawValue && $0.text == detail
+                })
+                #expect(!ui.elements(in: host).contains { $0.label == detail })
+                try hover(NSPoint(x: 20, y: 50), in: window, inside: true)
+                try await ui.wait { ui.elements(in: host).contains { $0.label == detail } }
+                let hint = try ui.button(detail, in: host)
+                let point = window.convertPoint(fromScreen: NSPoint(x: hint.frame.midX, y: hint.frame.midY))
+                try hover(point, in: window, inside: true)
+                try await ui.wait {
+                    NSApp.windows.contains { $0.isVisible && $0.parent === window && ui.contains(detail, in: $0) }
+                }
+                #expect(selections == 0, "Opening help must not select or run the row")
+                try hover(point, in: window, inside: false)
+                try await ui.wait {
+                    !NSApp.windows.contains { $0.isVisible && $0.parent === window && ui.contains(detail, in: $0) }
+                }
+                try hover(NSPoint(x: 20, y: 50), in: window, inside: true)
+                try await ui.wait { ui.elements(in: host).contains { $0.label == detail } }
+                try ui.button(detail, in: host).press()
+                try await ui.wait {
+                    NSApp.windows.contains { $0.isVisible && $0.parent === window && ui.contains(detail, in: $0) }
+                }
+                #expect(selections == 0)
+                try hint.press()
+                try await ui.wait {
+                    !NSApp.windows.contains { $0.isVisible && $0.parent === window && ui.contains(detail, in: $0) }
+                }
+                if selectable {
+                    try ui.button("Guide item", in: host).press()
+                    #expect(selections == 1)
+                }
+            }
+            try await ui.withWindow(plain.environment(\.interfaceStyle, style), width: 500, height: 100) { _, host in
+                #expect(!ui.elements(in: host).contains { $0.role == NSAccessibility.Role.button.rawValue })
+            }
+        }
+    }
+
+    private func hover(_ point: NSPoint, in window: NSWindow, inside: Bool) throws {
+        func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(descendants) }
+        var delivered = false
+        for view in descendants(try #require(window.contentView)) {
+            for area in view.trackingAreas {
+                let rect = area.options.contains(.inVisibleRect) ? view.visibleRect : area.rect
+                guard rect.contains(view.convert(point, from: nil)), let owner = area.owner as? NSResponder else { continue }
+                let event = HelpRowHoverEvent(area: area, point: point, window: window, inside: inside)
+                if inside { owner.mouseEntered(with: event) } else { owner.mouseExited(with: event) }
+                delivered = true
+            }
+        }
+        #expect(delivered, "Guide rows must expose native hover tracking areas")
     }
 
     @Test func `opening starts fresh on the start page or searching`() async throws {
