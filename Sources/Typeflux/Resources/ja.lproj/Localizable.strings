@@ -2147,11 +2147,11 @@
 /* GUL-151 Ask send queue */
 "ask.queue.count" = "%d 件待機中";
 "ask.queue.paused" = "一時停止中";
-"ask.queue.resume" = "送信を再開";
+"ask.queue.resume" = "待機中の質問を続ける";
 "ask.queue.clear" = "クリア";
 "ask.queue.expand" = "すべて表示";
 "ask.queue.collapse" = "折りたたむ";
-"ask.queue.jump" = "割り込み";
+"ask.queue.jump" = "現在のタスクに追加";
 "ask.queue.jump.help" = "実行中のタスクに渡し、次のステップで反映します。";
 "ask.queue.edit" = "編集";
 "ask.queue.remove" = "削除";
@@ -6550,3 +6550,11 @@
 "ask.web.sites.legacy" = "Old host preference; allows are inactive. Remove an old deny before selecting an exact origin.";
 
 "ask.web.removePermission" = "Remove permission or old preference for %@";
+
+"ask.queue.pending" = "確認中…";
+
+"ask.queue.reconcile" = "追加内容を確認できませんでした。「待機中の質問を続ける」で再確認してください。";
+
+"ask.queue.pausedReason" = "キューは一時停止中です。準備ができたら待機中の質問を続けてください。";
+
+"ask.queue.session" = "キューはこのMacの現在のセッション内のみです。端末間では同期されず、再起動後は保持されません。";

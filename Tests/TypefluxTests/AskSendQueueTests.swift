@@ -170,7 +170,7 @@ struct AskSendQueueTests {
         #expect(!f.model.isQueuePaused)
     }
 
-    @Test func continuingQueueAfterUnknownResultEndsTheOldRunAndSendsTheFollowUp() async throws {
+    @Test func continuingQueueAfterUnknownResultRetainsTheOldRunAndFollowUp() async throws {
         let f = try AskTestFixture()
         defer { f.model.resetSession() }
         let value = AskRecoveryFixture.conversation()
@@ -185,13 +185,12 @@ struct AskSendQueueTests {
         #expect(await f.api.sends.isEmpty)
 
         f.model.resumeQueue()
-        try await f.wait { f.model.queuedMessages.isEmpty && f.model.busyIds.isEmpty
-            && f.model.selected?.run?.id != value.run?.id }
-        #expect(await f.api.sends.map(\.id) == [queued.id])
-        #expect(await f.api.sends.map(\.text) == ["Only explain the SSH tunnel"])
-        #expect(await f.api.results.isEmpty)
-        #expect(f.model.draft.text.isEmpty)
-        #expect(!f.model.isQueuePaused && !f.model.hasRecoveryNotice)
+        #expect(f.model.queuedMessages.map(\.id) == [queued.id])
+        #expect(f.model.selected?.run?.id == value.run?.id)
+        #expect(await f.api.sends.isEmpty)
+        #expect(await f.api.cancellations.isEmpty)
+        #expect(f.model.isQueuePaused && f.model.hasRecoveryNotice)
+
     }
 
     @Test func anotherDeviceCannotContinueAnUnknownQueue() async throws {
@@ -285,6 +284,9 @@ struct AskSendQueueTests {
         #expect(f.model.queuedMessages.map(\.id) == [item.id])
         try await f.wait { f.model.pendingApprovals[id]?.id == continuing.id }
         f.model.approve(conversationId: id, allowed: false)
+        try await f.wait { f.model.busyIds.isEmpty }
+        #expect(f.model.isQueuePaused && f.model.queuedMessages.map(\.id) == [item.id])
+        f.model.resumeQueue()
         try await f.wait { f.model.busyIds.isEmpty && f.model.queuedMessages.isEmpty }
     }
 

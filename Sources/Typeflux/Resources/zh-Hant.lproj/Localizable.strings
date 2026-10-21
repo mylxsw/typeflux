@@ -2154,11 +2154,11 @@
 /* GUL-151 Ask send queue */
 "ask.queue.count" = "排隊中 %d 則";
 "ask.queue.paused" = "已暫停";
-"ask.queue.resume" = "繼續傳送";
+"ask.queue.resume" = "繼續佇列中的問題";
 "ask.queue.clear" = "清除";
 "ask.queue.expand" = "展開";
 "ask.queue.collapse" = "收合";
-"ask.queue.jump" = "插隊";
+"ask.queue.jump" = "補充目前任務";
 "ask.queue.jump.help" = "交給正在執行的任務，下一步生效。";
 "ask.queue.edit" = "編輯";
 "ask.queue.remove" = "刪除";
@@ -6552,3 +6552,11 @@
 "ask.web.sites.legacy" = "Old host preference; allows are inactive. Remove an old deny before selecting an exact origin.";
 
 "ask.web.removePermission" = "Remove permission or old preference for %@";
+
+"ask.queue.pending" = "正在確認…";
+
+"ask.queue.reconcile" = "尚未確認補充要求。請點選「繼續佇列中的問題」重新核對。";
+
+"ask.queue.pausedReason" = "佇列已暫停，準備好後可繼續佇列中的問題。";
+
+"ask.queue.session" = "佇列僅在此 Mac 的目前工作階段中保留，不跨裝置同步，重新啟動後不保留。";

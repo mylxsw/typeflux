@@ -828,6 +828,8 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         if calls.isEmpty, deliverSteering(&record) {
             // Messages sent while the model was answering get a reply in the same run.
             record.conversation.run?.status = "running"
+            // Commit the accepted completion and steering before the next adapter decision.
+            try save(&record)
             return try await step(&record)
         }
         if calls.isEmpty {

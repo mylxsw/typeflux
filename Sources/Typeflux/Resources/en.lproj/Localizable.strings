@@ -2157,11 +2157,11 @@
 /* GUL-151 Ask send queue */
 "ask.queue.count" = "%d queued";
 "ask.queue.paused" = "Paused";
-"ask.queue.resume" = "Send now";
+"ask.queue.resume" = "Continue queued questions";
 "ask.queue.clear" = "Clear";
 "ask.queue.expand" = "Show all";
 "ask.queue.collapse" = "Show less";
-"ask.queue.jump" = "Jump in";
+"ask.queue.jump" = "Add to current task";
 "ask.queue.jump.help" = "Hand this to the running task; it reads it at its next step.";
 "ask.queue.edit" = "Edit";
 "ask.queue.remove" = "Remove";
@@ -6550,3 +6550,11 @@
 "ask.web.sites.legacy" = "Old host preference; allows are inactive. Remove an old deny before selecting an exact origin.";
 
 "ask.web.removePermission" = "Remove permission or old preference for %@";
+
+"ask.queue.pending" = "Checking…";
+
+"ask.queue.reconcile" = "Could not confirm the supplement. Continue queued questions to check again.";
+
+"ask.queue.pausedReason" = "Queue paused. Continue queued questions when ready.";
+
+"ask.queue.session" = "This queue exists only in this session on this Mac; it is not synced or saved across restarts.";

@@ -2147,11 +2147,11 @@
 /* GUL-151 Ask send queue */
 "ask.queue.count" = "대기 중 %d개";
 "ask.queue.paused" = "일시 정지됨";
-"ask.queue.resume" = "계속 보내기";
+"ask.queue.resume" = "대기 중인 질문 계속";
 "ask.queue.clear" = "비우기";
 "ask.queue.expand" = "모두 보기";
 "ask.queue.collapse" = "접기";
-"ask.queue.jump" = "끼어들기";
+"ask.queue.jump" = "현재 작업에 추가";
 "ask.queue.jump.help" = "실행 중인 작업에 전달하며 다음 단계에서 반영됩니다.";
 "ask.queue.edit" = "편집";
 "ask.queue.remove" = "삭제";
@@ -6550,3 +6550,11 @@
 "ask.web.sites.legacy" = "Old host preference; allows are inactive. Remove an old deny before selecting an exact origin.";
 
 "ask.web.removePermission" = "Remove permission or old preference for %@";
+
+"ask.queue.pending" = "확인 중…";
+
+"ask.queue.reconcile" = "추가 내용을 확인하지 못했습니다. 대기 중인 질문 계속을 눌러 다시 확인하세요.";
+
+"ask.queue.pausedReason" = "대기열이 일시 정지되었습니다. 준비되면 대기 중인 질문을 계속하세요.";
+
+"ask.queue.session" = "대기열은 이 Mac의 현재 세션에만 유지됩니다. 기기 간 동기화나 재시작 후 저장은 지원하지 않습니다.";

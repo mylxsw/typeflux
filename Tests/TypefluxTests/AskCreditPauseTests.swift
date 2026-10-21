@@ -45,9 +45,9 @@ struct AskCreditPauseTests {
         #expect(!recovery.isVisible)
         #expect(AskRunPhase.resolve(run: run, busy: false, pendingApproval: false, recovery: recovery)
             == .pausedCredits(step: 2))
-        // While `resume` drives the run, it reads as working again.
+        // Unwinding local work cannot paint the credit checkpoint as running.
         #expect(AskRunPhase.resolve(run: run, busy: true, pendingApproval: false, recovery: recovery)
-            == .working(step: 2))
+            == .pausedCredits(step: 2))
         let phase = AskRunPhase.pausedCredits(step: 2)
         #expect(phase.offersStop)
         #expect(!phase.isWorking)

@@ -12,6 +12,10 @@ struct AskQueueBar: View {
         if let first = items.first {
             VStack(alignment: .leading, spacing: 0) {
                 row(first, index: 1, header: true)
+                if model.isQueuePaused, let reason = model.queuePauseReason {
+                    Text(reason).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                        .padding(.bottom, 6)
+                }
                 if expanded {
                     ForEach(Array(items.dropFirst().enumerated()), id: \.element.id) { offset, item in
                         Rectangle().fill(AskTheme.separator).frame(height: 1)
@@ -45,6 +49,7 @@ struct AskQueueBar: View {
         return HStack(spacing: 8) {
             if header {
                 Text(Self.countText(items.count, paused: model.isQueuePaused))
+                    .help(model.queuePauseReason ?? L("ask.queue.session"))
                     .font(.system(size: 11.5, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
                     .lineLimit(1).fixedSize()
@@ -53,6 +58,9 @@ struct AskQueueBar: View {
             } else {
                 Text("\(index)").font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary).monospacedDigit()
                     .frame(minWidth: 20, alignment: .trailing)
+            }
+            if model.isQueueItemPending(item.id) {
+                Text(L("ask.queue.pending")).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
             }
             if editing {
                 Text(L("ask.queue.editing"))
@@ -72,15 +80,18 @@ struct AskQueueBar: View {
             Spacer(minLength: 6)
             if header, model.isQueuePaused {
                 AskQueueAction(title: L("ask.queue.resume"), prominent: true) { model.resumeQueue() }
+                    .disabled(!model.canResumeQueue)
+                    .help(model.queuePauseReason ?? L("ask.queue.session"))
                 AskQueueAction(title: L("ask.queue.clear")) { model.clearQueue() }
             }
             if !editing {
                 if model.canSteer {
                     AskQueueAction(title: "↑ " + L("ask.queue.jump"), prominent: true) { model.steerQueued(item.id) }
                         .help(L("ask.queue.jump.help"))
-                        .disabled(model.steeringIds.contains(item.id))
+                        .disabled(model.isQueueItemPending(item.id))
                 }
                 AskQueueIcon(symbol: "pencil", label: L("ask.queue.edit")) { model.editQueued(item.id) }
+                    .disabled(model.isQueueItemPending(item.id) || model.hasPendingSubmission)
                 AskQueueIcon(symbol: "xmark", label: L("ask.queue.remove")) { model.removeQueued(item.id) }
             }
             if header, items.count > 1 {

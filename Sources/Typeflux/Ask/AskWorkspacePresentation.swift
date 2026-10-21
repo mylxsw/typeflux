@@ -18,6 +18,7 @@ enum AskRunPhase: Equatable {
     case needsDecision(step: Int)
     /// The server paused the run until the account has credits again.
     case pausedCredits(step: Int)
+    case waitingDevice(step: Int)
     case completed(steps: Int)
     case failed
     case cancelled
@@ -27,12 +28,17 @@ enum AskRunPhase: Equatable {
                         recovery: AskRecoveryPresentation?) -> AskRunPhase? {
         let step = max(run?.steps ?? 0, 1)
         // An unknown outcome blocks every driver, so nothing is actually working.
-        if recovery?.unknown == true, run != nil { return .needsDecision(step: step) }
+        let inspectionBlocked = run.map { $0.isActive && $0.needsRecoveryInspection } ?? false
+        if run != nil, recovery?.unknown == true || inspectionBlocked || (recovery?.savedReceipts ?? 0) > 0 {
+            return .needsDecision(step: step)
+        }
         if pendingApproval, let run, !run.needsRecoveryInspection { return .approval }
+        if let run, run.isPausedForCredits { return .pausedCredits(step: step) }
+        if let run, recovery?.otherDevice == true, ["waiting_tool", "waiting_inference"].contains(run.status) {
+            return .waitingDevice(step: step)
+        }
         if busy { return .working(step: step) }
         guard let run else { return nil }
-        // A credit pause is a known checkpoint, never an ambiguous outcome.
-        if run.isPausedForCredits, (recovery?.savedReceipts ?? 0) == 0 { return .pausedCredits(step: step) }
         // The recovery card only appears while nothing drives the run.
         if recovery?.isVisible == true { return .needsDecision(step: step) }
         if run.isActive { return .working(step: step) }
@@ -62,7 +68,7 @@ enum AskRunPhase: Equatable {
     /// The step shown by both the header and the live activity line.
     var step: Int? {
         switch self {
-        case let .working(step), let .needsDecision(step), let .pausedCredits(step): return step
+        case let .working(step), let .needsDecision(step), let .pausedCredits(step), let .waitingDevice(step): return step
         default: return nil
         }
     }
@@ -70,7 +76,7 @@ enum AskRunPhase: Equatable {
     var tone: AskRunTone {
         switch self {
         case .working: return .running
-        case .approval, .needsDecision, .pausedCredits: return .attention
+        case .approval, .needsDecision, .pausedCredits, .waitingDevice: return .attention
         case .completed: return .done
         case .failed, .cancelled: return .failed
         }
@@ -82,6 +88,7 @@ enum AskRunPhase: Equatable {
         case .approval: return L("ask.run.attention")
         case .needsDecision: return L("ask.run.needsDecision")
         case .pausedCredits: return L("ask.run.pausedCredits")
+        case .waitingDevice: return L("ask.recovery.otherDevice")
         case let .completed(steps): return L("ask.run.completed", steps)
         case .failed: return L("ask.run.failed")
         case .cancelled: return L("ask.run.cancelled")

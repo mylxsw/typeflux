@@ -29,6 +29,10 @@ actor AskTestAPI: AskAPI {
     func setCloudTools(_ tools: [AskToolDefinition]) { cloudToolDefinitions = tools }
     var failReceipts = false
     func setFailReceipts(_ value: Bool) { failReceipts = value }
+    var failAfterSend = false
+    func setFailAfterSend(_ flag: Bool) { failAfterSend = flag }
+    var afterSend: (@Sendable () async -> Void)?
+    func setAfterSend(_ action: (@Sendable () async -> Void)?) { afterSend = action }
     var beforeSend: (@Sendable () async -> Void)?
     func setBeforeSend(_ action: (@Sendable () async -> Void)?) { beforeSend = action }
     var failSend = false
@@ -112,6 +116,8 @@ actor AskTestAPI: AskAPI {
         // Mirrors the server: the latest question decides, and only pinned memory can be off.
         value.memoryOff = value.memory != nil && request.memoryOff == true ? true : nil
         value.revision += 1; values[conversationId] = value
+        await afterSend?()
+        if failAfterSend { throw URLError(.networkConnectionLost) }
         return value
     }
     func result(conversationId: String, request: AskToolResultRequest, token: String) async throws -> AskConversation {
@@ -197,12 +203,19 @@ actor AskTestAPI: AskAPI {
         value.revision += 1; values[conversationId] = value
         return value
     }
+    var beforeSteer: (@Sendable () async -> Void)?
+    var afterSteer: (@Sendable () async -> Void)?
+    func setBeforeSteer(_ action: (@Sendable () async -> Void)?) { beforeSteer = action }
+    func setAfterSteer(_ action: (@Sendable () async -> Void)?) { afterSteer = action }
     var steers: [AskSteerRequest] = []
     var deliverSteers = false
+    var failAfterSteer = false
+    func setFailAfterSteer(_ value: Bool) { failAfterSteer = value }
     var failSteer = false
     func setDeliverSteers(_ flag: Bool) { deliverSteers = flag }
     func setFailSteer(_ flag: Bool) { failSteer = flag }
     func steer(conversationId: String, request: AskSteerRequest, token: String) async throws -> AskConversation {
+        await beforeSteer?()
         if failSteer { throw AskLocalError.message("Conflict") }
         steers.append(request)
         var value = try await conversation(id: conversationId, token: token)
@@ -210,6 +223,8 @@ actor AskTestAPI: AskAPI {
             value.messages.append(.init(id: request.id, role: "user", text: request.text, createdAt: Date(), runId: request.runId, steered: true))
             value.revision += 1; values[conversationId] = value
         }
+        await afterSteer?()
+        if failAfterSteer { throw URLError(.networkConnectionLost) }
         return value
     }
     func delete(conversationId: String, token: String) async throws {
@@ -259,14 +274,22 @@ final class AskTestTools: AskToolExecuting {
     func bindExecution(ownerId: String, conversationId: String, runId: String) {
         executionScope = .init(ownerId: ownerId, conversationId: conversationId, runId: runId)
     }
+    var folderStagingError: Error?
     var grantedFolders: [String: [String]] = [:]
     var folderAdmissions: [(String, String)] = []
+    var folderEvents: [String] = []
+    func revokeTaskFolders(conversationId _: String, runId: String?) {
+        folderEvents.append("revoke:" + (runId ?? "all"))
+    }
     func stageFolders(_ paths: [String], lifetime _: AskFolderGrants.Lifetime, ownerId _: String,
                       deviceId _: String, conversationId: String, messageID _: String, generation _: UUID) throws {
+        if let folderStagingError { throw folderStagingError }
+        folderEvents.append("stage")
         grantedFolders[conversationId, default: []] += paths
     }
 
     func admitFolders(messageID: String, conversationId _: String, runId: String) throws {
+        folderEvents.append("admit:" + messageID)
         folderAdmissions.append((messageID, runId))
     }
 
