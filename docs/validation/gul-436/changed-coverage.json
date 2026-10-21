@@ -1,0 +1,45 @@
+{
+  "Sources/Typeflux/Ask/AskAgentBinding.swift": {
+    "changed_covered": 8,
+    "changed_total": 8,
+    "file_covered": 56,
+    "file_total": 56,
+    "missed_changed_lines": []
+  },
+  "Sources/Typeflux/Ask/AskAgentRegistry.swift": {
+    "changed_covered": 35,
+    "changed_total": 35,
+    "file_covered": 35,
+    "file_total": 35,
+    "missed_changed_lines": []
+  },
+  "Sources/Typeflux/Ask/AskApplicationAPI.swift": {
+    "changed_covered": 12,
+    "changed_total": 14,
+    "file_covered": 71,
+    "file_total": 74,
+    "missed_changed_lines": [
+      19,
+      20
+    ]
+  },
+  "Sources/Typeflux/Ask/AskConversationWindowController.swift": {
+    "changed_covered": 11,
+    "changed_total": 15,
+    "file_covered": 11,
+    "file_total": 577,
+    "missed_changed_lines": [
+      50,
+      57,
+      58,
+      94
+    ]
+  },
+  "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowEditorWindowController.swift": {
+    "changed_covered": 2,
+    "changed_total": 2,
+    "file_covered": 9,
+    "file_total": 102,
+    "missed_changed_lines": []
+  }
+}

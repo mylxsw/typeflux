@@ -19,10 +19,19 @@ struct AskAgentBinding: Codable, Equatable, Sendable {
     /// Legacy absence resolves without modifying the persisted representation.
     static func resolve(_ binding: Self?) throws -> Self {
         guard let binding else { return .default }
-        guard binding.invalid == nil, binding.id == Self.default.id, binding.version == 1 else {
+        guard AskAgentDescriptor.default.supports(binding, requiredOperations: []) else {
             throw AskLocalError.implementationUnavailable
         }
         return binding
+    }
+
+    /// ASCII letters/digits followed by letters/digits, dot, underscore or hyphen.
+    var isWellFormed: Bool {
+        guard invalid == nil, version > 0, !id.isEmpty else { return false }
+        return id.utf8.enumerated().allSatisfy { index, byte in
+            let alphanumeric = (65...90).contains(byte) || (97...122).contains(byte) || (48...57).contains(byte)
+            return alphanumeric || (index > 0 && [46, 95, 45].contains(byte))
+        }
     }
 
     private enum CodingKeys: String, CodingKey { case id, version }

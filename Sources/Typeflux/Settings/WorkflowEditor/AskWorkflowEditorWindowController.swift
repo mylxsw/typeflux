@@ -65,11 +65,12 @@ final class AskWorkflowEditorWindowController: NSObject, NSWindowDelegate {
 
     /// Without the Ask workspace (its storage failed to open) the assistant still runs
     /// through a routed API of its own.
-    private static func fallbackDependencies(settings: SettingsStore) -> AskWorkflowAssistant.Dependencies {
+    static func fallbackDependencies(settings: SettingsStore, cloud: any AskAPI = AskAPIClient(),
+                                     local: any AskAPI = AskLocalEngine()) -> AskWorkflowAssistant.Dependencies {
         let deviceKey = "ask.deviceId"
         let deviceId = settings.defaults.string(forKey: deviceKey) ?? UUID().uuidString
         settings.defaults.set(deviceId, forKey: deviceKey)
-        return .init(api: AskApplicationAPI.routed(cloud: AskAPIClient(), local: AskLocalEngine()),
+        return .init(api: AskApplicationAPI.routed(cloud: cloud, local: local),
                      session: { AskRoutedAPI.session(
                          token: AuthState.shared.accessToken,
                          owner: AuthState.shared.userProfile?.id

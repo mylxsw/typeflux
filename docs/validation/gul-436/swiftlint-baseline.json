@@ -1,0 +1,506 @@
+[
+  {
+    "character" : 49,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskAgentBinding.swift",
+    "line" : 56,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Error",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 82,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskAgentBinding.swift",
+    "line" : 57,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Error",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 90,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskAgentBinding.swift",
+    "line" : 58,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Error",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 90,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskAgentBinding.swift",
+    "line" : 59,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Error",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 86,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskAgentBinding.swift",
+    "line" : 60,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Error",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 61,
+    "reason" : "Function should have 5 parameters or less: it currently has 6",
+    "rule_id" : "function_parameter_count",
+    "severity" : "Error",
+    "type" : "Function Parameter Count"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 54,
+    "reason" : "Line should be 120 characters or less; currently it has 138 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 58,
+    "reason" : "Line should be 120 characters or less; currently it has 144 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 62,
+    "reason" : "Line should be 120 characters or less; currently it has 196 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 66,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 129,
+    "reason" : "Line should be 120 characters or less; currently it has 137 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 137,
+    "reason" : "Line should be 120 characters or less; currently it has 133 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 142,
+    "reason" : "Line should be 120 characters or less; currently it has 144 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 156,
+    "reason" : "Line should be 120 characters or less; currently it has 130 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 160,
+    "reason" : "Line should be 120 characters or less; currently it has 127 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 163,
+    "reason" : "Line should be 120 characters or less; currently it has 134 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 165,
+    "reason" : "Line should be 120 characters or less; currently it has 150 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 167,
+    "reason" : "Line should be 120 characters or less; currently it has 167 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 169,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 170,
+    "reason" : "Line should be 120 characters or less; currently it has 142 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 181,
+    "reason" : "Line should be 120 characters or less; currently it has 130 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 187,
+    "reason" : "Line should be 120 characters or less; currently it has 136 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 189,
+    "reason" : "Line should be 120 characters or less; currently it has 127 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 190,
+    "reason" : "Line should be 120 characters or less; currently it has 144 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 191,
+    "reason" : "Line should be 120 characters or less; currently it has 137 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 193,
+    "reason" : "Line should be 120 characters or less; currently it has 155 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 194,
+    "reason" : "Line should be 120 characters or less; currently it has 139 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 203,
+    "reason" : "Line should be 120 characters or less; currently it has 144 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 232,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 242,
+    "reason" : "Line should be 120 characters or less; currently it has 156 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 261,
+    "reason" : "Line should be 120 characters or less; currently it has 139 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 298,
+    "reason" : "Line should be 120 characters or less; currently it has 144 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 312,
+    "reason" : "Line should be 120 characters or less; currently it has 144 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 313,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 368,
+    "reason" : "Line should be 120 characters or less; currently it has 124 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 369,
+    "reason" : "Line should be 120 characters or less; currently it has 155 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 12,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Tests/TypefluxTests/AskApplicationAPITests.swift",
+    "line" : 30,
+    "reason" : "Prefer failable `String(bytes:encoding:)` initializer when converting `Data` to `String`",
+    "rule_id" : "optional_data_string_conversion",
+    "severity" : "Error",
+    "type" : "Optional Data -> String Conversion"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "line" : 44,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 11",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Error",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "line" : 255,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 11",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Error",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "line" : 686,
+    "reason" : "File should contain 400 lines or less excluding comments and whitespaces: currently contains 579",
+    "rule_id" : "file_length",
+    "severity" : "Error",
+    "type" : "File Length"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "line" : 44,
+    "reason" : "Initializer body should span 100 lines or less excluding comments and whitespace: currently spans 146 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Error",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "line" : 255,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 51 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Error",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "line" : 319,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "line" : 338,
+    "reason" : "Line should be 120 characters or less; currently it has 142 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "line" : 447,
+    "reason" : "Line should be 120 characters or less; currently it has 124 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "line" : 460,
+    "reason" : "Line should be 120 characters or less; currently it has 128 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "line" : 468,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "line" : 498,
+    "reason" : "Line should be 200 characters or less; currently it has 231 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "line" : 577,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "line" : 599,
+    "reason" : "Line should be 120 characters or less; currently it has 178 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "line" : 606,
+    "reason" : "Line should be 120 characters or less; currently it has 133 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "line" : 612,
+    "reason" : "Line should be 120 characters or less; currently it has 124 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "line" : 618,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 11,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "line" : 140,
+    "reason" : "Trailing closure syntax should not be used when passing more than one closure argument",
+    "rule_id" : "multiple_closures_with_trailing_closure",
+    "severity" : "Error",
+    "type" : "Multiple Closures with Trailing Closure"
+  },
+  {
+    "character" : 110,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "line" : 171,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Error",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 7,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-436-0ef6042e380a/workdir/evidence/lint-baseline/Sources/Typeflux/Ask/AskConversationWindowController.swift",
+    "line" : 17,
+    "reason" : "Class body should span 350 lines or less excluding comments and whitespace: currently spans 539 lines",
+    "rule_id" : "type_body_length",
+    "severity" : "Error",
+    "type" : "Type Body Length"
+  }
+]

@@ -2,14 +2,14 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-private enum BoundaryFailure: Error, Equatable { case backend, callback }
+enum BoundaryFailure: Error, Equatable { case backend, callback }
 
-private struct BoundaryCall: Equatable, Sendable {
+struct BoundaryCall: Equatable, Sendable {
     var method: String
     var arguments: [String: String]
 }
 
-private actor BoundaryRecorder {
+actor BoundaryRecorder {
     var calls: [BoundaryCall] = []
     var failure: BoundaryFailure?
     func fail(_ value: BoundaryFailure?) { failure = value }
@@ -31,7 +31,7 @@ private func boundaryJSON<T: Encodable>(_ value: T) throws -> String {
 }
 
 /// Deliberately has no history or model-administration conformance.
-private struct BoundaryRuntime: AskAgentRuntime {
+struct BoundaryRuntime: AskAgentRuntime {
     let recorder: BoundaryRecorder
     var name = "runtime"
     func send(conversationId: String, request: AskSendRequest, token: String) async throws -> AskConversation {
@@ -82,7 +82,7 @@ private struct BoundaryRuntime: AskAgentRuntime {
     }
 }
 
-private struct BoundaryHistory: AskConversationAccess {
+struct BoundaryHistory: AskConversationAccess {
     let recorder: BoundaryRecorder
     var name = "history"
     func conversation(id: String, token: String) async throws -> AskConversation {
@@ -110,7 +110,7 @@ private struct BoundaryHistory: AskConversationAccess {
     }
 }
 
-private struct BoundaryModels: AskModelAccess {
+struct BoundaryModels: AskModelAccess {
     let recorder: BoundaryRecorder
     var name = "catalog"
     func featureModels(feature: String, token: String) async throws -> [AskCloudModel]? {
@@ -281,7 +281,7 @@ struct AskApplicationAPITests {
 }
 
 /// Uses exactly the required legacy surface, inheriting all pre-extraction defaults.
-private struct BoundaryLegacyAPI: AskAPI {
+struct BoundaryLegacyAPI: AskAPI {
     let recorder: BoundaryRecorder
     func conversation(id: String, token: String) async throws -> AskConversation {
         try await recorder.record("conversation", ["id": id, "token": token])
