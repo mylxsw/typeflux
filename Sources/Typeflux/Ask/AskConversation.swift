@@ -324,6 +324,7 @@ struct AskDraft: Codable, Equatable, Sendable {
         let sentAttachments = attachments?.map { item -> AskAttachment in
             var copy = item
             copy.localSourcePath = nil
+            copy.screenshot = nil
             return copy
         }
         return AskSendRequest(

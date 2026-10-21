@@ -289,7 +289,11 @@ struct AskFlowLayout: Layout {
         let sizes = sizes(subviews)
         var top = bounds.minY
         for row in Self.rows(sizes: sizes, maxWidth: bounds.width, spacing: spacing) {
-            var left = alignment == .trailing ? bounds.maxX - row.width : bounds.minX
+            var left: CGFloat = switch alignment {
+            case .trailing: bounds.maxX - row.width
+            case .center: bounds.minX + max(0, bounds.width - row.width) / 2
+            default: bounds.minX
+            }
             for index in row.indices {
                 let width = min(sizes[index].width, bounds.width)
                 if pinsLastToTrailingEdge, index == sizes.count - 1, alignment != .trailing {

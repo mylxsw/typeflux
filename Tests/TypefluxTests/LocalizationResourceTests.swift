@@ -535,3 +535,29 @@ extension LocalizationResourceTests {
         }
     }
 }
+
+extension LocalizationResourceTests {
+    /// The launcher's empty-result copy exists everywhere with the same format arguments as English.
+    func testLauncherEmptyResultCopyKeepsFormatArgumentsInEveryLanguage() throws {
+        func table(for language: AppLanguage) throws -> [String: String] {
+            let bundle = try localizationBundle(for: language)
+            let url = try XCTUnwrap(bundle.url(forResource: "Localizable", withExtension: "strings"))
+            return try XCTUnwrap(PropertyListSerialization.propertyList(from: Data(contentsOf: url),
+                options: [], format: nil) as? [String: String])
+        }
+        func specifiers(_ value: String) -> [String] {
+            ["%@", "%d"].map { value.components(separatedBy: $0).count - 1 }.map(String.init)
+        }
+        let prefixes = ["ask.launcher.context.", "ask.launcher.noMatch.", "ask.launcher.welcome."]
+        let english = try table(for: .english).filter { key, _ in prefixes.contains { key.hasPrefix($0) } }
+        XCTAssertGreaterThan(english.count, 70)
+        for language in AppLanguage.allCases {
+            let localized = try table(for: language)
+            for (key, value) in english {
+                let translation = try XCTUnwrap(localized[key], "Missing \(key) in \(language.rawValue)")
+                XCTAssertFalse(translation.isEmpty, key)
+                XCTAssertEqual(specifiers(translation), specifiers(value), "\(key) in \(language.rawValue)")
+            }
+        }
+    }
+}

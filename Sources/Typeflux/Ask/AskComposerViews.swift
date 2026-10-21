@@ -305,6 +305,12 @@ struct AskComposer: View {
             case let .row(row): action = .confirm(row.title)
             case let .chip(chip): action = .confirm(chip.title)
             }
+        } else if let chip = highlightedWelcomeChip {
+            action = .confirm(chip.title)
+        } else if let starter = highlightedContextStarter {
+            action = .confirm(starter.title)
+        } else if let destination = highlightedNoMatchDestination {
+            action = .confirm(destination.title)
         } else {
             action = launcherChatFallback
         }
@@ -353,13 +359,16 @@ struct AskComposer: View {
         } else if showsQuickResults, let results = quickResults {
             selection = results.identity(of: results.highlightedRow)
         } else {
-            selection = plugins.output?.selected?.id ?? "home:\(suggestionIndex)"
+            selection = plugins.output?.selected?.id ?? "home:\(suggestionIndex):\(canvasHighlight ?? -1)"
         }
         let target = AskLauncherActivationGate.Target(mode: action.mode, text: draft.wrappedValue.text,
                                                      selection: selection, confirming: quickActions?.confirming == true)
         guard primaryActivationGate.accept(target, now: ProcessInfo.processInfo.systemUptime) else { return }
         if routeCommandKey(.enter) { return }
         if showsLauncherSuggestions, let item = highlightedHomeItem { pick(item); return }
+        if let chip = highlightedWelcomeChip { pick(.chip(chip)); return }
+        if let starter = highlightedContextStarter { sendContextStarter(starter); return }
+        if let destination = highlightedNoMatchDestination { pickNoMatchDestination(destination); return }
         // An active feature owns Return, including when no action can be performed.
         guard !plugins.isActive else { return }
         if action.mode == .openChat { openChat() } else { model.submitLauncher() }
@@ -402,6 +411,12 @@ struct AskComposer: View {
         model.submitDraft()
     }
     @State private var suggestionIndex = 0
+    /// The highlight in the welcome chips, the context starters or the no-match
+    /// destinations; nil leaves Return with the editor.
+    @State private var canvasHighlight: Int?
+    /// A starter put in the editor reads as a question, not as a keyword its first word
+    /// may spell ("Summarize …"), until the user edits that word.
+    @State private var plainTextLead: String?
     /// A local answer for the launcher's text, such as a calculation.
     @State private var searchVisible = false
     @StateObject private var quickSearch: AskQuickSearchSession
@@ -800,7 +815,8 @@ struct AskComposer: View {
     private func refreshPlugins() -> Bool {
         let text = draft.wrappedValue.text
         let previousHint = plugins.hint
-        if let argument = plugins.detect(in: text) {
+        if let lead = plainTextLead, !text.hasPrefix(lead) { plainTextLead = nil }
+        if plainTextLead == nil, let argument = plugins.detect(in: text) {
             if plugins.keyword?.pluginID == AskQuickAskPlugin.id, model.quickAsk?.handedOff == true { model.quickAsk = nil }
             pluginHighlight = 0
             pluginReserve = 0
@@ -1232,7 +1248,9 @@ struct AskComposer: View {
     /// The home of the current render. A reference, so filling it never invalidates the view.
     private final class HomeMemo {
         var sections: [AskLauncherHome.Section]?
-        func reset() { sections = nil }
+        var chips: (chips: [AskLauncherHome.Chip], teaching: Bool)?
+        var destinations: (query: String, items: [AskLauncherNoMatch.Destination])?
+        func reset() { sections = nil; chips = nil; destinations = nil }
     }
 
     @State private var homeMemo = HomeMemo()
@@ -1256,6 +1274,94 @@ struct AskComposer: View {
     private var highlightedHomeItem: AskLauncherHome.Item? {
         let items = AskLauncherHome.items(home)
         return items.indices.contains(suggestionIndex) ? items[suggestionIndex] : items.first
+    }
+
+    // MARK: Empty results
+
+    /// The home has nothing to list: the launcher greets instead (`AskLauncherWelcome`).
+    private var showsLauncherWelcome: Bool { showsLauncherSuggestions && home.isEmpty }
+
+    private var welcomeChips: (chips: [AskLauncherHome.Chip], teaching: Bool) {
+        guard showsLauncherWelcome else { return ([], false) }
+        if let chips = homeMemo.chips { return chips }
+        let chips = model.presentedLauncherChips()
+        homeMemo.chips = chips
+        return chips
+    }
+
+    private var highlightedWelcomeChip: AskLauncherHome.Chip? {
+        guard showsLauncherWelcome, let index = canvasHighlight else { return nil }
+        let chips = welcomeChips.chips
+        return chips.indices.contains(index) ? chips[index] : nil
+    }
+
+    /// The question carries context, which hides the home and quick results: the
+    /// canvas offers questions about it instead (`AskLauncherContextHome`).
+    private var launcherContextHome: AskLauncherContextHome.Content? {
+        guard launcher, !active, !model.launcherHistoryMode, !launcherCollapsed, !plugins.isActive,
+              !paletteOpen, pluginDisplay == nil else { return nil }
+        return AskLauncherContextHome.content(draft.wrappedValue, loading: model.isLoadingAttachments(launcher: true))
+    }
+
+    private var highlightedContextStarter: AskLauncherContextHome.Starter? {
+        guard let index = canvasHighlight, let starters = launcherContextHome?.starters,
+              starters.indices.contains(index) else { return nil }
+        return starters[index]
+    }
+
+    /// The search finished without a single match: say so rather than leave the area empty.
+    private var showsLauncherNoMatch: Bool {
+        let text = draft.wrappedValue.text
+        return launcher && !active && !model.launcherHistoryMode && !launcherCollapsed && !paletteOpen
+            && !plugins.isActive && pluginDisplay == nil && draft.wrappedValue.hasText
+            && launcherContextHome == nil && quickSearch.isVisible && quickSearch.isCurrent(text: text)
+            && !quickSearch.isSearching && presentedQuickResults == nil
+    }
+
+    private var noMatchDestinations: [AskLauncherNoMatch.Destination] {
+        guard showsLauncherNoMatch else { return [] }
+        let query = draft.wrappedValue.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let memo = homeMemo.destinations, memo.query == query { return memo.items }
+        let items = model.launcherNoMatchDestinations(query: query)
+        homeMemo.destinations = (query, items)
+        return items
+    }
+
+    private var highlightedNoMatchDestination: AskLauncherNoMatch.Destination? {
+        guard let index = canvasHighlight else { return nil }
+        let destinations = noMatchDestinations
+        return destinations.indices.contains(index) ? destinations[index] : nil
+    }
+
+    private var launcherOrbPalette: AskOrbPalette { .init(marked: model.markedStorage(launcher: true)) }
+
+    private func sendContextStarter(_ starter: AskLauncherContextHome.Starter) {
+        canvasHighlight = nil
+        model.askFromLauncherContext(starter)
+    }
+
+    /// Puts a starter in the editor to change it before sending.
+    private func fillContextStarter(_ starter: AskLauncherContextHome.Starter) {
+        canvasHighlight = nil
+        plainTextLead = AskLauncherContextHome.plainTextLead(of: starter.prompt)
+        draft.wrappedValue.text = starter.prompt
+    }
+
+    /// The Ask AI row: the chat fallback Return takes when no destination is highlighted.
+    private func askAIFromNoMatch() {
+        canvasHighlight = nil
+        let action = launcherChatFallback
+        guard action.enabled, !launcherEditorIsComposing else { return }
+        if action.mode == .openChat { openChat() } else { model.submitLauncher() }
+    }
+
+    /// Enters the destination's keyword with the typed text, as typing it would.
+    private func pickNoMatchDestination(_ destination: AskLauncherNoMatch.Destination) {
+        canvasHighlight = nil
+        pluginHighlight = 0
+        pluginReserve = 0
+        model.enterLauncherKeyword(destination.keyword, run: false)
+        reportHeight()
     }
 
     /// Runs a home row: a keyword on the selection, a question, or a conversation.
@@ -1345,12 +1451,13 @@ struct AskComposer: View {
             }
             .onChange(of: editorHeight) { _ in reportHeight() }
             .onChange(of: launcherCollapsed) { _ in reportHeight() }
-            .onChange(of: showsLauncherSuggestions) { _ in reportHeight() }
+            .onChange(of: showsLauncherSuggestions) { _ in canvasHighlight = nil; reportHeight() }
+            .onChange(of: (draft.wrappedValue.attachments ?? []).count) { _ in canvasHighlight = nil }
             .onChange(of: showsQuickResults) { _ in updateFilePreview(); reportHeight() }
             // The home fills in as the context arrives after the panel shows.
             .onChange(of: model.launcherPresentationID) { _ in
                 guard launcher else { return }
-                suggestionIndex = 0; pluginHighlight = 0; pluginReserve = 0; quickReserve = 0
+                suggestionIndex = 0; canvasHighlight = nil; pluginHighlight = 0; pluginReserve = 0; quickReserve = 0
                 quickActions = nil; contextPanelOpen = false; closePalette()
                 refreshQuickResults(); reportHeight()
             }
@@ -1362,6 +1469,7 @@ struct AskComposer: View {
             .onChange(of: historyHeight) { _ in reportHeight() }
             .onChange(of: homeHeight) { _ in reportHeight() }
             .onChange(of: draft.wrappedValue.text) { _ in
+                canvasHighlight = nil
                 if launcher, model.launcherHistoryMode { model.launcherHistoryIndex = 0 }
                 refreshQuickResults()
                 if !draft.wrappedValue.hasText {
@@ -1605,11 +1713,31 @@ struct AskComposer: View {
             } else if model.launcherHistoryMode {
                 AskLauncherInputHistoryView(model: model, store: inputHistory,
                                             viewportHeight: launcherResultsViewportHeight)
+            } else if showsLauncherWelcome {
+                let chips = welcomeChips
+                AskLauncherWelcomeView(chips: chips.chips, teaching: chips.teaching, highlighted: $canvasHighlight,
+                                       settings: model.modelLibrary.settings, palette: launcherOrbPalette,
+                                       viewportHeight: launcherResultsViewportHeight,
+                                       onPick: { pick(.chip($0)) },
+                                       onEnableApps: model.quickAppsEnabled ? nil : {
+                                           model.onOpenSettings?(.launcher)
+                                           onDismiss()
+                                       },
+                                       onHistory: model.openLauncherInputHistory)
             } else if showsLauncherSuggestions {
                 AskLauncherSuggestions(sections: home, highlighted: $suggestionIndex, onPick: pick,
                                        viewportHeight: launcherResultsViewportHeight,
                                        onHistory: model.openLauncherInputHistory)
                     .disabled(active)
+            } else if let content = launcherContextHome {
+                AskLauncherContextCanvas(content: content, attachments: draft.wrappedValue.attachments ?? [],
+                                         highlighted: $canvasHighlight, palette: launcherOrbPalette,
+                                         viewportHeight: launcherResultsViewportHeight,
+                                         onSend: sendContextStarter, onFill: fillContextStarter,
+                                         onRemove: (draft.wrappedValue.attachments ?? []).isEmpty ? nil : {
+                                             canvasHighlight = nil
+                                             model.removeLauncherAttachments()
+                                         })
             } else if plugins.keyword?.pluginID == AskQuickAskPlugin.id {
                 AskQuickAskView(model: model, viewport: model.launcherViewport, chrome: launcherChromeHeight,
                                 available: availableHeight.map { $0 + AskMetrics.launcherGutter * 2 },
@@ -1697,6 +1825,12 @@ struct AskComposer: View {
                     // on every keystroke. All keyboard and action paths also reject them.
                     .disabled(active)
                     .allowsHitTesting(!quickResultsArePending)
+            } else if showsLauncherNoMatch {
+                AskLauncherNoMatchView(query: draft.wrappedValue.text.trimmingCharacters(in: .whitespacesAndNewlines),
+                                       searched: model.quickAppsEnabled || model.quickFilesEnabled,
+                                       destinations: noMatchDestinations, highlighted: $canvasHighlight,
+                                       onAskAI: askAIFromNoMatch,
+                                       onPick: pickNoMatchDestination)
             }
         }
         .transaction { $0.animation = nil; $0.disablesAnimations = true }
@@ -2394,6 +2528,9 @@ struct AskComposer: View {
         if !active, model.launcherHistoryMode { return L("ask.inputHistory.hint") }
         if !active, plugins.keyword?.pluginID == AskQuickAskPlugin.id { return L("ask.quickAsk.hint") }
         if !active, let pluginDisplay { return AskPluginResultsView.hint(for: pluginDisplay) }
+        if !active, highlightedWelcomeChip != nil { return L("ask.home.hint.chip") }
+        if !active, highlightedContextStarter != nil { return L("ask.launcher.context.hint") }
+        if !active, highlightedNoMatchDestination != nil { return L("ask.launcher.noMatch.hint") }
         if !active, showsLauncherSuggestions, let item = highlightedHomeItem {
             let hint = AskLauncherSuggestions.hint(for: item, hasContext: contextToken != nil)
             return inputHistory.enabled ? L("ask.inputHistory.homeHint") + " · " + hint : hint

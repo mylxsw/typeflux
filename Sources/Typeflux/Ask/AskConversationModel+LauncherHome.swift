@@ -116,3 +116,30 @@ final class AskCapturePermissionSnapshot {
         return value
     }
 }
+
+// MARK: - Empty results
+
+extension AskConversationModel {
+    /// The keyword chips the home offers when it has nothing to list, ranked as the home ranks them.
+    func presentedLauncherChips(now: Date = Date()) -> (chips: [AskLauncherHome.Chip], teaching: Bool) {
+        AskLauncherHome.chips(launcherHomeContext(now: now, permissions: launcherCapturePermissions))
+    }
+
+    /// Where a search that found nothing can go instead (`AskLauncherNoMatch`).
+    func launcherNoMatchDestinations(query: String) -> [AskLauncherNoMatch.Destination] {
+        AskLauncherNoMatch.destinations(launcherHomeContext(permissions: launcherCapturePermissions).keywords,
+                                        query: query)
+    }
+
+    /// Sends a starter from the context canvas with the draft's context.
+    func askFromLauncherContext(_ starter: AskLauncherContextHome.Starter) {
+        askFromLauncherHome(starter.prompt)
+    }
+
+    /// Takes every attachment off the launcher's question; the strip removes them one by one.
+    func removeLauncherAttachments() {
+        for attachment in launcherDraft.attachments ?? [] {
+            removeAttachment(attachment.id, launcher: true)
+        }
+    }
+}
