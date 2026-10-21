@@ -179,7 +179,7 @@ struct HelpBlock<Content: View>: View {
     }
 }
 
-/// One row of a block: icon, title and detail, trailing content.
+/// One row of a block: icon, title with the settings description hint, trailing content.
 struct HelpRow<Trailing: View>: View {
     var symbol: String?
     var title: String
@@ -195,13 +195,15 @@ struct HelpRow<Trailing: View>: View {
     var body: some View {
         let content = HStack(spacing: 12) {
             if let symbol {
-                Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
+                Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: 13))
+                    .foregroundStyle(StudioTheme.textSecondary)
                     .frame(width: 20)
             }
-            VStack(alignment: .leading, spacing: 1) {
+            HStack(spacing: 6) {
                 Text(title).font(.system(size: 13.5)).foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
+                    .accessibilityHint(detail)
                 if !detail.isEmpty {
-                    Text(detail).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                    SettingsDescriptionHint(detail: detail, visible: hovering)
                 }
             }
             .opacity(dimmed ? 0.5 : 1)
@@ -218,12 +220,15 @@ struct HelpRow<Trailing: View>: View {
             }
         }
         .contentShape(Rectangle())
+        .onHover { hovering = $0 }
         if let action {
-            content.onTapGesture(perform: action).onHover { hovering = $0 }
-                .accessibilityElement(children: .combine)
+            content.onTapGesture(perform: action)
+                .accessibilityElement(children: .contain)
                 .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+                .accessibilityLabel(title)
+                .accessibilityAction { action() }
         } else {
-            content.accessibilityElement(children: .combine)
+            content.accessibilityElement(children: .contain)
         }
     }
 
@@ -231,7 +236,7 @@ struct HelpRow<Trailing: View>: View {
         if selected {
             Rectangle().fill(HelpTheme.selection(style))
                 .overlay(Rectangle().strokeBorder(HelpTheme.selectionEdge(style), lineWidth: 1))
-        } else if hovering {
+        } else if hovering, action != nil {
             Rectangle().fill(AskTheme.hoverFill)
         }
     }
