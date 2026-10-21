@@ -69,7 +69,7 @@ final class AskWorkflowEditorWindowController: NSObject, NSWindowDelegate {
         let deviceKey = "ask.deviceId"
         let deviceId = settings.defaults.string(forKey: deviceKey) ?? UUID().uuidString
         settings.defaults.set(deviceId, forKey: deviceKey)
-        return .init(api: AskRoutedAPI(cloud: AskAPIClient(), local: AskLocalEngine()),
+        return .init(api: AskApplicationAPI.routed(cloud: AskAPIClient(), local: AskLocalEngine()),
                      session: { AskRoutedAPI.session(
                          token: AuthState.shared.accessToken,
                          owner: AuthState.shared.userProfile?.id

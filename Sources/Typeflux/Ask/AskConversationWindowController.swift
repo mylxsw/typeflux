@@ -75,7 +75,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         let deviceId = settings.defaults.string(forKey: deviceKey) ?? UUID().uuidString
         settings.defaults.set(deviceId, forKey: deviceKey)
         let search = AskSearchSettings(defaults: settings.defaults)
-        let api: any AskAPI = services?.api ?? AskRoutedAPI(
+        let api: any AskAPI = services?.api ?? AskApplicationAPI.routed(
             cloud: AskAPIClient(), local: AskLocalEngine(webTools: AskLocalWebTools(searchProvider: {
             search.configuration
         }), budgetEnabled: settings.defaults.bool(forKey: "ask.budgetEnabled"), contextLimits: { reference in
