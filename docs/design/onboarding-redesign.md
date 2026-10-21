@@ -1,5 +1,7 @@
 # Onboarding 重构 设计方案
 
+> 已被 `feature-onboarding.md`（GUL-339 第二轮：分功能上手）取代，保留作为历史方案。
+
 > 状态：待确认（GUL-339）。可交互设计稿：`docs/design/onboarding-redesign.html`（浏览器打开，按钮可点；顶栏切换浅色/深色、「全部画面」；←/→ 切换画面）。截图在 `docs/design/onboarding-redesign/`。
 
 ## 0. 一页结论
