@@ -225,6 +225,7 @@ extension AskLocalRecord {
     static func decodeSnapshot(_ data: Data) throws -> Self {
         guard case var .object(root) = try AskRouteJSON.decodeRaw(data) else { throw CocoaError(.coderReadCorrupt) }
         let archive = root.removeValue(forKey: "agent_routes")
+        let state = root.removeValue(forKey: "agent_state")
         var binding: AskRouteJSON?
         if case var .object(conversation) = root["conversation"], case var .object(run) = conversation["run"] {
             binding = run.removeValue(forKey: "agent_binding")
@@ -232,6 +233,7 @@ extension AskLocalRecord {
             root["conversation"] = .object(conversation)
         }
         var record = try AskCoding.decoder().decode(Self.self, from: AskRouteJSON.object(root).encodeRaw())
+        record.agentState = state
         record.agentRoutes = archive.map(AskRunRouteArchive.init(raw:))
         record.conversation.run?.agentBinding = binding.flatMap { $0 == .null ? nil : AskAgentBinding(raw: $0) }
         return record
@@ -241,10 +243,12 @@ extension AskLocalRecord {
         // Remove private evidence before Foundation encoding; reinsert exact tokens afterwards.
         var copy = self
         copy.agentRoutes = nil
+        copy.agentState = nil
         copy.conversation.run?.agentBinding = nil
         guard case var .object(root) = try AskRouteJSON.decodeRaw(AskCoding.encoder().encode(copy))
         else { throw CocoaError(.coderInvalidValue) }
         root["agent_routes"] = agentRoutes?.raw
+        root["agent_state"] = agentState
         if case var .object(conversation) = root["conversation"], case var .object(run) = conversation["run"] {
             run["agent_binding"] = self.conversation.run?.agentBinding?.routeEvidence
             conversation["run"] = .object(run)

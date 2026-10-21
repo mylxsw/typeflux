@@ -6,6 +6,8 @@ private actor AskHTTPStub: CloudHTTPSession {
     var requests: [URLRequest] = []
     var capabilityVersion: Int? = 1
     func capability(_ version: Int?) { capabilityVersion = version }
+    var agentHeader: String?
+    func agent(_ value: String?) { agentHeader = value }
     var status = 200
     var payload: Data = Data()
     func configure(status: Int = 200, payload: Data) { self.status = status; self.payload = payload }
@@ -15,7 +17,7 @@ private actor AskHTTPStub: CloudHTTPSession {
             return (Data("{\"code\":\"OK\",\"data\":{\"version\":\(capabilityVersion)}}".utf8),
                     HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
         }
-        return (payload, HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!)
+        return (payload, HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: agentHeader.map { [AskAgentPeerCapabilities.header: $0] })!)
     }
 }
 
@@ -27,6 +29,29 @@ private struct AskHTTPProber: CloudEndpointProbing {
 
 @Suite("Ask HTTP contract", .exclusiveUIState)
 struct AskAPIClientTests {
+    @Test func agentCapabilitiesUseOptionalBoundedHeadersWithoutChangingBodies() async throws {
+        actor PeerRecorder {
+            var versions: [Int?] = []
+            func record(_ peer: AskAgentPeerCapabilities?) { versions.append(peer?.protocolVersion) }
+        }
+        let stub = AskHTTPStub(), recorder = PeerRecorder()
+        let selector = CloudEndpointSelector(baseURLs: [URL(string: "https://example.test")!], prober: AskHTTPProber())
+        let executor = CloudRequestExecutor(selector: selector, session: stub)
+        let api = AskAPIClient(executor: executor, receiveAgentCapabilities: { await recorder.record($0) })
+        let conversation = AskConversation(id: "conversation", title: "Question", revision: 1, updatedAt: Date(), messages: [])
+        try await stub.configure(payload: Data(#"{"code":"OK","data":"#.utf8) + AskCoding.encoder().encode(conversation) + Data("}".utf8))
+        await stub.agent(AskAgentPeerCapabilities.canonical.headerValue)
+        _ = try await api.conversation(id: conversation.id, token: "t")
+        #expect(await stub.requests.last?.value(forHTTPHeaderField: AskAgentPeerCapabilities.header) == AskAgentPeerCapabilities.canonical.headerValue)
+        #expect(await recorder.versions == [1])
+        await stub.agent(String(repeating: "x", count: 4097))
+        _ = try await api.conversation(id: conversation.id, token: "t")
+        #expect(await recorder.versions == [1, nil])
+        await stub.agent(nil)
+        _ = try await api.conversation(id: conversation.id, token: "t")
+        #expect(await recorder.versions == [1, nil, nil])
+    }
+
     @Test func featureDiscoveryDistinguishesUnconfiguredDisabledAndOldServers() async throws {
         let stub = AskHTTPStub(), api = client(stub)
         await stub.configure(payload: Data(#"{"code":"OK","data":{"configured":true,"models":[{"id":"default","name":"Text"}]}}"#.utf8))

@@ -30,6 +30,8 @@ struct AskAPIClient: AskAPI {
         try await execute(path: "/\(conversationId)/inference-results", method: "POST", body: AskCoding.encoder().encode(request), token: token)
     }
     let executor: CloudRequestExecutor
+    let agentCapabilities: AskAgentPeerCapabilities
+    let receiveAgentCapabilities: @Sendable (AskAgentPeerCapabilities?) async -> Void
     let recoveryMetadataEnabled: Bool
     let streamSession: URLSession
     private let trustedPeer: AskHarnessContract?
@@ -37,7 +39,10 @@ struct AskAPIClient: AskAPI {
 
     init(executor: CloudRequestExecutor = CloudRequestExecutor(), streamSession: URLSession = .shared,
          trustedPeer: AskHarnessContract? = nil, enabledCapabilities: Set<AskHarnessCapability> = [],
-         recoveryMetadataEnabled: Bool = false) {
+         recoveryMetadataEnabled: Bool = false, agentCapabilities: AskAgentPeerCapabilities = .canonical,
+         receiveAgentCapabilities: @escaping @Sendable (AskAgentPeerCapabilities?) async -> Void = { _ in }) {
+        self.agentCapabilities = agentCapabilities.isValid && agentCapabilities.headerValue.utf8.count <= 4096 ? agentCapabilities : .canonical
+        self.receiveAgentCapabilities = receiveAgentCapabilities
         self.recoveryMetadataEnabled = recoveryMetadataEnabled
         self.trustedPeer = trustedPeer; self.enabledCapabilities = enabledCapabilities
         self.executor = executor; self.streamSession = streamSession
@@ -113,10 +118,13 @@ struct AskAPIClient: AskAPI {
     private func execute<T: Decodable>(path: String, method: String = "GET", body: Data? = nil, token: String) async throws -> T {
         let path = ChatRequest.conversationsPath + path
         let (data, response) = try await executor.execute(apiPath: path) { base in
-            var headers = ["X-Typeflux-Model-Catalog": "1", "X-Scenario": "ask-anything"]
+            var headers = ["X-Typeflux-Model-Catalog": "1", "X-Scenario": "ask-anything", AskAgentPeerCapabilities.header: agentCapabilities.headerValue]
             if recoveryMetadataEnabled { headers["X-Typeflux-Capabilities"] = "run_recovery_v1" }
             return ChatRequest.make(baseURL: base, path: path, method: method, body: body,
                                         token: token, headers: headers)
+        }
+        if (200..<300).contains(response.statusCode) {
+            await receiveAgentCapabilities(AskAgentPeerCapabilities.parse(response.value(forHTTPHeaderField: AskAgentPeerCapabilities.header)))
         }
         if !(200..<300).contains(response.statusCode), let exhausted = CloudCreditsExhaustedError.parse(data: data) {
             throw exhausted
