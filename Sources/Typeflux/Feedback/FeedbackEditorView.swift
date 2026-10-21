@@ -49,6 +49,7 @@ struct FeedbackEditorView: NSViewRepresentable {
         textView.onLinkRequest = { [weak textView, weak toolbar] in
             toolbar?.requestLinkEntry(in: textView)
         }
+        textView.onRemoveAttachment = { [weak model] id in model?.remove(id: id) }
         scrollView.documentView = textView
         model.editor.textView = textView
         context.coordinator.textView = textView
@@ -113,21 +114,16 @@ struct FeedbackEditorView: NSViewRepresentable {
             return view.handleNewline()
         }
 
-        /// Clicks on an attachment block: the remove button removes it, a failed block retries.
+        /// Clicks on a failed attachment block retry its upload.
         func textView(
             _ textView: NSTextView,
             clickedOn _: NSTextAttachmentCellProtocol,
-            in cellFrame: NSRect,
+            in _: NSRect,
             at charIndex: Int
         ) {
             guard let attachment = textView.textStorage?.attribute(.attachment, at: charIndex, effectiveRange: nil)
                 as? FeedbackTextAttachment else { return }
-            let frame = cellFrame.insetBy(dx: 0, dy: 4)
-            let click = textView.convert(textView.window?.mouseLocationOutsideOfEventStream ?? .zero, from: nil)
-            let kind = model.attachment(id: attachment.attachmentID)?.kind ?? .file
-            if FeedbackAttachmentCell.removeButtonRect(in: frame, kind: kind).insetBy(dx: -4, dy: -4).contains(click) {
-                model.remove(id: attachment.attachmentID)
-            } else if case .failed = model.attachment(id: attachment.attachmentID)?.state {
+            if case .failed = model.attachment(id: attachment.attachmentID)?.state {
                 model.retry(id: attachment.attachmentID)
             }
         }

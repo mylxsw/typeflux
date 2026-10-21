@@ -7,6 +7,7 @@ final class FeedbackTextView: NSTextView {
     var onFiles: (([URL]) -> Void)?
     var onImageData: ((Data) -> Void)?
     var onLinkRequest: (() -> Void)?
+    var onRemoveAttachment: ((UUID) -> Void)?
     private(set) var isDropTargeted = false {
         didSet {
             if oldValue != isDropTargeted {
@@ -202,6 +203,35 @@ final class FeedbackTextView: NSTextView {
     }
 
     // MARK: - Attachments
+
+    override func mouseDown(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        if let id = attachmentRemovalTarget(at: point), let onRemoveAttachment {
+            onRemoveAttachment(id)
+            return
+        }
+        super.mouseDown(with: event)
+    }
+
+    /// Editable text views may select attachments without sending the cell-click delegate callback.
+    /// Hit-test the drawn controls using TextKit's current layout and the actual mouse event.
+    func attachmentRemovalTarget(at point: NSPoint) -> UUID? {
+        guard let storage = textStorage, let layout = layoutManager, let container = textContainer else { return nil }
+        layout.ensureLayout(for: container)
+        var target: UUID?
+        storage.enumerateAttribute(.attachment, in: NSRange(location: 0, length: storage.length)) { value, range, stop in
+            guard let attachment = value as? FeedbackTextAttachment,
+                  let cell = attachment.attachmentCell as? FeedbackAttachmentCell else { return }
+            let glyphs = layout.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
+            let frame = layout.boundingRect(forGlyphRange: glyphs, in: container)
+                .offsetBy(dx: textContainerOrigin.x, dy: textContainerOrigin.y)
+            if cell.removeButtonHitRect(in: frame)?.contains(point) == true {
+                target = attachment.attachmentID
+                stop.pointee = true
+            }
+        }
+        return target
+    }
 
     /// Inserts the attachment block on its own paragraph after the paragraph at the cursor, so
     /// text and attachments can alternate.

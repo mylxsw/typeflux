@@ -68,6 +68,12 @@ final class FeedbackAttachmentCell: NSTextAttachmentCell {
         false
     }
 
+    func removeButtonHitRect(in cellFrame: NSRect) -> NSRect? {
+        guard let attachment = provider(attachmentID) else { return nil }
+        return Self.removeButtonRect(in: cellFrame.insetBy(dx: 0, dy: 4), kind: attachment.kind)
+            .insetBy(dx: -4, dy: -4)
+    }
+
     override func draw(withFrame cellFrame: NSRect, in _: NSView?) {
         guard let attachment = provider(attachmentID) else { return }
         let frame = cellFrame.insetBy(dx: 0, dy: 4)

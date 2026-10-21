@@ -46,6 +46,62 @@ struct FeedbackEditorViewTests {
         #expect(name.range(of: #"^screenshot-\d{4}-\d{2}-\d{2}-\d{6}\.png$"#, options: .regularExpression) != nil)
     }
 
+    @Test(arguments: [FeedbackAttachmentKind.image, .video, .file])
+    func `mouse clicks remove the targeted attachment in every upload state`(kind: FeedbackAttachmentKind) async throws {
+        let states: [FeedbackAttachmentState] = [
+            .preparing(progress: nil), .uploading, .uploaded("https://example.com/file"),
+            .failed("offline"), .rejected("too large")
+        ]
+        try await UI.withFixture { _ in
+            for state in states {
+                let (model, _) = makeModel()
+                try await UI.withWindow(
+                    FeedbackEditorView(model: model, toolbar: FeedbackToolbarState()), width: 500, height: 300
+                ) { window, _ in
+                    let view = try #require(model.editor.textView)
+                    view.insertText("Keep this text\n", replacementRange: view.selectedRange())
+                    let retained = model.beginAttachment(filename: "keep.log", kind: .file, originalSize: 1)
+                    let removed = model.beginAttachment(filename: "remove", kind: kind, originalSize: 1)
+                    model.update(id: removed) { $0.state = state }
+                    let layout = try #require(view.layoutManager)
+                    let container = try #require(view.textContainer)
+                    layout.ensureLayout(for: container)
+                    let storage = try #require(view.textStorage)
+                    var characterRange: NSRange?
+                    storage.enumerateAttribute(.attachment, in: NSRange(location: 0, length: storage.length)) {
+                        value, range, _ in
+                        if (value as? FeedbackTextAttachment)?.attachmentID == removed {
+                            characterRange = range
+                        }
+                    }
+                    let range = try #require(characterRange)
+                    let glyphs = layout.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
+                    let frame = layout.boundingRect(forGlyphRange: glyphs, in: container)
+                        .offsetBy(dx: view.textContainerOrigin.x, dy: view.textContainerOrigin.y)
+                    let button = FeedbackAttachmentCell.removeButtonRect(
+                        in: frame.insetBy(dx: 0, dy: 4), kind: kind
+                    )
+                    #expect(view.attachmentRemovalTarget(at: NSPoint(x: frame.minX + 10, y: frame.midY)) == nil)
+                    #expect(view.attachmentRemovalTarget(at: NSPoint(x: frame.maxX + 20, y: frame.midY)) == nil)
+                    #expect(view.attachmentRemovalTarget(at: NSPoint(x: 0, y: 0)) == nil)
+
+                    // Scrolling changes window coordinates, while TextKit frames remain in document coordinates.
+                    view.scroll(NSPoint(x: 0, y: max(0, button.midY - 80)))
+                    let location = view.convert(NSPoint(x: button.midX, y: button.midY), to: nil)
+                    let event = try #require(NSEvent.mouseEvent(
+                        with: .leftMouseDown, location: location, modifierFlags: [], timestamp: 0,
+                        windowNumber: window.windowNumber, context: nil, eventNumber: 1, clickCount: 1, pressure: 1
+                    ))
+                    view.mouseDown(with: event)
+
+                    #expect(model.attachments.map(\.id) == [retained])
+                    #expect(view.attachmentIDs == [retained])
+                    #expect(view.string.hasPrefix("Keep this text\n"))
+                }
+            }
+        }
+    }
+
     private func makeCoordinator(
         _ model: FeedbackWindowModel,
         _ toolbar: FeedbackToolbarState,
