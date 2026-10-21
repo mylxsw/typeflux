@@ -21,6 +21,40 @@ final class AskSandboxIsolationTests: XCTestCase {
         try? FileManager.default.removeItem(at: root)
     }
 
+    func testTruncatedNormalExitsAreKnownAndFinishWritingFiles() async throws {
+        for (stdout, stderr) in [(true, false), (false, true), (true, true)] {
+            for code in [0, 7] {
+                let flood = "printf '%31001s' x | tr ' ' x"
+                let script = [stdout ? flood : nil, stderr ? flood + " >&2" : nil]
+                    .compactMap { $0 }.joined(separator: "; ")
+                let result = try await sandbox.run(
+                    .shell, code: script + "; printf done > marker; exit \(code)", conversationId: "clipped"
+                )
+                XCTAssertEqual(result.exitCode, Int32(code), result.stderr)
+                XCTAssertFalse(result.outcomeUnknown)
+                XCTAssertFalse(result.timedOut)
+                XCTAssertFalse(result.imageIncomplete)
+                let retained = String(repeating: "x", count: 30000) + "\n[1001 more bytes omitted]"
+                XCTAssertEqual(result.stdout, stdout ? retained : "")
+                XCTAssertEqual(result.stderr, stderr ? retained : "")
+                let workspace = try sandbox.workspace(for: "clipped")
+                XCTAssertEqual(try String(contentsOf: workspace.appendingPathComponent("marker")), "done")
+                try FileManager.default.removeItem(at: workspace.appendingPathComponent("marker"))
+            }
+        }
+    }
+
+    func testTruncationDoesNotMaskTimeoutOrSignal() async throws {
+        let flood = "printf '%31001s' x | tr ' ' x"
+        for ending in ["while :; do :; done", "kill -KILL $$"] {
+            let result = try await sandbox.run(.shell, code: flood + "; printf done > marker; " + ending,
+                                               conversationId: "ambiguous", timeout: 1)
+            XCTAssertTrue(result.outcomeUnknown)
+            XCTAssertEqual(result.timedOut, ending.hasPrefix("while"))
+            XCTAssertTrue(result.stdout.contains("more bytes omitted"))
+        }
+    }
+
     func testProductionGateFailsClosedAndDoesNotAdvertiseTool() async throws {
         let production = AskCodeSandbox(baseDirectory: root)
         XCTAssertFalse(production.isSupported)

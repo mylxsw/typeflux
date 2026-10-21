@@ -227,7 +227,7 @@ struct AskCodeSandbox: Sendable {
         let changed = Self.changes(before: before, after: workspace.snapshot())
         let image = await Self.firstImage(changed, workspace: workspace)
         let outcomeUnknown: Bool = switch result.termination {
-        case .exited: result.outputTruncated
+        case .exited: false
         case .signalled, .timedOut, .cancelled, .outputLimit: true
         }
         return Execution(exitCode: result.exitCode, timedOut: result.termination == .timedOut,
