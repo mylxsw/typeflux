@@ -411,7 +411,7 @@ final class AskConversationModel: ObservableObject {
     private var operationGenerations: [String: UUID] = [:]
     private struct OperationOwner {
         let account: String
-        let initialRunId: String?
+        let conversationId: String
     }
     private var operationOwners: [UUID: OperationOwner] = [:]
     private var operationRuns: [UUID: AskProjectScope] = [:]
@@ -1909,13 +1909,15 @@ final class AskConversationModel: ObservableObject {
         let capturedRun = snapshots[id]?.run
         let operationId = operationIds[id]
         let generation = operationGenerations[id]
-        let admittedScope = operationId.flatMap { operationRuns[$0] }
-        // Task ownership exists before a run is admitted. A snapshot alone never
-        // authorizes interruption of an unrelated or replacement operation.
+        let admittedScope = operationId.flatMap { operationRuns[$0] }.flatMap { scope in
+            scope.ownerId == current.account && scope.conversationId == id ? scope : nil
+        }
+        // Task ownership belongs to the current account/conversation/generation.
+        // Observed runs neither grant nor revoke it; only our admitted scope
+        // authorizes tool interruption, independently of the displayed run.
         if let operationId, let operationOwner = operationOwners[operationId],
-           operationOwner.account == current.account,
-           admittedScope.map({ $0.ownerId == current.account && $0.runId == capturedRun?.id
-               && capturedRun?.deviceId == deviceId }) ?? (operationOwner.initialRunId == capturedRun?.id),
+           operationOwner.account == current.account, operationOwner.conversationId == id,
+           generation == operationId,
            let operation = operations[id] {
             permissionModes[id] = .standard
             operation.cancel()
@@ -2141,7 +2143,7 @@ final class AskConversationModel: ObservableObject {
         }
         operationIds[id] = operationId
         operationGenerations[id] = operationId
-        operationOwners[operationId] = .init(account: account, initialRunId: snapshots[id]?.run?.id)
+        operationOwners[operationId] = .init(account: account, conversationId: id)
     }
 
     private func checkOperation(_ id: String, operationId: UUID, account: String) throws {

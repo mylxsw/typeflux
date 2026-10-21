@@ -21,6 +21,41 @@ struct AskAgentBindingInteractionTests {
         #expect(fixture.model.pendingApprovals.isEmpty)
     }
 
+    @Test(arguments: ["default", "unsupported"], [false, true])
+    func acceptanceStopAfterObserverPrecedesSendResponse(binding: String, inference: Bool) async throws {
+        let fixture = try AskTestFixture()
+        let gate = CancellationGate()
+        defer { gate.release(); fixture.model.resetSession() }
+        await fixture.api.setBeforeSend { await gate.wait() }
+        fixture.model.launcherDraft.text = "Stop after observing dispatched run"
+        fixture.model.submitLauncher()
+        try await fixture.wait { gate.entered }
+        var observed = try #require(fixture.model.selected)
+        observed.run = AskRecoveryFixture.conversation(model: inference).run
+        observed.run?.agentBinding = binding == "default" ? .default : .init(id: "future.engine", version: 1)
+        observed.revision += 10
+        await fixture.api.seed(observed)
+        // Use the real default observe polling and monitorConversation acceptance.
+        // The optimistic pending message is included so the observer may publish it.
+        try await fixture.wait { fixture.model.selected?.run?.id == observed.run?.id }
+        #expect(fixture.model.selected?.revision == observed.revision)
+        fixture.model.stop()
+        try await fixture.wait { gate.cancelled }
+        #expect(!gate.returned)
+        #expect(fixture.tools.cancelledRuns.isEmpty)
+        #expect(await fixture.api.cancellations.isEmpty)
+        #expect(fixture.model.hasPendingSubmission)
+        gate.release()
+        try await fixture.wait { fixture.model.busyIds.isEmpty }
+        #expect(fixture.model.selected?.revision == observed.revision)
+        #expect(fixture.model.hasPendingSubmission)
+        #expect(fixture.tools.executions == 0)
+        #expect(try await fixture.cache.executions(conversationId: observed.id, owner: "owner").isEmpty)
+        #expect(await fixture.api.results.isEmpty)
+        #expect(await fixture.api.inferenceResults.isEmpty)
+        #expect(await fixture.api.cancellations.isEmpty)
+    }
+
     @Test func stopDuringResponsePersistenceDoesNotPublishTheResponse() async throws {
         let gate = CancellationGate()
         let cache = GatedConversationCache(base: try AskConversationCache.inMemory()) { value in
@@ -294,21 +329,27 @@ struct AskAgentBindingInteractionTests {
         #expect(fixture.tools.executions == 0)
     }
 
-    @Test func stopCannotUseOldHandleToInterruptAnotherRun() async throws {
+    @Test(arguments: ["default", "unsupported", "absent"])
+    func stopCannotUseOldHandleToInterruptAnotherRun(binding: String) async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
         var value = try await startOwnedWork(fixture)
+        let ownedRunId = try #require(value.run?.id)
         value.revision += 10
         value.run?.id = "unknown-run"
-        value.run?.agentBinding = .init(id: "future.engine", version: 1)
+        value.run?.agentBinding = binding == "default" ? .default : .init(id: "future.engine", version: 1)
+        if binding == "absent" { value.run = nil }
         await fixture.api.seed(value)
         try await fixture.model.accept(value, route: #require(fixture.model.credentials(for: value.id)))
         fixture.model.stop()
-        try await fixture.wait { fixture.model.error != nil }
-        #expect(fixture.tools.cancelledRuns.isEmpty)
+        #expect(fixture.tools.cancelledRuns == [.init(ownerId: "owner", conversationId: value.id, runId: ownedRunId)])
+        try await fixture.wait { fixture.model.busyIds.isEmpty }
+        #expect(fixture.model.pendingApprovals.isEmpty)
         #expect(fixture.tools.cancelledConversations.isEmpty)
-        #expect(!fixture.model.pendingApprovals.isEmpty)
+        #expect(fixture.tools.executions == 0)
         #expect(await fixture.api.cancellations.isEmpty)
+        #expect(await fixture.api.values[value.id]?.run == value.run)
+        #expect(fixture.model.selected?.run == value.run)
     }
 
     @Test func approvalReloadCannotAdmitUnsupportedRecord() async throws {
