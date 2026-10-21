@@ -3,12 +3,13 @@ import SwiftUI
 /// The Overview pane: what Ask can use now, what needs fixing, and where new conversations are kept.
 extension AskToolsSettingsView {
     @ViewBuilder var overviewSections: some View {
-        FeatureTriggerSettingsView(settings: settings, feature: .chat)
         let statuses = capabilityStatuses
         AgentOverviewSummary(statuses: statuses, noteCount: memoryNotes.notes.count) { status in
             navigate(to: status.capability)
         }
-        TFFormSection {
+        TFFormSection(title: L("agent.section.general"), identifier: "agent.settings.general") {
+            FeatureTriggerSettingsView(settings: settings, feature: .chat, showsSection: false)
+            TFDivider.formWithIcon
             TFFormRow(title: L("ask.settings.local.title"), icon: "archivebox") {
                 TFPopUpButton(title: L("ask.settings.local.title"),
                               options: [TFOption(false, Self.storageName(local: false), systemImage: "cloud"),
@@ -16,10 +17,13 @@ extension AskToolsSettingsView {
                               selection: Binding(get: { newConversationsStayLocal }, set: setNewConversationsStayLocal),
                               width: TFMetrics.formControlWidth, identifier: "agent.settings.newConversationStorage")
             }
+            TFDivider.formWithIcon
+            AskAgentStepSettingsView(settings: settings)
+            TFDivider.formWithIcon
+            AskTitleSettingsView(settings: settings)
+            TFDivider.formWithIcon
+            AskTemporarySettingsView(settings: settings)
         }
-        AskAgentStepSettingsView(settings: settings)
-        AskTitleSettingsView(settings: settings)
-        AskTemporarySettingsView(settings: settings)
         let attention = statuses.filter { $0.level == .attention }
         TFFormSection(title: L("agent.overview.attention.title"), count: attention.isEmpty ? nil : attention.count) {
             if attention.isEmpty {
@@ -67,6 +71,7 @@ struct AgentOverviewSummary: View {
                     TFButton(title: L("agent.overview.fix"), kind: .primary) { onFix(first) }
                 }
             }
+            .accessibilityIdentifier("agent.overview.summary")
         }
     }
 }

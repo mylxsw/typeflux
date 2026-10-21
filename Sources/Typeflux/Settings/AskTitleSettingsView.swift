@@ -6,10 +6,9 @@ struct AskTitleSettingsView: View {
     @State private var enabled = true
 
     var body: some View {
-        TFFormSection(title: L("ask.title.section")) {
-            TFFormRow(title: L("ask.title.enabled"), detail: L("ask.title.enabled.subtitle"), icon: "pencil.line") {
-                TFSwitch(title: L("ask.title.enabled"), isOn: $enabled)
-            }
+        TFFormRow(title: L("ask.title.enabled"), detail: L("ask.title.enabled.subtitle"), icon: "pencil.line") {
+            TFSwitch(title: L("ask.title.enabled"), isOn: $enabled)
+                .accessibilityIdentifier("agent.settings.automaticTitles")
         }
         .onAppear { enabled = settings.askAutomaticTitles }
         .onChange(of: enabled) { settings.askAutomaticTitles = $0 }

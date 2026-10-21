@@ -27,8 +27,9 @@ struct HotkeySettingsViewTests {
         }
     }
 
-    @Test func `feature trigger controls appear first and clear the shared binding`() async throws {
+    @Test func `feature triggers follow their page grouping and clear the shared binding`() async throws {
         try await SettingsBehaviorTestSupport.withFixture { store in
+            AppLocalization.shared.setLanguage(.simplifiedChinese)
             for feature in [FeatureTriggerSettingsView.Feature.launcher, .chat] {
                 store.askHotkey = binding
                 store.setHotkey(binding, for: AppHotkeyAction.openChat)
@@ -48,6 +49,29 @@ struct HotkeySettingsViewTests {
                         if identifier == "launcher.settings.position"
                             || identifier == "agent.settings.newConversationStorage" {
                             #expect(trigger.frame.minY > other.frame.maxY)
+                        }
+                    }
+                    if feature == .chat {
+                        let summaryControl = controls.first {
+                            $0.value("accessibilityIdentifier") as? String == "agent.overview.summary"
+                        }
+                        let summary = try #require(summaryControl)
+                        #expect(summary.frame.minY > trigger.frame.maxY)
+                        #expect(SettingsBehaviorTestSupport.contains(L("agent.section.general"), in: window))
+                        for removedHeading in ["ask.steps.section", "ask.title.section", "ask.temporary.settings.section"] {
+                            #expect(!SettingsBehaviorTestSupport.contains(L(removedHeading), in: window))
+                        }
+                        var previousFrame = trigger.frame
+                        for identifier in ["agent.settings.newConversationStorage", "agent.settings.maxSteps",
+                                           "agent.settings.automaticTitles", "agent.settings.confirmLeavingTemporary"] {
+                            let nextControl = controls.first {
+                                $0.value("accessibilityIdentifier") as? String == identifier
+                            }
+                            let next = try #require(nextControl)
+                            #expect(previousFrame.minY > next.frame.maxY)
+                            // Adjacent rows belong to one card rather than separate sections.
+                            #expect(previousFrame.minY - next.frame.maxY < 50)
+                            previousFrame = next.frame
                         }
                     }
                     try trigger.press()
