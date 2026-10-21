@@ -82,9 +82,14 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         self.launcherInputSource = launcherInputSource
         conversationFrameAutosaveName = services?.frameAutosaveName ?? "AskConversationWorkspace"
         let workspaces = services?.tools == nil ? AskConversationWorkspaceStore.shared : nil
+        let commandJobs: AskCommandJobStore?
+        if services?.tools == nil {
+            commandJobs = try AskCommandJobStore(root: TypefluxDataDirectories.data.appendingPathComponent("command-jobs", isDirectory: true))
+        } else { commandJobs = nil }
         let tools = services?.tools ?? AskLocalTools(
             registry: registry, settings: settings,
             workspaces: workspaces,
+            commandJobs: commandJobs,
             screenObservation: AskScreenObservation(capturer: screenCapture, permission: screenCapturePermission)
         )
         let sandbox = tools.sandbox

@@ -6528,3 +6528,10 @@
 "settings.trigger.title" = "触发键";
 
 "ask.implementationUnavailable" = "此版本无法继续此任务。请更新应用或服务后重试。";
+
+"ask.tool.command_job" = "命令任务";
+"ask.commandJob.deadline" = "最长 %d 秒，且不超过本轮截止时间";
+"ask.commandJob.lifetime" = "仅在本轮有效；结束、停止、替换本轮，删除对话、切换账号或退出应用都会取消。停止不会撤销已发生的更改。";
+"ask.commandJob.status" = "查看命令状态";
+"ask.commandJob.logs" = "读取命令输出";
+"ask.commandJob.stop" = "停止命令";

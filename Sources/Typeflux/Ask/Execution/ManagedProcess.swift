@@ -5,6 +5,8 @@ import Foundation
 /// must prevent group/session escape separately before running untrusted code.
 /// Keeps spawning, PID ownership and the bounded I/O lifecycle together.
 struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
+    enum Stream: String, Codable, Sendable { case stdout, stderr }
+
     struct Request: Sendable {
         var executable: String
         var arguments: [String] = []
@@ -22,6 +24,9 @@ struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
         var drainGrace: TimeInterval = 0.3
         /// Cumulative, bounded stdout through its last complete line.
         var onOutput: (@Sendable (String) -> Void)?
+        /// Synchronous fixed-size drain chunks, including stderr and partial lines.
+        /// Must not block, dispatch work or retain unbounded output.
+        var onRawOutput: (@Sendable (Stream, Data) -> Void)?
         var immediateCleanupOnExit = false
         /// Called only after the direct child has been reaped (possibly later).
         var onReaped: (@Sendable () -> Void)?
@@ -121,6 +126,8 @@ struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
         let out = try OutputPipe(limit: request.outputLimit)
         let err = try OutputPipe(limit: request.stderrLimit ?? request.outputLimit)
         let input = try request.stdin.map { try InputPipe(data: $0) }
+        try Task.checkCancellation()
+        if cancellation.isCancelled { throw CancellationError() }
         let pid = try spawn(request, stdin: input?.reader, stdout: out.writer, stderr: err.writer)
         child = pid
         request.onStarted?()
@@ -140,8 +147,8 @@ struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
                 throw error
             }
             input?.writeAvailable()
-            out.drain()
-            err.drain()
+            out.drain { request.onRawOutput?(.stdout, $0) }
+            err.drain { request.onRawOutput?(.stderr, $0) }
             if let onOutput = request.onOutput, let prefix = out.output.completeLines(after: emitted) {
                 emitted = prefix.count
                 // Preserve arbitrary process bytes, including split UTF-8 sequences.
@@ -277,13 +284,15 @@ struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
             close(writer); writer = -1
         }
 
-        func drain() {
+        func drain(observer: (Data) -> Void) {
             guard reader >= 0 else { return }
             // A flood cannot starve the second stream or lifecycle checks.
             for _ in 0 ..< 8 {
                 let count = read(reader, &buffer, buffer.count)
                 if count > 0 {
-                    output.append(Data(buffer.prefix(count)))
+                    let chunk = Data(buffer.prefix(count))
+                    output.append(chunk)
+                    observer(chunk)
                 } else {
                     if count == 0 || (errno != EAGAIN && errno != EINTR) {
                         close(reader)

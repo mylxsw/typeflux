@@ -6528,3 +6528,10 @@
 "settings.trigger.title" = "Trigger Key";
 
 "ask.implementationUnavailable" = "This version cannot continue this task. Update the app or service, then try again.";
+
+"ask.tool.command_job" = "Command job";
+"ask.commandJob.deadline" = "Up to %d seconds, bounded by this run's deadline";
+"ask.commandJob.lifetime" = "This run only. Ending, stopping or replacing the run, deleting the conversation, changing accounts or quitting cancels it. Stopping does not undo changes.";
+"ask.commandJob.status" = "Check command status";
+"ask.commandJob.logs" = "Read command output";
+"ask.commandJob.stop" = "Stop command";

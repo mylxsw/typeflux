@@ -245,6 +245,7 @@ extension AskLocalTools {
     }
 
     func cancelProjects(conversationId: String?) {
+        commandJobs?.cancelAll(conversation: conversationId)
         for (id, scope) in projectScopes
             where conversationId == nil || conversationId == id {
             projectRuntime?.cancel(scope: scope)
@@ -257,5 +258,8 @@ extension AskLocalTools {
         }
     }
 
-    func cancelProjectRun(_ scope: AskProjectScope) { projectRuntime?.cancel(scope: scope) }
+    func cancelProjectRun(_ scope: AskProjectScope) {
+        projectRuntime?.cancel(scope: scope)
+        commandJobs?.cancelRun(owner: scope.ownerId, conversation: scope.conversationId, run: scope.runId)
+    }
 }

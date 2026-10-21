@@ -6530,3 +6530,10 @@
 "settings.trigger.title" = "觸發鍵";
 
 "ask.implementationUnavailable" = "此版本無法繼續此任務。請更新應用程式或服務後再試。";
+
+"ask.tool.command_job" = "Command job";
+"ask.commandJob.deadline" = "Up to %d seconds, bounded by this run's deadline";
+"ask.commandJob.lifetime" = "This run only. Ending, stopping or replacing the run, deleting the conversation, changing accounts or quitting cancels it. Stopping does not undo changes.";
+"ask.commandJob.status" = "Check command status";
+"ask.commandJob.logs" = "Read command output";
+"ask.commandJob.stop" = "Stop command";

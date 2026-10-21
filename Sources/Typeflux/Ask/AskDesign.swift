@@ -305,6 +305,10 @@ enum AskTheme {
         if name.hasPrefix("mcp_") {
             return (mcpServer ?? "MCP") + " · " + String(name.dropFirst(4))
         }
+        if name == "command_job" {
+            let action = args["action"] as? String ?? ""
+            return ["status", "logs", "stop"].contains(action) ? L("ask.commandJob." + action) : L("ask.tool.command_job")
+        }
         if name == AskNotebookTool.name { return notebookToolTitle(args) }
         if ["memory", "run_code", "run_command", "skill"].contains(name) {
             let title = L("ask.tool." + name)
@@ -1276,7 +1280,7 @@ enum AskPresentation {
         case "web_fetch": return "network"
         case "artifact": return "doc.richtext"
         case "files", "project_files": return "folder"
-        case "run_code", "run_command", "project_terminal": return "terminal"
+        case "run_code", "run_command", "command_job", "project_terminal": return "terminal"
         case "skill": return "book"
         case "memory": return "brain"
         case AskNotebookTool.name: return "note.text"

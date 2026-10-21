@@ -30,6 +30,10 @@ enum AskApprovalPresentation {
             return (args["content"] as? String).map { .content(clip($0)) } ?? .none
         case ("run_code", _):
             return (args["code"] as? String).map { .content(clip($0)) } ?? .none
+        case ("command_job", "start"):
+            guard let request = try? AskCommandJobRequest.validated(args) else { return .none }
+            return .content(request.command + "\n\n" + L("ask.commandJob.deadline", request.timeout) + "\n" + L("ask.commandJob.lifetime"))
+        case ("command_job", _): return .none
         case ("run_command", _):
             return (args["command"] as? String).map { .content($0) } ?? .none
         case ("computer", "type"), ("browser", "fill"), (AskEmbeddedBrowserTool.name, "fill"):
@@ -128,14 +132,14 @@ struct AskApprovalCard: View {
     static func previewStartsExpanded(_ preview: AskApprovalPresentation.Preview, call: AskToolCall) -> Bool {
         switch preview {
         case .diff: true
-        case .content: ["run_command", "project_terminal"].contains(call.function.name)
+        case .content: ["run_command", "command_job", "project_terminal"].contains(call.function.name)
         case .none: false
         }
     }
 
     static func previewTitle(_ call: AskToolCall) -> String {
         switch call.function.name {
-        case "run_command", "project_terminal": L("ask.approval.preview.command")
+        case "run_command", "command_job", "project_terminal": L("ask.approval.preview.command")
         case "run_code": L("ask.approval.preview.code")
         case "files", "project_files", AskNotebookTool.name:
             AskApprovalPresentation.preview(call).isDiff ? L("ask.approval.preview.diff") : L("ask.approval.preview.content")

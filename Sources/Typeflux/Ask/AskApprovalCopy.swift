@@ -29,7 +29,7 @@ enum AskApprovalCopy {
         case ("files", "edit"), ("project_files", "edit"):
             guard let path = path(args) else { break }
             return L("ask.approval.q.edit", filename(path))
-        case ("run_command", _):
+        case ("run_command", _), ("command_job", "start"):
             return L("ask.approval.q.command")
         case ("run_code", _):
             if let language = args["language"] as? String, !language.isEmpty {
@@ -82,7 +82,7 @@ enum AskApprovalCopy {
             let removed = lineCount(args["old_text"] as? String ?? "")
             let added = lineCount(args["new_text"] as? String ?? "")
             facts.append(.init(symbol: "pencil", text: L("ask.approval.fact.change", added, removed)))
-        case ("run_command", _):
+        case ("run_command", _), ("command_job", "start"):
             facts.append(.init(symbol: "person", text: L("ask.approval.fact.account")))
         case ("computer", "screenshot"):
             facts.append(.init(symbol: "camera.viewfinder", text: L("ask.approval.fact.screenshot")))
@@ -90,6 +90,7 @@ enum AskApprovalCopy {
             if let target = readableTarget(targetSummary) {
                 facts.append(.init(symbol: "macwindow", text: target))
             }
+        case ("command_job", _): break
         default:
             if call.function.name != "run_code", let target = readableTarget(targetSummary) {
                 facts.append(.init(symbol: "scope", text: target))

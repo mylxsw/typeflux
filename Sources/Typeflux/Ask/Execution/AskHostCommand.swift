@@ -44,21 +44,37 @@ struct AskHostCommand: Sendable {
         return (command, timeout)
     }
 
-    func run(command: String, timeout: Int, workingDirectory: URL? = nil) async throws -> AskLocalToolOutput {
-        if let workingDirectory {
-            _ = try AskSecureDirectory.openRoot(workingDirectory, privateRoot: false)
-                .child(".typeflux", create: true, privateDirectory: true)
-                .child("tmp", create: true, privateDirectory: true)
-        }
+    struct Prepared {
+        let directory: AskSecureDirectory
+        let environment: [String: String]
+    }
+
+    static func prepare(workingDirectory: URL?) throws -> Prepared {
         let home = NSHomeDirectory()
-        let directory = open(workingDirectory?.path ?? home, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
-        guard directory >= 0 else { throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno)) }
-        defer { close(directory) }
+        let directory: AskSecureDirectory
+        if let workingDirectory {
+            directory = try AskSecureDirectory.openRoot(workingDirectory, privateRoot: false)
+            _ = try directory.child(".typeflux", create: true, privateDirectory: true)
+                .child("tmp", create: true, privateDirectory: true)
+        } else {
+            let descriptor = open(home, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
+            guard descriptor >= 0 else { throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno)) }
+            directory = AskSecureDirectory(descriptor: descriptor)
+        }
         var environment = ["HOME": home, "USER": NSUserName(),
                            "PATH": "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
                            "LANG": "en_US.UTF-8", "LC_ALL": "en_US.UTF-8",
                            "TMPDIR": workingDirectory?.appendingPathComponent(".typeflux/tmp").path ?? NSTemporaryDirectory()]
         if let workingDirectory { environment["TYPEFLUX_WORKSPACE"] = workingDirectory.path }
+        return Prepared(directory: directory, environment: environment)
+    }
+
+    func run(command: String, timeout: Int, workingDirectory: URL? = nil) async throws -> AskLocalToolOutput {
+        let prepared = try Self.prepare(workingDirectory: workingDirectory)
+        let directory = prepared.directory.descriptor
+        let environment = prepared.environment
+        // Keep the pinned directory alive across ManagedProcess's worker queue.
+        defer { withExtendedLifetime(prepared.directory) {} }
         let result = try await ManagedProcess().run(.init(
             executable: "/bin/zsh", arguments: ["-f", "-c", command], environment: environment,
             directoryDescriptor: directory, timeout: TimeInterval(timeout), outputLimit: 30_000,

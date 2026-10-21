@@ -145,7 +145,8 @@ enum AskRecoveryObservation {
         "web_browser": ["read", "snapshot", "screenshot", "tabs", "wait"],
         "files": ["list", "read", "search"],
         "project_files": ["list", "read", "review"],
-        "project_terminal": ["status", "output"]
+        "project_terminal": ["status", "output"],
+        "command_job": ["status", "logs"]
     ]
 
     static func permits(_ call: AskToolCall) -> Bool {

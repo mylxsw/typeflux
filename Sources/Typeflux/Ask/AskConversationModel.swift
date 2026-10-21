@@ -1508,6 +1508,14 @@ final class AskConversationModel: ObservableObject {
         value = snapshots[value.id]?.reconciling(value, preservingEqualRevisionContent: true) ?? value
         value = sanitizedMemory(value, account: route.account, local: route.token.isEmpty)
         if quickAsk?.conversationId == value.id { objectWillChange.send() }
+        // A terminal observer can settle a run even when no drive task is active.
+        // Cancel only the explicitly settled run; the executor checks admitted ownership.
+        if let previousRun = snapshots[value.id]?.run?.id, previousRun != value.run?.id {
+            tools.observeCommandRun(ownerId: route.account, conversationId: value.id, runId: previousRun, active: false)
+        }
+        if let run = value.run {
+            tools.observeCommandRun(ownerId: route.account, conversationId: value.id, runId: run.id, active: run.isActive)
+        }
         snapshots[value.id] = value
         if selected?.id == value.id { selected = selected?.reconciling(value, preservingEqualRevisionContent: true) ?? value }
         if let inferenceID = progressInferenceIDs[value.id], value.run?.inference?.id != inferenceID {
@@ -1581,7 +1589,8 @@ final class AskConversationModel: ObservableObject {
                 try await accept(stopped, route: current, operationId: operationId)
                 throw AskLocalError.message(L("ask.quickAsk.advanced"))
             }
-            tools.bindExecution(ownerId: current.account, conversationId: value.id, runId: run.id)
+            tools.bindExecution(ownerId: current.account, conversationId: value.id, runId: run.id,
+                                deviceId: deviceId, persistent: !isTemporary(value.id))
             if run.status == "waiting_inference", let inference = run.inference {
                 let identity = AskExecutionIdentity(owner: current.account, conversation: value, run: run,
                                                     callId: inference.id, kind: "model")
@@ -1668,7 +1677,8 @@ final class AskConversationModel: ObservableObject {
                 }
                 // Project and artifact scopes belong to the account, as `artifactAccess` reads them,
                 // not to the cache partition a private conversation uses.
-                tools.bindExecution(ownerId: current.account, conversationId: value.id, runId: run.id)
+                tools.bindExecution(ownerId: current.account, conversationId: value.id, runId: run.id,
+                                deviceId: deviceId, persistent: !isTemporary(value.id))
                 // Consent comes from the submitted draft, never from historical images or live UI state.
                 let cloudDefinition = run.approvalTool(for: call)
                 let binding: AskToolBinding
@@ -1908,10 +1918,17 @@ final class AskConversationModel: ObservableObject {
         continuation.resume(returning: grant)
     }
 
+    func shutdownCommandJobs() async { await tools.shutdownCommandJobs() }
+
     func stop(id: String? = nil) {
         let preflight = submissionPreflights[false] ?? submissionPreflights[true]
         let preflightId = operationIds.first(where: { $0.value == preflight })?.key
         guard let id = id ?? selected?.id ?? preflightId, let current = credentials(for: id) else { return }
+        // No drive task may be active during observer-only settlement or a pause.
+        // This synchronous user action cancels only authority already admitted by the host.
+        if operationIds[id] == nil {
+            tools.observeCommandRun(ownerId: current.account, conversationId: id, runId: nil, active: false)
+        }
         let capturedRun = snapshots[id]?.run
         let operationId = operationIds[id]
         let generation = operationGenerations[id]
