@@ -86,7 +86,7 @@ struct AskRunPhaseTests {
         #expect(cancelled == .cancelled && cancelled?.tone == .failed
             && cancelled?.summary == L("ask.run.cancelled"))
         #expect(AskRunPhase.resolve(run: run("mystery"), busy: false, pendingApproval: false, recovery: nil)
-            == .working(step: 3))
+            == .needsDecision(step: 3))
     }
 
     @Test func stopIsOfferedWhileTheRunIsHeldOpen() {

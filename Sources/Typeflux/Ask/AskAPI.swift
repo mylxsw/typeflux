@@ -44,7 +44,7 @@ extension AskAgentRuntime {
     func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, maxSteps _: Int?, token: String) async throws -> AskConversation {
         try await retry(conversationId: conversationId, runId: runId, deviceId: deviceId, modelRef: modelRef, token: token)
     }
-    /// Services without steering reject it; the device then sends the message as a new turn.
+    /// Services without steering reject it; the device retains the intent for explicit reconciliation.
     func steer(conversationId: String, request: AskSteerRequest, token: String) async throws -> AskConversation {
         throw AskLocalError.message(L("ask.local.conflict"))
     }

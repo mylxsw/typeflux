@@ -423,6 +423,21 @@ final class AskConversationModel: ObservableObject {
     private let approvalReuseEnabled: Bool
     private var operationErrors: [String: String] = [:]
     private var pendingSends: [String: AskSendRequest] = [:]
+    private var queueSession = UUID()
+    private struct QueueFlight {
+        let attempt: UUID
+        let owner: String
+        let device: String
+        let originalDevice: String
+        let session: UUID
+        let selection: UUID
+        let claim: AskSendQueue.Claim
+        var task: Task<Void, Never>?
+    }
+    private var queueFlights: [String: [String: QueueFlight]] = [:]
+    private var queuedSubmissions: [String: AskSendQueue.Claim] = [:]
+    private var queuedOperations: Set<UUID> = []
+    private var queuedSubmissionSelections: [String: UUID] = [:]
     // Local consent for the latest submission, retained for retries but never restored from history.
     private var screenshotConsent: [String: String] = [:]
     var captureGeneration = UUID()
@@ -634,6 +649,9 @@ final class AskConversationModel: ObservableObject {
         approvals.values.forEach { $0.resume(returning: nil) }; approvals = [:]; approvalRequests = [:]; approvalStore.reset()
         inferenceUsage = [:]
         pendingApprovals = [:]; busyIds = []; pendingSends = [:]; operationErrors = [:]
+        queueSession = UUID()
+        for flights in queueFlights.values { for flight in flights.values { flight.task?.cancel() } }
+        queueFlights = [:]; queuedSubmissions = [:]; queuedSubmissionSelections = [:]; queuedOperations = []
         sendQueue = AskSendQueue(); steeringIds = []
         screenshotConsent = [:]
         cloudApprovals = [:]
@@ -940,6 +958,7 @@ final class AskConversationModel: ObservableObject {
         cancelQueuedEdit(advancing: false)
         selectionObservation?.cancel(); selectionObservation = nil
         let generation = UUID(); selectionGeneration = generation
+        let selectingSession = queueSession
         let oldId = selectedId, oldDraft = draft
         if let oldId, !isLoadingSelection { drafts[oldId] = oldDraft }
         // Commit navigation synchronously, before the first cache/network await.
@@ -960,13 +979,17 @@ final class AskConversationModel: ObservableObject {
         draft = drafts[id] ?? savedDraft ?? .followUp
         do {
             let value = try await api.conversation(id: id, token: current.token)
-            guard owner == current.account else { return }
+            guard owner == current.account, session()?.owner == current.account,
+                  selectingSession == queueSession, !deletedConversationIDs.contains(id) else { return }
+            reconcileConfirmedSupplements(fromAuthenticated: value)
             let hasUnconfirmedMessage = pendingSends[id].map { pending in !value.messages.contains { $0.id == pending.id } } ?? false
             if !hasUnconfirmedMessage { try await cache.save(value, owner: current.owner) }
             let latest = try await cache.load(id: id, owner: current.owner) ?? value
-            guard owner == current.account else { return }
+            guard owner == current.account, session()?.owner == current.account,
+                  selectingSession == queueSession, !deletedConversationIDs.contains(id) else { return }
             snapshots[id] = sanitizedMemory(snapshots[id]?.reconciling(latest) ?? latest,
                                             account: current.account, local: current.token.isEmpty)
+            reconcileConfirmedQueuedSubmission(fromAuthenticated: value)
             guard generation == selectionGeneration else { return }
             selected = snapshots[id] ?? latest; isLoadingSelection = false
             await refreshRecovery(selected ?? latest, route: current)
@@ -1066,6 +1089,11 @@ final class AskConversationModel: ObservableObject {
     /// sends on its own, so whatever the user is typing stays in the composer.
     private func submit(_ submitted: AskDraft, newConversation: Bool, messageId queuedId: String? = nil,
                         clearsDraft: Bool = true, launcher: Bool = false, recoveryCheck: Bool = false, quickAskGeneration: UUID? = nil) {
+        var transferred = false
+        let queuedConversation = queuedId == nil ? nil : selectedId
+        defer {
+            if !transferred, let id = queuedConversation { restoreQueuedSubmission(id) }
+        }
         guard submissionPreflights[launcher] == nil else { return }
         guard submitted.referencesWithinLimit, submitted.text.utf8.count <= 32000,
               (submitted.sentSelection?.utf8.count ?? 0) <= 64000,
@@ -1104,6 +1132,7 @@ final class AskConversationModel: ObservableObject {
                 return
             }
             submissionIssues[launcher] = nil
+            transferred = true
             submitValidated(submitted, modelRef: reference, local: local, newConversation: newConversation, messageId: queuedId,
                             clearsDraft: clearsDraft, launcher: launcher, temporary: temporary, recoveryCheck: recoveryCheck, quickAskGeneration: quickAskGeneration)
             return
@@ -1114,14 +1143,14 @@ final class AskConversationModel: ObservableObject {
         let operationId = UUID()
         submissionPreflights[launcher] = operationId
         busyIds.insert(id); registerOperation(id, operationId: operationId, account: account.account)
+        transferred = true
         operations[id] = Task { [weak self] in
             guard let self else { return }
             var handled = false
             defer {
                 if !handled, owner == account.account, session()?.owner == account.account,
-                   !deletedConversationIDs.contains(id), let queuedId {
-                    sendQueue.putFirst(AskQueuedMessage(id: queuedId, draft: submitted), in: id)
-                    sendQueue.pause(id)
+                   !deletedConversationIDs.contains(id), queuedId != nil {
+                    restoreQueuedSubmission(id)
                 }
                 if submissionPreflights[launcher] == operationId { submissionPreflights[launcher] = nil }
                 finishOperation(id, operationId: operationId)
@@ -1152,10 +1181,7 @@ final class AskConversationModel: ObservableObject {
     private func rejectSubmission(_ issue: AskSubmissionIssue, submitted: AskDraft, queuedId: String?, launcher: Bool) {
         submissionIssues[launcher] = issue
         if !launcher || plugins.keyword?.pluginID != AskQuickAskPlugin.id { error = issue.text }
-        if let queuedId, let id = selectedId {
-            sendQueue.putFirst(AskQueuedMessage(id: queuedId, draft: submitted), in: id)
-            sendQueue.pause(id)
-        }
+        if queuedId != nil, let id = selectedId { restoreQueuedSubmission(id) }
         persistDrafts()
     }
 
@@ -1210,6 +1236,14 @@ final class AskConversationModel: ObservableObject {
     private func submitValidated(_ submitted: AskDraft, modelRef: String, local: Bool, newConversation: Bool, messageId queuedId: String? = nil,
                                  clearsDraft: Bool = true, launcher: Bool = false, temporary: Bool = false,
                                  recoveryCheck: Bool = false, quickAskGeneration: UUID? = nil) {
+        var admitted = false
+        let queuedConversation = queuedId == nil ? nil : selectedId
+        defer {
+            if !admitted, let id = queuedConversation {
+                busyIds.remove(id)
+                restoreQueuedSubmission(id)
+            }
+        }
         guard let account = credentials() else { return }
         guard newConversation || selected != nil else { return }
         let inline = quickAskGeneration != nil
@@ -1256,12 +1290,14 @@ final class AskConversationModel: ObservableObject {
         value.modelRef = request.modelRef
         Self.applyMemoryChoice(submitted, newConversation: newConversation, request: &request, conversation: &value)
         pendingSends[id] = request
+        admitted = true
         screenshotConsent[id] = submitted.includeScreenshot ? messageId : nil
         value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort, references: request.references, attachments: request.attachments, skills: request.skills, mcpServers: request.mcpServers))
         if launcher { persistDrafts() }
         if !inline {
             selectedId = id; selected = value; isLoadingSelection = false; selectionGeneration = UUID()
         }
+        if queuedId != nil { queuedSubmissionSelections[id] = selectionGeneration }
         if !inline, clearsDraft, launcher || draft == submitted {
             clearCapturedContentFeedback(launcher: false); draft = .followUp
         }
@@ -1275,43 +1311,8 @@ final class AskConversationModel: ObservableObject {
         if clearsDraft && !inline { onShowConversation?() }
         persistDrafts()
         registerOperation(id, operationId: operationId, account: current.account)
-        operations[id] = Task { [weak self] in
-            guard let self else { return }
-            defer { tools.discardFolderSubmission(messageID: messageId); finishOperation(id, operationId: operationId) }
-            let monitor = monitorConversation(id: id, current: current, operationId: operationId)
-            defer { monitor.cancel() }
-            do {
-                try checkOperation(id, operationId: operationId, account: current.account)
-                if let workspaces {
-                    try await workspaces.saveConversation(value, owner: current.account)
-                    try await workspaces.captureInputs(submitted.attachments ?? [], image: request.image,
-                                                       messageId: messageId, owner: current.account,
-                                                       conversationId: id)
-                }
-                try await cache.save(value, owner: current.owner)
-                if inline, quickAsk?.conversationId == id { quickAsk?.persisted = true }
-                var request = request
-                let offered = inline ? [] : Self.offeredTools(await tools.definitions(conversationId: id), temporary: temporaryRun)
-                request.tools = inline ? [] : recoveryCheck ? Self.recoveryObservationTools(offered) : offered
-                try checkOperation(id, operationId: operationId, account: current.account)
-                request.memory = request.memory?.usable(owner: current.account, invalidations: memoryInvalidations)
-                pendingSends[id] = request
-                let response = try await api.send(conversationId: id, request: request, token: current.token)
-                try checkOperation(id, operationId: operationId, account: current.account)
-                pendingSends[id] = nil
-                try admitFolderSubmission(response, conversationID: id, messageID: messageId, previousRunID: value.run?.id)
-                if recoveryCheck, response.run?.recoveryCheck != true {
-                    if let run = response.run, run.isActive {
-                        _ = try? await api.cancel(conversationId: id, runId: run.id, token: current.token)
-                    }
-                    throw AskLocalError.message(L("ask.recovery.readOnlyUnavailable"))
-                }
-                try await drive(response, current: current, operationId: operationId, screenshotConsentMessageID: submitted.includeScreenshot ? messageId : nil, allowsTools: !inline)
-            } catch is CancellationError {} catch {
-                guard !Task.isCancelled, operationIds[id] == operationId else { return }
-                await reportOperationError(error, id: id, owner: current.account)
-            }
-        }
+        startSubmittedSend(submitted, conversation: value, request: request, route: current,
+                           operationId: operationId, inline: inline)
     }
 
     /// The server pins memory from the opening message only; empty memory is not sent.
@@ -1368,24 +1369,25 @@ final class AskConversationModel: ObservableObject {
         }
         busyIds.insert(id); submissionIssues[false] = nil; error = nil; operationErrors[id] = nil
         let operationId = UUID(); registerOperation(id, operationId: operationId, account: current.account)
+        if queuedSubmissions[id] != nil { queuedOperations.insert(operationId) }
         operations[id] = Task { [weak self] in
-            guard let self else { return }; defer { finishOperation(id, operationId: operationId) }
+            guard let self else { return }
+            defer {
+                if operationIds[id] == operationId, owner == current.account, session()?.owner == current.account {
+                    restoreQueuedSubmission(id)
+                }
+                finishOperation(id, operationId: operationId)
+            }
             let monitor = monitorConversation(id: id, current: current, operationId: operationId)
             defer { monitor.cancel() }
             do {
                 try checkOperation(id, operationId: operationId, account: current.account)
                 _ = await tools.definitions(conversationId: id)
                 let response: AskConversation
-                if var request = pendingSends[id] {
-                    try await validateModel(
-                        request.modelRef, token: current.token,
-                        hasImage: request.sendsImage || value.messages.contains(where: { $0.hasImage })
-                    )
-                    request.memory = request.memory?.usable(owner: current.account, invalidations: memoryInvalidations)
-                    try checkOperation(id, operationId: operationId, account: current.account)
-                    response = try await api.send(conversationId: id, request: request, token: current.token)
-                    try checkOperation(id, operationId: operationId, account: current.account)
+                if let request = pendingSends[id] {
+                    response = try await resumePendingSend(request, conversation: value, route: current, operationId: operationId)
                     pendingSends[id] = nil
+                    acknowledgeQueuedSubmission(id, messageID: request.id)
                     if request.recoveryCheck == true, response.run?.recoveryCheck != true {
                         if let run = response.run, run.isActive {
                             _ = try? await api.cancel(conversationId: id, runId: run.id, token: current.token)
@@ -1522,13 +1524,21 @@ final class AskConversationModel: ObservableObject {
         return value
     }
 
-    func accept(_ value: AskConversation, route: AskRoute, operationId: UUID? = nil) async throws {
+    func accept(_ incoming: AskConversation, route: AskRoute, operationId: UUID? = nil) async throws {
+        let acceptingSession = queueSession
         try Task.checkCancellation()
-        if let operationId { try checkOperation(value.id, operationId: operationId, account: route.account) }
+        if let operationId { try checkOperation(incoming.id, operationId: operationId, account: route.account) }
         guard owner == route.account, session()?.owner == route.account,
-              !deletedConversationIDs.contains(value.id) else { throw CancellationError() }
-        if let previous = snapshots[value.id], !value.isNewer(than: previous) { return }
-        var value = snapshots[value.id]?.reconciling(value, preservingEqualRevisionContent: true) ?? value
+              !deletedConversationIDs.contains(incoming.id) else { throw CancellationError() }
+        reconcileConfirmedSupplements(fromAuthenticated: incoming)
+        if let previous = snapshots[incoming.id], !incoming.isNewer(than: previous) {
+            if previous.revision > incoming.revision || previous.run?.id == incoming.run?.id {
+                reconcileConfirmedQueuedSubmission(fromAuthenticated: incoming)
+            }
+            return
+        }
+        // Keep authenticated evidence separate from the display/cache projection across awaits.
+        var value = snapshots[incoming.id]?.reconciling(incoming, preservingEqualRevisionContent: true) ?? incoming
         value = sanitizedMemory(value, account: route.account, local: route.token.isEmpty)
         // Persist meaningful message/state changes, not every transient preview.
         if snapshots[value.id]?.title != value.title || snapshots[value.id]?.titleGeneration != value.titleGeneration
@@ -1543,7 +1553,9 @@ final class AskConversationModel: ObservableObject {
         }
         try Task.checkCancellation()
         if let operationId { try checkOperation(value.id, operationId: operationId, account: route.account) }
-        guard owner == route.account, session()?.owner == route.account else { throw CancellationError() }
+        guard owner == route.account, session()?.owner == route.account,
+              acceptingSession == queueSession, !deletedConversationIDs.contains(incoming.id) else { throw CancellationError() }
+        reconcileConfirmedQueuedSubmission(fromAuthenticated: incoming)
         // Recheck after the cache write: another delivery or optimistic send
         // may have advanced the state while this task was suspended.
         if let latest = snapshots[value.id], !value.isNewer(than: latest) { return }
@@ -1564,6 +1576,8 @@ final class AskConversationModel: ObservableObject {
             tools.observeCommandRun(ownerId: route.account, conversationId: value.id, runId: run.id, active: run.isActive)
         }
         snapshots[value.id] = value
+        reconcileConfirmedSupplements(fromAuthenticated: incoming, allowTerminal: incoming.revision >= value.revision
+            && incoming.run?.id == value.run?.id && incoming.run?.status == value.run?.status)
         if selected?.id == value.id { selected = selected?.reconciling(value, preservingEqualRevisionContent: true) ?? value }
         if let inferenceID = progressInferenceIDs[value.id], value.run?.inference?.id != inferenceID {
             inferenceProgress[value.id] = nil; progressInferenceIDs[value.id] = nil
@@ -1571,7 +1585,10 @@ final class AskConversationModel: ObservableObject {
         updateSummary(value)
         scheduleTitle(value, route: route)
         await refreshRecovery(value, route: route)
-        if value.run?.isActive == false, sendQueue.messages(value.id).isEmpty == false || sendQueue.steeredMessages(value.id).isEmpty == false {
+        if let operationId { try checkOperation(incoming.id, operationId: operationId, account: route.account) }
+        guard owner == route.account, session()?.owner == route.account,
+              acceptingSession == queueSession, !deletedConversationIDs.contains(incoming.id) else { throw CancellationError() }
+        if !sendQueue.messages(value.id).isEmpty || !sendQueue.steeredMessages(value.id).isEmpty {
             queueDidSettle(value.id)
         } else {
             sendQueue.noteSettled(value.id, run: value.run)
@@ -2009,6 +2026,8 @@ final class AskConversationModel: ObservableObject {
         let preflight = submissionPreflights[false] ?? submissionPreflights[true]
         let preflightId = operationIds.first(where: { $0.value == preflight })?.key
         guard let id = id ?? selected?.id ?? preflightId, let current = credentials(for: id) else { return }
+        sendQueue.pause(id)
+        cancelQueueFlights(id)
         tools.revokeTaskFolders(conversationId: id, runId: nil)
         approvalStore.revokeTask(conversation: id)
         // No drive task may be active during observer-only settlement or a pause.
@@ -2038,7 +2057,7 @@ final class AskConversationModel: ObservableObject {
             // Keep pending request evidence: dispatch may already have succeeded.
             if admittedScope == nil { return }
         }
-        guard let capturedRun else { return }
+        guard let capturedRun, capturedRun.deviceId == deviceId else { return }
         Task {
             do {
                 let value = try await api.conversation(id: id, token: current.token)
@@ -2070,16 +2089,26 @@ final class AskConversationModel: ObservableObject {
     }
 
     func delete(_ id: String) async {
-        guard !busyIds.contains(id), let current = credentials(for: id) else { return }
+        guard let current = credentials(for: id), owner == current.account, session()?.owner == current.account else { return }
+        if let operationId = operationIds[id], operationOwners[operationId]?.account == current.account,
+           queuedSubmissions[id] != nil || queuedOperations.contains(operationId) {
+            let pending = operations[id]
+            pending?.cancel()
+            if let scope = operationRuns[operationId] { tools.cancelProjectRun(scope) }
+            await pending?.value
+        }
+        guard !busyIds.contains(id), owner == current.account, session()?.owner == current.account else { return }
         tools.revokeFolder(nil, conversationId: id)
         tools.cancelProjects(conversationId: id)
         do {
             try await syncWorkspace(id, requireFresh: true)
             try await api.delete(conversationId: id, token: current.token)
             guard owner == current.account else { return }
+            deletedConversationIDs.insert(id)
+            forgetQueueFlights(id)
+            sendQueue.clear(id)
             try tools.deleteArtifacts(ownerId: current.account, conversationId: id)
             try workflowAuthoring?.remove(id)
-            deletedConversationIDs.insert(id)
             if selectedId == id { remoteImageScope.invalidate(); conversationImageScope.invalidate() }
             titleTasks[id]?.cancel(); titleTasks[id] = nil; titleRetryAfter[id] = nil
             // Drain a writer already inside the cache before deleting its draft.
@@ -2094,7 +2123,6 @@ final class AskConversationModel: ObservableObject {
             conversations.removeAll { $0.id == id }; localConversationIds.remove(id)
             if temporaryConversation?.id == id { temporaryConversation = nil }
             drafts[id] = nil; snapshots[id] = nil; operationErrors[id] = nil; transcriptPositions[id] = nil
-            sendQueue.clear(id)
             screenshotConsent[id] = nil; permissionModes[id] = nil; approvalStore.revoke(conversation: id)
             if selectedId == id { selectedId = nil; newConversation() }
             else { persistDrafts() }
@@ -2149,7 +2177,8 @@ final class AskConversationModel: ObservableObject {
         approvalStore.revoke(conversation: id)
         busyIds.remove(id); pendingSends[id] = nil; pendingApprovals[id] = nil; operationErrors[id] = nil
         inferenceProgress[id] = nil; progressInferenceIDs[id] = nil; recoveryEntries[id] = nil
-        drafts[id] = nil; snapshots[id] = nil; transcriptPositions[id] = nil; sendQueue.clear(id)
+        drafts[id] = nil; snapshots[id] = nil; transcriptPositions[id] = nil
+        forgetQueueFlights(id); sendQueue.clear(id)
         screenshotConsent[id] = nil; permissionModes[id] = nil; cloudApprovals[id] = nil
         titleTasks[id]?.cancel(); titleTasks[id] = nil; titleRetryAfter[id] = nil
         deletedConversationIDs.insert(id)
@@ -2263,6 +2292,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     private func finishOperation(_ id: String, operationId: UUID) {
+        queuedOperations.remove(operationId)
         operationRuns[operationId] = nil; operationOwners[operationId] = nil
         guard operationIds[id] == operationId else { return }
         operationIds[id] = nil
@@ -2348,54 +2378,84 @@ extension AskConversationModel {
         return sendQueue.steeredMessages(value.id).filter { item in !value.messages.contains { $0.id == item.id } }
     }
 
+    func isQueueItemPending(_ itemID: String) -> Bool {
+        guard let id = selectedId else { return false }
+        return queueFlights[id]?[itemID] != nil || queuedSubmissions[id]?.item.id == itemID
+    }
+
     var isQueuePaused: Bool { selectedId.map { sendQueue.isPaused($0) } ?? false }
+
+    var canResumeQueue: Bool {
+        guard let value = selected, !isLoadingSelection, !busyIds.contains(value.id) else { return false }
+        let disposition = queueDisposition(value, ignoringPause: true)
+        return disposition == .ready || (disposition == .blocked(.flight)
+            && (pendingSends[value.id] != nil || queueFlights[value.id]?.values.contains(where: { $0.task == nil }) == true))
+    }
+
+    var queuePauseReason: String? {
+        guard let value = selected else { return nil }
+        switch queueDisposition(value, ignoringPause: true) {
+        case .blocked(.recovery): return L("ask.run.needsDecision")
+        case .blocked(.credits): return L("ask.run.pausedCredits")
+        case .blocked(.otherDevice): return L("ask.recovery.binding")
+        case .blocked(.approval): return L("ask.run.attention")
+        case .blocked(.flight): return L("ask.queue.reconcile")
+        default: return isQueuePaused ? L("ask.queue.pausedReason") : nil
+        }
+    }
 
     /// "Jump the queue" needs a run that is still working.
     var canSteer: Bool {
-        selected.map { $0.run?.isActive == true && !recoveryBlocksResume($0) } == true && !isLoadingSelection
+        selected.map { value in
+            guard let run = value.run, ["running", "waiting_tool", "waiting_inference"].contains(run.status) else { return false }
+            return !recoveryBlocksResume(value) && (run.status == "running" || run.deviceId == deviceId)
+        } == true && !isLoadingSelection
     }
 
     func removeQueued(_ itemId: String) {
         guard let id = selectedId else { return }
         if sendQueue.isEditing(id, itemId: itemId) { cancelQueuedEdit() }
         sendQueue.remove(itemId, from: id)
+        if queuedSubmissions[id]?.item.id == itemId { operations[id]?.cancel() }
+        queueFlights[id]?[itemId]?.task?.cancel()
     }
 
     func clearQueue() {
         guard let id = selectedId else { return }
         cancelQueuedEdit(advancing: false)
+        cancelQueueFlights(id)
+        if queuedSubmissions[id] != nil { operations[id]?.cancel() }
         sendQueue.clear(id)
     }
 
     func resumeQueue() {
         guard let value = selected, !recoveryWorking else { return }
         let id = value.id
-        if recoveryBlocksResume(value) {
-            guard value.run?.isActive == true else {
-                sendQueue.pause(id)
-                inspectingRecovery = true
-                return
-            }
-            guard !recoveryPresentation.otherDevice else {
-                error = L("ask.recovery.binding")
-                return
-            }
-            Task { [weak self] in
-                guard let self else { return }
-                await endRecoveryRun()
-                guard selectedId == id, selected?.run?.isActive == false else { return }
-                sendQueue.resume(id)
-                queueDidSettle(id)
-            }
+        if queueDisposition(value, ignoringPause: true) == .blocked(.recovery) {
+            inspectingRecovery = true
             return
         }
+        if let flight = queueFlights[id]?.values.first(where: { $0.task == nil }) {
+            reconcileSteer(flight, conversationID: id)
+            return
+        }
+        if pendingSends[id] != nil {
+            // Explicit continuation also releases the pause for following FIFO items.
+            // The existing pending request owns this ID; its retry path remains the only sender.
+            guard !busyIds.contains(id) else { return }
+            sendQueue.resume(id)
+            resume()
+            return
+        }
+        guard queueDisposition(value, ignoringPause: true) == .ready else { return }
         sendQueue.resume(id)
         queueDidSettle(id)
     }
 
     /// Opens a queued message in the composer; what the user was typing is set aside.
     func editQueued(_ itemId: String) {
-        guard let id = selectedId, let item = sendQueue.messages(id).first(where: { $0.id == itemId }) else { return }
+        guard let id = selectedId, queueFlights[id]?[itemId] == nil, queuedSubmissions[id]?.item.id != itemId,
+              let item = sendQueue.messages(id).first(where: { $0.id == itemId }) else { return }
         if isEditingQueued { saveQueuedEdit(advancing: false) }
         clearCapturedContentFeedback(launcher: false)
         sendQueue.editing = .init(conversationId: id, itemId: itemId, stash: draft)
@@ -2421,40 +2481,217 @@ extension AskConversationModel {
         if advancing { queueDidSettle(editing.conversationId) }
     }
 
-    /// Hands a queued message to the running run, which reads it at its next step.
-    /// A run that already ended gets it as the next turn instead.
+    /// Hands the exact queued draft to its captured run at the existing safe boundary.
     func steerQueued(_ itemId: String) {
-        guard let value = selected, let current = credentials(for: value.id), let run = value.run, run.isActive,
-              !recoveryBlocksResume(value), !steeringIds.contains(itemId), sendQueue.messages(value.id).contains(where: { $0.id == itemId }) else { return }
-        guard admitAgentCommand(value) else { return }
+        guard let value = selected, canSteer, let current = credentials(for: value.id), let run = value.run,
+              !steeringIds.contains(itemId), admitAgentCommand(value) else { return }
         if sendQueue.isEditing(value.id, itemId: itemId) { saveQueuedEdit(advancing: false) }
-        guard let latest = sendQueue.messages(value.id).first(where: { $0.id == itemId }) else { return }
-        let id = value.id
-        steeringIds.insert(itemId)
-        // A changed instruction invalidates pending intent before the network suspension.
-        approvalStore.revoke(conversation: id)
-        approve(conversationId: id, allowed: false)
-        var message = latest.draft.request(deviceId: deviceId, tools: [], id: latest.id)
-        message.skills = skillUses(latest.draft.skills)
-        let request = AskSteerRequest(runId: run.id, message: message)
-        Task { [weak self] in
+        guard let claim = sendQueue.claim(itemId, in: value.id, runID: run.id) else { return }
+        let flight = QueueFlight(attempt: UUID(), owner: current.account, device: deviceId, originalDevice: run.deviceId,
+                                 session: queueSession, selection: selectionGeneration, claim: claim)
+        queueFlights[value.id, default: [:]][itemId] = flight
+        launchSteer(flight, conversationID: value.id, route: current, refreshing: false)
+    }
+
+    private func continueAfterQueueReconciliation(_ flight: QueueFlight, conversationID id: String) {
+        guard owner == flight.owner, session()?.owner == flight.owner, queueSession == flight.session,
+              selectedId == id, selectionGeneration == flight.selection, let value = selected,
+              queueDisposition(value, ignoringPause: true) == .ready else { return }
+        sendQueue.resume(id)
+        queueDidSettle(id)
+    }
+
+    private func ownsQueueFlight(_ flight: QueueFlight, conversationID: String) -> Bool {
+        owner == flight.owner && session()?.owner == flight.owner && queueSession == flight.session
+            && deviceId == flight.device && !deletedConversationIDs.contains(conversationID)
+            && queueFlights[conversationID]?[flight.claim.item.id]?.attempt == flight.attempt
+    }
+
+    private func cancelQueueFlights(_ id: String) {
+        for flight in queueFlights[id]?.values.map({ $0 }) ?? [] { flight.task?.cancel() }
+    }
+
+    private func forgetQueueFlights(_ id: String) {
+        for flight in queueFlights[id]?.values.map({ $0 }) ?? [] {
+            flight.task?.cancel()
+            sendQueue.release(flight.claim, in: id)
+            steeringIds.remove(flight.claim.item.id)
+        }
+        queueFlights[id] = nil; queuedSubmissionSelections[id] = nil; pendingSends[id] = nil
+        if let claim = queuedSubmissions.removeValue(forKey: id) { sendQueue.release(claim, in: id) }
+    }
+
+    private func reconcileSteer(_ previous: QueueFlight, conversationID: String) {
+        guard let route = credentials(for: conversationID) else { return }
+        let flight = QueueFlight(attempt: UUID(), owner: previous.owner, device: previous.device, originalDevice: previous.originalDevice,
+                                 session: previous.session, selection: selectionGeneration, claim: previous.claim)
+        queueFlights[conversationID]?[flight.claim.item.id] = flight
+        launchSteer(flight, conversationID: conversationID, route: route, refreshing: true)
+    }
+
+    private func launchSteer(_ flight: QueueFlight, conversationID id: String, route: AskRoute, refreshing: Bool) {
+        let item = flight.claim.item
+        steeringIds.insert(item.id)
+        if !refreshing {
+            approvalStore.revoke(conversation: id)
+            approve(conversationId: id, allowed: false)
+        }
+        let task = Task<Void, Never> { [weak self] in
             guard let self else { return }
-            defer { steeringIds.remove(itemId) }
+            defer {
+                if ownsQueueFlight(flight, conversationID: id) {
+                    queueFlights[id]?[item.id]?.task = nil
+                    steeringIds.remove(item.id)
+                }
+            }
             do {
-                let response = try await api.steer(conversationId: id, request: request, token: current.token)
-                guard owner == current.account else { return }
-                sendQueue.markSteered(latest, in: id)
-                try await accept(response, route: current)
+                if refreshing {
+                    let fresh = try await api.conversation(id: id, token: route.token)
+                    guard ownsQueueFlight(flight, conversationID: id), !Task.isCancelled else { return }
+                    if try await settleSteer(flight, response: fresh, route: route, accepted: false) {
+                        continueAfterQueueReconciliation(flight, conversationID: id)
+                        return
+                    }
+                    // Retry only the original idempotent supplement, never a replacement run or new turn.
+                    guard let freshRun = fresh.run, freshRun.id == flight.claim.originalRunID,
+                          freshRun.deviceId == flight.originalDevice, freshRun.isActive,
+                          !freshRun.needsRecoveryInspection, !freshRun.isPausedForCredits,
+                          sendQueue.owns(flight.claim, in: id) else { return }
+                }
+                var message = item.draft.request(deviceId: flight.device, tools: [], id: item.id)
+                message.skills = skillUses(item.draft.skills)
+                let request = AskSteerRequest(runId: flight.claim.originalRunID ?? "", message: message)
+                let response = try await api.steer(conversationId: id, request: request, token: route.token)
+                guard ownsQueueFlight(flight, conversationID: id) else { return }
+                // Removal invalidates local intent, but a positive response can still release its reservation.
+                guard !Task.isCancelled || !sendQueue.owns(flight.claim, in: id) else { return }
+                if try await settleSteer(flight, response: response, route: route, accepted: true) == false {
+                    sendQueue.pause(id)
+                    if selectedId == id { self.error = L("ask.queue.reconcile") }
+                }
             } catch {
-                guard owner == current.account else { return }
-                // The run ended first: send it ahead of the rest of the queue.
-                let refreshed = try? await api.conversation(id: id, token: current.token)
-                guard owner == current.account else { return }
-                if let refreshed, refreshed.run?.isActive != true {
-                    sendQueue.putFirst(latest, in: id)
-                    sendQueue.resume(id)
-                    try? await accept(refreshed, route: current)
-                    queueDidSettle(id)
+                guard ownsQueueFlight(flight, conversationID: id) else { return }
+                sendQueue.pause(id)
+                if !Task.isCancelled, let fresh = try? await api.conversation(id: id, token: route.token),
+                   ownsQueueFlight(flight, conversationID: id), !Task.isCancelled {
+                    if (try? await settleSteer(flight, response: fresh, route: route, accepted: false)) == true { return }
+                }
+                guard ownsQueueFlight(flight, conversationID: id), sendQueue.owns(flight.claim, in: id) else { return }
+                operationErrors[id] = L("ask.queue.reconcile")
+                if selectedId == id { self.error = L("ask.queue.reconcile") }
+            }
+        }
+        queueFlights[id]?[item.id]?.task = task
+    }
+
+    /// A transcript ID is consumption; a successful original-run response is acceptance only.
+    private func settleSteer(_ flight: QueueFlight, response: AskConversation, route: AskRoute, accepted: Bool) async throws -> Bool {
+        let id = response.id, item = flight.claim.item
+        guard ownsQueueFlight(flight, conversationID: id), response.run?.id == flight.claim.originalRunID,
+              response.run?.deviceId == flight.originalDevice else { return false }
+        let consumed = response.messages.contains { $0.id == item.id && $0.runId == flight.claim.originalRunID }
+        let terminal = response.run.map { ["completed", "failed", "cancelled"].contains($0.status) && !$0.needsRecoveryInspection } == true
+        if !consumed, let latest = snapshots[id] {
+            guard latest.run?.id == flight.claim.originalRunID,
+                  latest.run?.deviceId == flight.originalDevice else { return false }
+            // Content clocks and identity matter; serialized dates can have a different precision.
+            if latest.run?.isActive != true, !terminal { return false }
+            if response.revision < latest.revision, terminal || latest.run?.isActive != true { return false }
+        }
+        guard consumed || terminal || accepted else { return false }
+        if sendQueue.owns(flight.claim, in: id) {
+            if consumed { sendQueue.remove(item.id, from: id) }
+            else if terminal { sendQueue.restore(flight.claim, in: id) }
+            else { sendQueue.markSteered(item, in: id, runID: flight.claim.originalRunID) }
+        }
+        sendQueue.release(flight.claim, in: id)
+        queueFlights[id]?[item.id] = nil
+        steeringIds.remove(item.id)
+        // Selection changes invalidate advancement, while confirmed evidence still belongs to its conversation.
+        if selectionGeneration != flight.selection { sendQueue.pause(id) }
+        try await accept(response, route: route)
+        return true
+    }
+
+    private func reconcileConfirmedSupplements(fromAuthenticated value: AskConversation, allowTerminal: Bool = false) {
+        // Consumption comes only from API/engine transcript evidence, never cached display messages.
+        sendQueue.reconcile(value.id, transcript: value.messages, run: nil)
+        for flight in queueFlights[value.id]?.values.map({ $0 }) ?? [] {
+            guard ownsQueueFlight(flight, conversationID: value.id) else { continue }
+            let consumed = value.messages.contains {
+                $0.id == flight.claim.item.id && $0.runId == flight.claim.originalRunID
+            }
+            let terminal = allowTerminal && value.run?.id == flight.claim.originalRunID
+                && value.run?.deviceId == flight.originalDevice && value.run.map { ["completed", "failed", "cancelled"].contains($0.status) && !$0.needsRecoveryInspection } == true
+            let discardedReplacement = allowTerminal && !sendQueue.owns(flight.claim, in: value.id)
+                && value.run.map { !$0.id.isEmpty && $0.id != flight.claim.originalRunID } == true
+            guard consumed || terminal || discardedReplacement else { continue }
+            if consumed { sendQueue.remove(flight.claim.item.id, from: value.id) }
+            else { sendQueue.restore(flight.claim, in: value.id) }
+            sendQueue.release(flight.claim, in: value.id)
+            queueFlights[value.id]?[flight.claim.item.id] = nil
+            steeringIds.remove(flight.claim.item.id)
+            if selectionGeneration != flight.selection { sendQueue.pause(value.id) }
+            flight.task?.cancel()
+        }
+    }
+
+    private func startSubmittedSend(_ submitted: AskDraft, conversation value: AskConversation,
+                                    request: AskSendRequest, route current: AskRoute, operationId: UUID, inline: Bool) {
+        let id = value.id, messageId = request.id
+        let queueClaim = queuedSubmissions[id]
+        if queueClaim != nil { queuedOperations.insert(operationId) }
+        let temporaryRun = isTemporary(id), recoveryCheck = request.recoveryCheck == true
+        operations[id] = Task { [weak self] in
+            guard let self else { return }
+            defer {
+                tools.discardFolderSubmission(messageID: messageId)
+                if operationIds[id] == operationId, owner == current.account, session()?.owner == current.account {
+                    restoreQueuedSubmission(id)
+                }
+                finishOperation(id, operationId: operationId)
+            }
+            var accepted = false
+            let monitor = monitorConversation(id: id, current: current, operationId: operationId)
+            defer { monitor.cancel() }
+            do {
+                try checkOperation(id, operationId: operationId, account: current.account)
+                if let workspaces {
+                    try await workspaces.saveConversation(value, owner: current.account)
+                    try await workspaces.captureInputs(submitted.attachments ?? [], image: request.image,
+                                                       messageId: messageId, owner: current.account,
+                                                       conversationId: id)
+                }
+                try await cache.save(value, owner: current.owner)
+                if inline, quickAsk?.conversationId == id { quickAsk?.persisted = true }
+                var request = request
+                let offered = inline ? [] : Self.offeredTools(await tools.definitions(conversationId: id), temporary: temporaryRun)
+                request.tools = inline ? [] : recoveryCheck ? Self.recoveryObservationTools(offered) : offered
+                try checkOperation(id, operationId: operationId, account: current.account)
+                request.memory = request.memory?.usable(owner: current.account, invalidations: memoryInvalidations)
+                pendingSends[id] = request
+                let response = try await api.send(conversationId: id, request: request, token: current.token)
+                try checkOperation(id, operationId: operationId, account: current.account)
+                guard response.id == id, response.messages.contains(where: { $0.id == messageId }) else {
+                    throw AskLocalError.message(L("ask.local.conflict"))
+                }
+                accepted = true
+                // Queue ownership transfers only after drive publishes authoritative state.
+                // Admit the staged folder selection first, preserving its existing exact scope.
+                if queueClaim == nil { pendingSends[id] = nil }
+                try admitFolderSubmission(response, conversationID: id, messageID: messageId, previousRunID: value.run?.id)
+                if recoveryCheck, response.run?.recoveryCheck != true {
+                    if let run = response.run, run.isActive {
+                        _ = try? await api.cancel(conversationId: id, runId: run.id, token: current.token)
+                    }
+                    throw AskLocalError.message(L("ask.recovery.readOnlyUnavailable"))
+                }
+                try await drive(response, current: current, operationId: operationId, screenshotConsentMessageID: submitted.includeScreenshot ? messageId : nil, allowsTools: !inline)
+            } catch is CancellationError {} catch {
+                guard !Task.isCancelled, operationIds[id] == operationId else { return }
+                if let claim = queueClaim, !accepted || queuedSubmissions[id] != nil {
+                    guard queuedSubmissions[id] == claim, sendQueue.owns(claim, in: id) else { return }
+                    await reportOperationError(AskLocalError.message(L("ask.queue.reconcile")), id: id, owner: current.account)
                 } else {
                     await reportOperationError(error, id: id, owner: current.account)
                 }
@@ -2462,17 +2699,96 @@ extension AskConversationModel {
         }
     }
 
-    /// Called whenever a conversation may have gone idle: settles jumped messages,
-    /// pauses after a failed or stopped run, and otherwise sends the next queued message.
+    private func reconcileConfirmedQueuedSubmission(fromAuthenticated value: AskConversation) {
+        guard session()?.owner == owner, let claim = queuedSubmissions[value.id], let pending = pendingSends[value.id],
+              claim.item.id == pending.id, value.messages.contains(where: { $0.id == pending.id }) else { return }
+        pendingSends[value.id] = nil
+        acknowledgeQueuedSubmission(value.id, messageID: pending.id)
+    }
+
+    /// The existing pending submission remains the only sender for its idempotent request.
+    private func resumePendingSend(_ pending: AskSendRequest, conversation value: AskConversation,
+                                   route current: AskRoute, operationId: UUID) async throws -> AskConversation {
+        let id = value.id
+        let queueClaim = queuedSubmissions[id]
+        if let claim = queueClaim {
+            let fresh = try? await api.conversation(id: id, token: current.token)
+            try checkOperation(id, operationId: operationId, account: current.account)
+            if let fresh, fresh.id == id, fresh.messages.contains(where: { $0.id == pending.id }) {
+                try await accept(fresh, route: current, operationId: operationId)
+                try checkOperation(id, operationId: operationId, account: current.account)
+                return fresh
+            }
+            // Discarded intent and a different active task allow inspection only.
+            guard sendQueue.owns(claim, in: id), fresh?.run?.isActive != true,
+                  fresh?.run?.needsRecoveryInspection != true else {
+                throw AskLocalError.message(L("ask.queue.reconcile"))
+            }
+        }
+        try await validateModel(pending.modelRef, token: current.token,
+                                hasImage: pending.sendsImage || value.messages.contains(where: { $0.hasImage }))
+        var request = pending
+        request.memory = request.memory?.usable(owner: current.account, invalidations: memoryInvalidations)
+        try checkOperation(id, operationId: operationId, account: current.account)
+        let response: AskConversation
+        do { response = try await api.send(conversationId: id, request: request, token: current.token) }
+        catch {
+            try checkOperation(id, operationId: operationId, account: current.account)
+            if let claim = queueClaim,
+               queuedSubmissions[id] != claim || !sendQueue.owns(claim, in: id) { throw CancellationError() }
+            throw error
+        }
+        try checkOperation(id, operationId: operationId, account: current.account)
+        guard response.id == id, response.messages.contains(where: { $0.id == pending.id }) else {
+            throw AskLocalError.message(L("ask.local.conflict"))
+        }
+        try await accept(response, route: current, operationId: operationId)
+        try checkOperation(id, operationId: operationId, account: current.account)
+        return response
+    }
+
+    private func acknowledgeQueuedSubmission(_ id: String, messageID: String) {
+        guard let claim = queuedSubmissions[id], claim.item.id == messageID else { return }
+        sendQueue.remove(messageID, from: id)
+        sendQueue.release(claim, in: id)
+        if let generation = queuedSubmissionSelections[id], generation != selectionGeneration { sendQueue.pause(id) }
+        queuedSubmissions[id] = nil; queuedSubmissionSelections[id] = nil
+    }
+
+    private func restoreQueuedSubmission(_ id: String) {
+        guard session()?.owner == owner, let claim = queuedSubmissions[id] else { return }
+        sendQueue.restore(claim, in: id)
+        if pendingSends[id] == nil {
+            sendQueue.release(claim, in: id)
+            queuedSubmissions[id] = nil; queuedSubmissionSelections[id] = nil
+        }
+    }
+
+    private func queueDisposition(_ value: AskConversation, ignoringPause: Bool = false) -> AskQueueDisposition {
+        let receiptBlocked = (recoveryEntries[value.id] ?? []).contains {
+            $0.readUnavailable || (!$0.acknowledged && !$0.deleted && $0.receipt != nil
+                && ($0.audit == nil || $0.audit?.identity.runId == value.run?.id))
+        }
+        return .resolve(run: value.run, recoveryBlocked: recoveryBlocksResume(value) || receiptBlocked,
+                        submitting: busyIds.contains(value.id) || pendingSends[value.id] != nil,
+                        steering: !(queueFlights[value.id]?.isEmpty ?? true), pendingApproval: pendingApprovals[value.id] != nil,
+                        deviceID: deviceId, paused: !ignoringPause && sendQueue.isPaused(value.id),
+                        hasItems: !sendQueue.messages(value.id).isEmpty)
+    }
+
     func queueDidSettle(_ id: String) {
-        guard let value = snapshots[id] ?? (selected?.id == id ? selected : nil) else { return }
-        sendQueue.reconcile(id, transcript: value.messages, run: value.run)
-        if recoveryBlocksResume(value) { sendQueue.pause(id); return }
-        guard selectedId == id, selected != nil, !isLoadingSelection, !busyIds.contains(id), pendingSends[id] == nil,
-              value.run?.isActive != true, let next = sendQueue.next(for: id), !steeringIds.contains(next.id),
+        guard session()?.owner == owner,
+              let value = snapshots[id] ?? (selected?.id == id ? selected : nil) else { return }
+        // Presentation can settle an admitted run, but cannot prove message consumption.
+        sendQueue.reconcile(id, transcript: [], run: value.run)
+        if queueDisposition(value) == .blocked(.recovery) { sendQueue.pause(id); return }
+        guard selectedId == id, selected != nil, !isLoadingSelection, queueDisposition(value) == .ready,
+              let next = sendQueue.next(for: id), let claim = sendQueue.claim(next.id, in: id),
               let item = sendQueue.take(next.id, from: id) else { return }
+        queuedSubmissions[id] = claim
         submit(item.draft, newConversation: false, messageId: item.id, clearsDraft: false)
     }
+
 }
 
 // MARK: - Inline launcher conversation

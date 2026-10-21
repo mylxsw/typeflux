@@ -2157,11 +2157,11 @@
 /* GUL-151 Ask send queue */
 "ask.queue.count" = "排队中 %d 条";
 "ask.queue.paused" = "已暂停";
-"ask.queue.resume" = "继续发送";
+"ask.queue.resume" = "继续队列中的问题";
 "ask.queue.clear" = "清空";
 "ask.queue.expand" = "展开";
 "ask.queue.collapse" = "收起";
-"ask.queue.jump" = "插队";
+"ask.queue.jump" = "补充当前任务";
 "ask.queue.jump.help" = "交给正在运行的任务，下一步生效。";
 "ask.queue.edit" = "编辑";
 "ask.queue.remove" = "删除";
@@ -6550,3 +6550,11 @@
 "ask.web.sites.legacy" = "旧主机偏好中的允许权限已失效；请移除旧拒绝项后选择精确来源。";
 
 "ask.web.removePermission" = "移除 %@ 的来源权限或旧偏好";
+
+"ask.queue.pending" = "正在确认…";
+
+"ask.queue.reconcile" = "尚未确认补充要求。请点击“继续队列中的问题”重新核对。";
+
+"ask.queue.pausedReason" = "队列已暂停，准备好后可继续队列中的问题。";
+
+"ask.queue.session" = "队列仅在此 Mac 的当前会话中保留，不跨设备同步，重启后不保留。";

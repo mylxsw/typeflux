@@ -1244,7 +1244,7 @@ struct AskConversationView: View {
             let carriesRun = run?.isActive == true && items.last?.id == group.id
             let halted: Bool = {
                 switch phase {
-                case .needsDecision?, .pausedCredits?: break
+                case .needsDecision?, .pausedCredits?, .waitingDevice?: break
                 default: return false
                 }
                 guard isLatest else { return false }
