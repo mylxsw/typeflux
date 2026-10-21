@@ -1,0 +1,5 @@
+Sources/Typeflux/Ask/AskAgentBinding.swift: 41/41 (100.00%)
+Sources/Typeflux/Ask/AskRouteJSONCodec.swift: 219/223 (98.21%)
+Sources/Typeflux/Ask/AskRunRoute.swift: 117/119 (98.32%)
+Sources/Typeflux/Ask/Local/AskLocalEngine.swift: 36/36 (100.00%)
+TOTAL: 413/419 (98.57%)
