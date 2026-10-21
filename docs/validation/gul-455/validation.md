@@ -1,63 +1,62 @@
 # GUL-455 C3 validation
 
-Baseline: main at `307ae12f` (PR #693 merged). Environment details are in
-`environment.log.gz`.
+Baseline: `307ae12f` (main after #693). This correction updates PR #694 from
+`19ccc081`; the earlier 100-test run and its 32/32 coverage result are historical,
+recorded in `validation-19ccc081.md`. Its raw LCOV and intersection remain in
+`changed-files-19ccc081.lcov.gz` and `changed-coverage-19ccc081.txt`.
 
-The local engine retains one opaque snapshot store and one host budget journal,
-selected at construction from the existing directory or supplied by composition.
-The engine still owns record encoding/decoding, recovery, revisions and memory.
-The journal retains its synchronous callback, file lock, mutation validation and
-protected atomic write, including persistence after a valid callback throws.
-No Go wrapper, schema, dispatch, shared-state authority or UI setting was added.
-This does not establish full Agent replaceability; that scope remains separate.
+## Streaming snapshot contract
 
-## Focused checks
+`AskLocalSnapshotStoring.forEachSnapshot` takes a synchronous, nonescaping,
+non-Sendable consumer. The concrete store enumerates immediate JSON URLs and
+reads one payload, invokes the consumer, then reads the next. It does not retain
+consumed bytes or collect payloads. The engine decodes, marks recoverable default
+bindings and inserts records inside that callback on its actor. Its loaded guard,
+malformed-input skipping, unknown-binding handling and write/error ordering stay
+unchanged. Array collection exists only in a test helper.
 
-Coverage replaces a plain test pass. The normal repository coverage runner built
-and discovered the SwiftPM test target, then selected only the listed methods.
-No full test/UI execution, provider request or CI wait was performed. Command
-wall times include dependency preparation, build, discovery, startup, execution
-and report generation.
+The concrete regression seeds four distinct JSON payloads. During the first
+callback it identifies the current payload and deletes every other snapshot.
+Exactly one callback must occur, regardless of enumeration order; an eager read
+would consume the deleted payloads. The recording visitor also checks that a
+reopened engine visits all seeded snapshots once, skips malformed JSON, preserves
+unknown bindings and marks recovery in memory without writes or execution.
 
-- First command: `make coverage SUITE='AskStoragePortsTests AskBudgetTests AskLocalEngineTests AskLocalBudgetTests AskLocalEngineReentrancyTests AskLocalLateUsageTests AskLocalUsageTests AskLocalEngineTemporaryTests AskMemoryTests AskAgentBindingTests AskAgentRegistryTests'`.
-  Exit 2, **500.563 s** total; first-use build **466.55 s**, runner **495.60 s**.
-  Build succeeded, but discovery rejected the nonexistent `AskAgentRegistryTests`
-  suite before any tests executed. The composition checks actually live in
-  `AskApplicationAPITests`; the corrected command selects its three relevant
-  factory/routing methods. Raw output: `coverage-run.log.gz`.
+## Focused validation
 
-- Corrected command: `make coverage SUITE='AskStoragePortsTests AskBudgetTests AskLocalEngineTests AskLocalBudgetTests AskLocalEngineReentrancyTests AskLocalLateUsageTests AskLocalUsageTests AskLocalEngineTemporaryTests AskMemoryTests AskAgentBindingTests AskSemanticCompactionTests' FILTER='AskApplicationAPITests/(productionConversationFactoryBuildsConfiguredDefaultEngine|productionCallerFactoriesRetainLocalStateAndCloudRoute|routedDefaultSharesLocalEngineStateAndHostAccess)'`.
-  Exit 0; **100 selected methods passed** (62 XCTest, 38 Swift Testing), no test
-  failure or test retry. **102.803 s** total; incremental build **72.22 s**,
-  build/discovery **86.39 s**, execution phase **11.36 s**, runner **97.78 s**.
-  This was an incremental rebuild, not a verified cache hit. Raw command,
-  test names, results and coverage output: `coverage-final.log.gz`.
-  Combined wall time for both coverage commands: **603.366 s**.
+The correction runs `make coverage` with `SUITE=AskStoragePortsTests` and these
+five method filters (joined with `|`):
 
-The selected scope maps to the changed behavior:
+- `AskLocalEngineTests/testRecoveryCheckRemainsReadOnlyAfterRestartAndRetry`
+- `AskLocalEngineTests/testConversationRunsOnDeviceWithToolsAndPersists`
+- `AskLocalEngineTests/testLegacyReopenedTypedReceiptPreparesWithoutRepeatingTool`
+- `AskLocalEngineTests/testTypedResultThroughLocalRunAndReopen`
+- `AskBudgetTests/testJournalContractFailuresAndDurableThrowingStop`
 
-- `AskStoragePortsTests`: seven focused methods cover real snapshot reopen,
-  malformed JSON, an unreadable `.json` directory without chmod assumptions,
-  missing/non-directory paths, immediate JSON enumeration, layout, identifier
-  boundaries, and deletion of only the validated target. Recording stores cover
-  send, inference receipt, history, memory purge, canonical deletion, swallowed
-  removal errors, late temporary usage, keep once, summary completion, write
-  failure without publication, load-once recovery and unknown-binding reads.
-  Both stores are injected with budgets enabled; no configured-directory
-  fallback is permitted. Temporary snapshots stay in memory while temporary
-  budget journals keep their existing policy.
-- `AskBudgetTests`: journal invalid root/conversation, missing/corrupt/invalid
-  stored state, valid stopped state surviving callback failure, invalid
-  postmutation rejection without write, repeated settlement idempotency and
-  concurrent updates through separately constructed store instances.
-- Existing local engine/budget/usage/late-usage/reentrancy, semantic compaction,
-  local temporary engine, memory and binding suites exercise their shared paths.
-  Three production factory/routing methods verify default composition.
+The eight storage methods exercise the concrete visitor, injected send/receipt/
+history/delete/keep/purge/summary paths, temporary exclusion, failed writes and
+load-once recovery. The four existing engine cases cover restart and persisted
+receipt behavior. The budget storage contract case refreshes coverage for the
+shared identifier guard and its error branch in the complete C3 line map.
+Unrelated suites from the earlier 100-test run were not repeated. No full suite,
+real provider calls or CI wait is included.
 
-## Changed executable coverage
+The first command stopped during test-target compilation (exit 2, **527.133 s**
+wall time; runner **524.66 s**), before any tests executed. `XCTAssertNoThrow`
+inside the new consumer made Swift infer a throwing closure, incompatible with
+the required nonthrowing visitor. Replaced that assertion with explicit
+`do/catch`; the production visitor signature is unchanged. The exact same focused
+command was retried. Raw first-use output: `coverage-correction.log.gz`.
 
-**32/32 unique added/modified executable production lines (100%)** relative to
-`307ae12f`, exceeding the 90% target. No uncovered changed executable lines.
+The retry passed **13/13 XCTest methods**, exit 0, in **79.274 s** total
+(**53.78 s** incremental build, **68.44 s** build/discovery, **7.49 s** execution
+phase, **75.93 s** runner). This was an incremental rebuild, not a verified cache
+hit. No test failures occurred. Both coverage attempts together took **606.407 s**.
+Raw successful command/output: `coverage-correction-final.log.gz`. Correction
+environment: `environment-correction.log.gz`.
+
+Fresh LLVM export against the final production source map reports **36/36 changed
+executable lines (100%)**, with no uncovered changed executable lines:
 
 | File | Covered / executable |
 | --- | --- |
@@ -66,36 +65,58 @@ The selected scope maps to the changed behavior:
 | `AskBudgetStore.swift` | 3 / 3 |
 | `AskLocalEngine+Budget.swift` | 1 / 1 |
 | `AskLocalEngine.swift` | 8 / 8 |
-| `AskLocalSnapshotStore.swift` | 16 / 16 |
+| `AskLocalSnapshotStore.swift` | 20 / 20 |
 
-This counts changed physical lines having LLVM LCOV `DA` entries, not whole-file,
-whole-project or branch coverage. Protocol declarations, synthesized accessors
-without `DA` records, comments, blank lines, deleted implementations and tests
-are excluded. The focused run does not fault-inject OS open/flock failures or
-power loss; those unchanged journal/platform behaviors are outside this changed
-line denominator. Atomic/protection options were verified unchanged in source.
+The denominator is physical added/modified production lines with LLVM `DA`
+records versus `307ae12f`; it excludes comments, declarations without executable
+records, tests and deleted lines. This is neither whole-project nor branch
+coverage. Raw export: `changed-files.lcov.gz`; exact export command, denominator
+and uncovered lists: `changed-coverage.txt`. OS lock/open failures and power loss
+remain outside these changed paths.
 
-The raw selected-file LCOV is `changed-files.lcov.gz`; the export command and
-per-file denominator are in `changed-coverage.txt`. Recompute the intersection
-from the committed artifact with `python3 docs/validation/gul-455/changed_coverage.py`.
-Pass `--export` after the focused instrumented run to refresh the raw artifact.
+## Portable artifact recomputation
 
-## Review
+Run `python3 docs/validation/gul-455/changed_coverage.py` to recompute using only
+committed source, Git diff and raw LCOV; no binary, profile, Xcode export or build
+is needed. Use `--export` only after a fresh focused instrumented test run.
 
-Reviewed the full storage call graph: all snapshot reads/writes/deletes and
-budget journal updates use the retained instances. `persist` still encodes and
-writes before publishing records and clears prepared images afterward; save
-ordering, cancellation, temporary handling, late usage and summary ownership
-remain in orchestration. No new await, task, lock or resource lifetime exists.
-The journal lock scope and error ordering are unchanged. Identifier checks occur
-before file operations; snapshots remain opaque at the protocol boundary.
-No credentials, public UI changes, migration or unrelated refactor was added.
+LCOV `SF` entries retain their original absolute checkout paths. The script maps
+exactly one `Sources/Typeflux` suffix, rejects ambiguous/noncanonical paths and
+checks the six known changed production files. All five implementation files
+must contain changed executable `DA` records. The protocol-only file may have
+no LCOV entry. `changed-executable-lines.json` records source hashes and exact
+expected executable line numbers; artifact-only recomputation rejects stale
+source or missing individual executable records rather than reporting an empty
+or reduced denominator. Hit counts always come from raw LLVM output.
 
-Strict lint on all affected production files initially found an introduced long
-identifier guard, which was wrapped. The remaining engine lint findings also
-exist in the baseline: stdin JSON comparison shows 71 baseline findings versus
-68 current findings, with no increased rule counts. New interfaces/stores and
-the budget sources have zero findings. The whole affected-engine strict lint
-check therefore remains non-green due to existing complexity/length/naming and
-style findings; no broad cleanup was attempted. Raw initial output and the
-baseline/current comparison are retained. `git diff --check` passes.
+Four Python regressions cover foreign/relative source paths, ambiguity/traversal,
+missing implementation files or executable records, and invalid/orphan `DA`
+records. Raw command/results/timing: `python-regressions.log.gz`.
+
+Verified in a separate detached checkout directory, populated with the final six
+source files and committed-format coverage artifacts. Running the command above
+without `--export` produced **36/36 (100%)**; `.build` was absent before and after.
+Removing one expected snapshot-store `DA` record then failed with exit 1; restoring
+LCOV and modifying a source hash also failed with exit 1. These intentional
+negative cases changed only temporary verification copies. The raw original
+artifacts remain untouched. The temporary checkout was removed afterward.
+All three portability checks and checkout/cleanup took **5.116 s**; raw commands
+and results: `artifact-portability.log.gz`.
+
+## Self-review
+
+Reviewed the visitor's full path from fixed-directory enumeration through
+synchronous actor-isolated decode/insertion. No new task, await, callback escape,
+Sendable conversion, lock or resource lifetime is introduced. Only URL names
+remain collected; payload lifetime is scoped to each iteration. Write/delete ID
+validation, protected atomic options and journal lock/error ordering are unchanged.
+Tests cover missing/unreadable directories, malformed records, recovery, unknown
+bindings, temporary snapshots and failure without publishing state. No new
+filesystem fallback, credentials, migration or public settings were added.
+
+Lint initially flagged the enlarged test class; the new concrete regression was
+moved to a same-file extension before compilation. The concrete store passes
+strict lint. Engine and test lint findings match `19ccc081` exactly (68 and 7
+respectively), with no increased rule counts; see `lint-correction.json`.
+`git diff --check` passes. Shared host authority and full Agent replaceability
+remain outside this increment; GUL-456 is unchanged.

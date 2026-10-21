@@ -38,13 +38,13 @@ final class AskStoragePortsTests: XCTestCase {
 
     func testFileRoundtripReopenAndBestEffortEnumeration() async throws {
         let store = FileAskLocalSnapshotStore(directory: directory)
-        XCTAssertTrue(store.loadSnapshots().isEmpty)
+        XCTAssertTrue(store.collectedSnapshots().isEmpty)
         let c = try await AskLocalEngine(directory: directory).send(
             conversationId: "baseline",
             request: request(),
             token: ""
         )
-        let bytes = try XCTUnwrap(store.loadSnapshots().first)
+        let bytes = try XCTUnwrap(store.collectedSnapshots().first)
         try store.writeSnapshot(bytes, id: "baseline")
         try Data("invalid json".utf8).write(to: directory.appendingPathComponent("malformed.json"))
         try bytes.write(to: directory.appendingPathComponent("ignored.txt"))
@@ -55,7 +55,7 @@ final class AskStoragePortsTests: XCTestCase {
         let budgets = directory.appendingPathComponent("Budgets")
         try FileManager.default.createDirectory(at: budgets, withIntermediateDirectories: true)
         try bytes.write(to: budgets.appendingPathComponent("nested.json"))
-        XCTAssertEqual(FileAskLocalSnapshotStore(directory: directory).loadSnapshots().count, 2)
+        XCTAssertEqual(FileAskLocalSnapshotStore(directory: directory).collectedSnapshots().count, 2)
         let reopened = AskLocalEngine(directory: directory)
         let loaded = try await reopened.conversation(id: c.id, token: "")
         XCTAssertEqual(loaded.revision, c.revision)
@@ -66,7 +66,7 @@ final class AskStoragePortsTests: XCTestCase {
         XCTAssertThrowsError(try store.removeSnapshot(id: "baseline"))
         // A regular file cannot be enumerated as a directory, independent of chmod privileges.
         XCTAssertTrue(FileAskLocalSnapshotStore(directory: directory.appendingPathComponent("ignored.txt"))
-            .loadSnapshots().isEmpty)
+            .collectedSnapshots().isEmpty)
     }
 
     func testIdentifierContractRejectsBeforeCreatingDirectoriesOrDeletingFiles() throws {
@@ -100,7 +100,7 @@ final class AskStoragePortsTests: XCTestCase {
         XCTAssertEqual(try Set(FileManager.default.contentsOfDirectory(atPath: directory.path)),
                        Set(["A_z-09.json", String(repeating: "a", count: 128) + ".json"]))
         try store.removeSnapshot(id: "A_z-09")
-        XCTAssertEqual(store.loadSnapshots(), [Data(String(repeating: "a", count: 128).utf8)])
+        XCTAssertEqual(store.collectedSnapshots(), [Data(String(repeating: "a", count: 128).utf8)])
     }
 
     func testInjectedInstancesHandleSendReceiptHistoryPurgeAndCanonicalDeleteWithoutFallback() async throws {
@@ -231,6 +231,7 @@ final class AskStoragePortsTests: XCTestCase {
         snapshots.values["recovery"] = try AskCoding.encoder().encode(record)
         snapshots.values["bad"] = Data("bad json".utf8)
         let before = snapshots.values, writes = snapshots.writes
+        let loads = snapshots.loads, visits = snapshots.visits.count
         let budgets = RecordingBudgets()
         let reopened = AskLocalEngine(directory: directory, snapshotStore: snapshots, budgetStore: budgets)
         let future = try await reopened.conversation(id: c.id, token: "")
@@ -247,6 +248,38 @@ final class AskStoragePortsTests: XCTestCase {
         XCTAssertEqual(snapshots.values, before)
         XCTAssertEqual(snapshots.writes, writes)
         XCTAssertTrue(budgets.calls.isEmpty)
+        XCTAssertEqual(snapshots.loads, loads + 1)
+        XCTAssertEqual(Array(snapshots.visits.dropFirst(visits)), before.keys.sorted())
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
+    }
+}
+
+extension AskStoragePortsTests {
+    func testFileVisitorReadsNextPayloadOnlyAfterConsumerReturns() throws {
+        let store = FileAskLocalSnapshotStore(directory: directory)
+        let payloads = Dictionary(uniqueKeysWithValues: (0 ..< 4).map { index in
+            ("snapshot-\(index)", Data("{\"id\":\"snapshot-\(index)\"}".utf8))
+        })
+        for (id, data) in payloads {
+            try store.writeSnapshot(data, id: id)
+        }
+        var consumed: [Data] = []
+        store.forEachSnapshot { data in
+            consumed.append(data)
+            guard consumed.count == 1 else { return }
+            // Identify the current payload rather than assuming directory order.
+            let current = payloads.first { $0.value == data }?.key
+            XCTAssertNotNil(current)
+            for id in payloads.keys where id != current {
+                do {
+                    try store.removeSnapshot(id: id)
+                } catch {
+                    XCTFail("Could not remove unread snapshot: \(error)")
+                }
+            }
+        }
+        XCTAssertEqual(consumed.count, 1, "Deleted files must not have been prefetched")
+        XCTAssertTrue(consumed.allSatisfy { payloads.values.contains($0) })
     }
 }
 
@@ -258,10 +291,17 @@ private final class RecordingSnapshots: AskLocalSnapshotStoring, @unchecked Send
     var writes: [String] = []
     var removals: [String] = []
     var loads = 0
+    var visits: [String] = []
     var failWrite = false
     var failRemoval = false
-    func loadSnapshots() -> [Data] {
-        loads += 1; return Array(values.values)
+    func forEachSnapshot(_ consume: (Data) -> Void) {
+        loads += 1
+        for id in values.keys.sorted() {
+            if let data = values[id] {
+                visits.append(id)
+                consume(data)
+            }
+        }
     }
 
     func writeSnapshot(_ data: Data, id: String) throws {
@@ -293,5 +333,13 @@ private final class RecordingBudgets: AskBudgetJournaling, @unchecked Sendable {
         do { try change(&value) } catch { values[key] = value; throw error }
         values[key] = value
         return value
+    }
+}
+
+private extension AskLocalSnapshotStoring {
+    func collectedSnapshots() -> [Data] {
+        var snapshots: [Data] = []
+        forEachSnapshot { snapshots.append($0) }
+        return snapshots
     }
 }

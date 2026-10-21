@@ -103,7 +103,7 @@ actor AskLocalEngine: AskAPI {
         guard !loaded else { return }
         loaded = true
         let decoder = AskCoding.decoder()
-        for data in snapshotStore.loadSnapshots() {
+        snapshotStore.forEachSnapshot { data in
             if var record = try? decoder.decode(AskLocalRecord.self, from: data) {
                 // A persisted engine step may have dispatched a built-in request before exit.
                 // Inspect/cancel it; never infer that a fresh process can safely repeat it.

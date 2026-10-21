@@ -2,7 +2,8 @@ import Foundation
 
 /// Opaque local adapter snapshots. Encoding and recovery belong to the engine.
 protocol AskLocalSnapshotStoring: Sendable {
-    func loadSnapshots() -> [Data]
+    /// Calls the nonescaping consumer synchronously on the caller's isolation.
+    func forEachSnapshot(_ consume: (Data) -> Void)
     func writeSnapshot(_ data: Data, id: String) throws
     func removeSnapshot(id: String) throws
 }
@@ -10,9 +11,13 @@ protocol AskLocalSnapshotStoring: Sendable {
 struct FileAskLocalSnapshotStore: AskLocalSnapshotStoring {
     let directory: URL
 
-    func loadSnapshots() -> [Data] {
+    func forEachSnapshot(_ consume: (Data) -> Void) {
         let files = (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? []
-        return files.filter { $0.pathExtension == "json" }.compactMap { try? Data(contentsOf: $0) }
+        for file in files where file.pathExtension == "json" {
+            if let data = try? Data(contentsOf: file) {
+                consume(data)
+            }
+        }
     }
 
     func writeSnapshot(_ data: Data, id: String) throws {

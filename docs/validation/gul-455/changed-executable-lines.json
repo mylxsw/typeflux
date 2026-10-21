@@ -1,0 +1,67 @@
+{
+  "Sources/Typeflux/Ask/AskStorageIdentifier.swift": {
+    "sha256": "1dd3465d38cd7220273d5effa97ffb15cc28df3740d9f5b63f9ded39b7902eef",
+    "lines": [
+      5,
+      6,
+      7,
+      8
+    ]
+  },
+  "Sources/Typeflux/Ask/Budget/AskBudgetJournaling.swift": {
+    "sha256": "1174c6541c19bc9dd949e1e8a35d09069072f9fc1b97196b6f40c9a41d732917",
+    "lines": []
+  },
+  "Sources/Typeflux/Ask/Budget/AskBudgetStore.swift": {
+    "sha256": "b3caa428c18d737ea26f0c2723729a0ecfd4cdec36374dfe995563b6bd9ac5e2",
+    "lines": [
+      11,
+      12,
+      13
+    ]
+  },
+  "Sources/Typeflux/Ask/Local/AskLocalEngine+Budget.swift": {
+    "sha256": "78b2b408fb6567907f66271b7e794c4498a35da4f1ab4457e3f8ad21c7b010d4",
+    "lines": [
+      10
+    ]
+  },
+  "Sources/Typeflux/Ask/Local/AskLocalEngine.swift": {
+    "sha256": "f7b4cf7515e4fb7eace31563f60296f4cd685676b4d668dab2b6025c1454189a",
+    "lines": [
+      81,
+      90,
+      91,
+      106,
+      107,
+      120,
+      148,
+      218
+    ]
+  },
+  "Sources/Typeflux/Ask/Local/AskLocalSnapshotStore.swift": {
+    "sha256": "a12b28a1a4c5a599c2db384f33120646208131c1576d6259c69db6907187053d",
+    "lines": [
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      23,
+      24,
+      25,
+      26,
+      27,
+      29,
+      30,
+      31,
+      33,
+      34,
+      35,
+      36
+    ]
+  }
+}
