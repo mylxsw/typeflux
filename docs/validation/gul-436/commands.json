@@ -1,0 +1,47 @@
+[
+  {
+    "command": [
+      "make",
+      "coverage",
+      "SUITE=AskApplicationAPITests AskAgentBindingTests AskAgentBindingInteractionTests"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 417.351
+  },
+  {
+    "command": [
+      "make",
+      "coverage",
+      "FILTER=AskApplicationAPITests/(registrySharedFixtures|registryValuesRemainImmutableAndCompositionRejectsMissingOperations|routedDefaultSharesLocalEngineStateAndHostAccess|productionCallerFactoriesRetainLocalStateAndCloudRoute)"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 78.73
+  },
+  {
+    "command": [
+      "make",
+      "coverage",
+      "FILTER=AskApplicationAPITests/productionConversationFactoryBuildsConfiguredDefaultEngine"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 79.912
+  },
+  {
+    "command": [
+      "swiftlint",
+      "lint",
+      "--strict",
+      "--reporter",
+      "json",
+      "Sources/Typeflux/Ask/AskAgentBinding.swift",
+      "Sources/Typeflux/Ask/AskAgentRegistry.swift",
+      "Sources/Typeflux/Ask/AskApplicationAPI.swift",
+      "Sources/Typeflux/Ask/AskConversationWindowController.swift",
+      "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowEditorWindowController.swift",
+      "Tests/TypefluxTests/AskApplicationAPI+RegistryTests.swift",
+      "Tests/TypefluxTests/AskApplicationAPITests.swift"
+    ],
+    "exit_code": 2,
+    "wall_seconds": 0.288
+  }
+]

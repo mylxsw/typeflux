@@ -1,0 +1,781 @@
+[
+  {
+    "id": "exact",
+    "registrations": [
+      {
+        "binding": {
+          "id": "typeflux.default",
+          "version": 1
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      }
+    ],
+    "default_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    },
+    "run": {
+      "agent_binding": {
+        "id": "typeflux.default",
+        "version": 1
+      }
+    },
+    "required_operations": [
+      "send"
+    ],
+    "select_default": false,
+    "setup_error": false,
+    "expected_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    }
+  },
+  {
+    "id": "configured-default",
+    "registrations": [
+      {
+        "binding": {
+          "id": "typeflux.default",
+          "version": 1
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      }
+    ],
+    "default_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    },
+    "run": {},
+    "required_operations": [
+      "send"
+    ],
+    "select_default": true,
+    "setup_error": false,
+    "expected_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    }
+  },
+  {
+    "id": "legacy-absent",
+    "registrations": [
+      {
+        "binding": {
+          "id": "typeflux.default",
+          "version": 1
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      }
+    ],
+    "default_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    },
+    "run": {},
+    "required_operations": [
+      "send"
+    ],
+    "select_default": false,
+    "setup_error": false,
+    "expected_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    }
+  },
+  {
+    "id": "legacy-null",
+    "registrations": [
+      {
+        "binding": {
+          "id": "typeflux.default",
+          "version": 1
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      }
+    ],
+    "default_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    },
+    "run": {
+      "agent_binding": null
+    },
+    "required_operations": [
+      "send"
+    ],
+    "select_default": false,
+    "setup_error": false,
+    "expected_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    }
+  },
+  {
+    "id": "unknown",
+    "registrations": [
+      {
+        "binding": {
+          "id": "typeflux.default",
+          "version": 1
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      }
+    ],
+    "default_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    },
+    "run": {
+      "agent_binding": {
+        "id": "test.alternate",
+        "version": 2
+      }
+    },
+    "required_operations": [
+      "send"
+    ],
+    "select_default": false,
+    "setup_error": false,
+    "expected_binding": null
+  },
+  {
+    "id": "wrong-version",
+    "registrations": [
+      {
+        "binding": {
+          "id": "typeflux.default",
+          "version": 1
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      }
+    ],
+    "default_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    },
+    "run": {
+      "agent_binding": {
+        "id": "typeflux.default",
+        "version": 2
+      }
+    },
+    "required_operations": [
+      "send"
+    ],
+    "select_default": false,
+    "setup_error": false,
+    "expected_binding": null
+  },
+  {
+    "id": "malformed",
+    "registrations": [
+      {
+        "binding": {
+          "id": "typeflux.default",
+          "version": 1
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      }
+    ],
+    "default_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    },
+    "run": {
+      "agent_binding": {
+        "id": "typeflux.default",
+        "version": "1"
+      }
+    },
+    "required_operations": [
+      "send"
+    ],
+    "select_default": false,
+    "setup_error": false,
+    "expected_binding": null
+  },
+  {
+    "id": "empty-id",
+    "registrations": [
+      {
+        "binding": {
+          "id": "typeflux.default",
+          "version": 1
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      }
+    ],
+    "default_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    },
+    "run": {
+      "agent_binding": {
+        "id": "",
+        "version": 1
+      }
+    },
+    "required_operations": [
+      "send"
+    ],
+    "select_default": false,
+    "setup_error": false,
+    "expected_binding": null
+  },
+  {
+    "id": "whitespace-id",
+    "registrations": [
+      {
+        "binding": {
+          "id": "typeflux.default",
+          "version": 1
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      }
+    ],
+    "default_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    },
+    "run": {
+      "agent_binding": {
+        "id": " bad",
+        "version": 1
+      }
+    },
+    "required_operations": [
+      "send"
+    ],
+    "select_default": false,
+    "setup_error": false,
+    "expected_binding": null
+  },
+  {
+    "id": "nonpositive-version",
+    "registrations": [
+      {
+        "binding": {
+          "id": "typeflux.default",
+          "version": 1
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      }
+    ],
+    "default_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    },
+    "run": {
+      "agent_binding": {
+        "id": "typeflux.default",
+        "version": 0
+      }
+    },
+    "required_operations": [
+      "send"
+    ],
+    "select_default": false,
+    "setup_error": false,
+    "expected_binding": null
+  },
+  {
+    "id": "missing-operation",
+    "registrations": [
+      {
+        "binding": {
+          "id": "typeflux.default",
+          "version": 1
+        },
+        "operations": [
+          "send"
+        ]
+      }
+    ],
+    "default_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    },
+    "run": {},
+    "required_operations": [
+      "send",
+      "observe"
+    ],
+    "select_default": false,
+    "setup_error": false,
+    "expected_binding": null
+  },
+  {
+    "id": "alternate-default",
+    "registrations": [
+      {
+        "binding": {
+          "id": "typeflux.default",
+          "version": 1
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      },
+      {
+        "binding": {
+          "id": "test.alternate",
+          "version": 2
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      }
+    ],
+    "default_binding": {
+      "id": "test.alternate",
+      "version": 2
+    },
+    "run": {},
+    "required_operations": [
+      "send"
+    ],
+    "select_default": true,
+    "setup_error": false,
+    "expected_binding": {
+      "id": "test.alternate",
+      "version": 2
+    }
+  },
+  {
+    "id": "alternate-exact",
+    "registrations": [
+      {
+        "binding": {
+          "id": "typeflux.default",
+          "version": 1
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      },
+      {
+        "binding": {
+          "id": "test.alternate",
+          "version": 2
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      }
+    ],
+    "default_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    },
+    "run": {
+      "agent_binding": {
+        "id": "test.alternate",
+        "version": 2
+      }
+    },
+    "required_operations": [
+      "send"
+    ],
+    "select_default": false,
+    "setup_error": false,
+    "expected_binding": {
+      "id": "test.alternate",
+      "version": 2
+    }
+  },
+  {
+    "id": "legacy-with-alternate-default",
+    "registrations": [
+      {
+        "binding": {
+          "id": "typeflux.default",
+          "version": 1
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      },
+      {
+        "binding": {
+          "id": "test.alternate",
+          "version": 2
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      }
+    ],
+    "default_binding": {
+      "id": "test.alternate",
+      "version": 2
+    },
+    "run": {},
+    "required_operations": [
+      "send"
+    ],
+    "select_default": false,
+    "setup_error": false,
+    "expected_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    }
+  },
+  {
+    "id": "legacy-without-legacy-registration",
+    "registrations": [
+      {
+        "binding": {
+          "id": "test.alternate",
+          "version": 2
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      }
+    ],
+    "default_binding": {
+      "id": "test.alternate",
+      "version": 2
+    },
+    "run": {},
+    "required_operations": [
+      "send"
+    ],
+    "select_default": false,
+    "setup_error": false,
+    "expected_binding": null
+  },
+  {
+    "id": "duplicate",
+    "registrations": [
+      {
+        "binding": {
+          "id": "typeflux.default",
+          "version": 1
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      },
+      {
+        "binding": {
+          "id": "typeflux.default",
+          "version": 1
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      }
+    ],
+    "default_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    },
+    "run": {},
+    "required_operations": [
+      "send"
+    ],
+    "select_default": false,
+    "setup_error": true,
+    "expected_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    }
+  },
+  {
+    "id": "missing-default",
+    "registrations": [],
+    "default_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    },
+    "run": {},
+    "required_operations": [
+      "send"
+    ],
+    "select_default": false,
+    "setup_error": true,
+    "expected_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    }
+  },
+  {
+    "id": "invalid-registration",
+    "registrations": [
+      {
+        "binding": {
+          "id": "bad id",
+          "version": 1
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      }
+    ],
+    "default_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    },
+    "run": {},
+    "required_operations": [
+      "send"
+    ],
+    "select_default": false,
+    "setup_error": true,
+    "expected_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    }
+  },
+  {
+    "id": "invalid-default",
+    "registrations": [
+      {
+        "binding": {
+          "id": "typeflux.default",
+          "version": 1
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      }
+    ],
+    "default_binding": {
+      "id": "typeflux.default",
+      "version": -1
+    },
+    "run": {},
+    "required_operations": [
+      "send"
+    ],
+    "select_default": false,
+    "setup_error": true,
+    "expected_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    }
+  },
+  {
+    "id": "empty-required",
+    "registrations": [
+      {
+        "binding": {
+          "id": "typeflux.default",
+          "version": 1
+        },
+        "operations": [
+          "send",
+          "result",
+          "inference_result",
+          "cancel",
+          "retry",
+          "regenerate",
+          "steer",
+          "resume",
+          "observe"
+        ]
+      }
+    ],
+    "default_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    },
+    "run": {},
+    "required_operations": [],
+    "select_default": false,
+    "setup_error": false,
+    "expected_binding": {
+      "id": "typeflux.default",
+      "version": 1
+    }
+  }
+]

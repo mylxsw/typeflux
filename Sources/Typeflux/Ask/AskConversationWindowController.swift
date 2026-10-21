@@ -41,6 +41,23 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     /// as soon as the interface style changes in Settings.
     private lazy var interfaceStyle = InterfaceStyleObserver(settings: settings)
 
+    /// Keeps production composition testable without opening workspace windows.
+    static func makeAPI(settings: SettingsStore, modelLibrary: AskModelLibrary,
+                        cloud: any AskAPI = AskAPIClient(), local: (any AskAPI)? = nil) -> AskApplicationAPI {
+        let search = AskSearchSettings(defaults: settings.defaults)
+        return AskApplicationAPI.routed(
+            cloud: cloud, local: local ?? AskLocalEngine(webTools: AskLocalWebTools(searchProvider: {
+            search.configuration
+        }), budgetEnabled: settings.defaults.bool(forKey: "ask.budgetEnabled"), contextLimits: { reference in
+            let model = ModelRegistry.read(search.defaults)?.resolve(reference)?.1
+            return AskContextLimits(window: model?.contextWindowTokens ?? 32768,
+                                    maxOutput: model?.maxOutputTokens ?? 4096,
+                                    known: model?.contextWindowTokens != nil)
+        }, summarize: { [modelLibrary] inference, run, device in
+            await AskAuxiliaryInference.complete(inference, run: run, device: device, library: modelLibrary)
+        }))
+    }
+
     init(settings: SettingsStore, injector: TextInjector, registry: MCPRegistry, modelLibrary: AskModelLibrary,
          llmService: LLMService? = nil, translationEngines: AskTranslationEngineFactory? = nil, dockVisibility: DockVisibilityController = .shared,
          launcherInputSource: any AskLauncherInputSourceSelecting = SystemAskLauncherInputSourceSelector(),
@@ -74,18 +91,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         let deviceKey = "ask.deviceId"
         let deviceId = settings.defaults.string(forKey: deviceKey) ?? UUID().uuidString
         settings.defaults.set(deviceId, forKey: deviceKey)
-        let search = AskSearchSettings(defaults: settings.defaults)
-        let api: any AskAPI = services?.api ?? AskApplicationAPI.routed(
-            cloud: AskAPIClient(), local: AskLocalEngine(webTools: AskLocalWebTools(searchProvider: {
-            search.configuration
-        }), budgetEnabled: settings.defaults.bool(forKey: "ask.budgetEnabled"), contextLimits: { reference in
-            let model = ModelRegistry.read(search.defaults)?.resolve(reference)?.1
-            return AskContextLimits(window: model?.contextWindowTokens ?? 32768,
-                                    maxOutput: model?.maxOutputTokens ?? 4096,
-                                    known: model?.contextWindowTokens != nil)
-        }, summarize: { [modelLibrary] inference, run, device in
-            await AskAuxiliaryInference.complete(inference, run: run, device: device, library: modelLibrary)
-        }))
+        let api: any AskAPI = services?.api ?? Self.makeAPI(settings: settings, modelLibrary: modelLibrary)
         model = AskConversationModel(api: api, cache: cache, tools: tools, workspaces: workspaces,
                                      capture: services?.capture ?? AskContextCapture(
                                          injector: injector, memory: AskMemoryProvider(settings: settings),

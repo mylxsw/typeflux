@@ -8,8 +8,16 @@ struct AskApplicationAPI: AskAPI {
 
     /// Retains the existing token-based local/cloud routing for every capability.
     static func routed(cloud: any AskAPI, local: any AskAPI) -> AskApplicationAPI {
-        let routed = AskRoutedAPI(cloud: cloud, local: local)
-        return .init(runtime: routed, conversations: routed, modelAccess: routed)
+        do {
+            let registry = try AskAgentRegistry(registrations: [
+                .init(descriptor: .default, runtime: local)
+            ], defaultBinding: .default)
+            let composedLocal = try AskApplicationAPI(registry: registry, conversations: local, modelAccess: local)
+            let routed = AskRoutedAPI(cloud: cloud, local: composedLocal)
+            return .init(runtime: routed, conversations: routed, modelAccess: routed)
+        } catch {
+            preconditionFailure("Invalid default Ask runtime composition")
+        }
     }
 
     func updateTitle(id: String, request: AskTitleRequest, token: String) async throws -> AskConversation {
@@ -74,5 +82,14 @@ struct AskApplicationAPI: AskAPI {
     }
     func purgeMemory(owner: String, token: String) async throws {
         try await conversations.purgeMemory(owner: owner, token: token)
+    }
+}
+
+extension AskApplicationAPI {
+    /// Validate the complete runtime contract before publishing an application API.
+    /// Production callers supply only the canonical default local registration.
+    init(registry: AskAgentRegistry, conversations: any AskConversationAccess, modelAccess: any AskModelAccess) throws {
+        let selected = try registry.selectDefault(requiredOperations: Set(AskAgentOperation.allCases))
+        self.init(runtime: selected.runtime, conversations: conversations, modelAccess: modelAccess)
     }
 }
