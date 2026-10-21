@@ -205,7 +205,7 @@ struct TFButton: View {
         if isLoading && (systemImage != nil || iconOnly) {
             TFSpinner(size: size)
         } else if let systemImage {
-            Image(systemName: systemImage)
+            Image(systemName: systemImage).aiSymbolTint(systemImage)
                 .font(.system(size: size.iconSize, weight: .semibold))
         }
     }

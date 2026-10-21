@@ -73,7 +73,7 @@ struct AskLibraryBarButton: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 5) {
-                Image(systemName: symbol).font(.system(size: 11.5))
+                Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: 11.5))
                 if !compact { Text(title).font(.system(size: 12.5)).lineLimit(1) }
             }
             .fixedSize()

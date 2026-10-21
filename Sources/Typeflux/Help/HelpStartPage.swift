@@ -188,7 +188,7 @@ struct HelpLauncherArt: View {
             HelpBigKeys(keys: keys, pressed: false, accent: false, openSettings: openSettings)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 5) {
-                    Image(systemName: "sparkles").font(.system(size: 11)).foregroundStyle(AskTheme.accent)
+                    Image(systemName: "sparkles").font(.system(size: 11)).foregroundStyle(StudioTheme.aiIcon)
                     Text(L("help.start.launcher.sample.question")).font(.system(size: 12, weight: .medium))
                 }
                 Text(L("help.start.launcher.sample.answer")).font(.system(size: 12))

@@ -550,7 +550,7 @@ struct AskChip: View {
 
     var body: some View {
         HStack(spacing: 5) {
-            Image(systemName: systemImage).font(.system(size: 11, weight: .medium))
+            Image(systemName: systemImage).aiSymbolTint(systemImage).font(.system(size: 11, weight: .medium))
             Text(title).lineLimit(1)
             if let onRemove {
                 Button(action: onRemove) {
@@ -659,7 +659,7 @@ struct AskBanner: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: systemImage ?? defaultSymbol).font(.system(size: 12, weight: .medium))
+            Image(systemName: systemImage ?? defaultSymbol).aiSymbolTint(systemImage ?? defaultSymbol).font(.system(size: 12, weight: .medium))
             Text(text).font(.system(size: 12)).lineLimit(2).textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
             if let actionTitle, let action {
@@ -732,7 +732,7 @@ struct AskSystemLine: View {
         HStack(spacing: 10) {
             rule
             HStack(spacing: 6) {
-                if let systemImage { Image(systemName: systemImage).font(.system(size: 11, weight: .medium)) }
+                if let systemImage { Image(systemName: systemImage).aiSymbolTint(systemImage).font(.system(size: 11, weight: .medium)) }
                 Text(text).lineLimit(2).multilineTextAlignment(.center).textSelection(.enabled)
                 if let actionTitle, let action {
                     Button(action: action) {
@@ -857,7 +857,7 @@ struct AskSendButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: symbol)
+            Image(systemName: symbol).aiSymbolTint(symbol)
                 .font(.system(size: 16, weight: .semibold))
                 .frame(width: AskSendButton.size, height: AskSendButton.size)
                 .contentShape(Circle())
@@ -912,7 +912,7 @@ struct AskKeyCap: View {
 
     var body: some View {
         Group {
-            if let symbol { Image(systemName: symbol).font(.system(size: 9, weight: .semibold)) }
+            if let symbol { Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: 9, weight: .semibold)) }
             else { Text(text ?? "").font(.system(size: 10, weight: .semibold)) }
         }
         .foregroundStyle(StudioTheme.textSecondary)
@@ -1051,7 +1051,7 @@ struct AskGhostButton: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 5) {
-                Image(systemName: systemImage).font(.system(size: 10.5))
+                Image(systemName: systemImage).aiSymbolTint(systemImage).font(.system(size: 10.5))
                 Text(title).font(.system(size: 11.5, weight: .medium)).lineLimit(1)
             }
             .foregroundStyle(foreground)
@@ -1145,7 +1145,7 @@ private struct AskSelectionActionButton: View {
     var body: some View {
         Button(action: perform) {
             HStack(spacing: 5) {
-                Image(systemName: action.systemImage).font(.system(size: 11))
+                Image(systemName: action.systemImage).aiSymbolTint(action.systemImage).font(.system(size: 11))
                 Text(action.title).font(.system(size: 12, weight: .medium)).lineLimit(1)
             }
             .foregroundStyle(hovering ? AskTheme.accentText : StudioTheme.textSecondary)
@@ -1740,7 +1740,7 @@ struct AskTitleBarButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: symbol).font(.system(size: 14, weight: .regular))
+            Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: 14, weight: .regular))
                 .foregroundStyle(hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
                 .frame(width: Self.size.width, height: Self.size.height)
                 .background(hovering ? AskTheme.hoverFill : .clear, in: style.controlShape(height: Self.size.height))

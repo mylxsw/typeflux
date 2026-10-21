@@ -157,7 +157,7 @@ struct TFSegmentedControl<Value: Hashable>: View {
         } label: {
             HStack(spacing: 5) {
                 if let symbol = option.systemImage {
-                    Image(systemName: symbol).font(.system(size: size.iconSize + 1, weight: .medium))
+                    Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: size.iconSize + 1, weight: .medium))
                 }
                 if !option.title.isEmpty {
                     Text(option.title)
@@ -272,7 +272,7 @@ struct TFPaneList<ID: Hashable>: View {
         let selected = item.id == selection
         return Button { selection = item.id } label: {
             HStack(spacing: 9) {
-                Image(systemName: item.systemImage)
+                Image(systemName: item.systemImage).aiSymbolTint(item.systemImage)
                     .font(.system(size: 13))
                     .foregroundStyle(selected ? TFColors.accent : TFColors.textSecondary)
                     .frame(width: 18)

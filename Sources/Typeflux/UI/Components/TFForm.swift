@@ -96,7 +96,7 @@ struct TFFormRow<Control: View>: View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 6) {
                 if let systemImage {
-                    Image(systemName: systemImage).font(.system(size: 13, weight: .semibold)).foregroundStyle(imageTint)
+                    Image(systemName: systemImage).aiSymbolTint(systemImage).font(.system(size: 13, weight: .semibold)).foregroundStyle(imageTint)
                         .accessibilityHidden(true)
                 }
                 Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(TFColors.textPrimary)

@@ -27,7 +27,7 @@ struct TFNotice: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
-            Image(systemName: systemImage).foregroundStyle(color).accessibilityHidden(true)
+            Image(systemName: systemImage).aiSymbolTint(systemImage).foregroundStyle(color).accessibilityHidden(true)
             Text(text)
                 .foregroundStyle(tone == .info ? TFColors.textSecondary : color)
                 .fixedSize(horizontal: false, vertical: true)
@@ -167,7 +167,7 @@ struct TFChecklist: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             if let systemImage {
-                Image(systemName: systemImage).font(.system(size: 15)).foregroundStyle(TFColors.textSecondary)
+                Image(systemName: systemImage).aiSymbolTint(systemImage).font(.system(size: 15)).foregroundStyle(TFColors.textSecondary)
                     .padding(.bottom, 3).accessibilityHidden(true)
             }
             ForEach(Array(items.enumerated()), id: \.offset) { _, item in
@@ -235,7 +235,7 @@ struct TFTermTile: View {
                 if let image {
                     Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
                 } else if let systemImage {
-                    Image(systemName: systemImage).font(.system(size: 12)).foregroundStyle(TFColors.textTertiary)
+                    Image(systemName: systemImage).aiSymbolTint(systemImage).font(.system(size: 12)).foregroundStyle(TFColors.textTertiary)
                 }
             }
             .frame(width: 16, height: 16)

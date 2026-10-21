@@ -207,7 +207,7 @@ struct AskTranslationServiceIcon: View {
                     weight: .bold
                 ))
             } else {
-                Image(systemName: service.symbol).font(.system(size: 10, weight: .semibold))
+                Image(systemName: service.symbol).aiSymbolTint(service.symbol).font(.system(size: 10, weight: .semibold))
             }
         }
         .foregroundStyle(.white).frame(width: 19, height: 19)

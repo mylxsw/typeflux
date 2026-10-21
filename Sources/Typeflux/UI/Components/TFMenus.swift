@@ -73,7 +73,7 @@ struct TFPopUpButton<Value: Hashable>: View {
                 HStack(spacing: size.spacing) {
                     if let leading { leading(selection) }
                     if let symbol = current?.systemImage, leading == nil {
-                        Image(systemName: symbol).font(.system(size: size.iconSize))
+                        Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: size.iconSize))
                     }
                     Text(current?.title ?? title)
                         .fontWeight(.regular)
@@ -169,7 +169,7 @@ struct TFMenuButton: View {
                            hoverOverride: hovering) {
                 HStack(spacing: size.spacing) {
                     if let systemImage {
-                        Image(systemName: systemImage).font(.system(size: size.iconSize, weight: .semibold))
+                        Image(systemName: systemImage).aiSymbolTint(systemImage).font(.system(size: size.iconSize, weight: .semibold))
                     }
                     if !iconOnly {
                         Text(title)

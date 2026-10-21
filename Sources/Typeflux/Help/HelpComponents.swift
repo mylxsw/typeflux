@@ -195,7 +195,7 @@ struct HelpRow<Trailing: View>: View {
     var body: some View {
         let content = HStack(spacing: 12) {
             if let symbol {
-                Image(systemName: symbol).font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
+                Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
                     .frame(width: 20)
             }
             VStack(alignment: .leading, spacing: 1) {
@@ -249,7 +249,7 @@ struct HelpButton: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 6) {
-                if let symbol { Image(systemName: symbol).font(.system(size: 12)) }
+                if let symbol { Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: 12)) }
                 Text(title)
                 if let trailing { Text(trailing).opacity(0.75) }
             }

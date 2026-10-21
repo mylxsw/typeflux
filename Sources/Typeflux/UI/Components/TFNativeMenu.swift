@@ -81,7 +81,13 @@ struct TFNativeMenuEntry: Equatable {
                 if let image = entry.image {
                     item.image = image
                 } else if let symbol = entry.systemImage {
-                    item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+                    let image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+                    if symbol == "sparkles" {
+                        item.image = image?.withSymbolConfiguration(.init(paletteColors: [NSColor(StudioTheme.aiIcon)]))
+                        item.image?.isTemplate = false
+                    } else {
+                        item.image = image
+                    }
                 }
                 item.state = entry.isSelected ? .on : .off
                 item.isEnabled = entry.isEnabled

@@ -70,7 +70,7 @@ struct BackgroundActivityRowView: View {
         default: break
         }
         switch activity.kind {
-        case .agent: return ("sparkles", .green)
+        case .agent: return ("sparkles", StudioTheme.aiIcon)
         case .download: return ("arrow.down", .blue)
         case .index: return ("doc.text.magnifyingglass", .indigo)
         }

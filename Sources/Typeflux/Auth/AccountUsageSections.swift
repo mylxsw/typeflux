@@ -30,7 +30,7 @@ struct AccountUsageMetricsGrid: View {
     private func metric(symbol: String, tint: Color, title: String, value: String, detail: String) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 6) {
-                Image(systemName: symbol)
+                Image(systemName: symbol).aiSymbolTint(symbol)
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(tint)
                     .frame(width: 18, height: 18)

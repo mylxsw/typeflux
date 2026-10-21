@@ -62,7 +62,7 @@ struct AskKeywordChip: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: symbol)
+            Image(systemName: symbol).aiSymbolTint(symbol)
                 .font(.system(size: 10.5, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(width: 20, height: 20)
@@ -401,7 +401,7 @@ struct AskPluginResultsView: View {
     private var highlighted: Bool { display.highlighted == 0 }
 
     private func tile(_ symbol: String) -> some View {
-        Image(systemName: symbol).font(.system(size: 12, weight: .bold))
+        Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: 12, weight: .bold))
             .foregroundStyle(.white)
             .frame(width: 28, height: 28)
             .background(AskTheme.accent, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
@@ -826,7 +826,7 @@ struct AskPluginResultsView: View {
     private func actionButton(title: String, symbol: String, key: String?, primary: Bool,
                               action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: symbol).font(.system(size: 12))
+            Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: 12))
             .foregroundStyle(primary ? AskTheme.accent : StudioTheme.textSecondary)
             .frame(width: 32, height: Self.actionsHeight)
             .background(primary ? AskTheme.accent.opacity(0.16) : AskTheme.hoverFill,

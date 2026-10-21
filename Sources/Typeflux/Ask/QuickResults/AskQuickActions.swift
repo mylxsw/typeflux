@@ -175,7 +175,7 @@ struct AskQuickActionPanelView: View {
                 if case let .openIn(url) = action {
                     AskFileIconView(url: url, thumbnail: false)
                 } else {
-                    Image(systemName: action.symbol).font(.system(size: 11.5, weight: .medium))
+                    Image(systemName: action.symbol).aiSymbolTint(action.symbol).font(.system(size: 11.5, weight: .medium))
                 }
             }
             .frame(width: 16, height: 16)

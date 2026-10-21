@@ -102,7 +102,7 @@ struct AskWorkflowEditorView: View {
     private var header: some View {
         HStack(spacing: 10) {
             if let draft = model.draft {
-                Image(systemName: model.workflow?.symbol ?? "sparkles")
+                Image(systemName: model.workflow?.symbol ?? "sparkles").aiSymbolTint(model.workflow?.symbol ?? "sparkles")
                     .font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
                     .frame(width: 30, height: 30)
                     .background(AskWorkflowEditorStyle.tileColor(for: model.workflowID ?? "new"),
@@ -297,7 +297,7 @@ extension AskWorkflowEditorView {
                         @ViewBuilder actions: () -> some View) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
-                Image(systemName: symbol).foregroundStyle(tint)
+                Image(systemName: symbol).aiSymbolTint(symbol).foregroundStyle(tint)
                 text().font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
                 Spacer()
                 HStack(spacing: 6) { actions() }.buttonStyle(AskWorkflowActionStyle(small: true))
@@ -334,7 +334,7 @@ extension AskWorkflowEditorView {
             Text(L("ask.workflow.editor.empty")).foregroundStyle(StudioTheme.textSecondary)
             HStack {
                 Button { creating = .assistant } label: {
-                    Label(L("ask.workflow.editor.new.ai"), systemImage: "sparkles")
+                    Label { Text(L("ask.workflow.editor.new.ai")) } icon: { Image(systemName: "sparkles").foregroundStyle(StudioTheme.aiIcon) }
                 }
                 .buttonStyle(AskWorkflowActionStyle(kind: .assistant))
                 Button(L("ask.workflow.gallery.fromGalleryMenu")) { showingGallery = true }
@@ -414,7 +414,7 @@ struct AskWorkflowEditorSidebar: View {
             HStack(spacing: 6) {
                 Menu {
                     Button { create(.assistant) } label: {
-                        Label(L("ask.workflow.editor.new.ai"), systemImage: "sparkles")
+                        Label { Text(L("ask.workflow.editor.new.ai")) } icon: { Image(systemName: "sparkles").foregroundStyle(StudioTheme.aiIcon) }
                     }
                     Button { gallery() } label: {
                         Label(L("ask.workflow.gallery.fromGalleryMenu"), systemImage: "square.grid.2x2")
@@ -482,7 +482,7 @@ struct AskWorkflowEditorSidebar: View {
     private func row(_ row: Row, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 10) {
-                Image(systemName: row.symbol).font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
+                Image(systemName: row.symbol).aiSymbolTint(row.symbol).font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
                     .frame(width: 26, height: 26)
                     .background(AskWorkflowEditorStyle.tileColor(for: row.id),
                                 in: RoundedRectangle(cornerRadius: 7, style: .continuous))

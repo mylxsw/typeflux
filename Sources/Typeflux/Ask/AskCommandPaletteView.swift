@@ -149,7 +149,7 @@ private struct AskCommandRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: command.symbol)
+            Image(systemName: command.symbol).aiSymbolTint(command.symbol)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(iconColor)
                 .frame(width: 28, height: 28)

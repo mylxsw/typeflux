@@ -113,7 +113,7 @@ struct AskCreditPauseCard: View {
         if let primary = presentation.primary {
             Button { perform(primary) } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: AskCreditPausePresentation.symbol(primary))
+                    Image(systemName: AskCreditPausePresentation.symbol(primary)).aiSymbolTint(AskCreditPausePresentation.symbol(primary))
                         .font(.system(size: 11, weight: .semibold))
                     Text(L(AskCreditPausePresentation.titleKey(primary)))
                 }

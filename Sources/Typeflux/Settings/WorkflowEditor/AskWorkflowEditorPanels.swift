@@ -111,7 +111,7 @@ struct AskWorkflowTestPanel: View {
             }
             Spacer()
             if !result.succeeded {
-                Button { fix() } label: { Label(L("ask.workflow.assistant.fix"), systemImage: "sparkles") }
+                Button { fix() } label: { Label { Text(L("ask.workflow.assistant.fix")) } icon: { Image(systemName: "sparkles").foregroundStyle(StudioTheme.aiIcon) } }
                     .buttonStyle(AskWorkflowActionStyle(kind: .assistant, small: true))
                     .accessibilityIdentifier("ask.workflow.editor.fix")
             } else {
@@ -359,7 +359,7 @@ struct AskWorkflowAssistantPanel: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 10) {
             Image(systemName: "sparkles").font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(AskWorkflowEditorStyle.assistant)
+                .foregroundStyle(StudioTheme.aiIcon)
                 .frame(width: 34, height: 34)
                 .background(AskWorkflowEditorStyle.assistant.opacity(0.14),
                             in: RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -436,7 +436,7 @@ struct AskWorkflowAssistantPanel: View {
             }
         case let .reply(_, text):
             VStack(alignment: .leading, spacing: 3) {
-                Label(L("ask.workflow.assistant.title"), systemImage: "sparkles")
+                Label { Text(L("ask.workflow.assistant.title")) } icon: { Image(systemName: "sparkles").foregroundStyle(StudioTheme.aiIcon) }
                     .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
                 Text((try? AttributedString(markdown: text,
                                             options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
@@ -464,7 +464,7 @@ struct AskWorkflowAssistantPanel: View {
         let changes = model.draft.map { proposal.changes(against: $0) } ?? []
         return VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 6) {
-                Image(systemName: "sparkles").foregroundStyle(AskWorkflowEditorStyle.assistant)
+                Image(systemName: "sparkles").foregroundStyle(StudioTheme.aiIcon)
                 Text(L("ask.workflow.assistant.proposal")).font(.system(size: 12, weight: .semibold))
                 Spacer()
                 Text(stateText(proposal, files: changes.count)).font(.system(size: 11))

@@ -1510,7 +1510,7 @@ struct AskReasoningView: View {
         VStack(alignment: .leading, spacing: 8) {
             Button { expanded.toggle() } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "sparkles").font(.system(size: 11))
+                    Image(systemName: "sparkles").foregroundStyle(StudioTheme.aiIcon).font(.system(size: 11))
                     Text(label)
                         .font(.system(size: 12.5, weight: .medium))
                         .modifier(AskShimmer(active: active))

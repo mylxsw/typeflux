@@ -906,7 +906,7 @@ struct AskWordBookDetail: View {
                 HStack(spacing: 10) {
                     Text(L("ask.wordBook.plainHint")).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
                     Button { regenerate(entry) } label: {
-                        Label(L("ask.plugin.action.wordCard"), systemImage: "sparkles").font(.system(size: 12.5))
+                        Label { Text(L("ask.plugin.action.wordCard")) } icon: { Image(systemName: "sparkles").foregroundStyle(StudioTheme.aiIcon) }.font(.system(size: 12.5))
                             .foregroundStyle(StudioTheme.textPrimary)
                             .padding(.horizontal, 10).frame(height: 28)
                             .askWordBookControl()

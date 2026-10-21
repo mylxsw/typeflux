@@ -66,7 +66,7 @@ struct AskWorkflowBadge: View {
     var body: some View {
         HStack(spacing: 3) {
             if let symbol {
-                Image(systemName: symbol).font(.system(size: 9, weight: .bold))
+                Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: 9, weight: .bold))
             }
             Text(text)
         }
@@ -242,7 +242,7 @@ struct AskWorkflowTabs<Tab: Hashable>: View {
                 Button { selection = item.tab } label: {
                     HStack(spacing: 5) {
                         if let symbol = item.symbol {
-                            Image(systemName: symbol).font(.system(size: size - 2, weight: .semibold))
+                            Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: size - 2, weight: .semibold))
                                 .foregroundStyle(selected ? item.tint : StudioTheme.textTertiary)
                         }
                         Text(item.title).font(.system(size: size, weight: selected ? .semibold : .regular))
@@ -518,7 +518,7 @@ struct AskWorkflowRiskChips: View {
     private func chip(_ text: String, symbol: String?, highlighted: Bool) -> some View {
         HStack(spacing: 4) {
             if let symbol {
-                Image(systemName: symbol)
+                Image(systemName: symbol).aiSymbolTint(symbol)
             }
             Text(text)
         }

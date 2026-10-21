@@ -91,7 +91,7 @@ struct AskPluginItemIcon: View {
             } else if case let .fileType(type) = icon {
                 AskNativeIconView(icon: .init(kind: .type, value: type), symbol: symbol).frame(width: 26, height: 26)
             } else {
-                Image(systemName: Self.symbolName(icon) ?? symbol)
+                Image(systemName: Self.symbolName(icon) ?? symbol).aiSymbolTint(Self.symbolName(icon) ?? symbol)
                     .font(.system(size: 12.5, weight: .semibold))
                     .foregroundStyle(filled ? AskTheme.accentText : StudioTheme.textSecondary)
                     .frame(width: 28, height: 28)

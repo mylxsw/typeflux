@@ -1152,7 +1152,7 @@ struct StudioButton: View {
                         .controlSize(.small)
                         .tint(variant == .primary ? .white : StudioTheme.textSecondary)
                 } else if let systemImage {
-                    Image(systemName: systemImage)
+                    Image(systemName: systemImage).aiSymbolTint(systemImage)
                         .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
                 }
                 Text(title)
@@ -1190,7 +1190,7 @@ struct StudioIconButton: View {
                         .controlSize(.small)
                         .tint(variant == .primary ? .white : StudioTheme.textSecondary)
                 } else {
-                    Image(systemName: systemImage)
+                    Image(systemName: systemImage).aiSymbolTint(systemImage)
                         .font(.system(size: StudioTheme.Typography.iconRegular, weight: .medium))
                 }
             }
@@ -1209,7 +1209,7 @@ struct StudioPill: View {
     var body: some View {
         HStack(spacing: 4) {
             if let systemImage {
-                Image(systemName: systemImage)
+                Image(systemName: systemImage).aiSymbolTint(systemImage)
                     .font(.system(size: StudioTheme.Typography.caption - 1, weight: .semibold))
             }
             Text(title)
@@ -1234,7 +1234,7 @@ struct StudioTag: View {
     var body: some View {
         HStack(spacing: 3) {
             if let systemImage {
-                Image(systemName: systemImage)
+                Image(systemName: systemImage).aiSymbolTint(systemImage)
                     .font(.system(size: StudioTheme.Typography.caption - 2, weight: .bold))
             }
             Text(title)
@@ -1260,7 +1260,7 @@ struct StudioMetricCard: View {
                     .fill(StudioTheme.iconTileSurface)
                     .frame(width: StudioTheme.ControlSize.overviewBadge, height: StudioTheme.ControlSize.overviewBadge)
                     .overlay(
-                        Image(systemName: icon)
+                        Image(systemName: icon).aiSymbolTint(icon)
                             .font(.system(size: StudioTheme.Typography.iconRegular, weight: .semibold))
                             .foregroundStyle(StudioTheme.accent)
                     )

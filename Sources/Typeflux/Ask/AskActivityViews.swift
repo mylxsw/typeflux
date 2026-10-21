@@ -216,7 +216,7 @@ private struct AskStepNote: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
-            if let symbol { Image(systemName: symbol).font(.system(size: 10)) }
+            if let symbol { Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: 10)) }
             Text(text)
                 .font(.system(size: 12.5))
                 .lineSpacing(2)

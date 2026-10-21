@@ -66,7 +66,7 @@ struct AskLauncherInputHistoryView: View {
     private func row(_ entry: AskLauncherInputHistory.Entry, index: Int, selected: Bool) -> some View {
         Button { model.fillLauncherInputHistory(entry) } label: {
             HStack(spacing: 10) {
-                Image(systemName: symbol(entry.destination))
+                Image(systemName: symbol(entry.destination)).aiSymbolTint(symbol(entry.destination))
                     .font(.system(size: 15))
                     .foregroundStyle(entry.destination == .unsent ? Color.orange : AskTheme.accent)
                     .frame(width: 26)

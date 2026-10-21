@@ -294,7 +294,7 @@ private struct AskAccountLinkRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 9) {
-                Image(systemName: symbol)
+                Image(systemName: symbol).aiSymbolTint(symbol)
                     .font(.system(size: 13))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .frame(width: 16)

@@ -187,12 +187,12 @@ struct AskNotesSidebar: View {
         } label: {
             Image(systemName: "sparkles")
                 .font(.system(size: 12.5))
-                .foregroundStyle(model.agentEnabled ? AskTheme.accent : StudioTheme.textTertiary)
+                .foregroundStyle(model.agentEnabled ? StudioTheme.aiIcon : StudioTheme.textTertiary)
                 .frame(width: 28, height: 28)
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
-        .tint(model.agentEnabled ? AskTheme.accent : StudioTheme.textTertiary)
+        .tint(model.agentEnabled ? StudioTheme.aiIcon : StudioTheme.textTertiary)
         .fixedSize()
         .help(L("ask.notes.agent.title"))
         .accessibilityLabel(L("ask.notes.agent.title"))

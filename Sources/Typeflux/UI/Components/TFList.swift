@@ -38,7 +38,8 @@ struct TFIconTile: View {
     }
 
     private var fill: Color {
-        switch style {
+        if systemImage == "sparkles" || systemImage == "sparkle" { return TFColors.control }
+        return switch style {
         case .filled: tint
         case .soft: tint.opacity(0.15)
         case .neutral: TFColors.control
@@ -46,7 +47,8 @@ struct TFIconTile: View {
     }
 
     private var glyph: Color {
-        switch style {
+        if systemImage == "sparkles" || systemImage == "sparkle" { return StudioTheme.aiIcon }
+        return switch style {
         case .filled: .white
         case .soft: tint
         case .neutral: TFColors.textSecondary

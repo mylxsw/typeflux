@@ -861,7 +861,7 @@ struct ScreenshotEditorToolbar: View {
     /// All follow-ups use compact icons; their localized names remain available to assistive technology.
     private func followUpButton(_ followUp: ScreenshotFollowUp) -> some View {
         iconButton(followUp.symbol, help: followUp.title,
-                   tint: followUp == .askAI ? AskTheme.accent : nil) { perform(.followUp(followUp)) }
+                   tint: followUp == .askAI ? StudioTheme.aiIcon : nil) { perform(.followUp(followUp)) }
             .accessibilityLabel(followUp.title)
             .accessibilityIdentifier("screenshot.followUp.\(followUp.rawValue)")
     }

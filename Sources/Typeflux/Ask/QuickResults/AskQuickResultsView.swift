@@ -425,7 +425,7 @@ struct AskQuickResultsView: View {
     }
 
     private func tile(_ symbol: String, tint: Color) -> some View {
-        Image(systemName: symbol).font(.system(size: 12.5, weight: .semibold))
+        Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: 12.5, weight: .semibold))
             .foregroundStyle(tint)
             .frame(width: 28, height: 28)
             .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 9, style: .continuous))

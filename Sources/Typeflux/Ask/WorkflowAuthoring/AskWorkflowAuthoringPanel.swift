@@ -272,7 +272,7 @@ struct AskWorkflowAuthoringPanel: View {
                                 if completing {
                                     ProgressView().controlSize(.mini)
                                 } else {
-                                    Image(systemName: "sparkles").font(.system(size: 11, weight: .semibold))
+                                    Image(systemName: "sparkles").foregroundStyle(StudioTheme.aiIcon).font(.system(size: 11, weight: .semibold))
                                 }
                                 Text(L("ask.workflow.chat.complete"))
                             }
