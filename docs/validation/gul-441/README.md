@@ -1,3 +1,7 @@
+The parent acceptance corrections are complete locally. Current-source changed coverage is **648/692 (93.64%)**; the correction alone is **8/8 (100%)**. [Correction details, exact commands/timings, raw logs, source hashes and updated menu screenshots](correction/README.md) supersede the historical browser-history and four-choice presentation claims below. The final PR head is recorded in the handoff comment and PR description.
+
+The remaining text records the initial `050b22c075d2f9dc147594110fe26e1b0c97acdc` delivery. Its run counts and timing are historical; current coverage reports at this path have been recomputed.
+
 GUL-441 implements local task/conversation-session folder grants and revocation, exact browser-origin policy, and fresh consent for generic browser mutations. The base is accepted GUL-440 main, `aeda1f98e294e9f24406c3e0b1402a5570c1f9b7`. No Go or harness DTO changed. Architecture acceptance and merging remain with the parent.
 
 Folder authority is an injected, locked, in-memory store. A local submission generation and exact message must be admitted before task roots execute. Owner, device, epoch, conversation, task/run, revision and descriptor identity constrain leases. Cancellation revokes local task authority without asserting remote termination; session grants survive task settlement and history retention, and expire on revoke, conversation deletion/discard, account reset or app exit. Historical labels and saved legacy paths do not restore grants. Settings/workspace sources remain independent, including overlapping roots.

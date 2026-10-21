@@ -5941,7 +5941,7 @@
 "ask.web.giveBack" = "AI에게 돌려주기";
 "ask.web.permission.off" = "끔";
 "ask.web.permission.ask" = "매번 확인";
-"ask.web.permission.read" = "읽기만";
+"ask.web.permission.read" = "읽기 및 탐색";
 "ask.web.permission.act" = "읽기 및 탐색";
 "ask.web.permission.help" = "이 사이트에서 AI가 할 수 있는 작업입니다. '사이트 및 로그인'에서 변경하세요.";
 "ask.web.permission.label" = "%@의 AI 권한";

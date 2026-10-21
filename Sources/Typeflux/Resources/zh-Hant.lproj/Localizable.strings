@@ -5982,7 +5982,7 @@
 "ask.web.giveBack" = "交還給 AI";
 "ask.web.permission.off" = "禁止";
 "ask.web.permission.ask" = "每次詢問";
-"ask.web.permission.read" = "僅讀取";
+"ask.web.permission.read" = "讀取與導覽";
 "ask.web.permission.act" = "讀取與導覽";
 "ask.web.permission.help" = "AI 在此網站上的權限，可在「網站與登入」中修改。";
 "ask.web.permission.label" = "%@ 的 AI 權限";

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "swiftlint",
+    "lint",
+    "--quiet",
+    "Sources/Typeflux/Ask/Browser/AskBrowserSitePolicy.swift",
+    "Sources/Typeflux/Ask/Browser/AskBrowserSitesView.swift",
+    "Sources/Typeflux/Ask/Browser/AskEmbeddedBrowserTool.swift",
+    "Tests/TypefluxTests/AskBrowserPanelRenderTests.swift",
+    "Tests/TypefluxTests/AskBrowserSitePolicyTests.swift",
+    "Tests/TypefluxTests/AskScopedApprovalTests.swift",
+    "Tests/TypefluxTests/AskBrowserBackNavigationTests.swift"
+  ],
+  "wall_seconds": 0.32077220792416483,
+  "exit_code": 2
+}

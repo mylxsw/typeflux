@@ -6059,7 +6059,7 @@
 "ask.web.giveBack" = "交还给 AI";
 "ask.web.permission.off" = "禁止";
 "ask.web.permission.ask" = "每次询问";
-"ask.web.permission.read" = "仅读取";
+"ask.web.permission.read" = "读取与导航";
 "ask.web.permission.act" = "读取与导航";
 "ask.web.permission.help" = "AI 在此站点上的权限，可在「站点与登录」中修改。";
 "ask.web.permission.label" = "%@ 的 AI 权限";

@@ -6,7 +6,10 @@ import Foundation
 enum AskBrowserSitePermission: String, CaseIterable, Codable, Sendable {
     case off, ask, read, act
 
-    var title: String { L("ask.web.permission." + rawValue) }
+    /// Compatibility values remain decodable; presentation offers one read/navigation choice.
+    static let choices: [Self] = [.off, .ask, .read]
+    var presented: Self { self == .act ? .read : self }
+    var title: String { L("ask.web.permission." + presented.rawValue) }
 }
 
 /// Exact HTTP origin. Paths, cookies, display names and userinfo cannot mint authority.

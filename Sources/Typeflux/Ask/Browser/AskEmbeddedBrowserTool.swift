@@ -190,6 +190,10 @@ final class AskEmbeddedBrowserTool {
         try Task.checkCancellation()
         try authorize()
         guard !tab.isPrivate, try binding(args) == expected else { throw AskObservationError.needsObservation }
+        if action == "back" {
+            // Back consumes both the current page and its history destination.
+            try checkAllowed(host: AskHTTPOrigin(tab.url)?.description)
+        }
         try checkAllowed(host: governingOrigin(args))
         workspace.select(tab)
         workspace.requestPresentation()

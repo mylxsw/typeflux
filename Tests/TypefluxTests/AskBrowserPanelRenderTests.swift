@@ -95,7 +95,7 @@ struct AskBrowserPanelRenderTests {
         let (workspace, defaults) = makeWorkspace()
         defaults.set(["legacy.invalid": "act"], forKey: AskBrowserSitePolicy.defaultsKey)
         try render(AskBrowserSitesView(workspace: workspace), name: "browser-sites-empty", size: NSSize(width: 560, height: 360))
-        workspace.policy.set(.read, for: "https://mail.google.com")
+        workspace.policy.set(.act, for: "https://mail.google.com")
         workspace.policy.set(.off, for: "https://example.com")
         let size = NSSize(width: 560, height: 420)
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],
@@ -118,6 +118,14 @@ struct AskBrowserPanelRenderTests {
             try await Task.sleep(for: .milliseconds(20))
         }
         #expect(rows == 2, "Both exact-origin controls must be visible inside the sheet")
+        let pickers = descendants(hosting).compactMap { $0 as? NSPopUpButton }
+        for picker in pickers {
+            #expect(picker.itemTitles == AskBrowserSitePermission.choices.map(\.title))
+        }
+        #expect(pickers.contains { $0.titleOfSelectedItem == AskBrowserSitePermission.read.title },
+                "Persisted act must select the canonical read/navigation option")
+        #expect(workspace.policy.permission(for: "https://mail.google.com") == .act,
+                "Rendering must not rewrite compatibility storage")
         try await Task.sleep(for: .milliseconds(50))
         hosting.layoutSubtreeIfNeeded()
         try snapshot(hosting, name: "browser-sites")

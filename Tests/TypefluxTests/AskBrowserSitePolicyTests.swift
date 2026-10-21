@@ -155,3 +155,43 @@ final class AskBrowserSitePolicyTests: XCTestCase {
         XCTAssertFalse(AskBrowserTab.allowsNavigation(to: URL(string: "javascript:alert(1)")))
     }
 }
+
+extension AskBrowserSitePolicyTests {
+    func testPresentationOffersThreeChoicesAndCanonicalizesOnlyNewSelections() throws {
+        typealias Permission = AskBrowserSitePermission
+        XCTAssertEqual(Permission.choices, [.off, .ask, .read])
+        XCTAssertEqual(Permission.act.presented, .read)
+        for permission in Permission.choices { XCTAssertEqual(permission.presented, permission) }
+        XCTAssertEqual(Permission.act.title, Permission.read.title)
+        XCTAssertEqual(Set(Permission.choices.map(\.title)).count, 3)
+        for language in AppLanguage.allCases {
+            let bundle = try XCTUnwrap(language.bundleLocalizationCandidates.lazy
+                .compactMap { Bundle.appResources.path(forResource: $0, ofType: "lproj") }.first.flatMap(Bundle.init(path:)))
+            let titles = Permission.choices.map { bundle.localizedString(forKey: "ask.web.permission." + $0.rawValue,
+                                                                        value: nil, table: nil) }
+            XCTAssertEqual(Set(titles).count, 3)
+            XCTAssertEqual(titles.last, bundle.localizedString(forKey: "ask.web.permission.act", value: nil, table: nil))
+        }
+        let store = defaults()
+        let policy = AskBrowserSitePolicy(defaults: store, owner: { "owner" }, deviceId: "device")
+        let origin = "https://example.com"
+        let key = AskBrowserSitePolicy.originDefaultsKey + "." + AskToolPolicy.digest("owner\u{0}device")
+        store.set([origin: "act"], forKey: key)
+        store.set(["legacy.example": "act", "denied.example": "off"], forKey: AskBrowserSitePolicy.defaultsKey)
+        XCTAssertEqual(try JSONDecoder().decode(Permission.self, from: Data("\"act\"".utf8)), .act)
+        XCTAssertEqual(policy.permission(for: origin), .act)
+        XCTAssertEqual(policy.permission(for: origin).presented, .read)
+        XCTAssertEqual((store.dictionary(forKey: key) as? [String: String])?[origin], "act")
+        policy.set(policy.permission(for: origin).presented, for: origin)
+        XCTAssertEqual((store.dictionary(forKey: key) as? [String: String])?[origin], "read")
+        for permission in [Permission.act, .read] {
+            for kind in [AskBrowserRisk.Kind.observe, .navigate] {
+                XCTAssertEqual(AskBrowserRisk.risk(kind, permission: permission), .read)
+            }
+            XCTAssertEqual(AskBrowserRisk.risk(.sensitive, permission: permission), .destructive)
+        }
+        XCTAssertEqual(policy.legacyPreferences["legacy.example"], .act)
+        XCTAssertEqual(policy.permission(for: "https://legacy.example"), .ask)
+        XCTAssertEqual(policy.permission(for: "https://www.denied.example"), .off)
+    }
+}

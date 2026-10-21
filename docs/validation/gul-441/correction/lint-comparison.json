@@ -1,0 +1,27 @@
+{
+  "baseline_errors": [
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)",
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)",
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)",
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)",
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)",
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)",
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)",
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)",
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)",
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)"
+  ],
+  "current_errors": [
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)",
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)",
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)",
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)",
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)",
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)",
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)",
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)",
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)",
+    "Identifier Name Violation: Variable name 'f' should be between 3 and 40 characters long (identifier_name)"
+  ],
+  "same_errors": true
+}

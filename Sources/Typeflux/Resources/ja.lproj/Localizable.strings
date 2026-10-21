@@ -5941,7 +5941,7 @@
 "ask.web.giveBack" = "AI に戻す";
 "ask.web.permission.off" = "オフ";
 "ask.web.permission.ask" = "毎回確認";
-"ask.web.permission.read" = "読み取りのみ";
+"ask.web.permission.read" = "閲覧と移動";
 "ask.web.permission.act" = "閲覧と移動";
 "ask.web.permission.help" = "このサイトで AI ができること。「サイトとサインイン」で変更できます。";
 "ask.web.permission.label" = "%@ の AI 権限";

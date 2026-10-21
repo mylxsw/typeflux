@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python3",
+    "scripts/test_groups.py",
+    "--coverage",
+    "--filter",
+    "AskBrowserPanelRenderTests.sitesSheetRenders"
+  ],
+  "environment": {
+    "TYPEFLUX_BROWSER_SNAPSHOTS": "docs/validation/gul-441/correction"
+  },
+  "wall_seconds": 33.279175582923926,
+  "exit_code": 0
+}

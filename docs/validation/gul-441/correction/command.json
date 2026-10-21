@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "scripts/test_groups.py",
+    "--coverage",
+    "--suite",
+    "AskBrowserSitePolicyTests",
+    "--suite",
+    "AskEmbeddedBrowserToolTests",
+    "--suite",
+    "AskBrowserBackNavigationTests",
+    "--filter",
+    "AskBrowserPanelRenderTests.sitesSheetRenders|AskScopedApprovalTests.*actual embedded browser mutations still ask in yolo mode|AskToolPolicyTests.*"
+  ],
+  "wall_seconds": 368.4529540538788,
+  "exit_code": 0
+}

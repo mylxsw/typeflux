@@ -135,9 +135,9 @@ struct AskBrowserSitesView: View {
             if site.isLegacy { Text(site.permission.title).font(.caption) }
             Spacer(minLength: 8)
             if site.isOrigin {
-                Picker("", selection: Binding(get: { policy.permission(for: site.host) },
+                Picker("", selection: Binding(get: { policy.permission(for: site.host).presented },
                                               set: { policy.set($0, for: site.host) })) {
-                    ForEach(AskBrowserSitePermission.allCases, id: \.self) { Text($0.title).tag($0) }
+                    ForEach(AskBrowserSitePermission.choices, id: \.self) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.menu)
                 .labelsHidden()

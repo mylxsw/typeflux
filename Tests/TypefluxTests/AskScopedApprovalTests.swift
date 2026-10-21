@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import WebKit
 @testable import Typeflux
 
 private struct ApprovalReceiptCatalog: ProviderModelCatalog {
@@ -226,15 +227,24 @@ struct AskScopedApprovalTests {
 }
 
 extension AskScopedApprovalTests {
-    @Test func `actual embedded browser mutations still ask in yolo mode`() async throws {
+    @Test(arguments: ["click", "fill"], [AskBrowserSitePermission.read, .act])
+    func `actual embedded browser mutations still ask in yolo mode`(action: String, permission: AskBrowserSitePermission) async throws {
         let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
         let tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)),
                                   settings: SettingsStore(defaults: defaults), owner: { "owner" })
-        tools.embeddedBrowser = AskEmbeddedBrowserTool(workspace: AskBrowserWorkspace())
+        let workspace = AskBrowserWorkspace(policy: AskBrowserSitePolicy(defaults: defaults), dataStore: .nonPersistent())
+        defer { workspace.tabs.forEach { workspace.close($0) } }
+        let tab = try workspace.newTab()
+        tab.webView.loadHTMLString("<title>Consent fixture</title><input><button>Click</button>",
+                                   baseURL: URL(string: "https://consent.invalid"))
+        try await tab.waitForLoad(timeout: .seconds(3))
+        #expect(tab.url?.host == "consent.invalid")
+        workspace.policy.set(permission, for: "https://consent.invalid")
+        tools.embeddedBrowser = AskEmbeddedBrowserTool(workspace: workspace)
         let fixture = try AskTestFixture(toolsOverride: tools)
         defer { fixture.model.resetSession() }
         fixture.model.setPermissionMode(.yolo, launcher: true)
-        await fixture.api.setTool(call("web_browser", "click"))
+        await fixture.api.setTool(call("web_browser", action))
         fixture.model.launcherDraft = .followUp
         fixture.model.launcherDraft.text = "Click the control"
         fixture.model.submitLauncher()

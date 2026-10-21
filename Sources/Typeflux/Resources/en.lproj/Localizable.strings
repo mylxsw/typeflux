@@ -6058,8 +6058,8 @@
 "ask.web.takenOver.detail" = "The AI is paused until you hand the page back.";
 "ask.web.giveBack" = "Hand Back to AI";
 "ask.web.permission.off" = "Off";
-"ask.web.permission.ask" = "Ask";
-"ask.web.permission.read" = "Read";
+"ask.web.permission.ask" = "Ask each time";
+"ask.web.permission.read" = "Read & navigate";
 "ask.web.permission.act" = "Read & navigate";
 "ask.web.permission.help" = "What the AI may do on this site. Change it in Sites & Sign-ins.";
 "ask.web.permission.label" = "AI permission for %@";
