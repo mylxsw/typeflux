@@ -249,7 +249,7 @@ final class AskLocalModeIntegrationTests: XCTestCase {
         XCTAssertFalse(firstLocal.hasPrefix("cloud:"))
 
         let engine = AskLocalEngine(directory: root.appendingPathComponent("conversations"), webTools: AskLocalWebTools(resolve: { _ in [] }))
-        let model = AskConversationModel(api: AskRoutedAPI(cloud: AskAPIClient(), local: engine),
+        let model = AskConversationModel(api: AskApplicationAPI.routed(cloud: AskAPIClient(), local: engine),
                                          cache: try AskConversationCache(url: root.appendingPathComponent("cache.sqlite")),
                                          tools: AskTestTools(), capture: AskTestCapture(), deviceId: "device", modelLibrary: library,
                                          session: { AskRoutedAPI.session(token: nil, owner: nil) })
@@ -288,7 +288,7 @@ final class AskLocalModeIntegrationTests: XCTestCase {
         XCTAssertEqual(listed.count, 1)
 
         // A Cloud session never falls back.
-        let signedIn = AskConversationModel(api: AskRoutedAPI(cloud: AskAPIClient(), local: engine),
+        let signedIn = AskConversationModel(api: AskApplicationAPI.routed(cloud: AskAPIClient(), local: engine),
                                             cache: try AskConversationCache(url: root.appendingPathComponent("cache2.sqlite")),
                                             tools: AskTestTools(), capture: AskTestCapture(), deviceId: "device", modelLibrary: library,
                                             session: { ("owner", "token") })
