@@ -6419,9 +6419,7 @@
 "hotkeys.action.ring.title" = "圓環";
 "hotkeys.action.ring.subtitle" = "按住在滑鼠處打開圓環，放開執行所指的操作。";
 "ring.title" = "圓環";
-"ring.enabled" = "啟用圓環";
 "ring.hotkey.title" = "觸發鍵";
-"ring.hotkey.required" = "設定快速鍵後即可啟用圓環。";
 "ring.hotkey.detail" = "支援單個修飾鍵，可區分左右鍵，也支援 Fn。\n按住快速鍵：圓環出現在滑鼠處，移向某個操作後放開即執行，移回中心再放開則取消。\n輕按快速鍵：圓環保持打開，可點按、按數字鍵 1–8 或方向鍵 + ↩ 選擇；Esc 或再按一次快速鍵關閉。";
 "ring.actions.title" = "操作";
 "ring.actions.reset" = "恢復預設";

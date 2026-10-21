@@ -294,7 +294,7 @@ final class EventTapHotkeyService: HotkeyService {
     }
 
     /// The feature shortcuts and the keyword shortcuts that are switched on. The ring's
-    /// shortcut is left to other apps while the ring is off or empty.
+    /// shortcut is registered only when assigned and the ring has actions.
     static func shortcutBindings(in settingsStore: SettingsStore) -> [HotkeyTarget: HotkeyBinding] {
         var bindings: [HotkeyTarget: HotkeyBinding] = [:]
         let ringUsable = settingsStore.ringConfiguration.isUsable

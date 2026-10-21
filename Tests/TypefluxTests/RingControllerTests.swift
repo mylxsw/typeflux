@@ -17,6 +17,7 @@ final class RingControllerTests: XCTestCase {
         suiteName = "RingControllerTests-\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suiteName)
         store = SettingsStore(defaults: defaults)
+        store.setHotkey(RingConfiguration.defaultHotkey, for: .ring)
         menu = FakeRingMenu()
         environment = FakeRingEnvironment()
         pointer = CGPoint(x: 100, y: 100)
@@ -136,7 +137,7 @@ final class RingControllerTests: XCTestCase {
         XCTAssertEqual(menu.dismissals, 1)
     }
 
-    func testStaysClosedWhileRecordingOffOrEmpty() {
+    func testStaysClosedWhileRecordingUnassignedOrEmpty() {
         let controller = makeController()
         controller.isRecordingActive = { true }
         controller.pressBegan()
@@ -144,26 +145,31 @@ final class RingControllerTests: XCTestCase {
 
         controller.isRecordingActive = { false }
         var configuration = store.ringConfiguration
-        configuration.enabled = false
-        store.ringConfiguration = configuration
+        store.setHotkey(nil, for: .ring)
         controller.pressBegan()
         XCTAssertTrue(menu.shownAt.isEmpty)
 
-        configuration.enabled = true
+        store.setHotkey(RingConfiguration.defaultHotkey, for: .ring)
         configuration.actions = []
         store.ringConfiguration = configuration
         controller.pressBegan()
         XCTAssertTrue(menu.shownAt.isEmpty)
     }
 
-    func testTurningTheRingOffClosesAnOpenRing() {
+    func testClearingTheShortcutClosesAnOpenRing() {
         let controller = makeController()
         defer { withExtendedLifetime(controller) {} }
-        menu.isVisible = true
-        var configuration = store.ringConfiguration
-        configuration.enabled = false
-        store.ringConfiguration = configuration
+        controller.pressBegan()
+        XCTAssertTrue(menu.isVisible)
+        store.setHotkey(nil, for: .ring)
         XCTAssertEqual(menu.dismissals, 1)
+        controller.pressEnded()
+        XCTAssertEqual(menu.activations, 0)
+        controller.pressBegan()
+        XCTAssertFalse(menu.isVisible)
+        store.setHotkey(RingConfiguration.defaultHotkey, for: .ring)
+        controller.pressBegan()
+        XCTAssertTrue(menu.isVisible)
     }
 
     func testSelectingAnActionRunsItAndUnknownIDsAreIgnored() async throws {

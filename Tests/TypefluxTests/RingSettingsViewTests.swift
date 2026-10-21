@@ -34,8 +34,6 @@ struct RingSettingsViewTests {
         VStack(alignment: .leading, spacing: 24) {
             HStack {
                 Text(L("ring.title")).font(.system(size: 22, weight: .semibold))
-                Spacer()
-                RingEnabledSwitch(settingsStore: store)
             }
             RingSettingsView(settingsStore: store)
         }
@@ -60,10 +58,9 @@ struct RingSettingsViewTests {
         store.setHotkey(RingConfiguration.defaultHotkey, for: .ring)
         var configuration = store.ringConfiguration
         configuration.actions = []
-        configuration.enabled = false
         store.ringConfiguration = configuration
         try await render(page(store),
-                         size: NSSize(width: 860, height: 760), name: "ring-settings-empty-off", light: true)
+                         size: NSSize(width: 860, height: 760), name: "ring-settings-empty", light: true)
     }
 
     @Test("editor renders every action type")

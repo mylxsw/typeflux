@@ -25,15 +25,25 @@ final class RingHotkeyTests: XCTestCase {
         XCTAssertNotNil(EventTapHotkeyService.shortcutBindings(in: store)[.action(.ring)])
 
         var configuration = store.ringConfiguration
-        configuration.enabled = false
-        store.ringConfiguration = configuration
+        store.setHotkey(nil, for: .ring)
         XCTAssertNil(EventTapHotkeyService.shortcutBindings(in: store)[.action(.ring)])
-        XCTAssertNotNil(store.hotkeyAssignments[.action(.ring)], "the keys stay reserved for the ring")
+        XCTAssertNil(store.hotkeyAssignments[.action(.ring)])
 
-        configuration.enabled = true
+        store.setHotkey(RingConfiguration.defaultHotkey, for: .ring)
+        XCTAssertNotNil(EventTapHotkeyService.shortcutBindings(in: store)[.action(.ring)])
         configuration.actions = []
         store.ringConfiguration = configuration
         XCTAssertNil(EventTapHotkeyService.shortcutBindings(in: store)[.action(.ring)])
+    }
+
+    func testLegacyDisabledFlagDoesNotBlockAnAssignedShortcut() throws {
+        defaults.set(Data(#"{"enabled":false}"#.utf8), forKey: "ring.configuration.json")
+        let store = SettingsStore(defaults: defaults)
+        store.setHotkey(RingConfiguration.defaultHotkey, for: .ring)
+        XCTAssertNotNil(EventTapHotkeyService.shortcutBindings(in: store)[.action(.ring)])
+        let encoded = try JSONEncoder().encode(store.ringConfiguration)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        XCTAssertNil(json["enabled"], "the retired flag is no longer persisted")
     }
 
     func testShortcutsPageListsTheRing() {
@@ -77,9 +87,7 @@ final class RingHotkeyTests: XCTestCase {
         _ = send(.keyUp, 8, flags)
         XCTAssertTrue(send(.flagsChanged, 61, 0))
         _ = send(.flagsChanged, 61, flags)
-        var configuration = store.ringConfiguration
-        configuration.enabled = false
-        store.ringConfiguration = configuration
+        store.setHotkey(nil, for: .ring)
         service.refreshBindings()
         XCTAssertFalse(send(.flagsChanged, 61, 0))
         XCTAssertFalse(send(.flagsChanged, 61, flags))

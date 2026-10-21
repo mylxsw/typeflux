@@ -39,7 +39,7 @@ final class RingController {
     private(set) var configuration: RingConfiguration
     private var gesture = RingHotkeyGesture()
     private var previousApplication: NSRunningApplication?
-    private var observer: NSObjectProtocol?
+    private var observers: [NSObjectProtocol] = []
 
     init(settingsStore: SettingsStore, menu: any RingMenuPresenting, executor: RingActionExecutor,
          pointerLocation: @escaping () -> CGPoint = { NSEvent.mouseLocation },
@@ -52,25 +52,34 @@ final class RingController {
         configuration = settingsStore.ringConfiguration
         menu.onSelect = { [weak self] id in self?.select(id) }
         apply(configuration)
-        observer = NotificationCenter.default.addObserver(forName: .ringSettingsDidChange, object: settingsStore,
-                                                          queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.reload() }
+        for name in [Notification.Name.ringSettingsDidChange, .hotkeySettingsDidChange] {
+            observers.append(NotificationCenter.default.addObserver(forName: name, object: settingsStore,
+                                                                    queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.reload() }
+            })
         }
     }
 
     deinit {
-        if let observer { NotificationCenter.default.removeObserver(observer) }
+        for observer in observers { NotificationCenter.default.removeObserver(observer) }
     }
 
     func reload() {
         configuration = settingsStore.ringConfiguration
         apply(configuration)
-        if !configuration.isUsable, menu.isVisible { menu.dismiss() }
+        if !canOpen {
+            gesture.reset()
+            if menu.isVisible { menu.dismiss() }
+        }
+    }
+
+    private var canOpen: Bool {
+        settingsStore.actionHotkeys[.ring] != nil && configuration.isUsable
     }
 
     func pressBegan() {
         let location = pointerLocation()
-        guard configuration.isUsable, !isRecordingActive() else { return }
+        guard canOpen, !isRecordingActive() else { return }
         switch gesture.pressBegan(isVisible: menu.isVisible, at: location) {
         case .show:
             let front = frontmostApplication()

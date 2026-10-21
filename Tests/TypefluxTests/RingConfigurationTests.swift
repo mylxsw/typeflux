@@ -19,9 +19,8 @@ final class RingConfigurationTests: XCTestCase {
         super.tearDown()
     }
 
-    func testDefaultsOfferSixFeaturesFrostedAndOn() {
+    func testDefaultsOfferSixFeaturesAndFrostedStyle() {
         let configuration = RingConfiguration()
-        XCTAssertTrue(configuration.enabled)
         XCTAssertTrue(configuration.isUsable)
         XCTAssertEqual(configuration.style, .frosted)
         XCTAssertEqual(configuration.centerTitle, "Typeflux")
@@ -38,11 +37,8 @@ final class RingConfigurationTests: XCTestCase {
                        "defaults keep their ids")
     }
 
-    func testUsableOnlyWhenOnAndNotEmpty() {
+    func testUsableOnlyWhenNotEmpty() {
         var configuration = RingConfiguration()
-        configuration.enabled = false
-        XCTAssertFalse(configuration.isUsable)
-        configuration.enabled = true
         configuration.actions = []
         XCTAssertFalse(configuration.isUsable)
         XCTAssertTrue(configuration.canAddAction)
@@ -63,7 +59,7 @@ final class RingConfigurationTests: XCTestCase {
             RingAction(kind: .url("https://typeflux.app"), title: "Typeflux", symbol: "link"),
             RingAction(kind: .folder(path: "~/Downloads"), title: "Downloads", symbol: "folder")
         ]
-        let configuration = RingConfiguration(enabled: false, actions: actions, style: .liquidGlass, centerTitle: "Go")
+        let configuration = RingConfiguration(actions: actions, style: .liquidGlass, centerTitle: "Go")
         let decoded = try JSONDecoder().decode(RingConfiguration.self, from: JSONEncoder().encode(configuration))
         XCTAssertEqual(decoded, configuration)
         XCTAssertEqual(decoded.actions.map(\.kind.type), RingActionType.allCases)
@@ -71,14 +67,13 @@ final class RingConfigurationTests: XCTestCase {
 
     func testDecodingKeepsDefaultsSkipsUnknownActionsAndCapsTheCount() throws {
         let empty = try JSONDecoder().decode(RingConfiguration.self, from: Data("{}".utf8))
-        XCTAssertTrue(empty.enabled)
         XCTAssertEqual(empty.actions.map(\.kind), RingConfiguration.defaultActions().map(\.kind))
         let known = try XCTUnwrap(String(bytes: JSONEncoder().encode(RingAction.feature(.notes)), encoding: .utf8))
         let unknown = #"{"id":"\#(UUID().uuidString)","kind":{"teleport":{}},"title":"?","symbol":"x"}"#
         let actions = ([known, unknown] + Array(repeating: known, count: 9)).joined(separator: ",")
         let json = #"{"enabled":false,"style":"future","actions":[\#(actions)]}"#
         let decoded = try JSONDecoder().decode(RingConfiguration.self, from: Data(json.utf8))
-        XCTAssertFalse(decoded.enabled)
+        XCTAssertTrue(decoded.isUsable, "the retired enabled flag is ignored")
         XCTAssertEqual(decoded.style, .frosted)
         XCTAssertEqual(decoded.centerTitle, "Typeflux")
         XCTAssertEqual(decoded.actions.count, RingConfiguration.maxActions)
@@ -104,9 +99,9 @@ final class RingConfigurationTests: XCTestCase {
         store.ringConfiguration = configuration
         XCTAssertEqual([ringChanges, hotkeyChanges], [1, 0])
 
-        configuration.enabled = false
+        configuration.actions = []
         store.ringConfiguration = configuration
-        XCTAssertEqual([ringChanges, hotkeyChanges], [2, 1], "turning the ring off releases its shortcut")
+        XCTAssertEqual([ringChanges, hotkeyChanges], [2, 1], "an empty ring releases its shortcut")
         XCTAssertEqual(SettingsStore(defaults: defaults).ringConfiguration, configuration)
     }
 

@@ -213,22 +213,6 @@ struct RingSettingsView: View {
     }
 }
 
-/// The ring's on/off switch, in the page header next to the title.
-struct RingEnabledSwitch: View {
-    @StateObject private var model: RingSettingsModel
-
-    init(settingsStore: SettingsStore) {
-        _model = StateObject(wrappedValue: RingSettingsModel(settingsStore: settingsStore))
-    }
-
-    var body: some View {
-        TFSwitch(title: L("ring.enabled"), isOn: Binding(get: { model.isEnabled }, set: model.setEnabled))
-            .disabled(!model.hasHotkey)
-            .help(model.hasHotkey ? L("ring.enabled") : L("ring.hotkey.required"))
-            .accessibilityIdentifier("ring.enabled")
-    }
-}
-
 /// A slice in the list. The description sits behind the hover "?" like every settings row.
 struct RingActionRow: View {
     let action: RingAction

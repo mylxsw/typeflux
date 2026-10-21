@@ -488,10 +488,7 @@ struct StudioView: View {
     /// Actions on the right of the page header, including the spacer that pushes them there.
     private var pageHeaderActions: some View {
         Group {
-            if viewModel.currentSection == .ring {
-                Spacer()
-                RingEnabledSwitch(settingsStore: viewModel.askToolSettings)
-            } else if viewModel.currentSection == .vocabulary {
+            if viewModel.currentSection == .vocabulary {
                 Spacer()
                 TFButton(title: L("vocabulary.action.newWord"), systemImage: "plus") {
                     editingVocabularyEntry = nil

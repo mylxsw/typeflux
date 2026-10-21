@@ -25,39 +25,10 @@ final class RingSettingsModelTests: XCTestCase {
 
     func testChangesAreSavedImmediately() {
         let model = RingSettingsModel(settingsStore: store)
-        model.setEnabled(false)
         model.setStyle(.classic)
         model.setCenterTitle("A very long centre title")
-        XCTAssertFalse(store.ringConfiguration.enabled)
         XCTAssertEqual(store.ringConfiguration.style, .classic)
         XCTAssertEqual(store.ringConfiguration.centerTitle, "A very lon")
-    }
-
-    func testEnabledStateRequiresAHotkeyAndFollowsAssignments() {
-        let model = RingSettingsModel(settingsStore: store)
-        XCTAssertFalse(model.hasHotkey)
-        XCTAssertFalse(model.isEnabled)
-
-        store.setHotkey(RingConfiguration.defaultHotkey, for: .ring)
-        XCTAssertTrue(model.hasHotkey)
-        XCTAssertTrue(model.isEnabled)
-
-        store.setHotkey(nil, for: .ring)
-        XCTAssertFalse(model.hasHotkey)
-        XCTAssertFalse(model.isEnabled)
-        model.setEnabled(true)
-        XCTAssertFalse(model.isEnabled)
-
-        store.setHotkey(RingConfiguration.defaultHotkey, for: .ring)
-        model.setEnabled(false)
-        XCTAssertFalse(model.isEnabled)
-        XCTAssertNotNil(store.actionHotkeys[.ring], "pausing keeps the shortcut")
-        store.setHotkey(nil, for: .ring)
-        store.setHotkey(RingConfiguration.defaultHotkey, for: .ring)
-        XCTAssertFalse(model.isEnabled, "reassigning respects an explicit pause")
-        model.setEnabled(true)
-        XCTAssertTrue(model.isEnabled)
-        XCTAssertTrue(SettingsStore(defaults: defaults).ringConfiguration.enabled)
     }
 
     func testSaveAddsReplacesAndRespectsTheLimit() {

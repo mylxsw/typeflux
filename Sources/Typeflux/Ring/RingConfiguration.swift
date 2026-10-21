@@ -28,14 +28,12 @@ struct RingConfiguration: Codable, Equatable, Sendable {
         modifierFlags: UInt(NSEvent.ModifierFlags.control.union(.option).rawValue)
     )
 
-    var enabled = true
     var actions: [RingAction]
     var style: RingStyle = .frosted
     var centerTitle = RingConfiguration.defaultCenterTitle
 
-    init(enabled: Bool = true, actions: [RingAction] = RingConfiguration.defaultActions(),
+    init(actions: [RingAction] = RingConfiguration.defaultActions(),
          style: RingStyle = .frosted, centerTitle: String = RingConfiguration.defaultCenterTitle) {
-        self.enabled = enabled
         self.actions = actions
         self.style = style
         self.centerTitle = centerTitle
@@ -55,18 +53,17 @@ struct RingConfiguration: Codable, Equatable, Sendable {
         actions.count < Self.maxActions
     }
 
-    /// The ring opens only when it is on and has something to choose.
+    /// A configured shortcut can open the ring only when there is something to choose.
     var isUsable: Bool {
-        enabled && !actions.isEmpty
+        !actions.isEmpty
     }
 
-    private enum CodingKeys: String, CodingKey { case enabled, actions, style, centerTitle }
+    private enum CodingKeys: String, CodingKey { case actions, style, centerTitle }
 
     /// Missing fields keep their defaults; an action written by a newer version is skipped
     /// instead of discarding the whole ring.
     init(from decoder: any Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
-        enabled = try values.decodeIfPresent(Bool.self, forKey: .enabled) ?? true
         style = (try? values.decodeIfPresent(RingStyle.self, forKey: .style)) ?? .frosted
         centerTitle = try values.decodeIfPresent(String.self, forKey: .centerTitle) ?? Self.defaultCenterTitle
         if values.contains(.actions) {
