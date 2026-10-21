@@ -11,6 +11,69 @@ struct HotkeySettingsViewTests {
         modifierFlags: UInt(NSEvent.ModifierFlags.control.union(.option).rawValue)
     )
 
+    @Test func `feature triggers share bindings and reject occupied keys`() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { store in
+            let model = HotkeySettingsModel(settingsStore: store, workflows: .shared)
+            #expect(model.setHotkey(binding, for: BuiltInHotkey.ask) == nil)
+            #expect(store.askHotkey == binding)
+            #expect(model.row(for: .builtIn(.ask))?.binding == binding)
+            #expect(model.setHotkey(binding, for: AppHotkeyAction.openChat) != nil)
+            #expect(store.actionHotkeys[.openChat] == nil)
+            store.setHotkey(nil, for: BuiltInHotkey.ask)
+            #expect(model.setHotkey(binding, for: AppHotkeyAction.openChat) == nil)
+            #expect(model.row(for: .action(.openChat))?.binding == binding)
+            #expect(model.setHotkey(binding, for: BuiltInHotkey.ask) != nil)
+            #expect(store.askHotkey == nil)
+        }
+    }
+
+    @Test func `feature trigger controls appear first and clear the shared binding`() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { store in
+            for feature in [FeatureTriggerSettingsView.Feature.launcher, .chat] {
+                store.askHotkey = binding
+                store.setHotkey(binding, for: AppHotkeyAction.openChat)
+                let page = feature == .launcher
+                    ? AnyView(LauncherSettingsView(settings: store))
+                    : AnyView(AskToolsSettingsView(settings: store))
+                try await render(page.padding(20), size: NSSize(width: 600, height: 1400),
+                                 name: feature.identifier) { window in
+                    let controls = SettingsBehaviorTestSupport.elements(in: window)
+                    let triggerControl = controls.first {
+                        $0.value("accessibilityIdentifier") as? String == feature.identifier
+                    }
+                    let trigger = try #require(triggerControl)
+                    #expect(trigger.frame.width > 0)
+                    for other in controls {
+                        let identifier = other.value("accessibilityIdentifier") as? String
+                        if identifier == "launcher.settings.position"
+                            || identifier == "agent.settings.newConversationStorage" {
+                            #expect(trigger.frame.minY > other.frame.maxY)
+                        }
+                    }
+                    try trigger.press()
+                    try await SettingsBehaviorTestSupport.wait {
+                        SettingsBehaviorTestSupport.contains(L("hotkeys.recording"), in: window)
+                    }
+                    // Clicking again cancels recording without changing the stored shortcut.
+                    try trigger.press()
+                    try await SettingsBehaviorTestSupport.wait {
+                        !SettingsBehaviorTestSupport.contains(L("hotkeys.recording"), in: window)
+                    }
+                    let clearControl = SettingsBehaviorTestSupport.elements(in: window).first {
+                        $0.value("accessibilityIdentifier") as? String == feature.identifier + ".unset"
+                    }
+                    let clear = try #require(clearControl)
+                    try clear.press()
+                    if feature == .launcher {
+                        #expect(store.askHotkey == nil)
+                    } else {
+                        #expect(store.actionHotkeys[.openChat] == nil)
+                    }
+                }
+            }
+        }
+    }
+
     private func render(_ view: some View, size: NSSize, name: String, light: Bool = false,
                         check: (NSWindow) async throws -> Void = { _ in }) async throws {
         _ = NSApplication.shared

@@ -3,6 +3,7 @@ import SwiftUI
 /// The Overview pane: what Ask can use now, what needs fixing, and where new conversations are kept.
 extension AskToolsSettingsView {
     @ViewBuilder var overviewSections: some View {
+        FeatureTriggerSettingsView(settings: settings, feature: .chat)
         let statuses = capabilityStatuses
         AgentOverviewSummary(statuses: statuses, noteCount: memoryNotes.notes.count) { status in
             navigate(to: status.capability)

@@ -63,6 +63,17 @@ final class HotkeySettingsModel: ObservableObject {
 
     // MARK: - Feature shortcuts
 
+    /// Saves a built-in shortcut from its feature pane after checking all global owners.
+    @discardableResult
+    func setHotkey(_ binding: HotkeyBinding, for builtIn: BuiltInHotkey) -> String? {
+        let result = check(binding, for: .builtIn(builtIn))
+        if let problem = result.problem {
+            return message(for: problem)
+        }
+        settingsStore.setHotkey(binding, for: builtIn)
+        return nil
+    }
+
     /// Saves a feature shortcut, or returns why it cannot be saved.
     @discardableResult
     func setHotkey(_ binding: HotkeyBinding, for action: AppHotkeyAction) -> String? {

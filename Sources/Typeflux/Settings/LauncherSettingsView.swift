@@ -59,6 +59,7 @@ struct LauncherSettingsView: View {
 
     @ViewBuilder private var basicsPane: some View {
         TFPaneHeader(systemImage: pane.symbol, title: pane.title)
+        FeatureTriggerSettingsView(settings: settings, feature: .launcher)
         TFFormSection {
             launcherPositionRow
             TFDivider.formWithIcon

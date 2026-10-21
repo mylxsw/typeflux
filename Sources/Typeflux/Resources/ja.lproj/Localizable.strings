@@ -6418,7 +6418,7 @@
 "hotkeys.action.ring.subtitle" = "押し続けるとポインタの位置にリングを開き、離すと指している操作を実行します。";
 "ring.title" = "リング";
 "ring.enabled" = "リングを有効にする";
-"ring.hotkey.title" = "ショートカット";
+"ring.hotkey.title" = "起動キー";
 "ring.hotkey.required" = "ショートカットを設定するとリングを有効にできます。";
 "ring.hotkey.detail" = "左右の修飾キーや Fn を単独で使用できます。\nショートカットを押し続ける：ポインタの位置にリングが開きます。操作の方向へ動かして離すと実行、中央に戻して離すとキャンセルします。\nショートカットを軽く押す：リングは開いたままになります。クリック、1〜8 キー、または矢印キーと ↩ で選び、Esc かもう一度ショートカットで閉じます。";
 "ring.actions.title" = "操作";
@@ -6525,3 +6525,5 @@
 "ring.error.invalidURL" = "この Web アドレスは開けません。";
 "ring.error.folderMissing" = "フォルダ「%@」が見つかりません。";
 "ring.error.automation" = "「システム設定 → プライバシーとセキュリティ → オートメーション」で、Typeflux による「System Events」の制御を許可してください。";
+
+"settings.trigger.title" = "起動キー";
