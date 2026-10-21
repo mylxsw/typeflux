@@ -8,11 +8,20 @@ extension AskLocalTools {
         try Task.checkCancellation()
         var files = fileTools(conversationId: conversationId)
         let selected = try AskFileAccess.location(args["path"] as? String ?? "", roots: files.roots)
-        let grantCheck = AskFileGrantCheck(
-            workspace: workspaceURL(conversationId: conversationId)?.path,
-            defaults: settings?.defaults, grants: folderGrants,
-            conversationId: conversationId, root: selected.root
-        )
+        // Capture exactly one authoritative source; validation never switches to a new source.
+        let grantCheck: AskFileGrantCheck
+        if workspaceURL(conversationId: conversationId)
+            .map({ AskProjectFileAccess.normalizedRoot($0.path) }) == selected.root {
+            grantCheck = .workspace(selected.root)
+        } else if settings?.askFileAccessFolders.map(AskProjectFileAccess.normalizedRoot)
+            .contains(selected.root) == true,
+            let defaults = settings?.defaults {
+            grantCheck = .settings(defaults, selected.root)
+        } else if let scope = executionFolderScope(conversationId) {
+            grantCheck = try .temporary(folderGrants, folderGrants.capture(selected.root, executionScope: scope))
+        } else {
+            throw AskFileAccess.denied
+        }
         let cancellation = AskFileCancellation()
         files.cancellation = cancellation
         files.hooks = fileOperationHooks
@@ -41,18 +50,19 @@ extension AskLocalTools {
     }
 }
 
-/// UserDefaults supports concurrent reads/writes; AskFolderGrants has its own
-/// lock. Only those thread-safe operations cross into the descriptor worker.
-private struct AskFileGrantCheck: @unchecked Sendable {
-    let workspace: String?
-    let defaults: UserDefaults?
-    let grants: AskFolderGrants
-    let conversationId: String
-    let root: String
+/// Immutable source selection; detached workers use only thread-safe validation.
+private enum AskFileGrantCheck: @unchecked Sendable {
+    case workspace(String)
+    case settings(UserDefaults, String)
+    case temporary(AskFolderGrants, AskFolderGrants.GrantLease)
 
     func validate() throws {
-        let current = (workspace.map { [$0] } ?? []) +
-            (defaults?.stringArray(forKey: "ask.fileAccessFolders") ?? []) + grants.folders(for: conversationId)
-        guard current.map(AskProjectFileAccess.normalizedRoot).contains(root) else { throw AskFileAccess.denied }
+        switch self {
+        case .workspace: break // The descriptor worker independently pins and reopens this root.
+        case let .settings(defaults, root):
+            guard (defaults.stringArray(forKey: "ask.fileAccessFolders") ?? [])
+                .map(AskProjectFileAccess.normalizedRoot).contains(root) else { throw AskFileAccess.denied }
+        case let .temporary(store, lease): try store.validate(lease)
+        }
     }
 }

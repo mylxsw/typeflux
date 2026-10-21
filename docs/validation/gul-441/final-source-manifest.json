@@ -1,0 +1,33 @@
+{
+  "base": "aeda1f98e294e9f24406c3e0b1402a5570c1f9b7",
+  "sha256": {
+    "Sources/Typeflux/Ask/AskAttachViews.swift": "8c5c1f1c26a10c11211eb6058cf34f9b48bd289dfc66648e25b4fe9154c569c2",
+    "Sources/Typeflux/Ask/AskAttachment.swift": "5b7b5ba4cee42265b9634d623f1accec611127d542d874349e7dc06b8b084727",
+    "Sources/Typeflux/Ask/AskConversation.swift": "ba02015868c2c43eca97f06128475886c35438489b6d978b008f508561d0db85",
+    "Sources/Typeflux/Ask/AskConversationModel.swift": "65cdad48c1949e21b1d9138e548886b4842bea09cc861e068b18b170d268b1a9",
+    "Sources/Typeflux/Ask/AskFileMutation.swift": "8c446bf4ddf8d5d9a03cd83ca7685910fc15e165a93a2259cf6df53ebdd3b04f",
+    "Sources/Typeflux/Ask/AskFolderGrants.swift": "0323da799bbc9da79117a8163d96fb8c786a1930e2053280871a5f55d1002535",
+    "Sources/Typeflux/Ask/AskLocalTools+Approval.swift": "33617e8c8dbc5667a485b152bdae795539dd35470cbff782eaac61ed45bd7b66",
+    "Sources/Typeflux/Ask/AskLocalTools+Files.swift": "5e8696a14e190710d2a7ea54e573383fd2d9295a2642b0430df7f438b6bb2285",
+    "Sources/Typeflux/Ask/AskLocalTools+FolderAuthority.swift": "e48dd840ffec4e59c39941fe9efc0c47c2625664a374003c466303b0193f292b",
+    "Sources/Typeflux/Ask/AskLocalTools.swift": "1967b981125dd55e28206ee849d07f5e2ba1186f1e05a4e3aacd318de024d4d7",
+    "Sources/Typeflux/Ask/AskToolPolicy.swift": "fc864e1af186d87c3d919aa133a7cabbe399416a553dc988769500a8f7f9869f",
+    "Sources/Typeflux/Ask/Browser/AskBrowserPanel.swift": "3c9b1133ae2d9b36a004df6fc3886dc13a756c192b5827ec1512f7fd9541203f",
+    "Sources/Typeflux/Ask/Browser/AskBrowserSitePolicy.swift": "17eb03e305f8a4a2bdd131c936942cb3a94f6af0d60d74e3d82bf7e23eeb1b9e",
+    "Sources/Typeflux/Ask/Browser/AskBrowserSitesView.swift": "4c2d9b343a6c955140d58a0bc77ae72d02c51318b3ac18e9496be9b7fa4f68fc",
+    "Sources/Typeflux/Ask/Browser/AskBrowserWorkspace.swift": "75004172891f4b1ae603bc85dc5c6c64324d68c1dce96e580bf4a1813d24f11b",
+    "Sources/Typeflux/Ask/Browser/AskEmbeddedBrowserTool.swift": "af88af356038ae896d9b8e5edb945c24f8b2109aeb6b73ed853427996162d36a",
+    "Sources/Typeflux/Ask/Project/AskLocalTools+Project.swift": "98bbda1fc6849d1fa099a73eb65543d23fbd69404ad0381fe78445d203b2400a",
+    "Tests/TypefluxTests/AskAttachmentTests.swift": "334eddf8fbb7cd1d1357f6f33bef62f9dfbd0452d2a61385d93ef8d55575b716",
+    "Tests/TypefluxTests/AskBrowserPanelRenderTests.swift": "c9c01a3d4fd6df4f79a79dbee9ce88112f9c87d83d2fe3b49ab5592afcb4ab77",
+    "Tests/TypefluxTests/AskBrowserSitePolicyTests.swift": "b2dae7be02c7262690c7c5bf6e4672623f14acf688f84485df7a10b8b04a6fa3",
+    "Tests/TypefluxTests/AskBrowserWorkspaceTests.swift": "d645e7673a15e432e7da52ef841aff3068f2980ddacc175fdc4aab7037835227",
+    "Tests/TypefluxTests/AskConversationTests.swift": "b6c0582c80d40db1f50fa70d9b410909b7508dc89107a56a75ae389bc0e6050e",
+    "Tests/TypefluxTests/AskEmbeddedBrowserToolTests.swift": "36f232850c1cf73aa2acda771853d04ea6ac5860e9279fde5dfeebbf4f2bb851",
+    "Tests/TypefluxTests/AskFileDispatchTests.swift": "54993a7c78aebb6e83b92392d29b9151766e00f84f79346c536893b8cacbd1d5",
+    "Tests/TypefluxTests/AskFolderAuthorityTests.swift": "3a9536bd5abe7dcdc9f0b8cf9d4f666653c64d0cc03c2a3607032a8406b254da",
+    "Tests/TypefluxTests/AskLocalApprovalTests.swift": "82d8b2d253d52372b6211637806b3836353a286d6f115c540a0b178bf9dba625",
+    "Tests/TypefluxTests/AskScopedApprovalTests.swift": "3eeed5b599622f04791fe4494a4c8c7bf0e61c3a3a44f3f34977fc727e10789d",
+    "Tests/TypefluxTests/AskToolPolicyTests.swift": "c7ff1d172128b70c0171d2c8fb3a40eed07684871bd3295182d1300e519e413a"
+  }
+}

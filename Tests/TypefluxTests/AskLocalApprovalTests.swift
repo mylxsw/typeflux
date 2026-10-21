@@ -62,7 +62,10 @@ struct AskLocalApprovalTests {
         let tools = AskLocalTools(registry: registry(), settings: SettingsStore(defaults: defaults), folderGrants: grants)
         let read = try call("files", ["action": "read", "path": file.path])
         await #expect(throws: (any Error).self) { try await tools.approvalBinding(for: read, conversationId: "c1") }
-        tools.grantFolders([root.path], conversationId: "c1")
+        try tools.stageFolders([root.path], lifetime: .task, ownerId: GlobalSoulOwner.currentID,
+                               deviceId: "d", conversationId: "c1", messageID: "m", generation: UUID())
+        try tools.admitFolders(messageID: "m", conversationId: "c1", runId: "r")
+        tools.bindExecution(ownerId: GlobalSoulOwner.currentID, conversationId: "c1", runId: "r")
         let approved = try await tools.approvalBinding(for: read, conversationId: "c1")
         #expect(approved.target.path == file.resolvingSymlinksInPath().path)
         let raw = try await tools.execute(read, conversationId: "c1")
@@ -73,14 +76,22 @@ struct AskLocalApprovalTests {
             try await tools.executeApproved(read, conversationId: "c2", binding: approved, authorize: {})
         }
         // Changing even an unrelated root changes the advertised capability and invalidates approval.
-        tools.grantFolders([root.appendingPathComponent("extra").path], conversationId: "c1")
+        try FileManager.default.createDirectory(
+            at: root.appendingPathComponent("extra"),
+            withIntermediateDirectories: true
+        )
+        let scope = try #require(tools.folderExecutions["c1"])
+        var staging = scope; staging.runId = nil
+        try grants.stage([root.appendingPathComponent("extra").path], lifetime: .task,
+                         submissionScope: staging, messageID: "extra")
+        try grants.bindSubmission(messageID: "extra", admittedRun: "r", trustedScope: staging)
         let changed = try await tools.approvalBinding(for: read, conversationId: "c1")
         #expect(changed.target == approved.target)
         #expect(changed.toolVersion != approved.toolVersion)
         await #expect(throws: (any Error).self) {
             try await tools.executeApproved(read, conversationId: "c1", binding: approved, authorize: {})
         }
-        grants.revoke("c1")
+        tools.revokeFolder(nil, conversationId: "c1")
         await #expect(throws: (any Error).self) {
             try await tools.executeApproved(read, conversationId: "c1", binding: changed, authorize: {})
         }
@@ -163,5 +174,42 @@ struct AskLocalApprovalTests {
     @Test func nativeEvidenceFailsClosedForAnUnavailableProcess() {
         #expect(AskLocalTools.focusedWindow(-1) == nil)
         #expect(AskLocalTools.windowFrame(AXUIElementCreateApplication(-1)) == nil)
+    }
+}
+
+extension AskLocalApprovalTests {
+    @Test func approvedHTMLPreviewRechecksRevokedSourceAfterPause() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let path = root.appendingPathComponent("preview.html")
+        try Data("<!doctype html><title>Fixture</title><p>Local preview</p>".utf8).write(to: path)
+        let settings = SettingsStore(defaults: UserDefaults(suiteName: UUID().uuidString)!)
+        settings.askCodeExecutionEnabled = false
+        let tools = AskLocalTools(registry: registry(), settings: settings)
+        let workspace = AskBrowserWorkspace(dataStore: .nonPersistent())
+        defer { workspace.tabs.forEach { workspace.close($0) } }
+        tools.embeddedBrowser = AskEmbeddedBrowserTool(workspace: workspace)
+        try tools.stageFolders([root.path], lifetime: .conversationSession, ownerId: GlobalSoulOwner.currentID,
+                               deviceId: "d", conversationId: "c", messageID: "m", generation: UUID())
+        try tools.admitFolders(messageID: "m", conversationId: "c", runId: "r")
+        tools.bindExecution(ownerId: GlobalSoulOwner.currentID, conversationId: "c", runId: "r")
+        let request = try call("web_browser", ["action": "open_file", "path": path.path])
+        let binding = try await tools.approvalBinding(for: request, conversationId: "c")
+        workspace.setPaused(true)
+        var authorizations = 0
+        let pending = Task {
+            try await tools.executeApproved(request, conversationId: "c", binding: binding) { authorizations += 1 }
+        }
+        try await SettingsBehaviorTestSupport.wait { authorizations >= 2 }
+        tools.revokeFolder(nil, conversationId: "c")
+        settings.askFileAccessFolders = [root.path]
+        workspace.setPaused(false)
+        await #expect(throws: (any Error).self) { try await pending.value }
+        #expect(workspace.tabs.isEmpty, "A revoked attachment cannot switch to a Settings source while paused")
+        let independent = try await tools.approvalBinding(for: request, conversationId: "c")
+        #expect(independent.authorityRevision?.hasPrefix("settings:") == true)
+        let output = try await tools.executeApproved(request, conversationId: "c", binding: independent, authorize: {})
+        #expect(output.content.contains("Opened local HTML"))
     }
 }

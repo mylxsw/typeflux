@@ -224,3 +224,28 @@ struct AskScopedApprovalTests {
         #expect(request.mcpServers == ["local-tools"])
     }
 }
+
+extension AskScopedApprovalTests {
+    @Test func `actual embedded browser mutations still ask in yolo mode`() async throws {
+        let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
+        let tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)),
+                                  settings: SettingsStore(defaults: defaults), owner: { "owner" })
+        tools.embeddedBrowser = AskEmbeddedBrowserTool(workspace: AskBrowserWorkspace())
+        let fixture = try AskTestFixture(toolsOverride: tools)
+        defer { fixture.model.resetSession() }
+        fixture.model.setPermissionMode(.yolo, launcher: true)
+        await fixture.api.setTool(call("web_browser", "click"))
+        fixture.model.launcherDraft = .followUp
+        fixture.model.launcherDraft.text = "Click the control"
+        fixture.model.submitLauncher()
+        try await fixture.wait { !fixture.model.pendingApprovals.isEmpty }
+        let id = try #require(fixture.model.selectedId)
+        #expect(fixture.model.approvalRisk(id) == .destructive)
+        #expect(!fixture.model.canAllowForConversation(id))
+        fixture.model.resumeAutomaticallyApprovedTool(id)
+        #expect(fixture.model.pendingApprovals[id] != nil)
+        fixture.model.approve(conversationId: id, allowed: false)
+        try await fixture.wait { !fixture.model.isBusy }
+        #expect(await fixture.api.results.first?.isError == true)
+    }
+}

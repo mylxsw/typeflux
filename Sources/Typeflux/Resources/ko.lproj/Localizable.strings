@@ -5942,14 +5942,14 @@
 "ask.web.permission.off" = "끔";
 "ask.web.permission.ask" = "매번 확인";
 "ask.web.permission.read" = "읽기만";
-"ask.web.permission.act" = "조작 허용";
+"ask.web.permission.act" = "읽기 및 탐색";
 "ask.web.permission.help" = "이 사이트에서 AI가 할 수 있는 작업입니다. '사이트 및 로그인'에서 변경하세요.";
 "ask.web.permission.label" = "%@의 AI 권한";
 "ask.web.private.detail" = "비공개 탭: 닫으면 쿠키와 기록이 삭제되며 AI는 사용할 수 없습니다.";
 "ask.web.signedIn" = "로그인한 사이트";
 "ask.web.start.detail" = "여기의 로그인은 Safari, Chrome과 별개이며 이 Mac에만 저장됩니다. AI는 허용한 사이트에서만 작업하고, 로그인과 결제는 사용자에게 넘깁니다.";
 "ask.web.sites.title" = "사이트 및 로그인";
-"ask.web.sites.detail" = "여기서 로그인한 계정은 이 Mac의 Typeflux 브라우저 프로필에만 저장되며 업로드되지 않습니다. 사이트별로 AI가 할 수 있는 작업을 선택하세요.";
+"ask.web.sites.detail" = "정확한 웹 출처별로 권한을 선택합니다. 페이지 변경은 매번 승인이 필요합니다.";
 "ask.web.sites.empty" = "아직 사이트가 없습니다. 브라우저에서 로그인하면 여기에 표시됩니다.";
 "ask.web.sites.signedIn" = "저장된 데이터 있음";
 "ask.web.sites.noData" = "저장된 데이터 없음";
@@ -6535,3 +6535,18 @@
 "ask.commandJob.status" = "Check command status";
 "ask.commandJob.logs" = "Read command output";
 "ask.commandJob.stop" = "Stop command";
+
+// Temporary folder authority and exact browser origins.
+"ask.folder.lifetime" = "Attached folder access";
+"ask.folder.task" = "This task";
+"ask.folder.session" = "This conversation until sign-out or app exit";
+"ask.folder.boundary" = "Folder access does not approve file changes or shell commands.";
+"ask.folder.source" = "Source: temporary attachment";
+"ask.folder.settingsAlso" = "Settings also authorizes this folder. Revoking this attachment keeps Settings access.";
+"ask.folder.revoke" = "Revoke attachment access";
+"ask.folder.revokeAll" = "Revoke all temporary folders";
+"ask.folder.expired" = "Previous folder access has expired. Attach the folder again to authorize access.";
+"ask.web.sites.exactOrigin" = "Exact web origin permission";
+"ask.web.sites.legacy" = "Old host preference; allows are inactive. Remove an old deny before selecting an exact origin.";
+
+"ask.web.removePermission" = "Remove permission or old preference for %@";

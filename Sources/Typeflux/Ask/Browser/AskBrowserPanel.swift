@@ -132,7 +132,8 @@ struct AskBrowserPanel: View {
                     .focused($addressFocused)
                     .onSubmit(submitAddress)
                     .accessibilityIdentifier("ask.web.address")
-                if let host = tab?.host, workspace.policy.permission(for: host) != .off, tab?.isPrivate == false {
+                if let host = AskHTTPOrigin(tab?.url)?.description, workspace.policy.permission(for: host) != .off,
+                   tab?.isPrivate == false {
                     Text(workspace.policy.permission(for: host).title)
                         .font(.system(size: 10.5, weight: .medium))
                         .foregroundStyle(AskTheme.accentText)

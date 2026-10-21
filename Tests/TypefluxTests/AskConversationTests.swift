@@ -260,7 +260,16 @@ final class AskTestTools: AskToolExecuting {
         executionScope = .init(ownerId: ownerId, conversationId: conversationId, runId: runId)
     }
     var grantedFolders: [String: [String]] = [:]
-    func grantFolders(_ paths: [String], conversationId: String) { grantedFolders[conversationId, default: []] += paths }
+    var folderAdmissions: [(String, String)] = []
+    func stageFolders(_ paths: [String], lifetime _: AskFolderGrants.Lifetime, ownerId _: String,
+                      deviceId _: String, conversationId: String, messageID _: String, generation _: UUID) throws {
+        grantedFolders[conversationId, default: []] += paths
+    }
+
+    func admitFolders(messageID: String, conversationId _: String, runId: String) throws {
+        folderAdmissions.append((messageID, runId))
+    }
+
     var beforeDefinitions: (() async -> Void)?
     var definitionRequests: [String?] = []
     var riskOverride: AskToolRisk?

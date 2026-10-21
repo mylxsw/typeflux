@@ -28,7 +28,7 @@ struct AskBrowserPanelRenderTests {
     private func descendants(_ view: NSView) -> [NSView] { view.subviews + view.subviews.flatMap(descendants) }
 
     @discardableResult
-    private func render<V: View>(_ root: V, name: String, size: NSSize, dark: Bool = false) throws -> NSView {
+    private func render<V: View>(_ root: V, name: String, size: NSSize, dark: Bool = false, minimumPNGBytes: Int = 8000) throws -> NSView {
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -38,16 +38,16 @@ struct AskBrowserPanelRenderTests {
         window.contentView = hosting
         window.orderFront(nil)
         defer { window.orderOut(nil); window.close() }
-        try snapshot(hosting, name: name)
+        try snapshot(hosting, name: name, minimumBytes: minimumPNGBytes)
         return hosting
     }
 
-    private func snapshot(_ hosting: NSView, name: String) throws {
+    private func snapshot(_ hosting: NSView, name: String, minimumBytes: Int = 8000) throws {
         hosting.layoutSubtreeIfNeeded()
         let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
         hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
         let data = try #require(bitmap.representation(using: .png, properties: [:]))
-        #expect(data.count > 8000, "\(name) rendered blank")
+        #expect(data.count > minimumBytes, "\(name) rendered blank")
         if let directory = ProcessInfo.processInfo.environment["TYPEFLUX_BROWSER_SNAPSHOTS"] {
             let url = URL(fileURLWithPath: directory)
             try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
@@ -68,7 +68,7 @@ struct AskBrowserPanelRenderTests {
         let tab = try workspace.newTab()
         try render(panel(workspace), name: "browser-start-page", size: size)
         try await loadPage(tab)
-        workspace.policy.set(.act, for: "github.com")
+        workspace.policy.set(.act, for: "https://github.com")
         let hosting = try render(panel(workspace), name: "browser-page", size: size)
         #expect(descendants(hosting).contains { $0 === tab.webView }, "The tab's own web view is hosted")
 
@@ -92,10 +92,11 @@ struct AskBrowserPanelRenderTests {
     }
 
     @Test func sitesSheetRenders() async throws {
-        let (workspace, _) = makeWorkspace()
+        let (workspace, defaults) = makeWorkspace()
+        defaults.set(["legacy.invalid": "act"], forKey: AskBrowserSitePolicy.defaultsKey)
         try render(AskBrowserSitesView(workspace: workspace), name: "browser-sites-empty", size: NSSize(width: 560, height: 360))
-        workspace.policy.set(.read, for: "mail.google.com")
-        workspace.policy.set(.off, for: "example.com")
+        workspace.policy.set(.read, for: "https://mail.google.com")
+        workspace.policy.set(.off, for: "https://example.com")
         let size = NSSize(width: 560, height: 420)
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],
                               backing: .buffered, defer: false)
@@ -109,11 +110,16 @@ struct AskBrowserPanelRenderTests {
         var rows = 0
         for _ in 0 ..< 100 {
             hosting.layoutSubtreeIfNeeded()
-            rows = descendants(hosting).filter { $0 is NSSegmentedControl }.count
+            rows = descendants(hosting).filter { view in
+                view is NSPopUpButton && !view.visibleRect.isEmpty &&
+                    hosting.bounds.contains(hosting.convert(view.bounds, from: view))
+            }.count
             if rows == 2 { break }
             try await Task.sleep(for: .milliseconds(20))
         }
-        #expect(rows == 2, "One permission control per site")
+        #expect(rows == 2, "Both exact-origin controls must be visible inside the sheet")
+        try await Task.sleep(for: .milliseconds(50))
+        hosting.layoutSubtreeIfNeeded()
         try snapshot(hosting, name: "browser-sites")
     }
 
@@ -143,5 +149,51 @@ struct AskBrowserPanelRenderTests {
         try await loadPage(tab)
         try snapshot(hosting, name: "browser-window")
         workspace.tabs.forEach { workspace.close($0) }
+    }
+}
+
+extension AskBrowserPanelRenderTests {
+    @Test func temporaryFolderControlsShowLifetimeSourceAndIndependentSettings() async throws {
+        let root = try AskAttachmentFixture.directory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        let settings = SettingsStore(defaults: defaults)
+        settings.askFileAccessFolders = [root.path]
+        let tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)),
+                                  settings: settings, owner: { "owner" })
+        let fixture = try AskTestFixture(modelLibrary: AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false), toolsOverride: tools)
+        defer { fixture.model.resetSession() }
+        await fixture.api.seed(.init(id: "c", title: "Folder fixture", revision: 1, updatedAt: Date(), messages: []))
+        await fixture.model.select("c")
+        try tools.stageFolders([root.path], lifetime: .conversationSession, ownerId: "owner",
+                               deviceId: "device", conversationId: "c", messageID: "m", generation: UUID())
+        try tools.admitFolders(messageID: "m", conversationId: "c", runId: "r")
+        #expect(fixture.model.hasSettingsFolder(root.path))
+        #expect(fixture.model.hasSettingsFolder(root.appendingPathComponent("nested").path))
+        #expect(fixture.model.temporaryFolderGrants().count == 1)
+        _ = NSApplication.shared
+        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+        let previous = NSApp.accessibilityAttributeValue(attribute)
+        NSApp.accessibilitySetValue(true, forAttribute: attribute)
+        defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
+        let size = NSSize(width: 340, height: 300)
+        let view = AskFolderPermissionControls(model: fixture.model, launcher: false)
+            .padding(12).frame(width: size.width, height: size.height, alignment: .topLeading).background(AskTheme.surface)
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        let hosting = NSHostingView(rootView: view)
+        window.contentView = hosting
+        window.orderFront(nil)
+        defer { window.orderOut(nil); window.close() }
+        try await SettingsBehaviorTestSupport.wait {
+            SettingsBehaviorTestSupport.contains(L("ask.folder.revoke"), in: window)
+        }
+        try snapshot(hosting, name: "temporary-folder-permissions")
+        try SettingsBehaviorTestSupport.button(L("ask.folder.revoke"), in: window).press()
+        try await SettingsBehaviorTestSupport.wait { fixture.model.temporaryFolderGrants().isEmpty }
+        #expect(tools.fileTools(conversationId: "c").roots.contains(root.path))
+        try render(AskFolderPermissionControls(model: fixture.model, launcher: true).padding(12)
+            .frame(width: 340, height: 160).background(AskTheme.surface),
+                   name: "launcher-folder-lifetime", size: NSSize(width: 340, height: 160), minimumPNGBytes: 4000)
     }
 }

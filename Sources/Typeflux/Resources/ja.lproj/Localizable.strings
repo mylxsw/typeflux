@@ -5942,14 +5942,14 @@
 "ask.web.permission.off" = "オフ";
 "ask.web.permission.ask" = "毎回確認";
 "ask.web.permission.read" = "読み取りのみ";
-"ask.web.permission.act" = "操作可";
+"ask.web.permission.act" = "閲覧と移動";
 "ask.web.permission.help" = "このサイトで AI ができること。「サイトとサインイン」で変更できます。";
 "ask.web.permission.label" = "%@ の AI 権限";
 "ask.web.private.detail" = "プライベートタブ：閉じると Cookie と履歴は破棄され、AI は使用できません。";
 "ask.web.signedIn" = "サインイン済みのサイト";
 "ask.web.start.detail" = "ここでのサインインは Safari や Chrome とは別で、この Mac にのみ保存されます。AI は許可したサイトでのみ操作し、サインインや支払いはあなたに引き継ぎます。";
 "ask.web.sites.title" = "サイトとサインイン";
-"ask.web.sites.detail" = "ここでサインインしたアカウントは、この Mac の Typeflux ブラウザプロファイルにのみ保存され、アップロードされません。サイトごとに AI ができることを選べます。";
+"ask.web.sites.detail" = "正確なウェブオリジンごとに許可します。ページの変更には毎回承認が必要です。";
 "ask.web.sites.empty" = "まだサイトはありません。ブラウザでサインインするとここに表示されます。";
 "ask.web.sites.signedIn" = "保存データあり";
 "ask.web.sites.noData" = "保存データなし";
@@ -6535,3 +6535,18 @@
 "ask.commandJob.status" = "Check command status";
 "ask.commandJob.logs" = "Read command output";
 "ask.commandJob.stop" = "Stop command";
+
+// Temporary folder authority and exact browser origins.
+"ask.folder.lifetime" = "Attached folder access";
+"ask.folder.task" = "This task";
+"ask.folder.session" = "This conversation until sign-out or app exit";
+"ask.folder.boundary" = "Folder access does not approve file changes or shell commands.";
+"ask.folder.source" = "Source: temporary attachment";
+"ask.folder.settingsAlso" = "Settings also authorizes this folder. Revoking this attachment keeps Settings access.";
+"ask.folder.revoke" = "Revoke attachment access";
+"ask.folder.revokeAll" = "Revoke all temporary folders";
+"ask.folder.expired" = "Previous folder access has expired. Attach the folder again to authorize access.";
+"ask.web.sites.exactOrigin" = "Exact web origin permission";
+"ask.web.sites.legacy" = "Old host preference; allows are inactive. Remove an old deny before selecting an exact origin.";
+
+"ask.web.removePermission" = "Remove permission or old preference for %@";

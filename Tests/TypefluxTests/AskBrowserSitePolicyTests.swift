@@ -10,39 +10,84 @@ final class AskBrowserSitePolicyTests: XCTestCase {
         return defaults
     }
 
-    func testUnknownSitesAskAndHostsAreNormalized() {
-        let policy = AskBrowserSitePolicy(defaults: defaults())
-        XCTAssertEqual(policy.permission(for: "github.com"), .ask)
-        XCTAssertEqual(policy.permission(for: nil), .ask)
-        XCTAssertEqual(policy.permission(for: ""), .ask)
-        policy.set(.act, for: "WWW.GitHub.com")
-        XCTAssertEqual(policy.permission(for: "github.com"), .act)
-        XCTAssertEqual(policy.permission(for: "www.github.com"), .act)
-        XCTAssertEqual(policy.permission(for: "gist.github.com"), .ask, "Subdomains are separate sites")
+    func testExactOriginsAndLegacyMigration() {
+        let store = defaults()
+        store.set(
+            ["example.com": "act", "denied.com": "off", "www.double.com": "off", "broken.com": "bogus", "例子.测试": "off"],
+            forKey: AskBrowserSitePolicy.defaultsKey
+        )
+        var owner = "a"
+        let policy = AskBrowserSitePolicy(defaults: store, owner: { owner }, deviceId: "d")
+        for value in [nil, "", "example.com", "https://example.com", "http://example.com", "data:x", "file:///tmp/x"] {
+            XCTAssertEqual(policy.permission(for: value), .ask)
+        }
+        policy.set(.read, for: "https://EXAMPLE.com:443/path")
+        XCTAssertEqual(policy.permission(for: "https://example.com/other"), .read)
+        for value in [
+            "http://example.com",
+            "https://example.com:444",
+            "https://www.example.com",
+            "https://sub.example.com"
+        ] {
+            XCTAssertEqual(policy.permission(for: value), .ask)
+        }
+        for value in ["http://denied.com", "https://www.denied.com:444", "https://例子.测试", "https://www.例子.测试"] {
+            XCTAssertEqual(policy.permission(for: value), .off)
+        }
+        XCTAssertEqual(policy.permission(for: "https://www.www.double.com"), .off)
+        XCTAssertEqual(policy.permission(for: "https://www.double.com"), .ask)
+        policy.set(.act, for: "https://www.denied.com")
+        XCTAssertEqual(policy.permission(for: "https://www.denied.com"), .off)
+        policy.remove("denied.com")
+        XCTAssertEqual(policy.permission(for: "https://www.denied.com"), .act)
+        policy.set(.act, for: "bare.com")
+        XCTAssertEqual(policy.permissions.count, 2)
+        owner = "b"
+        XCTAssertTrue(policy.permissions.isEmpty)
+        XCTAssertEqual(policy.permission(for: "https://example.com"), .ask)
+        owner = "a"
+        XCTAssertEqual(policy.permission(for: "https://example.com"), .read)
+        XCTAssertEqual(
+            AskBrowserSitePolicy(defaults: store, owner: { "a" }, deviceId: "d").permission(for: "https://example.com"),
+            .read
+        )
+        XCTAssertEqual(
+            AskBrowserSitePolicy(defaults: store, owner: { "a" }, deviceId: "other")
+                .permission(for: "https://example.com"),
+            .ask
+        )
+        policy.remove("https://example.com")
+        policy.remove("")
+        XCTAssertEqual(policy.permission(for: "https://example.com"), .ask)
         XCTAssertNil(AskBrowserSitePolicy.normalized("  "))
     }
 
-    func testPermissionsPersistAndCanBeRemoved() {
-        let store = defaults()
-        let policy = AskBrowserSitePolicy(defaults: store)
-        policy.set(.off, for: "mail.google.com")
-        policy.set(.read, for: "example.com")
-        policy.set(.act, for: "")
-        let reloaded = AskBrowserSitePolicy(defaults: store)
-        XCTAssertEqual(reloaded.permission(for: "mail.google.com"), .off)
-        XCTAssertEqual(reloaded.permission(for: "example.com"), .read)
-        XCTAssertEqual(reloaded.permissions.count, 2)
-        reloaded.remove("example.com")
-        reloaded.remove("")
-        XCTAssertEqual(AskBrowserSitePolicy(defaults: store).permission(for: "example.com"), .ask)
-    }
-
-    func testCorruptStoredValuesAreIgnored() {
-        let store = defaults()
-        store.set(["a.com": "bogus", "b.com": "read"], forKey: AskBrowserSitePolicy.defaultsKey)
-        let policy = AskBrowserSitePolicy(defaults: store)
-        XCTAssertEqual(policy.permission(for: "a.com"), .ask)
-        XCTAssertEqual(policy.permission(for: "b.com"), .read)
+    func testOriginParsingRejectsAmbiguousAuthority() {
+        XCTAssertEqual(AskHTTPOrigin(string: "HTTP://example.com:80/a")?.description, "http://example.com")
+        XCTAssertEqual(AskHTTPOrigin(string: "https://[2001:0db8::1]:443/a")?.description, "https://[2001:db8::1]")
+        XCTAssertEqual(AskHTTPOrigin(string: "http://[::1]:8080")?.description, "http://[::1]:8080")
+        for value in [
+            "https://u:p@example.com",
+            "https://u@example.com",
+            "https://example.com:0",
+            "https://example.com:65536",
+            "https://example.com:bad", "https://example.com:", "https://example.com:999999999999999999999",
+            "https://bad..com",
+            "https://-bad.com",
+            "https://bad_.com",
+            "https://%00.com",
+            "https://[garbage]",
+            "file:///x",
+            "data:x",
+            "about:blank",
+            "custom://example.com",
+            "example.com",
+            "https://"
+        ] {
+            XCTAssertNil(AskHTTPOrigin(string: value), value)
+        }
+        XCTAssertEqual(AskHTTPOrigin(string: "https://例子.测试")?.description, "https://xn--fsqu00a.xn--0zwm56d")
+        XCTAssertNil(AskHTTPOrigin(nil))
     }
 
     func testActionKinds() {
@@ -51,8 +96,12 @@ final class AskBrowserSitePolicyTests: XCTestCase {
         XCTAssertEqual(AskBrowserRisk.kind(action: "snapshot", elementName: nil), .observe)
         XCTAssertEqual(AskBrowserRisk.kind(action: "screenshot", elementName: nil), .observe)
         XCTAssertEqual(AskBrowserRisk.kind(action: "open", elementName: nil), .navigate)
-        XCTAssertEqual(AskBrowserRisk.kind(action: "click", elementName: "Unread"), .write)
-        XCTAssertEqual(AskBrowserRisk.kind(action: "fill", elementName: "Send"), .write, "Filling never sends")
+        XCTAssertEqual(AskBrowserRisk.kind(action: "click", elementName: "Unread"), .sensitive)
+        XCTAssertEqual(
+            AskBrowserRisk.kind(action: "fill", elementName: "Send"),
+            .sensitive,
+            "Generic fills require fresh consent"
+        )
         XCTAssertEqual(AskBrowserRisk.kind(action: "click", elementName: "Send message"), .sensitive)
         XCTAssertEqual(AskBrowserRisk.kind(action: "unknown", elementName: nil), .sensitive)
     }

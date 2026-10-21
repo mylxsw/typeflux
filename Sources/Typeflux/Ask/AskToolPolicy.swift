@@ -9,6 +9,8 @@ struct AskToolBinding: Equatable, Sendable {
     var serverVersion: String? = nil
     var summary: String
     var allowsReuse = false
+    var requiresExplicitConsent = false
+    var authorityRevision: String?
 }
 
 struct AskApprovalRequest: Equatable, Sendable {
@@ -17,6 +19,7 @@ struct AskApprovalRequest: Equatable, Sendable {
     var binding: AskToolBinding
     var risk: AskToolRisk
     var reusable: Bool
+    var localScope: AskFolderGrants.Scope?
 }
 
 enum AskToolPolicy {
@@ -49,7 +52,8 @@ enum AskToolPolicy {
                             deadline: now.addingTimeInterval(300), serverId: binding.serverId,
                             serverVersion: binding.serverVersion),
               action: action(call), binding: binding, risk: risk,
-              reusable: reuseEnabled && binding.allowsReuse && mayReuse(call) && risk < .destructive)
+              reusable: reuseEnabled && binding.allowsReuse && !binding
+                  .requiresExplicitConsent && mayReuse(call) && risk < .destructive)
     }
 
     static func valid(_ request: AskApprovalRequest, now: Date) -> Bool {
@@ -76,19 +80,25 @@ final class AskApprovalStore {
     struct Grant {
         var scope: AskApprovalScope
         let request: AskApprovalRequest
+        var lifetime: AskFolderGrants.Lifetime = .task
     }
     private var grants: [String: Grant] = [:]
     var now: () -> Date = { .now }
 
-    func issue(_ request: AskApprovalRequest, reusable: Bool = false) -> String? {
+    func issue(_ request: AskApprovalRequest, reusable: Bool = false,
+               lifetime: AskFolderGrants.Lifetime = .task) -> String? {
         let time = now()
         guard AskToolPolicy.valid(request, now: time), !reusable || request.reusable else { return nil }
+        if reusable, lifetime == .conversationSession, request.localScope == nil {
+            return nil
+        }
         grants = grants.filter { $0.value.scope.expiresAt > time && $0.value.scope.revokedAt == nil }
         let id = UUID().uuidString
         grants[id] = .init(scope: .init(id: id, ownerId: request.context.ownerId,
-                                       conversationId: request.context.conversationId, action: request.action,
-                                       target: request.context.target, expiresAt: request.context.deadline,
-                                       singleUse: !reusable, argumentsHash: request.context.argumentsHash), request: request)
+                                        conversationId: request.context.conversationId, action: request.action,
+                                        target: request.context.target, expiresAt: request.context.deadline,
+                                        singleUse: !reusable, argumentsHash: request.context.argumentsHash),
+                           request: request, lifetime: lifetime)
         return id
     }
 
@@ -127,14 +137,35 @@ final class AskApprovalStore {
         if s.singleUse {
             return old.runId == c.runId && old.stepId == c.stepId && old.toolCallId == c.toolCallId
         }
-        return grant.request.reusable && request.reusable
+        guard grant.request.reusable, request.reusable else { return false }
+        if grant.lifetime == .task {
+            return old.runId == c.runId && grant.request.localScope == request.localScope
+        }
+        guard let original = grant.request.localScope, let current = request.localScope else { return false }
+        return original.conversation == current.conversation
     }
 
     /// A historical receipt only. No persisted scope can be imported as a grant.
     func auditScope(_ id: String) -> AskApprovalScope? { grants[id]?.scope }
 
-    func revoke(conversation: String) { grants = grants.filter { $0.value.scope.conversationId != conversation } }
-    func reset() { grants.removeAll() }
+    func revoke(conversation: String) {
+        grants = grants.filter { $0.value.scope.conversationId != conversation }
+    }
+
+    func revokeTask(conversation: String, run: String? = nil) {
+        grants = grants.filter { _, grant in
+            !(grant.scope.conversationId == conversation && (grant.scope.singleUse || grant.lifetime == .task) &&
+                (run == nil || grant.request.context.runId == run))
+        }
+    }
+
+    func revoke(_ id: String) {
+        grants[id] = nil
+    }
+
+    func reset() {
+        grants.removeAll()
+    }
 }
 
 /// Intrinsic observation effects owned by the host, independent of approval presentation.

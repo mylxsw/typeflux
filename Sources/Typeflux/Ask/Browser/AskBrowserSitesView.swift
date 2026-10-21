@@ -126,27 +126,40 @@ struct AskBrowserSitesView: View {
             Image(systemName: "globe").font(.system(size: 15)).foregroundStyle(StudioTheme.textTertiary)
             VStack(alignment: .leading, spacing: 2) {
                 Text(site.host).font(.system(size: 12.5, weight: .semibold))
-                Text(L(site.hasData ? "ask.web.sites.signedIn" : "ask.web.sites.noData"))
-                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                    .lineLimit(1).truncationMode(.middle).help(site.host)
+                Text(L(site.isOrigin ? "ask.web.sites.exactOrigin" : site
+                        .isLegacy ? "ask.web.sites.legacy" : "ask.web.sites.signedIn"))
+                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary).lineLimit(3)
             }
+            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+            if site.isLegacy { Text(site.permission.title).font(.caption) }
             Spacer(minLength: 8)
-            Picker("", selection: Binding(get: { policy.permission(for: site.host) },
-                                          set: { policy.set($0, for: site.host) })) {
-                ForEach(AskBrowserSitePermission.allCases, id: \.self) { Text($0.title).tag($0) }
+            if site.isOrigin {
+                Picker("", selection: Binding(get: { policy.permission(for: site.host) },
+                                              set: { policy.set($0, for: site.host) })) {
+                    ForEach(AskBrowserSitePermission.allCases, id: \.self) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .frame(width: 170)
+                .accessibilityLabel(L("ask.web.permission.label", site.host))
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .fixedSize()
-            .accessibilityLabel(L("ask.web.permission.label", site.host))
             Button {
-                Task { await workspace.clearData(for: site.host); await reload() }
+                Task {
+                    if site.isOrigin || site.isLegacy {
+                        policy.remove(site.host)
+                    } else {
+                        await workspace.clearData(for: site.host)
+                    }
+                    await reload()
+                }
             } label: {
                 Image(systemName: "trash").frame(width: 24, height: 24)
             }
             .buttonStyle(.plain)
-            .disabled(!site.hasData)
-            .help(L("ask.web.clearSite", site.host))
-            .accessibilityLabel(L("ask.web.clearSite", site.host))
+            .disabled(!site.hasData && !site.isOrigin && !site.isLegacy)
+            .help(L(site.isOrigin || site.isLegacy ? "ask.web.removePermission" : "ask.web.clearSite", site.host))
+            .accessibilityLabel(L(site.isOrigin || site.isLegacy ? "ask.web.removePermission" : "ask.web.clearSite", site.host))
         }
         .padding(.horizontal, 18).padding(.vertical, 10)
     }

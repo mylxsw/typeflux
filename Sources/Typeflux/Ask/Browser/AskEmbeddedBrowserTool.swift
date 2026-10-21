@@ -25,6 +25,7 @@ final class AskEmbeddedBrowserTool {
         let target: AskExecutionTarget
         let summary: String
         let reusable: Bool
+        var requiresExplicitConsent: Bool = false
     }
 
     struct Observation {
@@ -93,15 +94,17 @@ final class AskEmbeddedBrowserTool {
         return workspace.selectedTab
     }
 
-    private func destinationHost(_ args: [String: Any]) -> String? {
-        (args["url"] as? String).flatMap(URL.init(string:))?.host?.lowercased()
+    private func destinationOrigin(_ args: [String: Any]) -> String? {
+        (args["url"] as? String).flatMap { AskHTTPOrigin(string: $0)?.description }
     }
 
-    /// The site whose permission governs this call.
-    func governingHost(_ args: [String: Any]) -> String? {
+    /// Authority is an actual origin, never a cookie domain or a guessed scheme.
+    func governingOrigin(_ args: [String: Any]) -> String? {
         switch action(args) {
-        case "open", "new_tab", "open_file": destinationHost(args)
-        default: targetTab(args)?.host
+        case "open", "new_tab": destinationOrigin(args)
+        case "open_file": nil
+        case "back": AskHTTPOrigin(targetTab(args)?.webView.backForwardList.backItem?.url)?.description
+        default: AskHTTPOrigin(targetTab(args)?.url)?.description
         }
     }
 
@@ -113,7 +116,7 @@ final class AskEmbeddedBrowserTool {
             targetTab(args).flatMap { observations[$0.id]?.elements[ref] }
         }
         let kind = AskBrowserRisk.kind(action: action, elementName: element?.name)
-        let permission = workspace.policy.permission(for: governingHost(args))
+        let permission = workspace.policy.permission(for: governingOrigin(args))
         return AskBrowserRisk.risk(kind, permission: permission)
     }
 
@@ -126,11 +129,13 @@ final class AskEmbeddedBrowserTool {
                            summary: "Open local HTML in built-in browser: " + url.path, reusable: false)
         }
         let tab = targetTab(args)
-        let host = governingHost(args)
+        let host = governingOrigin(args)
         let version = tab.map { "\($0.number):\($0.generation):\($0.url?.absoluteString ?? "")" } ?? "none"
         let target = AskExecutionTarget(kind: "browser_tab",
                                         id: "typeflux-browser:" + (tab.map { String($0.number) } ?? "new"),
-                                        version: AskToolPolicy.digest(version), domain: host)
+                                        version: AskToolPolicy
+                                            .digest(version + ":" + workspace.policy.permission(for: host).rawValue),
+                                        domain: host)
         var summary = L("ask.web.action." + action)
         if let host { summary += " · " + host }
         if let url = args["url"] as? String, action == "open" || action == "new_tab" { summary += " → " + url }
@@ -140,7 +145,8 @@ final class AskEmbeddedBrowserTool {
         }
         // Reads and navigation may repeat for the conversation; each change to a page is approved on its own.
         let reusable = AskBrowserRisk.observeActions.contains(action) || AskBrowserRisk.navigateActions.contains(action)
-        return Binding(target: target, summary: summary, reusable: reusable)
+        return Binding(target: target, summary: summary, reusable: reusable,
+                       requiresExplicitConsent: !reusable && !AskBrowserRisk.neutralActions.contains(action))
     }
 
     private func checkAllowed(host: String?) throws {
@@ -151,30 +157,59 @@ final class AskEmbeddedBrowserTool {
 
     // MARK: - Execution
 
-    func execute(_ args: [String: Any], conversationId: String) async throws -> AskLocalToolOutput {
+    func execute(_ args: [String: Any], conversationId: String,
+                 authorize: () throws -> Void = {}) async throws -> AskLocalToolOutput {
         let action = action(args)
         guard Self.actions.contains(action) else { throw AskLocalError.message(L("ask.tool.invalid")) }
+        let expected = try binding(args)
+        try authorize()
         switch action {
         case "tabs": return .init(content: tabList(conversationId: conversationId))
-        case "handoff": return try await handoff(args)
-        case "new_tab": return try await newTab(args, conversationId: conversationId)
-        case "open_file": return try await openFile(args, conversationId: conversationId)
+        case "handoff": return try await handoff(args, authorize: authorize)
+        case "new_tab": return try await newTab(args, conversationId: conversationId, authorize: authorize)
+        case "open_file": return try await openFile(args, conversationId: conversationId, authorize: authorize)
         default: break
         }
         guard let tab = targetTab(args) else {
-            if action == "open" { return try await newTab(args, conversationId: conversationId) }
+            if action == "open" {
+                return try await newTab(args, conversationId: conversationId, authorize: authorize)
+            }
             throw AskLocalError.message(L("ask.web.noTab"))
         }
         guard !tab.isPrivate else { throw AskLocalError.message(L("ask.web.privateTab")) }
         if action == "close_tab" || action == "select_tab" {
+            try checkAllowed(host: AskHTTPOrigin(tab.url)?.description)
             return try manageTab(action, tab: tab, conversationId: conversationId)
         }
-        try checkAllowed(host: action == "open" ? destinationHost(args) : tab.host)
+        let origin = governingOrigin(args)
+        if action == "back" {
+            try checkAllowed(host: AskHTTPOrigin(tab.url)?.description)
+        }
+        try checkAllowed(host: origin)
         try await workspace.waitUntilResumed(conversationId: conversationId)
+        try Task.checkCancellation()
+        try authorize()
+        guard !tab.isPrivate, try binding(args) == expected else { throw AskObservationError.needsObservation }
+        try checkAllowed(host: governingOrigin(args))
         workspace.select(tab)
         workspace.requestPresentation()
         workspace.beginActivity(L("ask.web.action." + action), conversationId: conversationId, tab: tab)
-        return try await page(action, args: args, tab: tab)
+        let output = try await page(action, args: args, tab: tab)
+        do {
+            try authorize()
+            try validatePage(tab, origin: origin)
+            if !["open", "back", "click", "fill"].contains(action), try binding(args) != expected {
+                throw AskObservationError.needsObservation
+            }
+        } catch {
+            // The effect already happened. Keep its receipt without exposing the changed page.
+            if let outcome = output.outcome, outcome.eventDispatched == true || outcome.status == "unknown" {
+                return AskActionReceipt(outcome: outcome, message: "Action finished or may have taken effect. "
+                    + "The page or permission changed. Observe and reconcile; do not replay automatically.").output()
+            }
+            throw error
+        }
+        return output
     }
 
     private func manageTab(_ action: String, tab: AskBrowserTab, conversationId: String) throws -> AskLocalToolOutput {
@@ -228,7 +263,7 @@ final class AskEmbeddedBrowserTool {
 
     static func validatedURL(_ value: Any?) throws -> URL {
         guard let raw = value as? String, raw.count <= 4000, let url = URL(string: raw),
-              ["http", "https"].contains(url.scheme?.lowercased() ?? ""), url.host != nil else {
+              AskHTTPOrigin(url) != nil else {
             throw AskLocalError.message(L("ask.web.invalidURL"))
         }
         return url
@@ -247,9 +282,14 @@ final class AskEmbeddedBrowserTool {
         return url
     }
 
-    private func openFile(_ args: [String: Any], conversationId: String) async throws -> AskLocalToolOutput {
+    private func openFile(_ args: [String: Any], conversationId: String,
+                          authorize: () throws -> Void) async throws -> AskLocalToolOutput {
         let url = try Self.validatedLocalHTML(args["path"])
+        let expected = try binding(args)
         try await workspace.waitUntilResumed(conversationId: conversationId)
+        try authorize()
+        try Task.checkCancellation()
+        guard try binding(args) == expected else { throw AskObservationError.needsObservation }
         let previous = workspace.tabs.first {
             $0.owner == .agent(conversationId: conversationId) && $0.url?.standardizedFileURL == url
         }
@@ -260,41 +300,69 @@ final class AskEmbeddedBrowserTool {
         workspace.beginActivity(L("ask.web.action.open"), conversationId: conversationId, tab: tab)
         tab.loadLocalHTML(url)
         try await tab.waitForLoad(timeout: loadTimeout)
-        guard tab.url?.standardizedFileURL == url, !tab.isLoading, tab.notice == nil else {
+        try authorize()
+        try Task.checkCancellation()
+        guard !tab.isPrivate, tab.url?.standardizedFileURL == url, !tab.isLoading, tab.notice == nil else {
             if previous == nil { workspace.close(tab) }
             throw AskLocalError.message(tab.notice ?? "Local HTML preview did not finish loading.")
         }
         return .init(content: "Opened local HTML in tab \(tab.number).\n" + pageSummary(tab))
     }
 
-    private func newTab(_ args: [String: Any], conversationId: String) async throws -> AskLocalToolOutput {
+    private func newTab(_ args: [String: Any], conversationId: String,
+                        authorize: () throws -> Void) async throws -> AskLocalToolOutput {
         let url = try args["url"].map(Self.validatedURL)
-        try checkAllowed(host: url?.host?.lowercased())
+        let expected = try binding(args)
+        try checkAllowed(host: AskHTTPOrigin(url)?.description)
         try await workspace.waitUntilResumed(conversationId: conversationId)
+        try authorize()
+        try Task.checkCancellation()
+        try checkAllowed(host: AskHTTPOrigin(url)?.description)
+        guard try binding(args) == expected else { throw AskObservationError.needsObservation }
         let tab = try workspace.newTab(owner: .agent(conversationId: conversationId))
         workspace.requestPresentation()
         guard let url else { return .init(content: "Opened tab \(tab.number).") }
         workspace.beginActivity(L("ask.web.action.open"), conversationId: conversationId, tab: tab)
         tab.load(url)
         try await tab.waitForLoad(timeout: loadTimeout)
+        try authorize()
+        if AskHTTPOrigin(tab.url) != AskHTTPOrigin(url) {
+            // Report only local navigation status; a redirect never inherits page-read authority.
+            return .init(content: "Opened tab \(tab.number). Navigation did not finish at the requested origin. "
+                + "Observe the current tab before continuing.")
+        }
+        try validatePage(tab, origin: AskHTTPOrigin(url)?.description)
         return .init(content: "Opened tab \(tab.number).\n" + pageSummary(tab))
     }
 
-    private func handoff(_ args: [String: Any]) async throws -> AskLocalToolOutput {
+    private func handoff(_ args: [String: Any], authorize: () throws -> Void) async throws -> AskLocalToolOutput {
         guard let tab = targetTab(args) else {
             throw AskLocalError.message(L("ask.web.noTab"))
         }
+        guard !tab.isPrivate else { throw AskLocalError.message(L("ask.web.privateTab")) }
+        let origin = AskHTTPOrigin(tab.url)?.description
+        try checkAllowed(host: origin)
         let reason = (args["reason"] as? String).flatMap(AskBrowserWorkspace.Handoff.Reason.init(rawValue:)) ?? .other
         let message = String((args["message"] as? String ?? "").prefix(300))
         observations[tab.id] = nil
         let completed = await workspace.requestHandoff(tab: tab, reason: reason, message: message)
         try Task.checkCancellation()
+        try authorize()
+        try validatePage(tab, origin: origin)
         guard completed else {
             return .init(content: "The user declined to finish this step in the browser. "
                 + "Do not retry it; ask them how to continue.", isError: true)
         }
         return .init(content: "The user finished the step and handed the page back. Observe again before acting.\n"
             + pageSummary(tab))
+    }
+
+    private func validatePage(_ tab: AskBrowserTab, origin: String?) throws {
+        try Task.checkCancellation()
+        guard !tab.isPrivate, AskHTTPOrigin(tab.url)?.description == origin else {
+            throw AskObservationError.needsObservation
+        }
+        try checkAllowed(host: origin)
     }
 
     private func tabList(conversationId: String) -> String {
@@ -314,16 +382,21 @@ final class AskEmbeddedBrowserTool {
         return text
     }
 
+    // Observations and DOM effects share the same local policy guards below.
+}
+
+extension AskEmbeddedBrowserTool {
     // MARK: Observation
 
     private func observe(_ tab: AskBrowserTab, read: Bool) async throws -> AskLocalToolOutput {
         let id = UUID().uuidString
         let generation = tab.generation
+        let origin = AskHTTPOrigin(tab.url)?.description
         let raw = try await tab.webView.callAsyncJavaScript(
             "return " + AskBrowserExecutor.observationScript(id: id, read: read),
             arguments: [:], in: nil, contentWorld: Self.contentWorld
         )
-        try Task.checkCancellation()
+        try validatePage(tab, origin: origin)
         guard let text = raw as? String, let data = text.data(using: .utf8),
               let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               object["observation_id"] as? String == id, tab.generation == generation else {
@@ -397,7 +470,8 @@ final class AskEmbeddedBrowserTool {
         if receipt.outcome.status == "invalid", receipt.message == "needs-observation" {
             throw AskObservationError.needsObservation
         }
-        try await tab.waitForLoad(timeout: loadTimeout)
+        do { try await tab.waitForLoad(timeout: loadTimeout) }
+        catch { return receipt.output() }
         var output = receipt.output()
         output.content += "\n" + pageSummary(tab)
         return output

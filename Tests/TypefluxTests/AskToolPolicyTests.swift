@@ -88,6 +88,8 @@ struct AskToolPolicyTests {
         let store = store(), original = request()
         let id = try #require(store.issue(original, reusable: true))
         var next = original; next.context.toolCallId = "next"; next.context.runId = "next-run"
+        #expect(store.reusableGrant(for: next) == nil)
+        next.context.runId = original.context.runId
         #expect(store.reusableGrant(for: next) == id)
         #expect(store.consume(id, for: next)); #expect(store.consume(id, for: next))
         next.reusable = false
@@ -140,5 +142,62 @@ struct AskToolPolicyTests {
         #expect(store.consume(id, for: request))
         request.context.target.kind = "workspace"; request.binding.target = request.context.target
         #expect(store.issue(request) == nil)
+    }
+}
+
+extension AskToolPolicyTests {
+    @Test func `task and session approval lifetimes stay local and bounded`() throws {
+        let store = store()
+        var original = request()
+        let folders = AskFolderGrants()
+        original.localScope = folders.scope(ownerId: "owner", deviceId: "device", conversationId: "conversation",
+                                            taskIdentity: UUID(), runId: "run")
+        let task = try #require(store.issue(original, reusable: true))
+        let session = try #require(store.issue(original, reusable: true, lifetime: .conversationSession))
+        var next = original
+        next.context.runId = "next"
+        next.context.toolCallId = "other"
+        next.localScope?.runId = "next"
+        next.localScope?.taskIdentity = UUID()
+        #expect(!store.consume(task, for: next))
+        #expect(store.consume(session, for: next))
+        store.revokeTask(conversation: "conversation", run: "run")
+        #expect(!store.consume(task, for: original))
+        #expect(store.consume(session, for: next))
+        var changed = next
+        changed.localScope = folders.scope(
+            ownerId: "owner",
+            deviceId: "other",
+            conversationId: "conversation",
+            runId: "next"
+        )
+        #expect(!store.consume(session, for: changed))
+        folders.resetSession()
+        changed.localScope = folders.scope(
+            ownerId: "owner",
+            deviceId: "device",
+            conversationId: "conversation",
+            runId: "next"
+        )
+        #expect(!store.consume(session, for: changed))
+        changed = next; changed.context.argumentsHash = AskToolPolicy.digest("changed")
+        #expect(!store.consume(session, for: changed))
+        store.now = { time.addingTimeInterval(301) }
+        #expect(!store.validateDispatch(session, for: next))
+        store.now = { time }
+        store.revoke(session)
+        #expect(!store.consume(session, for: next))
+        #expect(store.issue(request(), reusable: true, lifetime: .conversationSession) == nil)
+    }
+
+    @Test func `trusted explicit consent prevents reuse regardless of risk label`() {
+        var binding = request().binding
+        binding.requiresExplicitConsent = true
+        let call = AskToolCall(id: "call", function: .init(name: "browser", arguments: "{\"action\":\"open\"}"))
+        let prepared = AskToolPolicy.request(call: call, owner: "o", conversation: "c", run: "r", step: "s",
+                                             binding: binding, risk: .read, reuseEnabled: true, now: time)
+        #expect(!prepared.reusable)
+        #expect(store().issue(prepared, reusable: true) == nil)
+        #expect(store().issue(prepared) != nil)
     }
 }

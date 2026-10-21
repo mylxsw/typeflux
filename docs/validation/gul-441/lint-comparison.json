@@ -1,0 +1,28 @@
+{
+  "baseline": {
+    "error_count": 19,
+    "errors_by_rule": {
+      "identifier_name": 3,
+      "force_cast": 3,
+      "force_try": 2,
+      "cyclomatic_complexity": 2,
+      "file_length": 1,
+      "function_body_length": 1,
+      "line_length": 6,
+      "type_body_length": 1
+    }
+  },
+  "current": {
+    "error_count": 19,
+    "errors_by_rule": {
+      "force_try": 2,
+      "force_cast": 3,
+      "identifier_name": 3,
+      "cyclomatic_complexity": 2,
+      "file_length": 1,
+      "function_body_length": 1,
+      "line_length": 6,
+      "type_body_length": 1
+    }
+  }
+}

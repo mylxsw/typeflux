@@ -45,8 +45,14 @@ protocol AskToolExecuting {
                          authorize: () throws -> Void) async throws -> AskLocalToolOutput
     /// The MCP server behind a tool call, for approvals; nil for built-in tools.
     func mcpServerName(of call: AskToolCall) -> String?
-    /// Opens folders the user attached to the `files` tool for one conversation.
-    func grantFolders(_ paths: [String], conversationId: String)
+    func stageFolders(_ paths: [String], lifetime: AskFolderGrants.Lifetime, ownerId: String,
+                      deviceId: String, conversationId: String, messageID: String, generation: UUID) throws
+    func admitFolders(messageID: String, conversationId: String, runId: String) throws
+    func discardFolderSubmission(messageID: String)
+    func temporaryFolders(conversationId: String) -> [AskFolderGrants.Grant]
+    func revokeFolder(_ id: UUID?, conversationId: String)
+    func revokeTaskFolders(conversationId: String, runId: String?)
+    func resetFolderSession()
     func deleteArtifacts(ownerId: String, conversationId: String) throws
     /// Typeflux's own browser panel, when this executor offers the `web_browser` tool.
     var browserWorkspace: AskBrowserWorkspace? { get }
@@ -79,7 +85,17 @@ extension AskToolExecuting {
     func bindExecution(ownerId _: String, conversationId _: String, runId _: String) {}
     func exportProjectPatch(_: AskWorkspaceRef, ownerId _: String, conversationId _: String) throws -> Data { throw AskProjectError.unavailable }
     func mcpServerName(of _: AskToolCall) -> String? { nil }
-    func grantFolders(_: [String], conversationId _: String) {}
+    func stageFolders(_: [String], lifetime _: AskFolderGrants.Lifetime, ownerId _: String,
+                      deviceId _: String, conversationId _: String, messageID _: String, generation _: UUID) throws {}
+    func admitFolders(messageID _: String, conversationId _: String, runId _: String) throws {}
+    func discardFolderSubmission(messageID _: String) {}
+    func temporaryFolders(conversationId _: String) -> [AskFolderGrants.Grant] {
+        []
+    }
+
+    func revokeFolder(_: UUID?, conversationId _: String) {}
+    func revokeTaskFolders(conversationId _: String, runId _: String? = nil) {}
+    func resetFolderSession() {}
     func executeApproved(_ call: AskToolCall, conversationId: String, binding: AskToolBinding,
                          authorize: () throws -> Void) async throws -> AskLocalToolOutput {
         let current = try await approvalBinding(for: call, conversationId: conversationId)
@@ -106,6 +122,8 @@ final class AskLocalTools: AskToolExecuting {
     private let notes: AskMemoryNoteStore
     var fileOperationHooks = AskFileTools.Hooks()
     let folderGrants: AskFolderGrants
+    var folderSubmissions: [String: AskFolderGrants.Scope] = [:]
+    var folderExecutions: [String: AskFolderGrants.Scope] = [:]
     let artifactStore: AskArtifactStore
     var imageGenerator: any AskImageGenerating = AskImageGenerationService()
     var executionDeadlines: [String: Date] = [:]
@@ -210,27 +228,6 @@ final class AskLocalTools: AskToolExecuting {
         return skills.skills().filter { !disabled.contains($0.name) }
     }
 
-    var fileTools: AskFileTools { AskFileTools(roots: settings?.askFileAccessFolders ?? []) }
-
-    /// Settings folders plus the folders attached to this conversation.
-    func fileTools(conversationId: String?) -> AskFileTools {
-        var roots = conversationId.flatMap { workspaceURL(conversationId: $0)?.path }.map { [$0] } ?? []
-        roots.append(contentsOf: fileTools.roots.filter { !roots.contains($0) })
-        for path in conversationId.map(folderGrants.folders(for:)) ?? [] where !roots.contains(path) { roots.append(path) }
-        return AskFileTools(roots: roots)
-    }
-
-    func grantFolders(_ paths: [String], conversationId: String) { folderGrants.grant(paths, to: conversationId) }
-
-    /// Without host-command access, a browser preview must respect the same folder grants as `files`.
-    func validateBrowserLocalFile(_ args: [String: Any], conversationId: String) throws {
-        guard args["action"] as? String == "open_file" else { return }
-        let url = try AskEmbeddedBrowserTool.validatedLocalHTML(args["path"])
-        if settings?.askCodeExecutionEnabled != true {
-            _ = try fileTools(conversationId: conversationId).resolve(url.path)
-        }
-    }
-
     /// The bound browser, or a running Safari/Chrome when the question started elsewhere.
     func browserBundle(conversationId: String?) -> String? {
         // An existing conversation only controls the app it was bound to, which is gone after a restart.
@@ -242,8 +239,13 @@ final class AskLocalTools: AskToolExecuting {
 
     func definitions(conversationId: String?) async -> [AskToolDefinition] {
         await registry.connectAutoConnectServers()
-        var result = automationDefinitions.filter { $0.name != "browser" || browserBundle(conversationId: conversationId) != nil }
-        if let files = AskFileTools.definition(roots: fileTools(conversationId: conversationId).roots) { result.append(files) }
+        var result = automationDefinitions
+            .filter { $0.name != "browser" || browserBundle(conversationId: conversationId) != nil }
+        let metadataRoots = fileTools(conversationId: conversationId)
+            .roots + (conversationId.map(folderMetadataRoots) ?? [])
+        if let files = AskFileTools.definition(roots: Array(Set(metadataRoots)).sorted()) {
+            result.append(files)
+        }
         if projectModeEnabled, !fileTools(conversationId: conversationId).roots.isEmpty,
            let project = try? Self.projectDefinition(roots: fileTools(conversationId: conversationId).roots) {
             result.append(project)

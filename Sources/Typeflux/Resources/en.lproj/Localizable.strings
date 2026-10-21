@@ -6060,14 +6060,14 @@
 "ask.web.permission.off" = "Off";
 "ask.web.permission.ask" = "Ask";
 "ask.web.permission.read" = "Read";
-"ask.web.permission.act" = "Act";
+"ask.web.permission.act" = "Read & navigate";
 "ask.web.permission.help" = "What the AI may do on this site. Change it in Sites & Sign-ins.";
 "ask.web.permission.label" = "AI permission for %@";
 "ask.web.private.detail" = "Private tab: cookies and history are discarded when it closes, and the AI can't use it.";
 "ask.web.signedIn" = "Signed-in sites";
 "ask.web.start.detail" = "Sign-ins here are separate from Safari and Chrome and stay on this Mac. The AI acts only on sites you allow, and hands sign-ins and payments to you.";
 "ask.web.sites.title" = "Sites & Sign-ins";
-"ask.web.sites.detail" = "Accounts you sign in to here are kept only in Typeflux's browser profile on this Mac and are never uploaded. Choose what the AI may do on each site.";
+"ask.web.sites.detail" = "Accounts you sign in to here are kept only in Typeflux's browser profile on this Mac and are never uploaded. Choose permissions for exact web origins. Page changes always need approval.";
 "ask.web.sites.empty" = "No sites yet. Sign in to a site in the browser and it appears here.";
 "ask.web.sites.signedIn" = "Has saved data";
 "ask.web.sites.noData" = "No saved data";
@@ -6535,3 +6535,18 @@
 "ask.commandJob.status" = "Check command status";
 "ask.commandJob.logs" = "Read command output";
 "ask.commandJob.stop" = "Stop command";
+
+// Temporary folder authority and exact browser origins.
+"ask.folder.lifetime" = "Attached folder access";
+"ask.folder.task" = "This task";
+"ask.folder.session" = "This conversation until sign-out or app exit";
+"ask.folder.boundary" = "Folder access does not approve file changes or shell commands.";
+"ask.folder.source" = "Source: temporary attachment";
+"ask.folder.settingsAlso" = "Settings also authorizes this folder. Revoking this attachment keeps Settings access.";
+"ask.folder.revoke" = "Revoke attachment access";
+"ask.folder.revokeAll" = "Revoke all temporary folders";
+"ask.folder.expired" = "Previous folder access has expired. Attach the folder again to authorize access.";
+"ask.web.sites.exactOrigin" = "Exact web origin permission";
+"ask.web.sites.legacy" = "Old host preference; allows are inactive. Remove an old deny before selecting an exact origin.";
+
+"ask.web.removePermission" = "Remove permission or old preference for %@";

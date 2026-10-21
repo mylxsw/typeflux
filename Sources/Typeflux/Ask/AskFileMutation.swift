@@ -106,6 +106,7 @@ extension AskFileTools {
                 // Cancellation observed here leaves the destination unchanged. After
                 // commit, return its receipt even if cancellation arrives concurrently.
                 try hooks.onEvent?("commit")
+                try access.revalidate()
                 try cancellation.check()
                 let status = access.initial == nil
                     ? renameatx_np(

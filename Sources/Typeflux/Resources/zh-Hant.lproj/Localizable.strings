@@ -5983,14 +5983,14 @@
 "ask.web.permission.off" = "禁止";
 "ask.web.permission.ask" = "每次詢問";
 "ask.web.permission.read" = "僅讀取";
-"ask.web.permission.act" = "可操作";
+"ask.web.permission.act" = "讀取與導覽";
 "ask.web.permission.help" = "AI 在此網站上的權限，可在「網站與登入」中修改。";
 "ask.web.permission.label" = "%@ 的 AI 權限";
 "ask.web.private.detail" = "私密分頁：關閉後不保留 Cookie 與記錄，AI 不能使用。";
 "ask.web.signedIn" = "已登入的網站";
 "ask.web.start.detail" = "這裡的登入狀態獨立於 Safari 和 Chrome，只保存在本機。AI 只在你允許的網站上操作，遇到登入、付款等步驟會交給你完成。";
 "ask.web.sites.title" = "網站與登入";
-"ask.web.sites.detail" = "你在這裡登入的帳號只保存在本機的 Typeflux 瀏覽器設定中，不會上傳。為每個網站決定 AI 能做什麼。";
+"ask.web.sites.detail" = "僅對精確網頁來源授權。頁面修改始終需要單次批准。";
 "ask.web.sites.empty" = "還沒有網站。在瀏覽器中正常登入後，網站會出現在這裡。";
 "ask.web.sites.signedIn" = "已保存登入資料";
 "ask.web.sites.noData" = "無保存資料";
@@ -6537,3 +6537,18 @@
 "ask.commandJob.status" = "Check command status";
 "ask.commandJob.logs" = "Read command output";
 "ask.commandJob.stop" = "Stop command";
+
+// Temporary folder authority and exact browser origins.
+"ask.folder.lifetime" = "Attached folder access";
+"ask.folder.task" = "This task";
+"ask.folder.session" = "This conversation until sign-out or app exit";
+"ask.folder.boundary" = "Folder access does not approve file changes or shell commands.";
+"ask.folder.source" = "Source: temporary attachment";
+"ask.folder.settingsAlso" = "Settings also authorizes this folder. Revoking this attachment keeps Settings access.";
+"ask.folder.revoke" = "Revoke attachment access";
+"ask.folder.revokeAll" = "Revoke all temporary folders";
+"ask.folder.expired" = "Previous folder access has expired. Attach the folder again to authorize access.";
+"ask.web.sites.exactOrigin" = "Exact web origin permission";
+"ask.web.sites.legacy" = "Old host preference; allows are inactive. Remove an old deny before selecting an exact origin.";
+
+"ask.web.removePermission" = "Remove permission or old preference for %@";
