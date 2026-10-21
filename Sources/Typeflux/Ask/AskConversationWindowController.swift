@@ -333,6 +333,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: AskMetrics.launcherWidth, height: launcherHeight),
                                      styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.level = .floating
+        // AppKit's inferred panel animation scales the already rendered launcher
+        // and settles with a bounce. Present at its final size on every opening.
+        panel.animationBehavior = .none
         panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = true
         panel.isMovableByWindowBackground = false
         panel.hidesOnDeactivate = false

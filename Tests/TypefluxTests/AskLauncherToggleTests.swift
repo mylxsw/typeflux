@@ -151,6 +151,8 @@ struct AskLauncherToggleTests {
 
         // Check both initial presentation and reuse of the same panel.
         for _ in 0..<2 {
+            #expect(launcher.animationBehavior == .none,
+                    "Opening and reopening must not add AppKit's panel scaling animation")
             #expect(launcher.styleMask.contains(.nonactivatingPanel))
             #expect(launcher.canBecomeKey)
             #expect(!launcher.canBecomeMain)
