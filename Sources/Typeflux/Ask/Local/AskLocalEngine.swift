@@ -45,7 +45,7 @@ actor AskLocalEngine: AskAPI {
     let directory: URL
     private let prepareImages: @Sendable ([AskMessage]) async -> [AskMessage]
     private let typedContentEnabled: Bool
-    private let webTools: AskLocalWebTools
+    private let builtinTools: any AskBuiltinToolHosting
     let budgetEnabled: Bool
     let budgetLimits: AskBudgetResources
     let contextLimits: @Sendable (String) -> AskContextLimits
@@ -73,7 +73,8 @@ actor AskLocalEngine: AskAPI {
          contextLimits: @escaping @Sendable (String) -> AskContextLimits = { _ in .init() },
          summarize: (@Sendable (AskInference, String, String) async -> AskInferenceResult)? = nil,
          prepareImages: @escaping @Sendable ([AskMessage]) async -> [AskMessage] = { await AskTypedContent.prepareHistory($0) },
-         promptBuilder: any AskPromptBuilding = DefaultAskPromptBuilder()) {
+         promptBuilder: any AskPromptBuilding = DefaultAskPromptBuilder(),
+         builtinTools: (any AskBuiltinToolHosting)? = nil) {
         self.promptBuilder = promptBuilder
         self.summarize = summarize
         self.prepareImages = prepareImages
@@ -82,7 +83,7 @@ actor AskLocalEngine: AskAPI {
         self.contextLimits = contextLimits
         self.typedContentEnabled = typedContentEnabled
         self.directory = directory
-        self.webTools = webTools
+        self.builtinTools = builtinTools ?? DefaultAskBuiltinToolHost(webTools: webTools)
         self.now = now
     }
 
@@ -530,7 +531,7 @@ actor AskLocalEngine: AskAPI {
         record.summaryUnavailable = nil
         record.summaryFallback = nil
         record.steering = nil
-        record.builtinTools = [Self.planTool] + webTools.definitions()
+        record.builtinTools = builtinTools.definitions()
         let deviceNames = Set(record.conversation.run?.tools.map(\.name) ?? [])
         record.conversation.run?.cloudTools = record.builtinTools.filter { !deviceNames.contains($0.name) }
         record.approvedCloudCallId = nil
@@ -817,37 +818,13 @@ actor AskLocalEngine: AskAPI {
         return try await step(&record)
     }
 
-    private struct BuiltinResult {
-        var text: String
-        var isError: Bool
-        var plan: [AskPlanItem]?
-    }
-
-    private func executeBuiltin(_ call: AskToolCall, conversation: AskConversation, cloudCalls: Int, budgeted: Bool) async -> BuiltinResult {
+    private func executeBuiltin(_ call: AskToolCall, conversation: AskConversation, cloudCalls: Int, budgeted: Bool) async -> AskBuiltinToolOutput {
         guard ["update_plan", "read_conversation_history"].contains(call.function.name) || cloudCalls < Self.maxBuiltinCalls else {
-            return BuiltinResult(
+            return AskBuiltinToolOutput(
                 text: "Web tool limit for this request reached. Answer with the information gathered so far.",
                 isError: true)
         }
-        if call.function.name == AskSemanticCompaction.historyTool.name {
-            do { return BuiltinResult(text: try AskSemanticCompaction.readHistory(conversation, arguments: call.function.arguments), isError: false) }
-            catch { return BuiltinResult(text: "Invalid original message index, offset or limit.", isError: true) }
-        }
-        if call.function.name == "update_plan" {
-            do {
-                return BuiltinResult(text: "Plan updated.", isError: false,
-                                     plan: try Self.parsePlan(call.function.arguments))
-            } catch { return BuiltinResult(text: error.localizedDescription, isError: true) }
-        }
-        var boundedTools = webTools
-        if budgeted {
-            // One reservation authorizes one request; redirect follow-ups require
-            // a fresh reservation, so this local adapter refuses them.
-            boundedTools.session = URLSession(configuration: webTools.session.configuration, delegate: AskModelRedirectPolicy(), delegateQueue: nil)
-        }
-        defer { if budgeted { boundedTools.session.finishTasksAndInvalidate() } }
-        let (text, failed) = await boundedTools.execute(name: call.function.name, arguments: call.function.arguments)
-        return BuiltinResult(text: text, isError: failed)
+        return await builtinTools.execute(.init(call: call, conversation: conversation, budgeted: budgeted))
     }
 
     /// Appends the messages waiting for this run. Only at a step boundary, so a user
@@ -908,34 +885,9 @@ actor AskLocalEngine: AskAPI {
 
     // MARK: - Plan
 
-    static let planTool = AskToolDefinition(
-        name: "update_plan",
-        description: "Record the plan for a multi-step task so the user can follow progress. Send the complete list every time; mark at most one step in_progress.",
-        parameters: JSONValue(data: try! JSONSerialization.data(withJSONObject: [
-            "type": "object", "required": ["items"], "additionalProperties": false,
-            "properties": ["items": ["type": "array", "minItems": 1, "maxItems": 20, "items": [
-                "type": "object", "required": ["step", "status"], "additionalProperties": false,
-                "properties": ["step": ["type": "string"], "status": ["type": "string", "enum": ["pending", "in_progress", "completed"]]]
-            ]]]
-        ], options: .sortedKeys)))
+    static let planTool = AskBuiltinPlan.definition
 
     static func parsePlan(_ arguments: String) throws -> [AskPlanItem] {
-        let args = try AskLocalTools.jsonArguments(arguments)
-        guard let raw = args["items"] as? [[String: Any]], (1 ... 20).contains(raw.count) else {
-            throw AskLocalError.message("items must list 1 to 20 steps")
-        }
-        var active = 0
-        let items = try raw.map { item -> AskPlanItem in
-            let step = (item["step"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            let status = item["status"] as? String ?? ""
-            guard !step.isEmpty, step.count <= 300 else { throw AskLocalError.message("Each step needs 1 to 300 characters") }
-            guard ["pending", "in_progress", "completed"].contains(status) else {
-                throw AskLocalError.message("status must be pending, in_progress or completed")
-            }
-            if status == "in_progress" { active += 1 }
-            return AskPlanItem(step: step, status: status)
-        }
-        guard active <= 1 else { throw AskLocalError.message("Mark at most one step in_progress") }
-        return items
+        try AskBuiltinPlan.parse(arguments)
     }
 }

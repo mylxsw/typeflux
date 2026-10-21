@@ -184,5 +184,7 @@ extension AskApplicationAPITests {
         #expect(limits.maxOutput == 4096)
         #expect(!limits.known)
         #expect(await engine.budgetEnabled == settings.defaults.bool(forKey: "ask.budgetEnabled"))
+        let host = try #require(Mirror(reflecting: engine).children.first { $0.label == "builtinTools" }?.value as? DefaultAskBuiltinToolHost)
+        #expect(host.definitions() == [AskBuiltinPlan.definition] + host.webTools.definitions())
     }
 }
