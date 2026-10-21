@@ -553,3 +553,143 @@ extension AskFileDispatchTests {
         }
     }
 }
+
+extension AskFileDispatchTests {
+    func testTemporaryRevocationCannotSwitchSourceOrReviveHeldWorker() async throws {
+        for event in ["createParent", "createStaging", "precommit", "commit", "release"] {
+            let (root, tools, defaults) = try fixture()
+            defer { try? FileManager.default.removeItem(at: root) }
+            defaults.set([], forKey: "ask.fileAccessFolders")
+            try tools.stageFolders([root.path], lifetime: .task, ownerId: GlobalSoulOwner.currentID,
+                                   deviceId: "d", conversationId: "c", messageID: "m", generation: UUID())
+            // The actual production executor cannot use pending selections.
+            XCTAssertTrue(tools.fileTools(conversationId: "c").roots.isEmpty)
+            try tools.admitFolders(messageID: "m", conversationId: "c", runId: "r")
+            tools.bindExecution(ownerId: GlobalSoulOwner.currentID, conversationId: "c", runId: "r")
+            let path = event == "createParent" ? "new/created" : event == "release" ? "file" : "created"
+            let request = try call(event == "release" ? "read" : "write", path: path, extra: ["content": "changed"])
+            let binding = try await tools.approvalBinding(for: request, conversationId: "c")
+            let entered = expectation(description: event)
+            let suspension = FileSuspension(event, entered: entered)
+            tools.fileOperationHooks.onEvent = { try suspension.visit($0) }
+            let worker = Task { try await tools.executeApproved(
+                request,
+                conversationId: "c",
+                binding: binding,
+                authorize: {}
+            ) }
+            await fulfillment(of: [entered], timeout: 30)
+            let grant = try XCTUnwrap(tools.temporaryFolders(conversationId: "c").first)
+            tools.revokeFolder(grant.id, conversationId: "c")
+            // Both another authority source and a same-path regrant are insufficient for the held lease.
+            defaults.set([root.path], forKey: "ask.fileAccessFolders")
+            try tools.stageFolders([root.path], lifetime: .task, ownerId: GlobalSoulOwner.currentID,
+                                   deviceId: "d", conversationId: "c", messageID: "next", generation: UUID())
+            try tools.admitFolders(messageID: "next", conversationId: "c", runId: "r2")
+            tools.bindExecution(ownerId: GlobalSoulOwner.currentID, conversationId: "c", runId: "r2")
+            suspension.release()
+            do { _ = try await worker.value; XCTFail("Revoked worker must fail") } catch {}
+            XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("created").path))
+            XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("new").path))
+            XCTAssertEqual(try String(contentsOf: root.appendingPathComponent("file")), "original")
+            XCTAssertFalse(try (FileManager.default.contentsOfDirectory(atPath: root.path))
+                .contains { $0.hasPrefix(".typeflux") })
+        }
+    }
+
+    func testOldApprovalBindingDoesNotSurviveRegrantAndSettingsRemainIndependent() async throws {
+        let (root, tools, defaults) = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        defaults.set([], forKey: "ask.fileAccessFolders")
+        let request = try call("read", path: "file")
+        try tools.stageFolders([root.path], lifetime: .conversationSession, ownerId: GlobalSoulOwner.currentID,
+                               deviceId: "d", conversationId: "c", messageID: "m", generation: UUID())
+        try tools.admitFolders(messageID: "m", conversationId: "c", runId: "r")
+        tools.bindExecution(ownerId: GlobalSoulOwner.currentID, conversationId: "c", runId: "r")
+        let original = try await tools.approvalBinding(for: request, conversationId: "c")
+        tools.revokeFolder(nil, conversationId: "c")
+        try tools.stageFolders([root.path], lifetime: .task, ownerId: GlobalSoulOwner.currentID,
+                               deviceId: "d", conversationId: "c", messageID: "m2", generation: UUID())
+        try tools.admitFolders(messageID: "m2", conversationId: "c", runId: "r")
+        let replacement = try await tools.approvalBinding(for: request, conversationId: "c")
+        XCTAssertEqual(original.target, replacement.target)
+        XCTAssertNotEqual(original.authorityRevision, replacement.authorityRevision)
+        do { _ = try await tools.executeApproved(
+            request,
+            conversationId: "c",
+            binding: original,
+            authorize: {}
+        ); XCTFail() } catch {}
+        defaults.set([root.path], forKey: "ask.fileAccessFolders")
+        let settingsBinding = try await tools.approvalBinding(for: request, conversationId: "c")
+        tools.revokeFolder(nil, conversationId: "c")
+        let result = try await tools.executeApproved(
+            request,
+            conversationId: "c",
+            binding: settingsBinding,
+            authorize: {}
+        )
+        XCTAssertTrue(result.content.contains("original"))
+    }
+}
+
+private extension AskConversationWorkspaceStore {
+    func holdFolderSubmission(_ suspension: FileSuspension) throws { try suspension.visit("workspace") }
+}
+
+extension AskFileDispatchTests {
+    func testHeldWorkspaceCannotAdmitCancelledFolderSubmission() async throws {
+        let (root, _, defaults) = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let workspaces = AskConversationWorkspaceStore(rootURL: root.appendingPathComponent("workspaces"))
+        let settings = SettingsStore(defaults: defaults)
+        settings.askFileAccessFolders = []
+        let tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)),
+                                  settings: settings, workspaces: workspaces, owner: { "owner" })
+        let fixture = try AskTestFixture(workspaces: workspaces, toolsOverride: tools)
+        defer { fixture.model.resetSession() }
+        let entered = expectation(description: "workspace actor held before submission")
+        let suspension = FileSuspension("workspace", entered: entered)
+        defer { suspension.release() }
+        let holder = Task { try await workspaces.holdFolderSubmission(suspension) }
+        await fulfillment(of: [entered], timeout: 10)
+        fixture.model.draft = .followUp
+        fixture.model.draft.text = "Inspect the attachment"
+        fixture.model.draft.attachments = [.init(kind: .folder, name: "root", path: root.path)]
+        fixture.model.submitDraft()
+        try await fixture.wait { !tools.folderSubmissions.isEmpty }
+        let id = try XCTUnwrap(fixture.model.selectedId)
+        XCTAssertTrue(tools.folderGrants.roots(for: tools.folderScope(id, run: "unadmitted")).isEmpty)
+        fixture.model.stop(id: id)
+        XCTAssertTrue(tools.temporaryFolders(conversationId: id).isEmpty)
+        suspension.release()
+        try await holder.value
+        try await fixture.wait { !fixture.model.isBusy }
+        XCTAssertTrue(tools.folderSubmissions.isEmpty)
+        let sends = await fixture.api.sends
+        XCTAssertTrue(sends.isEmpty)
+        XCTAssertEqual(try String(contentsOf: root.appendingPathComponent("file")), "original")
+    }
+
+    func testWorkspaceAuthorityAndTaskReplacementKeepTheirOwnLifetimes() async throws {
+        let (root, _, defaults) = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let workspaces = AskConversationWorkspaceStore(rootURL: root.appendingPathComponent("workspaces"))
+        let workspace = try await workspaces.ensure(owner: "owner", conversationId: "c")
+        try Data("workspace".utf8).write(to: workspace.appendingPathComponent("note"))
+        let settings = SettingsStore(defaults: defaults)
+        settings.askFileAccessFolders = []
+        let tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)),
+                                  settings: settings, workspaces: workspaces, owner: { "owner" })
+        try tools.stageFolders([root.path], lifetime: .task, ownerId: "owner", deviceId: "d", conversationId: "c", messageID: "m", generation: UUID())
+        try tools.admitFolders(messageID: "m", conversationId: "c", runId: "r")
+        tools.bindExecution(ownerId: "owner", conversationId: "c", runId: "r")
+        tools.bindExecution(ownerId: "owner", conversationId: "c", runId: "replacement")
+        XCTAssertTrue(tools.temporaryFolders(conversationId: "c").isEmpty)
+        let request = try call("read", path: "note")
+        let binding = try await tools.approvalBinding(for: request, conversationId: "c")
+        XCTAssertTrue(binding.authorityRevision?.hasPrefix("workspace:") == true)
+        let output = try await tools.executeApproved(request, conversationId: "c", binding: binding, authorize: {})
+        XCTAssertTrue(output.content.contains("workspace"))
+    }
+}

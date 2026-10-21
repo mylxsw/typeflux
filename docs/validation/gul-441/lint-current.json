@@ -1,0 +1,2558 @@
+[
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskFileMutation.swift",
+    "line" : 29,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 14",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskFileMutation.swift",
+    "line" : 29,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 100 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Warning",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 143,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 11",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 20,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 210,
+    "reason" : "Function should have 5 parameters or less: it currently has 6",
+    "rule_id" : "function_parameter_count",
+    "severity" : "Warning",
+    "type" : "Function Parameter Count"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 17,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 19,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 21,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 23,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 25,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 27,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 29,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 31,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 100,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 121,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 137,
+    "reason" : "Line should be 120 characters or less; currently it has 148 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 139,
+    "reason" : "Line should be 120 characters or less; currently it has 132 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 160,
+    "reason" : "Line should be 120 characters or less; currently it has 131 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 165,
+    "reason" : "Line should be 120 characters or less; currently it has 156 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 168,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 191,
+    "reason" : "Line should be 120 characters or less; currently it has 150 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 201,
+    "reason" : "Line should be 120 characters or less; currently it has 147 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 207,
+    "reason" : "Line should be 120 characters or less; currently it has 153 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 216,
+    "reason" : "Line should be 120 characters or less; currently it has 155 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 249,
+    "reason" : "Line should be 120 characters or less; currently it has 134 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 250,
+    "reason" : "Line should be 120 characters or less; currently it has 124 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 279,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 293,
+    "reason" : "Line should be 120 characters or less; currently it has 124 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 81,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskAttachment.swift",
+    "line" : 225,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 240,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 15",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 17,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 299,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 13",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 407,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 18",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 495,
+    "reason" : "File should contain 400 lines or less excluding comments and whitespaces: currently contains 436",
+    "rule_id" : "file_length",
+    "severity" : "Warning",
+    "type" : "File Length"
+  },
+  {
+    "character" : 88,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 404,
+    "reason" : "Force tries should be avoided",
+    "rule_id" : "force_try",
+    "severity" : "Error",
+    "type" : "Force Try"
+  },
+  {
+    "character" : 20,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 487,
+    "reason" : "Force tries should be avoided",
+    "rule_id" : "force_try",
+    "severity" : "Error",
+    "type" : "Force Try"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 407,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 53 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Warning",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 48,
+    "reason" : "Function should have 5 parameters or less: it currently has 7",
+    "rule_id" : "function_parameter_count",
+    "severity" : "Warning",
+    "type" : "Function Parameter Count"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 88,
+    "reason" : "Function should have 5 parameters or less: it currently has 7",
+    "rule_id" : "function_parameter_count",
+    "severity" : "Warning",
+    "type" : "Function Parameter Count"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 8,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 158,
+    "reason" : "Line should be 120 characters or less; currently it has 124 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 257,
+    "reason" : "Line should be 120 characters or less; currently it has 135 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 271,
+    "reason" : "Line should be 120 characters or less; currently it has 137 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 277,
+    "reason" : "Line should be 120 characters or less; currently it has 144 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 375,
+    "reason" : "Line should be 120 characters or less; currently it has 134 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 378,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 380,
+    "reason" : "Line should be 120 characters or less; currently it has 131 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 395,
+    "reason" : "Line should be 120 characters or less; currently it has 133 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 403,
+    "reason" : "Line should be 120 characters or less; currently it has 135 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 404,
+    "reason" : "Line should be 120 characters or less; currently it has 162 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 436,
+    "reason" : "Line should be 120 characters or less; currently it has 127 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 439,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 471,
+    "reason" : "Line should be 120 characters or less; currently it has 131 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 16,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 488,
+    "reason" : "Prefer failable `String(bytes:encoding:)` initializer when converting `Data` to `String`",
+    "rule_id" : "optional_data_string_conversion",
+    "severity" : "Warning",
+    "type" : "Optional Data -> String Conversion"
+  },
+  {
+    "character" : 7,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools.swift",
+    "line" : 112,
+    "reason" : "Class body should span 250 lines or less excluding comments and whitespace: currently spans 338 lines",
+    "rule_id" : "type_body_length",
+    "severity" : "Warning",
+    "type" : "Type Body Length"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 34,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 35,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 36,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 37,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 38,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 40,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 41,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 43,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 45,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 46,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 47,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 48,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 49,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 56,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 57,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 58,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 59,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 61,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 62,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 73,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 92,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 96,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 97,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 98,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 99,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 100,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 101,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 102,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 104,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 106,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 108,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 110,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 111,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 112,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 113,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 114,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 115,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 118,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 139,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 140,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 141,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 142,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 143,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 145,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 154,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 155,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 156,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 158,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 166,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 167,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 168,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 169,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 170,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 179,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 180,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 181,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 182,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 183,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 184,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 185,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 193,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 211,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 212,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 215,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 216,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 228,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 229,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 230,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 231,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 241,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 247,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 249,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 259,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 262,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 264,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 266,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 269,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 274,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 277,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 279,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 281,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 283,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 284,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 287,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversation.swift",
+    "line" : 290,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools+FolderAuthority.swift",
+    "line" : 31,
+    "reason" : "Function should have 5 parameters or less: it currently has 7",
+    "rule_id" : "function_parameter_count",
+    "severity" : "Warning",
+    "type" : "Function Parameter Count"
+  },
+  {
+    "character" : 23,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+    "line" : 117,
+    "reason" : "Force casts should be avoided",
+    "rule_id" : "force_cast",
+    "severity" : "Error",
+    "type" : "Force Cast"
+  },
+  {
+    "character" : 40,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+    "line" : 126,
+    "reason" : "Force casts should be avoided",
+    "rule_id" : "force_cast",
+    "severity" : "Error",
+    "type" : "Force Cast"
+  },
+  {
+    "character" : 94,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+    "line" : 126,
+    "reason" : "Force casts should be avoided",
+    "rule_id" : "force_cast",
+    "severity" : "Error",
+    "type" : "Force Cast"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+    "line" : 6,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 94 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Warning",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+    "line" : 132,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 75 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Warning",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+    "line" : 12,
+    "reason" : "Line should be 120 characters or less; currently it has 127 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+    "line" : 38,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+    "line" : 40,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+    "line" : 115,
+    "reason" : "Line should be 120 characters or less; currently it has 138 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+    "line" : 124,
+    "reason" : "Line should be 120 characters or less; currently it has 142 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+    "line" : 126,
+    "reason" : "Line should be 120 characters or less; currently it has 143 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+    "line" : 143,
+    "reason" : "Line should be 120 characters or less; currently it has 133 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+    "line" : 148,
+    "reason" : "Line should be 120 characters or less; currently it has 130 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+    "line" : 160,
+    "reason" : "Line should be 120 characters or less; currently it has 129 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+    "line" : 199,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 64,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+    "line" : 151,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 64,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+    "line" : 194,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 64,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+    "line" : 206,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 12,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskToolPolicy.swift",
+    "line" : 46,
+    "reason" : "Function should have 5 parameters or less: it currently has 7",
+    "rule_id" : "function_parameter_count",
+    "severity" : "Warning",
+    "type" : "Function Parameter Count"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskToolPolicy.swift",
+    "line" : 60,
+    "reason" : "Variable name 'c' should be between 3 and 40 characters long",
+    "rule_id" : "identifier_name",
+    "severity" : "Error",
+    "type" : "Identifier Name"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskToolPolicy.swift",
+    "line" : 124,
+    "reason" : "Variable name 's' should be between 3 and 40 characters long",
+    "rule_id" : "identifier_name",
+    "severity" : "Error",
+    "type" : "Identifier Name"
+  },
+  {
+    "character" : 59,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskToolPolicy.swift",
+    "line" : 124,
+    "reason" : "Variable name 'c' should be between 3 and 40 characters long",
+    "rule_id" : "identifier_name",
+    "severity" : "Error",
+    "type" : "Identifier Name"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskToolPolicy.swift",
+    "line" : 8,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskToolPolicy.swift",
+    "line" : 9,
+    "reason" : "Optional should be implicitly initialized without nil",
+    "rule_id" : "implicit_optional_initialization",
+    "severity" : "Warning",
+    "type" : "Implicit Optional Initialization"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskToolPolicy.swift",
+    "line" : 203,
+    "reason" : "Line should be 120 characters or less; currently it has 122 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/Browser/AskBrowserPanel.swift",
+    "line" : 126,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/Browser/AskEmbeddedBrowserTool.swift",
+    "line" : 160,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 15",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/Browser/AskEmbeddedBrowserTool.swift",
+    "line" : 479,
+    "reason" : "File should contain 400 lines or less excluding comments and whitespaces: currently contains 423",
+    "rule_id" : "file_length",
+    "severity" : "Warning",
+    "type" : "File Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/Browser/AskEmbeddedBrowserTool.swift",
+    "line" : 13,
+    "reason" : "Line should be 120 characters or less; currently it has 130 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/Browser/AskEmbeddedBrowserTool.swift",
+    "line" : 56,
+    "reason" : "Line should be 120 characters or less; currently it has 131 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/Browser/AskEmbeddedBrowserTool.swift",
+    "line" : 466,
+    "reason" : "Line should be 120 characters or less; currently it has 122 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 62,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/Browser/AskEmbeddedBrowserTool.swift",
+    "line" : 473,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 7,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/Browser/AskEmbeddedBrowserTool.swift",
+    "line" : 10,
+    "reason" : "Class body should span 250 lines or less excluding comments and whitespace: currently spans 335 lines",
+    "rule_id" : "type_body_length",
+    "severity" : "Warning",
+    "type" : "Type Body Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/Browser/AskBrowserSitesView.swift",
+    "line" : 162,
+    "reason" : "Line should be 120 characters or less; currently it has 128 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 9,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/Browser/AskBrowserWorkspace.swift",
+    "line" : 16,
+    "reason" : "Types should be nested at most 1 level deep",
+    "rule_id" : "nesting",
+    "severity" : "Warning",
+    "type" : "Nesting"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 917,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 20",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1067,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 16",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1210,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 26",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Error",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1349,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 16",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1525,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 16",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1592,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 61",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Error",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 2008,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 13",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 2614,
+    "reason" : "File should contain 1000 lines or less excluding comments and whitespaces: currently contains 2259",
+    "rule_id" : "file_length",
+    "severity" : "Error",
+    "type" : "File Length"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 598,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 57 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Warning",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 917,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 68 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Warning",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1067,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 77 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Warning",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1210,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 99 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Warning",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1349,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 75 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Warning",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1592,
+    "reason" : "Function body should span 100 lines or less excluding comments and whitespace: currently spans 270 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Error",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 2008,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 54 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Warning",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 63,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 2199,
+    "reason" : "Variable name 'to' should be between 3 and 40 characters long",
+    "rule_id" : "identifier_name",
+    "severity" : "Warning",
+    "type" : "Identifier Name"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 57,
+    "reason" : "Line should be 200 characters or less; currently it has 205 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 71,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 161,
+    "reason" : "Line should be 120 characters or less; currently it has 124 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 190,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 192,
+    "reason" : "Line should be 120 characters or less; currently it has 171 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 432,
+    "reason" : "Line should be 120 characters or less; currently it has 157 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 470,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 471,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 570,
+    "reason" : "Line should be 120 characters or less; currently it has 130 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 571,
+    "reason" : "Line should be 200 characters or less; currently it has 341 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 574,
+    "reason" : "Line should be 120 characters or less; currently it has 139 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 575,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 577,
+    "reason" : "Line should be 120 characters or less; currently it has 197 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 593,
+    "reason" : "Line should be 120 characters or less; currently it has 129 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 632,
+    "reason" : "Line should be 120 characters or less; currently it has 159 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 634,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 641,
+    "reason" : "Line should be 120 characters or less; currently it has 145 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 682,
+    "reason" : "Line should be 120 characters or less; currently it has 137 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 872,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 947,
+    "reason" : "Line should be 120 characters or less; currently it has 149 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 950,
+    "reason" : "Line should be 120 characters or less; currently it has 164 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 964,
+    "reason" : "Line should be 120 characters or less; currently it has 133 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1013,
+    "reason" : "Line should be 120 characters or less; currently it has 144 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1073,
+    "reason" : "Line should be 120 characters or less; currently it has 129 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1074,
+    "reason" : "Line should be 120 characters or less; currently it has 128 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1107,
+    "reason" : "Line should be 120 characters or less; currently it has 128 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1108,
+    "reason" : "Line should be 120 characters or less; currently it has 165 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1134,
+    "reason" : "Line should be 120 characters or less; currently it has 136 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1138,
+    "reason" : "Line should be 120 characters or less; currently it has 132 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1139,
+    "reason" : "Line should be 120 characters or less; currently it has 169 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1143,
+    "reason" : "Line should be 120 characters or less; currently it has 136 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1234,
+    "reason" : "Line should be 120 characters or less; currently it has 162 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1252,
+    "reason" : "Line should be 120 characters or less; currently it has 134 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1260,
+    "reason" : "Line should be 200 characters or less; currently it has 344 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1272,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1294,
+    "reason" : "Line should be 120 characters or less; currently it has 131 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1302,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1309,
+    "reason" : "Line should be 120 characters or less; currently it has 182 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1338,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1396,
+    "reason" : "Line should be 120 characters or less; currently it has 130 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1397,
+    "reason" : "Line should be 120 characters or less; currently it has 124 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1398,
+    "reason" : "Line should be 120 characters or less; currently it has 200 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1413,
+    "reason" : "Line should be 120 characters or less; currently it has 130 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1414,
+    "reason" : "Line should be 120 characters or less; currently it has 122 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1419,
+    "reason" : "Line should be 120 characters or less; currently it has 136 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1435,
+    "reason" : "Line should be 120 characters or less; currently it has 127 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1444,
+    "reason" : "Line should be 120 characters or less; currently it has 136 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1468,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1505,
+    "reason" : "Line should be 120 characters or less; currently it has 136 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1535,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1564,
+    "reason" : "Line should be 120 characters or less; currently it has 122 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1567,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1574,
+    "reason" : "Line should be 120 characters or less; currently it has 144 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1660,
+    "reason" : "Line should be 120 characters or less; currently it has 142 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1661,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1663,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1684,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1686,
+    "reason" : "Line should be 120 characters or less; currently it has 140 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1689,
+    "reason" : "Line should be 120 characters or less; currently it has 144 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1691,
+    "reason" : "Line should be 200 characters or less; currently it has 223 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1694,
+    "reason" : "Line should be 200 characters or less; currently it has 272 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1699,
+    "reason" : "Line should be 200 characters or less; currently it has 284 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1719,
+    "reason" : "Line should be 120 characters or less; currently it has 128 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1727,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1728,
+    "reason" : "Line should be 120 characters or less; currently it has 129 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1739,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1742,
+    "reason" : "Line should be 120 characters or less; currently it has 126 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1743,
+    "reason" : "Line should be 120 characters or less; currently it has 129 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1750,
+    "reason" : "Line should be 120 characters or less; currently it has 128 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1788,
+    "reason" : "Line should be 120 characters or less; currently it has 129 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1790,
+    "reason" : "Line should be 120 characters or less; currently it has 122 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1791,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1796,
+    "reason" : "Line should be 120 characters or less; currently it has 123 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1813,
+    "reason" : "Line should be 120 characters or less; currently it has 130 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1816,
+    "reason" : "Line should be 120 characters or less; currently it has 128 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1867,
+    "reason" : "Line should be 120 characters or less; currently it has 122 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1920,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1936,
+    "reason" : "Line should be 120 characters or less; currently it has 127 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 2056,
+    "reason" : "Line should be 120 characters or less; currently it has 140 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 2059,
+    "reason" : "Line should be 120 characters or less; currently it has 125 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 2428,
+    "reason" : "Line should be 120 characters or less; currently it has 156 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 97,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 605,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 87,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 864,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 89,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1540,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 78,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1696,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 78,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1844,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 105,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1856,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 25,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 1861,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 71,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 2099,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 93,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 2169,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 93,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 2188,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 55,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 2296,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 7,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 5,
+    "reason" : "Class body should span 350 lines or less excluding comments and whitespace: currently spans 2006 lines",
+    "rule_id" : "type_body_length",
+    "severity" : "Error",
+    "type" : "Type Body Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-441-02108fc17c88/workdir/typeflux/Sources/Typeflux/Ask/AskConversationModel.swift",
+    "line" : 197,
+    "reason" : "Limit vertical whitespace to a single empty line; currently 2",
+    "rule_id" : "vertical_whitespace",
+    "severity" : "Warning",
+    "type" : "Vertical Whitespace"
+  }
+]

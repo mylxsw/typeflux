@@ -1,0 +1,25 @@
+The parent acceptance corrections are implemented on top of PR #703 head `050b22c075d2f9dc147594110fe26e1b0c97acdc`. The PR remains unmerged; architecture and final acceptance remain with the parent.
+
+Back now rechecks the actual current origin after suspension, cancellation, authorization and binding validation, immediately before the existing destination check and before selecting a tab, starting activity or navigating. The exact-origin, generation, destination, private-tab and post-navigation guards remain intact.
+
+`AskBrowserBackNavigationTests` serves two independent loopback-only HTTP origins using Network.framework listeners. Each case loads A then B, checks both document titles and URLs, and requires a genuine A back item. After pausing Back, an expectation waits for its pre-suspension authorization callback. Disabling B then resuming must produce the actual site-denied error, leave B's URL/generation/back item unchanged, and create no activity. Disabling A also rejects; leaving A/B allowed navigates back to A. Every listener and accepted connection is cancelled in teardown, including partial server setup failure. The three cases passed in 1.844 seconds of XCTest time. No HTML-string/no-history rejection substitutes for this regression.
+
+The real site picker offers exactly Off, Ask each time, and Read & navigate. `AskBrowserSitePermission.presented` maps legacy `.act` to `.read` for selection and all titles, including current-origin badges and inert compatibility rows. Codable and raw policy storage still preserve `.act`; displaying it does not rewrite storage. Picker choices persist canonical `.read`. All five localizations retain the individual page-change approval explanation. Owner/device isolation and legacy host deny/allow behavior are unchanged.
+
+Validation passed:
+
+- `command.json` records the focused coverage command and **368.45 seconds** wall time, including first dependency checkout, a 334.13-second instrumented build, discovery and test execution. It executes 35 XCTest methods (3 Back, 8 site-policy, 24 executor) and 12 Swift Testing methods, all passing. The latter include four click/fill × read/legacy-act cases through production model approval in YOLO, the scoped tool policy suite, and the existing small site-picker rendering fixture. No full unit/UI suite executed.
+- The picker fixture checks both real NSPopUpButtons expose exactly the three canonical titles, selects Read & navigate for a persisted `.act` origin, and leaves its storage unchanged. Pure policy tests verify canonical new writes, decoding, read/navigation behavior, legacy compatibility and all five localization titles.
+- `screenshot-command.json` records one repeat of that same picker method solely to save the updated screenshots: **33.28 seconds** wall time, passing. Total new runner wall time is **401.73 seconds**. `browser-sites.png` was visually inspected; controls and explanatory text fit within the sheet.
+- Current-source stage8 changed executable-line coverage is **648/692 (93.64%)** against `aeda1f98e294e9f24406c3e0b1402a5570c1f9b7`; the correction alone is **8/8 (100%)** against `050b22c075d2f9dc147594110fe26e1b0c97acdc`. These are line coverage, not branch coverage. `../coverage_report.py` accepts older records only when the entire source file SHA-256 still matches. `acceptance-correction` and `acceptance-screenshot` LCOV/manifests retain the new source evidence; `reviewed-source-hashes.json` additionally pins changed tests and translations.
+- `git diff --check` passed. Scoped SwiftLint retains the same **10 baseline error-level diagnostics** in the existing scoped-approval fixture (short variable names). `lint-comparison.json` verifies identical errors. Warnings include existing large browser executor code, new helper complexity/length and long test lines. Lint is not green. `lint.log` and `lint-baseline.log` preserve diagnostics; the original broader stage8 lint comparison remains historical evidence.
+
+Self-review checked the complete paused-Back dispatch path, both origin policies, binding/cancellation/private-tab safeguards, actual HTTP history prerequisites, bounded fixture waits and server/connection cleanup, persisted-value compatibility, canonical picker writes, consistent badges/legacy labels, and fresh mutation approval. No policy-engine, server/schema, directory-grant or capability-gate changes were needed. The production reusable-operation gate remains hidden. Uncovered stage8 lines and previous limits remain listed in the main coverage report. No live external sites, CI wait, self-merge or stage9 work occurred.
+
+Recompute portable coverage from the repository root:
+
+```sh
+python3 docs/validation/gul-441/coverage_report.py
+python3 docs/validation/gul-457/changed_coverage.py docs/validation/gul-441/matching-source.lcov.gz --base aeda1f98e294e9f24406c3e0b1402a5570c1f9b7
+python3 docs/validation/gul-457/changed_coverage.py docs/validation/gul-441/matching-source.lcov.gz --base 050b22c075d2f9dc147594110fe26e1b0c97acdc
+```

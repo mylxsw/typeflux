@@ -372,33 +372,16 @@ struct AskAttachmentPromptTests {
 struct AskFolderGrantTests {
     private func defaults() -> UserDefaults { UserDefaults(suiteName: "ask-grants-" + UUID().uuidString)! }
 
-    @Test func grantsAreKeptPerConversationAndSurviveAReload() {
-        let store = defaults()
-        let grants = AskFolderGrants(defaults: store)
-        grants.grant(["/a", "", "/a"], to: "ABC")
-        grants.grant(["/b"], to: "abc")
-        grants.grant([], to: "other")
-        #expect(grants.folders(for: "abc") == ["/a", "/b"])
-        #expect(AskFolderGrants(defaults: store).folders(for: "ABC") == ["/a", "/b"])
-        #expect(grants.folders(for: "other").isEmpty)
-        grants.revoke("abc")
-        #expect(grants.folders(for: "abc").isEmpty)
-    }
-
-    @Test func theOldestConversationsDropOff() {
-        let grants = AskFolderGrants(defaults: defaults())
-        for index in 0 ... AskFolderGrants.maximumConversations { grants.grant(["/f"], to: "c\(index)") }
-        #expect(grants.folders(for: "c0").isEmpty)
-        #expect(grants.folders(for: "c\(AskFolderGrants.maximumConversations)") == ["/f"])
-    }
-
     @Test func theFilesToolReadsGrantedFoldersOnlyInTheirConversation() async throws {
         let dir = try AskAttachmentFixture.directory()
         defer { try? FileManager.default.removeItem(at: dir) }
         let settings = SettingsStore(defaults: defaults())
         settings.askFileAccessFolders = ["/settings"]
         let tools = AskLocalTools(registry: MCPRegistry(), settings: settings, folderGrants: AskFolderGrants(defaults: defaults()))
-        tools.grantFolders([dir.path, "/settings"], conversationId: "c1")
+        try tools.stageFolders([dir.path], lifetime: .task, ownerId: GlobalSoulOwner.currentID,
+                               deviceId: "d", conversationId: "c1", messageID: "m", generation: UUID())
+        try tools.admitFolders(messageID: "m", conversationId: "c1", runId: "r")
+        tools.bindExecution(ownerId: GlobalSoulOwner.currentID, conversationId: "c1", runId: "r")
         #expect(tools.fileTools(conversationId: "c1").roots == ["/settings", dir.path])
         #expect(tools.fileTools(conversationId: "c2").roots == ["/settings"])
         #expect(tools.fileTools(conversationId: nil).roots == ["/settings"])
@@ -537,5 +520,211 @@ struct AskAttachmentModelTests {
             #expect(f.model.attachmentNotice == capability.hint)
         }
         #expect(f.model.requiresVision(launcher: false))
+    }
+}
+
+@Suite("Folder authority submission lifecycle", .exclusiveUIState)
+@MainActor
+struct AskFolderSubmissionTests {
+    @Test func `launcher temporary session and keep do not persist authority`() async throws {
+        let root = try AskAttachmentFixture.directory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
+        let tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)),
+                                  settings: SettingsStore(defaults: defaults), owner: { "owner" })
+        let fixture = try AskTestFixture(toolsOverride: tools)
+        defer { fixture.model.resetSession() }
+        fixture.model.launcherDraft = .followUp
+        fixture.model.launcherDraft.text = "Inspect folder"
+        fixture.model.launcherDraft.temporary = true
+        fixture.model.launcherDraft.folderLifetime = .conversationSession
+        fixture.model.launcherDraft.attachments = [.init(kind: .folder, name: "root", path: root.path)]
+        fixture.model.submitLauncher()
+        try await fixture.wait { !fixture.model.isBusy && fixture.model.selectedId != nil }
+        let id = try #require(fixture.model.selectedId)
+        #expect(fixture.model.temporaryFolderGrants().count == 1)
+        #expect(fixture.model.temporaryFolderGrants().first?.lifetime == .conversationSession)
+        #expect(tools.folderSubmissions.isEmpty)
+        fixture.model.keepTemporaryConversation()
+        try await fixture.wait { fixture.model.temporaryConversation == nil }
+        #expect(fixture.model.temporaryFolderGrants().count == 1)
+        fixture.model.revokeTemporaryFolder(nil)
+        #expect(fixture.model.temporaryFolderGrants().isEmpty)
+        #expect(!fixture.model.hasSettingsFolder(root.path))
+        fixture.model.resetSession()
+        #expect(tools.temporaryFolders(conversationId: id).isEmpty)
+        #expect(AskFolderGrants(defaults: defaults).list(scope: tools.folderScope(id)).isEmpty)
+    }
+
+    @Test func `failed submission and local cancellation discard pending authority`() async throws {
+        for cancel in [false, true] {
+            let root = try AskAttachmentFixture.directory()
+            defer { try? FileManager.default.removeItem(at: root) }
+            let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
+            let tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)),
+                                      settings: SettingsStore(defaults: defaults), owner: { "owner" })
+            let fixture = try AskTestFixture(toolsOverride: tools)
+            defer { fixture.model.resetSession() }
+            if cancel {
+                await fixture.api.setBeforeSend { try? await Task.sleep(for: .milliseconds(100)) }
+            } else {
+                await fixture.api.setFailSend(true)
+            }
+            fixture.model.draft = .followUp
+            fixture.model.draft.text = "Read this"
+            fixture.model.draft.attachments = [.init(kind: .folder, name: "root", path: root.path)]
+            fixture.model.submitDraft()
+            try await fixture.wait { fixture.model.selectedId != nil }
+            let id = try #require(fixture.model.selectedId)
+            #expect(tools.fileTools(conversationId: id).roots.isEmpty)
+            if cancel {
+                fixture.model.stop(id: id)
+            }
+            try await fixture.wait { !fixture.model.isBusy }
+            #expect(tools.temporaryFolders(conversationId: id).isEmpty)
+            #expect(tools.folderSubmissions.isEmpty)
+        }
+    }
+}
+
+extension AskFolderSubmissionTests {
+    @Test func cancelledQueuedFolderSelectionCannotAuthorizeTheNextRun() async throws {
+        let root = try AskAttachmentFixture.directory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        let tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)),
+                                  settings: SettingsStore(defaults: defaults), owner: { "owner" })
+        let fixture = try AskTestFixture(toolsOverride: tools)
+        defer { fixture.model.resetSession() }
+        await fixture.api.setTool(.init(id: "remember", function: .init(name: "memory", arguments: "{\"action\":\"remember\"}")))
+        fixture.model.draft = .followUp
+        fixture.model.draft.text = "Initial task"
+        fixture.model.submitDraft()
+        try await fixture.wait { !fixture.model.pendingApprovals.isEmpty }
+        let id = try #require(fixture.model.selectedId)
+        fixture.model.draft.text = "Queued selection"
+        fixture.model.draft.attachments = [.init(kind: .folder, name: "root", path: root.path)]
+        fixture.model.submitDraft()
+        let queued = try #require(fixture.model.queuedMessages.first)
+        #expect(tools.temporaryFolders(conversationId: id).isEmpty)
+        fixture.model.removeQueued(queued.id)
+        fixture.model.approve(conversationId: id, allowed: false)
+        try await fixture.wait { !fixture.model.isBusy }
+        #expect(tools.temporaryFolders(conversationId: id).isEmpty)
+        #expect(tools.folderSubmissions.isEmpty)
+    }
+}
+
+extension AskFolderSubmissionTests {
+    @Test func defaultProductionFileDispatchUsesOnlyAdmittedTaskAndSessionRoots() async throws {
+        for lifetime in AskFolderGrants.Lifetime.allCases {
+            let root = try AskAttachmentFixture.directory()
+            defer { try? FileManager.default.removeItem(at: root) }
+            let path = root.appendingPathComponent("note.txt")
+            try Data("scope-bound file content".utf8).write(to: path)
+            let defaults = UserDefaults(suiteName: UUID().uuidString)!
+            let tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)),
+                                      settings: SettingsStore(defaults: defaults), owner: { "owner" })
+            let fixture = try AskTestFixture(toolsOverride: tools)
+            defer { fixture.model.resetSession() }
+            let call = AskToolCall(id: "read", function: .init(name: "files", arguments:
+                String(decoding: try JSONSerialization.data(withJSONObject: ["action": "read", "path": path.path]), as: UTF8.self)))
+            await fixture.api.setTool(call)
+            fixture.model.draft = .followUp
+            fixture.model.draft.text = "Read the selected folder"
+            fixture.model.draft.folderLifetime = lifetime
+            fixture.model.draft.attachments = [.init(kind: .folder, name: "root", path: root.path)]
+            fixture.model.submitDraft()
+            try await fixture.wait { !fixture.model.isBusy && fixture.model.selectedId != nil }
+            let id = try #require(fixture.model.selectedId)
+            #expect(await fixture.api.results.first?.content.contains("scope-bound file content") == true)
+            #expect(tools.temporaryFolders(conversationId: id).count == (lifetime == .task ? 0 : 1))
+            if lifetime == .conversationSession {
+                fixture.model.draft.text = "Read again in another task"
+                fixture.model.submitDraft()
+                try await fixture.wait { !fixture.model.isBusy }
+                #expect(await fixture.api.results.count == 2)
+                #expect(tools.temporaryFolders(conversationId: id).count == 1)
+                fixture.model.revokeTemporaryFolder(nil)
+                #expect(tools.temporaryFolders(conversationId: id).isEmpty)
+            }
+        }
+    }
+}
+
+extension AskFolderSubmissionTests {
+    @Test func deletingOrDiscardingConversationRevokesOnlyItsSessionFolders() async throws {
+        for temporary in [false, true] {
+            let root = try AskAttachmentFixture.directory()
+            defer { try? FileManager.default.removeItem(at: root) }
+            let defaults = UserDefaults(suiteName: UUID().uuidString)!
+            let tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)),
+                                      settings: SettingsStore(defaults: defaults),
+                                      artifactStore: AskArtifactStore(storageURL: root.appendingPathComponent("artifacts")),
+                                      owner: { "owner" })
+            let fixture = try AskTestFixture(toolsOverride: tools)
+            defer { fixture.model.resetSession() }
+            fixture.model.draft = .followUp
+            fixture.model.draft.text = "Authorize this conversation"
+            fixture.model.draft.temporary = temporary
+            fixture.model.draft.folderLifetime = .conversationSession
+            fixture.model.draft.attachments = [.init(kind: .folder, name: "root", path: root.path)]
+            fixture.model.submitDraft()
+            try await fixture.wait { !fixture.model.isBusy && fixture.model.selectedId != nil }
+            let id = try #require(fixture.model.selectedId)
+            let cacheOwner = fixture.model.cacheOwner(id)
+            #expect(tools.temporaryFolders(conversationId: id).count == 1)
+            try tools.stageFolders([root.path], lifetime: .conversationSession, ownerId: "owner", deviceId: "device",
+                                   conversationId: "other", messageID: "other-message", generation: UUID())
+            try tools.admitFolders(messageID: "other-message", conversationId: "other", runId: "other-run")
+            if temporary {
+                await fixture.model.discardTemporaryConversation()?.value
+                let deadline = ContinuousClock.now + .seconds(3)
+                while !(await fixture.api.deletes.contains(id)), ContinuousClock.now < deadline {
+                    try await Task.sleep(for: .milliseconds(2))
+                }
+                #expect(await fixture.api.deletes.contains(id))
+                while try await fixture.cache.load(id: id, owner: cacheOwner) != nil, ContinuousClock.now < deadline {
+                    try await Task.sleep(for: .milliseconds(2))
+                }
+            } else { await fixture.model.delete(id) }
+            #expect(tools.temporaryFolders(conversationId: id).isEmpty)
+            #expect(tools.temporaryFolders(conversationId: "other").count == 1)
+            #expect(try await fixture.cache.load(id: id, owner: cacheOwner) == nil)
+        }
+    }
+}
+
+extension AskFolderSubmissionTests {
+    @Test func historyNeverRestoresAuthorityAndExpiryNoticeRespectsSettings() async throws {
+        for persistent in [false, true] {
+            let root = try AskAttachmentFixture.directory()
+            defer { try? FileManager.default.removeItem(at: root) }
+            let defaults = UserDefaults(suiteName: UUID().uuidString)!
+            let settings = SettingsStore(defaults: defaults)
+            settings.askFileAccessFolders = persistent ? [root.path] : []
+            let tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)), settings: settings, owner: { "owner" })
+            let fixture = try AskTestFixture(modelLibrary: AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false), toolsOverride: tools)
+            defer { fixture.model.resetSession() }
+            let attachment = AskAttachment(kind: .folder, name: "old folder", path: root.path)
+            await fixture.api.seed(.init(id: "old", title: "History", revision: 1, updatedAt: Date(),
+                                         messages: [.init(id: "old-message", role: "user", text: "Old question", createdAt: Date(), attachments: [attachment]),
+                                                    .init(id: "old-answer", role: "assistant", text: "Previous answer", createdAt: Date())]))
+            await fixture.model.select("old")
+            #expect(fixture.model.selected?.messages.first?.attachments?.first?.name == "old folder")
+            fixture.model.draft = .followUp
+            fixture.model.draft.text = "Follow up on the previous question"
+            #expect(fixture.model.canSend)
+            fixture.model.submitDraft()
+            try await fixture.wait { !fixture.model.isBusy }
+            #expect(fixture.model.attachmentNotice == (persistent ? nil : L("ask.folder.expired")))
+            #expect(tools.temporaryFolders(conversationId: "old").isEmpty)
+            #expect(tools.fileTools(conversationId: "old").roots == (persistent ? [root.path] : []))
+            fixture.model.attachmentNotice = nil
+            fixture.model.draft.text = "Another follow-up"
+            fixture.model.submitDraft()
+            try await fixture.wait { !fixture.model.isBusy }
+            #expect(fixture.model.attachmentNotice == nil, "Explain expiry once without denying independent Settings access")
+        }
     }
 }

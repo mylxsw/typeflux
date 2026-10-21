@@ -35,6 +35,10 @@ extension AskLocalTools {
     }
 
     func bindExecution(ownerId: String, conversationId: String, runId: String) {
+        if let previous = folderExecutions[conversationId], previous.runId != runId || previous.ownerId != ownerId {
+            folderGrants.revokeTask(scope: previous)
+            folderExecutions[conversationId] = nil
+        }
         commandJobs?.bind(owner: ownerId, conversation: conversationId, run: runId, device: commandDeviceId,
                           persistent: commandPersistence[conversationId] ?? true)
         let next = AskProjectScope(ownerId: ownerId, conversationId: conversationId, runId: runId)

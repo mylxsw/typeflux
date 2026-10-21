@@ -6059,15 +6059,15 @@
 "ask.web.giveBack" = "交还给 AI";
 "ask.web.permission.off" = "禁止";
 "ask.web.permission.ask" = "每次询问";
-"ask.web.permission.read" = "仅读取";
-"ask.web.permission.act" = "可操作";
+"ask.web.permission.read" = "读取与导航";
+"ask.web.permission.act" = "读取与导航";
 "ask.web.permission.help" = "AI 在此站点上的权限，可在「站点与登录」中修改。";
 "ask.web.permission.label" = "%@ 的 AI 权限";
 "ask.web.private.detail" = "无痕标签页：关闭后不保留 Cookie 与历史，AI 不能使用。";
 "ask.web.signedIn" = "已登录的站点";
 "ask.web.start.detail" = "这里的登录状态独立于 Safari 和 Chrome，只保存在本机。AI 只在你允许的站点上操作，遇到登录、付款等步骤会交给你完成。";
 "ask.web.sites.title" = "站点与登录";
-"ask.web.sites.detail" = "你在这里登录的账号只保存在本机的 Typeflux 浏览器配置中，不会上传。为每个站点决定 AI 能做什么。";
+"ask.web.sites.detail" = "仅对精确网页来源授权。页面修改始终需要单次批准。";
 "ask.web.sites.empty" = "还没有站点。在浏览器中正常登录后，站点会出现在这里。";
 "ask.web.sites.signedIn" = "已保存登录数据";
 "ask.web.sites.noData" = "无保存数据";
@@ -6535,3 +6535,18 @@
 "ask.commandJob.status" = "查看命令状态";
 "ask.commandJob.logs" = "读取命令输出";
 "ask.commandJob.stop" = "停止命令";
+
+// Temporary folder authority and exact browser origins.
+"ask.folder.lifetime" = "附件目录访问期限";
+"ask.folder.task" = "本次任务";
+"ask.folder.session" = "此对话，直到退出登录或退出应用";
+"ask.folder.boundary" = "目录访问不会批准文件修改或 Shell 命令。";
+"ask.folder.source" = "来源：临时目录附件";
+"ask.folder.settingsAlso" = "设置也授权了此目录。撤销附件授权后，设置授权仍然有效。";
+"ask.folder.revoke" = "撤销附件访问";
+"ask.folder.revokeAll" = "撤销此对话的全部临时目录";
+"ask.folder.expired" = "先前的目录访问授权已过期，请重新附加目录以授权访问。";
+"ask.web.sites.exactOrigin" = "精确网页来源权限";
+"ask.web.sites.legacy" = "旧主机偏好中的允许权限已失效；请移除旧拒绝项后选择精确来源。";
+
+"ask.web.removePermission" = "移除 %@ 的来源权限或旧偏好";

@@ -1,0 +1,14 @@
+{
+  "Sources/Typeflux/Ask/Browser/AskBrowserSitePolicy.swift": "96cb0a1fe7383ccf602b2dc25ea9b2400cefb9658269fdea1719ac377afe73e1",
+  "Sources/Typeflux/Ask/Browser/AskBrowserSitesView.swift": "55086b1b33c2f81a85d0b894231d57d3f91724b62110793b5cc11fc7ca836a6e",
+  "Sources/Typeflux/Ask/Browser/AskEmbeddedBrowserTool.swift": "7d0b05396866f18c690b9dbc1c84cc55bf5207d3594b75c6a733833a8ea97b8e",
+  "Sources/Typeflux/Resources/en.lproj/Localizable.strings": "b0d7e685d1e768dbcef4fd0900f029b997f6177afe8a8a3740986fab5c140d14",
+  "Sources/Typeflux/Resources/ja.lproj/Localizable.strings": "8c18d383776ed859794f326027220315132dbe08182996971faba61b91bf4f9d",
+  "Sources/Typeflux/Resources/ko.lproj/Localizable.strings": "d67c3c0a01eb5e5e1bd18f4203a5155570e547dbb7cd1cc3eda344145c1149d7",
+  "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings": "be1d3594a60969dcb7de35cd832546c9bad15898e873f162a2ef758f6d502416",
+  "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings": "eeec7cc1bd215e6f30ee9222c86db3996f012b054f790721ae287761b642e44c",
+  "Tests/TypefluxTests/AskBrowserPanelRenderTests.swift": "1507dce47a57fa3f30dd5cc75bda1891a5142c2ddba2907995dfaec9e2295404",
+  "Tests/TypefluxTests/AskBrowserSitePolicyTests.swift": "cd4c6b9e0f0527bed28b1e65e934745c915bab9808ed35b068e380e4020757eb",
+  "Tests/TypefluxTests/AskScopedApprovalTests.swift": "82710e6d089f73efee92aba68d1b70af8a097214bcf3c3a43aa4470dfb93bfd8",
+  "Tests/TypefluxTests/AskBrowserBackNavigationTests.swift": "becf9eacd90158853dca67fe2dccc6f319c75f3c3a2f689e0326836f68c166b2"
+}

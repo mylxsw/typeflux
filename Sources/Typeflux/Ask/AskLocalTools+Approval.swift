@@ -18,6 +18,8 @@ extension AskLocalTools {
         var target: AskExecutionTarget
         var summary: String
         var reusable = false
+        var explicitConsent = false
+        var authorityRevision: String?
         switch call.function.name {
         case "command_job": return try commandJobBinding(call, conversationId: conversationId)
         case "generate_image": return try imageGenerationBinding(args)
@@ -35,6 +37,7 @@ extension AskLocalTools {
             definition = AskFileTools.definition(roots: files.roots)
             let path = try files.resolve(args["path"] as? String ?? "", forWriting: args["action"] as? String == "write").path
             target = Self.fileApprovalTarget(path)
+            authorityRevision = try fileAuthorityRevision(path: args["path"] as? String ?? "", conversationId: conversationId)
             summary = path; reusable = true
         case "memory":
             definition = AskMemoryNoteStore.definition
@@ -72,18 +75,32 @@ extension AskLocalTools {
             definition = AskEmbeddedBrowserTool.definition
             let binding = try embeddedBrowser.binding(args)
             target = binding.target; summary = binding.summary; reusable = binding.reusable
+            explicitConsent = binding.requiresExplicitConsent
+            if args["action"] as? String == "open_file", settings?.askCodeExecutionEnabled != true {
+                authorityRevision = try fileAuthorityRevision(
+                    path: args["path"] as? String ?? "",
+                    conversationId: conversationId
+                )
+            }
         case "computer", "browser":
             definition = automationDefinitions.first { $0.name == call.function.name }
             target = try await automationBinding(call.function.name, args: args, conversationId: conversationId)
             summary = target.id + (target.domain.map { " / " + $0 } ?? "")
-            if let destination = args["url"] as? String { summary += " → " + destination }
-            // An observation is single-use evidence, never a reusable authorization.
+            if let destination = args["url"] as? String {
+                summary += " → " + destination
+            }
+            if call.function.name == "browser" {
+                explicitConsent = !["read", "snapshot", "open", "back", "scroll"]
+                    .contains(args["action"] as? String ?? "")
+            }
+        // An observation is single-use evidence, never a reusable authorization.
         default: throw AskLocalError.message(L("ask.tool.unavailable"))
         }
         guard let definition else { throw AskLocalError.message(L("ask.tool.unavailable")) }
         let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
-        return .init(target: target, toolVersion: AskToolPolicy.digest(try encoder.encode(definition)),
-                     summary: summary, allowsReuse: reusable)
+        return try .init(target: target, toolVersion: AskToolPolicy.digest(encoder.encode(definition)),
+                         summary: summary, allowsReuse: reusable, requiresExplicitConsent: explicitConsent,
+                         authorityRevision: authorityRevision)
     }
 
     nonisolated static func fileApprovalTarget(_ path: String) -> AskExecutionTarget {
@@ -110,6 +127,8 @@ extension AskLocalTools {
         return CGRect(origin: origin, size: extent)
     }
 
+    // Keep all approved adapters at the same dispatch boundary.
+    // swiftlint:disable:next cyclomatic_complexity
     func executeApproved(_ call: AskToolCall, conversationId: String, binding: AskToolBinding,
                          authorize: () throws -> Void) async throws -> AskLocalToolOutput {
         guard try await approvalBinding(for: call, conversationId: conversationId) == binding else {
@@ -147,6 +166,20 @@ extension AskLocalTools {
         case "computer", "browser":
             return try await executeAutomation(call.function.name, args: args, conversationId: conversationId,
                                                approved: binding.target, authorize: authorize)
+        case AskEmbeddedBrowserTool.name:
+            guard let embeddedBrowser else { throw AskLocalError.message(L("ask.tool.unavailable")) }
+            return try await embeddedBrowser.execute(args, conversationId: conversationId) {
+                try authorize()
+                try self.validateBrowserLocalFile(args, conversationId: conversationId)
+                if let revision = binding.authorityRevision {
+                    guard try self.fileAuthorityRevision(
+                        path: args["path"] as? String ?? "",
+                        conversationId: conversationId
+                    ) == revision else {
+                        throw AskFileAccess.denied
+                    }
+                }
+            }
         case "files":
             return try await executeFiles(args, conversationId: conversationId, approved: binding.target)
         case AskNotebookTool.name:

@@ -418,6 +418,7 @@ final class AskConversationModel: ObservableObject {
     private var approvals: [String: CheckedContinuation<String?, Never>] = [:]
     private var approvalRequests: [String: (id: UUID, request: AskApprovalRequest)] = [:]
     let approvalStore = AskApprovalStore()
+    var expiredFolderNotices: Set<String> = []
     var cloudApprovals: [String: (id: String, request: AskApprovalRequest)] = [:]
     private let approvalReuseEnabled: Bool
     private var operationErrors: [String: String] = [:]
@@ -595,6 +596,8 @@ final class AskConversationModel: ObservableObject {
     }
 
     func resetSession() {
+        tools.resetFolderSession()
+        expiredFolderNotices = []
         quickAsk = nil
         if let temporary = temporaryConversation, !keepingTemporaryIDs.contains(temporary.id), let workspaces {
             let account = owner
@@ -1167,6 +1170,43 @@ final class AskConversationModel: ObservableObject {
             .map { .init(text: $0, offersModels: true) }
     }
 
+    private func stageFolderSubmission(_ submitted: AskDraft, conversation: AskConversation, route: AskRoute,
+                                       messageID: String, generation: UUID) -> Bool {
+        let id = conversation.id
+        let folders = (submitted.attachments ?? []).compactMap { $0.kind == .folder ? $0.path : nil }
+        if folders.isEmpty, tools.temporaryFolders(conversationId: id).isEmpty,
+           conversation.messages.contains(where: { message in
+               (message.attachments ?? []).contains { attachment in
+                   attachment.kind == .folder && (attachment.path.map { !hasSettingsFolder($0) } ?? true)
+               }
+           }),
+           expiredFolderNotices.insert(id).inserted {
+            attachmentNotice = L("ask.folder.expired")
+        }
+        do {
+            try tools.stageFolders(folders, lifetime: submitted.folderLifetime ?? .task,
+                                   ownerId: route.account, deviceId: deviceId, conversationId: id,
+                                   messageID: messageID, generation: generation)
+        } catch {
+            busyIds.remove(id)
+            operationErrors[id] = error.localizedDescription
+            self.error = error.localizedDescription
+            return false
+        }
+        return true
+    }
+
+    private func admitFolderSubmission(_ response: AskConversation, conversationID: String,
+                                       messageID: String, previousRunID: String?) throws {
+        // Only this send's response can admit its local folder selection.
+        // A displayed/observed run or retried historical message cannot mint authority.
+        if response.id == conversationID, let run = response.run, run.deviceId == deviceId,
+           run.id != previousRunID, response.messages.last(where: { $0.role == "user" })?.id == messageID {
+            try tools.admitFolders(messageID: messageID, conversationId: conversationID, runId: run.id)
+            if !run.isActive { tools.revokeTaskFolders(conversationId: conversationID, runId: run.id) }
+        }
+    }
+
     private func submitValidated(_ submitted: AskDraft, modelRef: String, local: Bool, newConversation: Bool, messageId queuedId: String? = nil,
                                  clearsDraft: Bool = true, launcher: Bool = false, temporary: Bool = false,
                                  recoveryCheck: Bool = false, quickAskGeneration: UUID? = nil) {
@@ -1191,10 +1231,11 @@ final class AskConversationModel: ObservableObject {
             if launcher { launcherPermissionMode = .standard } else { draftPermissionMode = .standard }
             tools.bindConversation(id)
         }
-        let folders = (submitted.attachments ?? []).compactMap { $0.kind == .folder ? $0.path : nil }
-        if !folders.isEmpty { tools.grantFolders(folders, conversationId: id) }
         var value = newConversation ? AskConversation(id: id, title: String(submitted.title.prefix(50)), revision: 0, updatedAt: Date(), messages: []) : selected!
         let messageId = queuedId ?? UUID().uuidString
+        let operationId = UUID()
+        guard stageFolderSubmission(submitted, conversation: value, route: current,
+                                    messageID: messageId, generation: operationId) else { return }
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
         request.maxSteps = recoveryCheck ? min(modelLibrary.settings.askAgentMaxSteps, 20)
             : modelLibrary.settings.askAgentMaxSteps
@@ -1233,10 +1274,10 @@ final class AskConversationModel: ObservableObject {
         // A queued message sending on its own must not bring the window forward.
         if clearsDraft && !inline { onShowConversation?() }
         persistDrafts()
-        let operationId = UUID(); registerOperation(id, operationId: operationId, account: current.account)
+        registerOperation(id, operationId: operationId, account: current.account)
         operations[id] = Task { [weak self] in
             guard let self else { return }
-            defer { finishOperation(id, operationId: operationId) }
+            defer { tools.discardFolderSubmission(messageID: messageId); finishOperation(id, operationId: operationId) }
             let monitor = monitorConversation(id: id, current: current, operationId: operationId)
             defer { monitor.cancel() }
             do {
@@ -1258,6 +1299,7 @@ final class AskConversationModel: ObservableObject {
                 let response = try await api.send(conversationId: id, request: request, token: current.token)
                 try checkOperation(id, operationId: operationId, account: current.account)
                 pendingSends[id] = nil
+                try admitFolderSubmission(response, conversationID: id, messageID: messageId, previousRunID: value.run?.id)
                 if recoveryCheck, response.run?.recoveryCheck != true {
                     if let run = response.run, run.isActive {
                         _ = try? await api.cancel(conversationId: id, runId: run.id, token: current.token)
@@ -1512,8 +1554,13 @@ final class AskConversationModel: ObservableObject {
         // Cancel only the explicitly settled run; the executor checks admitted ownership.
         if let previousRun = snapshots[value.id]?.run?.id, previousRun != value.run?.id {
             tools.observeCommandRun(ownerId: route.account, conversationId: value.id, runId: previousRun, active: false)
+            tools.revokeTaskFolders(conversationId: value.id, runId: previousRun)
         }
         if let run = value.run {
+            if !run.isActive {
+                tools.revokeTaskFolders(conversationId: value.id, runId: run.id)
+                approvalStore.revokeTask(conversation: value.id, run: run.id)
+            }
             tools.observeCommandRun(ownerId: route.account, conversationId: value.id, runId: run.id, active: run.isActive)
         }
         snapshots[value.id] = value
@@ -1560,7 +1607,13 @@ final class AskConversationModel: ObservableObject {
             value = sanitizedMemory(value, account: current.account, local: current.token.isEmpty)
             // A monitor can have advanced while this response was in flight.
             if let latest = snapshots[value.id] { value = latest }
-            guard let run = value.run, run.isActive else { return }
+            guard let run = value.run, run.isActive else {
+                if let run = value.run {
+                    tools.revokeTaskFolders(conversationId: value.id, runId: run.id)
+                    approvalStore.revokeTask(conversation: value.id, run: run.id)
+                }
+                return
+            }
             if (try? AskAgentBinding.resolve(run.agentBinding)) == nil,
                run.deviceId != deviceId, ["waiting_tool", "waiting_inference"].contains(run.status) {
                 throw AskLocalError.message(L("ask.tool.otherDevice"))
@@ -1697,7 +1750,11 @@ final class AskConversationModel: ObservableObject {
                                                     risk: toolRisk(call, cloudDefinition: cloudDefinition), reuseEnabled: false,
                                                     now: approvalStore.now())
                 let grantID: String?
-                if automaticallyApproves(call, risk: request.risk, conversationId: value.id) {
+                if !binding.requiresExplicitConsent, automaticallyApproves(
+                    call,
+                    risk: request.risk,
+                    conversationId: value.id
+                ) {
                     grantID = approvalStore.issue(request)
                 } else {
                     let approvalID = UUID()
@@ -1883,7 +1940,7 @@ final class AskConversationModel: ObservableObject {
 
     func resumeAutomaticallyApprovedTool(_ id: String) {
         guard let pending = approvalRequests[id],
-              let call = pendingApprovals[id],
+              let call = pendingApprovals[id], !pending.request.binding.requiresExplicitConsent,
               automaticallyApproves(call, risk: pending.request.risk, conversationId: id) else { return }
         approve(conversationId: id, allowed: true, expectedApprovalID: pending.id)
     }
@@ -1918,12 +1975,42 @@ final class AskConversationModel: ObservableObject {
         continuation.resume(returning: grant)
     }
 
+    func temporaryFolderGrants() -> [AskFolderGrants.Grant] {
+        guard let id = selectedId else { return [] }
+        return tools.temporaryFolders(conversationId: id)
+    }
+
+    func revokeTemporaryFolder(_ grant: UUID?) {
+        guard let id = selectedId else { return }
+        tools.revokeFolder(grant, conversationId: id)
+        // Pending or cached operation approval cannot outlive the explicit revoke.
+        approvalStore.revoke(conversation: id)
+        objectWillChange.send()
+    }
+
+    func hasSettingsFolder(_ path: String) -> Bool {
+        // Presentation uses lexical OS aliases so a missing descendant still shows its Settings source.
+        // Execution continues to use its own pinned descriptor and authoritative root selection.
+        func comparable(_ raw: String) -> String {
+            var path = (raw as NSString).expandingTildeInPath
+            for alias in ["/var", "/tmp", "/etc"] where path == alias || path.hasPrefix(alias + "/") {
+                path = "/private" + path
+            }
+            return URL(fileURLWithPath: path).standardized.path
+        }
+        let path = comparable(path)
+        return modelLibrary.settings.askFileAccessFolders.map(comparable)
+            .contains { root in path == root || path.hasPrefix(root == "/" ? "/" : root + "/") }
+    }
+
     func shutdownCommandJobs() async { await tools.shutdownCommandJobs() }
 
     func stop(id: String? = nil) {
         let preflight = submissionPreflights[false] ?? submissionPreflights[true]
         let preflightId = operationIds.first(where: { $0.value == preflight })?.key
         guard let id = id ?? selected?.id ?? preflightId, let current = credentials(for: id) else { return }
+        tools.revokeTaskFolders(conversationId: id, runId: nil)
+        approvalStore.revokeTask(conversation: id)
         // No drive task may be active during observer-only settlement or a pause.
         // This synchronous user action cancels only authority already admitted by the host.
         if operationIds[id] == nil {
@@ -1945,7 +2032,6 @@ final class AskConversationModel: ObservableObject {
             permissionModes[id] = .standard
             operation.cancel()
             if let admittedScope { tools.cancelProjectRun(admittedScope) }
-            approvalStore.revoke(conversation: id)
             approve(conversationId: id, allowed: false)
             if controllingConversationId == id { controllingConversationId = nil; onControlChanged?(false) }
             // A command awaiting its response has no admitted remote run to stop.
@@ -1985,6 +2071,7 @@ final class AskConversationModel: ObservableObject {
 
     func delete(_ id: String) async {
         guard !busyIds.contains(id), let current = credentials(for: id) else { return }
+        tools.revokeFolder(nil, conversationId: id)
         tools.cancelProjects(conversationId: id)
         do {
             try await syncWorkspace(id, requireFresh: true)
@@ -2075,6 +2162,7 @@ final class AskConversationModel: ObservableObject {
             draft = newQuestionDraft()
             draft.memory = capture.globalMemory() ?? AskMemory()
         }
+        tools.revokeFolder(nil, conversationId: id)
         tools.cancelProjects(conversationId: id)
         let workspaceCleanup: Task<Void, Never>? = workspaces.map { workspaces in
             Task {

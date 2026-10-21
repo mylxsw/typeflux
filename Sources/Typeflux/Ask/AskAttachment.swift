@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 
 /// A file, image or folder the user added to a question. Images and text are
 /// prepared on this Mac before sending; a folder sends only its path and is
-/// opened to the `files` tool for the conversation.
+/// opened to the `files` tool for the locally selected task or session lifetime.
 struct AskAttachment: Codable, Equatable, Sendable, Identifiable {
     enum Kind: String, Codable, Sendable { case image, file, folder }
 

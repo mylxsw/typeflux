@@ -26,18 +26,21 @@ struct AskAttachButton: View {
         .accessibilityLabel(L("ask.attach.title"))
         .accessibilityIdentifier("ask.composer.attach")
         .askMenu(isPresented: $expanded, glass: true) {
-            AskAttachChoices(sourceToRestore: sourceToRestore, selectionLinesToRestore: selectionLinesToRestore,
-                             restoreEnabled: !model.capturing,
-                             restore: { kind in
-                                 expanded = false
-                                 model.restoreCapturedContent(kind, launcher: launcher)
-                             }, choose: { choice in
-                expanded = false
-                switch choice {
-                case .files: model.pickAttachments(folders: false, launcher: launcher)
-                case .folder: model.pickAttachments(folders: true, launcher: launcher)
-                }
-            })
+            VStack(alignment: .leading, spacing: 8) {
+                AskAttachChoices(sourceToRestore: sourceToRestore, selectionLinesToRestore: selectionLinesToRestore,
+                                 restoreEnabled: !model.capturing,
+                                 restore: { kind in
+                                     expanded = false
+                                     model.restoreCapturedContent(kind, launcher: launcher)
+                                 }, choose: { choice in
+                                     expanded = false
+                                     switch choice {
+                                     case .files: model.pickAttachments(folders: false, launcher: launcher)
+                                     case .folder: model.pickAttachments(folders: true, launcher: launcher)
+                                     }
+                                 })
+                AskFolderPermissionControls(model: model, launcher: launcher)
+            }.padding(8).frame(maxWidth: 340)
         }
         // ⌘U picks files directly, without opening the menu.
         .background {
@@ -51,7 +54,9 @@ struct AskAttachButton: View {
         }
     }
 
-    private var draft: AskDraft { launcher ? model.launcherDraft : model.draft }
+    private var draft: AskDraft {
+        launcher ? model.launcherDraft : model.draft
+    }
 
     private var sourceToRestore: String? {
         guard draft.sourceOff == true, let source = draft.source, !source.isEmpty else { return nil }
@@ -119,8 +124,8 @@ struct AskAttachChoices: View {
     private func row(_ title: String, _ symbol: String, _ choice: Choice) -> some View {
         AskPopoverRow(title: L(title), selected: false,
                       action: { choose(choice) }, accessory: {
-            Image(systemName: symbol).font(.system(size: 12, weight: .medium))
-        })
+                          Image(systemName: symbol).font(.system(size: 12, weight: .medium))
+                      })
     }
 }
 
@@ -168,6 +173,56 @@ extension View {
                 model.addAttachments(sources, launcher: launcher)
             }
             return true
+        }
+    }
+}
+
+/// Permission controls shared by the launcher and conversation attachment menus.
+struct AskFolderPermissionControls: View {
+    @ObservedObject var model: AskConversationModel
+    let launcher: Bool
+    private var draft: AskDraft {
+        launcher ? model.launcherDraft : model.draft
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Divider()
+            Text(L("ask.folder.lifetime")).font(.caption)
+            Picker(L("ask.folder.lifetime"), selection: Binding(
+                get: { draft.folderLifetime ?? .task },
+                set: { lifetime in
+                    if launcher {
+                        model.launcherDraft.folderLifetime = lifetime
+                    } else {
+                        model.draft.folderLifetime = lifetime
+                    }
+                }
+            )) {
+                Text(L("ask.folder.task")).tag(AskFolderGrants.Lifetime.task)
+                Text(L("ask.folder.session")).tag(AskFolderGrants.Lifetime.conversationSession)
+            }.labelsHidden()
+            Text(L("ask.folder.boundary")).font(.caption).foregroundStyle(.secondary)
+            let grants = model.temporaryFolderGrants()
+            if !launcher, !grants.isEmpty {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 10) {
+                        ForEach(grants) { grant in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(grant.root).lineLimit(2).truncationMode(.middle).help(grant.root)
+                                Text(L(grant.lifetime == .task ? "ask.folder.task" : "ask.folder.session"))
+                                    .font(.caption)
+                                Text(L("ask.folder.source")).font(.caption)
+                                if model.hasSettingsFolder(grant.root) {
+                                    Text(L("ask.folder.settingsAlso")).font(.caption)
+                                }
+                                Button(L("ask.folder.revoke")) { model.revokeTemporaryFolder(grant.id) }
+                            }
+                        }
+                    }
+                }.frame(height: min(CGFloat(grants.count) * 120, 240))
+                Button(L("ask.folder.revokeAll")) { model.revokeTemporaryFolder(nil) }
+            }
         }
     }
 }

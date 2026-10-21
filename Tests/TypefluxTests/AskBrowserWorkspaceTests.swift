@@ -103,9 +103,9 @@ final class AskBrowserWorkspaceTests: XCTestCase {
 
     func testSitesMergePermissionsAndStoredData() async throws {
         let workspace = makeWorkspace()
-        workspace.policy.set(.read, for: "www.example.com")
+        workspace.policy.set(.read, for: "https://www.example.com")
         var sites = await workspace.sites()
-        XCTAssertEqual(sites.map(\.host), ["example.com"])
+        XCTAssertEqual(sites.map(\.host), ["https://www.example.com"])
         XCTAssertEqual(sites.first?.permission, .read)
         XCTAssertEqual(sites.first?.hasData, false)
         let cookie = try XCTUnwrap(HTTPCookie(properties: [.domain: "fixture.invalid", .path: "/", .name: "session",
@@ -115,6 +115,9 @@ final class AskBrowserWorkspaceTests: XCTestCase {
         sites = await workspace.sites()
         XCTAssertEqual(sites.first { $0.host == "fixture.invalid" }?.hasData, true)
         XCTAssertEqual(sites.first { $0.host == "fixture.invalid" }?.permission, .ask)
+        XCTAssertEqual(sites.first { $0.host == "fixture.invalid" }?.isOrigin, false)
+        workspace.policy.set(.act, for: "fixture.invalid")
+        XCTAssertEqual(workspace.policy.permission(for: "https://fixture.invalid"), .ask)
         await workspace.clearData(for: "fixture.invalid")
         sites = await workspace.sites()
         XCTAssertNil(sites.first { $0.host == "fixture.invalid" })

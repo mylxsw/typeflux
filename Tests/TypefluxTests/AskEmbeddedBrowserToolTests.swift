@@ -201,7 +201,7 @@ final class AskEmbeddedBrowserToolTests: XCTestCase {
 
     func testOffPermissionRefusesEveryPageAction() async throws {
         try await loadFixture()
-        workspace.policy.set(.off, for: "fixture.invalid")
+        workspace.policy.set(.off, for: "https://fixture.invalid")
         for action in ["read", "snapshot", "screenshot", "scroll"] {
             do { _ = try await run(["action": action]); XCTFail(action) } catch {}
         }
@@ -218,9 +218,9 @@ final class AskEmbeddedBrowserToolTests: XCTestCase {
         XCTAssertEqual(tool.risk(["action": "snapshot"]), .write, "Unknown sites ask")
         XCTAssertEqual(tool.risk(["action": "tabs"]), .none)
         XCTAssertEqual(tool.risk(["action": "new_tab"]), .none)
-        workspace.policy.set(.act, for: "fixture.invalid")
+        workspace.policy.set(.act, for: "https://fixture.invalid")
         XCTAssertEqual(tool.risk(["action": "snapshot"]), .read)
-        XCTAssertEqual(tool.risk(["action": "click", "ref": unread]), .read)
+        XCTAssertEqual(tool.risk(["action": "click", "ref": unread]), .destructive)
         for action in ["click", "fill", "open", "new_tab", "select_tab", "close_tab", "handoff"] {
             let call = AskToolCall(id: "trusted", function: .init(name: "web_browser", arguments: "{\"action\":\"\(action)\"}"))
             XCTAssertFalse(AskRecoveryObservation.permits(call), action)
@@ -236,12 +236,12 @@ final class AskEmbeddedBrowserToolTests: XCTestCase {
         let first = try tool.binding(["action": "click", "ref": try XCTUnwrap(observed.refs["Unread"])])
         XCTAssertEqual(first.target.kind, "browser_tab")
         XCTAssertEqual(first.target.id, "typeflux-browser:\(tab.number)")
-        XCTAssertEqual(first.target.domain, "fixture.invalid")
+        XCTAssertEqual(first.target.domain, "https://fixture.invalid")
         XCTAssertTrue(first.summary.contains("“Unread”"))
         XCTAssertFalse(first.reusable, "Each change to a page is approved on its own")
         XCTAssertTrue(try tool.binding(["action": "read"]).reusable)
         let open = try tool.binding(["action": "open", "url": "https://elsewhere.invalid/a"])
-        XCTAssertEqual(open.target.domain, "elsewhere.invalid")
+        XCTAssertEqual(open.target.domain, "https://elsewhere.invalid")
         XCTAssertTrue(open.summary.contains("https://elsewhere.invalid/a"))
         tab.webView.loadHTMLString("<p>next</p>", baseURL: URL(string: "https://fixture.invalid/next"))
         try await tab.waitForLoad(timeout: .seconds(3))
@@ -365,5 +365,71 @@ final class AskEmbeddedBrowserToolTests: XCTestCase {
         let output = try await run(["action": "open", "url": "https://fixture.invalid/start"])
         XCTAssertTrue(output.content.contains("Opened tab 1"))
         XCTAssertEqual(workspace.tabs.first?.owner, .agent(conversationId: "c1"))
+    }
+}
+
+extension AskEmbeddedBrowserToolTests {
+    func testPausedOriginOrPolicyChangeCannotBorrowOldConsent() async throws {
+        for changePolicy in [false, true] {
+            let tab = try await loadFixture()
+            workspace.beginActivity("Read", conversationId: "c1", tab: tab)
+            workspace.setPaused(true)
+            let task = Task { try await self.run(["action": "read"]) }
+            await Task.yield()
+            if changePolicy {
+                workspace.policy.set(.off, for: "https://fixture.invalid")
+            } else {
+                tab.webView.loadHTMLString(
+                    "<p>different authority</p>",
+                    baseURL: URL(string: "http://other.invalid:8080")
+                )
+                try await tab.waitForLoad(timeout: .seconds(3))
+            }
+            workspace.setPaused(false)
+            do { _ = try await task.value; XCTFail("Changed page cannot inherit consent") } catch {}
+            workspace.policy.remove("https://fixture.invalid")
+            workspace.close(tab)
+        }
+    }
+
+    func testGenericMutationsRequireFreshConsentEvenWithActPolicy() async throws {
+        try await loadFixture()
+        workspace.policy.set(.act, for: "https://fixture.invalid")
+        for action in ["click", "fill"] {
+            let binding = try tool.binding(["action": action])
+            XCTAssertTrue(binding.requiresExplicitConsent)
+            XCTAssertFalse(binding.reusable)
+            XCTAssertEqual(tool.risk(["action": action]), .destructive)
+        }
+        XCTAssertEqual(tool.governingOrigin(["action": "open", "url": "http://www.fixture.invalid:8080/path"]),
+                       "http://www.fixture.invalid:8080")
+        XCTAssertEqual(tool.governingOrigin(["action": "read"]), "https://fixture.invalid")
+        XCTAssertTrue(try tool.binding(["action": "read"]).reusable)
+    }
+
+    func testOriginChangeDuringWaitDoesNotReturnRedirectedPageContent() async throws {
+        let tab = try await loadFixture()
+        let task = Task { try await self.run(["action": "wait", "seconds": 0.1]) }
+        await Task.yield()
+        tab.webView.loadHTMLString("<p>redirected secret</p>", baseURL: URL(string: "https://other.invalid"))
+        try await tab.waitForLoad(timeout: .seconds(3))
+        do { _ = try await task.value; XCTFail("Redirected content needs a new origin decision") } catch {}
+    }
+}
+
+extension AskEmbeddedBrowserToolTests {
+    func testRevocationAfterPageEffectKeepsReceiptWithoutReturningPageData() async throws {
+        let tab = try await loadFixture()
+        let observed = try await snapshot()
+        let ref = try XCTUnwrap(observed.refs["Unread"])
+        var checks = 0
+        let result = try await tool.execute(["action": "click", "ref": ref, "observation_id": observed.id], conversationId: "c1") {
+            checks += 1
+            if checks == 3 { throw AskFileAccess.denied }
+        }
+        XCTAssertEqual(result.outcome?.eventDispatched, true)
+        XCTAssertFalse(result.content.contains("URL:"))
+        let count = try await tab.webView.evaluateJavaScript("window.clicked")
+        XCTAssertEqual((count as? NSNumber)?.intValue, 1)
     }
 }

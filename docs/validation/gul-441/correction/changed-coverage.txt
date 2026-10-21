@@ -1,0 +1,4 @@
+Sources/Typeflux/Ask/Browser/AskBrowserSitePolicy.swift: 2/2 (100.00%)
+Sources/Typeflux/Ask/Browser/AskBrowserSitesView.swift: 2/2 (100.00%)
+Sources/Typeflux/Ask/Browser/AskEmbeddedBrowserTool.swift: 4/4 (100.00%)
+TOTAL: 8/8 (100.00%)

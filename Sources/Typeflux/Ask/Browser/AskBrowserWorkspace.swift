@@ -27,10 +27,15 @@ final class AskBrowserWorkspace: ObservableObject {
     }
 
     struct Site: Identifiable, Equatable {
-        var id: String { host }
+        var id: String {
+            (isOrigin ? "origin:" : isLegacy ? "legacy:" : "data:") + host
+        }
+
         let host: String
         var hasData: Bool
         var permission: AskBrowserSitePermission
+        var isOrigin = false
+        var isLegacy = false
     }
 
     enum WorkspaceError: LocalizedError {
@@ -204,12 +209,16 @@ final class AskBrowserWorkspace: ObservableObject {
     /// Sites with stored data in the profile, plus any the user gave a permission.
     func sites() async -> [Site] {
         let records = await dataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes())
-        var hosts = Set(records.compactMap { AskBrowserSitePolicy.normalized($0.displayName) })
-        hosts.formUnion(policy.permissions.keys)
-        return hosts.sorted().map { host in
-            Site(host: host, hasData: records.contains { AskBrowserSitePolicy.normalized($0.displayName) == host },
-                 permission: policy.permission(for: host))
+        let hosts = Set(records.compactMap { AskBrowserSitePolicy.normalized($0.displayName) })
+        let origins = Set(policy.permissions.keys).union(tabs.compactMap { AskHTTPOrigin($0.url)?.description })
+        let dataRows = hosts.sorted().map { Site(host: $0, hasData: true, permission: .ask) }
+        let originRows = origins.sorted().map {
+            Site(host: $0, hasData: false, permission: policy.permission(for: $0), isOrigin: true)
         }
+        let legacyRows = policy.legacyPreferences.keys.sorted().map {
+            Site(host: $0, hasData: false, permission: policy.legacyPreferences[$0] ?? .ask, isLegacy: true)
+        }
+        return originRows + legacyRows + dataRows
     }
 
     /// Signs out of a site: removes its cookies and storage. The permission stays.
