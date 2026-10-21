@@ -62,18 +62,17 @@ struct AskHostCommand: Sendable {
         let result = try await ManagedProcess().run(.init(
             executable: "/bin/zsh", arguments: ["-f", "-c", command], environment: environment,
             directoryDescriptor: directory, timeout: TimeInterval(timeout), outputLimit: 30_000,
-            stopOnOutputLimit: true, preserveWhitespace: true, immediateCleanupOnExit: true
+            stopOnOutputLimit: false, preserveWhitespace: true, immediateCleanupOnExit: true
         ))
         if result.termination == .cancelled { throw CancellationError() }
         var lines = ["Exit code: \(result.exitCode)"]
         if result.termination == .timedOut { lines[0] = "Timed out after \(timeout) seconds; the command may have made changes." }
-        if result.termination == .outputLimit { lines.append("Output limit reached; the command was stopped.") }
         if !result.stdout.isEmpty { lines += ["--- stdout ---", result.stdout] }
         if !result.stderr.isEmpty { lines += ["--- stderr ---", result.stderr] }
-        if result.outputTruncated { lines.append("[output truncated]") }
+        if result.outputTruncated { lines.append("[output truncated; only part of the output is shown]") }
         let status: AskExecutionStatus = switch result.termination {
-        case .exited(0): result.outputTruncated ? .unknown : .ok
-        case .exited: result.outputTruncated ? .unknown : .failed
+        case .exited(0): .ok
+        case .exited: .failed
         case .timedOut: .timeout
         case .signalled, .outputLimit, .cancelled: .unknown
         }

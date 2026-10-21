@@ -190,6 +190,71 @@ final class ManagedProcessTests: XCTestCase {
         XCTAssertEqual(result.stdout, "stdin-closed")
     }
 
+    func testDisplayLimitDrainsBothStreamsAndPreservesNormalExit() async throws {
+        for limit in [0, 1, 127, 30000] {
+            for code in [0, 7] {
+                var invocation = request(
+                    "head -c 31001 /dev/zero; head -c 31001 /dev/zero >&2; printf done > marker; exit \(code)",
+                    timeout: 5, limit: limit
+                )
+                invocation.preserveWhitespace = true
+                let result = try await ManagedProcess().run(invocation)
+                XCTAssertEqual(result.termination, .exited(Int32(code)))
+                XCTAssertEqual(result.exitCode, Int32(code))
+                XCTAssertEqual(result.stdout.utf8.count, limit)
+                XCTAssertEqual(result.stderr.utf8.count, limit)
+                XCTAssertTrue(result.outputTruncated)
+                XCTAssertEqual(try directory.readFile("marker", limit: 10), Data("done".utf8))
+                try directory.remove("marker")
+            }
+        }
+    }
+
+    func testTruncatedExitWithPipeHoldingDescendantHasBoundedCleanup() async throws {
+        // The FIFO orders child startup before the parent exits; no timing sleeps.
+        XCTAssertEqual(mkfifo(root.appendingPathComponent("ready").path, 0o600), 0)
+        var invocation = request(
+            """
+            head -c 31001 /dev/zero
+            /bin/sh -c 'trap "" TERM; echo $$ > child; echo ready > ready; while :; do :; done' &
+            read value < ready; exit 7
+            """,
+            timeout: 5, limit: 30000
+        )
+        invocation.immediateCleanupOnExit = true
+        let start = ContinuousClock.now
+        let result = try await ManagedProcess().run(invocation)
+        XCTAssertEqual(result.termination, .exited(7))
+        XCTAssertTrue(result.outputTruncated)
+        XCTAssertLessThan(start.duration(to: .now), .seconds(2))
+        let pid = try XCTUnwrap(Int32(XCTUnwrap(String(data: directory.readFile("child", limit: 32), encoding: .utf8))
+            .trimmingCharacters(in: .whitespacesAndNewlines)))
+        assertGone(pid)
+    }
+
+    func testCollectorExactLimitsWhitespaceSplitUTF8AndArbitraryBytes() {
+        let collector = AskOutputCollector(limit: 6)
+        collector.append(Data([32, 0xE2]))
+        collector.append(Data([0x82, 0xAC, 32, 10]))
+        XCTAssertFalse(collector.isTruncated)
+        XCTAssertEqual(collector.rawText, " € \n")
+        XCTAssertEqual(collector.text, "€")
+        XCTAssertEqual(collector.completeLines(after: 0), Data(" € \n".utf8))
+        collector.append(Data([0xFF, 0, 65]))
+        XCTAssertTrue(collector.isTruncated)
+        XCTAssertEqual(collector.rawText, " € \n")
+        XCTAssertEqual(collector.text, "€\n[3 more bytes omitted]")
+        for limit in [0, 1, 2, 3] {
+            let small = AskOutputCollector(limit: limit)
+            let bytes = Data([0xE2, 0x82, 0xAC, 0xFF])
+            small.append(bytes)
+            // Invalid and incomplete UTF-8 must use lossy decoding.
+            // swiftlint:disable:next optional_data_string_conversion
+            XCTAssertEqual(small.rawText, String(decoding: bytes.prefix(limit), as: UTF8.self))
+            XCTAssertTrue(small.isTruncated)
+        }
+    }
+
     func testSignalStatusAndZeroOutputLimit() async throws {
         let result = try await ManagedProcess().run(request("echo hi; kill -KILL $$", limit: 0))
         XCTAssertEqual(result.termination, .signalled(SIGKILL))
