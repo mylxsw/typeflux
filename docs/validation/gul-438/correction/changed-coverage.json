@@ -1,0 +1,41 @@
+{
+  "base": "dfeff6f5305237a23325c6bf8d03fb42c9ddd717",
+  "head": "2134ee69e42cd6b923f1688124d579f0bc957804",
+  "files": {
+    "Sources/Typeflux/Ask/AskFileAccess.swift": {
+      "covered": 6,
+      "executable": 6,
+      "missed_lines": [],
+      "sha256": "e72fe44fb9c57e9f5eb02ed896facd049ca73f9f93943eff865444fe4657a016"
+    },
+    "Sources/Typeflux/Ask/AskFileCancellation.swift": {
+      "covered": 81,
+      "executable": 82,
+      "missed_lines": [
+        24
+      ],
+      "sha256": "82007b380e0fa9140e3824e36cde9ac42abb883750323a60458fd5d91c19d22a"
+    },
+    "Sources/Typeflux/Ask/AskFileMutation.swift": {
+      "covered": 27,
+      "executable": 27,
+      "missed_lines": [],
+      "sha256": "fcddc1cae87804aaa4141e8ceb879473a483ea68546267b3ecee584121742920"
+    },
+    "Sources/Typeflux/Ask/AskFileTools.swift": {
+      "covered": 0,
+      "executable": 0,
+      "missed_lines": [],
+      "sha256": "b80690f16ece901c49e9c5c00ba47e5d7d2a9216036962e23e8e4d0a3a3b4a4c"
+    },
+    "Sources/Typeflux/Ask/AskLocalTools+Files.swift": {
+      "covered": 3,
+      "executable": 3,
+      "missed_lines": [],
+      "sha256": "15a97f9c09fac9ccea862f80532385fd1887c7538544c5f293b8f8bce3749a3b"
+    }
+  },
+  "covered": 117,
+  "executable": 118,
+  "percent": 99.15254237288136
+}
