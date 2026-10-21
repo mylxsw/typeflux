@@ -162,6 +162,7 @@ final class EventTapHotkeyService: HotkeyService {
     var onHistoryRequested: (() -> Void)?
     var onScreenshotRequested: (() -> Void)?
     var onShortcutRequested: ((HotkeyTarget) -> Void)?
+    var onShortcutReleased: ((HotkeyTarget) -> Void)?
     var onError: ((String) -> Void)?
 
     private let settingsStore: SettingsStore
@@ -211,6 +212,9 @@ final class EventTapHotkeyService: HotkeyService {
         shortcutPool.onPressed = { [weak self] target in
             ErrorLogStore.shared.log("Hotkey(System): shortcut \(target)")
             self?.onShortcutRequested?(target)
+        }
+        shortcutPool.onReleased = { [weak self] target in
+            self?.onShortcutReleased?(target)
         }
     }
 
@@ -276,10 +280,12 @@ final class EventTapHotkeyService: HotkeyService {
         shortcutPool.register(Self.shortcutBindings(in: settingsStore))
     }
 
-    /// The feature shortcuts and the keyword shortcuts that are switched on.
+    /// The feature shortcuts and the keyword shortcuts that are switched on. The ring's
+    /// shortcut is left to other apps while the ring is off or empty.
     static func shortcutBindings(in settingsStore: SettingsStore) -> [HotkeyTarget: HotkeyBinding] {
         var bindings: [HotkeyTarget: HotkeyBinding] = [:]
-        for (action, binding) in settingsStore.actionHotkeys {
+        let ringUsable = settingsStore.ringConfiguration.isUsable
+        for (action, binding) in settingsStore.actionHotkeys where action != .ring || ringUsable {
             bindings[.action(action)] = binding
         }
         for hotkey in settingsStore.keywordHotkeys where hotkey.enabled {

@@ -114,6 +114,7 @@ final class SettingsStore {
         self.defaults = defaults
         migrateTranslationHotkeys()
         removeRetiredMouseVoicePreferences()
+        seedRingHotkeyIfNeeded()
     }
 
     /// Mouse voice input was replaced by the ring; its preferences have no reader any more.

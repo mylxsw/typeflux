@@ -30,6 +30,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "Packages/TypefluxChat"),
+        .package(path: "Packages/OpieMenu"),
         .package(url: "https://github.com/jpsim/Yams.git", exact: "6.2.2"),
         .package(url: "https://github.com/apple/swift-markdown.git", from: "0.3.0"),
         .package(url: "https://github.com/argmaxinc/WhisperKit.git", from: "0.9.0"),
@@ -59,6 +60,7 @@ let package = Package(
                 "TypefluxInferenceProtocol",
                 "TypefluxMediaProtocol",
                 .product(name: "TypefluxChat", package: "TypefluxChat"),
+                .product(name: "OpieMenu", package: "OpieMenu"),
                 .product(name: "Yams", package: "Yams"),
                 .product(name: "Markdown", package: "swift-markdown"),
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),

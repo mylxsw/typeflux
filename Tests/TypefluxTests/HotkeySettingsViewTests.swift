@@ -142,7 +142,9 @@ struct HotkeySettingsViewTests {
         ), initialSection: .settings)
 
         for light in [false, true] {
-            try await render(StudioView(viewModel: model, settingsPane: .hotkeys), size: NSSize(width: 1100, height: 900),
+            // Tall enough for every feature row (including the ring) and the lazily built keyword templates.
+            try await render(StudioView(viewModel: model, settingsPane: .hotkeys),
+                             size: NSSize(width: 1100, height: 1200),
                              name: "hotkeys-empty-\(light ? "light" : "dark")", light: light) { window in
                 #expect(SettingsBehaviorTestSupport.contains(AppHotkeyAction.openChat.title, in: window))
                 #expect(SettingsBehaviorTestSupport.contains(BuiltInHotkey.activation.title, in: window))

@@ -6,6 +6,7 @@ final class AppCoordinator {
 
     private var statusBarController: StatusBarController?
     private var workflowController: WorkflowController?
+    private var ringController: RingController?
     private var onboardingWindowController: OnboardingWindowController?
     private let cloudEndpointProbeScheduler = CloudEndpointProbeScheduler()
     private let asrPublicConfigRefreshScheduler = TypefluxASRPublicConfigRefreshScheduler()
@@ -206,6 +207,10 @@ final class AppCoordinator {
         di.hotkeyService.onShortcutRequested = { [weak self, weak screenshotCoordinator] target in
             self?.handleShortcut(target, screenshotCoordinator: screenshotCoordinator)
         }
+        di.hotkeyService.onShortcutReleased = { [weak self] target in
+            if target == .action(.ring) { self?.ringController?.pressEnded() }
+        }
+        startRing(screenshotCoordinator: screenshotCoordinator)
 
         statusBarController = StatusBarController(
             appState: di.appState,
@@ -387,11 +392,52 @@ final class AppCoordinator {
             statusBarController?.showSettings(section: .home)
         case .action(.openHelp):
             showHelp(query: "")
+        case .action(.ring):
+            ringController?.pressBegan()
         case let .keyword(id):
             guard let hotkey = di.settingsStore.keywordHotkeys.first(where: { $0.id == id }), hotkey.enabled,
                   let model = di.askConversationWindowController?.model else { return }
             workflowController?.cancelRecording()
             model.runKeywordShortcut(hotkey)
+        }
+    }
+
+    private func startRing(screenshotCoordinator: ScreenshotCoordinator) {
+        let executor = RingActionExecutor(environment: LiveRingSystemEnvironment())
+        executor.handlers = RingActionExecutor.Handlers(
+            feature: { [weak self, weak screenshotCoordinator] feature in
+                self?.runRingFeature(feature, screenshotCoordinator: screenshotCoordinator)
+            },
+            keyword: { [weak self] hotkey in
+                guard let model = self?.di.askConversationWindowController?.model else { return }
+                self?.workflowController?.cancelRecording()
+                model.runKeywordShortcut(hotkey)
+            }
+        )
+        executor.onFailure = { [weak overlay = di.overlayController] message in overlay?.showNotice(message: message) }
+        let controller = RingController(settingsStore: di.settingsStore, menu: OpieRingMenu(), executor: executor)
+        controller.isRecordingActive = { [weak self] in self?.workflowController?.isRecording ?? false }
+        ringController = controller
+    }
+
+    /// The ring's Typeflux features use the same entry points as their shortcuts.
+    private func runRingFeature(_ feature: RingFeature, screenshotCoordinator: ScreenshotCoordinator?) {
+        if let action = feature.shortcutAction {
+            return handleShortcut(.action(action), screenshotCoordinator: screenshotCoordinator)
+        }
+        switch feature {
+        case .dictation:
+            workflowController?.handlePressBegan(intent: .dictation, startLocked: true)
+        case .ask:
+            di.askConversationWindowController?.toggleLauncher()
+        case .screenshot:
+            screenshotCoordinator?.start(mode: .region)
+        case .clipboard:
+            workflowController?.handleHistoryPickerRequested()
+        case .persona:
+            workflowController?.handlePersonaPickerRequested()
+        default:
+            break
         }
     }
 

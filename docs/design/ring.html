@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 圆环（Ring）交互设计稿 v2</title>
+<style>
+/* Tokens mirror StudioTheme / TFColors / TFMetrics (docs/design/settings-search-unification.md §2). */
+:root{--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;--mono:"SF Mono",ui-monospace,Menlo,monospace;--warm:#FFC457}
+.light{--page:#FBFBFC;--side:#F3F4F6;--sideSel:#FFFFFF;--sideSelStroke:rgba(15,23,42,.08);--sideSelText:#1D4ED8;
+  --card:#FFFFFF;--cardStroke:rgba(15,23,42,.09);--control:#F4F4F5;--raised:#FFFFFF;--border:rgba(15,23,42,.10);
+  --accent:#2563EB;--accentHover:#1D4ED8;--accentSoft:rgba(37,99,235,.10);--focus:rgba(37,99,235,.30);
+  --t1:#1D1D1F;--t2:#515154;--t3:#6E6E73;--danger:#DC2626;--success:#16A34A;--overlay:rgba(29,29,31,.06);--press:rgba(29,29,31,.11);
+  --pop:#FFFFFF;--popStroke:rgba(15,23,42,.12);--menu:rgba(246,246,248,.94);--scrim:rgba(0,0,0,.10)}
+.dark{--page:#1E1E20;--side:#2C2C34;--sideSel:rgba(255,255,255,.11);--sideSelStroke:transparent;--sideSelText:#EEEEEE;
+  --card:#2A2A2C;--cardStroke:rgba(255,255,255,.115);--control:#323234;--raised:#4F4F51;--border:rgba(255,255,255,.115);
+  --accent:#178CFF;--accentHover:#178CFF;--accentSoft:rgba(45,45,45,.78);--focus:rgba(23,140,255,.30);
+  --t1:#EEEEEE;--t2:#B8B8B8;--t3:#8F8F8F;--danger:#DB5252;--success:#29C76E;--overlay:rgba(238,238,238,.06);--press:rgba(238,238,238,.11);
+  --pop:#2C2C2E;--popStroke:rgba(255,255,255,.14);--menu:rgba(40,40,42,.94);--scrim:rgba(0,0,0,.25)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--font);background:#0E0E10;color:#EDEDED;-webkit-font-smoothing:antialiased;overflow:hidden;font-size:13px}
+button{font-family:inherit;color:inherit}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none;display:block}
+
+/* ---------- prototype chrome (outside the app) ---------- */
+.proto-bar{height:48px;display:flex;align-items:center;gap:14px;padding:0 18px;border-bottom:1px solid rgba(255,255,255,.06);background:#121214}
+.proto-bar .brand{font-weight:600;font-size:13px;color:#fff}
+.proto-bar .brand small{color:#8E8E93;font-weight:400;margin-left:6px}
+.ptabs,.pill{display:flex;gap:2px;background:#1C1C1F;padding:3px;border-radius:999px}
+.ptabs button,.pill button{border:0;background:transparent;color:#A1A1A6;font-size:12.5px;padding:5px 13px;border-radius:999px;cursor:pointer}
+.ptabs button.on,.pill button.on{background:#3A3A3D;color:#fff}
+.proto-bar .sp{flex:1}
+.stage{position:absolute;top:48px;left:0;right:0;bottom:0;display:none}
+.stage.on{display:flex}
+#stage-settings{align-items:center;justify-content:center;background:radial-gradient(1200px 700px at 30% 20%,#2a3550 0,#15171c 55%,#0e0e10 100%)}
+
+/* ---------- window + sidebar ---------- */
+.window{width:min(1120px,calc(100vw - 40px));height:min(800px,calc(100vh - 88px));border-radius:12px;overflow:hidden;display:flex;position:relative;
+  background:var(--page);color:var(--t1);box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 .5px rgba(255,255,255,.12)}
+.sidebar{width:220px;flex:none;padding:10px;display:flex}
+.sidepanel{flex:1;background:var(--side);border-radius:14px;display:flex;flex-direction:column;padding:14px 10px}
+.lights{display:flex;gap:8px;padding:2px 6px 20px}
+.lights i{width:12px;height:12px;border-radius:50%;display:block}
+.logo{display:flex;align-items:center;gap:10px;padding:0 8px 22px;font-weight:700;font-size:17px}
+.logo .mk{width:26px;height:26px;border-radius:50%;background:var(--t1);color:var(--page);display:grid;place-items:center}
+.logo .mk svg{width:17px;height:17px;stroke-width:2.4}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;font-size:13px;color:var(--t1);cursor:default;border:.5px solid transparent}
+.nav a svg{width:16px;height:16px;color:var(--t2)}
+.nav a.on{background:var(--sideSel);border-color:var(--sideSelStroke);color:var(--sideSelText);font-weight:600}
+.nav a.on svg{color:var(--sideSelText)}
+.sidepanel .foot{margin-top:auto;display:flex;align-items:center;gap:8px;padding:8px 10px;font-size:12px;color:var(--t2)}
+.sidepanel .foot b{margin-left:auto;color:var(--accent);font-weight:600}
+
+.content{flex:1;overflow:auto;position:relative}
+.page{max-width:820px;margin:0 auto;padding:28px 28px 48px;display:flex;flex-direction:column;gap:24px}
+
+/* ---------- TFPaneHeader: 40pt soft tile + 17pt title, no subtitle ---------- */
+.pane-h{display:flex;align-items:center;gap:14px}
+.pane-h .tile40{width:40px;height:40px;border-radius:10px;background:var(--accentSoft);color:var(--accent);display:grid;place-items:center}
+.light .pane-h .tile40{background:rgba(37,99,235,.15)}
+.dark .pane-h .tile40{background:rgba(23,140,255,.15)}
+.pane-h .tile40 svg{width:21px;height:21px;stroke-width:2}
+.pane-h h1{font-size:17px;font-weight:600;margin:0}
+.pane-h .sp{flex:1}
+
+/* ---------- TFFormSection / TFSectionHeader / TFCard ---------- */
+.sec{display:flex;flex-direction:column;gap:6px}
+.sec-h{display:flex;align-items:center;gap:7px;min-height:24px;padding:0 4px}
+.sec-h b{font-size:12px;font-weight:600;color:var(--t2)}
+.sec-h .cnt{font-size:11px;color:var(--t3);font-variant-numeric:tabular-nums}
+.sec-h .sp{flex:1}
+.card{background:var(--card);border:.5px solid var(--cardStroke);border-radius:12px}
+.divider{height:.5px;background:var(--border);margin-left:54px}
+.divider.full{margin-left:0}
+
+/* ---------- TFFormRow ---------- */
+.frow{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:52px;position:relative}
+.tile28{width:28px;height:28px;border-radius:7px;background:var(--control);color:var(--t2);display:grid;place-items:center;flex:none}
+.tile28 svg{width:15px;height:15px;stroke-width:2}
+.frow .lbl{flex:1;min-width:180px;display:flex;flex-direction:column;gap:3px}
+.frow .ttl{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+.frow .val{font-size:12px;color:var(--t2)}
+.frow .msg{font-size:11.5px;color:var(--danger)}
+.frow .ctl{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.w220{width:220px}
+
+/* SettingsDescriptionHint: "?" visible on row hover; popover on icon hover or click */
+.hint{width:16px;height:16px;border:0;background:transparent;padding:0;color:var(--t2);cursor:pointer;opacity:0;transform:scale(.85);transition:opacity .18s ease-out,transform .18s ease-out;position:relative}
+.hint svg{width:13px;height:13px;stroke-width:2}
+.frow:hover .hint,.lrow:hover .hint,.hint.open{opacity:1;transform:none}
+.popover{position:absolute;z-index:60;width:300px;padding:14px;font-size:13px;line-height:1.5;color:var(--t1);background:var(--pop);border:.5px solid var(--popStroke);border-radius:10px;
+  box-shadow:0 10px 30px rgba(0,0,0,.18),0 1px 3px rgba(0,0,0,.08);pointer-events:auto;animation:fadeIn .12s ease-out}
+.popover::after{content:"";position:absolute;left:var(--ax,150px);bottom:-6px;width:12px;height:12px;background:var(--pop);border-right:.5px solid var(--popStroke);border-bottom:.5px solid var(--popStroke);transform:translateX(-50%) rotate(45deg)}
+.popover.below::after{bottom:auto;top:-6px;transform:translateX(-50%) rotate(225deg)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(3px)}}
+
+/* ---------- TFButton: capsule; 30 regular / 24 small ---------- */
+.btn{--h:30px;height:var(--h);min-width:64px;padding:0 14px;border-radius:999px;border:.5px solid var(--border);background:var(--control);color:var(--t1);
+  font-size:13px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;position:relative;white-space:nowrap;
+  transition:transform .25s cubic-bezier(.3,1.5,.5,1)}
+.btn::after{content:"";position:absolute;inset:0;border-radius:inherit;background:transparent;pointer-events:none}
+.btn:hover::after{background:var(--overlay)}
+.btn:active{transform:scale(.97)}
+.btn:active::after{background:var(--press)}
+.btn svg.i{width:12px;height:12px;stroke-width:2.4}
+.btn.primary{background:var(--accent);border-color:transparent;color:#fff;font-weight:600}
+.btn.primary:hover{background:var(--accentHover)}
+.btn.primary:hover::after{background:transparent}
+.btn.plain{background:transparent;border-color:transparent}
+.btn.destructive{color:var(--danger)}
+.btn.danger-fill{background:var(--danger);border-color:transparent;color:#fff;font-weight:600}
+.btn.sm{--h:24px;min-width:0;padding:0 10px;font-size:12px;gap:5px}
+.btn.sm svg.i{width:11px;height:11px}
+.btn.icon{width:var(--h);min-width:0;padding:0}
+.btn.icon svg.i{width:14px;height:14px;stroke-width:2.2}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.btn:focus-visible,.field:focus,.seg:focus-visible,.keyfield:focus-visible,.picker:focus-visible{outline:1px solid var(--accent);box-shadow:0 0 0 3.5px var(--focus)}
+
+/* TFSwitch (mini) */
+.switch{width:26px;height:15px;border-radius:999px;background:rgba(120,120,128,.32);position:relative;cursor:pointer;flex:none;transition:.18s;border:0;padding:0}
+.switch::after{content:"";position:absolute;width:13px;height:13px;border-radius:50%;background:#fff;top:1px;left:1px;transition:.18s;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.switch.on{background:var(--accent)}
+.switch.on::after{left:12px}
+
+/* TFKeyCap(style:.key) inside a recorder control */
+.keyfield{height:30px;border-radius:999px;border:.5px solid var(--border);background:var(--control);display:inline-flex;align-items:center;gap:4px;padding:0 4px 0 4px;cursor:pointer;outline:none}
+.keyfield:hover{box-shadow:inset 0 0 0 999px var(--overlay)}
+.keyfield.rec{outline:1px solid var(--accent);box-shadow:0 0 0 3.5px var(--focus)}
+.kc{min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--raised);border:.5px solid var(--border);box-shadow:0 1px 0 rgba(0,0,0,.08);font-size:12px;font-weight:500;display:inline-grid;place-items:center;color:var(--t1)}
+.keyfield .rec-t{font-size:12.5px;color:var(--accent);padding:0 10px;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.5}}
+
+/* TFSegmentedControl (form: equal widths filling the control column) */
+.seg{display:flex;height:30px;padding:2px;border-radius:999px;background:var(--control);border:.5px solid var(--border);outline:none}
+.seg button{flex:1;border:0;background:transparent;border-radius:999px;font-size:12.5px;font-weight:500;color:var(--t2);cursor:pointer;padding:0 8px;white-space:nowrap}
+.seg button.on{background:var(--raised);color:var(--t1);font-weight:600;box-shadow:0 1px 1px rgba(0,0,0,.12)}
+
+/* fields */
+.field{height:30px;border-radius:8px;border:.5px solid var(--border);background:var(--control);color:var(--t1);font-size:13px;padding:0 10px;outline:none;font-family:inherit;width:100%}
+.field.mono{font-family:var(--mono);font-size:12px}
+.field.err{border-color:var(--danger)}
+.fmsg{font-size:11.5px;margin-top:5px}
+.fmsg.err{color:var(--danger)}.fmsg.hint{color:var(--t3)}
+
+/* TFPopUpButton / TFRichPicker trigger */
+.picker{height:30px;border-radius:999px;border:.5px solid var(--border);background:var(--control);display:flex;align-items:center;gap:8px;padding:0 10px 0 12px;cursor:pointer;font-size:13px;width:100%;text-align:left;position:relative}
+.picker:hover{box-shadow:inset 0 0 0 999px var(--overlay)}
+.picker .pv{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:7px}
+.picker .pv svg.i{width:14px;height:14px;color:var(--t2)}
+.picker .chev{color:var(--t3)}
+.picker .chev svg{width:10px;height:10px;stroke-width:2.6}
+.picker.ph .pv{color:var(--t3)}
+
+/* menus: native NSMenu look; rich panel per §5.4 */
+.menu{position:absolute;z-index:70;min-width:180px;padding:5px;border-radius:10px;background:var(--menu);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);
+  border:.5px solid var(--popStroke);box-shadow:0 12px 34px rgba(0,0,0,.22);font-size:13px;animation:fadeIn .1s ease-out}
+.menu .mi{display:flex;align-items:center;gap:8px;height:24px;padding:0 10px 0 6px;border-radius:6px;cursor:default;white-space:nowrap}
+.menu .mi .ck{width:12px;display:grid;place-items:center}
+.menu .mi .ck svg{width:11px;height:11px;stroke-width:2.6}
+.menu .mi svg.i{width:14px;height:14px}
+.menu .mi:hover{background:var(--accent);color:#fff}
+.menu .mi.danger{color:var(--danger)}
+.menu .mi.danger:hover{color:#fff}
+.menu .mi.dis{opacity:.4;pointer-events:none}
+.menu hr{border:0;border-top:.5px solid var(--border);margin:5px 6px}
+.rich{width:340px;max-height:360px;display:flex;flex-direction:column;border-radius:12px}
+.rich .search{position:relative;margin:2px 2px 6px}
+.rich .search input{height:30px;border-radius:999px;padding-left:30px}
+.rich .search svg{position:absolute;left:10px;top:9px;width:12px;height:12px;color:var(--t3)}
+.rich .list{overflow:auto}
+.rich .ri{display:flex;align-items:center;gap:9px;min-height:44px;padding:4px 8px 4px 6px;border-radius:7px;cursor:default}
+.rich .ri .ck{width:12px;color:var(--accent)}
+.rich .ri .ck svg{width:11px;height:11px;stroke-width:2.6}
+.rich .ri .t{flex:1;min-width:0}
+.rich .ri .t small{display:block;font-size:11.5px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rich .ri:hover,.rich .ri.kb{background:var(--accent);color:#fff}
+.rich .ri:hover small,.rich .ri.kb small,.rich .ri:hover .ck,.rich .ri.kb .ck{color:rgba(255,255,255,.85)}
+.rich .grp{font-size:11px;font-weight:600;color:var(--t3);padding:8px 8px 4px}
+.rich .none{padding:14px;color:var(--t2);font-size:12.5px;text-align:center}
+.icongrid{display:grid;grid-template-columns:repeat(8,30px);gap:4px;padding:4px}
+.icongrid button{width:30px;height:30px;border-radius:7px;border:0;background:transparent;display:grid;place-items:center;cursor:pointer;color:var(--t1)}
+.icongrid button:hover{background:var(--overlay)}
+.icongrid button.on{background:var(--accent);color:#fff}
+
+/* ---------- Actions card: preview + TFListRow list ---------- */
+.editor{display:grid;grid-template-columns:300px 1fr}
+.preview{border-right:.5px solid var(--border);display:grid;place-items:center;padding:8px 0;background:radial-gradient(240px 240px at 50% 50%,rgba(120,110,160,.13),transparent 72%)}
+.preview .ring-host{width:290px;height:290px;position:relative}
+.lrow{display:flex;align-items:center;gap:10px;height:44px;padding:0 12px;cursor:pointer;position:relative}
+.lrow:hover{background:var(--overlay)}
+.lrow.hl{background:var(--accentSoft)}
+.lrow.drag{opacity:.35}
+.lrow.over::before{content:"";position:absolute;left:12px;right:12px;top:-1px;height:2px;border-radius:2px;background:var(--accent)}
+.lrow .tx{flex:1;min-width:0}
+.lrow .tx b{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lrow .tx span{display:block;font-size:11.5px;color:var(--t2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lrow .more{opacity:0;color:var(--t3)}
+.lrow:hover .more,.lrow .more.open{opacity:1}
+.lrow .warn-tag{font-size:10.5px;height:16px;padding:0 6px;border-radius:999px;background:rgba(220,38,38,.12);color:var(--danger);display:inline-flex;align-items:center}
+.ldiv{height:.5px;background:var(--border);margin-left:50px}
+.arow{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;color:var(--accent);font-size:13px;font-weight:500;cursor:pointer;border:0;background:transparent;width:100%;border-top:.5px solid var(--border)}
+.arow:hover{background:var(--overlay)}
+.arow svg.i{width:13px;height:13px;stroke-width:2.4}
+.arow[disabled]{color:var(--t3);cursor:not-allowed;background:transparent}
+.empty{padding:34px 20px 30px;text-align:center;color:var(--t2);font-size:12.5px}
+.empty b{display:block;color:var(--t1);font-size:13px;margin-bottom:4px}
+
+/* ---------- Sheet (18pt) and alert ---------- */
+.scrim{position:absolute;inset:0;background:var(--scrim);display:none;align-items:flex-start;justify-content:center;z-index:40;padding-top:56px}
+.scrim.on{display:flex}
+.sheet{width:480px;background:var(--page);border:.5px solid var(--popStroke);border-radius:18px;box-shadow:0 24px 70px rgba(0,0,0,.32);animation:sheetIn .22s cubic-bezier(.2,.9,.3,1.1);position:relative}
+@keyframes sheetIn{from{transform:translateY(-16px);opacity:0}}
+.sheet h2{font-size:15px;font-weight:600;margin:0;padding:20px 22px 18px}
+.sheet .body{padding:0 22px;display:flex;flex-direction:column;gap:14px}
+.sf{display:flex;align-items:flex-start;gap:12px}
+.sf>label{width:76px;flex:none;font-size:12.5px;color:var(--t2);padding-top:7px}
+.sf>.c{flex:1;min-width:0}
+.sheet .foot{display:flex;align-items:center;gap:8px;padding:18px 22px 20px}
+.sheet .foot .sp{flex:1}
+.prev{display:flex;align-items:center;gap:10px;height:44px;padding:0 12px;border-radius:10px;background:#18181A;color:#eee}
+.prev .dot{width:30px;height:30px;border-radius:50%;background:#262628;display:grid;place-items:center;color:var(--warm)}
+.prev .dot svg.i{width:16px;height:16px}
+.prev .pl{font-size:10.5px;background:#3A2C18;color:var(--warm);padding:3px 8px;border-radius:6px;white-space:pre-line;line-height:1.3;font-weight:600}
+.alert{width:260px;background:var(--page);border:.5px solid var(--popStroke);border-radius:18px;box-shadow:0 24px 70px rgba(0,0,0,.35);padding:20px 16px 16px;text-align:center;align-self:center;margin-top:-40px;animation:sheetIn .18s ease-out}
+.alert .ai{width:48px;height:48px;border-radius:12px;background:var(--t1);color:var(--page);display:grid;place-items:center;margin:0 auto 12px}
+.alert .ai svg{width:28px;height:28px;stroke-width:2.2}
+.alert b{display:block;font-size:13px;margin-bottom:6px}
+.alert p{font-size:11.5px;color:var(--t2);margin:0 0 16px;line-height:1.45}
+.alert .btns{display:flex;flex-direction:column;gap:8px}
+.alert .btns .btn{width:100%}
+
+/* ---------- Ring (always dark; mirrors OpieMenu RadialMenuView) ---------- */
+.ring{position:absolute;width:620px;height:620px;left:0;top:0;pointer-events:none;transform-origin:310px 310px}
+.ring .blur{position:absolute;left:182px;top:182px;width:256px;height:256px;border-radius:50%;overflow:hidden}
+.ring svg{position:absolute;inset:0;overflow:visible}
+.ring .lbl{font-family:var(--font);font-size:10.5px;font-weight:500}
+.ring.opening{animation:ringIn .26s cubic-bezier(.2,1.3,.4,1) both}
+.ring.closing{animation:ringOut .16s ease-in both}
+@keyframes ringIn{from{opacity:0;transform:var(--base) scale(.72) rotate(-14deg)}to{opacity:1;transform:var(--base) scale(1)}}
+@keyframes ringOut{to{opacity:0;transform:var(--base) scale(.9)}}
+
+/* ---------- experience stage ---------- */
+#stage-demo{flex-direction:column}
+.desk{flex:1;position:relative;overflow:hidden;outline:none;
+  background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,.25)),radial-gradient(900px 600px at 70% 10%,#5b7bd6 0,transparent 60%),radial-gradient(800px 700px at 10% 90%,#2f8f6b 0,transparent 55%),linear-gradient(135deg,#1d2f5c,#0f3b33)}
+.menubar{height:26px;background:rgba(30,30,32,.55);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;gap:18px;padding:0 14px;font-size:12.5px;color:#fff}
+.menubar .sp{flex:1}
+.doc{position:absolute;left:8%;top:12%;width:520px;border-radius:12px;background:#FBFBFA;color:#222;box-shadow:0 20px 60px rgba(0,0,0,.4);overflow:hidden}
+.doc .tb{height:36px;background:#EFEFED;display:flex;align-items:center;gap:7px;padding:0 12px;font-size:12px;color:#666}
+.doc .tb i{width:11px;height:11px;border-radius:50%;display:block}
+.doc .bd{padding:18px 22px;font-size:14px;line-height:1.75}
+.doc mark{background:#B4D5FE;color:inherit;border-radius:2px}
+.helpcard{position:absolute;right:28px;top:48px;width:330px;border-radius:14px;background:rgba(22,22,24,.8);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,.1);padding:16px 18px;font-size:12.5px;line-height:1.65;color:#ddd}
+.helpcard h3{margin:0 0 8px;font-size:14px;color:#fff}
+.helpcard ol{padding-left:18px;margin:6px 0 10px}
+.helpcard .note{color:#8E8E93;font-size:11.5px}
+.helpcard .kc,.practice .kc{background:#3A3A3C;color:#fff;border-color:#545456}
+.toast{position:absolute;left:50%;bottom:36px;transform:translateX(-50%) translateY(20px);opacity:0;transition:.25s;background:rgba(28,28,30,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);color:#fff;border:1px solid rgba(255,255,255,.1);
+  border-radius:12px;padding:11px 16px;font-size:13px;display:flex;gap:10px;align-items:center;max-width:620px;pointer-events:none;z-index:80}
+.toast.on{opacity:1;transform:translateX(-50%)}
+.toast .tt{width:28px;height:28px;border-radius:50%;background:#3a2c18;color:var(--warm);display:grid;place-items:center;flex:none}
+.toast small{display:block;color:#A1A1A6;font-size:11.5px;margin-top:2px}
+.pressing{position:absolute;left:50%;top:40px;transform:translateX(-50%);font-size:11.5px;color:#fff;background:rgba(0,0,0,.45);padding:4px 10px;border-radius:12px;opacity:0;transition:.15s}
+.pressing.on{opacity:1}
+.practice{position:absolute;inset:0;z-index:50;display:none;background:rgba(10,10,12,.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);outline:none}
+.practice.on{display:block}
+.practice .bar{position:absolute;left:50%;top:20px;transform:translateX(-50%);background:rgba(28,28,30,.95);color:#fff;border:.5px solid rgba(255,255,255,.14);border-radius:999px;padding:5px 5px 5px 16px;font-size:12.5px;display:flex;gap:10px;align-items:center;white-space:nowrap}
+.practice .bar .btn{background:#3A3A3D;color:#fff;border-color:transparent}
+
+/* plan */
+#stage-plan{overflow:auto;background:#151517;justify-content:center}
+.plan{max-width:880px;padding:30px 28px 80px;color:#D8D8DC;font-size:13.5px;line-height:1.75}
+.plan h2{color:#fff;font-size:19px;margin:26px 0 10px}
+.plan h2:first-child{margin-top:0}
+.plan table{border-collapse:collapse;width:100%;font-size:12.5px;margin:8px 0}
+.plan td,.plan th{border:1px solid #2E2E31;padding:7px 10px;text-align:left;vertical-align:top}
+.plan th{background:#1F1F22;color:#fff;font-weight:600}
+.plan code{font-family:var(--mono);font-size:12px;background:#232326;padding:1px 5px;border-radius:4px}
+.fatal{position:fixed;left:16px;bottom:16px;z-index:999;background:#DC2626;color:#fff;padding:10px 14px;border-radius:10px;font-size:12.5px;display:none;max-width:560px}
+</style>
+</head>
+<body>
+<div class="proto-bar">
+  <div class="brand">Typeflux · 圆环<small>交互稿 v2 · GUL-448</small></div>
+  <div class="ptabs" id="ptabs">
+    <button data-stage="settings" class="on">① 设置页</button>
+    <button data-stage="demo">② 实际体验</button>
+    <button data-stage="plan">③ 交互规则</button>
+  </div>
+  <div class="sp"></div>
+  <div class="pill" id="themeT"><button data-t="light" class="on">浅色</button><button data-t="dark">深色</button></div>
+</div>
+
+<!-- ============ ① Settings ============ -->
+<div class="stage on" id="stage-settings">
+  <div class="window light" id="win">
+    <aside class="sidebar"><div class="sidepanel">
+      <div class="lights"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i></div>
+      <div class="logo"><span class="mk" data-icon="infinity"></span>Typeflux</div>
+      <nav class="nav">
+        <a><span data-icon="waveform"></span>语音输入</a>
+        <a><span data-icon="cpu"></span>模型</a>
+        <a><span data-icon="puzzle"></span>Agent</a>
+        <a><span data-icon="command"></span>启动器</a>
+        <a class="on"><span data-icon="ring"></span>圆环</a>
+        <a><span data-icon="gear"></span>设置</a>
+      </nav>
+      <div class="foot"><span data-icon="user"></span>访客<b>登录</b></div>
+    </div></aside>
+    <main class="content" id="content">
+      <div class="page">
+        <header class="pane-h">
+          <span class="tile40" data-icon="ring"></span><h1>圆环</h1><span class="sp"></span>
+          <button class="switch on" id="enableSw" title="启用圆环" aria-label="启用圆环"></button>
+        </header>
+        <div id="body" style="display:flex;flex-direction:column;gap:24px">
+          <section class="sec">
+            <div class="card">
+              <div class="frow" data-hint="按住快捷键：圆环出现在鼠标处，移向某个操作后松开即执行，移回中心再松开则取消。&#10;轻按快捷键：圆环保持打开，可点击、按数字键 1–8 或方向键 + ↩ 选择；Esc 或再按一次快捷键关闭。">
+                <span class="tile28" data-icon="keyboard"></span>
+                <div class="lbl"><div class="ttl">快捷键</div><div class="msg" id="hkMsg" style="display:none"></div></div>
+                <div class="ctl"><div class="keyfield" id="hotkey" tabindex="0" role="button" aria-label="录制圆环快捷键"></div></div>
+              </div>
+              <div class="divider"></div>
+              <div class="frow" data-hint="按住快捷键试一试方向和手感，松开时只提示会执行哪个操作，不会真正执行。">
+                <span class="tile28" data-icon="target"></span>
+                <div class="lbl"><div class="ttl">练习</div></div>
+                <div class="ctl"><button class="btn" id="practiceBtn">开始练习</button></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="sec">
+            <div class="sec-h"><b>操作</b><span class="cnt" id="cnt"></span><span class="sp"></span>
+              <button class="btn sm plain" id="resetBtn">恢复默认</button></div>
+            <div class="card">
+              <div class="editor">
+                <div class="preview"><div class="ring-host" id="previewHost"></div></div>
+                <div style="display:flex;flex-direction:column;min-width:0">
+                  <div id="alist" style="flex:1"></div>
+                  <button class="arow" id="addBtn"><span data-icon="plus"></span>添加操作</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="sec">
+            <div class="sec-h"><b>外观</b></div>
+            <div class="card">
+              <div class="frow" data-hint="液态玻璃需要 macOS 26，更早的系统自动使用磨砂。">
+                <span class="tile28" data-icon="palette"></span>
+                <div class="lbl"><div class="ttl">样式</div></div>
+                <div class="ctl"><div class="seg w220" id="styleSeg" role="radiogroup" aria-label="样式">
+                  <button data-v="classic">经典</button><button data-v="frosted">磨砂</button><button data-v="liquid">液态玻璃</button></div></div>
+              </div>
+              <div class="divider"></div>
+              <div class="frow" data-hint="显示在圆环中心，下方附带操作数量。最多 10 个字。">
+                <span class="tile28" data-icon="text"></span>
+                <div class="lbl"><div class="ttl">中心文字</div></div>
+                <div class="ctl"><input class="field w220" id="centerTitle" maxlength="10" aria-label="中心文字"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+    <div class="scrim" id="scrim"></div>
+    <div class="practice" id="practice" tabindex="0">
+      <div class="bar"><span>练习模式 · 不会执行任何操作</span><span class="kc">Space</span><span style="color:#A1A1A6">模拟快捷键</span><button class="btn sm" id="practiceExit">结束练习</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ② Demo ============ -->
+<div class="stage" id="stage-demo">
+  <div class="desk" id="desk" tabindex="0">
+    <div class="menubar"><b>备忘录</b><span>文件</span><span>编辑</span><span>格式</span><span>显示</span><span>窗口</span><div class="sp"></div><span>10月21日 周三 10:24</span></div>
+    <div class="doc">
+      <div class="tb"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i><span style="margin-left:10px">周会纪要</span></div>
+      <div class="bd"><b>产品周会 · 10/21</b><br>1. 圆环替换鼠标语音输入，本周出交互稿。<br>2. <mark>The ring opens right under the pointer, so every action is one flick away.</mark><br>3. 启动器关键词支持在圆环里直接调用。<br>4. 下周评审 Liquid Glass 样式在 macOS 26 上的表现。</div>
+    </div>
+    <div class="helpcard">
+      <h3>体验圆环</h3>
+      浏览器无法捕获全局快捷键，这里用 <span class="kc">Space</span> 模拟 <span id="hkMirror"></span>。
+      <ol>
+        <li><b>按住 Space</b>：圆环出现在鼠标处。</li>
+        <li>朝某个方向移动鼠标，扇区高亮，外缘会被拉向指针。</li>
+        <li><b>松开 Space</b> 执行；移回中心再松开则取消。</li>
+        <li><b>轻按 Space</b>：圆环保持打开，可点击扇区、按 1–8 或方向键 + ↩，Esc 关闭。</li>
+      </ol>
+      <div class="note">操作和样式与 ① 中的配置实时同步。先点一下这块区域，让它获得键盘焦点。</div>
+    </div>
+    <div class="pressing" id="pressing">Space 按下中…</div>
+    <div class="toast" id="toast"><span class="tt" id="toastIc"></span><div><b id="toastT"></b><small id="toastD"></small></div></div>
+  </div>
+</div>
+
+<!-- ============ ③ Plan ============ -->
+<div class="stage" id="stage-plan"><div class="plan">
+  <h2>交互规则</h2>
+  <table>
+    <tr><th style="width:160px">手势</th><th>结果</th></tr>
+    <tr><td>按住快捷键</td><td>在鼠标位置打开圆环（靠近屏幕边缘时自动内移，支持多显示器）。</td></tr>
+    <tr><td>按住 → 移动 → 松开</td><td>指针离按下点 ≥ 20pt 且有选中扇区时执行。方向决定扇区，越过外圈也有效。</td></tr>
+    <tr><td>移回中心再松开</td><td>取消。</td></tr>
+    <tr><td>轻按</td><td>圆环保持打开：点击、<code>1–8</code>、方向键 + <code>↩</code> 选择；<code>Esc</code>、再按一次快捷键或点击外部关闭。</td></tr>
+    <tr><td>执行时机</td><td>关闭动画后先把焦点还给原应用，再执行。</td></tr>
+  </table>
+  <h2>设置页遵循的规范（settings-search-unification.md）</h2>
+  <table>
+    <tr><th style="width:160px">元素</th><th>做法</th></tr>
+    <tr><td>页面标题</td><td><code>TFPaneHeader</code>：40pt 图标块 + 17pt 标题，没有副标题；启用开关放在标题行右侧。</td></tr>
+    <tr><td>设置项说明</td><td><code>TFFormRow(detail:)</code>：说明不占行，悬停行时出现 ?，悬停 ? 或点击后在气泡中显示。</td></tr>
+    <tr><td>按钮</td><td>全部胶囊；表单 30pt，分组标题行 24pt；一个区域最多一个主要按钮，放最右边。</td></tr>
+    <tr><td>列表</td><td><code>TFListRow</code> 单行，操作说明放进悬停 ? 提示；「⋯」操作菜单悬停时出现；「添加操作」用 <code>TFActionRow</code> 放在卡片底部。</td></tr>
+    <tr><td>弹窗</td><td>Sheet 圆角 18、宽 480；标题 15pt，没有说明文字；左标签右控件；底部右对齐 [取消][添加]，Esc 取消、⌘↩ 确认；编辑时左下角是「删除」。</td></tr>
+    <tr><td>危险操作</td><td>删除、恢复默认都先弹确认对话框，危险按钮红色填充，默认焦点在「取消」。</td></tr>
+    <tr><td>下拉</td><td>类型用选择器（⌃⌄ + 原生菜单）；功能、应用等带图标和副标题的选项用 <code>TFRichPicker</code>，超过 12 项时顶部自动出现搜索框。</td></tr>
+  </table>
+  <h2>状态与边界</h2>
+  <table>
+    <tr><td style="width:160px">0 个操作</td><td>列表显示空状态；快捷键不会打开圆环。</td></tr>
+    <tr><td>8 个操作</td><td>「添加操作」禁用，悬停提示最多 8 个。</td></tr>
+    <tr><td>关闭圆环</td><td>注销快捷键，下方配置置灰但保留。</td></tr>
+    <tr><td>快捷键冲突</td><td><code>HotkeyConflictChecker</code> 检查，冲突时不保存，在该行下方用红字说明占用方。</td></tr>
+    <tr><td>目标失效</td><td>应用、关键词或快捷指令被删除：列表行显示「已失效」标签，扇区置灰，执行时提示原因。</td></tr>
+  </table>
+</div></div>
+<div class="fatal" id="fatal"></div>
+
+<script>
+window.addEventListener('error', e => { const f=document.getElementById('fatal'); if(f){ f.textContent='原型脚本出错：'+e.message; f.style.display='block'; } });
+/* ================= icons (SF-Symbol-like strokes, 24 grid) ================= */
+const I = {
+  help:'<circle cx="12" cy="12" r="9.5"/><path d="M9.3 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.7 2.5-2.7 4.3M12 17.6h.01"/>',
+  updown:'<path d="M7 9.5l5-5 5 5M7 14.5l5 5 5-5"/>',
+  chevD:'<path d="M6 9l6 6 6-6"/>',
+  infinity:'<path d="M12 12c-2-2.7-3.6-4-5.5-4a4 4 0 0 0 0 8c1.9 0 3.5-1.3 5.5-4zm0 0c2 2.7 3.6 4 5.5 4a4 4 0 0 0 0-8c-1.9 0-3.5 1.3-5.5 4z"/>',
+  waveform:'<path d="M3 10v4M7 6v12M11 3v18M15 7v10M19 10v4"/>',
+  cpu:'<rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx=".5"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',
+  puzzle:'<path d="M14 4a2 2 0 1 0-4 0v1H6a1 1 0 0 0-1 1v4h1a2 2 0 1 1 0 4H5v4a1 1 0 0 0 1 1h4v-1a2 2 0 1 1 4 0v1h4a1 1 0 0 0 1-1v-4h1a2 2 0 1 0 0-4h-1V6a1 1 0 0 0-1-1h-4z"/>',
+  command:'<path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"/>',
+  ring:'<circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="3.6"/><path d="M12 2.5v5.9M12 15.6v5.9M2.5 12h5.9M15.6 12h5.9"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  keyboard:'<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
+  target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  play:'<path d="M7 4.5v15l12-7.5z"/>',
+  reset:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  grip:'<path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="3"/>',
+  dots:'<path d="M5 12h.01M12 12h.01M19 12h.01" stroke-width="3"/>',
+  palette:'<circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 2a10 10 0 0 0 0 20c1 0 1.6-.8 1.6-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7H16a6 6 0 0 0 6-6c0-4.4-4.5-8.4-10-8.4z"/>',
+  text:'<path d="M4 7V5h16v2M9 19h6M12 5v14"/>',
+  chevL:'<path d="M15 18l-6-6 6-6"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  pencil:'<path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>',
+  trash:'<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/>',
+  up:'<path d="M12 19V5M5 12l7-7 7 7"/>', down:'<path d="M12 5v14M19 12l-7 7-7-7"/>',
+  copy:'<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+  warn:'<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+  /* action icons */
+  mic:'<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1M12 18v4M8 22h8"/>',
+  sparkles:'<path d="M11 3l1.9 5.1L18 10l-5.1 1.9L11 17l-1.9-5.1L4 10l5.1-1.9z"/><path d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8z"/>',
+  chat:'<path d="M21 12a8.5 8.5 0 0 1-12.3 7.6L3 21l1.4-5.4A8.5 8.5 0 1 1 21 12z"/>',
+  viewfinder:'<path d="M3 8V6a3 3 0 0 1 3-3h2M16 3h2a3 3 0 0 1 3 3v2M21 16v2a3 3 0 0 1-3 3h-2M8 21H6a3 3 0 0 1-3-3v-2"/><circle cx="12" cy="12" r="3.2"/>',
+  textscan:'<path d="M3 8V6a3 3 0 0 1 3-3h2M16 3h2a3 3 0 0 1 3 3v2M21 16v2a3 3 0 0 1-3 3h-2M8 21H6a3 3 0 0 1-3-3v-2"/><path d="M8 9h8M8 12h8M8 15h5"/>',
+  translate:'<path d="M3 5h9M7.5 3v2M10 5c-.9 3.6-3 6.5-6 8.5M5.6 9c1.3 1.9 3.3 3.4 5.9 4.3"/><path d="M13 21l4-9 4 9M14.4 18h5.2"/>',
+  shotTr:'<path d="M3 8V6a3 3 0 0 1 3-3h2M16 3h2a3 3 0 0 1 3 3v2M8 21H6a3 3 0 0 1-3-3v-2"/><path d="M13 21l3.5-8 3.5 8M14.2 18.5h4.6M7 8h6M10 7v1M11.5 8c-.5 2-1.8 3.6-3.5 4.6"/>',
+  clipboard:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+  note:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
+  book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
+  persona:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M17 4l3 3-3 3M20 7h-4.5"/>',
+  wand:'<path d="M15 4V2M15 10V8M11 6H9M21 6h-2M18 3l-1 1M18 9l-1-1M14 10L3 21"/>',
+  workflow:'<rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/><path d="M9 6h4a3 3 0 0 1 3 3v6"/>',
+  app:'<rect x="3" y="3" width="7" height="7" rx="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.8"/>',
+  link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+  folder:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  contrast:'<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>',
+  mute:'<path d="M11 5L6 9H2v6h4l5 4z"/><path d="M22 9l-6 6M16 9l6 6"/>',
+  mission:'<rect x="2" y="4" width="9" height="7" rx="1.5"/><rect x="13" y="4" width="9" height="7" rx="1.5"/><rect x="2" y="13" width="20" height="7" rx="1.5"/>',
+  lock:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  smile:'<circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>',
+  bolt:'<path d="M13 2L3 14h9l-1 8 10-12h-9z"/>',
+  moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  layers:'<path d="M12 2l10 5-10 5L2 7z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>',
+  terminal:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 9l4 3-4 3M12 15h6"/>',
+  star:'<path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/>',
+  heart:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21.2l8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/>',
+  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  timer:'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/>',
+  mail:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/>',
+};
+const icon = (n, cls='i') => `<svg class="${cls}" viewBox="0 0 24 24">${I[n]||I.star}</svg>`;
+function hydrateIcons(root=document){ root.querySelectorAll('[data-icon]').forEach(e=>{ if(!e.dataset.done){ e.innerHTML=icon(e.dataset.icon); e.dataset.done=1; e.style.display='inline-grid'; } }); }
+
+/* ================= catalogs ================= */
+const TYPES = [
+  {k:'feature', name:'Typeflux 功能', icon:'infinity', desc:'语音输入、随便问、截图、翻译、剪贴板……'},
+  {k:'keyword', name:'启动器关键词', icon:'command', desc:'运行你配置的关键词或工作流，作用于选中文字。'},
+  {k:'app', name:'打开应用', icon:'app', desc:'打开或切换到 Mac 上的任意应用。'},
+  {k:'keys', name:'发送快捷键', icon:'keyboard', desc:'向当前应用发送一个按键组合。'},
+  {k:'system', name:'系统操作', icon:'contrast', desc:'深色模式、静音、调度中心、锁屏……'},
+  {k:'shortcut', name:'快捷指令', icon:'layers', desc:'运行“快捷指令”App 里的一个指令。'},
+  {k:'url', name:'网址', icon:'link', desc:'在默认浏览器中打开一个网址。'},
+  {k:'folder', name:'文件夹', icon:'folder', desc:'在访达中打开一个文件夹。'},
+  {k:'script', name:'Shell 脚本', icon:'terminal', desc:'运行你写的脚本。', soon:true},
+];
+const T = Object.fromEntries(TYPES.map(t=>[t.k,t]));
+const CAT = {
+  feature:[
+    {ref:'dictation',title:'语音输入',icon:'mic',sub:'免按住听写，再按一次结束',effect:'开始听写，说完再按一次快捷键结束并插入文字'},
+    {ref:'ask',title:'随便问',icon:'sparkles',sub:'在鼠标处打开启动器',effect:'在鼠标附近打开启动器，选中的文字已作为上下文'},
+    {ref:'chat',title:'对话窗口',icon:'chat',sub:'打开随便问的对话窗口',effect:'打开对话窗口'},
+    {ref:'screenshot',title:'截图',icon:'viewfinder',sub:'框选区域，可标注、钉图、录屏',effect:'进入截图框选'},
+    {ref:'ocr',title:'截图识字',icon:'textscan',sub:'框选区域，识别其中的文字',effect:'框选区域后在启动器中显示识别出的文字'},
+    {ref:'shotTranslate',title:'截图翻译',icon:'shotTr',sub:'框选区域，识别后翻译',effect:'框选区域，本机识别文字后翻译'},
+    {ref:'translate',title:'翻译选中文字',icon:'translate',sub:'没有选中文字时打开翻译面板',effect:'“The ring opens right under the pointer…” → 圆环就在指针下方打开，每个操作都只需轻轻一划。'},
+    {ref:'clipboard',title:'剪贴板历史',icon:'clipboard',sub:'在鼠标附近打开剪贴板面板',effect:'打开剪贴板历史面板'},
+    {ref:'notes',title:'笔记',icon:'note',sub:'打开笔记窗口',effect:'打开笔记窗口'},
+    {ref:'wordbook',title:'单词本',icon:'book',sub:'打开单词本窗口',effect:'打开单词本'},
+    {ref:'persona',title:'切换人设',icon:'persona',sub:'打开人设切换面板',effect:'打开人设切换面板'},
+    {ref:'studio',title:'打开 Typeflux',icon:'infinity',sub:'打开 Typeflux 主窗口',effect:'打开 Typeflux 主窗口'},
+  ],
+  keyword:[
+    {ref:'fy',title:'翻译',icon:'translate',sub:'fy · 翻译插件',effect:'用关键词 fy 处理选中文字'},
+    {ref:'rs',title:'润色',icon:'wand',sub:'rs · 自定义提示词',effect:'用关键词 rs 润色选中文字并替换'},
+    {ref:'sum',title:'总结',icon:'note',sub:'sum · 自定义提示词',effect:'总结选中文字，结果显示在启动器中'},
+    {ref:'dict',title:'查词',icon:'book',sub:'dict · 词典',effect:'查询选中的单词'},
+    {ref:'wf-weekly',title:'生成周报',icon:'workflow',sub:'工作流 · 已信任',effect:'运行工作流「生成周报」'},
+  ],
+  app:[
+    {ref:'Safari',title:'Safari',color:'#1E90FF'},{ref:'微信',title:'微信',color:'#07C160'},{ref:'Xcode',title:'Xcode',color:'#1575F9'},
+    {ref:'Visual Studio Code',title:'VS Code',color:'#23A9F2'},{ref:'访达',title:'访达',color:'#3EA8F4'},{ref:'备忘录',title:'备忘录',color:'#F5C400'},
+    {ref:'日历',title:'日历',color:'#FF3B30'},{ref:'终端',title:'终端',color:'#2B2B2B'},{ref:'Slack',title:'Slack',color:'#611F69'},{ref:'Obsidian',title:'Obsidian',color:'#7C3AED'},
+  ],
+  system:[
+    {ref:'darkMode',title:'切换深色模式',icon:'contrast',sub:'在浅色与深色外观之间切换',effect:'切换系统外观'},
+    {ref:'mute',title:'静音',icon:'mute',sub:'切换系统静音',effect:'切换系统静音'},
+    {ref:'mission',title:'调度中心',icon:'mission',sub:'显示所有窗口和桌面',effect:'打开调度中心'},
+    {ref:'lock',title:'锁定屏幕',icon:'lock',sub:'立即锁定这台 Mac',effect:'锁定屏幕'},
+    {ref:'emoji',title:'表情与符号',icon:'smile',sub:'打开系统表情面板',effect:'打开表情与符号'},
+    {ref:'awake',title:'防止休眠',icon:'bolt',sub:'切换“保持唤醒”',effect:'切换保持唤醒'},
+  ],
+  shortcut:[
+    {ref:'番茄钟',title:'番茄钟',icon:'timer',sub:'快捷指令',effect:'运行快捷指令「番茄钟」'},
+    {ref:'发送到 Things',title:'发送到 Things',icon:'layers',sub:'快捷指令',effect:'运行快捷指令「发送到 Things」'},
+    {ref:'今日简报',title:'今日简报',icon:'layers',sub:'快捷指令',effect:'运行快捷指令「今日简报」'},
+  ],
+  folder:[
+    {ref:'~/Downloads',title:'下载',icon:'folder',sub:'~/Downloads'},{ref:'~/Documents',title:'文稿',icon:'folder',sub:'~/Documents'},
+    {ref:'~/Desktop',title:'桌面',icon:'folder',sub:'~/Desktop'},{ref:'~/Projects',title:'Projects',icon:'folder',sub:'~/Projects'},
+  ],
+};
+const ICON_CHOICES = ['mic','sparkles','chat','viewfinder','textscan','translate','clipboard','note','book','persona','wand','workflow','app','keyboard','link','folder','contrast','mute','mission','lock','smile','bolt','moon','layers','star','heart','globe','timer','mail','command','terminal','infinity'];
+
+const DEFAULTS = () => ([
+  {type:'feature',ref:'dictation'},{type:'feature',ref:'ask'},{type:'feature',ref:'translate'},
+  {type:'feature',ref:'screenshot'},{type:'feature',ref:'ocr'},{type:'feature',ref:'clipboard'},
+].map(a=>{ const c=CAT.feature.find(x=>x.ref===a.ref); return {id:uid(),type:a.type,ref:a.ref,title:c.title,icon:c.icon}; }));
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+
+/* ================= state (storage is optional: sandboxed previews forbid it) ================= */
+const store = (() => { try { const s = window.localStorage; s.getItem('tf-ring-v2'); return s; } catch (_) { return null; } })();
+function loadSaved(){ try { return JSON.parse((store && store.getItem('tf-ring-v2')) || '{}') || {}; } catch (_) { return {}; } }
+const save = () => { if (!store) return; try { store.setItem('tf-ring-v2', JSON.stringify(S)); } catch (_) {} };
+CAT.app.push(
+  {ref:'邮件',title:'邮件',color:'#2F7CF6'},{ref:'信息',title:'信息',color:'#30C759'},{ref:'音乐',title:'音乐',color:'#FA2D48'},
+  {ref:'Figma',title:'Figma',color:'#A259FF'},{ref:'Linear',title:'Linear',color:'#5E6AD2'},{ref:'Notion',title:'Notion',color:'#2B2B2B'}
+);
+const S = Object.assign({ enabled:true, theme:'light', style:'frosted', centerTitle:'Typeflux',
+  hotkey:{mods:['⌃','⌥'],key:'Space'}, actions:null }, loadSaved());
+if (!Array.isArray(S.actions)) S.actions = DEFAULTS();
+
+function catItem(a){ return (CAT[a.type]||[]).find(x=>x.ref===a.ref); }
+function describe(a){
+  const t=T[a.type], c=catItem(a);
+  if(a.type==='keys') return `${t.name} · ${a.ref}`;
+  if(a.type==='url') return `${t.name} · ${a.ref}`;
+  if(a.type==='app') return `${t.name} · ${a.ref}`;
+  if(a.type==='folder') return `${t.name} · ${a.ref}`;
+  if(a.type==='keyword') return `${t.name} · ${c?c.sub:a.ref}`;
+  return `${t.name}${c?' · '+(c.title!==a.title?c.title:c.sub):''}`;
+}
+function effectOf(a){
+  const c=catItem(a); if(c && c.effect) return c.effect;
+  if(a.type==='app') return `打开或切换到 ${a.ref}`;
+  if(a.type==='keys') return `向「备忘录」发送 ${a.ref}`;
+  if(a.type==='url') return `在默认浏览器中打开 ${a.ref}`;
+  if(a.type==='folder') return `在访达中打开 ${a.ref}`;
+  return T[a.type].name;
+}
+const DIRS = n => { const names=['上','右上','右','右下','下','左下','左','左上']; return i => names[Math.round(i*8/n)%8]; };
+function angleIndex(a,n){ const cw=((Math.PI/2 - a)%(2*Math.PI)+2*Math.PI)%(2*Math.PI); return Math.round(cw/(2*Math.PI/n))%n; }
+function appTile(a,size){ const g=appGlyph(a); return `<svg width="${size}" height="${size}" viewBox="0 0 26 26"><rect width="26" height="26" rx="6.5" fill="${g.color}"/><text x="13" y="17.5" text-anchor="middle" font-size="12.5" font-weight="700" fill="#fff" font-family="-apple-system,PingFang SC">${esc(g.ch)}</text></svg>`; }
+const actIcon = (a,size=15) => a.type==='app' ? (a.ref ? appTile(a,size+3) : icon('app')) : icon(a.icon);
+
+/* ================= ring renderer ================= */
+const C=310, R_OUT=128, R_IN=54, R_CENTER=48;
+const pt=(r,a)=>[C+r*Math.cos(a), C-r*Math.sin(a)];           // math angle, y-up
+const itemAngle=(i,n)=>Math.PI/2 - i*2*Math.PI/n;
+function wrap(a){ while(a>Math.PI)a-=2*Math.PI; while(a<-Math.PI)a+=2*Math.PI; return a; }
+function outerR(theta, jelly){ if(!jelly||jelly.ext<=0) return R_OUT; const d=wrap(theta-jelly.angle); return R_OUT + jelly.ext*Math.exp(-(d*d)/(2*0.30*0.30)); }
+function outlinePath(jelly){
+  let d=''; const N=144;
+  for(let k=0;k<=N;k++){ const th=k/N*2*Math.PI; const [x,y]=pt(outerR(th,jelly),th); d+=(k?'L':'M')+x.toFixed(1)+' '+y.toFixed(1); }
+  return d+'Z';
+}
+const holePath = r => `M${C+r} ${C}A${r} ${r} 0 1 0 ${C-r} ${C}A${r} ${r} 0 1 0 ${C+r} ${C}Z`;
+function sectorPath(i,n,jelly){
+  const h=Math.PI/n, a0=itemAngle(i,n)+h, a1=itemAngle(i,n)-h; let d='';
+  const steps=24;
+  for(let k=0;k<=steps;k++){ const th=a0+(a1-a0)*k/steps; const [x,y]=pt(outerR(th,jelly)+1,th); d+=(k?'L':'M')+x.toFixed(1)+' '+y.toFixed(1); }
+  for(let k=steps;k>=0;k--){ const th=a0+(a1-a0)*k/steps; const [x,y]=pt(R_IN,th); d+='L'+x.toFixed(1)+' '+y.toFixed(1); }
+  return d+'Z';
+}
+const glyphW = ch => /[\u2E80-\uFFFF]/.test(ch) ? 10.6 : 6.1;
+const textW = s => [...s].reduce((w,ch)=>w+glyphW(ch),0);
+function fitLine(s,max){ if(textW(s)<=max) return s; let out=''; for(const ch of s){ if(textW(out+ch+'…')>max) break; out+=ch; } return out+'…'; }
+function wrapLabel(s){
+  const MAX=66; s=s.trim(); if(textW(s)<=MAX) return [s];
+  const sp=s.lastIndexOf(' ', Math.ceil(s.length/2)+3);
+  if(sp>0) return [fitLine(s.slice(0,sp),MAX), fitLine(s.slice(sp+1),MAX)];
+  if(/[\u2E80-\uFFFF]/.test(s)){ const cut=Math.ceil(s.length/2); return [s.slice(0,cut), fitLine(s.slice(cut),MAX)]; }
+  return [fitLine(s,MAX*1.5)];
+}
+function appGlyph(a){ const c=CAT.app.find(x=>x.ref===a.ref); return {color:(c&&c.color)||'#555', ch:(a.title||'?').slice(0,1)}; }
+
+function ringSVG(actions, o){
+  const n=actions.length, jelly=o.jelly, style=o.style, sel=o.sel, uidp=o.uidp||'r';
+  const out=outlinePath(jelly);
+  const ringFill = {classic:`url(#${uidp}gC)`, frosted:'rgba(26,26,30,.58)', liquid:'rgba(255,255,255,.07)'}[style];
+  let s=`<svg viewBox="0 0 620 620" width="620" height="620"><defs>
+    <linearGradient id="${uidp}gC" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#151516"/><stop offset="1" stop-color="#1D1D1F"/></linearGradient>
+    <radialGradient id="${uidp}hl" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="rgb(238,146,87)" stop-opacity=".62"/><stop offset=".55" stop-color="rgb(184,110,87)" stop-opacity=".28"/><stop offset="1" stop-color="rgb(184,110,87)" stop-opacity="0"/></radialGradient>
+    <radialGradient id="${uidp}vio" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="rgb(161,122,184)" stop-opacity=".5"/><stop offset="1" stop-color="rgb(186,117,150)" stop-opacity="0"/></radialGradient>
+    <linearGradient id="${uidp}rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="${style==='liquid'?.65:.22}"/><stop offset=".5" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#fff" stop-opacity="${style==='liquid'?.35:.12}"/></linearGradient>
+    <clipPath id="${uidp}clip"><path d="${out} ${holePath(R_IN)}" clip-rule="evenodd"/></clipPath>
+    <filter id="${uidp}sh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity=".45"/></filter>
+  </defs>`;
+  if(n===0){
+    s+=`<circle cx="${C}" cy="${C}" r="${R_OUT}" fill="none" stroke="rgba(255,255,255,.25)" stroke-dasharray="6 6"/>
+        <text x="${C}" y="${C+4}" text-anchor="middle" fill="#8E8E93" font-size="12">还没有操作</text></svg>`;
+    return s;
+  }
+  s+=`<path d="${out} ${holePath(R_IN)}" fill-rule="evenodd" fill="${ringFill}" filter="url(#${uidp}sh)"/>`;
+  s+=`<g clip-path="url(#${uidp}clip)">`;
+  if(jelly && jelly.ext>2){ const [fx,fy]=pt(R_OUT+jelly.ext*.58, jelly.angle); s+=`<circle cx="${fx}" cy="${fy}" r="115" fill="url(#${uidp}vio)"/>`; }
+  if(sel!=null && sel>=0){
+    const [hx,hy]=pt((R_IN+R_OUT)/2+6, itemAngle(sel,n));
+    s+=`<path d="${sectorPath(sel,n,jelly)}" fill="rgba(255,190,120,.07)"/><circle cx="${hx}" cy="${hy}" r="${o.flash?150:110}" fill="url(#${uidp}hl)"/>`;
+  }
+  // separators
+  for(let i=0;i<n;i++){ const a=itemAngle(i,n)+Math.PI/n; const [x1,y1]=pt(R_IN,a), [x2,y2]=pt(outerR(a,jelly),a);
+    s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="rgba(255,255,255,${style==='classic'?.07:.1})"/>`; }
+  s+=`</g>`;
+  s+=`<path d="${out}" fill="none" stroke="url(#${uidp}rim)" stroke-width="${style==='liquid'?1.4:1}"/>`;
+  s+=`<circle cx="${C}" cy="${C}" r="${R_IN}" fill="none" stroke="rgba(255,255,255,${style==='liquid'?.35:.12})"/>`;
+  // center disc
+  const centerFill={classic:'#1B1B1D',frosted:'rgba(30,30,34,.72)',liquid:'rgba(255,255,255,.1)'}[style];
+  s+=`<circle cx="${C}" cy="${C}" r="${R_CENTER}" fill="${centerFill}" stroke="rgba(255,255,255,.1)"/>
+      <text x="${C}" y="${C+1}" text-anchor="middle" fill="#fff" font-size="13" font-weight="700" font-family="-apple-system,PingFang SC,sans-serif">${esc(o.title||'')}</text>
+      <text x="${C}" y="${C+17}" text-anchor="middle" fill="rgba(255,255,255,.53)" font-size="8" letter-spacing="1" font-family="-apple-system,PingFang SC,sans-serif">${n} 个操作</text>`;
+  // icons & labels
+  actions.forEach((a,i)=>{
+    const ang=itemAngle(i,n), on=i===sel, broken=a.broken;
+    const [ix,iy]=pt((R_IN+R_OUT)/2+4 + (on?3:0), ang);
+    const col = broken?'rgba(255,255,255,.3)': on?'#FFC457':'rgba(255,255,255,.88)';
+    const sc = on?1.14:1;
+    if(a.type==='app'){ const g=appGlyph(a);
+      s+=`<g transform="translate(${ix} ${iy}) scale(${sc})"><rect x="-13" y="-13" width="26" height="26" rx="6.5" fill="${g.color}"/><text y="4.5" text-anchor="middle" font-size="12.5" font-weight="700" fill="#fff" font-family="-apple-system,PingFang SC">${esc(g.ch)}</text></g>`;
+    } else {
+      s+=`<g transform="translate(${ix-13*sc} ${iy-13*sc}) scale(${26*sc/24})" color="${col}"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${I[a.icon]||I.star}</g></g>`;
+    }
+    // label pill
+    const lines=wrapLabel(a.title); const [lx,ly]=pt(R_OUT+40, ang);
+    const w=Math.max(...lines.map(textW))+14, h=lines.length*13+8;
+    s+=`<g transform="translate(${lx} ${ly})"><rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="6" fill="${on?'rgba(58,44,24,.95)':'rgba(24,24,26,.82)'}" stroke="rgba(255,255,255,.06)"/>`;
+    lines.forEach((l,k)=>{ s+=`<text class="lbl" x="0" y="${-h/2+15+k*13}" text-anchor="middle" fill="${on?'#FFC457':'rgba(255,255,255,.72)'}" font-weight="${on?600:500}">${esc(l)}</text>`; });
+    s+=`</g>`;
+  });
+  return s+`</svg>`;
+}
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function mountRing(host, x, y, scale){
+  const el=document.createElement('div'); el.className='ring';
+  el.innerHTML='<div class="blur"></div><div class="svg"></div>';
+  const base=`translate(${x-C}px, ${y-C}px) scale(${scale})`;
+  el.style.setProperty('--base', base); el.style.transform=base;
+  host.appendChild(el); return el;
+}
+function paintRing(el, actions, o){
+  const blur=el.querySelector('.blur');
+  if(o.style==='classic'||actions.length===0){ blur.style.backdropFilter=''; blur.style.webkitBackdropFilter=''; blur.style.clipPath=''; }
+  else { const f=o.style==='liquid'?'blur(5px) saturate(1.9) brightness(1.05)':'blur(22px) saturate(1.4)';
+    blur.style.backdropFilter=f; blur.style.webkitBackdropFilter=f; }
+  el.querySelector('.svg').innerHTML=ringSVG(actions,o);
+}
+
+
+
+/* ================= floating layers: popover hint, menus, sheet, alert ================= */
+const win = document.getElementById('win');
+const layerHost = () => win;
+function placeBelow(el, anchor, {align='left', gap=4}={}){
+  const wr=win.getBoundingClientRect(), r=anchor.getBoundingClientRect();
+  let left = align==='right' ? r.right-wr.left-el.offsetWidth : r.left-wr.left;
+  left=Math.max(8, Math.min(left, wr.width-el.offsetWidth-8));
+  let top=r.bottom-wr.top+gap;
+  if(top+el.offsetHeight>wr.height-8) top=Math.max(8, r.top-wr.top-el.offsetHeight-gap);
+  el.style.left=left+'px'; el.style.top=top+'px';
+}
+let openLayer=null;
+function closeLayer(){ if(openLayer){ const l=openLayer; openLayer=null; l.el.remove(); l.onClose&&l.onClose(); } }
+document.addEventListener('mousedown', e => { if(openLayer && !openLayer.el.contains(e.target) && !(openLayer.anchor && openLayer.anchor.contains(e.target))) closeLayer(); }, true);
+
+/* SettingsDescriptionHint */
+let hintPop=null, hintTimer=0, hintPinned=false;
+function setupHints(root=document){
+  root.querySelectorAll('.frow[data-hint], .lrow[data-hint]').forEach(row=>{
+    if(row.querySelector('.hint')) return;
+    const b=document.createElement('button'); b.className='hint'; b.type='button'; b.innerHTML=icon('help'); b.setAttribute('aria-label', row.dataset.hint);
+    row.querySelector('.ttl').appendChild(b);
+    b.addEventListener('mouseenter',()=>{ clearTimeout(hintTimer); showHint(b,row.dataset.hint); });
+    b.addEventListener('mouseleave',()=>scheduleHintClose());
+    b.addEventListener('click',e=>{ e.stopPropagation(); if(hintPinned && hintPop && hintPop.anchor===b){ hintPinned=false; hideHint(); } else { hintPinned=true; showHint(b,row.dataset.hint); } });
+  });
+}
+function showHint(anchor,text){
+  if(hintPop && hintPop.anchor===anchor) return;
+  hideHint();
+  const p=document.createElement('div'); p.className='popover'; p.textContent=text; p.style.whiteSpace='pre-line';
+  win.appendChild(p);
+  const wr=win.getBoundingClientRect(), r=anchor.getBoundingClientRect();
+  const cx=r.left+r.width/2-wr.left; let left=Math.max(8,Math.min(cx-150, wr.width-308));
+  let top=r.top-wr.top-p.offsetHeight-10;
+  if(top<8){ top=r.bottom-wr.top+10; p.classList.add('below'); }   // no room above: open below, arrow on top
+  p.style.left=left+'px'; p.style.top=top+'px'; p.style.setProperty('--ax',(cx-left)+'px');
+  p.addEventListener('mouseenter',()=>clearTimeout(hintTimer)); p.addEventListener('mouseleave',()=>scheduleHintClose());
+  anchor.classList.add('open'); hintPop={el:p,anchor};
+}
+function scheduleHintClose(){ clearTimeout(hintTimer); hintTimer=setTimeout(()=>{ if(!hintPinned) hideHint(); },220); }
+function hideHint(){ if(hintPop){ hintPop.el.remove(); hintPop.anchor.classList.remove('open'); hintPop=null; } }
+document.addEventListener('mousedown',e=>{ if(hintPop && !hintPop.el.contains(e.target) && !hintPop.anchor.contains(e.target)){ hintPinned=false; hideHint(); } });
+document.getElementById('content').addEventListener('scroll',()=>{ hintPinned=false; hideHint(); closeLayer(); });
+
+/* native-style menu: items [{label, icon, check, danger, disabled, sep, run}] */
+function showMenu(anchor, items, opts={}){
+  closeLayer();
+  const m=document.createElement('div'); m.className='menu'; m.setAttribute('role','menu');
+  m.innerHTML=items.map((it,i)=>it.sep?'<hr>':`<div class="mi ${it.danger?'danger':''} ${it.disabled?'dis':''}" role="menuitem" data-i="${i}">
+    ${opts.checks?`<span class="ck">${it.check?icon('check'):''}</span>`:''}${it.icon?icon(it.icon):''}<span>${esc(it.label)}</span></div>`).join('');
+  win.appendChild(m); placeBelow(m, anchor, {align:opts.align||'left'});
+  m.addEventListener('click',e=>{ const mi=e.target.closest('.mi'); if(!mi) return; const it=items[+mi.dataset.i]; closeLayer(); it.run&&it.run(); });
+  openLayer={el:m, anchor, onClose:opts.onClose};
+}
+
+/* TFRichPicker: icon + subtitle, search when > 12 options, ↑↓ / Return */
+function showRich(anchor, options, current, onPick){
+  closeLayer();
+  const m=document.createElement('div'); m.className='menu rich';
+  const needSearch=options.length>12;
+  m.innerHTML=(needSearch?`<div class="search">${icon('search')}<input class="field" placeholder="搜索" aria-label="搜索"></div>`:'')+'<div class="list"></div>';
+  win.appendChild(m); m.style.width=Math.max(anchor.offsetWidth,300)+'px';
+  const list=m.querySelector('.list'); let shown=options, kb=-1;
+  const render=()=>{ list.innerHTML = shown.length ? shown.map((o,i)=>`<div class="ri ${i===kb?'kb':''}" data-i="${i}"><span class="ck">${o.ref===current?icon('check'):''}</span>
+      <span class="tile28" style="width:26px;height:26px">${o.tile}</span><span class="t">${esc(o.title)}${o.sub?`<small>${esc(o.sub)}</small>`:''}</span></div>`).join('')
+      : `<div class="none">没有找到 “${esc(m.querySelector('input').value)}”</div>`; };
+  render(); placeBelow(m, anchor);
+  list.addEventListener('click',e=>{ const ri=e.target.closest('.ri'); if(!ri) return; const o=shown[+ri.dataset.i]; closeLayer(); onPick(o); });
+  const inp=m.querySelector('input');
+  if(inp){ inp.focus(); inp.addEventListener('input',()=>{ const v=inp.value.trim().toLowerCase(); shown=options.filter(o=>(o.title+' '+(o.sub||'')).toLowerCase().includes(v)); kb=shown.length?0:-1; render(); }); }
+  m.addEventListener('keydown',e=>{
+    if(e.key==='ArrowDown'){ kb=Math.min(kb+1,shown.length-1); render(); e.preventDefault(); }
+    if(e.key==='ArrowUp'){ kb=Math.max(kb-1,0); render(); e.preventDefault(); }
+    if(e.key==='Enter' && kb>=0){ const o=shown[kb]; closeLayer(); onPick(o); e.preventDefault(); e.stopPropagation(); }
+    if(e.key==='Escape'){ closeLayer(); e.stopPropagation(); }
+  });
+  openLayer={el:m, anchor};
+}
+
+/* confirmation dialog: danger fill, default focus on Cancel */
+function confirmDanger(title, message, actionLabel, run){
+  const sc=document.getElementById('scrim'); const prev=sc.innerHTML, wasOn=sc.classList.contains('on');
+  const holder=document.createElement('div'); holder.style.cssText='position:absolute;inset:0;display:flex;justify-content:center;z-index:45;background:var(--scrim)';
+  holder.innerHTML=`<div class="alert" role="alertdialog"><div class="ai">${icon('infinity')}</div><b>${esc(title)}</b><p>${esc(message)}</p>
+    <div class="btns"><button class="btn danger-fill" data-a="ok">${esc(actionLabel)}</button><button class="btn" data-a="cancel">取消</button></div></div>`;
+  win.appendChild(holder);
+  const close=()=>{ holder.remove(); document.removeEventListener('keydown',onKey,true); };
+  const onKey=e=>{ if(e.key==='Escape'){ e.stopPropagation(); e.preventDefault(); close(); } };
+  document.addEventListener('keydown',onKey,true);
+  holder.querySelector('[data-a=cancel]').onclick=close;
+  holder.querySelector('[data-a=ok]').onclick=()=>{ close(); run(); };
+  holder.querySelector('[data-a=cancel]').focus();
+}
+
+/* ================= settings page ================= */
+hydrateIcons();
+setupHints();
+const keycaps = hk => [...hk.mods, hk.key].map(k=>`<span class="kc">${esc(k)}</span>`).join('');
+let recording=false;
+function renderHotkey(){
+  const h=document.getElementById('hotkey');
+  h.classList.toggle('rec',recording);
+  h.innerHTML = recording ? '<span class="rec-t">按下新的快捷键，Esc 取消</span>' : keycaps(S.hotkey);
+  h.title = recording ? '' : '点击重新录制';
+  document.getElementById('hkMirror').innerHTML=keycaps(S.hotkey);
+}
+const hkEl=document.getElementById('hotkey');
+hkEl.onclick=()=>{ recording=!recording; document.getElementById('hkMsg').style.display='none'; renderHotkey(); };
+hkEl.onkeydown=e=>{ if(!recording && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); recording=true; renderHotkey(); } };
+const CONFLICTS={'⌘+Space':'随便问 · 启动器','⌥⌘+A':'截图','⌥⌘+O':'剪贴板与历史','⌥⌘+P':'人设切换器'};
+function keyName(e){ return e.code==='Space'?'Space': e.code.startsWith('Key')?e.code.slice(3): e.code.startsWith('Digit')?e.code.slice(5): e.key.length===1?e.key.toUpperCase():e.key; }
+function modsOf(e){ const m=[]; if(e.ctrlKey)m.push('⌃'); if(e.altKey)m.push('⌥'); if(e.shiftKey)m.push('⇧'); if(e.metaKey)m.push('⌘'); return m; }
+window.addEventListener('keydown',e=>{
+  if(!recording) return;
+  e.preventDefault(); e.stopPropagation();
+  if(['Shift','Control','Alt','Meta'].includes(e.key)) return;
+  const msg=document.getElementById('hkMsg'); const mods=modsOf(e);
+  if(e.key==='Escape' && !mods.length){ recording=false; renderHotkey(); return; }
+  if(!mods.length){ msg.style.display='block'; msg.textContent='需要至少一个修饰键（⌃ ⌥ ⇧ ⌘）'; return; }
+  const key=keyName(e), sig=mods.join('')+'+'+key;
+  recording=false;
+  if(CONFLICTS[sig]){ msg.style.display='block'; msg.textContent=`已被「${CONFLICTS[sig]}」使用，未保存`; renderHotkey(); return; }
+  S.hotkey={mods,key}; save(); renderHotkey();
+},true);
+
+let hoverIdx=null;
+function renderAll(){
+  const sw=document.getElementById('enableSw'); sw.classList.toggle('on',S.enabled); sw.setAttribute('aria-checked',S.enabled);
+  const body=document.getElementById('body'); body.style.opacity=S.enabled?1:.45; body.style.pointerEvents=S.enabled?'':'none';
+  document.querySelectorAll('#styleSeg button').forEach(b=>{ b.classList.toggle('on',b.dataset.v===S.style); b.setAttribute('aria-checked',b.dataset.v===S.style); });
+  const ct=document.getElementById('centerTitle'); if(document.activeElement!==ct) ct.value=S.centerTitle;
+  renderHotkey(); renderList(); renderPreview();
+}
+const PK=290/440;
+function renderPreview(){
+  const host=document.getElementById('previewHost'); host.innerHTML='';
+  const el=mountRing(host, 145, 145, PK); el.style.pointerEvents='auto';
+  paintRing(el, S.actions, {style:S.style, sel:hoverIdx, title:S.centerTitle, uidp:'pv'});
+  document.getElementById('cnt').textContent=`${S.actions.length} / 8`;
+}
+const previewHost=document.getElementById('previewHost');
+function previewIndex(e){
+  const r=previewHost.getBoundingClientRect(); const dx=(e.clientX-r.left-145)/PK, dy=-(e.clientY-r.top-145)/PK;
+  const d=Math.hypot(dx,dy), n=S.actions.length; if(!n || d<R_IN || d>R_OUT+70) return null;
+  return angleIndex(Math.atan2(dy,dx), n);
+}
+previewHost.addEventListener('mousemove',e=>{ const i=previewIndex(e); previewHost.style.cursor=i==null?'default':'pointer'; if(i!==hoverIdx){ hoverIdx=i; renderPreview(); markRows(); } });
+previewHost.addEventListener('mouseleave',()=>{ if(hoverIdx!=null){ hoverIdx=null; renderPreview(); markRows(); } });
+previewHost.addEventListener('click',e=>{ const i=previewIndex(e); if(i!=null) openSheet('edit',i); });
+function markRows(){ document.querySelectorAll('.lrow').forEach(r=>r.classList.toggle('hl', +r.dataset.i===hoverIdx)); }
+
+let dragFrom=null;
+function renderList(){
+  hintPinned=false; hideHint();
+  const L=document.getElementById('alist'), n=S.actions.length;
+  if(!n) L.innerHTML=`<div class="empty"><b>还没有操作</b>添加至少 1 个操作，快捷键才会打开圆环。</div>`;
+  else L.innerHTML=S.actions.map((a,i)=>`${i?'<div class="ldiv"></div>':''}
+    <div class="lrow" draggable="true" data-i="${i}" data-hint="${esc(describe(a))}">
+      <span class="tile28">${actIcon(a)}</span>
+      <span class="tx"><b class="ttl">${esc(a.title)}</b></span>
+      <button class="btn sm icon plain more" data-more="${i}" title="更多" aria-label="更多操作">${icon('dots')}</button>
+    </div>`).join('');
+  setupHints(L);
+  const add=document.getElementById('addBtn'); add.disabled=n>=8; add.title=n>=8?'圆环最多 8 个操作':'';
+  L.querySelectorAll('.lrow').forEach(r=>{
+    const i=+r.dataset.i;
+    r.onclick=e=>{ if(e.target.closest('.more')) return; openSheet('edit',i); };
+    r.onmouseenter=()=>{ hoverIdx=i; renderPreview(); };
+    r.onmouseleave=()=>{ hoverIdx=null; renderPreview(); };
+    r.ondragstart=e=>{ dragFrom=i; r.classList.add('drag'); e.dataTransfer.effectAllowed='move'; try{ e.dataTransfer.setData('text/plain',String(i)); }catch(_){} };
+    r.ondragend=()=>{ r.classList.remove('drag'); L.querySelectorAll('.over').forEach(x=>x.classList.remove('over')); };
+    r.ondragover=e=>{ e.preventDefault(); L.querySelectorAll('.over').forEach(x=>x.classList.remove('over')); r.classList.add('over'); };
+    r.ondrop=e=>{ e.preventDefault(); if(dragFrom==null||dragFrom===i) return; move(dragFrom,i); dragFrom=null; };
+  });
+  L.querySelectorAll('[data-more]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); rowMenu(b,+b.dataset.more); });
+}
+function move(from,to){ const [a]=S.actions.splice(from,1); S.actions.splice(to,0,a); save(); renderList(); renderPreview(); }
+function rowMenu(anchor,i){
+  const n=S.actions.length; anchor.classList.add('open');
+  showMenu(anchor,[
+    {label:'编辑', run:()=>openSheet('edit',i)},
+    {label:'复制', disabled:n>=8, run:()=>{ S.actions.splice(i+1,0,{...S.actions[i],id:uid()}); save(); renderAll(); }},
+    {sep:true},
+    {label:'上移', disabled:i===0, run:()=>move(i,i-1)},
+    {label:'下移', disabled:i===n-1, run:()=>move(i,i+1)},
+    {sep:true},
+    {label:'删除', danger:true, run:()=>askDelete(i)},
+  ], {align:'right', onClose:()=>anchor.classList.remove('open')});
+}
+function askDelete(i, after){
+  confirmDanger(`删除「${S.actions[i].title}」？`, '圆环上的这个操作会被移除。', '删除', ()=>{ S.actions.splice(i,1); save(); renderAll(); after&&after(); });
+}
+
+document.getElementById('enableSw').onclick=()=>{ S.enabled=!S.enabled; save(); renderAll(); };
+document.querySelectorAll('#styleSeg button').forEach(b=>b.onclick=()=>{ S.style=b.dataset.v; save(); renderAll(); });
+document.getElementById('centerTitle').oninput=e=>{ S.centerTitle=e.target.value; save(); renderPreview(); };
+document.getElementById('resetBtn').onclick=()=>confirmDanger('恢复默认操作？','当前的操作会被替换为默认的 6 个操作。','恢复默认',()=>{ S.actions=DEFAULTS(); save(); renderAll(); });
+document.getElementById('addBtn').onclick=()=>openSheet('add');
+
+/* ---------- add / edit sheet ---------- */
+let D=null, keyRec=false;
+const FIELD_LABEL={feature:'功能',keyword:'关键词',app:'应用',keys:'快捷键',system:'操作',shortcut:'快捷指令',url:'网址',folder:'文件夹'};
+const okURL = v => /^https?:\/\/[^\s/]+\.[^\s]+$/.test(v||'');
+function isValid(a){ if(!a.type||!a.title||!a.title.trim()) return false; if(a.type==='url') return okURL(a.ref); return !!a.ref; }
+function openSheet(mode,i){
+  closeLayer(); hideHint();
+  if(mode==='add'){ if(S.actions.length>=8) return; D={mode, a:{id:uid(),type:'feature',ref:null,title:'',icon:'star'}, titleEdited:false, urlTouched:false}; }
+  else D={mode, idx:i, a:{...S.actions[i]}, titleEdited:true, urlTouched:true};
+  keyRec=false;
+  const sc=document.getElementById('scrim'); sc.classList.add('on'); renderSheet();
+}
+function closeSheet(){ closeLayer(); const sc=document.getElementById('scrim'); sc.classList.remove('on'); sc.innerHTML=''; D=null; keyRec=false; }
+document.getElementById('scrim').addEventListener('mousedown',e=>{ if(e.target.id==='scrim') closeSheet(); });
+function optionList(type){
+  return (CAT[type]||[]).map(c=>({ref:c.ref,title:c.title,sub:c.sub||'',icon:c.icon,color:c.color,
+    tile: type==='app'?appTile({type:'app',ref:c.ref,title:c.title},20):icon(c.icon)}));
+}
+function renderSheet(){
+  const sc=document.getElementById('scrim'), a=D.a, t=T[a.type], c=catItem(a);
+  const second = (() => {
+    if(CAT[a.type]) return `<button class="picker ${c?'':'ph'}" id="refPick" type="button"><span class="pv">${c?(a.type==='app'?appTile(a,16):icon(c.icon))+esc(c.title):'选择'+FIELD_LABEL[a.type]}</span><span class="chev">${icon('updown')}</span></button>`;
+    if(a.type==='keys') return `<div class="keyfield ${keyRec?'rec':''}" id="keyRec" tabindex="0" role="button" style="width:100%;justify-content:space-between;padding-right:12px">
+        <span style="display:flex;gap:4px">${keyRec?'<span class="rec-t" style="padding-left:6px">按下要发送的快捷键…</span>':a.ref?a.ref.split(' ').map(k=>`<span class="kc">${esc(k)}</span>`).join(''):'<span style="color:var(--t3);padding-left:8px">点击录制</span>'}</span>
+        <span style="font-size:11.5px;color:var(--t3)">${a.ref&&!keyRec?'点击重新录制':''}</span></div>`;
+    if(a.type==='url'){ const bad=D.urlTouched && a.ref && !okURL(a.ref);
+      return `<input class="field mono ${bad?'err':''}" id="urlIn" value="${esc(a.ref||'')}" placeholder="https://"><div class="fmsg ${bad?'err':'hint'}" id="urlMsg">${bad?'网址需要以 http:// 或 https:// 开头':''}</div>`; }
+    return '';
+  })();
+  const iconCtl = a.type==='app' ? `<div style="font-size:12.5px;color:var(--t2);padding-top:7px">使用应用图标</div>`
+    : `<button class="picker" id="iconPick" type="button" style="width:auto;min-width:72px"><span class="pv">${icon(a.icon)}</span><span class="chev">${icon('chevD')}</span></button>`;
+  sc.innerHTML=`<div class="sheet" role="dialog" aria-label="${D.mode==='add'?'添加操作':'编辑操作'}">
+    <h2>${D.mode==='add'?'添加操作':'编辑操作'}</h2>
+    <div class="body">
+      <div class="sf"><label>类型</label><div class="c"><button class="picker" id="typePick" type="button"><span class="pv">${icon(t.icon)}${t.name}</span><span class="chev">${icon('updown')}</span></button></div></div>
+      <div class="sf"><label>${FIELD_LABEL[a.type]}</label><div class="c">${second}</div></div>
+      <div class="sf"><label>名称</label><div class="c"><input class="field" id="nameIn" maxlength="12" value="${esc(a.title)}" placeholder="选择后自动填写"></div></div>
+      <div class="sf"><label>图标</label><div class="c">${iconCtl}</div></div>
+      <div class="sf"><label>预览</label><div class="c"><div class="prev"><span class="dot">${actIcon(a,16)}</span><span class="pl">${esc(wrapLabel(a.title||'名称').join('\n'))}</span></div></div></div>
+    </div>
+    <div class="foot">${D.mode==='edit'?'<button class="btn plain destructive" id="shDel" type="button">删除</button>':''}<span class="sp"></span>
+      <button class="btn" id="shX" type="button">取消</button><button class="btn primary" id="shOk" type="button" ${isValid(a)?'':'disabled'}>${D.mode==='add'?'添加':'保存'}</button></div>
+  </div>`;
+  const q=s=>sc.querySelector(s);
+  const refresh=()=>{ q('#shOk').disabled=!isValid(a); q('.prev .pl').textContent=wrapLabel(a.title||'名称').join('\n'); };
+  q('#typePick').onclick=e=>{ const b=e.currentTarget;
+    showMenu(b, TYPES.map(tp=>({label:tp.name+(tp.soon?'（后续）':''), icon:tp.icon, check:tp.k===a.type, disabled:!!tp.soon,
+      run:()=>{ if(tp.k===a.type) return; a.type=tp.k; a.ref=tp.k==='url'?'':null; a.icon=tp.icon; if(!D.titleEdited) a.title=''; D.urlTouched=false; keyRec=false; renderSheet(); }})), {checks:true}); };
+  const rp=q('#refPick'); if(rp) rp.onclick=()=>showRich(rp, optionList(a.type), a.ref, o=>{ a.ref=o.ref; if(!D.titleEdited||!a.title) { a.title=o.title; D.titleEdited=false; } if(o.icon) a.icon=o.icon; renderSheet(); });
+  const kr=q('#keyRec'); if(kr) kr.onclick=()=>{ keyRec=!keyRec; renderSheet(); };
+  const ui=q('#urlIn'); if(ui){ ui.oninput=()=>{ a.ref=ui.value.trim(); if(!D.titleEdited){ try{ a.title=new URL(a.ref).hostname.replace(/^www\./,''); }catch(_){ a.title=''; } q('#nameIn').value=a.title; }
+      if(D.urlTouched){ const bad=a.ref&&!okURL(a.ref); ui.classList.toggle('err',bad); const m=q('#urlMsg'); m.className='fmsg '+(bad?'err':'hint'); m.textContent=bad?'网址需要以 http:// 或 https:// 开头':''; } refresh(); };
+    ui.onblur=()=>{ D.urlTouched=true; ui.oninput(); }; }
+  q('#nameIn').oninput=e=>{ a.title=e.target.value; D.titleEdited=!!a.title; refresh(); };
+  const ip=q('#iconPick'); if(ip) ip.onclick=()=>{ closeLayer();
+    const m=document.createElement('div'); m.className='menu'; m.innerHTML=`<div class="icongrid">${ICON_CHOICES.map(n=>`<button data-ic="${n}" class="${a.icon===n?'on':''}" title="${n}" aria-label="${n}">${icon(n)}</button>`).join('')}</div>`;
+    win.appendChild(m); placeBelow(m, ip); openLayer={el:m, anchor:ip};
+    m.onclick=e=>{ const b=e.target.closest('[data-ic]'); if(!b) return; a.icon=b.dataset.ic; closeLayer(); renderSheet(); }; };
+  q('#shX').onclick=closeSheet;
+  const dl=q('#shDel'); if(dl) dl.onclick=()=>askDelete(D.idx, closeSheet);
+  q('#shOk').onclick=submitSheet;
+}
+function submitSheet(){ if(!D || !isValid(D.a)) return; const a={...D.a, title:D.a.title.trim()};
+  if(D.mode==='add') S.actions.push(a); else S.actions[D.idx]=a; save(); closeSheet(); renderAll(); }
+window.addEventListener('keydown',e=>{
+  if(!D) return;
+  if(keyRec){ e.preventDefault(); e.stopPropagation(); if(['Shift','Control','Alt','Meta'].includes(e.key)) return;
+    const m=modsOf(e); if(e.key==='Escape'&&!m.length){ keyRec=false; renderSheet(); return; }
+    const k=keyName(e); D.a.ref=[...m,k].join(' '); if(!D.titleEdited) D.a.title='快捷键 '+m.join('')+k; D.a.icon='keyboard'; keyRec=false; renderSheet(); return; }
+  if(openLayer) return;
+  if(document.querySelector('.alert')) return;
+  if(e.key==='Escape'){ e.preventDefault(); closeSheet(); }
+  else if(e.key==='Enter' && (e.metaKey || e.target.tagName==='INPUT')){ e.preventDefault(); submitSheet(); }
+},true);
+
+/* ================= ring controller (demo + practice) ================= */
+function RingController(host, {practice}){
+  let el=null, open=false, pressAt=null, pressT=0, held=false, sel=null, ptr=null, center=null, jelly={angle:0,ext:0}, target={angle:0,ext:0}, raf=0, kbSel=null;
+  const scaleK=1;
+  host.addEventListener('mousemove',e=>{ const r=host.getBoundingClientRect(); ptr=[e.clientX-r.left, e.clientY-r.top]; if(open) update(); });
+  host.addEventListener('mousedown',e=>{ if(!open) return; const i=pickAt(...ptrOf(e)); if(i!=null && distOf(...ptrOf(e))>=R_IN-4) { sel=i; execute(i); } else if(distOf(...ptrOf(e))>R_OUT+80) close(); });
+  function ptrOf(e){ const r=host.getBoundingClientRect(); return [e.clientX-r.left, e.clientY-r.top]; }
+  function distOf(x,y){ return Math.hypot(x-center[0], y-center[1]); }
+  function pickAt(x,y){ const n=S.actions.length; if(!n) return null; return angleIndex(Math.atan2(-(y-center[1]), x-center[0]), n); }
+  function update(){
+    if(!ptr||!center) return;
+    const d=distOf(...ptr);
+    if(d>=R_IN*0.9){ sel=pickAt(...ptr); kbSel=null; } else if(kbSel==null) sel=null;
+    target.angle=Math.atan2(-(ptr[1]-center[1]), ptr[0]-center[0]);
+    target.ext = d>R_OUT ? Math.min((d-R_OUT)*0.45, 46) : 0;
+    loop();
+  }
+  function loop(){ if(raf) return; const step=()=>{ raf=0;
+      const da=wrap(target.angle-jelly.angle); jelly.angle+=da*0.35; jelly.ext+= (target.ext-jelly.ext)*(target.ext<jelly.ext?0.22:0.35);
+      paint(); if(Math.abs(target.ext-jelly.ext)>0.3||Math.abs(da)>0.01) raf=requestAnimationFrame(step); };
+    raf=requestAnimationFrame(step); }
+  function paint(flash){ if(el) paintRing(el, S.actions, {style:S.style, sel:kbSel!=null?kbSel:sel, title:S.centerTitle, jelly, uidp:practice?'pr':'dm', flash}); }
+  function show(){
+    if(!S.enabled){ toast('ring','圆环已关闭','在 ① 设置页右上角打开开关后，快捷键才会生效'); return; }
+    if(open||!S.actions.length) { if(!S.actions.length) toast('ring','圆环里还没有操作','到 ① 设置页添加至少 1 个操作'); return; }
+    const r=host.getBoundingClientRect(); const p=ptr||[r.width/2,r.height/2];
+    const m=R_OUT+70; center=[Math.min(Math.max(p[0],m),r.width-m), Math.min(Math.max(p[1],m),r.height-m)];
+    el=mountRing(host, center[0], center[1], scaleK); el.classList.add('opening');
+    open=true; sel=null; kbSel=null; jelly={angle:0,ext:0}; target={angle:0,ext:0}; paint(); update();
+  }
+  function close(){ if(!open) return; open=false; const e=el; el=null; e.classList.remove('opening'); e.classList.add('closing'); setTimeout(()=>e.remove(),170); }
+  function execute(i){
+    const a=S.actions[i]; sel=i; paint(true);
+    setTimeout(()=>{ close();
+      if(practice) toast(a.icon,`练习：会执行「${a.title}」`, `方向：${DIRS(S.actions.length)(i)} · 练习模式下不会真正执行`);
+      else toast(a.type==='app'?'app':a.icon, `已执行「${a.title}」`, effectOf(a));
+    },90);
+  }
+  return {
+    get open(){return open},
+    keyDown(){ if(held) return; held=true; pressT=performance.now(); pressAt=ptr?[...ptr]:null;
+      if(open){ close(); held=false; return; } show(); },
+    keyUp(){ if(!held) return; held=false; if(!open) return;
+      const moved=pressAt&&ptr?Math.hypot(ptr[0]-pressAt[0],ptr[1]-pressAt[1]):0;
+      if(moved<20){ return; }                            // tap or no movement → stay open
+      const d=distOf(...ptr);
+      if(sel!=null && d>=R_IN*0.9) execute(sel); else close();  // released in center → cancel
+    },
+    nav(e){ if(!open) return false; const n=S.actions.length;
+      if(e.key==='Escape'){ close(); return true; }
+      if(e.key>='1'&&e.key<='8'){ const i=+e.key-1; if(i<n){ kbSel=i; execute(i);} return true; }
+      if(['ArrowRight','ArrowDown','ArrowLeft','ArrowUp'].includes(e.key)){ const dl=(e.key==='ArrowRight'||e.key==='ArrowDown')?1:-1; kbSel=((kbSel??sel??-dl)+dl+n)%n; sel=kbSel; paint(); return true; }
+      if(e.key==='Enter'){ const i=kbSel??sel; if(i!=null) execute(i); return true; }
+      return false; },
+    close,
+  };
+}
+
+
+let toastTimer=0;
+function toast(ic,t,d){
+  const tt=document.getElementById('toast');
+  document.getElementById('toastIc').innerHTML=icon(ic); document.getElementById('toastT').textContent=t; document.getElementById('toastD').textContent=d||'';
+  const stage = practiceOn ? document.getElementById('practice') : document.getElementById('desk');
+  if(tt.parentElement!==stage) stage.appendChild(tt);
+  tt.classList.add('on'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>tt.classList.remove('on'),2600);
+}
+const desk=document.getElementById('desk'), demo=RingController(desk,{practice:false});
+const practiceEl=document.getElementById('practice'), prac=RingController(practiceEl,{practice:true});
+let practiceOn=false, stageNow='settings';
+function activeCtl(){ if(stageNow==='demo') return demo; if(stageNow==='settings'&&practiceOn) return prac; return null; }
+window.addEventListener('keydown',e=>{
+  if(recording||keyRec) return;
+  const c=activeCtl(); if(!c) return;
+  if(e.code==='Space'){ e.preventDefault(); if(!e.repeat){ c.keyDown(); document.getElementById('pressing').classList.add('on'); } return; }
+  if(c.nav(e)) e.preventDefault();
+  else if(e.key==='Escape' && practiceOn) stopPractice();
+});
+window.addEventListener('keyup',e=>{ const c=activeCtl(); if(!c) return; if(e.code==='Space'){ e.preventDefault(); c.keyUp(); document.getElementById('pressing').classList.remove('on'); } });
+window.addEventListener('blur',()=>{ demo.close(); prac.close(); });
+document.getElementById('practiceBtn').onclick=()=>{ practiceOn=true; practiceEl.classList.add('on'); practiceEl.focus(); };
+function stopPractice(){ practiceOn=false; prac.close(); practiceEl.classList.remove('on'); }
+document.getElementById('practiceExit').onclick=e=>{ e.stopPropagation(); stopPractice(); };
+
+/* ---------- prototype chrome ---------- */
+document.querySelectorAll('#ptabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#ptabs button').forEach(x=>x.classList.toggle('on',x===b));
+  stageNow=b.dataset.stage; document.querySelectorAll('.stage').forEach(s=>s.classList.toggle('on',s.id==='stage-'+stageNow));
+  demo.close(); closeLayer(); hideHint(); if(stageNow==='demo') desk.focus();
+});
+document.querySelectorAll('#themeT button').forEach(b=>b.onclick=()=>{ S.theme=b.dataset.t; save(); applyTheme(); });
+function applyTheme(){ win.classList.toggle('light',S.theme==='light'); win.classList.toggle('dark',S.theme==='dark'); document.querySelectorAll('#themeT button').forEach(x=>x.classList.toggle('on',x.dataset.t===S.theme)); }
+applyTheme(); renderAll();
+
+</script>
+</body>
+</html>
