@@ -392,7 +392,7 @@ private final class CancellationGate {
     func release() { continuations.forEach { $0.resume() }; continuations = [] }
 }
 
-private actor GatedConversationCache: AskCaching {
+actor GatedConversationCache: AskCaching {
     let base: any AskCaching
     let beforeSave: @Sendable (AskConversation) async -> Void
     init(base: any AskCaching, beforeSave: @escaping @Sendable (AskConversation) async -> Void) {

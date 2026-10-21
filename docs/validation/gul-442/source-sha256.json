@@ -1,6 +1,6 @@
 {
   "Sources/Typeflux/Ask/AskAPI.swift": "f9b0699830be7f2ef158b5843431edca52cbf929349b6b13cc0a7322e2cf79ec",
-  "Sources/Typeflux/Ask/AskConversationModel.swift": "485049729c9430df0d6181a7bae44216bc4b27f24c94d2043f039747a420c356",
+  "Sources/Typeflux/Ask/AskConversationModel.swift": "ccf4197b0456a5a6c54ceb4c2da4d70e22bb6e816985741a6d41cd0b484b86bd",
   "Sources/Typeflux/Ask/AskConversationViews.swift": "82779982a04d14653871624b8e388ae5f96ecf57f4d8830f8b19a831a2a51309",
   "Sources/Typeflux/Ask/AskQueueViews.swift": "beddec34beeb5cbef702cfd83a5760b7cf201e03a7eaeeeca128ece6f34a2720",
   "Sources/Typeflux/Ask/AskSendQueue.swift": "38050ddf4f0cf8e2a2f19fb3860fca119a4e1a44e9a4c5c54827c0d5d6d55e29",
@@ -11,9 +11,10 @@
   "Sources/Typeflux/Resources/ko.lproj/Localizable.strings": "796c442a85a09aa44dc53984957bef77386bda1c087964ada62da103df1b8dc0",
   "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings": "2a00688f6ac67b4b84b635c409dcc94f80f97604efeb982dec87e475beb01ffb",
   "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings": "4c58aa301cd27574c7665a9d1473030954dc34bc19e8a0702dd7c7964b4a4cc9",
+  "Tests/TypefluxTests/AskAgentBindingInteractionTests.swift": "0d5f043cbabdd8445905e699c36d1ec47b9bd88f9fa3b9b160f315f1cd626bfa",
   "Tests/TypefluxTests/AskChatRedesignTests.swift": "76149ad5ed97e320ac15173f09d398d6a78f55b77a67f11d730940e008779817",
-  "Tests/TypefluxTests/AskConversationTests.swift": "b56aa9b83f2ae1d02244cb14f603ba8c60459ba358db9b7a2d6e71fc92dc09d8",
+  "Tests/TypefluxTests/AskConversationTests.swift": "382bf51374fba11af03e9975aac203acbc90b07834036255d79d87e0427f23c1",
   "Tests/TypefluxTests/AskCreditPauseTests.swift": "1dce9d24058f5fd9d0eab2e49e321a3df7691344a4620dacc61f75128de0c25d",
-  "Tests/TypefluxTests/AskQueueOwnershipTests.swift": "7a1305b322775e2f84dd7c41ebf06f285ff8dc059c084911231cc45893bdfa22",
+  "Tests/TypefluxTests/AskQueueOwnershipTests.swift": "2e3a220c3ea02c56b49bfacf437d838487e207d0671b9c201315e384e6e97148",
   "Tests/TypefluxTests/AskSendQueueTests.swift": "b17e5bac157ea7c2e750297cf8adaf563cd13ad25205c0d12d31e455d5ccb27e"
 }

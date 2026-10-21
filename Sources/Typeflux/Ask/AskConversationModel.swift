@@ -958,6 +958,7 @@ final class AskConversationModel: ObservableObject {
         cancelQueuedEdit(advancing: false)
         selectionObservation?.cancel(); selectionObservation = nil
         let generation = UUID(); selectionGeneration = generation
+        let selectingSession = queueSession
         let oldId = selectedId, oldDraft = draft
         if let oldId, !isLoadingSelection { drafts[oldId] = oldDraft }
         // Commit navigation synchronously, before the first cache/network await.
@@ -978,15 +979,17 @@ final class AskConversationModel: ObservableObject {
         draft = drafts[id] ?? savedDraft ?? .followUp
         do {
             let value = try await api.conversation(id: id, token: current.token)
-            guard owner == current.account else { return }
-            reconcileConfirmedSupplements(value)
+            guard owner == current.account, session()?.owner == current.account,
+                  selectingSession == queueSession, !deletedConversationIDs.contains(id) else { return }
+            reconcileConfirmedSupplements(fromAuthenticated: value)
             let hasUnconfirmedMessage = pendingSends[id].map { pending in !value.messages.contains { $0.id == pending.id } } ?? false
             if !hasUnconfirmedMessage { try await cache.save(value, owner: current.owner) }
             let latest = try await cache.load(id: id, owner: current.owner) ?? value
-            guard owner == current.account else { return }
+            guard owner == current.account, session()?.owner == current.account,
+                  selectingSession == queueSession, !deletedConversationIDs.contains(id) else { return }
             snapshots[id] = sanitizedMemory(snapshots[id]?.reconciling(latest) ?? latest,
                                             account: current.account, local: current.token.isEmpty)
-            reconcileConfirmedQueuedSubmission(value)
+            reconcileConfirmedQueuedSubmission(fromAuthenticated: value)
             guard generation == selectionGeneration else { return }
             selected = snapshots[id] ?? latest; isLoadingSelection = false
             await refreshRecovery(selected ?? latest, route: current)
@@ -1368,7 +1371,13 @@ final class AskConversationModel: ObservableObject {
         let operationId = UUID(); registerOperation(id, operationId: operationId, account: current.account)
         if queuedSubmissions[id] != nil { queuedOperations.insert(operationId) }
         operations[id] = Task { [weak self] in
-            guard let self else { return }; defer { finishOperation(id, operationId: operationId) }
+            guard let self else { return }
+            defer {
+                if operationIds[id] == operationId, owner == current.account, session()?.owner == current.account {
+                    restoreQueuedSubmission(id)
+                }
+                finishOperation(id, operationId: operationId)
+            }
             let monitor = monitorConversation(id: id, current: current, operationId: operationId)
             defer { monitor.cancel() }
             do {
@@ -1515,19 +1524,21 @@ final class AskConversationModel: ObservableObject {
         return value
     }
 
-    func accept(_ value: AskConversation, route: AskRoute, operationId: UUID? = nil) async throws {
+    func accept(_ incoming: AskConversation, route: AskRoute, operationId: UUID? = nil) async throws {
+        let acceptingSession = queueSession
         try Task.checkCancellation()
-        if let operationId { try checkOperation(value.id, operationId: operationId, account: route.account) }
+        if let operationId { try checkOperation(incoming.id, operationId: operationId, account: route.account) }
         guard owner == route.account, session()?.owner == route.account,
-              !deletedConversationIDs.contains(value.id) else { throw CancellationError() }
-        reconcileConfirmedSupplements(value)
-        if let previous = snapshots[value.id], !value.isNewer(than: previous) {
-            if previous.revision > value.revision || previous.run?.id == value.run?.id {
-                reconcileConfirmedQueuedSubmission(value)
+              !deletedConversationIDs.contains(incoming.id) else { throw CancellationError() }
+        reconcileConfirmedSupplements(fromAuthenticated: incoming)
+        if let previous = snapshots[incoming.id], !incoming.isNewer(than: previous) {
+            if previous.revision > incoming.revision || previous.run?.id == incoming.run?.id {
+                reconcileConfirmedQueuedSubmission(fromAuthenticated: incoming)
             }
             return
         }
-        var value = snapshots[value.id]?.reconciling(value, preservingEqualRevisionContent: true) ?? value
+        // Keep authenticated evidence separate from the display/cache projection across awaits.
+        var value = snapshots[incoming.id]?.reconciling(incoming, preservingEqualRevisionContent: true) ?? incoming
         value = sanitizedMemory(value, account: route.account, local: route.token.isEmpty)
         // Persist meaningful message/state changes, not every transient preview.
         if snapshots[value.id]?.title != value.title || snapshots[value.id]?.titleGeneration != value.titleGeneration
@@ -1542,7 +1553,9 @@ final class AskConversationModel: ObservableObject {
         }
         try Task.checkCancellation()
         if let operationId { try checkOperation(value.id, operationId: operationId, account: route.account) }
-        guard owner == route.account, session()?.owner == route.account else { throw CancellationError() }
+        guard owner == route.account, session()?.owner == route.account,
+              acceptingSession == queueSession, !deletedConversationIDs.contains(incoming.id) else { throw CancellationError() }
+        reconcileConfirmedQueuedSubmission(fromAuthenticated: incoming)
         // Recheck after the cache write: another delivery or optimistic send
         // may have advanced the state while this task was suspended.
         if let latest = snapshots[value.id], !value.isNewer(than: latest) { return }
@@ -1563,8 +1576,8 @@ final class AskConversationModel: ObservableObject {
             tools.observeCommandRun(ownerId: route.account, conversationId: value.id, runId: run.id, active: run.isActive)
         }
         snapshots[value.id] = value
-        reconcileConfirmedQueuedSubmission(value)
-        reconcileConfirmedSupplements(value, allowTerminal: true)
+        reconcileConfirmedSupplements(fromAuthenticated: incoming, allowTerminal: incoming.revision >= value.revision
+            && incoming.run?.id == value.run?.id && incoming.run?.status == value.run?.status)
         if selected?.id == value.id { selected = selected?.reconciling(value, preservingEqualRevisionContent: true) ?? value }
         if let inferenceID = progressInferenceIDs[value.id], value.run?.inference?.id != inferenceID {
             inferenceProgress[value.id] = nil; progressInferenceIDs[value.id] = nil
@@ -1572,6 +1585,9 @@ final class AskConversationModel: ObservableObject {
         updateSummary(value)
         scheduleTitle(value, route: route)
         await refreshRecovery(value, route: route)
+        if let operationId { try checkOperation(incoming.id, operationId: operationId, account: route.account) }
+        guard owner == route.account, session()?.owner == route.account,
+              acceptingSession == queueSession, !deletedConversationIDs.contains(incoming.id) else { throw CancellationError() }
         if !sendQueue.messages(value.id).isEmpty || !sendQueue.steeredMessages(value.id).isEmpty {
             queueDidSettle(value.id)
         } else {
@@ -2424,7 +2440,10 @@ extension AskConversationModel {
             return
         }
         if pendingSends[id] != nil {
+            // Explicit continuation also releases the pause for following FIFO items.
             // The existing pending request owns this ID; its retry path remains the only sender.
+            guard !busyIds.contains(id) else { return }
+            sendQueue.resume(id)
             resume()
             return
         }
@@ -2594,7 +2613,9 @@ extension AskConversationModel {
         return true
     }
 
-    private func reconcileConfirmedSupplements(_ value: AskConversation, allowTerminal: Bool = false) {
+    private func reconcileConfirmedSupplements(fromAuthenticated value: AskConversation, allowTerminal: Bool = false) {
+        // Consumption comes only from API/engine transcript evidence, never cached display messages.
+        sendQueue.reconcile(value.id, transcript: value.messages, run: nil)
         for flight in queueFlights[value.id]?.values.map({ $0 }) ?? [] {
             guard ownsQueueFlight(flight, conversationID: value.id) else { continue }
             let consumed = value.messages.contains {
@@ -2678,7 +2699,7 @@ extension AskConversationModel {
         }
     }
 
-    private func reconcileConfirmedQueuedSubmission(_ value: AskConversation) {
+    private func reconcileConfirmedQueuedSubmission(fromAuthenticated value: AskConversation) {
         guard session()?.owner == owner, let claim = queuedSubmissions[value.id], let pending = pendingSends[value.id],
               claim.item.id == pending.id, value.messages.contains(where: { $0.id == pending.id }) else { return }
         pendingSends[value.id] = nil
@@ -2758,9 +2779,8 @@ extension AskConversationModel {
     func queueDidSettle(_ id: String) {
         guard session()?.owner == owner,
               let value = snapshots[id] ?? (selected?.id == id ? selected : nil) else { return }
-        // Optimistic messages are not acknowledgements of a pending send.
-        let transcript = value.messages.filter { $0.id != pendingSends[id]?.id }
-        sendQueue.reconcile(id, transcript: transcript, run: value.run)
+        // Presentation can settle an admitted run, but cannot prove message consumption.
+        sendQueue.reconcile(id, transcript: [], run: value.run)
         if queueDisposition(value) == .blocked(.recovery) { sendQueue.pause(id); return }
         guard selectedId == id, selected != nil, !isLoadingSelection, queueDisposition(value) == .ready,
               let next = sendQueue.next(for: id), let claim = sendQueue.claim(next.id, in: id),

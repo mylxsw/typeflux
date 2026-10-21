@@ -99,6 +99,7 @@ actor AskTestAPI: AskAPI {
         if failSend { throw AskLocalError.message("Network unavailable") }
         sends.append(request)
         await beforeSend?()
+        if failSend { throw AskLocalError.message("Network unavailable after held send") }
         if values[conversationId] == nil, request.temporary == true { temporaryIDs.insert(conversationId) }
         var value = values[conversationId] ?? AskConversation(id: conversationId, title: request.text, revision: 0, updatedAt: Date(), messages: [])
         if value.messages.contains(where: { $0.id == request.id }) { return value }

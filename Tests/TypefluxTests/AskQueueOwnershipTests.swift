@@ -41,14 +41,14 @@ struct AskQueueOwnershipTests {
     private func run(_ status: String, id: String = "original") -> AskRun {
         .init(id: id, deviceId: "device", status: status, steps: 2, updatedAt: Date(), tools: [], pending: [])
     }
-    private func prepare(local: Bool = false) async throws -> AskTestFixture {
+    private func prepare(local: Bool = false, cacheOverride: (any AskCaching)? = nil) async throws -> AskTestFixture {
         let defaults = try #require(UserDefaults(suiteName: "queue-ownership-" + UUID().uuidString))
         if local {
             let profile = AskModelProfile(name: "Fixture", baseURL: "https://fixture.invalid/v1", model: "fixture")
             defaults.set(try JSONEncoder().encode([profile]), forKey: "llm.model.profiles")
         }
         let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
-        let fixture = try AskTestFixture(modelLibrary: library)
+        let fixture = try AskTestFixture(modelLibrary: library, cacheOverride: cacheOverride)
         let value = AskConversation(id: "queue-ownership", title: "Queue", revision: 1, updatedAt: Date(), messages: [], run: run("running"))
         if local { fixture.model.registerLocalHistory([.init(id: value.id, title: value.title, updatedAt: value.updatedAt)]) }
         await (local ? fixture.localAPI : fixture.api).seed(value)
@@ -594,5 +594,157 @@ extension AskQueueOwnershipTests {
         #expect(phase?.step == 2 && phase?.summary == L("ask.recovery.otherDevice"))
         remote.status = "running"
         #expect(AskRunPhase.resolve(run: remote, busy: true, pendingApproval: false, recovery: recovery) == .working(step: 2))
+    }
+}
+
+
+extension AskQueueOwnershipTests {
+    @Test(arguments: [false, true], ["usage", "recovery", "budget", "cache"])
+    func independentClocksCannotConfirmHeldQueuedSend(local: Bool, clock: String) async throws {
+        let cacheGate = QueueGate()
+        let cacheRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: cacheRoot) }
+        let base = try AskConversationCache(url: cacheRoot.appendingPathComponent("cache.sqlite"))
+        let cache = GatedConversationCache(base: base) { value in
+            if clock == "cache", value.usage?.version == 1 { await cacheGate.wait() }
+        }
+        let fixture = try await prepare(local: local, cacheOverride: cache)
+        defer { fixture.model.resetSession() }
+        let api = local ? fixture.localAPI : fixture.api
+        let item = try enqueue("Exact draft, selection and ID must survive", fixture)
+        let next = try enqueue("No automatic fallback", fixture)
+        fixture.model.draft.text = "Keep current composer"
+        let sendGate = QueueGate()
+        await api.setBeforeSend { await sendGate.wait() }
+        try await publish("completed", fixture)
+        await sendGate.untilEntered()
+        let id = try #require(fixture.model.selectedId)
+        let route = try #require(fixture.model.credentials(for: id))
+        var incoming = try await api.conversation(id: id, token: route.token)
+        #expect(!incoming.messages.contains { $0.id == item.id })
+        #expect(fixture.model.selected?.messages.contains { $0.id == item.id } == true)
+        let revision = incoming.revision
+        switch clock {
+        case "recovery": incoming.run?.recovery = .init(state: "completed", sequence: 1)
+        case "budget":
+            incoming.run?.budget = .init(version: 1, limits: .init(), occupied: .init(), actual: .init(),
+                pending: 1, deadline: Date().addingTimeInterval(60), metering: "fixture")
+        default:
+            incoming.usage = .init(version: 1, since: Date(), historicalGap: false,
+                total: .init(calls: 1, pending: 1), runs: [:])
+        }
+        #expect(incoming.revision == revision)
+        let update = Task { try await fixture.model.accept(incoming, route: route) }
+        if clock == "cache" {
+            await cacheGate.untilEntered()
+            // The cache write contains the optimistic message; it must never become evidence.
+            #expect(fixture.model.hasPendingSubmission)
+            await cacheGate.release()
+        }
+        try await update.value
+        #expect(fixture.model.hasPendingSubmission)
+        #expect(fixture.model.selected?.messages.contains { $0.id == item.id } == true)
+        if clock == "usage" || clock == "cache" { #expect(fixture.model.selected?.usage?.version == 1) }
+        if clock == "budget" { #expect(fixture.model.selected?.run?.budget?.version == 1) }
+        // Terminal recovery metadata follows the existing freshness policy and cannot resurrect content.
+        if clock == "recovery" { #expect(fixture.model.selected?.run?.status == "completed") }
+        await api.setFailSend(true)
+        await sendGate.release()
+        try await fixture.wait { fixture.model.busyIds.isEmpty }
+        #expect(fixture.model.queuedMessages == [item, next])
+        #expect(fixture.model.isQueuePaused && fixture.model.hasPendingSubmission)
+        #expect(fixture.model.draft.text == "Keep current composer")
+        #expect(await api.sends.map(\.id) == [item.id])
+        #expect(try await api.conversation(id: id, token: route.token).messages.isEmpty)
+        // Another failed explicit retry must pause again and retain both exact drafts.
+        await api.setBeforeSend(nil)
+        fixture.model.resumeQueue()
+        try await fixture.wait { fixture.model.busyIds.isEmpty }
+        #expect(fixture.model.isQueuePaused && fixture.model.queuedMessages == [item, next])
+        // Retry reuses the sole pending request; a successful acknowledgement releases FIFO once.
+        await api.setFailSend(false)
+        fixture.model.resumeQueue()
+        try await fixture.wait { fixture.model.busyIds.isEmpty && fixture.model.queuedMessages.isEmpty }
+        #expect(await api.sends.map(\.id) == [item.id, item.id, next.id])
+        #expect(!fixture.model.hasPendingSubmission)
+    }
+}
+
+
+extension AskQueueOwnershipTests {
+    @Test func authenticatedAcceptanceSurvivesNewerDisplayDuringCacheWrite() async throws {
+        let cacheGate = QueueGate(), sendGate = QueueGate()
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let base = try AskConversationCache(url: root.appendingPathComponent("cache.sqlite"))
+        let cache = GatedConversationCache(base: base) { value in
+            if value.usage?.version == 1 { await cacheGate.wait() }
+        }
+        let fixture = try await prepare(cacheOverride: cache)
+        defer { fixture.model.resetSession() }
+        let item = try enqueue("Actual acknowledgement across suspension", fixture)
+        await fixture.api.setAfterSend { await sendGate.wait() }
+        try await publish("completed", fixture)
+        await sendGate.untilEntered()
+        let id = try #require(fixture.model.selectedId)
+        let route = try #require(fixture.model.credentials())
+        var accepted = try await fixture.api.conversation(id: id, token: route.token)
+        #expect(accepted.messages.contains { $0.id == item.id })
+        accepted.usage = .init(version: 1, since: Date(), historicalGap: false,
+            total: .init(calls: 1, pending: 1), runs: [:])
+        let confirmation = Task { try await fixture.model.accept(accepted, route: route) }
+        await cacheGate.untilEntered()
+        var newerClock = accepted
+        newerClock.messages = []
+        newerClock.usage?.version = 2
+        try await fixture.model.accept(newerClock, route: route)
+        #expect(fixture.model.hasPendingSubmission)
+        await cacheGate.release()
+        try await confirmation.value
+        #expect(!fixture.model.hasPendingSubmission)
+        #expect(fixture.model.selected?.usage?.version == 2)
+        await fixture.api.setFailAfterSend(true)
+        await sendGate.release()
+        try await fixture.wait { fixture.model.busyIds.isEmpty }
+        #expect(fixture.model.queuedMessages.isEmpty && fixture.model.error == nil)
+        fixture.model.resumeQueue()
+        #expect(await fixture.api.sends.map(\.id) == [item.id])
+    }
+}
+
+
+extension AskQueueOwnershipTests {
+    @Test(arguments: [false, true])
+    func admittedRecoveryClockCannotConfirmOptimisticIntentOrReplayIntoReplacement(local: Bool) async throws {
+        let fixture = try await prepare(local: local)
+        defer { fixture.model.resetSession() }
+        let api = local ? fixture.localAPI : fixture.api
+        let item = try enqueue("Retain original intent through recovery", fixture)
+        let gate = QueueGate()
+        await api.setBeforeSend { await gate.wait() }
+        try await publish("completed", fixture)
+        await gate.untilEntered()
+        // Build evidence from API state, never the optimistic selected transcript.
+        let id = try #require(fixture.model.selectedId)
+        let route = try #require(fixture.model.credentials())
+        var recovery = try await api.conversation(id: id, token: route.token)
+        #expect(!recovery.messages.contains { $0.id == item.id })
+        recovery.run = run("running", id: "replacement"); recovery.revision = 11
+        await api.seed(recovery)
+        try await fixture.model.accept(recovery, route: route)
+        recovery.run?.recovery = .init(state: "running", sequence: 1)
+        try await fixture.model.accept(recovery, route: route)
+        #expect(fixture.model.selected?.run?.recovery?.sequence == 1)
+        #expect(fixture.model.hasPendingSubmission)
+        await api.setFailSend(true)
+        await gate.release()
+        try await fixture.wait { fixture.model.busyIds.isEmpty }
+        #expect(fixture.model.queuedMessages == [item] && fixture.model.isQueuePaused)
+        await api.setBeforeSend(nil)
+        await api.setFailSend(false)
+        fixture.model.resumeQueue()
+        try await fixture.wait { fixture.model.busyIds.isEmpty }
+        #expect(await api.sends.map(\.id) == [item.id])
+        #expect(fixture.model.queuedMessages == [item] && fixture.model.isQueuePaused)
     }
 }
