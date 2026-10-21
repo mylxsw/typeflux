@@ -6419,13 +6419,8 @@
 "ring.title" = "링";
 "ring.enabled" = "링 사용";
 "ring.hotkey.title" = "단축키";
+"ring.hotkey.required" = "단축키를 설정하면 링을 활성화할 수 있습니다.";
 "ring.hotkey.detail" = "단축키를 누르고 있기: 포인터 위치에 링이 열립니다. 동작 쪽으로 움직인 뒤 떼면 실행되고, 가운데로 돌아와 떼면 취소됩니다.\n단축키를 짧게 누르기: 링이 열린 채로 유지됩니다. 클릭하거나 1–8 키 또는 화살표 키와 ↩로 선택하고, Esc나 단축키를 다시 누르면 닫힙니다.";
-"ring.practice.title" = "연습";
-"ring.practice.detail" = "단축키로 방향과 감각을 익혀 보세요. 떼면 실행될 동작만 보여 주고 실제로 실행하지는 않습니다.";
-"ring.practice.start" = "연습 시작";
-"ring.practice.stop" = "연습 종료";
-"ring.practice.waiting" = "단축키를 누르고 있어 보세요";
-"ring.practice.result" = "“%1$@” 실행 예정 (%2$@)";
 "ring.actions.title" = "동작";
 "ring.actions.reset" = "기본값 복원";
 "ring.actions.add" = "동작 추가";

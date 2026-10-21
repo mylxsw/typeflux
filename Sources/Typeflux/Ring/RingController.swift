@@ -24,37 +24,12 @@ protocol RingMenuPresenting: AnyObject {
     func activatePointedItem() -> Bool
 }
 
-/// Settings → Ring's practice mode: while it is on, a chosen slice is reported instead of run.
-@MainActor
-final class RingPractice: ObservableObject {
-    static let shared = RingPractice()
-
-    @Published var isActive = false
-    /// "Would run …" for the last slice chosen while practicing.
-    @Published private(set) var lastResult: String?
-
-    func start() {
-        lastResult = nil
-        isActive = true
-    }
-
-    func stop() {
-        isActive = false
-        lastResult = nil
-    }
-
-    func record(_ action: RingAction, direction: String) {
-        lastResult = L("ring.practice.result", action.title, direction)
-    }
-}
-
 /// Opens the ring for the `.ring` shortcut and runs the chosen slice.
 @MainActor
 final class RingController {
     private let settingsStore: SettingsStore
     private let menu: any RingMenuPresenting
     private let executor: RingActionExecutor
-    private let practice: RingPractice
     private let pointerLocation: () -> CGPoint
     private let frontmostApplication: () -> NSRunningApplication?
     /// Voice input owns the keyboard while recording; the ring stays closed.
@@ -66,13 +41,11 @@ final class RingController {
     private var observer: NSObjectProtocol?
 
     init(settingsStore: SettingsStore, menu: any RingMenuPresenting, executor: RingActionExecutor,
-         practice: RingPractice = .shared,
          pointerLocation: @escaping () -> CGPoint = { NSEvent.mouseLocation },
          frontmostApplication: @escaping () -> NSRunningApplication? = { NSWorkspace.shared.frontmostApplication }) {
         self.settingsStore = settingsStore
         self.menu = menu
         self.executor = executor
-        self.practice = practice
         self.pointerLocation = pointerLocation
         self.frontmostApplication = frontmostApplication
         configuration = settingsStore.ringConfiguration
@@ -118,12 +91,6 @@ final class RingController {
     private func select(_ id: String) {
         guard let index = configuration.actions.firstIndex(where: { $0.id.uuidString == id }) else { return }
         let action = configuration.actions[index]
-        if practice.isActive {
-            practice.record(action, direction: RingSettingsPresentation.direction(
-                of: index, count: configuration.actions.count
-            ))
-            return
-        }
         let previous = previousApplication
         Task { await executor.perform(action, previousApplication: previous) }
     }

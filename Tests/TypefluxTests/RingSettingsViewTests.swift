@@ -37,7 +37,7 @@ struct RingSettingsViewTests {
                 Spacer()
                 RingEnabledSwitch(settingsStore: store)
             }
-            RingSettingsView(settingsStore: store, practice: RingPractice())
+            RingSettingsView(settingsStore: store)
         }
         .padding(28)
     }
@@ -48,11 +48,16 @@ struct RingSettingsViewTests {
         let defaults = try #require(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
         let store = SettingsStore(defaults: defaults)
+        store.setHotkey(RingConfiguration.defaultHotkey, for: .ring)
         for light in [true, false] {
             try await render(page(store),
                              size: NSSize(width: 860, height: 760), name: "ring-settings-\(light ? "light" : "dark")",
                              light: light)
         }
+        store.setHotkey(nil, for: .ring)
+        try await render(page(store), size: NSSize(width: 860, height: 760),
+                         name: "ring-settings-no-hotkey", light: false)
+        store.setHotkey(RingConfiguration.defaultHotkey, for: .ring)
         var configuration = store.ringConfiguration
         configuration.actions = []
         configuration.enabled = false

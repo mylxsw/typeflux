@@ -6419,13 +6419,8 @@
 "ring.title" = "リング";
 "ring.enabled" = "リングを有効にする";
 "ring.hotkey.title" = "ショートカット";
+"ring.hotkey.required" = "ショートカットを設定するとリングを有効にできます。";
 "ring.hotkey.detail" = "ショートカットを押し続ける：ポインタの位置にリングが開きます。操作の方向へ動かして離すと実行、中央に戻して離すとキャンセルします。\nショートカットを軽く押す：リングは開いたままになります。クリック、1〜8 キー、または矢印キーと ↩ で選び、Esc かもう一度ショートカットで閉じます。";
-"ring.practice.title" = "練習";
-"ring.practice.detail" = "ショートカットで方向と感覚を試せます。離しても実行される操作が表示されるだけで、実際には実行されません。";
-"ring.practice.start" = "練習を開始";
-"ring.practice.stop" = "練習を終了";
-"ring.practice.waiting" = "ショートカットを押し続けて試してください";
-"ring.practice.result" = "「%1$@」を実行します（%2$@）";
 "ring.actions.title" = "操作";
 "ring.actions.reset" = "デフォルトに戻す";
 "ring.actions.add" = "操作を追加";

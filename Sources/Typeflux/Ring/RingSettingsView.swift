@@ -5,7 +5,6 @@ struct RingSettingsView: View {
     @StateObject private var model: RingSettingsModel
     @StateObject private var shortcuts: HotkeySettingsModel
     @StateObject private var recorder = HotkeyRecorder()
-    @ObservedObject private var practice: RingPractice
     @State private var isRecording = false
     @State private var hotkeyNotice: String?
     @State private var editing: RingActionDraft?
@@ -14,10 +13,9 @@ struct RingSettingsView: View {
     @State private var highlighted: UUID?
     @State private var centerTitle = ""
 
-    init(settingsStore: SettingsStore, practice: RingPractice = .shared) {
+    init(settingsStore: SettingsStore) {
         _model = StateObject(wrappedValue: RingSettingsModel(settingsStore: settingsStore))
         _shortcuts = StateObject(wrappedValue: HotkeySettingsModel(settingsStore: settingsStore, workflows: .shared))
-        self.practice = practice
     }
 
     private var configuration: RingConfiguration {
@@ -30,13 +28,10 @@ struct RingSettingsView: View {
             actionsSection
             appearanceSection
         }
-        .disabled(!configuration.enabled)
-        .opacity(configuration.enabled ? 1 : TFMetrics.disabledOpacity)
         .onAppear { centerTitle = configuration.centerTitle }
         .onDisappear {
             recorder.stop()
             isRecording = false
-            practice.stop()
         }
         .sheet(item: $editing) { draft in
             RingActionEditorSheet(draft: draft, keywords: shortcuts.options, onSave: { action in
@@ -62,7 +57,7 @@ struct RingSettingsView: View {
         } message: { Text(L("ring.reset.message")) }
     }
 
-    // MARK: - Shortcut and practice
+    // MARK: - Shortcut
 
     private var triggerSection: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -82,15 +77,6 @@ struct RingSettingsView: View {
                         shortcuts.unsetHotkey(for: .ring)
                     }
                     .disabled(shortcuts.row(for: .action(.ring))?.binding == nil)
-                }
-                TFDivider.formWithIcon
-                TFFormRow(title: L("ring.practice.title"), detail: L("ring.practice.detail"),
-                          valueText: practice.isActive ? (practice.lastResult ?? L("ring.practice.waiting")) : nil,
-                          icon: "scope") {
-                    TFButton(title: L(practice.isActive ? "ring.practice.stop" : "ring.practice.start")) {
-                        if practice.isActive { practice.stop() } else { practice.start() }
-                    }
-                    .accessibilityIdentifier("ring.practice")
                 }
             }
             if let hotkeyNotice {
@@ -236,8 +222,9 @@ struct RingEnabledSwitch: View {
     }
 
     var body: some View {
-        TFSwitch(title: L("ring.enabled"), isOn: Binding(get: { model.configuration.enabled }, set: model.setEnabled))
-            .help(L("ring.enabled"))
+        TFSwitch(title: L("ring.enabled"), isOn: Binding(get: { model.isEnabled }, set: model.setEnabled))
+            .disabled(!model.hasHotkey)
+            .help(model.hasHotkey ? L("ring.enabled") : L("ring.hotkey.required"))
             .accessibilityIdentifier("ring.enabled")
     }
 }

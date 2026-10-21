@@ -6419,13 +6419,8 @@
 "ring.title" = "Ring";
 "ring.enabled" = "Enable Ring";
 "ring.hotkey.title" = "Shortcut";
+"ring.hotkey.required" = "Set a shortcut to enable the ring.";
 "ring.hotkey.detail" = "Hold the shortcut: the ring opens at the pointer. Move toward an action and let go to run it; let go in the middle to cancel.\nTap the shortcut: the ring stays open. Click an action, press 1–8, or use the arrow keys and Return. Esc or the shortcut again closes it.";
-"ring.practice.title" = "Practice";
-"ring.practice.detail" = "Try the directions with the shortcut. Letting go only shows what would run; nothing runs.";
-"ring.practice.start" = "Start Practice";
-"ring.practice.stop" = "End Practice";
-"ring.practice.waiting" = "Hold the shortcut and try it";
-"ring.practice.result" = "Would run “%1$@” (%2$@)";
 "ring.actions.title" = "Actions";
 "ring.actions.reset" = "Restore Defaults";
 "ring.actions.add" = "Add Action";

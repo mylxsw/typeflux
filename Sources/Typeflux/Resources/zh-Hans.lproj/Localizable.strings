@@ -6419,13 +6419,8 @@
 "ring.title" = "圆环";
 "ring.enabled" = "启用圆环";
 "ring.hotkey.title" = "快捷键";
+"ring.hotkey.required" = "设置快捷键后即可启用圆环。";
 "ring.hotkey.detail" = "按住快捷键：圆环出现在鼠标处，移向某个操作后松开即执行，移回中心再松开则取消。\n轻按快捷键：圆环保持打开，可点击、按数字键 1–8 或方向键 + ↩ 选择；Esc 或再按一次快捷键关闭。";
-"ring.practice.title" = "练习";
-"ring.practice.detail" = "按住快捷键试一试方向和手感。松开时只提示会执行哪个操作，不会真正执行。";
-"ring.practice.start" = "开始练习";
-"ring.practice.stop" = "结束练习";
-"ring.practice.waiting" = "按住快捷键试一试";
-"ring.practice.result" = "会执行「%1$@」（%2$@）";
 "ring.actions.title" = "操作";
 "ring.actions.reset" = "恢复默认";
 "ring.actions.add" = "添加操作";

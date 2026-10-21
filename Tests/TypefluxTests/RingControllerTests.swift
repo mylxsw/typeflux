@@ -9,7 +9,6 @@ final class RingControllerTests: XCTestCase {
     private var store: SettingsStore!
     private var menu: FakeRingMenu!
     private var environment: FakeRingEnvironment!
-    private var practice: RingPractice!
     private var pointer = CGPoint(x: 100, y: 100)
     private var features: [RingFeature] = []
 
@@ -20,7 +19,6 @@ final class RingControllerTests: XCTestCase {
         store = SettingsStore(defaults: defaults)
         menu = FakeRingMenu()
         environment = FakeRingEnvironment()
-        practice = RingPractice()
         pointer = CGPoint(x: 100, y: 100)
         features = []
     }
@@ -31,14 +29,13 @@ final class RingControllerTests: XCTestCase {
         store = nil
         menu = nil
         environment = nil
-        practice = nil
         super.tearDown()
     }
 
     private func makeController() -> RingController {
         let executor = RingActionExecutor(environment: environment)
         executor.handlers.feature = { [weak self] in self?.features.append($0) }
-        return RingController(settingsStore: store, menu: menu, executor: executor, practice: practice,
+        return RingController(settingsStore: store, menu: menu, executor: executor,
                               pointerLocation: { [weak self] in self?.pointer ?? .zero },
                               frontmostApplication: { nil })
     }
@@ -146,19 +143,14 @@ final class RingControllerTests: XCTestCase {
         XCTAssertEqual(menu.dismissals, 1)
     }
 
-    func testPracticeReportsInsteadOfRunning() async throws {
+    func testSelectingAnActionRunsItAndUnknownIDsAreIgnored() async throws {
         let controller = makeController()
         defer { withExtendedLifetime(controller) {} }
-        practice.start()
         let action = store.ringConfiguration.actions[2]
         menu.onSelect(action.id.uuidString)
-        XCTAssertEqual(practice.lastResult, L("ring.practice.result", action.title, L("ring.direction.downRight")))
         menu.onSelect("unknown")
-        try await Task.sleep(for: .milliseconds(20))
-        XCTAssertTrue(features.isEmpty)
-        practice.stop()
-        XCTAssertFalse(practice.isActive)
-        XCTAssertNil(practice.lastResult)
+        try await waitUntil { self.features == [.translate] }
+        XCTAssertEqual(features, [.translate])
     }
 
     func testOpieStyleMapping() {

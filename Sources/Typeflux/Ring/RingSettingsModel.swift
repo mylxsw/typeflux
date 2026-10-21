@@ -5,31 +5,43 @@ import Foundation
 final class RingSettingsModel: ObservableObject {
     @Published private(set) var configuration: RingConfiguration
     let settingsStore: SettingsStore
-    private var observer: NSObjectProtocol?
+    @Published private(set) var hasHotkey: Bool
+    private var observers: [NSObjectProtocol] = []
 
     init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
         configuration = settingsStore.ringConfiguration
-        observer = NotificationCenter.default.addObserver(forName: .ringSettingsDidChange, object: settingsStore,
-                                                          queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.reload() }
+        hasHotkey = settingsStore.actionHotkeys[.ring] != nil
+        for name in [Notification.Name.ringSettingsDidChange, .hotkeySettingsDidChange] {
+            observers.append(NotificationCenter.default.addObserver(forName: name, object: settingsStore,
+                                                                    queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.reload() }
+            })
         }
     }
 
     deinit {
-        if let observer { NotificationCenter.default.removeObserver(observer) }
+        for observer in observers { NotificationCenter.default.removeObserver(observer) }
     }
 
     func reload() {
         let stored = settingsStore.ringConfiguration
         if stored != configuration { configuration = stored }
+        let hasHotkey = settingsStore.actionHotkeys[.ring] != nil
+        if hasHotkey != self.hasHotkey { self.hasHotkey = hasHotkey }
     }
 
     var actions: [RingAction] {
         configuration.actions
     }
 
+    /// Keep the pause preference, but never show an unassigned ring as enabled.
+    var isEnabled: Bool {
+        hasHotkey && configuration.enabled
+    }
+
     func setEnabled(_ enabled: Bool) {
+        guard !enabled || hasHotkey else { return }
         update { $0.enabled = enabled }
     }
 
