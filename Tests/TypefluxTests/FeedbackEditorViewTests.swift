@@ -105,7 +105,10 @@ struct FeedbackEditorViewTests {
     private func makeCoordinator(
         _ model: FeedbackWindowModel,
         _ toolbar: FeedbackToolbarState,
-        text: String
+        text: String,
+        openFile: @escaping (URL) -> Void = { _ in
+            Issue.record("Unexpected attempt to open an external application")
+        }
     ) -> (FeedbackEditorView.Coordinator, FeedbackTextView) {
         let view = FeedbackTextView()
         view.textStorage?.setAttributedString(NSAttributedString(
@@ -113,7 +116,7 @@ struct FeedbackEditorViewTests {
             attributes: FeedbackRichText.baseAttributes
         ))
         model.editor.textView = view
-        let coordinator = FeedbackEditorView.Coordinator(model: model, toolbar: toolbar)
+        let coordinator = FeedbackEditorView.Coordinator(model: model, toolbar: toolbar, openFile: openFile)
         coordinator.textView = view
         view.delegate = coordinator
         return (coordinator, view)
@@ -179,9 +182,14 @@ struct FeedbackEditorViewTests {
 
     @Test func `clicking a failed block retries it and double clicking needs a local file`() async throws {
         let (model, services) = makeModel()
-        let (coordinator, view) = makeCoordinator(model, FeedbackToolbarState(), text: "")
+        var openedFiles: [URL] = []
+        let (coordinator, view) = makeCoordinator(model, FeedbackToolbarState(), text: "text\n") {
+            openedFiles.append($0)
+        }
         services.uploadError = FeedbackAPIError.networkError("offline")
-        try model.addFiles([sampleFile("a.log")])
+        let file = try sampleFile("a.log")
+        defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+        try model.addFiles([file])
         for _ in 0 ..< 400 {
             if case .failed = model.attachments.first?.state {
                 break
@@ -202,6 +210,10 @@ struct FeedbackEditorViewTests {
             try await Task.sleep(nanoseconds: 10_000_000)
         }
         #expect(model.attachments.first?.state.isReady == true)
+        #expect(openedFiles.isEmpty)
+
+        coordinator.textView(view, doubleClickedOn: cell, in: .zero, at: index)
+        #expect(openedFiles == [file])
 
         // Neither click does anything on text, and a pasted image has no file to open.
         coordinator.textView(view, clickedOn: cell, in: .zero, at: 0)
@@ -210,6 +222,7 @@ struct FeedbackEditorViewTests {
         let second = view.attachmentIDs.last
         #expect(second != nil)
         coordinator.textView(view, doubleClickedOn: cell, in: .zero, at: view.string.utf16.count - 2)
+        #expect(openedFiles == [file], "text and pasted images must not open files")
     }
 
     @Test func `live services prepare images and report no sign-in`() async throws {

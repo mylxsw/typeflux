@@ -71,11 +71,17 @@ struct FeedbackEditorView: NSViewRepresentable {
     final class Coordinator: NSObject, NSTextViewDelegate {
         let model: FeedbackWindowModel
         let toolbar: FeedbackToolbarState
+        private let openFile: (URL) -> Void
         weak var textView: FeedbackTextView?
 
-        init(model: FeedbackWindowModel, toolbar: FeedbackToolbarState) {
+        init(
+            model: FeedbackWindowModel,
+            toolbar: FeedbackToolbarState,
+            openFile: @escaping (URL) -> Void = { NSWorkspace.shared.open($0) }
+        ) {
             self.model = model
             self.toolbar = toolbar
+            self.openFile = openFile
         }
 
         func textDidChange(_: Notification) {
@@ -137,7 +143,7 @@ struct FeedbackEditorView: NSViewRepresentable {
             guard let attachment = textView.textStorage?.attribute(.attachment, at: charIndex, effectiveRange: nil)
                 as? FeedbackTextAttachment,
                 let url = model.previewURL(id: attachment.attachmentID) else { return }
-            NSWorkspace.shared.open(url)
+            openFile(url)
         }
     }
 }
