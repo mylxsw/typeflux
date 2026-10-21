@@ -24,7 +24,9 @@ private func systemHotkeyPoolCallback(
         return OSStatus(eventNotHandledErr)
     }
     let pool = Unmanaged<SystemHotkeyPool>.fromOpaque(userData).takeUnretainedValue()
-    return pool.handlePressed(id: hotkeyID.id) ? noErr : OSStatus(eventNotHandledErr)
+    let handled = GetEventKind(event) == UInt32(kEventHotKeyReleased)
+        ? pool.handleReleased(id: hotkeyID.id) : pool.handlePressed(id: hotkeyID.id)
+    return handled ? noErr : OSStatus(eventNotHandledErr)
 }
 
 /// Registers any number of plain key chords (⌃⌥R) with the system, for the feature and
@@ -37,6 +39,8 @@ final class SystemHotkeyPool {
     private var eventHandlerRef: EventHandlerRef?
 
     var onPressed: ((HotkeyTarget) -> Void)?
+    /// The key of a registered chord was let go. Only shortcuts that are held (the ring) use it.
+    var onReleased: ((HotkeyTarget) -> Void)?
 
     init(name: String) {
         self.name = name
@@ -89,10 +93,21 @@ final class SystemHotkeyPool {
         targets = [:]
     }
 
-    fileprivate func handlePressed(id: UInt32) -> Bool {
+    func handlePressed(id: UInt32) -> Bool {
         guard let target = targets[id] else { return false }
         DispatchQueue.main.async { [weak self] in self?.onPressed?(target) }
         return true
+    }
+
+    func handleReleased(id: UInt32) -> Bool {
+        guard let target = targets[id] else { return false }
+        DispatchQueue.main.async { [weak self] in self?.onReleased?(target) }
+        return true
+    }
+
+    /// The registration id of `target`, for tests that drive the callbacks.
+    func registrationID(of target: HotkeyTarget) -> UInt32? {
+        targets.first { $0.value == target }?.key
     }
 
     static func canRegister(_ binding: HotkeyBinding) -> Bool {
@@ -119,12 +134,15 @@ final class SystemHotkeyPool {
     }
 
     private func installEventHandler() {
-        var eventType = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
+        var eventTypes = [
+            EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed)),
+            EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyReleased))
+        ]
         let status = InstallEventHandler(
             GetApplicationEventTarget(),
             systemHotkeyPoolCallback,
-            1,
-            &eventType,
+            eventTypes.count,
+            &eventTypes,
             Unmanaged.passUnretained(self).toOpaque(),
             &eventHandlerRef
         )

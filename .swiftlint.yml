@@ -2,6 +2,8 @@ excluded:
   - .build
   - coverage-report
   - TypefluxApp.xcodeproj
+  # Vendored from opie-menu-macos; kept close to upstream.
+  - Packages/OpieMenu
 
 line_length:
   warning: 120

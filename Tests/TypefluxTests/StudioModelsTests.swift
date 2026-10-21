@@ -5,7 +5,7 @@ final class StudioModelsTests: XCTestCase {
     // MARK: - StudioSection
 
     func testStudioSectionAllCasesCount() {
-        XCTAssertEqual(StudioSection.allCases.count, 9)
+        XCTAssertEqual(StudioSection.allCases.count, 10)
     }
 
     func testStudioSectionId() {
@@ -50,7 +50,7 @@ final class StudioModelsTests: XCTestCase {
 
     func testSidebarUpperCases() {
         let upper = StudioSection.sidebarUpperCases
-        XCTAssertEqual(upper, [.home, .models, .agent, .launcher, .settings])
+        XCTAssertEqual(upper, [.home, .models, .agent, .launcher, .ring, .settings])
     }
 
     func testVoiceInputCasesAreTheTabsInOrder() {

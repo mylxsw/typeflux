@@ -37,6 +37,8 @@ protocol HotkeyService: AnyObject {
     var onScreenshotRequested: (() -> Void)? { get set }
     /// A feature or keyword shortcut from the Shortcuts page was pressed.
     var onShortcutRequested: ((HotkeyTarget) -> Void)? { get set }
+    /// The key of a feature shortcut was let go; the ring runs the slice under the pointer.
+    var onShortcutReleased: ((HotkeyTarget) -> Void)? { get set }
     var onError: ((String) -> Void)? { get set }
 
     func start()
@@ -52,5 +54,6 @@ extension HotkeyService {
     var onAuxiliaryPromoted: ((HotkeyEventContext) -> Void)? { get { nil } set {} }
     var onScreenshotRequested: (() -> Void)? { get { nil } set {} }
     var onShortcutRequested: ((HotkeyTarget) -> Void)? { get { nil } set {} }
+    var onShortcutReleased: ((HotkeyTarget) -> Void)? { get { nil } set { _ = newValue } }
     func settleActivationGesture() {}
 }
