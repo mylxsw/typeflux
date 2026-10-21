@@ -1,0 +1,2 @@
+Command: swiftlint lint --strict --quiet Sources/Typeflux/Ask/AskRouteJSONCodec.swift Sources/Typeflux/Ask/AskAgentBinding.swift Sources/Typeflux/Ask/AskRunRoute.swift
+Exit: 0; no violations.

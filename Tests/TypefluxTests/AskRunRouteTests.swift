@@ -3,12 +3,180 @@ import XCTest
 @testable import Typeflux
 
 final class AskRunRouteTests: XCTestCase {
-    private func raw(_ text: String) throws -> AskRouteJSON { try JSONDecoder().decode(AskRouteJSON.self, from: Data(text.utf8)) }
+    private func raw(_ text: String) throws -> AskRouteJSON { try AskRouteJSON.decodeRaw(Data(text.utf8)) }
     private func archive(_ text: String) throws -> AskRunRouteArchive { .init(raw: try raw(text)) }
     private func routeRun(_ id: String = "first", device: String = "device", binding: String? = nil) throws -> AskRun {
         var run = AskRun(id: id, deviceId: device, status: "completed", steps: 0, updatedAt: Date(), tools: [], pending: [])
         run.agentBinding = try binding.map { try JSONDecoder().decode(AskAgentBinding.self, from: Data($0.utf8)) }
         return run
+    }
+
+    func testExactNumericCodecAndInvalidSyntax() throws {
+        let numbers = ["12345678901234567890123456789012345678901234567890",
+                       "1.000000000000000000000000000000000000000000000001", "1e200", "1e9999999999999999999999"]
+        for token in numbers {
+            XCTAssertEqual(try String(decoding: raw(token).encodeRaw(), as: UTF8.self), token)
+        }
+        for (left, right) in [("1", "1.0"), ("1e0", "0.01e2"), ("-0.00", "0"),
+                              ("100e9999999999999999999999", "1e10000000000000000000001"),
+                              ("10e-9999999999999999999999", "1e-9999999999999999999998"), ("1.0e-1", "0.1")] {
+            XCTAssertEqual(try raw(left), try raw(right))
+        }
+        XCTAssertNotEqual(try raw(numbers[1]), try raw("1"))
+        for invalid in [
+            "",
+            "01",
+            "1.",
+            "1e",
+            "[1,]",
+            "{\"x\":}",
+            "true false",
+            "[",
+            "{",
+            "\"unterminated",
+            "\"\\uZZZZ\"",
+            "{\"x\" 1}",
+            "[1 2]"
+        ] {
+            XCTAssertThrowsError(try raw(invalid), invalid)
+        }
+        XCTAssertThrowsError(try raw(String(repeating: "[", count: 513) + String(repeating: "]", count: 513)))
+        let escaped = #"{"quote":"\"\\\n\u4e2d", "values":[null,true,false,{},[]]}"#
+        XCTAssertEqual(try AskRouteJSON.decodeRaw(raw(escaped).encodeRaw()), try raw(escaped))
+    }
+
+    func testSameRunExactNumericExtensionConflict() throws {
+        let near = "1.000000000000000000000000000000000000000000000001"
+        var previous = try routeRun()
+        previous
+            .agentBinding =
+            try AskAgentBinding(raw: raw("{\"id\":\"typeflux.default\",\"version\":1,\"evidence\":\(near)}"))
+        let saved = try AskRunRouteArchive.merging(cached: nil, incoming: nil, previous: nil, current: previous)
+        var current = previous
+        current
+            .agentBinding =
+            try AskAgentBinding(raw: raw("{\"id\":\"typeflux.default\",\"version\":1.0,\"evidence\":1}"))
+        XCTAssertThrowsError(try AskRunRouteArchive.merging(
+            cached: saved,
+            incoming: nil,
+            previous: previous,
+            current: current
+        ))
+        XCTAssertEqual(AskRunRouteArchive.lookup(archive: saved, current: current, runID: "first"), .unavailable)
+        current
+            .agentBinding =
+            try AskAgentBinding(raw: raw("{\"id\":\"typeflux.default\",\"version\":1.0,\"evidence\":\(near)}"))
+        XCTAssertEqual(
+            try AskRunRouteArchive.merging(cached: saved, incoming: nil, previous: previous, current: current),
+            saved
+        )
+    }
+
+    func testOriginalSnapshotNumericEvidenceSurvivesMetadataSaveAndReload() async throws {
+        let huge = "12345678901234567890123456789012345678901234567890"
+        let near = "1.000000000000000000000000000000000000000000000001"
+        for binding in ["{\"id\":\"typeflux.default\",\"version\":1.0,\"extension_value\":\(huge)}",
+                        "{\"id\":\"typeflux.default\",\"version\":\(near),\"extension_value\":\(huge)}",
+                        "{\"id\":\"future\",\"version\":9007199254740993.0,\"extension_value\":\(near)}",
+                        "[\(huge),\(near)]"] {
+            let record = try AskLocalRecord(conversation: AskConversation(id: "numeric", title: "before", revision: 1,
+                                                                          updatedAt: Date(), messages: [],
+                                                                          run: routeRun()))
+            guard case var .object(root) = try raw(String(decoding: AskCoding.encoder().encode(record), as: UTF8.self)),
+                  case var .object(conversation) = root["conversation"],
+                  case var .object(run) = conversation["run"] else { return XCTFail() }
+            let evidence = try raw(binding)
+            run["agent_binding"] = evidence
+            conversation["run"] = .object(run)
+            root["conversation"] = .object(conversation)
+            root["agent_routes"] =
+                try raw(
+                    "{\"version\":1,\"root_extension\":\(near),\"runs\":{\"first\":{\"device_id\":\"device\",\"agent_binding\":\(binding)}}}"
+                )
+            let store = RouteSnapshotStore()
+            // The first load starts from original tokens, before any Foundation decode.
+            store.data = try AskRouteJSON.object(root).encodeRaw()
+            let engine = AskLocalEngine(directory: URL(fileURLWithPath: "/unused"), snapshotStore: store)
+            let loaded = try await engine.conversation(id: "numeric", token: "")
+            XCTAssertEqual(loaded.run?.agentBinding?.routeEvidence, evidence)
+            if binding.contains("typeflux.default"), !binding.contains(near) {
+                XCTAssertNoThrow(try AskAgentBinding.resolve(loaded.run?.agentBinding))
+            } else {
+                XCTAssertThrowsError(try AskAgentBinding.resolve(loaded.run?.agentBinding))
+            }
+            _ = try await engine.updateTitle(id: "numeric", request: .init(action: "rename", title: "after"), token: "")
+            let savedData = try XCTUnwrap(store.data)
+            let saved = try AskLocalRecord.decodeSnapshot(savedData)
+            XCTAssertEqual(saved.conversation.title, "after")
+            XCTAssertEqual(saved.conversation.run?.agentBinding?.routeEvidence, evidence)
+            XCTAssertEqual(saved.agentRoutes?.raw, root["agent_routes"])
+            for token in [huge, near] where binding.contains(token) {
+                XCTAssertTrue(String(decoding: savedData, as: UTF8.self).contains(token))
+            }
+            let reopened = AskLocalEngine(directory: URL(fileURLWithPath: "/unused"), snapshotStore: store)
+            let reloaded = try await reopened.conversation(id: "numeric", token: "")
+            XCTAssertEqual(reloaded.run?.agentBinding?.routeEvidence, evidence)
+            let lookup = try await reopened.runRoute(conversationId: "numeric", runId: "first")
+            if AskAgentBinding(raw: evidence).isWellFormed {
+                guard case .found = lookup else { return XCTFail() }
+            } else {
+                XCTAssertEqual(lookup, .unavailable)
+            }
+            var conflict = saved
+            conflict.conversation.run?
+                .agentBinding = try AskAgentBinding(raw: raw("{\"id\":\"typeflux.default\",\"version\":1}"))
+            do { try await reopened.persist(conflict); XCTFail() } catch {}
+            XCTAssertEqual(store.data, savedData)
+        }
+    }
+
+    func testExactOpaqueArchivesAndArchiveCreationFromPreservedBinding() async throws {
+        let near = "1.000000000000000000000000000000000000000000000001"
+        for opaque in [
+            near,
+            "12345678901234567890123456789012345678901234567890",
+            "[\(near)]",
+            "{\"version\":\(near),\"runs\":{}}"
+        ] {
+            var record = try AskLocalRecord(conversation: AskConversation(id: "opaque", title: "before", revision: 1,
+                                                                          updatedAt: Date(), messages: [],
+                                                                          run: routeRun()))
+            record.agentRoutes = try archive(opaque)
+            let store = RouteSnapshotStore()
+            store.data = try record.encodeSnapshot()
+            let engine = AskLocalEngine(directory: URL(fileURLWithPath: "/unused"), snapshotStore: store)
+            _ = try await engine.updateTitle(id: "opaque", request: .init(action: "rename", title: "after"), token: "")
+            let reloaded = try AskLocalRecord.decodeSnapshot(XCTUnwrap(store.data))
+            XCTAssertEqual(reloaded.agentRoutes?.raw, try raw(opaque))
+            let token = opaque.contains(near) ? near : opaque
+            XCTAssertTrue(try String(decoding: XCTUnwrap(store.data), as: UTF8.self).contains(token))
+        }
+        var record = try AskLocalRecord(conversation: AskConversation(
+            id: "legacy-numeric",
+            title: "before",
+            revision: 1,
+            updatedAt: Date(),
+            messages: [],
+            run: routeRun()
+        ))
+        let evidence = try raw("{\"id\":\"typeflux.default\",\"version\":\(near)}")
+        record.conversation.run?.agentBinding = AskAgentBinding(raw: evidence)
+        let store = RouteSnapshotStore()
+        store.data = try record.encodeSnapshot()
+        let engine = AskLocalEngine(directory: URL(fileURLWithPath: "/unused"), snapshotStore: store)
+        _ = try await engine.updateTitle(
+            id: "legacy-numeric",
+            request: .init(action: "rename", title: "after"),
+            token: ""
+        )
+        let saved = try AskLocalRecord.decodeSnapshot(XCTUnwrap(store.data))
+        XCTAssertEqual(
+            saved.agentRoutes,
+            try AskRunRouteArchive.merging(cached: nil, incoming: nil, previous: nil, current: record.conversation.run)
+        )
+        let exact = try AskAgentBinding(raw: raw("{\"id\":\"typeflux.default\",\"version\":1}"))
+        record.conversation.run?.agentBinding = exact
+        do { try await engine.persist(record); XCTFail() } catch {}
     }
 
     func testDecisionTableAndLosslessValues() throws {

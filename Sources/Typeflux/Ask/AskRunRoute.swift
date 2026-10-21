@@ -20,8 +20,10 @@ enum AskRunRouteLookup: Equatable, Sendable {
 
 /// Local JSON value semantics, including scalar/null roots. Do not use the sync
 /// JSONValue implementation, whose serialization assumes object/array roots.
+/// Foundation Codable is a compatibility adapter, not a numeric token source.
+/// Private snapshots must use decodeSnapshot/encodeSnapshot and the raw codec.
 indirect enum AskRouteJSON: Codable, Equatable, Sendable {
-    case null, bool(Bool), number(Decimal), wideNumber(Double), string(String), array([Self]), object([String: Self])
+    case null, bool(Bool), number(AskRouteNumber), string(String), array([Self]), object([String: Self])
 
     init(from decoder: Decoder) throws {
         let value = try decoder.singleValueContainer()
@@ -30,15 +32,15 @@ indirect enum AskRouteJSON: Codable, Equatable, Sendable {
         } else if let item = try? value.decode(Bool.self) {
             self = .bool(item)
         } else if let item = try? value.decode(Decimal.self) {
-            self = .number(item)
+            self = .number(.init(NSDecimalNumber(decimal: item).stringValue))
         } else if let item = try? value.decode(Double.self) {
-            self = .wideNumber(item)
+            self = .number(.init(String(item)))
         } else if let item = try? value.decode(String.self) {
             self = .string(item)
         } else if let item = try? value.decode([Self].self) {
             self = .array(item)
         } else {
-            self = .object(try value.decode([String: Self].self))
+            self = try .object(value.decode([String: Self].self))
         }
     }
 
@@ -47,8 +49,15 @@ indirect enum AskRouteJSON: Codable, Equatable, Sendable {
         switch self {
         case .null: try value.encodeNil()
         case let .bool(item): try value.encode(item)
-        case let .number(item): try value.encode(item)
-        case let .wideNumber(item): try value.encode(item)
+        case let .number(item):
+            if let number = Decimal(string: item.token),
+               AskRouteNumber(NSDecimalNumber(decimal: number).stringValue) == item {
+                try value.encode(number)
+            } else if let number = Double(item.token), number.isFinite, AskRouteNumber(String(number)) == item {
+                try value.encode(number)
+            } else {
+                throw CocoaError(.coderInvalidValue)
+            }
         case let .string(item): try value.encode(item)
         case let .array(item): try value.encode(item)
         case let .object(item): try value.encode(item)
@@ -87,9 +96,7 @@ struct AskRunRouteArchive: Codable, Equatable, Sendable {
 
     private static func route(_ run: AskRun?) throws -> AskRunRoute? {
         guard let run else { return nil }
-        let raw = try run.agentBinding.map {
-            try JSONDecoder().decode(AskRouteJSON.self, from: JSONEncoder().encode($0))
-        }
+        let raw = run.agentBinding?.routeEvidence
         guard !run.id.isEmpty, run.id.utf8.count <= 128 else { throw conflict }
         return .init(runID: run.id, deviceID: run.deviceId, binding: .effectiveBinding(raw))
     }
@@ -149,8 +156,7 @@ struct AskRunRouteArchive: Codable, Equatable, Sendable {
         } else if let snapshot, snapshot.runID == runID {
             route = snapshot; source = .currentSnapshot
         } else { return .unrecorded }
-        guard let binding = try? JSONDecoder().decode(AskAgentBinding.self, from: JSONEncoder().encode(route.binding)),
-              binding.isWellFormed else { return .unavailable }
+        guard AskAgentBinding(raw: route.binding).isWellFormed else { return .unavailable }
         return .found(route, source: source)
     }
 }

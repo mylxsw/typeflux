@@ -1,0 +1,13 @@
+{
+  "base": "43ab96cb9d57f7d0d9cf68882df526dc7de839a4",
+  "sources": {
+    "Sources/Typeflux/Ask/AskAgentBinding.swift": "b391f31263ee66fe14ec8c12a1a22db0a72ff1ccb76f4b78b49d8bdd50012f31",
+    "Sources/Typeflux/Ask/AskRunRoute.swift": "6855a80e00b1ae0a6f7f53ccbcf41edf5b6d3b2e0a05667e1a748066d7e20d8f",
+    "Sources/Typeflux/Ask/AskRouteJSONCodec.swift": "a43046d180124ee458ff9ac7b04a84c05bf9d2ddc2a51af2df6485cc49f966fb",
+    "Sources/Typeflux/Ask/Local/AskLocalEngine.swift": "eeeb59562b2938e976bbbe0b8e7cd1c693e0d6a8ff21550fa3a7e41b5c0fce8d"
+  },
+  "artifacts": {
+    "initial-scope.lcov.gz": "9038daaff6ae25b8bca4f579697d488f28efa7eb90c015a2cb70f61a72bc2a1a",
+    "retry-scope.lcov.gz": "21c95185f65915b07e34ec1dbf22bc5c0b0f0ca7946dcf2ed98aabfe0fe8f7d1"
+  }
+}

@@ -1,0 +1,12 @@
+Command: ["python3", "-m", "unittest", "discover", "-s", "docs/validation/gul-457", "-p", "test_*.py", "-v"]
+test_foreign_checkout_and_relative_paths (test_changed_coverage.PortableCoverageTests.test_foreign_checkout_and_relative_paths) ... ok
+test_go_module_path_rejection (test_changed_coverage.PortableCoverageTests.test_go_module_path_rejection) ... ok
+test_maximum_across_records_and_profiles (test_changed_coverage.PortableCoverageTests.test_maximum_across_records_and_profiles) ... ok
+test_reject_ambiguous_unrelated_and_traversal (test_changed_coverage.PortableCoverageTests.test_reject_ambiguous_unrelated_and_traversal) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.001s
+
+OK
+
+Exit: 0; wall time: 0.06s

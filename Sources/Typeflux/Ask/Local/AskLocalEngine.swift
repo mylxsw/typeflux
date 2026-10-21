@@ -103,9 +103,8 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     private func loadAll() {
         guard !loaded else { return }
         loaded = true
-        let decoder = AskCoding.decoder()
         snapshotStore.forEachSnapshot { data in
-            if var record = try? decoder.decode(AskLocalRecord.self, from: data) {
+            if var record = try? AskLocalRecord.decodeSnapshot(data) {
                 // A persisted engine step may have dispatched a built-in request before exit.
                 // Inspect/cancel it; never infer that a fresh process can safely repeat it.
                 if (try? AskAgentBinding.resolve(record.conversation.run?.agentBinding)) != nil, record.conversation.run?.status == "running" {
@@ -150,7 +149,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         record.agentRoutes = try AskRunRouteArchive.merging(cached: cached?.agentRoutes, incoming: record.agentRoutes,
             previous: cached?.conversation.run, current: record.conversation.run)
         if !temporaryIDs.contains(record.conversation.id) {
-            try snapshotStore.writeSnapshot(AskCoding.encoder().encode(record), id: record.conversation.id)
+            try snapshotStore.writeSnapshot(record.encodeSnapshot(), id: record.conversation.id)
         }
         var retained = record
         for index in retained.conversation.messages.indices { retained.conversation.messages[index].harness?.outcome?.preparedImages = [:] }
