@@ -53,6 +53,43 @@ final class RingHotkeyTests: XCTestCase {
         XCTAssertTrue(result.canSave)
     }
 
+    func testModifierBindingSavesPersistsAndRoutesThroughEventService() async {
+        let store = SettingsStore(defaults: defaults)
+        let model = HotkeySettingsModel(settingsStore: store, workflows: AskWorkflowStore(settings: store, root: FileManager.default.temporaryDirectory.appendingPathComponent(suiteName)))
+        XCTAssertNil(model.setHotkey(.rightOptionActivation, for: .ring))
+        XCTAssertEqual(SettingsStore(defaults: defaults).actionHotkeys[.ring]?.signature,
+                       HotkeyBinding.rightOptionActivation.signature)
+        let service = EventTapHotkeyService(settingsStore: store)
+        service.refreshBindings()
+        var events: [String] = []
+        service.onShortcutRequested = { if $0 == .action(.ring) { events.append("press") } }
+        service.onShortcutReleased = { if $0 == .action(.ring) { events.append("release") } }
+        service.onShortcutCancelled = { if $0 == .action(.ring) { events.append("cancel") } }
+        let flags = HotkeyBinding.rightOptionActivation.modifierFlags
+        func send(_ type: HotkeyPhysicalEventType, _ key: Int, _ value: UInt) -> Bool {
+            service.processPhysicalEvent(eventType: type, keyCode: key, modifierFlags: value,
+                                         isRepeat: false, canConsume: true, timestamp: 1)
+        }
+        XCTAssertTrue(send(.flagsChanged, 61, flags))
+        XCTAssertTrue(send(.flagsChanged, 61, 0))
+        XCTAssertTrue(send(.flagsChanged, 61, flags))
+        XCTAssertFalse(send(.keyDown, 8, flags), "the user's normal shortcut must pass through")
+        _ = send(.keyUp, 8, flags)
+        XCTAssertTrue(send(.flagsChanged, 61, 0))
+        _ = send(.flagsChanged, 61, flags)
+        var configuration = store.ringConfiguration
+        configuration.enabled = false
+        store.ringConfiguration = configuration
+        service.refreshBindings()
+        XCTAssertFalse(send(.flagsChanged, 61, 0))
+        XCTAssertFalse(send(.flagsChanged, 61, flags))
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+        XCTAssertEqual(events, ["press", "release", "press", "cancel", "press", "cancel"])
+        service.stop()
+    }
+
     func testPoolReportsPressAndReleaseOfRegisteredShortcuts() async throws {
         let pool = SystemHotkeyPool(name: "RingHotkeyTests")
         defer { pool.unregisterAll() }

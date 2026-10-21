@@ -95,15 +95,18 @@ struct RingSettingsViewTests {
         var selected: [String] = []
         menu.onSelect = { selected.append($0) }
         menu.configure(items: [], style: .classic, centerTitle: "")
-        menu.show(at: CGPoint(x: 400, y: 400))
+        menu.show(at: CGPoint(x: 400, y: 400), takesKeyboardFocus: true)
         #expect(!menu.isVisible, "an empty ring never opens")
         menu.configure(items: [
             RingMenuItem(id: "a", label: "Notes", symbol: "note.text"),
             RingMenuItem(id: "b", label: "Finder", symbol: "app", bundleIdentifier: "com.apple.finder"),
             RingMenuItem(id: "c", label: "Gone", symbol: "app", bundleIdentifier: "com.example.not-installed")
         ], style: .liquidGlass, centerTitle: "Go")
-        menu.show(at: CGPoint(x: 400, y: 400))
+        menu.show(at: CGPoint(x: 400, y: 400), takesKeyboardFocus: false)
         #expect(menu.isVisible)
+        #expect(!menu.hasKeyboardFocus)
+        menu.focusKeyboard()
+        #expect(menu.hasKeyboardFocus)
         // Where the test pointer is decides whether a slice is under it; either way the ring closes.
         _ = menu.activatePointedItem()
         #expect(selected.count <= 1)

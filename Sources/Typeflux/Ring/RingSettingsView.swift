@@ -89,7 +89,7 @@ struct RingSettingsView: View {
         if isRecording { return stopRecording() }
         isRecording = true
         hotkeyNotice = nil
-        recorder.start { binding in
+        recorder.start(supportsAuxiliaryBindings: true) { binding in
             isRecording = false
             hotkeyNotice = shortcuts.setHotkey(binding, for: .ring)
             let usedByMacOS = HotkeyConflictChecker.isCommonSystemShortcut(binding)

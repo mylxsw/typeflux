@@ -18,7 +18,8 @@ protocol RingMenuPresenting: AnyObject {
     /// Called with the item id after the closing animation.
     var onSelect: (String) -> Void { get set }
     func configure(items: [RingMenuItem], style: RingStyle, centerTitle: String)
-    func show(at point: CGPoint)
+    func show(at point: CGPoint, takesKeyboardFocus: Bool)
+    func focusKeyboard()
     func dismiss()
     /// Runs the slice under the pointer; false when the pointer is in the middle.
     func activatePointedItem() -> Bool
@@ -74,7 +75,8 @@ final class RingController {
         case .show:
             let front = frontmostApplication()
             previousApplication = front?.processIdentifier == ProcessInfo.processInfo.processIdentifier ? nil : front
-            menu.show(at: location)
+            let takesFocus = settingsStore.actionHotkeys[.ring]?.isSingleModifierTrigger != true
+            menu.show(at: location, takesKeyboardFocus: takesFocus)
         case .dismiss:
             menu.dismiss()
         case .ignore:
@@ -83,9 +85,18 @@ final class RingController {
     }
 
     func pressEnded() {
-        guard gesture.pressEnded(isVisible: menu.isVisible, at: pointerLocation()) == .activate else { return }
+        guard gesture.isHeld else { return }
+        guard gesture.pressEnded(isVisible: menu.isVisible, at: pointerLocation()) == .activate else {
+            if menu.isVisible { menu.focusKeyboard() }
+            return
+        }
         // Let go in the middle: nothing is under the pointer, so the ring just closes.
         if !menu.activatePointedItem() { menu.dismiss() }
+    }
+
+    func cancelPress() {
+        gesture.reset()
+        if menu.isVisible { menu.dismiss() }
     }
 
     private func select(_ id: String) {
@@ -121,6 +132,8 @@ final class OpieRingMenu: RingMenuPresenting {
         menu.isVisible
     }
 
+    var hasKeyboardFocus: Bool { menu.hasKeyboardFocus }
+
     func configure(items: [RingMenuItem], style: RingStyle, centerTitle: String) {
         menu.updateItems(items.map(Self.menuItem))
         menu.setStyle(Self.style(style))
@@ -128,8 +141,12 @@ final class OpieRingMenu: RingMenuPresenting {
         if !items.isEmpty { menu.prepare() }
     }
 
-    func show(at point: CGPoint) {
-        menu.show(at: point)
+    func show(at point: CGPoint, takesKeyboardFocus: Bool = true) {
+        menu.show(at: point, takesKeyboardFocus: takesKeyboardFocus)
+    }
+
+    func focusKeyboard() {
+        menu.focusKeyboard()
     }
 
     func dismiss() {

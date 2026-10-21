@@ -39,6 +39,8 @@ protocol HotkeyService: AnyObject {
     var onShortcutRequested: ((HotkeyTarget) -> Void)? { get set }
     /// The key of a feature shortcut was let go; the ring runs the slice under the pointer.
     var onShortcutReleased: ((HotkeyTarget) -> Void)? { get set }
+    /// A held shortcut became a chord or was disabled; close without executing.
+    var onShortcutCancelled: ((HotkeyTarget) -> Void)? { get set }
     var onError: ((String) -> Void)? { get set }
 
     func start()
@@ -55,5 +57,6 @@ extension HotkeyService {
     var onScreenshotRequested: (() -> Void)? { get { nil } set {} }
     var onShortcutRequested: ((HotkeyTarget) -> Void)? { get { nil } set {} }
     var onShortcutReleased: ((HotkeyTarget) -> Void)? { get { nil } set { _ = newValue } }
+    var onShortcutCancelled: ((HotkeyTarget) -> Void)? { get { nil } set { _ = newValue } }
     func settleActivationGesture() {}
 }

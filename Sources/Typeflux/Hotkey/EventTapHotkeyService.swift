@@ -163,6 +163,7 @@ final class EventTapHotkeyService: HotkeyService {
     var onScreenshotRequested: (() -> Void)?
     var onShortcutRequested: ((HotkeyTarget) -> Void)?
     var onShortcutReleased: ((HotkeyTarget) -> Void)?
+    var onShortcutCancelled: ((HotkeyTarget) -> Void)?
     var onError: ((String) -> Void)?
 
     private let settingsStore: SettingsStore
@@ -174,19 +175,28 @@ final class EventTapHotkeyService: HotkeyService {
     private var historyBinding: HotkeyBinding?
     private var screenshotBinding: HotkeyBinding?
 
-    private func refreshBindings() {
+    func refreshBindings() {
         activationBinding = settingsStore.activationHotkey
         auxiliaryBinding = settingsStore.auxiliaryHotkey
         askBinding = settingsStore.askHotkey
         personaBinding = settingsStore.personaHotkey
         historyBinding = settingsStore.historyHotkey
         screenshotBinding = settingsStore.screenshotHotkey
+        let configuredRingBinding = Self.shortcutBindings(in: settingsStore)[.action(.ring)]
+        let nextRingBinding = configuredRingBinding?.isSingleModifierTrigger == true ? configuredRingBinding : nil
+        if ringModifierBinding?.signature != nextRingBinding?.signature {
+            if ringModifier.isActive { dispatchRingModifierEvent(.cancelled) }
+            ringModifier = RingModifierHotkey()
+        }
+        ringModifierBinding = nextRingBinding
     }
 
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
     private var globalMonitor: Any?
     private var localMonitor: Any?
+    private var ringModifierBinding: HotkeyBinding?
+    private var ringModifier = RingModifierHotkey()
     private var arbiter = HotkeyGestureArbiter()
     private var pendingModifierActivationWorkItem: DispatchWorkItem?
     private var accessibilityRetryWorkItem: DispatchWorkItem?
@@ -272,6 +282,9 @@ final class EventTapHotkeyService: HotkeyService {
         shortcutPool.unregisterAll()
         arbiter = HotkeyGestureArbiter()
         recordingStopGesture = RecordingStopGesture()
+        if ringModifier.isActive { dispatchRingModifierEvent(.cancelled) }
+        ringModifier = RingModifierHotkey()
+        ringModifierBinding = nil
     }
 
     private func registerSystemHotkeys() {
@@ -404,7 +417,7 @@ final class EventTapHotkeyService: HotkeyService {
         return shouldConsume ? nil : Unmanaged.passUnretained(event)
     }
 
-    private func processPhysicalEvent(
+    func processPhysicalEvent(
         eventType: HotkeyPhysicalEventType?,
         keyCode: Int,
         modifierFlags: UInt,
@@ -414,12 +427,18 @@ final class EventTapHotkeyService: HotkeyService {
     ) -> Bool {
         guard let eventType else { return false }
 
+        if let event = ringModifier.handle(type: eventType, keyCode: keyCode, flags: modifierFlags,
+                                           binding: ringModifierBinding) {
+            dispatchRingModifierEvent(event)
+        }
+        let consumesRingModifier = eventType == .flagsChanged && keyCode == ringModifierBinding?.keyCode
+
         let activationHotkey = activationBinding
         let askHotkey = askBinding
         let personaHotkey = personaBinding
         let historyHotkey = historyBinding
         let screenshotHotkey = screenshotBinding
-        let shouldConsume = canConsume && arbiter.shouldConsume(
+        let shouldConsume = canConsume && (consumesRingModifier || arbiter.shouldConsume(
             eventType: eventType,
             keyCode: keyCode,
             modifierFlags: modifierFlags,
@@ -429,7 +448,7 @@ final class EventTapHotkeyService: HotkeyService {
             historyHotkey: historyHotkey,
             screenshotHotkey: screenshotHotkey,
             auxiliaryHotkey: auxiliaryBinding
-        )
+        ))
 
         let stopEnabled = recordingStopEnabled?() == true
         let stopRequested = recordingStopGesture.handle(
@@ -496,6 +515,16 @@ final class EventTapHotkeyService: HotkeyService {
         }
 
         return shouldConsume
+    }
+
+    private func dispatchRingModifierEvent(_ event: RingModifierHotkey.Event) {
+        DispatchQueue.main.async { [weak self] in
+            switch event {
+            case .began: self?.onShortcutRequested?(.action(.ring))
+            case .ended: self?.onShortcutReleased?(.action(.ring))
+            case .cancelled: self?.onShortcutCancelled?(.action(.ring))
+            }
+        }
     }
 
     private func filteredFlags(_ flags: NSEvent.ModifierFlags) -> UInt {

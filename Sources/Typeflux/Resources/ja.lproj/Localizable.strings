@@ -4627,7 +4627,7 @@
 "hotkeys.keyword.sheet.takeKeys" = "このキーを使い、元の割り当てを解除";
 "hotkeys.keyword.sheet.shortcutHint" = "⌘・⌥・⌃ + キー、または F1–F19。";
 "hotkeys.conflict.usedBy" = "「%@」で使用中です。";
-"hotkeys.conflict.gesture" = "修飾キーのみやダブルタップは音声入力用です。";
+"hotkeys.conflict.gesture" = "この操作ではこのキー操作を使用できません。別のショートカットを選んでください。";
 "hotkeys.conflict.needsModifier" = "入力中に誤動作しないよう ⌘、⌥、⌃ のいずれかを含めてください（F1–F19 は可）。";
 "hotkeys.conflict.system" = "macOS やよく使うアプリのショートカットです。設定すると Typeflux が優先されます。";
 "hotkeys.recording" = "キーを押してください…";
@@ -6420,7 +6420,7 @@
 "ring.enabled" = "リングを有効にする";
 "ring.hotkey.title" = "ショートカット";
 "ring.hotkey.required" = "ショートカットを設定するとリングを有効にできます。";
-"ring.hotkey.detail" = "ショートカットを押し続ける：ポインタの位置にリングが開きます。操作の方向へ動かして離すと実行、中央に戻して離すとキャンセルします。\nショートカットを軽く押す：リングは開いたままになります。クリック、1〜8 キー、または矢印キーと ↩ で選び、Esc かもう一度ショートカットで閉じます。";
+"ring.hotkey.detail" = "左右の修飾キーや Fn を単独で使用できます。\nショートカットを押し続ける：ポインタの位置にリングが開きます。操作の方向へ動かして離すと実行、中央に戻して離すとキャンセルします。\nショートカットを軽く押す：リングは開いたままになります。クリック、1〜8 キー、または矢印キーと ↩ で選び、Esc かもう一度ショートカットで閉じます。";
 "ring.actions.title" = "操作";
 "ring.actions.reset" = "デフォルトに戻す";
 "ring.actions.add" = "操作を追加";

@@ -180,7 +180,7 @@ struct HotkeySettingsView: View {
 
     private func startRecording(_ row: HotkeyRow) {
         recordingTarget = row.target
-        let supportsAuxiliary = row.target == .builtIn(.auxiliary)
+        let supportsAuxiliary = row.target == .builtIn(.auxiliary) || row.target == .action(.ring)
         recorder.start(supportsAuxiliaryBindings: supportsAuxiliary) { binding in
             recordingTarget = nil
             apply(binding, to: row.target)

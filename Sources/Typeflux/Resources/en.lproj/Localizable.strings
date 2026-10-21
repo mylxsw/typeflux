@@ -4648,7 +4648,7 @@
 "hotkeys.keyword.sheet.takeKeys" = "Use these keys and clear the original binding";
 "hotkeys.keyword.sheet.shortcutHint" = "⌘, ⌥ or ⌃ + a key, or F1–F19.";
 "hotkeys.conflict.usedBy" = "Already used by %@.";
-"hotkeys.conflict.gesture" = "A modifier alone or a double tap is reserved for voice input.";
+"hotkeys.conflict.gesture" = "This action does not support this key gesture. Choose another shortcut.";
 "hotkeys.conflict.needsModifier" = "Include ⌘, ⌥ or ⌃ so typing never sets it off (F1–F19 are fine).";
 "hotkeys.conflict.system" = "macOS or common apps use this shortcut; Typeflux will take it over.";
 "hotkeys.recording" = "Press keys…";
@@ -6420,7 +6420,7 @@
 "ring.enabled" = "Enable Ring";
 "ring.hotkey.title" = "Shortcut";
 "ring.hotkey.required" = "Set a shortcut to enable the ring.";
-"ring.hotkey.detail" = "Hold the shortcut: the ring opens at the pointer. Move toward an action and let go to run it; let go in the middle to cancel.\nTap the shortcut: the ring stays open. Click an action, press 1–8, or use the arrow keys and Return. Esc or the shortcut again closes it.";
+"ring.hotkey.detail" = "You can use a single modifier key, including left/right variants and Fn. \nHold the shortcut: the ring opens at the pointer. Move toward an action and let go to run it; let go in the middle to cancel.\nTap the shortcut: the ring stays open. Click an action, press 1–8, or use the arrow keys and Return. Esc or the shortcut again closes it.";
 "ring.actions.title" = "Actions";
 "ring.actions.reset" = "Restore Defaults";
 "ring.actions.add" = "Add Action";

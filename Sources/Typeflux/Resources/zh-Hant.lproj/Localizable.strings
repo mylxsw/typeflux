@@ -4634,7 +4634,7 @@
 "hotkeys.keyword.sheet.takeKeys" = "使用此按鍵，並清除原綁定";
 "hotkeys.keyword.sheet.shortcutHint" = "⌘、⌥、⌃ + 按鍵，或 F1–F19。";
 "hotkeys.conflict.usedBy" = "已被「%@」使用。";
-"hotkeys.conflict.gesture" = "不能只用修飾鍵或連按兩次，這類手勢留給語音輸入。";
+"hotkeys.conflict.gesture" = "此操作不支援這種按鍵方式，請換一個快速鍵。";
 "hotkeys.conflict.needsModifier" = "需要包含 ⌘、⌥ 或 ⌃，否則打字時會誤觸發（F1–F19 除外）。";
 "hotkeys.conflict.system" = "這是 macOS 或常用應用程式的快捷鍵，設定後會覆蓋它們。";
 "hotkeys.recording" = "請按鍵…";
@@ -6422,7 +6422,7 @@
 "ring.enabled" = "啟用圓環";
 "ring.hotkey.title" = "快速鍵";
 "ring.hotkey.required" = "設定快速鍵後即可啟用圓環。";
-"ring.hotkey.detail" = "按住快速鍵：圓環出現在滑鼠處，移向某個操作後放開即執行，移回中心再放開則取消。\n輕按快速鍵：圓環保持打開，可點按、按數字鍵 1–8 或方向鍵 + ↩ 選擇；Esc 或再按一次快速鍵關閉。";
+"ring.hotkey.detail" = "支援單個修飾鍵，可區分左右鍵，也支援 Fn。\n按住快速鍵：圓環出現在滑鼠處，移向某個操作後放開即執行，移回中心再放開則取消。\n輕按快速鍵：圓環保持打開，可點按、按數字鍵 1–8 或方向鍵 + ↩ 選擇；Esc 或再按一次快速鍵關閉。";
 "ring.actions.title" = "操作";
 "ring.actions.reset" = "恢復預設";
 "ring.actions.add" = "新增操作";

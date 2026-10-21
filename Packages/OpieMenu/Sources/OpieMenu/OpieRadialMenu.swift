@@ -13,6 +13,7 @@ public final class OpieRadialMenu {
     public private(set) var style: OpieMenuStyle
     public private(set) var lastPresentationCenter: NSPoint?
     public var isVisible: Bool { panel?.isVisible == true }
+    public var hasKeyboardFocus: Bool { panel?.isKeyWindow == true }
 
     private let size = NSSize(width: 620, height: 620)
     private var panel: MenuPanel?
@@ -80,7 +81,7 @@ public final class OpieRadialMenu {
     }
 
     /// Opens at a global screen point. The panel stays inside the visible area of that screen.
-    public func show(at screenPoint: NSPoint = NSEvent.mouseLocation) {
+    public func show(at screenPoint: NSPoint = NSEvent.mouseLocation, takesKeyboardFocus: Bool = true) {
         guard !isVisible, !items.isEmpty else { return }
         onWillShow?()
         guard !items.isEmpty else { return }
@@ -113,13 +114,19 @@ public final class OpieRadialMenu {
         let surface = RadialMenuSurface(frame: NSRect(origin: .zero, size: size), menu: view)
         panel.contentView = surface
         panel.orderFrontRegardless()
-        panel.makeKey()
+        if takesKeyboardFocus { panel.makeKey() }
         self.panel = panel
         self.view = view
         self.surface = surface
         isDismissing = false
         installEventMonitors()
         view.animateIn()
+    }
+
+    /// Enables keyboard navigation after a modifier-only tap, without stealing focus during a hold.
+    public func focusKeyboard() {
+        guard !isDismissing else { return }
+        panel?.makeKey()
     }
 
     public func toggle(at screenPoint: NSPoint = NSEvent.mouseLocation) {
@@ -235,7 +242,7 @@ public final class OpieRadialMenu {
             return event
         }
         localKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self, self.isVisible, !self.isDismissing else { return event }
+            guard let self, self.isVisible, !self.isDismissing, self.panel?.isKeyWindow == true else { return event }
             switch event.keyCode {
             case 53: self.dismiss(); return nil
             case 123, 126: self.moveSelection(-1); return nil

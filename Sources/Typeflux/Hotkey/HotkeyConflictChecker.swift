@@ -5,7 +5,7 @@ import Foundation
 /// keyword shortcuts. Pure, so the rules are tested without the settings window.
 enum HotkeyConflictChecker {
     enum Problem: Equatable {
-        /// A modifier alone or a double tap: these gestures belong to voice input.
+        /// A gesture that this target does not support.
         case gesture
         /// No ⌘, ⌥ or ⌃ (and not an F key): it would fire while typing.
         case needsModifier
@@ -30,7 +30,7 @@ enum HotkeyConflictChecker {
     /// Checks `binding` for `target` against every other assigned shortcut.
     static func check(_ binding: HotkeyBinding, for target: HotkeyTarget,
                       among assignments: [HotkeyTarget: HotkeyBinding]) -> Result {
-        if !allowsGestures(target) {
+        if !allowsGestures(target), !(target == .action(.ring) && binding.isSingleModifierTrigger) {
             if binding.isModifierOnlyTrigger || binding.isModifierDoubleTapTrigger || (binding.pressCount ?? 1) > 1
                 || binding.modifierKeyCodes != nil || HotkeyBinding.modifierFlag(for: binding.keyCode) != 0 {
                 return Result(problem: .gesture)
@@ -50,7 +50,12 @@ enum HotkeyConflictChecker {
                       among assignments: [HotkeyTarget: HotkeyBinding]) -> HotkeyTarget? {
         orderedTargets(assignments.keys).first { other in
             guard other != target, let existing = assignments[other] else { return false }
-            return existing.signature == binding.signature || existing.conflicts(with: binding)
+            // A ring press must not also become another action on the second tap.
+            let sharesRingModifier = (target == .action(.ring) && binding.isSingleModifierTrigger
+                || other == .action(.ring) && existing.isSingleModifierTrigger)
+                && binding.physicalModifierKeys == existing.physicalModifierKeys
+                && binding.modifierFlags == existing.modifierFlags
+            return sharesRingModifier || existing.signature == binding.signature || existing.conflicts(with: binding)
         }
     }
 

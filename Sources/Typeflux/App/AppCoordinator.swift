@@ -210,6 +210,9 @@ final class AppCoordinator {
         di.hotkeyService.onShortcutReleased = { [weak self] target in
             if target == .action(.ring) { self?.ringController?.pressEnded() }
         }
+        di.hotkeyService.onShortcutCancelled = { [weak self] target in
+            if target == .action(.ring) { self?.ringController?.cancelPress() }
+        }
         startRing(screenshotCoordinator: screenshotCoordinator)
 
         statusBarController = StatusBarController(

@@ -91,6 +91,13 @@ struct HotkeyBinding: Codable, Equatable, Identifiable {
         }
     }
 
+    /// A single physical modifier, including left/right variants, without a double tap.
+    var isSingleModifierTrigger: Bool {
+        let flag = Self.modifierFlag(for: keyCode)
+        return flag != 0 && modifierFlags == flag && (pressCount ?? 1) == 1
+            && physicalModifierKeys == [keyCode]
+    }
+
     var physicalModifierKeys: [Int] {
         modifierKeyCodes ?? (Self.modifierFlag(for: keyCode) != 0 ? [keyCode] : [])
     }

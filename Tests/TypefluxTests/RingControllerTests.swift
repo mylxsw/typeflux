@@ -94,6 +94,29 @@ final class RingControllerTests: XCTestCase {
         withExtendedLifetime(controller) {}
     }
 
+    func testSingleModifierOnlyTakesKeyboardFocusAfterTap() {
+        store.setHotkey(.rightOptionActivation, for: .ring)
+        let controller = makeController()
+        controller.pressBegan()
+        XCTAssertFalse(menu.takesKeyboardFocus)
+        XCTAssertEqual(menu.keyboardFocusRequests, 0)
+        controller.pressEnded()
+        XCTAssertEqual(menu.keyboardFocusRequests, 1)
+    }
+
+    func testCancelledPressNeverRunsAndNextPressCanOpen() {
+        let controller = makeController()
+        controller.pressBegan()
+        pointer = CGPoint(x: 100, y: 160)
+        menu.pointed = store.ringConfiguration.actions[3].id.uuidString
+        controller.cancelPress()
+        controller.pressEnded()
+        XCTAssertFalse(menu.isVisible)
+        XCTAssertEqual(menu.activations, 0)
+        controller.pressBegan()
+        XCTAssertTrue(menu.isVisible)
+    }
+
     func testReleasingInTheMiddleCloses() {
         let controller = makeController()
         controller.pressBegan()
@@ -186,7 +209,13 @@ final class FakeRingMenu: RingMenuPresenting {
         self.centerTitle = centerTitle
     }
 
-    func show(at point: CGPoint) {
+    var takesKeyboardFocus = true
+    var keyboardFocusRequests = 0
+
+    func focusKeyboard() { keyboardFocusRequests += 1 }
+
+    func show(at point: CGPoint, takesKeyboardFocus: Bool) {
+        self.takesKeyboardFocus = takesKeyboardFocus
         shownAt.append(point)
         isVisible = true
     }
