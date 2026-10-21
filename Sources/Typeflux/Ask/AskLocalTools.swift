@@ -23,6 +23,9 @@ protocol AskToolExecuting {
     var generationRecoveryRoot: URL? { get }
     func bindConversation(_ id: String)
     func bindExecution(ownerId: String, conversationId: String, runId: String)
+    func bindExecution(ownerId: String, conversationId: String, runId: String, deviceId: String, persistent: Bool)
+    func shutdownCommandJobs() async
+    func observeCommandRun(ownerId: String, conversationId: String, runId: String?, active: Bool)
     func setExecutionDeadline(_ deadline: Date?, conversationId: String)
     func cancelProjects(conversationId: String?)
     func cancelProjectRun(_ scope: AskProjectScope)
@@ -50,6 +53,11 @@ protocol AskToolExecuting {
 }
 
 extension AskToolExecuting {
+    func bindExecution(ownerId: String, conversationId: String, runId: String, deviceId: String, persistent: Bool) {
+        bindExecution(ownerId: ownerId, conversationId: conversationId, runId: runId)
+    }
+    func shutdownCommandJobs() async {}
+    func observeCommandRun(ownerId: String, conversationId: String, runId: String?, active: Bool) {}
     var generationRecoveryRoot: URL? { nil }
     var browserWorkspace: AskBrowserWorkspace? { nil }
     func setExecutionDeadline(_: Date?, conversationId _: String) {}
@@ -110,6 +118,9 @@ final class AskLocalTools: AskToolExecuting {
     let projectModeEnabled: Bool
     let workspaces: AskConversationWorkspaceStore?
     var projectScopes: [String: AskProjectScope] = [:]
+    let commandJobs: AskCommandJobStore?
+    var commandDeviceId: String
+    var commandPersistence: [String: Bool] = [:]
     let projectRuntime: AskProjectRuntime?
     var projectLeases: [String: AskProjectRuntimeLease] = [:]
     var projectOutputBuffers: [String: AskTerminalTextBuffer] = [:]
@@ -136,8 +147,11 @@ final class AskLocalTools: AskToolExecuting {
          artifactStore: AskArtifactStore = AskArtifactStore(), artifactCreationEnabled: Bool = false,
          artifactPreviewEnabled: Bool = false,
          projectRuntime: AskProjectRuntime? = nil,
+         commandJobs: AskCommandJobStore? = nil,
          screenObservation: AskScreenObservation? = nil,
          owner: @escaping @MainActor () -> String = { GlobalSoulOwner.currentID }) {
+        self.commandJobs = commandJobs
+        commandDeviceId = settings?.defaults.string(forKey: "ask.deviceId") ?? UUID().uuidString
         self.registry = registry; self.settings = settings
         self.screenObservation = screenObservation ?? AskScreenObservation()
         let store = AskObservationStore()
@@ -238,6 +252,7 @@ final class AskLocalTools: AskToolExecuting {
         }
         if settings?.askCodeExecutionEnabled == true, let code = sandbox.definition() { result.append(code) }
         if settings?.askCodeExecutionEnabled == true { result.append(AskHostCommand.definition) }
+        if commandJobs != nil { result.append(AskCommandJobRequest.definition(allowStart: settings?.askCodeExecutionEnabled == true)) }
         if let skill = skills.definition(enabledSkills) { result.append(skill) }
         if workflowAuthoringEnabled { result += Self.workflowChatDefinitions }
         result.append(AskMemoryNoteStore.definition)
@@ -294,7 +309,9 @@ final class AskLocalTools: AskToolExecuting {
         case ("project_terminal", _): return ["status", "output"].contains(action) ? .read : .write
         case ("project_files", _): return ["list", "read", "review", "export"].contains(action) ? .read : .write
         case (AskNotebookTool.name, _): return AskNotebookTool.risk(action: action)
-        case ("run_command", _): return .destructive
+        case ("command_job", "status"), ("command_job", "logs"): return .read
+        case ("command_job", "stop"): return .write
+        case ("command_job", _), ("run_command", _): return .destructive
         case ("computer", _), ("browser", _), ("run_code", _), ("memory", _): return .write
         default: return .destructive
         }
@@ -401,7 +418,7 @@ final class AskLocalTools: AskToolExecuting {
         }
         let args = try Self.jsonArguments(call.function.arguments)
         switch call.function.name {
-        case "artifact", "project_files", "project_terminal", "generate_image", "run_command":
+        case "artifact", "project_files", "project_terminal", "generate_image", "run_command", "command_job":
             throw AskProjectError.denied // Requires the approved dispatch entry point.
         case "computer", "browser":
             return try await executeAutomation(call.function.name, args: args, conversationId: conversationId)

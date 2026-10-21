@@ -19,6 +19,7 @@ extension AskLocalTools {
         var summary: String
         var reusable = false
         switch call.function.name {
+        case "command_job": return try commandJobBinding(call, conversationId: conversationId)
         case "generate_image": return try imageGenerationBinding(args)
         case "project_terminal": return try terminalBinding(call, conversationId: conversationId)
         case "artifact":
@@ -134,6 +135,8 @@ extension AskLocalTools {
         }
         let args = try Self.jsonArguments(call.function.arguments)
         switch call.function.name {
+        case "command_job":
+            return try await executeCommandJob(call, conversationId: conversationId, authorize: authorize)
         case "generate_image":
             return try await executeImageGeneration(call, conversationId: conversationId, binding: binding, authorize: authorize)
         case "project_terminal":

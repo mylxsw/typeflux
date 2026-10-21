@@ -82,7 +82,7 @@ struct AskRecoveryPresentation: Equatable {
         let toolKey: String = switch unknownTool {
         case "browser": "ask.recovery.tool.browser"
         case "computer": "ask.recovery.tool.computer"
-        case "run_command": "ask.recovery.tool.command"
+        case "run_command", "command_job": "ask.recovery.tool.command"
         case "model": "ask.recovery.tool.model"
         default: "ask.recovery.tool.other"
         }

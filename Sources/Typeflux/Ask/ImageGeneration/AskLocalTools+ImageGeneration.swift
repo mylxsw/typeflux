@@ -148,6 +148,8 @@ extension AskLocalTools {
     }
 
     func deleteArtifacts(ownerId: String, conversationId: String) throws {
+        try commandJobs?.cancelConversation(owner: ownerId, conversation: conversationId)
+        commandPersistence[conversationId] = nil
         try AskImageGenerationRetention.delete(rootURL: AskImageGenerationRetention.root(for: artifactStore),
                                                ownerId: ownerId, conversationId: conversationId)
         try artifactStore.delete(ownerId: ownerId, conversationId: conversationId)
