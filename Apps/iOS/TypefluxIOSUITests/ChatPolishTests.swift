@@ -6,6 +6,96 @@ final class ChatPolishTests: XCTestCase {
     }
 
     @MainActor
+    func testAppIconSettingsShowAllStylesInBothLanguages() {
+        for language in ["en", "zh-Hans"] {
+            let app = XCUIApplication()
+            app.launchArguments = ["--synthetic-preview", "-AppleLanguages", "(\(language))"]
+            app.launch()
+            XCTAssertTrue(app.buttons["chat.sidebar.open"].waitForExistence(timeout: 10))
+            openHistory(app)
+            app.buttons["chat.account"].tap()
+            let entry = app.buttons["settings.appIcon"]
+            XCTAssertTrue(entry.waitForExistence(timeout: 5))
+            if !entry.isHittable { app.swipeUp() }
+            entry.tap()
+            let first = app.buttons["settings.appIcon.glassFrosted"]
+            XCTAssertTrue(first.waitForExistence(timeout: 5))
+            XCTAssertEqual(first.label, language == "en" ? "Frosted glass" : "磨砂玻璃")
+            screenshot(app, "gul447-icons-" + language)
+            let last = app.buttons["settings.appIcon.hairyPuppet"]
+            if !last.isHittable { app.swipeUp() }
+            XCTAssertTrue(last.exists)
+            XCTAssertEqual(last.label, language == "en" ? "Furry puppet" : "毛茸茸布偶")
+            screenshot(app, "gul447-icons-bottom-" + language)
+            app.terminate()
+        }
+    }
+
+    @MainActor
+    func testAppIconChangeUsesSystemResult() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--synthetic-preview", "-AppleLanguages", "(en)"]
+        app.launch()
+        XCTAssertTrue(app.buttons["chat.sidebar.open"].waitForExistence(timeout: 10))
+        openHistory(app)
+        app.buttons["chat.account"].tap()
+        app.buttons["settings.appearance.dark"].tap()
+        let entry = app.buttons["settings.appIcon"]
+        if !entry.isHittable { app.swipeUp() }
+        entry.tap()
+        let primary = app.buttons["settings.appIcon.primary"]
+        XCTAssertTrue(primary.waitForExistence(timeout: 5))
+        let black = app.buttons["settings.appIcon.black"]
+        let wasBlack = black.isSelected
+        let target = wasBlack ? primary : black
+        let wasPrimary = primary.isSelected
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let confirmation = springboard.alerts.firstMatch
+        target.tap()
+        let failure = app.alerts["Unable to change app icon"]
+        let result = NSPredicate { _, _ in confirmation.exists || target.isSelected || failure.exists }
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: result, object: nil)],
+                                     timeout: 15), .completed)
+        if failure.exists {
+            screenshot(app, "gul447-native-change-failed")
+            failure.buttons["OK"].tap()
+            XCTAssertFalse(target.isSelected)
+            XCTAssertEqual(primary.isSelected, wasPrimary)
+        } else {
+            // iOS can present a system-owned confirmation after applying the icon.
+            if confirmation.exists {
+                screenshot(springboard, "gul447-system-confirmation")
+                confirmation.buttons.firstMatch.tap()
+            }
+            let applied = NSPredicate { _, _ in target.isSelected }
+            XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: applied, object: nil)],
+                                         timeout: 5), .completed)
+            XCTAssertTrue(target.isSelected)
+            screenshot(app, "gul447-native-change-applied")
+            app.terminate()
+            app.launch()
+            XCTAssertTrue(app.buttons["chat.sidebar.open"].waitForExistence(timeout: 10))
+            openHistory(app)
+            app.buttons["chat.account"].tap()
+            if !entry.isHittable { app.swipeUp() }
+            entry.tap()
+            XCTAssertTrue(target.waitForExistence(timeout: 5))
+            XCTAssertTrue(target.isSelected)
+            // Restore the initial system icon after verifying persistence.
+            let original = wasBlack ? black : primary
+            original.tap()
+            let restored = NSPredicate { _, _ in confirmation.exists || original.isSelected }
+            XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: restored, object: nil)],
+                                         timeout: 15), .completed)
+            if confirmation.exists { confirmation.buttons.firstMatch.tap() }
+            let originalSelected = NSPredicate { _, _ in original.isSelected }
+            XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: originalSelected, object: nil)],
+                                         timeout: 5), .completed)
+            XCTAssertTrue(original.isSelected)
+        }
+    }
+
+    @MainActor
     func testEnglishSettingsAndAccountHaveCompactRows() {
         let app = XCUIApplication()
         app.launchArguments = ["--synthetic-preview", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]

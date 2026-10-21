@@ -410,3 +410,22 @@
 "Use a single line of up to 60 characters." = "Use a single line of up to 60 characters.";
 "Wait for the answer to finish, then rename the conversation." = "Wait for the answer to finish, then rename the conversation.";
 "Typeflux is unavailable right now. Try again when you're back online." = "Typeflux is unavailable right now. Try again when you're back online.";
+
+"appIcon.glassFrosted" = "Frosted glass";
+"appIcon.pureWhite" = "Pure white";
+"appIcon.white" = "Warm white";
+"appIcon.black" = "Black";
+"appIcon.colorful" = "Colorful";
+"appIcon.retroMosaic" = "Retro mosaic";
+"appIcon.cartoonPetrol" = "Cartoon · Petrol";
+"appIcon.cartoonCobalt" = "Cartoon · Cobalt";
+"appIcon.cartoonLavender" = "Cartoon · Lavender";
+"appIcon.yarnBall" = "Yarn ball";
+"appIcon.hairyPuppet" = "Furry puppet";
+"App icon" = "App icon";
+"Choose the icon shown on your Home Screen." = "Choose the icon shown on your Home Screen.";
+"Changing app icon…" = "Changing app icon…";
+"App icon changes are unavailable on this device." = "App icon changes are unavailable on this device.";
+"Unable to change app icon" = "Unable to change app icon";
+"Please try again. Your current app icon is unchanged." = "Please try again. Your current app icon is unchanged.";
+"appIcon.primary" = "Default icon";

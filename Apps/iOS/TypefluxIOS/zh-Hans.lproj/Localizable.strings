@@ -410,3 +410,22 @@
 "Use a single line of up to 60 characters." = "请使用一行、不超过 60 个字的标题。";
 "Wait for the answer to finish, then rename the conversation." = "请等回答结束后再重命名。";
 "Typeflux is unavailable right now. Try again when you're back online." = "Typeflux 服务暂不可用，请恢复联网后再试。";
+
+"appIcon.glassFrosted" = "磨砂玻璃";
+"appIcon.pureWhite" = "纯白";
+"appIcon.white" = "暖白";
+"appIcon.black" = "黑色";
+"appIcon.colorful" = "彩色";
+"appIcon.retroMosaic" = "复古马赛克";
+"appIcon.cartoonPetrol" = "卡通·深海蓝";
+"appIcon.cartoonCobalt" = "卡通·钴蓝";
+"appIcon.cartoonLavender" = "卡通·淡紫";
+"appIcon.yarnBall" = "毛线球";
+"appIcon.hairyPuppet" = "毛茸茸布偶";
+"App icon" = "应用图标";
+"Choose the icon shown on your Home Screen." = "选择主屏幕上显示的应用图标。";
+"Changing app icon…" = "正在更换应用图标…";
+"App icon changes are unavailable on this device." = "此设备暂不支持更换应用图标。";
+"Unable to change app icon" = "无法更换应用图标";
+"Please try again. Your current app icon is unchanged." = "请重试。当前应用图标未更改。";
+"appIcon.primary" = "默认图标";

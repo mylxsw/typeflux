@@ -61,6 +61,9 @@
 		0A1684799A73180EB2AF48D0 /* ChatOfflineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B081A1DB4D3D27630A168479 /* ChatOfflineTests.swift */; };
 		9548A4C2943212AC9F3667B0 /* ChatStore+Titles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4964D06140242DA19548A4C2 /* ChatStore+Titles.swift */; };
 		CCC3655A5B851E82B1ABEBAB /* ChatFollowupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A95A8A301E18D990CCC3655A /* ChatFollowupTests.swift */; };
+		A44700000000000000000002 /* ChatAppIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44700000000000000000001 /* ChatAppIcon.swift */; };
+		A44700000000000000000004 /* ChatAppIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44700000000000000000003 /* ChatAppIconView.swift */; };
+		A44700000000000000000006 /* ChatAppIconTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44700000000000000000005 /* ChatAppIconTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -133,6 +136,9 @@
 		B081A1DB4D3D27630A168479 /* ChatOfflineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChatOfflineTests.swift"; sourceTree = "<group>"; };
 		4964D06140242DA19548A4C2 /* ChatStore+Titles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChatStore+Titles.swift"; sourceTree = "<group>"; };
 		A95A8A301E18D990CCC3655A /* ChatFollowupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ChatFollowupTests.swift"; sourceTree = "<group>"; };
+		A44700000000000000000001 /* ChatAppIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAppIcon.swift; sourceTree = "<group>"; };
+		A44700000000000000000003 /* ChatAppIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAppIconView.swift; sourceTree = "<group>"; };
+		A44700000000000000000005 /* ChatAppIconTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAppIconTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -212,6 +218,8 @@
 				817242F80C11DE42D39BF6D5 /* ChatStore+Offline.swift */,
 				F37E9340A1A8E9DFDA697F4E /* ChatModelLibrary.swift */,
 				7DEF3F74976AE35C15AD619F /* ChatSettingsView.swift */,
+				A44700000000000000000003 /* ChatAppIconView.swift */,
+				A44700000000000000000001 /* ChatAppIcon.swift */,
 			);
 			path = TypefluxIOS;
 			sourceTree = "<group>";
@@ -231,6 +239,7 @@
 				A474B5F117EB2B75C2766D2E /* ChatMarkdownTests.swift */,
 				EE14CD5FFA9F3A26B79E2671 /* ChatTranscriptTests.swift */,
 				18B2FDFCCBF1BCB102476D8C /* ChatPreferencesTests.swift */,
+				A44700000000000000000005 /* ChatAppIconTests.swift */,
 				8600FF50CFFBD65952C46E06 /* SyntheticPreviewTests.swift */,
 			);
 			path = TypefluxIOSTests;
@@ -401,6 +410,8 @@
 				D39BF6D51DEAC559B69480C5 /* ChatStore+Offline.swift in Sources */,
 				DA697F4EAF30F834199BDE84 /* ChatModelLibrary.swift in Sources */,
 				B6A18D912191CDDE99B711B7 /* ChatSettingsView.swift in Sources */,
+				A44700000000000000000004 /* ChatAppIconView.swift in Sources */,
+				A44700000000000000000002 /* ChatAppIcon.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -420,6 +431,7 @@
 				D7AD93BD3CE95D55F6D4E98F /* ChatMarkdownTests.swift in Sources */,
 				4FFB8ECD2C9F8D45FC3DA5F8 /* ChatTranscriptTests.swift in Sources */,
 				BA00E0679C9783B9DE431E2A /* ChatPreferencesTests.swift in Sources */,
+				A44700000000000000000006 /* ChatAppIconTests.swift in Sources */,
 				04431571BB119E7574F0C302 /* SyntheticPreviewTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -508,6 +520,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIcon-glassFrosted AppIcon-pureWhite AppIcon-white AppIcon-black AppIcon-colorful AppIcon-retroMosaic AppIcon-cartoonPetrol AppIcon-cartoonCobalt AppIcon-cartoonLavender AppIcon-yarnBall AppIcon-hairyPuppet";
 				CODE_SIGN_ENTITLEMENTS = TypefluxIOS/TypefluxIOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -536,6 +549,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIcon-glassFrosted AppIcon-pureWhite AppIcon-white AppIcon-black AppIcon-colorful AppIcon-retroMosaic AppIcon-cartoonPetrol AppIcon-cartoonCobalt AppIcon-cartoonLavender AppIcon-yarnBall AppIcon-hairyPuppet";
 				CODE_SIGN_ENTITLEMENTS = TypefluxIOS/TypefluxIOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
