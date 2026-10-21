@@ -466,6 +466,57 @@ struct ChatOfflineTests {
     }
 }
 
+// MARK: - Connection notice preferences
+
+@MainActor
+extension ChatOfflineTests {
+    @Test func `connection notice dismissal lasts exactly 24 hours across launches`() async throws {
+        let domain = "ChatConnectivityTests-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: domain))
+        defer { defaults.removePersistentDomain(forName: domain) }
+        func store(synthetic: Bool = false) -> ChatStore {
+            ChatStore(service: OutageAPI(), credentials: MemoryCredentials(), deviceID: "test",
+                      isSynthetic: synthetic, noticeDefaults: defaults)
+        }
+        let first = store()
+        await first.login(email: "person@example.com", password: "pw")
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        #expect(!first.showsConnectivityNotice(at: start))
+        first.connectivity = .serviceUnavailable
+        #expect(first.showsConnectivityNotice(at: start))
+        first.dismissConnectivityNotice(at: start)
+        #expect(!first.showsConnectivityNotice(at: start))
+        #expect(!first.showsConnectivityNotice(at: start.addingTimeInterval(86_399)))
+        #expect(first.showsConnectivityNotice(at: start.addingTimeInterval(86_400)))
+        #expect(first.showsConnectivityNotice(at: start.addingTimeInterval(-1)))
+        let restored = store()
+        #expect(restored.connectivityNoticeDismissedAt == start)
+        await restored.login(email: "person@example.com", password: "pw")
+        restored.connectivity = .offline
+        #expect(!restored.showsConnectivityNotice(at: start.addingTimeInterval(60)))
+        restored.noteUnsent(.serviceUnavailable)
+        #expect(restored.errorMessage == ChatStore.unavailableMessage)
+        #expect(!restored.showsConnectivityNotice(at: start.addingTimeInterval(60)))
+        restored.markOnline()
+        restored.connectivity = .serviceUnavailable
+        #expect(!restored.showsConnectivityNotice(at: start.addingTimeInterval(60)))
+        let preview = store(synthetic: true)
+        #expect(preview.connectivityNoticeDismissedAt == nil)
+        preview.dismissConnectivityNotice(at: start.addingTimeInterval(100))
+        #expect(store().connectivityNoticeDismissedAt == start)
+        #expect(!store().showsConnectivityNotice(at: start.addingTimeInterval(86_400)))
+    }
+
+    @Test func `private models cannot select reasoning levels`() throws {
+        let fixture = try make(withProvider: true)
+        fixture.store.modelRef = Self.localChat
+        #expect(fixture.store.sendsLocally)
+        #expect(fixture.store.supportedReasoningLevels.isEmpty)
+        fixture.store.selectReasoningEffort(.high)
+        #expect(fixture.store.reasoningEffort == .providerDefault)
+    }
+}
+
 // MARK: - Test doubles
 
 /// A Typeflux API whose network can be cut.

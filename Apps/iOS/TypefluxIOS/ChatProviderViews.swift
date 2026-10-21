@@ -164,12 +164,17 @@ struct ChatProviderEditor: View {
                 } else {
                     LabeledContent("Address", value: kind.defaultBaseURL)
                 }
-                LabeledContent(kind.requiresKey ? "API key" : "API key (optional)") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(kind.requiresKey ? "API key" : "API key (optional)")
                     SecureField(kind.requiresKey ? "API key" : "API key (optional)", text: $key,
-                                prompt: Text(hasSavedKey ? "Saved · enter a new key to replace it" : "sk-…"))
-                        .multilineTextAlignment(.trailing)
+                                prompt: Text(verbatim: "sk-…"))
                         .textInputAutocapitalization(.never).autocorrectionDisabled()
                         .accessibilityIdentifier("provider.key")
+                    if hasSavedKey {
+                        Text("Saved · enter a new key to replace it")
+                            .font(.footnote).foregroundStyle(ChatTheme.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
             } header: {
                 Text("Connection")
@@ -201,17 +206,15 @@ struct ChatProviderEditor: View {
             if !models.isEmpty {
                 Section {
                     ForEach($models) { $model in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Toggle(isOn: $model.enabled) {
-                                Text(model.name).font(.system(size: 15))
+                        Toggle(isOn: $model.enabled) {
+                            Text(model.name).font(.system(size: 15))
+                        }
+                        .accessibilityIdentifier("provider.model." + model.id)
+                        if model.enabled {
+                            Toggle(isOn: $model.vision) {
+                                Text("Accepts photos").font(.footnote).foregroundStyle(ChatTheme.secondary)
                             }
-                            .accessibilityIdentifier("provider.model." + model.id)
-                            if model.enabled {
-                                Toggle(isOn: $model.vision) {
-                                    Text("Accepts photos").font(.footnote).foregroundStyle(ChatTheme.secondary)
-                                }
-                                .controlSize(.mini)
-                            }
+                            .accessibilityIdentifier("provider.vision." + model.id)
                         }
                     }
                 } header: {
@@ -369,40 +372,55 @@ struct ChatConnectivityBanner: View {
     @State private var retrying = false
 
     var body: some View {
-        if let notice = store.connectivityNotice {
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: store.connectivity == .offline ? "wifi.slash" : "exclamationmark.icloud")
-                    .foregroundStyle(.orange)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(NSLocalizedString(notice, comment: "Connectivity notice"))
-                        .font(.system(size: 13)).fixedSize(horizontal: false, vertical: true)
-                    if let synced = store.cloudSyncedAt {
-                        Text(String(format: NSLocalizedString("Updated %@", comment: "Cache time"),
-                                    synced.formatted(date: .abbreviated, time: .shortened)))
-                            .font(.system(size: 11.5)).foregroundStyle(ChatTheme.secondary)
-                    }
-                }
-                Spacer(minLength: 4)
-                Button {
-                    retrying = true
-                    Task {
-                        await store.retryConnection()
-                        retrying = false
-                    }
-                } label: {
-                    if retrying {
-                        ProgressView().controlSize(.small)
-                    } else {
-                        Text("Retry").font(.system(size: 13, weight: .semibold))
-                    }
-                }
-                .disabled(retrying)
-                .accessibilityIdentifier("connectivity.retry")
+        let expiry = store.connectivityNoticeDismissedAt?.addingTimeInterval(86_400) ?? Date()
+        TimelineView(.explicit([Date(), expiry].sorted())) { context in
+            if store.showsConnectivityNotice(at: context.date), let notice = store.connectivityNotice {
+                banner(notice)
             }
-            .padding(.horizontal, 12).padding(.vertical, 9)
-            .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("connectivity.banner")
         }
+    }
+
+    private func banner(_ notice: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: store.connectivity == .offline ? "wifi.slash" : "exclamationmark.icloud")
+                .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(NSLocalizedString(notice, comment: "Connectivity notice"))
+                    .font(.system(size: 13)).fixedSize(horizontal: false, vertical: true)
+                if let synced = store.cloudSyncedAt {
+                    Text(String(format: NSLocalizedString("Updated %@", comment: "Cache time"),
+                                synced.formatted(date: .abbreviated, time: .shortened)))
+                        .font(.system(size: 11.5)).foregroundStyle(ChatTheme.secondary)
+                }
+            }
+            Spacer(minLength: 4)
+            Button {
+                retrying = true
+                Task {
+                    await store.retryConnection()
+                    retrying = false
+                }
+            } label: {
+                if retrying {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Text("Retry").font(.system(size: 13, weight: .semibold))
+                }
+            }
+            .disabled(retrying)
+            .accessibilityIdentifier("connectivity.retry")
+            Button { store.dismissConnectivityNotice() } label: {
+                Image(systemName: "xmark")
+                    .frame(minWidth: 32, minHeight: 32)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(NSLocalizedString("Dismiss", comment: ""))
+            .accessibilityIdentifier("connectivity.dismiss")
+        }
+        .padding(.horizontal, 12).padding(.vertical, 9)
+        .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("connectivity.banner")
     }
 }

@@ -195,6 +195,58 @@ final class ChatPolishTests: XCTestCase {
     }
 
     @MainActor
+    func testConnectionDismissalAndProviderLayout() {
+        for language in ["en", "zh-Hans"] {
+            let app = XCUIApplication()
+            app.launchArguments = ["--synthetic-preview", "--synthetic-offline", "--synthetic-providers",
+                                   "-AppleLanguages", "(\(language))"]
+            app.launch()
+            let close = app.buttons["connectivity.dismiss"]
+            XCTAssertTrue(close.waitForExistence(timeout: 10))
+            screenshot(app, "gul449-connection-" + language)
+            close.tap()
+            XCTAssertTrue(close.waitForNonExistence(timeout: 5))
+            app.buttons["modelPicker"].tap()
+            app.buttons["changeModel"].tap()
+            let local = app.buttons["model-local-deepseek-chat"]
+            XCTAssertTrue(local.waitForExistence(timeout: 5))
+            local.tap()
+            XCTAssertTrue(app.staticTexts[language == "en" ? "Not supported" : "不支持"]
+                .waitForExistence(timeout: 5))
+            screenshot(app, "gul449-local-model-" + language)
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1)).tap()
+            openHistory(app)
+            XCTAssertFalse(app.descendants(matching: .any)["chat.sidebar"]
+                .descendants(matching: .any)["connectivity.banner"].exists)
+            app.buttons["chat.account"].tap()
+            app.buttons["settings.providers"].tap()
+            app.buttons["providers.item.preview-deepseek"].tap()
+            let key = app.secureTextFields["provider.key"]
+            XCTAssertTrue(key.waitForExistence(timeout: 5))
+            let saved = app.staticTexts[language == "en"
+                ? "Saved · enter a new key to replace it" : "已保存 · 输入新的 Key 可替换"]
+            XCTAssertTrue(saved.exists)
+            XCTAssertGreaterThanOrEqual(saved.frame.minY, key.frame.maxY)
+            let enabled = app.switches["provider.model.deepseek-chat"]
+            let vision = app.switches["provider.vision.deepseek-chat"]
+            if !vision.isHittable { app.swipeUp() }
+            XCTAssertTrue(enabled.exists)
+            XCTAssertTrue(vision.exists)
+            // Native Form accessibility frames include the complete adjoining rows.
+            XCTAssertGreaterThanOrEqual(vision.frame.minY, enabled.frame.maxY)
+            XCTAssertGreaterThanOrEqual(enabled.frame.height, 44)
+            XCTAssertGreaterThanOrEqual(vision.frame.height, 44)
+            screenshot(app, "gul449-provider-" + language)
+            vision.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+            let switched = XCTNSPredicateExpectation(
+                predicate: NSPredicate(format: "value == %@", "1"), object: vision)
+            XCTAssertEqual(XCTWaiter.wait(for: [switched], timeout: 5), .completed)
+            XCTAssertEqual(enabled.value as? String, "1")
+            app.terminate()
+        }
+    }
+
+    @MainActor
     private func openHistory(_ app: XCUIApplication) {
         app.buttons["chat.sidebar.open"].tap()
         XCTAssertTrue(app.buttons["chat.new"].waitForExistence(timeout: 5))

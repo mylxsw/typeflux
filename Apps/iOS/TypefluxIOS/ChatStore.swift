@@ -4,6 +4,7 @@ import Observation
 import TypefluxChat
 
 @MainActor @Observable
+// swiftlint:disable:next type_body_length
 final class ChatStore {
     private(set) var email = ""
     private(set) var isAuthenticated = false
@@ -40,6 +41,8 @@ final class ChatStore {
     var connectivity: ChatConnectivity = .online
     /// When the device's copy of the cloud history was last refreshed.
     var cloudSyncedAt: Date?
+    let noticeDefaults: UserDefaults
+    var connectivityNoticeDismissedAt: Date?
     /// Conversations kept only on this device, answered by the user's own providers.
     var localConversations: [ChatConversationSummary] = []
     /// A cloud message could not be sent because Typeflux was unreachable; the draft
@@ -98,8 +101,12 @@ final class ChatStore {
         library: ChatModelLibrary? = nil,
         providerService: any ChatProviderService = ChatProviderClient(),
         cache: ChatLocalStore? = try? .inMemory(),
-        localStore: ChatLocalStore? = try? .inMemory()
+        localStore: ChatLocalStore? = try? .inMemory(),
+        noticeDefaults: UserDefaults = .standard
     ) {
+        self.noticeDefaults = noticeDefaults
+        connectivityNoticeDismissedAt = isSynthetic ? nil :
+            noticeDefaults.object(forKey: Self.connectivityDismissalKey) as? Date
         self.library = library ?? .ephemeral()
         self.providerService = providerService
         self.cache = cache

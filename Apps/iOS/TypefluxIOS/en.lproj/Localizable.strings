@@ -429,3 +429,5 @@
 "Unable to change app icon" = "Unable to change app icon";
 "Please try again. Your current app icon is unchanged." = "Please try again. Your current app icon is unchanged.";
 "appIcon.primary" = "Default icon";
+
+"Not supported" = "Not supported";
