@@ -1,0 +1,11 @@
+Generated with the built-in image generation tool. Existing three icon designs supplied as edit references. Color explorations only; no application code changed.
+Shared direction: preserve the original Flux Spark, Dialogue Spark and Flux Knot silhouettes. Replace the rainbow palette with two colors. Use near-solid color fields with subtle same-hue shading at ribbon folds. Preserve transparency. Present three equally sized icons in one horizontal strip without labels.
+
+Electric blue + acid lime
+Dominant electric ultramarine #3148E8 (80%), acid lime #C8EE55 (20%). On image 1 make the body blue and just the upper-right ribbon fold lime. On image 2 make the speech outline blue and the interior sparkle lime. On image 3 make one complete ribbon blue and the other complete ribbon lime, but visually favor blue. Energetic precise digital instrument aesthetic.
+
+Ink violet + apricot
+Dominant deep ink violet #453653 (75%), warm luminous apricot #F4AF78 (25%). On image 1 make the body ink violet and the upper-right folded face apricot. On image 2 make the speech outline ink violet and the central sparkle apricot. On image 3 make one ribbon ink violet and the other apricot. Quiet warm editorial aesthetic. Not pink, not neon.
+
+Petrol teal + mint
+Dominant petrol teal #12615D (75%), fresh soft mint #A7E2C5 (25%). On image 1 make the body petrol teal and the upper-right folded face mint. On image 2 make the speech outline petrol teal and the central sparkle mint. On image 3 make one ribbon petrol teal and the other mint. Calm sophisticated precise aesthetic. No blue, purple or pink.
