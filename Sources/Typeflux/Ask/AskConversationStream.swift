@@ -56,12 +56,14 @@ extension AskAPIClient {
         if recoveryMetadataEnabled {
             request.setValue("run_recovery_v1", forHTTPHeaderField: "X-Typeflux-Capabilities")
         }
+        request.setValue(agentCapabilities.headerValue, forHTTPHeaderField: AskAgentPeerCapabilities.header)
         request.timeoutInterval = 40
         let (bytes, response) = try await streamSession.bytes(for: request)
         guard let http = response as? HTTPURLResponse, http.statusCode == 200,
               http.value(forHTTPHeaderField: "Content-Type")?.contains("text/event-stream") == true else {
             throw AskStreamError.requestFailed
         }
+        await receiveAgentCapabilities(AskAgentPeerCapabilities.parse(http.value(forHTTPHeaderField: AskAgentPeerCapabilities.header)))
         var frame = AskSSEFrame(limit: 32_000_000)
         var state = AskConversationStreamState()
         for try await byte in bytes {

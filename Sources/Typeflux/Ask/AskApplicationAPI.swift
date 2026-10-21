@@ -1,6 +1,7 @@
 import Foundation
 
-/// Application entry point with independently replaceable runtime, history and catalog services.
+/// Host facade for runtime, history and catalog services. Turn adapters are
+/// resolved per admitted run inside the execution host, never by this facade.
 struct AskApplicationAPI: AskAPI {
     let runtime: any AskAgentRuntime
     let conversations: any AskConversationAccess
@@ -86,7 +87,8 @@ struct AskApplicationAPI: AskAPI {
 }
 
 extension AskApplicationAPI {
-    /// Validate the complete runtime contract before publishing an application API.
+    /// Compatibility registration for existing host-service callers. This does not
+    /// register an alternate turn adapter or grant execution authority.
     /// Production callers supply only the canonical default local registration.
     init(registry: AskAgentRegistry, conversations: any AskConversationAccess, modelAccess: any AskModelAccess) throws {
         let selected = try registry.selectDefault(requiredOperations: Set(AskAgentOperation.allCases))

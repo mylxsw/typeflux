@@ -4,6 +4,7 @@ import Foundation
 /// Engine-only state stored next to a local conversation.
 struct AskLocalRecord: Codable, Equatable, Sendable {
     var agentRoutes: AskRunRouteArchive?
+    var agentState: AskRouteJSON?
     var summaryFallback: Bool?
     var summaryUnavailable: Bool?
     var contextLimits: AskContextLimits?
@@ -42,6 +43,9 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     static let keepRecent = 12
     static let staleAfter: TimeInterval = 10 * 60
 
+    private let turnPolicy: AskAgentTurnPolicy
+    private let turnWriterLease: AskTurnWriterLease?
+    private let turnOwnershipAvailable: Bool
     private let promptBuilder: any AskPromptBuilding
     let directory: URL
     private let snapshotStore: any AskLocalSnapshotStoring
@@ -79,7 +83,12 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
          promptBuilder: any AskPromptBuilding = DefaultAskPromptBuilder(),
          builtinTools: (any AskBuiltinToolHosting)? = nil,
          snapshotStore: (any AskLocalSnapshotStoring)? = nil,
-         budgetStore: (any AskBudgetJournaling)? = nil) {
+         budgetStore: (any AskBudgetJournaling)? = nil,
+         turnPolicy: AskAgentTurnPolicy = .canonical) {
+        self.turnPolicy = turnPolicy
+        let writer = turnPolicy.claimWriter(directory: directory)
+        turnWriterLease = writer.lease
+        turnOwnershipAvailable = !writer.required || writer.lease != nil
         self.promptBuilder = promptBuilder
         self.summarize = summarize
         self.prepareImages = prepareImages
@@ -107,7 +116,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
             if var record = try? AskLocalRecord.decodeSnapshot(data) {
                 // A persisted engine step may have dispatched a built-in request before exit.
                 // Inspect/cancel it; never infer that a fresh process can safely repeat it.
-                if (try? AskAgentBinding.resolve(record.conversation.run?.agentBinding)) != nil, record.conversation.run?.status == "running" {
+                if (try? resolveTurn(record)) != nil, record.conversation.run?.status == "running" {
                     record.conversation.run?.recovery = .init(state: "unknown_outcome", sequence: record.conversation.revision)
                 }
                 records[record.conversation.id] = record
@@ -170,7 +179,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         loadAll()
         let id = AskConversationID.canonical(id)
         guard Self.validID(id), var record = records[id] else { throw AskLocalError.message(L("ask.local.notFound")) }
-        guard (try? AskAgentBinding.resolve(record.conversation.run?.agentBinding)) != nil else { return record }
+        guard (try? resolveTurn(record)) != nil else { return record }
         record.conversation.memory = record.conversation.memory?.usable(at: now())
         if record.conversation.memory == nil, let payload = record.conversation.run?.inference?.payload {
             record.conversation.run?.inference?.payload = AskMemory.removingInjection(from: payload)
@@ -258,7 +267,8 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         }
     }
 
-    func send(conversationId: String, request: AskSendRequest, token _: String) async throws -> AskConversation {
+    func send(conversationId: String, request: AskSendRequest, token: String) async throws -> AskConversation {
+        guard token.isEmpty else { throw conflict() }
         loadAll()
         let id = AskConversationID.canonical(conversationId)
         guard Self.validID(id) else { throw AskLocalError.message(L("ask.local.notFound")) }
@@ -270,7 +280,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         var record = records[id] ?? AskLocalRecord(conversation: AskConversation(
             id: id, title: String(Self.title(request).prefix(50)),
             revision: 0, updatedAt: now(), messages: []))
-        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
+        _ = try resolveTurn(record)
         if record.conversation.messages.contains(where: { $0.id == request.id }) { return record.conversation }
         if record.conversation.run?.isActive == true { throw AskLocalError.message(L("ask.local.busy")) }
         guard record.conversation.messages.count < Self.maxMessages else { throw AskLocalError.message(L("ask.local.full")) }
@@ -293,14 +303,16 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         c.run?.clientToolApproval = request.clientToolApproval
         c.run?.recoveryCheck = request.recoveryCheck
         record.conversation = c
-        prepareRun(&record)
+        try prepareRun(&record)
+        try save(&record)
         return try await step(&record)
     }
 
-    func result(conversationId: String, request: AskToolResultRequest, token _: String) async throws -> AskConversation {
+    func result(conversationId: String, request: AskToolResultRequest, token: String) async throws -> AskConversation {
+        guard token.isEmpty else { throw conflict() }
         var record = try record(conversationId)
         guard let run = record.conversation.run, run.id == request.runId, run.deviceId == request.deviceId else { throw conflict() }
-        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
+        _ = try resolveTurn(record)
         if record.conversation.messages.contains(where: { $0.role == "tool" && $0.toolCallId == request.toolCallId }) { return record.conversation }
         guard run.status == "waiting_tool", run.pending.first?.id == request.toolCallId else { throw conflict() }
         if run.clientToolApproval == true, let call = run.pending.first, isBuiltin(call, record) {
@@ -330,9 +342,15 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         guard token.isEmpty else { throw conflict() }
         var record = try record(conversationId)
         guard let run = record.conversation.run else { throw conflict() }
-        if (try? AskAgentBinding.resolve(run.agentBinding)) == nil {
-            guard (run.id == request.runId && run.deviceId == request.deviceId) || record.localUsage?.contains(request) == true else { throw conflict() }
-            _ = try AskAgentBinding.resolve(run.agentBinding)
+        let currentReceipt = run.id == request.runId && run.deviceId == request.deviceId
+            && run.status == "waiting_inference" && run.inference?.id == request.inferenceId
+        if currentReceipt {
+            _ = try resolveTurn(record)
+        } else if record.localUsage?.contains(request) == true {
+            try admitSettlement(record, request: request)
+        } else {
+            guard run.id == request.runId, run.deviceId == request.deviceId else { throw conflict() }
+            _ = try resolveTurn(record)
         }
         if run.budgetEnabled == true {
             let root = record.localUsage?.budgetRoot(for: request)
@@ -400,11 +418,15 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         throw conflict()
     }
 
-    func resume(conversationId: String, runId: String, token _: String) async throws -> AskConversation {
-        let value = try record(conversationId)
-        if (try? AskAgentBinding.resolve(value.conversation.run?.agentBinding)) == nil {
-            guard value.conversation.run?.id == runId else { throw conflict() }
-            _ = try AskAgentBinding.resolve(value.conversation.run?.agentBinding)
+    func resume(conversationId: String, runId: String, token: String) async throws -> AskConversation {
+        guard token.isEmpty else { throw conflict() }
+        var value = try record(conversationId)
+        guard value.conversation.run?.id == runId else { throw conflict() }
+        _ = try resolveTurn(value)
+        if value.conversation.run?.status == "waiting_tool", value.conversation.run?.pending.isEmpty == true {
+            value.conversation.run?.status = "running"
+            try save(&value)
+            return try await step(&value, previous: .resume)
         }
         return value.conversation
     }
@@ -413,10 +435,11 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         try await cancel(conversationId: conversationId, runId: runId, partial: nil, token: token)
     }
 
-    func cancel(conversationId: String, runId: String, partial: AskInferenceResult?, token _: String) async throws -> AskConversation {
+    func cancel(conversationId: String, runId: String, partial: AskInferenceResult?, token: String) async throws -> AskConversation {
+        guard token.isEmpty else { throw conflict() }
         var record = try record(conversationId)
         guard let run = record.conversation.run, run.id == runId else { throw conflict() }
-        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
+        _ = try resolveTurn(record)
         summaries.removeValue(forKey: AskConversationID.canonical(conversationId))?.task.cancel()
         guard run.isActive else { return record.conversation }
         if let partial, partial.runId == run.id, run.status == "waiting_inference",
@@ -435,11 +458,12 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     }
 
     /// Queues a message for the active run; the model reads it at the next step boundary.
-    func steer(conversationId: String, request: AskSteerRequest, token _: String) async throws -> AskConversation {
+    func steer(conversationId: String, request: AskSteerRequest, token: String) async throws -> AskConversation {
+        guard token.isEmpty else { throw conflict() }
         var record = try record(conversationId)
-        if (try? AskAgentBinding.resolve(record.conversation.run?.agentBinding)) == nil {
+        if (try? resolveTurn(record)) == nil {
             guard record.conversation.run?.id == request.runId else { throw conflict() }
-            _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
+            _ = try resolveTurn(record)
         }
         if record.conversation.messages.contains(where: { $0.id == request.id }) { return record.conversation }
         guard let run = record.conversation.run, run.isActive, run.id == request.runId else { throw conflict() }
@@ -463,10 +487,11 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         try await retry(conversationId: conversationId, runId: runId, deviceId: deviceId, modelRef: modelRef, maxSteps: nil, token: token)
     }
 
-    func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, maxSteps: Int?, token _: String) async throws -> AskConversation {
+    func retry(conversationId: String, runId: String, deviceId: String, modelRef: String?, maxSteps: Int?, token: String) async throws -> AskConversation {
+        guard token.isEmpty else { throw conflict() }
         var record = try record(conversationId)
         guard let run = record.conversation.run, run.id == runId, run.deviceId == deviceId else { throw conflict() }
-        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
+        _ = try resolveTurn(record)
         if run.isActive || run.status == "completed" { return record.conversation }
         let model = try Self.localModel(modelRef ?? run.modelRef)
         record.conversation.modelRef = model
@@ -477,14 +502,16 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         record.conversation.run?.maxSteps = try Self.configuredMaxSteps(maxSteps ?? run.maxSteps)
         record.conversation.run?.clientToolApproval = true
         record.conversation.run?.recoveryCheck = run.recoveryCheck
-        prepareRun(&record)
+        try prepareRun(&record)
+        try save(&record)
         return try await step(&record)
     }
 
-    func regenerate(conversationId: String, request: AskRegenerateRequest, token _: String) async throws -> AskConversation {
+    func regenerate(conversationId: String, request: AskRegenerateRequest, token: String) async throws -> AskConversation {
+        guard token.isEmpty else { throw conflict() }
         var record = try record(conversationId)
         var c = record.conversation
-        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
+        _ = try resolveTurn(record)
         if c.run?.isActive == true { throw conflict() }
         guard let index = c.messages.firstIndex(where: { $0.id == request.messageId && $0.role == "assistant" }),
               !c.messages[(index + 1)...].contains(where: { $0.role == "user" }) else { throw AskLocalError.message(L("ask.local.regenerateLatest")) }
@@ -502,7 +529,8 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         c.run?.clientToolApproval = request.clientToolApproval
         c.run?.recoveryCheck = record.conversation.run?.recoveryCheck
         record.conversation = c
-        prepareRun(&record)
+        try prepareRun(&record)
+        try save(&record)
         return try await step(&record)
     }
 
@@ -530,8 +558,12 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
 
     private func conflict() -> AskLocalError { .message(L("ask.local.conflict")) }
 
-    private func prepareRun(_ record: inout AskLocalRecord) {
-        record.conversation.run?.agentBinding = .default
+    private func prepareRun(_ record: inout AskLocalRecord) throws {
+        guard turnOwnershipAvailable, turnPolicy.acceptsDirectory(directory) else { throw AskLocalError.implementationUnavailable }
+        _ = try turnPolicy.resolve(turnPolicy.selected, operations: Set(AskAgentOperation.allCases))
+        record.conversation.run?.agentBinding = turnPolicy.selected
+        record.agentState = nil
+        if turnPolicy.selected != .default { record.agentState = stateEnvelope(record, sequence: 0, payload: .null) }
         record.typedContentEnabled = typedContentEnabled
         record.contextLimits = contextLimits(record.conversation.run?.modelRef ?? "")
         if budgetEnabled || record.conversation.run?.budgetEnabled == true {
@@ -587,7 +619,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
                     try Task.checkCancellation()
                     guard let latest = records[id], latest.conversation.run?.id == run.id,
                           latest.conversation.run?.status == record.conversation.run?.status else { throw conflict() }
-                    _ = try AskAgentBinding.resolve(latest.conversation.run?.agentBinding)
+                    _ = try resolveTurn(latest)
                     record = latest
                     preparation = summaries[id] ?? preparation
                 }
@@ -636,11 +668,11 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     private func finishSummary(_ frozen: AskLocalRecord, receipt: AskInferenceResult) {
         let id = frozen.conversation.id
         // Budget settlement remains bound to the original root, even after cancellation.
-        guard var latest = records[id],
-              (try? AskAgentBinding.resolve(latest.conversation.run?.agentBinding)) != nil else { return }
+        guard var latest = records[id], (try? admitSettlement(latest, request: receipt)) != nil else { return }
         try? settleInference(frozen, receipt)
         _ = latest.settleUsage(receipt)
         if let prepared = summaries[id], prepared.id == receipt.inferenceId,
+           (try? resolveTurn(latest)) != nil, latest.conversation.run?.id == receipt.runId,
            latest.conversation.run?.status == "completed", !receipt.failed,
            !receipt.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
            receipt.toolCalls.isEmpty, receipt.finishReason != "length", receipt.content.utf8.count <= 64000,
@@ -675,8 +707,8 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     }
 
     /// Queues the next on-device inference: a summary when the history is long, otherwise the answer.
-    private func step(_ record: inout AskLocalRecord) async throws -> AskConversation {
-        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
+    private func step(_ record: inout AskLocalRecord, previous: AskAgentTurnOutcome? = nil) async throws -> AskConversation {
+        _ = try resolveTurn(record)
         let skipSummary = try await backgroundSummary(&record)
         record.conversation.memory = record.conversation.memory?.usable(at: now())
         if record.conversation.run?.status == "running" { deliverSteering(&record) }
@@ -712,14 +744,20 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
             try Task.checkCancellation()
             // Cancellation, deletion, steering and privacy changes may have advanced the record.
             guard let latest = records[record.conversation.id], latest.conversation.revision == revision else { throw conflict() }
-            _ = try AskAgentBinding.resolve(latest.conversation.run?.agentBinding)
+            _ = try resolveTurn(latest)
         }
-        return try queue(&record, payload: promptBuilder.conversation(promptInput(promptConversation, record)),
-                         summaryThrough: nil)
+        let payload = promptBuilder.conversation(promptInput(promptConversation, record))
+        let decision = try await decideTurn(&record, payload: payload, previous: previous)
+        switch decision {
+        case let .requestModel(prompt, purpose, _):
+            return try queue(&record, payload: modelPayload(prompt, purpose: purpose, prepared: payload), summaryThrough: nil)
+        default:
+            return try await applyDecision(&record, decision: decision, originalCalls: [])
+        }
     }
 
     private func queue(_ record: inout AskLocalRecord, payload: [String: Any], summaryThrough: Int?) throws -> AskConversation {
-        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
+        _ = try resolveTurn(record)
         let id = UUID().uuidString.lowercased()
         var payload = payload
         payload.removeValue(forKey: "typeflux_summary_through")
@@ -753,7 +791,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     }
 
     private func applyCompletion(_ record: inout AskLocalRecord, content: String, calls: [AskToolCall], finishReason: String?) async throws -> AskConversation {
-        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
+        _ = try resolveTurn(record)
         if finishReason == "length" {
             record.conversation.run?.preview = content
             return try fail(&record, L("ask.local.truncated"))
@@ -768,6 +806,16 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
                 return try fail(&record, L("ask.local.invalidTools"))
             }
         }
+        let outcome = AskAgentTurnOutcome.model(content: content, tools: calls.map { .init(name: $0.function.name, arguments: $0.function.arguments, callID: $0.id) }, finishReason: finishReason)
+        let decision = try await decideTurn(&record, payload: nil, previous: outcome)
+        switch decision {
+        case .requestModel, .suspend: record.conversation.run?.steps += 1
+        default: break
+        }
+        return try await applyDecision(&record, decision: decision, originalCalls: calls)
+    }
+
+    private func applyDecisionCompletion(_ record: inout AskLocalRecord, content: String, calls: [AskToolCall]) async throws -> AskConversation {
         guard let run = record.conversation.run else { return record.conversation }
         record.conversation.messages.append(AskMessage(id: run.assistantId ?? UUID().uuidString.lowercased(), role: "assistant", text: content,
                                                        toolCalls: calls.isEmpty ? nil : calls, createdAt: now(),
@@ -792,7 +840,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
 
     /// Runs leading built-in calls here, then hands device calls to the device or starts the next step.
     private func continueTools(_ record: inout AskLocalRecord) async throws -> AskConversation {
-        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
+        _ = try resolveTurn(record)
         while let call = record.conversation.run?.pending.first, isBuiltin(call, record) {
             if record.conversation.run?.clientToolApproval == true, record.approvedCloudCallId != call.id {
                 record.conversation.run?.status = "waiting_tool"
@@ -808,7 +856,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
             guard var latest = records[record.conversation.id] else {
                 throw AskLocalError.message(L("ask.local.notFound"))
             }
-            _ = try AskAgentBinding.resolve(latest.conversation.run?.agentBinding)
+            _ = try resolveTurn(latest)
             try settleBudgetTool(record, callId: call.id)
             try refreshBudget(&latest)
             // Cancellation or a replacement run wins over a late tool result.
@@ -860,7 +908,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     }
 
     func fail(_ record: inout AskLocalRecord, _ reason: String) throws -> AskConversation {
-        _ = try AskAgentBinding.resolve(record.conversation.run?.agentBinding)
+        _ = try resolveTurn(record)
         keepPartial(&record)
         closePending(&record, reason: reason)
         record.conversation.run?.status = "failed"
@@ -900,6 +948,156 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         record.conversation.run?.inference = nil
     }
 
+    private func admitSettlement(_ record: AskLocalRecord, request: AskInferenceResult) throws {
+        guard record.localUsage?.contains(request) == true else { throw conflict() }
+        switch AskRunRouteArchive.lookup(archive: record.agentRoutes, current: record.conversation.run, runID: request.runId) {
+        case let .found(route, _):
+            guard route.deviceID == request.deviceId, AskAgentBinding(raw: route.binding).isWellFormed else { throw conflict() }
+        case .unrecorded:
+            // Trusted pre-C5 invocation evidence is the only legacy settlement fallback.
+            break
+        case .unavailable: throw AskLocalError.implementationUnavailable
+        }
+    }
+
+    private func sanitizedPrompt(_ value: AskRouteJSON) -> AskRouteJSON {
+        switch value {
+        case let .object(fields): return .object(fields.filter { !["provider_context", "thought_signature"].contains($0.key) }.mapValues(sanitizedPrompt))
+        case let .array(items): return .array(items.map(sanitizedPrompt))
+        default: return value
+        }
+    }
+
+    private func modelPayload(_ prompt: AskRouteJSON, purpose: String, prepared: [String: Any]) throws -> [String: Any] {
+        guard ["main", "summary"].contains(purpose), try prompt.encodeRaw().count <= 20 * 1024 * 1024 else { throw AskLocalError.implementationUnavailable }
+        let original = try AskRouteJSON.decodeRaw(JSONSerialization.data(withJSONObject: prepared))
+        if prompt == sanitizedPrompt(original) {
+            guard purpose == "summary" else { return prepared }
+            var payload = prepared
+            payload.removeValue(forKey: "tools"); payload.removeValue(forKey: "tool_choice")
+            return payload
+        }
+        guard case let .object(fields) = prompt, fields.count == 1, case let .array(messages) = fields["messages"],
+              !messages.isEmpty, messages.count <= 500 else { throw AskLocalError.implementationUnavailable }
+        for message in messages {
+            guard case let .object(fields) = message, case let .string(role) = fields["role"],
+                  ["system", "user", "assistant", "tool"].contains(role),
+                  Set(fields.keys).isSubset(of: ["role", "content", "name", "tool_calls", "tool_call_id"]),
+                  sanitizedPrompt(message) == message else { throw AskLocalError.implementationUnavailable }
+        }
+        var payload = prepared
+        payload["messages"] = try JSONSerialization.jsonObject(with: AskRouteJSON.array(messages).encodeRaw())
+        if purpose == "summary" { payload.removeValue(forKey: "tools"); payload.removeValue(forKey: "tool_choice") }
+        return payload
+    }
+
+    private func stateEnvelope(_ record: AskLocalRecord, sequence: Int, payload: AskRouteJSON) -> AskRouteJSON {
+        .object(["version": .number(.init("1")), "run_id": .string(record.conversation.run?.id ?? ""),
+                 "binding": (record.conversation.run?.agentBinding ?? .default).routeEvidence,
+                 "turn_sequence": .number(.init(String(sequence))), "payload": payload])
+    }
+
+    private func turnState(_ record: AskLocalRecord) throws -> (Int, AskRouteJSON?) {
+        guard let run = record.conversation.run else { return (0, nil) }
+        guard let raw = record.agentState else {
+            guard run.agentBinding == nil || run.agentBinding == .default else { throw AskLocalError.implementationUnavailable }
+            return (0, nil)
+        }
+        guard case let .object(fields) = raw, fields["version"] == .number(.init("1")),
+              fields["run_id"] == .string(run.id), fields["binding"] == (run.agentBinding ?? .default).routeEvidence,
+              case let .number(number) = fields["turn_sequence"], let sequence = number.integer,
+              sequence >= 0, let payload = fields["payload"] else { throw AskLocalError.implementationUnavailable }
+        return (sequence, payload)
+    }
+
+    @discardableResult
+    private func resolveTurn(_ record: AskLocalRecord) throws -> AskAgentBinding {
+        guard turnOwnershipAvailable, turnPolicy.acceptsDirectory(directory) else { throw AskLocalError.implementationUnavailable }
+        guard record.conversation.run != nil else { return .default }
+        let binding = record.conversation.run?.agentBinding ?? .default
+        _ = try turnPolicy.resolve(binding, operations: Set(AskAgentOperation.allCases))
+        _ = try turnState(record)
+        if let run = record.conversation.run {
+            let lookup = AskRunRouteArchive.lookup(archive: records[record.conversation.id]?.agentRoutes ?? record.agentRoutes, current: run, runID: run.id)
+            guard case let .found(route, _) = lookup, route.deviceID == run.deviceId, route.binding == binding.routeEvidence else { throw AskLocalError.implementationUnavailable }
+        }
+        return binding
+    }
+
+    private struct AgentTurnScope {
+        let runID: String
+        let deviceID: String
+        let revision: Int64
+        let binding: AskAgentBinding
+        let sequence: Int
+    }
+
+    private func decideTurn(_ record: inout AskLocalRecord, payload: [String: Any]?, previous: AskAgentTurnOutcome?) async throws -> AskAgentDecision {
+        let binding = try resolveTurn(record)
+        guard let run = record.conversation.run else { throw conflict() }
+        let (sequence, state) = try turnState(record)
+        let scope = AgentTurnScope(runID: run.id, deviceID: run.deviceId, revision: record.conversation.revision, binding: binding, sequence: sequence)
+        let adapter = try turnPolicy.resolve(binding, operations: Set(AskAgentOperation.allCases))
+        let hostPayload = payload ?? promptBuilder.conversation(promptInput(record.conversation, record))
+        let prepared = try sanitizedPrompt(AskRouteJSON.decodeRaw(JSONSerialization.data(withJSONObject: hostPayload)))
+        let messages = record.conversation.messages.map { AskAgentTurnMessage(role: $0.role, content: $0.text, callID: $0.toolCallId) }
+        let outcome = previous ?? (messages.last?.role == "tool" ? .tools(Array(messages.reversed().prefix { $0.role == "tool" }.reversed())) : nil)
+        let decision: AskAgentDecision
+        do {
+            decision = try await adapter.next(.init(runID: run.id, binding: binding, turnSequence: sequence, messages: messages,
+                preparedPrompt: prepared, modelReference: run.modelRef ?? "", previous: outcome, state: state))
+        } catch {
+            try Task.checkCancellation()
+            throw AskLocalError.implementationUnavailable
+        }
+        try Task.checkCancellation()
+        guard let latest = records[record.conversation.id], latest.conversation.revision == scope.revision,
+              latest.agentState == record.agentState,
+              latest.conversation.run?.id == scope.runID, latest.conversation.run?.deviceId == scope.deviceID,
+              latest.conversation.run?.status != "cancelled", latest.conversation.run?.status != "failed",
+              try resolveTurn(latest) == scope.binding else { throw conflict() }
+        if case let .requestModel(prompt, purpose, _) = decision {
+            _ = try modelPayload(prompt, purpose: purpose, prepared: hostPayload)
+        }
+        guard (try decision.state?.encodeRaw().count ?? 0) <= 65536, sequence < Int.max else { throw AskLocalError.implementationUnavailable }
+        record.agentState = stateEnvelope(record, sequence: scope.sequence + 1, payload: decision.state ?? .null)
+        return decision
+    }
+
+    private func applyDecision(_ record: inout AskLocalRecord, decision: AskAgentDecision, originalCalls: [AskToolCall]) async throws -> AskConversation {
+        let content: String
+        let calls: [AskToolCall]
+        switch decision {
+        case let .finish(answer, reasoning, _):
+            content = answer; calls = []
+            if let reasoning { record.conversation.run?.reasoning = reasoning }
+        case let .proposeTools(intents, text, _):
+            content = text
+            calls = intents.map { intent in
+                originalCalls.first { $0.id == intent.callID && $0.function.name == intent.name && $0.function.arguments == intent.arguments }
+                    ?? AskToolCall(id: intent.callID, type: "function", function: .init(name: intent.name, arguments: intent.arguments))
+            }
+        case .suspend:
+            record.conversation.run?.status = "waiting_tool"
+            try save(&record)
+            return record.conversation
+        case let .requestModel(prompt, purpose, _):
+            guard let run = record.conversation.run, run.steps < (run.maxSteps ?? Self.maxSteps) + (run.extraSteps ?? 0) else { return try fail(&record, L("ask.local.stepLimit")) }
+            let prepared = promptBuilder.conversation(promptInput(record.conversation, record))
+            return try queue(&record, payload: modelPayload(prompt, purpose: purpose, prepared: prepared), summaryThrough: nil)
+        }
+        guard content.utf8.count <= 256000, calls.count <= Self.maxToolCalls,
+              !calls.isEmpty || !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw AskLocalError.implementationUnavailable }
+        let known = Set(allTools(record).map(\.name))
+        var seen = Set(record.conversation.messages.flatMap { $0.toolCalls ?? [] }.map(\.id))
+        for call in calls {
+            guard !call.id.isEmpty, call.id.count <= 200, seen.insert(call.id).inserted, known.contains(call.function.name),
+                  call.function.arguments.utf8.count <= 64000,
+                  (try? JSONSerialization.jsonObject(with: Data(call.function.arguments.utf8))) is [String: Any] else { throw AskLocalError.implementationUnavailable }
+        }
+        return try await applyDecisionCompletion(&record, content: content, calls: calls)
+    }
+
     // MARK: - Plan
 
     static let planTool = AskBuiltinPlan.definition
@@ -911,12 +1109,13 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
 
 extension AskLocalRecord {
     private enum CodingKeys: String, CodingKey {
-        case agentRoutes, summaryFallback, summaryUnavailable, contextLimits, typedContentEnabled, conversation
+        case agentRoutes, agentState, summaryFallback, summaryUnavailable, contextLimits, typedContentEnabled, conversation
         case timeZone, locale, localDate, builtinTools, lastInferenceId, localUsage, cloudCalls, approvedCloudCallId, steering
     }
 
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
+        agentState = try values.decodeIfPresent(AskRouteJSON.self, forKey: .agentState)
         agentRoutes = values.contains(.agentRoutes) ? try values.decode(AskRunRouteArchive.self, forKey: .agentRoutes) : nil
         summaryFallback = try values.decodeIfPresent(Bool.self, forKey: .summaryFallback)
         summaryUnavailable = try values.decodeIfPresent(Bool.self, forKey: .summaryUnavailable)
