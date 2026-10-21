@@ -15,7 +15,7 @@ enum AskCommandJobError: Error, LocalizedError {
         switch self {
         case .invalid: "Invalid command job arguments."
         case .unavailable: "Command job unavailable."
-        case .capacity: "Command job capacity reached; stop a running job before starting another."
+        case .capacity: "Command job capacity reached. Wait for the owning run to end before admitting more work."
         case .conflict: "Command job invocation already has different arguments. Do not retry it."
         case .storage: "Command job storage unavailable. No new command was admitted."
         }

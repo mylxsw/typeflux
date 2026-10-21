@@ -405,7 +405,7 @@ extension AskCommandJobTests {
     func testRetentionBoundsExpiryAndNoHistoricalReplay() async throws {
         let directory = root(), secure = try AskSecureDirectory.openRoot(directory), now = Date()
         var oldest = ""
-        for index in 0 ..< 132 {
+        for index in 0 ..< 128 {
             let handle = UUID().uuidString.lowercased()
             if index == 0 {
                 oldest = handle
@@ -428,7 +428,7 @@ extension AskCommandJobTests {
         var hooks = AskCommandJobStore.Hooks(); hooks.now = { clock }
         let store = try AskCommandJobStore(root: directory, hooks: hooks), scope = bind(store, persistent: true)
         XCTAssertEqual(secure.entries().count, 128)
-        XCTAssertThrowsError(try store.status(oldest, scope: scope))
+        XCTAssertEqual(try store.status(oldest, scope: scope).state, "exited")
         clock = now.addingTimeInterval(90000)
         XCTAssertThrowsError(try store.status(UUID().uuidString.lowercased(), scope: scope))
         XCTAssertEqual(secure.entries().count, 0)
@@ -551,8 +551,10 @@ extension AskCommandJobTests {
             if revoke {
                 allowed = false
             } else {
-                let second = try await start(store, scope, id: "same", timeout: 120)
-                XCTAssertEqual(second.state, "starting")
+                do {
+                    _ = try await start(store, scope, id: "same", timeout: 120)
+                    XCTFail("Preparing invocation must not be admitted twice")
+                } catch AskCommandJobError.unavailable {}
             }
             await gate.release()
             do {
@@ -612,4 +614,179 @@ extension AskCommandJobTests {
             XCTAssertFalse(error.localizedDescription.isEmpty)
         }
     }
+}
+
+
+extension AskCommandJobTests {
+    private func countingHooks(_ count: Count) -> AskCommandJobStore.Hooks {
+        var hooks = AskCommandJobStore.Hooks()
+        hooks.run = { request in
+            count.increment(); request.onStarted?()
+            request.onRawOutput?(.stdout, Data("private output".utf8))
+            return .init(termination: .exited(0), exitCode: 0, stdout: "", stderr: "", outputTruncated: false)
+        }
+        return hooks
+    }
+
+    func testCountPressureProtectsInvocationUntilRunRetiresAndRejectsBeforeWorkspace() async throws {
+        let count = Count(), prepared = Count(), workspace = Count()
+        var clock = Date(), hooks = countingHooks(count)
+        hooks.now = { clock }
+        hooks.prepare = { directory in prepared.increment(); return try AskHostCommand.prepare(workingDirectory: directory) }
+        let store = try AskCommandJobStore(root: nil, hooks: hooks), scope = bind(store)
+        let original = try await start(store, scope, id: "original")
+        await store.waitForCompletion(original.jobId)
+        for index in 1 ..< 128 {
+            clock = clock.addingTimeInterval(1)
+            let value = try await start(store, scope, id: String(index))
+            await store.waitForCompletion(value.jobId)
+        }
+        let duplicate = try await start(store, scope, id: "original")
+        XCTAssertEqual(duplicate.jobId, original.jobId)
+        do { _ = try await start(store, scope, command: "different", id: "original"); XCTFail("Expected conflict")
+        } catch AskCommandJobError.conflict {}
+        do {
+            _ = try await store.start(.init(action: "start", command: "printf ok"), scope: scope,
+                                      invocationID: "overflow", deadline: nil,
+                                      workspace: { workspace.increment(); return self.root() }, authorize: {})
+            XCTFail("Protected evidence must reject the 129th invocation")
+        } catch AskCommandJobError.capacity {}
+        XCTAssertEqual(count.count, 128); XCTAssertEqual(prepared.count, 128); XCTAssertEqual(workspace.count, 0)
+        XCTAssertEqual(try store.status(original.jobId, scope: scope).state, "exited")
+        clock = clock.addingTimeInterval(86401)
+        XCTAssertThrowsError(try store.logs(original.jobId, scope: scope, stream: .stdout, offset: 0, limit: 10))
+        do { _ = try await start(store, scope, id: "original"); XCTFail("Expected expired evidence")
+        } catch AskCommandJobError.unavailable {}
+        do { _ = try await start(store, scope, command: "different", id: "original"); XCTFail("Expected conflict")
+        } catch AskCommandJobError.conflict {}
+        do { _ = try await start(store, scope, id: "still-full"); XCTFail("Expiry must not release protected capacity")
+        } catch AskCommandJobError.capacity {}
+        XCTAssertEqual(count.count, 128)
+        store.cancelRun(scope)
+        // Rebinding the same revoked run must not restore admission to reclaim space.
+        let revoked = bind(store)
+        do { _ = try await start(store, revoked, id: "revoked"); XCTFail("Expected unavailable")
+        } catch AskCommandJobError.unavailable {}
+        let next = bind(store, run: "next")
+        let admitted = try await start(store, next, id: "after-retirement")
+        await store.waitForCompletion(admitted.jobId)
+        XCTAssertEqual(count.count, 129)
+        XCTAssertThrowsError(try store.status(original.jobId, scope: next))
+        await store.shutdown()
+    }
+
+    func testExpiredPayloadKeepsPersistentFenceAcrossReopenAndOriginalRunRebind() async throws {
+        let directory = root(), count = Count(), now = Date()
+        var clock = now, hooks = countingHooks(count)
+        hooks.now = { clock }
+        var store: AskCommandJobStore? = try AskCommandJobStore(root: directory, hooks: hooks)
+        let scope = try bind(XCTUnwrap(store), persistent: true)
+        let original = try await start(XCTUnwrap(store), scope)
+        await store?.waitForCompletion(original.jobId)
+        clock = now.addingTimeInterval(86401)
+        XCTAssertThrowsError(try store?.logs(original.jobId, scope: scope, stream: .stdout, offset: 0, limit: 20))
+        XCTAssertThrowsError(try store?.status(original.jobId, scope: scope))
+        do { _ = try await start(XCTUnwrap(store), scope); XCTFail("Expired output must not authorize replay")
+        } catch AskCommandJobError.unavailable {}
+        do { _ = try await start(XCTUnwrap(store), scope, command: "different"); XCTFail("Expected conflict")
+        } catch AskCommandJobError.conflict {}
+        let secure = try AskSecureDirectory.openRoot(directory)
+        let data = try secure.readFile(original.jobId + ".json", limit: AskCommandJobStore.maximumRecordBytes)
+        let record = try JSONDecoder().decode(AskCommandJobStore.Record.self, from: data)
+        XCTAssertEqual(record.outputRetention, .expired)
+        XCTAssertTrue(record.stdout.prefix.isEmpty); XCTAssertTrue(record.stderr.prefix.isEmpty)
+        XCTAssertFalse(String(decoding: data, as: UTF8.self).contains("private output"))
+        // App shutdown cancels ownership but cannot retire a still-active server run.
+        await store?.shutdown(); store = nil
+        let reopened = try AskCommandJobStore(root: directory, hooks: hooks)
+        let rebound = bind(reopened, persistent: true)
+        do { _ = try await start(reopened, rebound); XCTFail("Reopen must preserve unbound evidence")
+        } catch AskCommandJobError.unavailable {}
+        do { _ = try await start(reopened, rebound, command: "different"); XCTFail("Expected conflict")
+        } catch AskCommandJobError.conflict {}
+        XCTAssertEqual(count.count, 1)
+        reopened.cancelRun(rebound)
+        let next = bind(reopened, run: "next", persistent: true)
+        let value = try await start(reopened, next)
+        await reopened.waitForCompletion(value.jobId)
+        XCTAssertEqual(count.count, 2)
+        XCTAssertThrowsError(try secure.readFile(original.jobId + ".json",
+                                                limit: AskCommandJobStore.maximumRecordBytes))
+        await reopened.shutdown()
+    }
+
+    func testReservationConsumesFinalEvidenceSlotBeforeSuspendingPreparation() async throws {
+        let entered = Gate(), gate = Gate(), count = Count(), workspaces = Count()
+        let store = try AskCommandJobStore(root: nil, hooks: countingHooks(count)), scope = bind(store)
+        for index in 0 ..< 127 {
+            let value = try await start(store, scope, id: String(index))
+            await store.waitForCompletion(value.jobId)
+        }
+        let held = Task {
+            try await store.start(.init(action: "start", command: "printf ok"), scope: scope,
+                                  invocationID: "held", deadline: nil,
+                                  workspace: { await entered.release(); await gate.wait(); return nil }, authorize: {})
+        }
+        await entered.wait()
+        do {
+            _ = try await store.start(.init(action: "start", command: "printf ok"), scope: scope,
+                                      invocationID: "overflow", deadline: nil,
+                                      workspace: { workspaces.increment(); return nil }, authorize: {})
+            XCTFail("Reservation must occupy capacity")
+        } catch AskCommandJobError.capacity {}
+        do { _ = try await start(store, scope, command: "different", id: "held"); XCTFail("Expected conflict")
+        } catch AskCommandJobError.conflict {}
+        XCTAssertEqual(workspaces.count, 0); XCTAssertEqual(count.count, 127)
+        await gate.release()
+        let value = try await held.value
+        await store.waitForCompletion(value.jobId)
+        XCTAssertEqual(count.count, 128)
+        await store.shutdown()
+    }
+
+    func testLoadExpiresLegacyPayloadWithoutDiscardingUnboundFence() async throws {
+        let directory = root(), secure = try AskSecureDirectory.openRoot(directory), count = Count()
+        let now = Date(), handle = UUID().uuidString.lowercased()
+        var record = AskCommandJobStore.Record(
+            handle: handle, owner: "owner", conversation: "chat", run: "run", device: "device",
+            invocation: "call", digest: AskToolPolicy.digest("printf ok" + "\0" + "5"),
+            created: now.addingTimeInterval(-90000), updated: now.addingTimeInterval(-90000)
+        )
+        record.state = .exited; record.stdout.prefix = Data("expired secret".utf8)
+        var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(record)) as? [String: Any])
+        legacy["outputRetention"] = nil; legacy["admissionRetired"] = nil
+        try secure.createFile(handle + ".json", data: JSONSerialization.data(withJSONObject: legacy))
+        let store = try AskCommandJobStore(root: directory, hooks: countingHooks(count))
+        XCTAssertEqual(secure.entries().count, 1) // No restored binding yet.
+        let scope = bind(store, persistent: true)
+        do { _ = try await start(store, scope); XCTFail("Legacy expired invocation must not replay")
+        } catch AskCommandJobError.unavailable {}
+        do { _ = try await start(store, scope, command: "different"); XCTFail("Expected conflict")
+        } catch AskCommandJobError.conflict {}
+        XCTAssertEqual(count.count, 0)
+        let saved = try JSONDecoder().decode(AskCommandJobStore.Record.self, from:
+            secure.readFile(handle + ".json", limit: AskCommandJobStore.maximumRecordBytes))
+        XCTAssertEqual(saved.outputRetention, .expired); XCTAssertTrue(saved.stdout.prefix.isEmpty)
+        await store.shutdown()
+    }
+
+    func testLegacyOverflowFailsClosedBeforeWorkspaceAndUnknownEvidenceConsumesBudget() async throws {
+        for number in [128, 129] {
+            let directory = root(), secure = try AskSecureDirectory.openRoot(directory), workspace = Count()
+            for _ in 0 ..< number {
+                try secure.createFile(UUID().uuidString.lowercased() + ".json", data: Data("unknown".utf8))
+            }
+            let store = try AskCommandJobStore(root: directory), scope = bind(store, persistent: true)
+            do {
+                _ = try await store.start(.init(action: "start", command: "printf ok"), scope: scope,
+                                          invocationID: "new", deadline: nil,
+                                          workspace: { workspace.increment(); return nil }, authorize: {})
+                XCTFail("Unknown or overflow evidence cannot grant capacity")
+            } catch AskCommandJobError.capacity { XCTAssertEqual(number, 128)
+            } catch AskCommandJobError.storage { XCTAssertEqual(number, 129) }
+            XCTAssertEqual(workspace.count, 0); XCTAssertEqual(secure.entries().count, number)
+            await store.shutdown()
+        }
+    }
+
 }

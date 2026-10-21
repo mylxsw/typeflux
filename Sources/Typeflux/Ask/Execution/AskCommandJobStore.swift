@@ -9,6 +9,8 @@ final class AskCommandJobStore {
         case timedOut = "timed_out", failedToStart = "failed_to_start"
     }
 
+    enum OutputRetention: String, Codable { case retained, expired }
+
     struct Record: Codable {
         var version = 1
         let handle: String
@@ -26,6 +28,9 @@ final class AskCommandJobStore {
         var stdout = AskCommandJobBuffer.Stream()
         var stderr = AskCommandJobBuffer.Stream()
         var durabilityAvailable = true
+        // Optional fields preserve compatibility with version 1 evidence.
+        var outputRetention: OutputRetention? = .retained
+        var admissionRetired: Bool? = false
         var live: Bool {
             state == .starting || state == .running
         }
@@ -63,7 +68,7 @@ final class AskCommandJobStore {
         var record: Record
         let scope: AskCommandJobScope?
         let persistent: Bool
-        let buffer: AskCommandJobBuffer
+        var buffer: AskCommandJobBuffer
         var task: Task<Void, Never>?
         var stopping = false
         init(record: Record, scope: AskCommandJobScope?, persistent: Bool) {
@@ -91,7 +96,10 @@ final class AskCommandJobStore {
     private let hooks: Hooks
     private var entries: [String: Entry] = [:]
     private var retiring: [String: Entry] = [:]
+    private var reservations: [String: Entry] = [:]
+    static let evidenceLimit = 128
     private var storageHealthy = true
+    private var unknownEvidenceCount = 0
     private var bindings: [String: Binding] = [:]
     private var closed = false
 
@@ -133,7 +141,19 @@ final class AskCommandJobStore {
             device: device,
             generation: UUID()
         )
-        bindings[conversation] = Binding(scope: scope, persistent: persistent)
+        let retired = entries.values.contains {
+            $0.record.owner == owner && $0.record.conversation == conversation &&
+                $0.record.run == run && $0.record.device == device && $0.record.admissionRetired == true
+        }
+        bindings[conversation] = Binding(scope: scope, persistent: persistent, revoked: retired)
+        // A trusted replacement retires loaded evidence too; no binding on reopen
+        // by itself is not evidence that the originating run has ended.
+        for entry in entries.values where entry.record.owner != owner ||
+            (entry.record.conversation == conversation &&
+                (entry.record.run != run || entry.record.device != device)) {
+            retire(entry)
+        }
+        prune()
         return scope
     }
 
@@ -167,30 +187,20 @@ final class AskCommandJobStore {
             throw AskCommandJobError.invalid
         }
         try validate(scope)
+        prune()
         let digest = AskToolPolicy.digest(request.command + "\0" + String(request.timeout))
         if let existing = try retransmission(scope, invocation: invocationID, digest: digest) {
             return status(existing)
         }
         try authorize()
         try Task.checkCancellation()
-        let directory = try await workspace()
-        try validate(scope); try authorize(); try Task.checkCancellation()
-        let prepared = try hooks.prepare(directory)
-        // No suspension from this revalidation through persistence and task installation.
-        try validate(scope); try authorize(); try Task.checkCancellation()
-        let timeout = min(TimeInterval(request.timeout), deadline?.timeIntervalSince(hooks.now()) ?? .infinity)
-        guard timeout > 0 else { throw CancellationError() }
-        if let existing = try retransmission(scope, invocation: invocationID, digest: digest) {
-            return status(existing)
-        }
-        prune()
+        prune(makeRoom: true)
         guard storageHealthy else { throw AskCommandJobError.storage }
-        let live = (Array(entries.values) + Array(retiring.values)).filter(\.record.live)
-        guard live.count < 4,
+        let occupied = Array(entries.values) + Array(retiring.values) + Array(reservations.values)
+        let live = occupied.filter(\.record.live)
+        guard occupied.count + unknownEvidenceCount < Self.evidenceLimit, live.count < 4,
               live.filter({ $0.record.owner == scope.owner && $0.record.conversation == scope.conversation }).count < 2
-        else {
-            throw AskCommandJobError.capacity
-        }
+        else { throw AskCommandJobError.capacity }
         let record = Record(
             handle: UUID().uuidString.lowercased(),
             owner: scope.owner,
@@ -203,6 +213,16 @@ final class AskCommandJobStore {
             updated: hooks.now()
         )
         let entry = Entry(record: record, scope: scope, persistent: bindings[scope.conversation]?.persistent == true)
+        // Reserve atomically before workspace preparation can suspend or create anything.
+        reservations[record.handle] = entry
+        defer { reservations[record.handle] = nil }
+        let directory = try await workspace()
+        try validate(scope); try authorize(); try Task.checkCancellation()
+        let prepared = try hooks.prepare(directory)
+        // No suspension from revalidation through persistence and task installation.
+        try validate(scope); try authorize(); try Task.checkCancellation()
+        let timeout = min(TimeInterval(request.timeout), deadline?.timeIntervalSince(hooks.now()) ?? .infinity)
+        guard timeout > 0 else { throw CancellationError() }
         try persist(entry) // Initial evidence must be durable before any possible spawn.
         entries[record.handle] = entry
         let buffer = entry.buffer, runner = hooks.run
@@ -236,19 +256,23 @@ final class AskCommandJobStore {
 
 extension AskCommandJobStore {
     private func retransmission(_ scope: AskCommandJobScope, invocation: String, digest: String) throws -> Entry? {
-        let existing = entries.values
+        let existing = (Array(entries.values) + Array(reservations.values))
             .first { $0.record.owner == scope.owner && $0.record.conversation == scope.conversation
                 && $0.record.run == scope.run && $0.record.device == scope.device && $0.record.invocation == invocation
             }
         if let existing, existing.record.digest != digest {
             throw AskCommandJobError.conflict
         }
+        if let existing, existing.record.outputRetention == .expired || reservations[existing.record.handle] != nil {
+            throw AskCommandJobError.unavailable
+        }
         return existing
     }
 
     private func lookup(_ handle: String, scope: AskCommandJobScope) throws -> Entry {
         prune()
-        guard !closed, let entry = entries[handle], entry.record.owner == scope.owner,
+        guard !closed, let entry = entries[handle], entry.record.outputRetention != .expired,
+              entry.record.owner == scope.owner,
               entry.record.conversation == scope.conversation, entry.record.device == scope.device,
               bindings[scope.conversation]?.scope == scope else { throw AskCommandJobError.unavailable }
         if entry.record
@@ -304,11 +328,14 @@ extension AskCommandJobStore {
     }
 
     func cancelRun(_ scope: AskCommandJobScope) {
-        if bindings[scope.conversation]?.scope == scope {
-            bindings[scope.conversation]?.revoked = true
-        }
-        for entry in entries.values where entry.scope == scope && entry.record.live {
-            cancel(entry)
+        let current = bindings[scope.conversation]?.scope == scope
+        if current { bindings[scope.conversation]?.revoked = true }
+        for entry in entries.values where entry.scope == scope ||
+            (current && entry.scope == nil && entry.record.owner == scope.owner &&
+                entry.record.conversation == scope.conversation && entry.record.run == scope.run &&
+                entry.record.device == scope.device) {
+            retire(entry)
+            if entry.record.live { cancel(entry) }
         }
     }
 
@@ -362,7 +389,9 @@ extension AskCommandJobStore {
 
     func shutdown() async {
         closed = true
-        cancelAll()
+        // Closing this app instance is not proof that the server run is terminal.
+        // Preserve fences in case that same active run is admitted after restart.
+        for entry in entries.values where entry.record.live { cancel(entry) }
         let tasks = entries.values.compactMap(\.task) + retiring.values.compactMap(\.task)
         for task in tasks {
             await task.value
@@ -409,16 +438,20 @@ extension AskCommandJobStore {
     private func load() throws {
         guard let storage else { return }
         // Fixed enumeration/read bounds. Unknown/corrupt evidence is never overwritten or executed.
-        for name in storage.entries(limit: 512).sorted() where name.hasSuffix(".json") && entries.count < 132 {
+        let listing = storage.entries(limit: 513)
+        let names = listing.sorted().filter { $0.hasSuffix(".json") }
+        // Legacy overflow or incomplete enumeration cannot become permission to execute.
+        if listing.count >= 513 || names.count > Self.evidenceLimit { storageHealthy = false }
+        for name in names.prefix(Self.evidenceLimit) {
             let handle = String(name.dropLast(5))
             guard UUID(uuidString: handle) != nil,
                   let data = try? storage.readFile(name, limit: Self.maximumRecordBytes),
                   var record = try? JSONDecoder().decode(Record.self, from: data), record.version == 1,
                   record.handle == handle, record.stdout.prefix.count <= 65536, record.stderr.prefix.count <= 65536,
                   [record.owner, record.conversation, record.run, record.device, record.invocation, record.digest]
-                  .allSatisfy({ !$0.isEmpty && $0.utf8.count <= 1024 }) else { continue }
+                  .allSatisfy({ !$0.isEmpty && $0.utf8.count <= 1024 }) else { unknownEvidenceCount += 1; continue }
             if record.live {
-                record.state = .interrupted; record.ambiguous = true; record.updated = hooks.now()
+                record.state = .interrupted; record.ambiguous = true
             }
             let entry = Entry(record: record, scope: nil, persistent: true)
             entries[handle] = entry
@@ -427,14 +460,31 @@ extension AskCommandJobStore {
         prune()
     }
 
-    private func prune() {
-        let terminal = entries.values.filter { !$0.record.live }.sorted { $0.record.updated > $1.record.updated }
-        for (index, entry) in terminal.enumerated()
-            where index >= 128 || hooks.now().timeIntervalSince(entry.record.updated) >= 86400 {
-            // A failed delete keeps evidence for a later bounded retry; it never grants execution.
-            if entry
-                .persistent {
-                do { try storage?.remove(entry.record.handle + ".json") } catch { storageHealthy = false }
+    private func retire(_ entry: Entry) {
+        guard entry.record.admissionRetired != true else { return }
+        entry.record.admissionRetired = true
+        do { try persist(entry) } catch { entry.record.durabilityAvailable = false }
+    }
+
+    private func prune(makeRoom: Bool = false) {
+        let terminal = entries.values.filter { !$0.record.live }.sorted { $0.record.updated < $1.record.updated }
+        for entry in terminal {
+            let expired = hooks.now().timeIntervalSince(entry.record.updated) >= 86400
+            if expired && entry.record.outputRetention != .expired {
+                entry.record.outputRetention = .expired
+                entry.record.stdout = .init(); entry.record.stderr = .init()
+                entry.buffer.close(); entry.buffer = .init(); entry.buffer.close()
+                do { try persist(entry) } catch {
+                    entry.record.durabilityAvailable = false; storageHealthy = false
+                }
+            }
+            let full = entries.count + retiring.count + reservations.count + unknownEvidenceCount >= Self.evidenceLimit
+            guard entry.record.admissionRetired == true, expired || (makeRoom && full) else { continue }
+            // Keep failed deletions accounted for; they never authorize execution.
+            if entry.persistent {
+                do { try storage?.remove(entry.record.handle + ".json") } catch {
+                    storageHealthy = false; continue
+                }
             }
             entry.buffer.close(); entries[entry.record.handle] = nil
         }
