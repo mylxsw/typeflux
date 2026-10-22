@@ -130,6 +130,44 @@ Required migration contracts:
    after the chat ownership/handoff contract is verified. Retain existing typed
    worker pools and their independent recovery policies.
 
+## Independent presentation process prototype
+
+`TypefluxChatWindowHelper` is a separate, lightweight AppKit application whose
+only dependencies are `TypefluxChatWindowRuntime` and `TypefluxChatWindowProtocol`.
+It receives bounded presentation snapshots and displays selectable, read-only
+text. It has no application DI container, credentials, conversation database,
+model client, tool executor, shortcuts, clipboard monitor or synchronization loop.
+The normal conversation window has not been switched to this prototype.
+
+`AskChatWindowClient` launches this owned child through `ManagedProcess` and a
+private inherited Unix socket descriptor. There is no named listener or network
+port. The child binds the first handshake's generation; all following requests
+must match. Request IDs and response kinds must match, and snapshot sequence
+numbers must increase. Each frame is capped at 512 KiB; text payloads are capped
+at 256 KiB, with per-message and count limits. Invalid payloads fail explicitly.
+
+Each client admits one outstanding request. Encoding and socket I/O execute off
+the main actor under one monotonic deadline. Cancellation, timeout, malformed
+reply or disconnect retires the connection and cancels only its owned process.
+No automatic replacement, queued backlog or request replay is introduced.
+Heartbeats traverse the helper's main queue, so a responsive socket worker cannot
+hide a frozen GUI. Parent death is checked on an independent child timer, and
+idle connections expire after 90 seconds; a future presenter must send periodic
+heartbeats and close the child on account changes and application termination.
+
+Both SwiftPM packaging scripts and the checked-in Xcode project embed a nested
+GUI app with a distinct parent-scoped bundle identity. It is signed before the
+outer app without the parent's restricted entitlements. DEBUG-only `--probe`
+launches an offscreen window and optionally freezes its main thread for up to
+30 seconds; ordinary standalone launches without the inherited descriptor fail.
+
+The next integration must replace direct `AskConversationModel` access with
+presentation snapshots and explicit user intents, keeping the single execution
+owner in the host. The existing draft acknowledgment contract must be used for
+editable input. Attachments, approvals, temporary chats, quick-ask, account
+changes, voice/capture/focus, quit and restart still need end-to-end routing.
+This prototype is a real process boundary test, not a complete chat migration.
+
 ## Acceptance gates
 
 - Freeze the chat helper's main thread for 30 seconds: launcher, screenshot, and
@@ -226,3 +264,43 @@ Required migration contracts:
   draft is never automatically sent. An installed-app crash/restart, real IPC,
   signed helper launch, and the 30-second GUI freeze acceptance gate have not
   been exercised; this step does not claim process isolation.
+
+## Presentation process prototype validation, 2026-10-22
+
+- One focused coverage command passed 39 methods: `ChatWindowProtocolTests`,
+  `ChatWindowPresentationTests`, `ChatWindowClientTests`, `ChatWindowFreezeTests`,
+  `ManagedProcessTests`, and `ExclusiveUIStateLanguageTests`. The scope covers
+  wire limits/session fencing, native presentation, child lifecycle, signed
+  bundle startup, real GUI stalls, the existing process cleanup dependency and
+  UI test isolation. There were no failed tests or retries.
+- The child actually blocked its main thread for 30 seconds. Its main-thread
+  heartbeat returned after 30.031 s while the test parent's main actor completed
+  1,272 scheduled callbacks, with a worst interval of 33.564 ms (20 ms requested).
+  This measures the test parent's responsiveness, not launcher/screenshot/
+  clipboard shortcut latency in the installed application.
+- Separate cases verify a 100 ms heartbeat timeout and caller cancellation retire
+  the stalled child within a three-second bound, overlapping requests are
+  rejected, and wrong IDs/generations/kinds/sequences cannot be accepted. A
+  cold child handshake took 0.929 s on this machine; this is one observation,
+  not a benchmark distribution. The instrumented helper binary was 484 KiB.
+- A temporary nested GUI app was ad-hoc signed with hardened runtime, verified
+  with `codesign --verify --strict`, then launched over the inherited connection.
+  No installed app was replaced. Developer ID signing/notarization, the complete
+  Xcode app build, installed-app permissions and memory benchmarks were not run.
+- Six Python packaging checks passed, covering this GUI helper and the existing
+  media/inference helper packaging. Both dev entrypoints, release packaging and
+  the checked-in Xcode target embed/sign the child without parent entitlements.
+- External coverage-command wall time: 413.28 s (runner-reported 413.15 s;
+  365.30 s build/discovery and 47.85 s execution/startup). Python packaging
+  command: 0.68 s. Both replace, rather than duplicate, plain validation runs.
+  Earlier compile-only checks reported 11.77 s for the helper and 121.33 s for
+  the host; their shell startup time was not separately measured.
+- Parent-test and child-process LLVM coverage were exported against their own
+  binaries and combined by source line. They cover 308/309 changed executable
+  Swift lines (99.68%); see `chat-window-prototype-coverage.json` in the validation
+  directory. This is line coverage, not branch coverage or whole-project coverage.
+  The uncovered line handles failure to set close-on-exec on a new socket pair.
+- The default production conversation window still uses its original process.
+  The prototype is read-only and deliberately has no inference/tool execution
+  path. Full UI/intents integration and the installed-app acceptance gates above
+  remain outstanding.

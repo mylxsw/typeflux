@@ -5,6 +5,7 @@ require 'fileutils'
 require 'xcodeproj'
 require_relative 'xcode_inference_helper'
 require_relative 'xcode_media_helper'
+require_relative 'xcode_chat_window_helper'
 
 ROOT = File.expand_path('..', __dir__)
 PROJECT_PATH = File.join(ROOT, 'TypefluxApp.xcodeproj')
@@ -65,6 +66,7 @@ end
 
 add_inference_helper(project, app_target, TEAM_ID)
 add_media_helper(project, app_target, TEAM_ID)
+add_chat_window_helper(project, app_target, TEAM_ID, BUNDLE_ID)
 
 scheme = Xcodeproj::XCScheme.new
 scheme.configure_with_targets(app_target, nil, launch_target: true)

@@ -22,6 +22,8 @@ let package = Package(
     ],
     products: [
         .library(name: "TypefluxKit", targets: ["Typeflux"]),
+        .library(name: "TypefluxChatWindowKit", targets: ["TypefluxChatWindowRuntime"]),
+        .executable(name: "TypefluxChatWindowHelper", targets: ["TypefluxChatWindowHelper"]),
         .library(name: "TypefluxMediaWorkerKit", targets: ["TypefluxMediaRuntime"]),
         .executable(name: "TypefluxMediaHelper", targets: ["TypefluxMediaHelper"]),
         .library(name: "TypefluxInferenceWorkerKit", targets: ["TypefluxInferenceRuntime"]),
@@ -40,6 +42,9 @@ let package = Package(
         .package(url: "https://github.com/migueldeicaza/SwiftTerm.git", exact: "1.10.1")
     ],
     targets: [
+        .target(name: "TypefluxChatWindowProtocol"),
+        .target(name: "TypefluxChatWindowRuntime", dependencies: ["TypefluxChatWindowProtocol"]),
+        .executableTarget(name: "TypefluxChatWindowHelper", dependencies: ["TypefluxChatWindowRuntime"]),
         .target(name: "TypefluxMediaProtocol"),
         .target(name: "TypefluxMediaRuntime", dependencies: ["TypefluxMediaProtocol"]),
         .executableTarget(name: "TypefluxMediaHelper", dependencies: ["TypefluxMediaRuntime"]),
@@ -57,6 +62,7 @@ let package = Package(
             name: "Typeflux",
             dependencies: [
                 "TypefluxAudioSafety",
+                "TypefluxChatWindowProtocol",
                 "TypefluxInferenceProtocol",
                 "TypefluxMediaProtocol",
                 .product(name: "TypefluxChat", package: "TypefluxChat"),
@@ -90,7 +96,7 @@ let package = Package(
         ),
         .testTarget(
             name: focusedTestFiles == nil ? "TypefluxTests" : "TypefluxFocusedTests",
-            dependencies: ["Typeflux", "TypefluxInferenceRuntime", "TypefluxMediaRuntime"],
+            dependencies: ["Typeflux", "TypefluxInferenceRuntime", "TypefluxMediaRuntime", "TypefluxChatWindowRuntime"],
             path: "Tests/TypefluxTests",
             exclude: focusedTestFiles.map { selected in allTestFiles.filter { !selected.contains($0) } } ?? [],
             sources: focusedTestFiles
