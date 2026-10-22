@@ -95,7 +95,7 @@ final class AskLocalEngineTests: XCTestCase {
         XCTAssertNil(body["max_tokens"])
         // Read the system texts themselves; serialized JSON escapes "/".
         let text = ((body["messages"] as? [[String: Any]]) ?? []).compactMap { $0["content"] as? String }.joined(separator: "\n")
-        XCTAssertTrue(text.contains("You are Typeflux Ask"))
+        XCTAssertTrue(text.contains("You are Typeflux Chat"))
         XCTAssertTrue(text.contains(#"Pinned date: "2026-10-02 (Friday)"; time zone: "Asia/Shanghai"."#), text)
         XCTAssertTrue(text.contains(#"Device locale: "zh-Hans-CN"."#))
         XCTAssertTrue(text.contains("Prefers &lt;b&gt;short&lt;/b&gt; answers"))

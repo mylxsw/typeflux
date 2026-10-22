@@ -1,13 +1,13 @@
 # Agent Framework Refactoring Development Document
 
-> **Superseded.** The voice "Ask Anything" agent described here (AgentLoop, job records,
+> **Superseded.** The voice "Chat" agent described here (AgentLoop, job records,
 > clarification dialog, `WorkflowController+Agent`) was removed once the 对话 conversation
 > window (`Sources/Typeflux/Ask/`, see `ASK_CONVERSATIONS.md`) replaced it. Only the
 > `AgentTool` protocol and MCP support remain, reused by Ask. Kept for historical context.
 
 ## Goal
 
-Refactor the "Ask Anything" feature from the current fixed two-step flow (intent classification → execution) into a fully functional Agent framework with support for:
+Refactor the "Chat" feature from the current fixed two-step flow (intent classification → execution) into a fully functional Agent framework with support for:
 - **Iterative execution**: The agent can perform multi-step reasoning, limited to a maximum number of steps (default: 10)
 - **Tool calling**: Built-in tools (termination tools, intermediate tools) + external MCP tools
 - **MCP support**: Model Context Protocol, with Stdio (local process) and HTTP/SSE (remote server) transport modes
@@ -1068,7 +1068,7 @@ The existing `WorkflowController` remains unchanged. A new extension file is add
 
 ```swift
 extension WorkflowController {
-    /// Handle "Ask Anything" using the new Agent framework
+    /// Handle "Chat" using the new Agent framework
     func runAskAgent(
         selectedText: String?,
         spokenInstruction: String,

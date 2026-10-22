@@ -585,7 +585,7 @@ extension LocalizationResourceTests {
                     "studio.eyebrow.agent", "ask.models.ask", "ring.feature.ask.title"]
         let retiredNames = ["随便问", "隨便問", "Ask Anything", "何でも聞いてください",
                             "「何でも質問」", "「何でも聞く」", "なんでも質問", "무엇이든 묻기",
-                            "무엇이든 질문"]
+                            "무엇이든 질문", "when Ask starts"]
         for language in AppLanguage.allCases {
             let bundle = try localizationBundle(for: language)
             let url = try XCTUnwrap(bundle.url(forResource: "Localizable", withExtension: "strings"))

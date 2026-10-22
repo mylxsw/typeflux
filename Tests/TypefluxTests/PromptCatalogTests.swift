@@ -412,7 +412,7 @@ final class PromptCatalogTests: XCTestCase {
         )
 
         XCTAssertTrue(prompts.system.contains("Default to \"answer\" whenever the intent is ambiguous."))
-        XCTAssertTrue(prompts.system.contains("single-shot \"Ask Anything\" requests"))
+        XCTAssertTrue(prompts.system.contains("single-shot \"Chat\" requests"))
         XCTAssertTrue(prompts.system.contains("final answer in the \"content\" field"))
         XCTAssertTrue(prompts.system.contains("final rewritten text in the \"content\" field"))
         XCTAssertTrue(prompts.system.contains("If <editable_target> is false, you must choose \"answer\""))

@@ -762,7 +762,7 @@ enum PromptCatalog {
         switch mode {
         case .decision:
             return """
-            You handle single-shot "Ask Anything" requests about selected text.
+            You handle single-shot "Chat" requests about selected text.
 
             You must choose exactly one value for "answer_edit":
             - "answer": The user is asking a question, requesting explanation, analysis, clarification, extraction of information, or any other read-only help. When you choose "answer", provide the final answer in the "content" field.
@@ -778,7 +778,7 @@ enum PromptCatalog {
             """
         case .answer:
             return """
-            You answer spoken "Ask Anything" requests.
+            You answer spoken "Chat" requests.
 
             Provide a direct, helpful answer to the user's spoken question or request.
             If selected text is provided, treat it as the user's current context and use it when answering.

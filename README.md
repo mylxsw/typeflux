@@ -34,19 +34,19 @@ Most voice input tools force you to switch apps — dictating in one place, then
 
 Typeflux injects text directly into whichever app you're already using, at the cursor position, the moment you release the hotkey. It feels like typing, just **4× faster** (~200 WPM vs. ~50 WPM).
 
-And when you need more than dictation, **Ask Anything** turns your voice into an AI assistant for Q&A, rewriting, translation, and complex workflows.
+And when you need more than dictation, **Chat** turns your voice into an AI assistant for Q&A, rewriting, translation, and complex workflows.
 
 ## How It Works
 
 ```
 Hold Fn → Speak → Release → Text appears instantly
-Fn ×2 → Ask → Release → Answer, edit, or action
+Fn ×2 → Chat → Release → Answer, edit, or action
 ```
 
 1. **Press and hold** `Fn` (default hotkey)
 2. **Speak naturally**
 3. **Release** — Typeflux transcribes and injects the text at your cursor
-4. **Double-press** `Fn` to use Ask Anything for Q&A, selected-text edits, and agent workflows
+4. **Double-press** `Fn` to use Chat for Q&A, selected-text edits, and agent workflows
 5. The result is also copied to clipboard as a fallback
 
 ## Features
@@ -58,7 +58,7 @@ layout and upgrade behavior.
 ### One-Click Voice Input
 Hold `Fn` to start, release to stop. No switching input methods, no clicking buttons — works in any text field across browsers, code editors, terminals, and native apps.
 
-### Ask Anything (`Fn` ×2)
+### Chat (`Fn` ×2)
 More than just dictation. Double-press `Fn`, speak on the second press, then release to chat with an AI agent using your voice:
 
 - **Voice Q&A** — Ask questions and get instant answers
@@ -85,7 +85,7 @@ Create named instruction sets for different scenarios — work emails, study not
 | Free Models | Cloud | No API key, open-source endpoints |
 
 ### Custom Model Protocols
-In **Settings → Models → Add Endpoint**, choose **Chat Completions**, **Anthropic Messages**, or **Responses**, then enter the endpoint, API key, and model ID. The protocol is saved with the provider and used for model discovery, connection tests, rewrite, and Ask, including streamed replies and tools. Existing custom providers keep Chat Completions until you change their protocol.
+In **Settings → Models → Add Endpoint**, choose **Chat Completions**, **Anthropic Messages**, or **Responses**, then enter the endpoint, API key, and model ID. The protocol is saved with the provider and used for model discovery, connection tests, rewrite, and Chat, including streamed replies and tools. Existing custom providers keep Chat Completions until you change their protocol.
 
 You can enter a base URL such as `https://api.example.com/v1` or a full inference URL. Typeflux preserves gateway path prefixes when selecting `/models`, `/messages`, `/responses`, or `/chat/completions`. Model discovery depends on the gateway exposing a compatible `/models` endpoint; otherwise add model IDs manually.
 
@@ -165,7 +165,7 @@ collaborator can comment `@autotest` to run the test workflow.
 
 See [CLAUDE.md](./CLAUDE.md) for the full development guide.
 
-### Run the iOS Ask app
+### Run the iOS Chat app
 
 With full Xcode 26+ and an iOS Simulator runtime installed, run from the repository root:
 
@@ -186,7 +186,7 @@ The iOS app requires iOS 17+. See the [iOS run, installation, and deployment gui
 ## Documentation
 
 - [iOS Run, Installation, and Deployment (中文)](./docs/IOS_QUICKSTART.zh-CN.md)
-- [iOS Ask Client: Architecture and Development](./docs/IOS_CHAT.md)
+- [iOS Chat Client: Architecture and Development](./docs/IOS_CHAT.md)
 - [Usage Guide](./docs/USAGE.md)
 - [Make Commands](./docs/MAKE_COMMANDS.md)
 - [Release Guide](./docs/RELEASE.md)

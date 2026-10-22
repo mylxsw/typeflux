@@ -1185,7 +1185,7 @@ final class WorkflowController {
             }
             if effectiveIntent == .askSelection {
                 NetworkDebugLogger
-                    .logMessage("[Ask Flow] realtime transcription disabled for isolated Ask Anything recording")
+                    .logMessage("[Ask Flow] realtime transcription disabled for isolated Chat recording")
             }
             let realtimeAudioBufferPump = realtimeSession.map { RealtimeAudioBufferPump(session: $0) }
             activeRealtimeTranscriptionSession = realtimeSession

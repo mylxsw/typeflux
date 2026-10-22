@@ -550,7 +550,7 @@ final class AXTextInjector: TextInjector {
 
         if TypefluxWindowIdentity.isAskAnswerWindow(typefluxFrontmostWindow()) {
             NetworkDebugLogger.logMessage(
-                "[AXTextInjector] skipped selection snapshot for Typeflux Ask Answer window"
+                "[AXTextInjector] skipped selection snapshot for Typeflux Chat Answer window"
             )
             latestSelectionContext = nil
             return .completed(typefluxReadOnlyWindowSelectionSnapshot(source: "typeflux-ask-answer-window"))
@@ -844,7 +844,7 @@ final class AXTextInjector: TextInjector {
 
         if TypefluxWindowIdentity.isAskAnswerWindow(typefluxFrontmostWindow()) {
             NetworkDebugLogger.logMessage(
-                "[AXTextInjector] skipped input snapshot for Typeflux Ask Answer window"
+                "[AXTextInjector] skipped input snapshot for Typeflux Chat Answer window"
             )
             return typefluxOwnedInputSnapshot(failureReason: "typeflux-ask-answer-window")
         }

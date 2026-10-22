@@ -2582,7 +2582,7 @@
 "agent.skills.install.root" = "repository root";
 "agent.mcp.emptyTitle" = "Connect external tools";
 "agent.mcp.emptyHint" = "Supports local commands (stdio) and remote HTTP, and imports the mcpServers JSON used by Claude Desktop and Cursor.";
-"agent.mcp.listHint" = "Click a server to edit it. Enabled servers connect when a conversation needs them; with auto-connect on, they connect when Ask starts.";
+"agent.mcp.listHint" = "Click a server to edit it. Enabled servers connect when a conversation needs them; with auto-connect on, they connect when Chat starts.";
 "agent.mcp.status.disabled" = "Off";
 "agent.mcp.status.untested" = "Not tested";
 "agent.mcp.status.connected" = "Connected · %d tools";

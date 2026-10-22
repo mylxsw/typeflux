@@ -1,6 +1,6 @@
-# iOS Ask client
+# iOS Chat client
 
-The iOS app is a SwiftUI chat client for Typeflux Ask. It uses the existing
+The iOS app is a SwiftUI chat client for Typeflux Chat. It uses the existing
 account and cloud conversation API, keeps a copy of cloud history on the device,
 and can also run entirely on the user's own model providers without an account.
 It supports dictation through Apple Speech. It does not include a keyboard
@@ -11,7 +11,7 @@ extension, on-device model inference, or a desktop tool executor.
 ```text
 typeflux/
 ├── Package.swift                    # Existing macOS application and tests
-├── Sources/Typeflux/                # macOS UI, voice, local tools, rich Ask state
+├── Sources/Typeflux/                # macOS UI, voice, local tools, rich Chat state
 ├── Packages/TypefluxChat/           # Foundation-only shared Swift package
 │   ├── Sources/TypefluxChat/        # Wire DTOs, auth decoding, REST, SSE
 │   └── Tests/TypefluxChatTests/
@@ -36,7 +36,7 @@ replacement document that could erase desktop-only metadata.
 
 ## Current behavior
 
-The interface follows design v4 (GUL-199): the Mac Ask visual language on a
+The interface follows design v4 (GUL-199): the Mac Chat visual language on a
 phone, with one accent colour, one type scale and glass only on floating layers.
 
 - The app opens on a new conversation, like the Mac window. History lives in a
