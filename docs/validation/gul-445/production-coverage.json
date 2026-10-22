@@ -1,0 +1,50 @@
+{
+  "changed_production_executable_lines": 0,
+  "files": {
+    "Sources/Typeflux/Ask/AskAgentBinding.swift": {
+      "covered": 69,
+      "executable": 74,
+      "sha256": "b391f31263ee66fe14ec8c12a1a22db0a72ff1ccb76f4b78b49d8bdd50012f31"
+    },
+    "Sources/Typeflux/Ask/AskAgentTurn.swift": {
+      "covered": 90,
+      "executable": 91,
+      "sha256": "afbf62ed02b73770fde28ae861691e1998e5d2267685c4978705b2754eedf1b7"
+    },
+    "Sources/Typeflux/Ask/AskApplicationAPI.swift": {
+      "covered": 71,
+      "executable": 74,
+      "sha256": "23d7070c45946ea9b212244cfb74d489f3523705c1e04f900cbc219edc3e1fc0"
+    },
+    "Sources/Typeflux/Ask/AskConversationModel.swift": {
+      "covered": 1587,
+      "executable": 2513,
+      "sha256": "ccf4197b0456a5a6c54ceb4c2da4d70e22bb6e816985741a6d41cd0b484b86bd"
+    },
+    "Sources/Typeflux/Ask/AskFolderGrants.swift": {
+      "covered": 118,
+      "executable": 118,
+      "sha256": "0323da799bbc9da79117a8163d96fb8c786a1930e2053280871a5f55d1002535"
+    },
+    "Sources/Typeflux/Ask/AskLocalTools+Files.swift": {
+      "covered": 45,
+      "executable": 53,
+      "sha256": "5e8696a14e190710d2a7ea54e573383fd2d9295a2642b0430df7f438b6bb2285"
+    },
+    "Sources/Typeflux/Ask/Execution/AskHostCommand.swift": {
+      "covered": 79,
+      "executable": 79,
+      "sha256": "d3c5d216adf36c2a2e8d059d123e3eef120825bf63b146aeeaaab5ca2a0b5ba2"
+    },
+    "Sources/Typeflux/Ask/Local/AskLocalEngine.swift": {
+      "covered": 911,
+      "executable": 1044,
+      "sha256": "2f4fb4f816fb89b973df1922c55a58690df3ea4f86672712d42f10436c76d690"
+    },
+    "Sources/Typeflux/Ask/Local/AskPromptBuilder.swift": {
+      "covered": 101,
+      "executable": 101,
+      "sha256": "45705c8f3a986ce5f879d1f3dbc5af25f69e6fe0e02a4b0c33da11cebeb181c8"
+    }
+  }
+}

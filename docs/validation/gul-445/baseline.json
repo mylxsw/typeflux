@@ -1,0 +1,5 @@
+{
+  "source": "5e31755bf9801d3ca3270180773bad3ffd37d0a1",
+  "intervening_changes": "None after required #706 baseline. Earlier main includes c05b305b Chat rename and c465316a app icon; retained unchanged.",
+  "production_changes": false
+}

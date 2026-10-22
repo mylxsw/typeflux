@@ -99,6 +99,47 @@ final class AskAgentTurnTests: XCTestCase {
         XCTAssertFalse(wire.contains("agent_state")); XCTAssertFalse(wire.contains("9007199254740993"))
         let usage = try await restartedAPI.usage(id: conversation.id, runId: nil, cursor: nil, token: "")
         XCTAssertFalse(String(decoding: try AskCoding.encoder().encode(usage), as: UTF8.self).contains("agent_state"))
+        XCTAssertFalse(usage.items.isEmpty)
+        XCTAssertTrue(usage.items.allSatisfy { $0.runId == run.id })
+    }
+
+    func testDefaultApprovalReopenKeepsOriginalBindingAndNewRunUsesAlternate() async throws {
+        let owner = try AskTurnDirectoryOwner(directory: directory), adapter = fake()
+        var engine: AskLocalEngine? = AskLocalEngine(directory: directory, budgetEnabled: true,
+            turnPolicy: try policy(adapter, owner: owner, selected: .default))
+        var api: AskApplicationAPI? = app(engine!)
+        let req = request()
+        var value = try await api!.send(conversationId: "default-reopen", request: req, token: "")
+        let run = try XCTUnwrap(value.run), inference = try XCTUnwrap(run.inference)
+        value = try await api!.inferenceResult(conversationId: value.id, request: .init(runId: run.id,
+            deviceId: "device", inferenceId: inference.id, content: "", toolCalls: [.init(id: "plan-call",
+                function: .init(name: "update_plan", arguments: #"{"items":[{"step":"Approved once","status":"completed"}]}"#))]), token: "")
+        XCTAssertEqual(value.run?.status, "waiting_tool")
+        XCTAssertTrue(value.run?.plan?.isEmpty != false)
+        api = nil; engine = nil
+        let reopened = AskLocalEngine(directory: directory, budgetEnabled: true, turnPolicy: try policy(adapter, owner: owner))
+        let boundary = app(reopened)
+        let approval = AskToolResultRequest(approveExecution: true, runId: run.id, deviceId: "device",
+            toolCallId: "plan-call", content: "", isError: false)
+        value = try await boundary.result(conversationId: value.id, request: approval, token: "")
+        XCTAssertEqual(value.run?.agentBinding, .default)
+        XCTAssertEqual(value.run?.plan?.map(\.step), ["Approved once"])
+        XCTAssertEqual(adapter.count, 0)
+        let continuation = try XCTUnwrap(value.run?.inference)
+        value = try await boundary.inferenceResult(conversationId: value.id, request: .init(runId: run.id,
+            deviceId: "device", inferenceId: continuation.id, content: "Finished original run"), token: "")
+        let revision = value.revision
+        value = try await boundary.result(conversationId: value.id, request: approval, token: "")
+        XCTAssertEqual(value.revision, revision)
+        XCTAssertEqual(value.messages.filter { $0.toolCallId == "plan-call" }.count, 1)
+        XCTAssertEqual(value.run?.status, "completed")
+        let usage = try await boundary.usage(id: value.id, runId: run.id, cursor: nil, token: "")
+        XCTAssertFalse(usage.items.isEmpty)
+        XCTAssertTrue(usage.items.allSatisfy { $0.runId == run.id })
+        value = try await boundary.send(conversationId: value.id, request: request(), token: "")
+        XCTAssertEqual(value.run?.agentBinding, adapter.descriptor.binding)
+        XCTAssertNotEqual(value.run?.id, run.id)
+        XCTAssertEqual(adapter.count, 1)
     }
 
     func testProductionDefaultCallsAdapterAndPreservesContent() async throws {
