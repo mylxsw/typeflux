@@ -143,6 +143,12 @@ enum AskCommandCatalog {
                        disabledReason: context.launcher || !context.hasAnswer ? L("ask.command.disabled.noAnswer") : nil),
             AskCommand(action: .permissionMode, name: "mode", title: L("ask.mode.title"), symbol: "checkmark.shield",
                        group: .conversation, kind: .submenu, trailing: context.permissionMode.title),
+            AskCommand(action: .chatMode, name: "chat", title: L("ask.command.chat"), symbol: AskConversationKind.chat.symbol,
+                       group: .conversation, kind: .toggle(on: context.conversationKind == .chat),
+                       aliases: ["liaotian", "talk"]),
+            AskCommand(action: .workMode, name: "work", title: L("ask.command.work"), symbol: AskConversationKind.work.symbol,
+                       group: .conversation, kind: .toggle(on: context.conversationKind == .work),
+                       aliases: ["task", "renwu", "agent"]),
             AskCommand(action: .model, name: "model", title: L("ask.command.model"), symbol: "cpu", group: .model,
                        kind: .submenu, disabledReason: busy,
                        trailing: context.models.first { $0.reference == context.currentModel }?.name, aliases: ["moxing", "switch"])
@@ -153,12 +159,6 @@ enum AskCommandCatalog {
                                      aliases: ["reasoning", "effort"]))
         }
         result += [
-            AskCommand(action: .chatMode, name: "chat", title: L("ask.command.chat"), symbol: AskConversationKind.chat.symbol,
-                       group: .conversation, kind: .toggle(on: context.conversationKind == .chat),
-                       aliases: ["liaotian", "talk"]),
-            AskCommand(action: .workMode, name: "work", title: L("ask.command.work"), symbol: AskConversationKind.work.symbol,
-                       group: .conversation, kind: .toggle(on: context.conversationKind == .work),
-                       aliases: ["task", "renwu", "agent"]),
             AskCommand(action: .localMode, name: "local", title: L("ask.command.local"), symbol: "lock",
                        group: .model, kind: .toggle(on: context.localMode), disabledReason: context.storageLocked,
                        aliases: ["offline", "private"]),

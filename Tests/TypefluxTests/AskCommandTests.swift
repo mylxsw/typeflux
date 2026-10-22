@@ -478,7 +478,8 @@ struct AskCommandExecutionTests {
         #expect(context.skills.map(\.name) == ["meeting-notes"])
         #expect(context.mcpServers.map(\.name) == ["github"])
         #expect(context.chosenSkills == ["meeting-notes"])
-        #expect(!context.models.contains { $0.reference.hasPrefix("cloud:") })
+        // Signed in, a conversation kept on this Mac may use Cloud models too (GUL-460).
+        #expect(context.models.contains { $0.reference.hasPrefix("cloud:") })
         recorder.local = false
         #expect(f.model.commandContext(launcher: true).models.contains { $0.reference == context.currentModel })
     }

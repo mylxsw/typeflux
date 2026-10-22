@@ -44,6 +44,9 @@ struct AskLocalizationPolishAccessibilityTests {
             let field = try #require(editor(window.contentView!))
             #expect(field.accessibilityLabel() == L("ask.followup.placeholder"))
             fixture.model.newConversation()
+            // The shared fixture starts work; a chat keeps the original question placeholder.
+            try await fixture.wait { field.accessibilityLabel() == L("ask.input.placeholder.work") }
+            fixture.model.setConversationKind(.chat, launcher: false)
             try await fixture.wait { field.accessibilityLabel() == L("ask.input.placeholder") }
             let tree = nodes(window)
             let attach = tree.filter { value($0, "accessibilityIdentifier") as? String == "ask.composer.attach" }
