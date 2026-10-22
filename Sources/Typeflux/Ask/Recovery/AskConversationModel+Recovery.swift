@@ -50,9 +50,8 @@ extension AskConversationModel {
         }
     }
 
-    /// First reconcile facts already on disk, then start a read-only inspection
-    /// if the current run still has an uncertain effect. The user does not need
-    /// to understand or decide what a missing receipt means.
+    /// Reconcile receipts already on disk without creating a message or a run.
+    /// An uncertain outcome stays paused until the user requests an inspection.
     func recoverWithoutUser() async {
         guard automaticRecoveryEnabled, let value = selected, let run = value.run, !isLoadingSelection,
               !busyIds.contains(value.id), !recoveryWorking,
@@ -64,10 +63,6 @@ extension AskConversationModel {
             await retransmitSavedReceipts()
             guard !canRetransmitReceipts else { return }
         }
-        guard selectedId == value.id, selected?.run?.id == run.id,
-              recoveryPresentation.unknown,
-              automaticRecoveryAttempts.insert(key + "/inspect").inserted else { return }
-        await checkAndContinueRecovery()
     }
 
     func refreshRecovery(_ value: AskConversation, route: AskRoute) async {

@@ -57,12 +57,15 @@ extension AskFileTools {
                 if access.initial != nil {
                     guard let expectedVersion
                     else {
-                        throw AskFileAccess
-                            .error("Read the file first and supply expected_version before changing an existing file.")
+                        throw AskToolPreparationFailure(AskFileAccess.error(
+                            "Read the file first and supply expected_version before changing an existing file."
+                        ))
                     }
-                    guard expectedVersion == access.version else { throw AskFileAccess.conflict }
+                    guard expectedVersion == access.version else {
+                        throw AskToolPreparationFailure(AskFileAccess.conflict)
+                    }
                 } else if expectedVersion != nil {
-                    throw AskFileAccess.conflict
+                    throw AskToolPreparationFailure(AskFileAccess.conflict)
                 }
                 let original = access.initial == nil ? nil : try access.boundedData(limit: Self.maximumEditBytes)
                 let originalDigest = original.map(AskFileAccess.digest)

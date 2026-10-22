@@ -6,6 +6,7 @@ import SwiftUI
 /// inside the transcript's layout pass.
 struct AskReasoningText: NSViewRepresentable {
     let text: String
+    @Environment(\.colorScheme) private var colorScheme
 
     func makeNSView(context _: Context) -> NSScrollView {
         Self.makeScrollView()
@@ -37,6 +38,7 @@ struct AskReasoningText: NSViewRepresentable {
     }
 
     func updateNSView(_ scroll: NSScrollView, context _: Context) {
+        scroll.appearance = NSAppearance(named: colorScheme == .dark ? .darkAqua : .aqua)
         (scroll.documentView as? Editor)?.setContent(text)
     }
 
@@ -46,14 +48,22 @@ struct AskReasoningText: NSViewRepresentable {
         func setContent(_ text: String) {
             guard source != text, let storage = textStorage else { return }
             let selection = selectedRange()
+            // NSTextStorage string edits do not inherit NSTextView's textColor
+            // when storage is empty. Style every inserted run explicitly.
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: 13),
+                .foregroundColor: NSColor.secondaryLabelColor
+            ]
             // Providers normally append. Do not replace the existing storage or
             // invalidate its laid-out prefix for every token.
             if text.hasPrefix(source) {
                 let offset = source.utf16.count
                 storage.replaceCharacters(in: NSRange(location: storage.length, length: 0),
-                                          with: (text as NSString).substring(from: offset))
+                                          with: NSAttributedString(string: (text as NSString).substring(from: offset),
+                                                                   attributes: attributes))
             } else {
-                storage.replaceCharacters(in: NSRange(location: 0, length: storage.length), with: text)
+                storage.replaceCharacters(in: NSRange(location: 0, length: storage.length),
+                                          with: NSAttributedString(string: text, attributes: attributes))
             }
             source = text
             if NSMaxRange(selection) <= storage.length { setSelectedRange(selection) }

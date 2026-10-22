@@ -37,7 +37,9 @@ extension AskLocalTools {
                     args["path"] as? String ?? "",
                     forWriting: args["action"] as? String == "write"
                 ).path
-                guard Self.fileApprovalTarget(path) == approved else { throw AskFileAccess.conflict }
+                guard Self.fileApprovalTarget(path) == approved else {
+                    throw AskToolPreparationFailure(AskFileAccess.conflict)
+                }
             }
             return try AskLocalToolOutput(content: files.execute(args))
         }

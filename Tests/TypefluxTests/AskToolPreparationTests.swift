@@ -38,6 +38,45 @@ struct AskToolPreparationTests {
         }
     }
 
+    @Test(arguments: ["write", "edit"], [true, false])
+    func `stale or missing file version is a known refusal without synthetic user followup`(_ action: String, _ hasVersion: Bool) async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = root.appendingPathComponent("solver.js")
+        try Data("original".utf8).write(to: file)
+        let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
+        let settings = SettingsStore(defaults: defaults)
+        settings.askFileAccessFolders = [root.path]
+        let tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)), settings: settings)
+        let fixture = try AskTestFixture(automaticRecovery: true, toolsOverride: tools)
+        defer { fixture.model.resetSession() }
+        var args: [String: String] = ["action": action, "path": file.path, "expected_version": "1",
+                                      "old_text": "original", "new_text": "edited", "content": "replacement"]
+        if !hasVersion { args["expected_version"] = nil }
+        var value = AskRecoveryFixture.conversation()
+        value.messages[0].createdAt = Date(timeIntervalSince1970: 1_800_000_000)
+        value.run?.pending = [try .init(id: "call", function: .init(
+            name: "files", arguments: String(decoding: JSONSerialization.data(withJSONObject: args), as: UTF8.self)
+        ))]
+        await fixture.api.seed(value)
+        await fixture.model.select(value.id)
+        fixture.model.setPermissionMode(.yolo, launcher: false)
+        fixture.model.resume()
+        try await fixture.wait { fixture.model.busyIds.isEmpty }
+        await fixture.model.recoverWithoutUser()
+        let result = try #require(await fixture.api.results.first)
+        #expect(result.isError)
+        #expect(result.harness?.outcome?.safeStatus == .invalid)
+        #expect(result.harness?.outcome?.eventDispatched == false)
+        #expect(!fixture.model.hasRecoveryNotice)
+        #expect(await fixture.api.sends.isEmpty)
+        #expect(fixture.model.selected?.messages.filter { $0.role == "user" } == value.messages.filter { $0.role == "user" })
+        #expect(try String(contentsOf: file) == "original")
+        let entry = try #require(await fixture.cache.execution(id: "run/call", owner: "owner"))
+        #expect(entry.acknowledged && !entry.unknown)
+    }
+
     @Test(arguments: ["computer", "browser", "invalid-json", "missing-tool", "stale-observation", "permission"])
     func `rejected preparation settles pending call`(_ scenario: String) async throws {
         let f = try Fixture()
@@ -248,7 +287,7 @@ struct AskToolPreparationTests {
         #expect(await f.base.api.results.isEmpty && f.desktop.events.isEmpty)
     }
 
-    @Test(arguments: ["denied", "failed"])
+    @Test(arguments: ["denied", "failed", "invalid"])
     func `classified failure advances the real local engine`(_ status: String) async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -273,7 +312,7 @@ struct AskToolPreparationTests {
                                                      )]
                                                  ), token: "")
         #expect(value.run?.status == "waiting_tool")
-        let refusal = AskToolPreparationFailure(AskObservationError.disabled)
+        let refusal = AskToolPreparationFailure(status == "invalid" ? AskFileAccess.conflict : AskObservationError.disabled)
         let receipt = AskToolResultRequest(runId: run.id, deviceId: "device", toolCallId: "call",
                                            content: status == "failed" ? "Exit code: 1" : refusal.message,
                                            isError: true, harness: .init(

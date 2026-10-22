@@ -56,6 +56,26 @@ final class AskFileDispatchTests: XCTestCase {
         return (root, tools, defaults)
     }
 
+    func testChangedApprovalTargetIsKnownNotDispatched() async throws {
+        let (root, tools, _) = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let version = try AskFileTools(roots: [root.path]).readPage("file").version
+        let request = try call("write", extra: ["content": "replacement", "expected_version": version])
+        let binding = try await tools.approvalBinding(for: request, conversationId: "c")
+        try Data("external change".utf8).write(to: root.appendingPathComponent("file"))
+        do {
+            _ = try await tools.executeFiles(
+                ["action": "write", "path": "file", "content": "replacement", "expected_version": version],
+                conversationId: "c", approved: binding.target
+            )
+            XCTFail("Stale approval must be rejected")
+        } catch let failure as AskToolPreparationFailure {
+            XCTAssertEqual(failure.outcome.safeStatus, .invalid)
+            XCTAssertEqual(failure.outcome.eventDispatched, false)
+        }
+        XCTAssertEqual(try String(contentsOf: root.appendingPathComponent("file")), "external change")
+    }
+
     func testActualRawAndApprovedDispatchForwardCancellationAndJoinWorker() async throws {
         for (action, event, approved) in [("read", "read", false), ("search", "entry", false), ("read", "read", true),
                                           ("write", "staged", true), ("write", "precommit", true)] {

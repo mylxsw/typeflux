@@ -44,6 +44,35 @@ import Testing
         #expect(NSMaxRange(editor.selectedRange()) == 0)
     }
 
+    @Test func `initial appended and replaced text retain readable colors in both appearances`() throws {
+        let scroll = AskReasoningText.makeScrollView()
+        let editor = try #require(scroll.documentView as? AskReasoningText.Editor)
+        for name in [NSAppearance.Name.darkAqua, .aqua] {
+            let appearance = try #require(NSAppearance(named: name))
+            scroll.appearance = appearance
+            for text in ["Initial 中文", "Initial 中文 appended", "Replacement", "", "After clearing"] {
+                editor.setContent(text)
+                let storage = try #require(editor.textStorage)
+                storage.enumerateAttributes(in: NSRange(location: 0, length: storage.length)) { attrs, _, _ in
+                    #expect((attrs[.font] as? NSFont)?.pointSize == 13)
+                    guard let color = attrs[.foregroundColor] as? NSColor else {
+                        Issue.record("Reasoning text has no explicit foreground color")
+                        return
+                    }
+                    appearance.performAsCurrentDrawingAppearance {
+                        let rgb = color.usingColorSpace(.deviceRGB)
+                        #expect(rgb != nil)
+                        if name == .darkAqua {
+                            #expect((rgb?.redComponent ?? 0) > 0.7)
+                        } else {
+                            #expect((rgb?.redComponent ?? 1) < 0.4)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @Test func `large streamed reasoning fits a bounded viewport at narrow widths`() throws {
         _ = NSApplication.shared
         let scroll = AskReasoningText.makeScrollView()
