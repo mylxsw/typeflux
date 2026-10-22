@@ -428,6 +428,10 @@ body.bare .desk { border-radius: 0; }
 .pvc { padding: 11px 12px; font-size: 12.5px; color: var(--t2); border-top: 1px solid var(--hair); }
 .pvl:nth-child(-n+4), .pvc:nth-child(-n+4) { border-top: none; }
 .pvc.on { color: var(--t1); font-weight: 560; background: var(--acc-soft); }
+.pvfacts { position: absolute; left: 20px; right: 20px; top: 196px; height: 240px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.pvf { border-radius: 16px; background: var(--panel); border: 1px solid var(--hair); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+.pvf .g { width: 64px; height: 64px; border-radius: 18px; background: var(--acc-soft); color: var(--acc-t); display: flex; align-items: center; justify-content: center; }
+.pvf b { font-size: 15px; font-weight: 600; }
 .pcards { position: absolute; left: 20px; right: 20px; top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .pcard { all: unset; box-sizing: border-box; border-radius: 14px; background: var(--panel); border: 1px solid var(--hair); padding: 14px 15px; cursor: pointer; color: var(--t1); transition: all .2s; }
 .pcard.on { border-color: color-mix(in srgb, var(--acc) 70%, transparent); background: var(--acc-soft); }
@@ -599,25 +603,25 @@ function sWelcome() {
   const h = HERO[st.slide];
   const verbs = [["mic", "说", "语音输入", kc("fn")], ["search", "找", "启动器 · 剪贴板 · 截图", kc("⌘") + kc("Space")], ["ring", "划", "圆环", kc("⌃") + kc("⌥") + kc("Space")], ["chat", "问", "Agent 对话", kc("⌘") + kc("↩")]];
   return setupWin(-1, `<div class="wel"><div class="copy"><img class="logo" src="${LOGO}"><h1>说、找、划、问。<br>都在一个按键之外。</h1>
-    <p class="lead">Typeflux 待在菜单栏里，在任何应用中随叫随到。花 1 分钟设置，再用几分钟亲手试一遍。</p>
+    <p class="lead">常驻菜单栏，任何应用里随叫随到。</p>
     <div class="verbs">${verbs.map((v, i) => `<div class="verb ${i === st.slide ? "on" : ""}" data-slide="${i}">${ic(v[0])}<b>${v[1]}</b><span>${v[2]}</span><span class="k">${v[3]}</span></div>`).join("")}</div></div>
     <div class="hero" style="--h:${chOf(h.k).h}"><div class="wall"></div>${HERO.map((x, i) => `<div class="scene ${i === st.slide ? "on" : ""}">${x.art()}</div>`).join("")}
       <div class="cap"><span>${h.cap}</span><span class="prog">${HERO.map((_, i) => `<i class="${i === st.slide ? "on" : i < st.slide ? "done" : ""}"></i>`).join("")}</span></div></div></div>`,
     `<span class="note">${ic("globe")}简体中文 ${ic("chevd", "width:12px")}</span><span class="sp"></span><span class="note">${ic("clock")}设置约 1 分钟</span><button class="btn pri lg" data-go="goals">开始</button>`);
 }
 const GT = {
-  voice: { d: "按住说话，松开就写进去；选中文字说一句话就能改写。", art: () => `<div style="position:absolute;left:12px;top:15px;right:12px;height:28px;border-radius:14px;background:rgba(20,20,23,.9);display:flex;align-items:center;gap:8px;padding:0 12px;color:#ddd;font-size:11px;white-space:nowrap">${wave(9)}下午三点开会</div>` },
-  launch: { d: "一个输入框打开应用、计算、翻译；找回复制过的东西；截图标注。", art: () => `<div style="position:absolute;left:12px;top:11px;right:12px;height:36px;border-radius:12px;background:rgba(48,48,52,.92);display:flex;align-items:center;gap:8px;padding:0 12px;color:#eee;font-size:12px"><span style="font-family:var(--mono);font-size:11px;background:rgba(26,140,255,.25);color:#9ccbff;padding:1px 6px;border-radius:5px">fy</span>hello<span style="margin-left:auto;opacity:.55">你好</span></div>` },
-  tools: { d: "多服务翻译与单词卡、录屏转 GIF、用脚本写自己的小工具。", art: () => `<div style="position:absolute;left:12px;top:10px;width:62px;height:38px;border:2px solid #ff453a;border-radius:6px"></div><div style="position:absolute;left:86px;top:19px;height:22px;white-space:nowrap;border-radius:99px;background:rgba(20,20,23,.9);color:#fff;font-size:10.5px;display:flex;align-items:center;gap:6px;padding:0 10px"><i style="width:7px;height:7px;border-radius:50%;background:#ff453a"></i>00:07 · GIF</div>` },
-  ring: { d: "在指针旁打开的快捷菜单：按住、划一下、松开。", art: () => `<svg viewBox="0 0 120 58" style="position:absolute;inset:0;margin:auto;width:120px;height:58px">${[0, 1, 2, 3, 4, 5].map(i => { const a0 = -Math.PI / 2 + (i - .5) * Math.PI / 3 + .07, a1 = a0 + Math.PI / 3 - .14, R = 26, r = 10; const p = (a, rr) => `${(60 + rr * Math.cos(a)).toFixed(1)},${(29 + rr * Math.sin(a)).toFixed(1)}`; return `<path d="M${p(a0, r)} L${p(a0, R)} A${R},${R} 0 0 1 ${p(a1, R)} L${p(a1, r)} A${r},${r} 0 0 0 ${p(a0, r)}Z" fill="${i === 1 ? "#1a8cff" : "rgba(160,160,170,.4)"}"/>`; }).join("")}</svg>` },
-  chat: { d: "带着屏幕和选中的文字提问；能读写文件、联网、调用工具。", art: () => `<div style="position:absolute;right:12px;top:8px;padding:3px 10px;border-radius:11px 11px 3px 11px;background:#1a8cff;color:#fff;font-size:11px">这张表哪个月最高？</div><div style="position:absolute;left:12px;top:32px;padding:3px 10px;border-radius:11px 11px 11px 3px;background:rgba(160,160,170,.3);font-size:11px">7 月，环比 +32%</div>` },
+  voice: { d: "说话即输入，一句话改写", art: () => `<div style="position:absolute;left:12px;top:15px;right:12px;height:28px;border-radius:14px;background:rgba(20,20,23,.9);display:flex;align-items:center;gap:8px;padding:0 12px;color:#ddd;font-size:11px;white-space:nowrap">${wave(9)}下午三点开会</div>` },
+  launch: { d: "打开、找回、截图", art: () => `<div style="position:absolute;left:12px;top:11px;right:12px;height:36px;border-radius:12px;background:rgba(48,48,52,.92);display:flex;align-items:center;gap:8px;padding:0 12px;color:#eee;font-size:12px"><span style="font-family:var(--mono);font-size:11px;background:rgba(26,140,255,.25);color:#9ccbff;padding:1px 6px;border-radius:5px">fy</span>hello<span style="margin-left:auto;opacity:.55">你好</span></div>` },
+  tools: { d: "翻译、录 GIF、小工具", art: () => `<div style="position:absolute;left:12px;top:10px;width:62px;height:38px;border:2px solid #ff453a;border-radius:6px"></div><div style="position:absolute;left:86px;top:19px;height:22px;white-space:nowrap;border-radius:99px;background:rgba(20,20,23,.9);color:#fff;font-size:10.5px;display:flex;align-items:center;gap:6px;padding:0 10px"><i style="width:7px;height:7px;border-radius:50%;background:#ff453a"></i>00:07 · GIF</div>` },
+  ring: { d: "指针旁一划即达", art: () => `<svg viewBox="0 0 120 58" style="position:absolute;inset:0;margin:auto;width:120px;height:58px">${[0, 1, 2, 3, 4, 5].map(i => { const a0 = -Math.PI / 2 + (i - .5) * Math.PI / 3 + .07, a1 = a0 + Math.PI / 3 - .14, R = 26, r = 10; const p = (a, rr) => `${(60 + rr * Math.cos(a)).toFixed(1)},${(29 + rr * Math.sin(a)).toFixed(1)}`; return `<path d="M${p(a0, r)} L${p(a0, R)} A${R},${R} 0 0 1 ${p(a1, R)} L${p(a1, r)} A${r},${r} 0 0 0 ${p(a0, r)}Z" fill="${i === 1 ? "#1a8cff" : "rgba(160,160,170,.4)"}"/>`; }).join("")}</svg>` },
+  chat: { d: "看得懂屏幕，能动手", art: () => `<div style="position:absolute;right:12px;top:8px;padding:3px 10px;border-radius:11px 11px 3px 11px;background:#1a8cff;color:#fff;font-size:11px">这张表哪个月最高？</div><div style="position:absolute;left:12px;top:32px;padding:3px 10px;border-radius:11px 11px 11px 3px;background:rgba(160,160,170,.3);font-size:11px">7 月，环比 +32%</div>` },
 };
 function permsFor(goals) { const p = []; if (goals.voice || goals.chat) p.push("mic"); if (goals.voice || goals.launch || goals.ring) p.push("ax"); return p; }
 function sGoals() {
   const picked = CH.filter(c => st.goals[c.k]), all = CH.every(c => st.goals[c.k]);
   const tiles = CH.map(c => `<button class="gt ${st.goals[c.k] ? "on" : ""}" data-goal="${c.k}"><span class="chk">${ic("check")}</span><div class="art" style="background:radial-gradient(180px 70px at 50% 130%, rgba(${c.h},.4), transparent 70%), var(--well)">${GT[c.k].art()}</div><b>${c.n}</b><span class="d">${GT[c.k].d}</span></button>`).join("");
   const perms = permsFor(st.goals), total = picked.reduce((a, c) => a + parseInt(c.time), 0);
-  return setupWin(0, `<div class="gl"><div><div class="h2">你最想先用哪几个？</div><p class="sub">我们只申请它们需要的权限，并按这个顺序带你上手。没选的功能照样能用。</p>
+  return setupWin(0, `<div class="gl"><div><div class="h2">你最想先用哪几个？</div><p class="sub">按你的选择申请权限、安排顺序。</p>
       <div class="gtiles">${tiles}<button class="gt ${all ? "on" : ""}" data-goal="all" style="border-style:dashed"><span class="chk">${ic("check")}</span><div class="art" style="display:flex;align-items:center;justify-content:center;background:none;border:1px dashed var(--hair2)">${ic("grid", "width:22px;height:22px;color:var(--t2)")}</div><b>都想试试</b><span class="d">五个功能全部选上，按推荐顺序上手。</span></button></div></div>
     <div class="plan"><h4>你的上手计划</h4><div class="t">${picked.length ? `${picked.length} 个功能 · 约 ${total} 分钟 · 随时可以暂停` : "至少选一个"}</div>
       ${picked.map((c, i) => `<div class="row"><span class="n">${i + 1}</span>${c.short || c.n}<span class="m">${c.time}</span></div>`).join("")}
@@ -630,15 +634,15 @@ function sPerms() {
   const row = (k, icn, t, d, uses) => `<div class="prow ${st.perm[k] ? "ok" : ""}"><span class="pi">${ic(icn)}</span><div class="tx"><b>${t}</b><p>${d}</p><div class="uses">${uses.map(u => `<span class="tag">${u}</span>`).join("")}</div></div>
       ${st.perm[k] ? `<span class="granted"><span class="c">${ic("check")}</span>已允许</span>` : `<button class="btn sec" data-act="perm-${k}">${k === "ax" ? "打开系统设置" : "允许"}</button>`}</div>`;
   const rows = [];
-  if (need.includes("mic")) rows.push(row("mic", "mic", "麦克风", "听见你说的话。只在你按住快捷键时录音，默认在本机识别。", ["语音输入", ...(st.goals.chat ? ["语音提问"] : [])]));
-  if (need.includes("ax")) rows.push(row("ax", "access", "辅助功能", "把文字写进当前应用，读取你选中的文字。", ["语音输入", "启动器", ...(st.goals.ring ? ["圆环"] : ["剪贴板粘贴"])]));
+  if (need.includes("mic")) rows.push(row("mic", "mic", "麦克风", "只在按住快捷键时录音", ["语音输入", ...(st.goals.chat ? ["语音提问"] : [])]));
+  if (need.includes("ax")) rows.push(row("ax", "access", "辅助功能", "把文字写进当前应用", ["语音输入", "启动器", ...(st.goals.ring ? ["圆环"] : ["剪贴板粘贴"])]));
   const ready = need.every(k => st.perm[k]), left = need.filter(k => !st.perm[k]).length;
   let ov = "";
   if (st.dlg === "mic") ov = `<div class="alert"><img src="${LOGO}"><b>“Typeflux”想访问麦克风。</b><p>按住语音快捷键时录音，用于把你说的话转成文字。</p><div class="acts"><button data-act="mic-no">不允许</button><button class="d" data-act="mic-yes">允许</button></div></div>`;
   if (st.dlg === "ax") ov = `<div class="win syswin"><div class="side"><div>通用</div><div>外观</div><div>辅助功能</div><div>控制中心</div><div class="on">隐私与安全性</div><div>键盘</div></div><div class="main"><div style="font-weight:650;font-size:14px">‹ 辅助功能</div><div class="faint" style="font-size:11.5px;margin:3px 0 14px">允许下面的应用控制你的电脑。</div>
       <div class="r">${ic("app", "width:20px;height:20px")}Raycast<span class="tog on"></span></div><div class="r hl"><img src="${LOGO}" style="width:20px;height:20px;border-radius:5px">Typeflux<span class="tog" data-act="ax-toggle"></span></div><div class="r">${ic("app", "width:20px;height:20px")}终端<span class="tog"></span></div></div></div>
     <div class="coach r" style="left:352px;top:282px"><b>打开 Typeflux 右边的开关</b>打开后会自动回到这里，不用手动切换。</div>`;
-  return setupWin(1, `<div class="pm"><div class="h2">${ready ? "都准备好了" : `还需要 ${left} 个权限`}</div><p class="sub">根据你选的功能生成，每一项都写清了用在哪里。</p>${rows.join("") || `<div class="prow"><span class="pi">${ic("check")}</span><div class="tx"><b>你选的功能现在不需要额外权限</b></div></div>`}
+  return setupWin(1, `<div class="pm"><div class="h2">${ready ? "都准备好了" : `还需要 ${left} 个权限`}</div><p class="sub">只要你选的功能需要的。</p>${rows.join("") || `<div class="prow"><span class="pi">${ic("check")}</span><div class="tx"><b>你选的功能现在不需要额外权限</b></div></div>`}
     <div class="later">${ic("clock")}用到时再问：<span class="tag">${ic("screen")}屏幕录制 · 第一次截图或录屏时</span>${st.goals.tools ? `<span class="tag">${ic("record")}摄像头 · 录屏打开小窗时</span>` : ""}<span class="tag">${ic("spark")}AI · 第一次用到时连接</span></div></div>`,
     `<button class="btn ghost" data-go="goals">返回</button><span class="sp"></span>${ready ? "" : `<button class="btn ghost" data-go="first">稍后再说</button>`}<button class="btn pri" data-go="first" ${ready ? "" : "disabled"}>开始上手</button>`) + ov;
 }
@@ -707,8 +711,8 @@ function updCapsule() { const c = $("#capsule"); if (c) { const t = document.cre
 const fnKey = () => `<div class="dock">${kc("fn", "big" + (st.v.phase === "rec" ? " on" : ""), 'data-hold="fn"')}<span class="l">${st.v.phase === "rec" ? "松开结束" : "按住"}</span></div>`;
 BEAT["v-dictate"] = {
   short: "按住说话",
-  title: () => `按住 ${kc("fn")} 说一句话，说完松开`,
-  ins: () => `文字会写进光标所在的位置。在下面的邮件里试试，口头禅会被自动去掉。`,
+  title: () => `按住 ${kc("fn")} 说话`,
+  ins: () => `说完松开，文字写进光标处。`,
   hint: () => ({ rec: "正在听…松开 fn 结束", proc: "正在整理", short: "太快了，按住说完一整句再松开" }[st.v.phase] || "等你按住 fn"),
   doneText: () => `写进去了，用时 0.6 秒`,
   stage: () => {
@@ -726,7 +730,7 @@ const aiCard = `<div class="cardx" style="left:110px;right:190px;top:110px"><div
 BEAT["v-rewrite"] = {
   short: "说一句话改写",
   title: () => `选中文字，按住 ${kc("fn")} 说你想怎么改`,
-  ins: () => `有选中文字时，你说的话就是指令：改正式、缩短、翻译、换语气都行。`,
+  ins: () => `选中后，你说的话就是指令。`,
   hint: () => ({ rec: "正在听你的要求…", proc: "正在改写", needai: "改写需要 AI，选一种方式连接", connecting: "正在连接…", short: "按住说完整句再松开" }[st.v.phase] || "文字已经选好了，按住 fn 说“改得正式一点”"),
   doneText: () => `已替换选中的文字 · ⌘Z 可以撤销`,
   stage: () => {
@@ -742,13 +746,13 @@ const PERSONA = { default: ["默认", "忠实整理你说的话", "明天下午�
 BEAT["v-tune"] = {
   short: "人设与词汇",
   title: () => `让它写成你的样子`,
-  ins: () => `人设决定写出来的语气，${kc("⌥")}${kc("⌘")}${kc("P")} 随时切换；词汇表教它认识你的专有名词。`,
+  ins: () => `${kc("⌥")}${kc("⌘")}${kc("P")} 切换语气，词汇表教它认词。`,
   hint: () => `换一个人设，或者加一个词`,
   doneText: () => `已保存，之后每次语音输入都会用上`,
   stage: () => {
     const t = st.tune, has = w => t.vocab.some(x => x.toLowerCase() === w.toLowerCase());
     return `<div style="position:absolute;left:20px;top:20px;bottom:20px;width:420px;border-radius:15px;background:var(--panel);border:1px solid var(--hair);padding:16px">
-        <div class="faint" style="font-size:11.5px;font-weight:600;margin-bottom:10px">人设 · 你说的都是“明天下午三点开会讨论首页”</div>
+        <div class="faint" style="font-size:11.5px;font-weight:600;margin-bottom:10px">同一句话，不同人设</div>
         ${Object.entries(PERSONA).map(([k, p]) => `<div data-persona="${k}" style="display:flex;gap:12px;align-items:center;padding:9px 12px;border-radius:11px;cursor:pointer;margin-bottom:4px;${t.persona === k ? "background:var(--acc-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--acc) 50%,transparent)" : ""}"><span style="width:16px;height:16px;border-radius:50%;border:${t.persona === k ? "5px solid var(--acc)" : "1.5px solid var(--hair2)"};flex:none"></span><div><b style="font-size:13px">${p[0]}</b><div class="faint" style="font-size:11.5px">${p[1]}</div></div></div>`).join("")}
         <div style="margin-top:12px;padding:14px;border-radius:12px;background:var(--doc);color:var(--doc-t);font-size:14px;line-height:1.6;min-height:74px;box-shadow:0 0 0 1px var(--hair)"><div class="faint" style="font-size:11px;margin-bottom:4px">写出来</div>${PERSONA[t.persona][2]}</div></div>
       <div style="position:absolute;left:456px;top:20px;bottom:20px;right:20px;border-radius:15px;background:var(--panel);border:1px solid var(--hair);padding:16px">
@@ -757,7 +761,7 @@ BEAT["v-tune"] = {
         <div style="display:flex;gap:8px"><input id="vocabIn" placeholder="添加一个词，比如 PGVector" value="${esc(t.draft)}" style="flex:1;height:32px;border-radius:9px;border:1px solid var(--hair2);background:var(--well);color:var(--t1);padding:0 11px;font:inherit;outline:none"><button class="btn sec sm" data-act="vocab-add" style="height:32px">添加</button></div>
         <div class="faint" style="font-size:11.5px;font-weight:600;margin:22px 0 8px">识别效果</div>
         <div style="padding:12px 14px;border-radius:12px;background:var(--doc);color:var(--doc-t);font-size:14px;line-height:1.75;box-shadow:0 0 0 1px var(--hair)">我们用 ${has("PGVector") ? `<b class="ins-new">PGVector</b>` : `<span style="text-decoration:underline wavy var(--warn)">PG 向量</span>`} 存 embedding，<br>下周和 ${has("Typeflux") ? "<b>Typeflux</b>" : `<span style="text-decoration:underline wavy var(--warn)">泰普弗勒克斯</span>`} 团队对一下。</div>
-        <div class="faint" style="font-size:11.5px;margin-top:10px">你在别处改过的词，Typeflux 也会自动学到。</div></div>`;
+        <div class="faint" style="font-size:11.5px;margin-top:10px">改过的词也会自动学到。</div></div>`;
   },
 };
 
@@ -840,7 +844,7 @@ function lRun(i) {
 BEAT["l-open"] = {
   short: "打开启动器",
   title: () => `按 ${launchKC()} 打开启动器`,
-  ins: () => `输入应用名、文件名或算式，↩ 执行，esc 关闭。原型里按 L，或点下面的键帽。`,
+  ins: () => `打开应用、找文件、算数，↩ 执行。`,
   hint: () => st.l.open ? "试试输入 128*3，再按 ↩" : `按 ${launchKeys().join(" ")} 打开`,
   doneText: () => `你用启动器完成了第一件事`,
   stage: () => `<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding-bottom:${st.conflict ? 76 : 0}px">
@@ -851,13 +855,13 @@ BEAT["l-open"] = {
 BEAT["l-keyword"] = {
   short: "关键词",
   title: () => `关键词：输入 ${kw("fy")} 再按空格`,
-  ins: () => `关键词把启动器变成翻译器、搜索框、汇率计算器……点一张卡片试试；忘了就输入 help。`,
+  ins: () => `点一张卡片试试，忘了就输入 help。`,
   hint: () => st.l.open ? "按 ↩ 运行" : `选一个关键词试试`,
   doneText: () => `学会了关键词。一共 50 多个，输入 help 都能看到`,
   stage: () => {
     const cards = [["fy", "翻译 · 单词卡", "fy serendipity"], ["g", "Google 搜索", "g typeflux"], ["sum", "总结选中的长文", "sum"], ["fx", "汇率（工作流）", "fx 100 usd"], ["ocr", "截图识字", "ocr"], ["cal", "日历与日程", "cal 明天"], ["gif", "录一段 GIF", "gif"], ["help", "全部关键词", "help"]];
     return `<div style="position:absolute;left:22px;right:22px;top:22px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">${cards.map((c, i) => `<div class="gc" data-fill="${c[2]}" style="cursor:pointer;${i === 0 ? "border-color:color-mix(in srgb,var(--acc) 60%,transparent);background:var(--acc-soft)" : ""}"><div class="t">${kw(c[0])}</div><p style="margin:10px 0 6px">${c[1]}</p><div class="faint" style="font-size:11.5px;font-family:var(--mono)">${c[2]}</div></div>`).join("")}</div>
-      <div style="position:absolute;left:22px;right:22px;bottom:22px;display:flex;align-items:center;gap:10px;padding:13px 16px;border-radius:14px;background:var(--panel);border:1px solid var(--hair);font-size:12.5px">${ic("info", "color:var(--t3)")}<span class="muted">先选中一段文字，再打开启动器输入 <b style="color:var(--t1)">fy</b> 并按 ↩，翻译的就是你选中的内容。在空输入框里按退格可以退出关键词。</span></div>`;
+      <div style="position:absolute;left:22px;right:22px;bottom:22px;display:flex;align-items:center;gap:10px;padding:13px 16px;border-radius:14px;background:var(--panel);border:1px solid var(--hair);font-size:12.5px">${ic("info", "color:var(--t3)")}<span class="muted">先选中文字再输入 <b style="color:var(--t1)">fy</b>，翻译的就是选中内容。</span></div>`;
   },
 };
 const CLIPS = [
@@ -878,7 +882,7 @@ function shelfHTML() {
 BEAT["l-clip"] = {
   short: "剪贴板",
   title: () => `按 ${kc("⌥")}${kc("⌘")}${kc("O")} 找回复制过的东西`,
-  ins: () => `文字、链接、图片、文件和语音记录都在。打字就是搜索，← → 选择，↩ 粘贴回原处。原型里按 V。`,
+  ins: () => `打字即搜索，↩ 粘贴回原处。`,
   hint: () => st.clip.open ? "← → 选一张卡片，↩ 粘贴" : "按 ⌥⌘O 打开剪贴板，把路线图粘贴到周报里",
   doneText: () => `粘贴回了原来的位置`,
   stage: () => {
@@ -889,8 +893,8 @@ BEAT["l-clip"] = {
 };
 BEAT["l-shot"] = {
   short: "截图",
-  title: () => `按 ${kc("⌥")}${kc("⌘")}${kc("A")} 截图，拖一个框，直接标注`,
-  ins: () => `框选后可以画箭头、方框、打码；↩ 复制，⌘S 保存，钉图让它浮在最上面。原型里按 S，然后拖动鼠标。`,
+  title: () => `按 ${kc("⌥")}${kc("⌘")}${kc("A")} 截图并标注`,
+  ins: () => `↩ 复制 · ⌘S 保存 · 钉图浮在最上层。`,
   hint: () => ({ select: "拖动鼠标框选区域", annotate: "在框里拖动画一个箭头，然后按 ↩ 复制" }[st.shot.phase] || "按 ⌥⌘A 开始截图"),
   doneText: () => `截图已复制，可以直接粘贴`,
   stage: () => `<div class="mock" style="left:56px;top:28px;width:620px;height:420px"><div class="mt"><i></i><i></i><i></i><span>Numbers · 2026 Q3 渠道新增</span></div>
@@ -915,7 +919,7 @@ const CONFLICTS = { "⌘C": "复制", "⌘V": "粘贴", "⌘Space": "聚焦搜�
 BEAT["t-translate"] = {
   short: "翻译",
   title: () => `双击一个单词，马上看到释义`,
-  ins: () => `本机翻译、AI 翻译和你配置的服务一起出结果，单词会生成单词卡。再在下面录一个顺手的划词翻译快捷键。`,
+  ins: () => `多个服务一起出结果，再录一个快捷键。`,
   hint: () => !st.tr.word ? "双击文中任意一个单词，比如 serendipity" : st.tr.rec === "listen" ? "按下你想用的组合键" : "在下面录一个划词翻译快捷键",
   doneText: () => `翻译和快捷键都设好了`,
   stage: () => {
@@ -927,15 +931,15 @@ BEAT["t-translate"] = {
       ${card ? `<div class="tpanel" style="left:${tr.px}px;top:${tr.py}px"><div class="h">检测到 英语 ${ic("chevd", "width:11px")} ⇄ 简体中文 ${ic("chevd", "width:11px")}<span class="r">${ic("star", "width:14px;height:14px")}${ic("pin", "width:14px;height:14px")}</span></div>
         <div class="w1"><b>${card[0]}</b><span>${card[1]} ${card[2]}</span>${ic("volume", "width:15px;height:15px;opacity:.6")}</div><div class="gl2">${card[3]}</div>
         ${card[4] ? `<div class="ex">${card[4]}</div>` : ""}<div class="svc"><div><span>本机翻译</span>${card[5][0]}</div><div><span>DeepL</span>${card[5][1]}</div></div><div class="f"><span>↩ 复制</span><span>⌥↩ 插入</span><span>⌘S 收藏</span><span>? 全部快捷键</span></div></div>` : ""}
-      <div class="recorder"><div class="lbl"><b>划词翻译快捷键</b><span>选中文字后按下它，在任何应用里直接翻译。默认不设置。</span></div><span class="sp"></span>${verdict}
+      <div class="recorder"><div class="lbl"><b>划词翻译快捷键</b><span>任何应用里选中后按下即可翻译</span></div><span class="sp"></span>${verdict}
         <span class="keybox ${tr.rec === "listen" ? "listen" : combo ? "set" : ""}" data-act="rec-key">${tr.rec === "listen" ? "按下组合键…" : combo ? keycaps(combo) : "点这里录制"}</span>
         ${combo && !CONFLICTS[combo] ? "" : `<button class="btn ghost sm" data-act="rec-suggest">用 ⌃⌥T</button>`}</div>`;
   },
 };
 BEAT["t-record"] = {
   short: "录屏与 GIF",
-  title: () => `在启动器里输入 ${kw("gif")}，框一块区域录成动图`,
-  ins: () => `也能录整屏或单个窗口，带系统声音、麦克风和摄像头小窗；${kw("lp")} 录 MP4。录完先预览、裁剪再导出。`,
+  title: () => `输入 ${kw("gif")}，录一段动图`,
+  ins: () => `录完先裁剪再导出；${kw("lp")} 录 MP4。`,
   hint: () => ({ setup: "选好格式，点红色按钮开始", count: "准备…", rec: "正在录制，点 ■ 停止", preview: "拖动黄色边框两端裁剪，然后导出", exporting: "正在导出 GIF…" }[st.rec.phase] || ""),
   doneText: () => `已保存 typeflux-1021.gif · 2.4 MB`,
   stage: () => {
@@ -960,12 +964,12 @@ BEAT["t-record"] = {
 const GAL = [["fx", "汇率换算", "fx 100 usd → 实时汇率", "Python", "联网"], ["ts", "时间戳", "ts 1700000000 → 多种格式", "Shell"], ["qr", "二维码", "把文字或链接变成二维码", "Python"], ["json", "JSON 格式化", "格式化、压缩、校验", "Node"], ["uuid", "UUID", "生成一个或多个 UUID", "Shell"], ["ip", "IP 地址", "显示内网和公网 IP", "Shell", "联网"]];
 BEAT["t-flow"] = {
   short: "工作流",
-  title: () => `工作流：把你的小工具装进启动器`,
-  ins: () => `用任何语言写的脚本都能变成一个关键词。先从示例库添加一个，马上就能用；也可以让 AI 帮你写。`,
+  title: () => `把小工具装进启动器`,
+  ins: () => `从示例库加一个，马上能用。`,
   hint: () => st.flow.added ? (st.l.open ? "按 ↩ 复制结果" : "在启动器里运行 fx 100 usd") : "添加「汇率换算」",
   doneText: () => `你的第一个工作流跑通了`,
   stage: () => `<div class="gal">${GAL.map(g => { const added = g[0] === "fx" && st.flow.added; return `<div class="gc ${added ? "added" : ""}"><div class="t">${kw(g[0])}${g[1]}</div><p>${g[2]}</p><div class="f"><span class="tag">${g[3]}</span>${g[4] ? `<span class="tag" style="color:var(--warn)">${g[4]}</span>` : ""}<span class="sp"></span>${added ? `<button class="btn pri sm" data-act="flow-run">在启动器里试试</button>` : g[0] === "fx" ? `<button class="btn sec sm" data-act="flow-add">${ic("plus", "width:13px;height:13px")}添加</button>` : `<button class="btn ghost sm">添加</button>`}</div></div>`; }).join("")}</div>
-    <div style="position:absolute;left:20px;right:20px;bottom:20px;display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;background:var(--panel);border:1px solid var(--hair);font-size:12.5px">${ic("spark", "color:var(--t2)")}<span class="muted">想要别的？在对话里说“帮我做一个去除重复行的工具”，AI 会写好、测好，确认后保存到启动器。</span></div>`,
+    <div style="position:absolute;left:20px;right:20px;bottom:20px;display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;background:var(--panel);border:1px solid var(--hair);font-size:12.5px">${ic("spark", "color:var(--t2)")}<span class="muted">想要别的？在对话里让 AI 帮你写一个。</span></div>`,
 };
 
 /* ================= RING ================= */
@@ -987,7 +991,7 @@ const PTR = (x, y) => `<svg class="ptr" style="left:${x}px;top:${y}px" viewBox="
 BEAT["r-gesture"] = {
   short: "按住 · 划向 · 松开",
   title: () => `按住 ${kc("⌃")}${kc("⌥")}${kc("Space")}，划向一项，松开`,
-  ins: () => `圆环在指针旁打开。不用瞄准，往那个方向划一下就行；划回中心再松开就是取消。原型里在下面按住鼠标，或按住 R。`,
+  ins: () => `往方向划一下就行，划回中心取消。`,
   hint: () => st.ring.open ? (st.ring.sticky ? "点一项，或按数字键" : st.ring.act >= 0 ? `松开就执行「${RACT[st.rc.slots[st.ring.act]][1]}」` : "往任意方向划一下") : (st.ring.last ? `刚才执行了「${st.ring.last}」，再试一次？` : "在练习区里按住鼠标"),
   doneText: () => `用手势执行了「${st.ring.last || "翻译"}」`,
   stage: () => `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--t3);pointer-events:none;${st.ring.open ? "opacity:0" : ""}">${ic("ring", "width:48px;height:48px;stroke-width:1.2")}<span style="font-size:13px">在这里任意位置按住</span></div>
@@ -997,7 +1001,7 @@ const RPAL = [["Typeflux 功能", ["notes"]], ["应用", ["figma"]], ["系统", 
 BEAT["r-custom"] = {
   short: "放上常用的",
   title: () => `把你最常用的放进圆环`,
-  ins: () => `最多 8 个：Typeflux 功能、启动器关键词、应用、系统动作、快捷键、网址。点左边添加，点圆环上的一项移除。`,
+  ins: () => `点左边添加，点圆环上的移除。`,
   hint: () => `添加一个你常用的`,
   doneText: () => `圆环已更新 · ${st.rc.slots.length} / 8`,
   stage: () => `<div class="rpal">${RPAL.map(g => `<div class="ph2">${g[0]}</div>${g[1].map(k => { const used = st.rc.slots.includes(k); return `<div class="it ${used ? "used" : ""}" data-radd="${k}"><span class="ap">${ic(RACT[k][0])}</span>${RACT[k][1]}<span class="ad">${used ? ic("check") : ic("plus")}</span></div>`; }).join("")}`).join("")}
@@ -1015,7 +1019,7 @@ const ANS_PLAIN = ANS.replace(/<[^>]+>/g, "");
 BEAT["c-ask"] = {
   short: "带着上下文提问",
   title: () => `带着你正在看的东西提问`,
-  ins: () => `在启动器里按 ⌘↩，或打开对话窗口。当前屏幕和选中的文字会作为上下文带上，点一下就能去掉。`,
+  ins: () => `屏幕和选中的文字会自动带上。`,
   hint: () => ({ connect: "第一次用 AI，先选一种连接方式", think: "正在读屏幕…", stream: "正在回答…" }[st.chat.phase] || "点一个问题，或者直接发送"),
   doneText: () => `得到了第一个回答`,
   stage: () => {
@@ -1037,8 +1041,8 @@ const MODES = { strict: ["严格", "每次调用工具都先问你"], standard: 
 const agentScript = mode => [["tool", "列出 <code>~/Downloads</code> · 找到 23 张上周的截图", mode === "strict", "读取下载文件夹？"], ["tool", "移动 23 个文件到 <code>~/Pictures/截图/2026-10</code>", mode !== "yolo", "移动 23 个文件？"], ["ans", mode === "yolo" ? "已全部归档。如果不对，可以点「撤销」恢复。" : "完成，23 张截图都归档好了。另外发现 4 张重复的，要删掉吗？"]];
 BEAT["c-agent"] = {
   short: "让它动手",
-  title: () => `让它动手：你决定什么时候需要确认`,
-  ins: () => `Agent 能读写文件、操作应用、联网。权限模式决定它什么时候先问你。切换上面的模式，看同一个任务有什么不同。`,
+  title: () => `让它动手，你决定何时确认`,
+  ins: () => `切换模式，看它什么时候先问你。`,
   hint: () => { const s = agentScript(st.ag.mode)[st.ag.step]; return st.ag.denied ? "拒绝了也没关系，换个模式再试试" : s && s[2] ? "需要你确认这一步" : "看它怎么做"; },
   doneText: () => `任务完成。每个对话都能单独设置权限，也可以输入 /mode`,
   stage: () => {
@@ -1059,27 +1063,20 @@ BEAT["c-agent"] = {
   },
 };
 const PV = {
-  cloud: ["cloud", "云端同步", "保存在你的 Typeflux 账号里，在 Mac、iPhone 和网页上都能接着聊。", "默认", "⌘N"],
-  private: ["lock", "仅存本机", "只保存在这台 Mac 上，使用你自己配置的模型（API Key 或 Ollama）。", "", "⇧⌘N"],
-  temp: ["clock", "临时对话", "不进入历史、不读写记忆，离开这段对话就丢弃。适合一次性的问题。", "", "⌥⌘N"],
+  cloud: ["cloud", "云端同步", "多设备接着聊", "默认", "⌘N", [["cloud", "存在你的账号"], ["globe", "Mac · iPhone · 网页"], ["spark", "云端或自己的模型"]]],
+  private: ["lock", "仅存本机", "只在这台 Mac", "", "⇧⌘N", [["screen", "存在这台 Mac"], ["key", "用自己的模型"], ["cpu", "可以离线"]]],
+  temp: ["clock", "临时对话", "用完不留", "", "⌥⌘N", [["eyeoff", "不进历史"], ["x", "不读写记忆"], ["spark", "云端或自己的模型"]]],
 };
-const PV_ROWS = [
-  ["对话记录保存在", { cloud: "你的 Typeflux 账号", private: "这台 Mac", temp: "不保存" }],
-  ["可以用的模型", { cloud: "Typeflux Cloud 模型 · 你自己的模型", private: "你自己的模型", temp: "Typeflux Cloud 模型 · 你自己的模型" }],
-  ["在 iPhone、网页上接着聊", { cloud: "可以", private: "不同步", temp: "不同步" }],
-  ["记忆", { cloud: "会用到", private: "会用到", temp: "不读也不写" }],
-  ["适合", { cloud: "日常大多数对话", private: "离线，或想自己管理数据", temp: "试一下 prompt、一次性的问题" }],
-];
 BEAT["c-private"] = {
   short: "对话存在哪里",
-  title: () => `对话存在哪里，由你决定`,
-  ins: () => `每个对话开始前都可以选：云端同步、仅存本机，或者用完不留。输入框左下角的存储图标随时可以改。`,
-  hint: () => `点一种看看有什么不同`,
-  doneText: () => `记住了：⌘N 云端同步 · ⇧⌘N 仅存本机 · ⌥⌘N 临时`,
+  title: () => `对话存在哪里，你来选`,
+  ins: () => `开始对话前选一种，随时可以改。`,
+  hint: () => `点一种看看`,
+  doneText: () => `⌘N 云端 · ⇧⌘N 本机 · ⌥⌘N 临时`,
   stage: () => {
-    const m = st.pv.mode, keys = Object.keys(PV);
-    return `<div class="pcards">${keys.map(k => { const v = PV[k]; return `<button class="pcard ${m === k ? "on" : ""}" data-pv="${k}"><div class="t">${ic(v[0])}${v[1]}${v[3] ? `<span class="tag acc" style="margin-left:6px">${v[3]}</span>` : ""}<span class="kw" style="margin-left:auto">${v[4]}</span></div><p>${v[2]}</p></button>`; }).join("")}</div>
-      <div class="pvgrid">${PV_ROWS.map(r => `<div class="pvl">${r[0]}</div>${keys.map(k => `<div class="pvc ${m === k ? "on" : ""}">${r[1][k]}</div>`).join("")}`).join("")}</div>`;
+    const m = st.pv.mode, v = PV[m];
+    return `<div class="pcards" style="top:64px">${Object.entries(PV).map(([k, x]) => `<button class="pcard ${m === k ? "on" : ""}" data-pv="${k}"><div class="t">${ic(x[0])}${x[1]}${x[3] ? `<span class="tag acc" style="margin-left:6px">${x[3]}</span>` : ""}<span class="kw" style="margin-left:auto">${x[4]}</span></div><p>${x[2]}</p></button>`).join("")}</div>
+      <div class="pvfacts">${v[5].map(f => `<div class="pvf"><span class="g">${ic(f[0], "width:26px;height:26px;stroke-width:1.4")}</span><b>${f[1]}</b></div>`).join("")}</div>`;
   },
 };
 
