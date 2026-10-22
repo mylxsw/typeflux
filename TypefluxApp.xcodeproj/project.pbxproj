@@ -7,14 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		28B08DE3786E6C510B2BB1CE /* TypefluxChatWindowKit in Frameworks */ = {isa = PBXBuildFile; productRef = 71C18246FCD5D5C63FDD4AB0 /* TypefluxChatWindowKit */; };
 		416C33B80BF0D241676DD388 /* TypefluxMediaHelper in Embed media helper */ = {isa = PBXBuildFile; fileRef = 2C6E44CD9EC87847306AAC37 /* TypefluxMediaHelper */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		562C917C6553DDF4847F69C4 /* swift-transformers_Hub.bundle in Embed inference helper */ = {isa = PBXBuildFile; fileRef = 7935FE2FE689F8A3C8633185 /* swift-transformers_Hub.bundle */; };
 		687C552D7D63619CA6F20BD4 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7DCD59424C3B5F1B988E350 /* Cocoa.framework */; };
 		76A2D42036749CA19380BACA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D67B304CC5684E32605F39D /* Cocoa.framework */; };
 		7F5F79A4D832A3108595F5F0 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D67B304CC5684E32605F39D /* Cocoa.framework */; };
+		869BC05514111E88EBC3F875 /* TypefluxChatWindowHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABEBD0E2558A9133C6A69EBA /* TypefluxChatWindowHelper.swift */; };
+		ADB2833E0885AF521AD44CF0 /* TypefluxChatWindowHelper.app in Embed chat window helper */ = {isa = PBXBuildFile; fileRef = DD82D626D6F14FC122E05CB6 /* TypefluxChatWindowHelper.app */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		B03D41CB1D968CD98932231A /* TypefluxMediaWorkerKit in Frameworks */ = {isa = PBXBuildFile; productRef = F04468CDC6FD5681C126CBC6 /* TypefluxMediaWorkerKit */; };
 		BC7E37126F11DFD1CAF66AD5 /* Typeflux.icns in Resources */ = {isa = PBXBuildFile; fileRef = 0EF1DD4DF7DB34487F73A003 /* Typeflux.icns */; };
 		D34176AADAE8C4D9F3911A97 /* TypefluxInferenceHelper in Embed inference helper */ = {isa = PBXBuildFile; fileRef = 27875DC8E2E09D096C067B2C /* TypefluxInferenceHelper */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		D793FAFD3FBF6C0BBA498C71 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7DCD59424C3B5F1B988E350 /* Cocoa.framework */; };
 		DBDD2EC01294F77F103A45A3 /* TypefluxInferenceWorkerKit in Frameworks */ = {isa = PBXBuildFile; productRef = 04F5628CB32105DDF40483F4 /* TypefluxInferenceWorkerKit */; };
 		E72FB606B9EB31D953A60119 /* TypefluxKit in Frameworks */ = {isa = PBXBuildFile; productRef = 63E2E255FBC0FB81F86D40A1 /* TypefluxKit */; };
 		EFB6911934D71DF70021313B /* TypefluxInferenceHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62746A23BAE8292240E64B2B /* TypefluxInferenceHelper.swift */; };
@@ -23,6 +27,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		429C3C465D4703E3E3D2ACEA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3A9F08B0DDDAB878E7422879 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D374F0740B2F6EB332879851;
+			remoteInfo = TypefluxChatWindowHelper;
+		};
 		D31C63634B7A4BDD92FBEDD0 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 3A9F08B0DDDAB878E7422879 /* Project object */;
@@ -40,6 +51,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		977520E4FE54BEFC487592E5 /* Embed chat window helper */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = ../Helpers;
+			dstSubfolderSpec = 6;
+			files = (
+				ADB2833E0885AF521AD44CF0 /* TypefluxChatWindowHelper.app in Embed chat window helper */,
+			);
+			name = "Embed chat window helper";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F9016852DF08D78201C4ED30 /* Embed media helper */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -78,7 +100,9 @@
 		8D67B304CC5684E32605F39D /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 		933D640EAC9946F3AF4B13C0 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = Info.plist; path = app/Info.plist; sourceTree = "<group>"; };
 		A54B93972F97B94400E3730D /* TypefluxAppRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TypefluxAppRelease.entitlements; sourceTree = "<group>"; };
+		ABEBD0E2558A9133C6A69EBA /* TypefluxChatWindowHelper.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TypefluxChatWindowHelper.swift; path = Sources/TypefluxChatWindowHelper/TypefluxChatWindowHelper.swift; sourceTree = "<group>"; };
 		D7DCD59424C3B5F1B988E350 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
+		DD82D626D6F14FC122E05CB6 /* TypefluxChatWindowHelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TypefluxChatWindowHelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,6 +112,15 @@
 			files = (
 				76A2D42036749CA19380BACA /* Cocoa.framework in Frameworks */,
 				B03D41CB1D968CD98932231A /* TypefluxMediaWorkerKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		647659D3D3B775D6FB4E7096 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D793FAFD3FBF6C0BBA498C71 /* Cocoa.framework in Frameworks */,
+				28B08DE3786E6C510B2BB1CE /* TypefluxChatWindowKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -131,6 +164,7 @@
 				62746A23BAE8292240E64B2B /* TypefluxInferenceHelper.swift */,
 				7935FE2FE689F8A3C8633185 /* swift-transformers_Hub.bundle */,
 				567EDB758F46CE17A32F208E /* TypefluxMediaHelper.swift */,
+				ABEBD0E2558A9133C6A69EBA /* TypefluxChatWindowHelper.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -140,6 +174,7 @@
 				2DDB70C53E2097A89CFACB4F /* Typeflux.app */,
 				27875DC8E2E09D096C067B2C /* TypefluxInferenceHelper */,
 				2C6E44CD9EC87847306AAC37 /* TypefluxMediaHelper */,
+				DD82D626D6F14FC122E05CB6 /* TypefluxChatWindowHelper.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -204,6 +239,26 @@
 			productReference = 27875DC8E2E09D096C067B2C /* TypefluxInferenceHelper */;
 			productType = "com.apple.product-type.tool";
 		};
+		D374F0740B2F6EB332879851 /* TypefluxChatWindowHelper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2C5B547F92CCE8D06F363466 /* Build configuration list for PBXNativeTarget "TypefluxChatWindowHelper" */;
+			buildPhases = (
+				BCE6A0259871A80F3FD28A0B /* Sources */,
+				647659D3D3B775D6FB4E7096 /* Frameworks */,
+				4DF3DA6DC2891B24832A5A59 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TypefluxChatWindowHelper;
+			packageProductDependencies = (
+				71C18246FCD5D5C63FDD4AB0 /* TypefluxChatWindowKit */,
+			);
+			productName = TypefluxChatWindowHelper;
+			productReference = DD82D626D6F14FC122E05CB6 /* TypefluxChatWindowHelper.app */;
+			productType = "com.apple.product-type.application";
+		};
 		D42AC802ACB13ABE04EA8A7B /* TypefluxApp */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6BB9A270CE379F86CABF9B01 /* Build configuration list for PBXNativeTarget "TypefluxApp" */;
@@ -213,12 +268,14 @@
 				D6B012BCF425A407570E90E6 /* Resources */,
 				FDDD54B71D825865ED69D0B3 /* Embed inference helper */,
 				F9016852DF08D78201C4ED30 /* Embed media helper */,
+				977520E4FE54BEFC487592E5 /* Embed chat window helper */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				76F3DAC91969CB0E0D9C8E40 /* PBXTargetDependency */,
 				56D358D3726A586277F4B7BA /* PBXTargetDependency */,
+				62A32B84E12F792BD6630291 /* PBXTargetDependency */,
 			);
 			name = TypefluxApp;
 			packageProductDependencies = (
@@ -256,11 +313,19 @@
 				D42AC802ACB13ABE04EA8A7B /* TypefluxApp */,
 				CF205547502CECE13E0259DC /* TypefluxInferenceHelper */,
 				2444A92E0406869F908E3E5E /* TypefluxMediaHelper */,
+				D374F0740B2F6EB332879851 /* TypefluxChatWindowHelper */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		4DF3DA6DC2891B24832A5A59 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D6B012BCF425A407570E90E6 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -296,6 +361,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BCE6A0259871A80F3FD28A0B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				869BC05514111E88EBC3F875 /* TypefluxChatWindowHelper.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -304,6 +377,12 @@
 			name = TypefluxMediaHelper;
 			target = 2444A92E0406869F908E3E5E /* TypefluxMediaHelper */;
 			targetProxy = D31C63634B7A4BDD92FBEDD0 /* PBXContainerItemProxy */;
+		};
+		62A32B84E12F792BD6630291 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = TypefluxChatWindowHelper;
+			target = D374F0740B2F6EB332879851 /* TypefluxChatWindowHelper */;
+			targetProxy = 429C3C465D4703E3E3D2ACEA /* PBXContainerItemProxy */;
 		};
 		76F3DAC91969CB0E0D9C8E40 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -392,6 +471,52 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		49E12BEF955546CE04A87DE2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = N95437SZ2A;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "app/ChatWindowHelper-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.gulu.app.typeflux.chat-window";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		69171D937F86B194EEA9B6CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = N95437SZ2A;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "app/ChatWindowHelper-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "ai.gulu.app.typeflux.chat-window";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.9;
 			};
 			name = Release;
 		};
@@ -538,6 +663,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		2C5B547F92CCE8D06F363466 /* Build configuration list for PBXNativeTarget "TypefluxChatWindowHelper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				69171D937F86B194EEA9B6CD /* Release */,
+				49E12BEF955546CE04A87DE2 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		6BB9A270CE379F86CABF9B01 /* Build configuration list for PBXNativeTarget "TypefluxApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -591,6 +725,10 @@
 		63E2E255FBC0FB81F86D40A1 /* TypefluxKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = TypefluxKit;
+		};
+		71C18246FCD5D5C63FDD4AB0 /* TypefluxChatWindowKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TypefluxChatWindowKit;
 		};
 		F04468CDC6FD5681C126CBC6 /* TypefluxMediaWorkerKit */ = {
 			isa = XCSwiftPackageProductDependency;

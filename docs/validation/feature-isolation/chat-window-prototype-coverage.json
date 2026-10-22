@@ -1,0 +1,51 @@
+{
+  "covered": 308,
+  "total": 309,
+  "percent": 99.68,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/Isolation/AskChatWindowClient.swift",
+      "covered": 104,
+      "executable_changed_lines": 105,
+      "percent": 99.05,
+      "uncovered": [
+        34
+      ]
+    },
+    {
+      "file": "Sources/TypefluxChatWindowProtocol/ChatWindowProtocol.swift",
+      "covered": 44,
+      "executable_changed_lines": 44,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/TypefluxChatWindowProtocol/ChatWindowSocket.swift",
+      "covered": 58,
+      "executable_changed_lines": 58,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/TypefluxChatWindowRuntime/ChatWindowApplication.swift",
+      "covered": 54,
+      "executable_changed_lines": 54,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/TypefluxChatWindowRuntime/ChatWindowPresentation.swift",
+      "covered": 37,
+      "executable_changed_lines": 37,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/TypefluxChatWindowHelper/TypefluxChatWindowHelper.swift",
+      "covered": 11,
+      "executable_changed_lines": 11,
+      "percent": 100.0,
+      "uncovered": []
+    }
+  ]
+}

@@ -135,6 +135,7 @@ cp "$ROOT_DIR/app/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
 cp "$BIN" "$APP_BUNDLE/Contents/MacOS/Typeflux"
 bash "$ROOT_DIR/scripts/copy_inference_helper.sh" "$BIN_DIR" "$APP_BUNDLE"
 bash "$ROOT_DIR/scripts/copy_media_helper.sh" "$BIN_DIR" "$APP_BUNDLE"
+bash "$ROOT_DIR/scripts/copy_chat_window_helper.sh" "$BIN_DIR" "$APP_BUNDLE"
 cp "$ROOT_DIR/app/Typeflux.icns" "$APP_BUNDLE/Contents/Resources/Typeflux.icns"
 bash "$ROOT_DIR/scripts/copy_resource_bundles.sh" "$BIN_DIR" "$APP_BUNDLE/Contents/Resources"
 verify_main_executable_architecture
@@ -260,6 +261,8 @@ if [[ -n "${TYPEFLUX_CODESIGN_IDENTITY:-}" ]]; then
     "$APP_BUNDLE/Contents/Helpers/TypefluxInferenceHelper"
   codesign --force --sign "$TYPEFLUX_CODESIGN_IDENTITY" --timestamp --options runtime \
     "$APP_BUNDLE/Contents/Helpers/TypefluxMediaHelper"
+  codesign --force --sign "$TYPEFLUX_CODESIGN_IDENTITY" --timestamp --options runtime \
+    "$APP_BUNDLE/Contents/Helpers/TypefluxChatWindowHelper.app"
   codesign "${codesign_args[@]}" "$APP_EXECUTABLE"
   codesign "${codesign_args[@]}" "$APP_BUNDLE"
   codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
