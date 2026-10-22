@@ -5,6 +5,8 @@ import SwiftUI
 /// A single text storage per message makes selection continuous across Markdown
 /// blocks. Unchanged messages never replace their storage during stream updates.
 struct AskTranscriptText: NSViewRepresentable {
+    // Parsing different visible messages must not create one CPU-bound thread per row.
+    private static let parsingQueue = DispatchQueue(label: "typeflux.transcript-parse", qos: .userInitiated)
     var text: String
     var markdown = true
     var onAsk: ((String, String) -> Void)? = nil
@@ -31,7 +33,11 @@ struct AskTranscriptText: NSViewRepresentable {
     func updateNSView(_ editor: Editor, context _: Context) {
         editor.onAsk = onAsk
         editor.onSaveNote = onSaveNote
-        editor.setContent(text, markdown: markdown, dark: colorScheme == .dark)
+        editor.requestContent(text, markdown: markdown, dark: colorScheme == .dark)
+    }
+
+    static func dismantleNSView(_ editor: Editor, coordinator: ()) {
+        editor.cancelPreparation()
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, nsView: Editor, context _: Context) -> CGSize? {
@@ -43,6 +49,11 @@ struct AskTranscriptText: NSViewRepresentable {
     }
 
     final class Editor: NSTextView {
+        var preparation: any LatestBackgroundWorking = LatestBackgroundWork(
+            label: "typeflux.transcript-parse", queue: AskTranscriptText.parsingQueue
+        )
+        private var requested: (text: String, markdown: Bool, dark: Bool)?
+        private var contentGeneration = UUID()
         private var source: String?
         private var dark = false
         private var usesMarkdown = true
@@ -113,6 +124,10 @@ struct AskTranscriptText: NSViewRepresentable {
             super.viewWillMove(toWindow: newWindow)
         }
 
+        func cancelPreparation() {
+            contentGeneration = UUID(); requested = nil; pending = nil; preparation.cancel()
+        }
+
         override func keyUp(with event: NSEvent) {
             super.keyUp(with: event)
             if event.modifierFlags.contains(.shift) { showSelectionAction() }
@@ -124,7 +139,7 @@ struct AskTranscriptText: NSViewRepresentable {
             defer {
                 dragging = false
                 if let pending {
-                    self.pending = nil; setContent(pending.0, markdown: pending.1, dark: pending.2)
+                    self.pending = nil; requestContent(pending.0, markdown: pending.1, dark: pending.2)
                 }
                 showSelectionAction()
             }
@@ -135,7 +150,41 @@ struct AskTranscriptText: NSViewRepresentable {
             nextResponder?.scrollWheel(with: event)
         }
 
+        /// Parse outside AppKit's update/layout pass. Each editor keeps only its
+        /// running parse and newest replacement, including during fast streams.
+        func requestContent(_ text: String, markdown: Bool, dark: Bool) {
+            if let requested, requested.text == text, requested.markdown == markdown, requested.dark == dark { return }
+            if dragging { pending = (text, markdown, dark); return }
+            requested = (text, markdown, dark)
+            let generation = UUID(); contentGeneration = generation
+            guard source != text || self.dark != dark || usesMarkdown != markdown else {
+                preparation.cancel(); return
+            }
+            guard markdown else {
+                preparation.cancel()
+                applyContent(text, markdown: false, dark: dark, document: nil)
+                return
+            }
+            var document: Markdown.Document?
+            preparation.submit({ document = Markdown.Document(parsing: AskMarkdownFences.normalize(text)) }, completion: { [weak self] result in
+                guard let self, contentGeneration == generation else { return }
+                guard case .success = result, let document else {
+                    requested = nil
+                    if !dragging { applyContent(text, markdown: false, dark: dark, document: nil) }
+                    return
+                }
+                if dragging { pending = (text, markdown, dark); requested = nil; return }
+                applyContent(text, markdown: true, dark: dark, document: document)
+            })
+        }
+
+        /// Synchronous entry for deterministic text-layout fixtures.
         func setContent(_ text: String, markdown: Bool, dark: Bool) {
+            contentGeneration = UUID(); requested = nil; preparation.cancel()
+            applyContent(text, markdown: markdown, dark: dark, document: nil)
+        }
+
+        private func applyContent(_ text: String, markdown: Bool, dark: Bool, document: Markdown.Document?) {
             guard source != text || self.dark != dark || usesMarkdown != markdown else { return }
             if dragging {
                 pending = (text, markdown, dark); return
@@ -143,7 +192,7 @@ struct AskTranscriptText: NSViewRepresentable {
             let oldSelection = selectedRange()
             let oldString = string as NSString
             source = text; self.dark = dark; usesMarkdown = markdown
-            let rendered = AskMarkdownText.render(text, markdown: markdown)
+            let rendered = AskMarkdownText.render(text, markdown: markdown, document: document)
             textStorage?.setAttributedString(rendered)
             // Preserve a selection only if the selected prefix is still identical.
             if NSMaxRange(oldSelection) <= oldString.length, NSMaxRange(oldSelection) <= rendered.length,
@@ -213,7 +262,7 @@ enum AskMarkdownText {
         }
     }
 
-    static func render(_ text: String, markdown: Bool = true) -> NSAttributedString {
+    static func render(_ text: String, markdown: Bool = true, document: Markdown.Document? = nil) -> NSAttributedString {
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineSpacing = lineSpacing
         paragraph.paragraphSpacing = paragraphSpacing
@@ -330,7 +379,7 @@ enum AskMarkdownText {
                 append("\n", attributes)
             }
         }
-        visit(Document(parsing: AskMarkdownFences.normalize(text)), base)
+        visit(document ?? Markdown.Document(parsing: AskMarkdownFences.normalize(text)), base)
         // TextKit requires the final cell's paragraph terminator to lay out a table.
         if result.string.hasSuffix("\n"),
            (result.attribute(.paragraphStyle, at: result.length - 1, effectiveRange: nil) as? NSParagraphStyle)?

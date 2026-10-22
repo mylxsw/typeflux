@@ -1,0 +1,67 @@
+{
+  "covered": 278,
+  "total": 291,
+  "percent": 95.53,
+  "files": [
+    {
+      "file": "Sources/Typeflux/App/TypefluxApplication.swift",
+      "covered": 0,
+      "executable_changed_lines": 3,
+      "percent": 0.0,
+      "uncovered": [
+        33,
+        41,
+        105
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskTranscriptText.swift",
+      "covered": 42,
+      "executable_changed_lines": 44,
+      "percent": 95.45,
+      "uncovered": [
+        142,
+        161
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Stability/LatestBackgroundWork.swift",
+      "covered": 55,
+      "executable_changed_lines": 55,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Stability/MainThreadHangMonitor.swift",
+      "covered": 114,
+      "executable_changed_lines": 118,
+      "percent": 96.61,
+      "uncovered": [
+        49,
+        50,
+        108,
+        109
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Workflow/WorkflowController+History.swift",
+      "covered": 63,
+      "executable_changed_lines": 66,
+      "percent": 95.45,
+      "uncovered": [
+        115,
+        116,
+        117
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Workflow/WorkflowController.swift",
+      "covered": 4,
+      "executable_changed_lines": 5,
+      "percent": 80.0,
+      "uncovered": [
+        482
+      ]
+    }
+  ]
+}

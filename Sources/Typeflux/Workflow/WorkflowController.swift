@@ -205,6 +205,10 @@ final class WorkflowController {
     var personaPickerSelectedIndex = 0
     var personaPickerMode: PersonaPickerMode = .switchDefault
     var isHistoryPickerPresented = false
+    var isHistoryPickerLoading = false
+    var historyPanelLoadGeneration = UUID()
+    var historyPanelWork: any LatestBackgroundWorking = LatestBackgroundWork(label: "typeflux.clipboard-panel-read")
+    var clipboardMaintenanceWork: any LatestBackgroundWorking = LatestBackgroundWork(label: "typeflux.clipboard-maintenance")
     /// The clipboard panel's state; the panel opens from the history hotkey.
     let historyPanelModel = ClipboardPanelModel()
     var clipboardHistoryStore: ClipboardHistoryStore?
@@ -475,6 +479,7 @@ final class WorkflowController {
     }
 
     func stop() {
+        clipboardMaintenanceWork.cancel()
         clipboardActionGeneration = UUID()
         Task { @MainActor [weak self] in self?.clipboardAction.cancel() }
         hotkeyService.stop()

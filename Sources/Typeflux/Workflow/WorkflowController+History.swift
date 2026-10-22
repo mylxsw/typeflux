@@ -53,7 +53,7 @@ extension WorkflowController {
 
     func handleHistoryPickerRequested() {
         clipboardActionGeneration = UUID()
-        if isHistoryPickerPresented {
+        if isHistoryPickerPresented || isHistoryPickerLoading {
             dismissHistoryPicker()
             return
         }
@@ -64,20 +64,7 @@ extension WorkflowController {
 
         guard !isRecording, processingTask == nil else { return }
 
-        enforceClipboardRetentionPolicy()
-        let entries = historyPanelEntries()
-        guard !entries.isEmpty else {
-            overlayController.showNotice(message: L("overlay.historyPicker.empty"))
-            overlayController.dismiss(after: 2.0)
-            return
-        }
-
-        historyPanelModel.showsPreview = settingsStore.clipboardShowsPreview
-        historyPanelModel.isRecordingPaused = settingsStore.isClipboardRecordingPaused()
-        historyPanelModel.singleClickPastes = settingsStore.clipboardSingleClickPastes
-        historyPanelModel.reset(entries: entries, selectFirstUnpinned: settingsStore.clipboardSelectsFirstUnpinned)
-        isHistoryPickerPresented = true
-        clipboardPanelPresenter?.present(historyPanelModel)
+        requestHistoryPanel(opening: true)
     }
 
     /// The rows currently shown in the panel.
@@ -86,26 +73,68 @@ extension WorkflowController {
     }
 
     func historyPanelEntries() -> [ClipboardEntry] {
+        Self.historyPanelEntries(history: historyStore, clipboard: clipboardHistoryStore)
+    }
+
+    private static func historyPanelEntries(history: any HistoryStore, clipboard: (any ClipboardHistoryStore)?) -> [ClipboardEntry] {
         let records = StatusBarMenuSupport.recentTranscriptionRecords(
-            from: historyStore.list(limit: Self.historyPanelVoiceLimit * 3, offset: 0, searchQuery: nil),
+            from: history.list(limit: Self.historyPanelVoiceLimit * 3, offset: 0, searchQuery: nil),
             limit: Self.historyPanelVoiceLimit
         )
         return ClipboardFeed.entries(
             // Trimming bounds the store; pinned items come on top of the unpinned limit.
-            clipboardItems: clipboardHistoryStore?.items(limit: Int(Int32.max)) ?? [],
+            clipboardItems: clipboard?.items(limit: Int(Int32.max)) ?? [],
             voiceRecords: records,
-            pinnedVoiceRecordIDs: clipboardHistoryStore?.pinnedVoiceRecordIDs() ?? []
+            pinnedVoiceRecordIDs: clipboard?.pinnedVoiceRecordIDs() ?? []
         )
     }
 
     func reloadHistoryPanel() {
         guard isHistoryPickerPresented else { return }
-        let entries = historyPanelEntries()
-        guard !entries.isEmpty else {
-            dismissHistoryPicker()
-            return
-        }
-        historyPanelModel.replaceEntries(entries)
+        requestHistoryPanel(opening: false)
+    }
+
+    private func requestHistoryPanel(opening: Bool) {
+        let generation = UUID()
+        historyPanelLoadGeneration = generation
+        isHistoryPickerLoading = true
+        // Capture settings on the UI thread; the worker only accesses synchronized stores.
+        let history = historyStore, clipboard = clipboardHistoryStore
+        let maintenance = clipboardMaintenance(at: Date())
+        var entries: [ClipboardEntry] = []
+        historyPanelWork.submit({
+            if opening { maintenance() }
+            entries = Self.historyPanelEntries(history: history, clipboard: clipboard)
+        }, completion: { [weak self] result in
+            guard let self, historyPanelLoadGeneration == generation else { return }
+            isHistoryPickerLoading = false
+            switch result {
+            case .failure:
+                if isHistoryPickerPresented { historyPanelModel.showNotice(L("ask.plugin.clip.unavailable")) }
+                else {
+                    overlayController.showNotice(message: L("ask.plugin.clip.unavailable"))
+                    overlayController.dismiss(after: 2)
+                }
+            case .success:
+                guard !entries.isEmpty else {
+                    if opening {
+                        overlayController.showNotice(message: L("overlay.historyPicker.empty"))
+                        overlayController.dismiss(after: 2)
+                    } else { dismissHistoryPicker() }
+                    return
+                }
+                if opening {
+                    // Another feature can start while the read is suspended.
+                    guard !isRecording, processingTask == nil, !isPersonaPickerPresented else { return }
+                    historyPanelModel.showsPreview = settingsStore.clipboardShowsPreview
+                    historyPanelModel.isRecordingPaused = settingsStore.isClipboardRecordingPaused()
+                    historyPanelModel.singleClickPastes = settingsStore.clipboardSingleClickPastes
+                    historyPanelModel.reset(entries: entries, selectFirstUnpinned: settingsStore.clipboardSelectsFirstUnpinned)
+                    isHistoryPickerPresented = true
+                    clipboardPanelPresenter?.present(historyPanelModel)
+                } else if isHistoryPickerPresented { historyPanelModel.replaceEntries(entries) }
+            }
+        })
     }
 
     func confirmHistorySelection() {
@@ -189,6 +218,9 @@ extension WorkflowController {
     }
 
     func dismissHistoryPicker() {
+        historyPanelLoadGeneration = UUID()
+        isHistoryPickerLoading = false
+        historyPanelWork.cancel()
         Task { @MainActor [weak self] in self?.clipboardAction.cancelPreparation() }
         guard isHistoryPickerPresented else { return }
         isHistoryPickerPresented = false
@@ -198,11 +230,20 @@ extension WorkflowController {
     /// Applies the clipboard's own retention, item limit and image storage limit
     /// (Settings → Launcher → Clipboard).
     func enforceClipboardRetentionPolicy(now: Date = Date()) {
-        guard let store = clipboardHistoryStore else { return }
-        if let days = settingsStore.clipboardRetention.days {
-            store.purge(olderThan: now.addingTimeInterval(-TimeInterval(max(1, days)) * 24 * 3600))
+        clipboardMaintenanceWork.submit(clipboardMaintenance(at: now), completion: { _ in })
+    }
+
+    private func clipboardMaintenance(at now: Date) -> () -> Void {
+        let store = clipboardHistoryStore
+        let cutoff = settingsStore.clipboardRetention.days.map {
+            now.addingTimeInterval(-TimeInterval(max(1, $0)) * 24 * 3600)
         }
-        ClipboardMonitor.applyLimits(of: settingsStore.clipboardCapturePolicy(now: now), to: store)
+        let policy = settingsStore.clipboardCapturePolicy(now: now)
+        return {
+            guard let store else { return }
+            if let cutoff { store.purge(olderThan: cutoff) }
+            ClipboardMonitor.applyLimits(of: policy, to: store)
+        }
     }
 
     // MARK: - Actions

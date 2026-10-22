@@ -30,6 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appearanceObserver: NSObjectProtocol?
     private var appIconObserver: NSObjectProtocol?
     private let termination = AppTerminationBarrier()
+    private let responsiveness = MainThreadHangMonitor()
 
     init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
@@ -37,6 +38,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_: Notification) {
+        responsiveness.start()
         let settingsStore = self.settingsStore
         AppLocalization.shared.setLanguage(settingsStore.appLanguage)
         AppAppearance.apply(settingsStore.appearanceMode)
@@ -100,6 +102,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_: Notification) {
+        responsiveness.stop()
         if let languageObserver {
             NotificationCenter.default.removeObserver(languageObserver)
         }
