@@ -6598,11 +6598,11 @@
 "onboarding.v2.goals.all.title" = "모두 써 보기";
 "onboarding.v2.goals.all.detail" = "전부 선택";
 "onboarding.goal.voice.title" = "음성 입력";
-"onboarding.goal.voice.detail" = "말로 입력하고 말로 고치기";
-"onboarding.goal.launcher.title" = "런처 · 클립보드 · 스크린샷";
-"onboarding.goal.launcher.detail" = "열기, 다시 찾기, 캡처";
-"onboarding.goal.tools.title" = "번역 · 녹화 · 워크플로";
-"onboarding.goal.tools.detail" = "번역, GIF, 작은 도구";
+"onboarding.goal.voice.detail" = "말하면 입력";
+"onboarding.goal.launcher.title" = "런처";
+"onboarding.goal.launcher.detail" = "클립보드, 스크린샷";
+"onboarding.goal.tools.title" = "도구";
+"onboarding.goal.tools.detail" = "번역, 녹화, 워크플로";
 "onboarding.goal.ring.title" = "링";
 "onboarding.goal.ring.detail" = "포인터 옆에서 한 번에";
 "onboarding.goal.chat.title" = "Agent 채팅";

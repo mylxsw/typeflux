@@ -6600,11 +6600,11 @@
 "onboarding.v2.goals.all.title" = "都想試試";
 "onboarding.v2.goals.all.detail" = "全部選上";
 "onboarding.goal.voice.title" = "語音輸入";
-"onboarding.goal.voice.detail" = "說話即輸入，一句話改寫";
-"onboarding.goal.launcher.title" = "啟動器 · 剪貼簿 · 截圖";
-"onboarding.goal.launcher.detail" = "開啟、找回、截圖";
-"onboarding.goal.tools.title" = "翻譯 · 錄影 · 工作流程";
-"onboarding.goal.tools.detail" = "翻譯、錄 GIF、小工具";
+"onboarding.goal.voice.detail" = "說話即輸入";
+"onboarding.goal.launcher.title" = "啟動器";
+"onboarding.goal.launcher.detail" = "剪貼簿、截圖";
+"onboarding.goal.tools.title" = "工具";
+"onboarding.goal.tools.detail" = "翻譯、錄影、工作流程";
 "onboarding.goal.ring.title" = "圓環";
 "onboarding.goal.ring.detail" = "指標旁一劃即達";
 "onboarding.goal.chat.title" = "Agent 對話";

@@ -274,7 +274,8 @@ struct OnboardingView: View {
                 Text(detail)
                     .font(.studioBody(12))
                     .foregroundStyle(secondaryText)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 3)
             }
             .frame(maxWidth: .infinity, minHeight: 132, alignment: .topLeading)

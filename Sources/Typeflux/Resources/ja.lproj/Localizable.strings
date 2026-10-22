@@ -6598,11 +6598,11 @@
 "onboarding.v2.goals.all.title" = "全部試す";
 "onboarding.v2.goals.all.detail" = "すべて選択";
 "onboarding.goal.voice.title" = "音声入力";
-"onboarding.goal.voice.detail" = "話して入力、ひと言で書き直し";
-"onboarding.goal.launcher.title" = "ランチャー · クリップ · スクショ";
-"onboarding.goal.launcher.detail" = "開く・呼び出す・撮る";
-"onboarding.goal.tools.title" = "翻訳 · 録画 · ワークフロー";
-"onboarding.goal.tools.detail" = "翻訳、GIF、小さなツール";
+"onboarding.goal.voice.detail" = "話すだけで入力";
+"onboarding.goal.launcher.title" = "ランチャー";
+"onboarding.goal.launcher.detail" = "クリップボード・スクショ";
+"onboarding.goal.tools.title" = "ツール";
+"onboarding.goal.tools.detail" = "翻訳・録画・ワークフロー";
 "onboarding.goal.ring.title" = "リング";
 "onboarding.goal.ring.detail" = "ポインタの横でひとなぞり";
 "onboarding.goal.chat.title" = "Agent チャット";

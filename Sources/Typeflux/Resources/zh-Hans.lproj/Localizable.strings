@@ -6598,11 +6598,11 @@
 "onboarding.v2.goals.all.title" = "都想试试";
 "onboarding.v2.goals.all.detail" = "全部选上";
 "onboarding.goal.voice.title" = "语音输入";
-"onboarding.goal.voice.detail" = "说话即输入，一句话改写";
-"onboarding.goal.launcher.title" = "启动器 · 剪贴板 · 截图";
-"onboarding.goal.launcher.detail" = "打开、找回、截图";
-"onboarding.goal.tools.title" = "翻译 · 录屏 · 工作流";
-"onboarding.goal.tools.detail" = "翻译、录 GIF、小工具";
+"onboarding.goal.voice.detail" = "说话即输入";
+"onboarding.goal.launcher.title" = "启动器";
+"onboarding.goal.launcher.detail" = "剪贴板、截图";
+"onboarding.goal.tools.title" = "工具";
+"onboarding.goal.tools.detail" = "翻译、录屏、工作流";
 "onboarding.goal.ring.title" = "圆环";
 "onboarding.goal.ring.detail" = "指针旁一划即达";
 "onboarding.goal.chat.title" = "Agent 对话";

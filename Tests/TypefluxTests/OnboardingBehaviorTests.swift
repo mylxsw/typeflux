@@ -26,7 +26,6 @@ struct OnboardingBehaviorTests {
                 try RenderedUI.button(OnboardingGoal.ring.title, in: host).press()
                 try await RenderedUI.wait { model.goals.contains(.ring) }
                 try await RenderedUI.wait { RenderedUI.contains(L("onboarding.v2.plan.summary", 4, 6), in: host) }
-                try RenderedUI.snapshot(host, name: "onboarding-goals")
 
                 try RenderedUI.button(L("onboarding.v2.goals.all.title"), in: host).press()
                 try await RenderedUI.wait { model.allGoalsSelected }
@@ -115,6 +114,29 @@ struct OnboardingBehaviorTests {
                     OnboardingWelcomeHero.Scene.allCases.contains { RenderedUI.contains($0.caption, in: host) }
                 }
                 try RenderedUI.snapshot(host, name: "onboarding-welcome-zh")
+            }
+        }
+    }
+
+    @Test func `goals screen opened directly shows the plan`() async throws {
+        try await RenderedUI.withFixture { settings in
+            let model = OnboardingViewModel(settingsStore: settings, globeKeyReader: ReadyGlobeKey(), onComplete: {})
+            model.currentStep = .goals
+            try await withOnboardingWindow(model, appearance: .light) { _, host in
+                try await RenderedUI.wait { RenderedUI.contains(L("onboarding.v2.plan.summary", 3, 5), in: host) }
+                // Captured without a step transition so the snapshot shows the settled screen.
+                try RenderedUI.snapshot(host, name: "onboarding-goals")
+            }
+        }
+    }
+
+    @Test func `every welcome scene renders its caption`() async throws {
+        try await RenderedUI.withFixture { _ in
+            for scene in OnboardingWelcomeHero.Scene.allCases {
+                try await RenderedUI.withWindow(OnboardingWelcomeHero(scene: scene), width: 480, height: 520) { _, host in
+                    try await RenderedUI.wait { RenderedUI.contains(scene.caption, in: host) }
+                }
+                #expect(!scene.verb.isEmpty && !scene.featureName.isEmpty && !scene.symbol.isEmpty)
             }
         }
     }
