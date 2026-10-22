@@ -13,7 +13,8 @@ extension AskConversationModel {
         if plugins.keyword?.pluginID == AskQuickAskPlugin.id, quickAsk?.conversationId != nil {
             return await openQuickAskInChat()
         }
-        guard canOpenChatFromLauncher else { confirm(L("ask.openChat.wait")); return false }
+        guard !Task.isCancelled, canOpenChatFromLauncher else { confirm(L("ask.openChat.wait")); return false }
+        if session() != nil { _ = credentials() }
         isOpeningChat = true
         defer { isOpeningChat = false }
         let account = owner, sessionOwner = session()?.owner
@@ -31,25 +32,29 @@ extension AskConversationModel {
             }
         }
         let transfers = !otherPlugin && incoming.hasChatInput
+        let handoffID = transfers && incoming.temporary != true ? reserveChatDraft(incoming, account: account).id : nil
         do {
             if transfers {
                 // The queued editor's underlying draft is restored by newConversation().
                 let preserved = sendQueue.editing.flatMap { $0.conversationId == selectedId ? $0.stash : nil } ?? previous
                 if let previousID, !isLoadingSelection {
                     try await cache.saveDraft(preserved, key: previousID, owner: cacheOwner(previousID))
-                } else if previousID == nil, preserved.hasChatInput {
-                    let saved = AskSavedChatDraft(id: "saved-chat:" + UUID().uuidString, draft: preserved)
-                    try await cache.saveDraft(saved.draft, key: saved.id, owner: account)
+                } else if previousID == nil, preserved.hasChatInput, preserved.temporary != true {
+                    let saved = displacedChatDraft(preserved, handoffID: handoffID)
+                    try await saveChatDraft(saved.draft, key: saved.id, account: account)
                     if owner == account, session()?.owner == sessionOwner { savedChatDrafts.append(saved) }
                 }
             }
-            guard owner == account, session()?.owner == sessionOwner, source == launcherDraft,
+            let recoveryKey = transfers ? try await stageChatDraft(incoming, account: account) : nil
+            guard !Task.isCancelled, owner == account, session()?.owner == sessionOwner, source == launcherDraft,
                   previous == draft, generation == selectionGeneration, plugins.keyword == keyword,
                   !recordingIsActive(), !voiceInput.isOccupied, !capturing,
                   !isLoadingAttachments(launcher: true), !isLoadingAttachments(launcher: false) else { return false }
             if transfers {
                 let mode = launcherPermissionMode
-                newConversation()
+                guard newConversation() else { return false }
+                activeChatDraftID = recoveryKey
+                pendingDraftHandoff = nil
                 draftPermissionMode = mode; launcherPermissionMode = .standard
                 draft = incoming
                 clearCapturedContentFeedback(launcher: true)
@@ -65,7 +70,7 @@ extension AskConversationModel {
             persistDrafts()
             onShowConversation?()
             return true
-        } catch {
+        } catch is CancellationError { return false } catch {
             confirm(L("ask.cache.failed"))
             return false
         }
@@ -75,7 +80,7 @@ extension AskConversationModel {
         let account = owner, sessionOwner = session()?.owner
         guard let saved = try? await cache.savedChatDrafts(owner: account),
               owner == account, session()?.owner == sessionOwner else { return }
-        savedChatDrafts = saved
+        savedChatDrafts = saved.filter { $0.id != activeChatDraftID }
     }
 
     /// Restoring preserves the visible unsent draft before replacing it.
@@ -93,16 +98,16 @@ extension AskConversationModel {
             guard owner == account, session()?.owner == sessionOwner, draft == previous, generation == selectionGeneration else { return }
             let replacement = selectedId == nil ? draft : .followUp
             // Save the displaced draft separately before touching the visible composer.
-            if replacement.hasChatInput {
-                let displaced = AskSavedChatDraft(id: "saved-chat:" + UUID().uuidString, draft: replacement)
-                try await cache.saveDraft(displaced.draft, key: displaced.id, owner: account)
+            if replacement.hasChatInput, replacement.temporary != true {
+                let displaced = displacedChatDraft(replacement)
+                try await saveChatDraft(displaced.draft, key: displaced.id, account: account)
             }
             guard owner == account, session()?.owner == sessionOwner, draft == previous, generation == selectionGeneration,
                   !recordingIsActive(), !voiceInput.isOccupied, !capturing,
                   !isLoadingAttachments(launcher: true), !isLoadingAttachments(launcher: false) else { return }
-            newConversation()
+            guard !Task.isCancelled, newConversation() else { return }
+            activeChatDraftID = saved.id
             draft = saved.draft
-            try await cache.saveDraft(.followUp, key: saved.id, owner: account)
             guard owner == account, session()?.owner == sessionOwner else { return }
             await loadSavedChatDrafts()
             persistDrafts()

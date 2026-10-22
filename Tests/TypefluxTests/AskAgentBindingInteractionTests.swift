@@ -395,8 +395,14 @@ private final class CancellationGate {
 actor GatedConversationCache: AskCaching {
     let base: any AskCaching
     let beforeSave: @Sendable (AskConversation) async -> Void
-    init(base: any AskCaching, beforeSave: @escaping @Sendable (AskConversation) async -> Void) {
+    let beforeDraftSave: @Sendable (String) async -> Void
+    let afterDraftSave: @Sendable (String, String) async throws -> Void
+    init(base: any AskCaching,
+         beforeDraftSave: @escaping @Sendable (String) async -> Void = { _ in },
+         afterDraftSave: @escaping @Sendable (String, String) async throws -> Void = { _, _ in },
+         beforeSave: @escaping @Sendable (AskConversation) async -> Void) {
         self.base = base; self.beforeSave = beforeSave
+        self.beforeDraftSave = beforeDraftSave; self.afterDraftSave = afterDraftSave
     }
     func save(_ conversation: AskConversation, owner: String) async throws {
         await beforeSave(conversation)
@@ -411,7 +417,11 @@ actor GatedConversationCache: AskCaching {
     func load(id: String, owner: String) async throws -> AskConversation? { try await base.load(id: id, owner: owner) }
     func list(owner: String) async throws -> [AskConversationSummary] { try await base.list(owner: owner) }
     func delete(id: String, owner: String) async throws { try await base.delete(id: id, owner: owner) }
-    func saveDraft(_ draft: AskDraft, key: String, owner: String) async throws { try await base.saveDraft(draft, key: key, owner: owner) }
+    func saveDraft(_ draft: AskDraft, key: String, owner: String) async throws {
+        await beforeDraftSave(key)
+        try await base.saveDraft(draft, key: key, owner: owner)
+        try await afterDraftSave(key, owner)
+    }
     func draft(key: String, owner: String) async throws -> AskDraft? { try await base.draft(key: key, owner: owner) }
     func savedChatDrafts(owner: String) async throws -> [AskSavedChatDraft] { try await base.savedChatDrafts(owner: owner) }
     func associateTool(id: String, conversationId: String, owner: String) async throws { try await base.associateTool(id: id, conversationId: conversationId, owner: owner) }

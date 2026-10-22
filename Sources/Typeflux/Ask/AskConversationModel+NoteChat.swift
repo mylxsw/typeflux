@@ -17,16 +17,16 @@ extension AskConversationModel {
             let preserved = sendQueue.editing.flatMap { $0.conversationId == previousID ? $0.stash : nil } ?? previous
             if let previousID, !isLoadingSelection {
                 try await cache.saveDraft(preserved, key: previousID, owner: cacheOwner(previousID))
-            } else if previousID == nil, preserved.hasChatInput {
-                let saved = AskSavedChatDraft(id: "saved-chat:" + UUID().uuidString, draft: preserved)
-                try await cache.saveDraft(saved.draft, key: saved.id, owner: account)
+            } else if previousID == nil, preserved.hasChatInput, preserved.temporary != true {
+                let saved = displacedChatDraft(preserved)
+                try await saveChatDraft(saved.draft, key: saved.id, account: account)
                 if owner == account, session()?.owner == sessionOwner { savedChatDrafts.append(saved) }
             }
             guard owner == account, session()?.owner == sessionOwner, draft == previous,
                   selectedId == previousID, selectionGeneration == generation,
                   !recordingIsActive(), !voiceInput.isOccupied, !capturing,
                   !isLoadingAttachments(launcher: true), !isLoadingAttachments(launcher: false) else { return false }
-            newConversation()
+            guard newConversation() else { return false }
             // Keep the new conversation's global memory, without unrelated captured content.
             draft.includeScreenshot = false
             draft.references = incoming.references

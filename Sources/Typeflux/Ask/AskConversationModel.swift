@@ -273,6 +273,10 @@ final class AskConversationModel: ObservableObject {
 
     @Published var isOpeningChat = false
     @Published var savedChatDrafts: [AskSavedChatDraft] = []
+    var chatDraftWrites: [String: [String: AskChatDraftWrite]] = [:]
+    var activeChatDraftID: String?
+    var pendingDraftHandoff: AskDraftHandoff?
+    var chatDraftSubmissions: [String: AskDraftHandoffSubmission] = [:]
     @Published var referenceLocation: String?
     @Published var launcherWindowMode: AskLauncherWindowMode = .complete
     @Published var launcherDraft = AskDraft(includeScreenshot: false) {
@@ -664,6 +668,7 @@ final class AskConversationModel: ObservableObject {
         inferenceProgress = [:]; progressInferenceIDs = [:]
         selected = nil; selectedId = nil; isLoadingSelection = false; selectionLoadFailed = false
         snapshots = [:]; drafts = [:]; transcriptPositions = [:]; savedChatDrafts = []
+        activeChatDraftID = nil; pendingDraftHandoff = nil; chatDraftSubmissions = [:]
         historyGeneration = UUID(); historyOffset = 0; conversations = []; localConversationIds = []
         // In memory only, so a new session never sees it; the server expires its copy.
         temporaryConversation = nil; keepingTemporaryIDs = []
@@ -799,12 +804,19 @@ final class AskConversationModel: ObservableObject {
         let launcher = newQuestionDraft(), followUp = editing ?? draft, owner = owner
         let id = isLoadingSelection ? nil : selectedId.flatMap { deletedConversationIDs.contains($0) ? nil : $0 }
         let followUpOwner = id.map(cacheOwner) ?? owner
+        // Privacy cleanup must not be cancelled by the next debounced edit.
+        if followUp.temporary == true { detachChatDraft() }
+        let recoveryKey = id == nil ? activeChatDraftID : nil
         if let id, !isLoadingSelection { drafts[id] = followUp }
         draftSaveConversationID = id
         draftSave = Task { [cache] in
             do {
                 try await Task.sleep(for: .milliseconds(300))
                 try await cache.saveDraft(launcher, key: "launcher", owner: owner)
+                try Task.checkCancellation()
+                if let recoveryKey {
+                    try await saveChatDraft(followUp, key: recoveryKey, account: owner)
+                }
                 try Task.checkCancellation()
                 if let id, self.owner == owner, !deletedConversationIDs.contains(id) {
                     try await cache.saveDraft(followUp, key: id, owner: followUpOwner)
@@ -963,6 +975,7 @@ final class AskConversationModel: ObservableObject {
         selectionObservation?.cancel(); selectionObservation = nil
         let generation = UUID(); selectionGeneration = generation
         let selectingSession = queueSession
+        detachChatDraft()
         let oldId = selectedId, oldDraft = draft
         if let oldId, !isLoadingSelection { drafts[oldId] = oldDraft }
         // Commit navigation synchronously, before the first cache/network await.
@@ -1026,8 +1039,10 @@ final class AskConversationModel: ObservableObject {
     /// `storesLocally` starts a conversation kept on this Mac (true) or in Typeflux Cloud
     /// (false); nil follows the default from settings.
     /// `temporary` starts a temporary conversation instead, which never enters history.
-    func newConversation(storesLocally: Bool? = nil, temporary: Bool = false) {
-        guard leaveTemporaryConversation(for: nil) else { return }
+    @discardableResult
+    func newConversation(storesLocally: Bool? = nil, temporary: Bool = false) -> Bool {
+        guard leaveTemporaryConversation(for: nil) else { return false }
+        detachChatDraft()
         draftPermissionMode = .standard
         clearCapturedContentFeedback(launcher: false)
         selectionObservation?.cancel(); selectionObservation = nil
@@ -1044,6 +1059,7 @@ final class AskConversationModel: ObservableObject {
         // A temporary conversation uses none.
         draft.temporary = temporary ? true : nil
         draft.memory = temporary ? AskMemory() : capture.globalMemory() ?? AskMemory()
+        return true
     }
 
     func submitLauncher(recordInput: Bool = true) {
@@ -1296,6 +1312,12 @@ final class AskConversationModel: ObservableObject {
         Self.applyMemoryChoice(submitted, newConversation: newConversation, request: &request, conversation: &value)
         pendingSends[id] = request
         admitted = true
+        if launcher, !inline, newConversation { detachChatDraft() }
+        if !launcher, !inline, newConversation, clearsDraft, draft == submitted, let key = activeChatDraftID {
+            chatDraftSubmissions[id] = .init(key: key, owner: current.account, messageID: messageId)
+            activeChatDraftID = nil
+            pendingDraftHandoff = nil
+        }
         screenshotConsent[id] = submitted.includeScreenshot ? messageId : nil
         value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort, references: request.references, attachments: request.attachments, skills: request.skills, mcpServers: request.mcpServers))
         if launcher { persistDrafts() }
@@ -2705,6 +2727,8 @@ extension AskConversationModel {
                     throw AskLocalError.message(L("ask.local.conflict"))
                 }
                 accepted = true
+                await acknowledgeChatDraft(response, route: current)
+                try checkOperation(id, operationId: operationId, account: current.account)
                 // Queue ownership transfers only after drive publishes authoritative state.
                 // Admit the staged folder selection first, preserving its existing exact scope.
                 if queueClaim == nil { pendingSends[id] = nil }
@@ -2772,6 +2796,8 @@ extension AskConversationModel {
             throw AskLocalError.message(L("ask.local.conflict"))
         }
         try await accept(response, route: current, operationId: operationId)
+        try checkOperation(id, operationId: operationId, account: current.account)
+        await acknowledgeChatDraft(response, route: current)
         try checkOperation(id, operationId: operationId, account: current.account)
         return response
     }
@@ -2922,9 +2948,9 @@ extension AskConversationModel {
             let preserved = sendQueue.editing.flatMap { $0.conversationId == previousID ? $0.stash : nil } ?? previous
             if let previousID, previousID != id, !isLoadingSelection {
                 try await cache.saveDraft(preserved, key: previousID, owner: cacheOwner(previousID))
-            } else if previousID == nil, preserved.hasChatInput {
-                let saved = AskSavedChatDraft(id: "saved-chat:" + UUID().uuidString, draft: preserved)
-                try await cache.saveDraft(saved.draft, key: saved.id, owner: owner)
+            } else if previousID == nil, preserved.hasChatInput, preserved.temporary != true {
+                let saved = displacedChatDraft(preserved)
+                try await saveChatDraft(saved.draft, key: saved.id, account: owner)
                 if owner == quick.owner, session()?.owner == quick.owner { savedChatDrafts.append(saved) }
             }
             guard owner == quick.owner, session()?.owner == quick.owner,
@@ -2933,6 +2959,7 @@ extension AskConversationModel {
                   !isLoadingAttachments(launcher: true), !isLoadingAttachments(launcher: false),
                   let value = snapshots[id] else { return false }
             if previousID != id {
+                detachChatDraft()
                 cancelQueuedEdit(advancing: false)
                 if let previousID { drafts[previousID] = preserved }
                 stopSelectionObservation()
