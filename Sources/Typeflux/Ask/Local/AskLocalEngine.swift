@@ -80,6 +80,10 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     /// Temporary conversations: kept in memory only and never listed.
     private var temporaryIDs: Set<String> = []
     private var loaded = false
+    // Raw engines with injected stores remain useful for isolated fixtures. Every
+    // production factory enables directory ownership before loading any state.
+    let requiresExclusiveAccess: Bool
+    private var directoryLease: AskConversationDirectoryLease?
 
     init(directory: URL = AskLocalEngine.defaultDirectory, webTools: AskLocalWebTools = AskLocalWebTools(),
          now: @escaping @Sendable () -> Date = { Date() }, typedContentEnabled: Bool = false,
@@ -91,7 +95,9 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
          builtinTools: (any AskBuiltinToolHosting)? = nil,
          snapshotStore: (any AskLocalSnapshotStoring)? = nil,
          budgetStore: (any AskBudgetJournaling)? = nil,
-         turnPolicy: AskAgentTurnPolicy = .canonical, allowsCloudModels: Bool = false) {
+         turnPolicy: AskAgentTurnPolicy = .canonical, allowsCloudModels: Bool = false,
+         requiresExclusiveAccess: Bool = false) {
+        self.requiresExclusiveAccess = requiresExclusiveAccess
         self.allowsCloudModels = allowsCloudModels
         self.turnPolicy = turnPolicy
         let writer = turnPolicy.claimWriter(directory: directory)
@@ -117,7 +123,14 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
 
     // MARK: - Storage
 
-    private func loadAll() {
+    func requireStoreOwnership() throws {
+        if requiresExclusiveAccess, directoryLease == nil {
+            directoryLease = try AskConversationDirectoryLease(directory: directory)
+        }
+    }
+
+    private func loadAll() throws {
+        try requireStoreOwnership()
         guard !loaded else { return }
         loaded = true
         snapshotStore.forEachSnapshot { data in
@@ -161,6 +174,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     /// Metering can arrive after a run ends without changing content or activity dates.
     /// A temporary conversation never reaches the disk.
     func persist(_ record: AskLocalRecord) throws {
+        try requireStoreOwnership()
         var record = record
         let cached = records[record.conversation.id]
         record.agentRoutes = try AskRunRouteArchive.merging(cached: cached?.agentRoutes, incoming: record.agentRoutes,
@@ -178,7 +192,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     }
 
     func runRoute(conversationId: String, runId: String) async throws -> AskRunRouteLookup {
-        loadAll()
+        try loadAll()
         let id = AskConversationID.canonical(conversationId)
         guard Self.validID(id), let value = records[id] else { throw AskLocalError.message(L("ask.local.notFound")) }
         guard AskStorageIdentifier.isValid(runId) else { throw conflict() }
@@ -188,7 +202,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     func isTemporary(_ id: String) -> Bool { temporaryIDs.contains(AskConversationID.canonical(id)) }
 
     private func record(_ id: String) throws -> AskLocalRecord {
-        loadAll()
+        try loadAll()
         let id = AskConversationID.canonical(id)
         guard Self.validID(id), var record = records[id] else { throw AskLocalError.message(L("ask.local.notFound")) }
         guard (try? resolveTurn(record)) != nil else { return record }
@@ -224,7 +238,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     // MARK: - AskAPI
 
     func list(token _: String, offset: Int) async throws -> [AskConversationSummary] {
-        loadAll()
+        try loadAll()
         return records.values.map(\.conversation).filter { !temporaryIDs.contains($0.id) }
             .sorted { $0.updatedAt > $1.updatedAt }
             .dropFirst(max(0, offset)).prefix(50)
@@ -243,7 +257,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     func models(token _: String, scenario _: String) async throws -> [AskCloudModel] { [] }
 
     func delete(conversationId: String, token _: String) async throws {
-        loadAll()
+        try loadAll()
         let id = AskConversationID.canonical(conversationId)
         guard Self.validID(id) else { return }
         summaries.removeValue(forKey: id)?.task.cancel()
@@ -269,7 +283,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     func purgeMemory(owner: String, token _: String) async throws { try clearMemorySnapshots(owner: owner) }
 
     private func clearMemorySnapshots(owner: String?) throws {
-        loadAll()
+        try loadAll()
         for id in Array(records.keys) where records[id]?.conversation.memory != nil {
             guard var record = records[id] else { continue }
             if let owner, let capturedOwner = record.conversation.memory?.owner, capturedOwner != owner { continue }
@@ -284,7 +298,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
 
     func send(conversationId: String, request: AskSendRequest, token: String) async throws -> AskConversation {
         guard token.isEmpty else { throw conflict() }
-        loadAll()
+        try loadAll()
         let id = AskConversationID.canonical(conversationId)
         guard Self.validID(id) else { throw AskLocalError.message(L("ask.local.notFound")) }
         let hasQuestion = !request.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -591,7 +605,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     /// Only a terminal legacy conversation may seed device execution. A history
     /// replica never imports pending calls, grants, or an active server run.
     func importLegacy(_ conversation: AskConversation) throws {
-        loadAll()
+        try loadAll()
         guard Self.validID(conversation.id), conversation.run?.isActive != true,
               conversation.run?.needsRecoveryInspection != true else { throw conflict() }
         _ = try AskAgentBinding.resolve(conversation.run?.agentBinding)

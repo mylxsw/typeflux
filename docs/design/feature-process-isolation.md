@@ -42,13 +42,34 @@ Do not launch a second `AskConversationModel`/`AskLocalEngine` against the same
 mutable conversation state as an implementation shortcut. Engines cache local
 records in memory, temporary conversations are memory-only, and the launcher
 currently drives quick-ask runs and transfers them into the conversation window.
-The canonical engine does not provide a cross-process writer lock. The optional
-alternate-agent directory owner has a lock, which is not a general solution for
-the canonical store. SQLite serialization alone cannot transfer execution
-ownership or in-memory state.
+Production canonical engines now acquire a nonblocking directory lease before
+loading records. The device API separately owns its account directory before
+reading the sync journal or starting an uploader. These leases exclude other
+participating processes; SQLite serialization alone still cannot transfer
+execution ownership or in-memory state.
 
-The separate device-execution work changes this boundary too. Reconcile its
-final API before replacing the current model composition.
+The device-execution change merged before this boundary. Its account-scoped
+engines and sync journals remain together. `AskApplicationService` now retains
+one production API graph; the conversation controller and fallback workflow
+assistant resolve it instead of constructing competing caches or upload loops.
+Explicitly injected API graphs remain isolated for fixtures.
+
+The lease is retained for the owner's lifetime, across awaits, task cancellation,
+and window closure. A rejected acquisition does not mark an engine loaded; a
+later explicit retry reads fresh records after the old owner exits. Locks are
+not unlinked on release, use close-on-exec, reject symlink/non-regular/hardlinked
+lock files, and are acquired without waiting for another owner. Different account
+directories remain independent. Ownership errors have localized user feedback.
+Raw engine/device initializers retain an opt-out default for injected fixtures;
+every production construction path enables exclusive access. Older binaries
+that do not participate in this protocol are not fenced by advisory file locks.
+
+This is a storage-ownership boundary, not a GUI or execution-driver split. The
+existing durable execution journal still decides whether a model/tool call may
+be dispatched. UI models still drive calls, temporary drafts still live in their
+current model, and no helper process, IPC handoff, or automatic takeover is
+introduced by this step. `shutdown()` stops sync retries, not engine ownership;
+releasing a live service during an uncertain operation would be unsafe.
 
 Required migration contracts:
 
@@ -114,3 +135,30 @@ Required migration contracts:
 - The app-delegate startup/termination wiring and a real end-to-end 30-second GUI
   freeze were not exercised. No GUI helper is installed by this change. The hard
   process-isolation acceptance gates above remain outstanding.
+
+## Storage ownership validation, 2026-10-22
+
+- The focused scope passed all 78 distinct methods: engine behavior, budget
+  accounting and reentrancy; device synchronization; application composition;
+  injected model completion; directory ownership; and shared UI-state discipline.
+  The fallback workflow assistant's API routing is checked by the composition
+  and production-factory tests, not by claiming a full workflow-editor test run.
+- A real Perl child process fails a nonblocking lock while the Swift owner holds
+  it and succeeds after release. Other tests cover path aliases, independent
+  directories/accounts, invalid lock files, retained lock-file identity,
+  localized errors, denied read/write/delete/import/budget paths, fresh reads
+  after takeover, temporary state, and cancellation retaining ownership.
+- After correcting the inert service singleton's actor-isolation annotation,
+  the smallest relevant follow-up scope passed all seven methods. There were no
+  failing tests. Both runs rebuilt/discovered tests before execution; neither is
+  reported as a verified build-cache hit.
+- First command: 452.20 s (433.47 s preparation/build/discovery). Follow-up:
+  74.60 s (68.61 s preparation/build/discovery). Total command wall time:
+  526.80 s. Coverage replaced plain test runs.
+- Merged scoped LLVM profiles cover 69/72 changed executable Swift lines
+  (95.83%); see `docs/validation/feature-isolation/ownership-coverage.json`.
+  Uncovered paths are the authenticated production engine factory and an unusual
+  non-contention `flock` error. This is not whole-project coverage.
+- Tests used temporary stores and synthetic model/transport dependencies. No
+  real inference, production account upload, installed-app replacement or GUI
+  helper freeze test was performed. The GUI acceptance gates remain outstanding.

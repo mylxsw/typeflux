@@ -18,10 +18,12 @@ actor AskDeviceAPI: AskAPI {
 
     private struct Account {
         let engine: AskLocalEngine
+        let lease: AskConversationDirectoryLease?
         let directory: URL
         var journal: Journal
     }
 
+    let requiresExclusiveAccess: Bool
     private let root: URL
     private let legacy: any AskAPI
     private let transport: any AskDeviceTransporting
@@ -38,7 +40,9 @@ actor AskDeviceAPI: AskAPI {
 
     init(root: URL, legacy: any AskAPI, transport: any AskDeviceTransporting = AskDeviceTransport(),
          resolveAccount: @escaping AccountResolver,
-         refreshToken: (@Sendable (String) async -> String?)? = nil, factory: @escaping EngineFactory) {
+         refreshToken: (@Sendable (String) async -> String?)? = nil,
+         requiresExclusiveAccess: Bool = false, factory: @escaping EngineFactory) {
+        self.requiresExclusiveAccess = requiresExclusiveAccess
         self.root = root; self.legacy = legacy; self.transport = transport
         self.resolveAccount = resolveAccount; self.factory = factory
         self.refreshToken = refreshToken
@@ -59,6 +63,9 @@ actor AskDeviceAPI: AskAPI {
         guard AskStorageIdentifier.isValid(owner), !token.isEmpty else { throw AuthError.unauthorized }
         if accounts[owner] == nil {
             let directory = root.appendingPathComponent(owner, isDirectory: true)
+            // Acquire before reading the outbox or constructing an engine. A
+            // second process must not upload, adopt or delete using stale state.
+            let lease = try requiresExclusiveAccess ? AskConversationDirectoryLease(directory: directory) : nil
             let file = directory.appendingPathComponent("sync.json")
             // A corrupt synchronization journal must not silently resurrect
             // deleted history. Execution snapshots remain untouched on failure.
@@ -67,6 +74,7 @@ actor AskDeviceAPI: AskAPI {
             } else { Journal() }
             accounts[owner] = Account(
                 engine: factory(owner, directory.appendingPathComponent("conversations", isDirectory: true)),
+                lease: lease,
                 directory: directory,
                 journal: journal
             )
