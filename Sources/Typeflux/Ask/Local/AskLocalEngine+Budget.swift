@@ -1,7 +1,7 @@
 import Foundation
 
 extension AskLocalEngine {
-    func budgetJournal(_ record: AskLocalRecord,
+    func budgetJournal(_ record: AskLocalRecord, createIfMissing: Bool = false,
                        _ change: (inout AskBudgetController) throws -> Void) throws -> AskBudgetController? {
         guard let run = record.conversation.run, run.budgetEnabled == true else { return nil }
         guard let root = run.budgetRootId, let deadline = run.budgetDeadline,
@@ -10,7 +10,7 @@ extension AskLocalEngine {
         return try budgetStore.update(
             conversation: record.conversation.id,
             root: root,
-            initial: initial
+            initial: createIfMissing ? initial : nil
         ) { journal in
             // Legacy journals have run IDs but no device binding. Only the
             // still-persisted run can witness that binding, before retry replaces it.
@@ -71,6 +71,19 @@ extension AskLocalEngine {
                 operations: 1
             )
         )
+    }
+
+    /// The caller owns an admitted wave that has not launched any child.
+    /// Dispatch quotas already marked pending retain their existing semantics.
+    func compensateUnlaunchedBudgetTool(_ record: AskLocalRecord, callId: String) throws {
+        _ = try budgetJournal(record) { journal in
+            let id = toolOperation(record, callId)
+            guard let reservation = journal.reservations[id] else { return }
+            if reservation.state == "reserved" { try journal.release(id) }
+            else if reservation.state == "pending" {
+                try journal.settle(id, actual: .init(), source: "scheduler", tokensFinal: true, costFinal: true)
+            }
+        }
     }
 
     func settleBudgetTool(_ record: AskLocalRecord, callId: String) throws {

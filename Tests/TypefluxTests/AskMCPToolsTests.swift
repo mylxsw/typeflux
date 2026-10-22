@@ -127,12 +127,13 @@ final class AskMCPToolsTests: XCTestCase {
         XCTAssertTrue(text.isError)
         XCTAssertNil(text.image)
 
+        // Exercise normalization with an owned worker; shared previews require app lifecycle admission.
         let png = try Self.pngBase64(width: 3200, height: 1600)
-        let image = await AskLocalTools.output(from: MCPToolsCallResult(content: [
+        let image = await AskTypedContent.output(from: MCPToolsCallResult(content: [
             MCPContentBlock(type: "image", data: "not an image", mimeType: "image/png"),
             MCPContentBlock(type: "image", data: png, mimeType: "image/png"),
             MCPContentBlock(type: "image", data: png, mimeType: "image/png")
-        ], isError: false))
+        ], isError: false), normalizer: AskToolImageNormalizer(worker: MediaWorker(timeout: 3)))
         let dataURL = try XCTUnwrap(image.image)
         XCTAssertTrue(dataURL.hasPrefix("data:image/jpeg;base64,"))
         let jpeg = try XCTUnwrap(Data(base64Encoded: String(dataURL.dropFirst("data:image/jpeg;base64,".count))))
@@ -144,10 +145,11 @@ final class AskMCPToolsTests: XCTestCase {
 
         let invalid = await AskLocalTools.output(from: MCPToolsCallResult(content: [MCPContentBlock(type: "image", data: "@@@")], isError: false))
         XCTAssertNil(invalid.image)
-        XCTAssertTrue(invalid.content.contains("projection unavailable or invalid"))
+        XCTAssertTrue(invalid.content.contains("withheld"))
+        XCTAssertEqual(invalid.outcome?.projectionWithheld, true)
         XCTAssertTrue(invalid.isError)
 
-        let onlyImage = await AskLocalTools.output(from: MCPToolsCallResult(content: [MCPContentBlock(type: "image", data: png, mimeType: "image/png")], isError: false))
+        let onlyImage = await AskTypedContent.output(from: MCPToolsCallResult(content: [MCPContentBlock(type: "image", data: png, mimeType: "image/png")], isError: false), normalizer: AskToolImageNormalizer(worker: MediaWorker(timeout: 3)))
         XCTAssertEqual(onlyImage.content, "[Tool image attached]")
         let empty = await AskLocalTools.output(from: MCPToolsCallResult(content: [], isError: true))
         XCTAssertTrue(empty.content.contains("Tool returned no content"))
@@ -162,7 +164,7 @@ final class AskMCPToolsTests: XCTestCase {
         let client = MockMCPClient()
         try await client.connect()
         await client.setMockCallResult(MCPToolsCallResult(content: [
-            MCPContentBlock(type: "image", data: "abc"),
+            MCPContentBlock(type: "future", text: "opaque"),
             MCPContentBlock(type: "resource", resource: MCPEmbeddedResource(uri: nil, mimeType: nil, text: "embedded"))
         ], isError: true))
         let output = try await MCPToolAdapter(client: client, toolDef: tool("t")).execute(arguments: "{}")

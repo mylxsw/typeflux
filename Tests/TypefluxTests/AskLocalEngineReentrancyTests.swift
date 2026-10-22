@@ -109,7 +109,8 @@ final class AskLocalEngineReentrancyTests: XCTestCase {
                 XCTAssertEqual(duplicate, purged)
             }
             assertPurged(result)
-            XCTAssertEqual(result.revision, purgedRevision + 1)
+            // Completion is checkpointed before queuing the next inference.
+            XCTAssertEqual(result.revision, purgedRevision + 2)
             XCTAssertEqual(result.run?.status, "waiting_inference")
             let receipts = result.messages.filter { $0.toolCallId == "fetch" }
             XCTAssertEqual(receipts.count, 1)
@@ -145,7 +146,8 @@ final class AskLocalEngineReentrancyTests: XCTestCase {
                 latestRevision = try await engine.conversation(id: initial.id, token: "").revision
             }
             assertPurged(result)
-            XCTAssertEqual(result.revision, latestRevision + 2)
+            // Fetch and plan results each commit before the next boundary.
+            XCTAssertEqual(result.revision, latestRevision + 4)
             XCTAssertEqual(result.run?.plan, [AskPlanItem(step: "Read", status: "completed")])
             XCTAssertEqual(result.run?.status, "waiting_tool")
             XCTAssertEqual(result.run?.pending.map(\.id), ["browser"])
@@ -211,9 +213,14 @@ final class AskLocalEngineReentrancyTests: XCTestCase {
             restarted = try await engine.retry(conversationId: initial.id, runId: initial.run!.id,
                                                 deviceId: device, modelRef: nil, token: "")
         }
-        XCTAssertNotEqual(result.run?.id, initial.run?.id)
-        XCTAssertEqual(result, restarted)
-        try await assertPersisted(result)
+        // Cancellation now reaches the held transport. Its caller can return
+        // while retry is still preparing the replacement inference; that
+        // snapshot does not own or overwrite the replacement continuation.
+        let current = try await engine.conversation(id: initial.id, token: "")
+        XCTAssertNotEqual(current.run?.id, initial.run?.id)
+        XCTAssertEqual(current, restarted)
+        XCTAssertFalse(result.messages.contains { $0.toolCallId == "fetch" && $0.isError != true })
+        try await assertPersisted(current)
         XCTAssertEqual(fixture.requestCount, 1)
     }
 
