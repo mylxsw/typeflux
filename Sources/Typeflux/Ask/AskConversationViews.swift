@@ -21,6 +21,7 @@ struct AskConversationView: View {
     @State private var endedStepLimitRunId: String?
     /// Which conversations the sidebar lists while some are kept on this Mac.
     @State private var historyFilter = AskHistoryFilter.all
+    @State private var historyKind: AskConversationKind?
     @State private var searchHover = false
     /// The selected row's pill slides between rows instead of jumping.
     @Namespace private var selectionSpace
@@ -274,9 +275,7 @@ struct AskConversationView: View {
                     .padding(.trailing, 12)
                     .frame(height: AskMetrics.titleBarRowHeight)
                     sidebarSearchField.padding(.horizontal, AskMetrics.sidebarContentInset).padding(.bottom, 8)
-                    if showsHistoryFilter {
-                        historyFilterPicker.padding(.horizontal, AskMetrics.sidebarContentInset).padding(.bottom, 8)
-                    }
+                    historyFilterPicker.padding(.horizontal, AskMetrics.sidebarContentInset).padding(.bottom, 8)
                     historyList
                     accountFooter
                 }
@@ -316,9 +315,7 @@ struct AskConversationView: View {
             Color.clear.frame(height: AskMetrics.sidebarTopInset)
             sidebarSearchField.padding(.horizontal, AskMetrics.sidebarContentInset)
                 .padding(.top, 4).padding(.bottom, 8)
-            if showsHistoryFilter {
-                historyFilterPicker.padding(.horizontal, AskMetrics.sidebarContentInset).padding(.bottom, 8)
-            }
+            historyFilterPicker.padding(.horizontal, AskMetrics.sidebarContentInset).padding(.bottom, 8)
             historyList
             accountFooter
         }
@@ -557,12 +554,17 @@ struct AskConversationView: View {
     private var showsHistoryFilter: Bool { model.isSignedIn && !model.localConversationIds.isEmpty }
 
     private var visibleConversations: [AskConversationSummary] {
-        guard showsHistoryFilter else { return model.conversations }
-        return historyFilter.apply(model.conversations, isLocal: model.isLocal)
+        let stored = showsHistoryFilter ? historyFilter.apply(model.conversations, isLocal: model.isLocal) : model.conversations
+        return stored.filtered(kind: historyKind)
     }
 
+    /// All / Chat / Work, with where conversations are kept as a compact menu once
+    /// the list mixes Cloud conversations with ones kept on this Mac.
     private var historyFilterPicker: some View {
-        AskHistoryFilterBar(selection: $historyFilter)
+        HStack(spacing: 6) {
+            AskHistoryKindBar(selection: $historyKind)
+            if showsHistoryFilter { AskHistoryStorageMenu(selection: $historyFilter) }
+        }
     }
 
     private var historyList: some View {
@@ -681,6 +683,7 @@ struct AskConversationView: View {
             selected: model.selectedId == item.id,
             busy: model.busyIds.contains(item.id),
             local: showsHistoryFilter && model.isLocal(item.id),
+            work: item.resolvedKind == .work,
             selectionSpace: selectionSpace,
             onSelect: {
                 showsSidebarDrawer = false
@@ -757,11 +760,18 @@ struct AskConversationView: View {
     /// Keep the essential actions in one row; the title yields before controls do.
     private var compactHeader: some View {
         HStack(spacing: 4) {
-            Text(headerTitle ?? model.selected?.title ?? L("ask.new"))
-                .font(.system(size: 12.5, weight: .semibold))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .lineLimit(1)
+            if model.selectedId == nil {
+                AskConversationKindSwitch(selection: model.conversationKind(launcher: false), compact: true) {
+                    model.setConversationKind($0, launcher: false)
+                }
                 .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+            } else {
+                Text(headerTitle ?? model.selected?.title ?? L("ask.new"))
+                    .font(.system(size: 12.5, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .lineLimit(1)
+                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+            }
             headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
                 .accessibilityIdentifier("ask.workspace.usage")
             browserButton()
@@ -855,6 +865,18 @@ struct AskConversationView: View {
         .padding(.leading, sidebarHidden ? AskMetrics.collapsedTitleInset : 14)
         .padding(.trailing, 14)
         .frame(height: AskMetrics.titleBarRowHeight)
+        .overlay {
+            if model.selectedId == nil { kindSwitch }
+        }
+    }
+
+    /// Chat or work for the conversation about to start, like ChatGPT's switch.
+    private var kindSwitch: some View {
+        AskConversationKindSwitch(selection: model.conversationKind(launcher: false)) { kind in
+            withAnimation(AskMotion.revealAnimation(reduceMotion: reduceMotion)) {
+                model.setConversationKind(kind, launcher: false)
+            }
+        }
     }
 
     @ViewBuilder private func browserButton(showsInteriorFill: Bool = true) -> some View {
@@ -908,7 +930,8 @@ struct AskConversationView: View {
                             .padding(.bottom, 20)
                     }
                     if !layout.isVeryShort {
-                        Text(L("ask.empty")).font(.system(size: layout.isShort ? 20 : 26, weight: .bold))
+                        Text(L(model.conversationKind(launcher: false) == .work ? "ask.empty.work" : "ask.empty"))
+                            .font(.system(size: layout.isShort ? 20 : 26, weight: .bold))
                             .foregroundStyle(StudioTheme.textPrimary)
                             .padding(.bottom, 9)
                     }

@@ -24,8 +24,10 @@ public struct ChatConversationSummary: Codable, Equatable, Identifiable, Sendabl
     @ChatConversationID public var id: String
     public var title: String
     public var updatedAt: Date
-    public init(id: String, title: String, updatedAt: Date = Date()) {
-        self.id = id; self.title = title; self.updatedAt = updatedAt
+    /// "chat" or "work"; nil from servers and caches that predate conversation kinds.
+    public var kind: String?
+    public init(id: String, title: String, updatedAt: Date = Date(), kind: String? = nil) {
+        self.id = id; self.title = title; self.updatedAt = updatedAt; self.kind = kind
     }
 }
 

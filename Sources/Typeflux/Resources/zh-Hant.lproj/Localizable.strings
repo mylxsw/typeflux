@@ -6737,3 +6737,16 @@
 "worldclock.settings.hintCount" = "關鍵字提示列顯示的城市：%d 個";
 "worldclock.settings.copyFormat" = "拷貝格式";
 "worldclock.settings.meetingZones" = "會議時間附上時區縮寫（EDT、BST）";
+
+/* Chat and Work conversations (GUL-460) */
+"ask.kind.switch" = "對話類型";
+"ask.kind.chat" = "聊天";
+"ask.kind.work" = "任務";
+"ask.kind.chat.help" = "問答、寫作和聯網搜尋，不會讀寫這台 Mac 上的檔案。";
+"ask.kind.work.help" = "在這台 Mac 上執行：讀寫你授權的資料夾、執行命令、操作 App。";
+"ask.empty.work" = "要讓這台 Mac 做什麼？";
+"ask.kind.chatToolRefused" = "聊天不能使用存取這台 Mac 的工具，請新開一個任務。";
+"ask.kind.switchedToWork" = "已切換為任務：資料夾只能在任務中使用。";
+"ask.kind.chatFolderRefused" = "聊天不能附加資料夾，請新開一個任務。";
+"ask.history.kindFilter" = "對話類型";
+"ask.kind.foldersRemoved" = "已移除資料夾：聊天不能使用資料夾。";

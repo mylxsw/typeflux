@@ -368,6 +368,7 @@ struct AskRecoveryInteractionTests {
             modelLibrary: fixture.model.modelLibrary,
             session: { (fixture.sessionState.owner, "token") }
         )
+        model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         model.automaticRecoveryEnabled = false
         return model
     }

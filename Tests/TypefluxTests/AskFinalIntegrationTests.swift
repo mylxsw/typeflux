@@ -105,6 +105,7 @@ struct AskFinalIntegrationTests {
                                              capture: AskTestCapture(), deviceId: "device", modelLibrary: library,
                                              defaults: defaults,
                                              session: { (AskRoutedAPI.localOwner, "") }, modelClient: completion)
+        model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         defer { model.resetSession() }
         model.automaticRecoveryEnabled = false
         do {

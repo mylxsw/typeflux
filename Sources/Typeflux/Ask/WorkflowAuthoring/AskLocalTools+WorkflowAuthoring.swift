@@ -19,7 +19,7 @@ extension AskLocalTools {
         ]
     }
 
-    static var workflowChatNames: Set<String> {
+    nonisolated static var workflowChatNames: Set<String> {
         AskWorkflowAuthorTools.names.union(["workflow_start", "workflow_list", "workflow_save"])
     }
 

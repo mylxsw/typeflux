@@ -270,6 +270,7 @@ final class AskImageToolTests: XCTestCase {
         )
         let model = AskConversationModel(api: api, cache: cache, tools: tools, capture: AskTestCapture(),
                                          deviceId: "device", modelLibrary: library, session: { ("owner", "token") })
+        model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         defer { model.resetSession() }
         await api.setTool(call)
         model.launcherDraft.text = "Generate a blue bird"

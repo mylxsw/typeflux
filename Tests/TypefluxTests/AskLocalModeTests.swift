@@ -253,6 +253,7 @@ final class AskLocalModeIntegrationTests: XCTestCase {
                                          cache: try AskConversationCache(url: root.appendingPathComponent("cache.sqlite")),
                                          tools: AskTestTools(), capture: AskTestCapture(), deviceId: "device", modelLibrary: library,
                                          session: { AskRoutedAPI.session(token: nil, owner: nil) })
+        model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         XCTAssertFalse(model.cloudAvailable)
         // The Cloud default falls back to one of the user's own models.
         XCTAssertEqual(model.modelReference(launcher: true), firstLocal)
@@ -292,6 +293,7 @@ final class AskLocalModeIntegrationTests: XCTestCase {
                                             cache: try AskConversationCache(url: root.appendingPathComponent("cache2.sqlite")),
                                             tools: AskTestTools(), capture: AskTestCapture(), deviceId: "device", modelLibrary: library,
                                             session: { ("owner", "token") })
+        signedIn.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         XCTAssertTrue(signedIn.cloudAvailable)
         XCTAssertEqual(signedIn.localFallback("cloud:default", hasImage: false, local: false), "cloud:default")
     }

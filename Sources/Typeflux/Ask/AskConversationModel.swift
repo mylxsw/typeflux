@@ -1325,6 +1325,12 @@ final class AskConversationModel: ObservableObject {
                                     modelRef: modelLibrary.settings.askTitleModelReference)
         request.auxiliaryModelRef = local ? modelLibrary.settings.askAuxiliaryModelReference : nil
         request.temporary = temporary ? true : nil
+        if newConversation {
+            // An inline answer offers no tools, so it is a chat whatever the composer shows.
+            let kind: AskConversationKind = inline ? .chat : conversationKind(of: submitted)
+            request.kind = kind.rawValue; value.kind = kind.rawValue
+            if !inline { lastConversationKind = kind }
+        }
         request.clientToolApproval = true
         request.skills = skillUses(submitted.skills)
         request.modelRef = modelRef
@@ -1485,7 +1491,7 @@ final class AskConversationModel: ObservableObject {
                 } else if value.run == nil, let message = value.messages.last, message.role == "user" {
                     var request = AskSendRequest(clientToolApproval: true, id: message.id, deviceId: deviceId, text: message.text,
                                                  selection: message.selection, source: message.source, image: message.image,
-                                                 tools: await tools.definitions(conversationId: id), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort, references: message.references,
+                                                 tools: value.resolvedKind.offered(await tools.definitions(conversationId: id)), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort, references: message.references,
                                                  attachments: message.attachments)
                     request.maxSteps = modelLibrary.settings.askAgentMaxSteps
                     try await validateModel(
@@ -1582,7 +1588,7 @@ final class AskConversationModel: ObservableObject {
             defer { monitor.cancel() }
             do {
                 try checkOperation(id, operationId: operationId, account: current.account)
-                let definitions = await tools.definitions(conversationId: id)
+                let definitions = value.resolvedKind.offered(await tools.definitions(conversationId: id))
                 try await validateModel(
                     modelRef, token: current.token,
                     hasImage: value.messages.contains(where: { $0.hasImage })
@@ -1687,7 +1693,7 @@ final class AskConversationModel: ObservableObject {
     private func updateSummary(_ value: AskConversation) {
         // A temporary conversation never appears in the history list.
         guard !isTemporary(value.id) else { return }
-        let summary = AskConversationSummary(id: value.id, title: value.title, updatedAt: value.updatedAt)
+        let summary = AskConversationSummary(value)
         if let index = conversations.firstIndex(where: { $0.id == value.id }) {
             if conversations[index] != summary, conversations[index].updatedAt <= summary.updatedAt {
                 conversations[index] = summary
@@ -1849,6 +1855,14 @@ final class AskConversationModel: ObservableObject {
                 result = persisted
             }
             if result == nil {
+                // A chat is never offered device tools; refuse one the model names anyway.
+                if run.approvalTool(for: call) == nil, !value.dispatchKind.offers(call.function.name) {
+                    let failure = AskToolPreparationFailure(AskLocalError.message(L("ask.kind.chatToolRefused")))
+                    guard let rejected = try await rejectToolPreparation(failure, call: call, value: value,
+                                                                         identity: identity, current: current) else { return }
+                    value = try await deliverToolResult(rejected, identity: identity, current: current, operationId: operationId)
+                    continue
+                }
                 if run.recoveryCheck == true,
                    !run.permitsRecoveryTool(call) {
                     let failure = AskToolPreparationFailure(AskLocalError.message(L("ask.recovery.readOnly")))
@@ -2368,8 +2382,9 @@ final class AskConversationModel: ObservableObject {
     }
 
     /// The memory tool would write what a temporary conversation must forget.
-    static func offeredTools(_ tools: [AskToolDefinition], temporary: Bool) -> [AskToolDefinition] {
-        temporary ? tools.filter { $0.name != "memory" } : tools
+    static func offeredTools(_ tools: [AskToolDefinition], temporary: Bool,
+                             kind: AskConversationKind) -> [AskToolDefinition] {
+        kind.offered(temporary ? tools.filter { $0.name != "memory" } : tools)
     }
 
     /// Offer the same host-owned observation actions enforced at dispatch.
@@ -2787,7 +2802,8 @@ extension AskConversationModel {
                 try await cache.save(value, owner: current.owner)
                 if inline, quickAsk?.conversationId == id { quickAsk?.persisted = true }
                 var request = request
-                let offered = inline ? [] : Self.offeredTools(await tools.definitions(conversationId: id), temporary: temporaryRun)
+                let offered = inline ? [] : Self.offeredTools(await tools.definitions(conversationId: id),
+                                                             temporary: temporaryRun, kind: value.resolvedKind)
                 request.tools = inline ? [] : recoveryCheck ? Self.recoveryObservationTools(offered) : offered
                 try checkOperation(id, operationId: operationId, account: current.account)
                 request.memory = request.memory?.usable(owner: current.account, invalidations: memoryInvalidations)

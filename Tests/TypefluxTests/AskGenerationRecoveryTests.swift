@@ -242,6 +242,7 @@ import XCTest
         await api.seed(AskConversation(id: "conversation", title: "Recovery", revision: 1, updatedAt: Date(), messages: []))
         let model = AskConversationModel(api: api, cache: cache, tools: tools, capture: AskTestCapture(),
             deviceId: "test", modelLibrary: library, defaults: defaults, session: { account })
+        model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         defer { model.resetSession() }
         XCTAssertNil(model.generationRecoveryAccess)
         await model.select("conversation")

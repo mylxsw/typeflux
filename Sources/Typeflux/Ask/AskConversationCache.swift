@@ -91,7 +91,7 @@ actor AskConversationCache: AskCaching {
             status = sqlite3_step(statement)
         }
         guard status == SQLITE_DONE else { throw CocoaError(.fileReadUnknown) }
-        return snapshots.values.map { AskConversationSummary(id: $0.id, title: $0.title, updatedAt: $0.updatedAt) }.sorted { $0.updatedAt > $1.updatedAt }
+        return snapshots.values.map { AskConversationSummary($0) }.sorted { $0.updatedAt > $1.updatedAt }
     }
     func delete(id: String, owner: String) throws {
         try execute("BEGIN IMMEDIATE", strings: [])

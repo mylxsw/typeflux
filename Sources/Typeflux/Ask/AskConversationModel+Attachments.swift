@@ -58,10 +58,11 @@ extension AskConversationModel {
         else { attachmentLoads = [:] }
     }
 
-    func applyAttachments(_ batch: AskAttachmentBatch, launcher: Bool) {
+    func applyAttachments(_ incoming: AskAttachmentBatch, launcher: Bool) {
+        let (batch, kindNotice) = admitFolders(incoming, launcher: launcher)
         var refusal = batch.failure
         if launcher { refusal = launcherDraft.append(batch.items) ?? refusal } else { refusal = draft.append(batch.items) ?? refusal }
-        let message = refusal?.message
+        let message = refusal?.message ?? kindNotice
         if launcher { launcherAttachmentNotice = message } else { attachmentNotice = message }
         if batch.items.contains(where: { $0.kind == .image }) {
             switchToVisionModelIfNeeded(launcher: launcher, needsVision: true)

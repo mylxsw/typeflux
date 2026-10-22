@@ -327,6 +327,7 @@ extension AskOpenChatTests {
         let model = AskConversationModel(api: f.api, cache: f.cache, tools: f.tools, capture: capture,
                                          deviceId: "test", modelLibrary: f.model.modelLibrary,
                                          session: { ("owner", "token") })
+        model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         let task = Task { await model.prepareLauncher() }
         try await f.wait { capture.continuation != nil }
         #expect(model.capturing)

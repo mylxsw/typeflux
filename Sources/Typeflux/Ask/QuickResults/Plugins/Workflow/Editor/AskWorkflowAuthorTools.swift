@@ -42,12 +42,13 @@ extension AskWorkflowAuthoringHost {
 /// host controls. See `docs/design/ask-workflow-editor.md` §10.4.
 @MainActor
 struct AskWorkflowAuthorTools {
-    static let read = "workflow_read"
-    static let environment = "workflow_environment"
-    static let checkKeyword = "workflow_check_keyword"
-    static let propose = "workflow_propose"
-    static let test = "workflow_test"
-    static let names: Set<String> = [read, environment, checkKeyword, propose, test]
+    // Plain names: readable off the main actor, e.g. by conversation-kind rules.
+    nonisolated static let read = "workflow_read"
+    nonisolated static let environment = "workflow_environment"
+    nonisolated static let checkKeyword = "workflow_check_keyword"
+    nonisolated static let propose = "workflow_propose"
+    nonisolated static let test = "workflow_test"
+    nonisolated static let names: Set<String> = [read, environment, checkKeyword, propose, test]
 
     /// Output the model sees from one stream of a test run.
     nonisolated static let outputLimit = 4096

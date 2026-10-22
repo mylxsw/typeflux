@@ -268,6 +268,7 @@ struct AskLauncherToggleTests {
         let capture = HeldLauncherCapture()
         let model = AskConversationModel(api: f.api, cache: f.cache, tools: f.tools, capture: capture,
                                          deviceId: "test", modelLibrary: f.model.modelLibrary, session: { nil })
+        model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
         let controller = AskConversationWindowController(settings: SettingsStore(defaults: defaults), model: model)
         defer {
@@ -305,6 +306,7 @@ struct AskLauncherToggleTests {
         let capture = HeldLauncherCapture()
         let model = AskConversationModel(api: f.api, cache: f.cache, tools: f.tools, capture: capture,
                                          deviceId: "test", modelLibrary: f.model.modelLibrary, session: { nil })
+        model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
         let controller = AskConversationWindowController(settings: SettingsStore(defaults: defaults), model: model)
         defer {

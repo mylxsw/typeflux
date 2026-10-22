@@ -183,6 +183,7 @@ struct AskConversationTitleTests {
             let model = AskConversationModel(api: api, cache: cache, tools: AskTestTools(), capture: AskTestCapture(),
                                             deviceId: "device", modelLibrary: library, defaults: defaults,
                                             session: { ("owner", token) })
+            model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
             _ = model.credentials()
             defer { model.resetSession() }
             var value = conversation()
@@ -236,6 +237,7 @@ extension AskConversationTitleTests {
             let model = AskConversationModel(api: api, cache: cache, tools: AskTestTools(), capture: AskTestCapture(),
                                             deviceId: "device", modelLibrary: library, defaults: defaults,
                                             session: { ("owner", "") }, modelClient: fake)
+            model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
             defer { model.resetSession() }
             _ = model.credentials()
             var value = conversation()

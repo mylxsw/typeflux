@@ -21,6 +21,7 @@ struct AskToolPreparationTests {
             model = AskConversationModel(api: base.api, cache: base.cache, tools: tools, capture: base.capture,
                                          deviceId: "device", modelLibrary: base.model.modelLibrary,
                                          session: { [state = base.sessionState] in (state.owner, "token") })
+            model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         }
 
         func open(_ call: AskToolCall) async {
@@ -164,6 +165,7 @@ struct AskToolPreparationTests {
                                                 tools: f.tools, capture: f.base.capture, deviceId: "device",
                                                 modelLibrary: f.base.model.modelLibrary,
                                                 session: { ("owner", "token") })
+        reopened.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         reopened.automaticRecoveryEnabled = false
         defer { reopened.resetSession() }
         f.tools.computerExecutor.writesEnabled = true
