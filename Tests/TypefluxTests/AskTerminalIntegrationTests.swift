@@ -226,8 +226,10 @@ import XCTest
         XCTAssertEqual(try access.status(lease.reference).status.state, .stopped)
         let second = try await fixture.start("serve.py", service: true)
         _ = try await fixture.runtime.wait(second, ready: true)
+        // Stop interrupts only work that its own admitted operation started; this job
+        // was started outside one, so it keeps running until the session ends.
         model.stop(id: "conversation")
-        XCTAssertEqual(try fixture.tools.terminalStatus(second.reference).status.state, .cancelled)
+        XCTAssertEqual(try fixture.tools.terminalStatus(second.reference).status.state, .ready)
         model.resetSession()
         XCTAssertThrowsError(try fixture.tools.terminalStatus(second.reference))
     }
@@ -269,8 +271,10 @@ import XCTest
         XCTAssertEqual(receipt.process.ownerId, "owner")
         XCTAssertEqual(receipt.status.state, .ready)
         XCTAssertEqual(try model.terminalAccess.status(lease.reference).status.state, .ready)
+        // The run already settled, so stop has no admitted operation to interrupt.
         model.stop(id: conversation.id)
-        XCTAssertEqual(try fixture.tools.terminalStatus(lease.reference).status.state, .cancelled)
+        XCTAssertEqual(try fixture.tools.terminalStatus(lease.reference).status.state, .ready)
         model.resetSession()
+        XCTAssertThrowsError(try fixture.tools.terminalStatus(lease.reference))
     }
 }

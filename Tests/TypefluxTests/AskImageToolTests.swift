@@ -34,7 +34,9 @@ final class AskImageToolTests: XCTestCase {
         base = FileManager.default.temporaryDirectory.appendingPathComponent("image-tool-" + UUID().uuidString)
         store = AskArtifactStore(storageURL: base.appendingPathComponent("artifacts"))
         let defaults = UserDefaults(suiteName: UUID().uuidString)!
-        tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)), artifactStore: store)
+        // Folder staging only accepts the account the tools act for; the window's session is "owner".
+        tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)), artifactStore: store,
+                              owner: { "owner" })
         tools.imageConfigurationOverride = { self.config.map { ($0, self.key) } }
         generator = try ImageGeneratorStub([AskGeneratedImageData(data: AskImageGenerationTests.picture(), mediaType: "image/png", width: 8, height: 6)])
         tools.imageGenerator = generator

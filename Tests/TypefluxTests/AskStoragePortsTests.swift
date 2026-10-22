@@ -116,7 +116,9 @@ final class AskStoragePortsTests: XCTestCase {
         var c = try await engine.send(conversationId: "stored", request: input, token: "")
         XCTAssertFalse(snapshots.writes.isEmpty)
         XCTAssertFalse(budgets.calls.isEmpty)
-        XCTAssertTrue(budgets.calls.allSatisfy { $0.conversation == "stored" && $0.initial?.runId == $0.root })
+        // Reads pass no initial journal; the one that creates it is rooted at the run.
+        XCTAssertTrue(budgets.calls.allSatisfy { $0.conversation == "stored" && ($0.initial == nil || $0.initial?.runId == $0.root) })
+        XCTAssertTrue(budgets.calls.contains { $0.initial != nil })
         let completed = try await engine.inferenceResult(conversationId: c.id, request: receipt(c), token: "")
         XCTAssertEqual(completed.run?.budget?.actual.tokens, 10)
         let history = try await engine.list(token: "", offset: 0)
