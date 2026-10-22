@@ -171,7 +171,13 @@ struct AskFinalIntegrationTests {
                 #expect(results.first?.isError == false)
             } else {
                 #expect(!results.contains { $0.text.contains("Only the authorized run") })
-                #expect(tools.fileTools(conversationId: id).roots.isEmpty)
+                if action == "stop" {
+                    // Attached folders last for the conversation (f5191368): stop ends the run,
+                    // but the conversation keeps its folder until it is revoked or the session ends.
+                    #expect(!tools.fileTools(conversationId: id).roots.isEmpty)
+                } else {
+                    #expect(tools.fileTools(conversationId: id).roots.isEmpty)
+                }
                 if action == "reset" {
                     #expect(model.selected == nil)
                 }
