@@ -46,6 +46,12 @@ struct AskMessage: Codable, Identifiable, Equatable, Sendable {
     var diagnostic: AskResultDiagnostic? = nil
     var generatedImage: AskGeneratedImage? = nil
 
+    /// A correctable precondition is diagnostic detail, not a failed user task.
+    var isRecoverableToolRefusal: Bool {
+        role == "tool" && harness?.version == 1 && harness?.outcome?.safeStatus == .invalid
+            && harness?.outcome?.eventDispatched == false
+    }
+
     /// The screenshot or an attached image; such a conversation needs a vision model.
     var hasImage: Bool { image != nil || attachments?.contains { $0.kind == .image } == true }
 }
@@ -57,7 +63,12 @@ struct AskRun: Codable, Equatable, Sendable {
     var clientToolApproval: Bool? = nil
     /// A recovery inspection may observe state but cannot dispatch mutations.
     var recoveryCheck: Bool? = nil
+    var internalRecovery: AskInternalRecovery? = nil
     var cloudTools: [AskToolDefinition]? = nil
+
+    func permitsRecoveryTool(_ call: AskToolCall) -> Bool {
+        internalRecovery == nil ? AskRecoveryObservation.permits(call) : AskInternalRecovery.permits(call)
+    }
 
     func approvalTool(for call: AskToolCall) -> AskToolDefinition? {
         guard clientToolApproval == true else { return nil }

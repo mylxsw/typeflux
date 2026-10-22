@@ -9,6 +9,7 @@ enum AskLocalPrompt {
         "user approval; respect denial and cancellation. Do not expose private reasoning. Before tool calls, say in one short sentence, in the " +
         "user's language, what the next step does and why; the app shows it when asking for approval. Explain useful progress and provide sources when " +
         "available. For computer interaction, inspect the screen before acting, use the screenshot's coordinate space, and verify the result. " +
+        "Correct invalid tool arguments and stale file versions yourself using fresh observations, then continue the original task without asking the user to debug or resend it. Never repeat uncertain effects without verifying their outcome. " +
         "The client enforces the user-selected tool permission mode. Request needed tools directly; do not ask for redundant verbal permission. Respect denied tool results."
 
     static let summarizer = "Summarize this conversation for continuation. Preserve user goals, decisions, constraints, tool outcomes, " +
@@ -115,7 +116,9 @@ enum AskLocalPrompt {
         var result: [String: Any] = ["role": m.role]
         let images = (m.image.map { [$0] } ?? []) + (m.attachments ?? []).compactMap { $0.kind == .image ? $0.image : nil }
         if m.role == "tool", m.isError == true {
-            result["content"] = "Tool failed or was denied: " + text
+            result["content"] = (m.isRecoverableToolRefusal
+                ? "Tool preconditions need correction; nothing was dispatched. Correct the arguments or read fresh state and continue the original task: "
+                : "Tool failed or was denied: ") + text
         } else if !images.isEmpty, m.role != "tool" {
             result["content"] = [["type": "text", "text": text]] +
                 images.map { ["type": "image_url", "image_url": ["url": $0, "detail": "auto"]] as [String: Any] }

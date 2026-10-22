@@ -1374,6 +1374,42 @@ final class AskConversationModel: ObservableObject {
         await modelLibrary.probeOllama()
     }
 
+    /// Own the internal recovery like any other cancellable execution. Drafts,
+    /// user messages, original run identity and permission mode stay unchanged.
+    func startInternalRecovery() {
+        guard let value = selected, let run = value.run, !busyIds.contains(value.id), !recoveryWorking,
+              run.deviceId == deviceId, run.status != "completed", run.status != "cancelled",
+              let current = credentials(for: value.id), admitAgentCommand(value) else { return }
+        let entries = selectedRecoveryEntries.filter { $0.audit?.identity.runId == run.id && $0.needsInspection(run: run) }
+        var callIDs = entries.compactMap { $0.audit?.identity.kind == "tool" ? $0.audit?.identity.callId : nil }
+        if callIDs.isEmpty, run.needsRecoveryInspection { callIDs = run.pending.map(\.id) }
+        let request = AskRecoveryRequest(runId: run.id, deviceId: deviceId, callIds: callIDs,
+            inferenceId: entries.first { $0.audit?.identity.kind == "model" }?.audit?.identity.callId)
+        stopSelectionObservation()
+        let id = value.id, operationId = UUID()
+        busyIds.insert(id); error = nil; operationErrors[id] = nil
+        registerOperation(id, operationId: operationId, account: current.account)
+        operations[id] = Task { [weak self] in
+            guard let self else { return }
+            defer { finishOperation(id, operationId: operationId) }
+            do {
+                try checkOperation(id, operationId: operationId, account: current.account)
+                let response = try await api.recover(conversationId: id, request: request, token: current.token)
+                try checkOperation(id, operationId: operationId, account: current.account)
+                guard response.run?.id == run.id,
+                      (request.callIds.isEmpty || response.run?.internalRecovery != nil),
+                      try AskCoding.encoder().encode(response.messages.filter({ $0.role == "user" }))
+                        == AskCoding.encoder().encode(value.messages.filter({ $0.role == "user" })) else {
+                    throw AskLocalError.message(L("ask.recovery.readOnlyUnavailable"))
+                }
+                try await drive(response, current: current, operationId: operationId, screenshotConsentMessageID: screenshotConsent[id])
+            } catch is CancellationError {} catch {
+                guard !Task.isCancelled, operationIds[id] == operationId else { return }
+                await reportOperationError(error, id: id, owner: current.account)
+            }
+        }
+    }
+
     func resume() {
         selectionObservation?.cancel(); selectionObservation = nil
         guard let value = selected, !busyIds.contains(value.id),
@@ -1789,7 +1825,7 @@ final class AskConversationModel: ObservableObject {
             }
             if result == nil {
                 if run.recoveryCheck == true,
-                   !AskRecoveryObservation.permits(call) {
+                   !run.permitsRecoveryTool(call) {
                     let failure = AskToolPreparationFailure(AskLocalError.message(L("ask.recovery.readOnly")))
                     guard let rejected = try await rejectToolPreparation(failure, call: call, value: value,
                                                                          identity: identity, current: current) else { return }
@@ -1883,7 +1919,7 @@ final class AskConversationModel: ObservableObject {
                             _ = try AskAgentBinding.resolve(self.snapshots[identity.conversationId]?.run?.agentBinding)
                             try self.checkOperation(identity.conversationId, operationId: operationId, account: current.account)
                             if self.snapshots[identity.conversationId]?.run?.recoveryCheck == true,
-                               !AskRecoveryObservation.permits(call) {
+                               !run.permitsRecoveryTool(call) {
                                 throw AskLocalError.message(L("ask.recovery.readOnly"))
                             }
                             if run.budgetEnabled == true, let deadline = run.budgetDeadline, Date() >= deadline {

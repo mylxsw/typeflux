@@ -18,7 +18,7 @@ struct AskRecoveryDecisionTests {
         return value
     }
 
-    @Test func checkAndContinueEndsTheRunAndAsksToCheckFirst() async throws {
+    @Test func checkAndContinuePreservesTheRunAndDraftWithoutSendingAMessage() async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
         let value = try await uncertain(fixture)
@@ -28,14 +28,17 @@ struct AskRecoveryDecisionTests {
         fixture.model.inspectingRecovery = true
         await fixture.model.checkAndContinueRecovery()
         try await fixture.wait {
-            !fixture.model.busyIds.contains(value.id) && fixture.model.selected?.run?.id != value.run?.id
+            !fixture.model.busyIds.contains(value.id) && fixture.model.selected?.run?.status == "completed"
         }
         let sends = await fixture.api.sends
-        #expect(sends.map(\.text) == [L("ask.recovery.checkPrompt")])
+        #expect(sends.isEmpty)
+        #expect(await fixture.api.cancellations.isEmpty)
+        #expect(await fixture.api.recoveries.count == 1)
+        #expect(fixture.model.selected?.run?.id == value.run?.id)
         #expect(fixture.model.draft.text == "keep what I typed")
         #expect(!fixture.model.inspectingRecovery)
         #expect(!fixture.model.recoveryPresentation.isVisible)
-        #expect(fixture.model.runPhase == .completed(steps: 1))
+        #expect(fixture.model.runPhase == .completed(steps: 7))
     }
 
     @Test func checkAndContinueIsRefusedOnAnotherDevice() async throws {
@@ -77,8 +80,10 @@ struct AskRecoveryDecisionTests {
         #expect(fixture.model.selected?.id == value.id)
 
         fixture.model.performRecovery(.checkAndContinue)
-        try await fixture.wait { fixture.model.selected?.run?.status == "completed" }
-        #expect(await fixture.api.sends.map(\.text) == [L("ask.recovery.checkPrompt")])
+        await Task.yield()
+        #expect(fixture.model.selected?.run?.status == "cancelled")
+        #expect(await fixture.api.sends.isEmpty)
+        #expect(await fixture.api.recoveries.isEmpty)
     }
 
     @Test func followUpNeedsAConversation() async throws {

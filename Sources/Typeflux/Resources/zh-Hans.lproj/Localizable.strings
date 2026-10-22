@@ -2456,11 +2456,10 @@
 "ask.recovery.checkAndContinue" = "重新核对";
 "ask.recovery.details" = "了解详情";
 "ask.recovery.recommended" = "推荐";
-"ask.recovery.checkPrompt" = "请只读核对上一操作的实际结果。查看已有记录和可访问的文件或应用状态，说明已确认的事实及仍缺的证据。不要重做、修改或继续执行任务；无法判断时，请说明需要什么具体信息。";
 "ask.recovery.option.check" = "让 Typeflux 核对";
 "ask.recovery.option.checkBody" = "只读取现状，不重复操作；仍无法判断时说明缺少什么证据。";
 "ask.recovery.approvalChanged" = "之前的批准已失效。请核对现状或结束旧任务，再发起新请求。";
-"ask.recovery.readOnly" = "核对期间只允许读取现状。如需更改，请发起新请求。";
+"ask.recovery.readOnly" = "先读取现状核实结果，再继续原任务。";
 "ask.recovery.readOnlyUnavailable" = "安全核对未能启动，请稍后重试。";
 "ask.recovery.option.refresh" = "刷新进度";
 "ask.recovery.option.refreshBody" = "把这台 Mac 上已保存的处理结果同步到对话，不会把操作再做一遍。";

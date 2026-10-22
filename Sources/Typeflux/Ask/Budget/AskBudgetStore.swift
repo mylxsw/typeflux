@@ -32,7 +32,7 @@ struct AskBudgetStore: AskBudgetJournaling {
         do { try change(&value) } catch { failure = error }
         guard value.valid else { throw AskBudgetError.invalid }
         // A reached-budget reason is durable even though the dispatch was denied.
-        try AskCoding.encoder().encode(value).write(to: file, options: [.atomic, .completeFileProtection])
+        try AskPrivateFile.write(AskCoding.encoder().encode(value), to: file)
         if let failure {
             throw failure
         }

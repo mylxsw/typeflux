@@ -25,7 +25,7 @@ struct AskActivityGroup: Equatable {
     var messageIds: [String] { messages.map(\.id) }
     var calls: [AskToolCall] { messages.flatMap { $0.toolCalls ?? [] } }
     /// Calls shown as steps; plan updates are shown as the checklist instead.
-    var steps: [AskToolCall] { calls.filter { $0.function.name != "update_plan" } }
+    var steps: [AskToolCall] { calls.filter { !["update_plan", AskInternalRecovery.toolName].contains($0.function.name) } }
 }
 
 struct AskTranscriptItem: Identifiable, Equatable {
@@ -151,7 +151,7 @@ enum AskActivity {
     static func categorySummary(_ calls: [AskToolCall]) -> String {
         var counts: [Category: Int] = [:]
         var others: [(name: String, count: Int)] = []
-        for call in calls where call.function.name != "update_plan" {
+        for call in calls where !["update_plan", AskInternalRecovery.toolName].contains(call.function.name) {
             let category = Category.of(call.function.name)
             guard category == .other else { counts[category, default: 0] += 1; continue }
             let name = toolName(call)
@@ -188,7 +188,8 @@ enum AskActivity {
         if let streamingId, group.messageIds.contains(streamingId) { return .running }
         if group.calls.contains(where: { call in !results.contains { $0.toolCallId == call.id } }) { return .running }
         if group.steps.contains(where: { call in
-            AskPresentation.toolState(result: results.first { $0.toolCallId == call.id }) == .failed
+            let result = results.first { $0.toolCallId == call.id }
+            return result?.isRecoverableToolRefusal != true && AskPresentation.toolState(result: result) == .failed
         }) { return .failed }
         return .done
     }
@@ -241,7 +242,8 @@ enum AskActivity {
     /// Steps whose result failed; only these are colored on the line.
     static func failures(_ group: AskActivityGroup, results: [AskMessage]) -> Int {
         group.steps.filter { call in
-            AskPresentation.toolState(result: results.first { $0.toolCallId == call.id }) == .failed
+            let result = results.first { $0.toolCallId == call.id }
+            return result?.isRecoverableToolRefusal != true && AskPresentation.toolState(result: result) == .failed
         }.count
     }
 

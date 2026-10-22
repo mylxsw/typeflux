@@ -2446,11 +2446,10 @@
 "ask.recovery.checkAndContinue" = "다시 확인";
 "ask.recovery.details" = "자세히 보기";
 "ask.recovery.recommended" = "추천";
-"ask.recovery.checkPrompt" = "이전 작업의 실제 결과를 읽기 전용으로 확인하세요. 저장된 기록과 접근 가능한 파일 또는 앱 상태를 살펴보고 확인된 사실과 부족한 증거를 보고하세요. 작업을 반복하거나 수정하거나 계속 진행하지 마세요. 판단할 수 없다면 필요한 구체적인 정보를 알려 주세요.";
 "ask.recovery.option.check" = "Typeflux가 확인";
 "ask.recovery.option.checkBody" = "작업을 반복하지 않고 현재 상태를 읽어 부족한 증거를 설명합니다.";
 "ask.recovery.approvalChanged" = "이전 승인이 더 이상 유효하지 않습니다. 현재 상태를 확인하거나 이전 실행을 종료한 후 새 요청을 시작하세요.";
-"ask.recovery.readOnly" = "복구 확인 중에는 현재 상태만 읽을 수 있습니다. 변경하려면 새 요청을 시작하세요.";
+"ask.recovery.readOnly" = "먼저 현재 상태를 확인하고 결과가 확인되면 원래 작업을 계속하세요.";
 "ask.recovery.readOnlyUnavailable" = "안전한 확인을 시작하지 못했습니다. 나중에 다시 시도해 주세요.";
 "ask.recovery.option.refresh" = "진행 상황 새로고침";
 "ask.recovery.option.refreshBody" = "이 Mac에 저장된 작업 결과를 대화에 반영합니다. 작업을 다시 하지 않습니다.";

@@ -159,6 +159,23 @@ private actor DeviceTestTransport: AskDeviceTransporting {
         Issue.record("Timed out waiting for the asynchronous synchronization worker")
     }
 
+    @Test func `cloud stored conversation recovers locally without server orchestration or a user message`() async throws {
+        try await environment { api, legacy, _, _, _, _ in
+            let id = UUID().uuidString.lowercased()
+            let original = try await api.send(conversationId: id, request: request(), token: "user-a")
+            let run = try #require(original.run)
+            let recovered = try await api.recover(conversationId: id,
+                request: .init(runId: run.id, deviceId: run.deviceId, callIds: [], inferenceId: run.inference?.id), token: "user-a")
+            #expect(recovered.run?.id == run.id && recovered.run?.inference?.id != run.inference?.id)
+            #expect(recovered.messages.filter { $0.role == "user" } == original.messages.filter { $0.role == "user" })
+            #expect(await legacy.recoveries.isEmpty)
+            #expect(await legacy.sends.isEmpty)
+            let completed = try await finish(api, recovered)
+            #expect(completed.run?.status == "completed")
+            #expect(try await api.hasPendingSynchronization(token: "user-a"))
+        }
+    }
+
     @Test func `offline execution survives long inference and never calls server orchestration`() async throws {
         try await environment { api, legacy, _, _, clock, _ in
             let id = UUID().uuidString.lowercased()

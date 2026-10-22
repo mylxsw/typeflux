@@ -199,7 +199,7 @@ struct AskActivityBlock: View {
                     AskStepNote(text: reasoning, symbol: "sparkle")
                 }
                 if !message.text.isEmpty { AskStepNote(text: message.text, symbol: nil) }
-                ForEach((message.toolCalls ?? []).filter { $0.function.name != "update_plan" }) { call in
+                ForEach((message.toolCalls ?? []).filter { !["update_plan", AskInternalRecovery.toolName].contains($0.function.name) }) { call in
                     AskToolStepRow(call: call, result: results.first { $0.toolCallId == call.id },
                                    preparing: streamingId == message.id, pending: approvalToolId == call.id,
                                    exportProjectPatch: exportProjectPatch)

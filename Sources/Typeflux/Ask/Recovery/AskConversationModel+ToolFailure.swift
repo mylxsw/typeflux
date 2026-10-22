@@ -78,7 +78,7 @@ extension AskConversationModel {
                 throw AskLocalError.message(L("ask.recovery.approvalChanged"))
             }
             _ = try AskAgentBinding.resolve(run.agentBinding)
-            if run.recoveryCheck == true, !AskRecoveryObservation.permits(call) {
+            if run.recoveryCheck == true, !run.permitsRecoveryTool(call) {
                 throw AskLocalError.message(L("ask.recovery.readOnly"))
             }
             let binding = try await preparedToolBinding(call, conversationId: snapshot.id, cloudDefinition: definition)

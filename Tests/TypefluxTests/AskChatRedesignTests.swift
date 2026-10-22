@@ -164,8 +164,8 @@ struct AskRecoveryActionTests {
     @Test func stoppedUnknownCannotBeStoppedAgain() {
         let stopped = presentation([unknownEntry], status: "cancelled")
         #expect(stopped.actions(canRetransmit: false, canContinue: false)
-            == .init(primary: .checkAndContinue, stop: false, details: true))
-        #expect(stopped.options(canRetransmit: false, canContinue: false) == [.checkAndContinue])
+            == .init(primary: nil, stop: false, details: true))
+        #expect(stopped.options(canRetransmit: false, canContinue: false).isEmpty)
     }
 
     @Test func otherDeviceOffersNoAction() {
@@ -367,7 +367,7 @@ struct AskChatRedesignCopyTests {
     static let keys = [
         "ask.run.needsDecision", "ask.usage.conversationSpent", "ask.usage.conversationSpentHelp",
         "ask.recovery.checkAndContinue", "ask.recovery.details", "ask.recovery.recommended",
-        "ask.recovery.checkPrompt", "ask.recovery.option.check", "ask.recovery.option.checkBody",
+        "ask.recovery.option.check", "ask.recovery.option.checkBody",
         "ask.recovery.option.refresh", "ask.recovery.option.refreshBody", "ask.recovery.option.continue",
         "ask.recovery.option.self", "ask.recovery.option.stop", "ask.recovery.timeline.unknown",
         "ask.recovery.timeline.paused", "ask.workflow.chat.view", "ask.workflow.chat.openedBeside",
@@ -417,7 +417,7 @@ struct AskChatRedesignCopyTests {
         let bundle = try #require(Bundle(path: path))
         func text(_ key: String) -> String { bundle.localizedString(forKey: key, value: nil, table: nil) }
         #expect(text("ask.recovery.retransmit") == "刷新进度")
-        #expect(text("ask.recovery.checkAndContinue") == "检查并继续")
+        #expect(text("ask.recovery.checkAndContinue") == "重新核对")
         #expect(text("ask.recovery.end") == "停止任务")
         #expect(text("ask.recovery.details") == "了解详情")
         #expect(text("ask.usage.conversationSpent") == "本对话已用")

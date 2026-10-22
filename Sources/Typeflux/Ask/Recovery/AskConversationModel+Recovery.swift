@@ -26,7 +26,7 @@ extension AskConversationModel {
     }
 
     var hasRecoveryNotice: Bool {
-        selected != nil && recoveryPresentation.isVisible
+        selectedId.map { !busyIds.contains($0) } == true && recoveryPresentation.isVisible
     }
 
     /// Quote only a message explicitly attached to this run, never a newer question.
@@ -50,18 +50,30 @@ extension AskConversationModel {
         }
     }
 
-    /// Reconcile receipts already on disk without creating a message or a run.
-    /// An uncertain outcome stays paused until the user requests an inspection.
+    /// Reconcile saved results, then inspect uncertain effects within the same task.
+    /// No user message is manufactured and no uncertain effect is replayed.
     func recoverWithoutUser() async {
         guard automaticRecoveryEnabled, let value = selected, let run = value.run, !isLoadingSelection,
               !busyIds.contains(value.id), !recoveryWorking,
               !selectedRecoveryEntries.contains(where: \.readUnavailable),
-              !recoveryPresentation.otherDevice, run.recoveryCheck != true else { return }
+              !recoveryPresentation.otherDevice else { return }
         let key = value.id + "/" + run.id
         if canRetransmitReceipts {
-            guard automaticRecoveryAttempts.insert(key + "/receipt").inserted else { return }
+            let receiptIDs = selectedRecoveryEntries.filter { !$0.acknowledged && $0.receipt != nil }
+                .map(\.id).sorted().joined(separator: ",")
+            guard automaticRecoveryAttempts.insert(key + "/receipt/" + receiptIDs).inserted else { return }
             await retransmitSavedReceipts()
             guard !canRetransmitReceipts else { return }
+        }
+        guard selectedId == value.id, selected?.run?.id == run.id else { return }
+        if recoveryPresentation.unknown {
+            guard automaticRecoveryAttempts.filter({ $0.hasPrefix(key + "/inspect/") }).count < 2 else { return }
+            let checkpoint = selected?.run?.inference?.id ?? String(selected?.revision ?? 0)
+            guard automaticRecoveryAttempts.insert(key + "/inspect/" + checkpoint).inserted else { return }
+            startInternalRecovery()
+        } else if selected?.run?.internalRecovery?.phase == .inspecting, selected?.run?.isActive == true {
+            guard automaticRecoveryAttempts.insert(key + "/continue-inspection/" + String(selected?.revision ?? 0)).inserted else { return }
+            resume()
         }
     }
 
@@ -197,19 +209,10 @@ extension AskConversationModel {
         } catch { await reportOperationError(error, id: value.id, owner: current.account) }
     }
 
-    /// End the uncertain run, then inspect observable state in a new read-only
-    /// run. Its tool policy is enforced at dispatch, including after a restart.
+    /// Manual retry uses the same internal continuation as automatic recovery.
     func checkAndContinueRecovery() async {
-        guard !recoveryWorking, let value = selected, !busyIds.contains(value.id),
-              !recoveryPresentation.otherDevice else { return }
-        guard admitAgentCommand(value) else { return }
-        if value.run?.isActive == true {
-            await endRecoveryRun()
-            guard selectedId == value.id, selected?.run?.isActive == false else { return }
-        }
-        stopSelectionObservation()
         inspectingRecovery = false
-        sendFollowUp(L("ask.recovery.checkPrompt"), recoveryCheck: true)
+        startInternalRecovery()
     }
 
     /// Runs the action the user picked on the recovery card or in the inspector.

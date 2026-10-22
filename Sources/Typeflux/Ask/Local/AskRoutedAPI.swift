@@ -37,6 +37,9 @@ struct AskRoutedAPI: AskAPI {
     }
     func list(token: String, offset: Int) async throws -> [AskConversationSummary] { try await api(token).list(token: token, offset: offset) }
     func conversation(id: String, token: String) async throws -> AskConversation { try await api(token).conversation(id: id, token: token) }
+    func recover(conversationId: String, request: AskRecoveryRequest, token: String) async throws -> AskConversation {
+        try await api(token).recover(conversationId: conversationId, request: request, token: token)
+    }
     func send(conversationId: String, request: AskSendRequest, token: String) async throws -> AskConversation {
         try await api(token).send(conversationId: conversationId, request: request, token: token)
     }

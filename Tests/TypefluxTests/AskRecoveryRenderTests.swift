@@ -194,7 +194,7 @@ struct AskRecoveryRenderTests {
         ))
         #expect(text.components(separatedBy: localized("ask.recovery.unknown")).count == 2)
         #expect(text.components(separatedBy: localized("ask.recovery.details")).count == 2)
-        #expect(text.components(separatedBy: localized("ask.recovery.checkAndContinue")).count == 2)
+        #expect(text.components(separatedBy: localized("ask.recovery.checkAndContinue")).count == 1)
         #expect(!text.contains(localized("ask.retry")))
         #expect(!text.contains(localized("ask.resume")))
 
@@ -222,7 +222,7 @@ struct AskRecoveryRenderTests {
                                                                       language: .simplifiedChinese))))
                 #expect(readable(chinese).contains(readable(localized("ask.recovery.details",
                                                                       language: .simplifiedChinese))))
-                #expect(readable(chinese).contains(readable(localized("ask.recovery.checkAndContinue",
+                #expect(!readable(chinese).contains(readable(localized("ask.recovery.checkAndContinue",
                                                                       language: .simplifiedChinese))))
             }
         }
@@ -232,7 +232,7 @@ struct AskRecoveryRenderTests {
         let keys = ["unknown", "unknownBody", "checkBody", "endBody", "binding", "otherDevice", "saved", "savedBody",
                     "paused", "activeBody", "finished", "finishedBody", "inspect", "retransmit", "continue", "close",
                     "end", "followUpBody", "message", "stopped", "checkAndContinue", "details", "recommended",
-                    "checkPrompt", "option.check", "option.checkBody", "option.refresh", "option.refreshBody",
+                    "option.check", "option.checkBody", "option.refresh", "option.refreshBody",
                     "option.continue", "option.self", "option.stop", "timeline.unknown", "timeline.paused",
                     "timeline.done", "unknownToolBody", "tool.browser", "tool.computer",
                     "tool.command", "tool.model", "tool.other"].map { "ask.recovery." + $0 }
@@ -321,7 +321,7 @@ extension AskRecoveryRenderTests {
                     size: .init(width: 360, height: 820)
                 )
                 let keys = [active ? "ask.recovery.unknown" : "ask.recovery.stopped",
-                            "ask.recovery.close", "ask.recovery.option.check"]
+                            "ask.recovery.close"] + (active ? ["ask.recovery.option.check"] : [])
                 #expect(!readable(text).contains(readable(value.messages[0].text)))
                 expectOneReturnButton(text, active: active, language: language)
                 let stop = readable(localized("ask.recovery.option.stop", language: language))

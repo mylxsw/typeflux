@@ -23,7 +23,7 @@ struct FileAskLocalSnapshotStore: AskLocalSnapshotStoring {
     func writeSnapshot(_ data: Data, id: String) throws {
         let file = try file(id)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try data.write(to: file, options: [.atomic, .completeFileProtection])
+        try AskPrivateFile.write(data, to: file)
     }
 
     func removeSnapshot(id: String) throws {

@@ -121,6 +121,21 @@ actor AskTestAPI: AskAPI {
         if failAfterSend { throw URLError(.networkConnectionLost) }
         return value
     }
+    var recoveries: [AskRecoveryRequest] = []
+    func recover(conversationId: String, request: AskRecoveryRequest, token: String) async throws -> AskConversation {
+        recoveries.append(request)
+        var value = try await conversation(id: conversationId, token: token)
+        if echoRecoveryCheck {
+            let step = value.run?.steps ?? 0
+            value.run?.internalRecovery = .init(handledCallIds: request.callIds,
+                uncertainCallIds: request.callIds, evidenceStart: value.messages.count, startedStep: step)
+            value.run?.recoveryCheck = true
+        }
+        value.run?.pending = nextTool.map { [$0] } ?? []
+        value.run?.status = nextTool == nil ? "completed" : "waiting_tool"
+        value.revision += 1; values[conversationId] = value
+        return value
+    }
     func result(conversationId: String, request: AskToolResultRequest, token: String) async throws -> AskConversation {
         if failReceipts { throw URLError(.notConnectedToInternet) }
         results.append(request)

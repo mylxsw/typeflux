@@ -127,6 +127,8 @@ struct AskExecutionEntry: Equatable, Sendable, Identifiable {
     /// A settled run may contain an earlier failed attempt that the model already
     /// received and handled. Preserve its outcome without reopening recovery.
     func needsInspection(run: AskRun?) -> Bool {
+        if let identity = audit?.identity, identity.runId == run?.id,
+           run?.internalRecovery?.handledCallIds.contains(identity.callId) == true { return false }
         guard unknown || audit == nil else { return false }
         if let run, !run.isActive, acknowledged, receipt != nil, audit != nil {
             return false

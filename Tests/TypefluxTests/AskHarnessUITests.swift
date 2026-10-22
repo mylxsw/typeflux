@@ -84,6 +84,22 @@ struct AskHarnessUITests {
         #expect(AskActivity.status(group, results: done, streamingId: nil, approvalToolId: "other") == .done)
     }
 
+    @Test func recoverablePreconditionsStayInDetailsWithoutAHeadlineFailure() {
+        let edit = call("edit", "files", ["action": "edit"])
+        let control = call("control", AskInternalRecovery.toolName)
+        let group = AskActivityGroup(id: "a", messages: [step("a", [edit, control])])
+        var invalid = result("edit", error: true)
+        invalid.harness = .init(version: 1, outcome: .init(status: "invalid", eventDispatched: false))
+        let results = [invalid, result("control")]
+        #expect(AskPresentation.toolState(result: invalid) == .failed)
+        #expect(AskActivity.failures(group, results: results) == 0)
+        #expect(AskActivity.status(group, results: results, streamingId: nil, approvalToolId: nil) == .done)
+        #expect(group.steps == [edit])
+        #expect(!AskActivity.categorySummary(group.calls).contains(AskInternalRecovery.toolName))
+        invalid.harness?.outcome?.status = "denied"
+        #expect(AskActivity.failures(group, results: [invalid, result("control")]) == 1)
+    }
+
     @Test func titlesSayWhatTheBlockDid() {
         let plan = [AskPlanItem(step: "A", status: "completed"), AskPlanItem(step: "B", status: "pending")]
         let group = AskActivityGroup(id: "a", messages: [step("a", [call("p", "update_plan"), call("s", "web_search"),

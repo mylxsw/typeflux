@@ -8,8 +8,10 @@ struct AskRecoveryPresentation: Equatable {
     let savedReceipts: Int
     let canContinue: Bool
     let unknownTool: String?
+    let canInspect: Bool
 
     init(run: AskRun?, entries: [AskExecutionEntry], deviceId: String, local _: Bool) {
+        canInspect = run.map { !["completed", "cancelled"].contains($0.status) } ?? false
         // A terminal run with no unacknowledged execution has no outstanding
         // effect to inspect. Its own failure (for example the step limit) has a
         // separate, more accurate status. Keep an actual missing receipt visible.
@@ -92,7 +94,7 @@ struct AskRecoveryPresentation: Equatable {
 
 /// What the user can do about a run that waits for a recovery decision.
 enum AskRecoveryAction: Equatable, CaseIterable {
-    /// Ends the uncertain run and starts one that checks before continuing.
+    /// Inspects uncertain effects inside the original run before continuing.
     case checkAndContinue
     /// Delivers results saved on this Mac; was "Update conversation".
     case refresh
@@ -152,7 +154,7 @@ extension AskRecoveryPresentation {
     /// `canRetransmit` and `canContinue` are what this Mac can actually do now.
     func actions(canRetransmit: Bool, canContinue: Bool) -> Actions {
         let primary: AskRecoveryAction? = if unknown {
-            otherDevice ? nil : .checkAndContinue
+            otherDevice || !canInspect ? nil : .checkAndContinue
         } else if savedReceipts > 0 {
             // "Refresh progress" exists only while there is saved progress to deliver.
             canRetransmit ? .refresh : nil

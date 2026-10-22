@@ -150,7 +150,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         AskStorageIdentifier.isValid(id)
     }
 
-    private func save(_ record: inout AskLocalRecord) throws {
+    func save(_ record: inout AskLocalRecord) throws {
         // A helper may report usage while image preparation is suspended. Merge
         // those receipts without replacing the foreground conversation snapshot.
         if let latest = records[record.conversation.id]?.localUsage {
@@ -201,7 +201,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
 
     func isTemporary(_ id: String) -> Bool { temporaryIDs.contains(AskConversationID.canonical(id)) }
 
-    private func record(_ id: String) throws -> AskLocalRecord {
+    func record(_ id: String) throws -> AskLocalRecord {
         try loadAll()
         let id = AskConversationID.canonical(id)
         guard Self.validID(id), var record = records[id] else { throw AskLocalError.message(L("ask.local.notFound")) }
@@ -359,10 +359,11 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         record.conversation.messages.append(request.message(step: run.steps, now: now()))
         record.conversation.run?.pending.removeFirst()
         if ["unknown", "timeout", "cancelled"].contains(AskExecutionReceipt.tool(request).status) {
-            record.conversation.run?.status = "running"
-            record.conversation.run?.recovery = .init(state: "unknown_outcome", sequence: record.conversation.revision + 1)
-            try save(&record)
-            return record.conversation
+            if run.internalRecovery?.phase == .inspecting {
+                record.conversation.run?.internalRecovery?.handledCallIds.append(request.toolCallId)
+                return try await continueTools(&record)
+            }
+            return try await beginInternalRecovery(&record, uncertain: [request.toolCallId])
         }
         return try await continueTools(&record)
     }
@@ -543,6 +544,15 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         record.conversation.run?.maxSteps = try Self.configuredMaxSteps(maxSteps ?? run.maxSteps)
         record.conversation.run?.clientToolApproval = true
         record.conversation.run?.recoveryCheck = run.recoveryCheck
+        if var recovery = run.internalRecovery {
+            if recovery.phase != .continued {
+                recovery.phase = .inspecting
+                recovery.startedStep = 0
+                recovery.evidenceStart = record.conversation.messages.count
+                recovery.attempts += 1
+            }
+            record.conversation.run?.internalRecovery = recovery
+        }
         try prepareRun(&record)
         try save(&record)
         return try await step(&record)
@@ -554,6 +564,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         var c = record.conversation
         _ = try resolveTurn(record)
         if c.run?.isActive == true { throw conflict() }
+        if let recovery = c.run?.internalRecovery, recovery.phase != .continued { throw conflict() }
         guard let index = c.messages.firstIndex(where: { $0.id == request.messageId && $0.role == "assistant" }),
               !c.messages[(index + 1)...].contains(where: { $0.role == "user" }) else { throw AskLocalError.message(L("ask.local.regenerateLatest")) }
         var cut = index
@@ -765,7 +776,8 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     private func allTools(_ record: AskLocalRecord) -> [AskToolDefinition] {
         let device = record.conversation.run?.tools ?? []
         let deviceNames = Set(device.map(\.name))
-        return device + record.builtinTools.filter { !deviceNames.contains($0.name) }
+        let offered = device + record.builtinTools.filter { !deviceNames.contains($0.name) }
+        return record.conversation.run?.internalRecovery?.tools(offered, step: record.conversation.run?.steps ?? 0) ?? offered
     }
 
     private func isBuiltin(_ call: AskToolCall, _ record: AskLocalRecord) -> Bool {
@@ -774,7 +786,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     }
 
     /// Queues the next on-device inference: a summary when the history is long, otherwise the answer.
-    private func step(_ record: inout AskLocalRecord, previous: AskAgentTurnOutcome? = nil) async throws -> AskConversation {
+    func step(_ record: inout AskLocalRecord, previous: AskAgentTurnOutcome? = nil) async throws -> AskConversation {
         _ = try resolveTurn(record)
         let skipSummary = try await backgroundSummary(&record)
         record.conversation.memory = record.conversation.memory?.usable(at: now())
@@ -900,6 +912,9 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
             return try await step(&record)
         }
         if calls.isEmpty {
+            if record.conversation.run?.internalRecovery?.phase == .inspecting {
+                record.conversation.run?.internalRecovery?.phase = .blocked
+            }
             record.conversation.run?.status = "completed"
             try save(&record)
             return record.conversation
@@ -928,8 +943,20 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
 
     private func continueTools(_ record: inout AskLocalRecord) async throws -> AskConversation {
         _ = try resolveTurn(record)
-        while let first = record.conversation.run?.pending.first, isBuiltin(first, record) {
+        while let first = record.conversation.run?.pending.first {
             try Task.checkCancellation()
+            if first.function.name == AskInternalRecovery.toolName, record.conversation.run?.internalRecovery != nil {
+                finishInternalRecovery(&record, call: first)
+                try save(&record)
+                continue
+            }
+            if record.conversation.run?.internalRecovery != nil, record.conversation.run?.recoveryCheck == true,
+               !AskInternalRecovery.permits(first) {
+                appendRecoveryControlResult(&record, call: first, text: "Inspect current state before changing it. Use complete_recovery after verifying the interrupted operation, then continue the original task.", failed: true)
+                try save(&record)
+                continue
+            }
+            guard isBuiltin(first, record) else { break }
             let calls = builtinWave(record)
             if calls.isEmpty {
                 record.conversation.run?.status = "waiting_tool"
@@ -1067,7 +1094,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     }
 
     /// Visible partial output stays in the history as an interrupted reply.
-    private func keepPartial(_ record: inout AskLocalRecord) {
+    func keepPartial(_ record: inout AskLocalRecord) {
         guard let run = record.conversation.run else { return }
         let text = run.preview ?? "", reasoning = run.reasoning ?? ""
         if !text.isEmpty || !reasoning.isEmpty {
@@ -1159,7 +1186,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     }
 
     @discardableResult
-    private func resolveTurn(_ record: AskLocalRecord) throws -> AskAgentBinding {
+    func resolveTurn(_ record: AskLocalRecord) throws -> AskAgentBinding {
         guard turnOwnershipAvailable, turnPolicy.acceptsDirectory(directory) else { throw AskLocalError.implementationUnavailable }
         guard record.conversation.run != nil else { return .default }
         let binding = record.conversation.run?.agentBinding ?? .default

@@ -34,6 +34,9 @@ extension AskRecoveryRenderTests {
     @discardableResult
     func renderConversation(_ model: AskConversationModel, name: String, dark: Bool = false,
                             language: AppLanguage = .english, size: NSSize) async throws -> String {
+        let previousKeychainMode = KeychainTokenStore.useInMemoryStoreForTesting
+        KeychainTokenStore.useInMemoryStoreForTesting = true
+        defer { KeychainTokenStore.useInMemoryStoreForTesting = previousKeychainMode }
         func content() -> some View {
             AskConversationView(model: model)
                 .environment(\.askGlassMaterialOverride, .opaque)

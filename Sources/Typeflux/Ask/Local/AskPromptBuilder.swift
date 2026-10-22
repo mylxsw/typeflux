@@ -71,6 +71,9 @@ struct DefaultAskPromptBuilder: AskPromptBuilding {
             Array(conversation.messages[cut...]),
             typedContentEnabled: input.typedContentEnabled
         )
+        if let recovery = conversation.run?.internalRecovery {
+            messages.append(["role": "system", "content": recovery.prompt])
+        }
         var payload: [String: Any] = ["model": conversation.run?.modelRef ?? "", "messages": messages]
         if let effort = conversation.run?.reasoningEffort, !effort.isEmpty {
             payload["reasoning_effort"] = effort

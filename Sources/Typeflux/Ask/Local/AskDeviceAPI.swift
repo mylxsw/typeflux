@@ -105,8 +105,8 @@ actor AskDeviceAPI: AskAPI {
         for id in journal.pending.keys {
             journal.pending[id]?.conversation = nil
         }
-        try AskCoding.encoder().encode(journal).write(to: account.directory.appendingPathComponent("sync.json"),
-                                                      options: [.atomic, .completeFileProtection])
+        try AskPrivateFile.write(AskCoding.encoder().encode(journal),
+                                 to: account.directory.appendingPathComponent("sync.json"))
     }
 
     private func queue(_ value: AskConversation, owner: String) {
@@ -403,6 +403,12 @@ actor AskDeviceAPI: AskAPI {
     func steer(conversationId id: String, request: AskSteerRequest, token: String) async throws -> AskConversation {
         let owner = try await account(token), (api, route) = try await execution(id, owner: owner)
         let value = try await api.steer(conversationId: id, request: request, token: route)
+        return route.isEmpty ? await commit(value, owner: owner) : value
+    }
+
+    func recover(conversationId id: String, request: AskRecoveryRequest, token: String) async throws -> AskConversation {
+        let owner = try await account(token), (api, route) = try await execution(id, owner: owner)
+        let value = try await api.recover(conversationId: id, request: request, token: route)
         return route.isEmpty ? await commit(value, owner: owner) : value
     }
 

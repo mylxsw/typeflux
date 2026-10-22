@@ -27,7 +27,12 @@ enum AskRunPhase: Equatable {
     static func resolve(run: AskRun?, busy: Bool, pendingApproval: Bool,
                         recovery: AskRecoveryPresentation?) -> AskRunPhase? {
         let step = max(run?.steps ?? 0, 1)
-        // An unknown outcome blocks every driver, so nothing is actually working.
+        // The host owns inspection now; it is work in progress, not a request
+        // for the user to troubleshoot an old receipt. Keep Stop available.
+        if busy, run?.internalRecovery?.phase == .inspecting {
+            return pendingApproval ? .approval : .working(step: step)
+        }
+        // Otherwise an unknown outcome blocks normal execution.
         let inspectionBlocked = run.map { $0.isActive && $0.needsRecoveryInspection } ?? false
         if run != nil, recovery?.unknown == true || inspectionBlocked || (recovery?.savedReceipts ?? 0) > 0 {
             return .needsDecision(step: step)
