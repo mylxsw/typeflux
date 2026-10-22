@@ -212,7 +212,7 @@ struct AskLocalModeUITests {
         for status in [AskLocalModeStatus(source: "Ollama", offersSignIn: true),
                        AskLocalModeStatus(source: "Ollama", offersSignIn: false),
                        AskLocalModeStatus(source: "Ollama", offersSignIn: false,
-                                          local: false, changeable: true),
+                                          local: false, changeable: true, choices: [.cloud, .local, .temporary]),
                        AskLocalModeStatus(source: "Ollama", offersSignIn: false,
                                           local: false)] {
             #expect(fits(AskLocalModeCard(status: status, onSignIn: {})).height > 80)

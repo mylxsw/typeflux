@@ -150,21 +150,27 @@ struct AskLocalModeCard: View {
                       systemImage: status.changeable ? "tray.full" : status.kind.symbol)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
-                Text(L(status.changeable ? "ask.storage.card.changeHint" : status.summaryKey))
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                if !status.changeable {
+                    Text(L(status.summaryKey))
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             if status.changeable {
                 VStack(spacing: 4) {
                     ForEach(status.choices, id: \.self) { option($0) }
                 }
             }
-            Rectangle().fill(AskTheme.separator).frame(height: 0.5)
-            switch status.kind {
-            case .temporary: temporaryDetails
-            case .local: localDetails
-            case .cloud: cloudDetails
+            if !status.changeable {
+                Rectangle().fill(AskTheme.separator).frame(height: 0.5)
+                switch status.kind {
+                case .temporary: temporaryDetails
+                case .local: localDetails
+                case .cloud: cloudDetails
+                }
+            } else if status.kind == .local {
+                modelIssue
             }
             if status.offersSignIn {
                 Rectangle().fill(AskTheme.separator).frame(height: 0.5)
@@ -196,13 +202,17 @@ struct AskLocalModeCard: View {
         .frame(width: Self.width, alignment: .leading)
     }
 
-    @ViewBuilder private var localDetails: some View {
+    @ViewBuilder private var modelIssue: some View {
         if let reason = status.modelReason {
             Text(reason).font(.system(size: 11)).foregroundStyle(StudioTheme.warning)
                 .fixedSize(horizontal: false, vertical: true)
             Button(L("ask.submission.models"), action: onOpenModelSettings)
                 .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
         }
+    }
+
+    @ViewBuilder private var localDetails: some View {
+        modelIssue
         if status.usesOnlineModel {
             fact("network", L("ask.storage.card.onlineModelNotice"))
         } else if status.usesCustomModel {
@@ -267,17 +277,10 @@ struct AskLocalModeCard: View {
                     .foregroundStyle(tint)
                     .frame(width: 26, height: 26)
                     .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(L(kind == .local ? "ask.storage.card.localOption" : kind == .temporary
-                        ? "ask.temporary.title" : kind.titleKey))
-                        .font(.system(size: 12.5, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                    Text(L(kind == .local ? "ask.storage.card.localDetail" : kind == .temporary
-                        ? "ask.storage.card.temporaryDetail" : kind.detailKey))
-                        .font(.system(size: 11))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                Text(L(kind == .local ? "ask.storage.card.localOption" : kind == .temporary
+                    ? "ask.temporary.title" : kind.titleKey))
+                    .font(.system(size: 12.5, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
                 Spacer(minLength: 6)
                 if chosen {
                     Image(systemName: "checkmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(tint)

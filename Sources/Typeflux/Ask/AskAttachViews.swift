@@ -182,11 +182,10 @@ struct AskFolderPermissionControls: View {
     @ObservedObject var model: AskConversationModel
     let launcher: Bool
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Divider()
-            Text(L("ask.folder.boundary")).font(.caption).foregroundStyle(.secondary)
-            let grants = model.temporaryFolderGrants()
-            if !launcher, !grants.isEmpty {
+        let grants = model.temporaryFolderGrants()
+        if !launcher, !grants.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Divider()
                 ScrollView {
                     VStack(alignment: .leading, spacing: 10) {
                         ForEach(grants) { grant in

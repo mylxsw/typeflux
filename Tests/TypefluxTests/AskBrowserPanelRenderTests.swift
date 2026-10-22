@@ -202,8 +202,9 @@ extension AskBrowserPanelRenderTests {
         try SettingsBehaviorTestSupport.button(L("ask.folder.revoke"), in: window).press()
         try await SettingsBehaviorTestSupport.wait { fixture.model.temporaryFolderGrants().isEmpty }
         #expect(tools.fileTools(conversationId: "c").roots.contains(root.path))
-        try render(AskFolderPermissionControls(model: fixture.model, launcher: true).padding(12)
-            .frame(width: 340, height: 160).background(AskTheme.surface),
-                   name: "launcher-folder-permissions", size: NSSize(width: 340, height: 160), minimumPNGBytes: 4000)
+        for launcher in [false, true] {
+            let empty = NSHostingView(rootView: AskFolderPermissionControls(model: fixture.model, launcher: launcher))
+            #expect(empty.fittingSize.height == 0)
+        }
     }
 }
