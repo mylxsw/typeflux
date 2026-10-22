@@ -18,6 +18,12 @@ enum ChatHistorySection: Int, CaseIterable, Identifiable {
 }
 
 enum ChatPresentation {
+    /// "Runs on MacBook Pro": a conversation the phone can read but not continue.
+    static func hostLine(_ name: String?) -> String {
+        guard let name, !name.isEmpty else { return NSLocalizedString("Runs on your Mac", comment: "") }
+        return String(format: NSLocalizedString("Runs on %@", comment: "Host device"), name)
+    }
+
     enum RunNotice: Equatable {
         case stopped
         case failure(String)

@@ -140,3 +140,118 @@ extension Array where Element == AskConversationSummary {
         return filter { $0.resolvedKind == kind }
     }
 }
+
+/// Replaces the composer for a conversation another device runs: this Mac reads its
+/// synchronized history but cannot continue it, and can start a new chat instead.
+struct AskHostElsewhereNotice: View {
+    let host: String
+    let kind: AskConversationKind
+    var onNewChat: () -> Void
+    @Environment(\.interfaceStyle) private var style
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "desktopcomputer")
+                .font(.system(size: 18, weight: .regular))
+                .foregroundStyle(StudioTheme.textSecondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(L(kind == .work ? "ask.host.workTitle" : "ask.host.chatTitle", host))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                Text(L("ask.host.detail"))
+                    .font(.system(size: 12))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+            Button(L("ask.host.newChat"), action: onNewChat)
+                .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
+                .accessibilityIdentifier("ask.host.newChat")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(style.usesGlass ? AskTheme.controlSurface : AskClassic.card,
+                    in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(AskTheme.separator, lineWidth: 0.5))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("ask.host.notice")
+    }
+}
+
+/// The folder a new task works in: the first attached folder, or the task's own
+/// workspace. A click picks folders to attach, which grants the task access to them.
+struct AskWorkFolderButton: View {
+    @ObservedObject var model: AskConversationModel
+    var launcher = false
+    @State private var hovering = false
+
+    static func title(_ draft: AskDraft) -> String {
+        let folders = (draft.attachments ?? []).filter { $0.kind == .folder }
+        guard let first = folders.first else { return L("ask.kind.defaultWorkspace") }
+        return folders.count == 1 ? first.name : L("ask.kind.folders", first.name, folders.count - 1)
+    }
+
+    var body: some View {
+        let draft = launcher ? model.launcherDraft : model.draft
+        Button { model.pickAttachments(folders: true, launcher: launcher) } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "folder").font(.system(size: 12, weight: .medium))
+                Text(Self.title(draft)).font(.system(size: 12.5)).lineLimit(1).truncationMode(.middle)
+            }
+            .foregroundStyle(hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+            .padding(.horizontal, 8)
+            .frame(height: AskMetrics.composerControlHeight)
+            .frame(maxWidth: launcher ? 120 : 180)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .help(L("ask.kind.folderHelp"))
+        .accessibilityLabel(L("ask.kind.folderHelp"))
+        .accessibilityValue(Self.title(draft))
+        .accessibilityIdentifier("ask.composer.workFolder")
+    }
+}
+
+/// Typeflux Cloud cannot be reached and the composer is on a Cloud model: say so and
+/// offer a local model. Nothing is queued to send later.
+struct AskOfflineNotice: View {
+    let suggestion: AskOfflineSuggestion
+    let library: AskModelLibrary
+    var onApply: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "wifi.slash").foregroundStyle(StudioTheme.warning)
+            Text(message).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 8)
+            if let action {
+                Button(action, action: onApply)
+                    .buttonStyle(AskCapsuleButtonStyle(kind: .primary))
+                    .accessibilityIdentifier("ask.offline.apply")
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(AskTheme.warningSoft, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("ask.offline.notice")
+    }
+
+    private var message: String {
+        switch suggestion {
+        case .useLocalModel: L("ask.offline.newConversation")
+        case .continueLocally: L("ask.offline.started")
+        case .needsLocalModel: L("ask.offline.noLocalModel")
+        }
+    }
+
+    private var action: String? {
+        switch suggestion {
+        case let .useLocalModel(reference): L("ask.offline.useModel", library.name(for: reference))
+        case let .continueLocally(reference): L("ask.offline.continueWith", library.name(for: reference))
+        case .needsLocalModel: nil
+        }
+    }
+}

@@ -60,6 +60,7 @@ extension AskConversationModel {
             : L(isSignedIn ? "ask.storage.locked" : "ask.storage.signedOut")
         context.temporaryMode = isTemporaryComposer(launcher: launcher)
         context.temporaryLocked = canChooseStorage(launcher: launcher) ? nil : L("ask.storage.locked")
+        context.conversationKind = conversationKind(launcher: launcher)
         context.screenshotOn = value.includeScreenshot
         context.screenshotUnavailable = capability == .supported ? nil : capability.hint
         context.selectionAvailable = value.selection?.isEmpty == false
@@ -120,6 +121,8 @@ extension AskConversationModel {
             let on = !storesLocally(launcher: launcher)
             setStoresLocally(on, launcher: launcher)
             confirm(L(on ? "ask.command.localOn" : "ask.command.localOff"))
+        case .chatMode, .workMode:
+            chooseConversationKind(command.action == .workMode ? .work : .chat, launcher: launcher)
         case .temporaryMode:
             guard canChooseStorage(launcher: launcher) else { return }
             toggleTemporary(launcher: launcher)

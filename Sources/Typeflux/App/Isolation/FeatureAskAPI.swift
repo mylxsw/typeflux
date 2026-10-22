@@ -22,6 +22,7 @@ struct FeatureAskAPI: AskAPI {
     func conversation(id: String, token: String) async throws -> AskConversation { try await invoke("ask.conversation.14", Call14(id: id, token: token)) }
     func delete(conversationId: String, token: String) async throws { let _: FeatureRPC.Empty = try await invoke("ask.delete.15", Call15(conversationId: conversationId, token: token)) }
     func keep(conversationId: String, token: String) async throws -> AskConversation { try await invoke("ask.keep.16", Call16(conversationId: conversationId, token: token)) }
+    func upload(conversationId: String, token: String) async throws -> AskConversation { try await invoke("ask.upload.23", Call16(conversationId: conversationId, token: token)) }
     func purgeMemory(token: String) async throws { let _: FeatureRPC.Empty = try await invoke("ask.purgeMemory.17", Call17(token: token)) }
     func purgeMemory(owner: String, token: String) async throws { let _: FeatureRPC.Empty = try await invoke("ask.purgeMemory.18", Call18(owner: owner, token: token)) }
     func featureModels(feature: String, token: String) async throws -> [AskCloudModel]? { try await invoke("ask.featureModels.19", Call19(feature: feature, token: token)) }
@@ -117,6 +118,9 @@ struct FeatureAskAPI: AskAPI {
             case "ask.models.22":
                 let value = try JSONDecoder().decode(Call22.self, from: payload)
                 result = try JSONEncoder().encode(try await api.models(token: value.token, scenario: value.scenario))
+            case "ask.upload.23":
+                let value = try JSONDecoder().decode(Call16.self, from: payload)
+                result = try JSONEncoder().encode(try await api.upload(conversationId: value.conversationId, token: value.token))
             default: throw FeatureRPC.Failure.invalidMessage
             }
             reply = .init(payload: result, error: nil)

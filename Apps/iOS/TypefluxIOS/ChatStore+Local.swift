@@ -364,13 +364,39 @@ enum ChatHistoryFilter: String, CaseIterable, Identifiable {
     }
 }
 
+/// Chats and work: work is started and run on a Mac; the phone reads it.
+enum ChatKindFilter: String, CaseIterable, Identifiable {
+    case all, chat, work
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all: "All"
+        case .chat: "Chats"
+        case .work: "Work"
+        }
+    }
+
+    func includes(_ item: ChatConversationSummary) -> Bool {
+        switch self {
+        case .all: true
+        case .chat: !item.isWork
+        case .work: item.isWork
+        }
+    }
+}
+
 extension ChatStore {
     /// Cloud and private conversations, newest first.
-    func history(_ filter: ChatHistoryFilter) -> [ChatConversationSummary] {
+    func history(_ filter: ChatHistoryFilter, kind: ChatKindFilter = .all) -> [ChatConversationSummary] {
         let cloud = filter == .local ? [] : conversations
         let local = filter == .cloud ? [] : localConversations
-        return (cloud + local).sorted { $0.updatedAt > $1.updatedAt }
+        return (cloud + local).filter(kind.includes).sorted { $0.updatedAt > $1.updatedAt }
     }
+
+    /// The kind filter is offered once a Mac has synchronized any work.
+    var hasWork: Bool { conversations.contains { $0.isWork } }
 
     /// The filter is offered only when both kinds exist.
     var hasBothStorages: Bool {

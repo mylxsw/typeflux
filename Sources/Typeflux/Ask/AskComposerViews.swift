@@ -2326,7 +2326,8 @@ struct AskComposer: View {
             return L(model.isTemporaryComposer(launcher: true) ? "ask.launcher.placeholder.temporary" : "ask.launcher.placeholder")
         }
         return AskReferenceStrip.placeholder(count: draft.wrappedValue.references?.count ?? 0)
-            ?? L(model.selectedId == nil ? "ask.input.placeholder" : "ask.followup.placeholder")
+            ?? L(model.selectedId != nil ? "ask.followup.placeholder"
+                : model.conversationKind(launcher: false) == .work ? "ask.input.placeholder.work" : "ask.input.placeholder")
     }
 
     private func historyKey(_ key: AskCommandKey) -> Bool {
@@ -2734,9 +2735,17 @@ struct AskComposer: View {
         }
     }
 
-    /// Only work uses tools, so a chat has no permission mode to show.
+    /// Only work uses tools, so a chat has no permission mode to show. A new task also
+    /// shows the folder it will work in.
     @ViewBuilder private var permissionModeMenu: some View {
-        if model.conversationKind(launcher: launcher) == .work { permissionMenuControl }
+        if model.conversationKind(launcher: launcher) == .work {
+            permissionMenuControl
+            // The launcher's bar keeps its empty space for dragging; folders attach with +.
+            if !launcher, model.canChangeConversationKind(launcher: false) {
+                AskWorkFolderButton(model: model, launcher: false)
+                    .disabled(active)
+            }
+        }
     }
 
     private var permissionMenuControl: some View {

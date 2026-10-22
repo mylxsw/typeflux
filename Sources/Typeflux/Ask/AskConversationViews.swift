@@ -684,6 +684,7 @@ struct AskConversationView: View {
             busy: model.busyIds.contains(item.id),
             local: showsHistoryFilter && model.isLocal(item.id),
             work: item.resolvedKind == .work,
+            host: model.hostElsewhere(item),
             selectionSpace: selectionSpace,
             onSelect: {
                 showsSidebarDrawer = false
@@ -782,6 +783,9 @@ struct AskConversationView: View {
                 } else if model.isSignedIn, model.storesLocally(launcher: false) {
                     Label(L("ask.storage.local"), systemImage: "lock")
                 }
+                if canContinueAsWork {
+                    Button(L("ask.kind.continueAsWork")) { model.continueInNew(.work) }
+                }
                 if let id = model.selectedId {
                     Button(L("ask.workspace.openFolder")) { Task { await model.openWorkspace(id) } }
                     Button(L("ask.delete"), role: .destructive) { deleteId = id }
@@ -847,6 +851,13 @@ struct AskConversationView: View {
             if model.selectedId != nil || model.tools.browserWorkspace != nil {
                 HStack(spacing: 2) {
                     if model.selectedId != nil {
+                        if canContinueAsWork {
+                            AskHeaderIconButton(symbol: AskConversationKind.work.symbol,
+                                                label: L("ask.kind.continueAsWork"), shortcut: nil) {
+                                model.continueInNew(.work)
+                            }
+                            .accessibilityIdentifier("ask.workspace.continueAsWork")
+                        }
                         AskHeaderIconButton(symbol: "folder", label: L("ask.workspace.openFolder"), shortcut: nil) {
                             if let id = model.selectedId { Task { await model.openWorkspace(id) } }
                         }
@@ -890,6 +901,11 @@ struct AskConversationView: View {
                 .keyboardShortcut("b", modifiers: [.command, .shift])
                 .accessibilityIdentifier("ask.workspace.browser")
         }
+    }
+
+    /// A started chat this Mac can continue offers to carry on as work.
+    private var canContinueAsWork: Bool {
+        model.selected != nil && model.selectedHostElsewhere == nil && model.conversationKind(launcher: false) == .chat
     }
 
     /// A temporary conversation is never named, a new one is just "Temporary chat".
@@ -1064,10 +1080,22 @@ struct AskConversationView: View {
             // composer; it now rides in the footer next to the send button.
             // Nothing sits under the card: its shortcuts are in the placeholder
             // and on the send and microphone buttons' help.
-            AskComposer(model: model, compact: layout.isShort, availableWidth: layout.composerWidth,
-                        availableHeight: layout.composerAvailableHeight,
-                        launcher: false, onToggleUsage: { toggleUsage() })
-                .disabled(model.isLoadingSelection)
+            if let suggestion = model.offlineSuggestion(launcher: false) {
+                AskOfflineNotice(suggestion: suggestion, library: model.modelLibrary) {
+                    model.applyOfflineSuggestion(suggestion, launcher: false)
+                }
+            }
+            if let host = model.selectedHostElsewhere {
+                // Another device runs it; this Mac only reads its synchronized history.
+                AskHostElsewhereNotice(host: host, kind: model.conversationKind(launcher: false)) {
+                    model.continueInNewChat()
+                }
+            } else {
+                AskComposer(model: model, compact: layout.isShort, availableWidth: layout.composerWidth,
+                            availableHeight: layout.composerAvailableHeight,
+                            launcher: false, onToggleUsage: { toggleUsage() })
+                    .disabled(model.isLoadingSelection)
+            }
         }
         .frame(maxWidth: AskMetrics.composerMaxWidth)
         .padding(.horizontal, layout.compactContent ? 12 : 22)

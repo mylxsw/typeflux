@@ -3,7 +3,7 @@ import AppKit
 /// What a slash command does once it is chosen.
 enum AskCommandAction: Equatable, Hashable, Sendable {
     case newConversation, search, regenerate, copyAnswer
-    case model, reasoning, localMode, temporaryMode, permissionMode
+    case model, reasoning, localMode, temporaryMode, permissionMode, chatMode, workMode
     case attachFiles, attachFolder, screenshot, selection, memory, remember
     /// One of the launcher's starting points, by `AskSuggestion.key`.
     case suggestion(String)
@@ -88,6 +88,8 @@ struct AskCommandContext: Equatable, Sendable {
     var temporaryMode = false
     /// Why it cannot switch to or from temporary: the conversation has started.
     var temporaryLocked: String?
+    /// Chat or work: the draft's choice, or the open conversation's fixed kind.
+    var conversationKind: AskConversationKind = .chat
     var screenshotOn = false
     /// Why a screenshot cannot be attached, e.g. the model cannot read images.
     var screenshotUnavailable: String?
@@ -151,6 +153,12 @@ enum AskCommandCatalog {
                                      aliases: ["reasoning", "effort"]))
         }
         result += [
+            AskCommand(action: .chatMode, name: "chat", title: L("ask.command.chat"), symbol: AskConversationKind.chat.symbol,
+                       group: .conversation, kind: .toggle(on: context.conversationKind == .chat),
+                       aliases: ["liaotian", "talk"]),
+            AskCommand(action: .workMode, name: "work", title: L("ask.command.work"), symbol: AskConversationKind.work.symbol,
+                       group: .conversation, kind: .toggle(on: context.conversationKind == .work),
+                       aliases: ["task", "renwu", "agent"]),
             AskCommand(action: .localMode, name: "local", title: L("ask.command.local"), symbol: "lock",
                        group: .model, kind: .toggle(on: context.localMode), disabledReason: context.storageLocked,
                        aliases: ["offline", "private"]),

@@ -2258,7 +2258,7 @@
 /* GUL-193 Per-conversation storage */
 "ask.storage.local" = "僅存本機";
 "ask.storage.cloud" = "雲端同步";
-"ask.storage.local.detail" = "不上傳到 Typeflux Cloud，只使用你自己的模型";
+"ask.storage.local.detail" = "不上傳到 Typeflux Cloud，仍可使用雲端模型";
 "ask.storage.cloud.detail" = "在其他裝置上繼續，可使用全部雲端功能";
 "ask.storage.help" = "點選查看詳情";
 "ask.storage.card.title" = "對話儲存方式";
@@ -6734,7 +6734,7 @@
 "worldclock.settings.workHours" = "工作時間";
 "worldclock.settings.workdays" = "工作日";
 "worldclock.settings.step" = "←→ 每次調整";
-"worldclock.settings.hintCount" = "關鍵字提示列顯示的城市：%d 個";
+"worldclock.settings.hintCount" = "關鍵詞提示列顯示的城市：%d 個";
 "worldclock.settings.copyFormat" = "拷貝格式";
 "worldclock.settings.meetingZones" = "會議時間附上時區縮寫（EDT、BST）";
 
@@ -6750,3 +6750,33 @@
 "ask.kind.chatFolderRefused" = "聊天不能附加資料夾，請新開一個任務。";
 "ask.history.kindFilter" = "對話類型";
 "ask.kind.foldersRemoved" = "已移除資料夾：聊天不能使用資料夾。";
+
+/* Chat and Work, phase 2 (GUL-460) */
+"ask.storage.card.cloudModelPrivateNotice" = "內容會經由 Typeflux 傳送給模型服務商，但不會保存在 Typeflux。";
+"ask.host.anotherMac" = "另一台 Mac";
+"ask.host.runsOn" = "在「%@」上執行";
+"ask.host.workTitle" = "這個任務在「%@」上執行";
+"ask.host.chatTitle" = "這段對話在「%@」上執行";
+"ask.host.detail" = "只有那台裝置能繼續它；這台 Mac 可以查看全部記錄。";
+"ask.host.newChat" = "根據它開個聊天";
+"ask.command.chat" = "切換為聊天";
+"ask.command.work" = "切換為任務";
+"ask.kind.switched" = "已切換為%@";
+"ask.kind.continuedAsWork" = "已新建任務，並帶上這段聊天";
+"ask.kind.continuedAsChat" = "已新建聊天，並帶上這段對話";
+"ask.kind.continueAsWork" = "轉為任務繼續";
+"ask.input.placeholder.work" = "描述要完成的任務，/ 呼叫命令";
+"ask.kind.defaultWorkspace" = "預設工作區";
+"ask.kind.folders" = "%@ 等 +%ld";
+"ask.kind.folderHelp" = "任務的工作資料夾：點擊加入任務可讀寫的資料夾";
+"ask.offline.newConversation" = "無法連線 Typeflux Cloud，雲端模型暫不可用。";
+"ask.offline.started" = "無法連線 Typeflux Cloud，這段對話暫時不能繼續。";
+"ask.offline.noLocalModel" = "無法連線 Typeflux Cloud。在 設定 → 模型 中加入自己的模型後可離線使用。";
+"ask.offline.useModel" = "改用 %@";
+"ask.offline.continueWith" = "用 %@ 在新對話中繼續";
+"ask.upload.action" = "上傳到雲端同步";
+"ask.upload.help" = "一次性上傳，之後在所有裝置上同步，不能再改回僅存本機。";
+"ask.upload.confirmTitle" = "把這段對話上傳到 Typeflux Cloud？";
+"ask.upload.confirmDetail" = "上傳後它會在你的所有裝置上同步，並且不能再改回僅存本機。";
+"ask.upload.done" = "已上傳，這段對話現在會在所有裝置同步";
+"ask.upload.failed" = "上傳失敗，請稍後再試。";

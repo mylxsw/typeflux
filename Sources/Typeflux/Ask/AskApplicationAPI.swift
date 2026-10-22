@@ -81,6 +81,12 @@ struct AskApplicationAPI: AskAPI {
     func keep(conversationId: String, token: String) async throws -> AskConversation {
         try await conversations.keep(conversationId: conversationId, token: token)
     }
+    func upload(conversationId: String, token: String) async throws -> AskConversation {
+        try await conversations.upload(conversationId: conversationId, token: token)
+    }
+    func importConversation(_ value: AskConversation, token: String) async throws -> AskConversation {
+        try await conversations.importConversation(value, token: token)
+    }
 
     func purgeMemory(token: String) async throws {
         try await conversations.purgeMemory(token: token)

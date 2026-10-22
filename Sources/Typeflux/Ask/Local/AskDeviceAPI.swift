@@ -249,9 +249,12 @@ actor AskDeviceAPI: AskAPI {
     func conversation(id: String, token: String) async throws -> AskConversation {
         let owner = try await account(token)
         if let value = try await localValue(id, owner: owner) { return value }
-        if let snapshot = try await transport.snapshot(id: id, token: token), let value = snapshot.conversation {
+        if let snapshot = try await transport.snapshot(id: id, token: token), var value = snapshot.conversation {
             accounts[owner]?.journal.replicas.insert(id)
             try persist(owner)
+            // Another device runs it: say which, so the window can show it read-only.
+            value.hostDeviceId = snapshot.deviceId
+            value.hostDeviceName = snapshot.deviceName
             return value
         }
         let value = try await legacy.conversation(id: id, token: token)
@@ -266,14 +269,44 @@ actor AskDeviceAPI: AskAPI {
         if try await localValue(id, owner: owner) == nil {
             guard accounts[owner]?.journal.replicas.contains(id) != true
             else { throw AskLocalError.message(L("ask.tool.otherDevice")) }
-            if request.deviceCreate != true {
+            if request.deviceCreate == true {
+                if Self.runsInCloud(request) { return try await sendToCloud(id, request: request, owner: owner, token: token) }
+            } else {
                 _ = try await conversation(id: id, token: token)
                 guard accounts[owner]?.journal.legacy.contains(id) == true
                 else { throw AskLocalError.message(L("ask.tool.otherDevice")) }
+                if try await isCloudChat(id, owner: owner, token: token) {
+                    return try await sendToCloud(id, request: request, owner: owner, token: token)
+                }
             }
         }
         try await adoptLegacy(id, owner: owner, device: request.deviceId, token: token)
         return try await commit(engine.send(conversationId: id, request: request, token: ""), owner: owner)
+    }
+
+    /// A chat that opens on a Typeflux Cloud model runs in Typeflux Cloud, so any device
+    /// can continue it. Work, and chats on the user's own models, run on this Mac.
+    static func runsInCloud(_ request: AskSendRequest) -> Bool {
+        request.kind.map(AskConversationKind.init(stored:)) == .chat
+            && (request.modelRef ?? "cloud:default").hasPrefix("cloud:")
+    }
+
+    private func sendToCloud(_ id: String, request: AskSendRequest, owner: String,
+                             token: String) async throws -> AskConversation {
+        let value = try await legacy.send(conversationId: id, request: request, token: token)
+        accounts[owner]?.journal.legacy.insert(id)
+        try persist(owner)
+        return value
+    }
+
+    /// A server conversation that is a chat stays in Typeflux Cloud: it is never adopted
+    /// by this Mac, so other devices can keep continuing it. Server conversations from
+    /// before kinds keep their existing adoption on the next message.
+    private func isCloudChat(_ id: String, owner: String, token: String) async throws -> Bool {
+        guard try await localValue(id, owner: owner) == nil,
+              accounts[owner]?.journal.legacy.contains(id) == true else { return false }
+        let value = try await legacy.conversation(id: id, token: tokens[owner] ?? token)
+        return value.kind.map(AskConversationKind.init(stored:)) == .chat
     }
 
     private func adoptLegacy(
@@ -377,7 +410,9 @@ actor AskDeviceAPI: AskAPI {
     ) async throws -> AskConversation {
         let owner = try await account(token)
         if try await localValue(id, owner: owner) == nil { _ = try await conversation(id: id, token: token) }
-        try await adoptLegacy(id, owner: owner, device: deviceId, token: token, sameDevice: true)
+        if try await !isCloudChat(id, owner: owner, token: token) {
+            try await adoptLegacy(id, owner: owner, device: deviceId, token: token, sameDevice: true)
+        }
         let (api, route) = try await execution(id, owner: owner)
         let value = try await api.retry(
             conversationId: id,
@@ -394,7 +429,9 @@ actor AskDeviceAPI: AskAPI {
                     token: String) async throws -> AskConversation {
         let owner = try await account(token)
         if try await localValue(id, owner: owner) == nil { _ = try await conversation(id: id, token: token) }
-        try await adoptLegacy(id, owner: owner, device: request.deviceId, token: token)
+        if try await !isCloudChat(id, owner: owner, token: token) {
+            try await adoptLegacy(id, owner: owner, device: request.deviceId, token: token)
+        }
         let (api, route) = try await execution(id, owner: owner)
         let value = try await api.regenerate(conversationId: id, request: request, token: route)
         return route.isEmpty ? await commit(value, owner: owner) : value
@@ -458,6 +495,21 @@ actor AskDeviceAPI: AskAPI {
         let owner = try await account(token)
         try await accounts[owner]?.engine.purgeMemory(token: "")
         try await legacy.purgeMemory(token: token)
+    }
+
+    /// Adopts a conversation that was kept on this Mac, then synchronizes it like any
+    /// conversation this Mac runs. It must be settled and new to this account.
+    func importConversation(_ value: AskConversation, token: String) async throws -> AskConversation {
+        let owner = try await account(token)
+        let engine = try ensureAvailable(value.id, owner: owner)
+        guard try await localValue(value.id, owner: owner) == nil,
+              accounts[owner]?.journal.legacy.contains(value.id) != true,
+              accounts[owner]?.journal.replicas.contains(value.id) != true
+        else { throw AskLocalError.message(L("ask.local.conflict")) }
+        try await engine.importLegacy(value)
+        let imported = try await engine.conversation(id: value.id, token: "")
+        queue(imported, owner: owner)
+        return imported
     }
 
     func delete(conversationId id: String, token: String) async throws {

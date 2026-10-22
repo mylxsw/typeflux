@@ -89,6 +89,20 @@ phone, with one accent colour, one type scale and glass only on floating layers.
 Not yet available on iOS: subscriptions (monthly plans are bought on the web;
 credit packs are bought in the app).
 
+## Chats, work and conversations a Mac runs (GUL-460)
+
+- Every conversation started on the phone is a chat (`kind: "chat"` on its opening
+  request). Work is started on a Mac.
+- The history list includes conversations a Mac runs: rows show a terminal glyph for
+  work and "Runs on <Mac>" under the title. Once any work exists, a segmented
+  All / Chats / Work filter appears above the list.
+- Opening one shows its full history, but the composer is replaced by a read-only
+  card ("Work runs on your Mac") with "New chat". Rename and delete are not offered;
+  the server would answer `ASK_DEVICE_OWNED`, which reads as "This conversation runs
+  on your Mac".
+- Chats a Mac started on a Typeflux Cloud model run in Typeflux Cloud and can be
+  continued here like any other chat.
+
 ## Offline use, private conversations and model choice (GUL-418)
 
 Design and plan: `docs/design/ios-offline-local-mode.md` and the interactive board

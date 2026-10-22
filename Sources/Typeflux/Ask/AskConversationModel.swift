@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import Network
 
 @MainActor
 final class AskConversationModel: ObservableObject {
@@ -205,18 +206,28 @@ final class AskConversationModel: ObservableObject {
                              local: storesLocally(launcher: launcher))
     }
 
-    /// Conversations kept on this Mac run on the user's own models; a Cloud reference
-    /// falls back to the first one available.
+    /// Signed out, every conversation is kept on this Mac and runs on the user's own
+    /// models; a Cloud reference falls back to the first one available. Signed in, a
+    /// conversation kept on this Mac may use Cloud models through the stateless
+    /// device inference endpoint, which keeps no history on the server.
     func localFallback(_ reference: String, hasImage: Bool, local: Bool) -> String {
-        guard local, reference.hasPrefix("cloud:") else { return reference }
+        guard local, !isSignedIn, reference.hasPrefix("cloud:") else { return reference }
         return modelLibrary.firstLocalReference(hasImage: hasImage)
             ?? modelLibrary.firstLocalReference(hasImage: hasImage, confirmedVision: false) ?? reference
     }
 
-    /// Whether the conversation window's composer can use Cloud models: signed in,
-    /// and its conversation is not one kept on this Mac.
+    /// Whether the conversation window's composer can use Cloud models: whenever signed
+    /// in, including conversations kept on this Mac (their history still never
+    /// reaches the server).
     var cloudAvailable: Bool { cloudAvailable(launcher: false) }
-    func cloudAvailable(launcher: Bool) -> Bool { !storesLocally(launcher: launcher) }
+    func cloudAvailable(launcher _: Bool) -> Bool { isSignedIn }
+
+    /// The session token that pays for Cloud inference. A conversation kept on this
+    /// Mac has an empty route token but still uses the signed-in account for Cloud models.
+    func cloudToken(for route: AskRoute) -> String {
+        guard route.token.isEmpty, let current = session(), current.owner == route.account else { return route.token }
+        return current.token
+    }
 
     /// A Typeflux Cloud session exists; without one every conversation stays on this Mac.
     var isSignedIn: Bool { session().map { !$0.token.isEmpty } ?? false }
@@ -261,6 +272,36 @@ final class AskConversationModel: ObservableObject {
     }
 
     func isDeletedConversation(_ id: String) -> Bool { deletedConversationIDs.contains(id) }
+
+    /// A conversation kept on this Mac that can move to Typeflux Cloud: signed in,
+    /// settled, opened here and not temporary.
+    var canUploadSelected: Bool {
+        guard isSignedIn, let id = selectedId, selected?.id == id, localConversationIds.contains(id),
+              !isTemporary(id), !busyIds.contains(id), selected?.run?.isActive != true else { return false }
+        return true
+    }
+
+    /// Moves the open conversation kept on this Mac into the account's synchronized
+    /// history. The cache moves from the private partition to the account's after the
+    /// engines agree; a failure leaves it where it was.
+    func uploadSelected() async {
+        guard canUploadSelected, let id = selectedId, let account = credentials() else { return }
+        busyIds.insert(id)
+        defer { busyIds.remove(id) }
+        do {
+            let value = try await api.upload(conversationId: id, token: account.token)
+            guard session()?.owner == account.account else { return }
+            try await cache.save(value, owner: account.owner)
+            try? await cache.delete(id: id, owner: AskRoutedAPI.localOwner)
+            localConversationIds.remove(id)
+            snapshots[id] = value
+            if selectedId == id { selected = value }
+            updateSummary(value)
+            confirm(L("ask.upload.done"))
+        } catch {
+            confirm(L("ask.upload.failed"))
+        }
+    }
 
     /// The cache partition of a conversation's copies and drafts.
     func cacheOwner(_ id: String) -> String {
@@ -307,6 +348,18 @@ final class AskConversationModel: ObservableObject {
     /// Why the last files could not all be attached, per composer.
     @Published var attachmentNotice: String?
     @Published var launcherAttachmentNotice: String?
+    /// Whether the network can reach Typeflux Cloud; false offers local models instead.
+    @Published var networkAvailable = true
+    var networkMonitor: NWPathMonitor?
+    /// Asks before uploading a conversation kept on this Mac; tests answer directly.
+    var uploadConfirmation: @MainActor () -> Bool = {
+        let alert = NSAlert()
+        alert.messageText = L("ask.upload.confirmTitle")
+        alert.informativeText = L("ask.upload.confirmDetail")
+        alert.addButton(withTitle: L("ask.upload.action"))
+        alert.addButton(withTitle: L("common.cancel"))
+        return alert.runModal() == .alertFirstButtonReturn
+    }
     /// Loads in flight per draft key (`visionDraftKey`); sending waits for them.
     @Published var attachmentLoads: [String: Int] = [:]
     let attachmentWork = AskAttachmentWork()
@@ -398,7 +451,7 @@ final class AskConversationModel: ObservableObject {
     var launcherScreenshot: AskLauncherScreenshot? {
         didSet { if oldValue?.source.id != launcherScreenshot?.source.id { oldValue?.source.recognition.cancel() } }
     }
-    deinit { launcherScreenshot?.source.recognition.cancel() }
+    deinit { launcherScreenshot?.source.recognition.cancel(); networkMonitor?.cancel() }
     /// Reads a screenshot's text, band by band when it is long.
     var screenshotTextRecognizer: any ImageTextRecognizing = TiledImageTextRecognizer(base: VisionImageTextRecognizer())
     var onSignIn: () -> Void = { LoginWindowController.shared.show() }
@@ -1170,7 +1223,7 @@ final class AskConversationModel: ObservableObject {
         let needsRefresh = (reference.hasPrefix("cloud:") && reference != "cloud:default")
             || modelLibrary.registry.resolve(reference)?.0.isOllama == true
         if !needsRefresh {
-            if let reason = modelSelectionIssue(reference, cloudAvailable: !token.isEmpty, hasImage: hasImage) {
+            if let reason = modelSelectionIssue(reference, cloudAvailable: !account.token.isEmpty, hasImage: hasImage) {
                 rejectSubmission(reason, submitted: submitted, queuedId: queuedId, launcher: launcher)
                 return false
             }
@@ -1212,7 +1265,7 @@ final class AskConversationModel: ObservableObject {
                 guard !Task.isCancelled, operationIds[id] == operationId,
                       owner == account.account, session()?.owner == account.account,
                       quickAskGeneration.map({ self.quickAsk?.generation == $0 }) ?? (selectionGeneration == generation) else { return }
-                let issue = modelSelectionIssue(reference, cloudAvailable: !token.isEmpty, hasImage: hasImage)
+                let issue = modelSelectionIssue(reference, cloudAvailable: !account.token.isEmpty, hasImage: hasImage)
                     ?? AskSubmissionIssue(text: error.localizedDescription, offersModels: true)
                 handled = true
                 rejectSubmission(issue, submitted: submitted, queuedId: queuedId, launcher: launcher)
@@ -1379,9 +1432,11 @@ final class AskConversationModel: ObservableObject {
         return memory
     }
 
-    private func validateModel(_ reference: String?, token: String, hasImage: Bool = false) async throws {
+    private func validateModel(_ reference: String?, token routeToken: String, hasImage: Bool = false) async throws {
         try Task.checkCancellation()
         let reference = reference ?? "cloud:default"
+        // A conversation kept on this Mac validates Cloud models with the signed-in session.
+        let token = routeToken.isEmpty ? (session()?.token ?? "") : routeToken
         if token.isEmpty, reference.hasPrefix("cloud:") {
             throw AskSubmissionIssue(text: L("ask.local.modelRequired"), offersModels: true, offersSignIn: !isSignedIn)
         }
@@ -1806,8 +1861,9 @@ final class AskConversationModel: ObservableObject {
                             throw AskLocalError.message(L("ask.models.unavailable"))
                         }
                         let hasImage = inference.payload.contains("image_url")
+                        let inferenceToken = cloudToken(for: current)
                         if let reason = modelLibrary.selectionReason(
-                            model, provider: provider, hasImage: hasImage, loggedIn: !current.token.isEmpty
+                            model, provider: provider, hasImage: hasImage, loggedIn: !inferenceToken.isEmpty
                         ) {
                             throw AskLocalError.message(reason)
                         }
@@ -1817,7 +1873,7 @@ final class AskConversationModel: ObservableObject {
                         let currentPayload = sanitizedMemory(value, account: current.account, local: current.token.isEmpty)
                             .run?.inference?.payload ?? inference.payload
                         let payload = try AskContextPlanner.devicePayload(currentPayload, model: model, budgeted: run.budgetEnabled == true)
-                        let connection = AskDeviceModelClient.authenticated(modelLibrary.connection(provider, model: model), token: current.token)
+                        let connection = AskDeviceModelClient.authenticated(modelLibrary.connection(provider, model: model), token: inferenceToken)
                         let (text, calls) = try await customInference.complete(provider: provider,
                             connection: connection, payload: payload,
                             onUsage: { [weak self] usage in await self?.recordInferenceUsage(usage, id: inference.id, owner: current.account) },
