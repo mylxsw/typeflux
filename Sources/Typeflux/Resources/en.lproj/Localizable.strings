@@ -6635,3 +6635,4 @@
 "onboarding.v2.voice.practice.done" = "It works";
 "onboarding.v2.finish.title" = "You're all set";
 "onboarding.v2.finish.subtitle" = "These keys are all you need.";
+"ask.history.syncPending" = "Some conversations have not synced yet. Retrying automatically.";

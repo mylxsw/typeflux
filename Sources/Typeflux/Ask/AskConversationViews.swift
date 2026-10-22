@@ -571,6 +571,13 @@ struct AskConversationView: View {
         let items = AskHistoryPeriod.ordered(visibleConversations, now: now, calendar: calendar)
         return ScrollView {
             LazyVStack(spacing: 2) {
+                if model.historyHasPendingSync {
+                    Label(L("ask.history.syncPending"), systemImage: "icloud.slash")
+                        .font(.system(size: 11))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 8).padding(.vertical, 6)
+                }
                 if model.isTemporaryComposer(launcher: false) {
                     AskTemporaryHistoryRow().padding(.top, 4)
                 }

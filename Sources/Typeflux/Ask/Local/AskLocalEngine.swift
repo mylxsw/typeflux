@@ -44,6 +44,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     static let staleAfter: TimeInterval = 10 * 60
 
     private let turnPolicy: AskAgentTurnPolicy
+    private let allowsCloudModels: Bool
     private let turnWriterLease: AskTurnWriterLease?
     private let turnOwnershipAvailable: Bool
     private let promptBuilder: any AskPromptBuilding
@@ -90,7 +91,8 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
          builtinTools: (any AskBuiltinToolHosting)? = nil,
          snapshotStore: (any AskLocalSnapshotStoring)? = nil,
          budgetStore: (any AskBudgetJournaling)? = nil,
-         turnPolicy: AskAgentTurnPolicy = .canonical) {
+         turnPolicy: AskAgentTurnPolicy = .canonical, allowsCloudModels: Bool = false) {
+        self.allowsCloudModels = allowsCloudModels
         self.turnPolicy = turnPolicy
         let writer = turnPolicy.claimWriter(directory: directory)
         turnWriterLease = writer.lease
@@ -297,7 +299,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         if record.conversation.messages.contains(where: { $0.id == request.id }) { return record.conversation }
         if record.conversation.run?.isActive == true { throw AskLocalError.message(L("ask.local.busy")) }
         guard record.conversation.messages.count < Self.maxMessages else { throw AskLocalError.message(L("ask.local.full")) }
-        let modelRef = try Self.localModel(request.modelRef)
+        let modelRef = try executionModel(request.modelRef)
         var c = record.conversation
         // A temporary conversation neither reads nor keeps memory.
         if c.messages.isEmpty { c.memory = temporaryIDs.contains(id) ? nil : request.memory?.usable(at: now()) }
@@ -383,6 +385,12 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         record.settleUsage(request)
         record.lastInferenceId = request.inferenceId
         record.conversation.run?.inference = nil
+        if allowsCloudModels, request.failed, request.errorCode == "CREDITS_EXHAUSTED" {
+            record.conversation.run?.status = AskRun.pausedCreditsStatus
+            record.conversation.run?.creditsPausedAt = now()
+            try save(&record)
+            return record.conversation
+        }
         if (inference.summaryThrough ?? 0) > 0,
            request.failed || request.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !request.toolCalls.isEmpty || request.finishReason == "length" || request.content.utf8.count > 64000 {
             if record.summaryFallback != true { record.summaryFallback = true } else { record.summaryUnavailable = true }
@@ -436,6 +444,12 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         var value = try record(conversationId)
         guard value.conversation.run?.id == runId else { throw conflict() }
         _ = try resolveTurn(value)
+        if allowsCloudModels, value.conversation.run?.isPausedForCredits == true {
+            value.conversation.run?.status = "running"
+            value.conversation.run?.creditsPausedAt = nil
+            try save(&value)
+            return try await step(&value, previous: .resume)
+        }
         if value.conversation.run?.status == "waiting_tool", value.conversation.run?.pending.isEmpty == true {
             value.conversation.run?.status = "running"
             try save(&value)
@@ -506,7 +520,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         guard let run = record.conversation.run, run.id == runId, run.deviceId == deviceId else { throw conflict() }
         _ = try resolveTurn(record)
         if run.isActive || run.status == "completed" { return record.conversation }
-        let model = try Self.localModel(modelRef ?? run.modelRef)
+        let model = try executionModel(modelRef ?? run.modelRef)
         record.conversation.modelRef = model
         record.conversation.run = AskRun(id: UUID().uuidString.lowercased(), deviceId: deviceId, status: "running", steps: 0, updatedAt: now(),
                                          tools: run.tools, pending: [], modelRef: model,
@@ -532,7 +546,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         while cut > 0, c.messages[cut - 1].role != "user" { cut -= 1 }
         guard cut > 0 else { throw AskLocalError.message(L("ask.local.regenerateLatest")) }
         let prompt = c.messages[cut - 1]
-        let model = try Self.localModel(request.modelRef ?? c.modelRef)
+        let model = try executionModel(request.modelRef ?? c.modelRef)
         c.messages = Array(c.messages.prefix(cut))
         if let through = c.summaryThrough, through > c.messages.count { c.summaryThrough = c.messages.count }
         c.modelRef = model
@@ -567,6 +581,31 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
             throw AskLocalError.message(L("ask.local.modelRequired"))
         }
         return reference
+    }
+
+    private func executionModel(_ reference: String?) throws -> String {
+        if allowsCloudModels, let reference, reference.hasPrefix("cloud:"), reference.count > 6 { return reference }
+        return try Self.localModel(reference)
+    }
+
+    /// Only a terminal legacy conversation may seed device execution. A history
+    /// replica never imports pending calls, grants, or an active server run.
+    func importLegacy(_ conversation: AskConversation) throws {
+        loadAll()
+        guard Self.validID(conversation.id), conversation.run?.isActive != true,
+              conversation.run?.needsRecoveryInspection != true else { throw conflict() }
+        _ = try AskAgentBinding.resolve(conversation.run?.agentBinding)
+        guard records[conversation.id] == nil else { return }
+        var record = AskLocalRecord(conversation: conversation)
+        record.conversation.memory = nil
+        record.conversation.run?.inference = nil
+        record.conversation.run?.pending = []
+        record.conversation.run?.budgetEnabled = nil
+        record.conversation.run?.budgetRootId = nil
+        record.conversation.run?.budgetDeadline = nil
+        record.conversation.run?.budgetLimits = nil
+        record.conversation.run?.budget = nil
+        try persist(record)
     }
 
     private func conflict() -> AskLocalError { .message(L("ask.local.conflict")) }

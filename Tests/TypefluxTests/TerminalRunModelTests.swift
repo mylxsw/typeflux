@@ -43,7 +43,7 @@ final class TerminalTestClock {
     var now = Date(timeIntervalSince1970: 1000)
 }
 
-@Suite("Built-in terminal run model")
+@Suite("Built-in terminal run model", .exclusiveUIState)
 @MainActor
 struct TerminalRunModelTests {
     private func model(_ settings: TerminalRunSettings = .init(), command: String = "ls -la",

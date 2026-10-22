@@ -347,7 +347,7 @@ actor RecordingAskModelClient: AskModelCompleting {
             let engine = AskLocalEngine(directory: root), fake = RecordingAskModelClient()
             let defaultDependencies = AskWorkflowAssistant.Dependencies(api: engine, session: { ("owner", "") },
                                                                         deviceId: "device", modelLibrary: library)
-            #expect(defaultDependencies.inference is AskCustomInference)
+            #expect(defaultDependencies.inference is AskDeviceModelClient)
             let cache = try AskConversationCache(url: root.appendingPathComponent("default.sqlite"))
             let defaultHost = AskConversationModel(
                 api: engine,

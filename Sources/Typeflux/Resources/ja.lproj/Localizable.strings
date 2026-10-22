@@ -6635,3 +6635,4 @@
 "onboarding.v2.voice.practice.done" = "できました";
 "onboarding.v2.finish.title" = "準備完了";
 "onboarding.v2.finish.subtitle" = "覚えるのはこのキーだけ。";
+"ask.history.syncPending" = "一部の会話が未同期です。自動的に再試行します。";

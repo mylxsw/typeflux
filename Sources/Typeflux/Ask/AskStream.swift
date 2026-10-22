@@ -241,6 +241,7 @@ extension AskCustomInference {
                 if data.count >= 65536 { break }
                 data.append(byte)
             }
+            if let exhausted = CloudCreditsExhaustedError.parse(data: data) { throw exhausted }
             if AskContextCompaction.isRejection(status: status, data: data) { throw AskStreamError.contextCapacity }
             throw AskReasoningRequest.isRejection(status: status) ? AskStreamError.rejected : AskStreamError.requestFailed
         }

@@ -143,10 +143,10 @@ extension AskApplicationAPITests {
             let api: any AskAPI
             if caller == "conversation" {
                 api = AskConversationWindowController.makeAPI(settings: settings, modelLibrary: .shared,
-                    cloud: remote, local: engine)
+                    cloud: remote, local: engine, device: remote)
             } else {
                 api = AskWorkflowEditorWindowController.fallbackDependencies(settings: settings,
-                    cloud: remote, local: engine).api
+                    cloud: remote, local: engine, device: remote).api
                 #expect(defaults.string(forKey: "ask.deviceId") != nil)
             }
             let request = AskSendRequest(id: UUID().uuidString, deviceId: "device", text: "Question",

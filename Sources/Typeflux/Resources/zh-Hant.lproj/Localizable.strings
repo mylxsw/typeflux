@@ -6637,3 +6637,4 @@
 "onboarding.v2.voice.practice.done" = "成功了";
 "onboarding.v2.finish.title" = "全部就緒";
 "onboarding.v2.finish.subtitle" = "記住這幾個鍵就夠了。";
+"ask.history.syncPending" = "部分對話尚未同步，將自動重試。";

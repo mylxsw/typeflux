@@ -49,11 +49,11 @@ struct AskLocalUsage: Codable, Equatable, Sendable {
 private extension AskUsageTotals {
     mutating func addLocal(_ item: AskUsageInvocation) {
         calls += 1
-        external += 1
+        if item.status == "external" { external += 1 }
         if item.status == "pending" {
             pending += 1
         }
-        if item.tokens == nil || item.tokens?.incomplete == true {
+        if item.tokens == nil || item.tokens?.incomplete == true || item.status == "unavailable" {
             missing += 1
         }
         if let tokens = item.tokens {
@@ -103,7 +103,9 @@ extension AskLocalRecord {
                 item.source = "client"
             }
         }
-        item.status = "external"
+        // Provider-reported tokens do not prove the Cloud charge. Keep its cost
+        // explicitly unavailable rather than labeling it as a user's own model.
+        item.status = item.modelRef.hasPrefix("cloud:") ? "unavailable" : "external"
         guard item != previous else { return false }
         localUsage?.version += 1
         item.version = localUsage?.version ?? 0

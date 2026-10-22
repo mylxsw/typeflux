@@ -368,6 +368,8 @@ final class AskConversationModel: ObservableObject {
     @Published var captureWarning: String?
     @Published private(set) var isRefreshingHistory = false
     @Published private(set) var historyRefreshError: String?
+    @Published private(set) var historyHasPendingSync = false
+    private var historySyncTask: Task<Void, Never>?
     private var pullRefreshID: UUID?
     private var historyErrorTask: Task<Void, Never>?
     @Published var historyHasMore = false
@@ -642,6 +644,7 @@ final class AskConversationModel: ObservableObject {
         tools.cancelProjects(conversationId: nil)
         voiceInput.cancel()
         historyErrorTask?.cancel(); historyRefreshError = nil
+        historySyncTask?.cancel(); historySyncTask = nil; historyHasPendingSync = false
         pullRefreshID = nil; isRefreshingHistory = false
         titleTasks.values.forEach { $0.cancel() }; titleTasks = [:]; titleRetryAfter = [:]
         operations.values.forEach { $0.cancel() }; operations = [:]; operationIds = [:]; operationGenerations = [:]; operationRuns = [:]; operationOwners = [:]
@@ -877,6 +880,7 @@ final class AskConversationModel: ObservableObject {
             conversations = Self.unique(merged)
             historyOffset = offset + items.count
             historyHasMore = items.count == 50
+            observeHistorySynchronization(current)
         } catch {
             if owner == current.account, generation == historyGeneration {
                 if inlineError { historyRefreshError = L("ask.history.refreshFailed") }
@@ -1271,6 +1275,7 @@ final class AskConversationModel: ObservableObject {
         guard stageFolderSubmission(submitted, conversation: value, route: current,
                                     messageID: messageId, generation: operationId) else { return }
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
+        request.deviceCreate = newConversation ? true : nil
         request.maxSteps = recoveryCheck ? min(modelLibrary.settings.askAgentMaxSteps, 20)
             : modelLibrary.settings.askAgentMaxSteps
         request.recoveryCheck = recoveryCheck ? true : nil
@@ -1584,6 +1589,7 @@ final class AskConversationModel: ObservableObject {
         }
         updateSummary(value)
         scheduleTitle(value, route: route)
+        observeHistorySynchronization(route)
         await refreshRecovery(value, route: route)
         if let operationId { try checkOperation(incoming.id, operationId: operationId, account: route.account) }
         guard owner == route.account, session()?.owner == route.account,
@@ -1606,6 +1612,23 @@ final class AskConversationModel: ObservableObject {
         } else { conversations.insert(summary, at: 0) }
     }
 
+    /// Poll only local outbox metadata. This never waits for an upload or causes
+    /// a task failure; it stops after synchronization or an account change.
+    private func observeHistorySynchronization(_ current: AskRoute) {
+        guard historySyncTask == nil, !current.token.isEmpty else { return }
+        historySyncTask = Task { [weak self, api] in
+            while !Task.isCancelled {
+                guard self?.owner == current.account, self?.session()?.owner == current.account else { return }
+                let pending = await api.historySyncPending(token: current.token)
+                guard !Task.isCancelled else { return }
+                guard self?.owner == current.account, self?.session()?.owner == current.account else { return }
+                self?.historyHasPendingSync = pending
+                if !pending { self?.historySyncTask = nil; return }
+                do { try await Task.sleep(for: .seconds(1)) } catch { return }
+            }
+        }
+    }
+
     private func drive(_ initial: AskConversation, current: AskRoute, operationId: UUID,
                        screenshotConsentMessageID: String?, allowsTools: Bool = true) async throws {
         try checkOperation(initial.id, operationId: operationId, account: current.account)
@@ -1618,7 +1641,11 @@ final class AskConversationModel: ObservableObject {
             }
         }
         var value = initial
+        var current = current
         while true {
+            guard let refreshed = credentials(for: initial.id), refreshed.account == current.account,
+                  refreshed.owner == current.owner else { throw CancellationError() }
+            current = refreshed
             value = sanitizedMemory(value, account: current.account, local: current.token.isEmpty)
             try await accept(value, route: current, operationId: operationId)
             value = sanitizedMemory(value, account: current.account, local: current.token.isEmpty)
@@ -1701,8 +1728,9 @@ final class AskConversationModel: ObservableObject {
                         let currentPayload = sanitizedMemory(value, account: current.account, local: current.token.isEmpty)
                             .run?.inference?.payload ?? inference.payload
                         let payload = try AskContextPlanner.devicePayload(currentPayload, model: model, budgeted: run.budgetEnabled == true)
+                        let connection = AskDeviceModelClient.authenticated(modelLibrary.connection(provider, model: model), token: current.token)
                         let (text, calls) = try await customInference.complete(provider: provider,
-                            connection: modelLibrary.connection(provider, model: model), payload: payload,
+                            connection: connection, payload: payload,
                             onUsage: { [weak self] usage in await self?.recordInferenceUsage(usage, id: inference.id, owner: current.account) },
                             onProgress: { [weak self] progress in
                                 await self?.updateInferenceProgress(progress, id: conversationID, inferenceID: inference.id, owner: current.account, visible: inference.summaryThrough == nil || inference.summaryThrough == 0)
@@ -1715,6 +1743,7 @@ final class AskConversationModel: ObservableObject {
                         let progress = inferenceProgress[value.id]
                         receipt = AskInferenceResult(runId: run.id, deviceId: deviceId, inferenceId: inference.id, content: progress?.text ?? "", usage: inferenceUsage[inference.id], failed: true, reasoning: progress?.reasoning, reasoningMilliseconds: progress?.reasoningMilliseconds)
                         if case AskStreamError.contextCapacity = error { receipt?.errorCode = "MODEL_CONTEXT_TOO_LONG" }
+                        if error is CloudCreditsExhaustedError { receipt?.errorCode = "CREDITS_EXHAUSTED" }
                     }
                     // Persist under the original binding even if logout/cancel raced completion.
                     try await cache.saveReceipt(.inference(receipt!), identity: identity, owner: current.owner)

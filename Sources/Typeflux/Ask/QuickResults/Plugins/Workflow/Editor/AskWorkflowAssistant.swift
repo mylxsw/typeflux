@@ -28,7 +28,7 @@ final class AskWorkflowAssistant: ObservableObject {
         var session: () -> (owner: String, token: String)
         var deviceId: String
         var modelLibrary: AskModelLibrary
-        var inference: any AskModelCompleting = AskCustomInference()
+        var inference: any AskModelCompleting = AskDeviceModelClient()
         /// New conversations stay on this Mac by the user's choice.
         var prefersLocal: () -> Bool = { false }
         var defaults: UserDefaults = .standard
@@ -52,6 +52,7 @@ final class AskWorkflowAssistant: ObservableObject {
     private var task: Task<Void, Never>?
     /// The send whose run is current; a cancelled one must not touch the next one's state.
     private var generation = UUID()
+    private var operationOwner: String?
     private var runID: String?
     private var seenMessages = Set<String>()
     /// Which workflow the conversation is remembered under.
@@ -93,6 +94,8 @@ final class AskWorkflowAssistant: ObservableObject {
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !isBusy else { return }
         error = nil
+        let createsConversation = conversationID == nil
+        operationOwner = dependencies.session().owner
         if conversationID == nil {
             let session = dependencies.session()
             isLocal = session.token.isEmpty || dependencies.prefersLocal()
@@ -122,6 +125,7 @@ final class AskWorkflowAssistant: ObservableObject {
             modelRef: model,
             skills: [AskWorkflowAuthorSkill.use]
         )
+        request.deviceCreate = createsConversation ? true : nil
         request.maxSteps = SettingsStore(defaults: dependencies.defaults).askAgentMaxSteps
         let conversation = conversationID ?? ""
         isBusy = true
@@ -280,8 +284,9 @@ extension AskWorkflowAssistant {
         )
         var receipt: AskInferenceResult
         do {
+            let connection = AskDeviceModelClient.authenticated(library.connection(provider, model: model), token: token)
             let (text, calls) = try await dependencies.inference.complete(
-                provider: provider, connection: library.connection(provider, model: model), payload: payload,
+                provider: provider, connection: connection, payload: payload,
                 onUsage: nil,
                 onProgress: { [weak self] progress in await self?.showProgress(progress.text, generation: current) }
             )
@@ -301,7 +306,7 @@ extension AskWorkflowAssistant {
 
     private func checkCurrent(_ current: UUID) throws {
         try Task.checkCancellation()
-        guard generation == current else { throw CancellationError() }
+        guard generation == current, operationOwner == dependencies.session().owner else { throw CancellationError() }
     }
 
     private func showProgress(_ text: String, generation current: UUID) {

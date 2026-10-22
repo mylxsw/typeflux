@@ -161,6 +161,9 @@ struct AskConversation: Codable, Identifiable, Equatable, Sendable {
 typealias AskConversationSummary = ChatConversationSummary
 
 struct AskSendRequest: Codable, Equatable, Sendable {
+    /// Host-created identity; distinguishes a new offline conversation from a
+    /// missing local execution snapshot of an existing synchronized conversation.
+    var deviceCreate: Bool? = nil
     var auxiliaryModelRef: String? = nil
     var maxSteps: Int? = nil
     var titlePolicy: AskTitlePolicy? = nil

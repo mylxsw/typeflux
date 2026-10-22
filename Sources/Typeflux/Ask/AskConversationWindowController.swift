@@ -44,10 +44,38 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     /// Keeps production composition testable without opening workspace windows.
     static func makeAPI(settings: SettingsStore, modelLibrary: AskModelLibrary,
                         cloud: any AskAPI = AskAPIClient(), local: (any AskAPI)? = nil,
-                        modelClient: any AskModelCompleting = AskCustomInference()) -> AskApplicationAPI {
+                        modelClient: any AskModelCompleting = AskDeviceModelClient(),
+                        device: (any AskAPI)? = nil) -> AskApplicationAPI {
         let search = AskSearchSettings(defaults: settings.defaults)
+        let deviceAPI = device ?? AskDeviceAPI(root: TypefluxDataDirectories.data.appendingPathComponent("AskDevice", isDirectory: true),
+            legacy: cloud, resolveAccount: { token in
+                try await MainActor.run {
+                    guard AuthState.shared.accessToken == token, let id = AuthState.shared.userProfile?.id else { throw AuthError.unauthorized }
+                    return id
+                }
+            }, refreshToken: { owner in
+                await MainActor.run { AuthState.shared.userProfile?.id == owner ? AuthState.shared.accessToken : nil }
+            }, factory: { owner, directory in
+                let token: @Sendable () async throws -> String = {
+                    try await MainActor.run {
+                        guard AuthState.shared.userProfile?.id == owner, let token = AuthState.shared.accessToken, !token.isEmpty else { throw AuthError.unauthorized }
+                        return token
+                    }
+                }
+                return AskLocalEngine(directory: directory,
+                    budgetEnabled: search.defaults.bool(forKey: "ask.budgetEnabled"), contextLimits: { reference in
+                        let model = ModelRegistry.read(search.defaults)?.resolve(reference)?.1
+                        return AskContextLimits(window: model?.contextWindowTokens ?? 32768,
+                                                maxOutput: model?.maxOutputTokens ?? 4096,
+                                                known: model?.contextWindowTokens != nil)
+                    }, summarize: { inference, run, device in
+                        let credential = try? await token()
+                        return await AskAuxiliaryInference.complete(inference, run: run, device: device,
+                            library: modelLibrary, client: modelClient, cloudToken: credential)
+                    }, builtinTools: AskDeviceBuiltinHost(transport: AskDeviceTransport(), token: token), allowsCloudModels: true)
+            })
         return AskApplicationAPI.routed(
-            cloud: cloud, local: local ?? AskLocalEngine(webTools: AskLocalWebTools(searchProvider: {
+            cloud: deviceAPI, local: local ?? AskLocalEngine(webTools: AskLocalWebTools(searchProvider: {
             search.configuration
         }), budgetEnabled: settings.defaults.bool(forKey: "ask.budgetEnabled"), contextLimits: { reference in
             let model = ModelRegistry.read(search.defaults)?.resolve(reference)?.1
@@ -114,7 +142,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                                      modelLibrary: modelLibrary, session: services?.session ?? {
             // Signing in is optional: without a Cloud session every conversation stays on this Mac.
             AskRoutedAPI.session(token: AuthState.shared.accessToken, owner: AuthState.shared.userProfile?.id)
-        })
+        }, modelClient: AskDeviceModelClient())
         super.init()
         maintenanceTasks.append(Task.detached(priority: .utility) { sandbox.pruneWorkspaces() })
         // Keyword plugins: translation falls back to the text-processing model, and

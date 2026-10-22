@@ -6635,3 +6635,4 @@
 "onboarding.v2.voice.practice.done" = "成功了";
 "onboarding.v2.finish.title" = "全部就绪";
 "onboarding.v2.finish.subtitle" = "记住这几个键就够了。";
+"ask.history.syncPending" = "部分对话尚未同步，将自动重试。";
