@@ -123,6 +123,8 @@ extension AskConversationModel {
             )
             let detail = keyword.pluginID == AskCalendarPlugin.id
                 ? AskCalendarPlugin.summary(language: language)
+                : keyword.pluginID == AskWorldClockPlugin.id
+                ? AskWorldClockPlugin.summary(options: keyword.options, language: language)
                 : keyword.pluginID == AskTerminalCommandPlugin.id ? L("ask.settings.keywords.kind.terminal.hint") : summary
             return AskPrefixPlugin.Entry(keyword: keyword, title: title, detail: detail, symbol: plugin.symbol)
         }

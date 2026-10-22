@@ -210,6 +210,7 @@ struct HelpKeywordDetail: View {
             "search"
         case AskEmojiPlugin.id: "emoji"
         case AskKillAppPlugin.id: "app"
+        case AskWorldClockPlugin.id: "city"
         default: nil
         }
         return kind.map { L("help.keyword.example.\($0)") }

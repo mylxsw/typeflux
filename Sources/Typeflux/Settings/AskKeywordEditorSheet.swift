@@ -101,6 +101,7 @@ struct AskKeywordEditorSheet: View {
         case .kill: "kill"
         case .emoji: "emoji"
         case .calendar: "cal"
+        case .worldClock: "tz"
         case .terminal: "cmd"
         case .system: ""
         case .workflow: ""
@@ -218,6 +219,8 @@ struct AskKeywordEditorSheet: View {
             hint(L("emoji.summary"))
         case .calendar:
             CalendarKeywordSettingsView(options: $draft.calendarOptions)
+        case .worldClock:
+            WorldClockKeywordSettingsView(options: $draft.worldClockOptions)
         case .terminal:
             terminalFields
         case .system:

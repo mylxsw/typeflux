@@ -28,6 +28,7 @@ enum AskPluginRegistry {
         AskSystemMonitorPlugin.id,
         AskSystemInfoPlugin.id,
         AskCalendarPlugin.id,
+        AskWorldClockPlugin.id,
         AskTerminalCommandPlugin.id,
         AskEmojiPlugin.id
     ] + AskSystemCommand.allCases.map(\.id)
@@ -46,6 +47,7 @@ enum AskPluginRegistry {
                     + AskSystemMonitorPlugin.keywords
                     + AskSystemInfoPlugin.keywords
                     + AskCalendarPlugin.keywords
+                    + AskWorldClockPlugin.keywords
                     + AskTerminalCommandPlugin.keywords
                     + AskEmojiPlugin.keywords
                     + AskSystemCommand.allCases.map {
@@ -239,6 +241,7 @@ extension AskConversationModel {
             AskSystemMonitorPlugin(),
             AskSystemInfoPlugin(),
             AskCalendarPlugin(),
+            AskWorldClockPlugin(),
             AskTerminalCommandPlugin(),
             AskEmojiPlugin(usage: { [weak self] in self?.emojiUsage.value ?? EmojiUsage() })
         ] + AskSystemCommand.allCases.map { AskSystemCommandPlugin(command: $0) } + workflowPlugins()

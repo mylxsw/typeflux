@@ -120,6 +120,7 @@ struct AskComposer: View {
     @ObservedObject private var plugins: AskPluginSession
     @ObservedObject private var launcherMonitor: SystemMonitorLauncherModel
     @ObservedObject private var launcherCalendar: CalendarLauncherModel
+    @ObservedObject private var launcherWorldClock: WorldClockLauncherModel
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.askGlassMaterialOverride) private var glassOverride
     @Environment(\.colorSchemeContrast) private var contrast
@@ -149,6 +150,7 @@ struct AskComposer: View {
         self.plugins = model.plugins
         self.launcherMonitor = model.systemMonitor
         self.launcherCalendar = model.calendarLauncher
+        self.launcherWorldClock = model.worldClock
         self.inputHistory = model.launcherInputHistory
         self._quickSearch = StateObject(wrappedValue: launcher ? model.quickSearch : AskQuickSearchSession())
         self._voiceShortcut = State(initialValue: model.modelLibrary.settings.activationHotkey)
@@ -274,6 +276,8 @@ struct AskComposer: View {
                 let title = calendar.interval != nil ? L("ask.launcher.action.copyResult")
                     : L("ask.quick.action.open")
                 action = .confirm(title, enabled: enabled)
+            } else if display.worldClock {
+                action = .confirm(launcherWorldClock.primaryTitle, enabled: launcherWorldClock.primaryEnabled)
             } else if display.systemMonitor {
                 let rows = launcherMonitor.rows(model.systemMonitorWindow.store.snapshot,
                                                 filter: draft.wrappedValue.text)
@@ -767,7 +771,8 @@ struct AskComposer: View {
             guard case let .browser(index) = results.highlightedRow, results.browserEntries.indices.contains(index) else { return false }
             AskQuickResults.copy(results.browserEntries[index].url)
         case .escape, .shiftTab, .commandD, .commandE, .commandZ, .commandS, .commandB, .commandO,
-             .commandDelete, .optionCommandDelete, .left, .commandLeft, .commandRight, .commandT, .commandN, .optionCommandN:
+             .commandDelete, .optionCommandDelete, .left, .commandLeft, .commandRight, .commandT, .commandN, .optionCommandN,
+             .optionUp, .optionDown, .optionLeft, .optionRight:
             return false
         }
         return true
@@ -793,11 +798,13 @@ struct AskComposer: View {
                                     comparing: plugins.comparing, highlighted: asks ? pluginHighlight : 0,
                                     offersAskAI: asks && ![AskKillAppPlugin.id, AskSystemMonitorPlugin.id,
                                                           AskSystemInfoPlugin.id, AskEmojiPlugin.id,
-                                                          AskCalendarPlugin.id, AskQuickAskPlugin.id, AskTerminalCommandPlugin.id].contains(plugin.id),
+                                                          AskCalendarPlugin.id, AskWorldClockPlugin.id, AskQuickAskPlugin.id,
+                                                          AskTerminalCommandPlugin.id].contains(plugin.id),
                                     savesNoteWhenDone: plugins.savesNoteWhenDone,
                                     systemMonitor: plugin.id == AskSystemMonitorPlugin.id,
                                     systemInfo: plugin.id == AskSystemInfoPlugin.id,
                                     calendar: plugin.id == AskCalendarPlugin.id,
+                                    worldClock: plugin.id == AskWorldClockPlugin.id,
                                     translation: plugin.id == AskTranslatePlugin.id
                                         && !AskTranslatePlugin.opensWordBook(plugins.keyword?.options ?? [:])
                                         && plugins.request?.text.isEmpty == false)
@@ -964,6 +971,7 @@ struct AskComposer: View {
         if display.systemMonitor, let handled = systemMonitorKey(key) { return handled }
         if display.systemInfo, let handled = systemInfoKey(key) { return handled }
         if display.calendar { return calendarKey(key) }
+        if display.worldClock { return worldClockKey(key) }
         let selection = draft.wrappedValue.sentSelection, text = draft.wrappedValue.text
         let language = AppLocalization.shared.language
         if display.hint != nil {
@@ -1073,6 +1081,7 @@ struct AskComposer: View {
             guard case let .fileIcon(url)? = plugins.output?.selected?.icon else { return false }
             model.attachFileToLauncher(url)
         case .left, .commandLeft, .commandRight, .commandT, .commandN, .optionCommandN,
+             .optionUp, .optionDown, .optionLeft, .optionRight,
              .optionCommandC, .commandDown, .commandDelete, .optionCommandDelete: return false
         }
         return true
@@ -1091,9 +1100,25 @@ struct AskComposer: View {
         return true
     }
 
+    private func performWorldClockEffect(_ effect: WorldClockEffect) {
+        if model.performWorldClockEffect(effect) == .close {
+            onDismiss()
+        }
+    }
+
+    private func worldClockKey(_ key: AskCommandKey) -> Bool {
+        let effect = model.worldClock.handle(key, inputEmpty: draft.wrappedValue.text.isEmpty)
+        guard effect != .unhandled else { return false }
+        performWorldClockEffect(effect)
+        return true
+    }
+
     private func moveLauncherHorizontal(_ delta: Int) -> Bool {
         if pluginDisplay?.calendar == true {
             return calendarKey(delta < 0 ? .left : .right)
+        }
+        if pluginDisplay?.worldClock == true {
+            return worldClockKey(delta < 0 ? .left : .right)
         }
         return moveEmojiSelection(delta)
     }
@@ -1151,6 +1176,8 @@ struct AskComposer: View {
         if pluginDisplay?.calendar == true || pluginDisplay?.systemMonitor == true { return true }
         // `sys` carries only its filter as output: there is no result to move into a window.
         if pluginDisplay?.systemInfo == true { return false }
+        // The world clock has no window of its own; ⌘O stays out of its way.
+        if pluginDisplay?.worldClock == true { return false }
         guard launcherPluginInputIsCurrent, plugins.canHandOff else { return false }
         // The result window renders text. Lists and images must keep their feature's interface.
         if let output = plugins.currentOutput {
@@ -1670,7 +1697,8 @@ struct AskComposer: View {
     private var showsFeatureBar: Bool {
         !active && plugins.isActive && pluginDisplay != nil
             && pluginDisplay?.systemMonitor != true && pluginDisplay?.systemInfo != true
-            && pluginDisplay?.calendar != true && plugins.keyword?.pluginID != AskQuickAskPlugin.id
+            && pluginDisplay?.calendar != true && pluginDisplay?.worldClock != true
+            && plugins.keyword?.pluginID != AskQuickAskPlugin.id
     }
 
     private var showsChatBar: Bool {
@@ -1772,6 +1800,17 @@ struct AskComposer: View {
                     }
                     .onChange(of: draft.wrappedValue.text) { model.calendarLauncher.update($0) }
                     .onDisappear { model.calendarLauncher.close() }
+            } else if let pluginDisplay, pluginDisplay.worldClock {
+                WorldClockLauncherView(model: model.worldClock, onEffect: performWorldClockEffect,
+                                       feedback: model.commandFeedback,
+                                       viewportHeight: launcherResultsViewportHeight)
+                    .onAppear {
+                        model.worldClock.activate(text: draft.wrappedValue.text,
+                                                  options: plugins.keyword?.options ?? [:],
+                                                  language: AppLocalization.shared.language)
+                    }
+                    .onChange(of: draft.wrappedValue.text) { model.worldClock.update($0) }
+                    .onDisappear { model.worldClock.close() }
             } else if let pluginDisplay {
                 AskPluginResultsView(display: pluginDisplay, question: draft.wrappedValue.text,
                                      minimumHeight: pluginHeight, viewportHeight: launcherResultsViewportHeight,
@@ -1994,6 +2033,15 @@ struct AskComposer: View {
 
     /// Esc steps back one layer (`AskLauncherEscape`); false closes the launcher.
     private func escapeKey() -> Bool {
+        if pluginDisplay?.worldClock == true {
+            if worldClockKey(.escape) {
+                return true
+            }
+            let keyword = plugins.keyword?.keyword ?? AskWorldClockPlugin.keywords[0].keyword
+            exitKeyword()
+            draft.wrappedValue.text = keyword
+            return true
+        }
         if pluginDisplay?.calendar == true {
             if calendarKey(.escape) {
                 return true
@@ -2142,6 +2190,13 @@ struct AskComposer: View {
             return true
         }
         if launcher, key == .enter, !plugins.isActive, !showsQuickResults,
+           plugins.hint?.pluginID != AskWorldClockPlugin.id || pluginHighlight == 0,
+           model.enterLauncherKeywordFromText(pluginID: AskWorldClockPlugin.id) {
+            pluginHighlight = 0
+            pluginReserve = 0
+            return true
+        }
+        if launcher, key == .enter, !plugins.isActive, !showsQuickResults,
            plugins.hint?.pluginID != AskKillAppPlugin.id || pluginHighlight == 0,
            model.enterLauncherKeywordFromText(pluginID: AskKillAppPlugin.id) {
             pluginHighlight = 0
@@ -2198,7 +2253,8 @@ struct AskComposer: View {
             closePalette()
         case .commandEnter, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC, .commandE,
              .commandZ, .commandS, .commandB, .commandO, .right, .commandY, .optionCommandC, .shiftCommandEnter, .commandDown,
-             .number, .commandDelete, .optionCommandDelete, .left, .commandLeft, .commandRight, .commandT, .commandN, .optionCommandN:
+             .number, .commandDelete, .optionCommandDelete, .left, .commandLeft, .commandRight, .commandT, .commandN, .optionCommandN,
+             .optionUp, .optionDown, .optionLeft, .optionRight:
             // ⌘Return sends as before, with the palette still open; the rest are the editor's.
             return false
         }
@@ -2339,6 +2395,8 @@ struct AskComposer: View {
                 Group {
                     if plugin.id == AskCalendarPlugin.id {
                         CalendarKeywordChip(model: model.calendarLauncher)
+                    } else if plugin.id == AskWorldClockPlugin.id {
+                        WorldClockKeywordChip(model: model.worldClock)
                     } else {
                         AskKeywordChip(title: plugin.inputChipTitle(for: keyword), symbol: plugin.symbol,
                                        detail: plugin.chipDetail(for: keyword,

@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 启动器世界时钟 tz（可交互设计稿）</title>
+<style>
+:root {
+  --bg: #1b1b1d; --card: rgba(255,255,255,.045); --card-hover: rgba(255,255,255,.075);
+  --border: rgba(255,255,255,.115); --border-soft: rgba(255,255,255,.07);
+  --text: #eeeeef; --text2: #b8b8bb; --text3: #85858a; --text4: #5d5d62; --accent: #2f8cff; --accent-soft: rgba(47,140,255,.16); --accent-text: #7db5ff;
+  --ok: #34c759; --ok-soft: rgba(52,199,89,.14); --warn: #ff9f40; --warn-soft: rgba(255,159,64,.14);
+  --work: rgba(47,140,255,.42); --awake: rgba(47,140,255,.17); --night: rgba(255,255,255,.045); --rest: rgba(255,255,255,.11);
+  --sun: #ffb340; --moon: #a5b4fc;
+  --tile: rgba(255,255,255,.07);
+  --stage: #0e0e10; --pop: #2a2a2d; --glass: rgba(34,34,38,.90); --field: rgba(255,255,255,.06);
+  --desk: radial-gradient(1200px 700px at 20% 10%, #2a3f63 0%, transparent 60%), radial-gradient(900px 600px at 90% 80%, #4a2e3e 0%, transparent 60%), linear-gradient(135deg, #1b2538 0%, #271d33 55%, #33241f 100%);
+  --shadow: 0 30px 80px rgba(0,0,0,.5);
+}
+body.light {
+  --bg: #f4f5f7; --card: rgba(255,255,255,.75); --card-hover: rgba(0,0,0,.045);
+  --border: rgba(97,115,143,.18); --border-soft: rgba(97,115,143,.11);
+  --text: #141414; --text2: #474747; --text3: #85868a; --text4: #b4b5b9; --accent: #1f6fe0; --accent-soft: rgba(31,111,224,.12); --accent-text: #1f6fe0;
+  --ok: #1fab63; --ok-soft: rgba(31,171,99,.12); --warn: #d9701f; --warn-soft: rgba(224,120,42,.12);
+  --work: rgba(31,111,224,.36); --awake: rgba(31,111,224,.13); --night: rgba(15,23,42,.05); --rest: rgba(15,23,42,.11);
+  --sun: #e08a00; --moon: #5b63d6;
+  --tile: rgba(0,0,0,.05);
+  --stage: #d9dde3; --pop: #fff; --glass: rgba(250,250,252,.92); --field: #fff;
+  --desk: radial-gradient(1200px 700px at 20% 10%, #c7d8f2 0%, transparent 60%), radial-gradient(900px 600px at 90% 80%, #ecd3df 0%, transparent 60%), linear-gradient(135deg, #b9cbe6 0%, #d8c8e8 55%, #ecd6c6 100%);
+  --shadow: 0 30px 80px rgba(30,40,60,.22);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font: 13px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+  color: var(--text); background: var(--stage); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+button, input, select { font: inherit; color: inherit; }
+svg { flex: none; display: block; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ---------- Stage ---------- */
+.stagebar { width: 1200px; max-width: calc(100vw - 32px); display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 18px 0 6px; color: var(--text2); }
+.stagebar b { color: var(--text); font-size: 14px; margin-right: 6px; }
+.stagebar .sp { flex: 1; }
+.pill { border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 4px 11px; cursor: pointer; font-size: 12px; }
+.pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.caption { width: 1200px; max-width: calc(100vw - 32px); color: var(--text3); font-size: 12px; padding: 0 0 12px; min-height: 34px; }
+.caption b { color: var(--text2); font-weight: 600; }
+body.solo .stagebar, body.solo .caption { display: none; }
+
+/* ---------- Desktop ---------- */
+.desk { position: relative; width: 1200px; height: 800px; border-radius: 14px; overflow: hidden; background: var(--desk); box-shadow: var(--shadow); user-select: none; }
+.menubar { height: 26px; display: flex; align-items: center; gap: 18px; padding: 0 14px; font-size: 12.5px; background: rgba(0,0,0,.22); color: rgba(255,255,255,.92); backdrop-filter: blur(20px); }
+body.light .menubar { background: rgba(255,255,255,.45); color: #1a1a1a; }
+.menubar b { font-weight: 700; }
+.menubar .sp { flex: 1; }
+.app { position: absolute; left: 60px; top: 70px; width: 700px; height: 520px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); box-shadow: 0 22px 60px rgba(0,0,0,.35); overflow: hidden; z-index: 10; }
+.app .tb { height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-bottom: 1px solid var(--border-soft); color: var(--text3); font-size: 12px; }
+.lights { display: flex; gap: 8px; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.lights i:nth-child(1) { background: #ff5f57; } .lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #28c840; }
+.app .doc { padding: 22px 26px; color: var(--text2); font-size: 14px; line-height: 1.9; }
+.app .doc .ins { background: var(--accent-soft); color: var(--text); border-radius: 3px; padding: 0 2px; }
+
+/* ---------- Launcher ---------- */
+.scrim { position: absolute; inset: 26px 0 0; z-index: 50; display: none; }
+.scrim.show { display: block; }
+.launcher { position: absolute; left: 50%; top: 92px; transform: translateX(-50%); width: 680px; background: var(--glass); border: 1px solid var(--border);
+  border-radius: 16px; box-shadow: 0 26px 70px rgba(0,0,0,.45); backdrop-filter: blur(28px) saturate(1.4); z-index: 60; display: none; overflow: hidden; }
+.launcher.show { display: block; animation: lin .16s ease-out; }
+@keyframes lin { from { opacity: 0; transform: translateX(-50%) scale(.98); } }
+.lin { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border-soft); }
+.lin input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 17px; }
+.lin input::placeholder { color: var(--text3); }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 6px; border-radius: 9px; flex: none; font-size: 13px; font-weight: 600; white-space: nowrap;
+  background: var(--accent-soft); color: var(--accent-text); }
+.chip .g { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; background: var(--accent); color: #fff; }
+.chip .opt { font-weight: 500; opacity: .85; }
+.lbody { padding: 0 14px; }
+.lbar { display: flex; align-items: center; gap: 14px; padding: 8px 14px; border-top: 1px solid var(--border-soft); font-size: 12px; color: var(--text3); white-space: nowrap; }
+.lbar .sp { flex: 1; }
+.lbar kbd, .kbd { font: 11px ui-monospace, Menlo, monospace; background: var(--tile); border-radius: 4px; padding: 0 4px; margin-right: 3px; color: var(--text2); }
+
+/* hint list */
+.sec { font-size: 11.5px; font-weight: 600; color: var(--text3); padding: 10px 4px 4px; display: flex; gap: 8px; }
+.sec .sp { flex: 1; }
+.sec .m { font-weight: 400; }
+.item { display: flex; align-items: center; gap: 11px; padding: 0 10px; min-height: 46px; border-radius: 10px; cursor: pointer; }
+.item.on { background: var(--card-hover); box-shadow: inset 0 0 0 1px rgba(47,140,255,.5); }
+.item:hover { background: var(--card-hover); }
+.item .ic { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; flex: none; color: #fff; }
+.item .t { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item .d { color: var(--text3); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item .d b { color: var(--text2); font-weight: 600; }
+.item .r { margin-left: auto; color: var(--text3); font-size: 11.5px; display: flex; gap: 8px; align-items: center; white-space: nowrap; flex: none; }
+
+/* ---------- World clock ---------- */
+.whead { display: flex; align-items: center; gap: 10px; padding: 10px 2px 4px; height: 44px; }
+.whead .ttl { font-size: 17px; font-weight: 700; letter-spacing: -.2px; }
+.whead .sub { color: var(--text3); font-size: 12px; }
+.whead .sub b { color: var(--accent-text); font-weight: 600; }
+.whead .sp { flex: 1; }
+.nav { display: inline-flex; gap: 6px; }
+.nav button { border: 1px solid var(--border); background: transparent; height: 26px; min-width: 28px; padding: 0 8px; border-radius: 7px; cursor: pointer; color: var(--text); font-size: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+.nav button:hover:not(:disabled) { background: var(--card-hover); }
+.nav button:disabled { color: var(--text3); cursor: default; }
+.nav button .s { color: var(--text3); font-size: 11px; }
+
+/* shared grid: icon | name | time | 24h ruler */
+.rows { --strip: 280px; position: relative; padding-bottom: 8px; }
+.grow { display: grid; grid-template-columns: 28px minmax(0, 1fr) 92px var(--strip); column-gap: 10px; align-items: center; padding: 0 10px; }
+.ruler { height: 22px; font-size: 10px; color: var(--text3); }
+.ruler .cb { position: relative; height: 22px; }
+.ruler .tk { position: absolute; top: 5px; transform: translateX(-50%); font-variant-numeric: tabular-nums; }
+.ruler .tag { position: absolute; top: 1px; transform: translateX(-50%); background: var(--accent); color: #fff; border-radius: 5px; padding: 1px 6px; font-size: 10.5px; font-weight: 700; white-space: nowrap; z-index: 3; font-variant-numeric: tabular-nums; }
+.ruler .tag.moved { background: var(--warn); }
+.crow { min-height: 52px; border-radius: 10px; cursor: pointer; position: relative; }
+.crow:hover { background: var(--card-hover); }
+.crow.sel { background: var(--card-hover); box-shadow: inset 0 0 0 1px rgba(47,140,255,.5); }
+.crow.dim .ci, .crow.dim .ct, .crow.dim .dn { opacity: .55; }
+.dn { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--tile); }
+.dn.day { color: var(--sun); } .dn.night { color: var(--moon); } .dn.twi { color: var(--warn); }
+.ci { min-width: 0; }
+.cn { font-weight: 650; font-size: 14px; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.cn .lbl { color: var(--text3); font-weight: 500; font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
+.tg { font-size: 10px; font-weight: 600; border-radius: 4px; padding: 0 5px; line-height: 16px; background: var(--tile); color: var(--text2); flex: none; }
+.tg.home { background: var(--accent-soft); color: var(--accent-text); }
+.tg.dst { background: var(--warn-soft); color: var(--warn); }
+.tg.src { background: var(--accent); color: #fff; }
+.tg.added { background: var(--ok-soft); color: var(--ok); }
+.cs { color: var(--text3); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ct { text-align: right; }
+.ct .tm { font-size: 22px; font-weight: 600; line-height: 26px; font-variant-numeric: tabular-nums; letter-spacing: -.3px; }
+.ct .tm small { font-size: 11px; font-weight: 600; color: var(--text3); margin-right: 3px; letter-spacing: 0; }
+.ct .dl { font-size: 11px; color: var(--text3); }
+.ct .dl.nd { color: var(--warn); font-weight: 600; }
+.cb { position: relative; align-self: stretch; display: flex; align-items: center; }
+.bar { position: relative; height: 24px; width: 100%; border-radius: 6px; overflow: hidden; display: flex; }
+.bar i { display: block; height: 100%; flex: 1; }
+.bar i.work { background: var(--work); } .bar i.awake { background: var(--awake); } .bar i.night { background: var(--night); } .bar i.rest { background: var(--rest); }
+.bar .hl { position: absolute; top: 5px; font-size: 9.5px; color: var(--text2); transform: translateX(-50%); font-variant-numeric: tabular-nums; pointer-events: none; }
+.bar .md { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--text3); opacity: .7; }
+.bar .mdl { position: absolute; top: 5px; font-size: 9.5px; font-weight: 700; color: var(--text); padding-left: 3px; pointer-events: none; white-space: nowrap; }
+.bar .mdl.end { transform: translateX(-100%); padding: 0 3px 0 0; }
+.cur { position: absolute; top: -1px; bottom: -1px; width: 2px; margin-left: -1px; background: var(--accent); z-index: 2; pointer-events: none; }
+.cur.moved { background: var(--warn); }
+.band { position: absolute; top: -1px; bottom: -1px; background: var(--ok-soft); box-shadow: inset 1px 0 0 var(--ok), inset -1px 0 0 var(--ok); z-index: 1; pointer-events: none; }
+.cx { grid-column: 2 / -1; display: flex; align-items: center; gap: 10px; padding: 0 0 9px; font-size: 11.5px; color: var(--text2); }
+.cx .note { flex: 1; min-width: 0; }
+.cx .note .w { color: var(--warn); }
+.mini { height: 24px; display: inline-flex; align-items: center; gap: 5px; padding: 0 8px; border-radius: 7px; border: 1px solid var(--border); background: var(--card); cursor: pointer; font-size: 11.5px; white-space: nowrap; }
+.mini:hover { background: var(--card-hover); }
+.mini .s { color: var(--text3); font-size: 10.5px; }
+.mini.pri { background: var(--accent); color: #fff; border-color: var(--accent); }
+.mini.pri .s { color: rgba(255,255,255,.75); }
+.legend { display: flex; gap: 12px; align-items: center; font-size: 10.5px; color: var(--text3); padding: 2px 12px 10px; }
+.legend i { display: inline-block; width: 12px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: 0; }
+.legend .sp { flex: 1; }
+
+/* result card (convert / meeting / timestamp) */
+.card { border: 1px solid var(--border-soft); background: var(--card); border-radius: 12px; padding: 12px 14px; margin: 8px 0 6px; }
+.card .k { font-size: 11.5px; color: var(--text3); margin-bottom: 4px; display: flex; gap: 8px; }
+.card .k .sp { flex: 1; }
+.eq { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.eq .side { display: flex; align-items: baseline; gap: 6px; }
+.eq .big { font-size: 24px; font-weight: 700; letter-spacing: -.4px; font-variant-numeric: tabular-nums; }
+.eq .pl { font-size: 13px; font-weight: 600; }
+.eq .sm { font-size: 12px; color: var(--text3); }
+.eq .op { color: var(--text3); font-size: 18px; }
+.card .acts { display: flex; gap: 6px; margin-top: 10px; align-items: center; }
+.card .acts .sp { flex: 1; }
+.card .acts .hint { font-size: 11px; color: var(--text3); }
+.sugs { display: flex; gap: 8px; margin-top: 8px; }
+.sug { flex: 1; border: 1px solid var(--border); border-radius: 10px; padding: 7px 10px; cursor: pointer; background: transparent; text-align: left; }
+.sug:hover { background: var(--card-hover); }
+.sug.on { border-color: var(--ok); box-shadow: inset 0 0 0 1px var(--ok); background: var(--ok-soft); }
+.sug .a { font-weight: 650; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.sug .b { font-size: 11px; color: var(--text3); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tsk { display: grid; grid-template-columns: 92px 1fr auto; gap: 4px 12px; font-size: 12.5px; margin-top: 6px; align-items: center; }
+.tsk span:nth-child(3n+1) { color: var(--text3); }
+.tsk code { font: 12.5px ui-monospace, Menlo, monospace; }
+.empty { padding: 26px; text-align: center; color: var(--text3); font-size: 12.5px; }
+.empty .ex { margin-top: 10px; display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.empty .ex span { background: var(--tile); border-radius: 6px; padding: 2px 8px; color: var(--text2); cursor: pointer; }
+mark { background: rgba(255,214,10,.35); color: inherit; border-radius: 2px; padding: 0 1px; }
+
+/* toast */
+.toast { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); background: var(--pop); border: 1px solid var(--border); border-radius: 999px; padding: 7px 14px; box-shadow: 0 10px 30px rgba(0,0,0,.3); font-size: 12.5px; display: none; z-index: 100; white-space: nowrap; }
+.toast.show { display: block; }
+.openhint { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 20; font-size: 12px; color: rgba(255,255,255,.75); background: rgba(0,0,0,.25); padding: 6px 12px; border-radius: 999px; cursor: pointer; backdrop-filter: blur(10px); }
+body.light .openhint { color: #333; background: rgba(255,255,255,.5); }
+
+/* settings window */
+.settings { position: absolute; left: 130px; top: 44px; width: 940px; height: 734px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); box-shadow: 0 30px 80px rgba(0,0,0,.45); z-index: 70; display: none; overflow: hidden; }
+.settings.show { display: flex; }
+.settings .side { width: 200px; border-right: 1px solid var(--border-soft); padding: 46px 10px 10px; display: flex; flex-direction: column; gap: 2px; background: rgba(0,0,0,.12); }
+body.light .settings .side { background: rgba(0,0,0,.03); }
+.settings .side .lights { position: absolute; top: 14px; left: 14px; }
+.settings .nv { padding: 6px 10px; border-radius: 7px; font-size: 12.5px; color: var(--text2); }
+.settings .nv.on { background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }
+.settings .main { flex: 1; padding: 24px 30px; overflow: hidden; }
+.settings h2 { margin: 0 0 4px; font-size: 20px; }
+.settings .crumb { color: var(--text3); font-size: 12px; margin-bottom: 16px; }
+.sc { border: 1px solid var(--border-soft); background: var(--card); border-radius: 14px; margin-bottom: 14px; }
+.sc .h { display: flex; align-items: center; padding: 11px 14px; font-weight: 650; gap: 8px; }
+.sc .h .sp { flex: 1; }
+.sc .h .m { color: var(--text3); font-weight: 400; font-size: 12px; }
+.srow { display: flex; align-items: center; gap: 10px; padding: 0 14px; height: 38px; border-top: 1px solid var(--border-soft); font-size: 12.5px; }
+.srow .sp { flex: 1; }
+.srow .grip { color: var(--text4); cursor: grab; }
+.srow .nm { font-weight: 600; width: 120px; }
+.srow .zn { color: var(--text3); width: 210px; }
+.srow .lb { height: 26px; border: 1px solid var(--border); border-radius: 7px; background: var(--field); padding: 0 8px; width: 150px; color: var(--text2); }
+.srow .x { color: var(--text3); cursor: pointer; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
+.seg span { padding: 3px 10px; font-size: 12px; }
+.seg span.on { background: var(--accent); color: #fff; }
+.sfield { height: 26px; border: 1px solid var(--border); border-radius: 7px; background: var(--field); padding: 0 9px; display: inline-flex; align-items: center; gap: 6px; color: var(--text2); font-size: 12px; }
+.wdays { display: inline-flex; gap: 4px; }
+.wdays span { width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; font-size: 11.5px; border: 1px solid var(--border); }
+.wdays span.on { background: var(--accent-soft); color: var(--accent-text); border-color: transparent; font-weight: 600; }
+.toggle { width: 32px; height: 19px; border-radius: 10px; background: var(--accent); position: relative; }
+.toggle::after { content: ''; position: absolute; right: 2px; top: 2px; width: 15px; height: 15px; border-radius: 50%; background: #fff; }
+.toggle.off { background: var(--tile); }
+.toggle.off::after { right: auto; left: 2px; }
+</style>
+</head>
+<body>
+
+<div class="stagebar">
+  <b>启动器世界时钟 · tz</b>
+  <button class="pill" data-s="hint">① 输入关键字</button>
+  <button class="pill" data-s="list">② 城市列表</button>
+  <button class="pill" data-s="scrub">③ 拖动时间</button>
+  <button class="pill" data-s="detail">④ 城市详情</button>
+  <button class="pill" data-s="search">⑤ 搜索城市</button>
+  <button class="pill" data-s="convert">⑥ 时间换算</button>
+  <button class="pill" data-s="meeting">⑦ 会议时间</button>
+  <button class="pill" data-s="ts">⑧ 时间戳</button>
+  <button class="pill" data-s="empty">⑨ 无结果</button>
+  <button class="pill" data-s="settings">⑩ 设置</button>
+  <span class="sp"></span>
+  <button class="pill" id="h12Btn">12 小时制</button>
+  <button class="pill" id="lightBtn">浅色</button>
+</div>
+<div class="caption" id="caption"></div>
+
+<div class="desk" id="desk">
+  <div class="menubar"><b></b><b>Slack</b><span>文件</span><span>编辑</span><span>显示</span><span>前往</span><span>窗口</span><span class="sp"></span>
+    <span id="menuClock">10月22日 周四 18:24</span></div>
+
+  <div class="app">
+    <div class="tb"><div class="lights"><i></i><i></i><i></i></div><span style="margin-left:8px">Slack — #global-launch</span></div>
+    <div class="doc" id="doc"><b style="color:var(--text)">Maya (NYC)</b>&nbsp; can we sync before the launch review?<br><b style="color:var(--text)">你</b>&nbsp; 可以，<span id="docIns">我这边时间都行</span></div>
+  </div>
+
+  <div class="openhint" id="openhint">按 ⌥Space 打开启动器</div>
+  <div class="scrim" id="scrim"></div>
+  <div class="launcher" id="launcher">
+    <div class="lin">
+      <span id="chipSlot"></span>
+      <input id="q" autocomplete="off" spellcheck="false" placeholder="对话，或输入关键字…">
+    </div>
+    <div class="lbody" id="lbody"></div>
+    <div class="lbar" id="lbar"></div>
+  </div>
+
+  <div class="settings" id="settings"></div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const params = new URLSearchParams(location.search);
+const KEYWORDS = ['tz', '时间', '时区', '世界时钟'];
+
+/* ---------- Icons ---------- */
+const P = {
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 3.8 5.6 3.8 9s-1.2 6.4-3.8 9c-2.6-2.6-3.8-5.6-3.8-9S9.4 5.6 12 3z"/>',
+  left: '<path d="M15 6l-6 6 6 6"/>', right: '<path d="M9 6l6 6-6 6"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  sunset: '<path d="M17 18a5 5 0 0 0-10 0M12 9V3M4.2 10.2l1.4 1.4M1 18h2M21 18h2M18.4 11.6l1.4-1.4M23 22H1M16 6l-4 4-4-4"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+  insert: '<path d="M4 12h12M12 8l4 4-4 4M20 5v14"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>', minus: '<path d="M5 12h14"/>',
+  spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+  grip: '<path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01"/>',
+  x: '<path d="M6 6l12 12M18 6L6 18"/>', search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
+};
+const ic = (n, s = 14, w = 2) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${P[n]}</svg>`;
+
+/* ---------- Time zones (real IANA rules via Intl; "now" is simulated) ---------- */
+const NOW = Date.UTC(2026, 9, 22, 10, 24);            // Thu Oct 22 2026, 18:24 in Beijing
+const MIN = 6e4, HOUR = 36e5, DAY = 864e5;
+const HOME = 'shanghai';
+const WD = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+const fmtCache = {};
+function parts(t, tz) {
+  const f = fmtCache[tz] || (fmtCache[tz] = new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', weekday: 'short' }));
+  const o = {}; f.formatToParts(new Date(t)).forEach(p => o[p.type] = p.value);
+  const wd = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(o.weekday);
+  return { y: +o.year, m: +o.month, d: +o.day, h: +o.hour % 24, mi: +o.minute, wd };
+}
+function offset(t, tz) {
+  if (tz.startsWith('UTC')) return fixedOffset(tz);
+  const p = parts(t, tz), floor = t - (((t % MIN) + MIN) % MIN);
+  return Math.round((Date.UTC(p.y, p.m - 1, p.d, p.h, p.mi) - floor) / MIN);
+}
+function fixedOffset(tz) { const m = tz.match(/UTC([+-])(\d{1,2})(?::(\d{2}))?/); return m ? (m[1] === '-' ? -1 : 1) * (+m[2] * 60 + +(m[3] || 0)) : 0; }
+function local(t, c) {
+  if (c.tz.startsWith('UTC')) { const d = new Date(t + offset(t, c.tz) * MIN); return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate(), h: d.getUTCHours(), mi: d.getUTCMinutes(), wd: d.getUTCDay() }; }
+  return parts(t, c.tz);
+}
+// Wall time in a zone → instant (two passes cover DST edges).
+function instant(c, y, m, d, h, mi) {
+  let g = Date.UTC(y, m - 1, d, h, mi);
+  g -= offset(g, c.tz) * MIN; g = Date.UTC(y, m - 1, d, h, mi) - offset(g, c.tz) * MIN;
+  return g;
+}
+function isDST(t, c) {
+  if (c.tz.startsWith('UTC')) return false;
+  const y = parts(t, c.tz).y, a = offset(Date.UTC(y, 0, 15), c.tz), b = offset(Date.UTC(y, 6, 15), c.tz);
+  return a !== b && offset(t, c.tz) === Math.max(a, b);
+}
+function nextTransition(t, c) {
+  if (c.tz.startsWith('UTC')) return null;
+  const o = offset(t, c.tz);
+  let lo = t, hi = null;
+  for (let s = t + DAY; s < t + 370 * DAY; s += DAY) { if (offset(s, c.tz) !== o) { hi = s; break; } lo = s; }
+  if (!hi) return null;
+  while (hi - lo > MIN) { const mid = Math.floor((lo + hi) / 2 / MIN) * MIN; if (offset(mid, c.tz) === o) lo = mid; else hi = mid; }
+  return { at: hi, from: o, to: offset(hi, c.tz) };
+}
+
+/* ---------- City directory (subset; production ships a bundled table) ---------- */
+const CITIES = [
+  { id: 'shanghai', zh: '北京', en: 'Beijing', py: 'beijing bj', country: '中国', tz: 'Asia/Shanghai', abbr: ['CST'] },
+  { id: 'sf', zh: '旧金山', en: 'San Francisco', py: 'jiujinshan jjs sf', country: '美国', tz: 'America/Los_Angeles', abbr: ['PST', 'PDT'] },
+  { id: 'la', zh: '洛杉矶', en: 'Los Angeles', py: 'luoshanji lsj la', country: '美国', tz: 'America/Los_Angeles', abbr: ['PST', 'PDT'] },
+  { id: 'seattle', zh: '西雅图', en: 'Seattle', py: 'xiyatu xyt', country: '美国', tz: 'America/Los_Angeles', abbr: ['PST', 'PDT'] },
+  { id: 'ny', zh: '纽约', en: 'New York', py: 'niuyue ny nyc', country: '美国', tz: 'America/New_York', abbr: ['EST', 'EDT'] },
+  { id: 'chicago', zh: '芝加哥', en: 'Chicago', py: 'zhijiage zjg', country: '美国', tz: 'America/Chicago', abbr: ['CST', 'CDT'] },
+  { id: 'london', zh: '伦敦', en: 'London', py: 'lundun ld', country: '英国', tz: 'Europe/London', abbr: ['GMT', 'BST'] },
+  { id: 'berlin', zh: '柏林', en: 'Berlin', py: 'bolin bl', country: '德国', tz: 'Europe/Berlin', abbr: ['CET', 'CEST'] },
+  { id: 'paris', zh: '巴黎', en: 'Paris', py: 'bali', country: '法国', tz: 'Europe/Paris', abbr: ['CET', 'CEST'] },
+  { id: 'tokyo', zh: '东京', en: 'Tokyo', py: 'dongjing dj', country: '日本', tz: 'Asia/Tokyo', abbr: ['JST'] },
+  { id: 'seoul', zh: '首尔', en: 'Seoul', py: 'shouer se', country: '韩国', tz: 'Asia/Seoul', abbr: ['KST'] },
+  { id: 'singapore', zh: '新加坡', en: 'Singapore', py: 'xinjiapo xjp', country: '新加坡', tz: 'Asia/Singapore', abbr: ['SGT'] },
+  { id: 'sydney', zh: '悉尼', en: 'Sydney', py: 'xini xn', country: '澳大利亚', tz: 'Australia/Sydney', abbr: ['AEST', 'AEDT'] },
+  { id: 'bangalore', zh: '班加罗尔', en: 'Bengaluru', alt: 'bangalore', py: 'banjialuoer bjle', country: '印度', tz: 'Asia/Kolkata', abbr: ['IST'] },
+  { id: 'mumbai', zh: '孟买', en: 'Mumbai', py: 'mengmai mm', country: '印度', tz: 'Asia/Kolkata', abbr: ['IST'] },
+  { id: 'bangkok', zh: '曼谷', en: 'Bangkok', py: 'mangu mg', country: '泰国', tz: 'Asia/Bangkok', abbr: ['ICT'] },
+  { id: 'banjul', zh: '班珠尔', en: 'Banjul', py: 'banzhuer bze', country: '冈比亚', tz: 'Africa/Banjul', abbr: ['GMT'] },
+  { id: 'kathmandu', zh: '加德满都', en: 'Kathmandu', py: 'jiademandu jdmd', country: '尼泊尔', tz: 'Asia/Kathmandu', abbr: ['NPT'] },
+  { id: 'dublin', zh: '都柏林', en: 'Dublin', py: 'dubolin dbl', country: '爱尔兰', tz: 'Europe/Dublin', abbr: ['GMT', 'IST'] },
+  { id: 'jerusalem', zh: '耶路撒冷', en: 'Jerusalem', py: 'yelusaleng ylsl', country: '以色列', tz: 'Asia/Jerusalem', abbr: ['IST', 'IDT'] },
+  { id: 'dubai', zh: '迪拜', en: 'Dubai', py: 'dibai db', country: '阿联酋', tz: 'Asia/Dubai', abbr: ['GST'] },
+  { id: 'saopaulo', zh: '圣保罗', en: 'São Paulo', alt: 'sao paulo', py: 'shengbaoluo sbl', country: '巴西', tz: 'America/Sao_Paulo', abbr: ['BRT'] },
+  { id: 'hongkong', zh: '香港', en: 'Hong Kong', py: 'xianggang xg hk', country: '中国', tz: 'Asia/Hong_Kong', abbr: ['HKT'] },
+  { id: 'shenzhen', zh: '深圳', en: 'Shenzhen', py: 'shenzhen sz', country: '中国', tz: 'Asia/Shanghai', abbr: ['CST'] },
+];
+const byId = Object.fromEntries(CITIES.map(c => [c.id, c]));
+function utcCity(sign, h, m) {
+  const label = `UTC${sign}${h}${m ? ':' + String(m).padStart(2, '0') : ''}`;
+  return { id: label, zh: label, en: label, py: '', country: '固定偏移', tz: label, abbr: [] };
+}
+
+/* ---------- State ---------- */
+const state = {
+  launcher: true, view: 'hint', pinned: ['shanghai', 'sf', 'ny', 'london', 'tokyo', 'sydney'],
+  labels: { ny: 'Maya', london: '设计团队' }, sel: 0, cursor: NOW, h12: false, light: false, sug: 0, nudge: 0, expanded: false,
+};
+
+/* ---------- Formatting ---------- */
+const pad = n => String(n).padStart(2, '0');
+function fmtHM(h, mi, compact) {
+  if (!state.h12) return `${pad(h)}:${pad(mi)}`;
+  const ap = h < 12 ? '上午' : '下午', hh = (h + 11) % 12 + 1;
+  return compact ? `${ap}${hh}:${pad(mi)}` : `<small>${ap}</small>${hh}:${pad(mi)}`;
+}
+const home = () => byId[HOME];
+// The word is relative to the user's real today; `dd` flags a different date than home at the same instant.
+function dayWord(t, c) {
+  const a = local(t, c), b = local(t, home()), today = local(NOW, home());
+  const rel = Math.round((Date.UTC(a.y, a.m - 1, a.d) - Date.UTC(today.y, today.m - 1, today.d)) / DAY);
+  const dd = Math.round((Date.UTC(a.y, a.m - 1, a.d) - Date.UTC(b.y, b.m - 1, b.d)) / DAY);
+  return { word: rel === 0 ? '今天' : rel === 1 ? '明天' : rel === -1 ? '昨天' : `${a.m}月${a.d}日`, dd };
+}
+function relDiff(c, t) {
+  const d = offset(t, c.tz) - offset(t, home().tz);
+  if (c.id === HOME) return '本地时间';
+  if (d === 0) return '与北京相同';
+  const h = Math.floor(Math.abs(d) / 60), m = Math.abs(d) % 60;
+  return `比北京${d < 0 ? '慢' : '快'} ${h} 小时${m ? ` ${m} 分` : ''}`;
+}
+const utcLabel = o => `UTC${o < 0 ? '−' : '+'}${Math.floor(Math.abs(o) / 60)}${Math.abs(o) % 60 ? ':' + pad(Math.abs(o) % 60) : ''}`;
+function abbr(c, t) { if (!c.abbr.length) return utcLabel(offset(t, c.tz)); return c.abbr.length > 1 && isDST(t, c) ? c.abbr[1] : c.abbr[0]; }
+function fmtDate(t, c) { const p = local(t, c); return `${p.m}月${p.d}日 ${WD[p.wd]}`; }
+function fmtLine(t, c) { const p = local(t, c); return `${c.zh} ${fmtDate(t, c)} ${fmtHM(p.h, p.mi, true)}`; }
+function period(h) { return h >= 7 && h < 18 ? 'day' : h >= 18 && h < 21 || h >= 5 && h < 7 ? 'twi' : 'night'; }
+function slotClass(p) {
+  const weekend = p.wd === 0 || p.wd === 6, hf = p.h + p.mi / 60;
+  if (hf >= 9 && hf < 18) return weekend ? 'rest' : 'work';
+  if (hf >= 7 && hf < 22) return 'awake';
+  return 'night';
+}
+function relNow(t) {
+  const d = Math.round((t - NOW) / MIN);
+  if (Math.abs(d) < 1) return '现在';
+  const a = Math.abs(d), days = Math.floor(a / 1440), h = Math.floor(a % 1440 / 60), m = a % 60;
+  const s = days ? `${days} 天${h ? ` ${h} 小时` : ''}` : `${h ? `${h} 小时` : ''}${m ? ` ${m} 分` : ''}`.trim();
+  return d > 0 ? `${s}后` : `${s}前`;
+}
+
+/* ---------- Query parsing (mirrors the spec in launcher-world-clock.md §3.4) ---------- */
+const norm = s => s.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').trim();
+function resolveCity(tok) {
+  const t = norm(tok); if (!t) return [];
+  const u = t.match(/^(?:utc|gmt)\s*([+-])\s*(\d{1,2})(?::?(\d{2}))?$/);
+  if (u) return [utcCity(u[1], +u[2], +(u[3] || 0))];
+  const ab = CITIES.filter(c => c.abbr.some(a => a.toLowerCase() === t));
+  if (ab.length) { const seen = new Set(); return ab.filter(c => !seen.has(c.tz) && seen.add(c.tz)); }
+  const exact = CITIES.filter(c => c.zh === tok.trim() || norm(c.en) === t || (c.alt && c.alt === t) || c.py.split(' ').includes(t) || c.tz.toLowerCase() === t);
+  return exact;
+}
+function searchCities(q) {
+  const t = norm(q); if (!t) return [];
+  const score = c => {
+    const fields = [c.zh, norm(c.en), c.alt || '', ...c.py.split(' '), norm(c.country), c.tz.toLowerCase()];
+    if (fields.some(f => f === t)) return 0;
+    if (fields.some(f => f.startsWith(t))) return 1;
+    if (fields.some(f => f.includes(t))) return 2;
+    return 9;
+  };
+  return CITIES.map(c => ({ c, s: score(c) })).filter(x => x.s < 9).sort((a, b) => a.s - b.s).map(x => x.c);
+}
+const DAYW = { '今天': 0, 'today': 0, '明天': 1, 'tomorrow': 1, '后天': 2, '昨天': -1, 'yesterday': -1 };
+function parseTime(s) {
+  let m = s.match(/(上午|早上|中午|下午|晚上)?\s*(\d{1,2})\s*(?:[:：](\d{2})|点\s*(半|\d{1,2}分?)?)\s*(am|pm)?/i) || s.match(/(\d{1,2})\s*(am|pm)/i);
+  if (!m) return null;
+  let h, mi = 0, ap;
+  if (m.length === 3) { h = +m[1]; ap = m[2].toLowerCase(); }
+  else {
+    h = +m[2]; mi = m[3] ? +m[3] : m[4] === '半' ? 30 : m[4] ? parseInt(m[4]) : 0; ap = (m[5] || '').toLowerCase();
+    if (/下午|晚上/.test(m[1] || '') && h < 12) h += 12;
+    if (m[1] === '中午' && h < 6) h += 12;
+  }
+  if (ap === 'pm' && h < 12) h += 12; if (ap === 'am' && h === 12) h = 0;
+  if (h > 23 || mi > 59) return null;
+  return { h, mi, rest: s.replace(m[0], ' ') };
+}
+function parseQuery(text) {
+  const t = text.trim();
+  if (!t) return { mode: 'list' };
+  if (/^(now|ts|unix|时间戳)$/i.test(t)) return { mode: 'ts', t: NOW, unit: '现在' };
+  if (/^\d{10}$/.test(t)) return { mode: 'ts', t: +t * 1000, unit: '秒', raw: t };
+  if (/^\d{13}$/.test(t)) return { mode: 'ts', t: +t, unit: '毫秒', raw: t };
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(t) && !isNaN(Date.parse(t))) return { mode: 'ts', t: Date.parse(t), unit: 'ISO 8601', raw: t };
+  const [srcPart, dstPart] = t.split(/\s*(?:→|->|到|\bto\b|\bin\b)\s*/i);
+  const tm = parseTime(srcPart);
+  if (tm) {
+    let rest = tm.rest, dayOff = 0;
+    for (const [w, v] of Object.entries(DAYW)) if (rest.includes(w)) { dayOff = v; rest = rest.replace(w, ' '); }
+    const src = rest.trim() ? resolveCity(rest.trim())[0] : home();
+    const dst = dstPart ? resolveCity(dstPart)[0] : null;
+    if (src && (dst || !dstPart)) {
+      const today = local(NOW, src), base = Date.UTC(today.y, today.m - 1, today.d) + dayOff * DAY, bd = new Date(base);
+      const at = instant(src, bd.getUTCFullYear(), bd.getUTCMonth() + 1, bd.getUTCDate(), tm.h, tm.mi);
+      return { mode: 'convert', src, dst: dst || (src.id === HOME ? null : home()), t: at };
+    }
+  }
+  const toks = t.split(/[\s,，、]+/).filter(Boolean);
+  if (toks.length >= 2) {
+    const cs = toks.map(x => resolveCity(x)[0]);
+    if (cs.every(Boolean)) return { mode: 'meeting', cities: cs };
+  }
+  const found = searchCities(t);
+  const direct = resolveCity(t);
+  const list = [...direct, ...found.filter(c => !direct.includes(c))];
+  return list.length ? { mode: 'search', q: t, cities: list } : { mode: 'none', q: t };
+}
+
+/* ---------- Meeting suggestions ---------- */
+function meetingSlots(cities) {
+  const start = Math.ceil(NOW / (30 * MIN)) * 30 * MIN, out = [];
+  for (let s = start; s < start + 2 * DAY; s += 30 * MIN) {
+    let pen = 0, ok = 0;
+    for (const c of cities) {
+      for (const tt of [s, s + 59 * MIN]) {
+        const p = local(tt, c), h = p.h + p.mi / 60, weekend = p.wd === 0 || p.wd === 6;
+        const dist = h >= 9 && h < 18 ? 0 : h >= 18 ? h - 18 + 0.5 : 9 - h;
+        pen += (weekend ? 6 : 0) + dist + (h < 7 || h >= 22 ? 4 : 0);
+        if (tt === s && dist === 0 && !weekend) ok++;
+      }
+    }
+    out.push({ s, pen, all: ok === cities.length });
+  }
+  const overlap = out.filter(x => x.all);
+  const pick = [];
+  // Distinct by time of day as well, so tomorrow's copy of the same slot is not offered twice.
+  const tod = x => (x.s % DAY + DAY) % DAY, far = (a, b) => Math.min(Math.abs(tod(a) - tod(b)), DAY - Math.abs(tod(a) - tod(b))) >= HOUR;
+  for (const x of [...out].sort((a, b) => a.pen - b.pen || a.s - b.s)) {
+    if (pick.every(p => far(p, x))) pick.push(x);
+    if (pick.length === 3) break;
+  }
+  return { pick: pick.sort((a, b) => a.s - b.s), overlap };
+}
+
+/* ---------- Rendering ---------- */
+const STRIP = 300;
+function windowStart(t) { const p = local(t, home()); return instant(home(), p.y, p.m, p.d, 0, 0); }
+function strip(c, ws, cursor, band) {
+  let slots = '', labels = '';
+  for (let i = 0; i < 48; i++) {
+    const tt = ws + i * 30 * MIN, p = local(tt, c);
+    slots += `<i class="${slotClass(p)}"></i>`;
+    const x = (i / 48) * 100;
+    if (p.h === 0 && p.mi < 30) labels += `<span class="md" style="left:${x}%"></span><span class="mdl${x > 88 ? ' end' : ''}" style="left:${x}%">${WD[p.wd]}</span>`;
+    else if (p.mi < 30 && p.h % 6 === 0 && i > 1 && i < 46) labels += `<span class="hl" style="left:${x + (p.mi ? 0 : 0)}%">${p.h}</span>`;
+  }
+  const cx = Math.max(0, Math.min(1, (cursor - ws) / DAY)) * 100;
+  const bandHtml = band ? `<span class="band" style="left:${(band.a - ws) / DAY * 100}%;width:${(band.b - band.a) / DAY * 100}%"></span>` : '';
+  return `<div class="cb">${bandHtml}<div class="bar">${slots}${labels}</div>${band ? '' : `<span class="cur ${cursor !== NOW ? 'moved' : ''}" style="left:${cx}%"></span>`}</div>`;
+}
+function ruler(ws, cursor) {
+  let tk = '';
+  for (let h = 3; h < 24; h += 3) tk += `<span class="tk" style="left:${h / 24 * 100}%">${h}</span>`;
+  const p = local(cursor, home()), cx = Math.max(0, Math.min(1, (cursor - ws) / DAY)) * 100;
+  const tag = `<span class="tag ${cursor !== NOW ? 'moved' : ''}" style="left:${Math.max(7, Math.min(93, cx))}%">${fmtHM(p.h, p.mi, true)}</span>`;
+  return `<div class="grow ruler"><span></span><span style="font-size:11px">城市</span><span style="text-align:right;font-size:11px">当地时间</span><div class="cb">${tk}${tag}</div></div>`;
+}
+function cityRow(c, i, t, ws, opts = {}) {
+  const p = local(t, c), dw = dayWord(t, c), per = period(p.h);
+  const sel = opts.sel, label = state.labels[c.id];
+  const tags = (c.id === HOME ? '<span class="tg home">本地</span>' : '') + (isDST(t, c) ? '<span class="tg dst">夏令时</span>' : '')
+    + (opts.src ? '<span class="tg src">源</span>' : '') + (opts.added ? '<span class="tg added">已添加</span>' : '');
+  const sub = opts.sub || `${c.country} · ${relDiff(c, t)}`;
+  let extra = '';
+  if (sel && opts.expand) {
+    const tr = nextTransition(NOW, c), o = offset(t, c.tz);
+    let note = `${abbr(c, t)} · ${utcLabel(o)} · ${c.tz.startsWith('UTC') ? '固定偏移，没有夏令时' : c.tz}`;
+    if (tr) {
+      const tp = local(tr.at - MIN, c), dd = Math.ceil((tr.at - NOW) / DAY), after = tr.to - offset(tr.at, home().tz);
+      const ah = Math.abs(after) / 60;
+      note += ` · <span class="w">${dd <= 30 ? `${dd} 天后（` : ''}${tp.m}月${tp.d}日 ${pad((tp.h + 1) % 24)}:00 ${tr.to < tr.from ? '结束' : '开始'}夏令时${dd <= 30 ? '）' : ''}，之后${after === 0 ? '与北京相同' : `比北京${after < 0 ? '慢' : '快'} ${ah} 小时`}</span>`;
+    } else if (!c.tz.startsWith('UTC')) note += ' · 不实行夏令时';
+    extra = `<div class="cx"><span class="note">${note}</span>${opts.actions || ''}</div>`;
+  }
+  return `<div class="crow grow ${sel ? 'sel' : ''} ${opts.dim ? 'dim' : ''}" data-i="${i}">
+    <div class="dn ${per}">${ic(per === 'day' ? 'sun' : per === 'twi' ? 'sunset' : 'moon', 15)}</div>
+    <div class="ci"><div class="cn">${esc(c.zh)}${label ? `<span class="lbl">${esc(label)}</span>` : ''}${tags}</div><div class="cs">${sub}</div></div>
+    <div class="ct"><div class="tm">${fmtHM(p.h, p.mi)}</div><div class="dl ${dw.dd ? 'nd' : ''}">${dw.word} ${WD[p.wd]}</div></div>
+    ${strip(c, ws, t, opts.band)}
+    ${extra}
+  </div>`;
+}
+const legend = (extra = '') => `<div class="legend"><span><i style="background:var(--work)"></i>工作时间 9–18</span><span><i style="background:var(--awake)"></i>清醒时间</span><span><i style="background:var(--night);box-shadow:inset 0 0 0 1px var(--border)"></i>夜间</span><span><i style="background:var(--rest)"></i>周末</span><span class="sp"></span>${extra}</div>`;
+const rowActs = c => `<button class="mini" data-act="copy">${ic('copy', 12)}复制<span class="s">⌘C</span></button><button class="mini" data-act="insert">${ic('insert', 12)}插入<span class="s">⌥↩</span></button>${c.id === HOME ? '' : `<button class="mini" data-act="remove">${ic('minus', 12)}移除<span class="s">⌘⌫</span></button>`}`;
+
+function renderLauncher() {
+  $('#launcher').classList.toggle('show', state.launcher);
+  $('#scrim').classList.toggle('show', state.launcher);
+  $('#openhint').style.display = state.launcher ? 'none' : '';
+  if (!state.launcher) return;
+  const q = $('#q');
+  if (state.view === 'clock') {
+    const a = parseQuery(q.value);
+    const opt = { convert: '→ 换算', meeting: '→ 会议时间', ts: '→ 时间戳', search: '→ 搜索城市', none: '→ 搜索城市' }[a.mode] || '';
+    $('#chipSlot').innerHTML = `<span class="chip"><span class="g">${ic('globe', 13, 2.2)}</span>世界时钟${opt ? `<span class="opt">${opt}</span>` : ''}</span>`;
+    q.placeholder = '城市、时间或时间戳：伦敦、明天 9am 纽约、北京 纽约 伦敦…';
+  } else {
+    $('#chipSlot').innerHTML = '';
+    q.placeholder = '对话，或输入关键字…';
+  }
+  renderBody();
+}
+
+function hintBody() {
+  const h = local(NOW, home()), tick = ['sf', 'ny', 'london', 'tokyo'].map(id => { const p = local(NOW, byId[id]); return `${byId[id].zh} <b>${fmtHM(p.h, p.mi, true)}</b>`; }).join(' · ');
+  const ang = (h.h % 12) * 30 + h.mi / 2, angm = h.mi * 6;
+  const face = `<svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#fff"/><circle cx="14" cy="14" r="13" fill="none" stroke="rgba(0,0,0,.12)"/>${[0, 90, 180, 270].map(a => `<line x1="14" y1="3.5" x2="14" y2="5.5" stroke="#999" stroke-width="1.2" transform="rotate(${a} 14 14)"/>`).join('')}<line x1="14" y1="14" x2="14" y2="8" stroke="#111" stroke-width="2" stroke-linecap="round" transform="rotate(${ang} 14 14)"/><line x1="14" y1="14" x2="14" y2="5" stroke="#111" stroke-width="1.4" stroke-linecap="round" transform="rotate(${angm} 14 14)"/><circle cx="14" cy="14" r="1.6" fill="#ff9500"/></svg>`;
+  return `<div class="sec">关键字</div>
+    <div class="item on" data-act="enter">${face}<div style="min-width:0"><div class="t">世界时钟</div><div class="d">北京 <b>${fmtHM(h.h, h.mi, true)}</b> · ${tick}</div></div><div class="r"><span class="kbd">↩</span>打开</div></div>
+    <div class="sec">应用</div>
+    <div class="item"><span class="ic" style="background:#1c1c1e;border-radius:50%">${face.replace('width="28" height="28"', 'width="24" height="24"')}</span><div><div class="t">时钟</div><div class="d">/System/Applications</div></div><div class="r"><span class="kbd">⌘2</span></div></div>
+    <div class="sec">AI</div>
+    <div class="item"><span class="ic" style="background:var(--accent-soft);color:var(--accent-text)">${ic('spark', 14)}</span><div class="t">问 AI “tz”</div><div class="r"><span class="kbd">⌘↩</span></div></div>`;
+}
+
+function headBar(t, title) {
+  const moved = t !== NOW, p = local(t, home());
+  const sub = moved ? `北京 ${fmtDate(t, home())} <b>${fmtHM(p.h, p.mi, true)}</b> · ${relNow(t)}` : `北京 ${fmtDate(t, home())} ${fmtHM(p.h, p.mi, true)} · ${state.pinned.length} 个城市`;
+  return `<div class="whead"><span class="ttl">${title}</span><span class="sub">${sub}</span><span class="sp"></span>
+    <div class="nav"><button data-act="now" ${moved ? '' : 'disabled'}>现在 <span class="s">⌘T</span></button><button data-act="back" title="早 30 分钟（←）">${ic('left', 13)}</button><button data-act="fwd" title="晚 30 分钟（→）">${ic('right', 13)}</button></div></div>`;
+}
+
+function renderBody() {
+  const body = $('#lbody'), bar = $('#lbar'), text = $('#q').value;
+  if (state.view === 'hint') {
+    body.innerHTML = hintBody();
+    bar.innerHTML = '<span><kbd>↩</kbd>打开世界时钟</span><span><kbd>空格</kbd>进入并输入城市或时间</span><span class="sp"></span><span><kbd>esc</kbd>关闭</span>';
+    return;
+  }
+  const a = parseQuery(text);
+  state.mode = a.mode;
+  if (a.mode === 'list') {
+    const t = state.cursor, ws = windowStart(t);
+    const cs = state.pinned.map(id => byId[id]);
+    body.innerHTML = headBar(t, '世界时钟') + `<div class="rows">${ruler(ws, t)}${cs.map((c, i) => cityRow(c, i, t, ws, { sel: i === state.sel, expand: state.expanded || i === state.sel, actions: rowActs(c) })).join('')}</div>` + legend();
+    bar.innerHTML = '<span><kbd>↑↓</kbd>城市</span><span><kbd>←→</kbd>调整时间</span><span><kbd>⌘T</kbd>现在</span><span><kbd>↩</kbd>复制</span><span><kbd>⌥↩</kbd>插入</span><span><kbd>⌘⌫</kbd>移除</span><span><kbd>⌥↑↓</kbd>排序</span><span class="sp"></span><span><kbd>esc</kbd>返回</span>';
+  } else if (a.mode === 'search') {
+    const t = NOW, ws = windowStart(t), cs = a.cities.slice(0, 5);
+    state.sel = Math.min(state.sel, cs.length - 1);
+    const rows = cs.map((c, i) => {
+      const added = state.pinned.includes(c.id);
+      const hi = c.zh.replace(a.q, `<mark>${esc(a.q)}</mark>`);
+      const enHi = esc(c.en).replace(new RegExp('^(' + a.q.replace(/[^a-z]/gi, '') + ')', 'i'), '<mark>$1</mark>');
+      const acts = added ? `<button class="mini" data-act="copy">${ic('copy', 12)}复制<span class="s">⌘C</span></button>` : `<button class="mini pri" data-act="add">${ic('plus', 12)}添加到世界时钟<span class="s">↩</span></button><button class="mini" data-act="copy">${ic('copy', 12)}复制<span class="s">⌘C</span></button>`;
+      return cityRow({ ...c, zh: c.zh }, i, t, ws, { sel: i === state.sel, expand: i === state.sel, added, sub: `${enHi} · ${c.country} · ${relDiff(c, t).replace('比北京', '')}`, actions: acts }).replace(`>${esc(c.zh)}<`, `>${hi}<`);
+    }).join('');
+    body.innerHTML = `<div class="sec" style="padding-top:12px">城市<span class="m">${a.cities.length} 个结果 · 按城市名、拼音、英文名、国家、时区缩写匹配</span></div><div class="rows">${ruler(ws, t)}${cityRow(home(), -1, t, ws, { dim: true, sub: '对照' })}${rows}</div>`;
+    bar.innerHTML = '<span><kbd>↑↓</kbd>选择</span><span><kbd>↩</kbd>添加到世界时钟</span><span><kbd>⌘C</kbd>复制当地时间</span><span><kbd>⌥↩</kbd>插入</span><span class="sp"></span><span><kbd>esc</kbd>清空</span>';
+  } else if (a.mode === 'convert') {
+    const t = a.t, ws = windowStart(t), dst = a.dst;
+    const sp = local(t, a.src);
+    const right = dst ? (() => { const p = local(t, dst); return `<span class="op">=</span><span class="side"><span class="pl">${dst.zh}</span><span class="big">${fmtHM(p.h, p.mi, true)}</span><span class="sm">${fmtDate(t, dst)} · ${abbr(dst, t)}</span></span>`; })() : '';
+    const order = [...new Set([a.src.id, ...(dst ? [dst.id] : []), ...state.pinned])].map(id => byId[id] || a.src);
+    body.innerHTML = `<div class="card"><div class="k"><span>时间换算</span><span class="sp"></span><span>${relNow(t)}</span></div>
+      <div class="eq"><span class="side"><span class="pl">${a.src.zh}</span><span class="big">${fmtHM(sp.h, sp.mi, true)}</span><span class="sm">${fmtDate(t, a.src)} · ${abbr(a.src, t)}</span></span>${right}</div>
+      <div class="acts"><button class="mini pri" data-act="copyconv">${ic('copy', 12)}复制换算结果<span class="s">↩</span></button><button class="mini" data-act="insertconv">${ic('insert', 12)}插入<span class="s">⌥↩</span></button><span class="sp"></span><span class="hint">下方是所有城市在这一刻的时间</span></div></div>
+      <div class="rows">${ruler(ws, t)}${order.map((c, i) => cityRow(c, i, t, ws, { src: c.id === a.src.id, sel: dst ? c.id === dst.id : false })).join('')}</div>`;
+    bar.innerHTML = '<span><kbd>↩</kbd>复制换算结果</span><span><kbd>⌥↩</kbd>插入</span><span><kbd>⌘T</kbd>回到现在</span><span class="sp"></span><span><kbd>esc</kbd>清空</span>';
+  } else if (a.mode === 'meeting') {
+    const { pick, overlap } = meetingSlots(a.cities);
+    state.sug = Math.min(state.sug, pick.length - 1);
+    const chosen = pick[state.sug], t = chosen.s + state.nudge, ws = windowStart(t);
+    const ovFirst = overlap[0];
+    const head = ovFirst
+      ? (() => { let end = ovFirst.s; while (overlap.some(x => x.s === end + 30 * MIN)) end += 30 * MIN;
+          const e = local(end + 30 * MIN, home());
+          return `${a.cities.length} 地都在工作时间的时段：${fmtLine(ovFirst.s, home())}–${fmtHM(e.h, e.mi, true)}，下面是其中的 3 个`; })()
+      : `${a.cities.length} 地没有同时在工作时间（9:00–18:00）的时段，下面是最接近的 3 个`;
+    const sugs = pick.map((x, i) => `<button class="sug ${i === state.sug ? 'on' : ''}" data-sug="${i}"><div class="a">${a.cities.map(c => { const p = local(x.s, c); return fmtHM(p.h, p.mi, true); }).join(' / ')}</div><div class="b">${a.cities.map(c => { const p = local(x.s, c), h = p.h; return `${c.zh}${h < 9 ? '早' : h >= 18 ? '晚' : ''}`; }).join(' · ')} · ${dayWord(x.s, home()).word}${WD[local(x.s, home()).wd]}</div></button>`).join('');
+    body.innerHTML = `<div class="card"><div class="k"><span>会议时间 · 1 小时</span><span class="sp"></span><span>${a.cities.map(c => c.zh).join(' · ')}</span></div>
+      <div style="font-size:12.5px;color:var(--text2)">${head}</div><div class="sugs">${sugs}</div>
+      <div class="acts"><button class="mini pri" data-act="copymeet">${ic('copy', 12)}复制各地时间<span class="s">↩</span></button><button class="mini" data-act="insertmeet">${ic('insert', 12)}插入<span class="s">⌥↩</span></button><span class="sp"></span><span class="hint">⇥ 切换推荐 · ⌥←→ 微调</span></div></div>
+      <div class="rows">${ruler(ws, t)}${a.cities.map((c, i) => cityRow(c, i, t, ws, { band: { a: t, b: t + HOUR } })).join('')}</div>` + legend('<span><i style="background:var(--ok-soft);box-shadow:inset 0 0 0 1px var(--ok)"></i>选中的会议时段</span>');
+    bar.innerHTML = '<span><kbd>⇥</kbd>切换推荐</span><span><kbd>⌥←→</kbd>微调 30 分钟</span><span><kbd>↩</kbd>复制各地时间</span><span><kbd>⌥↩</kbd>插入</span><span class="sp"></span><span><kbd>esc</kbd>清空</span>';
+  } else if (a.mode === 'ts') {
+    const t = a.t, ws = windowStart(t), d = new Date(t);
+    const iso = d.toISOString().replace('.000', '');
+    const sec = Math.floor(t / 1000);
+    const rows = [
+      ['Unix（秒）', `<code>${sec}</code>`, 'copy-sec'], ['Unix（毫秒）', `<code>${t}</code>`, 'copy-ms'],
+      ['ISO 8601', `<code>${iso}</code>`, 'copy-iso'], ['北京', `${fmtDate(t, home())} ${fmtHM(local(t, home()).h, local(t, home()).mi, true)} · ${relNow(t)}`, 'copy-local'],
+    ];
+    body.innerHTML = `<div class="card"><div class="k"><span>${a.unit === '现在' ? '当前时间戳' : `识别为 ${a.unit === 'ISO 8601' ? 'ISO 8601 时间' : `Unix 时间戳（${a.unit}）`}`}</span><span class="sp"></span><span>UTC ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}</span></div>
+      <div class="tsk">${rows.map(r => `<span>${r[0]}</span><span>${r[1]}</span><button class="mini" data-act="${r[2]}">${ic('copy', 12)}复制</button>`).join('')}</div></div>
+      <div class="rows">${ruler(ws, t)}${state.pinned.map(id => byId[id]).map((c, i) => cityRow(c, i, t, ws, {})).join('')}</div>`;
+    bar.innerHTML = '<span><kbd>↩</kbd>复制本地时间</span><span><kbd>⌘C</kbd>复制 ISO 8601</span><span><kbd>⌥↩</kbd>插入</span><span class="sp"></span><span><kbd>esc</kbd>清空</span>';
+  } else {
+    body.innerHTML = `<div class="empty">没有找到「${esc(a.q)}」对应的城市，也不是能识别的时间<div class="ex">${['伦敦', 'PST', 'UTC+5:30', '明天 9am 纽约', '15:00 伦敦 到 东京', '北京 纽约 伦敦', '1792405440'].map(x => `<span data-ex="${x}">${x}</span>`).join('')}</div></div>`;
+    bar.innerHTML = '<span>输入城市、时区缩写、时间或时间戳</span><span class="sp"></span><span><kbd>esc</kbd>清空</span>';
+  }
+}
+
+/* ---------- Interaction ---------- */
+function toast(msg) { const t = $('#toast'); t.innerHTML = msg; t.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), 2200); }
+function closeLauncher() { state.launcher = false; renderLauncher(); }
+function insertText(s) { $('#docIns').innerHTML = `<span class="ins">${esc(s)}</span>`; closeLauncher(); toast('已插入到 Slack'); }
+function currentCity() { const a = parseQuery($('#q').value); return a.mode === 'search' ? a.cities[state.sel] : byId[state.pinned[state.sel]]; }
+function copyCity() { const c = currentCity(); toast(`已复制「${esc(fmtLine(a_t(), c))}」`); }
+const a_t = () => (parseQuery($('#q').value).mode === 'search' ? NOW : state.cursor);
+function step(dir) {
+  const half = 30 * MIN, c = state.cursor;
+  state.cursor = dir > 0 ? Math.floor(c / half) * half + half : Math.ceil(c / half) * half - half;
+  renderBody();
+}
+function meetText(x, cities) { return '会议时间：' + cities.map(c => { const p = local(x.s, c); return `${c.zh} ${WD[p.wd]} ${fmtHM(p.h, p.mi, true)}`; }).join(' / '); }
+function convText(a) { return `${fmtLine(a.t, a.src)}${a.dst ? ` = ${fmtLine(a.t, a.dst)}` : ''}`; }
+
+$('#lbody').addEventListener('click', e => {
+  const act = e.target.closest('[data-act]')?.dataset.act, row = e.target.closest('.crow'), sug = e.target.closest('[data-sug]'), ex = e.target.closest('[data-ex]');
+  const a = parseQuery($('#q').value);
+  if (ex) { $('#q').value = ex.dataset.ex; state.sel = 0; renderLauncher(); return; }
+  if (sug) { state.sug = +sug.dataset.sug; state.nudge = 0; renderBody(); return; }
+  if (act === 'enter') { enterClock(''); return; }
+  if (act === 'now') { state.cursor = NOW; renderBody(); return; }
+  if (act === 'back') return step(-1);
+  if (act === 'fwd') return step(1);
+  if (act === 'copy') return copyCity();
+  if (act === 'insert') return insertText(fmtLine(a_t(), currentCity()));
+  if (act === 'remove') { const c = currentCity(); state.pinned = state.pinned.filter(id => id !== c.id); state.sel = Math.min(state.sel, state.pinned.length - 1); renderBody(); toast(`已移除「${c.zh}」 · ⌘Z 撤销`); return; }
+  if (act === 'add') { const c = currentCity(); state.pinned.push(c.id); $('#q').value = ''; state.sel = state.pinned.length - 1; renderLauncher(); toast(`已添加「${c.zh}」到世界时钟`); return; }
+  if (act === 'copyconv') return toast(`已复制「${esc(convText(a))}」`);
+  if (act === 'insertconv') return insertText(convText(a));
+  if (act === 'copymeet') return toast(`已复制「${esc(meetText({ s: meetingSlots(a.cities).pick[state.sug].s + state.nudge }, a.cities))}」`);
+  if (act === 'insertmeet') return insertText(meetText({ s: meetingSlots(a.cities).pick[state.sug].s + state.nudge }, a.cities));
+  if (act && act.startsWith('copy-')) return toast('已复制');
+  const cb = e.target.closest('.crow .cb');
+  if (cb && a.mode === 'list') {
+    const r = cb.getBoundingClientRect(), f = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    state.cursor = Math.round((windowStart(state.cursor) + f * DAY) / (30 * MIN)) * 30 * MIN;
+  }
+  if (row && +row.dataset.i >= 0) { state.sel = +row.dataset.i; renderBody(); }
+});
+$('#openhint').onclick = () => { state.launcher = true; renderLauncher(); $('#q').focus(); };
+function enterClock(arg) { state.view = 'clock'; $('#q').value = arg; state.sel = 0; state.cursor = NOW; renderLauncher(); $('#q').focus(); }
+$('#q').addEventListener('input', () => {
+  const v = $('#q').value;
+  if (state.view === 'hint') { const m = v.match(/^(\S+)\s(.*)$/); if (m && KEYWORDS.includes(m[1].toLowerCase())) return enterClock(m[2]); }
+  state.sel = 0; state.sug = 0; state.nudge = 0; renderLauncher();
+});
+$('#q').addEventListener('keydown', e => {
+  const q = $('#q'), cmd = e.metaKey || e.ctrlKey;
+  if (e.key === 'Escape') { e.preventDefault(); if (state.view === 'clock' && q.value) { q.value = ''; renderLauncher(); } else if (state.view === 'clock') { state.view = 'hint'; q.value = 'tz'; renderLauncher(); } else closeLauncher(); return; }
+  if (state.view === 'hint') { if (e.key === 'Enter') { e.preventDefault(); enterClock(''); } return; }
+  if (e.key === 'Backspace' && !q.value) { e.preventDefault(); state.view = 'hint'; q.value = 'tz'; renderLauncher(); return; }
+  const a = parseQuery(q.value), n = a.mode === 'search' ? Math.min(5, a.cities.length) : state.pinned.length;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (e.altKey && a.mode === 'list') { const j = state.sel + (e.key === 'ArrowDown' ? 1 : -1); if (j >= 0 && j < n) { const p = state.pinned; [p[state.sel], p[j]] = [p[j], p[state.sel]]; state.sel = j; } }
+    else state.sel = Math.max(0, Math.min(n - 1, state.sel + (e.key === 'ArrowDown' ? 1 : -1)));
+    renderBody(); return;
+  }
+  if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && (a.mode === 'list' && !q.value)) {
+    e.preventDefault(); if (cmd) { state.cursor += (e.key === 'ArrowRight' ? 1 : -1) * DAY; renderBody(); } else step(e.key === 'ArrowRight' ? 1 : -1); return;
+  }
+  if (e.key === 'Tab' && a.mode === 'meeting') { e.preventDefault(); state.sug = (state.sug + 1) % 3; state.nudge = 0; renderBody(); return; }
+  if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && a.mode === 'meeting') { e.preventDefault(); state.nudge += (e.key === 'ArrowRight' ? 1 : -1) * 30 * MIN; renderBody(); return; }
+  if (cmd && e.key.toLowerCase() === 't') { e.preventDefault(); state.cursor = NOW; q.value = ''; renderLauncher(); return; }
+  if (cmd && e.key === 'Backspace' && a.mode === 'list') { e.preventDefault(); $('#lbody [data-act="remove"]')?.click(); return; }
+  if (cmd && e.key.toLowerCase() === 'c' && !window.getSelection().toString()) { e.preventDefault(); if (a.mode === 'list' || a.mode === 'search') copyCity(); else toast('已复制'); return; }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (a.mode === 'list') return e.altKey ? insertText(fmtLine(state.cursor, currentCity())) : copyCity();
+    if (a.mode === 'search') return e.altKey ? insertText(fmtLine(NOW, currentCity())) : state.pinned.includes(currentCity().id) ? copyCity() : $('#lbody [data-act="add"]').click();
+    if (a.mode === 'convert') return $(`#lbody [data-act="${e.altKey ? 'insertconv' : 'copyconv'}"]`).click();
+    if (a.mode === 'meeting') return $(`#lbody [data-act="${e.altKey ? 'insertmeet' : 'copymeet'}"]`).click();
+    if (a.mode === 'ts') return toast('已复制本地时间');
+  }
+});
+
+/* ---------- Settings (关键字 › 世界时钟) ---------- */
+function renderSettings() {
+  const rows = state.pinned.map(id => byId[id]).map(c => `<div class="srow"><span class="grip">${ic('grip', 14, 3)}</span><span class="nm">${c.zh}${c.id === HOME ? ' <span class="tg home">本地</span>' : ''}</span><span class="zn">${c.tz} · ${abbr(c, NOW)} ${utcLabel(offset(NOW, c.tz))}</span><span class="lb">${esc(state.labels[c.id] || (c.id === HOME ? '跟随系统时区' : '备注，如「客户」'))}</span><span class="sp"></span>${c.id === HOME ? '' : `<span class="x">${ic('x', 13)}</span>`}</div>`).join('');
+  $('#settings').innerHTML = `<div class="side"><div class="lights"><i></i><i></i><i></i></div>${['通用', '听写', '模型', '快捷键', '关键字', '工作流', '账户'].map(x => `<div class="nv ${x === '关键字' ? 'on' : ''}">${x}</div>`).join('')}</div>
+    <div class="main"><h2>世界时钟</h2><div class="crumb">关键字 › 世界时钟 · 关键字 <b>tz</b>，别名 时间、时区、世界时钟</div>
+    <div class="sc"><div class="h">城市<span class="m">拖动排序；备注显示在城市名后面</span><span class="sp"></span><span class="sfield" style="width:220px">${ic('search', 12)}添加城市或时区…</span></div>${rows}</div>
+    <div class="sc"><div class="h">显示与复制</div>
+      <div class="srow">时间格式<span class="sp"></span><span class="seg"><span class="on">跟随系统</span><span>24 小时</span><span>12 小时</span></span></div>
+      <div class="srow">工作时间<span class="sp"></span><span class="sfield">09:00</span>–<span class="sfield">18:00</span></div>
+      <div class="srow">工作日<span class="sp"></span><span class="wdays">${['一', '二', '三', '四', '五', '六', '日'].map((d, i) => `<span class="${i < 5 ? 'on' : ''}">${d}</span>`).join('')}</span></div>
+      <div class="srow">←→ 每次调整<span class="sp"></span><span class="seg"><span>15 分钟</span><span class="on">30 分钟</span><span>1 小时</span></span></div>
+      <div class="srow">在关键字提示行显示的城市<span class="sp"></span><span class="sfield">前 4 个 ▾</span></div>
+      <div class="srow">复制格式<span class="sp"></span><span class="sfield">纽约 10月22日 周四 06:24 ▾</span></div>
+      <div class="srow">会议时间带上时区缩写（EDT、BST）<span class="sp"></span><span class="toggle"></span></div></div>
+    </div>`;
+}
+
+/* ---------- Screens ---------- */
+const CAPTIONS = {
+  hint: '<b>① 输入关键字</b>：输入 <b>tz</b>（别名 <b>时间</b>、<b>时区</b>、<b>世界时钟</b>），关键字区第一行就是「世界时钟」，图标是本地时间的小钟面，副标题直接给出本地和前 4 个城市的当前时间——很多时候看一眼就够了，不用进入。↩ 进入，「tz 空格」直接进入并开始输入。系统「时钟」App 照常出现在应用结果里。',
+  list: '<b>② 城市列表</b>：本地时间固定在第一行，其他城市按用户排序。每行：昼夜图标、城市名和备注、和本地的时差、当地时间和「今天 / 明天 / 昨天」，右边是 24 小时时间条（深蓝 = 工作时间，浅蓝 = 清醒时间，暗 = 夜间，灰 = 周末），所有时间条对齐同一时刻，竖线是「现在」。选中的行展开时区缩写、UTC 偏移和下一次夏令时切换。',
+  scrub: '<b>③ 拖动时间</b>：←→ 每次调整 30 分钟（⌘←→ 一天），所有城市一起变，竖线变成橙色，标题显示「2 小时 36 分后」。这里是「北京晚上 9 点，纽约正好早上 9 点」。⌘T 或「现在」按钮回到现在。点击时间条上任意位置也会把竖线移过去。',
+  detail: '<b>④ 城市详情</b>：选中「伦敦」：BST · UTC+1 · Europe/London，<b>3 天后（10月25日）结束夏令时</b>，之后比北京慢 8 小时。夏令时切换前 30 天内会用橙色提醒——这是跨时区约会最容易出错的地方。行内按钮：复制 ⌘C、插入 ⌥↩、移除 ⌘⌫（⌘Z 撤销）。',
+  search: '<b>⑤ 搜索城市</b>：输入的不是时间时，按城市名、拼音（全拼 / 首字母）、英文名、国家、时区缩写（PST、JST）、IANA 名（Asia/Tokyo）和 UTC±N 搜索。本地时间固定在顶部作对照。↩ 添加到世界时钟，已添加的显示「已添加」，↩ 改为复制。',
+  convert: '<b>⑥ 时间换算</b>：输入「时间 + 城市」，如 <b>明天 9am 纽约</b>、<b>15:00 伦敦 到 东京</b>、<b>下午 3 点半 PST</b>：卡片给出换算结果（不写目标就换算成本地），下面是所有城市在这一刻的时间，标「源」的是输入的城市。↩ 复制「纽约 10月23日 周五 09:00 = 北京 10月23日 周五 21:00」，⌥↩ 插入原来的应用。',
+  meeting: '<b>⑦ 会议时间</b>：输入两个以上城市（空格、逗号或顿号分隔），如 <b>北京 纽约 伦敦</b>：在接下来 48 小时里找 1 小时的会议时段。有大家都在工作时间的时段就直接给出；没有就推荐 3 个「最不打扰」的时段（避开深夜和周末）。⇥ 切换推荐，↩ 复制各地时间，可以直接贴进聊天。',
+  ts: '<b>⑧ 时间戳</b>：开发者常用：输入 10 位（秒）或 13 位（毫秒）Unix 时间戳、ISO 8601 时间，立刻得到 UTC、本地和所有城市的时间，以及「2 天前」。输入 <b>now</b> 或 <b>ts</b> 得到当前时间戳。每一行都能单独复制。',
+  empty: '<b>⑨ 无结果</b>：既不是城市也不是时间时，说明原因并给出可以点击的输入例子。',
+  settings: '<b>⑩ 设置</b>：关键字 › 世界时钟：管理城市（拖动排序、备注、删除、搜索添加），时间格式、工作时间、工作日、←→ 步长、提示行显示几个城市、复制格式。城市列表也可以直接在启动器里加删和排序（↩ 添加、⌘⌫ 移除、⌥↑↓ 排序）。',
+};
+function show(id) {
+  document.querySelectorAll('.pill[data-s]').forEach(p => p.classList.toggle('on', p.dataset.s === id));
+  $('#caption').innerHTML = CAPTIONS[id] || '';
+  Object.assign(state, { launcher: true, sel: 0, cursor: NOW, sug: 0, nudge: 0, expanded: false, pinned: ['shanghai', 'sf', 'ny', 'london', 'tokyo', 'sydney'] });
+  $('#docIns').innerHTML = '我这边时间都行';
+  $('#settings').classList.toggle('show', id === 'settings');
+  if (id === 'settings') { state.launcher = false; renderLauncher(); renderSettings(); $('#openhint').style.display = 'none'; }
+  const q = $('#q');
+  if (id === 'hint') { state.view = 'hint'; q.value = 'tz'; renderLauncher(); }
+  else if (id !== 'settings') {
+    state.view = 'clock';
+    q.value = (params.get('q') && id === (params.get('s') || 'hint')) ? params.get('q')
+      : { search: 'ban', convert: '明天 9am 纽约', meeting: '北京 纽约 伦敦', ts: '1792405440', empty: '火星' }[id] || '';
+    if (id === 'list') state.sel = 2;
+    if (id === 'scrub') { state.sel = 2; state.cursor = Date.UTC(2026, 9, 22, 13, 0); }
+    if (id === 'detail') state.sel = 3;
+    renderLauncher();
+  }
+  setTimeout(() => q.focus(), 0);
+  history.replaceState(null, '', '?' + new URLSearchParams({ ...Object.fromEntries(params), s: id }).toString());
+}
+document.querySelectorAll('.pill[data-s]').forEach(p => p.onclick = () => show(p.dataset.s));
+$('#lightBtn').onclick = () => { state.light = !state.light; document.body.classList.toggle('light', state.light); $('#lightBtn').classList.toggle('on', state.light); };
+$('#h12Btn').onclick = () => { state.h12 = !state.h12; $('#h12Btn').classList.toggle('on', state.h12); renderLauncher(); if ($('#settings').classList.contains('show')) renderSettings(); };
+
+if (params.get('light') === '1') { state.light = true; document.body.classList.add('light'); $('#lightBtn').classList.add('on'); }
+if (params.get('h12') === '1') { state.h12 = true; $('#h12Btn').classList.add('on'); }
+if (params.get('solo') === '1') document.body.classList.add('solo');
+show(params.get('s') || 'hint');
+</script>
+</body>
+</html>
