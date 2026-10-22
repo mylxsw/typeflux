@@ -71,6 +71,40 @@ current model, and no helper process, IPC handoff, or automatic takeover is
 introduced by this step. `shutdown()` stops sync retries, not engine ownership;
 releasing a live service during an uncertain operation would be unsafe.
 
+## Draft handoff groundwork
+
+Launcher-to-chat transfers now save an account-scoped recovery copy and read it
+back before clearing the launcher. The acknowledgment compares the serialized
+payload off the main actor, preserving attachments, references, source context,
+storage choice, skills and MCP selection without requiring exact subsecond Date
+round-trips. A failed save, unavailable/discarding cache, changed input/account,
+changed selection, or cancellation cannot acknowledge the transfer. Retrying an
+unchanged transfer reuses its identity and the displaced draft's identity.
+
+Recovery copies remain available after navigation or restart. The active copy is
+hidden from the saved-draft list and edits update it. Writes to the same copy
+are ordered across debounced saves and navigation; unrelated accounts and drafts
+have independent chains. Choosing temporary mode schedules cleanup independently
+of subsequent debounced edits. Deletion installs the existing cache tombstone,
+so a late save cannot recreate a consumed copy. Temporary inputs are not staged
+in persistent recovery storage, and cancelling departure from a temporary chat
+keeps the editors and current selection intact.
+
+Submitting binds the backup to one conversation/message identity. Only a valid
+accepted-run response containing that exact user message may consume it, after
+the destination conversation has been persisted. A failed/uncertain send keeps
+the backup; cleanup failure does not interrupt the accepted run or replay the
+request. Restoring a backup requires an explicit user action and never submits
+it automatically. A remaining backup is not evidence that an uncertain remote
+operation never executed. Recovery restores the standard permission mode; it
+does not persist a grant to run privileged tools.
+
+This is a durable draft contract inside the existing application, not IPC or an
+execution-owner transfer. Quick-ask continues its existing run in the same
+model. The signed GUI helper, service-owned execution, peer/generation checks,
+and cross-process temporary-state handoff remain required. The UI must not
+launch another executor against this cache as a shortcut.
+
 Required migration contracts:
 
 1. A single service owns conversation mutations, run identity, queues, execution
@@ -162,3 +196,33 @@ Required migration contracts:
 - Tests used temporary stores and synthetic model/transport dependencies. No
   real inference, production account upload, installed-app replacement or GUI
   helper freeze test was performed. The GUI acceptance gates remain outstanding.
+
+## Draft handoff validation, 2026-10-22
+
+- The first focused coverage command passed 123 methods across seven suites:
+  `AskDraftHandoffTests`, `AskOpenChatTests`, `AskNoteChatTests`, `AskQuickAskTests`,
+  `AskTemporaryConversationTests`, `AskConversationTests`, and
+  `AskAgentBindingInteractionTests`. These cover the transfer contract, its
+  launcher/note/quick-ask callers, temporary navigation, submission/retry, and
+  operation/account fencing. Command wall time: 224.85 s.
+- Review found two additional ordering/privacy edges. The follow-up passed all
+  63 methods in the first four suites, including a new held-write ordering test
+  and immediate editing after choosing temporary mode. Across the successful
+  commands, 124 distinct methods passed. Follow-up wall time: 215.60 s; successful
+  command total: 440.45 s, including compilation/discovery/execution. Both rebuilt
+  tests; neither is reported as a verified build-cache hit.
+- One intervening build failed in the Swift compiler before tests executed:
+  an unqualified `error` assignment inside `catch` triggered a type-checker
+  assertion. Explicitly using `self.error` fixed it. That failed command did not
+  emit a total wall time and is excluded from the measured total above.
+- The final binary's own LLVM profile covers 124/126 changed executable Swift
+  lines (98.41%); see `docs/validation/feature-isolation/handoff-coverage.json`.
+  Profiles from the earlier binary are not used in this figure because the
+  changed persistence function has incompatible counters. This is changed-code
+  coverage, not whole-project coverage.
+- Fixtures reopen SQLite storage, inject unavailable/altered storage and SQL
+  write/delete failures, hold writes across cancellation/account changes, and
+  verify exact-message acknowledgment without real API requests. A recovered
+  draft is never automatically sent. An installed-app crash/restart, real IPC,
+  signed helper launch, and the 30-second GUI freeze acceptance gate have not
+  been exercised; this step does not claim process isolation.

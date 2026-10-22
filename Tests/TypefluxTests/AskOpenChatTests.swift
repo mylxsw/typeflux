@@ -231,7 +231,8 @@ extension AskOpenChatTests {
         f.model.newConversation()
         await f.model.restoreChatDraft(saved)
         #expect(f.model.draft.text == "Old unsent")
-        #expect(f.model.savedChatDrafts.isEmpty)
+        // Leaving a transferred question keeps its recovery copy until it is submitted.
+        #expect(f.model.savedChatDrafts.map(\.draft.references) == [[quote]])
     }
 }
 
@@ -294,8 +295,7 @@ extension AskOpenChatTests {
         let controller = AskConversationWindowController(settings: f.model.modelLibrary.settings, model: f.model)
         defer { controller.dismissLauncher(); f.model.resetSession() }
         #expect(await f.model.openChatFromLauncher())
-        let window = try #require(NSApp.windows
-            .first { $0.identifier?.rawValue == "ai.gulu.app.typeflux.window.ask-conversations" && $0.isVisible })
+        let window = try #require(controller.conversationWindow)
         defer { window.close() }
         window.miniaturize(nil)
         #expect(await f.model.openChatFromLauncher())

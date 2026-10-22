@@ -1,0 +1,38 @@
+{
+  "covered": 124,
+  "total": 126,
+  "percent": 98.41,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+DraftHandoff.swift",
+      "covered": 73,
+      "executable_changed_lines": 75,
+      "percent": 97.33,
+      "uncovered": [
+        17,
+        88
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+NoteChat.swift",
+      "covered": 4,
+      "executable_changed_lines": 4,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+OpenChat.swift",
+      "covered": 18,
+      "executable_changed_lines": 18,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel.swift",
+      "covered": 29,
+      "executable_changed_lines": 29,
+      "percent": 100.0,
+      "uncovered": []
+    }
+  ]
+}
