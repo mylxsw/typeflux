@@ -85,6 +85,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
 
     /// Build the native window while the app is idle, before the first hotkey press.
     func prewarm(_ model: ClipboardPanelModel) {
+        guard FeatureProcess.owns(.clipboard) else { return }
         guard panel == nil else { return }
         style = settingsStore.clipboardPanelStyle
         let panel = panel(for: model)

@@ -53,7 +53,7 @@ extension AskConversationModel {
     /// Reconcile saved results, then inspect uncertain effects within the same task.
     /// No user message is manufactured and no uncertain effect is replayed.
     func recoverWithoutUser() async {
-        guard automaticRecoveryEnabled, let value = selected, let run = value.run, !isLoadingSelection,
+        guard automaticRecoveryEnabled, let value = selected, !externallyDrivenConversations.contains(value.id), let run = value.run, !isLoadingSelection,
               !busyIds.contains(value.id), !recoveryWorking,
               !selectedRecoveryEntries.contains(where: \.readUnavailable),
               !recoveryPresentation.otherDevice else { return }

@@ -1,306 +1,133 @@
-# Feature fault isolation
+# Feature process isolation
 
-## Objective
+## Production boundary
 
-A stalled conversation window must not prevent opening the launcher, capturing a
-screenshot, or using clipboard history. Ultimately, independently recoverable
-feature windows need separate GUI processes. A background task, actor, package,
-or extra window in the same process does not provide that guarantee.
+The application launches its full signed executable with a private inherited
+socket and a feature role. This is the normal application startup path, not an
+opt-in viewer. Chat uses the existing conversation controller, composer,
+attachments, approval sheets, tool execution, cancellation and transcript views.
 
-## Current implementation: responsiveness groundwork
+The host owns the menu, canonical Ask API graph, conversation cache, account
+refresh, sync and updater. Independent processes own chat, launcher, clipboard,
+screenshot/recording, settings, voice input, ring, notes, word book, system monitor,
+help and translation. Shortcut event taps run in another independent process.
+A blocked AppKit main thread therefore cannot block shortcut delivery or another
+feature's AppKit run loop. A shared operation may still wait for the feature
+which owns that operation; isolation does not manufacture a successful result.
 
-- `MainThreadHangMonitor` probes the main queue from an independent utility queue
-  every 250 ms, retaining one outstanding probe. A two-second delay is reported
-  once per incident. Gaps over five seconds invalidate the outstanding probe to
-  avoid classifying process suspension or system sleep as an application hang.
-- A hang triggers a local one-second `/usr/bin/sample` capture. Diagnostics use
-  their own worker, have a five-second process deadline, a 2 MiB stdout bound,
-  a one-minute sampling cooldown, and retain at most five reports in
-  `~/.typeflux/cache/hang-diagnostics`. There is no upload or automatic app restart.
-- Clipboard panel opening, refresh, row construction, and startup retention run
-  outside the main queue. Closing or reopening invalidates old deliveries.
-  Reads which time out leave an already visible panel intact; a late response
-  cannot reopen a dismissed panel or overwrite a newer request.
-- Markdown normalization and parsing run on a shared background queue. AppKit
-  styling and text layout remain on the main thread. An editor retains only the
-  running parse and its newest replacement. Timed-out preparation falls back to
-  plain text; stale results cannot overwrite a newer source or rendering mode.
-- `LatestBackgroundWork` bounds synchronous background work to one active and
-  one pending request per owner. Timeout/cancellation revokes result delivery,
-  but does not pretend that an uninterruptible operation has stopped. No retry
-  or replacement worker is launched while that worker remains occupied.
+`FeatureSupervisor` is an actor independent of the host's main thread. Each child
+has its own `FeatureRPC` connection, writer queue and request budget. Shortcut
+routing to feature windows and the cached bootstrap account snapshot do not wait
+for the menu process's main thread. Voice gestures follow the focused composer
+or the current recording owner; microphone admission is exclusive.
 
-This is not process isolation. Main-thread layout, clipboard polling, shortcut
-dispatch, and several explicit clipboard management/authority checks still
-share the application process. The clipboard query preserves the existing
-complete-history semantics, including pinned items and snippets; pagination is
-not implemented by silently imposing a new display limit.
+## Storage and execution ownership
 
-## Next boundary: one conversation owner
+Presentation processes use typed `FeatureAskAPI` and `FeatureAskCache` adapters.
+Only the host opens canonical engine state, account journals and conversation
+cache. Existing nonblocking directory leases remain enabled. A session generation
+fences requests and replies across account changes. Profile, token and subscription
+refreshes return to the host; children do not own refresh tokens or refresh timers.
+The host's resolved data, workspace and cache directories are inherited exactly,
+including migration fallback locations.
 
-Do not launch a second `AskConversationModel`/`AskLocalEngine` against the same
-mutable conversation state as an implementation shortcut. Engines cache local
-records in memory, temporary conversations are memory-only, and the launcher
-currently drives quick-ask runs and transfers them into the conversation window.
-Production canonical engines now acquire a nonblocking directory lease before
-loading records. The device API separately owns its account directory before
-reading the sync journal or starting an uploader. These leases exclude other
-participating processes; SQLite serialization alone still cannot transfer
-execution ownership or in-memory state.
+Chat owns the persistent command-job store. Launcher quick ask remains an inline,
+tool-free operation, as before; its ongoing inference retains one driver when its
+conversation is displayed in Chat. The supervisor rejects a second execution
+driver for the same active conversation. Durable execution claims and receipts
+remain authoritative. Cancellation is forwarded to the original quick-ask driver.
+No timeout, crash or lost acknowledgement automatically replays a write or starts
+a second provider request.
 
-The device-execution change merged before this boundary. Its account-scoped
-engines and sync journals remain together. `AskApplicationService` now retains
-one production API graph; the conversation controller and fallback workflow
-assistant resolve it instead of constructing competing caches or upload loops.
-Explicitly injected API graphs remain isolated for fixtures.
+Draft handoff stages non-temporary drafts before sending the complete input,
+attachments, references, model and permission settings. The destination deduplicates
+handoff identities and acknowledges acceptance. Only an unchanged source is then
+cleared. A lost acknowledgement leaves the source intact; an explicit retry uses
+the same identity. Temporary input remains memory-only. Unsaved Chat drafts flush
+before ordinary application shutdown.
 
-The lease is retained for the owner's lifetime, across awaits, task cancellation,
-and window closure. A rejected acquisition does not mark an engine loaded; a
-later explicit retry reads fresh records after the old owner exits. Locks are
-not unlinked on release, use close-on-exec, reject symlink/non-regular/hardlinked
-lock files, and are acquired without waiting for another owner. Different account
-directories remain independent. Ownership errors have localized user feedback.
-Raw engine/device initializers retain an opt-out default for injected fixtures;
-every production construction path enables exclusive access. Older binaries
-that do not participate in this protocol are not fenced by advisory file locks.
+Notes, word-book and history notifications cross the supervisor without echoing.
+Preference changes refresh model registries and the relevant local notifications.
+Translation handoff carries presentation snapshots and coalesced stream updates;
+its original provider call stays owned until completion or explicit cancellation.
+A screenshot that cannot reach its destination is saved and its location is shown.
 
-This is a storage-ownership boundary, not a GUI or execution-driver split. The
-existing durable execution journal still decides whether a model/tool call may
-be dispatched. UI models still drive calls, temporary drafts still live in their
-current model, and no helper process, IPC handoff, or automatic takeover is
-introduced by this step. `shutdown()` stops sync retries, not engine ownership;
-releasing a live service during an uncertain operation would be unsafe.
+## Failure and lifetime policy
 
-## Draft handoff groundwork
+RPCs have finite deadlines, at most 32 pending and 32 executing requests per
+connection, bounded payloads, bounded writer queues and no automatic retry.
+Cancellation skips queued requests that have not reached the writer. Failure of
+one channel closes only that channel. There is no public socket listener, port,
+credential file or shell-based launch command.
 
-Launcher-to-chat transfers now save an account-scoped recovery copy and read it
-back before clearing the launcher. The acknowledgment compares the serialized
-payload off the main actor, preserving attachments, references, source context,
-storage choice, skills and MCP selection without requiring exact subsecond Date
-round-trips. A failed save, unavailable/discarding cache, changed input/account,
-changed selection, or cancellation cannot acknowledge the transfer. Retrying an
-unchanged transfer reuses its identity and the displaced draft's identity.
+Children are application-owned managed processes, without an arbitrary 24-hour
+expiry. Normal shutdown first flushes drafts and stops owned work, then closes
+channels and reaps process groups. Children monitor parent death. Exited windows
+may be launched again on the next explicit request, limited to three launches
+per role per minute. The shortcut process is restarted within that same budget.
+Hung windows are not automatically killed: doing so could discard in-memory input
+or obscure an already dispatched external effect. Other processes remain available.
 
-Recovery copies remain available after navigation or restart. The active copy is
-hidden from the saved-draft list and edits update it. Writes to the same copy
-are ordered across debounced saves and navigation; unrelated accounts and drafts
-have independent chains. Choosing temporary mode schedules cleanup independently
-of subsequent debounced edits. Deletion installs the existing cache tombstone,
-so a late save cannot recreate a consumed copy. Temporary inputs are not staged
-in persistent recovery storage, and cancelling departure from a temporary chat
-keeps the editors and current selection intact.
+The earlier read-only `TypefluxChatWindowHelper` experiment is not the production
+window. It does not receive production presentations. The active implementation
+is under `App/Isolation` and reuses the complete application executable.
 
-Submitting binds the backup to one conversation/message identity. Only a valid
-accepted-run response containing that exact user message may consume it, after
-the destination conversation has been persisted. A failed/uncertain send keeps
-the backup; cleanup failure does not interrupt the accepted run or replay the
-request. Restoring a backup requires an explicit user action and never submits
-it automatically. A remaining backup is not evidence that an uncertain remote
-operation never executed. Recovery restores the standard permission mode; it
-does not persist a grant to run privileged tools.
+## Validation
 
-This is a durable draft contract inside the existing application, not IPC or an
-execution-owner transfer. Quick-ask continues its existing run in the same
-model. The signed GUI helper, service-owned execution, peer/generation checks,
-and cross-process temporary-state handoff remain required. The UI must not
-launch another executor against this cache as a shortcut.
+`FeatureRPCTests` exercises bidirectional concurrency, a stalled request, deadlines,
+cancellation, malformed channels and request budgets. `FeatureAskAdapterTests`
+uses the typed production channel for chat operations and canonical cache claims,
+drafts and receipts. Handoff and translation suites cover acknowledgement loss,
+source edits, account changes, temporary input, late updates and no repeated
+provider calls. Existing lifecycle, approval, voice, screenshot, clipboard and
+account suites cover the affected callers.
 
-Required migration contracts:
+`FeatureProcessFreezeTests` is an explicit native integration test. It creates a
+separately identified, ad-hoc-signed fixture bundle and private data directories;
+it never opens production databases or captures the real clipboard/screen. It
+starts the actual feature entry points and verifies distinct process identities.
+It then deliberately blocks all twelve feature UI threads in turn and exercises
+the other primary native windows through the shortcut process while each target
+remains blocked. It also freezes and replaces the shortcut process, blocks the
+host main thread, checks shared notes, sends a chat with an attachment, verifies
+deduplication, cancels owned command processes and verifies all children exit. Injection
+is compiled only in debug builds and additionally requires the fixture identity.
+Run it with `TYPEFLUX_FEATURE_FREEZE_TEST=1` in the focused coverage scope.
 
-1. A single service owns conversation mutations, run identity, queues, execution
-   claims, inference, tool approvals, and temporary workspaces. UI clients send
-   typed requests and receive versioned snapshots/deltas.
-2. Split launcher presentation state from conversation presentation state. A
-   launcher-to-chat handoff carries an acknowledged draft/reference, not a second
-   independent executor. Preserve attachments, account generation, permission
-   mode, temporary status, and any active quick-ask run.
-3. Put the conversation window in a signed, bundled GUI helper. Keep background
-   workers distinct from GUI helpers. Route settings, focus, voice recording,
-   screen capture, account changes, and quit through explicit asynchronous
-   interfaces; do not instantiate the entire main application's DI container
-   and start duplicate hotkeys, clipboard monitors, sync loops, or indexers.
-4. GUI health must include a reply from the helper's main thread. IPC liveness
-   alone is insufficient. The lightweight host must never synchronously wait for
-   a helper. Validate request identity, peer identity, protocol version, byte
-   limits, deadlines, and bounded concurrency.
-5. Recovery restarts only the affected helper with a bounded retry budget. An
-   uncertain write or tool result is reconciled, never replayed. A stale helper
-   generation must lose the ability to mutate state or commit delayed results.
-6. Move launcher, screenshot, and clipboard GUIs into separate processes only
-   after the chat ownership/handoff contract is verified. Retain existing typed
-   worker pools and their independent recovery policies.
+### Validation record (2026-10-22)
 
-## Independent presentation process prototype
+The production path is enabled at ordinary startup. The focused regression scope
+covers RPC and cache adapters, draft/translation handoffs, account fencing,
+command ownership, voice cancellation, shortcuts, screenshots, clipboard,
+recording sessions, storage and service recovery. The broad pass ran 336 XCTest
+and 156 Swift Testing tests. All XCTest tests passed; one native-chat test and
+four recording tests required the repairs and focused retries below.
 
-`TypefluxChatWindowHelper` is a separate, lightweight AppKit application whose
-only dependencies are `TypefluxChatWindowRuntime` and `TypefluxChatWindowProtocol`.
-It receives bounded presentation snapshots and displays selectable, read-only
-text. It has no application DI container, credentials, conversation database,
-model client, tool executor, shortcuts, clipboard monitor or synchronization loop.
-The normal conversation window has not been switched to this prototype.
+- Native fault injection passed for all thirteen child roles and a blocked host
+  main thread. Independent windows opened in 0.13–0.62 seconds in the final
+  handoff/native retry while the other feature stayed blocked for four seconds.
+- Draft acceptance now reports whether submission was actually admitted. A
+  rejected submission retains the source and supports explicit retry; a lost
+  acknowledgement does not submit twice. Six handoff/routing tests passed.
+- Recording diagnosis found 62 AppKit animation threads occupying the dispatch
+  pool. Capture/editor window transitions now skip native window animations.
+  All ten recording session tests and six real-codec synthetic-media tests
+  passed, including sixteen consecutive encoder create/finish/release cycles.
+- No test used a live paid AI provider, real screen capture, microphone or camera.
+  The native fixture uses the actual app controllers with isolated storage and
+  synthetic capture/provider inputs. It is not a substitute for signed release
+  distribution, notarization or live-provider testing.
 
-`AskChatWindowClient` launches this owned child through `ManagedProcess` and a
-private inherited Unix socket descriptor. There is no named listener or network
-port. The child binds the first handshake's generation; all following requests
-must match. Request IDs and response kinds must match, and snapshot sequence
-numbers must increase. Each frame is capped at 512 KiB; text payloads are capped
-at 256 KiB, with per-message and count limits. Invalid payloads fail explicitly.
+Changed executable Swift-line coverage is **75.82% (1,656 / 2,184)**, below the
+repository's 90% target. This is changed-code coverage, not project-wide coverage.
+The report uses current source mappings, the broad-pass profiles for unchanged
+files, the handoff/native retry profiles for subsequently edited routing and
+submission files, and the final recording profiles for recording files. Each
+profile group merged without warnings; incompatible historical runs were not
+combined. Uncovered UI actions and error branches remain a coverage limitation.
 
-Each client admits one outstanding request. Encoding and socket I/O execute off
-the main actor under one monotonic deadline. Cancellation, timeout, malformed
-reply or disconnect retires the connection and cancels only its owned process.
-No automatic replacement, queued backlog or request replay is introduced.
-Heartbeats traverse the helper's main queue, so a responsive socket worker cannot
-hide a frozen GUI. Parent death is checked on an independent child timer, and
-idle connections expire after 90 seconds; a future presenter must send periodic
-heartbeats and close the child on account changes and application termination.
-
-Both SwiftPM packaging scripts and the checked-in Xcode project embed a nested
-GUI app with a distinct parent-scoped bundle identity. It is signed before the
-outer app without the parent's restricted entitlements. DEBUG-only `--probe`
-launches an offscreen window and optionally freezes its main thread for up to
-30 seconds; ordinary standalone launches without the inherited descriptor fail.
-
-The next integration must replace direct `AskConversationModel` access with
-presentation snapshots and explicit user intents, keeping the single execution
-owner in the host. The existing draft acknowledgment contract must be used for
-editable input. Attachments, approvals, temporary chats, quick-ask, account
-changes, voice/capture/focus, quit and restart still need end-to-end routing.
-This prototype is a real process boundary test, not a complete chat migration.
-
-## Acceptance gates
-
-- Freeze the chat helper's main thread for 30 seconds: launcher, screenshot, and
-  clipboard shortcuts still respond within an explicitly measured latency budget.
-- Stall a clipboard read: main-queue callbacks still run; repeated requests stay
-  bounded; closing the panel invalidates every pending delivery.
-- Stop an OCR/media helper: only its requesting operation fails or times out.
-- Kill the chat helper during draft transfer, approval, local inference, and tool
-  execution: drafts survive according to the persistence contract and no
-  side-effecting command executes twice.
-- Verify signed release and development bundles, fresh/existing permissions,
-  account switching, temporary-chat cleanup, app termination, and restart.
-- Measure resident memory and cold/warm opening latency before expanding the
-  number of persistent GUI helpers.
-
-## Validation, 2026-10-22
-
-- First focused coverage run: 63 methods, 61 passed. The two failures were stale
-  clipboard tests which attempted to operate on voice records without selecting
-  the voice tab. Both now select the corresponding visible category.
-- Narrow retry plus additional diagnostic/lifecycle coverage: 14 methods passed.
-  Across both runs, 68 distinct methods ultimately passed. The retry covered
-  `MainThreadHangMonitorTests`, `AskTranscriptPreparationTests`, and only the two
-  failed methods in `WorkflowControllerProcessingTests`.
-- Command wall times, including preparation/build/discovery/execution: 371.51 s
-  for the first coverage build/run and 84.70 s for the narrow retry (456.21 s total).
-- Merged scoped LLVM profiles cover 278 of 291 executable changed production
-  lines (95.53%). This is changed-line coverage, not whole-project coverage; see
-  `docs/validation/feature-isolation/changed-line-coverage.json`.
-- The instrumented application and test binaries linked successfully. The final
-  hosted-text test verifies asynchronous text delivery and nonzero layout.
-- `/usr/bin/sample <owned-child-pid> 1 10 -file /dev/stdout` was separately checked
-  against an owned sleeping child: exit 0, 13,165 stdout bytes containing a call
-  graph. Diagnostic tests inject the capture runner and verify limits, retention,
-  private file permissions, failure cleanup, and cooldown without sampling or
-  modifying the user's running application.
-- The app-delegate startup/termination wiring and a real end-to-end 30-second GUI
-  freeze were not exercised. No GUI helper is installed by this change. The hard
-  process-isolation acceptance gates above remain outstanding.
-
-## Storage ownership validation, 2026-10-22
-
-- The focused scope passed all 78 distinct methods: engine behavior, budget
-  accounting and reentrancy; device synchronization; application composition;
-  injected model completion; directory ownership; and shared UI-state discipline.
-  The fallback workflow assistant's API routing is checked by the composition
-  and production-factory tests, not by claiming a full workflow-editor test run.
-- A real Perl child process fails a nonblocking lock while the Swift owner holds
-  it and succeeds after release. Other tests cover path aliases, independent
-  directories/accounts, invalid lock files, retained lock-file identity,
-  localized errors, denied read/write/delete/import/budget paths, fresh reads
-  after takeover, temporary state, and cancellation retaining ownership.
-- After correcting the inert service singleton's actor-isolation annotation,
-  the smallest relevant follow-up scope passed all seven methods. There were no
-  failing tests. Both runs rebuilt/discovered tests before execution; neither is
-  reported as a verified build-cache hit.
-- First command: 452.20 s (433.47 s preparation/build/discovery). Follow-up:
-  74.60 s (68.61 s preparation/build/discovery). Total command wall time:
-  526.80 s. Coverage replaced plain test runs.
-- Merged scoped LLVM profiles cover 69/72 changed executable Swift lines
-  (95.83%); see `docs/validation/feature-isolation/ownership-coverage.json`.
-  Uncovered paths are the authenticated production engine factory and an unusual
-  non-contention `flock` error. This is not whole-project coverage.
-- Tests used temporary stores and synthetic model/transport dependencies. No
-  real inference, production account upload, installed-app replacement or GUI
-  helper freeze test was performed. The GUI acceptance gates remain outstanding.
-
-## Draft handoff validation, 2026-10-22
-
-- The first focused coverage command passed 123 methods across seven suites:
-  `AskDraftHandoffTests`, `AskOpenChatTests`, `AskNoteChatTests`, `AskQuickAskTests`,
-  `AskTemporaryConversationTests`, `AskConversationTests`, and
-  `AskAgentBindingInteractionTests`. These cover the transfer contract, its
-  launcher/note/quick-ask callers, temporary navigation, submission/retry, and
-  operation/account fencing. Command wall time: 224.85 s.
-- Review found two additional ordering/privacy edges. The follow-up passed all
-  63 methods in the first four suites, including a new held-write ordering test
-  and immediate editing after choosing temporary mode. Across the successful
-  commands, 124 distinct methods passed. Follow-up wall time: 215.60 s; successful
-  command total: 440.45 s, including compilation/discovery/execution. Both rebuilt
-  tests; neither is reported as a verified build-cache hit.
-- One intervening build failed in the Swift compiler before tests executed:
-  an unqualified `error` assignment inside `catch` triggered a type-checker
-  assertion. Explicitly using `self.error` fixed it. That failed command did not
-  emit a total wall time and is excluded from the measured total above.
-- The final binary's own LLVM profile covers 124/126 changed executable Swift
-  lines (98.41%); see `docs/validation/feature-isolation/handoff-coverage.json`.
-  Profiles from the earlier binary are not used in this figure because the
-  changed persistence function has incompatible counters. This is changed-code
-  coverage, not whole-project coverage.
-- Fixtures reopen SQLite storage, inject unavailable/altered storage and SQL
-  write/delete failures, hold writes across cancellation/account changes, and
-  verify exact-message acknowledgment without real API requests. A recovered
-  draft is never automatically sent. An installed-app crash/restart, real IPC,
-  signed helper launch, and the 30-second GUI freeze acceptance gate have not
-  been exercised; this step does not claim process isolation.
-
-## Presentation process prototype validation, 2026-10-22
-
-- One focused coverage command passed 39 methods: `ChatWindowProtocolTests`,
-  `ChatWindowPresentationTests`, `ChatWindowClientTests`, `ChatWindowFreezeTests`,
-  `ManagedProcessTests`, and `ExclusiveUIStateLanguageTests`. The scope covers
-  wire limits/session fencing, native presentation, child lifecycle, signed
-  bundle startup, real GUI stalls, the existing process cleanup dependency and
-  UI test isolation. There were no failed tests or retries.
-- The child actually blocked its main thread for 30 seconds. Its main-thread
-  heartbeat returned after 30.031 s while the test parent's main actor completed
-  1,272 scheduled callbacks, with a worst interval of 33.564 ms (20 ms requested).
-  This measures the test parent's responsiveness, not launcher/screenshot/
-  clipboard shortcut latency in the installed application.
-- Separate cases verify a 100 ms heartbeat timeout and caller cancellation retire
-  the stalled child within a three-second bound, overlapping requests are
-  rejected, and wrong IDs/generations/kinds/sequences cannot be accepted. A
-  cold child handshake took 0.929 s on this machine; this is one observation,
-  not a benchmark distribution. The instrumented helper binary was 484 KiB.
-- A temporary nested GUI app was ad-hoc signed with hardened runtime, verified
-  with `codesign --verify --strict`, then launched over the inherited connection.
-  No installed app was replaced. Developer ID signing/notarization, the complete
-  Xcode app build, installed-app permissions and memory benchmarks were not run.
-- Six Python packaging checks passed, covering this GUI helper and the existing
-  media/inference helper packaging. Both dev entrypoints, release packaging and
-  the checked-in Xcode target embed/sign the child without parent entitlements.
-- External coverage-command wall time: 413.28 s (runner-reported 413.15 s;
-  365.30 s build/discovery and 47.85 s execution/startup). Python packaging
-  command: 0.68 s. Both replace, rather than duplicate, plain validation runs.
-  Earlier compile-only checks reported 11.77 s for the helper and 121.33 s for
-  the host; their shell startup time was not separately measured.
-- Parent-test and child-process LLVM coverage were exported against their own
-  binaries and combined by source line. They cover 308/309 changed executable
-  Swift lines (99.68%); see `chat-window-prototype-coverage.json` in the validation
-  directory. This is line coverage, not branch coverage or whole-project coverage.
-  The uncovered line handles failure to set close-on-exec on a new socket pair.
-- The default production conversation window still uses its original process.
-  The prototype is read-only and deliberately has no inference/tool execution
-  path. Full UI/intents integration and the installed-app acceptance gates above
-  remain outstanding.
+Command wall times include compilation and discovery: broad regression 254.31s;
+final recording retry 61.75s (37.44s build/discovery, 24.30s execution). Earlier
+failed attempts and diagnostic runs are retained in the task's validation logs;
+passing retries do not erase those failures. Release compilation is verified
+separately before main-branch delivery.

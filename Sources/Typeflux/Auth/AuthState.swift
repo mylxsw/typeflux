@@ -235,6 +235,10 @@ final class AuthState: ObservableObject {
     // MARK: - Logout
 
     func logout(clearRecentInputMemory: Bool = true) {
+        if FeatureProcess.enabled, FeatureProcess.role != .host {
+            FeatureProcess.send(.init(destination: .host, action: "logout"))
+            return
+        }
         webLoginCoordinator.cancel()
         RecentInputMemoryStore.shared.invalidateObservations()
         if clearRecentInputMemory {
@@ -295,6 +299,11 @@ final class AuthState: ObservableObject {
     /// Returns a usable access token, refreshing it first when it has expired
     /// or is about to. Returns nil when the session is gone or was revoked.
     func validAccessToken() async -> String? {
+        if FeatureProcess.enabled, FeatureProcess.role != .host {
+            let remaining = accessTokenExpiresAt.map { $0 - Int(Date().timeIntervalSince1970) } ?? 0
+            if remaining < Int(Self.validTokenRefreshLeadTime) { _ = await FeatureAuth.refresh() }
+            return accessToken
+        }
         guard isLoggedIn else { return accessToken }
         let remaining = accessTokenExpiresAt.map { TimeInterval($0) - Date().timeIntervalSince1970 } ?? 0
         if remaining < Self.validTokenRefreshLeadTime, hasStoredRefreshToken {

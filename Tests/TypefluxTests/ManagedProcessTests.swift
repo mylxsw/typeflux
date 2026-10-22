@@ -50,6 +50,19 @@ final class ManagedProcessTests: XCTestCase {
         do { _ = try await ManagedProcess().run(invocation); XCTFail() } catch {}
     }
 
+    func testApplicationLifetimeDisablesDeadlineButPreservesCancellation() async throws {
+        var invocation = request("echo ready; sleep 30", timeout: 0.05)
+        invocation.ownedApplicationLifetime = true
+        let started = Date()
+        let task = Task { try await ManagedProcess().run(invocation) }
+        try await Task.sleep(for: .milliseconds(150))
+        task.cancel()
+        let result = try await task.value
+        XCTAssertEqual(result.termination, .cancelled)
+        XCTAssertEqual(result.stdout, "ready")
+        XCTAssertLessThan(Date().timeIntervalSince(started), 2)
+    }
+
     private var root: URL!
     private var directory: AskSecureDirectory!
 

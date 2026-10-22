@@ -7,7 +7,7 @@ enum AskStreamError: Error {
     case rejected
 }
 
-struct AskStreamProgress: Equatable, Sendable {
+struct AskStreamProgress: Codable, Equatable, Sendable {
     var text = ""
     var reasoning = ""
     var toolCalls: [AskToolCall] = []

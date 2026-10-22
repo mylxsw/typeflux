@@ -30,6 +30,9 @@ final class ScreenshotToastController: ScreenshotToastPresenting {
         case let .saved(url):
             Content(message: L("screenshot.toast.saved", url.deletingLastPathComponent().lastPathComponent),
                     symbol: "checkmark.circle", revealURL: url, duration: 4)
+        case let .followUpSaved(url):
+            Content(message: L("feature.screenshotSaved"), symbol: "exclamationmark.triangle",
+                    isError: true, revealURL: url, duration: 8)
         case let .savedAsCopy(reason):
             Content(message: L("screenshot.toast.savedAsCopy", reason), symbol: "exclamationmark.triangle",
                     isError: true, duration: 5)

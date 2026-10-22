@@ -141,6 +141,7 @@ final class RealtimeAudioBufferPump {
     }
 
     func cancel() { close(cancelled: true); task.cancel() }
+    func cancelAndWait() async { cancel(); await task.value }
 
     private func close(cancelled: Bool) {
         admission.lock.lock(); defer { admission.lock.unlock() }

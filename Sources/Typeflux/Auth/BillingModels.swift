@@ -370,3 +370,23 @@ extension ISO8601DateFormatter {
         return formatter
     }()
 }
+
+extension BillingSubscriptionSnapshot: Encodable {
+    func encode(to encoder: Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encode(billingEnabled, forKey: .billingEnabled)
+        try values.encodeIfPresent(billingMode, forKey: .billingMode)
+        try values.encodeIfPresent(autoRenew, forKey: .autoRenew)
+        try values.encodeIfPresent(planCode, forKey: .planCode)
+        try values.encodeIfPresent(planName, forKey: .planName)
+        try values.encodeIfPresent(status, forKey: .status)
+        try values.encodeIfPresent(currentPeriodStart, forKey: .currentPeriodStart)
+        try values.encodeIfPresent(currentPeriodEnd, forKey: .currentPeriodEnd)
+        try values.encode(cancelAtPeriodEnd, forKey: .cancelAtPeriodEnd)
+        try values.encode(entitled, forKey: .entitled)
+        try values.encode(active, forKey: .active)
+        try values.encode(paid, forKey: .paid)
+        try values.encode(cloudASRAllowed, forKey: .cloudASRAllowed)
+        try values.encodeIfPresent(periodSource, forKey: .periodSource)
+    }
+}

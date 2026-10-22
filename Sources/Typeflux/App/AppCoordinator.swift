@@ -2,11 +2,11 @@ import AppKit
 
 @MainActor
 final class AppCoordinator {
-    private let di = DIContainer()
+    let di = DIContainer()
 
-    private var statusBarController: StatusBarController?
-    private var workflowController: WorkflowController?
-    private var ringController: RingController?
+    var statusBarController: StatusBarController?
+    var workflowController: WorkflowController?
+    var ringController: RingController?
     private var onboardingWindowController: OnboardingWindowController?
     private let cloudEndpointProbeScheduler = CloudEndpointProbeScheduler()
     private let asrPublicConfigRefreshScheduler = TypefluxASRPublicConfigRefreshScheduler()
@@ -16,16 +16,46 @@ final class AppCoordinator {
     private var permissionAnalyticsTimer: Timer?
     private lazy var helpWindowController = HelpWindowController.app(
         settings: di.settingsStore, ask: di.askConversationWindowController,
-        openSettings: { [weak self] destination in self?.statusBarController?.showSettings(for: destination) },
-        openFeedback: { [weak self] destination in self?.statusBarController?.showFeedback(destination) }
+        openSettings: { destination in
+            if let data = try? JSONEncoder().encode(destination) { FeatureProcess.send(.init(destination: .host, action: "helpSettings", payload: data)) }
+        },
+        openFeedback: { destination in
+            if let data = try? JSONEncoder().encode(destination) { FeatureProcess.send(.init(destination: .host, action: "helpFeedback", payload: data)) }
+        }
     )
 
+    var featureStatusTimer: Timer?
+    var featureQuickUpdate: Task<Void, Never>?
+    var lastFeatureQuickProgress: FeatureQuickProgress?
+    let featureTranslations = FeatureTranslationBridge()
+    let featureScreenshotForwarder = FeatureScreenshotForwarder()
     private var moduleStartup: Task<Void, Never>?
+    var featureModuleStartup: Task<Void, Never>?
 
     // swiftlint:disable:next function_body_length
     func start() {
+        FeatureProcess.reportFailure = { [weak self] in self?.di.overlayController.showNotice(message: L("feature.unavailable")) }
+        FeatureProcess.handle = { [weak self] command in
+            guard let self else { throw FeatureRPC.Failure.unavailable }
+            return try await self.handleFeatureCommand(command)
+        }
+        if FeatureProcess.enabled {
+            featureModuleStartup = Task { [di] in
+                await withTaskGroup(of: Void.self) { group in
+                    for module in FeatureProcess.role.modules {
+                        group.addTask { try? await di.moduleRegistry.start(module) }
+                    }
+                }
+            }
+            FeatureProcess.configure(api: AskConversationWindowController.makeAPI(settings: di.settingsStore, modelLibrary: di.modelLibrary), cache: di.conversationCache, preparation: featureModuleStartup)
+            if FeatureProcess.role != .host { startFeature(); return }
+            featureStatusTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+                Task { @MainActor in self?.publishFeatureStatus() }
+            }
+        }
         moduleStartup?.cancel()
         moduleStartup = Task { [di] in
+            guard FeatureProcess.owns(.launcher) else { return }
             // Start the preview pool first and pay the helper/LaunchServices cold
             // start before the first launcher search needs an application icon.
             let previewReady = (try? await di.moduleRegistry.start(.mediaPreviews)) != nil
@@ -85,9 +115,176 @@ final class AppCoordinator {
                 }
             }
         }
+        let workflowController = makeWorkflowController()
+        self.workflowController = workflowController
+        workflowController.clipboardHistoryStore = di.clipboardHistoryStore
+        workflowController.clipboardPanelPresenter = di.clipboardPanelController
+        workflowController.clipboardContentActions = SystemClipboardContentActions(
+            textRecognizer: di.imageTextRecognizer
+        )
+        if FeatureProcess.owns(.clipboard) { workflowController.enforceClipboardRetentionPolicy() }
+        let clipboardPanelController = di.clipboardPanelController
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak clipboardPanelController, weak workflowController] in
+            guard let model = workflowController?.historyPanelModel else { return }
+            clipboardPanelController?.prewarm(model)
+        }
+        let semanticSearch = SemanticFileSearchService.shared
+        workflowController.onForegroundActivityChanged = { [weak semanticSearch] busy in semanticSearch?.setForegroundBusy(busy) }
+        if FeatureProcess.owns(.clipboard) { di.clipboardMonitor.start() }
+        if let ask = di.askConversationWindowController {
+            ask.model.semanticSearch = semanticSearch
+            workflowController.onAskRequested = { [weak ask] in ask?.toggleLauncher() }
+            // Build the launcher while the app is idle, so the first ⌥Space shows it at once.
+            DispatchQueue.main.async { [weak ask] in ask?.prewarmLauncher() }
+            let voice = ask.model.voiceInput
+            voice.recorder = WorkflowComposerRecording(workflowController)
+            workflowController.composerVoiceInput = voice
+            ask.model.recordingIsActive = { [weak workflowController] in workflowController?.isRecording ?? false }
+            let monitor = ask.model.systemMonitorWindow
+            monitor.openInLauncher = { [weak model = ask.model] focus in model?.openSystemMonitorInLauncher(focus: focus) }
+            // The monitor window comes back when it was open at quit.
+            DispatchQueue.main.async { if FeatureProcess.owns(.launcher) { monitor.restoreIfNeeded() } }
+        } else {
+            workflowController.onAskRequested = {
+                let alert = NSAlert()
+                alert.messageText = L("ask.cache.failed")
+                alert.runModal()
+            }
+        }
+
+        let screenshotCoordinator = di.screenshotCoordinator
+        let screenRecordingCoordinator = di.screenRecordingSessions
+        screenshotCoordinator.isRecordingActive = { [weak screenRecordingCoordinator] in
+            screenRecordingCoordinator?.isCaptureActive ?? false
+        }
+        screenshotCoordinator.onRecordingRequested = { [weak screenRecordingCoordinator] format, region in
+            screenRecordingCoordinator?.show(format: format, region: region)
+        }
+        di.hotkeyService.onScreenshotRequested = { [weak screenshotCoordinator] in
+            screenshotCoordinator?.start(mode: .region)
+        }
+        if let model = di.askConversationWindowController?.model {
+            model.onStartScreenshot = { [weak screenshotCoordinator] mode, followUp in
+                screenshotCoordinator?.start(mode: mode, followUp: followUp)
+            }
+            model.screenshotTextRecognizer = TiledImageTextRecognizer(base: di.imageTextRecognizer)
+            model.onTranslateScreenshot = { [weak self] image in self?.di.translationPanel.openScreenshot(image) }
+            model.onMoveTranslationToPanel = { [weak self, weak model] session, close in
+                guard let self, di.translationPanel.moveFromLauncher(session, closeLauncher: close) else { return false }
+                // A new launcher run must not reset the fanout now owned by the panel.
+                model?.translationFanout = di.translationEngines.makeSession()
+                if let model { model.plugins.replacePlugins(model.makeLauncherPlugins()) }
+                return true
+            }
+            // Text and questions stay in the launcher; translation opens its panel.
+            di.translationPanel.otherScreenshotHandler = model
+        }
+        screenshotCoordinator.followUpHandler = di.translationPanel
+        let translationPanelController = di.translationPanelController
+        DispatchQueue.main.async { [weak translationPanelController] in
+            if FeatureProcess.owns(.launcher) { translationPanelController?.prewarm() }
+        }
+        di.translationPanelModel.onSettings = { [weak self] in
+            guard let self else { return }
+            SettingsWindowController.shared.show(settingsStore: di.settingsStore, historyStore: di.historyStore,
+                initialSection: .launcher, launcherPane: .translation,
+                modelManager: di.ollamaModelManager, localModelManager: di.localModelManager)
+        }
+
+        di.hotkeyService.onShortcutRequested = { [weak self, weak screenshotCoordinator] target in
+            self?.handleShortcut(target, screenshotCoordinator: screenshotCoordinator)
+        }
+        di.hotkeyService.onShortcutReleased = { [weak self] target in
+            if target == .action(.ring) { self?.ringController?.pressEnded() }
+        }
+        di.hotkeyService.onShortcutCancelled = { [weak self] target in
+            if target == .action(.ring) { self?.ringController?.cancelPress() }
+        }
+        if FeatureProcess.owns(.ring) { startRing(screenshotCoordinator: screenshotCoordinator) }
+
+        statusBarController = StatusBarController(
+            appState: di.appState,
+            settingsStore: di.settingsStore,
+            historyStore: di.historyStore,
+            audioDeviceManager: di.audioDeviceManager,
+            modelManager: di.ollamaModelManager,
+            localModelManager: di.localModelManager,
+            notificationService: di.notificationService,
+            onRetryHistory: { [weak self] record in
+                self?.workflowController?.retry(record: record)
+            },
+            onOpenOnboarding: { [weak self] in
+                self?.showOnboarding()
+            },
+            onOpenHelp: { [weak self] in self?.showHelp(query: "") },
+            onOpenAskConversations: { [weak self] in
+                self?.di.askConversationWindowController?.showConversation()
+            },
+            onScreenshot: { [weak screenshotCoordinator] in
+                screenshotCoordinator?.start(mode: .region)
+            },
+            onScreenshotText: { [weak screenshotCoordinator] in
+                screenshotCoordinator?.start(mode: .region, followUp: .recognizeText)
+            },
+            onScreenRecording: { [weak screenRecordingCoordinator] in screenRecordingCoordinator?.show() },
+            pinnedScreenshots: { [weak screenshotCoordinator] in
+                FeatureProcess.enabled ? (FeatureActivityMirror.shared.pins, FeatureActivityMirror.shared.clickThroughPins) : (screenshotCoordinator?.pins.pinCount ?? 0, screenshotCoordinator?.pins.clickThroughCount ?? 0)
+            },
+            onRestorePinnedScreenshots: { [weak screenshotCoordinator] in
+                if FeatureProcess.enabled { FeatureProcess.send(.init(destination: .screenshot, action: "restorePins")) }
+                else { screenshotCoordinator?.pins.restoreMouse() }
+            },
+            onClosePinnedScreenshots: { [weak screenshotCoordinator] in
+                if FeatureProcess.enabled { FeatureProcess.send(.init(destination: .screenshot, action: "closePins")) }
+                else { screenshotCoordinator?.pins.closeAll() }
+            },
+            activityCenter: di.backgroundActivityCenter
+        )
+        di.backgroundActivityCenter.onOpen = { [weak self] route in self?.openBackgroundActivity(route) }
+        statusBarController?.start()
+        di.askConversationWindowController?.model.onOpenHelp = { [weak self] query in
+            self?.showHelp(query: query)
+        }
+        di.askConversationWindowController?.model.onOpenSettings = { [weak self] section in
+            self?.statusBarController?.showSettings(section: section)
+        }
+        di.askConversationWindowController?.model.onOpenFeedback = { [weak self] in
+            self?.statusBarController?.showFeedback(.direct)
+        }
+        self.workflowController?.start(backgroundWarmup: FeatureProcess.owns(.voice))
+        // Link the bundled SenseVoice copy before triggering the auto-model
+        // download service: triggerIfNeeded() reads preparedModelInfo to decide
+        // whether the local-first fallback route is available, so the record
+        // must already exist.
+        di.bundledModelAutoSetup.applyIfNeeded()
+        di.autoModelDownloadService.triggerIfNeeded()
+        AutoUpdater.shared.startAutoCheck(settingsStore: di.settingsStore)
+        UsageStatsStore.shared.backfillIfNeeded(from: di.historyStore) { [weak self] in
+            guard let self else { return }
+            di.usageDailySummaryReporter.reportIfNeeded(snapshot: .current(from: UsageStatsStore.shared))
+        }
+        cloudEndpointProbeScheduler.start()
+        asrPublicConfigRefreshScheduler.start()
+        Task {
+            await AuthState.shared.refreshTokenIfNeeded()
+            if let token = await MainActor.run(body: {
+                AuthState.shared.canUseCloudASR ? AuthState.shared.accessToken : nil
+            }) {
+                await TypefluxOfficialASRRouteCache.shared.prefetch(accessToken: token)
+            }
+        }
+
+        if !di.settingsStore.isOnboardingCompleted {
+            presentOnboarding()
+        } else {
+            presentPermissionGuidanceIfNeeded()
+        }
+    }
+
+    func makeWorkflowController() -> WorkflowController {
         let settingsStore = di.settingsStore
         let localModelManager = di.localModelManager
-        let workflowController = WorkflowController(
+        return WorkflowController(
             appState: di.appState,
             settingsStore: settingsStore,
             hotkeyService: di.hotkeyService,
@@ -129,163 +326,6 @@ final class AppCoordinator {
             outputPostProcessor: di.outputPostProcessor,
             analyticsReporter: di.analyticsReporter
         )
-        self.workflowController = workflowController
-        workflowController.clipboardHistoryStore = di.clipboardHistoryStore
-        workflowController.clipboardPanelPresenter = di.clipboardPanelController
-        workflowController.clipboardContentActions = SystemClipboardContentActions(
-            textRecognizer: di.imageTextRecognizer
-        )
-        workflowController.enforceClipboardRetentionPolicy()
-        let clipboardPanelController = di.clipboardPanelController
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak clipboardPanelController, weak workflowController] in
-            guard let model = workflowController?.historyPanelModel else { return }
-            clipboardPanelController?.prewarm(model)
-        }
-        let semanticSearch = SemanticFileSearchService.shared
-        workflowController.onForegroundActivityChanged = { [weak semanticSearch] busy in semanticSearch?.setForegroundBusy(busy) }
-        di.clipboardMonitor.start()
-        if let ask = di.askConversationWindowController {
-            ask.model.semanticSearch = semanticSearch
-            workflowController.onAskRequested = { [weak ask] in ask?.toggleLauncher() }
-            // Build the launcher while the app is idle, so the first ⌥Space shows it at once.
-            DispatchQueue.main.async { [weak ask] in ask?.prewarmLauncher() }
-            let voice = ask.model.voiceInput
-            voice.recorder = WorkflowComposerRecording(workflowController)
-            workflowController.composerVoiceInput = voice
-            ask.model.recordingIsActive = { [weak workflowController] in workflowController?.isRecording ?? false }
-            let monitor = ask.model.systemMonitorWindow
-            monitor.openInLauncher = { [weak model = ask.model] focus in model?.openSystemMonitorInLauncher(focus: focus) }
-            // The monitor window comes back when it was open at quit.
-            DispatchQueue.main.async { monitor.restoreIfNeeded() }
-        } else {
-            workflowController.onAskRequested = {
-                let alert = NSAlert()
-                alert.messageText = L("ask.cache.failed")
-                alert.runModal()
-            }
-        }
-
-        let screenshotCoordinator = di.screenshotCoordinator
-        let screenRecordingCoordinator = di.screenRecordingSessions
-        screenshotCoordinator.isRecordingActive = { [weak screenRecordingCoordinator] in
-            screenRecordingCoordinator?.isCaptureActive ?? false
-        }
-        screenshotCoordinator.onRecordingRequested = { [weak screenRecordingCoordinator] format, region in
-            screenRecordingCoordinator?.show(format: format, region: region)
-        }
-        di.hotkeyService.onScreenshotRequested = { [weak screenshotCoordinator] in
-            screenshotCoordinator?.start(mode: .region)
-        }
-        if let model = di.askConversationWindowController?.model {
-            model.onStartScreenshot = { [weak screenshotCoordinator] mode, followUp in
-                screenshotCoordinator?.start(mode: mode, followUp: followUp)
-            }
-            model.screenshotTextRecognizer = TiledImageTextRecognizer(base: di.imageTextRecognizer)
-            model.onTranslateScreenshot = { [weak self] image in self?.di.translationPanel.openScreenshot(image) }
-            model.onMoveTranslationToPanel = { [weak self, weak model] session, close in
-                guard let self, di.translationPanel.moveFromLauncher(session, closeLauncher: close) else { return false }
-                // A new launcher run must not reset the fanout now owned by the panel.
-                model?.translationFanout = di.translationEngines.makeSession()
-                if let model { model.plugins.replacePlugins(model.makeLauncherPlugins()) }
-                return true
-            }
-            // Text and questions stay in the launcher; translation opens its panel.
-            di.translationPanel.otherScreenshotHandler = model
-        }
-        screenshotCoordinator.followUpHandler = di.translationPanel
-        let translationPanelController = di.translationPanelController
-        DispatchQueue.main.async { [weak translationPanelController] in
-            translationPanelController?.prewarm()
-        }
-        di.translationPanelModel.onSettings = { [weak self] in
-            guard let self else { return }
-            SettingsWindowController.shared.show(settingsStore: di.settingsStore, historyStore: di.historyStore,
-                initialSection: .launcher, launcherPane: .translation,
-                modelManager: di.ollamaModelManager, localModelManager: di.localModelManager)
-        }
-
-        di.hotkeyService.onShortcutRequested = { [weak self, weak screenshotCoordinator] target in
-            self?.handleShortcut(target, screenshotCoordinator: screenshotCoordinator)
-        }
-        di.hotkeyService.onShortcutReleased = { [weak self] target in
-            if target == .action(.ring) { self?.ringController?.pressEnded() }
-        }
-        di.hotkeyService.onShortcutCancelled = { [weak self] target in
-            if target == .action(.ring) { self?.ringController?.cancelPress() }
-        }
-        startRing(screenshotCoordinator: screenshotCoordinator)
-
-        statusBarController = StatusBarController(
-            appState: di.appState,
-            settingsStore: di.settingsStore,
-            historyStore: di.historyStore,
-            audioDeviceManager: di.audioDeviceManager,
-            modelManager: di.ollamaModelManager,
-            localModelManager: di.localModelManager,
-            notificationService: di.notificationService,
-            onRetryHistory: { [weak self] record in
-                self?.workflowController?.retry(record: record)
-            },
-            onOpenOnboarding: { [weak self] in
-                self?.showOnboarding()
-            },
-            onOpenHelp: { [weak self] in self?.showHelp(query: "") },
-            onOpenAskConversations: { [weak self] in
-                self?.di.askConversationWindowController?.showConversation()
-            },
-            onScreenshot: { [weak screenshotCoordinator] in
-                screenshotCoordinator?.start(mode: .region)
-            },
-            onScreenshotText: { [weak screenshotCoordinator] in
-                screenshotCoordinator?.start(mode: .region, followUp: .recognizeText)
-            },
-            onScreenRecording: { [weak screenRecordingCoordinator] in screenRecordingCoordinator?.show() },
-            pinnedScreenshots: { [weak screenshotCoordinator] in
-                (screenshotCoordinator?.pins.pinCount ?? 0, screenshotCoordinator?.pins.clickThroughCount ?? 0)
-            },
-            onRestorePinnedScreenshots: { [weak screenshotCoordinator] in screenshotCoordinator?.pins.restoreMouse() },
-            onClosePinnedScreenshots: { [weak screenshotCoordinator] in screenshotCoordinator?.pins.closeAll() },
-            activityCenter: di.backgroundActivityCenter
-        )
-        di.backgroundActivityCenter.onOpen = { [weak self] route in self?.openBackgroundActivity(route) }
-        statusBarController?.start()
-        di.askConversationWindowController?.model.onOpenHelp = { [weak self] query in
-            self?.showHelp(query: query)
-        }
-        di.askConversationWindowController?.model.onOpenSettings = { [weak self] section in
-            self?.statusBarController?.showSettings(section: section)
-        }
-        di.askConversationWindowController?.model.onOpenFeedback = { [weak self] in
-            self?.statusBarController?.showFeedback(.direct)
-        }
-        self.workflowController?.start()
-        // Link the bundled SenseVoice copy before triggering the auto-model
-        // download service: triggerIfNeeded() reads preparedModelInfo to decide
-        // whether the local-first fallback route is available, so the record
-        // must already exist.
-        di.bundledModelAutoSetup.applyIfNeeded()
-        di.autoModelDownloadService.triggerIfNeeded()
-        AutoUpdater.shared.startAutoCheck(settingsStore: di.settingsStore)
-        UsageStatsStore.shared.backfillIfNeeded(from: di.historyStore) { [weak self] in
-            guard let self else { return }
-            di.usageDailySummaryReporter.reportIfNeeded(snapshot: .current(from: UsageStatsStore.shared))
-        }
-        cloudEndpointProbeScheduler.start()
-        asrPublicConfigRefreshScheduler.start()
-        Task {
-            await AuthState.shared.refreshTokenIfNeeded()
-            if let token = await MainActor.run(body: {
-                AuthState.shared.canUseCloudASR ? AuthState.shared.accessToken : nil
-            }) {
-                await TypefluxOfficialASRRouteCache.shared.prefetch(accessToken: token)
-            }
-        }
-
-        if !di.settingsStore.isOnboardingCompleted {
-            presentOnboarding()
-        } else {
-            presentPermissionGuidanceIfNeeded()
-        }
     }
 
     private func openBackgroundActivity(_ route: BackgroundActivity.Route) {
@@ -306,10 +346,14 @@ final class AppCoordinator {
     }
 
     func prepareForTermination() async {
-        await di.askConversationWindowController?.model.shutdownCommandJobs()
-        await di.askConversationWindowController?.model.discardTemporaryConversationForTermination()
+        featureStatusTimer?.invalidate(); featureStatusTimer = nil
+        featureQuickUpdate?.cancel(); featureQuickUpdate = nil
+        featureModuleStartup?.cancel()
+        if FeatureProcess.role == .host { await FeatureProcess.supervisor?.shutdown() }
+        await di.existingAskConversationWindowController?.model.shutdownCommandJobs()
+        await di.existingAskConversationWindowController?.model.discardTemporaryConversationForTermination()
         workflowController?.clipboardAction.preventNewWork()
-        di.askConversationWindowController?.model.clipboardAction.preventNewWork()
+        di.existingAskConversationWindowController?.model.clipboardAction.preventNewWork()
         moduleStartup?.cancel()
         moduleStartup = nil
         di.moduleRegistry.preventNewWork()
@@ -341,8 +385,11 @@ final class AppCoordinator {
     }
 
     func stop() {
+        featureStatusTimer?.invalidate(); featureStatusTimer = nil
+        featureQuickUpdate?.cancel(); featureQuickUpdate = nil
+        featureModuleStartup?.cancel()
         workflowController?.clipboardAction.preventNewWork()
-        di.askConversationWindowController?.model.clipboardAction.preventNewWork()
+        di.existingAskConversationWindowController?.model.clipboardAction.preventNewWork()
         moduleStartup?.cancel()
         moduleStartup = nil
         di.moduleRegistry.preventNewWork()
@@ -376,7 +423,11 @@ final class AppCoordinator {
     }
 
     /// A feature or keyword shortcut from Settings → Shortcuts.
-    private func handleShortcut(_ target: HotkeyTarget, screenshotCoordinator: ScreenshotCoordinator?) {
+    func handleShortcut(_ target: HotkeyTarget, screenshotCoordinator: ScreenshotCoordinator?) {
+        let destination = FeatureHotkeyEvent.destination(for: target)
+        if !FeatureProcess.owns(destination), let data = try? JSONEncoder().encode(FeatureHotkeyEvent(name: "onShortcutRequested", target: target)) {
+            FeatureProcess.send(.init(destination: destination, action: "hotkey", payload: data)); return
+        }
         switch target {
         case .builtIn:
             break
@@ -393,7 +444,10 @@ final class AppCoordinator {
         case .action(.openWordBook):
             AskWordBookWindowController.shared.show()
         case .action(.openStudio):
-            statusBarController?.showSettings(section: .home)
+            SettingsWindowController.shared.show(settingsStore: di.settingsStore, historyStore: di.historyStore,
+                initialSection: .home, modelManager: di.ollamaModelManager, localModelManager: di.localModelManager,
+                notificationService: di.notificationService,
+                onRetryHistory: { [weak self] in self?.workflowController?.retry(record: $0) })
         case .action(.openHelp):
             showHelp(query: "")
         case .action(.ring):
@@ -406,7 +460,7 @@ final class AppCoordinator {
         }
     }
 
-    private func startRing(screenshotCoordinator: ScreenshotCoordinator) {
+    func startRing(screenshotCoordinator: ScreenshotCoordinator) {
         let executor = RingActionExecutor(environment: LiveRingSystemEnvironment())
         executor.handlers = RingActionExecutor.Handlers(
             feature: { [weak self, weak screenshotCoordinator] feature in
@@ -431,6 +485,7 @@ final class AppCoordinator {
         }
         switch feature {
         case .dictation:
+            if !FeatureProcess.owns(.voice) { FeatureProcess.send(.init(destination: .voice, action: "dictation")); return }
             workflowController?.handlePressBegan(intent: .dictation, startLocked: true)
         case .ask:
             di.askConversationWindowController?.toggleLauncher()
@@ -439,6 +494,7 @@ final class AppCoordinator {
         case .clipboard:
             workflowController?.handleHistoryPickerRequested()
         case .persona:
+            if !FeatureProcess.owns(.voice) { FeatureProcess.send(.init(destination: .voice, action: "persona")); return }
             workflowController?.handlePersonaPickerRequested()
         default:
             break
@@ -447,7 +503,9 @@ final class AppCoordinator {
 
     /// Opens the usage guide window, closing the launcher it may have come from.
     func showHelp(query: String) {
-        di.askConversationWindowController?.dismissLauncher()
+        if !FeatureProcess.owns(.help) { FeatureProcess.send(.init(destination: .help, action: "help", payload: Data(query.utf8))); return }
+        if FeatureProcess.enabled { FeatureProcess.send(.init(destination: .launcher, action: "hideLauncher")) }
+        else { di.askConversationWindowController?.dismissLauncher() }
         helpWindowController.show(query: query)
     }
 

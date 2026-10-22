@@ -51,6 +51,7 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
     }
 
     func openInput() {
+        if !FeatureProcess.owns(.translation) { FeatureProcess.send(.init(destination: .translation, action: "translationInput")); return }
         if selectionTask != nil { cancelEntry() }
         if controller.isPresented {
             controller.focus(); return
@@ -64,6 +65,7 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
     }
 
     func toggleSelection() {
+        if !FeatureProcess.owns(.translation) { FeatureProcess.send(.init(destination: .translation, action: "translationToggle")); return }
         if controller.isPresented {
             model.dismiss()
         } else {
@@ -72,6 +74,7 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
     }
 
     func openSelection() {
+        if !FeatureProcess.owns(.translation) { FeatureProcess.send(.init(destination: .translation, action: "translationSelection")); return }
         selectionTask?.cancel()
         let current = generation
         let wasPresented = controller.isPresented
@@ -113,6 +116,7 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
     }
 
     func openScreenshot(_ image: ScreenshotFollowUpImage) {
+        if !FeatureProcess.owns(.translation) { FeatureScreenshotForwarder.shared.handle(.translate, image: image); return }
         cancelEntry()
         let current = generation
         processID = frontmost()

@@ -6637,3 +6637,7 @@
 "ask.history.syncPending" = "部分对话尚未同步，将自动重试。";
 
 "ask.storage.inUse" = "另一个 Typeflux 进程正在使用这些会话，请关闭它后重试。";
+
+"feature.unavailable" = "这个窗口暂时没有响应。输入已保留，其他工具仍可使用。";
+
+"feature.screenshotSaved" = "目标窗口没有响应，截图已保存。";

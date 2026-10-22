@@ -141,6 +141,9 @@ final class ScreenRecordingWindowController: NSObject, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
+        // Capture overlays change rapidly; native threaded animations can outlive
+        // their panels and starve media completion callbacks.
+        panel.animationBehavior = .none
         panel.identifier = Self.identifier
         panel.isOpaque = false
         panel.backgroundColor = .clear

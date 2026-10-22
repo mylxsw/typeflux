@@ -48,7 +48,7 @@ enum AppHotkeyAction: String, CaseIterable, Codable, Sendable {
 }
 
 /// Anything on the Shortcuts page that can own a key combination.
-enum HotkeyTarget: Hashable, Sendable {
+enum HotkeyTarget: Hashable, Codable, Sendable {
     case builtIn(BuiltInHotkey)
     case action(AppHotkeyAction)
     case keyword(UUID)

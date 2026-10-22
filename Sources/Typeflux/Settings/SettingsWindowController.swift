@@ -46,6 +46,9 @@ final class SettingsWindowController: NSObject {
 
     /// Switches the Settings section to one of its panes; the window must be shown.
     func requestSettingsPane(_ pane: AppSettingsPane) {
+        guard FeatureProcess.owns(.settings) else {
+            FeatureProcess.send(.init(destination: .settings, action: "settingsPane", payload: Data(pane.rawValue.utf8))); return
+        }
         viewModel?.settingsPaneRequest = pane
     }
 
@@ -60,6 +63,14 @@ final class SettingsWindowController: NSObject {
         notificationService: LocalNotificationSending = NoopLocalNotificationService(),
         onRetryHistory: @escaping (HistoryRecord) -> Void = { _ in }
     ) {
+        guard FeatureProcess.owns(.settings) else {
+            let request = FeatureSettingsRequest(section: initialSection.rawValue,
+                domain: initialModelDomain?.rawValue, pane: launcherPane?.rawValue)
+            if let payload = try? JSONEncoder().encode(request) {
+                FeatureProcess.send(.init(destination: .settings, action: "showSettings", payload: payload))
+            }
+            return
+        }
         self.settingsStore = settingsStore
 
         Task { await AuthState.shared.refreshTokenIfNeeded() }

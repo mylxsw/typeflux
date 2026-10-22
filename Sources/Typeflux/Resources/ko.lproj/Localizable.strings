@@ -6637,3 +6637,7 @@
 "ask.history.syncPending" = "일부 대화가 아직 동기화되지 않았습니다. 자동으로 다시 시도합니다.";
 
 "ask.storage.inUse" = "다른 Typeflux 프로세스가 이 대화를 사용 중입니다. 해당 프로세스를 종료한 후 다시 시도하세요.";
+
+"feature.unavailable" = "이 창이 응답하지 않습니다. 입력 내용은 보존되며 다른 도구는 계속 사용할 수 있습니다。";
+
+"feature.screenshotSaved" = "대상 창이 응답하지 않아 스크린샷을 저장했습니다.";

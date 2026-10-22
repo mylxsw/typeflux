@@ -106,6 +106,9 @@ final class ScreenshotCoordinator {
     /// while capturing or finishing, it is ignored with a notice. With a `followUp`, the chosen
     /// region goes straight to it instead of the editor.
     func start(mode: ScreenshotMode = .region, followUp: ScreenshotFollowUp? = nil) {
+        guard FeatureProcess.owns(.screenshot) else {
+            FeatureProcess.send(FeatureScreenshotRequest(mode: mode, followUp: followUp).command); return
+        }
         guard !isRecordingActive() else { toast.show(.busy); return }
         if mode == .recording || mode == .gif {
             guard state == .idle else { toast.show(.busy); return }

@@ -17,6 +17,15 @@ extension AuthState {
 
     @discardableResult
     func refreshSubscription() async -> BillingSubscriptionSnapshot? {
+        if FeatureProcess.enabled, !FeatureProcess.owns(.host) {
+            isLoadingSubscription = true
+            defer { isLoadingSubscription = false }
+            guard await FeatureAuth.refresh(action: "refreshSubscription") else {
+                subscriptionError = L("feature.unavailable"); return nil
+            }
+            subscriptionError = nil
+            return subscription
+        }
         guard let token = accessToken else {
             subscription = .none
             return nil
@@ -56,6 +65,13 @@ extension AuthState {
     /// returned instead.
     @discardableResult
     func syncSubscription() async throws -> BillingSubscriptionSnapshot {
+        if FeatureProcess.enabled, !FeatureProcess.owns(.host) {
+            isSyncingSubscription = true
+            defer { isSyncingSubscription = false }
+            guard await FeatureAuth.refresh(action: "syncSubscription") else { throw FeatureRPC.Failure.unavailable }
+            subscriptionError = nil
+            return subscription
+        }
         guard let token = accessToken else {
             throw AuthError.unauthorized
         }

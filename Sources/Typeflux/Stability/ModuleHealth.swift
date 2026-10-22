@@ -1,11 +1,11 @@
 import Foundation
 
-enum ModuleState: String, Sendable {
+enum ModuleState: String, Sendable, Codable {
     case stopped, starting, ready, recovering, circuitOpen, degraded, disabled
 }
 
 /// Content-free diagnostics. Never retain an underlying error's message here.
-struct ModuleHealth: Sendable {
+struct ModuleHealth: Sendable, Codable {
     let state: ModuleState
     let generation: UUID
     let pendingStarts: Int
@@ -14,7 +14,7 @@ struct ModuleHealth: Sendable {
     let failure: ModuleFailure?
 }
 
-enum ModuleFailure: Error, Equatable, Sendable {
+enum ModuleFailure: Error, Equatable, Sendable, Codable {
     case unavailable, overloaded, disabled, invalidPolicy, quarantined, healthPersistence
     case startupTimeout, operationTimeout, cleanupTimeout, invalidated
 }
@@ -23,7 +23,7 @@ enum ModuleFailureDisposition: Sendable {
     case operationOnly, recover, waitForExplicitRetry
 }
 
-enum ModuleRecoveryResponse: Sendable, Equatable {
+enum ModuleRecoveryResponse: Sendable, Equatable, Codable {
     case ready, started, coolingDown, busy, disabled, cancelled, unavailable
 }
 

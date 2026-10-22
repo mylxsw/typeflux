@@ -6637,3 +6637,7 @@
 "ask.history.syncPending" = "Some conversations have not synced yet. Retrying automatically.";
 
 "ask.storage.inUse" = "Another Typeflux process is using these conversations. Close it and try again.";
+
+"feature.unavailable" = "This window is not responding. Your input has been kept; other tools are still available.";
+
+"feature.screenshotSaved" = "The destination did not respond. Your screenshot was saved.";

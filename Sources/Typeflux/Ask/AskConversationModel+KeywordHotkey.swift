@@ -4,6 +4,12 @@ import Foundation
 /// runs it on the selected text, as if the user typed the keyword and pressed Return.
 extension AskConversationModel {
     func runKeywordShortcut(_ hotkey: KeywordHotkey) {
+        guard FeatureProcess.owns(.launcher) else {
+            if let payload = try? JSONEncoder().encode(FeatureHotkeyEvent(name: "onShortcutRequested", target: .keyword(hotkey.id))) {
+                FeatureProcess.send(.init(destination: .launcher, action: "hotkey", payload: payload))
+            }
+            return
+        }
         guard let onShowLauncher else { enterKeywordShortcut(hotkey, refreshingWorkflows: true); return }
         onShowLauncher { [weak self] in self?.enterKeywordShortcut(hotkey, refreshingWorkflows: true) }
     }

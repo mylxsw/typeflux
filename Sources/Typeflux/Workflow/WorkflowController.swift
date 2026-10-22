@@ -158,7 +158,13 @@ final class WorkflowController {
 
     var currentSelectedText: String?
     var onForegroundActivityChanged: ((Bool) -> Void)?
-    var isRecording = false { didSet { onForegroundActivityChanged?(isRecording || processingTask != nil) } }
+    var isRecording = false { didSet {
+        onForegroundActivityChanged?(isRecording || processingTask != nil)
+        if FeatureProcess.enabled {
+            FeatureProcess.send(.init(destination: .host, action: "voiceState",
+                payload: (try? JSONEncoder().encode(FeatureVoiceState(role: FeatureProcess.role, recording: isRecording))) ?? Data()))
+        }
+    } }
     var isAudioRecorderStarted = false
     var isAudioRecorderStarting = false
     var recordingAudioReadiness: RecordingAudioReadiness?
@@ -352,7 +358,7 @@ final class WorkflowController {
         )
     }
 
-    func start() {
+    func start(registerHotkeys: Bool = true, backgroundWarmup: Bool = true) {
         hotkeyService.recordingStopEnabled = { [weak self] in
             guard let self else { return false }
             return isRecording && recordingGestureDecision == nil
@@ -428,7 +434,7 @@ final class WorkflowController {
             }
         }
 
-        hotkeyService.start()
+        if registerHotkeys { hotkeyService.start() }
         Task { @MainActor [weak self] in
             self?.overlayController.prepareRecordingPresentation()
             if let self {
@@ -438,6 +444,7 @@ final class WorkflowController {
             }
         }
 
+        guard backgroundWarmup else { return }
         // Pre-warm the local STT model on startup, and re-warm whenever
         // the user switches provider or model in Settings.
         preheatLocalModelIfNeeded()
@@ -506,6 +513,9 @@ final class WorkflowController {
     }
 
     func retry(record: HistoryRecord) {
+        if !FeatureProcess.owns(.voice), let data = try? JSONEncoder().encode(record) {
+            FeatureProcess.send(.init(destination: .voice, action: "retryHistory", payload: data)); return
+        }
         guard !isRecording else { return }
         cancelCurrentProcessing(resetUI: false, reason: L("workflow.cancel.retry"))
 

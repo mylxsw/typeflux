@@ -13,6 +13,9 @@ struct AskLauncherScreenshot {
 /// module calls this through `ScreenshotFollowUpHandling`, so it never depends on `Ask/`.
 extension AskConversationModel: ScreenshotFollowUpHandling {
     func handle(_ followUp: ScreenshotFollowUp, image: ScreenshotFollowUpImage) {
+        guard FeatureProcess.owns(.launcher) else {
+            FeatureScreenshotForwarder().handle(followUp, image: image); return
+        }
         if followUp == .translate, let onTranslateScreenshot {
             onTranslateScreenshot(image)
             return

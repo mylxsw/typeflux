@@ -34,6 +34,9 @@ final class ScreenRecordingSessionController {
     }
 
     func show(format: ScreenRecordingFormat? = nil, region: ScreenRecordingTarget? = nil) {
+        guard FeatureProcess.owns(.screenshot) else {
+            FeatureProcess.send(FeatureScreenshotRequest(mode: format == .gif ? .gif : .recording, followUp: nil).command); return
+        }
         toast.hide()
         if let active = sessions.first(where: { $0.model.isCaptureActive }) {
             active.model.show()

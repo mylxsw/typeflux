@@ -5,6 +5,10 @@ extension AskConversationModel {
     /// Preserve the displaced draft before changing the visible conversation.
     @discardableResult
     func openChat(referencing note: AskNote) async -> Bool {
+        if !FeatureProcess.owns(.chat) {
+            return await transferFeatureDraft(AskDraft(includeScreenshot: false, references: [AskReference(note: note)]),
+                                              submit: false, clearingLauncher: false)
+        }
         guard canOpenChatFromLauncher else { confirm(L("ask.openChat.wait")); return false }
         if session() != nil { _ = credentials() }
         let incoming = AskDraft(includeScreenshot: false, references: [AskReference(note: note)])

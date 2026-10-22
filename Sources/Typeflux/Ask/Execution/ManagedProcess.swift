@@ -33,6 +33,9 @@ struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
         /// A borrowed socket, kept open until onStarted or a launch error. Only
         /// fd 100 is inherited; the caller owns its protocol and lifetime.
         var ipcDescriptor: Int32?
+        /// Bundled GUI children live until their owner cancels them. Tool calls
+        /// never set this; they retain their mandatory bounded deadline.
+        var ownedApplicationLifetime = false
     }
 
     enum Termination: Equatable, Sendable {
@@ -69,6 +72,29 @@ struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
             return cancelled || external()
         }
     }
+
+    private final class Registry: @unchecked Sendable {
+        let lock = NSLock()
+        var closed = false
+        var entries: [ObjectIdentifier: Cancellation] = [:]
+        func insert(_ cancellation: Cancellation) throws {
+            try lock.withLock {
+                guard !closed else { throw CancellationError() }
+                entries[ObjectIdentifier(cancellation)] = cancellation
+            }
+        }
+        func remove(_ cancellation: Cancellation) {
+            _ = lock.withLock { entries.removeValue(forKey: ObjectIdentifier(cancellation)) }
+        }
+        func stop() {
+            let active = lock.withLock { closed = true; return Array(entries.values) }
+            active.forEach { $0.cancel() }
+        }
+        var count: Int { lock.withLock { entries.count } }
+    }
+    private static let registry = Registry()
+    static func cancelAllForApplicationExit() { registry.stop() }
+    static var activeApplicationProcesses: Int { registry.count }
 
     func run(_ request: Request) async throws -> Result {
         let cancellation = Cancellation()
@@ -109,8 +135,10 @@ struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
     // swiftlint:disable:next function_body_length
     private static func execute(_ request: Request, cancellation: Cancellation) throws -> Result {
         try validate(request)
+        try registry.insert(cancellation)
+        defer { registry.remove(cancellation) }
         // This single monotonic deadline includes spawn and both pipe drains.
-        let deadline = ContinuousClock.now.advanced(by: .seconds(request.timeout))
+        let deadline: ContinuousClock.Instant? = request.ownedApplicationLifetime ? nil : .now.advanced(by: .seconds(request.timeout))
         if cancellation.isCancelled {
             throw CancellationError()
         }
@@ -184,7 +212,7 @@ struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
 
     private struct Lifecycle {
         let pid: pid_t
-        let deadline: ContinuousClock.Instant
+        let deadline: ContinuousClock.Instant?
         let killGrace: TimeInterval
         let drainGrace: TimeInterval
         let immediateCleanupOnExit: Bool
@@ -199,7 +227,7 @@ struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
             if reason == nil {
                 if cancelled {
                     reason = .cancelled
-                } else if now >= deadline {
+                } else if let deadline, now >= deadline {
                     reason = .timedOut
                 }
             }

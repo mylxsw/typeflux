@@ -37,6 +37,7 @@ final class AskNotesWindowController: NSObject, NSWindowDelegate {
 
     /// Opens the window, or brings it forward, showing `id` when it is a note.
     func show(selecting id: UUID? = nil) {
+        if !FeatureProcess.owns(.notes) { FeatureProcess.send(.init(destination: .notes, action: "showNotes", payload: Data((id?.uuidString ?? "").utf8))); return }
         guard let model = ensureModel() else { return }
         model.perform {
             await model.reload().value
@@ -47,6 +48,7 @@ final class AskNotesWindowController: NSObject, NSWindowDelegate {
 
     /// Opens the window on a new note with this title, ready to write.
     func showNewNote(title: String = "") {
+        if !FeatureProcess.owns(.notes) { FeatureProcess.send(.init(destination: .notes, action: "newNote", payload: Data(title.utf8))); return }
         guard let model = ensureModel() else { return }
         model.perform {
             await model.reload().value

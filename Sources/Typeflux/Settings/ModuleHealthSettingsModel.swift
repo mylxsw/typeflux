@@ -10,6 +10,8 @@ final class ModuleHealthSettingsModel: ObservableObject {
     private var subscriptions: [ModuleID: Task<Void, Never>] = [:]
     private var actions: [ModuleID: Task<Void, Never>] = [:]
     private var lifetime = UUID()
+    private let remote: FeatureModuleHealth?
+    private var remoteUpdates: Task<Void, Never>?
     private(set) var observing = false
 
     var affectedEntries: [ModuleRegistration] {
@@ -81,12 +83,18 @@ final class ModuleHealthSettingsModel: ObservableObject {
         }
     }
 
-    init(registry: ModuleRegistry?) {
+    init(registry: ModuleRegistry?, remote: FeatureModuleHealth? = FeatureProcess.enabled && FeatureProcess.role == .settings ? FeatureModuleHealth() : nil) {
+        self.remote = remote
         var seen: Set<ModuleID> = []
-        entries = (registry?.registrations ?? []).filter { seen.insert($0.id).inserted }
+        if let remote {
+            entries = ModuleID.allCases.map { id in
+                ModuleRegistration(presentation: id, recover: { await remote.recover(id, reset: $0) })
+            }
+        } else { entries = (registry?.registrations ?? []).filter { seen.insert($0.id).inserted } }
     }
 
     deinit {
+        remoteUpdates?.cancel()
         for task in subscriptions.values { task.cancel() }
         for task in actions.values { task.cancel() }
     }
@@ -95,6 +103,17 @@ final class ModuleHealthSettingsModel: ObservableObject {
         guard !observing else { return }
         observing = true
         let current = lifetime
+        if let remote {
+            remoteUpdates = Task { [weak self] in
+                while !Task.isCancelled {
+                    do {
+                        let snapshots = try await remote.snapshots()
+                        self?.publishRemote(snapshots, lifetime: current)
+                    } catch { self?.remoteUnavailable(lifetime: current) }
+                    do { try await Task.sleep(for: .seconds(1)) } catch { return }
+                }
+            }
+        }
         health.removeAll()
         observationFailed.removeAll()
         for entry in entries {
@@ -111,7 +130,22 @@ final class ModuleHealthSettingsModel: ObservableObject {
         }
     }
 
+    private func publishRemote(_ snapshots: [ModuleID: ModuleHealth], lifetime: UUID) {
+        guard observing, self.lifetime == lifetime else { return }
+        observationFailed.removeAll()
+        for entry in entries {
+            entry.health.publish(snapshots[entry.id] ?? .init(state: .stopped, generation: UUID(),
+                pendingStarts: 0, activeOperations: 0, hasLifecycleWork: false, failure: nil))
+        }
+    }
+
+    private func remoteUnavailable(lifetime: UUID) {
+        guard observing, self.lifetime == lifetime else { return }
+        observationFailed = Set(entries.map(\.id))
+    }
+
     func stopObserving() {
+        remoteUpdates?.cancel(); remoteUpdates = nil
         observing = false
         lifetime = UUID()
         for task in subscriptions.values { task.cancel() }

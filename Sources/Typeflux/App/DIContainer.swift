@@ -40,7 +40,7 @@ final class DIContainer {
     let localInferenceWorkers = WhisperWorkerPool.shared
     let noteStore: RecoveringAskNoteStore
     let wordBookStore: RecoveringAskWordBookStore
-    let conversationCache: RecoveringAskConversationCache
+    let conversationCache: any AskCaching
     let clipboardMonitor: ClipboardMonitor
     let clipboardPanelController: ClipboardPanelController
     let llmService: LLMService
@@ -56,8 +56,8 @@ final class DIContainer {
     let permissionStatusAnalyticsMonitor: PermissionStatusAnalyticsMonitor
     let usageDailySummaryReporter: UsageDailySummaryReporter
     let mcpRegistry: MCPRegistry
-    let cloudLoginSyncCoordinator: CloudLoginSyncCoordinator
-    let cloudDataSyncCoordinator: CloudDataSyncCoordinator
+    let cloudLoginSyncCoordinator: CloudLoginSyncCoordinator?
+    let cloudDataSyncCoordinator: CloudDataSyncCoordinator?
     let outputPostProcessor: OutputPostProcessing
     let screenCapturePermission: any ScreenCapturePermissionProviding
     let screenCapture: any ScreenCapturing
@@ -116,7 +116,12 @@ final class DIContainer {
         controller: translationPanelController, injector: textInjector,
         recognizer: TiledImageTextRecognizer(base: imageTextRecognizer))
 
+    private var initializedAskController = false
+    var existingAskConversationWindowController: AskConversationWindowController? {
+        initializedAskController ? askConversationWindowController : nil
+    }
     lazy var askConversationWindowController: AskConversationWindowController? = {
+        initializedAskController = true
         do { return try AskConversationWindowController(
             settings: settingsStore,
             injector: textInjector,
@@ -143,7 +148,9 @@ final class DIContainer {
         center.register(ollamaPullActivity)
         center.register(FileIndexActivitySource())
         center.register(ContentIndexActivitySource(service: SemanticFileSearchService.shared))
-        if let model = askConversationWindowController?.model {
+        if FeatureProcess.enabled {
+            center.register(AgentRunActivitySource(model: FeatureActivityMirror.shared))
+        } else if let model = askConversationWindowController?.model {
             center.register(AgentRunActivitySource(model: model))
         }
         return center
@@ -161,7 +168,7 @@ final class DIContainer {
             conversationFactory: conversationCacheFactory, wordBookFactory: wordBookFactory, noteFactory: noteFactory)
         noteStore = storage.notes
         wordBookStore = storage.words
-        conversationCache = storage.conversations
+        conversationCache = FeatureProcess.peer.map { FeatureAskCache(connection: $0) as any AskCaching } ?? storage.conversations
         mediaModules = MediaExtractionModules(healthDirectory: moduleHealthDirectory)
         nativeSystemModule = NativeSystemModule(worker: nativeSystemCommands, healthDirectory: moduleHealthDirectory)
         whisperInferenceModule = WhisperInferenceModule(pool: localInferenceWorkers, healthDirectory: moduleHealthDirectory)
@@ -169,14 +176,20 @@ final class DIContainer {
         fileIndexModule = FileIndexModule(index: AskFileIndex.shared, healthDirectory: moduleHealthDirectory)
         semanticReaderModules = SemanticReaderModules(readers: SemanticFileSearchService.shared.readers, healthDirectory: moduleHealthDirectory)
         semanticModelModules = SemanticModelModules(readers: SemanticFileSearchService.shared.embeddingOwners, healthDirectory: moduleHealthDirectory)
-        moduleRegistry = ModuleRegistry(storage.registry.registrations + mediaModules.registrations + semanticReaderModules.registrations + semanticModelModules.registrations + [nativeSystemModule.registration, whisperInferenceModule.registration, playbackModule.registration, fileIndexModule.registration])
-        modelLibrary = AskModelLibrary(defaults: settingsStore.defaults)
-        let screenCapturePermission = ScreenCapturePermission.live
+        let storageRegistrations = storage.registry.registrations.filter {
+            $0.id != .conversations || FeatureProcess.owns(.host)
+        }
+        moduleRegistry = ModuleRegistry(storageRegistrations + mediaModules.registrations + semanticReaderModules.registrations + semanticModelModules.registrations + [nativeSystemModule.registration, whisperInferenceModule.registration, playbackModule.registration, fileIndexModule.registration])
+        modelLibrary = AskModelLibrary(defaults: settingsStore.defaults, automaticallyLoadsCatalog: !FeatureIsolationProbe.enabled)
+        let screenCapturePermission = FeatureIsolationProbe.enabled
+            ? ScreenCapturePermission(preflight: { true }, requestAccess: { true }, openURL: { _ in })
+            : ScreenCapturePermission.live
         self.screenCapturePermission = screenCapturePermission
-        screenCapture = ScreenCaptureService(permission: screenCapturePermission)
+        screenCapture = FeatureIsolationProbe.enabled ? FeatureIsolationProbe.Screen() : ScreenCaptureService(permission: screenCapturePermission)
         SettingsWindowController.shared.moduleRegistry = moduleRegistry
         SettingsWindowController.shared.modelLibrary = modelLibrary
-        hotkeyService = EventTapHotkeyService(settingsStore: settingsStore)
+        hotkeyService = FeatureProcess.enabled
+            ? FeatureRemoteHotkeys() : EventTapHotkeyService(settingsStore: settingsStore)
         audioRecorder = SwitchableAudioRecorder(
             settingsStore: settingsStore,
             audioDeviceManager: audioDeviceManager
@@ -223,8 +236,8 @@ final class DIContainer {
             ollama: OllamaAgentService()
         )
         notificationService = SystemLocalNotificationService.shared
-        cloudLoginSyncCoordinator = CloudLoginSyncCoordinator(settingsStore: settingsStore)
-        cloudDataSyncCoordinator = CloudDataSyncCoordinator.shared
+        cloudLoginSyncCoordinator = FeatureProcess.owns(.host) ? CloudLoginSyncCoordinator(settingsStore: settingsStore) : nil
+        cloudDataSyncCoordinator = FeatureProcess.owns(.host) ? CloudDataSyncCoordinator.shared : nil
         localModelManager = LocalModelManager(analyticsReporter: analyticsReporter)
         bundledModelAutoSetup = BundledModelAutoSetup(linker: localModelManager)
         autoModelDownloadService = AutoModelDownloadService(

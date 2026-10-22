@@ -233,7 +233,8 @@ extension ScreenRecordingWriter {
         }
         finalizationDeadline = deadline
         queue.asyncAfter(deadline: .now() + 5, execute: deadline)
-        video.requestMediaDataWhenReady(on: queue) { [self] in
+        video.requestMediaDataWhenReady(on: queue) { [weak self] in
+            guard let self else { return }
             guard finalization != nil, !finishingContainer, video.isReadyForMoreMediaData else { return }
             finishingContainer = true
             let tail = duration - 1 / Double(options.captureFPS)
@@ -249,11 +250,11 @@ extension ScreenRecordingWriter {
             video.markAsFinished()
             self.lastPixel = nil; lastScreen = nil; camera = nil
             assetWriter.finishWriting { [self] in
-                queue.async { [self] in
-                    let result: Result<URL, Error> = assetWriter
-                        .status == .completed ? .success(assetWriter.outputURL) :
-                        .failure(assetWriter.error ?? ScreenRecordingFailure.encoding)
-                    completeFinalization(result)
+                self.queue.async { [self] in
+                    let result: Result<URL, Error> = self.assetWriter
+                        .status == .completed ? .success(self.assetWriter.outputURL) :
+                        .failure(self.assetWriter.error ?? ScreenRecordingFailure.encoding)
+                    self.completeFinalization(result)
                 }
             }
         }
