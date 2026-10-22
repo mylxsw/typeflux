@@ -161,7 +161,7 @@
 | `open` 打开 | `target` | http(s) 链接、文件（相对工作流文件夹或 `~`）、`app:` 应用名或 bundle id；其他 scheme 拒绝 | `.open(URL)` |
 | `reveal` 在 Finder 中显示 | `path` | `activateFileViewerSelecting` | 新增，很小 |
 | `speak` 朗读 | `text`、`language`（可选） | 系统 TTS | `.speak` |
-| `askAI` 交给 AI | `prompt` | 打开随便问，带着结果继续问 | `.askAI` |
+| `askAI` 交给 AI | `prompt` | 打开对话，带着结果继续问 | `.askAI` |
 | `runKeyword` 运行另一个关键字 | `keyword`、`argument` | 把「关键字 + 参数」填进启动器并运行；最多串 3 层，环检测 | 新增（O4） |
 
 **执行规则**
@@ -366,7 +366,7 @@ stdout 是下面这样的 JSON 时，启动器把 `text` 当作显示内容，�
 - `variables`：在这次关键字模式里，作为之后每次运行的 `options` 传回（stdin 的 `options`、`TYPEFLUX_OPTION_*`），退出关键字模式后清空。
 - 列表在脚本打印时不逐行显示（半个 JSON 没法显示），显示骨架；`auto` 下以 `{` 开头的输出同样。
 
-**Markdown**：复用随便问的渲染（`AskTranscriptText` / `AskMarkdownText`）：标题、列表、表格、代码块、链接（只有 http(s) 和 mailto 可点）。卡片高度按真实排版算出，最高 280pt，超出滚动。↩ / ⌥↩ 复制、写回的是 Markdown 原文。
+**Markdown**：复用对话的渲染（`AskTranscriptText` / `AskMarkdownText`）：标题、列表、表格、代码块、链接（只有 http(s) 和 mailto 可点）。卡片高度按真实排版算出，最高 280pt，超出滚动。↩ / ⌥↩ 复制、写回的是 Markdown 原文。
 
 **示例**：
 

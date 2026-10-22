@@ -1,4 +1,4 @@
-# 随便问：启动器头部与语音输入 设计方案
+# 对话：启动器头部与语音输入 设计方案
 
 > 状态：已确认并实现（GUL-214）。配套设计稿是 `docs/design/ask-launcher-header-voice.html`，截图在 `docs/design/ask-launcher-header-voice/`。
 

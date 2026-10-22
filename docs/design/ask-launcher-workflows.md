@@ -1,4 +1,4 @@
-# 随便问：自定义工作流（脚本插件）设计方案
+# 对话：自定义工作流（脚本插件）设计方案
 
 > 状态：W1 已实现（实现说明见第 12 节）；W2 的条目列表和 Alfred 兼容已随 GUL-232 实现（见 `workflow-gallery-output-actions.md` 第 8 节），W2 其余部分和 W3 仍是设计。配套设计稿：`docs/design/ask-launcher-workflows.html`，截图在 `docs/design/ask-launcher-workflows/`。截图：`1-list.png` 条目列表、`2-text.png` 文本结果、`3-error.png` 出错、`4-settings.png` 工作流列表、`5-editor.png` 编辑和测试运行、`6-trust.png` 信任确认。
 > 基于已经上线的关键字插件框架（`docs/design/ask-launcher-keyword-plugins.md`，P1 翻译、P2 AI 指令和网页搜索）。工作流就是那份文档 P3 里预留的「脚本插件」。

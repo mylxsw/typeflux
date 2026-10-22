@@ -184,7 +184,7 @@ struct AskNoticeVisualTests {
         let now = Date()
         let messages: [AskMessage] = [
             .init(id: "q1", role: "user", text: "讲讲这一屏在做什么", createdAt: now),
-            .init(id: "a1", role: "assistant", text: "这是 Typeflux 的「随便问」窗口。左侧是对话列表，中间是对话内容。", createdAt: now),
+            .init(id: "a1", role: "assistant", text: "这是 Typeflux 的「对话」窗口。左侧是对话列表，中间是对话内容。", createdAt: now),
             .init(id: "q2", role: "user", text: "再帮我把它翻成英文", createdAt: now)
         ]
         let run = AskRun(id: "run", deviceId: "device", status: "failed", error: "回答中断：网络连接已断开",

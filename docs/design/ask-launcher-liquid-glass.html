@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Typeflux · 随便问 浮窗 · Liquid Glass 交互设计稿 v3</title>
+<title>Typeflux · 对话 浮窗 · Liquid Glass 交互设计稿 v3</title>
 <style>
 /* ============================================================
    Page chrome (the review board around the desktop mock)
@@ -432,7 +432,7 @@ table.spec td:first-child { color: var(--board-text); white-space: nowrap; }
 <div class="page">
   <div class="head">
     <div>
-      <h1>随便问 · 快捷浮窗 · Liquid Glass <span class="tag">交互设计稿 v3</span></h1>
+      <h1>对话 · 快捷浮窗 · Liquid Glass <span class="tag">交互设计稿 v3</span></h1>
       <p>直接在下面的桌面里操作：输入、切模型、点上下文、点麦克风说话、回车发送、Esc 收起。顶部工具栏切换壁纸、深浅色、玻璃强度和两种布局，用来检查不同背景下的效果和可读性。</p>
     </div>
   </div>
@@ -826,7 +826,7 @@ table.spec td:first-child { color: var(--board-text); white-space: nowrap; }
     panel.classList.remove('sent'); void panel.offsetWidth; panel.classList.add('sent');
     const parts = [S.model.name];
     if (S.model.vision && S.shot) parts.push('附截图'); if (S.app) parts.push(APPS[S.wall].name); if (S.mem) parts.push('记忆');
-    toast(`已发送到随便问 · ${parts.join(' · ')}`);
+    toast(`已发送到对话 · ${parts.join(' · ')}`);
     setTimeout(() => { editor.value = ''; autosize(); refresh(); }, 180);
   }
   let toastTimer;
@@ -855,7 +855,7 @@ table.spec td:first-child { color: var(--board-text); white-space: nowrap; }
       box.appendChild(row);
     });
   }
-  $('#setDefault').addEventListener('click', () => { S.defaultModel = S.model.id; renderModelRows(); toast(`已将 ${S.model.name} 设为随便问默认模型`); });
+  $('#setDefault').addEventListener('click', () => { S.defaultModel = S.model.id; renderModelRows(); toast(`已将 ${S.model.name} 设为对话默认模型`); });
 
   function openPop(id, anchor) {
     if (S.openPop === id) return closePop();

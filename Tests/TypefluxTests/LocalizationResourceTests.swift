@@ -573,3 +573,32 @@ extension LocalizationResourceTests {
         }
     }
 }
+
+
+extension LocalizationResourceTests {
+    func testChatFeatureNameIsConsistentInEveryLanguage() throws {
+        let expected: [AppLanguage: String] = [
+            .english: "Chat", .simplifiedChinese: "对话", .traditionalChinese: "對話",
+            .japanese: "チャット", .korean: "대화"
+        ]
+        let keys = ["workflow.ask.answerTitle", "settings.shortcuts.ask.title",
+                    "studio.eyebrow.agent", "ask.models.ask", "ring.feature.ask.title"]
+        let retiredNames = ["随便问", "隨便問", "Ask Anything", "何でも聞いてください",
+                            "「何でも質問」", "「何でも聞く」", "なんでも質問", "무엇이든 묻기",
+                            "무엇이든 질문"]
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            let url = try XCTUnwrap(bundle.url(forResource: "Localizable", withExtension: "strings"))
+            let table = try XCTUnwrap(PropertyListSerialization.propertyList(from: Data(contentsOf: url),
+                options: [], format: nil) as? [String: String])
+            for key in keys {
+                XCTAssertEqual(table[key], expected[language], "\(key) in \(language.rawValue)")
+            }
+            for (key, value) in table {
+                for name in retiredNames {
+                    XCTAssertFalse(value.contains(name), "Retired feature name in \(key) (\(language.rawValue))")
+                }
+            }
+        }
+    }
+}

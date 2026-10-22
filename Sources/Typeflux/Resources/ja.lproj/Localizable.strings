@@ -541,7 +541,7 @@
 "workflow.transcription.noSpeech" = "明瞭な音声が検出されませんでした。転写はキャンセルされました。";
 "workflow.transcription.serverUnavailableNotice" = "サーバーに接続できません。録音は履歴に保存され、後で再試行できます。";
 "workflow.result.copyTitle" = "コピー結果";
-"workflow.ask.answerTitle" = "何でも聞いてください";
+"workflow.ask.answerTitle" = "チャット";
 "workflow.ask.questionSectionTitle" = "あなたの質問";
 "workflow.ask.answerSectionTitle" = "答え";
 "workflow.ask.answerDisclaimer" = "内容は AI によって生成されています。重要な情報は確認してください。";
@@ -555,7 +555,7 @@
 "workflow.persona.applicationSwitched" = "アプリのペルソナが %@ に切り替わりました。";
 "workflow.persona.applicationSwitchedOff" = "アプリのペルソナをオフにしました。";
 "workflow.persona.disabled" = "ペルソナ無効化。";
-"workflow.ask.selectionRequired" = "「何でも質問」では、最初にテキストを選択する必要があります。";
+"workflow.ask.selectionRequired" = "「チャット」では、最初にテキストを選択する必要があります。";
 "workflow.retry.audioMissing" = "再試行に失敗しました: 音声ファイルがありません。";
 "workflow.retry.audioGone" = "再試行に失敗しました: 音声ファイルはもう存在しません。";
 "workflow.typefluxCloud.loginRequired" = "Typeflux Cloud にサインインして、クラウド機能をご利用ください。";
@@ -805,7 +805,7 @@
 "settings.shortcuts.activation.title" = "音声入力";
 "settings.shortcuts.activation.subtitle" = "1 つのショートカットを使用して音声入力を開始します。押し続けて話すか、すばやくタップして録音セッションをロックします。テキストが選択されている場合、トランスクリプトはその選択を直接置き換えます。";
 "settings.shortcuts.activation.footnote" = "";
-"settings.shortcuts.ask.title" = "何でも聞いてください";
+"settings.shortcuts.ask.title" = "チャット";
 "settings.shortcuts.ask.subtitle" = "Fn を 2 回押すと録音が開始され、何でも質問できます。回答はポップアップに表示されます。テキストが選択されている場合、明示的な編集リクエストによってテキストを直接書き換えることもできます。";
 "settings.shortcuts.ask.footnote" = "";
 "settings.shortcuts.launcherPosition.title" = "ランチャーを開く位置";
@@ -823,23 +823,23 @@
 "settings.advanced.personaHotkeyApply.subtitle" = "有効にすると、ペルソナ ショートカットは最初に選択されたテキストを確認し、デフォルトのペルソナを切り替えるだけでなく、ピッカーを使用してその選択を書き換えます。";
 "settings.shortcuts.recording" = "新しいショートカットを記録する";
 "settings.shortcuts.recordingActivation" = "新しい音声入力キーまたはキーの組み合わせを今すぐ押してください。";
-"settings.shortcuts.recordingAsk" = "新しい「何でも質問」のショートカットを今すぐ押してください。同じ修飾キーを素早く 2 回押すこともできます。";
+"settings.shortcuts.recordingAsk" = "新しい「チャット」のショートカットを今すぐ押してください。同じ修飾キーを素早く 2 回押すこともできます。";
 "settings.shortcuts.recordingPersona" = "ペルソナピッカーを開くショートカットを押してください。";
 "settings.shortcuts.recordingHistory" = "履歴を開くショートカットを押してください。";
 "settings.shortcuts.recordingGeneric" = "使用するキーまたはキーの組み合わせを押してください。";
 "settings.shortcuts.record" = "記録";
 "settings.shortcuts.stopRecording" = "録音を停止する";
-"settings.shortcuts.activationConflict" = "音声入力ショートカットは、「何でも質問」、ペルソナ、または履歴のショートカットと一致できません。";
+"settings.shortcuts.activationConflict" = "音声入力ショートカットは、「チャット」、ペルソナ、または履歴のショートカットと一致できません。";
 "settings.shortcuts.activationUpdated" = "音声入力ショートカットが更新されました。";
 "settings.shortcuts.activationUnset" = "音声入力ショートカットを削除しました。";
-"settings.shortcuts.askConflict" = "「何でも聞く」ショートカットは、音声入力、ペルソナ、または履歴のショートカットと一致できません。";
-"settings.shortcuts.askUpdated" = "「何でも質問」ショートカットが更新されました。";
-"settings.shortcuts.askUnset" = "「何でも質問」ショートカットを削除しました。";
+"settings.shortcuts.askConflict" = "「チャット」ショートカットは、音声入力、ペルソナ、または履歴のショートカットと一致できません。";
+"settings.shortcuts.askUpdated" = "「チャット」ショートカットが更新されました。";
+"settings.shortcuts.askUnset" = "「チャット」ショートカットを削除しました。";
 "settings.shortcuts.doubleTapHelp" = "このキーを素早く 2 回押します。";
-"settings.shortcuts.personaConflict" = "ペルソナのショートカットは、音声入力、「何でも聞く」、または履歴のショートカットと一致できません。";
+"settings.shortcuts.personaConflict" = "ペルソナのショートカットは、音声入力、「チャット」、または履歴のショートカットと一致できません。";
 "settings.shortcuts.personaUpdated" = "ペルソナのショートカットが更新されました。";
 "settings.shortcuts.personaUnset" = "ペルソナのショートカットを削除しました。";
-"settings.shortcuts.historyConflict" = "履歴ショートカットは、音声入力、「何でも聞く」、またはペルソナのショートカットと一致できません。";
+"settings.shortcuts.historyConflict" = "履歴ショートカットは、音声入力、「チャット」、またはペルソナのショートカットと一致できません。";
 "settings.shortcuts.historyUpdated" = "履歴ショートカットが更新されました。";
 "settings.shortcuts.historyUnset" = "履歴ショートカットを削除しました。";
 "settings.shortcuts.unset" = "解除";
@@ -1173,17 +1173,17 @@
 "onboarding.shortcuts.globeKeyNotice.ready.title" = "FN / 🌐 キーの準備ができました";
 "onboarding.shortcuts.globeKeyNotice.ready.message" = "キーボード設定は整っており、Typeflux が FN / 🌐 キーをホットキーとして使用できます。それでも反応しない場合は、一度サインアウトして再ログインするか、Mac を再起動してみてください。";
 "onboarding.shortcuts.externalKeyboard.title" = "外付けキーボードで FN キーが使えませんか？";
-"onboarding.shortcuts.externalKeyboard.message" = "右 Command または右 Option を代わりに使えます。Typeflux は音声入力をそのキーに、「何でも聞く」をそのキーの素早い 2 回押しに変更します。";
+"onboarding.shortcuts.externalKeyboard.message" = "右 Command または右 Option を代わりに使えます。Typeflux は音声入力をそのキーに、「チャット」をそのキーの素早い 2 回押しに変更します。";
 "onboarding.shortcuts.externalKeyboard.useRightCommand" = "右 Command を使う";
 "onboarding.shortcuts.externalKeyboard.useRightOption" = "右 Option を使う";
 "onboarding.shortcuts.replacement.rightCommand" = "右 Command";
 "onboarding.shortcuts.replacement.rightOption" = "右 Option";
 "onboarding.shortcuts.replacement.fn" = "FN / 🌐";
 "onboarding.shortcuts.replacement.active.title" = "%@ ショートカットが有効です";
-"onboarding.shortcuts.replacement.active.message" = "ショートカットが変更されました。音声入力は %@、「何でも聞く」は %@×2 を使います。";
+"onboarding.shortcuts.replacement.active.message" = "ショートカットが変更されました。音声入力は %@、「チャット」は %@×2 を使います。";
 "onboarding.shortcuts.replacement.restore" = "FN ショートカットに戻す";
 "onboarding.shortcuts.replacement.appliedAlert.title" = "ショートカットを更新しました";
-"onboarding.shortcuts.replacement.appliedAlert.message" = "Typeflux は音声入力に %@、「何でも聞く」に %@×2 を使うようになりました。";
+"onboarding.shortcuts.replacement.appliedAlert.message" = "Typeflux は音声入力に %@、「チャット」に %@×2 を使うようになりました。";
 "onboarding.shortcuts.replacement.restoredAlert.message" = "Typeflux はデフォルトの FN / 🌐 ショートカットに戻りました。";
 "onboarding.shortcuts.activation.hint" = "話した内容を文字に変換";
 "onboarding.shortcuts.ask.hint" = "声で質問や選択文の編集";
@@ -1200,9 +1200,9 @@
 // MARK: - Agent Framework
 
 "studio.section.agent" = "エージェント";
-"studio.eyebrow.agent" = "Ask";
+"studio.eyebrow.agent" = "チャット";
 "studio.heading.agent" = "エージェント";
-"studio.subheading.agent" = "Ask が使えるツール、MCP サーバー、スキル、メモリを管理します。";
+"studio.subheading.agent" = "チャット が使えるツール、MCP サーバー、スキル、メモリを管理します。";
 "studio.search.agent" = "エージェント設定を検索...";
 
 "settings.advanced.localOptimization.title" = "ローカル最適化";
@@ -1698,9 +1698,9 @@
 "ask.models.byPurpose" = "利用シーン";
 "ask.models.speech" = "Speech recognition";
 "ask.models.rewrite" = "Rewrite and polish";
-"ask.models.ask" = "Ask Anything";
+"ask.models.ask" = "チャット";
 "ask.models.existingRewrite" = "Use provider configuration below";
-"ask.models.defaultsHint" = "The Ask default applies to new conversations. Each conversation can choose its own model.";
+"ask.models.defaultsHint" = "The Chat default applies to new conversations. Each conversation can choose its own model.";
 "ask.models.manage" = "Manage models";
 "ask.models.conversationOnly" = "Applies to this conversation only; does not change the rewrite model.";
 "ask.models.invalid" = "Enter a name, model ID and valid HTTPS API URL (HTTP is allowed for localhost).";
@@ -1713,7 +1713,7 @@
 "ask.models.cloudHint" = "Uses Typeflux Cloud";
 "ask.models.reload" = "Reload";
 "ask.models.add" = "Add custom model";
-"ask.models.empty" = "Add your API to make it available in Ask.";
+"ask.models.empty" = "Add your API to make it available in Chat.";
 "ask.models.delete" = "Delete model";
 "ask.models.privacy" = "Custom model keys stay on this Mac. Conversation history still syncs to Typeflux Cloud. Your API provider bills model usage.";
 "ask.models.deleteHint" = "Conversations using this model will need another model selected. They will not automatically switch to Cloud.";
@@ -1767,7 +1767,7 @@
 "models.capabilityHint" = "モデルのドキュメントに基づき、対応する機能にチェックしてください";
 "models.visionYes" = "ビジョン（画像認識）に対応";
 "models.reasoningYes" = "推論に対応";
-"models.askBlocked" = "Ask には使用できません：%@";
+"models.askBlocked" = "チャット には使用できません：%@";
 "models.rewriteBlocked" = "書き換えと推敲には使用できません：%@";
 "models.visionGuessed" = "モデル名からビジョン対応と推定しました。「···」メニューで変更できます";
 "ask.models.visionTrial" = "ビジョン対応は未確認です。画像の送信を試します";
@@ -1780,7 +1780,7 @@
 
 "models.noAvailable" = "この入力に使用できるモデルがありません。ログイン状態とモデル設定を確認してください。";
 
-"menu.openAskConversations" = "Ask Anything を開く";
+"menu.openAskConversations" = "チャット を開く";
 
 "ask.tool.preparing" = "引数を準備中";
 "ask.reasoning.active" = "考え中";
@@ -1799,7 +1799,7 @@
 "ask.reasoning.high" = "高";
 
 // Server-managed Cloud model list
-"models.cloud.managed" = "利用可能な Ask モデルは Typeflux Cloud から自動同期されます。設定はサーバーで管理されます。";
+"models.cloud.managed" = "利用可能な チャット モデルは Typeflux Cloud から自動同期されます。設定はサーバーで管理されます。";
 "models.cloud.available" = "利用可能なモデル";
 "models.cloud.refresh" = "モデル一覧を更新";
 "models.cloud.systemDefault" = "システムのデフォルト";
@@ -1916,7 +1916,7 @@
 "ask.usage.localHelp" = "独自モデルが報告したトークン数です。使用量はこの Mac に保存され、Typeflux credits は消費しません。";
 
 /* GUL-151 Ask tools */
-"ask.files.denied" = "このパスは Ask に許可されたフォルダの外にあります。設定 → Agent → ファイルアクセス でフォルダを追加してください。";
+"ask.files.denied" = "このパスは チャット に許可されたフォルダの外にあります。設定 → Agent → ファイルアクセス でフォルダを追加してください。";
 "ask.files.tooLarge" = "ファイルが 1 MB を超えています。";
 "ask.files.editMissing" = "置き換えるテキストが見つかりません。ファイルを読み直してください。";
 "ask.files.editAmbiguous" = "置き換えるテキストが %d 回出現します。前後の文脈を含めてください。";
@@ -1934,7 +1934,7 @@
 "ask.settings.code.title" = "サンドボックスでコードを実行";
 "ask.settings.code.subtitle" = "Python、JavaScript、シェルのプログラムはネットワークやホームフォルダにアクセスせずに実行されます。実行ごとに承認が必要です。";
 "ask.settings.skills.title" = "スキル";
-"ask.settings.skills.subtitle" = "タスクに応じて Ask が読み込む手順です。Skills/<名前>/SKILL.md として独自のスキルを追加できます。";
+"ask.settings.skills.subtitle" = "タスクに応じて チャット が読み込む手順です。Skills/<名前>/SKILL.md として独自のスキルを追加できます。";
 "ask.settings.skills.builtin" = "組み込み";
 "ask.settings.skills.open" = "スキルフォルダを開く";
 "ask.settings.skills.install" = "GitHub からインストール…";
@@ -1955,7 +1955,7 @@
 "ask.skills.install.rateLimited" = "GitHub がリクエストを制限しています。数分後に再試行してください。";
 "ask.skills.install.cannotRemove" = "組み込みスキルは削除できません。";
 "ask.settings.notes.title" = "保存したメモ";
-"ask.settings.notes.subtitle" = "Ask に覚えるよう頼んだ内容です。新しい会話のメモリに含まれます。";
+"ask.settings.notes.subtitle" = "チャット に覚えるよう頼んだ内容です。新しい会話のメモリに含まれます。";
 "ask.settings.notes.empty" = "保存したメモはありません。";
 "ask.tool.files" = "ファイル";
 "ask.tool.run_code" = "コードを実行";
@@ -1986,7 +1986,7 @@
 "ask.local.modelFailed" = "モデルへのリクエストが失敗しました。設定を確認して再試行してください。";
 "ask.local.badSummary" = "モデルが無効な要約を返しました。再試行してください。";
 "ask.local.regenerateLatest" = "再生成できるのは最新の返信だけです。";
-"ask.local.modelRequired" = "Typeflux Cloud を使わずに Ask を使うには、自分のモデルを選んでください。";
+"ask.local.modelRequired" = "Typeflux Cloud を使わずに チャット を使うには、自分のモデルを選んでください。";
 "ask.local.conflict" = "会話が変更されました。再読み込みしてもう一度お試しください。";
 "ask.local.stepLimit" = "エージェントのステップ上限に達しました。";
 "ask.local.truncated" = "回答が出力上限に達して途切れました。再試行するか続きを依頼してください。";
@@ -2043,7 +2043,7 @@
 "ask.approval.allowHelp" = "許可（⌘↩）";
 "ask.approval.allowDestructive" = "実行する";
 "ask.location.local" = "このMac";
-"ask.location.local.help" = "Ask はこのMacで自分のモデルを使って実行され、会話はこのMacに保存されます。";
+"ask.location.local.help" = "チャット はこのMacで自分のモデルを使って実行され、会話はこのMacに保存されます。";
 "ask.local.sourceNone" = "モデル未選択";
 "ask.local.card.body" = "会話はこの Mac に保存され、設定したモデルを使います。";
 "ask.local.card.cloudQuestion" = "クラウドのモデルを使いますか？";
@@ -2105,7 +2105,7 @@
 "account.page.contact" = "お問い合わせ";
 "account.page.dailyHint" = "今期 · 日別";
 "account.page.dailyTitle" = "日別の使用量";
-"account.page.featureAsk" = "Ask";
+"account.page.featureAsk" = "チャット";
 "account.page.featureFootnote" = "どの機能が最も使っているかを確認できます。";
 "account.page.featureHint" = "機能別";
 "account.page.featureRewrite" = "推敲・書き換え";
@@ -2176,8 +2176,8 @@
 "ask.attach.help" = "ファイル、画像、フォルダを添付（⌘U）。貼り付けやドラッグでも追加できます";
 "ask.attach.files" = "ファイル・画像を送信";
 "ask.attach.folder" = "フォルダを選択";
-"ask.attach.pickFiles" = "Ask に送るファイルや画像を選択";
-"ask.attach.pickFolders" = "この会話で Ask が読み取れるフォルダを選択";
+"ask.attach.pickFiles" = "チャット に送るファイルや画像を選択";
+"ask.attach.pickFolders" = "この会話で チャット が読み取れるフォルダを選択";
 "ask.attach.add" = "追加";
 "ask.attach.loading" = "添付ファイルを読み込み中";
 "ask.attach.pastedImage" = "貼り付けた画像";
@@ -2214,10 +2214,10 @@
 "ask.command.screenshot" = "スクリーンショットを添付";
 "ask.command.selection" = "選択したテキストを添付";
 "ask.command.memory" = "この質問でメモリを使う";
-"ask.command.remember" = "Ask に覚えさせる…";
+"ask.command.remember" = "チャット に覚えさせる…";
 "ask.command.remember.hint" = "覚える内容";
 "ask.command.help" = "使い方ガイドを開く";
-"ask.command.settings" = "Ask の設定を開く";
+"ask.command.settings" = "チャット の設定を開く";
 "ask.command.disabled.busy" = "回答を生成中";
 "ask.command.disabled.noAnswer" = "まだ回答がありません";
 "ask.command.disabled.noSelection" = "選択したテキストがありません";
@@ -2542,7 +2542,7 @@
 "agent.search.advanced" = "詳細オプション";
 "agent.search.missing" = "未入力：%@";
 "agent.search.getKey" = "%@ のキーを取得";
-"agent.files.empty" = "フォルダがまだありません。Ask はファイルを読み書きできません。";
+"agent.files.empty" = "フォルダがまだありません。チャット はファイルを読み書きできません。";
 "agent.files.rule.scope" = "このリストのフォルダのみ";
 "agent.files.rule.read" = "読み取り：許可済みフォルダ内で自動実行";
 "agent.files.rule.write" = "書き込み：標準モードでは実行前に確認";
@@ -2572,7 +2572,7 @@
 "agent.skills.install.root" = "リポジトリのルート";
 "agent.mcp.emptyTitle" = "外部ツールに接続";
 "agent.mcp.emptyHint" = "ローカルコマンド（stdio）とリモート HTTP に対応し、Claude Desktop / Cursor の mcpServers 設定をインポートできます。";
-"agent.mcp.listHint" = "サーバーをクリックすると編集できます。有効なサーバーは会話で必要になったときに接続し、自動接続がオンなら Ask の起動時に接続します。";
+"agent.mcp.listHint" = "サーバーをクリックすると編集できます。有効なサーバーは会話で必要になったときに接続し、自動接続がオンなら チャット の起動時に接続します。";
 "agent.mcp.status.disabled" = "オフ";
 "agent.mcp.status.untested" = "未テスト";
 "agent.mcp.status.connected" = "接続済み · %d 個のツール";
@@ -2596,7 +2596,7 @@
 "agent.memory.rule.use.title" = "新しい会話で使用";
 "agent.memory.rule.use.detail" = "メモは新しい会話に背景情報として渡されます。";
 "agent.memory.rule.ask.title" = "保存前に確認";
-"agent.memory.rule.ask.detail" = "Ask が何かを記憶するときは、先に確認します。";
+"agent.memory.rule.ask.detail" = "チャット が何かを記憶するときは、先に確認します。";
 "agent.memory.rule.delete.title" = "削除すると使われなくなる";
 "agent.memory.rule.delete.detail" = "削除・変更したメモは以降の会話で使われません。これまでの返答は変わりません。";
 "agent.memory.search" = "メモを検索";
@@ -3183,7 +3183,7 @@
 "agent.group.personalization" = "パーソナライズ";
 "agent.rules.title" = "安全ルール";
 "agent.memory.rules.title" = "メモの扱い";
-"agent.memory.subtitle" = "Ask が覚えているあなたについてのメモ。新しい会話に背景情報として渡されます。";
+"agent.memory.subtitle" = "チャット が覚えているあなたについてのメモ。新しい会話に背景情報として渡されます。";
 "agent.search.section" = "サービスと認証情報";
 "agent.automation.permissions" = "システム権限";
 "agent.automation.rule.confirm" = "操作の前に毎回確認";
@@ -4199,7 +4199,7 @@
 "settings.shortcuts.screenshot.saveLocation.title" = "スクリーンショットの保存先";
 "settings.shortcuts.screenshot.saveLocation.choose" = "選択…";
 "settings.shortcuts.screenshot.saveLocation.reset" = "デスクトップに戻す";
-"settings.shortcuts.screenshotConflict" = "スクリーンショットのショートカットは、音声入力、「何でも聞く」、ペルソナ、履歴のショートカットと同じにはできません。";
+"settings.shortcuts.screenshotConflict" = "スクリーンショットのショートカットは、音声入力、「チャット」、ペルソナ、履歴のショートカットと同じにはできません。";
 "settings.shortcuts.screenshotUpdated" = "スクリーンショットのショートカットを更新しました。";
 "settings.shortcuts.screenshotUnset" = "スクリーンショットのショートカットを削除しました。";
 "settings.shortcuts.usedByScreenshot" = "このショートカットはスクリーンショットに使われています。";
@@ -4596,13 +4596,13 @@
 "hotkeys.builtIn.persona.title" = "ペルソナ切り替え";
 "hotkeys.builtIn.persona.subtitle" = "ペルソナ一覧を開いて切り替えます。";
 "hotkeys.builtIn.ask.title" = "ランチャー";
-"hotkeys.builtIn.ask.subtitle" = "選択したテキストと一緒にランチャー（なんでも質問）を開きます。";
+"hotkeys.builtIn.ask.subtitle" = "選択したテキストと一緒にランチャー（チャット）を開きます。";
 "hotkeys.builtIn.history.title" = "クリップボードと履歴";
 "hotkeys.builtIn.history.subtitle" = "コピーした内容と音声履歴のクリップボードパネルを開きます。";
 "hotkeys.builtIn.screenshot.title" = "スクリーンショット";
 "hotkeys.builtIn.screenshot.subtitle" = "画面の範囲を選んで撮影し、編集します。";
 "hotkeys.action.openChat.title" = "チャットウインドウを開く";
-"hotkeys.action.openChat.subtitle" = "なんでも質問のチャットウインドウを開きます。";
+"hotkeys.action.openChat.subtitle" = "チャットのチャットウインドウを開きます。";
 "hotkeys.action.screenshotText.title" = "スクリーンショットで文字認識";
 "hotkeys.action.screenshotText.subtitle" = "画面の範囲を選び、その文字をランチャーに表示します。";
 "hotkeys.action.openNotes.title" = "メモを開く";
@@ -5292,7 +5292,7 @@
 "help.key.chat.new" = "新規チャット";
 "help.key.chat.search" = "チャットを検索";
 "help.key.chat.attach" = "ファイルを追加";
-"help.key.chat.settings" = "Ask の設定";
+"help.key.chat.settings" = "チャット の設定";
 "help.faq.status" = "権限";
 "help.faq.granted" = "許可済み";
 "help.faq.notGranted" = "未許可";
@@ -5336,7 +5336,7 @@
 "help.start.voice.title" = "音声入力";
 "help.start.voice.detail" = "キーを押したまま話し、離すとカーソル位置に文字が入ります。";
 "help.start.voice.sample" = "来週リリース";
-"help.start.launcher.title" = "ランチャー · Ask";
+"help.start.launcher.title" = "ランチャー · チャット";
 "help.start.launcher.detail" = "質問・計算・アプリやファイルを開く。テキストを選択して開くと、そのテキストを扱えます。";
 "help.start.launcher.sample.question" = "もっと短くして";
 "help.start.launcher.sample.answer" = "選択した 3 行を書き直しました";
@@ -6479,10 +6479,10 @@
 "ring.type.folder.target" = "フォルダ";
 "ring.feature.dictation.title" = "音声入力";
 "ring.feature.dictation.detail" = "ハンズフリーで音声入力を開始し、音声入力のショートカットで終了します";
-"ring.feature.ask.title" = "なんでも質問";
+"ring.feature.ask.title" = "チャット";
 "ring.feature.ask.detail" = "ランチャーを開きます";
 "ring.feature.chat.title" = "チャットウインドウ";
-"ring.feature.chat.detail" = "なんでも質問の会話ウインドウを開きます";
+"ring.feature.chat.detail" = "チャットの会話ウインドウを開きます";
 "ring.feature.screenshot.title" = "スクリーンショット";
 "ring.feature.screenshot.detail" = "範囲を選んでキャプチャ、注釈、ピン留めができます";
 "ring.feature.screenshotText.title" = "画面の文字認識";

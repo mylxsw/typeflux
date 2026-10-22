@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Typeflux · 随便问 — 私密对话（替代“本机模式”）交互设计稿</title>
+<title>Typeflux · 对话 — 私密对话（替代“本机模式”）交互设计稿</title>
 <style>
 :root {
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Helvetica Neue", sans-serif;
@@ -208,7 +208,7 @@ h1 { font-size: 20px; margin: 0 0 6px; }
 
 <div class="page">
   <div>
-    <h1>随便问 · 用「私密对话」替代「本机模式」</h1>
+    <h1>对话 · 用「私密对话」替代「本机模式」</h1>
     <p class="sub">现在的“本机”是一个<b>全局开关</b>：打开后，云端历史整个被藏起来，云端模型不能选，组件上只显示“本机”两个字。用户分不清它说的是模型在本机跑，还是数据存在本机。新方案把它降级为<b>每个对话自己的属性</b>：普通对话同步到 Typeflux Cloud，私密对话只存在这台 Mac 上。两种对话出现在同一个列表里，靠锁形图标和紫色区分。“模型在哪里运行”只放在模型选择器里说明。<br>
     下面的窗口<b>可以直接操作</b>：点输入框左下角的存储图标（☁ 云端同步 / 🔒 仅存本机）、顶部的新建按钮、模型名称和侧边栏筛选；发送消息试试。窗口上方的工具条可以切换登录状态和明暗主题。</p>
     <div class="dock">
@@ -471,7 +471,7 @@ function composer(c) {
 function settingsSheet() {
   if (!S.settings) return '';
   return `<div class="scrim" data-act="close-settings"><div class="sheet" data-stop="1">
-    <h3>随便问</h3><div class="crumb">设置 → Agent → 通用</div>
+    <h3>对话</h3><div class="crumb">设置 → Agent → 通用</div>
     <div class="srow"><div><div class="st">新对话默认保存在</div>
       <div class="sd">只影响新建的对话，已有对话不变。新建菜单里随时可以选另一种。${S.signedIn ? '' : '<br>未登录时只能新建私密对话。'}</div>
       <div class="diff">替换原来的 <s>「使用本机对话模式」</s> 开关。旧设置开启的用户会迁移为「仅存本机」。</div></div>

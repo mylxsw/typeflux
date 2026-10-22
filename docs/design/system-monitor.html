@@ -306,7 +306,7 @@ body.light .openhint { color: #333; background: rgba(255,255,255,.5); }
   <div class="launcher" id="launcher">
     <div class="lin">
       <span id="chipSlot"></span>
-      <input id="q" autocomplete="off" spellcheck="false" placeholder="随便问，或输入关键字…">
+      <input id="q" autocomplete="off" spellcheck="false" placeholder="对话，或输入关键字…">
       <span id="headRight"></span>
     </div>
     <div class="lbody" id="lbody"></div>
@@ -491,7 +491,7 @@ function renderLauncher() {
     $('#headRight').innerHTML = `<button class="hbtn" id="popBtn" title="${winOpen ? '前往独立窗口' : '在独立窗口中常驻显示'}">${ic(winOpen ? 'expand' : 'popout', 13)}${winOpen ? '前往窗口' : '独立窗口'}<span class="s">⌘O</span></button>`;
   } else {
     $('#chipSlot').innerHTML = '';
-    q.placeholder = '随便问，或输入关键字…';
+    q.placeholder = '对话，或输入关键字…';
     $('#headRight').innerHTML = '';
   }
   renderLauncherBody();
@@ -522,7 +522,7 @@ function renderLauncherBody() {
   body.innerHTML = `
     <div class="sec">试试</div>
     <div class="item" data-act="type-top"><span class="ic" style="background:#2bb3aa">${ic('gauge', 16, 2.2)}</span><div><div class="t">系统监控</div><div class="d">输入 <span class="kbd">top</span> 或 <span class="kbd">监控</span> 后按 ↩：CPU、内存、磁盘、网络和进程</div></div><div class="r"><span class="kbd">top</span></div></div>
-    <div class="item"><span class="ic" style="background:var(--accent-soft);color:var(--accent)">${ic('spark', 16)}</span><div><div class="t">随便问</div><div class="d">直接输入问题，⌘↩ 发给 AI</div></div></div>`;
+    <div class="item"><span class="ic" style="background:var(--accent-soft);color:var(--accent)">${ic('spark', 16)}</span><div><div class="t">对话</div><div class="d">直接输入问题，⌘↩ 发给 AI</div></div></div>`;
   bar.innerHTML = `<span>输入 <kbd>top</kbd> 试试</span><span class="sp"></span><span><kbd>esc</kbd>关闭</span>`;
 }
 

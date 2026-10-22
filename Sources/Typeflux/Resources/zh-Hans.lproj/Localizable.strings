@@ -545,7 +545,7 @@
 "workflow.transcription.noSpeech" = "未检测到清晰语音，本次转写已取消。";
 "workflow.transcription.serverUnavailableNotice" = "暂时无法连接服务器，录音已保存在历史记录中，可稍后重试。";
 "workflow.result.copyTitle" = "复制结果";
-"workflow.ask.answerTitle" = "随便问";
+"workflow.ask.answerTitle" = "对话";
 "workflow.ask.questionSectionTitle" = "你的问题";
 "workflow.ask.answerSectionTitle" = "回答";
 "workflow.ask.answerDisclaimer" = "内容由 AI 生成，请注意甄别信息准确性。";
@@ -559,7 +559,7 @@
 "workflow.persona.applicationSwitched" = "已将当前应用人设切换到 %@。";
 "workflow.persona.applicationSwitchedOff" = "已关闭当前应用人设。";
 "workflow.persona.disabled" = "人设已关闭。";
-"workflow.ask.selectionRequired" = "“随便问”需要先选中文本。";
+"workflow.ask.selectionRequired" = "“对话”需要先选中文本。";
 "workflow.retry.audioMissing" = "重试失败：缺少音频文件。";
 "workflow.retry.audioGone" = "重试失败：音频文件已不存在。";
 "workflow.typefluxCloud.loginRequired" = "请先登录 Typeflux Cloud，以使用云端功能。";
@@ -814,7 +814,7 @@
 "settings.shortcuts.activation.title" = "语音输入";
 "settings.shortcuts.activation.subtitle" = "使用一个快捷键开始语音输入。可按住说话，也可快速轻触后锁定录音。若当前已有选区，识别结果会直接覆盖该选区。";
 "settings.shortcuts.activation.footnote" = "";
-"settings.shortcuts.ask.title" = "随便问";
+"settings.shortcuts.ask.title" = "对话";
 "settings.shortcuts.ask.subtitle" = "连按两次 Fn 即可开始录音提问，回答会在弹窗中展示。若有选中文字，明确的编辑请求也可以直接改写选区。";
 "settings.shortcuts.ask.footnote" = "";
 "settings.shortcuts.launcherPosition.title" = "启动器打开位置";
@@ -832,23 +832,23 @@
 "settings.advanced.personaHotkeyApply.subtitle" = "开启后，人设快捷键会先检查是否有选中文本；如果有，就用所选人设直接改写该文本，而不只是切换默认人设。";
 "settings.shortcuts.recording" = "正在录制新的快捷键";
 "settings.shortcuts.recordingActivation" = "现在按下新的语音输入按键或组合键。";
-"settings.shortcuts.recordingAsk" = "现在按下新的“随便问”快捷键。也可以快速连按两次同一个修饰键。";
+"settings.shortcuts.recordingAsk" = "现在按下新的“对话”快捷键。也可以快速连按两次同一个修饰键。";
 "settings.shortcuts.recordingPersona" = "现在按下用于打开人设选择器的快捷键。";
 "settings.shortcuts.recordingHistory" = "现在按下用于打开历史记录的快捷键。";
 "settings.shortcuts.recordingGeneric" = "按下你想使用的按键或组合键。";
 "settings.shortcuts.record" = "录制";
 "settings.shortcuts.stopRecording" = "停止录制";
-"settings.shortcuts.activationConflict" = "语音输入快捷键不能与“随便问”、人设或历史记录快捷键相同。";
+"settings.shortcuts.activationConflict" = "语音输入快捷键不能与“对话”、人设或历史记录快捷键相同。";
 "settings.shortcuts.activationUpdated" = "语音输入快捷键已更新。";
 "settings.shortcuts.activationUnset" = "语音输入快捷键已清除。";
-"settings.shortcuts.askConflict" = "“随便问”快捷键不能与语音输入、人设或历史记录快捷键相同。";
-"settings.shortcuts.askUpdated" = "“随便问”快捷键已更新。";
-"settings.shortcuts.askUnset" = "“随便问”快捷键已清除。";
+"settings.shortcuts.askConflict" = "“对话”快捷键不能与语音输入、人设或历史记录快捷键相同。";
+"settings.shortcuts.askUpdated" = "“对话”快捷键已更新。";
+"settings.shortcuts.askUnset" = "“对话”快捷键已清除。";
 "settings.shortcuts.doubleTapHelp" = "快速连按两次这个按键。";
-"settings.shortcuts.personaConflict" = "人设快捷键不能与语音输入、“随便问”或历史记录快捷键相同。";
+"settings.shortcuts.personaConflict" = "人设快捷键不能与语音输入、“对话”或历史记录快捷键相同。";
 "settings.shortcuts.personaUpdated" = "人设快捷键已更新。";
 "settings.shortcuts.personaUnset" = "人设快捷键已清除。";
-"settings.shortcuts.historyConflict" = "历史记录快捷键不能与语音输入、“随便问”或人设快捷键相同。";
+"settings.shortcuts.historyConflict" = "历史记录快捷键不能与语音输入、“对话”或人设快捷键相同。";
 "settings.shortcuts.historyUpdated" = "历史记录快捷键已更新。";
 "settings.shortcuts.historyUnset" = "历史记录快捷键已清除。";
 "settings.shortcuts.unset" = "取消设置";
@@ -1184,17 +1184,17 @@
 "onboarding.shortcuts.globeKeyNotice.ready.title" = "FN / 🌐 键已就绪";
 "onboarding.shortcuts.globeKeyNotice.ready.message" = "键盘设置已经到位，Typeflux 可以使用 FN / 🌐 键作为快捷键了。若按键仍无响应，请尝试注销后重新登录，或重启 Mac。";
 "onboarding.shortcuts.externalKeyboard.title" = "使用外置键盘，且没有可用的 FN 键？";
-"onboarding.shortcuts.externalKeyboard.message" = "你可以改用右侧 Command 或右侧 Option。Typeflux 会将语音输入改为这个按键，将“随便问”改为快速连按两次这个按键。";
+"onboarding.shortcuts.externalKeyboard.message" = "你可以改用右侧 Command 或右侧 Option。Typeflux 会将语音输入改为这个按键，将“对话”改为快速连按两次这个按键。";
 "onboarding.shortcuts.externalKeyboard.useRightCommand" = "使用右侧 Command";
 "onboarding.shortcuts.externalKeyboard.useRightOption" = "使用右侧 Option";
 "onboarding.shortcuts.replacement.rightCommand" = "右侧 Command";
 "onboarding.shortcuts.replacement.rightOption" = "右侧 Option";
 "onboarding.shortcuts.replacement.fn" = "FN / 🌐";
 "onboarding.shortcuts.replacement.active.title" = "%@ 快捷键已启用";
-"onboarding.shortcuts.replacement.active.message" = "你的快捷键已经发生变化：语音输入现在使用 %@，“随便问”使用 %@×2。";
+"onboarding.shortcuts.replacement.active.message" = "你的快捷键已经发生变化：语音输入现在使用 %@，“对话”使用 %@×2。";
 "onboarding.shortcuts.replacement.restore" = "恢复 FN 快捷键";
 "onboarding.shortcuts.replacement.appliedAlert.title" = "快捷键已更新";
-"onboarding.shortcuts.replacement.appliedAlert.message" = "Typeflux 现在使用 %@ 作为语音输入快捷键，使用 %@×2 打开“随便问”。";
+"onboarding.shortcuts.replacement.appliedAlert.message" = "Typeflux 现在使用 %@ 作为语音输入快捷键，使用 %@×2 打开“对话”。";
 "onboarding.shortcuts.replacement.restoredAlert.message" = "Typeflux 已恢复默认的 FN / 🌐 快捷键。";
 "onboarding.shortcuts.activation.hint" = "把说的话输入为文字";
 "onboarding.shortcuts.ask.hint" = "语音提问或修改选中文字";
@@ -1211,9 +1211,9 @@
 // MARK: - Agent 框架
 
 "studio.section.agent" = "Agent";
-"studio.eyebrow.agent" = "随便问";
+"studio.eyebrow.agent" = "对话";
 "studio.heading.agent" = "Agent";
-"studio.subheading.agent" = "管理“随便问”可以使用的工具、MCP 服务器、技能与记忆。";
+"studio.subheading.agent" = "管理“对话”可以使用的工具、MCP 服务器、技能与记忆。";
 "studio.search.agent" = "搜索 Agent 设置...";
 
 "settings.advanced.localOptimization.title" = "本地优化";
@@ -1708,9 +1708,9 @@
 "ask.models.byPurpose" = "应用场景";
 "ask.models.speech" = "语音识别";
 "ask.models.rewrite" = "转译与润色";
-"ask.models.ask" = "随便问";
+"ask.models.ask" = "对话";
 "ask.models.existingRewrite" = "使用下方模型配置";
-"ask.models.defaultsHint" = "随便问默认模型用于新对话；对话中可单独切换。";
+"ask.models.defaultsHint" = "对话默认模型用于新对话；对话中可单独切换。";
 "ask.models.manage" = "管理模型";
 "ask.models.conversationOnly" = "仅用于本次对话，不改变转译模型";
 "ask.models.invalid" = "请填写名称、模型 ID 和有效的 HTTPS API 地址（本机服务可用 HTTP）。";
@@ -1723,7 +1723,7 @@
 "ask.models.cloudHint" = "使用 Typeflux Cloud 服务";
 "ask.models.reload" = "重新加载";
 "ask.models.add" = "添加自定义模型";
-"ask.models.empty" = "添加自己的 API，即可在随便问中选择。";
+"ask.models.empty" = "添加自己的 API，即可在对话中选择。";
 "ask.models.delete" = "删除模型";
 "ask.models.privacy" = "自定义模型的密钥仅存于本机；对话历史仍会同步到 Typeflux Cloud。模型费用由 API 服务商收取。";
 "ask.models.deleteHint" = "使用此模型的对话将需要重新选择模型，不会自动切换到云端。";
@@ -1777,7 +1777,7 @@
 "models.capabilityHint" = "请根据模型文档勾选该模型支持的能力";
 "models.visionYes" = "支持视觉（识图）";
 "models.reasoningYes" = "支持推理";
-"models.askBlocked" = "不能用于随便问：%@";
+"models.askBlocked" = "不能用于对话：%@";
 "models.rewriteBlocked" = "不能用于转译与润色：%@";
 "models.visionGuessed" = "根据模型名推断支持视觉，可在「···」菜单中更改";
 "ask.models.visionTrial" = "视觉能力未确认，将尝试发送图片";
@@ -1790,7 +1790,7 @@
 
 "models.noAvailable" = "暂无适用于当前输入的可用模型，请检查登录状态和模型设置。";
 
-"menu.openAskConversations" = "打开随便问";
+"menu.openAskConversations" = "打开对话";
 
 "ask.tool.preparing" = "正在准备参数";
 "ask.reasoning.active" = "正在思考";
@@ -1809,7 +1809,7 @@
 "ask.reasoning.high" = "高";
 
 // Server-managed Cloud model list
-"models.cloud.managed" = "随便问的可用模型由 Typeflux Cloud 自动同步，模型配置由服务端统一管理。";
+"models.cloud.managed" = "对话的可用模型由 Typeflux Cloud 自动同步，模型配置由服务端统一管理。";
 "models.cloud.available" = "可用模型";
 "models.cloud.refresh" = "刷新模型列表";
 "models.cloud.systemDefault" = "系统默认";
@@ -1944,7 +1944,7 @@
 "ask.settings.code.title" = "在沙箱中运行代码";
 "ask.settings.code.subtitle" = "Python、JavaScript 和 shell 程序在无网络、无法访问个人目录的环境中运行，每次运行都需要确认。";
 "ask.settings.skills.title" = "技能";
-"ask.settings.skills.subtitle" = "“随便问”在任务需要时加载的指令。可在 Skills/<名称>/SKILL.md 中添加自己的技能。";
+"ask.settings.skills.subtitle" = "“对话”在任务需要时加载的指令。可在 Skills/<名称>/SKILL.md 中添加自己的技能。";
 "ask.settings.skills.builtin" = "内置";
 "ask.settings.skills.open" = "打开技能文件夹";
 "ask.settings.skills.install" = "从 GitHub 安装…";
@@ -1965,7 +1965,7 @@
 "ask.skills.install.rateLimited" = "GitHub 当前限制了请求频率，请几分钟后再试。";
 "ask.skills.install.cannotRemove" = "内置技能无法移除。";
 "ask.settings.notes.title" = "已保存的笔记";
-"ask.settings.notes.subtitle" = "你让“随便问”记住的内容，会加入新对话的记忆。";
+"ask.settings.notes.subtitle" = "你让“对话”记住的内容，会加入新对话的记忆。";
 "ask.settings.notes.empty" = "暂无笔记。";
 "ask.tool.files" = "文件";
 "ask.tool.run_code" = "运行代码";
@@ -2053,7 +2053,7 @@
 "ask.approval.allowHelp" = "允许（⌘↩）";
 "ask.approval.allowDestructive" = "仍然执行";
 "ask.location.local" = "本机";
-"ask.location.local.help" = "“随便问”在这台 Mac 上使用你自己的模型运行，对话保存在本机。";
+"ask.location.local.help" = "“对话”在这台 Mac 上使用你自己的模型运行，对话保存在本机。";
 "ask.local.sourceNone" = "未选择模型";
 "ask.local.card.body" = "对话保存在这台 Mac，使用你配置的模型。";
 "ask.local.card.cloudQuestion" = "想用云端模型？";
@@ -2115,7 +2115,7 @@
 "account.page.contact" = "联系我们";
 "account.page.dailyHint" = "本期 · 按天";
 "account.page.dailyTitle" = "每日额度消耗";
-"account.page.featureAsk" = "随便问";
+"account.page.featureAsk" = "对话";
 "account.page.featureFootnote" = "看看哪个功能最耗额度。";
 "account.page.featureHint" = "按功能";
 "account.page.featureRewrite" = "润色与改写";
@@ -2186,8 +2186,8 @@
 "ask.attach.help" = "添加文件、图片或文件夹（⌘U），也可以直接粘贴或拖入";
 "ask.attach.files" = "发送文件或图片";
 "ask.attach.folder" = "选择文件夹";
-"ask.attach.pickFiles" = "选择要发给随便问的文件或图片";
-"ask.attach.pickFolders" = "选择随便问在本次对话中可以读取的文件夹";
+"ask.attach.pickFiles" = "选择要发给对话的文件或图片";
+"ask.attach.pickFolders" = "选择对话在本次对话中可以读取的文件夹";
 "ask.attach.add" = "添加";
 "ask.attach.loading" = "正在读取附件";
 "ask.attach.pastedImage" = "粘贴的图片";
@@ -2224,10 +2224,10 @@
 "ask.command.screenshot" = "附带屏幕截图";
 "ask.command.selection" = "附带选中的文字";
 "ask.command.memory" = "本条使用记忆";
-"ask.command.remember" = "让随便问记住…";
+"ask.command.remember" = "让对话记住…";
 "ask.command.remember.hint" = "要记住的内容";
 "ask.command.help" = "打开使用指南";
-"ask.command.settings" = "打开随便问设置";
+"ask.command.settings" = "打开对话设置";
 "ask.command.disabled.busy" = "对话进行中";
 "ask.command.disabled.noAnswer" = "还没有回答";
 "ask.command.disabled.noSelection" = "没有选中的文字";
@@ -2552,7 +2552,7 @@
 "agent.search.advanced" = "高级选项";
 "agent.search.missing" = "还需填写：%@";
 "agent.search.getKey" = "获取 %@ 密钥";
-"agent.files.empty" = "还没有授权文件夹，随便问现在不能读写你的文件。";
+"agent.files.empty" = "还没有授权文件夹，对话现在不能读写你的文件。";
 "agent.files.rule.scope" = "只能访问列表里的文件夹";
 "agent.files.rule.read" = "读取：已开放文件夹内自动执行";
 "agent.files.rule.write" = "写入：标准模式下执行前确认";
@@ -2582,7 +2582,7 @@
 "agent.skills.install.root" = "仓库根目录";
 "agent.mcp.emptyTitle" = "连接外部工具";
 "agent.mcp.emptyHint" = "支持本地命令（stdio）和远程 HTTP 两种连接方式，可导入 Claude Desktop / Cursor 使用的 mcpServers 配置。";
-"agent.mcp.listHint" = "点击服务器可编辑。启用的服务器会在对话需要时连接；开启“自动连接”的会在随便问启动时连接。";
+"agent.mcp.listHint" = "点击服务器可编辑。启用的服务器会在对话需要时连接；开启“自动连接”的会在对话启动时连接。";
 "agent.mcp.status.disabled" = "已停用";
 "agent.mcp.status.untested" = "未测试";
 "agent.mcp.status.connected" = "已连接 · %d 个工具";
@@ -2606,7 +2606,7 @@
 "agent.memory.rule.use.title" = "会用在新对话里";
 "agent.memory.rule.use.detail" = "这里的笔记会作为背景信息提供给新开始的对话。";
 "agent.memory.rule.ask.title" = "保存前先问你";
-"agent.memory.rule.ask.detail" = "随便问想记住新内容时，会先请你确认。";
+"agent.memory.rule.ask.detail" = "对话想记住新内容时，会先请你确认。";
 "agent.memory.rule.delete.title" = "删除即停止使用";
 "agent.memory.rule.delete.detail" = "删除或修改后，之后的对话不再使用旧内容；已有的回复不会改变。";
 "agent.memory.search" = "搜索笔记";
@@ -3193,7 +3193,7 @@
 "agent.group.personalization" = "个性化";
 "agent.rules.title" = "安全规则";
 "agent.memory.rules.title" = "使用规则";
-"agent.memory.subtitle" = "随便问记住的关于你的笔记，会作为背景信息提供给新对话。";
+"agent.memory.subtitle" = "对话记住的关于你的笔记，会作为背景信息提供给新对话。";
 "agent.search.section" = "服务与凭据";
 "agent.automation.permissions" = "系统权限";
 "agent.automation.rule.confirm" = "每一步操作前确认";
@@ -4220,7 +4220,7 @@
 "settings.shortcuts.screenshot.saveLocation.title" = "截图保存位置";
 "settings.shortcuts.screenshot.saveLocation.choose" = "选择…";
 "settings.shortcuts.screenshot.saveLocation.reset" = "改回桌面";
-"settings.shortcuts.screenshotConflict" = "截图快捷键不能与语音输入、“随便问”、人设或历史记录快捷键相同。";
+"settings.shortcuts.screenshotConflict" = "截图快捷键不能与语音输入、“对话”、人设或历史记录快捷键相同。";
 "settings.shortcuts.screenshotUpdated" = "截图快捷键已更新。";
 "settings.shortcuts.screenshotUnset" = "截图快捷键已清除。";
 "settings.shortcuts.usedByScreenshot" = "这个快捷键已用于截图。";
@@ -4617,13 +4617,13 @@
 "hotkeys.builtIn.persona.title" = "人设切换器";
 "hotkeys.builtIn.persona.subtitle" = "打开人设列表，切换当前人设。";
 "hotkeys.builtIn.ask.title" = "启动器";
-"hotkeys.builtIn.ask.subtitle" = "打开启动器（随便问），可带上选中的文字。";
+"hotkeys.builtIn.ask.subtitle" = "打开启动器（对话），可带上选中的文字。";
 "hotkeys.builtIn.history.title" = "剪贴板与历史";
 "hotkeys.builtIn.history.subtitle" = "打开剪贴板面板，查看复制过的内容和语音记录。";
 "hotkeys.builtIn.screenshot.title" = "截图";
 "hotkeys.builtIn.screenshot.subtitle" = "框选屏幕区域截图并编辑。";
 "hotkeys.action.openChat.title" = "打开对话窗口";
-"hotkeys.action.openChat.subtitle" = "打开随便问的对话窗口。";
+"hotkeys.action.openChat.subtitle" = "打开对话窗口。";
 "hotkeys.action.screenshotText.title" = "截图识字";
 "hotkeys.action.screenshotText.subtitle" = "框选屏幕区域，在启动器中显示其中的文字。";
 "hotkeys.action.openNotes.title" = "打开笔记";
@@ -5414,7 +5414,7 @@
 "help.key.chat.new" = "新对话";
 "help.key.chat.search" = "搜索对话";
 "help.key.chat.attach" = "添加文件";
-"help.key.chat.settings" = "随便问设置";
+"help.key.chat.settings" = "对话设置";
 "help.faq.status" = "权限";
 "help.faq.granted" = "已允许";
 "help.faq.notGranted" = "未允许";
@@ -5458,7 +5458,7 @@
 "help.start.voice.title" = "语音输入";
 "help.start.voice.detail" = "按住快捷键说话，松开后文字写进光标所在的位置。";
 "help.start.voice.sample" = "下周进入开发";
-"help.start.launcher.title" = "启动器 · 随便问";
+"help.start.launcher.title" = "启动器 · 对话";
 "help.start.launcher.detail" = "提问、算数、打开应用和文件。选中文字后打开，可以直接处理它。";
 "help.start.launcher.sample.question" = "把这段改短一点";
 "help.start.launcher.sample.answer" = "已改写选中的 3 行";
@@ -6479,10 +6479,10 @@
 "ring.type.folder.target" = "文件夹";
 "ring.feature.dictation.title" = "语音输入";
 "ring.feature.dictation.detail" = "免按住听写，按语音输入快捷键结束";
-"ring.feature.ask.title" = "随便问";
+"ring.feature.ask.title" = "对话";
 "ring.feature.ask.detail" = "打开启动器";
 "ring.feature.chat.title" = "对话窗口";
-"ring.feature.chat.detail" = "打开随便问的对话窗口";
+"ring.feature.chat.detail" = "打开对话窗口";
 "ring.feature.screenshot.title" = "截图";
 "ring.feature.screenshot.detail" = "框选区域，可标注、钉图";
 "ring.feature.screenshotText.title" = "截图识字";

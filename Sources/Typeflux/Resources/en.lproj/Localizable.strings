@@ -545,7 +545,7 @@
 "workflow.transcription.noSpeech" = "No clear speech detected. Transcription cancelled.";
 "workflow.transcription.serverUnavailableNotice" = "Unable to connect to the server. Your recording was saved in History for retry.";
 "workflow.result.copyTitle" = "Copy Result";
-"workflow.ask.answerTitle" = "Ask Anything";
+"workflow.ask.answerTitle" = "Chat";
 "workflow.ask.questionSectionTitle" = "Your Question";
 "workflow.ask.answerSectionTitle" = "Answer";
 "workflow.ask.answerDisclaimer" = "AI-generated content. Please verify important details.";
@@ -559,7 +559,7 @@
 "workflow.persona.applicationSwitched" = "Application persona switched to %@.";
 "workflow.persona.applicationSwitchedOff" = "Application persona switched off.";
 "workflow.persona.disabled" = "Persona disabled.";
-"workflow.ask.selectionRequired" = "Ask Anything requires selected text first.";
+"workflow.ask.selectionRequired" = "Chat requires selected text first.";
 "workflow.retry.audioMissing" = "Retry failed: audio file is missing.";
 "workflow.retry.audioGone" = "Retry failed: audio file no longer exists.";
 "workflow.typefluxCloud.loginRequired" = "Please sign in to Typeflux Cloud to use cloud features.";
@@ -814,7 +814,7 @@
 "settings.shortcuts.activation.title" = "Voice Input";
 "settings.shortcuts.activation.subtitle" = "Use one shortcut to start voice input. Hold to talk, or tap quickly to lock the recording session. If text is selected, the transcript replaces that selection directly.";
 "settings.shortcuts.activation.footnote" = "";
-"settings.shortcuts.ask.title" = "Ask Anything";
+"settings.shortcuts.ask.title" = "Chat";
 "settings.shortcuts.ask.subtitle" = "Double-tap Fn to start recording and ask anything. Answers appear in a popup. If text is selected, explicit edit requests can also rewrite it directly.";
 "settings.shortcuts.ask.footnote" = "";
 "settings.shortcuts.launcherPosition.title" = "Launcher open position";
@@ -832,23 +832,23 @@
 "settings.advanced.personaHotkeyApply.subtitle" = "When enabled, the persona shortcut checks for selected text first and uses the picker to rewrite that selection instead of only switching the default persona.";
 "settings.shortcuts.recording" = "Recording a new shortcut";
 "settings.shortcuts.recordingActivation" = "Press the new voice input key or key combination now.";
-"settings.shortcuts.recordingAsk" = "Press the new Ask Anything shortcut now. You can quickly press the same modifier key twice.";
+"settings.shortcuts.recordingAsk" = "Press the new Chat shortcut now. You can quickly press the same modifier key twice.";
 "settings.shortcuts.recordingPersona" = "Press the shortcut that should open the persona picker.";
 "settings.shortcuts.recordingHistory" = "Press the shortcut that should open history.";
 "settings.shortcuts.recordingGeneric" = "Press the key or key combination you want to use.";
 "settings.shortcuts.record" = "Record";
 "settings.shortcuts.stopRecording" = "Stop Recording";
-"settings.shortcuts.activationConflict" = "Voice input shortcut cannot match the Ask Anything, persona, or history shortcut.";
+"settings.shortcuts.activationConflict" = "Voice input shortcut cannot match the Chat, persona, or history shortcut.";
 "settings.shortcuts.activationUpdated" = "Voice input shortcut updated.";
 "settings.shortcuts.activationUnset" = "Voice input shortcut cleared.";
-"settings.shortcuts.askConflict" = "Ask Anything shortcut cannot match the voice input, persona, or history shortcut.";
-"settings.shortcuts.askUpdated" = "Ask Anything shortcut updated.";
-"settings.shortcuts.askUnset" = "Ask Anything shortcut cleared.";
+"settings.shortcuts.askConflict" = "Chat shortcut cannot match the voice input, persona, or history shortcut.";
+"settings.shortcuts.askUpdated" = "Chat shortcut updated.";
+"settings.shortcuts.askUnset" = "Chat shortcut cleared.";
 "settings.shortcuts.doubleTapHelp" = "Quickly press this key twice.";
-"settings.shortcuts.personaConflict" = "Persona shortcut cannot match the voice input, Ask Anything, or history shortcut.";
+"settings.shortcuts.personaConflict" = "Persona shortcut cannot match the voice input, Chat, or history shortcut.";
 "settings.shortcuts.personaUpdated" = "Persona shortcut updated.";
 "settings.shortcuts.personaUnset" = "Persona shortcut cleared.";
-"settings.shortcuts.historyConflict" = "History shortcut cannot match the voice input, Ask Anything, or persona shortcut.";
+"settings.shortcuts.historyConflict" = "History shortcut cannot match the voice input, Chat, or persona shortcut.";
 "settings.shortcuts.historyUpdated" = "History shortcut updated.";
 "settings.shortcuts.historyUnset" = "History shortcut cleared.";
 "settings.shortcuts.unset" = "Unset";
@@ -1184,17 +1184,17 @@
 "onboarding.shortcuts.globeKeyNotice.ready.title" = "FN / 🌐 key is ready";
 "onboarding.shortcuts.globeKeyNotice.ready.message" = "Your keyboard setting looks good — Typeflux can use the FN / 🌐 key as a hotkey. If the hotkey still doesn't respond, try signing out and back in, or restart your Mac.";
 "onboarding.shortcuts.externalKeyboard.title" = "Using an external keyboard without a working FN key?";
-"onboarding.shortcuts.externalKeyboard.message" = "You can use Right Command or Right Option instead. Typeflux will change Voice Input to that key, and Ask Anything to a quick double-press of that key.";
+"onboarding.shortcuts.externalKeyboard.message" = "You can use Right Command or Right Option instead. Typeflux will change Voice Input to that key, and Chat to a quick double-press of that key.";
 "onboarding.shortcuts.externalKeyboard.useRightCommand" = "Use Right Command";
 "onboarding.shortcuts.externalKeyboard.useRightOption" = "Use Right Option";
 "onboarding.shortcuts.replacement.rightCommand" = "Right Command";
 "onboarding.shortcuts.replacement.rightOption" = "Right Option";
 "onboarding.shortcuts.replacement.fn" = "FN / 🌐";
 "onboarding.shortcuts.replacement.active.title" = "%@ shortcuts are active";
-"onboarding.shortcuts.replacement.active.message" = "Your shortcuts have changed: Voice Input now uses %@, and Ask Anything uses %@×2.";
+"onboarding.shortcuts.replacement.active.message" = "Your shortcuts have changed: Voice Input now uses %@, and Chat uses %@×2.";
 "onboarding.shortcuts.replacement.restore" = "Restore FN shortcuts";
 "onboarding.shortcuts.replacement.appliedAlert.title" = "Shortcuts updated";
-"onboarding.shortcuts.replacement.appliedAlert.message" = "Typeflux now uses %@ for Voice Input and %@×2 for Ask Anything.";
+"onboarding.shortcuts.replacement.appliedAlert.message" = "Typeflux now uses %@ for Voice Input and %@×2 for Chat.";
 "onboarding.shortcuts.replacement.restoredAlert.message" = "Typeflux has restored the default FN / 🌐 shortcuts.";
 "onboarding.shortcuts.activation.hint" = "Turn speech into text";
 "onboarding.shortcuts.ask.hint" = "Ask aloud or edit selected text";
@@ -1211,9 +1211,9 @@
 // MARK: - Agent Framework
 
 "studio.section.agent" = "Agent";
-"studio.eyebrow.agent" = "Ask Anything";
+"studio.eyebrow.agent" = "Chat";
 "studio.heading.agent" = "Agent";
-"studio.subheading.agent" = "Tools, MCP servers, skills and memory that Ask Anything can use.";
+"studio.subheading.agent" = "Tools, MCP servers, skills and memory that Chat can use.";
 "studio.search.agent" = "Search agent settings...";
 
 "settings.advanced.localOptimization.title" = "Local Optimization";
@@ -1708,9 +1708,9 @@
 "ask.models.byPurpose" = "Application scenarios";
 "ask.models.speech" = "Speech recognition";
 "ask.models.rewrite" = "Rewrite and polish";
-"ask.models.ask" = "Ask Anything";
+"ask.models.ask" = "Chat";
 "ask.models.existingRewrite" = "Use provider configuration below";
-"ask.models.defaultsHint" = "The Ask default applies to new conversations. Each conversation can choose its own model.";
+"ask.models.defaultsHint" = "The Chat default applies to new conversations. Each conversation can choose its own model.";
 "ask.models.manage" = "Manage models";
 "ask.models.conversationOnly" = "Applies to this conversation only; does not change the rewrite model.";
 "ask.models.invalid" = "Enter a name, model ID and valid HTTPS API URL (HTTP is allowed for localhost).";
@@ -1723,7 +1723,7 @@
 "ask.models.cloudHint" = "Uses Typeflux Cloud";
 "ask.models.reload" = "Reload";
 "ask.models.add" = "Add custom model";
-"ask.models.empty" = "Add your API to make it available in Ask.";
+"ask.models.empty" = "Add your API to make it available in Chat.";
 "ask.models.delete" = "Delete model";
 "ask.models.privacy" = "Custom model keys stay on this Mac. Conversation history still syncs to Typeflux Cloud. Your API provider bills model usage.";
 "ask.models.deleteHint" = "Conversations using this model will need another model selected. They will not automatically switch to Cloud.";
@@ -1777,7 +1777,7 @@
 "models.capabilityHint" = "Check what this model supports, per its documentation";
 "models.visionYes" = "Supports vision (images)";
 "models.reasoningYes" = "Supports reasoning";
-"models.askBlocked" = "Can’t be used in Ask: %@";
+"models.askBlocked" = "Can’t be used in Chat: %@";
 "models.rewriteBlocked" = "Can’t be used for rewriting: %@";
 "models.visionGuessed" = "Vision inferred from the model name; change it from the ··· menu";
 "ask.models.visionTrial" = "Vision unconfirmed; images will be tried";
@@ -1790,7 +1790,7 @@
 
 "models.noAvailable" = "No models are available for this input. Check your sign-in and model settings.";
 
-"menu.openAskConversations" = "Open Ask Anything";
+"menu.openAskConversations" = "Open Chat";
 
 "ask.tool.preparing" = "Preparing arguments";
 "ask.reasoning.active" = "Thinking";
@@ -1809,7 +1809,7 @@
 "ask.reasoning.high" = "High";
 
 // Server-managed Cloud model list
-"models.cloud.managed" = "All available Ask models are synced from Typeflux Cloud. Model settings are managed by the server.";
+"models.cloud.managed" = "All available Chat models are synced from Typeflux Cloud. Model settings are managed by the server.";
 "models.cloud.available" = "Available models";
 "models.cloud.refresh" = "Refresh model list";
 "models.cloud.systemDefault" = "System default";
@@ -1867,7 +1867,7 @@
 "ask.references.explain" = "Explain this excerpt";
 "ask.selection.explain" = "Explain";
 "ask.selection.translate" = "Translate";
-"ask.selection.ask" = "Ask";
+"ask.selection.ask" = "Chat";
 "ask.references.translate" = "Translate this excerpt";
 "ask.references.source" = "Selected excerpt";
 "ask.references.locate" = "Locate source";
@@ -1926,7 +1926,7 @@
 "ask.usage.localHelp" = "Tokens reported by your own model. Usage stays on this Mac; no Typeflux credits are charged.";
 
 /* GUL-151 Ask tools */
-"ask.files.denied" = "This path is outside the folders authorized for Ask. Add the folder in Settings → Agent → File Access.";
+"ask.files.denied" = "This path is outside the folders authorized for Chat. Add the folder in Settings → Agent → File Access.";
 "ask.files.tooLarge" = "The file is larger than 1 MB.";
 "ask.files.editMissing" = "The text to replace was not found; read the file again.";
 "ask.files.editAmbiguous" = "The text to replace occurs %d times; include more context.";
@@ -1944,7 +1944,7 @@
 "ask.settings.code.title" = "Run code in a sandbox";
 "ask.settings.code.subtitle" = "Python, JavaScript and shell programs run without network access or access to your home folder. Each run needs approval.";
 "ask.settings.skills.title" = "Skills";
-"ask.settings.skills.subtitle" = "Instructions Ask loads when a task needs them. Add your own as Skills/<name>/SKILL.md.";
+"ask.settings.skills.subtitle" = "Instructions Chat loads when a task needs them. Add your own as Skills/<name>/SKILL.md.";
 "ask.settings.skills.builtin" = "Built-in";
 "ask.settings.skills.open" = "Open Skills Folder";
 "ask.settings.skills.install" = "Install from GitHub…";
@@ -1965,7 +1965,7 @@
 "ask.skills.install.rateLimited" = "GitHub is limiting requests right now. Try again in a few minutes.";
 "ask.skills.install.cannotRemove" = "Built-in skills cannot be removed.";
 "ask.settings.notes.title" = "Saved notes";
-"ask.settings.notes.subtitle" = "Facts you asked Ask to remember. They join the memory of new conversations.";
+"ask.settings.notes.subtitle" = "Facts you asked Chat to remember. They join the memory of new conversations.";
 "ask.settings.notes.empty" = "No saved notes.";
 "ask.tool.files" = "Files";
 "ask.tool.run_code" = "Run code";
@@ -1996,7 +1996,7 @@
 "ask.local.modelFailed" = "Your model request failed; check its configuration and retry.";
 "ask.local.badSummary" = "The model returned an invalid summary; retry to continue.";
 "ask.local.regenerateLatest" = "Only the latest reply can be regenerated.";
-"ask.local.modelRequired" = "Choose one of your own models to use Ask without Typeflux Cloud.";
+"ask.local.modelRequired" = "Choose one of your own models to use Chat without Typeflux Cloud.";
 "ask.local.conflict" = "The conversation changed; reload and try again.";
 "ask.local.stepLimit" = "Agent step limit reached.";
 "ask.local.truncated" = "The answer reached the output limit and was cut off; retry or ask to continue.";
@@ -2053,7 +2053,7 @@
 "ask.approval.allowHelp" = "Allow (⌘↩)";
 "ask.approval.allowDestructive" = "Allow anyway";
 "ask.location.local" = "This Mac";
-"ask.location.local.help" = "Ask runs on this Mac with your own models. Conversations stay on this Mac.";
+"ask.location.local.help" = "Chat runs on this Mac with your own models. Conversations stay on this Mac.";
 "ask.local.sourceNone" = "No model selected";
 "ask.local.card.body" = "Conversations stay on this Mac and use your configured models.";
 "ask.local.card.cloudQuestion" = "Want Cloud models?";
@@ -2115,7 +2115,7 @@
 "account.page.contact" = "Contact us";
 "account.page.dailyHint" = "This period · daily";
 "account.page.dailyTitle" = "Daily usage";
-"account.page.featureAsk" = "Ask";
+"account.page.featureAsk" = "Chat";
 "account.page.featureFootnote" = "See which feature uses the most.";
 "account.page.featureHint" = "By feature";
 "account.page.featureRewrite" = "Rewrite";
@@ -2186,8 +2186,8 @@
 "ask.attach.help" = "Attach files, images or a folder (⌘U). You can also paste or drop them here";
 "ask.attach.files" = "Send Files or Images";
 "ask.attach.folder" = "Choose Folder";
-"ask.attach.pickFiles" = "Choose files or images to send to Ask";
-"ask.attach.pickFolders" = "Choose a folder Ask can read in this conversation";
+"ask.attach.pickFiles" = "Choose files or images to send to Chat";
+"ask.attach.pickFolders" = "Choose a folder Chat can read in this conversation";
 "ask.attach.add" = "Add";
 "ask.attach.loading" = "Reading attachments";
 "ask.attach.pastedImage" = "Pasted image";
@@ -2195,7 +2195,7 @@
 "ask.attach.folderReadOnly" = "Read-only";
 "ask.attach.pages" = "%d pages";
 "ask.attach.truncated" = "Truncated";
-"ask.attach.unsupported" = "“%@” is a format Ask can't read yet.";
+"ask.attach.unsupported" = "“%@” is a format Chat can't read yet.";
 "ask.attach.tooLarge" = "“%@” is too large to attach.";
 "ask.attach.unreadable" = "Couldn't read “%@”.";
 "ask.attach.tooMany" = "Attach up to %d files per message.";
@@ -2224,10 +2224,10 @@
 "ask.command.screenshot" = "Attach the screenshot";
 "ask.command.selection" = "Attach the selected text";
 "ask.command.memory" = "Use memory for this question";
-"ask.command.remember" = "Ask to remember…";
+"ask.command.remember" = "Remember this…";
 "ask.command.remember.hint" = "what to remember";
 "ask.command.help" = "Open the usage guide";
-"ask.command.settings" = "Open Ask settings";
+"ask.command.settings" = "Open Chat settings";
 "ask.command.disabled.busy" = "A reply is in progress";
 "ask.command.disabled.noAnswer" = "No answer yet";
 "ask.command.disabled.noSelection" = "No selected text";
@@ -2552,7 +2552,7 @@
 "agent.search.advanced" = "Advanced options";
 "agent.search.missing" = "Still needed: %@";
 "agent.search.getKey" = "Get a %@ key";
-"agent.files.empty" = "No folders yet. Ask can't read or edit your files.";
+"agent.files.empty" = "No folders yet. Chat can't read or edit your files.";
 "agent.files.rule.scope" = "Only these folders";
 "agent.files.rule.read" = "Reads: automatic within allowed folders";
 "agent.files.rule.write" = "Writes: confirm in Standard mode";
@@ -2606,7 +2606,7 @@
 "agent.memory.rule.use.title" = "Used in new conversations";
 "agent.memory.rule.use.detail" = "Notes are given to new conversations as background.";
 "agent.memory.rule.ask.title" = "Asks before saving";
-"agent.memory.rule.ask.detail" = "When Ask wants to remember something, it asks you first.";
+"agent.memory.rule.ask.detail" = "When Chat wants to remember something, it asks you first.";
 "agent.memory.rule.delete.title" = "Deleting stops its use";
 "agent.memory.rule.delete.detail" = "Later conversations stop using a deleted or changed note; earlier replies don't change.";
 "agent.memory.search" = "Search notes";
@@ -3193,7 +3193,7 @@
 "agent.group.personalization" = "Personalization";
 "agent.rules.title" = "Safety rules";
 "agent.memory.rules.title" = "How notes are used";
-"agent.memory.subtitle" = "Notes Ask Anything keeps about you, given to new conversations as background.";
+"agent.memory.subtitle" = "Notes Chat keeps about you, given to new conversations as background.";
 "agent.search.section" = "Service and credentials";
 "agent.automation.permissions" = "System permissions";
 "agent.automation.rule.confirm" = "Asks before every step";
@@ -4220,7 +4220,7 @@
 "settings.shortcuts.screenshot.saveLocation.title" = "Save screenshots to";
 "settings.shortcuts.screenshot.saveLocation.choose" = "Choose…";
 "settings.shortcuts.screenshot.saveLocation.reset" = "Use Desktop";
-"settings.shortcuts.screenshotConflict" = "Screenshot shortcut cannot match the voice input, Ask Anything, persona, or history shortcut.";
+"settings.shortcuts.screenshotConflict" = "Screenshot shortcut cannot match the voice input, Chat, persona, or history shortcut.";
 "settings.shortcuts.screenshotUpdated" = "Screenshot shortcut updated.";
 "settings.shortcuts.screenshotUnset" = "Screenshot shortcut cleared.";
 "settings.shortcuts.usedByScreenshot" = "This shortcut is already used for screenshots.";
@@ -4617,13 +4617,13 @@
 "hotkeys.builtIn.persona.title" = "Persona switcher";
 "hotkeys.builtIn.persona.subtitle" = "Open the persona list to switch the current persona.";
 "hotkeys.builtIn.ask.title" = "Launcher";
-"hotkeys.builtIn.ask.subtitle" = "Open the launcher (Ask Anything), with the selected text.";
+"hotkeys.builtIn.ask.subtitle" = "Open the launcher (Chat), with the selected text.";
 "hotkeys.builtIn.history.title" = "Clipboard & history";
 "hotkeys.builtIn.history.subtitle" = "Open the clipboard panel with copied items and voice history.";
 "hotkeys.builtIn.screenshot.title" = "Screenshot";
 "hotkeys.builtIn.screenshot.subtitle" = "Capture a screen region and edit it.";
 "hotkeys.action.openChat.title" = "Open chat window";
-"hotkeys.action.openChat.subtitle" = "Open the Ask Anything chat window.";
+"hotkeys.action.openChat.subtitle" = "Open the Chat window.";
 "hotkeys.action.screenshotText.title" = "Screenshot to text";
 "hotkeys.action.screenshotText.subtitle" = "Capture a screen region and show its text in the launcher.";
 "hotkeys.action.openNotes.title" = "Open notes";
@@ -5414,7 +5414,7 @@
 "help.key.chat.new" = "New chat";
 "help.key.chat.search" = "Search chats";
 "help.key.chat.attach" = "Add files";
-"help.key.chat.settings" = "Ask settings";
+"help.key.chat.settings" = "Chat settings";
 "help.faq.status" = "Permissions";
 "help.faq.granted" = "Allowed";
 "help.faq.notGranted" = "Not allowed";
@@ -5458,7 +5458,7 @@
 "help.start.voice.title" = "Voice input";
 "help.start.voice.detail" = "Hold the key and speak; release it and the words appear where you are typing.";
 "help.start.voice.sample" = "Ship it next week";
-"help.start.launcher.title" = "Launcher · Ask";
+"help.start.launcher.title" = "Launcher · Chat";
 "help.start.launcher.detail" = "Ask anything, calculate, open apps and files. Open it with text selected to work on that text.";
 "help.start.launcher.sample.question" = "Make this shorter";
 "help.start.launcher.sample.answer" = "Rewrote the 3 selected lines";
@@ -6479,10 +6479,10 @@
 "ring.type.folder.target" = "Folder";
 "ring.feature.dictation.title" = "Voice Input";
 "ring.feature.dictation.detail" = "Start hands-free dictation; press the voice shortcut to finish";
-"ring.feature.ask.title" = "Ask";
+"ring.feature.ask.title" = "Chat";
 "ring.feature.ask.detail" = "Open the launcher";
 "ring.feature.chat.title" = "Chat Window";
-"ring.feature.chat.detail" = "Open the Ask conversation window";
+"ring.feature.chat.detail" = "Open the Chat window";
 "ring.feature.screenshot.title" = "Screenshot";
 "ring.feature.screenshot.detail" = "Select an area to capture, mark up or pin";
 "ring.feature.screenshotText.title" = "Screenshot Text";

@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>Typeflux · 随便问 输入框上下文 chip 设计稿</title>
+<title>Typeflux · 对话 输入框上下文 chip 设计稿</title>
 <style>
   :root {
     --card: #2e2e2e; --hair: rgba(255,255,255,.10); --text: #f2f2f2; --text-2: #a8a8ab; --text-3: #6e6e73;
@@ -95,7 +95,7 @@
   <symbol id="text" viewBox="0 0 16 16"><path d="M3 4h10M3 7h10M3 10h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12 9.5v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
 </defs></svg>
 
-<h1>随便问 · 输入框上下文 chip 设计稿</h1>
+<h1>对话 · 输入框上下文 chip 设计稿</h1>
 <p class="sub">问题：上下文 chip（截图、来源应用、选中文本、记忆）直接显示完整文字，来源应用还带着整条窗口标题。空间不够时整组收进「…」，点开的弹层比输入框还宽。<br>
 方案：<b style="color:#f2f2f2">图标优先，每个 chip 有最大宽度，文字悬停时再看</b>。平时只显示图标，用颜色表示状态；鼠标悬停 150ms 后，在上方弹出说明卡，显示完整名称、详情和可做的操作。chip 本身宽度不变，底栏不会跳动。聊天页输入框和快捷浮窗共用同一套规则。</p>
 

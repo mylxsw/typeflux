@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><title>Typeflux · 随便问 启动器位置与单词卡 设计稿</title>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>Typeflux · 对话 启动器位置与单词卡 设计稿</title>
 <style>
   :root {
     --canvas: #0c0c0d; --desk: #1b1c1f;
@@ -202,7 +202,7 @@
   .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: rgba(30,30,32,.92); color: #fff; padding: 7px 14px; border-radius: 9px; font-size: 12px; opacity: 0; transition: opacity .2s; pointer-events: none; }
   .toast.on { opacity: 1; }
 </style></head><body>
-<h1>随便问 · 启动器位置 + AI 单词卡</h1>
+<h1>对话 · 启动器位置 + AI 单词卡</h1>
 <p class="sub">两处改动：① 启动器（⌥Space 弹出的悬浮窗）可以拖到任意位置，设置里可选「始终居中」或「记住上次位置」；② 翻译插件用 AI 时，单词 / 短语返回单词卡（释义、词性、音标、例句），句子仍然直接给译文。本页可交互：拖动启动器、切换设置、关闭再打开；在单词卡里换示例、换引擎和状态。样式沿用 GUL-210 / GUL-214 的启动器。说明文档见 <code>docs/design/ask-launcher-position-word-card.md</code>。</p>
 <div class="topbar"><span class="label" style="margin:0">外观</span><div class="pill" id="theme"><button class="on" data-v="dark">深色</button><button data-v="light">浅色</button></div></div>
 
@@ -244,11 +244,11 @@
     </div>
   </div>
   <div>
-    <div class="label">② 设置 · 快捷键 · 随便问</div>
+    <div class="label">② 设置 · 快捷键 · 对话</div>
     <div class="win">
       <div class="tb"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><span style="margin-left:8px">设置 · 快捷键</span></div>
-      <div class="sec">随便问</div>
-      <div class="srow"><div class="t">快捷键<div class="d">打开随便问启动器</div></div><div class="r"><span class="hk"><span>⌥</span><span>Space</span></span></div></div>
+      <div class="sec">对话</div>
+      <div class="srow"><div class="t">快捷键<div class="d">打开对话启动器</div></div><div class="r"><span class="hk"><span>⌥</span><span>Space</span></span></div></div>
       <div class="srow"><div class="t">打开位置<div class="d" id="posdesc">每次都在鼠标所在屏幕的正中打开。拖动只影响这一次。</div></div>
         <div class="r"><div class="seg" id="mode"><button class="on" data-v="center">始终居中</button><button data-v="last">记住上次位置</button></div></div></div>
       <div class="srow"><div class="t">恢复默认位置<div class="d">清除记住的位置；也可以双击启动器顶部把手</div></div><div class="r"><button class="link" id="reset" disabled>恢复居中</button></div></div>
@@ -299,7 +299,7 @@
 <h3>三、实现要点（定稿后开发）</h3>
 <div class="notes"><table class="t">
   <tr><th>改动</th><th>位置</th><th>说明</th></tr>
-  <tr><td>位置设置</td><td><code>SettingsStore</code> + 设置 · 快捷键 · 随便问</td><td>新增 <code>askLauncherPlacement</code>：<code>center</code>（默认）/ <code>lastPosition</code>；位置按屏幕（<code>NSScreenNumber</code> → 显示器 UUID）存左上角相对可见区域的偏移。</td></tr>
+  <tr><td>位置设置</td><td><code>SettingsStore</code> + 设置 · 快捷键 · 对话</td><td>新增 <code>askLauncherPlacement</code>：<code>center</code>（默认）/ <code>lastPosition</code>；位置按屏幕（<code>NSScreenNumber</code> → 显示器 UUID）存左上角相对可见区域的偏移。</td></tr>
   <tr><td>打开位置</td><td><code>AskLauncherPlacement.frame(…)</code></td><td>多一个可选的「记住的顶点」：有就夹回屏内用它，没有就照旧居中。纯函数，单测覆盖居中、记住、出界、换屏。</td></tr>
   <tr><td>拖动</td><td><code>AskConversationWindowController</code> + <code>AskLauncherView</code></td><td>空白区和把手挂一个 <code>NSView</code> 背景，在 <code>mouseDown</code> 里调 <code>window.performDrag(with:)</code>；不开 <code>isMovableByWindowBackground</code>，避免抢走文本选择。拖完更新 <code>launcherTop</code>，保持向下生长。监听 <code>windowDidMove</code> 保存位置；双击把手回到中间。</td></tr>
   <tr><td>单词卡</td><td><code>AskTranslatePlugin</code> + <code>AskAITranslationEngine</code></td><td>本机判断是不是词；是词且用 AI 时换成单词卡提示词，用现有的 <code>LLMService.completeJSON(schema:)</code> 要求返回结构化 JSON（结构见 md 文档）；<code>AskPluginOutput</code> 加一个可选的 <code>wordCard</code>，视图按它渲染。解析失败回退为纯文本。按「词 + 目标语言 + 模型」在内存缓存，同一个词不重复花钱。</td></tr>

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><title>Typeflux · 随便问 启动器关键字插件 设计稿</title>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>Typeflux · 对话 启动器关键字插件 设计稿</title>
 <style>
   :root {
     --canvas: #0c0c0d; --desk: #1b1c1f;
@@ -203,7 +203,7 @@
   .warnline { color: var(--warn); font-size: 11.5px; margin: -6px 18px 12px 58px; }
   .addbtn { margin: 0 18px 16px 58px; display: inline-flex; gap: 6px; align-items: center; color: var(--accent-text); font-size: 12.5px; }
 </style></head><body>
-<h1>随便问 · 启动器关键字插件（翻译先行）</h1>
+<h1>对话 · 启动器关键字插件（翻译先行）</h1>
 <p class="sub">参照 Alfred 的关键字：关键字（可以自己定义）→ 插件（翻译、AI 指令、网页搜索……）。关键字后面有内容就处理这段内容；没有内容但识别到选中文字，就在按 ↩ 后处理选中文字。所有插件共用一套结果展示（文本卡片 / 条目列表 / 直接执行）和一套快捷键。样式基于 GUL-214 之后的启动器。详见 <code>docs/design/ask-launcher-keyword-plugins.md</code>。</p>
 <div class="grid">
   <div class="stage" id="hint"><div class="label">① 只输入了关键字：提示可以进入，但不抢回车</div><div class="card">

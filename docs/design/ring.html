@@ -499,7 +499,7 @@ function hydrateIcons(root=document){ root.querySelectorAll('[data-icon]').forEa
 
 /* ================= catalogs ================= */
 const TYPES = [
-  {k:'feature', name:'Typeflux 功能', icon:'infinity', desc:'语音输入、随便问、截图、翻译、剪贴板……'},
+  {k:'feature', name:'Typeflux 功能', icon:'infinity', desc:'语音输入、对话、截图、翻译、剪贴板……'},
   {k:'keyword', name:'启动器关键词', icon:'command', desc:'运行你配置的关键词或工作流，作用于选中文字。'},
   {k:'app', name:'打开应用', icon:'app', desc:'打开或切换到 Mac 上的任意应用。'},
   {k:'keys', name:'发送快捷键', icon:'keyboard', desc:'向当前应用发送一个按键组合。'},
@@ -513,8 +513,8 @@ const T = Object.fromEntries(TYPES.map(t=>[t.k,t]));
 const CAT = {
   feature:[
     {ref:'dictation',title:'语音输入',icon:'mic',sub:'免按住听写，再按一次结束',effect:'开始听写，说完再按一次快捷键结束并插入文字'},
-    {ref:'ask',title:'随便问',icon:'sparkles',sub:'在鼠标处打开启动器',effect:'在鼠标附近打开启动器，选中的文字已作为上下文'},
-    {ref:'chat',title:'对话窗口',icon:'chat',sub:'打开随便问的对话窗口',effect:'打开对话窗口'},
+    {ref:'ask',title:'对话',icon:'sparkles',sub:'在鼠标处打开启动器',effect:'在鼠标附近打开启动器，选中的文字已作为上下文'},
+    {ref:'chat',title:'对话窗口',icon:'chat',sub:'打开对话窗口',effect:'打开对话窗口'},
     {ref:'screenshot',title:'截图',icon:'viewfinder',sub:'框选区域，可标注、钉图、录屏',effect:'进入截图框选'},
     {ref:'ocr',title:'截图识字',icon:'textscan',sub:'框选区域，识别其中的文字',effect:'框选区域后在启动器中显示识别出的文字'},
     {ref:'shotTranslate',title:'截图翻译',icon:'shotTr',sub:'框选区域，识别后翻译',effect:'框选区域，本机识别文字后翻译'},
@@ -814,7 +814,7 @@ function renderHotkey(){
 const hkEl=document.getElementById('hotkey');
 hkEl.onclick=()=>{ recording=!recording; document.getElementById('hkMsg').style.display='none'; renderHotkey(); };
 hkEl.onkeydown=e=>{ if(!recording && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); recording=true; renderHotkey(); } };
-const CONFLICTS={'⌘+Space':'随便问 · 启动器','⌥⌘+A':'截图','⌥⌘+O':'剪贴板与历史','⌥⌘+P':'人设切换器'};
+const CONFLICTS={'⌘+Space':'对话 · 启动器','⌥⌘+A':'截图','⌥⌘+O':'剪贴板与历史','⌥⌘+P':'人设切换器'};
 function keyName(e){ return e.code==='Space'?'Space': e.code.startsWith('Key')?e.code.slice(3): e.code.startsWith('Digit')?e.code.slice(5): e.key.length===1?e.key.toUpperCase():e.key; }
 function modsOf(e){ const m=[]; if(e.ctrlKey)m.push('⌃'); if(e.altKey)m.push('⌥'); if(e.shiftKey)m.push('⇧'); if(e.metaKey)m.push('⌘'); return m; }
 window.addEventListener('keydown',e=>{

@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>Typeflux · 随便问 输入框提示信息重新设计</title>
+<title>Typeflux · 对话 输入框提示信息重新设计</title>
 <style>
   :root {
     --win: #1e1e20; --side: #26262a; --card: #2e2e2e; --hair: rgba(255,255,255,.10); --text: #f2f2f2; --text-2: #a8a8ab; --text-3: #6e6e73;
@@ -182,7 +182,7 @@
   <symbol id="x" viewBox="0 0 10 10"><path d="M2.5 2.5l5 5M7.5 2.5l-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
 </defs></svg>
 
-<h1>随便问 · 输入框提示信息重新设计</h1>
+<h1>对话 · 输入框提示信息重新设计</h1>
 <p class="sub">问题：「已切换到 coding/auto」这类提示统一用 <code>AskBanner</code> 堆在输入框<b>下方</b>。它会把输入框往上顶，还盖住了下面那行快捷键提示（截图红框处两行文字叠在一起）。模型切换、思考强度、截图、附件失败、语音出错、对话失败等七八种信息都挤在这一处，用户分不清哪条提示对应哪个操作。<br>
 方案：<b>输入框下方不再显示任何内容</b>。每条信息按它说的是什么，放回它所属的位置：状态确认变成<b>底栏空白处的一行灰色小字</b>（控件本身只换值，不闪不弹），需要处理的问题放进<b>卡片内部的提示条</b>，对话级事件写进<b>对话流</b>，快捷键说明改到<b>占位符和悬停提示</b>里。聊天页输入框和快捷浮窗（launcher）共用这套规则。</p>
 
@@ -439,7 +439,7 @@
     <div class="tx">
       <div class="sysline"><svg width="13" height="13"><use href="#eye"/></svg>这条消息带图片，已切换到 qwen2.5-vl · <a>改回 coding/auto</a></div>
       <div class="bubble">讲讲这一屏在做什么</div>
-      <div class="answer">这是 Typeflux 的「随便问」窗口。左侧是对话列表，按今天、昨天、更早分组；中间是空对话的欢迎页，提供三个快捷提问……</div>
+      <div class="answer">这是 Typeflux 的「对话」窗口。左侧是对话列表，按今天、昨天、更早分组；中间是空对话的欢迎页，提供三个快捷提问……</div>
       <div class="acts"><span><svg width="14" height="14"><use href="#copy"/></svg></span><span><svg width="14" height="14"><use href="#retry"/></svg></span></div>
       <div class="bubble">再帮我把它翻成英文</div>
       <div class="answer" style="color:var(--text-2)">The window is Typeflux's "Ask Anything" panel. On the left…</div>

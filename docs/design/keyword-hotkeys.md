@@ -18,7 +18,7 @@
 
 ### 1.1 全局快捷键
 
-- 「设置」页的「语音快捷键」区有 5 个固定的快捷键：语音输入 `fn`、辅助快捷键 `fn ⇧`、随便问（启动器）`⌘Space`、人设切换器 `⌥⌘P`、历史记录 `⌥⌘O`（`StudioView.shortcutConfigurationRow`）。每个快捷键占一张大卡片，有录制、恢复默认、取消三个按钮。语音输入卡片下面有「快速录入」，随便问卡片下面有「打开位置」。
+- 「设置」页的「语音快捷键」区有 5 个固定的快捷键：语音输入 `fn`、辅助快捷键 `fn ⇧`、对话（启动器）`⌘Space`、人设切换器 `⌥⌘P`、历史记录 `⌥⌘O`（`StudioView.shortcutConfigurationRow`）。每个快捷键占一张大卡片，有录制、恢复默认、取消三个按钮。语音输入卡片下面有「快速录入」，对话卡片下面有「打开位置」。
 - 存储：每个快捷键是 `SettingsStore` 里的一个 JSON 键（`hotkey.activation.json` 等），值是 `HotkeyBinding`（`keyCode`、`modifierFlags`、`pressCount`、`modifierKeyCodes`），`__unset__` 表示取消。改了以后发 `hotkeySettingsDidChange`。
 - 监听：`EventTapHotkeyService` 用 CGEventTap 监听这 5 个 binding，`HotkeyAction` 是一个固定的枚举。冲突检查写在 `SettingsViewModel.setXxxHotkey` 里，每个快捷键各写一遍。
 
@@ -158,7 +158,7 @@ struct KeywordHotkey: Codable, Equatable, Identifiable {
 
 - 「快捷键」页是**所有核心功能**的统一入口，不只是关键字。分四组：
   - 语音输入：语音输入、辅助语音输入、人设切换器。
-  - 启动器与窗口：启动器（随便问）、打开对话窗口、打开 Typeflux。
+  - 启动器与窗口：启动器（对话）、打开对话窗口、打开 Typeflux。
   - 内容工具：剪贴板与历史、截图、截图识字、打开笔记、打开单词本。
   - 关键词快捷键。
 - 原来的入口**全部保留**（设置页的快捷键卡片、启动器 → 剪贴板里的快捷键入口等），两边改的是同一份数据。3.1 里「设置页只留一个链接」不再执行。

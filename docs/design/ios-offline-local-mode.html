@@ -387,7 +387,7 @@ function composer() {
   }
   const canSend = S.draft.trim() && (S.signedIn || S.providers.length);
   return `<div class="composer-wrap">${card}<div class="composer">
-    <textarea id="draft" placeholder="${local ? '提问，对话只存在这台 iPhone' : '随便问'}">${esc(S.draft)}</textarea>
+    <textarea id="draft" placeholder="${local ? '提问，对话只存在这台 iPhone' : '对话'}">${esc(S.draft)}</textarea>
     <div class="crow"><button class="cbtn">＋</button>
       <button class="chip" data-a="storage" title="存储位置">${local ? '<span class="lk">🔒</span>' : '☁︎'}</button>
       <button class="chip ${issue ? 'warn' : ''}" data-a="openPicker">${info ? `<span class="lg" style="width:16px;height:16px;border-radius:4px;background:${info.color};color:#fff;font-size:9px;display:grid;place-items:center">${info.logo}</span>` : ''}<span>${esc(chipName)}</span>${issue ? '⚠︎' : '⌄'}</button>

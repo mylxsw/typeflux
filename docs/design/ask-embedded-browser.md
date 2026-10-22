@@ -1,10 +1,10 @@
-# 随便问 · 内嵌浏览器：调研与设计（GUL-417）
+# 对话 · 内嵌浏览器：调研与设计（GUL-417）
 
 可交互原型：[`ask-embedded-browser.html`](./ask-embedded-browser.html)（单文件，浏览器直接打开）。截图在 [`ask-embedded-browser/`](./ask-embedded-browser/)。
 
 ## 结论
 
-- **形态**：在随便问窗口的右侧面板里加入一个「浏览器」，与对话并排，可拖动调宽；窗口太窄时以抽屉形式覆盖在对话上。这和 ChatGPT / Codex 客户端的做法一致：浏览器是聊天窗口里的一个面板，不是另一个 App。
+- **形态**：在对话窗口的右侧面板里加入一个「浏览器」，与对话并排，可拖动调宽；窗口太窄时以抽屉形式覆盖在对话上。这和 ChatGPT / Codex 客户端的做法一致：浏览器是聊天窗口里的一个面板，不是另一个 App。
 - **引擎**：用系统 **WKWebView**，配一个独立的、持久化的「Typeflux 浏览器」数据存储（macOS 14+ `WKWebsiteDataStore(forIdentifier:)`）。用户在里面登录的账号会一直保留，只存在本机。不建议现在嵌入 Chromium：OpenAI 为 Atlas 专门造了 OWL 架构，这个投入对我们不划算。
 - **AI 怎么操作**：沿用现有 `browser` 工具的契约（`observation_id`、`read`/`snapshot`/`click`/`fill`/`scroll`/`back`/`open`、操作回执），新增一个执行器 `AskEmbeddedBrowserExecutor`。观察脚本跑在隔离的 `WKContentWorld` 里，比现在通过 AppleScript 往用户浏览器注入 JS 更难被页面篡改；点击和键盘用合成的原生事件（`isTrusted` 为 true）。新增 `screenshot`、`tabs`、`key`、`handoff` 四个动作。
 - **人始终在回路里**：AI 操作时页面四周有发光边框、显示「Typeflux」光标，底部浮条提供「暂停 / 接管 / 停止」，点击页面也等于接管。遇到登录、验证码、支付这类步骤，AI 把控制权交给用户，这段时间它不读取页面。会改动数据的操作按站点权限决定是否需要确认。
@@ -62,7 +62,7 @@ Issue 附带的截图是 Codex 桌面客户端：左侧是对话，右侧是一�
 
 ```mermaid
 flowchart LR
-  subgraph Window[随便问窗口]
+  subgraph Window[对话窗口]
     Chat[对话 / 输入框<br/>@引用网页] --- Panel[AskBrowserPanel<br/>标签栏·地址栏·覆盖层]
   end
   Panel --> WS[AskBrowserWorkspace<br/>窗口级 · 持有 WKWebView]

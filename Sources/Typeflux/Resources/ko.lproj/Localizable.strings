@@ -541,7 +541,7 @@
 "workflow.transcription.noSpeech" = "명확한 음성이 감지되지 않았습니다. 스크립트 작성이 취소되었습니다.";
 "workflow.transcription.serverUnavailableNotice" = "서버에 연결할 수 없습니다. 녹음은 기록에 저장되어 나중에 다시 시도할 수 있습니다.";
 "workflow.result.copyTitle" = "결과 복사";
-"workflow.ask.answerTitle" = "무엇이든 물어보세요";
+"workflow.ask.answerTitle" = "대화";
 "workflow.ask.questionSectionTitle" = "질문";
 "workflow.ask.answerSectionTitle" = "답변";
 "workflow.ask.answerDisclaimer" = "AI가 생성한 내용입니다. 중요한 정보는 확인해 주세요.";
@@ -555,7 +555,7 @@
 "workflow.persona.applicationSwitched" = "애플리케이션 페르소나가 %@로 전환되었습니다.";
 "workflow.persona.applicationSwitchedOff" = "애플리케이션 페르소나가 꺼졌습니다.";
 "workflow.persona.disabled" = "페르소나가 비활성화되었습니다.";
-"workflow.ask.selectionRequired" = "무엇이든 물어보세요. 먼저 선택한 텍스트가 필요합니다.";
+"workflow.ask.selectionRequired" = "대화. 먼저 선택한 텍스트가 필요합니다.";
 "workflow.retry.audioMissing" = "재시도 실패: 오디오 파일이 없습니다.";
 "workflow.retry.audioGone" = "재시도 실패: 오디오 파일이 더 이상 존재하지 않습니다.";
 "workflow.typefluxCloud.loginRequired" = "클라우드 기능을 사용하려면 Typeflux Cloud에 로그인하세요.";
@@ -805,7 +805,7 @@
 "settings.shortcuts.activation.title" = "음성 입력";
 "settings.shortcuts.activation.subtitle" = "하나의 단축키를 사용하여 음성 입력을 시작하세요. 길게 눌러 말하거나 빠르게 탭하여 녹음 세션을 잠급니다. 텍스트를 선택하면 스크립트가 해당 선택 항목을 직접 대체합니다.";
 "settings.shortcuts.activation.footnote" = "";
-"settings.shortcuts.ask.title" = "무엇이든 물어보세요";
+"settings.shortcuts.ask.title" = "대화";
 "settings.shortcuts.ask.subtitle" = "Fn을 두 번 누르면 녹음이 시작되고 무엇이든 물어볼 수 있습니다. 답변이 팝업으로 나타납니다. 텍스트를 선택한 경우 명시적 편집 요청을 통해 직접 다시 작성할 수도 있습니다.";
 "settings.shortcuts.ask.footnote" = "";
 "settings.shortcuts.launcherPosition.title" = "런처 열기 위치";
@@ -823,23 +823,23 @@
 "settings.advanced.personaHotkeyApply.subtitle" = "활성화되면 페르소나 단축키는 선택한 텍스트를 먼저 확인하고 기본 페르소나만 전환하는 대신 선택기를 사용하여 해당 선택 항목을 다시 작성합니다.";
 "settings.shortcuts.recording" = "새 바로가기 녹음";
 "settings.shortcuts.recordingActivation" = "지금 새로운 음성 입력 키나 키 조합을 누르세요.";
-"settings.shortcuts.recordingAsk" = "지금 새로운 무엇이든 물어보세요 단축키를 누르세요. 같은 보조 키를 빠르게 두 번 누를 수도 있습니다.";
+"settings.shortcuts.recordingAsk" = "지금 새로운 대화 단축키를 누르세요. 같은 보조 키를 빠르게 두 번 누를 수도 있습니다.";
 "settings.shortcuts.recordingPersona" = "페르소나 선택기를 여는 바로가기를 누르세요.";
 "settings.shortcuts.recordingHistory" = "기록을 여는 바로가기를 누르세요.";
 "settings.shortcuts.recordingGeneric" = "사용하려는 키나 키 조합을 누르세요.";
 "settings.shortcuts.record" = "기록";
 "settings.shortcuts.stopRecording" = "녹음 중지";
-"settings.shortcuts.activationConflict" = "음성 입력 바로가기는 무엇이든 물어보세요, 페르소나 또는 기록 바로가기와 일치할 수 없습니다.";
+"settings.shortcuts.activationConflict" = "음성 입력 바로가기는 대화, 페르소나 또는 기록 바로가기와 일치할 수 없습니다.";
 "settings.shortcuts.activationUpdated" = "음성 입력 단축키가 업데이트되었습니다.";
 "settings.shortcuts.activationUnset" = "음성 입력 단축키가 삭제되었습니다.";
-"settings.shortcuts.askConflict" = "무엇이든 물어보세요 단축키는 음성 입력, 페르소나 또는 기록 단축키와 일치할 수 없습니다.";
-"settings.shortcuts.askUpdated" = "무엇이든 물어보세요 바로가기가 업데이트되었습니다.";
-"settings.shortcuts.askUnset" = "무엇이든 물어보세요 단축키가 삭제되었습니다.";
+"settings.shortcuts.askConflict" = "대화 단축키는 음성 입력, 페르소나 또는 기록 단축키와 일치할 수 없습니다.";
+"settings.shortcuts.askUpdated" = "대화 바로가기가 업데이트되었습니다.";
+"settings.shortcuts.askUnset" = "대화 단축키가 삭제되었습니다.";
 "settings.shortcuts.doubleTapHelp" = "이 키를 빠르게 두 번 누르세요.";
-"settings.shortcuts.personaConflict" = "페르소나 단축키는 음성 입력, 무엇이든 물어보세요 또는 기록 단축키와 일치할 수 없습니다.";
+"settings.shortcuts.personaConflict" = "페르소나 단축키는 음성 입력, 대화 또는 기록 단축키와 일치할 수 없습니다.";
 "settings.shortcuts.personaUpdated" = "페르소나 바로가기가 업데이트되었습니다.";
 "settings.shortcuts.personaUnset" = "페르소나 단축키가 삭제되었습니다.";
-"settings.shortcuts.historyConflict" = "기록 단축키는 음성 입력, 무엇이든 물어보세요 또는 페르소나 단축키와 일치할 수 없습니다.";
+"settings.shortcuts.historyConflict" = "기록 단축키는 음성 입력, 대화 또는 페르소나 단축키와 일치할 수 없습니다.";
 "settings.shortcuts.historyUpdated" = "기록 단축키가 업데이트되었습니다.";
 "settings.shortcuts.historyUnset" = "기록 단축키가 삭제되었습니다.";
 "settings.shortcuts.unset" = "해제";
@@ -1173,17 +1173,17 @@
 "onboarding.shortcuts.globeKeyNotice.ready.title" = "FN / 🌐 키가 준비되었습니다";
 "onboarding.shortcuts.globeKeyNotice.ready.message" = "키보드 설정이 완료되어 Typeflux 가 FN / 🌐 키를 단축키로 사용할 수 있습니다. 그래도 반응이 없다면 한 번 로그아웃 후 다시 로그인하거나, Mac 을 재시작해 주세요.";
 "onboarding.shortcuts.externalKeyboard.title" = "외장 키보드에서 FN 키를 사용할 수 없나요?";
-"onboarding.shortcuts.externalKeyboard.message" = "오른쪽 Command 또는 오른쪽 Option 을 대신 사용할 수 있습니다. Typeflux 는 음성 입력을 해당 키로, 무엇이든 묻기를 해당 키 빠른 두 번 누르기로 변경합니다.";
+"onboarding.shortcuts.externalKeyboard.message" = "오른쪽 Command 또는 오른쪽 Option 을 대신 사용할 수 있습니다. Typeflux 는 음성 입력을 해당 키로, 대화를 해당 키 빠른 두 번 누르기로 변경합니다.";
 "onboarding.shortcuts.externalKeyboard.useRightCommand" = "오른쪽 Command 사용";
 "onboarding.shortcuts.externalKeyboard.useRightOption" = "오른쪽 Option 사용";
 "onboarding.shortcuts.replacement.rightCommand" = "오른쪽 Command";
 "onboarding.shortcuts.replacement.rightOption" = "오른쪽 Option";
 "onboarding.shortcuts.replacement.fn" = "FN / 🌐";
 "onboarding.shortcuts.replacement.active.title" = "%@ 단축키가 활성화되었습니다";
-"onboarding.shortcuts.replacement.active.message" = "단축키가 변경되었습니다. 음성 입력은 %@, 무엇이든 묻기는 %@×2 를 사용합니다.";
+"onboarding.shortcuts.replacement.active.message" = "단축키가 변경되었습니다. 음성 입력은 %@, 대화는 %@×2 를 사용합니다.";
 "onboarding.shortcuts.replacement.restore" = "FN 단축키 복원";
 "onboarding.shortcuts.replacement.appliedAlert.title" = "단축키가 업데이트되었습니다";
-"onboarding.shortcuts.replacement.appliedAlert.message" = "Typeflux 가 이제 음성 입력에 %@, 무엇이든 묻기에 %@×2 를 사용합니다.";
+"onboarding.shortcuts.replacement.appliedAlert.message" = "Typeflux 가 이제 음성 입력에 %@, 대화에 %@×2 를 사용합니다.";
 "onboarding.shortcuts.replacement.restoredAlert.message" = "Typeflux 가 기본 FN / 🌐 단축키로 복원되었습니다.";
 "onboarding.shortcuts.activation.hint" = "말한 내용을 텍스트로 입력";
 "onboarding.shortcuts.ask.hint" = "음성으로 질문하거나 선택한 글 수정";
@@ -1200,9 +1200,9 @@
 // MARK: - Agent Framework
 
 "studio.section.agent" = "에이전트";
-"studio.eyebrow.agent" = "Ask";
+"studio.eyebrow.agent" = "대화";
 "studio.heading.agent" = "에이전트";
-"studio.subheading.agent" = "Ask가 사용할 수 있는 도구, MCP 서버, 스킬, 메모리를 관리합니다.";
+"studio.subheading.agent" = "대화가 사용할 수 있는 도구, MCP 서버, 스킬, 메모리를 관리합니다.";
 "studio.search.agent" = "검색 에이전트 설정...";
 
 "settings.advanced.localOptimization.title" = "로컬 최적화";
@@ -1698,9 +1698,9 @@
 "ask.models.byPurpose" = "사용 시나리오";
 "ask.models.speech" = "Speech recognition";
 "ask.models.rewrite" = "Rewrite and polish";
-"ask.models.ask" = "Ask Anything";
+"ask.models.ask" = "대화";
 "ask.models.existingRewrite" = "Use provider configuration below";
-"ask.models.defaultsHint" = "The Ask default applies to new conversations. Each conversation can choose its own model.";
+"ask.models.defaultsHint" = "The Chat default applies to new conversations. Each conversation can choose its own model.";
 "ask.models.manage" = "Manage models";
 "ask.models.conversationOnly" = "Applies to this conversation only; does not change the rewrite model.";
 "ask.models.invalid" = "Enter a name, model ID and valid HTTPS API URL (HTTP is allowed for localhost).";
@@ -1713,7 +1713,7 @@
 "ask.models.cloudHint" = "Uses Typeflux Cloud";
 "ask.models.reload" = "Reload";
 "ask.models.add" = "Add custom model";
-"ask.models.empty" = "Add your API to make it available in Ask.";
+"ask.models.empty" = "Add your API to make it available in Chat.";
 "ask.models.delete" = "Delete model";
 "ask.models.privacy" = "Custom model keys stay on this Mac. Conversation history still syncs to Typeflux Cloud. Your API provider bills model usage.";
 "ask.models.deleteHint" = "Conversations using this model will need another model selected. They will not automatically switch to Cloud.";
@@ -1767,7 +1767,7 @@
 "models.capabilityHint" = "모델 문서를 확인해 지원하는 기능을 선택하세요";
 "models.visionYes" = "비전(이미지 인식) 지원";
 "models.reasoningYes" = "추론 지원";
-"models.askBlocked" = "Ask에 사용할 수 없음: %@";
+"models.askBlocked" = "대화에 사용할 수 없음: %@";
 "models.rewriteBlocked" = "다시 쓰기 및 다듬기에 사용할 수 없음: %@";
 "models.visionGuessed" = "모델 이름으로 비전 지원을 추정했습니다. ··· 메뉴에서 변경할 수 있습니다";
 "ask.models.visionTrial" = "비전 지원 미확인, 이미지 전송을 시도합니다";
@@ -1780,7 +1780,7 @@
 
 "models.noAvailable" = "현재 입력에 사용할 수 있는 모델이 없습니다. 로그인 상태와 모델 설정을 확인하세요.";
 
-"menu.openAskConversations" = "무엇이든 물어보기 열기";
+"menu.openAskConversations" = "대화 열기";
 
 "ask.tool.preparing" = "매개변수 준비 중";
 "ask.reasoning.active" = "생각 중";
@@ -1799,7 +1799,7 @@
 "ask.reasoning.high" = "높음";
 
 // Server-managed Cloud model list
-"models.cloud.managed" = "사용 가능한 Ask 모델은 Typeflux Cloud에서 자동으로 동기화됩니다. 모델 설정은 서버에서 관리합니다.";
+"models.cloud.managed" = "사용 가능한 대화 모델은 Typeflux Cloud에서 자동으로 동기화됩니다. 모델 설정은 서버에서 관리합니다.";
 "models.cloud.available" = "사용 가능한 모델";
 "models.cloud.refresh" = "모델 목록 새로고침";
 "models.cloud.systemDefault" = "시스템 기본값";
@@ -1916,7 +1916,7 @@
 "ask.usage.localHelp" = "개인 모델이 보고한 토큰 사용량입니다. 사용량은 이 Mac에 저장되며 Typeflux credits는 사용하지 않습니다.";
 
 /* GUL-151 Ask tools */
-"ask.files.denied" = "이 경로는 Ask에 허용된 폴더 밖에 있습니다. 설정 → Agent → 파일 접근에서 폴더를 추가하세요.";
+"ask.files.denied" = "이 경로는 대화에 허용된 폴더 밖에 있습니다. 설정 → Agent → 파일 접근에서 폴더를 추가하세요.";
 "ask.files.tooLarge" = "파일이 1MB를 초과합니다.";
 "ask.files.editMissing" = "바꿀 텍스트를 찾지 못했습니다. 파일을 다시 읽으세요.";
 "ask.files.editAmbiguous" = "바꿀 텍스트가 %d번 나타납니다. 앞뒤 문맥을 더 포함하세요.";
@@ -1934,7 +1934,7 @@
 "ask.settings.code.title" = "샌드박스에서 코드 실행";
 "ask.settings.code.subtitle" = "Python, JavaScript, 셸 프로그램은 네트워크와 홈 폴더 접근 없이 실행됩니다. 실행할 때마다 승인이 필요합니다.";
 "ask.settings.skills.title" = "스킬";
-"ask.settings.skills.subtitle" = "작업에 필요할 때 Ask가 불러오는 지침입니다. Skills/<이름>/SKILL.md로 직접 추가할 수 있습니다.";
+"ask.settings.skills.subtitle" = "작업에 필요할 때 대화가 불러오는 지침입니다. Skills/<이름>/SKILL.md로 직접 추가할 수 있습니다.";
 "ask.settings.skills.builtin" = "기본 제공";
 "ask.settings.skills.open" = "스킬 폴더 열기";
 "ask.settings.skills.install" = "GitHub에서 설치…";
@@ -1955,7 +1955,7 @@
 "ask.skills.install.rateLimited" = "GitHub가 요청을 제한하고 있습니다. 몇 분 후 다시 시도하세요.";
 "ask.skills.install.cannotRemove" = "기본 제공 스킬은 제거할 수 없습니다.";
 "ask.settings.notes.title" = "저장된 메모";
-"ask.settings.notes.subtitle" = "Ask에게 기억하라고 한 내용입니다. 새 대화의 메모리에 포함됩니다.";
+"ask.settings.notes.subtitle" = "대화에게 기억하라고 한 내용입니다. 새 대화의 메모리에 포함됩니다.";
 "ask.settings.notes.empty" = "저장된 메모가 없습니다.";
 "ask.tool.files" = "파일";
 "ask.tool.run_code" = "코드 실행";
@@ -1986,7 +1986,7 @@
 "ask.local.modelFailed" = "모델 요청이 실패했습니다. 설정을 확인하고 다시 시도하세요.";
 "ask.local.badSummary" = "모델이 잘못된 요약을 반환했습니다. 다시 시도하세요.";
 "ask.local.regenerateLatest" = "최신 답변만 다시 생성할 수 있습니다.";
-"ask.local.modelRequired" = "Typeflux Cloud 없이 Ask를 사용하려면 직접 설정한 모델을 선택하세요.";
+"ask.local.modelRequired" = "Typeflux Cloud 없이 대화를 사용하려면 직접 설정한 모델을 선택하세요.";
 "ask.local.conflict" = "대화가 변경되었습니다. 새로 고친 후 다시 시도하세요.";
 "ask.local.stepLimit" = "에이전트 단계 한도에 도달했습니다.";
 "ask.local.truncated" = "답변이 출력 한도에 도달해 잘렸습니다. 다시 시도하거나 계속해 달라고 요청하세요.";
@@ -2043,7 +2043,7 @@
 "ask.approval.allowHelp" = "허용 (⌘↩)";
 "ask.approval.allowDestructive" = "그래도 실행";
 "ask.location.local" = "이 Mac";
-"ask.location.local.help" = "Ask가 이 Mac에서 직접 설정한 모델로 실행되며 대화는 이 Mac에 저장됩니다.";
+"ask.location.local.help" = "대화가 이 Mac에서 직접 설정한 모델로 실행되며 대화는 이 Mac에 저장됩니다.";
 "ask.local.sourceNone" = "선택한 모델 없음";
 "ask.local.card.body" = "대화는 이 Mac에 저장되고 직접 설정한 모델을 사용합니다.";
 "ask.local.card.cloudQuestion" = "클라우드 모델을 사용하시겠어요?";
@@ -2105,7 +2105,7 @@
 "account.page.contact" = "문의하기";
 "account.page.dailyHint" = "이번 기간 · 일별";
 "account.page.dailyTitle" = "일별 사용량";
-"account.page.featureAsk" = "Ask";
+"account.page.featureAsk" = "대화";
 "account.page.featureFootnote" = "어떤 기능이 가장 많이 쓰는지 확인하세요.";
 "account.page.featureHint" = "기능별";
 "account.page.featureRewrite" = "다듬기·재작성";
@@ -2176,8 +2176,8 @@
 "ask.attach.help" = "파일, 이미지 또는 폴더 첨부(⌘U). 붙여넣거나 끌어다 놓을 수도 있습니다";
 "ask.attach.files" = "파일 또는 이미지 보내기";
 "ask.attach.folder" = "폴더 선택";
-"ask.attach.pickFiles" = "Ask에 보낼 파일이나 이미지 선택";
-"ask.attach.pickFolders" = "이 대화에서 Ask가 읽을 수 있는 폴더 선택";
+"ask.attach.pickFiles" = "대화에 보낼 파일이나 이미지 선택";
+"ask.attach.pickFolders" = "이 대화에서 대화가 읽을 수 있는 폴더 선택";
 "ask.attach.add" = "추가";
 "ask.attach.loading" = "첨부 파일 읽는 중";
 "ask.attach.pastedImage" = "붙여넣은 이미지";
@@ -2214,10 +2214,10 @@
 "ask.command.screenshot" = "스크린샷 첨부";
 "ask.command.selection" = "선택한 텍스트 첨부";
 "ask.command.memory" = "이 질문에 메모리 사용";
-"ask.command.remember" = "Ask에게 기억시키기…";
+"ask.command.remember" = "대화에게 기억시키기…";
 "ask.command.remember.hint" = "기억할 내용";
 "ask.command.help" = "사용 가이드 열기";
-"ask.command.settings" = "Ask 설정 열기";
+"ask.command.settings" = "대화 설정 열기";
 "ask.command.disabled.busy" = "답변 생성 중";
 "ask.command.disabled.noAnswer" = "아직 답변이 없음";
 "ask.command.disabled.noSelection" = "선택한 텍스트 없음";
@@ -2542,7 +2542,7 @@
 "agent.search.advanced" = "고급 옵션";
 "agent.search.missing" = "입력 필요: %@";
 "agent.search.getKey" = "%@ 키 받기";
-"agent.files.empty" = "아직 폴더가 없습니다. Ask가 파일을 읽거나 수정할 수 없습니다.";
+"agent.files.empty" = "아직 폴더가 없습니다. 대화가 파일을 읽거나 수정할 수 없습니다.";
 "agent.files.rule.scope" = "목록의 폴더만";
 "agent.files.rule.read" = "읽기: 허용된 폴더 내에서 자동 실행";
 "agent.files.rule.write" = "쓰기: 표준 모드에서 실행 전 확인";
@@ -2572,7 +2572,7 @@
 "agent.skills.install.root" = "저장소 루트";
 "agent.mcp.emptyTitle" = "외부 도구 연결";
 "agent.mcp.emptyHint" = "로컬 명령(stdio)과 원격 HTTP를 지원하며, Claude Desktop / Cursor에서 쓰는 mcpServers 설정을 가져올 수 있습니다.";
-"agent.mcp.listHint" = "서버를 클릭하면 편집할 수 있습니다. 켜진 서버는 대화에 필요할 때 연결되며, 자동 연결이 켜져 있으면 Ask 시작 시 연결됩니다.";
+"agent.mcp.listHint" = "서버를 클릭하면 편집할 수 있습니다. 켜진 서버는 대화에 필요할 때 연결되며, 자동 연결이 켜져 있으면 대화 시작 시 연결됩니다.";
 "agent.mcp.status.disabled" = "꺼짐";
 "agent.mcp.status.untested" = "테스트 안 함";
 "agent.mcp.status.connected" = "연결됨 · 도구 %d개";
@@ -2596,7 +2596,7 @@
 "agent.memory.rule.use.title" = "새 대화에 사용";
 "agent.memory.rule.use.detail" = "메모는 새 대화에 배경 정보로 제공됩니다.";
 "agent.memory.rule.ask.title" = "저장 전에 확인";
-"agent.memory.rule.ask.detail" = "Ask가 무언가를 기억하려 할 때 먼저 확인합니다.";
+"agent.memory.rule.ask.detail" = "대화가 무언가를 기억하려 할 때 먼저 확인합니다.";
 "agent.memory.rule.delete.title" = "삭제하면 사용 중지";
 "agent.memory.rule.delete.detail" = "삭제하거나 수정하면 이후 대화에서 이전 내용을 쓰지 않습니다. 기존 답변은 바뀌지 않습니다.";
 "agent.memory.search" = "메모 검색";
@@ -3183,7 +3183,7 @@
 "agent.group.personalization" = "개인화";
 "agent.rules.title" = "안전 규칙";
 "agent.memory.rules.title" = "사용 규칙";
-"agent.memory.subtitle" = "Ask가 기억하는 나에 대한 메모로, 새 대화에 배경 정보로 제공됩니다.";
+"agent.memory.subtitle" = "대화가 기억하는 나에 대한 메모로, 새 대화에 배경 정보로 제공됩니다.";
 "agent.search.section" = "서비스 및 자격 증명";
 "agent.automation.permissions" = "시스템 권한";
 "agent.automation.rule.confirm" = "모든 단계 전에 확인";
@@ -4199,7 +4199,7 @@
 "settings.shortcuts.screenshot.saveLocation.title" = "스크린샷 저장 위치";
 "settings.shortcuts.screenshot.saveLocation.choose" = "선택…";
 "settings.shortcuts.screenshot.saveLocation.reset" = "데스크탑으로 되돌리기";
-"settings.shortcuts.screenshotConflict" = "스크린샷 단축키는 음성 입력, 무엇이든 물어보세요, 페르소나 또는 기록 단축키와 같을 수 없습니다.";
+"settings.shortcuts.screenshotConflict" = "스크린샷 단축키는 음성 입력, 대화, 페르소나 또는 기록 단축키와 같을 수 없습니다.";
 "settings.shortcuts.screenshotUpdated" = "스크린샷 단축키가 업데이트되었습니다.";
 "settings.shortcuts.screenshotUnset" = "스크린샷 단축키가 삭제되었습니다.";
 "settings.shortcuts.usedByScreenshot" = "이 단축키는 이미 스크린샷에 사용 중입니다.";
@@ -4596,13 +4596,13 @@
 "hotkeys.builtIn.persona.title" = "페르소나 전환";
 "hotkeys.builtIn.persona.subtitle" = "페르소나 목록을 열어 전환합니다.";
 "hotkeys.builtIn.ask.title" = "런처";
-"hotkeys.builtIn.ask.subtitle" = "선택한 텍스트와 함께 런처(무엇이든 묻기)를 엽니다.";
+"hotkeys.builtIn.ask.subtitle" = "선택한 텍스트와 함께 런처(대화)를 엽니다.";
 "hotkeys.builtIn.history.title" = "클립보드와 기록";
 "hotkeys.builtIn.history.subtitle" = "복사한 항목과 음성 기록이 있는 클립보드 패널을 엽니다.";
 "hotkeys.builtIn.screenshot.title" = "스크린샷";
 "hotkeys.builtIn.screenshot.subtitle" = "화면 영역을 캡처하고 편집합니다.";
 "hotkeys.action.openChat.title" = "대화 창 열기";
-"hotkeys.action.openChat.subtitle" = "무엇이든 묻기 대화 창을 엽니다.";
+"hotkeys.action.openChat.subtitle" = "대화 창을 엽니다.";
 "hotkeys.action.screenshotText.title" = "스크린샷 텍스트 인식";
 "hotkeys.action.screenshotText.subtitle" = "화면 영역을 선택해 그 텍스트를 런처에 표시합니다.";
 "hotkeys.action.openNotes.title" = "노트 열기";
@@ -5292,7 +5292,7 @@
 "help.key.chat.new" = "새 채팅";
 "help.key.chat.search" = "채팅 검색";
 "help.key.chat.attach" = "파일 추가";
-"help.key.chat.settings" = "Ask 설정";
+"help.key.chat.settings" = "대화 설정";
 "help.faq.status" = "권한";
 "help.faq.granted" = "허용됨";
 "help.faq.notGranted" = "허용 안 됨";
@@ -5336,7 +5336,7 @@
 "help.start.voice.title" = "음성 입력";
 "help.start.voice.detail" = "키를 누른 채 말하고 떼면 커서 위치에 글자가 입력됩니다.";
 "help.start.voice.sample" = "다음 주에 출시";
-"help.start.launcher.title" = "런처 · Ask";
+"help.start.launcher.title" = "런처 · 대화";
 "help.start.launcher.detail" = "질문, 계산, 앱과 파일 열기. 텍스트를 선택하고 열면 그 텍스트를 바로 다룹니다.";
 "help.start.launcher.sample.question" = "이걸 더 짧게";
 "help.start.launcher.sample.answer" = "선택한 3줄을 다시 썼습니다";
@@ -6479,10 +6479,10 @@
 "ring.type.folder.target" = "폴더";
 "ring.feature.dictation.title" = "음성 입력";
 "ring.feature.dictation.detail" = "핸즈프리 받아쓰기를 시작하고 음성 입력 단축키로 끝냅니다";
-"ring.feature.ask.title" = "무엇이든 질문";
+"ring.feature.ask.title" = "대화";
 "ring.feature.ask.detail" = "런처를 엽니다";
 "ring.feature.chat.title" = "채팅 창";
-"ring.feature.chat.detail" = "무엇이든 질문 대화 창을 엽니다";
+"ring.feature.chat.detail" = "대화 창을 엽니다";
 "ring.feature.screenshot.title" = "스크린샷";
 "ring.feature.screenshot.detail" = "영역을 선택해 캡처하고 표시하거나 고정합니다";
 "ring.feature.screenshotText.title" = "화면 텍스트 인식";

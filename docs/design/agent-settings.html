@@ -243,7 +243,7 @@
     <section class="main">
       <div class="head">
         <h2>Agent</h2>
-        <p>决定“随便问”能用哪些能力、装了哪些扩展，以及它记住了什么。</p>
+        <p>决定“对话”能用哪些能力、装了哪些扩展，以及它记住了什么。</p>
         <div class="tabs" id="tabs"></div>
       </div>
       <div class="scroll" id="content"></div>
@@ -399,7 +399,7 @@ function overview() {
   return `
   <div class="summary">
     <div style="flex:1">
-      <b>随便问 现在可以使用 ${ready} 项能力</b>
+      <b>对话 现在可以使用 ${ready} 项能力</b>
       <div class="s">${[todo.length ? `还有 ${todo.length} 项需要处理：${todo.map(t => t.name).join('、')}` : '一切就绪', S.notes.length ? `记住了 ${S.notes.length} 条笔记` : ''].filter(Boolean).join(' · ')}</div>
     </div>
     ${todo.length ? `<button class="btn primary" onclick="go('${todo[0].tab}','${todo[0].id}','${todo[0].ext || ''}')">去处理</button>` : ''}
@@ -506,7 +506,7 @@ function tools() {
         <div class="row"><span class="ic">${ic('folder')}</span>
           <div class="tx"><div class="t">${esc(f.split('/').pop())}</div><div class="s mono">${esc(f)}</div></div>
           <button class="ibtn danger" title="移除" onclick="removeFolder(${i})">${ic('minus')}</button></div>`).join('')
-        : `<div class="row"><span class="ic">${ic('folder')}</span><div class="tx"><div class="s">还没有授权文件夹，“随便问”现在不能读写你的文件。</div></div></div>`}
+        : `<div class="row"><span class="ic">${ic('folder')}</span><div class="tx"><div class="s">还没有授权文件夹，“对话”现在不能读写你的文件。</div></div></div>`}
       <div class="row click" onclick="addFolder()"><span class="ic blue">${ic('plus')}</span><div class="tx"><div class="t" style="color:var(--accent-text)">添加文件夹…</div></div></div>
     </div>
     <div class="facts"><span class="chip">${ic('check')} 只能访问列表里的文件夹</span><span class="chip">读取：对话内可一次性允许</span><span class="chip">写入：每次都要确认</span></div>
@@ -606,7 +606,7 @@ function skillsView() {
         <span style="color:var(--text-3)">${ic('chev')}</span>
       </div>`).join('') : `<div class="empty"><p>没有匹配的技能。</p></div>`}
   </div>
-  <div class="hint">“随便问”会在任务需要时自动加载已启用的技能。也可以在技能文件夹中新建 <code>&lt;名称&gt;/SKILL.md</code> 添加自己的技能。</div>`;
+  <div class="hint">“对话”会在任务需要时自动加载已启用的技能。也可以在技能文件夹中新建 <code>&lt;名称&gt;/SKILL.md</code> 添加自己的技能。</div>`;
 }
 const sourceChip = s => s.source === 'builtin' ? '<span class="chip">内置</span>' : s.source === 'github' ? `<span class="chip blue">${ic('github')}GitHub</span>` : '<span class="chip">本地</span>';
 function toggleSkill(name) { const s = S.skills.find(x => x.name === name); s.on = !s.on; render(); if (drawerSkill === name) openSkill(name); }
@@ -694,7 +694,7 @@ function mcpView() {
     <div class="card"><div class="empty">
       <div class="big">${ic('plug')}</div>
       <h4>连接外部工具</h4>
-      <p>MCP 服务器可以让“随便问”使用更多工具和数据，例如读取 Notion、查询数据库或调用公司内部服务。服务器由你自己提供，Typeflux 只负责连接。</p>
+      <p>MCP 服务器可以让“对话”使用更多工具和数据，例如读取 Notion、查询数据库或调用公司内部服务。服务器由你自己提供，Typeflux 只负责连接。</p>
       <div style="display:flex;gap:8px;justify-content:center">
         <button class="btn primary" onclick="openMCP()">${ic('plus')}添加服务器</button>
         <button class="btn" onclick="openImport()">${ic('import')}从 JSON 导入</button>
@@ -716,7 +716,7 @@ function mcpView() {
     ${m.test?.ok && m.expanded ? `<div class="tools-list">可用工具：${m.test.tools.map(t => `<code>${t}</code>`).join('、')}</div>` : ''}
     ${m.test && !m.test.ok && !m.test.busy ? `<div class="tools-list" style="color:var(--danger)">${esc(m.test.msg)}</div>` : ''}`;
   }).join('')}</div>
-  <div class="hint">点击服务器可编辑。启用的服务器会在对话需要时连接；开启“自动连接”的会在“随便问”启动时连接。</div>`;
+  <div class="hint">点击服务器可编辑。启用的服务器会在对话需要时连接；开启“自动连接”的会在“对话”启动时连接。</div>`;
 }
 function toggleMCP(id) { const m = S.mcp.find(x => x.id === id); m.enabled = !m.enabled; render(); }
 function mcpMenu(ev, id) {
@@ -779,7 +779,7 @@ function renderMCPModal() {
           <label style="align-self:start;margin-top:7px">请求头</label><div>${kvRows(d.headers, 'headers', 'Authorization', 'Bearer …')}</div>`}
       </div>
       <div class="card" style="margin-top:16px">
-        <div class="row" style="min-height:48px"><div class="tx"><div class="t">启用</div><div class="s">关闭后“随便问”不会使用这个服务器的工具</div></div><button class="sw ${d.enabled ? 'on' : ''}" onclick="draft.enabled=!draft.enabled;renderMCPModal()"></button></div>
+        <div class="row" style="min-height:48px"><div class="tx"><div class="t">启用</div><div class="s">关闭后“对话”不会使用这个服务器的工具</div></div><button class="sw ${d.enabled ? 'on' : ''}" onclick="draft.enabled=!draft.enabled;renderMCPModal()"></button></div>
         <div class="row" style="min-height:48px"><div class="tx"><div class="t">启动时自动连接</div><div class="s">首次使用更快，但会常驻一个进程</div></div><button class="sw ${d.autoConnect ? 'on' : ''}" onclick="draft.autoConnect=!draft.autoConnect;renderMCPModal()"></button></div>
       </div>
       ${d.test ? `<div class="result ${d.test.busy ? 'busy' : d.test.ok ? 'ok' : 'err'}">${d.test.busy ? '正在连接…' : d.test.ok ? `${ic('check')}<span>连接成功，共 ${d.test.tools.length} 个工具：${d.test.tools.join('、')}</span>` : `${ic('warn')}<span>${esc(d.test.msg)}</span>`}</div>` : ''}
@@ -836,7 +836,7 @@ function memory() {
   return `
   <div class="card" style="padding:14px 16px;margin-bottom:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
     ${[['brain', '会用在新对话里', '这里的笔记会作为背景信息提供给新开始的对话。'],
-       ['shield', '保存前先问你', '“随便问”想记住新内容时，会先请你确认。'],
+       ['shield', '保存前先问你', '“对话”想记住新内容时，会先请你确认。'],
        ['trash', '删除即停止使用', '删除或修改后，之后的对话不再使用旧内容；已有的回复不会改变。']]
       .map(([i, t, d]) => `<div style="display:flex;gap:10px"><span style="color:var(--accent-text);margin-top:1px">${ic(i)}</span><div><b>${t}</b><div class="hint" style="margin-top:2px">${d}</div></div></div>`).join('')}
   </div>
@@ -911,7 +911,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeOverlay
 // ---------------------------------------------------------------- annotation panel
 const NOTES = {
   overview: [
-    ['new', '新增「概览」作为默认页', '一屏回答“随便问现在能做什么、还差什么”。每张能力卡片显示真实状态，点击直达对应设置；顶部汇总待处理项并提供“去处理”。'],
+    ['new', '新增「概览」作为默认页', '一屏回答“对话现在能做什么、还差什么”。每张能力卡片显示真实状态，点击直达对应设置；顶部汇总待处理项并提供“去处理”。'],
     ['fix', '存储选择改为二选一卡片', '原来是一段 100+ 字的说明配一个下拉框。现在把两种方式的差异拆成 ✓/– 清单并列对比，选择即生效，说明文字从段落降为一行提示。'],
     ['fix', '“对话存储”不再和“联网”挤在「通用」里', '存储是全局默认值，放概览；联网搜索是工具，移到「内置工具」。'],
   ],
@@ -922,7 +922,7 @@ const NOTES = {
     ['new', '新增「操作电脑与浏览器」', '已有 computer / browser 工具，但设置里完全看不到。这里展示所需的系统权限及授权入口。', 'ask'],
   ],
   extensions: [
-    ['fix', '技能与 MCP 合并为「扩展」', '两者都是“给随便问加能力”的外部扩展，合并后减少一级 tab；用分段控件切换，各自有主操作按钮。'],
+    ['fix', '技能与 MCP 合并为「扩展」', '两者都是“给对话加能力”的外部扩展，合并后减少一级 tab；用分段控件切换，各自有主操作按钮。'],
     ['new', '技能：搜索、筛选、详情抽屉', '来源、版本、声明权限原来只藏在悬停提示里，现在点开行即可看到；恢复上一版本、移除放在抽屉底部，降低误操作。'],
     ['fix', '安装弹窗即时解析链接', '输入链接后立即显示“将从 仓库 · 分支 · 路径 安装”，非法链接当场提示。'],
     ['fix', 'MCP 空状态讲清用途', '原来只有一行“尚未配置”。新空状态解释 MCP 是什么、举例、给出两个入口。'],

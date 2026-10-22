@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>Typeflux · 随便问 快捷输入浮窗 设计稿 v2</title>
+<title>Typeflux · 对话 快捷输入浮窗 设计稿 v2</title>
 <style>
   :root {
     --canvas: #0c0c0d; --desk: #1b1c1f;
@@ -93,7 +93,7 @@
   <symbol id="info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 7.3v3.6M8 5.2v.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
 </defs></svg>
 
-<h1>随便问 · 快捷输入浮窗 设计稿 v2</h1>
+<h1>对话 · 快捷输入浮窗 设计稿 v2</h1>
 <p class="sub">原则：快捷浮窗和聊天页输入框是<b style="color:#f2f2f2">同一个组件（<code>AskComposer</code>）</b>，只是触发方式不同。模型选择、推理强度、语音按钮的交互与状态、上下文 chip、发送钮的样式和行为完全一致；浮窗只多「悬浮外壳」和「来源应用」这两处必要差异。<br>所有提示中的按键都读取用户配置的快捷键，不写死 Fn。示意图用「⌥(R)」作为语音键、「⌘ Space」作为唤起键，以说明按键跟随设置变化。</p>
 
 <div class="grid">
@@ -185,7 +185,7 @@
     <h2>模型 / 推理强度：与聊天页同一选择器</h2>
     <ul>
       <li>点模型打开和聊天页相同的 <code>AskModelChoices</code> 弹层，包括分组、价格徽标、勾选列和「设为默认」。推理强度弹层同样共用。</li>
-      <li>浮窗与聊天页的草稿各自记住上次的模型（<code>launcherDraft</code> / <code>draft</code>），这是现有行为。两者的默认值都来自同一个「随便问默认模型」。</li>
+      <li>浮窗与聊天页的草稿各自记住上次的模型（<code>launcherDraft</code> / <code>draft</code>），这是现有行为。两者的默认值都来自同一个「对话默认模型」。</li>
       <li>截图 chip 的开关、预览和移除都与聊天页相同。发送钮只有在可以发送时才显示为蓝色。</li>
     </ul>
   </div>
@@ -239,7 +239,7 @@
   <div class="notes">
     <h2>按键一律从设置读取</h2>
     <ul>
-      <li>聊天页空状态原来写死「双击 Fn 唤起」。但「随便问」的默认唤起键是 <b>⌘ Space</b>，所以默认配置下这句提示就是错的。现在唤起键读取 <code>askHotkey</code>，语音键读取 <code>activationHotkey</code>，统一用 <code>HotkeyFormat.display</code> 格式化（和设置页显示一致，双击会显示为 ×2），修改快捷键后立即刷新。</li>
+      <li>聊天页空状态原来写死「双击 Fn 唤起」。但「对话」的默认唤起键是 <b>⌘ Space</b>，所以默认配置下这句提示就是错的。现在唤起键读取 <code>askHotkey</code>，语音键读取 <code>activationHotkey</code>，统一用 <code>HotkeyFormat.display</code> 格式化（和设置页显示一致，双击会显示为 ×2），修改快捷键后立即刷新。</li>
       <li>未设置唤起键时不显示唤起那半句；未设置语音键时显示「按住麦克风说话」。</li>
       <li>麦克风悬停提示原本就从 <code>activationHotkey</code> 读取，两处一致。</li>
       <li><b>不支持截图</b>：把共用的 <code>AskChip</code> 由虚线改为实线灰字加 ⓘ，文案为「不支持截图」，悬停说明原因。这是共用组件，聊天页和浮窗会一起改。</li>

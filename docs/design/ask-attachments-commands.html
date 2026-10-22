@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Typeflux · 随便问 — 附件上传与 / 命令 交互设计稿</title>
+<title>Typeflux · 对话 — 附件上传与 / 命令 交互设计稿</title>
 <style>
 :root {
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Helvetica Neue", sans-serif;
@@ -225,7 +225,7 @@ kbd { font-family: var(--font); font-size: 11px; padding: 1px 5px; border-radius
 <div class="board">
   <section class="stage">
     <div class="toolbar">
-      <h1>随便问 · 附件与 / 命令</h1>
+      <h1>对话 · 附件与 / 命令</h1>
       <span class="lbl">场景</span>
       <div class="seg" id="scenes">
         <button data-scene="empty" class="on">空白输入框</button>
@@ -394,7 +394,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 
 /* ======================= state ======================= */
 const MODELS = [
-  { id: 'minimax-m3', name: 'MiniMax M3', vision: true, note: '随便问默认' },
+  { id: 'minimax-m3', name: 'MiniMax M3', vision: true, note: '对话默认' },
   { id: 'claude', name: 'Claude Sonnet 5.5', vision: true },
   { id: 'gpt5mini', name: 'GPT-5 mini', vision: true },
   { id: 'grok', name: 'Grok 4.7', vision: true },
@@ -558,7 +558,7 @@ function buildCommands() {
   add('上下文与附件', { cmd: 'screenshot', title: '附带当前屏幕截图', icon: 'screen', kind: 'toggle', on: S.shot, disabled: !model().vision ? '当前模型不支持图片' : null, run: () => { S.shot = !S.shot; toast(S.shot ? '已附带屏幕截图' : '已移除屏幕截图'); } });
   add('上下文与附件', { cmd: 'selection', title: '附带选中的文字', icon: 'text', kind: 'toggle', on: S.selection, run: () => { S.selection = !S.selection; toast(S.selection ? '已附带选中的文字' : '已移除选中的文字'); } });
   add('上下文与附件', { cmd: 'memory', title: '本条使用记忆', icon: 'brain', kind: 'toggle', on: S.memory, run: () => { S.memory = !S.memory; toast(S.memory ? '本条使用记忆' : '本条不使用记忆'); } });
-  add('上下文与附件', { cmd: 'remember', title: '让随便问记住…', icon: 'pin', kind: 'arg', argHint: '要记住的内容', run: arg => { if (arg) toast('已记住：' + arg.slice(0, 18)); } });
+  add('上下文与附件', { cmd: 'remember', title: '让对话记住…', icon: 'pin', kind: 'arg', argHint: '要记住的内容', run: arg => { if (arg) toast('已记住：' + arg.slice(0, 18)); } });
   add('快捷提问', { cmd: 'explain-screen', title: '讲讲这一屏在做什么', icon: 'screen', kind: 'prompt', desc: '带当前截图', disabled: !model().vision ? '当前模型不支持图片' : null, run: () => { S.shot = true; insertText('讲讲这一屏在做什么'); } });
   add('快捷提问', { cmd: 'translate', title: '翻译我选中的文字', icon: 'lang', kind: 'prompt', desc: '保留原格式', alias: ['fanyi'], run: () => { S.selection = true; insertText('翻译我选中的文字'); } });
   add('快捷提问', { cmd: 'summarize-page', title: '读一下这个网页并总结', icon: 'globe', kind: 'prompt', desc: '用当前浏览器', run: () => insertText('读一下这个网页并总结') });
@@ -572,7 +572,7 @@ function buildCommands() {
       ...m.prompts.map(p => ({ cmd: m.name + ':' + p.name, icon: 'text', desc: p.desc, run: () => insertText(p.text) }))],
   }));
   add('其它', { cmd: 'help', title: '查看全部命令与快捷键', icon: 'help', kind: 'action', run: showHelp });
-  add('其它', { cmd: 'settings', title: '打开随便问设置', icon: 'gear', kind: 'action', key: '⌘,', run: () => toast('打开设置 · 随便问') });
+  add('其它', { cmd: 'settings', title: '打开对话设置', icon: 'gear', kind: 'action', key: '⌘,', run: () => toast('打开设置 · 对话') });
   return C;
 }
 

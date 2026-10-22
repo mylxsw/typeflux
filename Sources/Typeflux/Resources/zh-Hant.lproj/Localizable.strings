@@ -543,7 +543,7 @@
 "workflow.transcription.noSpeech" = "未偵測到清晰語音，本次轉寫已取消。";
 "workflow.transcription.serverUnavailableNotice" = "暫時無法連線至伺服器，錄音已儲存在歷史記錄中，可稍後重試。";
 "workflow.result.copyTitle" = "複製結果";
-"workflow.ask.answerTitle" = "隨便問";
+"workflow.ask.answerTitle" = "對話";
 "workflow.ask.questionSectionTitle" = "你的問題";
 "workflow.ask.answerSectionTitle" = "回答";
 "workflow.ask.answerDisclaimer" = "內容由 AI 生成，請注意甄別資訊準確性。";
@@ -557,7 +557,7 @@
 "workflow.persona.applicationSwitched" = "已將目前應用人設切換到 %@。";
 "workflow.persona.applicationSwitchedOff" = "已關閉目前應用人設。";
 "workflow.persona.disabled" = "人設已關閉。";
-"workflow.ask.selectionRequired" = "「隨便問」需要先選取文字。";
+"workflow.ask.selectionRequired" = "「對話」需要先選取文字。";
 "workflow.retry.audioMissing" = "重試失敗：缺少音訊檔。";
 "workflow.retry.audioGone" = "重試失敗：音訊檔已不存在。";
 "workflow.typefluxCloud.loginRequired" = "請先登入 Typeflux Cloud，以使用雲端功能。";
@@ -812,7 +812,7 @@
 "settings.shortcuts.activation.title" = "語音輸入";
 "settings.shortcuts.activation.subtitle" = "使用一組快捷鍵開始語音輸入。可按住說話，也可快速輕觸後鎖定錄音。若目前已有選取內容，識別結果會直接覆蓋該選取範圍。";
 "settings.shortcuts.activation.footnote" = "";
-"settings.shortcuts.ask.title" = "隨便問";
+"settings.shortcuts.ask.title" = "對話";
 "settings.shortcuts.ask.subtitle" = "連按兩次 Fn 即可開始錄音提問，回答會在視窗中展示。若有選取文字，明確的編輯請求也可以直接改寫選取範圍。";
 "settings.shortcuts.ask.footnote" = "";
 "settings.shortcuts.launcherPosition.title" = "啟動器開啟位置";
@@ -830,23 +830,23 @@
 "settings.advanced.personaHotkeyApply.subtitle" = "開啟後，人設快捷鍵會先檢查是否有選取文字；如果有，就用所選人設直接改寫該文字，而不只是切換預設人設。";
 "settings.shortcuts.recording" = "正在錄製新的快捷鍵";
 "settings.shortcuts.recordingActivation" = "現在按下新的語音輸入按鍵或組合鍵。";
-"settings.shortcuts.recordingAsk" = "現在按下新的「隨便問」快捷鍵。也可以快速連按兩次同一個修飾鍵。";
+"settings.shortcuts.recordingAsk" = "現在按下新的「對話」快捷鍵。也可以快速連按兩次同一個修飾鍵。";
 "settings.shortcuts.recordingPersona" = "現在按下用於打開人設選擇器的快捷鍵。";
 "settings.shortcuts.recordingHistory" = "現在按下用於打開歷史記錄的快捷鍵。";
 "settings.shortcuts.recordingGeneric" = "按下你想使用的按鍵或組合鍵。";
 "settings.shortcuts.record" = "錄製";
 "settings.shortcuts.stopRecording" = "停止錄製";
-"settings.shortcuts.activationConflict" = "語音輸入快捷鍵不能與「隨便問」、人設或歷史記錄快捷鍵相同。";
+"settings.shortcuts.activationConflict" = "語音輸入快捷鍵不能與「對話」、人設或歷史記錄快捷鍵相同。";
 "settings.shortcuts.activationUpdated" = "語音輸入快捷鍵已更新。";
 "settings.shortcuts.activationUnset" = "語音輸入快捷鍵已清除。";
-"settings.shortcuts.askConflict" = "「隨便問」快捷鍵不能與語音輸入、人設或歷史記錄快捷鍵相同。";
-"settings.shortcuts.askUpdated" = "「隨便問」快捷鍵已更新。";
-"settings.shortcuts.askUnset" = "「隨便問」快捷鍵已清除。";
+"settings.shortcuts.askConflict" = "「對話」快捷鍵不能與語音輸入、人設或歷史記錄快捷鍵相同。";
+"settings.shortcuts.askUpdated" = "「對話」快捷鍵已更新。";
+"settings.shortcuts.askUnset" = "「對話」快捷鍵已清除。";
 "settings.shortcuts.doubleTapHelp" = "快速連按兩次這個按鍵。";
-"settings.shortcuts.personaConflict" = "人設快捷鍵不能與語音輸入、「隨便問」或歷史記錄快捷鍵相同。";
+"settings.shortcuts.personaConflict" = "人設快捷鍵不能與語音輸入、「對話」或歷史記錄快捷鍵相同。";
 "settings.shortcuts.personaUpdated" = "人設快捷鍵已更新。";
 "settings.shortcuts.personaUnset" = "人設快捷鍵已清除。";
-"settings.shortcuts.historyConflict" = "歷史記錄快捷鍵不能與語音輸入、「隨便問」或人設快捷鍵相同。";
+"settings.shortcuts.historyConflict" = "歷史記錄快捷鍵不能與語音輸入、「對話」或人設快捷鍵相同。";
 "settings.shortcuts.historyUpdated" = "歷史記錄快捷鍵已更新。";
 "settings.shortcuts.historyUnset" = "歷史記錄快捷鍵已清除。";
 "settings.shortcuts.unset" = "取消設定";
@@ -1180,17 +1180,17 @@
 "onboarding.shortcuts.globeKeyNotice.ready.title" = "FN / 🌐 鍵已就緒";
 "onboarding.shortcuts.globeKeyNotice.ready.message" = "鍵盤設定已經到位，Typeflux 可以使用 FN / 🌐 鍵作為快捷鍵了。若按鍵仍無回應，請嘗試登出後重新登入，或重新啟動 Mac。";
 "onboarding.shortcuts.externalKeyboard.title" = "使用外接鍵盤，且沒有可用的 FN 鍵？";
-"onboarding.shortcuts.externalKeyboard.message" = "你可以改用右側 Command 或右側 Option。Typeflux 會將語音輸入改為這個按鍵，將「隨便問」改為快速連按兩次這個按鍵。";
+"onboarding.shortcuts.externalKeyboard.message" = "你可以改用右側 Command 或右側 Option。Typeflux 會將語音輸入改為這個按鍵，將「對話」改為快速連按兩次這個按鍵。";
 "onboarding.shortcuts.externalKeyboard.useRightCommand" = "使用右側 Command";
 "onboarding.shortcuts.externalKeyboard.useRightOption" = "使用右側 Option";
 "onboarding.shortcuts.replacement.rightCommand" = "右側 Command";
 "onboarding.shortcuts.replacement.rightOption" = "右側 Option";
 "onboarding.shortcuts.replacement.fn" = "FN / 🌐";
 "onboarding.shortcuts.replacement.active.title" = "%@ 快捷鍵已啟用";
-"onboarding.shortcuts.replacement.active.message" = "你的快捷鍵已經發生變化：語音輸入現在使用 %@，「隨便問」使用 %@×2。";
+"onboarding.shortcuts.replacement.active.message" = "你的快捷鍵已經發生變化：語音輸入現在使用 %@，「對話」使用 %@×2。";
 "onboarding.shortcuts.replacement.restore" = "恢復 FN 快捷鍵";
 "onboarding.shortcuts.replacement.appliedAlert.title" = "快捷鍵已更新";
-"onboarding.shortcuts.replacement.appliedAlert.message" = "Typeflux 現在使用 %@ 作為語音輸入快捷鍵，使用 %@×2 開啟「隨便問」。";
+"onboarding.shortcuts.replacement.appliedAlert.message" = "Typeflux 現在使用 %@ 作為語音輸入快捷鍵，使用 %@×2 開啟「對話」。";
 "onboarding.shortcuts.replacement.restoredAlert.message" = "Typeflux 已恢復預設的 FN / 🌐 快捷鍵。";
 "onboarding.shortcuts.activation.hint" = "把說的話輸入為文字";
 "onboarding.shortcuts.ask.hint" = "語音提問或修改選取文字";
@@ -1207,9 +1207,9 @@
 // MARK: - Agent 框架
 
 "studio.section.agent" = "Agent";
-"studio.eyebrow.agent" = "隨便問";
+"studio.eyebrow.agent" = "對話";
 "studio.heading.agent" = "Agent";
-"studio.subheading.agent" = "管理「隨便問」可使用的工具、MCP 伺服器、技能與記憶。";
+"studio.subheading.agent" = "管理「對話」可使用的工具、MCP 伺服器、技能與記憶。";
 "studio.search.agent" = "搜尋 Agent 設定...";
 
 "settings.advanced.localOptimization.title" = "本地優化";
@@ -1705,9 +1705,9 @@
 "ask.models.byPurpose" = "應用場景";
 "ask.models.speech" = "Speech recognition";
 "ask.models.rewrite" = "Rewrite and polish";
-"ask.models.ask" = "Ask Anything";
+"ask.models.ask" = "對話";
 "ask.models.existingRewrite" = "Use provider configuration below";
-"ask.models.defaultsHint" = "The Ask default applies to new conversations. Each conversation can choose its own model.";
+"ask.models.defaultsHint" = "The Chat default applies to new conversations. Each conversation can choose its own model.";
 "ask.models.manage" = "Manage models";
 "ask.models.conversationOnly" = "Applies to this conversation only; does not change the rewrite model.";
 "ask.models.invalid" = "Enter a name, model ID and valid HTTPS API URL (HTTP is allowed for localhost).";
@@ -1720,7 +1720,7 @@
 "ask.models.cloudHint" = "Uses Typeflux Cloud";
 "ask.models.reload" = "Reload";
 "ask.models.add" = "Add custom model";
-"ask.models.empty" = "Add your API to make it available in Ask.";
+"ask.models.empty" = "Add your API to make it available in Chat.";
 "ask.models.delete" = "Delete model";
 "ask.models.privacy" = "Custom model keys stay on this Mac. Conversation history still syncs to Typeflux Cloud. Your API provider bills model usage.";
 "ask.models.deleteHint" = "Conversations using this model will need another model selected. They will not automatically switch to Cloud.";
@@ -1774,7 +1774,7 @@
 "models.capabilityHint" = "請根據模型文件勾選該模型支援的能力";
 "models.visionYes" = "支援視覺（識圖）";
 "models.reasoningYes" = "支援推理";
-"models.askBlocked" = "無法用於隨便問：%@";
+"models.askBlocked" = "無法用於對話：%@";
 "models.rewriteBlocked" = "無法用於轉譯與潤色：%@";
 "models.visionGuessed" = "根據模型名稱推斷支援視覺，可在「···」選單中變更";
 "ask.models.visionTrial" = "視覺能力未確認，將嘗試傳送圖片";
@@ -1787,7 +1787,7 @@
 
 "models.noAvailable" = "暫無適用於目前輸入的可用模型，請檢查登入狀態和模型設定。";
 
-"menu.openAskConversations" = "開啟隨便問";
+"menu.openAskConversations" = "開啟對話";
 
 "ask.tool.preparing" = "正在準備參數";
 "ask.reasoning.active" = "正在思考";
@@ -1806,7 +1806,7 @@
 "ask.reasoning.high" = "高";
 
 // Server-managed Cloud model list
-"models.cloud.managed" = "隨便問的可用模型由 Typeflux Cloud 自動同步，模型設定由伺服器統一管理。";
+"models.cloud.managed" = "對話的可用模型由 Typeflux Cloud 自動同步，模型設定由伺服器統一管理。";
 "models.cloud.available" = "可用模型";
 "models.cloud.refresh" = "重新整理模型列表";
 "models.cloud.systemDefault" = "系統預設";
@@ -1923,7 +1923,7 @@
 "ask.usage.localHelp" = "用量來自自有模型回傳的 token 資訊，儲存在本機，不消耗 Typeflux credits。";
 
 /* GUL-151 Ask tools */
-"ask.files.denied" = "該路徑不在授權給 Ask 的資料夾中。請在 設定 → Agent → 檔案存取 中加入該資料夾。";
+"ask.files.denied" = "該路徑不在授權給 對話 的資料夾中。請在 設定 → Agent → 檔案存取 中加入該資料夾。";
 "ask.files.tooLarge" = "檔案超過 1 MB。";
 "ask.files.editMissing" = "找不到要取代的文字，請重新讀取檔案。";
 "ask.files.editAmbiguous" = "要取代的文字出現 %d 次，請提供更多上下文。";
@@ -1941,7 +1941,7 @@
 "ask.settings.code.title" = "在沙箱中執行程式碼";
 "ask.settings.code.subtitle" = "Python、JavaScript 與 shell 程式在無網路、無法存取個人目錄的環境中執行，每次執行都需要確認。";
 "ask.settings.skills.title" = "技能";
-"ask.settings.skills.subtitle" = "「隨便問」在任務需要時載入的指示。可在 Skills/<名稱>/SKILL.md 中加入自己的技能。";
+"ask.settings.skills.subtitle" = "「對話」在任務需要時載入的指示。可在 Skills/<名稱>/SKILL.md 中加入自己的技能。";
 "ask.settings.skills.builtin" = "內建";
 "ask.settings.skills.open" = "開啟技能資料夾";
 "ask.settings.skills.install" = "從 GitHub 安裝…";
@@ -1962,7 +1962,7 @@
 "ask.skills.install.rateLimited" = "GitHub 目前限制了請求頻率，請幾分鐘後再試。";
 "ask.skills.install.cannotRemove" = "內建技能無法移除。";
 "ask.settings.notes.title" = "已儲存的筆記";
-"ask.settings.notes.subtitle" = "你要求「隨便問」記住的內容，會加入新對話的記憶。";
+"ask.settings.notes.subtitle" = "你要求「對話」記住的內容，會加入新對話的記憶。";
 "ask.settings.notes.empty" = "尚無筆記。";
 "ask.tool.files" = "檔案";
 "ask.tool.run_code" = "執行程式碼";
@@ -2050,7 +2050,7 @@
 "ask.approval.allowHelp" = "允許（⌘↩）";
 "ask.approval.allowDestructive" = "仍然執行";
 "ask.location.local" = "本機";
-"ask.location.local.help" = "「隨便問」在這台 Mac 上使用你自己的模型執行，對話儲存在本機。";
+"ask.location.local.help" = "「對話」在這台 Mac 上使用你自己的模型執行，對話儲存在本機。";
 "ask.local.sourceNone" = "未選擇模型";
 "ask.local.card.body" = "對話儲存在這台 Mac，使用你設定的模型。";
 "ask.local.card.cloudQuestion" = "想用雲端模型？";
@@ -2112,7 +2112,7 @@
 "account.page.contact" = "聯絡我們";
 "account.page.dailyHint" = "本期 · 按天";
 "account.page.dailyTitle" = "每日額度消耗";
-"account.page.featureAsk" = "隨便問";
+"account.page.featureAsk" = "對話";
 "account.page.featureFootnote" = "看看哪個功能最耗額度。";
 "account.page.featureHint" = "按功能";
 "account.page.featureRewrite" = "潤飾與改寫";
@@ -2183,8 +2183,8 @@
 "ask.attach.help" = "新增檔案、圖片或資料夾（⌘U），也可以直接貼上或拖入";
 "ask.attach.files" = "傳送檔案或圖片";
 "ask.attach.folder" = "選擇資料夾";
-"ask.attach.pickFiles" = "選擇要傳給隨便問的檔案或圖片";
-"ask.attach.pickFolders" = "選擇隨便問在本次對話中可以讀取的資料夾";
+"ask.attach.pickFiles" = "選擇要傳給對話的檔案或圖片";
+"ask.attach.pickFolders" = "選擇對話在本次對話中可以讀取的資料夾";
 "ask.attach.add" = "新增";
 "ask.attach.loading" = "正在讀取附件";
 "ask.attach.pastedImage" = "貼上的圖片";
@@ -2221,10 +2221,10 @@
 "ask.command.screenshot" = "附加螢幕截圖";
 "ask.command.selection" = "附加選取的文字";
 "ask.command.memory" = "本則使用記憶";
-"ask.command.remember" = "讓隨便問記住…";
+"ask.command.remember" = "讓對話記住…";
 "ask.command.remember.hint" = "要記住的內容";
 "ask.command.help" = "開啟使用指南";
-"ask.command.settings" = "開啟隨便問設定";
+"ask.command.settings" = "開啟對話設定";
 "ask.command.disabled.busy" = "對話進行中";
 "ask.command.disabled.noAnswer" = "還沒有回答";
 "ask.command.disabled.noSelection" = "沒有選取的文字";
@@ -2549,7 +2549,7 @@
 "agent.search.advanced" = "進階選項";
 "agent.search.missing" = "還需填寫：%@";
 "agent.search.getKey" = "取得 %@ 金鑰";
-"agent.files.empty" = "尚未授權資料夾，隨便問目前無法讀寫你的檔案。";
+"agent.files.empty" = "尚未授權資料夾，對話目前無法讀寫你的檔案。";
 "agent.files.rule.scope" = "只能存取列表中的資料夾";
 "agent.files.rule.read" = "讀取：已開放資料夾內自動執行";
 "agent.files.rule.write" = "寫入：標準模式下執行前確認";
@@ -2579,7 +2579,7 @@
 "agent.skills.install.root" = "儲存庫根目錄";
 "agent.mcp.emptyTitle" = "連接外部工具";
 "agent.mcp.emptyHint" = "支援本機指令（stdio）與遠端 HTTP 兩種連線方式，可匯入 Claude Desktop / Cursor 使用的 mcpServers 設定。";
-"agent.mcp.listHint" = "點按伺服器即可編輯。啟用的伺服器會在對話需要時連線；開啟「自動連線」的會在隨便問啟動時連線。";
+"agent.mcp.listHint" = "點按伺服器即可編輯。啟用的伺服器會在對話需要時連線；開啟「自動連線」的會在對話啟動時連線。";
 "agent.mcp.status.disabled" = "已停用";
 "agent.mcp.status.untested" = "未測試";
 "agent.mcp.status.connected" = "已連線 · %d 個工具";
@@ -2603,7 +2603,7 @@
 "agent.memory.rule.use.title" = "會用在新對話中";
 "agent.memory.rule.use.detail" = "這裡的筆記會作為背景資訊提供給新開始的對話。";
 "agent.memory.rule.ask.title" = "儲存前先問你";
-"agent.memory.rule.ask.detail" = "隨便問想記住新內容時，會先請你確認。";
+"agent.memory.rule.ask.detail" = "對話想記住新內容時，會先請你確認。";
 "agent.memory.rule.delete.title" = "刪除即停止使用";
 "agent.memory.rule.delete.detail" = "刪除或修改後，之後的對話不再使用舊內容；已有的回覆不會改變。";
 "agent.memory.search" = "搜尋筆記";
@@ -3190,7 +3190,7 @@
 "agent.group.personalization" = "個人化";
 "agent.rules.title" = "安全規則";
 "agent.memory.rules.title" = "使用規則";
-"agent.memory.subtitle" = "隨便問記住的關於你的筆記，會作為背景資訊提供給新對話。";
+"agent.memory.subtitle" = "對話記住的關於你的筆記，會作為背景資訊提供給新對話。";
 "agent.search.section" = "服務與憑證";
 "agent.automation.permissions" = "系統權限";
 "agent.automation.rule.confirm" = "每一步操作前確認";
@@ -4206,7 +4206,7 @@
 "settings.shortcuts.screenshot.saveLocation.title" = "截圖儲存位置";
 "settings.shortcuts.screenshot.saveLocation.choose" = "選擇…";
 "settings.shortcuts.screenshot.saveLocation.reset" = "改回桌面";
-"settings.shortcuts.screenshotConflict" = "截圖快捷鍵不能與語音輸入、「隨便問」、人設或歷史記錄快捷鍵相同。";
+"settings.shortcuts.screenshotConflict" = "截圖快捷鍵不能與語音輸入、「對話」、人設或歷史記錄快捷鍵相同。";
 "settings.shortcuts.screenshotUpdated" = "截圖快捷鍵已更新。";
 "settings.shortcuts.screenshotUnset" = "截圖快捷鍵已清除。";
 "settings.shortcuts.usedByScreenshot" = "這個快捷鍵已用於截圖。";
@@ -4603,13 +4603,13 @@
 "hotkeys.builtIn.persona.title" = "人設切換器";
 "hotkeys.builtIn.persona.subtitle" = "開啟人設清單，切換目前的人設。";
 "hotkeys.builtIn.ask.title" = "啟動器";
-"hotkeys.builtIn.ask.subtitle" = "開啟啟動器（隨便問），可帶上選取的文字。";
+"hotkeys.builtIn.ask.subtitle" = "開啟啟動器（對話），可帶上選取的文字。";
 "hotkeys.builtIn.history.title" = "剪貼簿與歷史";
 "hotkeys.builtIn.history.subtitle" = "開啟剪貼簿面板，查看複製過的內容和語音記錄。";
 "hotkeys.builtIn.screenshot.title" = "截圖";
 "hotkeys.builtIn.screenshot.subtitle" = "框選螢幕區域截圖並編輯。";
 "hotkeys.action.openChat.title" = "開啟對話視窗";
-"hotkeys.action.openChat.subtitle" = "開啟隨便問的對話視窗。";
+"hotkeys.action.openChat.subtitle" = "開啟對話視窗。";
 "hotkeys.action.screenshotText.title" = "截圖識字";
 "hotkeys.action.screenshotText.subtitle" = "框選螢幕區域，在啟動器中顯示其中的文字。";
 "hotkeys.action.openNotes.title" = "開啟筆記";
@@ -5326,7 +5326,7 @@
 "help.key.chat.new" = "新對話";
 "help.key.chat.search" = "搜尋對話";
 "help.key.chat.attach" = "加入檔案";
-"help.key.chat.settings" = "隨便問設定";
+"help.key.chat.settings" = "對話設定";
 "help.faq.status" = "權限";
 "help.faq.granted" = "已允許";
 "help.faq.notGranted" = "未允許";
@@ -5370,7 +5370,7 @@
 "help.start.voice.title" = "語音輸入";
 "help.start.voice.detail" = "按住快捷鍵說話，放開後文字寫進游標所在的位置。";
 "help.start.voice.sample" = "下週進入開發";
-"help.start.launcher.title" = "啟動器 · 隨便問";
+"help.start.launcher.title" = "啟動器 · 對話";
 "help.start.launcher.detail" = "提問、算數、打開 App 和檔案。選取文字後開啟，可以直接處理它。";
 "help.start.launcher.sample.question" = "把這段改短一點";
 "help.start.launcher.sample.answer" = "已改寫選取的 3 行";
@@ -6481,10 +6481,10 @@
 "ring.type.folder.target" = "資料夾";
 "ring.feature.dictation.title" = "語音輸入";
 "ring.feature.dictation.detail" = "免按住聽寫，按語音輸入快速鍵結束";
-"ring.feature.ask.title" = "隨便問";
+"ring.feature.ask.title" = "對話";
 "ring.feature.ask.detail" = "打開啟動器";
 "ring.feature.chat.title" = "對話視窗";
-"ring.feature.chat.detail" = "打開隨便問的對話視窗";
+"ring.feature.chat.detail" = "打開對話視窗";
 "ring.feature.screenshot.title" = "截圖";
 "ring.feature.screenshot.detail" = "框選區域，可標註、釘圖";
 "ring.feature.screenshotText.title" = "截圖識字";

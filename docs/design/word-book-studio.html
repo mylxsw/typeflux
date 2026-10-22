@@ -683,7 +683,7 @@ function act(kind) {
   const e = current(); if (!e) return;
   if (kind === 'copy') toast('已复制释义');
   if (kind === 'say') toast('正在朗读…');
-  if (kind === 'ask') toast(`已在随便问中打开「${e.hw}」`);
+  if (kind === 'ask') toast(`已在对话中打开「${e.hw}」`);
   if (kind === 'delete') removeEntry(e);
   if (kind === 'regen') dialog(e.card ? '重新生成单词卡？' : '生成 AI 单词卡？', `「${e.hw}」会发送给 ${MODEL}，生成后替换现有内容。`, e.card ? '重新生成' : '生成', false, () => {
     // Regenerating replaces the card only; the star, count and first lookup survive.

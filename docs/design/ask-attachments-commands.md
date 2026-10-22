@@ -1,4 +1,4 @@
-# 随便问：附件上传与 `/` 命令 设计方案
+# 对话：附件上传与 `/` 命令 设计方案
 
 > 状态：设计稿，待确认后再进入开发。配套可交互设计稿：`docs/design/ask-attachments-commands.html`（浏览器直接打开）。
 
@@ -6,7 +6,7 @@
 
 ## 1. 背景与现状
 
-当前「随便问」输入框（`AskComposer`，`Sources/Typeflux/Ask/AskComposerViews.swift`）分两层：
+当前「对话」输入框（`AskComposer`，`Sources/Typeflux/Ask/AskComposerViews.swift`）分两层：
 
 - 编辑行：多行文本 + 引用条（Quote pills）+ 附件条（只展示**会被发送**的内容，GUL-163）。
 - 底栏：本机模式 · 模型菜单 · 思考强度 ┃ 上下文图标（截图 / 来源 / 选中文字 / 记忆）…… 用量环 · 麦克风 · 发送。
@@ -168,7 +168,7 @@ struct AskAttachment: Codable, Equatable, Sendable, Identifiable {
 
 | 命令 | 说明 | 形态 |
 |------|------|------|
-| `/model` | 切换模型（二级：同模型菜单，含视觉标记、"随便问默认"标记） | 二级 |
+| `/model` | 切换模型（二级：同模型菜单，含视觉标记、"对话默认"标记） | 二级 |
 | `/think` | 思考强度（二级：默认 / 低 / 中 / 高，随模型能力变化） | 二级 |
 | `/local` | 切换本机模式 | 开关 |
 
@@ -181,7 +181,7 @@ struct AskAttachment: Codable, Equatable, Sendable, Identifiable {
 | `/screenshot` | 附带当前屏幕截图 | 开关 |
 | `/selection` | 附带选中的文字 | 开关 |
 | `/memory` | 本条使用记忆 | 开关 |
-| `/remember <内容>` | 让随便问记住（写入 `AskMemoryNoteStore`） | 标记（参数） |
+| `/remember <内容>` | 让对话记住（写入 `AskMemoryNoteStore`） | 标记（参数） |
 
 **快捷提问**（即启动器里的建议，`AskSuggestion.all`）
 
@@ -207,7 +207,7 @@ struct AskAttachment: Codable, Equatable, Sendable, Identifiable {
 | 命令 | 说明 |
 |------|------|
 | `/help` | 列出全部命令与快捷键 |
-| `/settings` | 打开随便问设置 |
+| `/settings` | 打开对话设置 |
 
 面板底部常驻：左侧键位提示 `↑↓ 选择 · ↩ 执行 · ⇥ 补全 · esc 关闭`，右侧 `管理技能与 MCP →`（打开 Studio 对应页面）。
 

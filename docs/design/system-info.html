@@ -258,7 +258,7 @@ mark { background: color-mix(in srgb, var(--warn) 32%, transparent); color: inhe
   <div class="launcher" id="launcher">
     <div class="lin">
       <span id="chipSlot"></span>
-      <input id="q" autocomplete="off" spellcheck="false" placeholder="随便问，或输入关键字…">
+      <input id="q" autocomplete="off" spellcheck="false" placeholder="对话，或输入关键字…">
       <span id="headRight"></span>
     </div>
     <div class="lbody" id="lbody"></div>
@@ -289,7 +289,7 @@ mark { background: color-mix(in srgb, var(--warn) 32%, transparent); color: inhe
       <li><b>Wi‑Fi 名称</b>：macOS 14+ 读取 SSID 需要定位权限；未授权时只显示「需要定位权限」和「去授权」，其余网络信息照常显示。</li>
       <li><b>公网 IP</b>：唯一需要联网的字段，默认<b>点击才查询</b>（设置可改为自动 / 从不），查询结果只缓存在内存。</li>
       <li><b>慢字段</b>：显示器、电池健康、存储设备需 IOKit / system_profiler，首次打开逐项填入（骨架占位），结果本次运行内缓存 10 分钟；网络字段每次进入时刷新。</li>
-      <li><b>搜索无结果</b>：提示改用 AI 提问，⌘↩ 直接把关键词连同配置摘要发给随便问。</li>
+      <li><b>搜索无结果</b>：提示改用 AI 提问，⌘↩ 直接把关键词连同配置摘要发给对话。</li>
     </ul>
   </div>
   <div class="full">
@@ -466,7 +466,7 @@ function renderLauncher() {
     $('#headRight').innerHTML = `<button class="hbtn" data-act="report" title="复制完整配置报告">${ic('copy', 13)}复制报告<span class="s">⌘⇧C</span></button>`;
   } else {
     $('#chipSlot').innerHTML = '';
-    q.placeholder = '随便问，或输入关键字…';
+    q.placeholder = '对话，或输入关键字…';
     $('#headRight').innerHTML = '';
   }
   renderBody();
@@ -513,7 +513,7 @@ function renderBody() {
     <div class="sec">试试</div>
     <div class="item" data-act="type-sys"><span class="ic" style="background:var(--kw)">${ic('info', 16, 2.2)}</span><div style="min-width:0"><div class="t">本机配置</div><div class="d">输入 <span class="kbd">sys</span> 或 <span class="kbd">本机</span>：机型、芯片、内存、存储、显示器、网络、电池</div></div><div class="r"><span class="kbd">sys</span></div></div>
     <div class="item" data-act="type-ip"><span class="ic" style="background:var(--c-net)">${ic('net', 16, 2.2)}</span><div><div class="t">直接输入 ip / 序列号 / mac</div><div class="d">免关键字也能命中本机字段</div></div></div>
-    <div class="item"><span class="ic" style="background:var(--accent-soft);color:var(--accent)">${ic('spark', 16)}</span><div><div class="t">随便问</div><div class="d">直接输入问题，⌘↩ 发给 AI</div></div></div>`;
+    <div class="item"><span class="ic" style="background:var(--accent-soft);color:var(--accent)">${ic('spark', 16)}</span><div><div class="t">对话</div><div class="d">直接输入问题，⌘↩ 发给 AI</div></div></div>`;
   bar.innerHTML = `<span>输入 <kbd>sys</kbd> 试试</span><span class="sp"></span><span><kbd>esc</kbd>关闭</span>`;
 }
 
@@ -705,7 +705,7 @@ function renderSettings() {
   const seg = (k, opts) => `<span class="seg">${opts.map(([v, t]) => `<button class="${c[k] === v ? 'on' : ''}" data-cfg="${k}" data-v="${v}">${t}</button>`).join('')}</span>`;
   const tog = k => `<span class="tog ${c[k] ? 'on' : ''}" data-tog="${k}"></span>`;
   el.innerHTML = `<div class="tb"><div class="lights"><i></i><i></i><i></i></div><span style="margin-left:8px">设置 — 启动器 › 关键字 › 本机配置</span></div>
-    <div class="side"><div>通用</div><div>语音输入</div><div>随便问</div><div class="on">启动器关键字</div><div>快捷键</div><div>隐私</div></div>
+    <div class="side"><div>通用</div><div>语音输入</div><div>对话</div><div class="on">启动器关键字</div><div>快捷键</div><div>隐私</div></div>
     <div class="main">
       <h4>本机配置</h4><div class="hint">在启动器里查看这台 Mac 的硬件、系统和网络配置。所有信息都在本机读取，只有「公网 IP」需要联网。</div>
       <div class="sgt">关键字</div>
@@ -764,7 +764,7 @@ function startLoading() {
   clearTimeout(startLoading.t);
   startLoading.t = setTimeout(() => { state.loaded = true; renderBody(); }, 2200);
 }
-function ask(text) { toast(`已发给随便问：“${esc(text)}” · 附带配置摘要（不含敏感信息）`); }
+function ask(text) { toast(`已发给对话：“${esc(text)}” · 附带配置摘要（不含敏感信息）`); }
 
 /* Launcher input */
 $('#q').addEventListener('input', e => {
@@ -869,7 +869,7 @@ $('#swin').addEventListener('click', e => {
 /* ---------- Screens ---------- */
 const CAPTIONS = {
   hint: '<b>① 输入关键字</b>：输入 <b>sys</b>（或 about / 本机 / 配置），第一行是「本机配置」，行内就能看到一行摘要：机型 · 芯片 · 内存 · 存储 · 系统版本。↩ 进入；输入「sys 空格」直接进入并开始搜索字段。第二行提醒想看实时占用用 <b>top</b>。',
-  overview: '<b>② 概览</b>：左侧 8 个分区（⌘1–⌘8 / ⇥ 切换），右侧是机型卡 + 6 张规格卡，点卡片进入对应分区。下方「本地语音模型」根据芯片与内存给出 Typeflux 本地识别建议；再往下是和本机相关的 AI 问题，点击即带上脱敏配置发给随便问。',
+  overview: '<b>② 概览</b>：左侧 8 个分区（⌘1–⌘8 / ⇥ 切换），右侧是机型卡 + 6 张规格卡，点卡片进入对应分区。下方「本地语音模型」根据芯片与内存给出 Typeflux 本地识别建议；再往下是和本机相关的 AI 问题，点击即带上脱敏配置发给对话。',
   section: '<b>③ 分区详情</b>：以「存储」为例。每个分区按设备 / 用途分组，行是「名称 — 值 — 补充说明」。↑↓ 选行、↩ 或双击复制值，悬停出现复制按钮。容量用分段条展示，外接设备标「可移除」。右上「读写速度 → top」跳到实时监控。点左侧其他分区看看。',
   search: '<b>④ 搜索字段</b>：输入框搜索的是<b>配置项</b>而不是分区：「ip」同时命中 IPv4、IPv6、路由器、公网 IP，按分区分组，左侧显示每个分区的命中数，匹配处高亮。支持中英文别名（sn = 序列号、gpu = 显卡、hz = 刷新率）。↩ 复制第一项。试试输入「序列号」「刷新率」「循环」或一个不存在的词。',
   privacy: '<b>⑤ 隐私与权限</b>：网络分区。MAC、主机名、序列号、公网 IP 默认打码，点眼睛或<b>按住 ⌥</b> 临时显示；复制拿到的是原文。公网 IP 是唯一需要联网的字段，<b>点击才查询</b>。Wi‑Fi 名称在 macOS 14+ 需要定位权限，未授权时只占一行说明，不影响其他字段。',

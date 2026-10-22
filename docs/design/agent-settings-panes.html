@@ -410,7 +410,7 @@ function render() {
   document.querySelectorAll('.navitem').forEach(n => n.classList.toggle('on', n.dataset.main === S.main));
   const agent = S.main === 'agent';
   document.getElementById('pagehead').innerHTML = agent
-    ? `<h1>Agent</h1><p>管理「随便问」可以使用的能力、扩展与记忆。</p>`
+    ? `<h1>Agent</h1><p>管理「对话」可以使用的能力、扩展与记忆。</p>`
     : `<h1>启动器${A(3, '启动器功能从 Agent 页迁出，成为一级导航')}</h1><p>启动器里的计算器、应用搜索、关键字和你自己的工作流。它们由启动器直接触发，不经过 Agent。</p>`;
   renderSubnav(agent ? PANES : LAUNCHER_PANES);
   const fn = VIEWS[S.pane];
@@ -459,7 +459,7 @@ const VIEWS = {
     const opt = (local, icon, name, pts) => `<div class="opt ${S.local === local ? 'on' : ''}" onclick="S.local=${local};render()">
       <h4>${I(icon)}${name}<span class="radio"></span></h4><ul>${pts.map(([y, t]) => `<li><span class="${y ? 'y' : 'n'}">${I(y ? 'check' : 'minus', 12)}</span>${t}</li>`).join('')}</ul></div>`;
     return `
-      <div class="hero"><div class="t"><b>随便问现在可以使用 ${ready} 项能力</b>
+      <div class="hero"><div class="t"><b>对话现在可以使用 ${ready} 项能力</b>
         <span>${att.length ? `还有 ${att.length} 项需要处理` : '一切就绪'}${S.notes.length ? ` · 记住了 ${S.notes.length} 条笔记` : ''}</span></div>
         ${att.length ? `<button class="btn primary" onclick="go('${att[0]}')">去处理</button>` : ''}</div>
       ${section('新对话默认保存在' + A(5, '概览只保留存储选择和待处理清单，不再用 6 张卡片重复导航'), `<div class="choice">
@@ -505,7 +505,7 @@ const VIEWS = {
   },
 
   files() {
-    const rows = (S.folders.length ? '' : `<div class="row empty">还没有授权文件夹，随便问现在不能读写你的文件。</div>`)
+    const rows = (S.folders.length ? '' : `<div class="row empty">还没有授权文件夹，对话现在不能读写你的文件。</div>`)
       + S.folders.map((f, i) => row('folder', esc(f.split('/').pop() || f), `<span class="mono">${esc(f)}</span>`,
         `<button class="ibtn" title="移除" onclick="removeFolder(${i})">${I('minus', 14)}</button>`)).join('')
       + `<div class="row action" onclick="addFolder()"><span class="ri">${I('plus', 15)}</span>添加文件夹…</div>`;
@@ -518,7 +518,7 @@ const VIEWS = {
     return header('terminal', '代码执行', '在隔离沙箱里运行 Python、JavaScript 和 shell，用于计算、处理表格、画图。',
         `${badge(status('code'))}${sw(S.code, 'S.code=!S.code;render()', '代码执行')}`)
       + rules([['无网络', '沙箱内的代码不能访问网络'], ['不能访问个人目录', '只能读写本次运行的临时目录和你授权的文件'], ['每次运行前确认', '你会先看到要执行的代码']], !S.code)
-      + (S.code ? '' : `<div class="foot">关闭后，随便问不会运行任何代码。</div>`);
+      + (S.code ? '' : `<div class="foot">关闭后，对话不会运行任何代码。</div>`);
   },
 
   automation() {
@@ -576,11 +576,11 @@ const VIEWS = {
       + `<div class="row"><span class="ri" style="background:var(--accent-soft);color:var(--accent)">${I('plus', 15)}</span>
           <input class="field" id="newNote" placeholder="添加笔记，例如你的称呼、常用语言、工作习惯" onkeydown="if(event.key==='Enter')addNote()">
           <button class="btn primary" onclick="addNote()">保存</button></div>`;
-    return header('brain', '记忆', '随便问记住的关于你的笔记，会作为背景信息提供给新对话。', badge(status('memory')))
+    return header('brain', '记忆', '对话记住的关于你的笔记，会作为背景信息提供给新对话。', badge(status('memory')))
       + `<div class="toolbar"><label class="searchbox">${I('search', 14)}<input placeholder="搜索笔记" value="${esc(S.noteQuery)}" oninput="S.noteQuery=this.value;rerenderKeepFocus(this)"></label></div>`
       + card(rows)
       + `<div style="height:24px"></div>`
-      + rules([['会用在新对话里', '这里的笔记会作为背景信息提供给新开始的对话'], ['保存前先问你', '随便问想记住新内容时，会先请你确认'], ['删除即停止使用', '删除或修改后，之后的对话不再使用旧内容；已有的回复不会改变']], false, '使用规则')
+      + rules([['会用在新对话里', '这里的笔记会作为背景信息提供给新开始的对话'], ['保存前先问你', '对话想记住新内容时，会先请你确认'], ['删除即停止使用', '删除或修改后，之后的对话不再使用旧内容；已有的回复不会改变']], false, '使用规则')
       + `<div class="foot">删除笔记不会删除对话历史；需要的话，请在「历史」中单独删除。</div>`;
   },
 

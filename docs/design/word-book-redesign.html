@@ -298,7 +298,7 @@ body.shot > *:not(.shot-target) { display: none !important; }
 </svg>
 
 <h1>单词本改版 · dict 关键字</h1>
-<p class="sub">GUL-237 第三版设计稿。两件事：① 启动器新增 <code>dict</code>（及 <code>词典</code>）关键字，在「翻译」一组里，直接打开单词本并在里面查词；② 单词本窗口按随便问工作区的 Liquid Glass 风格重做：悬浮玻璃侧栏、顶部玻璃查词栏、三栏布局、卡片式详情、底部玻璃操作条。下面三块都能操作，并共用同一份数据：在 ① 按 ↩，会在 ③ 里完成查词。</p>
+<p class="sub">GUL-237 第三版设计稿。两件事：① 启动器新增 <code>dict</code>（及 <code>词典</code>）关键字，在「翻译」一组里，直接打开单词本并在里面查词；② 单词本窗口按对话工作区的 Liquid Glass 风格重做：悬浮玻璃侧栏、顶部玻璃查词栏、三栏布局、卡片式详情、底部玻璃操作条。下面三块都能操作，并共用同一份数据：在 ① 按 ↩，会在 ③ 里完成查词。</p>
 <div class="topbar">
   <div class="pill" id="theme"><button class="on" data-t="dark">深色</button><button data-t="light">浅色</button></div>
   <span class="notes">键盘：点一下单词本窗口再试 <kbd>⌘L</kbd> 查词 · <kbd>↑↓</kbd> 选择 · <kbd>⌘S</kbd> 收藏 · <kbd>⌫</kbd> 删除 · <kbd>⌘F</kbd> 过滤 · <kbd>esc</kbd>（Ctrl 代替 ⌘ 也行）</span>
@@ -411,14 +411,14 @@ body.shot > *:not(.shot-target) { display: none !important; }
 
 <div class="row2" style="margin-top:22px; grid-template-columns: 1fr 1fr;">
   <div class="notes"><ul>
-    <li><b>窗口</b>：与随便问工作区同一套语言——隐藏标题栏、红绿灯嵌在悬浮玻璃侧栏上，环境光晕随强调色；macOS 26 用系统 Liquid Glass，13–15 用 HUD 毛玻璃，「减少透明度」时退回不透明（复用 <code>AskGlass</code>）。</li>
+    <li><b>窗口</b>：与对话工作区同一套语言——隐藏标题栏、红绿灯嵌在悬浮玻璃侧栏上，环境光晕随强调色；macOS 26 用系统 Liquid Glass，13–15 用 HUD 毛玻璃，「减少透明度」时退回不透明（复用 <code>AskGlass</code>）。</li>
     <li><b>顶部查词栏</b>（核心）：随时 <kbd>⌘L</kbd> 输入一个词。打字时本机给出一行预览（不出本机）；<kbd>↩</kbd> 用 AI 生成单词卡，结果直接显示在右侧并记入「今天」；<kbd>⇥</kbd> 或点方向切换语言。已查过的词直接打开存下的卡，不再请求模型。</li>
     <li><b>侧栏</b>：资料库（全部 / 收藏 / 今天 / 本周）+ 语言方向；底部是连续查词天数与本周柱状条，给一点点成就感；导出与记录设置收在这里，不占主界面。</li>
     <li><b>列表</b>：大字号词头 + 音标 + 一行释义；悬停出现 ☆，查过多次显示 ×N；按天分组；顶部可过滤与排序。</li>
   </ul></div>
   <div class="notes"><ul>
     <li><b>详情</b>：大号词头，音标胶囊里直接朗读（英 / 美音）；收藏是醒目的星形按钮；释义按词性分组，<b>点一条即复制</b>；例句可朗读；<b>近义词与词形是可点的胶囊——点了就在单词本里查它</b>，方便顺藤摸瓜。</li>
-    <li><b>底部玻璃操作条</b>：复制释义 · 朗读 · 问 AI（带着单词卡开一段随便问）· 重新生成 · 删除，常用操作一处找到。</li>
+    <li><b>底部玻璃操作条</b>：复制释义 · 朗读 · 问 AI（带着单词卡开一段对话）· 重新生成 · 删除，常用操作一处找到。</li>
     <li><b>状态</b>：生成中骨架屏；新词标「新词 · 已记入」；查过的标「第 N 次查」；空状态给出 3 条上手提示；删除、复制等用底部玻璃提示，删除可撤销。</li>
     <li><b>键盘优先</b>：⌘L 查词、⌘F 过滤、↑↓ 选择、⌘S 收藏、⌘C 复制释义（焦点不在输入框时）、⌫ 删除、esc 依次清空输入 / 关闭窗口。</li>
   </ul></div>
@@ -427,7 +427,7 @@ body.shot > *:not(.shot-target) { display: none !important; }
 <h3>④ 与当前实现的差异</h3>
 <table class="t">
   <tr><th style="width:150px">方面</th><th>现在（#343）</th><th>改版</th></tr>
-  <tr><td><b>窗口外观</b></td><td>标准窗口、灰色工具栏、分段控件</td><td>Liquid Glass：悬浮玻璃侧栏、环境光晕、玻璃查词栏与操作条，与随便问一致</td></tr>
+  <tr><td><b>窗口外观</b></td><td>标准窗口、灰色工具栏、分段控件</td><td>Liquid Glass：悬浮玻璃侧栏、环境光晕、玻璃查词栏与操作条，与对话一致</td></tr>
   <tr><td><b>在单词本里查词</b></td><td>不能，只能从启动器进来</td><td>顶部查词栏，⌘L 随时查；<code>dict 词</code> 直接带词进来</td></tr>
   <tr><td><b>导航</b></td><td>收藏 / 查词记录 + 语言下拉</td><td>侧栏：全部 / 收藏 / 今天 / 本周 + 各语言方向，带数量</td></tr>
   <tr><td><b>详情</b></td><td>启动器单词卡原样嵌入 + 元数据表格 + 一排按钮</td><td>大号词头、可朗读音标胶囊、分组释义、可点的近义词 / 词形、例句朗读、查词记录一行</td></tr>
@@ -602,7 +602,7 @@ $('#win').addEventListener('click', ev => {
   if (act) {
     const e = current(); const a = act.dataset.act;
     if (a === 'copy') toast(`已复制「${esc(first(e))}」`); if (a === 'say') toast(ic('speak', 'sm') + ' 朗读中…');
-    if (a === 'ask') toast('已带着单词卡打开随便问'); if (a === 'del') del();
+    if (a === 'ask') toast('已带着单词卡打开对话'); if (a === 'del') del();
     if (a === 'regen') { if (confirm(`用 AI 重新生成「${e.hw}」的单词卡？\n会发送到 gpt-5-mini。`)) { S.look = { text: e.hw, phase: 'loading' }; renderDetail(); setTimeout(() => { S.look = null; S.sel = e.hw; renderAll(); toast('单词卡已更新'); }, 900); } }
     return;
   }

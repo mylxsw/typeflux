@@ -137,7 +137,7 @@ final class AppLocalizationInstanceTests: XCTestCase {
         defer { localization.setLanguage(original) }
 
         XCTAssertEqual(localization.string("agent.section.general"), "通用")
-        XCTAssertEqual(localization.string("studio.eyebrow.agent"), "随便问")
+        XCTAssertEqual(localization.string("studio.eyebrow.agent"), "对话")
         XCTAssertEqual(localization.string("agent.section.memory"), "记忆")
     }
 
@@ -148,7 +148,7 @@ final class AppLocalizationInstanceTests: XCTestCase {
         defer { localization.setLanguage(original) }
 
         XCTAssertEqual(localization.string("agent.section.general"), "一般")
-        XCTAssertEqual(localization.string("studio.eyebrow.agent"), "隨便問")
+        XCTAssertEqual(localization.string("studio.eyebrow.agent"), "對話")
     }
 
     // MARK: - setLanguage notification

@@ -1,4 +1,4 @@
-# 随便问：工作流编辑器设计方案
+# 对话：工作流编辑器设计方案
 
 > 状态：E1（编辑器）和 E2（AI 助手）已实现，实现说明见第 15 节；E3 随 W2。配套设计稿：`docs/design/ask-workflow-editor.html`（`?solo=<id>` 单独看一屏，`?light=1` 看浅色），截图在 `docs/design/ask-workflow-editor/`：`1-overview.png` 总览、`2-keywords-input.png` 关键字和输入、`3-output.png` 输出、`4-failure.png` 测试失败、`5-json.png` 清单视图、`6-external-change.png` 外部修改、`7-new.png` 新建、`8-entry.png` 入口、`9-light.png` 浅色、`10-ai-generate.png` AI 一键生成、`11-ai-assistant.png` AI 修改提案、`12-ai-fix.png` AI 修复和风险暂停。
 > 基于已经上线的 W1（`docs/design/ask-launcher-workflows.md` 第 12 节）。本方案只改「怎么编辑」（包括让 AI 来写），不改工作流包格式、运行器和信任模型。

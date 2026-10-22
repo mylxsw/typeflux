@@ -1,4 +1,4 @@
-# 随便问：启动器默认态（Home）
+# 对话：启动器默认态（Home）
 
 > 状态：已实现（GUL-240）。代码：`AskLauncherHome`（纯函数，决定放什么）、`AskLauncherSuggestions`（视图与按键）、`AskConversationModel+LauncherHome`（取上下文、执行）、`AskKeywordUsage`（关键词使用计数）。
 

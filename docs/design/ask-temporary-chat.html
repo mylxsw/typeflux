@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Typeflux · 随便问 — 临时对话（不进入对话历史）交互设计稿</title>
+<title>Typeflux · 对话 — 临时对话（不进入对话历史）交互设计稿</title>
 <style>
 :root {
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Helvetica Neue", sans-serif;
@@ -289,7 +289,7 @@ table.dt td.y { color: var(--success); } table.dt td.n { color: var(--temp); fon
 
 <div class="page">
   <div>
-    <h1>随便问 · 临时对话（不进入对话历史）</h1>
+    <h1>对话 · 临时对话（不进入对话历史）</h1>
     <p class="sub">临时对话是对话存储位置的<b>第三个选项</b>，和「云端同步」「仅存本机」并列。它<b>不进入任何历史列表</b>，<b>不读取也不更新记忆</b>，<b>离开这段对话或退出应用时丢弃</b>。临时对话可以使用全部模型。界面上用青色和虚线描边区分（虚线表示“不保存”）。<br>
     下面的窗口<b>可以直接操作</b>：点 ✎ 在下拉里选「新临时对话」，或点输入框左下角的存储图标，开始一段临时对话，发几条消息后切到别的对话看看会发生什么。工具条可以切换到 <b>⌥Space 启动器</b> 场景（按现有启动器还原：底栏的 ☁ 存储图标里选「临时」，或输入 <code>/temp</code>）、切换登录状态和明暗主题。</p>
     <div class="dock">
@@ -617,7 +617,7 @@ function leaveModal() {
 function settingsSheet() {
   if (!S.settings) return '';
   return `<div class="scrim" data-act="close-settings"><div class="sheet" data-stop="1">
-    <h3>随便问</h3><div class="crumb">设置 → Agent → 通用</div>
+    <h3>对话</h3><div class="crumb">设置 → Agent → 通用</div>
     <div class="srow"><div><div class="st">新对话默认保存在</div>
       <div class="sd">不变：云端同步 / 仅存本机。临时对话<b>不提供“默认”选项</b>，只能每次主动开启，避免用户以为对话已保存。</div></div>
       <div class="sc"><div class="seg" style="width:190px"><button class="${S.signedIn ? 'on' : ''}">${ic('cloud', 'sm')}云端同步</button><button class="${S.signedIn ? '' : 'on'}">${ic('lock', 'sm')}仅存本机</button></div></div></div>

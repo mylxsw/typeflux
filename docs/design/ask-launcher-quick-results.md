@@ -1,10 +1,10 @@
-# 随便问：启动器快捷结果（计算器先行）设计方案
+# 对话：启动器快捷结果（计算器先行）设计方案
 
 > 状态：M1（计算器）、M2（应用搜索，见第 9 节）已实现；M3 及以后仍是设计。配套可交互设计稿：`docs/design/ask-launcher-quick-results.html`（浏览器直接打开），截图见 `docs/design/ask-launcher-quick-results/`。
 
 ## 1. 背景与目标
 
-按快捷键（⌥Space）弹出的「随便问」启动器（`AskLauncherView` → `AskComposer(launcher: true)`）目前只做一件事：把输入框内容作为问题发给 AI。输入框为空时，下方是三条起手建议（`AskLauncherSuggestions`）；一旦开始输入，建议消失，回车即 `submitLauncher()` 新建对话。
+按快捷键（⌥Space）弹出的「对话」启动器（`AskLauncherView` → `AskComposer(launcher: true)`）目前只做一件事：把输入框内容作为问题发给 AI。输入框为空时，下方是三条起手建议（`AskLauncherSuggestions`）；一旦开始输入，建议消失，回车即 `submitLauncher()` 新建对话。
 
 需求：输入的是数学算式时，**不经过 AI**，在输入框下方直接给出计算结果，像 uTools / Raycast 的计算器那样。后续还会接入「搜索应用」「搜索文档」等。
 

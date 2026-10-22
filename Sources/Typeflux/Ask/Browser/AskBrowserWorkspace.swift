@@ -2,7 +2,7 @@ import Combine
 import Foundation
 import WebKit
 
-/// The embedded browser shared by the 随便问 window: its tabs, its persistent
+/// The embedded browser shared by the Chat window: its tabs, its persistent
 /// profile, and the state the user controls while the AI works (pause, hand-off).
 @MainActor
 final class AskBrowserWorkspace: ObservableObject {

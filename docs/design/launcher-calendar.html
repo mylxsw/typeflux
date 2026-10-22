@@ -274,7 +274,7 @@ body.light .openhint { color: #333; background: rgba(255,255,255,.5); }
   <div class="launcher" id="launcher">
     <div class="lin">
       <span id="chipSlot"></span>
-      <input id="q" autocomplete="off" spellcheck="false" placeholder="随便问，或输入关键字…">
+      <input id="q" autocomplete="off" spellcheck="false" placeholder="对话，或输入关键字…">
       <span id="headRight"></span>
     </div>
     <div class="lbody" id="lbody"></div>
@@ -509,7 +509,7 @@ function renderLauncher() {
     $('#headRight').innerHTML = '';
   } else {
     $('#chipSlot').innerHTML = '';
-    q.placeholder = '随便问，或输入关键字…';
+    q.placeholder = '对话，或输入关键字…';
     $('#headRight').innerHTML = '';
   }
   renderBody();
