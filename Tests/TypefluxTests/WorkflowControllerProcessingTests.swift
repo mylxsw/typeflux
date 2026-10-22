@@ -3049,7 +3049,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         let appState = AppStateStore()
         let overlayController = OverlayController(appState: appState)
 
-        return WorkflowController(
+        let controller = WorkflowController(
             appState: appState,
             settingsStore: settingsStore,
             hotkeyService: hotkeyService,
@@ -3091,6 +3091,11 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             sleep: sleep,
             monotonicNow: monotonicNow
         )
+        // These in-memory fixtures test panel behavior, not worker scheduling.
+        // Production scheduling is exercised separately below and by LatestBackgroundWorkTests.
+        controller.historyPanelWork = ImmediateHistoryWork()
+        controller.clipboardMaintenanceWork = ImmediateHistoryWork()
+        return controller
     }
 
     private func makeTestSettingsStore() -> SettingsStore {
@@ -4915,14 +4920,17 @@ extension WorkflowControllerProcessingTests {
         let harness = makeClipboardPanelHarness(voiceTexts: ["spoken"], configure: seed)
         harness.controller.handleHistoryPickerRequested()
 
+        harness.model.category = .voice
         harness.model.perform(.togglePin, at: harness.index(of: "spoken"))
         XCTAssertEqual(harness.model.visibleEntries.first?.title, "spoken")
         XCTAssertEqual(harness.store.pinnedVoiceIDs.count, 1)
         XCTAssertEqual(harness.model.selectedEntry?.title, "spoken")
 
+        harness.model.category = .all
         harness.model.perform(.togglePin, at: harness.index(of: "copied text"))
         XCTAssertTrue(harness.store.storedItems.first { $0.text == "copied text" }?.isPinned ?? false)
 
+        harness.model.category = .voice
         harness.model.perform(.togglePin, at: harness.index(of: "spoken"))
         XCTAssertTrue(harness.store.pinnedVoiceIDs.isEmpty)
     }
@@ -4935,6 +4943,7 @@ extension WorkflowControllerProcessingTests {
 
         harness.model.perform(.delete, at: harness.index(of: "copied"))
         XCTAssertTrue(harness.store.storedItems.isEmpty)
+        harness.model.category = .voice
         XCTAssertEqual(harness.model.visibleEntries.map(\.title), ["spoken"])
 
         harness.model.perform(.delete, at: 0)
@@ -5165,5 +5174,83 @@ final class ProcessingGate: @unchecked Sendable {
             return waiters
         }
         parked.forEach { $0.resume() }
+    }
+}
+
+private final class ImmediateHistoryWork: LatestBackgroundWorking {
+    func submit(_ work: @escaping () -> Void, completion: @escaping (Result<Void, Error>) -> Void) {
+        work(); completion(.success(()))
+    }
+    func cancel() {}
+}
+
+private final class DeferredHistoryWork: LatestBackgroundWorking {
+    var requests: [(work: () -> Void, completion: (Result<Void, Error>) -> Void)] = []
+    func submit(_ work: @escaping () -> Void, completion: @escaping (Result<Void, Error>) -> Void) {
+        requests.append((work, completion))
+    }
+    func cancel() {}
+    func finish(_ index: Int, result: Result<Void, Error> = .success(())) {
+        if case .success = result { requests[index].work() }
+        requests[index].completion(result)
+    }
+}
+
+extension WorkflowControllerProcessingTests {
+    @MainActor func testHistoryLoadCanBeCancelledBeforePresentationAndLateResultsAreIgnored() {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        let work = DeferredHistoryWork()
+        harness.controller.historyPanelWork = work
+        harness.controller.handleHistoryPickerRequested()
+        XCTAssertTrue(harness.controller.isHistoryPickerLoading)
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+        harness.controller.handleHistoryPickerRequested()
+        work.finish(0)
+        XCTAssertFalse(harness.controller.isHistoryPickerLoading)
+        XCTAssertEqual(harness.presenter.presentCount, 0)
+        harness.controller.handleHistoryPickerRequested()
+        work.finish(1)
+        XCTAssertEqual(harness.presenter.presentCount, 1)
+        harness.controller.dismissHistoryPicker()
+    }
+
+    @MainActor func testHistoryLoadFailureDoesNotPresentEmptyHistoryOrCloseExistingPanel() {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.controller.handleHistoryPickerRequested()
+        let original = harness.model.entries
+        let work = DeferredHistoryWork()
+        harness.controller.historyPanelWork = work
+        harness.controller.reloadHistoryPanel()
+        work.finish(0, result: .failure(BackgroundWorkFailure.timedOut))
+        XCTAssertTrue(harness.controller.isHistoryPickerPresented)
+        XCTAssertEqual(harness.model.entries, original)
+        XCTAssertNotNil(harness.model.notice)
+        harness.controller.dismissHistoryPicker()
+    }
+
+    @MainActor func testHistoryProductionWorkerLoadsOffMainAndPresentsAsynchronously() async {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.controller.historyPanelWork = LatestBackgroundWork(label: "test.clipboard-panel")
+        harness.controller.handleHistoryPickerRequested()
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+        await waitUntil { harness.controller.isHistoryPickerPresented }
+        XCTAssertEqual(harness.presenter.presentCount, 1)
+        XCTAssertEqual(harness.model.entries.count, 3)
+        harness.controller.dismissHistoryPicker()
+    }
+
+    @MainActor func testHistoryLateRefreshCannotOverwriteNewerResultOrReopenClosedPanel() {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.controller.handleHistoryPickerRequested()
+        let work = DeferredHistoryWork()
+        harness.controller.historyPanelWork = work
+        harness.controller.reloadHistoryPanel()
+        harness.controller.reloadHistoryPanel()
+        work.finish(0, result: .failure(BackgroundWorkFailure.timedOut))
+        XCTAssertNil(harness.model.notice)
+        harness.controller.dismissHistoryPicker()
+        work.finish(1)
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+        XCTAssertEqual(harness.presenter.presentCount, 1)
     }
 }
