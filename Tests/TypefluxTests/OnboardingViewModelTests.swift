@@ -29,122 +29,96 @@ final class OnboardingViewModelTests: XCTestCase {
     // MARK: - Steps
 
     @MainActor
-    func testStepsAreWelcomeGoalsPermissions() {
+    func testEveryoneWalksThroughEveryFeature() {
         let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
 
-        XCTAssertEqual(viewModel.visibleSteps, [.welcome, .goals, .permissions])
+        XCTAssertEqual(viewModel.visibleSteps, [.welcome, .permissions, .voice, .launcher, .tools, .ring, .chat, .finish])
+        XCTAssertEqual(viewModel.featureSteps.compactMap(\.feature), OnboardingFeature.allCases)
         XCTAssertEqual(viewModel.currentStep, .welcome)
         XCTAssertFalse(viewModel.canGoBack)
         XCTAssertFalse(viewModel.isLastStep)
+        XCTAssertNil(OnboardingViewModel.Step.welcome.feature)
+        XCTAssertNil(OnboardingViewModel.Step.finish.feature)
     }
 
     @MainActor
     func testAdvanceAndBackMoveBetweenSteps() {
         let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+        viewModel.permissions = grantedPermissions()
 
-        viewModel.advance()
-        XCTAssertEqual(viewModel.currentStep, .goals)
-        XCTAssertEqual(viewModel.stepDirection, 1)
         viewModel.advance()
         XCTAssertEqual(viewModel.currentStep, .permissions)
-        XCTAssertTrue(viewModel.isLastStep)
+        XCTAssertEqual(viewModel.stepDirection, 1)
+        viewModel.advance()
+        XCTAssertEqual(viewModel.currentStep, .voice)
 
         viewModel.goBack()
-        XCTAssertEqual(viewModel.currentStep, .goals)
+        XCTAssertEqual(viewModel.currentStep, .permissions)
         XCTAssertEqual(viewModel.stepDirection, -1)
         viewModel.goBack()
         viewModel.goBack()
         XCTAssertEqual(viewModel.currentStep, .welcome)
     }
 
-    // MARK: - Goals
-
     @MainActor
-    func testNewUserStartsWithDefaultGoals() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+    func testGuidesNeverBlockAndTheLastStepCompletes() {
+        var completions = 0
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: { completions += 1 })
+        viewModel.currentStep = .voice
 
-        XCTAssertEqual(viewModel.goals, OnboardingGoal.defaultSelection)
-        XCTAssertEqual(viewModel.orderedGoals, [.voice, .launcher, .chat])
-        XCTAssertEqual(viewModel.estimatedMinutes, 5)
-    }
-
-    @MainActor
-    func testStoredGoalsAreRestored() {
-        store.onboardingGoals = [.ring, .tools]
-
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        XCTAssertEqual(viewModel.orderedGoals, [.tools, .ring])
-    }
-
-    @MainActor
-    func testEmptyStoredGoalsFallBackToDefaults() {
-        store.onboardingGoals = []
-
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        XCTAssertEqual(viewModel.goals, OnboardingGoal.defaultSelection)
-    }
-
-    @MainActor
-    func testToggleGoalAndEmptySelectionBlocksAdvance() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        viewModel.currentStep = .goals
-
-        for goal in OnboardingGoal.defaultSelection {
-            viewModel.toggleGoal(goal)
+        for step in [OnboardingViewModel.Step.launcher, .tools, .ring, .chat, .finish] {
+            XCTAssertTrue(viewModel.canAdvance)
+            viewModel.advance()
+            XCTAssertEqual(viewModel.currentStep, step)
         }
-        XCTAssertTrue(viewModel.goals.isEmpty)
-        XCTAssertFalse(viewModel.canAdvance)
-        viewModel.advance()
-        XCTAssertEqual(viewModel.currentStep, .goals)
+        XCTAssertTrue(viewModel.isLastStep)
+        XCTAssertFalse(store.isOnboardingCompleted)
 
-        viewModel.toggleGoal(.ring)
-        XCTAssertEqual(viewModel.goals, [.ring])
-        XCTAssertTrue(viewModel.canAdvance)
+        viewModel.advance()
+        XCTAssertTrue(store.isOnboardingCompleted)
+        XCTAssertEqual(completions, 1)
+        viewModel.advance()
+        XCTAssertEqual(completions, 1, "Completing twice must not call back twice")
+    }
+
+    // MARK: - Guides
+
+    @MainActor
+    func testGuideShortcutsComeFromSettings() {
+        store.askHotkey = .rightOptionAsk
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+
+        XCTAssertEqual(
+            viewModel.shortcuts(for: .launcher).first?.keys,
+            HotkeyFormat.components(.rightOptionAsk)
+        )
     }
 
     @MainActor
-    func testToggleAllSelectsEverythingThenRestoresDefaults() {
+    func testVoicePracticeCountsOnlyRealText() {
         let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+        XCTAssertFalse(viewModel.didPracticeVoice)
 
-        viewModel.toggleAllGoals()
-        XCTAssertTrue(viewModel.allGoalsSelected)
-        XCTAssertEqual(viewModel.estimatedMinutes, 8)
+        viewModel.voicePracticeText = "  \n "
+        XCTAssertFalse(viewModel.didPracticeVoice)
 
-        viewModel.toggleAllGoals()
-        XCTAssertEqual(viewModel.goals, OnboardingGoal.defaultSelection)
-        XCTAssertFalse(viewModel.allGoalsSelected)
+        viewModel.voicePracticeText = "Hello there"
+        XCTAssertTrue(viewModel.didPracticeVoice)
     }
 
     // MARK: - Permissions
 
     @MainActor
-    func testRequiredPermissionsFollowGoals() {
+    func testEveryFeaturesPermissionsAreAskedForTogether() {
         let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
         XCTAssertEqual(viewModel.requiredPermissionIDs, [.microphone, .accessibility])
 
-        viewModel.toggleGoal(.voice)
-        viewModel.toggleGoal(.launcher)
-        XCTAssertEqual(viewModel.requiredPermissionIDs, [.microphone], "Chat alone only needs the microphone")
-
-        viewModel.toggleGoal(.chat)
-        viewModel.toggleGoal(.tools)
-        XCTAssertTrue(viewModel.requiredPermissionIDs.isEmpty)
-        XCTAssertTrue(viewModel.allRequiredPermissionsGranted)
+        store.useAppleSpeechFallback = true
+        XCTAssertEqual(viewModel.requiredPermissionIDs, [.microphone, .speechRecognition, .accessibility])
     }
 
     @MainActor
-    func testPermissionChipsListThePickedGoalsThatNeedIt() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        viewModel.toggleGoal(.ring)
-
-        XCTAssertEqual(viewModel.goals(using: .accessibility), [.voice, .launcher, .ring])
-        XCTAssertEqual(viewModel.goals(using: .microphone), [.voice, .chat])
-    }
-
-    @MainActor
-    func testMissingPermissionsBlockFinishButLaterCompletes() {
+    func testMissingPermissionsBlockContinueButLaterMovesOnToTheGuides() {
         var completions = 0
         let viewModel = OnboardingViewModel(settingsStore: store, onComplete: { completions += 1 })
         viewModel.currentStep = .permissions
@@ -155,57 +129,38 @@ final class OnboardingViewModelTests: XCTestCase {
 
         XCTAssertEqual(viewModel.missingPermissionCount, 1)
         XCTAssertEqual(viewModel.requiredPermissions.map(\.id), [.microphone, .accessibility])
+        XCTAssertFalse(viewModel.canAdvance)
         viewModel.advance()
+        XCTAssertEqual(viewModel.currentStep, .permissions)
+
+        viewModel.skipPermissions()
+        XCTAssertEqual(viewModel.currentStep, .voice, "Later skips the permissions, not the guides")
         XCTAssertFalse(store.isOnboardingCompleted)
         XCTAssertEqual(completions, 0)
-
-        viewModel.finishLater()
-        XCTAssertTrue(store.isOnboardingCompleted)
-        XCTAssertEqual(completions, 1)
     }
 
     @MainActor
-    func testFinishLaterOnlyWorksOnPermissionsStep() {
+    func testSkipPermissionsOnlyWorksOnPermissionsStep() {
         let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
 
-        viewModel.finishLater()
+        viewModel.skipPermissions()
 
-        XCTAssertFalse(store.isOnboardingCompleted)
-    }
-
-    @MainActor
-    func testGrantedPermissionsFinishAndPersistGoals() {
-        var completions = 0
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: { completions += 1 })
-        viewModel.toggleGoal(.tools)
-        viewModel.currentStep = .permissions
-        viewModel.permissions = grantedPermissions()
-
-        viewModel.advance()
-
-        XCTAssertTrue(store.isOnboardingCompleted)
-        XCTAssertEqual(store.onboardingGoals, [.voice, .launcher, .tools, .chat])
-        XCTAssertEqual(completions, 1)
-        viewModel.advance()
-        XCTAssertEqual(completions, 1, "Completing twice must not call back twice")
+        XCTAssertEqual(viewModel.currentStep, .welcome)
     }
 
     // MARK: - Globe key
 
     @MainActor
-    func testGlobeKeySetupShowsOnlyForVoiceWithBlockedFnKey() {
+    func testGlobeKeySetupShowsOnlyWhileFnIsBlocked() {
         let reader = StubGlobeKeyPreferenceReader(usage: .showEmojiAndSymbols)
         let viewModel = OnboardingViewModel(settingsStore: store, globeKeyReader: reader, onComplete: {})
         XCTAssertTrue(viewModel.needsGlobeKeySetup)
 
-        viewModel.toggleGoal(.voice)
-        XCTAssertFalse(viewModel.needsGlobeKeySetup, "No voice input, no fn key requirement")
-
-        viewModel.toggleGoal(.voice)
         viewModel.useExternalKeyboardShortcutReplacement(.rightCommand)
         XCTAssertFalse(viewModel.needsGlobeKeySetup, "A right-hand key replaces fn")
 
         viewModel.restoreDefaultFNShortcuts()
+        XCTAssertTrue(viewModel.needsGlobeKeySetup)
         reader.usage = .doNothing
         viewModel.refreshGlobeKeyState()
         XCTAssertFalse(viewModel.needsGlobeKeySetup)
@@ -275,13 +230,12 @@ final class OnboardingViewModelTests: XCTestCase {
     // MARK: - Speech model
 
     @MainActor
-    func testLeavingGoalsWithVoiceStartsSpeechModelDownload() async {
+    func testLeavingWelcomeStartsSpeechModelDownload() async {
         let manager = StubLocalModelManager()
         let prepared = expectation(description: "model prepared")
         manager.onPrepare = { prepared.fulfill() }
         store.sttProvider = .localModel
         let viewModel = OnboardingViewModel(settingsStore: store, localModelManager: manager, onComplete: {})
-        viewModel.currentStep = .goals
 
         viewModel.advance()
         await fulfillment(of: [prepared], timeout: 2)
@@ -290,12 +244,11 @@ final class OnboardingViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testLeavingGoalsWithoutVoiceDoesNotDownload() {
+    func testLaterStepsDoNotStartTheDownload() {
         let manager = StubLocalModelManager()
         store.sttProvider = .localModel
         let viewModel = OnboardingViewModel(settingsStore: store, localModelManager: manager, onComplete: {})
-        viewModel.toggleGoal(.voice)
-        viewModel.currentStep = .goals
+        viewModel.currentStep = .voice
 
         viewModel.advance()
 
@@ -308,7 +261,6 @@ final class OnboardingViewModelTests: XCTestCase {
         manager.available = true
         store.sttProvider = .localModel
         let viewModel = OnboardingViewModel(settingsStore: store, localModelManager: manager, onComplete: {})
-        viewModel.currentStep = .goals
 
         viewModel.advance()
 
@@ -342,41 +294,38 @@ final class OnboardingViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testSkipWithoutAnimationMarksCompletedAndKeepsGoals() {
+    func testSkipWithoutAnimationMarksCompleted() {
         let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        viewModel.toggleGoal(.ring)
 
         viewModel.skipWithoutAnimation()
 
         XCTAssertTrue(store.isOnboardingCompleted)
-        XCTAssertEqual(store.onboardingGoals, [.voice, .launcher, .ring, .chat])
     }
 
     // MARK: - Analytics
 
     @MainActor
-    func testAnalyticsReportsStepsGoalsAndCompletion() {
+    func testAnalyticsReportsEveryStepAndCompletion() {
         let recorder = AnalyticsEventRecorder()
         var now = Date(timeIntervalSince1970: 1000)
         let viewModel = OnboardingViewModel(
             settingsStore: store, analyticsReporter: recorder, now: { now }, onComplete: {}
         )
-
-        viewModel.advance()
-        viewModel.advance()
         viewModel.permissions = grantedPermissions()
+        viewModel.voicePracticeText = "Hi"
+
+        for _ in viewModel.visibleSteps.dropLast() {
+            viewModel.advance()
+        }
         now = Date(timeIntervalSince1970: 1012)
         viewModel.advance()
 
-        XCTAssertEqual(recorder.events.map(\.name), [
-            "onboarding_step_completed", "onboarding_step_completed", "onboarding_goal_selected",
-            "onboarding_step_completed", "onboarding_completed"
+        let steps = recorder.events.filter { $0.name == "onboarding_step_completed" }.compactMap { $0.properties["step"] }
+        XCTAssertEqual(steps, ["welcome", "permissions", "voice", "launcher", "tools", "ring", "chat", "finish"])
+        XCTAssertEqual(recorder.events.last?.name, "onboarding_completed")
+        XCTAssertEqual(recorder.events.last?.properties, [
+            "duration_seconds": "12", "missing_permissions": "0", "practiced_voice": "true"
         ])
-        XCTAssertEqual(recorder.events[0].properties, ["step": "welcome", "skipped": "false"])
-        XCTAssertEqual(recorder.events[2].properties, ["goals": "voice,launcher,chat"])
-        XCTAssertEqual(recorder.events[4].properties["duration_seconds"], "12")
-        XCTAssertEqual(recorder.events[4].properties["goals"], "voice,launcher,chat")
-        XCTAssertEqual(recorder.events[4].properties["missing_permissions"], "0")
     }
 
     @MainActor
@@ -386,27 +335,20 @@ final class OnboardingViewModelTests: XCTestCase {
         viewModel.currentStep = .permissions
         viewModel.permissions = [.init(id: .microphone, state: .needsAttention, detail: "Missing")]
 
-        viewModel.finishLater()
+        viewModel.skipPermissions()
+        viewModel.skipWithoutAnimation()
         viewModel.skipWithoutAnimation()
 
-        XCTAssertEqual(recorder.events.map(\.name), ["onboarding_step_completed", "onboarding_completed"])
+        XCTAssertEqual(recorder.events.map(\.name), ["onboarding_step_completed", "onboarding_abandoned"])
         XCTAssertEqual(recorder.events[0].properties, ["step": "permissions", "skipped": "true"])
-        XCTAssertEqual(recorder.events[1].properties["missing_permissions"], "2")
-
-        let abandoning = AnalyticsEventRecorder()
-        let other = OnboardingViewModel(settingsStore: store, analyticsReporter: abandoning, onComplete: {})
-        other.skipWithoutAnimation()
-        other.skipWithoutAnimation()
-        XCTAssertEqual(abandoning.events.map(\.name), ["onboarding_abandoned"])
-        XCTAssertEqual(abandoning.events[0].properties, ["last_step": "welcome"])
+        XCTAssertEqual(recorder.events[1].properties, ["last_step": "voice"])
     }
 
     // MARK: - Helpers
 
     @MainActor
     private func finish(_ viewModel: OnboardingViewModel) {
-        viewModel.currentStep = .permissions
-        viewModel.permissions = grantedPermissions()
+        viewModel.currentStep = .finish
         viewModel.advance()
         XCTAssertTrue(store.isOnboardingCompleted)
     }

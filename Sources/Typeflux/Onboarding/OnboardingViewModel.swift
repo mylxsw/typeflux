@@ -2,22 +2,36 @@ import AppKit
 import Foundation
 import SwiftUI
 
-/// First-run setup: welcome → what the user wants to use → the permissions those uses need.
-/// Models are not configured here: speech recognition works offline out of the box and AI is
-/// connected the first time a feature needs it.
+/// First-run setup, the same for everyone: welcome → permissions → one short guide per feature
+/// → every key on one page. Models are not configured here: speech recognition works offline
+/// out of the box and AI is connected the first time a feature needs it.
 @MainActor
 final class OnboardingViewModel: ObservableObject {
-    enum Step: Int, CaseIterable {
-        case welcome = 0
-        case goals = 1
-        case permissions = 2
+    enum Step: String, CaseIterable {
+        case welcome
+        case permissions
+        case voice
+        case launcher
+        case tools
+        case ring
+        case chat
+        case finish
 
-        var analyticsName: String {
+        /// The feature a guide step teaches.
+        var feature: OnboardingFeature? {
             switch self {
-            case .welcome: "welcome"
-            case .goals: "goals"
-            case .permissions: "permissions"
+            case .voice: .voice
+            case .launcher: .launcher
+            case .tools: .tools
+            case .ring: .ring
+            case .chat: .chat
+            case .welcome, .permissions, .finish: nil
             }
+        }
+
+        /// Guide steps report the feature's name, e.g. "voice".
+        var analyticsName: String {
+            rawValue
         }
     }
 
@@ -43,7 +57,8 @@ final class OnboardingViewModel: ObservableObject {
     @Published var currentStep: Step = .welcome
     @Published var stepDirection: Int = 1 // 1 = forward, -1 = backward
     @Published var appLanguage: AppLanguage
-    @Published private(set) var goals: Set<OnboardingGoal>
+    /// What the user dictated into the voice guide's practice box.
+    @Published var voicePracticeText = ""
 
     // Permissions
     @Published var permissions: [PrivacyGuard.PermissionSnapshot] = []
@@ -91,7 +106,6 @@ final class OnboardingViewModel: ObservableObject {
         self.onComplete = onComplete
 
         appLanguage = settingsStore.appLanguage
-        goals = settingsStore.onboardingGoals.flatMap { $0.isEmpty ? nil : $0 } ?? OnboardingGoal.defaultSelection
         permissions = PrivacyGuard.snapshots()
         isGlobeKeyReady = globeKeyReader.isReadyForHotkey
         let storedActivationHotkey = settingsStore.activationHotkey ?? .defaultActivation
@@ -125,18 +139,18 @@ final class OnboardingViewModel: ObservableObject {
 
     /// Whether the primary button can move on from the current step.
     var canAdvance: Bool {
-        switch currentStep {
-        case .welcome: true
-        case .goals: !goals.isEmpty
-        case .permissions: allRequiredPermissionsGranted
-        }
+        currentStep != .permissions || allRequiredPermissionsGranted
+    }
+
+    /// The guide steps, for the "2 / 5" counter.
+    var featureSteps: [Step] {
+        visibleSteps.filter { $0.feature != nil }
     }
 
     func advance() {
         guard canAdvance else { return }
         reportCurrentStepCompleted(skipped: false)
-        if currentStep == .goals {
-            reportGoalsSelected()
+        if currentStep == .welcome {
             prepareSpeechModelIfNeeded()
         }
         advanceToNextStepOrComplete()
@@ -150,53 +164,35 @@ final class OnboardingViewModel: ObservableObject {
         }
     }
 
-    /// Finishes setup with permissions still missing; they are asked for again when needed.
-    func finishLater() {
+    /// Moves on to the guides with permissions still missing; they are asked for again when needed.
+    func skipPermissions() {
         guard currentStep == .permissions else { return }
         reportCurrentStepCompleted(skipped: true)
-        complete()
+        advanceToNextStepOrComplete()
     }
 
     /// Marks onboarding as complete without triggering the completion callback.
     /// Used when the window is closed externally (e.g., user clicks the close button).
     func skipWithoutAnimation() {
         reportAbandonedIfNeeded()
-        settingsStore.onboardingGoals = goals
         settingsStore.applyDefaultPersonaIfLLMConfigured()
         settingsStore.isOnboardingCompleted = true
     }
 
-    // MARK: - Goals
+    // MARK: - Guides
 
-    var orderedGoals: [OnboardingGoal] {
-        OnboardingGoal.ordered(goals)
+    func shortcuts(for feature: OnboardingFeature) -> [OnboardingShortcut] {
+        feature.shortcuts(settingsStore: settingsStore)
     }
 
-    var allGoalsSelected: Bool {
-        goals.count == OnboardingGoal.allCases.count
-    }
-
-    var estimatedMinutes: Int {
-        goals.reduce(0) { $0 + $1.estimatedMinutes }
-    }
-
-    func toggleGoal(_ goal: OnboardingGoal) {
-        if goals.contains(goal) {
-            goals.remove(goal)
-        } else {
-            goals.insert(goal)
-        }
-    }
-
-    /// Selects every goal, or goes back to the default selection when all are already picked.
-    func toggleAllGoals() {
-        goals = allGoalsSelected ? OnboardingGoal.defaultSelection : Set(OnboardingGoal.allCases)
+    var didPracticeVoice: Bool {
+        !voicePracticeText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     // MARK: - Permissions
 
     var requiredPermissionIDs: [PrivacyGuard.PermissionID] {
-        OnboardingGoal.requiredPermissionIDs(for: goals, settingsStore: settingsStore)
+        OnboardingFeature.requiredPermissionIDs(settingsStore: settingsStore)
     }
 
     var requiredPermissions: [PrivacyGuard.PermissionSnapshot] {
@@ -211,14 +207,9 @@ final class OnboardingViewModel: ObservableObject {
         missingPermissionCount == 0
     }
 
-    /// The features each permission unlocks among the user's picks, for the chips under it.
-    func goals(using permission: PrivacyGuard.PermissionID) -> [OnboardingGoal] {
-        orderedGoals.filter { $0.requiredPermissions.contains(permission) || (permission == .speechRecognition && $0 == .voice) }
-    }
-
     /// Voice input cannot start while macOS keeps 🌐 for itself, unless another key replaces it.
     var needsGlobeKeySetup: Bool {
-        goals.contains(.voice) && !isGlobeKeyReady && activationHotkey.signature == HotkeyBinding.defaultActivation.signature
+        !isGlobeKeyReady && activationHotkey.signature == HotkeyBinding.defaultActivation.signature
     }
 
     func refreshPermissions() {
@@ -324,11 +315,10 @@ final class OnboardingViewModel: ObservableObject {
             eventName: "onboarding_completed",
             properties: [
                 "duration_seconds": "\(duration)",
-                "goals": orderedGoals.map(\.rawValue).joined(separator: ","),
-                "missing_permissions": "\(missingPermissionCount)"
+                "missing_permissions": "\(missingPermissionCount)",
+                "practiced_voice": "\(didPracticeVoice)"
             ]
         )
-        settingsStore.onboardingGoals = goals
         settingsStore.applyDefaultPersonaIfLLMConfigured()
         settingsStore.applyNewUserClipboardDefaults()
         settingsStore.isOnboardingCompleted = true
@@ -339,13 +329,6 @@ final class OnboardingViewModel: ObservableObject {
         analyticsReporter.report(
             eventName: "onboarding_step_completed",
             properties: ["step": currentStep.analyticsName, "skipped": "\(skipped)"]
-        )
-    }
-
-    private func reportGoalsSelected() {
-        analyticsReporter.report(
-            eventName: "onboarding_goal_selected",
-            properties: ["goals": orderedGoals.map(\.rawValue).joined(separator: ",")]
         )
     }
 
@@ -380,8 +363,7 @@ final class OnboardingViewModel: ObservableObject {
     /// Voice input uses the on-device model by default. Start fetching it in the background
     /// while the user grants permissions, unless it is bundled or already downloaded.
     private func prepareSpeechModelIfNeeded() {
-        guard goals.contains(.voice),
-              settingsStore.sttProvider == .localModel,
+        guard settingsStore.sttProvider == .localModel,
               let localModelManager,
               localSTTPreparationTask == nil
         else { return }

@@ -2,8 +2,8 @@ import AppKit
 import Combine
 import SwiftUI
 
-/// First-run setup window: welcome, what to use first, and the permissions those uses need.
-/// Copy stays to one short line per screen; keys, chips and the hero carry the rest.
+/// First-run setup window: welcome, permissions, one guide per feature, then every key on one page.
+/// Copy stays to one short line per screen; keys, chips and the drawn scenes carry the rest.
 struct OnboardingView: View {
     @ObservedObject var viewModel: OnboardingViewModel
     let appearanceMode: AppearanceMode
@@ -12,7 +12,6 @@ struct OnboardingView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var heroSlide = 0
 
-    private let goalColumns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 3)
     private let heroTimer = Timer.publish(every: 3.2, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -23,8 +22,10 @@ struct OnboardingView: View {
                 Group {
                     switch viewModel.currentStep {
                     case .welcome: welcomeStep
-                    case .goals: goalsStep
                     case .permissions: permissionsStep
+                    case .finish: finishStep
+                    case .voice, .launcher, .tools, .ring, .chat:
+                        if let feature = viewModel.currentStep.feature { featureStep(feature) }
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -52,7 +53,7 @@ struct OnboardingView: View {
         .onReceive(heroTimer) { _ in
             guard viewModel.currentStep == .welcome, !reduceMotion else { return }
             withAnimation(.easeInOut(duration: 0.5)) {
-                heroSlide = (heroSlide + 1) % OnboardingWelcomeHero.Scene.allCases.count
+                heroSlide = (heroSlide + 1) % OnboardingWelcomeHero.Scene.welcome.count
             }
         }
     }
@@ -73,7 +74,7 @@ struct OnboardingView: View {
     private var topBar: some View {
         HStack(spacing: 6) {
             if viewModel.currentStep != .welcome {
-                ForEach([OnboardingViewModel.Step.goals, .permissions], id: \.self) { step in
+                ForEach(viewModel.visibleSteps.filter { $0 != .welcome }, id: \.self) { step in
                     Capsule()
                         .fill(step == viewModel.currentStep ? secondaryText : borderColor)
                         .frame(width: step == viewModel.currentStep ? 20 : 6, height: 6)
@@ -97,37 +98,47 @@ struct OnboardingView: View {
                 StudioButton(title: L("onboarding.v2.action.start"), systemImage: nil, variant: .primary) {
                     viewModel.advance()
                 }
-            case .goals:
-                StudioButton(title: L("onboarding.v2.action.back"), systemImage: nil, variant: .ghost) {
-                    viewModel.goBack()
-                }
+            case .permissions:
+                backButton
                 Spacer()
+                if !viewModel.allRequiredPermissionsGranted {
+                    StudioButton(title: L("onboarding.v2.action.later"), systemImage: nil, variant: .ghost) {
+                        viewModel.skipPermissions()
+                    }
+                }
                 StudioButton(
                     title: L("onboarding.v2.action.continue"), systemImage: nil, variant: .primary,
                     isDisabled: !viewModel.canAdvance
                 ) {
                     viewModel.advance()
                 }
-            case .permissions:
-                StudioButton(title: L("onboarding.v2.action.back"), systemImage: nil, variant: .ghost) {
-                    viewModel.goBack()
-                }
+            case .voice, .launcher, .tools, .ring, .chat:
+                backButton
                 Spacer()
-                if !viewModel.allRequiredPermissionsGranted {
-                    StudioButton(title: L("onboarding.v2.action.later"), systemImage: nil, variant: .ghost) {
-                        viewModel.finishLater()
-                    }
+                if let index = viewModel.featureSteps.firstIndex(of: viewModel.currentStep) {
+                    Text("\(index + 1) / \(viewModel.featureSteps.count)")
+                        .font(.studioBody(12))
+                        .foregroundStyle(tertiaryText)
                 }
-                StudioButton(
-                    title: L("onboarding.v2.action.finish"), systemImage: nil, variant: .primary,
-                    isDisabled: !viewModel.canAdvance
-                ) {
+                StudioButton(title: L("onboarding.v2.action.next"), systemImage: nil, variant: .primary) {
+                    viewModel.advance()
+                }
+            case .finish:
+                backButton
+                Spacer()
+                StudioButton(title: L("onboarding.v2.action.finish"), systemImage: nil, variant: .primary) {
                     viewModel.advance()
                 }
             }
         }
         .padding(.horizontal, 28)
         .frame(height: 72)
+    }
+
+    private var backButton: some View {
+        StudioButton(title: L("onboarding.v2.action.back"), systemImage: nil, variant: .ghost) {
+            viewModel.goBack()
+        }
     }
 
     private var languageMenu: some View {
@@ -165,7 +176,7 @@ struct OnboardingView: View {
                     .foregroundStyle(secondaryText)
                     .padding(.top, 12)
                 VStack(spacing: 2) {
-                    ForEach(OnboardingWelcomeHero.Scene.allCases, id: \.self) { scene in
+                    ForEach(OnboardingWelcomeHero.Scene.welcome, id: \.self) { scene in
                         verbRow(scene)
                     }
                 }
@@ -175,7 +186,7 @@ struct OnboardingView: View {
             .frame(maxHeight: .infinity)
             .padding(.bottom, 20)
 
-            OnboardingWelcomeHero(scene: OnboardingWelcomeHero.Scene.allCases[heroSlide])
+            OnboardingWelcomeHero(scene: OnboardingWelcomeHero.Scene.welcome[heroSlide])
                 .padding(.bottom, 6)
         }
         .padding(.leading, 56)
@@ -183,10 +194,10 @@ struct OnboardingView: View {
     }
 
     private func verbRow(_ scene: OnboardingWelcomeHero.Scene) -> some View {
-        let isOn = OnboardingWelcomeHero.Scene.allCases[heroSlide] == scene
+        let isOn = OnboardingWelcomeHero.Scene.welcome[heroSlide] == scene
         return Button {
             withAnimation(.easeInOut(duration: 0.4)) {
-                heroSlide = OnboardingWelcomeHero.Scene.allCases.firstIndex(of: scene) ?? 0
+                heroSlide = OnboardingWelcomeHero.Scene.welcome.firstIndex(of: scene) ?? 0
             }
         } label: {
             HStack(spacing: 12) {
@@ -216,165 +227,145 @@ struct OnboardingView: View {
     private func keys(for scene: OnboardingWelcomeHero.Scene) -> [String] {
         switch scene {
         case .voice: HotkeyFormat.components(viewModel.activationHotkey)
-        case .launcher: viewModel.launcherHotkey.map(HotkeyFormat.components) ?? []
+        case .launcher, .tools: viewModel.launcherHotkey.map(HotkeyFormat.components) ?? []
         case .ring: viewModel.ringHotkey.map(HotkeyFormat.components) ?? []
         case .chat: ["⌘", "↩"]
         }
     }
 
-    // MARK: - Goals
+    // MARK: - Feature guides
 
-    private var goalsStep: some View {
-        HStack(alignment: .top, spacing: 24) {
+    private func featureStep(_ feature: OnboardingFeature) -> some View {
+        HStack(spacing: 22) {
             VStack(alignment: .leading, spacing: 0) {
-                stepTitle(L("onboarding.v2.goals.title"), subtitle: L("onboarding.v2.goals.subtitle"))
-                LazyVGrid(columns: goalColumns, spacing: 10) {
-                    ForEach(OnboardingGoal.allCases) { goal in
-                        goalTile(
-                            title: goal.title, detail: goal.detail, symbol: goal.symbol,
-                            isSelected: viewModel.goals.contains(goal)
-                        ) {
-                            viewModel.toggleGoal(goal)
-                        }
-                    }
-                    goalTile(
-                        title: L("onboarding.v2.goals.all.title"), detail: L("onboarding.v2.goals.all.detail"),
-                        symbol: "checkmark.circle", isSelected: viewModel.allGoalsSelected, dashed: true
-                    ) {
-                        viewModel.toggleAllGoals()
+                Image(systemName: feature.symbol)
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(StudioTheme.accent)
+                    .frame(width: 48, height: 48)
+                    .background(RoundedRectangle(cornerRadius: 13, style: .continuous).fill(mutedFill))
+                stepTitle(feature.title, subtitle: feature.caption)
+                    .padding(.top, 20)
+                VStack(spacing: 0) {
+                    ForEach(Array(viewModel.shortcuts(for: feature).enumerated()), id: \.element.id) { index, shortcut in
+                        if index > 0 { Divider().opacity(0.6) }
+                        shortcutRow(shortcut)
                     }
                 }
-                .padding(.top, 20)
+                .padding(.horizontal, 16)
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(cardFill))
+                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(borderColor, lineWidth: 1))
+                .padding(.top, 24)
+                if feature == .voice {
+                    voicePractice
+                        .padding(.top, 14)
+                }
             }
-            planPanel
-                .frame(width: 250)
-                .padding(.top, 8)
+            .frame(width: 380, alignment: .leading)
+            .frame(maxHeight: .infinity, alignment: .top)
+            .padding(.top, 8)
+
+            OnboardingWelcomeHero(scene: .init(feature), showsCaption: false)
+                .padding(.bottom, 6)
         }
-        .padding(.horizontal, 48)
+        .padding(.leading, 56)
+        .padding(.trailing, 24)
+    }
+
+    private func shortcutRow(_ shortcut: OnboardingShortcut) -> some View {
+        HStack(spacing: 12) {
+            Text(shortcut.title)
+                .font(.studioBody(13))
+                .foregroundStyle(primaryText)
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            if shortcut.keys.isEmpty {
+                Text(L("onboarding.v2.shortcut.notSet"))
+                    .font(.studioBody(12))
+                    .foregroundStyle(tertiaryText)
+            } else {
+                OnboardingKeycaps(keys: shortcut.keys)
+            }
+        }
+        .frame(height: 44)
+    }
+
+    /// Voice input writes into Typeflux's own text views too, so the guide can be tried in place.
+    private var voicePractice: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ZStack(alignment: .topLeading) {
+                TextEditor(text: $viewModel.voicePracticeText)
+                    .font(.studioBody(13))
+                    .scrollContentBackground(.hidden)
+                    .padding(8)
+                if viewModel.voicePracticeText.isEmpty {
+                    Text(L("onboarding.v2.voice.practice.placeholder", HotkeyFormat.display(viewModel.activationHotkey)))
+                        .font(.studioBody(13))
+                        .foregroundStyle(tertiaryText)
+                        .padding(.horizontal, 13)
+                        .padding(.vertical, 8)
+                        .allowsHitTesting(false)
+                }
+            }
+            .frame(height: 76)
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(cardFill))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(viewModel.didPracticeVoice ? StudioTheme.success.opacity(0.5) : borderColor, lineWidth: 1)
+            )
+            if viewModel.didPracticeVoice {
+                Label(L("onboarding.v2.voice.practice.done"), systemImage: "checkmark.circle.fill")
+                    .font(.studioBody(12, weight: .medium))
+                    .foregroundStyle(StudioTheme.success)
+            }
+        }
+    }
+
+    // MARK: - Finish
+
+    private var finishStep: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            stepTitle(L("onboarding.v2.finish.title"), subtitle: L("onboarding.v2.finish.subtitle"))
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                ForEach(OnboardingFeature.allCases) { feature in
+                    finishCard(feature)
+                }
+            }
+            .padding(.top, 22)
+        }
+        .padding(.horizontal, 56)
         .padding(.top, 4)
     }
 
-    private func goalTile(
-        title: String, detail: String, symbol: String, isSelected: Bool, dashed: Bool = false,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 0) {
-                Image(systemName: symbol)
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(isSelected ? StudioTheme.accent : primaryText)
-                    .frame(width: 40, height: 40)
-                    .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(mutedFill))
-                Text(title)
+    private func finishCard(_ feature: OnboardingFeature) -> some View {
+        let shortcut = viewModel.shortcuts(for: feature).first
+        return HStack(spacing: 12) {
+            Image(systemName: feature.symbol)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(primaryText)
+                .frame(width: 34, height: 34)
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(mutedFill))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(feature.title)
                     .font(.studioBody(13.5, weight: .semibold))
                     .foregroundStyle(primaryText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
-                    .padding(.top, 14)
-                Text(detail)
+                Text(shortcut?.title ?? "")
                     .font(.studioBody(12))
                     .foregroundStyle(secondaryText)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 3)
+                    .lineLimit(1)
             }
-            .frame(maxWidth: .infinity, minHeight: 132, alignment: .topLeading)
-            .padding(14)
-            .background(
-                RoundedRectangle(cornerRadius: 15, style: .continuous)
-                    .fill(isSelected ? StudioTheme.accentSoft : cardFill)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 15, style: .continuous)
-                    .stroke(
-                        isSelected ? StudioTheme.accent.opacity(0.7) : borderColor,
-                        style: StrokeStyle(lineWidth: 1, dash: dashed && !isSelected ? [4, 3] : [])
-                    )
-            )
-            .overlay(alignment: .topTrailing) { selectionMark(isSelected).padding(12) }
-            .contentShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-
-    private func selectionMark(_ isSelected: Bool) -> some View {
-        ZStack {
-            Circle()
-                .fill(isSelected ? StudioTheme.accent : .clear)
-            Circle()
-                .stroke(isSelected ? StudioTheme.accent : borderColor, lineWidth: 1.5)
-            if isSelected {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.white)
+            Spacer(minLength: 8)
+            if let keys = shortcut?.keys, !keys.isEmpty {
+                OnboardingKeycaps(keys: keys)
+            } else {
+                Text(L("onboarding.v2.shortcut.notSet"))
+                    .font(.studioBody(12))
+                    .foregroundStyle(tertiaryText)
             }
         }
-        .frame(width: 20, height: 20)
-    }
-
-    private var planPanel: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(L("onboarding.v2.plan.title"))
-                .font(.studioBody(13.5, weight: .semibold))
-                .foregroundStyle(primaryText)
-            Text(viewModel.goals.isEmpty
-                ? L("onboarding.v2.plan.empty")
-                : L("onboarding.v2.plan.summary", viewModel.goals.count, viewModel.estimatedMinutes))
-                .font(.studioBody(12))
-                .foregroundStyle(tertiaryText)
-                .padding(.top, 3)
-                .padding(.bottom, 10)
-            ForEach(Array(viewModel.orderedGoals.enumerated()), id: \.element) { index, goal in
-                Divider().opacity(0.6)
-                HStack(spacing: 10) {
-                    Text("\(index + 1)")
-                        .font(.studioBody(11, weight: .semibold))
-                        .foregroundStyle(secondaryText)
-                        .frame(width: 20, height: 20)
-                        .background(Circle().fill(mutedFill))
-                    Text(goal.title)
-                        .font(.studioBody(13))
-                        .foregroundStyle(primaryText)
-                        .lineLimit(1)
-                    Spacer(minLength: 4)
-                    Text(L("onboarding.v2.plan.minutes", goal.estimatedMinutes))
-                        .font(.studioBody(11.5))
-                        .foregroundStyle(tertiaryText)
-                }
-                .padding(.vertical, 8)
-            }
-            Divider().opacity(0.6)
-            planSection(L("onboarding.v2.plan.permissionsNow")) {
-                if viewModel.requiredPermissionIDs.isEmpty {
-                    Text(L("onboarding.v2.plan.noPermissions"))
-                        .font(.studioBody(12))
-                        .foregroundStyle(tertiaryText)
-                } else {
-                    ForEach(viewModel.requiredPermissionIDs) { id in
-                        chip(id.title, symbol: permissionSymbol(id))
-                    }
-                }
-            }
-            planSection(L("onboarding.v2.plan.permissionsLater")) {
-                chip(L("onboarding.v2.later.screen"), symbol: "rectangle.dashed")
-                chip(L("onboarding.v2.later.ai"), symbol: "sparkles")
-            }
-        }
-        .padding(18)
-        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(cardFill))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(borderColor, lineWidth: 1))
-    }
-
-    private func planSection(_ title: String, @ViewBuilder content: () -> some View) -> some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Text(title)
-                .font(.studioBody(11.5))
-                .foregroundStyle(tertiaryText)
-            HStack(spacing: 6) { content() }
-        }
-        .padding(.top, 12)
+        .padding(.horizontal, 16)
+        .frame(height: 64)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(cardFill))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(borderColor, lineWidth: 1))
     }
 
     // MARK: - Permissions
@@ -426,8 +417,8 @@ struct OnboardingView: View {
                     .font(.studioBody(12.5))
                     .foregroundStyle(secondaryText)
                 HStack(spacing: 5) {
-                    ForEach(viewModel.goals(using: snapshot.id)) { goal in
-                        chip(goal.title, symbol: nil)
+                    ForEach(OnboardingFeature.features(using: snapshot.id)) { feature in
+                        chip(feature.title, symbol: nil)
                     }
                 }
                 .padding(.top, 4)

@@ -1,18 +1,34 @@
 import SwiftUI
 
-/// The welcome screen's right-hand panel: one small, real-looking scene per verb
-/// (speak, find, swipe, ask). Scenes are drawn, not screenshots, so they follow the theme.
+/// One small, real-looking scene per feature: the welcome screen rotates through the four verbs
+/// (speak, find, swipe, ask) and each guide screen shows its own. Scenes are drawn, not
+/// screenshots, so they follow the theme.
 struct OnboardingWelcomeHero: View {
     enum Scene: CaseIterable, Hashable {
         case voice
         case launcher
+        case tools
         case ring
         case chat
+
+        /// The verbs the welcome screen lists and rotates through.
+        static let welcome: [Scene] = [.voice, .launcher, .ring, .chat]
+
+        init(_ feature: OnboardingFeature) {
+            switch feature {
+            case .voice: self = .voice
+            case .launcher: self = .launcher
+            case .tools: self = .tools
+            case .ring: self = .ring
+            case .chat: self = .chat
+            }
+        }
 
         var symbol: String {
             switch self {
             case .voice: "mic"
             case .launcher: "magnifyingglass"
+            case .tools: "square.grid.2x2"
             case .ring: "circle.circle"
             case .chat: "bubble.left.and.bubble.right"
             }
@@ -22,11 +38,13 @@ struct OnboardingWelcomeHero: View {
             switch self {
             case .voice: "voice"
             case .launcher: "launcher"
+            case .tools: "tools"
             case .ring: "ring"
             case .chat: "chat"
             }
         }
 
+        /// Only the welcome scenes have a verb.
         var verb: String { L("onboarding.v2.verb.\(key)") }
         var featureName: String { L("onboarding.v2.verb.\(key).detail") }
         var caption: String { L("onboarding.v2.hero.\(key)") }
@@ -35,6 +53,7 @@ struct OnboardingWelcomeHero: View {
             switch self {
             case .voice: Color(red: 1, green: 0.44, blue: 0.32)
             case .launcher: Color(red: 0.27, green: 0.55, blue: 1)
+            case .tools: Color(red: 0.2, green: 0.75, blue: 0.6)
             case .ring: Color(red: 0.67, green: 0.39, blue: 1)
             case .chat: Color(red: 1, green: 0.67, blue: 0.24)
             }
@@ -42,6 +61,8 @@ struct OnboardingWelcomeHero: View {
     }
 
     let scene: Scene
+    /// Guide screens already say the same thing in their title.
+    var showsCaption = true
     /// Redraws the scene text when the language changes mid-setup.
     @ObservedObject private var localization = AppLocalization.shared
     @Environment(\.colorScheme) private var colorScheme
@@ -57,6 +78,7 @@ struct OnboardingWelcomeHero: View {
                 switch scene {
                 case .voice: voiceScene
                 case .launcher: launcherScene
+                case .tools: toolsScene
                 case .ring: ringScene
                 case .chat: chatScene
                 }
@@ -64,10 +86,12 @@ struct OnboardingWelcomeHero: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .id(scene)
             .transition(.opacity)
-            Text(scene.caption)
-                .font(.studioBody(12.5))
-                .foregroundStyle(colorScheme == .dark ? Color.white : StudioTheme.textPrimary)
-                .padding(20)
+            if showsCaption {
+                Text(scene.caption)
+                    .font(.studioBody(12.5))
+                    .foregroundStyle(colorScheme == .dark ? Color.white : StudioTheme.textPrimary)
+                    .padding(20)
+            }
         }
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -139,6 +163,46 @@ struct OnboardingWelcomeHero: View {
         .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Color.white.opacity(0.14), lineWidth: 1))
         .shadow(color: .black.opacity(0.35), radius: 24, y: 14)
         .padding(.horizontal, 30)
+        .padding(.bottom, 40)
+    }
+
+    /// A word translated in place, with a GIF recording running below.
+    private var toolsScene: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            document {
+                VStack(alignment: .leading, spacing: 10) {
+                    (Text("We met by pure ") + Text("serendipity").foregroundColor(StudioTheme.accent) + Text("."))
+                        .font(.studioBody(14))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                    HStack(spacing: 8) {
+                        Image(systemName: "character.bubble")
+                        Text(L("onboarding.v2.hero.launcher.result"))
+                            .lineLimit(1)
+                    }
+                    .font(.studioBody(12.5))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background(RoundedRectangle(cornerRadius: 9).fill(StudioTheme.textPrimary.opacity(0.06)))
+                }
+            }
+            HStack(spacing: 10) {
+                Circle().fill(Color.red).frame(width: 9, height: 9)
+                Text("0:07")
+                    .font(.system(size: 12.5, weight: .semibold, design: .monospaced))
+                Text("GIF")
+                    .font(.studioBody(11, weight: .semibold))
+                    .padding(.horizontal, 7)
+                    .frame(height: 20)
+                    .background(Capsule().fill(Color.white.opacity(0.16)))
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 15)
+            .frame(height: 40)
+            .background(Capsule().fill(Color.black.opacity(0.88)))
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.horizontal, 34)
         .padding(.bottom, 40)
     }
 
