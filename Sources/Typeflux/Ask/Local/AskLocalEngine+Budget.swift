@@ -3,6 +3,7 @@ import Foundation
 extension AskLocalEngine {
     func budgetJournal(_ record: AskLocalRecord, createIfMissing: Bool = false,
                        _ change: (inout AskBudgetController) throws -> Void) throws -> AskBudgetController? {
+        try requireStoreOwnership()
         guard let run = record.conversation.run, run.budgetEnabled == true else { return nil }
         guard let root = run.budgetRootId, let deadline = run.budgetDeadline,
               let limits = run.budgetLimits else { throw AskBudgetError.invalid }

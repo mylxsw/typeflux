@@ -1,0 +1,61 @@
+{
+  "covered": 69,
+  "total": 72,
+  "percent": 95.83,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskApplicationService.swift",
+      "covered": 7,
+      "executable_changed_lines": 7,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationWindowController.swift",
+      "covered": 12,
+      "executable_changed_lines": 14,
+      "percent": 85.71,
+      "uncovered": [
+        73,
+        90
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Local/AskConversationDirectoryLease.swift",
+      "covered": 24,
+      "executable_changed_lines": 25,
+      "percent": 96.0,
+      "uncovered": [
+        25
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Local/AskDeviceAPI.swift",
+      "covered": 6,
+      "executable_changed_lines": 6,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Local/AskLocalEngine+Budget.swift",
+      "covered": 1,
+      "executable_changed_lines": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Local/AskLocalEngine.swift",
+      "covered": 17,
+      "executable_changed_lines": 17,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowEditorWindowController.swift",
+      "covered": 2,
+      "executable_changed_lines": 2,
+      "percent": 100.0,
+      "uncovered": []
+    }
+  ]
+}

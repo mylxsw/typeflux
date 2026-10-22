@@ -6636,3 +6636,5 @@
 "onboarding.v2.finish.title" = "준비 완료";
 "onboarding.v2.finish.subtitle" = "이 키만 기억하면 돼요.";
 "ask.history.syncPending" = "일부 대화가 아직 동기화되지 않았습니다. 자동으로 다시 시도합니다.";
+
+"ask.storage.inUse" = "다른 Typeflux 프로세스가 이 대화를 사용 중입니다. 해당 프로세스를 종료한 후 다시 시도하세요.";

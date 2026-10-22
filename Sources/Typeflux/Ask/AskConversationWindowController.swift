@@ -43,9 +43,24 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
     /// Keeps production composition testable without opening workspace windows.
     static func makeAPI(settings: SettingsStore, modelLibrary: AskModelLibrary,
-                        cloud: any AskAPI = AskAPIClient(), local: (any AskAPI)? = nil,
-                        modelClient: any AskModelCompleting = AskDeviceModelClient(),
-                        device: (any AskAPI)? = nil) -> AskApplicationAPI {
+                        cloud: (any AskAPI)? = nil, local: (any AskAPI)? = nil,
+                        modelClient: (any AskModelCompleting)? = nil,
+                        device: (any AskAPI)? = nil,
+                        service: AskApplicationService = .shared) -> AskApplicationAPI {
+        let create = {
+            makeConfiguredAPI(settings: settings, modelLibrary: modelLibrary,
+                              cloud: cloud ?? AskAPIClient(), local: local,
+                              modelClient: modelClient ?? AskDeviceModelClient(), device: device)
+        }
+        // Explicitly injected dependencies describe an isolated composition.
+        if cloud != nil || local != nil || modelClient != nil || device != nil { return create() }
+        return service.resolve(create: create)
+    }
+
+    private static func makeConfiguredAPI(settings: SettingsStore, modelLibrary: AskModelLibrary,
+                                         cloud: any AskAPI, local: (any AskAPI)?,
+                                         modelClient: any AskModelCompleting,
+                                         device: (any AskAPI)?) -> AskApplicationAPI {
         let search = AskSearchSettings(defaults: settings.defaults)
         let deviceAPI = device ?? AskDeviceAPI(root: TypefluxDataDirectories.data.appendingPathComponent("AskDevice", isDirectory: true),
             legacy: cloud, resolveAccount: { token in
@@ -55,7 +70,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                 }
             }, refreshToken: { owner in
                 await MainActor.run { AuthState.shared.userProfile?.id == owner ? AuthState.shared.accessToken : nil }
-            }, factory: { owner, directory in
+            }, requiresExclusiveAccess: true, factory: { owner, directory in
                 let token: @Sendable () async throws -> String = {
                     try await MainActor.run {
                         guard AuthState.shared.userProfile?.id == owner, let token = AuthState.shared.accessToken, !token.isEmpty else { throw AuthError.unauthorized }
@@ -72,7 +87,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                         let credential = try? await token()
                         return await AskAuxiliaryInference.complete(inference, run: run, device: device,
                             library: modelLibrary, client: modelClient, cloudToken: credential)
-                    }, builtinTools: AskDeviceBuiltinHost(transport: AskDeviceTransport(), token: token), allowsCloudModels: true)
+                    }, builtinTools: AskDeviceBuiltinHost(transport: AskDeviceTransport(), token: token), allowsCloudModels: true, requiresExclusiveAccess: true)
             })
         return AskApplicationAPI.routed(
             cloud: deviceAPI, local: local ?? AskLocalEngine(webTools: AskLocalWebTools(searchProvider: {
@@ -82,7 +97,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             return AskContextLimits(window: model?.contextWindowTokens ?? 32768,
                                     maxOutput: model?.maxOutputTokens ?? 4096,
                                     known: model?.contextWindowTokens != nil)
-        }, summarize: makeSummary(modelLibrary: modelLibrary, modelClient: modelClient)))
+        }, summarize: makeSummary(modelLibrary: modelLibrary, modelClient: modelClient), requiresExclusiveAccess: true))
     }
 
     /// Retains the host transport for auxiliary invocations in both production and isolated composition.

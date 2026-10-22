@@ -105,13 +105,14 @@ private actor DeviceTestTransport: AskDeviceTransporting {
     }
 
     private func make(root: URL, legacy: AskTestAPI, transport: DeviceTestTransport, session: DeviceTestSession,
-                      clock: DeviceTestClock) -> AskDeviceAPI {
+                      clock: DeviceTestClock, exclusive: Bool = false) -> AskDeviceAPI {
         AskDeviceAPI(
             root: root,
             legacy: legacy,
             transport: transport,
             resolveAccount: { try await session.account($0) },
             refreshToken: { await session.token($0) },
+            requiresExclusiveAccess: exclusive,
             factory: { _, directory in AskLocalEngine(
                 directory: directory,
                 now: { clock.now() },
@@ -516,6 +517,44 @@ private actor DeviceTestTransport: AskDeviceTransporting {
             #expect(await api.historySyncPending(token: "user-a"))
             let list = try await api.list(token: "user-a", offset: 0)
             #expect(list.map(\.id).contains(initial.id))
+        }
+    }
+}
+
+
+extension AskDeviceAPITests {
+    @Test func exclusiveAccountRejectsBeforeSyncAndAllowsAnIndependentAccount() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("device-owner-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let transport = DeviceTestTransport(), session = DeviceTestSession(), legacy = AskTestAPI()
+        let api = make(root: root, legacy: legacy, transport: transport, session: session,
+                       clock: DeviceTestClock(), exclusive: true)
+        var lease: AskConversationDirectoryLease? = try .init(directory: root.appendingPathComponent("user-a"))
+        #expect(lease != nil)
+        await #expect(throws: AskConversationOwnershipError.inUse) {
+            _ = try await api.send(conversationId: "chat", request: request(), token: "user-a")
+        }
+        await #expect(throws: AskConversationOwnershipError.inUse) {
+            _ = try await api.list(token: "user-a", offset: 0)
+        }
+        await #expect(throws: AskConversationOwnershipError.inUse) {
+            try await api.delete(conversationId: "chat", token: "user-a")
+        }
+        #expect(await transport.attempts.isEmpty)
+        #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("user-a/sync.json").path))
+        await session.use("user-b")
+        _ = try await api.send(conversationId: "other", request: request(temporary: true), token: "user-b")
+        await session.use("user-a")
+        lease = nil
+        let admitted = try await api.send(conversationId: "chat", request: request(temporary: true), token: "user-a")
+        #expect(admitted.run?.status == "waiting_inference")
+        #expect(throws: AskConversationOwnershipError.inUse) {
+            try AskConversationDirectoryLease(directory: root.appendingPathComponent("user-a"))
+        }
+        await api.shutdown()
+        // Stopping synchronization alone is not a transfer of execution ownership.
+        #expect(throws: AskConversationOwnershipError.inUse) {
+            try AskConversationDirectoryLease(directory: root.appendingPathComponent("user-a"))
         }
     }
 }
