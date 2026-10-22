@@ -423,6 +423,11 @@ body.bare .desk { border-radius: 0; }
 .flow .path.on { stroke: var(--acc); stroke-dasharray: none; opacity: .55; }
 .flow .dotm { fill: var(--acc); }
 .flow .x { stroke: var(--warn); stroke-width: 2.2; stroke-linecap: round; }
+.pvgrid { position: absolute; left: 20px; right: 20px; top: 130px; display: grid; grid-template-columns: 170px repeat(3, 1fr); column-gap: 12px; border-radius: 14px; background: var(--panel); border: 1px solid var(--hair); padding: 6px 0; }
+.pvl { padding: 11px 16px; font-size: 12px; color: var(--t3); border-top: 1px solid var(--hair); }
+.pvc { padding: 11px 12px; font-size: 12.5px; color: var(--t2); border-top: 1px solid var(--hair); }
+.pvl:nth-child(-n+4), .pvc:nth-child(-n+4) { border-top: none; }
+.pvc.on { color: var(--t1); font-weight: 560; background: var(--acc-soft); }
 .pcards { position: absolute; left: 20px; right: 20px; top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .pcard { all: unset; box-sizing: border-box; border-radius: 14px; background: var(--panel); border: 1px solid var(--hair); padding: 14px 15px; cursor: pointer; color: var(--t1); transition: all .2s; }
 .pcard.on { border-color: color-mix(in srgb, var(--acc) 70%, transparent); background: var(--acc-soft); }
@@ -568,7 +573,7 @@ const fresh = () => ({
   rc: { slots: ["dictation", "ask", "translate", "screenshot", "ocr", "clipboard"] },
   chat: { phase: "idle", ctxScreen: true, ctxSel: true, stream: 0 },
   ag: { mode: "standard", step: 0, denied: false },
-  pv: { mode: "private" },
+  pv: { mode: "cloud" },
 });
 let st = fresh();
 
@@ -717,7 +722,7 @@ BEAT["v-dictate"] = {
   },
 };
 const aiCard = `<div class="cardx" style="left:110px;right:190px;top:110px"><div style="display:flex;gap:10px;align-items:center;font-weight:650;font-size:15px">${ic("spark")}改写需要连接 AI</div><p class="muted" style="font-size:12.5px;margin:6px 0 14px">只需要这一次。语音识别仍然在本机完成。</p>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><button class="choice" data-act="ai-connect"><b>${ic("cloud")}Typeflux Cloud</b><span>登录即用 · 每月免费额度</span></button><button class="choice" data-act="ai-connect"><b>${ic("key")}自己的 API Key</b><span>OpenAI、Claude、DeepSeek…</span></button><button class="choice" data-act="ai-connect"><b>${ic("cpu")}本机模型</b><span>Ollama · 不离开这台 Mac</span></button></div></div>`;
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><button class="choice" data-act="ai-connect"><b>${ic("cloud")}Typeflux Cloud</b><span>登录即用 · 每月免费额度</span></button><button class="choice" data-act="ai-connect"><b>${ic("key")}自己的 API Key</b><span>OpenAI、Claude、DeepSeek…</span></button><button class="choice" data-act="ai-connect"><b>${ic("cpu")}本机模型</b><span>Ollama · 在这台 Mac 上运行</span></button></div></div>`;
 BEAT["v-rewrite"] = {
   short: "说一句话改写",
   title: () => `选中文字，按住 ${kc("fn")} 说你想怎么改`,
@@ -1002,7 +1007,7 @@ BEAT["r-custom"] = {
 
 /* ================= CHAT ================= */
 function chatShell(title, msgs, comp) {
-  return `<div class="chat"><div class="cs"><div class="ci on">${title}</div><div class="ci">请假邮件</div><div class="ci">周报整理</div><div class="gh">本机 · 私密</div><div class="ci">${ic("lock", "width:12px;height:12px;vertical-align:-1px")} 合同条款对比</div></div>
+  return `<div class="chat"><div class="cs"><div class="ci on">${title}</div><div class="ci">请假邮件</div><div class="ci">周报整理</div><div class="gh">仅存本机</div><div class="ci">${ic("lock", "width:12px;height:12px;vertical-align:-1px")} 合同条款对比</div></div>
     <div class="cm"><div class="ch">${title}<span class="r">${ic("cloud", "width:14px;height:14px")}Typeflux Cloud</span></div><div class="msgs" id="msgs">${msgs}</div>${comp}</div></div>`;
 }
 const ANS = "<b>7 月增长最快</b>，环比 +32%（从 6.1 万到 8.8 万）。主要来自「应用商店」渠道：7 月上了推荐位，这一列单月多了 2.1 万；其他渠道基本持平。要不要把三个月按渠道拆开画成图？";
@@ -1053,23 +1058,28 @@ BEAT["c-agent"] = {
     return chatShell("整理截图", m, comp) + `<div class="modebar">工具权限<div class="seg">${Object.entries(MODES).map(([k, v]) => `<button class="${st.ag.mode === k ? "on" : ""}" data-mode="${k}">${v[0]}</button>`).join("")}</div><span class="faint" style="padding-right:8px">${MODES[st.ag.mode][1]}</span></div>`;
   },
 };
-const PV = { cloud: ["cloud", "云端对话", "Typeflux Cloud 的模型，能联网搜索、识图，在你的设备间同步。", "默认"], private: ["lock", "私密对话", "用本机模型或你自己的 API Key，内容只存在这台 Mac 上，不经过 Typeflux 服务器。", "⇧⌘N"], temp: ["eyeoff", "临时对话", "不写进历史、不进入记忆，关掉窗口就删除。", "/temp"] };
+const PV = {
+  cloud: ["cloud", "云端同步", "保存在你的 Typeflux 账号里，在 Mac、iPhone 和网页上都能接着聊。", "默认", "⌘N"],
+  private: ["lock", "仅存本机", "只保存在这台 Mac 上，使用你自己配置的模型（API Key 或 Ollama）。", "", "⇧⌘N"],
+  temp: ["clock", "临时对话", "不进入历史、不读写记忆，离开这段对话就丢弃。适合一次性的问题。", "", "⌥⌘N"],
+};
+const PV_ROWS = [
+  ["对话记录保存在", { cloud: "你的 Typeflux 账号", private: "这台 Mac", temp: "不保存" }],
+  ["可以用的模型", { cloud: "Typeflux Cloud 模型 · 你自己的模型", private: "你自己的模型", temp: "Typeflux Cloud 模型 · 你自己的模型" }],
+  ["在 iPhone、网页上接着聊", { cloud: "可以", private: "不同步", temp: "不同步" }],
+  ["记忆", { cloud: "会用到", private: "会用到", temp: "不读也不写" }],
+  ["适合", { cloud: "日常大多数对话", private: "离线，或想自己管理数据", temp: "试一下 prompt、一次性的问题" }],
+];
 BEAT["c-private"] = {
-  short: "私密与临时",
-  title: () => `敏感的内容，留在这台 Mac 上`,
-  ins: () => `合同、病历、源代码这类内容，用私密对话或临时对话。点一下，看数据会去哪里。`,
-  hint: () => `选一种对话看看`,
-  doneText: () => `记住了：⇧⌘N 新建私密对话`,
+  short: "对话存在哪里",
+  title: () => `对话存在哪里，由你决定`,
+  ins: () => `每个对话开始前都可以选：云端同步、仅存本机，或者用完不留。输入框左下角的存储图标随时可以改。`,
+  hint: () => `点一种看看有什么不同`,
+  doneText: () => `记住了：⌘N 云端同步 · ⇧⌘N 仅存本机 · ⌥⌘N 临时`,
   stage: () => {
-    const m = st.pv.mode, mac = [190, 135], cloud = [660, 72], local = [660, 198];
-    const d = (a, b) => `M${a[0] + 82},${a[1]} C${(a[0] + b[0]) / 2},${a[1]} ${(a[0] + b[0]) / 2},${b[1]} ${b[0] - 92},${b[1]}`;
-    const dots = (a, b) => st.still ? `<circle class="dotm" r="4.5" cx="${(a[0] + b[0]) / 2}" cy="${(a[1] + b[1]) / 2}"/>` : [0, .33, .66].map(o => `<circle class="dotm" r="4.5"><animateMotion dur="1.8s" begin="-${(o * 1.8).toFixed(2)}s" repeatCount="indefinite" path="${d(a, b)}"/></circle>`).join("");
-    const node = (p, t, s, on, w = 184) => `<rect class="node" x="${p[0] - w / 2}" y="${p[1] - 30}" width="${w}" height="60" rx="15" style="${on ? "stroke:var(--acc)" : ""}"/><text x="${p[0]}" y="${p[1] - 3}" text-anchor="middle">${t}</text><text class="s" x="${p[0]}" y="${p[1] + 16}" text-anchor="middle">${s}</text>`;
-    const blocked = m === "cloud" ? "" : `<g transform="translate(${(mac[0] + cloud[0]) / 2},${(mac[1] + cloud[1]) / 2})"><circle r="11" fill="var(--well)" stroke="var(--warn)" stroke-width="1.5"/><path class="x" d="M-4,-4 L4,4 M4,-4 L-4,4"/></g>`;
-    return `<div class="pcards">${Object.entries(PV).map(([k, v]) => `<button class="pcard ${m === k ? "on" : ""}" data-pv="${k}"><div class="t">${ic(v[0])}${v[1]}<span class="tag" style="margin-left:auto">${v[3]}</span></div><p>${v[2]}</p></button>`).join("")}</div>
-      <div class="flow"><svg viewBox="0 0 856 270"><path class="path ${m === "cloud" ? "on" : ""}" d="${d(mac, cloud)}"/><path class="path ${m !== "cloud" ? "on" : ""}" d="${d(mac, local)}"/>${blocked}${m === "cloud" ? dots(mac, cloud) : dots(mac, local)}
-        ${node(mac, "你的 Mac", m === "temp" ? "关掉窗口就删除" : "保存对话记录", true)}${node(cloud, "Typeflux Cloud", "模型 · 多设备同步", m === "cloud")}${node(local, "本机模型 / 你的 API", "不经过 Typeflux 服务器", m !== "cloud", 200)}
-        ${m === "temp" ? `<text class="s" x="${mac[0]}" y="${mac[1] + 58}" text-anchor="middle">不写入历史 · 不进入记忆</text>` : ""}</svg></div>`;
+    const m = st.pv.mode, keys = Object.keys(PV);
+    return `<div class="pcards">${keys.map(k => { const v = PV[k]; return `<button class="pcard ${m === k ? "on" : ""}" data-pv="${k}"><div class="t">${ic(v[0])}${v[1]}${v[3] ? `<span class="tag acc" style="margin-left:6px">${v[3]}</span>` : ""}<span class="kw" style="margin-left:auto">${v[4]}</span></div><p>${v[2]}</p></button>`; }).join("")}</div>
+      <div class="pvgrid">${PV_ROWS.map(r => `<div class="pvl">${r[0]}</div>${keys.map(k => `<div class="pvc ${m === k ? "on" : ""}">${r[1][k]}</div>`).join("")}`).join("")}</div>`;
   },
 };
 
@@ -1081,7 +1091,7 @@ function keysum(k) {
     launch: [[launchKC(), "启动器", "应用、文件、计算"], [kw("fy") + kw("g") + kw("help"), "关键词", "一共 50 多个"], [kc("⌥") + kc("⌘") + kc("O"), "剪贴板", "找回复制过的"], [kc("⌥") + kc("⌘") + kc("A"), "截图", "标注、钉图、识字"]],
     tools: [[keycaps(combo), "划词翻译", "你刚设好的"], [kw("gif") + kw("lp"), "录屏", "GIF 或 MP4"], [kw("fx"), "工作流", "你的第一个"]],
     ring: [[kc("⌃") + kc("⌥") + kc("Space"), "圆环", "按住、划向、松开"], ["轻按", "保持打开", "点选或按数字"], ["设置 › 圆环", "自定义", "最多 8 个"]],
-    chat: [[kc("⌘") + kc("↩"), "问 AI", "在启动器里"], [kw("/mode"), "工具权限", "严格 · 标准 · YOLO"], [kc("⇧") + kc("⌘") + kc("N"), "私密对话", "只在本机"]],
+    chat: [[kc("⌘") + kc("↩"), "问 AI", "在启动器里"], [kw("/mode"), "工具权限", "严格 · 标准 · YOLO"], [kw("⌘N") + kw("⇧⌘N") + kw("⌥⌘N"), "存储位置", "云端 · 本机 · 临时"]],
   }[k];
 }
 function chapterDone(k) {
@@ -1142,7 +1152,7 @@ const SCREENS = [
   ["5 圆环", "r-custom", "放上常用的", () => playground("r-custom"), "<b>自定义圆环</b>：点左边添加，点圆环上的一项移除，圆环实时重新排布，最多 8 个。"],
   ["6 Agent 对话", "c-ask", "带上下文提问", () => playground("c-ask"), "<b>带着上下文提问</b>：上下文标签可以分别关掉。第一次提问时就地连接 AI，然后会看到「读取屏幕」这一步和逐字出现的回答。"],
   ["6 Agent 对话", "c-agent", "工具权限", () => playground("c-agent"), "<b>工具权限</b>：同一个任务在三种模式下的区别：严格模式每一步都问；标准模式只在改动前问；YOLO 模式全部自动执行，事后可以撤销。切换模式会重新演示一遍；拒绝也会演示。"],
-  ["6 Agent 对话", "c-private", "私密与临时", () => playground("c-private"), "<b>私密与临时对话</b>：数据流向图跟着选择变化，蓝点就是数据去的地方；私密对话和临时对话不会连到 Typeflux Cloud。"],
+  ["6 Agent 对话", "c-private", "对话存在哪里", () => playground("c-private"), "<b>对话存在哪里</b>：沿用产品里已有的「存储位置」概念（云端同步 / 仅存本机 / 临时），按用途对比，而不是按安全程度对比：云端同步是默认推荐，列出它能做到的事；仅存本机和临时是给特定场景的选项。不使用「敏感」「私密」这类暗示云端不安全的词，也不画数据被拦截的图。"],
   ["7 结束", "done-voice", "一章完成", () => chapterDone("voice"), "<b>一章完成</b>：给出这一章的速查按键，并推荐下一章；也可以「今天先到这里」。"],
   ["7 结束", "finish", "全部完成", finish, "<b>全部完成</b>：六个按键就是全部；默认打开「登录 Mac 时自动打开」。"],
   ["8 之后", "menubar", "菜单栏 · 继续上手", menubarScreen, "<b>菜单栏</b>：没学完时，菜单顶部显示进度和下一步。"],
