@@ -54,7 +54,7 @@ These figures are historical denominators, not recalculated from this test-only 
 | Stage 1 / GUL-434 facade | `AskApplicationAPITests` forwarding, routing, cancellation and production caller factories, rerun here |
 | Stage 2 / GUL-435 Go boundary | `TestAskAgentTurnHTTPHostAndPeerAdmission` exercises real handler interfaces and authenticated host dispatch; original boundary acceptance remains in the accepted PR |
 | Stage 3 / GUL-450 run binding | `docs/validation/gul-450/validation.md`: 130/137 (94.89%), correction 32/32; binding fixtures/read-only rejection rerun here |
-| Stage 3 / GUL-453 prompt host | `docs/validation/gul-453/validation.md`: 120/121 (99.17%); production request and worker prompt paths rerun here; issue still awaits parent review |
+| Stage 3 / GUL-453 prompt host | `docs/validation/gul-453/validation.md`: 120/121 (99.17%); production request and worker prompt paths rerun here; parent acceptance is complete; Swift #692 and API #155 are merged, independent of the stale issue status |
 | Stage 3 / GUL-454 built-in host | `docs/validation/gul-454/changed-coverage.json`: 68/68; stock-host and wave suites rerun here |
 | Stage 3 / GUL-455 storage ports | `docs/validation/gul-455/changed-coverage.txt`: 36/36; actual snapshot/budget stores used by reopened local journeys |
 | Stage 3 / GUL-456 model host | `docs/validation/gul-456/changed-coverage.txt`: 16/16; held completion uses production model-client injection |
