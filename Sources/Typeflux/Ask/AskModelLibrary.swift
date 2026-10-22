@@ -105,6 +105,17 @@ final class AskModelLibrary: ObservableObject {
         }
     }
 
+    /// Refresh a different process's committed preferences without writing them back.
+    func reloadFeaturePreferences() {
+        if let next = ModelRegistry.read(defaults), next != registry { registry = next }
+        let nextDefault = defaults.string(forKey: "ask.model.default") ?? "cloud:default"
+        let nextRewrite = defaults.string(forKey: "llm.profile.reference") ?? ""
+        if defaultReference != nextDefault { defaultReference = nextDefault }
+        if rewriteReference != nextRewrite { rewriteReference = nextRewrite }
+        let models = Self.readRewriteModels(defaults) ?? [.init(id: "default", name: "Typeflux Cloud", scenarios: ["rewrite"])]
+        if rewriteCloud != models { rewriteCloud = models }
+    }
+
     nonisolated static func readProfiles(_ defaults: UserDefaults) -> [AskModelProfile] {
         if let registry = ModelRegistry.read(defaults) {
             return registry.providers.filter { $0.id.hasPrefix("endpoint:") }.flatMap { provider in

@@ -113,6 +113,26 @@ struct ScreenRecordingMediaTests {
         _ = try await writer.finish(at: 101.2)
     }
 
+    @Test func completedRecordingsReleaseTheirEncoderBeforeTheNextSession() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        for index in 0..<16 {
+            weak var released: ScreenRecordingWriter?
+            do {
+                let writer = try ScreenRecordingWriter(url: directory.appendingPathComponent("\(index).mov"),
+                    size: CGSize(width: 160, height: 120), options: ScreenRecordingOptions())
+                released = writer
+                try writer.offer(Self.videoSample(at: 100), track: .screen, hostTime: 100)
+                _ = await writer.elapsed(at: 100)
+                try await Task.sleep(for: .milliseconds(100))
+                _ = try await writer.finish(at: 101)
+            }
+            for _ in 0..<100 where released != nil { try await Task.sleep(for: .milliseconds(10)) }
+            #expect(released == nil, "The finished writer must not retain its encoder callback")
+        }
+    }
+
     @Test func `empty and cancelled recordings cannot produce A valid movie`() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

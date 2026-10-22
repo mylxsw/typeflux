@@ -6638,6 +6638,10 @@
 
 "ask.storage.inUse" = "另一个 Typeflux 进程正在使用这些会话，请关闭它后重试。";
 
+"feature.unavailable" = "这个窗口暂时没有响应。输入已保留，其他工具仍可使用。";
+
+"feature.screenshotSaved" = "目标窗口没有响应，截图已保存。";
+
 /* World clock (tz) */
 "worldclock.title" = "世界时钟";
 "worldclock.placeholder" = "城市、时间或时间戳：伦敦、明天 9am 纽约、北京 纽约 伦敦…";

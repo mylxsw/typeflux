@@ -1,7 +1,7 @@
 import Foundation
 
 /// A displaced, unsent workspace draft; it is not a conversation history entry.
-struct AskSavedChatDraft: Identifiable, Equatable, Sendable {
+struct AskSavedChatDraft: Codable, Identifiable, Equatable, Sendable {
     var id: String
     var draft: AskDraft
 }

@@ -6640,6 +6640,10 @@
 
 "ask.storage.inUse" = "另一個 Typeflux 程序正在使用這些對話，請關閉它後重試。";
 
+"feature.unavailable" = "這個視窗暫時沒有回應。輸入已保留，其他工具仍可使用。";
+
+"feature.screenshotSaved" = "目標視窗沒有回應，截圖已儲存。";
+
 /* World clock (tz) */
 "worldclock.title" = "世界時鐘";
 "worldclock.placeholder" = "城市、時間或時間戳：倫敦、明天 9am 紐約、北京 紐約 倫敦…";

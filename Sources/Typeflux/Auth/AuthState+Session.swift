@@ -5,6 +5,11 @@ extension AuthState {
     // MARK: - Session Restore
 
     func restoreSession() {
+        if FeatureProcess.enabled, FeatureProcess.role != .host {
+            cachedStoredToken = nil
+            cachedRefreshToken = nil
+            return
+        }
         let storedToken = loadStoredToken()
         cachedStoredToken = storedToken
         cachedRefreshToken = loadStoredRefreshToken()
@@ -47,6 +52,7 @@ extension AuthState {
     /// (the API defaults to 15 minutes) are therefore renewed before they
     /// lapse instead of on a fixed hourly cadence.
     func startRefreshTimer() {
+        guard !FeatureProcess.enabled || FeatureProcess.role == .host else { return }
         refreshTimer?.invalidate()
         let delay = nextRefreshCheckDelay()
         refreshTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
@@ -86,6 +92,9 @@ extension AuthState {
     }
 
     func refreshStoredAccessToken(force: Bool) async -> AccessTokenRefreshResult {
+        if FeatureProcess.enabled, FeatureProcess.role != .host {
+            return await FeatureAuth.refresh() ? .refreshed : .failed
+        }
         if !force, !isAccessTokenExpiringSoon() {
             return .unavailable
         }

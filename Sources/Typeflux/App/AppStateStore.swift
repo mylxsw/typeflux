@@ -1,6 +1,6 @@
 import Foundation
 
-enum AppStatus: Equatable {
+enum AppStatus: Equatable, Codable, Sendable {
     case idle
     case recording
     case processing

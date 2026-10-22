@@ -114,6 +114,7 @@ extension ScreenRecordingWindowController {
                 defer: false
             )
             panel.retire = { [weak model] in model?.retirePreview() }
+            panel.animationBehavior = .none
             panel.identifier = Self.previewIdentifier
             panel.title = L("recording.previewTitle")
             panel.titleVisibility = .hidden; panel.titlebarAppearsTransparent = true; panel

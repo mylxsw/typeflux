@@ -8,9 +8,11 @@ public enum TypefluxApplication {
         if let code = NativeSystemWorkerCommand.handleInvocation(arguments: Array(CommandLine.arguments.dropFirst())) {
             exit(code)
         }
-        DevLauncher.relaunchAsAppBundleIfNeeded()
+        do { try FeatureProcess.install(arguments: Array(CommandLine.arguments.dropFirst())) }
+        catch { exit(64) }
+        if FeatureProcess.role == .host { DevLauncher.relaunchAsAppBundleIfNeeded() }
 
-        TypefluxDataDirectories.prepare()
+        if FeatureProcess.role == .host { TypefluxDataDirectories.prepare() }
 
         let app = NSApplication.shared
         let settingsStore = SettingsStore()
@@ -71,6 +73,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 AppIconController.apply(settingsStore.appIconStyle)
             }
         }
+        if FeatureProcess.role == .shortcuts {
+            FeatureShortcutHost.shared.start()
+            return
+        }
         appCoordinator = AppCoordinator()
         appCoordinator?.start()
         if ComponentGalleryAccess.opensAtLaunch() {
@@ -80,6 +86,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func application(_: NSApplication, open urls: [URL]) {
         Task { @MainActor in
+            if !FeatureProcess.owns(.host) {
+                if let data = try? JSONEncoder().encode(urls) { FeatureProcess.send(.init(destination: .host, action: "loginURLs", payload: data)) }
+                return
+            }
             await AppLoginURLRouter.handle(
                 urls, login: AuthState.shared.webLoginCoordinator,
                 isLoggedIn: { AuthState.shared.isLoggedIn },
@@ -90,6 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        if !FeatureProcess.owns(.host) { FeatureProcess.send(.init(destination: .host, action: "quit")); return .terminateCancel }
         guard let appCoordinator else { return .terminateNow }
         return termination.begin {
             if appCoordinator.hasScreenRecording {

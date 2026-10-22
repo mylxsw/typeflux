@@ -11,7 +11,11 @@ extension AuthState {
 
     @discardableResult
     func refreshProfile() async -> SessionRefreshResult {
-        await refreshProfile(allowTokenRefresh: true)
+        if FeatureProcess.enabled, !FeatureProcess.owns(.host) {
+            guard await FeatureAuth.refresh(action: "refreshProfile") else { return .failed }
+            return isLoggedIn ? .authenticated : .unauthenticated
+        }
+        return await refreshProfile(allowTokenRefresh: true)
     }
 
     /// Fetches the profile for the session that is current when the call

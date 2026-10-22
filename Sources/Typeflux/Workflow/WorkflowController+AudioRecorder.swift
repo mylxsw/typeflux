@@ -36,10 +36,17 @@ extension WorkflowController {
         return "workflow.audioStart.genericFailure"
     }
 
+    func claimFeatureMicrophone() async throws {
+        guard FeatureProcess.enabled else { return }
+        let data = try await FeatureProcess.route(.init(destination: .host, action: "claimVoice", payload: Data(FeatureProcess.role.rawValue.utf8)))
+        guard try JSONDecoder().decode(Bool.self, from: data) else { throw FeatureRPC.Failure.busy }
+    }
+
     func startAudioRecorderWithStartupRetry(
         levelHandler: @escaping (Float) -> Void,
         audioBufferHandler: ((AVAudioPCMBuffer) -> Void)?
     ) async throws {
+        try await claimFeatureMicrophone()
         var attempt = 1
         while true {
             do {

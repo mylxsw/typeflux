@@ -253,8 +253,8 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     }
 
     /// Called once by application startup, never by a health factory or recovery.
-    func startForApplication(using registry: ModuleRegistry) async {
-        _ = await registry.startAll()
+    func startForApplication(using registry: ModuleRegistry, startModules: Bool = true) async {
+        if startModules { _ = await registry.startAll() }
         guard !Task.isCancelled else { return }
         start(force: true)
     }

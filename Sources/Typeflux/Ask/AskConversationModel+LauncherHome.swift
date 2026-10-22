@@ -94,6 +94,9 @@ extension AskConversationModel {
 
     /// Opens a conversation from the home in the workspace window.
     func openConversationFromLauncher(_ id: String) {
+        guard FeatureProcess.owns(.chat) else {
+            FeatureProcess.send(.init(destination: .chat, action: "selectChat", payload: Data(id.utf8))); return
+        }
         onShowConversation?()
         Task { await select(id) }
     }

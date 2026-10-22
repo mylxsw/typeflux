@@ -15,6 +15,11 @@ struct ModuleRegistration: Sendable {
     let stop: @Sendable (Bool) async -> Bool
     let recover: @Sendable (Bool) async -> ModuleRecoveryResponse
 
+    init(presentation id: ModuleID, recover: @escaping @Sendable (Bool) async -> ModuleRecoveryResponse) {
+        self.id = id; dependencies = []; health = ModuleHealthChannel(); admission = ModuleAdmission()
+        start = {}; stop = { _ in true }; self.recover = recover
+    }
+
     init<Service>(_ id: ModuleID, handle: ModuleHandle<Service>, dependencies: [ModuleID] = []) {
         self.id = id
         self.dependencies = dependencies

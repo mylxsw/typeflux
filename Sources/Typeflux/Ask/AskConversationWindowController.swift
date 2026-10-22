@@ -54,6 +54,10 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         }
         // Explicitly injected dependencies describe an isolated composition.
         if cloud != nil || local != nil || modelClient != nil || device != nil { return create() }
+        if let peer = FeatureProcess.peer {
+            let remote = FeatureAskAPI(connection: peer)
+            return .init(runtime: remote, conversations: remote, modelAccess: remote)
+        }
         return service.resolve(create: create)
     }
 
@@ -126,7 +130,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         conversationFrameAutosaveName = services?.frameAutosaveName ?? "AskConversationWorkspace"
         let workspaces = services?.tools == nil ? AskConversationWorkspaceStore.shared : nil
         let commandJobs: AskCommandJobStore?
-        if services?.tools == nil {
+        if services?.tools == nil, FeatureProcess.owns(.chat) {
             commandJobs = try AskCommandJobStore(root: TypefluxDataDirectories.data.appendingPathComponent("command-jobs", isDirectory: true))
         } else { commandJobs = nil }
         let tools = services?.tools ?? AskLocalTools(
@@ -149,7 +153,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         settings.defaults.set(deviceId, forKey: deviceKey)
         let api: any AskAPI = services?.api ?? Self.makeAPI(settings: settings, modelLibrary: modelLibrary)
         model = AskConversationModel(api: api, cache: cache, tools: tools, workspaces: workspaces,
-                                     capture: services?.capture ?? AskContextCapture(
+                                     capture: services?.capture ?? FeatureIsolationProbe.capture ?? AskContextCapture(
                                          injector: injector, memory: AskMemoryProvider(settings: settings),
                                          permission: screenCapturePermission, capturer: screenCapture
                                      ),
@@ -181,8 +185,10 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         // The word book: words the translation plugin looked up, and the ones starred.
         let wordBook = services?.wordBook ?? wordBookStore ?? RecoveringAskWordBookStore()
         // Forever keeps everything; `purgeHistory(before: nil)` would clear it instead.
-        if let cutoff = settings.askWordBookRetention.cutoff(now: Date()) {
+        if FeatureProcess.owns(.launcher), let cutoff = settings.askWordBookRetention.cutoff(now: Date()) {
             maintenanceTasks.append(Task.detached(priority: .utility) {
+                await FeatureProcess.waitForServices()
+                guard !Task.isCancelled else { return }
                 do { try await wordBook.purgeHistory(before: cutoff) } catch {
                     ErrorLogStore.shared.log("Word book retention cleanup failed")
                 }
@@ -223,16 +229,19 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                               },
                               openConversation: { [weak self] id in
                                   guard let self else { return }
-                                  self.showConversation()
-                                  Task { await self.model.select(id) }
+                                  self.model.openConversationFromLauncher(id)
                               }, appearance: { [weak settings] in
                                   settings.flatMap { AppAppearance.nsAppearance(for: $0.appearanceMode) }
                               })
         // Recently Deleted keeps notes for 30 days.
-        maintenanceTasks.append(Task.detached(priority: .utility) {
-            do { try await notes.purgeTrash(before: Date().addingTimeInterval(-AskNoteQuery.trashRetention)) }
-            catch { ErrorLogStore.shared.log("Notes retention cleanup unavailable") }
-        })
+        if FeatureProcess.owns(.launcher) {
+            maintenanceTasks.append(Task.detached(priority: .utility) {
+                await FeatureProcess.waitForServices()
+                guard !Task.isCancelled else { return }
+                do { try await notes.purgeTrash(before: Date().addingTimeInterval(-AskNoteQuery.trashRetention)) }
+                catch { ErrorLogStore.shared.log("Notes retention cleanup unavailable") }
+            })
+        }
         let resultWindow = services?.resultWindow ?? AskResultWindowController.shared
         resultWindow.interfaceStyle = interfaceStyle
         resultWindow.appearance = { [weak settings] in
@@ -300,6 +309,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     }
 
     func toggleLauncher() {
+        guard FeatureProcess.owns(.launcher) else {
+            FeatureProcess.send(.init(destination: .launcher, action: "toggleLauncher")); return
+        }
         if launchTask != nil || launcher?.isVisible == true {
             dismissLauncher()
         } else {
@@ -315,6 +327,14 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     /// - Parameter prepared: runs once the launcher has its context, so what it puts in the
     ///   draft (a screenshot's text or image) is not replaced by a restored draft.
     func showLauncher(then prepared: (@MainActor () -> Void)? = nil) {
+        guard FeatureProcess.owns(.launcher) else {
+            prepared?()
+            let seed = FeatureLauncherSeed(draft: model.launcherDraft, keywordID: model.plugins.keyword?.id)
+            if let data = try? JSONEncoder().encode(seed) {
+                FeatureProcess.send(.init(destination: .launcher, action: "seedLauncher", payload: data))
+            }
+            return
+        }
         // Already open (its context may still be arriving): just bring the editor back.
         if launcher?.isVisible == true || launchTask != nil {
             if launcher?.isVisible == true { launcher?.makeKeyAndOrderFront(nil); focusEditor(in: launcher) }
@@ -414,6 +434,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
     /// Builds the launcher panel and lays out its view while the app is idle.
     func prewarmLauncher() {
+        guard FeatureProcess.owns(.launcher) else { return }
         if launcher?.isVisible != true { model.launcherWindowMode = settings.askLauncherWindowMode }
         model.quickSearch.setVisible(launcher?.isVisible == true)
         model.refreshQuickApps()
@@ -558,6 +579,13 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     }
 
     func showConversation() {
+        guard FeatureProcess.owns(.chat) else {
+            let id = model.selectedId
+            FeatureProcess.send(.init(destination: .chat, action: id == nil ? "showChat" : "selectChat",
+                                      payload: id.map { Data($0.utf8) } ?? Data()))
+            dismissLauncher()
+            return
+        }
         dismissLauncher()
         if conversationWindow == nil {
             let window = NSWindow(contentRect: NSRect(origin: .zero, size: AskWorkspaceLayout.defaultWindowSize), styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)

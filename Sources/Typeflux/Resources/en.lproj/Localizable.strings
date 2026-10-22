@@ -6638,6 +6638,10 @@
 
 "ask.storage.inUse" = "Another Typeflux process is using these conversations. Close it and try again.";
 
+"feature.unavailable" = "This window is not responding. Your input has been kept; other tools are still available.";
+
+"feature.screenshotSaved" = "The destination did not respond. Your screenshot was saved.";
+
 /* World clock (tz) */
 "worldclock.title" = "World Clock";
 "worldclock.placeholder" = "City, time or timestamp: London, tomorrow 9am New York, Beijing New York London…";

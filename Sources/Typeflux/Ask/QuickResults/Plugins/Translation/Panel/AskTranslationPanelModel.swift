@@ -117,6 +117,30 @@ final class AskTranslationPanelModel: ObservableObject {
         }
     }
 
+    private var featureTransferID: UUID?
+    private var featureTransferSequence = -1
+    private var featureTransfers: Set<UUID> = []
+
+    func receiveFeatureTransfer(_ transfer: FeatureTranslationTransfer) -> Bool {
+        if transfer.initial, featureTransferID != transfer.id {
+            guard !featureTransfers.contains(transfer.id), featureTransfers.count < 4096 else { return false }
+            importLauncher(transfer.output.output)
+            featureTransferID = transfer.id
+            featureTransferSequence = -1
+            featureTransfers.insert(transfer.id)
+            generation = transfer.id
+            engineOverride = transfer.engine
+            autoCopy = .none
+            cancelHandoff = { FeatureProcess.send(.init(destination: transfer.source, action: "cancelTranslationTransfer", payload: Data(transfer.id.uuidString.utf8))) }
+        }
+        guard featureTransferID == transfer.id, generation == transfer.id else { return false }
+        if transfer.sequence <= featureTransferSequence { return true }
+        featureTransferSequence = transfer.sequence
+        running = transfer.running
+        receiveHandoff(transfer.failed ? .cancelled : transfer.running ? .progress(transfer.output.output) : .done(transfer.output.output), id: transfer.id)
+        return true
+    }
+
     func importLauncher(_ result: AskPluginOutput) {
         open(source: .launcher, text: result.original)
         output = result

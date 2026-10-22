@@ -9,7 +9,7 @@ enum HotkeyAction {
     case screenshot
 }
 
-struct HotkeyEventContext: Sendable, Equatable {
+struct HotkeyEventContext: Codable, Sendable, Equatable {
     let detectedAt: Date
     /// Physical event time in seconds since system startup.
     let uptime: TimeInterval

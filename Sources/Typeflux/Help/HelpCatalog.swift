@@ -123,7 +123,7 @@ struct HelpCommand: Identifiable, Equatable, Sendable {
 }
 
 /// A settings page the guide links to.
-enum HelpSettingsDestination: Equatable, Sendable {
+enum HelpSettingsDestination: Equatable, Sendable, Codable {
     case shortcuts
     case keywords
     case workflows

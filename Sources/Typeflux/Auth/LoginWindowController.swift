@@ -38,7 +38,12 @@ final class LoginWindowController: NSObject {
         }
     )
 
-    func show() { webEntry.show() }
+    func show() {
+        guard FeatureProcess.owns(.host) else {
+            FeatureProcess.send(.init(destination: .host, action: "login")); return
+        }
+        webEntry.show()
+    }
 
     func showWebLoginFailure() { webEntry.showCurrentFailure() }
 

@@ -2535,6 +2535,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             historyStore: historyStore,
             configureSettings: { settingsStore in
                 self.configureReadyLLM(settingsStore: settingsStore)
+                settingsStore.voiceProcessingTimeout = .threeSeconds
                 settingsStore.applyPersonaSelection(settingsStore.personas[0].id)
             }
         )
@@ -4590,7 +4591,7 @@ extension WorkflowControllerProcessingTests {
         let recorder = ComposerLevelAudioRecorder()
         let factory = ComposerLiveSessionFactory(result: .success("unused"))
         let controller = makeWorkflowController(audioRecorder: recorder, sttTranscriber: factory,
-            configureSettings: { $0.sttProvider = .aliCloud }, hasPaidCloudSubscription: { false })
+            configureSettings: { $0.sttProvider = .typefluxOfficial }, hasPaidCloudSubscription: { false })
         let service = WorkflowComposerRecording(controller, isAppBundle: { true })
         try await service.start()
         XCTAssertNil(factory.session, "live text needs the realtime service the subscription pays for")

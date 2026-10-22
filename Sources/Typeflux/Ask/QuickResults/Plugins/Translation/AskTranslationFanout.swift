@@ -1,7 +1,7 @@
 import Foundation
 
-struct AskTranslationResult: Equatable, Identifiable, Sendable {
-    enum State: Equatable, Sendable {
+struct AskTranslationResult: Equatable, Identifiable, Sendable, Codable {
+    enum State: Equatable, Sendable, Codable {
         case loading
         case streaming(String)
         case done(String, AskWordCard? = nil)
@@ -57,8 +57,8 @@ struct AskTranslationResult: Equatable, Identifiable, Sendable {
 }
 
 /// A failure belongs to one service, with an actionable and credential-safe message.
-struct AskTranslationFailure: Equatable, Sendable {
-    enum Recovery: Equatable, Sendable {
+struct AskTranslationFailure: Equatable, Sendable, Codable {
+    enum Recovery: Equatable, Sendable, Codable {
         case configure, skip, retry, languages, none
         case download(source: String, target: String)
     }
@@ -143,7 +143,7 @@ struct AskTranslationFailure: Equatable, Sendable {
     }
 }
 
-struct AskTranslationStack: Equatable, Sendable {
+struct AskTranslationStack: Equatable, Sendable, Codable {
     var results: [AskTranslationResult]
     var source: String?
     var target: String

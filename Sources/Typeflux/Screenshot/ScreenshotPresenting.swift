@@ -51,6 +51,7 @@ extension ScreenshotOverlayPresenting {
 enum ScreenshotToast: Equatable {
     case copied
     case saved(URL)
+    case followUpSaved(URL)
     /// Saving failed, so the image went to the clipboard; the reason is shown.
     case savedAsCopy(reason: String)
     case colorCopied(String)

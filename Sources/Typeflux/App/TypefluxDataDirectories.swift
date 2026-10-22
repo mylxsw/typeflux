@@ -22,6 +22,8 @@ enum TypefluxDataDirectories {
             )
         }
 
+        func install(_ layout: Layout) { lock.withLock { if active == nil { active = layout } } }
+
         func prepare() {
             lock.lock()
             defer { lock.unlock() }
@@ -44,6 +46,23 @@ enum TypefluxDataDirectories {
         for error in state.layout.migrationErrors {
             NSLog("Typeflux data migration: %@", error)
         }
+    }
+
+    static var featureEnvironment: [String: String] {
+        ["TYPEFLUX_FEATURE_DATA": data.path, "TYPEFLUX_FEATURE_WORKSPACES": workspaces.path,
+         "TYPEFLUX_FEATURE_CACHE": cache.path]
+    }
+
+    /// The parent resolves migration fallbacks once; every child uses that exact layout.
+    static func inheritFeatureLayout(environment: [String: String]) throws {
+        let keys = ["TYPEFLUX_FEATURE_DATA", "TYPEFLUX_FEATURE_WORKSPACES", "TYPEFLUX_FEATURE_CACHE"]
+        let paths = keys.compactMap { environment[$0] }
+        guard paths.count == 3, paths.allSatisfy({ $0.hasPrefix("/") && !$0.contains("\0") }) else {
+            throw FeatureRPC.Failure.invalidMessage
+        }
+        state.install(.init(data: URL(fileURLWithPath: paths[0], isDirectory: true),
+                            workspaces: URL(fileURLWithPath: paths[1], isDirectory: true),
+                            cache: URL(fileURLWithPath: paths[2], isDirectory: true), migrationErrors: []))
     }
 
     private static func unmigratedLayout(home: URL) -> Layout {

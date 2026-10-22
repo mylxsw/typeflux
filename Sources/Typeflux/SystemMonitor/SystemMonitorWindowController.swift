@@ -53,6 +53,7 @@ final class SystemMonitorWindowController: NSObject, NSWindowDelegate {
 
     /// Opens the window, or points at it when it is open already.
     func show(sort: SystemMonitorSort? = nil, animated: Bool = true) {
+        if !FeatureProcess.owns(.monitor) { FeatureProcess.send(.init(destination: .monitor, action: "showMonitor", payload: Data((sort?.rawValue ?? "").utf8))); return }
         if let sort, sort != .disk { update { $0.sort = sort } }
         if isOpen {
             reveal()

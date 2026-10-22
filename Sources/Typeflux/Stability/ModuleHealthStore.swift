@@ -30,7 +30,9 @@ final class ModuleHealthStore: @unchecked Sendable {
     }
 
     static func directory() -> URL {
-        TypefluxDataDirectories.data.appendingPathComponent("ModuleHealth", isDirectory: true)
+        let root = TypefluxDataDirectories.data.appendingPathComponent("ModuleHealth", isDirectory: true)
+        guard FeatureProcess.enabled, FeatureProcess.role != .host else { return root }
+        return root.appendingPathComponent("features/" + FeatureProcess.role.rawValue, isDirectory: true)
     }
 
     /// Called only inside the supervisor's bounded detached factory task.

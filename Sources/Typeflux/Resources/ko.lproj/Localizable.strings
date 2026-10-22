@@ -6638,6 +6638,10 @@
 
 "ask.storage.inUse" = "다른 Typeflux 프로세스가 이 대화를 사용 중입니다. 해당 프로세스를 종료한 후 다시 시도하세요.";
 
+"feature.unavailable" = "이 창이 응답하지 않습니다. 입력 내용은 보존되며 다른 도구는 계속 사용할 수 있습니다。";
+
+"feature.screenshotSaved" = "대상 창이 응답하지 않아 스크린샷을 저장했습니다.";
+
 /* World clock (tz) */
 "worldclock.title" = "세계 시계";
 "worldclock.placeholder" = "도시, 시간 또는 타임스탬프: 런던, 내일 9am 뉴욕, 베이징 뉴욕 런던…";

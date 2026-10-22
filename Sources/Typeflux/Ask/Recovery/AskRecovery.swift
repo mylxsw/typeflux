@@ -79,7 +79,7 @@ struct AskExecutionAudit: Codable, Equatable, Sendable {
     }
 }
 
-enum AskExecutionReceipt: Equatable, Sendable {
+enum AskExecutionReceipt: Codable, Equatable, Sendable {
     case tool(AskToolResultRequest)
     case inference(AskInferenceResult)
 
@@ -106,7 +106,7 @@ enum AskExecutionReceipt: Equatable, Sendable {
     }
 }
 
-struct AskExecutionEntry: Equatable, Sendable, Identifiable {
+struct AskExecutionEntry: Codable, Equatable, Sendable, Identifiable {
     var id: String
     var audit: AskExecutionAudit?
     var receipt: AskExecutionReceipt?

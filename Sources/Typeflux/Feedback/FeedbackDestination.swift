@@ -1,7 +1,7 @@
 import Foundation
 
 /// The same feedback choices in the menu bar and the usage guide.
-enum FeedbackDestination: String, CaseIterable, Identifiable {
+enum FeedbackDestination: String, CaseIterable, Identifiable, Codable {
     case direct, email, github
 
     var id: String {

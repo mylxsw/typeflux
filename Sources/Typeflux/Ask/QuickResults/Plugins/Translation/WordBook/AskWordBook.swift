@@ -3,7 +3,7 @@ import Foundation
 /// A word or short phrase the translation plugin looked up, as the word book keeps
 /// it: an AI word card, or the short translation this Mac gave
 /// (`docs/design/translation-word-book.md`).
-struct AskWordBookLookup: Equatable, Sendable {
+struct AskWordBookLookup: Equatable, Sendable, Codable {
     var headword: String
     var source: String?
     var target: String

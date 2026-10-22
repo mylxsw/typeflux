@@ -10,6 +10,7 @@ extension AskConversationModel {
     /// edits or account changes during that await abort the handoff intact.
     @discardableResult
     func openChatFromLauncher() async -> Bool {
+        if !FeatureProcess.owns(.chat) { return await openFeatureChat() }
         if plugins.keyword?.pluginID == AskQuickAskPlugin.id, quickAsk?.conversationId != nil {
             return await openQuickAskInChat()
         }

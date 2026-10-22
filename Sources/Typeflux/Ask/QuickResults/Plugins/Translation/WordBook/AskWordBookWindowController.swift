@@ -44,6 +44,7 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
 
     /// Opens the window, or brings it forward, showing `key` when it is a word in the book.
     func show(selecting key: String? = nil) {
+        if !FeatureProcess.owns(.wordBook) { FeatureProcess.send(.init(destination: .wordBook, action: "showWordBook", payload: Data((key ?? "").utf8))); return }
         guard let model = ensureModel() else { return }
         model.reload()
         presentationTask?.cancel()
@@ -53,6 +54,7 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
 
     /// Opens the window and looks `text` up in it (`dict word`).
     func show(lookingUp text: String) {
+        if !FeatureProcess.owns(.wordBook) { FeatureProcess.send(.init(destination: .wordBook, action: "lookupWord", payload: Data(text.utf8))); return }
         guard let model = ensureModel() else { return }
         model.reload()
         model.lookupText = text

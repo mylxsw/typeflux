@@ -99,6 +99,7 @@ final class WorkflowComposerRecording: AskVoiceRecording {
         audioRelay = relay
         let level = onLevel
         do {
+            try await workflow.claimFeatureMicrophone()
             try await workflow.audioRecorder.startInBackground(levelHandler: { value in
                 guard let level else { return }
                 DispatchQueue.main.async { MainActor.assumeIsolated { level(value) } }
@@ -211,8 +212,8 @@ final class WorkflowComposerRecording: AskVoiceRecording {
                 workflow.isRecording = false; workflow.isAudioRecorderStarted = false
             }
             let pending = releaseRealtime(cancelling: true)
-            pending.pump?.cancel()
-            await pending.session?.cancel()
+            if let pump = pending.pump { await pump.cancelAndWait() }
+            else { await pending.session?.cancel() }
             throw error
         }
         let pending = releaseRealtime(cancelling: false)
@@ -225,8 +226,8 @@ final class WorkflowComposerRecording: AskVoiceRecording {
             prepared = false
         }
         guard file.duration >= WorkflowController.minimumRecordingDuration else {
-            pending.pump?.cancel()
-            await pending.session?.cancel()
+            if let pump = pending.pump { await pump.cancelAndWait() }
+            else { await pending.session?.cancel() }
             throw MessageError(message: L("workflow.recording.tooShort"))
         }
         workflow.appState.setStatus(.processing)
@@ -269,8 +270,8 @@ final class WorkflowComposerRecording: AskVoiceRecording {
 
     func cancel() async {
         let pending = releaseRealtime(cancelling: true)
-        pending.pump?.cancel()
-        await pending.session?.cancel()
+        if let pump = pending.pump { await pump.cancelAndWait() }
+        else { await pending.session?.cancel() }
         guard let workflow else { return }
         if prepared {
             workflow.recordingGestureDecision?.resolve()

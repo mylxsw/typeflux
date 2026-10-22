@@ -2,8 +2,8 @@ import Combine
 import Foundation
 
 /// The agent runs in progress, as the conversation model sees them.
-struct AgentActivityInput: Equatable {
-    struct Run: Equatable {
+struct AgentActivityInput: Codable, Equatable, Sendable {
+    struct Run: Codable, Equatable, Sendable {
         var id: String
         var title: String?
         /// The step waiting for the user's approval.

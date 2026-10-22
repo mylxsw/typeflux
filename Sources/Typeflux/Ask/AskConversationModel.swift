@@ -276,6 +276,9 @@ final class AskConversationModel: ObservableObject {
     @Published var isOpeningChat = false
     @Published var savedChatDrafts: [AskSavedChatDraft] = []
     var chatDraftWrites: [String: [String: AskChatDraftWrite]] = [:]
+    var featureRoute: (FeatureCommand) async throws -> Data = { try await FeatureProcess.route($0) }
+    var acceptedFeatureHandoffs: Set<String> = []
+    var externallyDrivenConversations: Set<String> = []
     var activeChatDraftID: String?
     var pendingDraftHandoff: AskDraftHandoff?
     var chatDraftSubmissions: [String: AskDraftHandoffSubmission] = [:]
@@ -502,7 +505,8 @@ final class AskConversationModel: ObservableObject {
             }
         }
         authObserver = NotificationCenter.default.publisher(for: .authDidLogout).sink { [weak self] _ in
-            Task { @MainActor in self?.resetSession() }
+            if Thread.isMainThread { MainActor.assumeIsolated { self?.resetSession() } }
+            else { Task { @MainActor in self?.resetSession() } }
         }
         imageAuthObserver = NotificationCenter.default.publisher(for: .authDidLogin)
             .merge(with: NotificationCenter.default.publisher(for: .authTokenDidRefresh)).sink { [weak self] _ in
@@ -619,6 +623,8 @@ final class AskConversationModel: ObservableObject {
     }
 
     func resetSession() {
+        acceptedFeatureHandoffs.removeAll()
+        externallyDrivenConversations.removeAll()
         tools.resetFolderSession()
         expiredFolderNotices = []
         quickAsk = nil
@@ -796,6 +802,14 @@ final class AskConversationModel: ObservableObject {
             draft.screenshot = screenshot; draft.capturedAt = context.capturedAt
         }
         captureWarning = context.warning; persistDrafts()
+    }
+
+    func flushFeatureDrafts() async {
+        persistDrafts()
+        await draftSave?.value
+        if selectedId == nil, draft.hasChatInput, draft.temporary != true, activeChatDraftID == nil {
+            _ = try? await stageChatDraft(draft, account: owner)
+        }
     }
 
     func persistDrafts() {
@@ -1070,6 +1084,11 @@ final class AskConversationModel: ObservableObject {
         if consumeModeCommand(launcher: true) { return }
         normalizeScreenshotChoices()
         guard canSendLauncher else { return }
+        if !FeatureProcess.owns(.chat) {
+            let incoming = launcherDraft
+            Task { _ = await transferFeatureDraft(incoming, submit: true) }
+            return
+        }
         // The launcher always starts a new conversation, so it leaves a temporary one.
         guard leaveTemporaryConversation(for: nil) else { return }
         // A temporary question leaves no trace in the launcher's input history either.
@@ -1083,19 +1102,20 @@ final class AskConversationModel: ObservableObject {
         draft = updated
     }
 
-    func submitDraft() {
-        if consumeModeCommand(launcher: false) { return }
+    @discardableResult
+    func submitDraft() -> Bool {
+        if consumeModeCommand(launcher: false) { return true }
         normalizeScreenshotChoices()
-        guard !isLoadingAttachments(launcher: false) else { return }
-        if isEditingQueued { saveQueuedEdit(); return }
+        guard !isLoadingAttachments(launcher: false) else { return false }
+        if isEditingQueued { saveQueuedEdit(); return true }
         if canQueue, let id = selected?.id {
             sendQueue.enqueue(draft, to: id)
             clearCapturedContentFeedback(launcher: false)
             draft = .followUp; persistDrafts()
-            return
+            return true
         }
-        guard canSendNow else { return }
-        submit(draft, newConversation: selectedId == nil)
+        guard canSendNow else { return false }
+        return submit(draft, newConversation: selectedId == nil)
     }
 
     /// Sends `text` as a follow-up in the selected conversation, leaving whatever
@@ -1109,28 +1129,29 @@ final class AskConversationModel: ObservableObject {
 
     /// `messageId` keeps a queued message's ID; `clearsDraft` is false when the queue
     /// sends on its own, so whatever the user is typing stays in the composer.
+    @discardableResult
     private func submit(_ submitted: AskDraft, newConversation: Bool, messageId queuedId: String? = nil,
-                        clearsDraft: Bool = true, launcher: Bool = false, recoveryCheck: Bool = false, quickAskGeneration: UUID? = nil) {
+                        clearsDraft: Bool = true, launcher: Bool = false, recoveryCheck: Bool = false, quickAskGeneration: UUID? = nil) -> Bool {
         var transferred = false
         let queuedConversation = queuedId == nil ? nil : selectedId
         defer {
             if !transferred, let id = queuedConversation { restoreQueuedSubmission(id) }
         }
-        guard submissionPreflights[launcher] == nil else { return }
+        guard submissionPreflights[launcher] == nil else { return false }
         guard submitted.referencesWithinLimit, submitted.text.utf8.count <= 32000,
               (submitted.sentSelection?.utf8.count ?? 0) <= 64000,
               (submitted.sentSource?.utf8.count ?? 0) <= 1000,
               (submitted.attachments ?? []).reduce(0, { $0 + $1.payloadBytes }) <= AskAttachmentLimits.maximumPayloadBytes else {
             rejectSubmission(.init(text: L("ask.input.tooLarge")), submitted: submitted, queuedId: queuedId, launcher: launcher)
-            return
+            return false
         }
         guard let account = credentials() else {
             rejectSubmission(.init(text: L("ask.loginRequired"), offersSignIn: true),
                              submitted: submitted, queuedId: queuedId, launcher: launcher)
-            return
+            return false
         }
-        guard newConversation || selected != nil else { return }
-        if !newConversation, let selected, !admitAgentCommand(selected) { return }
+        guard newConversation || selected != nil else { return false }
+        if !newConversation, let selected, !admitAgentCommand(selected) { return false }
         let temporary = newConversation && submitted.temporary == true
         let requested = submitted.modelRef ?? (newConversation ? modelLibrary.defaultReference
                                                : selected?.modelRef ?? "cloud:default")
@@ -1151,16 +1172,15 @@ final class AskConversationModel: ObservableObject {
         if !needsRefresh {
             if let reason = modelSelectionIssue(reference, cloudAvailable: !token.isEmpty, hasImage: hasImage) {
                 rejectSubmission(reason, submitted: submitted, queuedId: queuedId, launcher: launcher)
-                return
+                return false
             }
             submissionIssues[launcher] = nil
             transferred = true
-            submitValidated(submitted, modelRef: reference, local: local, newConversation: newConversation, messageId: queuedId,
+            return submitValidated(submitted, modelRef: reference, local: local, newConversation: newConversation, messageId: queuedId,
                             clearsDraft: clearsDraft, launcher: launcher, temporary: temporary, recoveryCheck: recoveryCheck, quickAskGeneration: quickAskGeneration)
-            return
         }
         let id = newConversation ? UUID().uuidString.lowercased() : selected!.id
-        guard !busyIds.contains(id) else { return }
+        guard !busyIds.contains(id) else { return false }
         let generation = selectionGeneration
         let operationId = UUID()
         submissionPreflights[launcher] = operationId
@@ -1198,6 +1218,7 @@ final class AskConversationModel: ObservableObject {
                 rejectSubmission(issue, submitted: submitted, queuedId: queuedId, launcher: launcher)
             }
         }
+        return true
     }
 
     private func rejectSubmission(_ issue: AskSubmissionIssue, submitted: AskDraft, queuedId: String?, launcher: Bool) {
@@ -1255,9 +1276,10 @@ final class AskConversationModel: ObservableObject {
         }
     }
 
+    @discardableResult
     private func submitValidated(_ submitted: AskDraft, modelRef: String, local: Bool, newConversation: Bool, messageId queuedId: String? = nil,
                                  clearsDraft: Bool = true, launcher: Bool = false, temporary: Bool = false,
-                                 recoveryCheck: Bool = false, quickAskGeneration: UUID? = nil) {
+                                 recoveryCheck: Bool = false, quickAskGeneration: UUID? = nil) -> Bool {
         var admitted = false
         let queuedConversation = queuedId == nil ? nil : selectedId
         defer {
@@ -1266,12 +1288,12 @@ final class AskConversationModel: ObservableObject {
                 restoreQueuedSubmission(id)
             }
         }
-        guard let account = credentials() else { return }
-        guard newConversation || selected != nil else { return }
+        guard let account = credentials() else { return false }
+        guard newConversation || selected != nil else { return false }
         let inline = quickAskGeneration != nil
-        if let quickAskGeneration, quickAsk?.generation != quickAskGeneration { return }
+        if let quickAskGeneration, quickAsk?.generation != quickAskGeneration { return false }
         let id = newConversation ? UUID().uuidString.lowercased() : selected!.id
-        guard !busyIds.contains(id) else { return }
+        guard !busyIds.contains(id) else { return false }
         if inline { quickAsk?.conversationId = id }
         if temporary {
             // Only one temporary conversation exists; the UI asked before leaving the last one.
@@ -1291,7 +1313,7 @@ final class AskConversationModel: ObservableObject {
         let messageId = queuedId ?? UUID().uuidString
         let operationId = UUID()
         guard stageFolderSubmission(submitted, conversation: value, route: current,
-                                    messageID: messageId, generation: operationId) else { return }
+                                    messageID: messageId, generation: operationId) else { return false }
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
         request.deviceCreate = newConversation ? true : nil
         request.maxSteps = recoveryCheck ? min(modelLibrary.settings.askAgentMaxSteps, 20)
@@ -1342,6 +1364,7 @@ final class AskConversationModel: ObservableObject {
         registerOperation(id, operationId: operationId, account: current.account)
         startSubmittedSend(submitted, conversation: value, request: request, route: current,
                            operationId: operationId, inline: inline)
+        return true
     }
 
     /// The server pins memory from the opening message only; empty memory is not sent.
@@ -2115,6 +2138,9 @@ final class AskConversationModel: ObservableObject {
         let preflight = submissionPreflights[false] ?? submissionPreflights[true]
         let preflightId = operationIds.first(where: { $0.value == preflight })?.key
         guard let id = id ?? selected?.id ?? preflightId, let current = credentials(for: id) else { return }
+        if externallyDrivenConversations.contains(id), FeatureProcess.enabled {
+            FeatureProcess.send(.init(destination: .launcher, action: "stopConversation", payload: Data(id.utf8)))
+        }
         sendQueue.pause(id)
         cancelQueueFlights(id)
         tools.revokeTaskFolders(conversationId: id, runId: nil)
@@ -2395,6 +2421,13 @@ final class AskConversationModel: ObservableObject {
     private func recordInferenceUsage(_ usage: AskTokenUsage, id: String, owner expectedOwner: String) {
         guard owner == expectedOwner else { return }
         inferenceUsage[id] = usage
+    }
+
+    func applyFeatureQuickProgress(_ value: FeatureQuickProgress) {
+        guard session()?.owner == value.owner, externallyDrivenConversations.contains(value.id),
+              !busyIds.contains(value.id), snapshots[value.id]?.run?.id == value.runID else { return }
+        inferenceProgress[value.id] = value.progress
+        if value.complete { externallyDrivenConversations.remove(value.id); inferenceProgress[value.id] = nil }
     }
 
     private func updateInferenceProgress(_ progress: AskStreamProgress, id: String, inferenceID: String, owner expectedOwner: String, visible: Bool) {
@@ -2975,6 +3008,7 @@ extension AskConversationModel {
 
     @discardableResult
     func openQuickAskInChat(focusComposer: Bool = false) async -> Bool {
+        if !FeatureProcess.owns(.chat) { return await transferFeatureQuickAsk() }
         guard canOpenChatFromLauncher, let quick = quickAsk,
               quick.owner == owner, session()?.owner == owner,
               quick.persisted, let id = quick.conversationId, snapshots[id] != nil else { return false }
