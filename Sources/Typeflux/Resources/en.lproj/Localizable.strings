@@ -6641,3 +6641,16 @@
 "feature.unavailable" = "This window is not responding. Your input has been kept; other tools are still available.";
 
 "feature.screenshotSaved" = "The destination did not respond. Your screenshot was saved.";
+
+/* Chat and Work conversations (GUL-460) */
+"ask.kind.switch" = "Conversation type";
+"ask.kind.chat" = "Chat";
+"ask.kind.work" = "Work";
+"ask.kind.chat.help" = "Questions, writing and web search. Never reads or changes files on this Mac.";
+"ask.kind.work.help" = "Runs on this Mac: reads and changes the folders you allow, runs commands and controls apps.";
+"ask.empty.work" = "What should this Mac work on?";
+"ask.kind.chatToolRefused" = "A chat cannot use tools that access this Mac. Start a Work conversation for that.";
+"ask.kind.switchedToWork" = "Switched to Work: folders can only be used in Work.";
+"ask.kind.chatFolderRefused" = "A chat cannot take a folder. Start a Work conversation for that.";
+"ask.history.kindFilter" = "Conversation type";
+"ask.kind.foldersRemoved" = "Folders removed: a chat cannot use folders.";

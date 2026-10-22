@@ -259,6 +259,7 @@ private actor RemoteGate {
         await api.seed(AskConversation(id: "conversation", title: "Images", revision: 1, updatedAt: Date(), messages: []))
         let model = AskConversationModel(api: api, cache: cache, tools: tools, capture: AskTestCapture(), deviceId: "test",
             modelLibrary: AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false), defaults: defaults, session: { account })
+        model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         defer { model.resetSession() }
         XCTAssertFalse(model.remoteImageAccess.allows())
         await model.select("conversation")

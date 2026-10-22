@@ -74,6 +74,7 @@ struct AskRecoverySafetyTests {
                 modelLibrary: fixture.model.modelLibrary,
                 session: { ("owner", "token") }
             )
+            model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
             model.automaticRecoveryEnabled = false
             await model.select(intent.value.id)
         }

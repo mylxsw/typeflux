@@ -261,6 +261,7 @@ import XCTest
                                              deviceId: "device",
                                              defaults: XCTUnwrap(UserDefaults(suiteName: UUID().uuidString)),
                                              session: { account.map { ($0, "token") } })
+        model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         XCTAssertThrowsError(try model.artifactAccess.load(ref))
         await model.select("conversation")
         XCTAssertNoThrow(try model.artifactAccess.load(ref))

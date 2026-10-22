@@ -119,8 +119,8 @@ struct AskTemporaryConversationTests {
     @Test func theMemoryToolIsNeverOfferedToATemporaryChat() {
         let tools = [AskToolDefinition(name: "memory", description: "", parameters: .init(data: Data(#"{"type":"object"}"#.utf8))),
                      AskToolDefinition(name: "browser", description: "", parameters: .init(data: Data(#"{"type":"object"}"#.utf8)))]
-        #expect(AskConversationModel.offeredTools(tools, temporary: true).map(\.name) == ["browser"])
-        #expect(AskConversationModel.offeredTools(tools, temporary: false).map(\.name) == ["memory", "browser"])
+        #expect(AskConversationModel.offeredTools(tools, temporary: true, kind: .work).map(\.name) == ["browser"])
+        #expect(AskConversationModel.offeredTools(tools, temporary: false, kind: .work).map(\.name) == ["memory", "browser"])
     }
 
     // MARK: - Leaving

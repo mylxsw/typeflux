@@ -195,6 +195,7 @@ struct SemanticReleaseUISliceTests {
                     modelLibrary: AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false),
                     defaults: defaults, session: { nil }
                 )
+                model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
                 model.appIndex = AskTestAppIndex([])
                 model.fileIndex = AskTestFileIndex()
                 model.browserSearch = ReleaseUISliceBrowserSearch()

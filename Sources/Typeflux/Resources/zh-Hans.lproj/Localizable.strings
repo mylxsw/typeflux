@@ -6641,3 +6641,16 @@
 "feature.unavailable" = "这个窗口暂时没有响应。输入已保留，其他工具仍可使用。";
 
 "feature.screenshotSaved" = "目标窗口没有响应，截图已保存。";
+
+/* Chat and Work conversations (GUL-460) */
+"ask.kind.switch" = "对话类型";
+"ask.kind.chat" = "聊天";
+"ask.kind.work" = "任务";
+"ask.kind.chat.help" = "问答、写作和联网搜索，不会读写这台 Mac 上的文件。";
+"ask.kind.work.help" = "在这台 Mac 上执行：读写你授权的文件夹、运行命令、操作 App。";
+"ask.empty.work" = "要让这台 Mac 做什么？";
+"ask.kind.chatToolRefused" = "聊天不能使用访问这台 Mac 的工具，请新开一个任务。";
+"ask.kind.switchedToWork" = "已切换为任务：文件夹只能在任务中使用。";
+"ask.kind.chatFolderRefused" = "聊天不能附加文件夹，请新开一个任务。";
+"ask.history.kindFilter" = "对话类型";
+"ask.kind.foldersRemoved" = "已移除文件夹：聊天不能使用文件夹。";

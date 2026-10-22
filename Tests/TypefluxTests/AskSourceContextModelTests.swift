@@ -44,6 +44,7 @@ private struct SourceContextFixture {
                                      deviceId: "device", modelLibrary: base.model.modelLibrary,
                                      defaults: UserDefaults(suiteName: UUID().uuidString)!,
                                      session: { (state.owner, "token") })
+        model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
     }
 
     func restore() async {

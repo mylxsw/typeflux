@@ -233,6 +233,7 @@ struct AskHarnessVisualTests {
                                          cache: try AskConversationCache(url: temp.appendingPathComponent("cache.sqlite")),
                                          tools: AskTestTools(), capture: AskTestCapture(), deviceId: "device", modelLibrary: library,
                                          session: { ("local", "") })
+        local.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         local.launcherDraft.text = "不登录也能用吗？帮我查一下今天的天气"
         local.launcherDraft.modelRef = profile.reference
         try await render(AskLauncherView(model: local, onDismiss: {}), size: NSSize(width: AskMetrics.launcherWidth, height: 114), appearance: .aqua,

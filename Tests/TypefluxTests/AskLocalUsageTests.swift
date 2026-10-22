@@ -396,6 +396,7 @@ struct AskLocalUsageTests {
                                                  AskRoutedAPI.localOwner,
                                                  ""
                                              ) })
+        model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         defer { model.resetSession() }
         model.registerLocalHistory([.init(id: done.id, title: done.title, updatedAt: done.updatedAt)])
         await model.select(done.id)

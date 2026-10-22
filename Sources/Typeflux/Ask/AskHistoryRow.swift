@@ -11,6 +11,8 @@ struct AskHistoryRow: View {
     /// Kept on this Mac while the list mixes it with Cloud conversations: a small
     /// neutral lock tells it apart without colouring the row.
     var local = false
+    /// Work on this Mac rather than a chat; a small neutral glyph leads the title.
+    var work = false
     let selectionSpace: Namespace.ID
     var onSelect: () -> Void
     var onRename: (String) async throws -> Void = { _ in }
@@ -47,6 +49,13 @@ struct AskHistoryRow: View {
         HStack(spacing: 8) {
             // A conversation still working shows a breathing accent dot.
             if busy { AskRunToneDot(tone: .running) }
+            if work, !busy {
+                Image(systemName: AskConversationKind.work.symbol)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .accessibilityLabel(L(AskConversationKind.work.titleKey))
+                    .accessibilityIdentifier("ask.history.workMark")
+            }
             if let editorTitle {
                 AskHistoryTitleEditor(title: editorTitle, selected: selected, onFinish: finishRename)
                     .id(editSession)

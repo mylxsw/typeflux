@@ -6641,3 +6641,16 @@
 "feature.unavailable" = "このウインドウは応答していません。入力は保持されています。他のツールは引き続き使えます。";
 
 "feature.screenshotSaved" = "送信先が応答しなかったため、スクリーンショットを保存しました。";
+
+/* Chat and Work conversations (GUL-460) */
+"ask.kind.switch" = "会話の種類";
+"ask.kind.chat" = "チャット";
+"ask.kind.work" = "タスク";
+"ask.kind.chat.help" = "質問、文章作成、ウェブ検索。この Mac のファイルは読み書きしません。";
+"ask.kind.work.help" = "この Mac で実行：許可したフォルダの読み書き、コマンドの実行、アプリの操作。";
+"ask.empty.work" = "この Mac で何をしますか？";
+"ask.kind.chatToolRefused" = "チャットではこの Mac にアクセスするツールを使えません。タスクを新しく始めてください。";
+"ask.kind.switchedToWork" = "タスクに切り替えました：フォルダはタスクでのみ使えます。";
+"ask.kind.chatFolderRefused" = "チャットにはフォルダを添付できません。タスクを新しく始めてください。";
+"ask.history.kindFilter" = "会話の種類";
+"ask.kind.foldersRemoved" = "フォルダを外しました：チャットではフォルダを使えません。";

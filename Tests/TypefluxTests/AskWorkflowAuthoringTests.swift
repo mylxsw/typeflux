@@ -317,6 +317,7 @@ struct AskWorkflowAuthoringTests {
             tools: tools, capture: AskTestCapture(), deviceId: "device",
             modelLibrary: AskModelLibrary(defaults: fixture.settings.defaults, automaticallyLoadsCatalog: false),
             session: { ("o", "token") })
+        model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         model.workflowAuthoring = authoring
         defer { model.resetSession() }
         await api.setTool(try call("workflow_start", ["name": "Tool"]))

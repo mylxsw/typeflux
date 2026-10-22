@@ -370,14 +370,14 @@ this Mac; signing in is optional. The design board is
   "Keep new conversations", stored under the old `ask.localMode` key so users who
   had local mode on keep starting private conversations). The launcher always
   starts a new conversation and can choose too.
-- UI: the composer shows only an icon (`AskStorageButton`: a cloud, or a purple
+- UI: the composer shows only an icon (`AskStorageButton`: a cloud, or a sage
   lock); hovering names it and a click opens `AskLocalModeCard`, which offers the
   choice for a conversation that has not started, explains why a started one is
   fixed, and offers the other kind of new conversation. Signed in, a private
   conversation shows a "Only on this Mac" header chip instead of credits, a lock
-  in the sidebar, and the sidebar gets an All / Cloud / This Mac filter once a
-  private conversation exists; a private conversation's composer and send button
-  take the private tint. A new conversation follows the default and its storage is
+  in the sidebar, and the sidebar gets a Cloud / This Mac menu beside the kind
+  filter once a private conversation exists. The composer edge and send button
+  stay neutral (Sky/Sage/Sand tints since `aca44a96`). A new conversation follows the default and its storage is
   switched with the composer icon; ⇧⌘N and the palette
   start a private conversation; `/local` toggles the new draft's storage.
   The new-conversation page and the transcript look the same in both kinds.
@@ -416,6 +416,46 @@ this Mac; signing in is optional. The design board is
   server-side background runs (a local run pauses while the app is closed and
   resumes from the workspace), run traces, Cloud usage metering and sync.
 
+## Chat and Work (GUL-460)
+
+Every conversation is a **chat** or **work**, chosen before its first message and
+fixed afterwards. This is independent of where it is kept (Cloud, this Mac or
+temporary) and of which model answers.
+
+- A chat only talks. It is never offered a tool that reads or changes this Mac:
+  of the device tools only `skill`, `memory` and `generate_image` (and the workflow
+  editor's own tools) remain; files, commands, code, projects, artifacts, computer
+  and browser control, the notebook, the embedded browser and MCP tools are work
+  only. Engine and Cloud tools (`web_search`, `web_fetch`, `update_plan`, …) are
+  unaffected. A device tool call in a chat is refused before approval or dispatch
+  (`ask.kind.chatToolRefused`), even in YOLO mode.
+- Work keeps today's behaviour: device tools, folder access and the permission
+  mode. The permission menu only appears for work.
+- The kind travels as `kind` on the opening `AskSendRequest`, is stored on the
+  conversation (`AskLocalEngine`, typeflux-api `Conversation.Kind`) and is listed
+  on summaries. Unknown values read as chat. Conversations from before kinds
+  existed infer it for display and for the tools later sends offer: one whose
+  transcript called a device tool outside chat's set is work, any other is chat.
+  Only a stored kind refuses a pending call; an older conversation that is mid-run
+  dispatches as before, under approval, because synced snapshots drop the run's
+  tool list.
+- UI: the new-conversation page shows a "Chat | Work" switch centred at the top
+  (`AskConversationKindSwitch`); the launcher has a small one at the start of its
+  bottom bar. A new conversation starts as the kind last sent
+  (`ask.lastConversationKind`, chat at first). Work shows "What should this Mac
+  work on?" on the empty page. The sidebar filters All / Chat / Work and marks
+  work rows with a terminal glyph.
+- Adding a folder to a chat that has not started switches it to work; a started
+  chat refuses the folder and keeps the other items. Switching a draft back to
+  chat removes its folders.
+
+Production views rendered with synthetic data (`AskConversationKindVisualTests`, set
+`TYPEFLUX_KIND_SNAPSHOTS` to a directory):
+
+![New chat](images/ask-kind/new-chat-light.png)
+![New work, dark](images/ask-kind/new-work-dark.png)
+![Launcher bar in work](images/ask-kind/launcher-work-dark.png)
+
 ## Temporary conversations (GUL-370)
 
 A temporary conversation is the third place a conversation can be kept, beside
@@ -447,8 +487,8 @@ leaves it, quits, signs out or switches accounts. The design board is
   …/:id/keep` or `AskLocalEngine.keep`, copies the snapshot to the account or `local`
   partition and lists it as a Cloud or private conversation. A keep in flight is
   never deleted by the next temporary conversation.
-- UI: teal with dashed edges (`AskTheme.temporaryTint`, `temporaryDash`): the
-  composer's edge, the send button, the hourglass storage icon, the header chip
+- UI: sand with dashed edges (`AskTheme.temporaryTint`, `temporaryDash`): the
+  composer's edge, the hourglass storage icon, the header chip
   (replacing credits), a pinned "Temporary chat · In progress" row above history,
   and a line on the new-conversation page. The launcher's home hides "Continue
   conversation" while its question is temporary.
@@ -584,7 +624,7 @@ tiles, and three blue footer icons of which only one meant "on":
   (permission, model, storage, attach) never use the accent: the permission
   menu sets its own tint, because a borderless menu drew its label in the
   launcher's accent and looked like an on switch. Only states that need
-  attention are coloured: YOLO red, kept on this Mac purple, a failed
+  attention are coloured: YOLO red, kept on this Mac sage, a failed
   screenshot amber.
 
 ### Model chooser in conversations with images (GUL-159)

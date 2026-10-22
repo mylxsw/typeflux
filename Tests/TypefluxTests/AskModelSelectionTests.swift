@@ -215,6 +215,7 @@ struct AskModelSelectionTests {
             ),
             session: { ("owner", "token") }
         )
+        restarted.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         await restarted.select(value.id)
         await restarted.retransmitSavedReceipts()
         #expect(await fixture.api.inferenceResults.count == 1)

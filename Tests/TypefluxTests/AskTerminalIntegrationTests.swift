@@ -207,6 +207,7 @@ import XCTest
         let model = try AskConversationModel(api: api, cache: AskConversationCache(url: fixture.runtime.base.appendingPathComponent("cache.sqlite")),
             tools: fixture.tools, capture: AskTestCapture(), deviceId: "device",
             defaults: XCTUnwrap(UserDefaults(suiteName: UUID().uuidString)), session: { owner.map { ($0, "token") } })
+        model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         XCTAssertThrowsError(try model.terminalAccess.status(lease.reference))
         await model.select("conversation")
         fixture.tools.bindExecution(ownerId: "owner", conversationId: "conversation", runId: "run")
@@ -239,6 +240,7 @@ import XCTest
                                          tools: fixture.tools, capture: AskTestCapture(), deviceId: "device",
                                          defaults: try XCTUnwrap(UserDefaults(suiteName: UUID().uuidString)),
                                          session: { ("owner", "cloud-token") })
+        model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         var conversation = AskConversation(id: "conversation", title: "Private project", revision: 1,
                                             updatedAt: Date(), messages: [])
         await local.seed(conversation)

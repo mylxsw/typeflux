@@ -6641,3 +6641,16 @@
 "feature.unavailable" = "이 창이 응답하지 않습니다. 입력 내용은 보존되며 다른 도구는 계속 사용할 수 있습니다。";
 
 "feature.screenshotSaved" = "대상 창이 응답하지 않아 스크린샷을 저장했습니다.";
+
+/* Chat and Work conversations (GUL-460) */
+"ask.kind.switch" = "대화 유형";
+"ask.kind.chat" = "채팅";
+"ask.kind.work" = "작업";
+"ask.kind.chat.help" = "질문, 글쓰기, 웹 검색. 이 Mac의 파일을 읽거나 변경하지 않습니다.";
+"ask.kind.work.help" = "이 Mac에서 실행: 허용한 폴더 읽기·쓰기, 명령 실행, 앱 조작.";
+"ask.empty.work" = "이 Mac에서 무엇을 할까요?";
+"ask.kind.chatToolRefused" = "채팅에서는 이 Mac에 접근하는 도구를 사용할 수 없습니다. 새 작업을 시작하세요.";
+"ask.kind.switchedToWork" = "작업으로 전환했습니다: 폴더는 작업에서만 사용할 수 있습니다.";
+"ask.kind.chatFolderRefused" = "채팅에는 폴더를 첨부할 수 없습니다. 새 작업을 시작하세요.";
+"ask.history.kindFilter" = "대화 유형";
+"ask.kind.foldersRemoved" = "폴더를 제거했습니다: 채팅에서는 폴더를 사용할 수 없습니다.";

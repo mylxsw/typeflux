@@ -279,6 +279,7 @@ struct AskRecoveryNoticeInteractionTests {
             modelLibrary: fixture.model.modelLibrary,
             session: { (fixture.sessionState.owner, "token") }
         )
+        reopened.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
         defer { reopened.resetSession() }
         await reopened.select(id)
         #expect(!reopened.hasRecoveryNotice && !reopened.canRetransmitReceipts)

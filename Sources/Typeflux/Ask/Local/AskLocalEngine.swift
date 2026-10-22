@@ -242,7 +242,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         return records.values.map(\.conversation).filter { !temporaryIDs.contains($0.id) }
             .sorted { $0.updatedAt > $1.updatedAt }
             .dropFirst(max(0, offset)).prefix(50)
-            .map { AskConversationSummary(id: $0.id, title: $0.title, updatedAt: $0.updatedAt) }
+            .map { AskConversationSummary($0) }
     }
 
     func conversation(id: String, token _: String) async throws -> AskConversation {
@@ -317,6 +317,8 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         var c = record.conversation
         // A temporary conversation neither reads nor keeps memory.
         if c.messages.isEmpty { c.memory = temporaryIDs.contains(id) ? nil : request.memory?.usable(at: now()) }
+        // The opening message fixes the kind; later messages cannot change it.
+        if c.messages.isEmpty { c.kind = request.kind.map { AskConversationKind(stored: $0).rawValue } }
         c.memoryOff = c.memory != nil && request.memoryOff == true ? true : nil
         if let zone = request.timeZone, TimeZone(identifier: zone) != nil { record.timeZone = zone }
         if let locale = request.locale, !locale.isEmpty, locale.count <= 35 { record.locale = locale }

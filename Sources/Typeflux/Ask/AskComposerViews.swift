@@ -2415,6 +2415,10 @@ struct AskComposer: View {
     /// Under the results: the model and switches, then what the keys do now.
     private var launcherBar: some View {
         HStack(spacing: 4) {
+            AskConversationKindSwitch(selection: model.conversationKind(launcher: true), compact: true) {
+                model.setConversationKind($0, launcher: true)
+            }
+            .disabled(active)
             composerTools
             modelMenu
             permissionModeMenu
@@ -2672,7 +2676,12 @@ struct AskComposer: View {
         }
     }
 
-    private var permissionModeMenu: some View {
+    /// Only work uses tools, so a chat has no permission mode to show.
+    @ViewBuilder private var permissionModeMenu: some View {
+        if model.conversationKind(launcher: launcher) == .work { permissionMenuControl }
+    }
+
+    private var permissionMenuControl: some View {
         AskPermissionModeMenu(mode: model.permissionMode(launcher: launcher),
                               compact: launcher || layout.width < 800, bare: launcher) { mode in
             model.setPermissionMode(mode, launcher: launcher)

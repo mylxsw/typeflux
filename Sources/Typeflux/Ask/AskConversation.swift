@@ -167,6 +167,9 @@ struct AskConversation: Codable, Identifiable, Equatable, Sendable {
     var memory: AskMemory? = nil
     /// The latest question asked without the pinned memory; the snapshot stays.
     var memoryOff: Bool?
+    /// "chat" or "work", fixed by the opening message; nil before kinds existed.
+    /// Read it through `resolvedKind`.
+    var kind: String? = nil
 }
 
 typealias AskConversationSummary = ChatConversationSummary
@@ -203,6 +206,8 @@ struct AskSendRequest: Codable, Equatable, Sendable {
     /// Creates a temporary conversation: kept out of every history list and
     /// deleted when it ends or expires. Only the opening message sets it.
     var temporary: Bool? = nil
+    /// The conversation's kind ("chat" or "work"). Only the opening message sets it.
+    var kind: String? = nil
 }
 
 /// A skill the user chose for one question, with the instructions it carries,
@@ -298,12 +303,15 @@ struct AskDraft: Codable, Equatable, Sendable {
     /// Starts a temporary conversation that never enters history or memory;
     /// nil or false for an ordinary one. Ignored once the conversation exists.
     var temporary: Bool? = nil
+    /// Chat or work for a new conversation; nil follows the last choice.
+    /// Ignored once the conversation exists.
+    var kind: String? = nil
 
     private enum CodingKeys: String, CodingKey {
         case text, includeScreenshot, screenshot, selection, source, sourceOff, capturedAt, modelRef
         case references, memory, memoryOff, selectionOff, attachments, skills, mcpServers,
              storesLocally,
-             temporary
+             temporary, kind
         // convertFromSnakeCase maps source_bundle_id to sourceBundleId.
         case sourceBundleID = "sourceBundleId"
     }

@@ -86,7 +86,7 @@ actor AskTestAPI: AskAPI {
         if failList { throw AskLocalError.message("Network unavailable") }
         if let listed { return Array(listed.dropFirst(offset).prefix(50)) }
         return values.values.filter { !temporaryIDs.contains($0.id) }.sorted { $0.updatedAt > $1.updatedAt }
-            .dropFirst(offset).map { .init(id: $0.id, title: $0.title, updatedAt: $0.updatedAt) }
+            .dropFirst(offset).map { .init(id: $0.id, title: $0.title, updatedAt: $0.updatedAt, kind: $0.kind) }
     }
     func conversation(id: String, token: String) async throws -> AskConversation {
         if failGets.contains(id) { throw AskLocalError.message("Offline") }
@@ -102,6 +102,8 @@ actor AskTestAPI: AskAPI {
         if failSend { throw AskLocalError.message("Network unavailable after held send") }
         if values[conversationId] == nil, request.temporary == true { temporaryIDs.insert(conversationId) }
         var value = values[conversationId] ?? AskConversation(id: conversationId, title: request.text, revision: 0, updatedAt: Date(), messages: [])
+        // Like the engines, only the opening message fixes the kind.
+        if values[conversationId] == nil { value.kind = request.kind }
         if value.messages.contains(where: { $0.id == request.id }) { return value }
         value.messages.append(.init(id: request.id, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), references: request.references,
                                     attachments: request.attachments, skills: request.skills, mcpServers: request.mcpServers))
@@ -386,6 +388,8 @@ struct AskTestFixture {
                                          return authenticated ? (sessionState.owner, sessionState.token) : nil
                                      })
         model.automaticRecoveryEnabled = automaticRecovery
+        // These fixtures exercise tool flows, which only work offers; chat has its own tests.
+        model.lastConversationKind = .work
         // Keep launcher results independent of this Mac's installed apps and files.
         model.appIndex = AskTestAppIndex([])
         model.fileIndex = AskTestFileIndex()

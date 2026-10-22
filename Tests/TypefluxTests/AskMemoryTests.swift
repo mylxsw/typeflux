@@ -28,6 +28,7 @@ private struct AskMemoryFixture {
         model = AskConversationModel(api: api, cache: cache, tools: AskTestTools(), capture: capture,
                                      deviceId: "device", modelLibrary: library, defaults: defaults,
                                      session: { authenticated ? ("owner", "token") : nil })
+        model.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
     }
     func wait(_ predicate: () -> Bool) async throws {
         for _ in 0 ..< 1000 {

@@ -96,9 +96,11 @@ actor RecordingAskModelClient: AskModelCompleting {
     private func model(_ api: any AskAPI, cache: any AskCaching, defaults: UserDefaults,
                        library: AskModelLibrary, fake: any AskModelCompleting,
                        state: AskTestSession) -> AskConversationModel {
-        AskConversationModel(api: api, cache: cache, tools: AskTestTools(), capture: AskTestCapture(),
-                             deviceId: "device", modelLibrary: library, defaults: defaults,
-                             session: { state.token.isEmpty ? nil : (state.owner, state.token) }, modelClient: fake)
+        let host = AskConversationModel(api: api, cache: cache, tools: AskTestTools(), capture: AskTestCapture(),
+                                        deviceId: "device", modelLibrary: library, defaults: defaults,
+                                        session: { state.token.isEmpty ? nil : (state.owner, state.token) }, modelClient: fake)
+        host.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
+        return host
     }
 
     /// Collect host-owned tasks without widening the production visibility boundary.
@@ -359,6 +361,7 @@ actor RecordingAskModelClient: AskModelCompleting {
                 defaults: defaults,
                 session: { ("owner", "") }
             )
+            defaultHost.lastConversationKind = .work // Predates conversation kinds: keep tool flows.
             #expect(defaultHost.customInference is AskCustomInference)
             defaultHost.resetSession()
             let assistant = AskWorkflowAssistant(dependencies: .init(
