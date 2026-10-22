@@ -1,0 +1,17 @@
+{
+  "Sources/Typeflux/Ask/Local/AskPromptBuilder.swift": {
+    "covered": 18,
+    "executable": 18,
+    "uncovered": []
+  },
+  "Sources/Typeflux/Ask/Local/AskPromptSections.swift": {
+    "covered": 49,
+    "executable": 49,
+    "uncovered": []
+  },
+  "total": {
+    "covered": 67,
+    "executable": 67,
+    "percent": 100.0
+  }
+}

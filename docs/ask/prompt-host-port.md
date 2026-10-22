@@ -30,11 +30,10 @@ An audit leaves no production engine calls to those default payload wrappers.
 Both production application factories inherit the new default parameter while
 continuing to compose one local engine with their existing API/registry route.
 
-The default preserves this platform's historical wording, memory envelope,
+The modular default composes trusted rules from effective declarations. The legacy policy preserves historical wording. Both retain the memory envelope,
 message/tool order, typed/media projection, original-history references, pinned
 latest user, summary cut, model and reasoning fields. Swift and Go have separate
 baseline fixtures because their prior payloads are not identical.
 
 Title generation and research prompts retain their owners. Other host ports,
-alternate runtimes, per-run dispatch, peer negotiation and prompt optimization
-remain outside this increment.
+alternate runtimes, per-run dispatch, peer negotiation remain outside this increment. See `../validation/gul-443/README.md` for composition policy and rollback.

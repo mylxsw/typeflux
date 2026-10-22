@@ -1,0 +1,11 @@
+{
+  "typeflux/Sources/Typeflux/Ask/Local/AskPromptBuilder.swift": "45705c8f3a986ce5f879d1f3dbc5af25f69e6fe0e02a4b0c33da11cebeb181c8",
+  "typeflux/Sources/Typeflux/Ask/Local/AskPromptSections.swift": "c967793c28495d7d0085e185f2558ab56d1559346c15b8351dbd3fd5b6ba7d9d",
+  "typeflux/Tests/TypefluxTests/Fixtures/prompt-scenarios.json": "06054326a30ebdf50bd95ed26466746b795bd62e3359033e425a1c5287b078cb",
+  "typeflux-api/internal/ask/prompt_builder.go": "a4878d698dfac6005ac61bd8973d4e67db2edefbffd2ac9e4b1e76185f6f0b61",
+  "typeflux-api/internal/ask/prompt_sections.go": "8f70a5a87eb0ef69d4e4edbc7a20a20b2bd393eed6d99b5a03dd990921f5e5d4",
+  "typeflux-api/internal/ask/testdata/prompt-scenarios.json": "06054326a30ebdf50bd95ed26466746b795bd62e3359033e425a1c5287b078cb",
+  "evidence/pi/LICENSE": "0457f5bcec3b3b211605dfb5d1a49042fd638f3686a410fe099c24a25af13c48",
+  "evidence/pi/system-prompt.ts": "5e28c82634113d0cca7ff5da6fa94e27aaae80e461cd5664ced9dbcef6f89089",
+  "evidence/pi/agent-session.ts": "e0fa206e8c49a98c024708068df39c0e4944f4251633425fc083b2fbb5ec0ac6"
+}
