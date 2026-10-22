@@ -1,4 +1,5 @@
 import Foundation
+import SystemConfiguration
 import TypefluxChat
 
 struct AskDeviceSnapshot: Codable, Equatable, Sendable {
@@ -6,9 +7,20 @@ struct AskDeviceSnapshot: Codable, Equatable, Sendable {
     var revision: Int64
     var deleted = false
     var conversation: AskConversation?
+    /// This Mac's name ("MacBook Pro"), so other devices can say where a conversation runs.
+    var deviceName: String?
 
-    init(deviceId: String, revision: Int64, deleted: Bool = false, conversation: AskConversation? = nil) {
+    /// The computer name from Sharing settings; nil when it cannot be read.
+    static let localName: String? = {
+        guard let name = SCDynamicStoreCopyComputerName(nil, nil) as String? else { return nil }
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : String(trimmed.prefix(64))
+    }()
+
+    init(deviceId: String, revision: Int64, deleted: Bool = false, conversation: AskConversation? = nil,
+         deviceName: String? = AskDeviceSnapshot.localName) {
         self.deviceId = deviceId; self.revision = revision; self.deleted = deleted
+        self.deviceName = deviceName
         self.conversation = conversation
         self.conversation?.memory = nil
         self.conversation?.usage = nil

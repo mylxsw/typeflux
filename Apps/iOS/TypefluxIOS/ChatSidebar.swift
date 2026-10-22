@@ -11,12 +11,13 @@ struct ChatSidebar: View {
     @State private var search = ""
     @State private var pendingDelete: ChatConversationSummary?
     @State private var filter = ChatHistoryFilter.all
+    @State private var kindFilter = ChatKindFilter.all
     @State private var renaming: ChatConversationSummary?
     @State private var renameText = ""
     @FocusState private var searchFocused: Bool
 
     private var items: [ChatConversationSummary] {
-        store.history(store.hasBothStorages ? filter : .all)
+        store.history(store.hasBothStorages ? filter : .all, kind: store.hasWork ? kindFilter : .all)
     }
 
     private var isSearching: Bool {
@@ -27,6 +28,16 @@ struct ChatSidebar: View {
         VStack(spacing: 0) {
             header
             searchField.padding(.horizontal, 4).padding(.top, 10).padding(.bottom, 4)
+            if store.hasWork {
+                Picker("Kind", selection: $kindFilter) {
+                    ForEach(ChatKindFilter.allCases) { item in
+                        Text(NSLocalizedString(item.title, comment: "History kind filter")).tag(item)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 4).padding(.bottom, 4)
+                .accessibilityIdentifier("chat.history.kindFilter")
+            }
             if store.hasBothStorages {
                 Picker("Show", selection: $filter) {
                     ForEach(ChatHistoryFilter.allCases) { item in
@@ -183,11 +194,23 @@ struct ChatSidebar: View {
                 if store.isLocalConversation(item.id) {
                     Image(systemName: "lock.fill").font(.system(size: 10.5)).foregroundStyle(ChatTheme.purple)
                         .accessibilityLabel(Text("Private conversation"))
+                } else if item.isHostedElsewhere || item.isWork {
+                    Image(systemName: item.isWork ? "terminal" : "desktopcomputer")
+                        .font(.system(size: 11)).foregroundStyle(ChatTheme.tertiary)
+                        .accessibilityLabel(Text(item.isWork ? "Work" : "On your Mac"))
                 }
-                Text(item.title.isEmpty ? NSLocalizedString("New conversation", comment: "") : item.title)
-                    .font(.system(size: 15, weight: selected ? .semibold : .regular))
-                    .foregroundStyle(selected ? ChatTheme.accentText : Color.primary)
-                    .lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(item.title.isEmpty ? NSLocalizedString("New conversation", comment: "") : item.title)
+                        .font(.system(size: 15, weight: selected ? .semibold : .regular))
+                        .foregroundStyle(selected ? ChatTheme.accentText : Color.primary)
+                        .lineLimit(1)
+                    if item.isHostedElsewhere {
+                        Text(ChatPresentation.hostLine(item.hostDeviceName))
+                            .font(.system(size: 11.5)).foregroundStyle(ChatTheme.tertiary).lineLimit(1)
+                            .accessibilityIdentifier("chat.history.host.\(item.id)")
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 Text(ChatPresentation.historyTime(item.updatedAt))
                     .font(.system(size: 12)).monospacedDigit().foregroundStyle(ChatTheme.tertiary)
             }
@@ -199,16 +222,21 @@ struct ChatSidebar: View {
         .buttonStyle(.plain)
         .listRowInsets(EdgeInsets(top: 1, leading: 4, bottom: 1, trailing: 4))
         .listRowBackground(Color.clear).listRowSeparator(.hidden)
+        // Only the device that runs a conversation may rename or delete it.
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            Button(role: .destructive) { pendingDelete = item } label: { Label("Delete", systemImage: "trash") }
-                .accessibilityIdentifier("chat.history.delete.\(item.id)")
-            Button { beginRename(item) } label: { Label("Rename", systemImage: "pencil") }
-                .tint(.gray)
-                .accessibilityIdentifier("chat.history.rename.\(item.id)")
+            if !item.isHostedElsewhere {
+                Button(role: .destructive) { pendingDelete = item } label: { Label("Delete", systemImage: "trash") }
+                    .accessibilityIdentifier("chat.history.delete.\(item.id)")
+                Button { beginRename(item) } label: { Label("Rename", systemImage: "pencil") }
+                    .tint(.gray)
+                    .accessibilityIdentifier("chat.history.rename.\(item.id)")
+            }
         }
         .contextMenu {
-            Button { beginRename(item) } label: { Label("Rename", systemImage: "pencil") }
-            Button(role: .destructive) { pendingDelete = item } label: { Label("Delete", systemImage: "trash") }
+            if !item.isHostedElsewhere {
+                Button { beginRename(item) } label: { Label("Rename", systemImage: "pencil") }
+                Button(role: .destructive) { pendingDelete = item } label: { Label("Delete", systemImage: "trash") }
+            }
         }
         .accessibilityIdentifier("chat.history.\(item.id)")
         .accessibilityAddTraits(selected ? .isSelected : [])

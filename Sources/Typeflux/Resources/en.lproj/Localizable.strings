@@ -2261,7 +2261,7 @@
 /* GUL-193 Per-conversation storage */
 "ask.storage.local" = "Only on this Mac";
 "ask.storage.cloud" = "Synced to Cloud";
-"ask.storage.local.detail" = "Not uploaded to Typeflux Cloud; uses only your own models";
+"ask.storage.local.detail" = "Not uploaded to Typeflux Cloud; Cloud models can still answer";
 "ask.storage.cloud.detail" = "Continue on your other devices with every Cloud feature";
 "ask.storage.help" = "Click for details";
 "ask.storage.card.title" = "Conversation storage";
@@ -6748,3 +6748,33 @@
 "ask.kind.chatFolderRefused" = "A chat cannot take a folder. Start a Work conversation for that.";
 "ask.history.kindFilter" = "Conversation type";
 "ask.kind.foldersRemoved" = "Folders removed: a chat cannot use folders.";
+
+/* Chat and Work, phase 2 (GUL-460) */
+"ask.storage.card.cloudModelPrivateNotice" = "Messages go through Typeflux to the model provider, but are not stored by Typeflux.";
+"ask.host.anotherMac" = "another Mac";
+"ask.host.runsOn" = "Runs on %@";
+"ask.host.workTitle" = "This task runs on %@";
+"ask.host.chatTitle" = "This conversation runs on %@";
+"ask.host.detail" = "Only that device can continue it. This Mac can read the whole history.";
+"ask.host.newChat" = "Start a chat from it";
+"ask.command.chat" = "Chat";
+"ask.command.work" = "Work";
+"ask.kind.switched" = "Switched to %@";
+"ask.kind.continuedAsWork" = "New task started with this chat attached";
+"ask.kind.continuedAsChat" = "New chat started with this conversation attached";
+"ask.kind.continueAsWork" = "Continue as Work";
+"ask.input.placeholder.work" = "Describe the task, / for commands";
+"ask.kind.defaultWorkspace" = "Default workspace";
+"ask.kind.folders" = "%@ +%ld";
+"ask.kind.folderHelp" = "Folders this task works in; click to add folders it may read and change";
+"ask.offline.newConversation" = "Typeflux Cloud can't be reached, so Cloud models are unavailable.";
+"ask.offline.started" = "Typeflux Cloud can't be reached, so this conversation can't continue for now.";
+"ask.offline.noLocalModel" = "Typeflux Cloud can't be reached. Add your own model in Settings → Models to work offline.";
+"ask.offline.useModel" = "Use %@";
+"ask.offline.continueWith" = "Continue with %@ in a new conversation";
+"ask.upload.action" = "Upload to Cloud";
+"ask.upload.help" = "A one-time upload: it then syncs to all your devices and can't go back to this Mac only.";
+"ask.upload.confirmTitle" = "Upload this conversation to Typeflux Cloud?";
+"ask.upload.confirmDetail" = "It will sync to all your devices and can't go back to this Mac only.";
+"ask.upload.done" = "Uploaded; this conversation now syncs to all your devices";
+"ask.upload.failed" = "Couldn't upload. Try again later.";

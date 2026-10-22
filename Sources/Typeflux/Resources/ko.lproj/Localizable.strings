@@ -2251,7 +2251,7 @@
 /* GUL-193 Per-conversation storage */
 "ask.storage.local" = "이 Mac에만";
 "ask.storage.cloud" = "클라우드 동기화";
-"ask.storage.local.detail" = "Typeflux Cloud에 업로드하지 않고 직접 설정한 모델만 사용합니다";
+"ask.storage.local.detail" = "Typeflux Cloud에 업로드하지 않으며 클라우드 모델도 사용할 수 있습니다";
 "ask.storage.cloud.detail" = "다른 기기에서 이어서 쓰고 모든 클라우드 기능을 사용할 수 있습니다";
 "ask.storage.help" = "클릭하면 자세히 보기";
 "ask.storage.card.title" = "대화 저장 방식";
@@ -6748,3 +6748,33 @@
 "ask.kind.chatFolderRefused" = "채팅에는 폴더를 첨부할 수 없습니다. 새 작업을 시작하세요.";
 "ask.history.kindFilter" = "대화 유형";
 "ask.kind.foldersRemoved" = "폴더를 제거했습니다: 채팅에서는 폴더를 사용할 수 없습니다.";
+
+/* Chat and Work, phase 2 (GUL-460) */
+"ask.storage.card.cloudModelPrivateNotice" = "내용은 Typeflux를 거쳐 모델 제공업체로 전송되지만 Typeflux에 저장되지 않습니다.";
+"ask.host.anotherMac" = "다른 Mac";
+"ask.host.runsOn" = "'%@'에서 실행";
+"ask.host.workTitle" = "이 작업은 '%@'에서 실행됩니다";
+"ask.host.chatTitle" = "이 대화는 '%@'에서 실행됩니다";
+"ask.host.detail" = "그 기기에서만 이어갈 수 있습니다. 이 Mac에서는 전체 기록을 볼 수 있습니다.";
+"ask.host.newChat" = "이 내용으로 채팅 시작";
+"ask.command.chat" = "채팅으로 전환";
+"ask.command.work" = "작업으로 전환";
+"ask.kind.switched" = "%@(으)로 전환했습니다";
+"ask.kind.continuedAsWork" = "이 채팅을 첨부해 새 작업을 시작했습니다";
+"ask.kind.continuedAsChat" = "이 대화를 첨부해 새 채팅을 시작했습니다";
+"ask.kind.continueAsWork" = "작업으로 이어가기";
+"ask.input.placeholder.work" = "할 작업을 설명하세요, / 로 명령";
+"ask.kind.defaultWorkspace" = "기본 작업 공간";
+"ask.kind.folders" = "%@ 외 %ld";
+"ask.kind.folderHelp" = "작업 폴더: 클릭해 작업이 읽고 쓸 폴더를 추가";
+"ask.offline.newConversation" = "Typeflux Cloud에 연결할 수 없어 클라우드 모델을 사용할 수 없습니다.";
+"ask.offline.started" = "Typeflux Cloud에 연결할 수 없어 지금은 이 대화를 이어갈 수 없습니다.";
+"ask.offline.noLocalModel" = "Typeflux Cloud에 연결할 수 없습니다. 설정 → 모델에서 자체 모델을 추가하면 오프라인으로 사용할 수 있습니다.";
+"ask.offline.useModel" = "%@ 사용";
+"ask.offline.continueWith" = "%@(으)로 새 대화에서 이어가기";
+"ask.upload.action" = "클라우드에 업로드";
+"ask.upload.help" = "한 번만 업로드합니다. 이후 모든 기기에서 동기화되며 이 Mac 전용으로 되돌릴 수 없습니다.";
+"ask.upload.confirmTitle" = "이 대화를 Typeflux Cloud에 업로드할까요?";
+"ask.upload.confirmDetail" = "모든 기기에서 동기화되며 이 Mac 전용으로 되돌릴 수 없습니다.";
+"ask.upload.done" = "업로드했습니다. 이제 이 대화는 모든 기기에서 동기화됩니다";
+"ask.upload.failed" = "업로드하지 못했습니다. 나중에 다시 시도하세요.";

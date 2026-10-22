@@ -51,7 +51,8 @@ extension AskConversation {
 extension AskConversationSummary {
     init(_ conversation: AskConversation) {
         self.init(id: conversation.id, title: conversation.title, updatedAt: conversation.updatedAt,
-                  kind: conversation.resolvedKind.rawValue)
+                  kind: conversation.resolvedKind.rawValue, hostDeviceId: conversation.hostDeviceId,
+                  hostDeviceName: conversation.hostDeviceName)
     }
 
     /// Rows listed by a server that predates kinds have none; they read as chat until opened.

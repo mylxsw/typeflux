@@ -94,11 +94,19 @@ struct ChatDetailView: View {
                         if store.needsCredits {
                             ChatCreditPauseCard(store: store, onBuy: onBuyCredits)
                         }
-                        ChatComposer(store: store, editorFocused: $editorFocused,
-                                     isLoadingPhoto: isLoadingPhoto, isEmpty: isEmpty,
-                                     availableHeight: geometry.size.height,
-                                     onPickPhoto: { showPhotoPicker = true },
-                                     onTakePhoto: { showCamera = true })
+                        if let conversation = store.conversation, conversation.isHostedElsewhere {
+                            // A Mac runs it: the phone reads the history but never continues it.
+                            ChatHostedElsewhereCard(conversation: conversation) {
+                                editorFocused = false
+                                onNewConversation()
+                            }
+                        } else {
+                            ChatComposer(store: store, editorFocused: $editorFocused,
+                                         isLoadingPhoto: isLoadingPhoto, isEmpty: isEmpty,
+                                         availableHeight: geometry.size.height,
+                                         onPickPhoto: { showPhotoPicker = true },
+                                         onTakePhoto: { showCamera = true })
+                        }
                     }
                 }
             }
@@ -334,5 +342,39 @@ struct ChatDetailView: View {
         } catch {
             store.errorMessage = ChatStore.userMessage(for: error)
         }
+    }
+}
+
+/// Takes the composer's place for a conversation a Mac runs: what it is, where it runs,
+/// and a way to start a new chat here instead.
+struct ChatHostedElsewhereCard: View {
+    let conversation: ChatConversation
+    var onNewChat: () -> Void
+
+    var body: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 10) {
+                Image(systemName: conversation.isWork ? "terminal" : "desktopcomputer")
+                    .font(.system(size: 17)).foregroundStyle(ChatTheme.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(conversation.isWork ? "Work runs on your Mac" : "This conversation runs on your Mac")
+                        .font(.system(size: 15, weight: .semibold))
+                    Text(ChatPresentation.hostLine(conversation.hostDeviceName)
+                        + " · " + NSLocalizedString("Read-only on this iPhone", comment: ""))
+                        .font(.system(size: 13)).foregroundStyle(ChatTheme.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+            Button(action: onNewChat) {
+                Text("New chat").font(.system(size: 15, weight: .semibold)).frame(maxWidth: .infinity, minHeight: 40)
+            }
+            .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("chat.hosted.newChat")
+        }
+        .padding(14)
+        .background(ChatTheme.fill, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(.horizontal, 12).padding(.bottom, 10)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("chat.hosted")
     }
 }

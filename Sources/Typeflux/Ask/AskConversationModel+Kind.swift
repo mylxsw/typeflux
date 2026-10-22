@@ -60,3 +60,60 @@ extension AskConversationModel {
         return (kept, L("ask.kind.chatFolderRefused"))
     }
 }
+
+extension AskConversationModel {
+    /// The name of the other device that runs the open conversation, or nil when this
+    /// Mac or Typeflux Cloud runs it. Such a conversation is read-only here.
+    var selectedHostElsewhere: String? {
+        guard let id = selectedId else { return nil }
+        let host = selected?.id == id ? (selected?.hostDeviceId, selected?.hostDeviceName)
+            : conversations.first { $0.id == id }.map { ($0.hostDeviceId, $0.hostDeviceName) } ?? (nil, nil)
+        return Self.hostElsewhere(id: host.0, name: host.1, thisDevice: deviceId)
+    }
+
+    func hostElsewhere(_ summary: AskConversationSummary) -> String? {
+        Self.hostElsewhere(id: summary.hostDeviceId, name: summary.hostDeviceName, thisDevice: deviceId)
+    }
+
+    nonisolated static func hostElsewhere(id: String?, name: String?, thisDevice: String) -> String? {
+        guard let id, !id.isEmpty, id.caseInsensitiveCompare(thisDevice) != .orderedSame else { return nil }
+        return name.flatMap { $0.isEmpty ? nil : $0 } ?? L("ask.host.anotherMac")
+    }
+}
+
+extension AskConversationModel {
+    /// `/chat` and `/work`: a new conversation switches; a started one of the other kind
+    /// carries on in a new conversation of the chosen kind, leaving itself unchanged.
+    func chooseConversationKind(_ kind: AskConversationKind, launcher: Bool) {
+        if canChangeConversationKind(launcher: launcher) {
+            setConversationKind(kind, launcher: launcher)
+            confirm(L("ask.kind.switched", L(kind.titleKey)))
+        } else if conversationKind(launcher: launcher) != kind {
+            continueInNew(kind)
+        }
+    }
+
+    /// Starts a new conversation of `kind` carrying the open conversation's transcript
+    /// as a reference, kept where the source is kept (this Mac or Typeflux Cloud).
+    /// "Continue as work" from a chat and "new chat" from another device's task use it.
+    func continueInNew(_ kind: AskConversationKind) {
+        guard let source = selected else { return }
+        let reference = AskReference(conversation: source)
+        let keepsLocally = isSignedIn && isLocal(source.id) && !isTemporary(source.id)
+        guard newConversation(storesLocally: keepsLocally ? true : nil) else { return }
+        setConversationKind(kind, launcher: false)
+        draft.includeScreenshot = false
+        draft.references = [reference]
+        persistDrafts()
+        confirm(L(kind == .work ? "ask.kind.continuedAsWork" : "ask.kind.continuedAsChat"))
+    }
+
+    func continueInNewChat() { continueInNew(.chat) }
+}
+
+extension AskConversationModel {
+    func confirmUploadSelected() {
+        guard canUploadSelected, uploadConfirmation() else { return }
+        Task { await uploadSelected() }
+    }
+}

@@ -142,6 +142,8 @@ struct AskLocalModeCard: View {
     var onKeep: () -> Void = {}
     /// Ends the temporary conversation.
     var onEnd: () -> Void = {}
+    /// Uploads a started conversation kept on this Mac to Typeflux Cloud; nil hides it.
+    var onUpload: (() -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -193,6 +195,12 @@ struct AskLocalModeCard: View {
             } else if !status.changeable, !status.offersSignIn {
                 HStack {
                     Spacer(minLength: 0)
+                    if status.local, let onUpload {
+                        Button(L("ask.upload.action"), action: onUpload)
+                            .buttonStyle(AskCapsuleButtonStyle(kind: .primary))
+                            .help(L("ask.upload.help"))
+                            .accessibilityIdentifier("ask.storage.upload")
+                    }
                     Button(L(status.local ? "ask.storage.newCloud" : "ask.storage.newLocal"), action: onStartOther)
                         .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
                 }
@@ -213,7 +221,9 @@ struct AskLocalModeCard: View {
 
     @ViewBuilder private var localDetails: some View {
         modelIssue
-        if status.usesOnlineModel {
+        if status.usesCloudModel {
+            fact("network", L("ask.storage.card.cloudModelPrivateNotice"))
+        } else if status.usesOnlineModel {
             fact("network", L("ask.storage.card.onlineModelNotice"))
         } else if status.usesCustomModel {
             fact("network", L("ask.storage.card.localNote"))
@@ -325,6 +335,9 @@ private struct AskLocalModeMenu: ViewModifier {
             }, onEnd: {
                 isPresented = false
                 model.endTemporaryConversation()
+            }, onUpload: launcher || !model.canUploadSelected ? nil : {
+                isPresented = false
+                model.confirmUploadSelected()
             })
         }
     }

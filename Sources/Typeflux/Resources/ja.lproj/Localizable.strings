@@ -2251,7 +2251,7 @@
 /* GUL-193 Per-conversation storage */
 "ask.storage.local" = "このMacのみ";
 "ask.storage.cloud" = "クラウド同期";
-"ask.storage.local.detail" = "Typeflux Cloud にアップロードせず、自分のモデルのみを使います";
+"ask.storage.local.detail" = "Typeflux Cloud にアップロードしません。クラウドモデルも使えます";
 "ask.storage.cloud.detail" = "ほかのデバイスで続けられ、クラウドの全機能を使えます";
 "ask.storage.help" = "クリックして詳細を表示";
 "ask.storage.card.title" = "会話の保存方法";
@@ -6748,3 +6748,33 @@
 "ask.kind.chatFolderRefused" = "チャットにはフォルダを添付できません。タスクを新しく始めてください。";
 "ask.history.kindFilter" = "会話の種類";
 "ask.kind.foldersRemoved" = "フォルダを外しました：チャットではフォルダを使えません。";
+
+/* Chat and Work, phase 2 (GUL-460) */
+"ask.storage.card.cloudModelPrivateNotice" = "内容は Typeflux を経由してモデル提供元に送られますが、Typeflux には保存されません。";
+"ask.host.anotherMac" = "別の Mac";
+"ask.host.runsOn" = "「%@」で実行";
+"ask.host.workTitle" = "このタスクは「%@」で実行されています";
+"ask.host.chatTitle" = "この会話は「%@」で実行されています";
+"ask.host.detail" = "続けられるのはそのデバイスだけです。この Mac では履歴をすべて読めます。";
+"ask.host.newChat" = "これをもとにチャット";
+"ask.command.chat" = "チャットにする";
+"ask.command.work" = "タスクにする";
+"ask.kind.switched" = "%@に切り替えました";
+"ask.kind.continuedAsWork" = "このチャットを添えて新しいタスクを始めました";
+"ask.kind.continuedAsChat" = "この会話を添えて新しいチャットを始めました";
+"ask.kind.continueAsWork" = "タスクとして続ける";
+"ask.input.placeholder.work" = "やりたいタスクを入力、/ でコマンド";
+"ask.kind.defaultWorkspace" = "既定のワークスペース";
+"ask.kind.folders" = "%@ ほか %ld";
+"ask.kind.folderHelp" = "タスクの作業フォルダ：クリックして読み書きを許可するフォルダを追加";
+"ask.offline.newConversation" = "Typeflux Cloud に接続できないため、クラウドモデルは使えません。";
+"ask.offline.started" = "Typeflux Cloud に接続できないため、この会話は今は続けられません。";
+"ask.offline.noLocalModel" = "Typeflux Cloud に接続できません。設定 → モデル で自分のモデルを追加するとオフラインで使えます。";
+"ask.offline.useModel" = "%@ を使う";
+"ask.offline.continueWith" = "%@ で新しい会話として続ける";
+"ask.upload.action" = "クラウドにアップロード";
+"ask.upload.help" = "一度だけのアップロードです。以降はすべてのデバイスで同期され、この Mac のみには戻せません。";
+"ask.upload.confirmTitle" = "この会話を Typeflux Cloud にアップロードしますか？";
+"ask.upload.confirmDetail" = "すべてのデバイスで同期され、この Mac のみには戻せなくなります。";
+"ask.upload.done" = "アップロードしました。この会話はすべてのデバイスで同期されます";
+"ask.upload.failed" = "アップロードできませんでした。後でもう一度お試しください。";

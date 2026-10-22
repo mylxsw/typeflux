@@ -12,12 +12,29 @@ public struct ChatConversation: Codable, Equatable, Identifiable, Sendable {
     /// `auto` once a title was generated, `manual` after a rename; nil while the
     /// conversation still carries its provisional title.
     public var titleSource: String?
+    /// "chat" or "work"; nil for conversations from before kinds existed.
+    public var kind: String?
+    /// The device that runs this conversation, read here from its synchronized
+    /// history; nil when it runs in Typeflux Cloud. Only that device continues it.
+    public var hostDeviceId: String?
+    public var hostDeviceName: String?
 
     public init(id: String, title: String, revision: Int64 = 0, updatedAt: Date = Date(),
-                messages: [ChatMessage] = [], run: ChatRun? = nil, titleSource: String? = nil) {
+                messages: [ChatMessage] = [], run: ChatRun? = nil, titleSource: String? = nil,
+                kind: String? = nil, hostDeviceId: String? = nil, hostDeviceName: String? = nil) {
         self.id = id; self.title = title; self.revision = revision
         self.updatedAt = updatedAt; self.messages = messages; self.run = run; self.titleSource = titleSource
+        self.kind = kind; self.hostDeviceId = hostDeviceId; self.hostDeviceName = hostDeviceName
     }
+
+    /// Runs on another device: readable here, never continued.
+    public var isHostedElsewhere: Bool { hostDeviceId?.isEmpty == false }
+    public var isWork: Bool { kind == "work" }
+}
+
+public extension ChatConversationSummary {
+    var isHostedElsewhere: Bool { hostDeviceId?.isEmpty == false }
+    var isWork: Bool { kind == "work" }
 }
 
 public struct ChatConversationSummary: Codable, Equatable, Identifiable, Sendable {
@@ -26,8 +43,14 @@ public struct ChatConversationSummary: Codable, Equatable, Identifiable, Sendabl
     public var updatedAt: Date
     /// "chat" or "work"; nil from servers and caches that predate conversation kinds.
     public var kind: String?
-    public init(id: String, title: String, updatedAt: Date = Date(), kind: String? = nil) {
+    /// The device that runs this conversation; nil when it runs in Typeflux Cloud
+    /// or on this device. Only that device may continue it.
+    public var hostDeviceId: String?
+    public var hostDeviceName: String?
+    public init(id: String, title: String, updatedAt: Date = Date(), kind: String? = nil,
+                hostDeviceId: String? = nil, hostDeviceName: String? = nil) {
         self.id = id; self.title = title; self.updatedAt = updatedAt; self.kind = kind
+        self.hostDeviceId = hostDeviceId; self.hostDeviceName = hostDeviceName
     }
 }
 
@@ -231,6 +254,8 @@ public struct ChatSendRequest: Encodable, Equatable, Sendable {
     public var reasoningEffort: String?
     public let tools: [String] = []
     public let platform = "iOS"
+    /// Every conversation started on the phone is a chat; ignored once it exists.
+    public let kind = "chat"
     public var timeZone: String
     public var locale: String
     /// Starts a temporary conversation: never listed and deleted when left.

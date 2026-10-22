@@ -170,6 +170,10 @@ struct AskConversation: Codable, Identifiable, Equatable, Sendable {
     /// "chat" or "work", fixed by the opening message; nil before kinds existed.
     /// Read it through `resolvedKind`.
     var kind: String? = nil
+    /// Set when this copy was read from another device's synchronized history:
+    /// only that device may continue the conversation.
+    var hostDeviceId: String? = nil
+    var hostDeviceName: String? = nil
 }
 
 typealias AskConversationSummary = ChatConversationSummary

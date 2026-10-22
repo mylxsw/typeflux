@@ -101,7 +101,10 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             return AskContextLimits(window: model?.contextWindowTokens ?? 32768,
                                     maxOutput: model?.maxOutputTokens ?? 4096,
                                     known: model?.contextWindowTokens != nil)
-        }, summarize: makeSummary(modelLibrary: modelLibrary, modelClient: modelClient), requiresExclusiveAccess: true))
+        }, summarize: makeSummary(modelLibrary: modelLibrary, modelClient: modelClient),
+        // Signed in, a conversation kept on this Mac may answer with Cloud models; the
+        // window runs those inferences with the session token, never storing history.
+        allowsCloudModels: true, requiresExclusiveAccess: true))
     }
 
     /// Retains the host transport for auxiliary invocations in both production and isolated composition.
@@ -163,6 +166,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             AskRoutedAPI.session(token: AuthState.shared.accessToken, owner: AuthState.shared.userProfile?.id)
         }, modelClient: AskDeviceModelClient())
         super.init()
+        // Offline, a composer on a Cloud model offers the user's own models instead.
+        if services == nil { model.startNetworkMonitor() }
         maintenanceTasks.append(Task.detached(priority: .utility) { sandbox.pruneWorkspaces() })
         // Keyword plugins: translation falls back to the text-processing model, and
         // ⌥Return types results into the app the launcher came from.

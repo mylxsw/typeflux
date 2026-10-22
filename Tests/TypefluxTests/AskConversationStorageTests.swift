@@ -30,7 +30,7 @@ struct AskConversationStorageTests {
         let (fixture, own) = try fixture()
         fixture.model.newConversation(storesLocally: true)
         #expect(fixture.model.storesLocally(launcher: false))
-        #expect(!fixture.model.cloudAvailable)
+        #expect(fixture.model.cloudAvailable, "signed in, a private conversation may use Cloud models")
         fixture.model.draft.text = "Keep this here"
         fixture.model.draft.modelRef = own
         fixture.model.submitDraft()
@@ -90,12 +90,16 @@ struct AskConversationStorageTests {
         fixture.model.setStoresLocally(false, launcher: true)
         #expect(!fixture.model.storesLocally(launcher: true))
         #expect(fixture.model.storesLocally(launcher: false))
-        // A Cloud reference in a private draft falls back to the user's own model.
-        #expect(fixture.model.modelReference(launcher: false) == own)
+        // Signed in, a Cloud reference in a private draft stays: it runs through the
+        // stateless device endpoint and keeps no history on the server (GUL-460).
+        #expect(fixture.model.modelReference(launcher: false).hasPrefix("cloud:"))
         fixture.model.newConversation(storesLocally: false)
         #expect(!fixture.model.storesLocally(launcher: false))
         #expect(fixture.model.localFallback("cloud:default", hasImage: false, local: false) == "cloud:default")
-        #expect(fixture.model.localFallback("cloud:default", hasImage: false, local: true) == own)
+        #expect(fixture.model.localFallback("cloud:default", hasImage: false, local: true) == "cloud:default")
+        // Signed out, there is no session to pay for Cloud models: it falls back to the user's own.
+        let signedOut = try AskTestFixture(localOnly: true, modelLibrary: fixture.model.modelLibrary)
+        #expect(signedOut.model.localFallback("cloud:default", hasImage: false, local: true) == own)
     }
 
     @Test func historyListsBothKindsWithoutMovingRows() async throws {
@@ -289,12 +293,15 @@ struct AskConversationStorageTests {
     }
 
     @Test func statusDescribesTheComposersConversation() throws {
-        let (fixture, _) = try fixture()
+        let (fixture, own) = try fixture()
         let cloud = AskLocalModeStatus.make(model: fixture.model, signedIn: true)
         #expect(!cloud.local && cloud.changeable && !cloud.offersSignIn)
         #expect(cloud.usesCloudModel && cloud.usesOnlineModel)
         #expect(cloud.summaryKey == "ask.storage.card.choose")
         fixture.model.setStoresLocally(true, launcher: false)
+        let localCloud = AskLocalModeStatus.make(model: fixture.model, signedIn: true)
+        #expect(localCloud.local && localCloud.usesCloudModel, "a private draft keeps its Cloud model")
+        fixture.model.draft.modelRef = own
         let local = AskLocalModeStatus.make(model: fixture.model, signedIn: true)
         #expect(local.local && local.source == "My model")
         #expect(!local.usesCloudModel && local.usesCustomModel)

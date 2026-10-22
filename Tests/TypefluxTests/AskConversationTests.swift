@@ -245,6 +245,15 @@ actor AskTestAPI: AskAPI {
         if failAfterSteer { throw URLError(.networkConnectionLost) }
         return value
     }
+    var imports: [String] = []
+    /// Like a device engine: takes over a conversation that was kept on this Mac.
+    func importConversation(_ value: AskConversation, token: String) async throws -> AskConversation {
+        guard values[value.id] == nil else { throw AskLocalError.message("Conflict") }
+        imports.append(value.id)
+        values[value.id] = value
+        return value
+    }
+
     func delete(conversationId: String, token: String) async throws {
         deletes.append(conversationId)
         values[conversationId] = nil

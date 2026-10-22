@@ -28,6 +28,11 @@ protocol AskConversationAccess: Sendable {
     func delete(conversationId: String, token: String) async throws
     /// Turns a temporary conversation into an ordinary one kept where it ran.
     func keep(conversationId: String, token: String) async throws -> AskConversation
+    /// Moves a conversation kept on this Mac into the signed-in account's synchronized
+    /// history. One-way: it is never moved back.
+    func upload(conversationId: String, token: String) async throws -> AskConversation
+    /// Takes over a conversation that was kept on this Mac (device engines only).
+    func importConversation(_ value: AskConversation, token: String) async throws -> AskConversation
     /// Removes device memory pinned to every conversation of the signed-in user.
     func purgeMemory(token: String) async throws
     func purgeMemory(owner: String, token: String) async throws
@@ -70,6 +75,12 @@ extension AskConversationAccess {
     /// Services without temporary conversations have nothing to keep.
     func keep(conversationId: String, token: String) async throws -> AskConversation {
         throw AskLocalError.message(L("ask.temporary.keepFailed"))
+    }
+    func upload(conversationId: String, token: String) async throws -> AskConversation {
+        throw AskLocalError.message(L("ask.upload.failed"))
+    }
+    func importConversation(_ value: AskConversation, token: String) async throws -> AskConversation {
+        throw AskLocalError.message(L("ask.upload.failed"))
     }
 }
 

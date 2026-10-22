@@ -306,6 +306,8 @@ final class ChatStore {
         }
         guard isAuthenticated else { showsLogin = true; return }
         guard canSend else { return }
+        // A Mac runs it; the server would refuse the message (ASK_DEVICE_OWNED).
+        guard conversation?.isHostedElsewhere != true else { return }
         if selectedID == nil {
             selectedID = UUID().uuidString.lowercased()
         }
@@ -1099,6 +1101,8 @@ extension ChatStore {
                 return "This conversation is no longer available. It may have been deleted on another device."
             case "ASK_CONFLICT":
                 return "This conversation changed on another device. Pull down to refresh, then try again."
+            case "ASK_DEVICE_OWNED":
+                return "This conversation runs on your Mac. Continue it there, or start a new chat here."
             case "AUTH_RESET_CODE_INVALID":
                 return "That code isn't right or has expired. Check the latest email and try again."
             case "AUTH_RESET_CODE_LOCKED", "AUTH_ACTIVATION_LOCKED":

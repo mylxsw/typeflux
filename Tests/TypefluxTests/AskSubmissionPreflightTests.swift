@@ -249,7 +249,8 @@ struct AskSubmissionPreflightTests {
         let cloud = try makeFixture(local: false)
         #expect(AskLocalModeStatus.make(model: cloud.model, signedIn: true).modelAvailable)
         cloud.model.draft.storesLocally = true
-        #expect(!AskLocalModeStatus.make(model: cloud.model, signedIn: true).modelAvailable)
+        // Signed in, a Cloud model stays available to a conversation kept on this Mac.
+        #expect(AskLocalModeStatus.make(model: cloud.model, signedIn: true).modelAvailable)
         #expect(!AskLocalModeStatus.make(model: cloud.model, signedIn: true).offersSignIn)
     }
 

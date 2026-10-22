@@ -69,6 +69,21 @@ struct AskRoutedAPI: AskAPI {
         try await api(token).keep(conversationId: conversationId, token: token)
     }
 
+    /// Hands a settled conversation from this Mac's private engine to the account's
+    /// device engine, which synchronizes it; the private copy is removed only after.
+    func upload(conversationId id: String, token: String) async throws -> AskConversation {
+        guard !token.isEmpty else { throw AuthError.unauthorized }
+        let value = try await local.conversation(id: id, token: "")
+        guard value.run?.isActive != true else { throw AskLocalError.message(L("ask.local.busy")) }
+        let imported = try await cloud.importConversation(value, token: token)
+        try await local.delete(conversationId: id, token: "")
+        return imported
+    }
+
+    func importConversation(_ value: AskConversation, token: String) async throws -> AskConversation {
+        try await cloud.importConversation(value, token: token)
+    }
+
     /// Local copies are always cleared; Cloud copies only with a Cloud session.
     func purgeMemory(token: String) async throws {
         try await local.purgeMemory(token: "")

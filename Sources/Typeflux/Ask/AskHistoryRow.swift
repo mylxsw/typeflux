@@ -13,6 +13,8 @@ struct AskHistoryRow: View {
     var local = false
     /// Work on this Mac rather than a chat; a small neutral glyph leads the title.
     var work = false
+    /// Another device runs it (read-only here); its name is the glyph's help.
+    var host: String? = nil
     let selectionSpace: Namespace.ID
     var onSelect: () -> Void
     var onRename: (String) async throws -> Void = { _ in }
@@ -49,7 +51,14 @@ struct AskHistoryRow: View {
         HStack(spacing: 8) {
             // A conversation still working shows a breathing accent dot.
             if busy { AskRunToneDot(tone: .running) }
-            if work, !busy {
+            if let host, !busy {
+                Image(systemName: "desktopcomputer")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .help(L("ask.host.runsOn", host))
+                    .accessibilityLabel(L("ask.host.runsOn", host))
+                    .accessibilityIdentifier("ask.history.hostMark")
+            } else if work, !busy {
                 Image(systemName: AskConversationKind.work.symbol)
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(StudioTheme.textTertiary)

@@ -409,10 +409,11 @@ this Mac; signing in is optional. The design board is
   Cloud. Cloud conversations use the server's search configuration; the choice
   follows conversation execution location, not the selected model provider.
   iOS uses server-side search and does not expose local search configuration.
-- A Cloud model reference in a private conversation falls back to the first
-  available configured model; with none configured the send is refused with
-  guidance to add one in Settings → Models. Cloud models stay disabled in the picker.
-- Not available in private conversations: Cloud models, the `research` sub-agent,
+- Signed out, a Cloud model reference falls back to the first available configured
+  model; with none configured the send is refused with guidance to add one in
+  Settings → Models. Signed in, private conversations may use Cloud models (see
+  "Where each conversation runs" below).
+- Not available in private conversations: the `research` sub-agent,
   server-side background runs (a local run pauses while the app is closed and
   resumes from the workspace), run traces, Cloud usage metering and sync.
 
@@ -448,6 +449,36 @@ temporary) and of which model answers.
 - Adding a folder to a chat that has not started switches it to work; a started
   chat refuses the folder and keeps the other items. Switching a draft back to
   chat removes its folders.
+
+### Where each conversation runs (phase 2)
+
+- A chat that opens on a Typeflux Cloud model runs in Typeflux Cloud (the server
+  engine), never on this Mac, so iOS and the web can continue it. `AskDeviceAPI`
+  sends it to the server on its opening message and keeps every later call there;
+  it is never adopted by this Mac. Work, and chats on the user's own models, run on
+  this Mac and synchronize their history. Server conversations from before kinds
+  keep their existing adoption on the next message.
+- Synchronized snapshots carry this Mac's computer name (`device_name`). A
+  conversation another device runs reads with `hostDeviceId`/`hostDeviceName`: its
+  sidebar row shows a computer glyph and the composer is replaced by a read-only
+  notice with "Start a chat from it".
+- Signed in, a conversation kept on this Mac may answer with Cloud models. Their
+  inference goes to the stateless `/ask/device/completions` endpoint with the
+  session token, so no history reaches the server; the storage card says so. Signed
+  out, Cloud references still fall back to the first local model.
+- A settled conversation kept on this Mac can be uploaded (storage card → "Upload
+  to Cloud", confirmed first). `AskRoutedAPI.upload` hands it to the account's
+  device engine (`importConversation`), which synchronizes it, and only then removes
+  the private copy. It is one-way.
+- Offline (`NWPathMonitor`), a composer on a Cloud model shows a notice: a new
+  conversation can switch to the first local model (it then runs on this Mac and
+  synchronizes later); a started Cloud conversation can continue in a new one on a
+  local model, carrying its transcript. Messages are never queued for later.
+- "Continue as Work" in a chat's header, `/work` in a started chat, and the
+  read-only notice start a new conversation that carries the source transcript as a
+  reference (`AskReference(conversation:)`, newest turns within 16 KB). `/chat` and
+  `/work` switch a new draft. A new task shows its folders beside the permission
+  menu (`AskWorkFolderButton`) and the placeholder "Describe the task".
 
 Production views rendered with synthetic data (`AskConversationKindVisualTests`, set
 `TYPEFLUX_KIND_SNAPSHOTS` to a directory):

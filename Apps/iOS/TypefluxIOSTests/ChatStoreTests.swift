@@ -722,6 +722,42 @@ extension ChatStoreTests {
     }
 }
 
+extension ChatStoreTests {
+    @Test func `a conversation a Mac runs is read-only on the phone`() async throws {
+        let (store, api, _) = makeStore()
+        await store.login(email: "user@example.com", password: "password")
+        await api.hostOnMac("MacBook Pro")
+        await store.select("one")
+        try await eventually { await MainActor.run { store.conversation?.isHostedElsewhere == true } }
+        #expect(store.conversation?.hostDeviceName == "MacBook Pro")
+        store.draft = "Continue here"
+        await store.send()
+        #expect(await api.sentRequests.isEmpty, "the phone never sends into a Mac's conversation")
+        #expect(store.draft == "Continue here")
+    }
+
+    @Test func `new phone conversations open as chats`() async {
+        let (store, api, _) = makeStore()
+        await store.login(email: "user@example.com", password: "password")
+        store.draft = "Hello"
+        await store.send()
+        #expect(await api.sentRequests.first?.kind == "chat")
+    }
+
+    @Test func `kind filter, host line and device-owned message`() {
+        let work = ChatConversationSummary(id: "w", title: "W", kind: "work", hostDeviceId: "mac", hostDeviceName: "Studio")
+        let chat = ChatConversationSummary(id: "c", title: "C", kind: "chat")
+        let legacy = ChatConversationSummary(id: "l", title: "L")
+        #expect([work, chat, legacy].filter(ChatKindFilter.work.includes).map(\.id) == ["w"])
+        #expect([work, chat, legacy].filter(ChatKindFilter.chat.includes).map(\.id) == ["c", "l"])
+        #expect([work, chat, legacy].filter(ChatKindFilter.all.includes).count == 3)
+        #expect(ChatPresentation.hostLine("Studio") == "Runs on Studio")
+        #expect(ChatPresentation.hostLine(nil) == "Runs on your Mac")
+        #expect(ChatStore.userMessage(for: ChatAPIError.server(code: "ASK_DEVICE_OWNED", message: "x"))
+            .contains("runs on your Mac"))
+    }
+}
+
 private extension ChatStoreTests {
     // A fixture groups the subject with its two independent test doubles.
     // swiftlint:disable:next large_tuple
@@ -991,6 +1027,13 @@ private actor FakeChatAPI: ChatAPI {
             return [first, ChatConversationSummary(id: "two", title: "Second")]
         }
         return []
+    }
+
+    /// Makes the served document one a Mac runs (GUL-460).
+    func hostOnMac(_ name: String?) {
+        document.kind = "work"
+        document.hostDeviceId = "mac-device"
+        document.hostDeviceName = name
     }
 
     func conversation(id _: String, token _: String) async throws -> ChatConversation {
