@@ -130,4 +130,11 @@ Command wall times include compilation and discovery: broad regression 254.31s;
 final recording retry 61.75s (37.44s build/discovery, 24.30s execution). Earlier
 failed attempts and diagnostic runs are retained in the task's validation logs;
 passing retries do not erase those failures. Release compilation is verified
-separately before main-branch delivery.
+separately before main-branch delivery. The optimized production build
+(`swift build --build-system native -c release --jobs 4 --product Typeflux`)
+passed in **408.30s** including the cold dependency build.
+
+Additional retry wall times: native/recording retry 169.19s; submission/encoder
+compile retries 33.01s and 86.14s; handoff/native/media retry 177.12s; recording
+diagnostic runs 76.77s and 43.06s. The final recording retry above closes the
+remaining failures. No failed selected test remains unresolved.
