@@ -181,27 +181,9 @@ extension View {
 struct AskFolderPermissionControls: View {
     @ObservedObject var model: AskConversationModel
     let launcher: Bool
-    private var draft: AskDraft {
-        launcher ? model.launcherDraft : model.draft
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Divider()
-            Text(L("ask.folder.lifetime")).font(.caption)
-            Picker(L("ask.folder.lifetime"), selection: Binding(
-                get: { draft.folderLifetime ?? .task },
-                set: { lifetime in
-                    if launcher {
-                        model.launcherDraft.folderLifetime = lifetime
-                    } else {
-                        model.draft.folderLifetime = lifetime
-                    }
-                }
-            )) {
-                Text(L("ask.folder.task")).tag(AskFolderGrants.Lifetime.task)
-                Text(L("ask.folder.session")).tag(AskFolderGrants.Lifetime.conversationSession)
-            }.labelsHidden()
             Text(L("ask.folder.boundary")).font(.caption).foregroundStyle(.secondary)
             let grants = model.temporaryFolderGrants()
             if !launcher, !grants.isEmpty {

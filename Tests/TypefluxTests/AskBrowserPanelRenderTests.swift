@@ -161,7 +161,7 @@ struct AskBrowserPanelRenderTests {
 }
 
 extension AskBrowserPanelRenderTests {
-    @Test func temporaryFolderControlsShowLifetimeSourceAndIndependentSettings() async throws {
+    @Test func temporaryFolderControlsOmitLifetimePickerAndKeepRevocation() async throws {
         let root = try AskAttachmentFixture.directory()
         defer { try? FileManager.default.removeItem(at: root) }
         let defaults = UserDefaults(suiteName: UUID().uuidString)!
@@ -196,12 +196,14 @@ extension AskBrowserPanelRenderTests {
         try await SettingsBehaviorTestSupport.wait {
             SettingsBehaviorTestSupport.contains(L("ask.folder.revoke"), in: window)
         }
+        #expect(!SettingsBehaviorTestSupport.contains(L("ask.folder.lifetime"), in: window))
+        #expect(!SettingsBehaviorTestSupport.contains(L("ask.folder.task"), in: window))
         try snapshot(hosting, name: "temporary-folder-permissions")
         try SettingsBehaviorTestSupport.button(L("ask.folder.revoke"), in: window).press()
         try await SettingsBehaviorTestSupport.wait { fixture.model.temporaryFolderGrants().isEmpty }
         #expect(tools.fileTools(conversationId: "c").roots.contains(root.path))
         try render(AskFolderPermissionControls(model: fixture.model, launcher: true).padding(12)
             .frame(width: 340, height: 160).background(AskTheme.surface),
-                   name: "launcher-folder-lifetime", size: NSSize(width: 340, height: 160), minimumPNGBytes: 4000)
+                   name: "launcher-folder-permissions", size: NSSize(width: 340, height: 160), minimumPNGBytes: 4000)
     }
 }

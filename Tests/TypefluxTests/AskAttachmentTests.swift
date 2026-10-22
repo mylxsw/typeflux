@@ -537,7 +537,6 @@ struct AskFolderSubmissionTests {
         fixture.model.launcherDraft = .followUp
         fixture.model.launcherDraft.text = "Inspect folder"
         fixture.model.launcherDraft.temporary = true
-        fixture.model.launcherDraft.folderLifetime = .conversationSession
         fixture.model.launcherDraft.attachments = [.init(kind: .folder, name: "root", path: root.path)]
         fixture.model.submitLauncher()
         try await fixture.wait { !fixture.model.isBusy && fixture.model.selectedId != nil }
@@ -616,39 +615,35 @@ extension AskFolderSubmissionTests {
 }
 
 extension AskFolderSubmissionTests {
-    @Test func defaultProductionFileDispatchUsesOnlyAdmittedTaskAndSessionRoots() async throws {
-        for lifetime in AskFolderGrants.Lifetime.allCases {
-            let root = try AskAttachmentFixture.directory()
-            defer { try? FileManager.default.removeItem(at: root) }
-            let path = root.appendingPathComponent("note.txt")
-            try Data("scope-bound file content".utf8).write(to: path)
-            let defaults = UserDefaults(suiteName: UUID().uuidString)!
-            let tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)),
-                                      settings: SettingsStore(defaults: defaults), owner: { "owner" })
-            let fixture = try AskTestFixture(toolsOverride: tools)
-            defer { fixture.model.resetSession() }
-            let call = AskToolCall(id: "read", function: .init(name: "files", arguments:
-                String(decoding: try JSONSerialization.data(withJSONObject: ["action": "read", "path": path.path]), as: UTF8.self)))
-            await fixture.api.setTool(call)
-            fixture.model.draft = .followUp
-            fixture.model.draft.text = "Read the selected folder"
-            fixture.model.draft.folderLifetime = lifetime
-            fixture.model.draft.attachments = [.init(kind: .folder, name: "root", path: root.path)]
-            fixture.model.submitDraft()
-            try await fixture.wait { !fixture.model.isBusy && fixture.model.selectedId != nil }
-            let id = try #require(fixture.model.selectedId)
-            #expect(await fixture.api.results.first?.content.contains("scope-bound file content") == true)
-            #expect(tools.temporaryFolders(conversationId: id).count == (lifetime == .task ? 0 : 1))
-            if lifetime == .conversationSession {
-                fixture.model.draft.text = "Read again in another task"
-                fixture.model.submitDraft()
-                try await fixture.wait { !fixture.model.isBusy }
-                #expect(await fixture.api.results.count == 2)
-                #expect(tools.temporaryFolders(conversationId: id).count == 1)
-                fixture.model.revokeTemporaryFolder(nil)
-                #expect(tools.temporaryFolders(conversationId: id).isEmpty)
-            }
-        }
+    @Test func defaultFolderAccessSurvivesFollowUpUntilRevoked() async throws {
+        let root = try AskAttachmentFixture.directory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let path = root.appendingPathComponent("note.txt")
+        try Data("scope-bound file content".utf8).write(to: path)
+        let defaults = UserDefaults(suiteName: UUID().uuidString)!
+        let tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)),
+                              settings: SettingsStore(defaults: defaults), owner: { "owner" })
+        let fixture = try AskTestFixture(toolsOverride: tools)
+        defer { fixture.model.resetSession() }
+        let call = AskToolCall(id: "read", function: .init(name: "files", arguments:
+            String(decoding: try JSONSerialization.data(withJSONObject: ["action": "read", "path": path.path]), as: UTF8.self)))
+        await fixture.api.setTool(call)
+        fixture.model.draft = .followUp
+        fixture.model.draft.text = "Read the selected folder"
+        fixture.model.draft.attachments = [.init(kind: .folder, name: "root", path: root.path)]
+        fixture.model.submitDraft()
+        try await fixture.wait { !fixture.model.isBusy && fixture.model.selectedId != nil }
+        let id = try #require(fixture.model.selectedId)
+        #expect(await fixture.api.results.first?.content.contains("scope-bound file content") == true)
+        #expect(tools.temporaryFolders(conversationId: id).first?.lifetime == .conversationSession)
+        fixture.model.draft.text = "Read again in another task"
+        fixture.model.submitDraft()
+        try await fixture.wait { !fixture.model.isBusy }
+        #expect(await fixture.api.results.count == 2)
+        #expect(await fixture.api.results.last?.content.contains("scope-bound file content") == true)
+        #expect(tools.temporaryFolders(conversationId: id).count == 1)
+        fixture.model.revokeTemporaryFolder(nil)
+        #expect(tools.temporaryFolders(conversationId: id).isEmpty)
     }
 }
 
@@ -667,7 +662,6 @@ extension AskFolderSubmissionTests {
             fixture.model.draft = .followUp
             fixture.model.draft.text = "Authorize this conversation"
             fixture.model.draft.temporary = temporary
-            fixture.model.draft.folderLifetime = .conversationSession
             fixture.model.draft.attachments = [.init(kind: .folder, name: "root", path: root.path)]
             fixture.model.submitDraft()
             try await fixture.wait { !fixture.model.isBusy && fixture.model.selectedId != nil }

@@ -1210,7 +1210,7 @@ final class AskConversationModel: ObservableObject {
             attachmentNotice = L("ask.folder.expired")
         }
         do {
-            try tools.stageFolders(folders, lifetime: submitted.folderLifetime ?? .task,
+            try tools.stageFolders(folders, lifetime: .conversationSession,
                                    ownerId: route.account, deviceId: deviceId, conversationId: id,
                                    messageID: messageID, generation: generation)
         } catch {

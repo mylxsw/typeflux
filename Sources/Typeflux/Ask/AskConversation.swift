@@ -39,8 +39,6 @@ struct AskMessage: Codable, Identifiable, Equatable, Sendable {
     /// Sent into a run that was already working ("jumped the queue").
     var steered: Bool? = nil
     var attachments: [AskAttachment]? = nil
-    /// Local user choice for a new submission; never read from server messages.
-    var folderLifetime: AskFolderGrants.Lifetime? = nil
     /// Skills and MCP servers the user chose for this question with a slash command.
     var skills: [AskSkillUse]? = nil
     var mcpServers: [String]? = nil
@@ -277,8 +275,6 @@ struct AskDraft: Codable, Equatable, Sendable {
     var selectionOff: Bool? = nil
     /// Files, images and folders the user added; nil when there are none.
     var attachments: [AskAttachment]? = nil
-    /// Local user choice for a new submission; never read from server messages.
-    var folderLifetime: AskFolderGrants.Lifetime? = nil
     /// Skill and MCP server names chosen with a slash command for the next message.
     var skills: [String]? = nil
     var mcpServers: [String]? = nil
@@ -291,7 +287,7 @@ struct AskDraft: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case text, includeScreenshot, screenshot, selection, source, sourceOff, capturedAt, modelRef
-        case references, memory, memoryOff, selectionOff, attachments, folderLifetime, skills, mcpServers,
+        case references, memory, memoryOff, selectionOff, attachments, skills, mcpServers,
              storesLocally,
              temporary
         // convertFromSnakeCase maps source_bundle_id to sourceBundleId.
