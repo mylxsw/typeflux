@@ -3,8 +3,8 @@ import SwiftUI
 
 @MainActor
 final class OnboardingWindowController: NSObject {
-    static let windowWidth: CGFloat = 980
-    static let windowHeight: CGFloat = 780
+    static let windowWidth: CGFloat = 960
+    static let windowHeight: CGFloat = 664
 
     private var window: NSWindow?
     private var viewModel: OnboardingViewModel?

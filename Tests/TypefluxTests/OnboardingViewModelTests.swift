@@ -13,6 +13,7 @@ final class OnboardingViewModelTests: XCTestCase {
         suiteName = "OnboardingViewModelTests-\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suiteName)
         store = SettingsStore(defaults: defaults)
+        store.useAppleSpeechFallback = false
     }
 
     override func tearDown() {
@@ -25,556 +26,335 @@ final class OnboardingViewModelTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: - Steps
+
     @MainActor
-    func testVisibleStepsDoNotIncludeWelcomeStep() {
+    func testEveryoneWalksThroughEveryFeature() {
         let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
 
-        XCTAssertEqual(viewModel.visibleSteps, [.language, .account, .stt, .llm, .permissions, .shortcuts])
-        XCTAssertEqual(viewModel.currentStep, .language)
+        XCTAssertEqual(viewModel.visibleSteps, [.welcome, .permissions, .voice, .launcher, .tools, .ring, .chat, .finish])
+        XCTAssertEqual(viewModel.featureSteps.compactMap(\.feature), OnboardingFeature.allCases)
+        XCTAssertEqual(viewModel.currentStep, .welcome)
+        XCTAssertFalse(viewModel.canGoBack)
+        XCTAssertFalse(viewModel.isLastStep)
+        XCTAssertNil(OnboardingViewModel.Step.welcome.feature)
+        XCTAssertNil(OnboardingViewModel.Step.finish.feature)
     }
 
     @MainActor
-    func testAdvanceFromLanguageMovesToAccountStep() {
+    func testAdvanceAndBackMoveBetweenSteps() {
         let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        viewModel.advance()
-
-        XCTAssertEqual(viewModel.currentStep, .account)
-    }
-
-    @MainActor
-    func testAdvanceFromAccountWithoutLoginMovesToSTT() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        viewModel.currentStep = .account
-
-        viewModel.advance()
-
-        XCTAssertEqual(viewModel.currentStep, .stt)
-    }
-
-    @MainActor
-    func testContinueWithoutCloudAccountMovesToManualSetup() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        viewModel.currentStep = .account
-
-        viewModel.continueWithoutCloudAccount()
-
-        XCTAssertFalse(viewModel.useCloudAccountModels)
-        XCTAssertEqual(viewModel.currentStep, .stt)
-    }
-
-    @MainActor
-    func testUsingCloudAccountSkipsModelConfigurationSteps() {
-        let authState = makeLoggedInAuthState()
-        let viewModel = OnboardingViewModel(settingsStore: store, authState: authState, onComplete: {})
-        viewModel.currentStep = .account
-
-        viewModel.useCloudAccountModelsAndContinue()
-
-        XCTAssertEqual(viewModel.currentStep, .permissions)
-        XCTAssertEqual(viewModel.visibleSteps, [.language, .account, .permissions, .shortcuts])
-        XCTAssertEqual(store.sttProvider, .typefluxOfficial)
-        XCTAssertEqual(store.llmProvider, .openAICompatible)
-        XCTAssertEqual(store.llmRemoteProvider, .typefluxCloud)
-    }
-
-    @MainActor
-    func testCloudDefaultsNotificationSyncsOnboardingState() async throws {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        viewModel.currentStep = .account
-        store.sttProvider = .typefluxOfficial
-        store.llmProvider = .openAICompatible
-        store.llmRemoteProvider = .typefluxCloud
-
-        NotificationCenter.default.post(name: .cloudAccountModelDefaultsDidApply, object: store)
-        try await Task.sleep(nanoseconds: 50_000_000)
-
-        XCTAssertEqual(viewModel.visibleSteps, [.language, .account, .permissions, .shortcuts])
-        XCTAssertEqual(viewModel.sttProvider, .typefluxOfficial)
-        XCTAssertEqual(viewModel.llmProvider, .openAICompatible)
-        XCTAssertEqual(viewModel.llmRemoteProvider, .typefluxCloud)
-    }
-
-    @MainActor
-    func testMultimodalSTTSkipsLLMStep() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        viewModel.currentStep = .stt
-        viewModel.sttProvider = .multimodalLLM
-        viewModel.multimodalLLMBaseURL = "https://api.openai.com/v1"
-        viewModel.multimodalLLMAPIKey = "sk-test"
-        viewModel.multimodalLLMModel = "gpt-4o-mini-transcribe"
+        viewModel.permissions = grantedPermissions()
 
         viewModel.advance()
         XCTAssertEqual(viewModel.currentStep, .permissions)
-        XCTAssertFalse(viewModel.visibleSteps.contains(.llm))
+        XCTAssertEqual(viewModel.stepDirection, 1)
+        viewModel.advance()
+        XCTAssertEqual(viewModel.currentStep, .voice)
 
         viewModel.goBack()
-        XCTAssertEqual(viewModel.currentStep, .stt)
-    }
-
-    @MainActor
-    func testRemoteSTTConfigurationBlocksAdvanceUntilComplete() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        viewModel.currentStep = .stt
-        viewModel.selectSTTProvider(.whisperAPI)
-        viewModel.whisperBaseURL = "https://api.openai.com/v1"
-        viewModel.whisperModel = "whisper-1"
-        viewModel.whisperAPIKey = ""
-
-        XCTAssertFalse(viewModel.isSTTConfigurationComplete)
-
-        viewModel.advance()
-
-        XCTAssertEqual(viewModel.currentStep, .stt)
-        XCTAssertTrue(viewModel.showIncompleteSTTConfigurationAlert)
-
-        viewModel.whisperAPIKey = "sk-test"
-        viewModel.advance()
-
-        XCTAssertEqual(viewModel.currentStep, .llm)
-        XCTAssertFalse(viewModel.showIncompleteSTTConfigurationAlert)
-    }
-
-    @MainActor
-    func testLocalSTTCanAdvanceWithoutManualCredentialConfiguration() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        viewModel.currentStep = .stt
-        viewModel.selectSTTProvider(.localModel)
-
-        XCTAssertTrue(viewModel.isSTTConfigurationComplete)
-
-        viewModel.advance()
-
-        XCTAssertEqual(viewModel.currentStep, .llm)
-        XCTAssertEqual(store.sttProvider, .localModel)
-    }
-
-    @MainActor
-    func testSelectingLocalSTTStartsBackgroundModelPreparation() async {
-        let modelManager = StubLocalModelManager()
-        let prepared = expectation(description: "local STT model preparation started")
-        modelManager.onPrepare = {
-            prepared.fulfill()
-        }
-        let viewModel = OnboardingViewModel(
-            settingsStore: store,
-            localModelManager: modelManager,
-            onComplete: {}
-        )
-        viewModel.currentStep = .stt
-
-        viewModel.selectSTTProvider(.localModel)
-
-        await fulfillment(of: [prepared], timeout: 1)
-        XCTAssertEqual(modelManager.preparedConfigurations.first?.model, .senseVoiceSmall)
-        XCTAssertEqual(store.localSTTModel, .senseVoiceSmall)
-        XCTAssertTrue(store.localSTTAutoSetup)
-    }
-
-    @MainActor
-    func testIncompleteLLMConfigurationShowsAlertAndStaysOnStep() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        viewModel.currentStep = .llm
-        viewModel.llmProvider = .openAICompatible
-        viewModel.llmRemoteProvider = .openAI
-        viewModel.llmBaseURL = "https://api.openai.com/v1"
-        viewModel.llmModel = "gpt-4o-mini"
-        viewModel.llmAPIKey = ""
-
-        viewModel.advance()
-
-        XCTAssertEqual(viewModel.currentStep, .llm)
-        XCTAssertTrue(viewModel.showIncompleteLLMConfigurationAlert)
-    }
-
-    @MainActor
-    func testSkippingIncompleteLLMConfigurationContinuesToPermissions() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        viewModel.currentStep = .llm
-        viewModel.llmProvider = .openAICompatible
-        viewModel.llmRemoteProvider = .openAI
-        viewModel.llmBaseURL = "https://api.openai.com/v1"
-        viewModel.llmModel = "gpt-4o-mini"
-        viewModel.llmAPIKey = ""
-
-        viewModel.advance()
-        viewModel.skipIncompleteLLMConfiguration()
-
         XCTAssertEqual(viewModel.currentStep, .permissions)
-        XCTAssertFalse(viewModel.showIncompleteLLMConfigurationAlert)
+        XCTAssertEqual(viewModel.stepDirection, -1)
+        viewModel.goBack()
+        viewModel.goBack()
+        XCTAssertEqual(viewModel.currentStep, .welcome)
     }
 
     @MainActor
-    func testAdvanceFromPermissionsShowsAlertWhenRequiredPermissionsAreMissing() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        viewModel.currentStep = .permissions
-        viewModel.permissions = [
-            PrivacyGuard.PermissionSnapshot(
-                id: .microphone,
-                state: .needsAttention,
-                detail: "Microphone missing"
-            ),
-            PrivacyGuard.PermissionSnapshot(
-                id: .speechRecognition,
-                state: .granted,
-                detail: "Speech granted"
-            ),
-            PrivacyGuard.PermissionSnapshot(
-                id: .accessibility,
-                state: .granted,
-                detail: "Accessibility granted"
-            )
-        ]
+    func testGuidesNeverBlockAndTheLastStepCompletes() {
+        var completions = 0
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: { completions += 1 })
+        viewModel.currentStep = .voice
 
-        viewModel.advance()
-
-        XCTAssertEqual(viewModel.currentStep, .permissions)
-        XCTAssertTrue(viewModel.showIncompletePermissionsAlert)
-    }
-
-    @MainActor
-    func testAdvanceFromPermissionsContinuesWhenRequiredPermissionsAreGranted() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        viewModel.currentStep = .permissions
-        viewModel.permissions = [
-            PrivacyGuard.PermissionSnapshot(
-                id: .microphone,
-                state: .granted,
-                detail: "Microphone granted"
-            ),
-            PrivacyGuard.PermissionSnapshot(
-                id: .speechRecognition,
-                state: .needsAttention,
-                detail: "Speech missing"
-            ),
-            PrivacyGuard.PermissionSnapshot(
-                id: .accessibility,
-                state: .granted,
-                detail: "Accessibility granted"
-            )
-        ]
-
-        viewModel.advance()
-
-        XCTAssertEqual(viewModel.currentStep, .shortcuts)
-        XCTAssertFalse(viewModel.showIncompletePermissionsAlert)
-    }
-
-    @MainActor
-    func testInitialSTTProviderFallsBackWhenTypefluxCloudIsHiddenInOnboarding() {
-        store.sttProvider = .typefluxOfficial
-
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        XCTAssertEqual(viewModel.sttProvider, .localModel)
-    }
-
-    @MainActor
-    func testInitialLLMProviderFallsBackWhenTypefluxCloudIsHiddenInOnboarding() {
-        store.llmProvider = .openAICompatible
-        store.llmRemoteProvider = .typefluxCloud
-
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        XCTAssertEqual(viewModel.llmProvider, .openAICompatible)
-        XCTAssertEqual(viewModel.llmRemoteProvider, .custom)
-    }
-
-    @MainActor
-    func testNewUserDefaultsToSenseVoiceAndOpenAI() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        XCTAssertEqual(viewModel.sttProvider, .localModel)
-        XCTAssertEqual(viewModel.localSTTModel, .senseVoiceSmall)
-        XCTAssertEqual(viewModel.llmProvider, .openAICompatible)
-        XCTAssertEqual(viewModel.llmRemoteProvider, .openAI)
-    }
-
-    // MARK: - Default persona selection on completion
-
-    @MainActor
-    func testCompletingOnboardingWithCloudLoginSelectsTypefluxPersona() {
-        let authState = makeLoggedInAuthState()
-        let viewModel = OnboardingViewModel(settingsStore: store, authState: authState, onComplete: {})
-
-        viewModel.currentStep = .account
-        viewModel.useCloudAccountModelsAndContinue()
-        completeOnboarding(viewModel)
-
-        XCTAssertTrue(store.personaRewriteEnabled)
-        XCTAssertEqual(store.activePersonaID, SettingsStore.defaultPersonaID.uuidString)
-        XCTAssertEqual(store.activePersona?.name, "Typeflux")
-    }
-
-    @MainActor
-    func testCompletingOnboardingWithCustomLLMSelectsTypefluxPersona() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        viewModel.currentStep = .llm
-        viewModel.llmProvider = .openAICompatible
-        viewModel.llmRemoteProvider = .custom
-        viewModel.llmBaseURL = "https://example.com/v1"
-        viewModel.llmModel = "my-model"
-        completeOnboarding(viewModel)
-
-        XCTAssertTrue(store.personaRewriteEnabled)
-        XCTAssertEqual(store.activePersonaID, SettingsStore.defaultPersonaID.uuidString)
-    }
-
-    @MainActor
-    func testCompletingOnboardingWithoutLLMLeavesPersonaDisabled() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        // Go through all steps without configuring LLM (default openAI, no API key).
-        completeOnboarding(viewModel)
-
-        XCTAssertFalse(store.personaRewriteEnabled)
-        XCTAssertEqual(store.activePersonaID, "")
-        XCTAssertNil(store.activePersona)
-    }
-
-    @MainActor
-    func testCompletingOnboardingDoesNotOverwriteExplicitPersonaChoice() throws {
-        // User pre-selected the "English Translator" persona before completing onboarding.
-        let translatorID = try XCTUnwrap(UUID(uuidString: "2A7A4A74-A8AC-4F3C-9FB1-5A433EDFA002"))
-        store.applyPersonaSelection(translatorID)
-
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        viewModel.currentStep = .llm
-        viewModel.llmProvider = .openAICompatible
-        viewModel.llmRemoteProvider = .custom
-        viewModel.llmBaseURL = "https://example.com/v1"
-        viewModel.llmModel = "my-model"
-        completeOnboarding(viewModel)
-
-        XCTAssertEqual(store.activePersonaID, translatorID.uuidString)
-    }
-
-    @MainActor
-    func testSkipWithoutAnimationAppliesDefaultPersonaWhenLLMConfigured() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        // Simulate a pre-configured LLM before the user closes the onboarding window.
-        store.llmProvider = .openAICompatible
-        store.llmRemoteProvider = .custom
-        store.setLLMBaseURL("https://example.com/v1", for: .custom)
-        store.setLLMModel("my-model", for: .custom)
-
-        viewModel.skipWithoutAnimation()
-
-        XCTAssertTrue(store.isOnboardingCompleted)
-        XCTAssertTrue(store.personaRewriteEnabled)
-        XCTAssertEqual(store.activePersonaID, SettingsStore.defaultPersonaID.uuidString)
-    }
-
-    @MainActor
-    private func completeOnboarding(_ viewModel: OnboardingViewModel) {
-        // Advance until onboarding marks itself complete. `advance()` no-ops past the last step,
-        // so bound the loop to avoid infinite iteration if `isOnboardingCompleted` is never set.
-        var guardCounter = 0
-        while !store.isOnboardingCompleted, guardCounter < 20 {
-            // The permissions step blocks advance() unless required permissions are granted.
-            // Stub them as granted so the loop can progress.
-            if viewModel.currentStep == .permissions {
-                viewModel.permissions = PrivacyGuard.requiredPermissionIDs(settingsStore: store).map { id in
-                    PrivacyGuard.PermissionSnapshot(id: id, state: .granted, detail: "Granted in test")
-                }
-            }
+        for step in [OnboardingViewModel.Step.launcher, .tools, .ring, .chat, .finish] {
+            XCTAssertTrue(viewModel.canAdvance)
             viewModel.advance()
-            if viewModel.showIncompleteLLMConfigurationAlert {
-                viewModel.skipIncompleteLLMConfiguration()
-            }
-            guardCounter += 1
+            XCTAssertEqual(viewModel.currentStep, step)
         }
-        XCTAssertTrue(store.isOnboardingCompleted, "Onboarding failed to complete within bounded iterations")
+        XCTAssertTrue(viewModel.isLastStep)
+        XCTAssertFalse(store.isOnboardingCompleted)
+
+        viewModel.advance()
+        XCTAssertTrue(store.isOnboardingCompleted)
+        XCTAssertEqual(completions, 1)
+        viewModel.advance()
+        XCTAssertEqual(completions, 1, "Completing twice must not call back twice")
+    }
+
+    // MARK: - Guides
+
+    @MainActor
+    func testGuideShortcutsComeFromSettings() {
+        store.askHotkey = .rightOptionAsk
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+
+        XCTAssertEqual(
+            viewModel.shortcuts(for: .launcher).first?.keys,
+            HotkeyFormat.components(.rightOptionAsk)
+        )
     }
 
     @MainActor
-    private func makeLoggedInAuthState() -> AuthState {
-        let storedToken = (
-            token: "token",
-            expiresAt: Int(Date().timeIntervalSince1970) + 3600
-        )
-        let storedProfile = UserProfile(
-            id: "user_123",
-            email: "test@example.com",
-            name: "Test User",
-            status: 1,
-            provider: "email",
-            createdAt: "2026-01-01T00:00:00Z",
-            updatedAt: "2026-01-01T00:00:00Z"
-        )
-        return AuthState(
-            loadStoredToken: { storedToken },
-            loadStoredRefreshToken: { nil },
-            loadStoredUserProfile: { storedProfile },
-            saveStoredToken: { _, _ in },
-            saveStoredUserProfile: { _ in },
-            clearStoredSession: {},
-            fetchProfile: { _ in storedProfile }
-        )
+    func testVoicePracticeCountsOnlyRealText() {
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+        XCTAssertFalse(viewModel.didPracticeVoice)
+
+        viewModel.voicePracticeText = "  \n "
+        XCTAssertFalse(viewModel.didPracticeVoice)
+
+        viewModel.voicePracticeText = "Hello there"
+        XCTAssertTrue(viewModel.didPracticeVoice)
+    }
+
+    // MARK: - Permissions
+
+    @MainActor
+    func testEveryFeaturesPermissionsAreAskedForTogether() {
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+        XCTAssertEqual(viewModel.requiredPermissionIDs, [.microphone, .accessibility])
+
+        store.useAppleSpeechFallback = true
+        XCTAssertEqual(viewModel.requiredPermissionIDs, [.microphone, .speechRecognition, .accessibility])
+    }
+
+    @MainActor
+    func testMissingPermissionsBlockContinueButLaterMovesOnToTheGuides() {
+        var completions = 0
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: { completions += 1 })
+        viewModel.currentStep = .permissions
+        viewModel.permissions = [
+            .init(id: .microphone, state: .needsAttention, detail: "Missing"),
+            .init(id: .accessibility, state: .granted, detail: "Granted")
+        ]
+
+        XCTAssertEqual(viewModel.missingPermissionCount, 1)
+        XCTAssertEqual(viewModel.requiredPermissions.map(\.id), [.microphone, .accessibility])
+        XCTAssertFalse(viewModel.canAdvance)
+        viewModel.advance()
+        XCTAssertEqual(viewModel.currentStep, .permissions)
+
+        viewModel.skipPermissions()
+        XCTAssertEqual(viewModel.currentStep, .voice, "Later skips the permissions, not the guides")
+        XCTAssertFalse(store.isOnboardingCompleted)
+        XCTAssertEqual(completions, 0)
+    }
+
+    @MainActor
+    func testSkipPermissionsOnlyWorksOnPermissionsStep() {
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+
+        viewModel.skipPermissions()
+
+        XCTAssertEqual(viewModel.currentStep, .welcome)
+    }
+
+    // MARK: - Globe key
+
+    @MainActor
+    func testGlobeKeySetupShowsOnlyWhileFnIsBlocked() {
+        let reader = StubGlobeKeyPreferenceReader(usage: .showEmojiAndSymbols)
+        let viewModel = OnboardingViewModel(settingsStore: store, globeKeyReader: reader, onComplete: {})
+        XCTAssertTrue(viewModel.needsGlobeKeySetup)
+
+        viewModel.useExternalKeyboardShortcutReplacement(.rightCommand)
+        XCTAssertFalse(viewModel.needsGlobeKeySetup, "A right-hand key replaces fn")
+
+        viewModel.restoreDefaultFNShortcuts()
+        XCTAssertTrue(viewModel.needsGlobeKeySetup)
+        reader.usage = .doNothing
+        viewModel.refreshGlobeKeyState()
+        XCTAssertFalse(viewModel.needsGlobeKeySetup)
     }
 
     @MainActor
     func testKeyboardSystemSettingsURLPointsToKeyboardPane() {
         let url = OnboardingViewModel.keyboardSystemSettingsURL
         XCTAssertEqual(url.scheme, "x-apple.systempreferences")
-        XCTAssertTrue(
-            url.absoluteString.contains("Keyboard"),
-            "URL should target the Keyboard settings pane, got: \(url.absoluteString)"
-        )
+        XCTAssertTrue(url.absoluteString.contains("Keyboard"))
     }
 
     @MainActor
-    func testIsGlobeKeyReadyReflectsInitialReaderState() {
-        let readyReader = StubGlobeKeyPreferenceReader(usage: .doNothing)
-        let notReadyReader = StubGlobeKeyPreferenceReader(usage: .showEmojiAndSymbols)
-
-        let readyVM = OnboardingViewModel(
-            settingsStore: store,
-            globeKeyReader: readyReader,
-            onComplete: {}
-        )
-        let notReadyVM = OnboardingViewModel(
-            settingsStore: store,
-            globeKeyReader: notReadyReader,
-            onComplete: {}
-        )
-
-        XCTAssertTrue(readyVM.isGlobeKeyReady)
-        XCTAssertFalse(notReadyVM.isGlobeKeyReady)
-    }
-
-    @MainActor
-    func testRefreshGlobeKeyStatePicksUpChanges() {
+    func testIsGlobeKeyReadyReflectsReaderState() {
         let reader = StubGlobeKeyPreferenceReader(usage: .changeInputSource)
-        let viewModel = OnboardingViewModel(
-            settingsStore: store,
-            globeKeyReader: reader,
-            onComplete: {}
-        )
+        let viewModel = OnboardingViewModel(settingsStore: store, globeKeyReader: reader, onComplete: {})
         XCTAssertFalse(viewModel.isGlobeKeyReady)
 
         reader.usage = .doNothing
         viewModel.refreshGlobeKeyState()
         XCTAssertTrue(viewModel.isGlobeKeyReady)
 
-        reader.usage = .startDictation
+        reader.usage = nil
         viewModel.refreshGlobeKeyState()
-        XCTAssertFalse(viewModel.isGlobeKeyReady)
+        XCTAssertFalse(viewModel.isGlobeKeyReady, "Unknown usage is not ready")
     }
 
     @MainActor
-    func testUnknownGlobeKeyStateIsNotReady() {
-        let reader = StubGlobeKeyPreferenceReader(usage: nil)
-        let viewModel = OnboardingViewModel(
-            settingsStore: store,
-            globeKeyReader: reader,
-            onComplete: {}
-        )
-
-        XCTAssertFalse(viewModel.isGlobeKeyReady)
-    }
-
-    @MainActor
-    func testUseExternalKeyboardShortcutReplacementPersistsRightCommandShortcuts() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        viewModel.useExternalKeyboardShortcutReplacement(.rightCommand)
-
-        XCTAssertEqual(viewModel.externalKeyboardShortcutReplacement, .rightCommand)
-        XCTAssertEqual(viewModel.activationHotkey.signature, HotkeyBinding.rightCommandActivation.signature)
-        XCTAssertEqual(viewModel.askHotkey?.signature, HotkeyBinding.rightCommandAsk.signature)
-        XCTAssertEqual(store.activationHotkey?.signature, HotkeyBinding.rightCommandActivation.signature)
-        XCTAssertEqual(store.askHotkey?.signature, HotkeyBinding.rightCommandAsk.signature)
-        XCTAssertTrue(viewModel.showShortcutReplacementAppliedAlert)
-    }
-
-    @MainActor
-    func testUseExternalKeyboardShortcutReplacementPersistsRightOptionShortcuts() {
+    func testExternalKeyboardReplacementPersistsAndRestores() {
         let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
 
         viewModel.useExternalKeyboardShortcutReplacement(.rightOption)
-
         XCTAssertEqual(viewModel.externalKeyboardShortcutReplacement, .rightOption)
-        XCTAssertEqual(viewModel.activationHotkey.signature, HotkeyBinding.rightOptionActivation.signature)
-        XCTAssertEqual(viewModel.askHotkey?.signature, HotkeyBinding.rightOptionAsk.signature)
         XCTAssertEqual(store.activationHotkey?.signature, HotkeyBinding.rightOptionActivation.signature)
         XCTAssertEqual(store.askHotkey?.signature, HotkeyBinding.rightOptionAsk.signature)
-    }
+        XCTAssertTrue(viewModel.showShortcutReplacementAppliedAlert)
 
-    @MainActor
-    func testRestoreDefaultFNShortcutsClearsExternalKeyboardReplacement() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        viewModel.useExternalKeyboardShortcutReplacement(.rightCommand)
         viewModel.showShortcutReplacementAppliedAlert = false
-
         viewModel.restoreDefaultFNShortcuts()
-
         XCTAssertNil(viewModel.externalKeyboardShortcutReplacement)
-        XCTAssertEqual(viewModel.activationHotkey.signature, HotkeyBinding.defaultActivation.signature)
-        XCTAssertEqual(viewModel.askHotkey?.signature, HotkeyBinding.defaultAsk.signature)
         XCTAssertEqual(store.activationHotkey?.signature, HotkeyBinding.defaultActivation.signature)
         XCTAssertEqual(store.askHotkey?.signature, HotkeyBinding.defaultAsk.signature)
         XCTAssertTrue(viewModel.showShortcutReplacementAppliedAlert)
     }
 
     @MainActor
-    func testInitialExternalKeyboardShortcutReplacementReflectsStoredShortcuts() {
-        store.activationHotkey = .rightOptionActivation
-        store.askHotkey = .rightOptionAsk
+    func testInitialExternalKeyboardReplacementReflectsStoredShortcuts() {
+        store.activationHotkey = .rightCommandActivation
+        store.askHotkey = .rightCommandAsk
 
         let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
 
-        XCTAssertEqual(viewModel.externalKeyboardShortcutReplacement, .rightOption)
-        XCTAssertEqual(viewModel.activationHotkey.signature, HotkeyBinding.rightOptionActivation.signature)
-        XCTAssertEqual(viewModel.askHotkey?.signature, HotkeyBinding.rightOptionAsk.signature)
+        XCTAssertEqual(viewModel.externalKeyboardShortcutReplacement, .rightCommand)
     }
 
     @MainActor
-    func testAnalyticsReportsStepCompletionAndCompletedWithoutConfigurationContent() {
-        let recorder = AnalyticsEventRecorder()
-        var now = Date(timeIntervalSince1970: 1_000)
-        let viewModel = OnboardingViewModel(
-            settingsStore: store,
-            analyticsReporter: recorder,
-            now: { now },
-            onComplete: {}
-        )
+    func testWelcomeKeysComeFromSettings() {
+        store.askHotkey = .rightOptionAsk
+        store.setHotkey(RingConfiguration.defaultHotkey, for: .ring)
+
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+
+        XCTAssertEqual(viewModel.launcherHotkey?.signature, HotkeyBinding.rightOptionAsk.signature)
+        XCTAssertEqual(viewModel.ringHotkey?.signature, RingConfiguration.defaultHotkey.signature)
+    }
+
+    // MARK: - Speech model
+
+    @MainActor
+    func testLeavingWelcomeStartsSpeechModelDownload() async {
+        let manager = StubLocalModelManager()
+        let prepared = expectation(description: "model prepared")
+        manager.onPrepare = { prepared.fulfill() }
+        store.sttProvider = .localModel
+        let viewModel = OnboardingViewModel(settingsStore: store, localModelManager: manager, onComplete: {})
 
         viewModel.advance()
-        viewModel.currentStep = .shortcuts
-        now = Date(timeIntervalSince1970: 1_012)
-        viewModel.advance()
+        await fulfillment(of: [prepared], timeout: 2)
 
-        XCTAssertEqual(
-            recorder.events.map(\.name),
-            ["onboarding_step_completed", "onboarding_step_completed", "onboarding_completed"]
-        )
-        XCTAssertEqual(recorder.events[0].properties, ["step": "language", "skipped": "false"])
-        XCTAssertEqual(recorder.events[1].properties, ["step": "shortcuts", "skipped": "false"])
-        XCTAssertEqual(recorder.events[2].properties["duration_seconds"], "12")
-        XCTAssertEqual(recorder.events[2].properties["stt_provider"], viewModel.sttProvider.rawValue)
-        XCTAssertEqual(recorder.events[2].properties["llm_provider"], viewModel.llmProvider.rawValue)
+        XCTAssertEqual(manager.preparedConfigurations.map(\.model), [store.localSTTModel])
     }
 
     @MainActor
-    func testAnalyticsReportsSkippedStepAndAbandonmentOnlyOnce() {
-        let recorder = AnalyticsEventRecorder()
-        let viewModel = OnboardingViewModel(
-            settingsStore: store,
-            analyticsReporter: recorder,
-            onComplete: {}
-        )
+    func testLaterStepsDoNotStartTheDownload() {
+        let manager = StubLocalModelManager()
+        store.sttProvider = .localModel
+        let viewModel = OnboardingViewModel(settingsStore: store, localModelManager: manager, onComplete: {})
+        viewModel.currentStep = .voice
 
-        viewModel.skip()
+        viewModel.advance()
+
+        XCTAssertTrue(manager.preparedConfigurations.isEmpty)
+    }
+
+    @MainActor
+    func testAvailableModelIsNotDownloadedAgain() {
+        let manager = StubLocalModelManager()
+        manager.available = true
+        store.sttProvider = .localModel
+        let viewModel = OnboardingViewModel(settingsStore: store, localModelManager: manager, onComplete: {})
+
+        viewModel.advance()
+
+        XCTAssertTrue(manager.preparedConfigurations.isEmpty)
+    }
+
+    // MARK: - Completion side effects
+
+    @MainActor
+    func testCompletingWithConfiguredLLMSelectsTypefluxPersona() {
+        store.llmProvider = .openAICompatible
+        store.llmRemoteProvider = .custom
+        store.setLLMBaseURL("https://example.com/v1", for: .custom)
+        store.setLLMModel("my-model", for: .custom)
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+
+        finish(viewModel)
+
+        XCTAssertTrue(store.personaRewriteEnabled)
+        XCTAssertEqual(store.activePersonaID, SettingsStore.defaultPersonaID.uuidString)
+    }
+
+    @MainActor
+    func testCompletingWithoutLLMLeavesPersonaDisabled() {
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+
+        finish(viewModel)
+
+        XCTAssertFalse(store.personaRewriteEnabled)
+        XCTAssertNil(store.activePersona)
+    }
+
+    @MainActor
+    func testSkipWithoutAnimationMarksCompleted() {
+        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
+
+        viewModel.skipWithoutAnimation()
+
+        XCTAssertTrue(store.isOnboardingCompleted)
+    }
+
+    // MARK: - Analytics
+
+    @MainActor
+    func testAnalyticsReportsEveryStepAndCompletion() {
+        let recorder = AnalyticsEventRecorder()
+        var now = Date(timeIntervalSince1970: 1000)
+        let viewModel = OnboardingViewModel(
+            settingsStore: store, analyticsReporter: recorder, now: { now }, onComplete: {}
+        )
+        viewModel.permissions = grantedPermissions()
+        viewModel.voicePracticeText = "Hi"
+
+        for _ in viewModel.visibleSteps.dropLast() {
+            viewModel.advance()
+        }
+        now = Date(timeIntervalSince1970: 1012)
+        viewModel.advance()
+
+        let steps = recorder.events.filter { $0.name == "onboarding_step_completed" }.compactMap { $0.properties["step"] }
+        XCTAssertEqual(steps, ["welcome", "permissions", "voice", "launcher", "tools", "ring", "chat", "finish"])
+        XCTAssertEqual(recorder.events.last?.name, "onboarding_completed")
+        XCTAssertEqual(recorder.events.last?.properties, [
+            "duration_seconds": "12", "missing_permissions": "0", "practiced_voice": "true"
+        ])
+    }
+
+    @MainActor
+    func testAnalyticsReportsSkippedPermissionsAndAbandonmentOnce() {
+        let recorder = AnalyticsEventRecorder()
+        let viewModel = OnboardingViewModel(settingsStore: store, analyticsReporter: recorder, onComplete: {})
+        viewModel.currentStep = .permissions
+        viewModel.permissions = [.init(id: .microphone, state: .needsAttention, detail: "Missing")]
+
+        viewModel.skipPermissions()
         viewModel.skipWithoutAnimation()
         viewModel.skipWithoutAnimation()
 
         XCTAssertEqual(recorder.events.map(\.name), ["onboarding_step_completed", "onboarding_abandoned"])
-        XCTAssertEqual(recorder.events[0].properties, ["step": "language", "skipped": "true"])
-        XCTAssertEqual(recorder.events[1].properties, ["last_step": "account"])
+        XCTAssertEqual(recorder.events[0].properties, ["step": "permissions", "skipped": "true"])
+        XCTAssertEqual(recorder.events[1].properties, ["last_step": "voice"])
+    }
+
+    // MARK: - Helpers
+
+    @MainActor
+    private func finish(_ viewModel: OnboardingViewModel) {
+        viewModel.currentStep = .finish
+        viewModel.advance()
+        XCTAssertTrue(store.isOnboardingCompleted)
+    }
+
+    private func grantedPermissions() -> [PrivacyGuard.PermissionSnapshot] {
+        PrivacyGuard.PermissionID.allCases.map { .init(id: $0, state: .granted, detail: "Granted") }
     }
 }
 
@@ -590,8 +370,9 @@ private final class StubGlobeKeyPreferenceReader: GlobeKeyPreferenceReading {
     }
 }
 
-private final class StubLocalModelManager: LocalSTTModelManaging {
+private final class StubLocalModelManager: LocalSTTModelManaging, @unchecked Sendable {
     var onPrepare: (() -> Void)?
+    var available = false
 
     private let lock = NSLock()
     private var _preparedConfigurations: [LocalSTTConfiguration] = []
@@ -611,14 +392,9 @@ private final class StubLocalModelManager: LocalSTTModelManaging {
         configuration: LocalSTTConfiguration,
         onUpdate: (@Sendable (LocalSTTPreparationUpdate) -> Void)?
     ) async throws {
-        lock.withLock {
-            _preparedConfigurations.append(configuration)
-        }
+        lock.withLock { _preparedConfigurations.append(configuration) }
         onUpdate?(LocalSTTPreparationUpdate(
-            message: "Preparing",
-            progress: 0.5,
-            storagePath: storagePath(for: configuration),
-            source: "Test"
+            message: "Preparing", progress: 0.5, storagePath: storagePath(for: configuration), source: "Test"
         ))
         onPrepare?()
     }
@@ -628,7 +404,7 @@ private final class StubLocalModelManager: LocalSTTModelManaging {
     }
 
     func isModelAvailable(_: LocalSTTModel) -> Bool {
-        false
+        available
     }
 
     func deleteModelFiles(_: LocalSTTModel) throws {}

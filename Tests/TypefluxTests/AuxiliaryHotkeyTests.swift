@@ -227,7 +227,7 @@ extension AuxiliaryHotkeyTests {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
         defer { defaults.removePersistentDomain(forName: name) }
         let model = OnboardingViewModel(settingsStore: SettingsStore(defaults: defaults), onComplete: {})
-        model.currentStep = .shortcuts
+        model.currentStep = .permissions
         for size in [CGSize(width: 920, height: 680), CGSize(width: 1100, height: 820)] {
             let view = OnboardingView(viewModel: model, appearanceMode: .light)
                 .frame(width: size.width, height: size.height)
