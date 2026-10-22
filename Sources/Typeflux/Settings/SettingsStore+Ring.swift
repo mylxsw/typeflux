@@ -14,8 +14,11 @@ extension SettingsStore {
     var ringConfiguration: RingConfiguration {
         get {
             guard let data = defaults.data(forKey: Self.ringConfigurationKey),
-                  let configuration = try? JSONDecoder().decode(RingConfiguration.self, from: data)
+                  var configuration = try? JSONDecoder().decode(RingConfiguration.self, from: data)
             else { return RingConfiguration() }
+            if configuration.migrateLegacyChatTitles(), let migrated = try? JSONEncoder().encode(configuration) {
+                defaults.set(migrated, forKey: Self.ringConfigurationKey)
+            }
             return configuration
         }
         set {

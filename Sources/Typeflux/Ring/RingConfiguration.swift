@@ -58,6 +58,21 @@ struct RingConfiguration: Codable, Equatable, Sendable {
         !actions.isEmpty
     }
 
+    /// Saved slice titles predate feature renames. Only replace former built-in names;
+    /// preserve custom names, action ids, targets, symbols and order.
+    mutating func migrateLegacyChatTitles() -> Bool {
+        let legacyNames: Set<String> = [
+            "随便问", "隨便問", "Ask", "Ask Anything", "なんでも質問", "무엇이든 질문"
+        ]
+        var changed = false
+        for index in actions.indices {
+            guard actions[index].kind == .feature(.ask), legacyNames.contains(actions[index].title) else { continue }
+            actions[index].title = RingFeature.ask.title
+            changed = true
+        }
+        return changed
+    }
+
     private enum CodingKeys: String, CodingKey { case actions, style, centerTitle }
 
     /// Missing fields keep their defaults; an action written by a newer version is skipped

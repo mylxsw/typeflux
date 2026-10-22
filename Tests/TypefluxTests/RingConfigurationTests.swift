@@ -110,6 +110,43 @@ final class RingConfigurationTests: XCTestCase {
         XCTAssertEqual(SettingsStore(defaults: defaults).ringConfiguration.actions.count, 6)
     }
 
+    func testStoredLegacyChatTitlesMigrateAndPersistWithoutChangingCustomActions() throws {
+        let language = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(language) }
+        let legacyNames = ["随便问", "隨便問", "Ask", "Ask Anything", "なんでも質問", "무엇이든 질문"]
+        let actions = legacyNames.map {
+            RingAction(kind: .feature(.ask), title: $0, symbol: "star")
+        } + [
+            RingAction(kind: .feature(.ask), title: "My assistant", symbol: "heart"),
+            RingAction(kind: .keyword(keyword: "ask", pluginID: "custom"), title: "随便问", symbol: "command")
+        ]
+        let original = RingConfiguration(actions: actions, style: .liquidGlass, centerTitle: "Mine")
+        defaults.set(try JSONEncoder().encode(original), forKey: "ring.configuration.json")
+        let store = SettingsStore(defaults: defaults)
+        let migrated = store.ringConfiguration
+        var expected = original
+        for index in legacyNames.indices { expected.actions[index].title = "对话" }
+        XCTAssertEqual(migrated, expected)
+        let saved = try XCTUnwrap(defaults.data(forKey: "ring.configuration.json"))
+        XCTAssertEqual(try JSONDecoder().decode(RingConfiguration.self, from: saved), expected)
+        XCTAssertEqual(SettingsStore(defaults: defaults).ringConfiguration, expected)
+    }
+
+    func testLegacyChatTitleMigrationUsesCurrentLanguageAndIsIdempotent() {
+        let language = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(language) }
+        for current in AppLanguage.allCases {
+            AppLocalization.shared.setLanguage(current)
+            var configuration = RingConfiguration(actions: [
+                RingAction(kind: .feature(.ask), title: "随便问", symbol: "sparkles")
+            ])
+            XCTAssertTrue(configuration.migrateLegacyChatTitles())
+            XCTAssertEqual(configuration.actions[0].title, RingFeature.ask.title)
+            XCTAssertFalse(configuration.migrateLegacyChatTitles())
+        }
+    }
+
     /// A store whose first-run seeding is undone, so a test controls what macOS reports.
     private func unseededStore() -> SettingsStore {
         let store = SettingsStore(defaults: defaults)
