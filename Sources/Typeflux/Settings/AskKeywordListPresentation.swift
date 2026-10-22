@@ -2,8 +2,8 @@ import Foundation
 
 /// What a launcher keyword reaches: one of the built-in plugins or a workflow.
 enum AskKeywordKind: String, CaseIterable, Sendable {
-    case translate, prompt, web, apps, files, semanticFiles, tabs, bookmarks, chat, quickAsk, prefix, setting, history, clip,
-         emoji, calendar, terminal, kill, system, workflow
+    case translate, prompt, web, apps, files, semanticFiles, tabs, bookmarks, chat, quickAsk, prefix, setting, history,
+         clip, emoji, calendar, worldClock, terminal, kill, system, workflow
 
     // One branch per built-in capability keeps keyword classification explicit.
     // swiftlint:disable:next cyclomatic_complexity
@@ -26,6 +26,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case AskClipboardPlugin.id: self = .clip
         case AskEmojiPlugin.id: self = .emoji
         case AskCalendarPlugin.id: self = .calendar
+        case AskWorldClockPlugin.id: self = .worldClock
         case AskTerminalCommandPlugin.id: self = .terminal
         default:
             if AskSystemCommand(pluginID: pluginID) != nil { self = .system; return }
@@ -57,6 +58,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .kill: AskKillAppPlugin.id
         case .emoji: AskEmojiPlugin.id
         case .calendar: AskCalendarPlugin.id
+        case .worldClock: AskWorldClockPlugin.id
         case .terminal: AskTerminalCommandPlugin.id
         case .system, .workflow: nil
         }
@@ -81,6 +83,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .kill: L("ask.plugin.kill.title")
         case .emoji: L("emoji.title")
         case .calendar: L("calendar.title")
+        case .worldClock: L("worldclock.title")
         case .terminal: L("terminal.command.title")
         case .system: L("ask.system.title")
         case .workflow: L("ask.settings.keywords.kind.workflow")
@@ -111,6 +114,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .kill: "xmark.app"
         case .emoji: "face.smiling"
         case .calendar: "calendar"
+        case .worldClock: "globe"
         case .terminal: "terminal"
         case .system: "terminal"
         case .workflow: "point.3.connected.trianglepath.dotted"
@@ -164,7 +168,7 @@ enum AskKeywordListPresentation {
     }
 
     /// What the chip and the card call a built-in keyword.
-    static func name(of keyword: AskKeyword) -> String {
+    static func name(of keyword: AskKeyword) -> String { // swiftlint:disable:this cyclomatic_complexity
         switch AskKeywordKind(pluginID: keyword.pluginID) {
         case .translate:
             AskTranslatePlugin
@@ -195,6 +199,7 @@ enum AskKeywordListPresentation {
         case .kill: L("ask.plugin.kill.title")
         case .emoji: L("emoji.title")
         case .calendar: L("calendar.title")
+        case .worldClock: L("worldclock.title")
         case .terminal: L("terminal.command.title")
         case .system:
             AskSystemCommand(pluginID: keyword.pluginID)?.title ?? keyword.keyword
@@ -204,7 +209,8 @@ enum AskKeywordListPresentation {
     }
 
     /// User-facing descriptions for presets; a short first sentence for custom prompts.
-    static func summary(of keyword: AskKeyword, interface: AppLanguage, secondLanguage: String) -> String {
+    static func summary(of keyword: AskKeyword, interface: AppLanguage, // swiftlint:disable:this cyclomatic_complexity
+                        secondLanguage: String) -> String {
         switch AskKeywordKind(pluginID: keyword.pluginID) {
         case .translate:
             if AskTranslatePlugin.opensWordBook(keyword.options) {
@@ -257,6 +263,7 @@ enum AskKeywordListPresentation {
             return L("ask.settings.keywords.kind.clip.hint")
         case .kill: return L("ask.settings.keywords.kind.kill.hint")
         case .emoji: return L("emoji.summary")
+        case .worldClock: return L("ask.settings.keywords.kind.worldClock.hint")
         case .calendar, .terminal:
             guard keyword.pluginID == AskTerminalCommandPlugin.id else { return L("ask.settings.keywords.kind.calendar.hint") }
             let external = L("terminal.command.runIn", TerminalApplication.configured(in: keyword.options)?.title ?? "?")
@@ -320,7 +327,7 @@ enum AskKeywordSection: String, CaseIterable {
         case .translate: [.translate]
         case .prompt: [.prompt]
         case .search: [.web, .apps, .files, .semanticFiles, .tabs, .bookmarks, .emoji]
-        case .typeflux: [.chat, .quickAsk, .prefix, .setting, .history, .clip, .calendar]
+        case .typeflux: [.chat, .quickAsk, .prefix, .setting, .history, .clip, .calendar, .worldClock]
         case .system: [.terminal, .kill, .system]
         }
     }

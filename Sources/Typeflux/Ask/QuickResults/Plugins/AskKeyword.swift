@@ -134,6 +134,7 @@ enum AskKeywordAliases {
         case AskSystemMonitorPlugin.id: return "systemmonitor"
         case AskSystemInfoPlugin.id: return "systeminfo"
         case AskCalendarPlugin.id: return "calendar"
+        case AskWorldClockPlugin.id: return "worldclock"
         default: return AskSystemCommand(pluginID: keyword.pluginID)?.defaultKeyword
         }
     }

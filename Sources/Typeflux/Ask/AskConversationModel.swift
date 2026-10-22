@@ -128,6 +128,8 @@ final class AskConversationModel: ObservableObject {
     lazy var emojiUsage = EmojiUsageStore(defaults: modelLibrary.settings.defaults)
     let systemMonitor = SystemMonitorLauncherModel()
     lazy var calendarLauncher = CalendarLauncherModel()
+    /// The world clock in the launcher (`tz`); see `AskConversationModel+WorldClock`.
+    lazy var worldClock = WorldClockLauncherModel()
     /// This Mac's configuration in the launcher (`sys`); see `AskConversationModel+SystemInfo`.
     let systemInfo = SystemInfoLauncherModel()
     /// What `sys` reads the configuration with; tests use their own.

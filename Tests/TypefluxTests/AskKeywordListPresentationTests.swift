@@ -37,7 +37,7 @@ struct AskKeywordListPresentationTests {
         let rows = rows(input)
         #expect(rows.filter { $0.kind != .system }.map(\.keyword) == [
             "fy", "dict", "rw", "sum", "ex", "custom", "g", "bd", "gh", "app", "f", "ss", "tab", "bmk", "chat", "qa", "prefix", "setting",
-            "history", "clip", "em", "cal", "cmd", "kill"
+            "history", "clip", "em", "cal", "tz", "cmd", "kill"
         ])
         #expect(rows.allSatisfy { $0.kind != .workflow })
         #expect(Set(rows.map(\.id)).count == rows.count)
@@ -45,7 +45,7 @@ struct AskKeywordListPresentationTests {
         #expect(rows.first { $0.kind == .history }?.source.pluginID == AskHistoryPlugin.id)
         #expect(rows.first { $0.kind == .history }?.summary == L("ask.settings.keywords.kind.history.hint"))
         #expect(AskKeywordListPresentation.filter(rows, kind: nil, query: "wf").isEmpty)
-        #expect(AskKeywordListPresentation.counts(rows)[nil] == 42)
+        #expect(AskKeywordListPresentation.counts(rows)[nil] == 43)
         #expect(AskKeywordListPresentation.filter(rows, kind: .chat, query: "chat").map(\.keyword) == ["chat"])
         #expect(!AskKeywordKind.editableKinds.contains(.workflow))
         #expect(self.rows([]).isEmpty)
@@ -99,9 +99,10 @@ struct AskKeywordListPresentationTests {
         #expect(AskKeywordListPresentation.filter(rows, kind: nil, query: "summarize").map(\.keyword) == ["sum"])
         #expect(AskKeywordListPresentation.filter(rows, kind: .prompt, query: "google").isEmpty)
         let counts = AskKeywordListPresentation.counts(rows)
-        #expect(counts[nil] == 41 && counts[.translate] == 2 && counts[.apps] == 1 && counts[.files] == 1 && counts[.workflow] == nil)
+        #expect(counts[nil] == 42 && counts[.translate] == 2 && counts[.apps] == 1 && counts[.files] == 1 && counts[.workflow] == nil)
         #expect(counts[.semanticFiles] == 1)
         #expect(counts[.calendar] == 1)
+        #expect(counts[.worldClock] == 1)
         #expect(counts[.clip] == 1)
         #expect(counts[.chat] == 1)
     }

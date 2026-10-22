@@ -25,6 +25,7 @@ struct AskKeywordDraft: Equatable {
     var engine: AskWebSearchPlugin.Engine?
     var systemCommand: AskSystemCommand = .toggleBluetooth
     var calendarOptions: [String: String] = [:]
+    var worldClockOptions: [String: String] = [:]
     var terminal: TerminalApplication = .terminal
     /// Terminal command: what Return does; ⌘↩ does the other.
     var runner: TerminalRunner = .builtin
@@ -36,6 +37,7 @@ struct AskKeywordDraft: Equatable {
         runner = TerminalRunSettings.runner(in: keyword.options)
         terminalSettings = TerminalRunSettings(options: keyword.options)
         calendarOptions = keyword.options
+        worldClockOptions = keyword.options
         systemCommand = AskSystemCommand(pluginID: keyword.pluginID) ?? .toggleBluetooth
         kind = AskKeywordKind(pluginID: keyword.pluginID) ?? .prompt
         self.keyword = keyword.keyword
@@ -91,7 +93,7 @@ struct AskKeywordDraft: Equatable {
                     ?? L("ask.settings.keywords.sheet.webNamePlaceholder")
             }
         case .translate, .apps, .files, .semanticFiles, .tabs, .bookmarks, .chat, .quickAsk, .prefix, .setting, .history, .clip, .emoji,
-             .calendar, .terminal, .kill, .system, .workflow:
+             .calendar, .worldClock, .terminal, .kill, .system, .workflow:
             ""
         }
     }
@@ -132,6 +134,7 @@ struct AskKeywordDraft: Equatable {
         case .kill: L("ask.plugin.kill.title")
         case .emoji: L("emoji.title")
         case .calendar: L("calendar.title")
+        case .worldClock: L("worldclock.title")
         case .terminal: L("terminal.command.title")
         case .system:
             systemCommand.title
@@ -183,7 +186,7 @@ struct AskKeywordDraft: Equatable {
         case .web:
             AskWebSearchPlugin.problem(with: url)
         case .translate, .apps, .files, .semanticFiles, .tabs, .bookmarks, .chat, .quickAsk, .prefix, .setting, .history, .clip, .emoji,
-             .calendar, .terminal, .kill, .system, .workflow:
+             .calendar, .worldClock, .terminal, .kill, .system, .workflow:
             nil
         }
     }
@@ -219,6 +222,8 @@ struct AskKeywordDraft: Equatable {
             }
         case .calendar:
             options = calendarOptions
+        case .worldClock:
+            options = worldClockOptions
         case .terminal:
             options[AskTerminalCommandPlugin.terminalOption] = terminal.rawValue
             options[TerminalRunSettings.runnerOption] = runner == .builtin ? nil : runner.rawValue
