@@ -3,6 +3,7 @@ import AppKit
 enum AppIconStyle: String, CaseIterable, Codable, Identifiable {
     case glassFrosted
     case pureWhite
+    case violetInfinity
     case white
     case black
     case colorful
@@ -19,6 +20,7 @@ enum AppIconStyle: String, CaseIterable, Codable, Identifiable {
         switch self {
         case .glassFrosted: L("appIcon.glassFrosted")
         case .pureWhite: L("appIcon.pureWhite")
+        case .violetInfinity: L("appIcon.violetInfinity")
         case .white: L("appIcon.white")
         case .black: L("appIcon.black")
         case .colorful: L("appIcon.colorful")
@@ -35,6 +37,7 @@ enum AppIconStyle: String, CaseIterable, Codable, Identifiable {
         switch self {
         case .glassFrosted: "TypefluxIconGlassFrosted"
         case .pureWhite: "TypefluxIconPureWhite"
+        case .violetInfinity: "TypefluxIconVioletInfinity"
         case .white: "TypefluxIconWhite"
         case .black: "TypefluxIconBlack"
         case .colorful: "TypefluxIconColorful"
@@ -49,7 +52,7 @@ enum AppIconStyle: String, CaseIterable, Codable, Identifiable {
 
     var needsRoundedTile: Bool {
         switch self {
-        case .cartoonPetrol, .cartoonCobalt, .cartoonLavender, .yarnBall, .hairyPuppet: true
+        case .violetInfinity, .cartoonPetrol, .cartoonCobalt, .cartoonLavender, .yarnBall, .hairyPuppet: true
         default: false
         }
     }
@@ -65,10 +68,10 @@ enum AppIconController {
         ) ?? Bundle.appResources.url(forResource: style.resourceName, withExtension: "png")
         guard let url, let artwork = NSImage(contentsOf: url) else { return nil }
         guard style.needsRoundedTile else { return artwork }
-        return roundedTile(for: artwork)
+        return roundedTile(for: artwork, sourceInsetFraction: style == .violetInfinity ? 0.1 : 0)
     }
 
-    private static func roundedTile(for artwork: NSImage) -> NSImage {
+    private static func roundedTile(for artwork: NSImage, sourceInsetFraction: CGFloat) -> NSImage {
         let size = NSSize(width: 1024, height: 1024)
         return NSImage(size: size, flipped: false) { canvas in
             NSGraphicsContext.saveGraphicsState()
@@ -76,7 +79,12 @@ enum AppIconController {
             let tile = canvas.insetBy(dx: canvas.width * 0.095, dy: canvas.height * 0.095)
             NSBezierPath(roundedRect: tile, xRadius: tile.width * 0.22, yRadius: tile.height * 0.22).addClip()
             NSGraphicsContext.current?.imageInterpolation = .high
-            artwork.draw(in: tile, from: NSRect(origin: .zero, size: artwork.size), operation: .copy, fraction: 1)
+            // Some supplied artwork already has a tile and outer padding; sample only its interior.
+            let source = NSRect(origin: .zero, size: artwork.size).insetBy(
+                dx: artwork.size.width * sourceInsetFraction,
+                dy: artwork.size.height * sourceInsetFraction
+            )
+            artwork.draw(in: tile, from: source, operation: .copy, fraction: 1)
             return true
         }
     }

@@ -3,6 +3,18 @@ import Foundation
 import XCTest
 
 final class LocalizationResourceTests: XCTestCase {
+    func testAppIconNamesExistInEveryLanguage() throws {
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            for style in AppIconStyle.allCases {
+                let key = "appIcon." + style.rawValue
+                let value = bundle.localizedString(forKey: key, value: nil, table: nil)
+                XCTAssertNotEqual(value, key, "Missing \(key) in \(language.rawValue)")
+                XCTAssertFalse(value.isEmpty)
+            }
+        }
+    }
+
     func testLauncherGeneralAndInputSourceCopyExistsInEveryLanguage() throws {
         for language in AppLanguage.allCases {
             let bundle = try localizationBundle(for: language)

@@ -132,8 +132,27 @@ struct AppearanceSettingsTests {
         #expect(pixels[3] == 0)
     }
 
+    @Test func `violet infinity can be selected and restored from appearance settings`() async throws {
+        let previousIcon = NSApplication.shared.applicationIconImage
+        defer { NSApp.applicationIconImage = previousIcon }
+        try await withModel { settings, model in
+            model.setAppLanguage(.simplifiedChinese)
+            try await UI.withWindow(AppearanceSettingsView(viewModel: model), width: 574, height: 1100) { _, host in
+                try UI.button("紫芯无限", in: host).press()
+                #expect(settings.appIconStyle == .violetInfinity)
+                #expect(model.appIconStyle == .violetInfinity)
+                #expect(SettingsStore(defaults: settings.defaults).appIconStyle == .violetInfinity)
+                #expect(AppIconController.apply(.violetInfinity))
+                #expect(NSApp.applicationIconImage != nil)
+                try UI.snapshot(host, name: "appearance-violet-infinity")
+                try UI.button(AppIconStyle.glassFrosted.displayName, in: host).press()
+                #expect(settings.appIconStyle == .glassFrosted)
+            }
+        }
+    }
+
     @Test func `illustrated icons have rounded transparent corners`() throws {
-        for style in [AppIconStyle.cartoonPetrol, .cartoonCobalt, .cartoonLavender, .yarnBall, .hairyPuppet] {
+        for style in [AppIconStyle.violetInfinity, .cartoonPetrol, .cartoonCobalt, .cartoonLavender, .yarnBall, .hairyPuppet] {
             let icon = try #require(AppIconController.image(for: style))
             let bitmap = try #require(NSBitmapImageRep(
                 bitmapDataPlanes: nil,
@@ -156,6 +175,21 @@ struct AppearanceSettingsTests {
 
             #expect(bitmap.colorAt(x: 0, y: 0)?.alphaComponent == 0)
             #expect((bitmap.colorAt(x: 512, y: 200)?.alphaComponent ?? 0) > 0.99)
+            if style == .violetInfinity {
+                // Outer black padding must not survive; the pale tile and violet center must remain.
+                for point in [(512, 50), (50, 512), (974, 512), (512, 974), (100, 100)] {
+                    #expect(bitmap.colorAt(x: point.0, y: point.1)?.alphaComponent == 0)
+                }
+                for point in [(512, 110), (110, 512), (914, 512), (512, 914)] {
+                    let edge = try #require(bitmap.colorAt(x: point.0, y: point.1)?.usingColorSpace(.deviceRGB))
+                    #expect(edge.redComponent > 0.9 && edge.greenComponent > 0.9 && edge.blueComponent > 0.9)
+                    #expect(edge.alphaComponent > 0.99)
+                }
+                let center = try #require(bitmap.colorAt(x: 512, y: 512)?.usingColorSpace(.deviceRGB))
+                #expect(center.blueComponent > 0.8)
+                #expect(center.blueComponent > center.redComponent + 0.15)
+                #expect(center.alphaComponent > 0.99)
+            }
         }
     }
 
