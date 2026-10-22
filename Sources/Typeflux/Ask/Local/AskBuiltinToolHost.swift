@@ -3,8 +3,15 @@ import Foundation
 /// Trusted application composition for admitted built-in calls. Approval, budget
 /// reservation, execution ownership and state application stay in the engine.
 protocol AskBuiltinToolHosting: Sendable {
+    func executionClassification(for definition: AskToolDefinition) -> AskBuiltinExecutionClass
     func definitions() -> [AskToolDefinition]
     func execute(_ input: AskBuiltinToolInput) async -> AskBuiltinToolOutput
+}
+
+enum AskBuiltinExecutionClass: Sendable { case serial, independentWebRead }
+
+extension AskBuiltinToolHosting {
+    func executionClassification(for _: AskToolDefinition) -> AskBuiltinExecutionClass { .serial }
 }
 
 /// An immutable, already admitted account-scoped conversation snapshot.
@@ -26,6 +33,12 @@ struct DefaultAskBuiltinToolHost: AskBuiltinToolHosting {
 
     func definitions() -> [AskToolDefinition] {
         [AskBuiltinPlan.definition] + webTools.definitions()
+    }
+
+    func executionClassification(for definition: AskToolDefinition) -> AskBuiltinExecutionClass {
+        guard ["web_search", "web_fetch"].contains(definition.name),
+              webTools.definitions().contains(definition) else { return .serial }
+        return .independentWebRead
     }
 
     func execute(_ input: AskBuiltinToolInput) async -> AskBuiltinToolOutput {

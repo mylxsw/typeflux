@@ -58,6 +58,12 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     let contextLimits: @Sendable (String) -> AskContextLimits
     let now: @Sendable () -> Date
     private var records: [String: AskLocalRecord] = [:]
+    private struct BuiltinFlight {
+        let id: UUID
+        let runID: String
+        let task: Task<[AskBuiltinToolOutput], Never>
+    }
+    private var builtinFlights: [String: BuiltinFlight] = [:]
     private let summarize: (@Sendable (AskInference, String, String) async -> AskInferenceResult)?
     private struct Preparation {
         var id: String
@@ -163,6 +169,10 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         var retained = record
         for index in retained.conversation.messages.indices { retained.conversation.messages[index].harness?.outcome?.preparedImages = [:] }
         records[record.conversation.id] = retained
+        if let flight = builtinFlights[record.conversation.id],
+           retained.conversation.run?.id != flight.runID || retained.conversation.run?.status != "running" {
+            flight.task.cancel()
+        }
     }
 
     func runRoute(conversationId: String, runId: String) async throws -> AskRunRouteLookup {
@@ -235,7 +245,10 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         let id = AskConversationID.canonical(conversationId)
         guard Self.validID(id) else { return }
         summaries.removeValue(forKey: id)?.task.cancel()
+        let flight = builtinFlights[id]
+        flight?.task.cancel()
         records[id] = nil
+        if let flight { _ = await flight.task.value }
         if temporaryIDs.remove(id) == nil { try? snapshotStore.removeSnapshot(id: id) }
     }
 
@@ -573,6 +586,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
                 record.conversation.run?.budgetRootId = root
                 record.conversation.run?.budgetDeadline = Date(timeIntervalSince1970: now().timeIntervalSince1970.rounded(.down) + 600)
                 record.conversation.run?.budgetLimits = budgetLimits
+                _ = try budgetJournal(record, createIfMissing: true) { _ in }
             }
             record.contextLimits = contextLimits(record.conversation.run?.modelRef ?? "")
         }
@@ -841,39 +855,123 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     }
 
     /// Runs leading built-in calls here, then hands device calls to the device or starts the next step.
+    /// The host admits a contiguous prefix; unclassified tools and approval
+    /// boundaries are never crossed to find additional work.
+    private func builtinWave(_ record: AskLocalRecord) -> [AskToolCall] {
+        var wave: [AskToolCall] = []
+        for call in record.conversation.run?.pending ?? [] {
+            guard wave.count < 3, isBuiltin(call, record) else { break }
+            let approval = record.conversation.run?.clientToolApproval == true
+            if approval && record.approvedCloudCallId != call.id { break }
+            let definition = record.builtinTools.first { $0.name == call.function.name }
+            let independent = definition.map { builtinTools.executionClassification(for: $0) == .independentWebRead } == true
+                && ["web_search", "web_fetch"].contains(call.function.name)
+            if !wave.isEmpty && (!independent || approval) { break }
+            wave.append(call)
+            if !independent || approval { break }
+        }
+        return wave
+    }
+
     private func continueTools(_ record: inout AskLocalRecord) async throws -> AskConversation {
         _ = try resolveTurn(record)
-        while let call = record.conversation.run?.pending.first, isBuiltin(call, record) {
-            if record.conversation.run?.clientToolApproval == true, record.approvedCloudCallId != call.id {
+        while let first = record.conversation.run?.pending.first, isBuiltin(first, record) {
+            try Task.checkCancellation()
+            let calls = builtinWave(record)
+            if calls.isEmpty {
                 record.conversation.run?.status = "waiting_tool"
                 try save(&record)
                 return record.conversation
             }
             record.approvedCloudCallId = nil
             record.conversation.run?.status = "running"
-            do { try reserveBudgetTool(record, call: call) } catch { return try stopBudget(&record, error: error) }
-            try save(&record)
-            let runId = record.conversation.run?.id
-            let result = await executeBuiltin(call, conversation: record.conversation, cloudCalls: record.cloudCalls, budgeted: record.conversation.run?.budgetEnabled == true)
-            guard var latest = records[record.conversation.id] else {
+            var admitted: [AskToolCall] = []
+            // Admission and compensation happen before the first child exists.
+            do {
+                for (index, call) in calls.enumerated() where builtinAllowed(call, count: record.cloudCalls + index) {
+                    _ = try resolveTurn(record)
+                    admitted.append(call)
+                    try reserveBudgetTool(record, call: call)
+                }
+                try save(&record)
+                _ = try resolveTurn(record)
+                try Task.checkCancellation()
+            } catch {
+                let admissionError = error
+                var accountingError: Error?
+                for call in admitted {
+                    do { try compensateUnlaunchedBudgetTool(record, callId: call.id) } catch { accountingError = accountingError ?? error }
+                }
+                if let accountingError { throw accountingError }
+                if admissionError is CancellationError { throw admissionError }
+                if admissionError is AskBudgetError { return try stopBudget(&record, error: admissionError) }
+                throw admissionError
+            }
+            let original = record
+            let host = builtinTools
+            let inputs = calls.map { AskBuiltinToolInput(call: $0, conversation: original.conversation,
+                                                        budgeted: original.conversation.run?.budgetEnabled == true) }
+            let allowed = calls.enumerated().map { builtinAllowed($0.element, count: original.cloudCalls + $0.offset) }
+            let flightID = UUID()
+            // The coordinator is owned and awaited here. All effects run in
+            // structured children; cancellation reaches every request, and the
+            // coordinator cannot complete until their cleanup has returned.
+            let task = Task {
+                await withTaskGroup(of: (Int, AskBuiltinToolOutput).self) { group in
+                    for (index, input) in inputs.enumerated() {
+                        group.addTask {
+                            guard allowed[index] else { return (index, AskBuiltinToolOutput(
+                                text: "Web tool limit for this request reached. Answer with the information gathered so far.", isError: true)) }
+                            guard !Task.isCancelled else { return (index, AskBuiltinToolOutput(text: "Tool execution cancelled.", isError: true)) }
+                            return (index, await host.execute(input))
+                        }
+                    }
+                    var indexed: [Int: AskBuiltinToolOutput] = [:]
+                    for await (index, output) in group { indexed[index] = output }
+                    return inputs.indices.map { indexed[$0]! }
+                }
+            }
+            builtinFlights[record.conversation.id] = .init(id: flightID, runID: record.conversation.run?.id ?? "", task: task)
+            let outputs = await withTaskCancellationHandler(operation: { await task.value }, onCancel: { task.cancel() })
+            if builtinFlights[original.conversation.id]?.id == flightID { builtinFlights[original.conversation.id] = nil }
+            // Original-root settlement is independent of replacement/deletion,
+            // cancellation, binding validation and content persistence.
+            var accountingError: Error?
+            for call in admitted {
+                do { try settleBudgetTool(original, callId: call.id) } catch { accountingError = accountingError ?? error }
+            }
+            guard var latest = records[original.conversation.id] else {
+                if let accountingError { throw accountingError }
                 throw AskLocalError.message(L("ask.local.notFound"))
             }
             _ = try resolveTurn(latest)
-            try settleBudgetTool(record, callId: call.id)
             try refreshBudget(&latest)
-            // Cancellation or a replacement run wins over a late tool result.
-            guard latest.conversation.run?.id == runId,
-                  latest.conversation.run?.status == "running", latest.conversation.run?.pending.first?.id == call.id else {
+            guard latest.conversation.run?.id == original.conversation.run?.id,
+                  latest.conversation.run?.deviceId == original.conversation.run?.deviceId,
+                  latest.conversation.run?.agentBinding == original.conversation.run?.agentBinding,
+                  latest.conversation.run?.status == "running",
+                  Array((latest.conversation.run?.pending ?? []).prefix(calls.count)) == calls else {
+                if let accountingError { throw accountingError }
                 return latest.conversation
             }
-            // Apply only the tool's delta to current state. In particular, never
-            // write memory from the snapshot taken before a concurrent purge.
             record = latest
-            if let plan = result.plan { record.conversation.run?.plan = plan }
-            record.conversation.messages.append(AskMessage(id: UUID().uuidString, role: "tool", text: result.text,
-                                                           toolCallId: call.id, isError: result.isError, createdAt: now()))
-            record.conversation.run?.pending.removeFirst()
-            if call.function.name != "update_plan", call.function.name != "read_conversation_history" { record.cloudCalls += 1 }
+            for (call, result) in zip(calls, outputs) {
+                if let plan = result.plan { record.conversation.run?.plan = plan }
+                record.conversation.messages.append(AskMessage(id: UUID().uuidString, role: "tool", text: result.text,
+                    toolCallId: call.id, isError: result.isError, createdAt: now(), runId: record.conversation.run?.id))
+                if !["update_plan", "read_conversation_history"].contains(call.function.name) { record.cloudCalls += 1 }
+            }
+            record.conversation.run?.pending.removeFirst(calls.count)
+            // Keep completion in memory if disk persistence fails, preventing
+            // a duplicate receipt from invoking a completed wave again.
+            records[record.conversation.id] = record
+            do { try save(&record) } catch {
+                record.conversation.run?.recovery = .init(state: "unknown_outcome", sequence: record.conversation.revision)
+                records[record.conversation.id] = record
+                throw error
+            }
+            if let accountingError { throw accountingError }
+            try Task.checkCancellation()
         }
         if let call = record.conversation.run?.pending.first {
             do { try reserveBudgetTool(record, call: call) } catch { return try stopBudget(&record, error: error) }
@@ -885,13 +983,8 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         return try await step(&record)
     }
 
-    private func executeBuiltin(_ call: AskToolCall, conversation: AskConversation, cloudCalls: Int, budgeted: Bool) async -> AskBuiltinToolOutput {
-        guard ["update_plan", "read_conversation_history"].contains(call.function.name) || cloudCalls < Self.maxBuiltinCalls else {
-            return AskBuiltinToolOutput(
-                text: "Web tool limit for this request reached. Answer with the information gathered so far.",
-                isError: true)
-        }
-        return await builtinTools.execute(.init(call: call, conversation: conversation, budgeted: budgeted))
+    private func builtinAllowed(_ call: AskToolCall, count: Int) -> Bool {
+        ["update_plan", "read_conversation_history"].contains(call.function.name) || count < Self.maxBuiltinCalls
     }
 
     /// Appends the messages waiting for this run. Only at a step boundary, so a user

@@ -96,8 +96,8 @@ final class AskLocalEngineTests: XCTestCase {
         // Read the system texts themselves; serialized JSON escapes "/".
         let text = ((body["messages"] as? [[String: Any]]) ?? []).compactMap { $0["content"] as? String }.joined(separator: "\n")
         XCTAssertTrue(text.contains("You are Typeflux Ask"))
-        XCTAssertTrue(text.contains("Today's date: 2026-10-02 (Friday), time zone Asia/Shanghai."), text)
-        XCTAssertTrue(text.contains("Device locale: zh-Hans-CN."))
+        XCTAssertTrue(text.contains(#"Pinned date: "2026-10-02 (Friday)"; time zone: "Asia/Shanghai"."#), text)
+        XCTAssertTrue(text.contains(#"Device locale: "zh-Hans-CN"."#))
         XCTAssertTrue(text.contains("Prefers &lt;b&gt;short&lt;/b&gt; answers"))
         let toolNames = (body["tools"] as? [[String: Any]])?.compactMap { ($0["function"] as? [String: Any])?["name"] as? String }
         XCTAssertEqual(toolNames, ["computer", "browser", "update_plan"])
