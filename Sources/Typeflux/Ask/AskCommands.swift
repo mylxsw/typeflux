@@ -410,6 +410,8 @@ enum AskCommandKey: Equatable {
     case left, commandLeft, commandRight, commandT, commandN
     /// ⌥⌘N: the launcher's question becomes temporary, or ordinary again.
     case optionCommandN
+    /// World clock: ⌥↑↓ reorder cities, ⌥←→ shift a meeting time; the editor's own word moves otherwise.
+    case optionUp, optionDown, optionLeft, optionRight
 
     init?(_ event: NSEvent) {
         let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
@@ -442,6 +444,11 @@ enum AskCommandKey: Equatable {
         if modifiers == [.command, .shift], event.keyCode == 8 { self = .shiftCommandC; return }
         if modifiers == .command, event.keyCode == 51 { self = .commandDelete; return }
         if modifiers == [.command, .option], event.keyCode == 51 { self = .optionCommandDelete; return }
+        if modifiers == .option, let arrow = [126: Self.optionUp, 125: .optionDown, 123: .optionLeft,
+                                              124: .optionRight][event.keyCode] {
+            self = arrow
+            return
+        }
         guard modifiers.isEmpty else { return nil }
         switch event.keyCode {
         case 126: self = .up

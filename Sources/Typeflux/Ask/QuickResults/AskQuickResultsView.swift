@@ -186,6 +186,8 @@ struct AskQuickResultsView: View {
                 Spacer(minLength: 8)
                 if entry.keyword.pluginID == AskCalendarPlugin.id {
                     CalendarHintSummary(options: entry.keyword.options, provider: calendarProvider)
+                } else if entry.keyword.pluginID == AskWorldClockPlugin.id, !highlighted {
+                    WorldClockHintSummary(options: entry.keyword.options)
                 } else {
                     Text(highlighted
                         ? L(entry.command == nil ? "ask.plugin.prefix.enter" : "ask.system.run") + " ↩" : entry.detail)

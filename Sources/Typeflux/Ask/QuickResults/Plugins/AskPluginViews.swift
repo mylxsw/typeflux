@@ -28,6 +28,8 @@ struct AskPluginDisplay: Equatable {
     /// This Mac's configuration (`sys`) takes the results' place.
     var systemInfo = false
     var calendar = false
+    /// The world clock (`tz`) takes the results' place.
+    var worldClock = false
     var translation = false
 
     var output: AskPluginOutput? { if case let .done(_, output) = phase { output } else { nil } }
@@ -257,6 +259,7 @@ struct AskPluginResultsView: View {
         if display.systemMonitor { return SystemMonitorLauncherView.height }
         if display.systemInfo { return SystemInfoLauncherView.height }
         if display.calendar { return CalendarLauncherView.height }
+        if display.worldClock { return WorldClockLauncherView.height }
         return 1 + listPadding * 2 + sectionHeight + rowSpacing + mainHeight(display)
     }
 
@@ -264,7 +267,7 @@ struct AskPluginResultsView: View {
     static func hint(for display: AskPluginDisplay) -> String {
         // The monitor names its keys in its own footer.
         if display.systemMonitor || display.systemInfo { return "" }
-        if display.calendar { return "" }
+        if display.calendar || display.worldClock { return "" }
         // The chat button already names this action in the bottom bar.
         if display.hint?.pluginID == AskOpenChatPlugin.id {
             return display.asksAI ? L("ask.launcher.hint") : ""
@@ -483,6 +486,9 @@ struct AskPluginResultsView: View {
                 }
                 if hint.pluginID == AskCalendarPlugin.id {
                     CalendarHintSummary(options: hint.options, provider: calendarProvider)
+                }
+                if hint.pluginID == AskWorldClockPlugin.id {
+                    WorldClockHintSummary(options: hint.options).layoutPriority(-1)
                 }
                 Spacer(minLength: 8)
                 Text(Self.hintRowKeys(hint, highlighted: highlighted))
