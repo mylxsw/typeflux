@@ -142,7 +142,7 @@ extension SettingsBehaviorTests {
                     appearanceMode: .dark
                 )) { owned, host in
                     window = owned
-                    try await RenderedUI.wait { RenderedUI.contains(AppLanguage.english.displayName, in: host) }
+                    try await RenderedUI.wait { RenderedUI.contains(AppLanguage.traditionalChinese.displayName, in: host) }
                     started = true
                     try await Task.sleep(for: .seconds(30))
                 }
