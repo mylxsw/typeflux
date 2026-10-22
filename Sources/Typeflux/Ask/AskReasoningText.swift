@@ -1,0 +1,62 @@
+import AppKit
+import SwiftUI
+
+/// Reasoning is untrusted, frequently changing plain text. Keep it in a bounded
+/// native viewport instead of parsing Markdown and measuring the entire stream
+/// inside the transcript's layout pass.
+struct AskReasoningText: NSViewRepresentable {
+    let text: String
+
+    func makeNSView(context _: Context) -> NSScrollView {
+        Self.makeScrollView()
+    }
+
+    static func makeScrollView() -> NSScrollView {
+        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 600, height: 220))
+        scroll.drawsBackground = false
+        scroll.hasVerticalScroller = true
+        scroll.autohidesScrollers = true
+        let editor = Editor(frame: scroll.contentView.bounds)
+        editor.isEditable = false
+        editor.isSelectable = true
+        editor.isRichText = false
+        editor.drawsBackground = false
+        editor.font = .systemFont(ofSize: 13)
+        editor.textColor = .secondaryLabelColor
+        editor.textContainerInset = NSSize(width: 0, height: 4)
+        editor.textContainer?.lineFragmentPadding = 0
+        editor.textContainer?.widthTracksTextView = true
+        editor.textContainer?.containerSize = NSSize(width: scroll.contentSize.width, height: .greatestFiniteMagnitude)
+        editor.layoutManager?.allowsNonContiguousLayout = true
+        editor.isVerticallyResizable = true
+        editor.isHorizontallyResizable = false
+        editor.autoresizingMask = [.width]
+        editor.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        scroll.documentView = editor
+        return scroll
+    }
+
+    func updateNSView(_ scroll: NSScrollView, context _: Context) {
+        (scroll.documentView as? Editor)?.setContent(text)
+    }
+
+    final class Editor: NSTextView {
+        private var source = ""
+
+        func setContent(_ text: String) {
+            guard source != text, let storage = textStorage else { return }
+            let selection = selectedRange()
+            // Providers normally append. Do not replace the existing storage or
+            // invalidate its laid-out prefix for every token.
+            if text.hasPrefix(source) {
+                let offset = source.utf16.count
+                storage.replaceCharacters(in: NSRange(location: storage.length, length: 0),
+                                          with: (text as NSString).substring(from: offset))
+            } else {
+                storage.replaceCharacters(in: NSRange(location: 0, length: storage.length), with: text)
+            }
+            source = text
+            if NSMaxRange(selection) <= storage.length { setSelectedRange(selection) }
+        }
+    }
+}
