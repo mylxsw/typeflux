@@ -203,6 +203,62 @@ final class AskAgentToolsTests: XCTestCase {
         XCTAssertEqual(AskLocalTools.builtinRisk(AskToolCall(id: "x", function: .init(name: "files", arguments: "not json"))), .write)
     }
 
+    func testApprovedHostCommandClippingRetainsExitAndFinalSideEffect() async throws {
+        let settings = settings()
+        settings.askCodeExecutionEnabled = true
+        let tools = AskLocalTools(registry: registry(), settings: settings,
+            skills: AskSkillLibrary(userDirectory: root),
+            notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("notes.json")), owner: { "me" })
+        for code in [0, 7] {
+            let marker = root.appendingPathComponent("marker-\(code)")
+            let command = call("run_command", ["command":
+                "head -c 90000 /dev/zero | tr '\\000' x; printf final-marker > '\(marker.path)'; exit \(code)"])
+            let binding = try await tools.approvalBinding(for: command, conversationId: "c")
+            let result = try await tools.executeApproved(command, conversationId: "c", binding: binding, authorize: {})
+            XCTAssertTrue(result.content.contains("Exit code: \(code)"))
+            XCTAssertTrue(result.content.contains("output truncated"))
+            XCTAssertEqual(result.outcome?.safeStatus, code == 0 ? .ok : .failed)
+            XCTAssertEqual(result.isError, code != 0)
+            XCTAssertEqual(try String(contentsOf: marker, encoding: .utf8), "final-marker")
+        }
+    }
+
+    func testActualFileHostContinuationConflictAndRevocation() async throws {
+        let settings = settings()
+        let tools = AskLocalTools(registry: registry(), settings: settings,
+            skills: AskSkillLibrary(userDirectory: root),
+            notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("notes.json")), owner: { "me" })
+        let path = root.appendingPathComponent("giant.txt")
+        let text = String(repeating: "é😀", count: 20000) + "\nlast"
+        try Data(text.utf8).write(to: path)
+        let generation = UUID()
+        try tools.stageFolders([root.path], lifetime: .task, ownerId: "me", deviceId: "device",
+            conversationId: "c", messageID: "message", generation: generation)
+        try tools.admitFolders(messageID: "message", conversationId: "c", runId: "run")
+        tools.bindExecution(ownerId: "me", conversationId: "c", runId: "run", deviceId: "device", persistent: true)
+        var pages: [String] = []
+        var args: [String: Any] = ["action": "read", "path": path.path]
+        var seen = Set<String>()
+        repeat {
+            let output = try await tools.execute(call("files", args), conversationId: "c")
+            pages.append(output.content)
+            let cursor = output.content.components(separatedBy: "\nContinuation: ").dropFirst().first
+            guard let cursor else { break }
+            XCTAssertTrue(seen.insert(cursor).inserted)
+            args = ["action": "read", "path": path.path, "continuation": cursor]
+        } while pages.count < 10
+        XCTAssertGreaterThan(pages.count, 1)
+        XCTAssertTrue(pages.last?.contains("[End of file") == true)
+        let version = try XCTUnwrap(pages.first?.components(separatedBy: "Version: ").dropFirst().first?.components(separatedBy: "\n").first)
+        try Data("changed by another writer".utf8).write(to: path)
+        let edit = call("files", ["action": "edit", "path": path.path, "old_text": "changed", "new_text": "replaced", "expected_version": version])
+        do { _ = try await tools.execute(edit, conversationId: "c"); XCTFail("Stale version was accepted") } catch {}
+        XCTAssertEqual(try String(contentsOf: path, encoding: .utf8), "changed by another writer")
+        tools.revokeFolder(nil, conversationId: "c")
+        do { _ = try await tools.execute(call("files", ["action": "read", "path": path.path]), conversationId: "c"); XCTFail("Revoked folder was read") } catch {}
+        XCTAssertTrue(tools.fileTools(conversationId: "c").roots.isEmpty)
+    }
+
     func testHostCommandOnlyRunsThroughApprovedDispatch() async throws {
         XCTAssertTrue(AskHostCommand.definition.description.contains("only when the user specifically requests an external browser"))
         XCTAssertEqual(try AskHostCommand.validated(["command": "printf ok"]).timeout,

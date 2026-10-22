@@ -1,0 +1,9 @@
+{
+  "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0",
+  "xcode": "Xcode 27.1\nBuild version 27A9275",
+  "machine": "Darwin arm64",
+  "postgres": "PostgreSQL 16 (postgres:16-alpine), ready on 127.0.0.1:32770",
+  "provider_calls": "synthetic only",
+  "source": "5e31755bf9801d3ca3270180773bad3ffd37d0a1",
+  "api_source": "fd445dcbb587acc7ec187db58f02eda102c45499"
+}

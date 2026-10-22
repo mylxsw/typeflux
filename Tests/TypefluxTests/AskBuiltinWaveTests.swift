@@ -65,6 +65,28 @@ final class AskBuiltinWaveTests: XCTestCase {
         }
     }
 
+    func testReadWavesCrossASeparateSerialPlanAdmission() async throws {
+        let host = WaveBuiltinHost()
+        let engine = engine(host, budget: 7)
+        let c = try await initial(engine)
+        let input = try receipt(c, names: ["web_search", "web_search", "web_search", "update_plan",
+                                           "web_search", "web_search", "web_search", "web_search"])
+        let task = Task { try await engine.inferenceResult(conversationId: c.id, request: input, token: "") }
+        var events = host.events.makeAsyncIterator()
+        for wave in [[0, 1, 2], [3], [4, 5, 6], [7]] {
+            var started = Set<String>()
+            for _ in wave { let event = await events.next(); started.insert(try XCTUnwrap(event)) }
+            XCTAssertEqual(started, Set(wave.map(String.init)))
+            XCTAssertEqual(host.ids.count, try XCTUnwrap(wave.last) + 1)
+            for index in wave.reversed() { host.release(String(index)) }
+        }
+        let value = try await task.value
+        XCTAssertEqual(host.peak, 3)
+        XCTAssertEqual(host.active, 0)
+        XCTAssertEqual(value.messages.filter { $0.role == "tool" }.compactMap(\.toolCallId), (0..<8).map(String.init))
+        XCTAssertEqual(value.run?.status, "waiting_inference")
+    }
+
     func testApprovalNeverAuthorizesAdjacentRead() async throws {
         let host = WaveBuiltinHost()
         let engine = engine(host)

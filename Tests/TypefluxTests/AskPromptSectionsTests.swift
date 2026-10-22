@@ -76,5 +76,21 @@ final class AskPromptSectionsTests: XCTestCase {
         XCTAssertEqual(replay.run?.inference?.payload, payload)
         let stored = try await reopened.conversation(id: "pending", token: "")
         XCTAssertEqual(stored.run?.inference?.payload, payload)
+        let completed = try await reopened.inferenceResult(conversationId: "pending", request: .init(
+            runId: try XCTUnwrap(stored.run?.id), deviceId: "device",
+            inferenceId: try XCTUnwrap(stored.run?.inference?.id), content: "Original completion"), token: "")
+        XCTAssertEqual(completed.run?.status, "completed")
+        let next = try await reopened.send(conversationId: "pending", request: .init(
+            id: "new-request", deviceId: "device", text: "New construction", tools: [], modelRef: "custom:main"), token: "")
+        let nextPayload = try XCTUnwrap(next.run?.inference?.payload)
+        let fresh = try await reopened.send(conversationId: "fresh", request: .init(
+            id: "fresh-request", deviceId: "device", text: "New construction", tools: [], modelRef: "custom:main"), token: "")
+        func prefix(_ raw: String) throws -> String {
+            let json = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(raw.utf8)) as? [String: Any])
+            return try XCTUnwrap((json["messages"] as? [[String: Any]])?.first?["content"] as? String)
+        }
+        XCTAssertNotEqual(try prefix(nextPayload), try prefix(payload))
+        XCTAssertEqual(try prefix(nextPayload), try prefix(XCTUnwrap(fresh.run?.inference?.payload)))
+        XCTAssertTrue(nextPayload.contains("Original completion"))
     }
 }
