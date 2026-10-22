@@ -85,9 +85,18 @@ struct AskQuickResultsFileTests {
         }
     }
 
+    @Test(arguments: [7, 10, 20]) func matchingFilesAreNotTruncatedToSixRows(count: Int) throws {
+        let entries = (0 ..< count).map { ("/Users/test/r/report-\($0).txt", AskFileRecord.Kind.file, Double($0)) }
+        let results = try #require(resolve("report", files: AskTestFileIndex(entries), apps: false))
+        #expect(results.files.count == count)
+        #expect(Set(results.files.map(\.path)) == Set(entries.map(\.0)))
+        #expect(results.listRows.count == count)
+        #expect(!results.moreFiles && !results.rows.contains(.showAllFiles))
+    }
+
     @Test func manyFilesOfferShowAll() throws {
         var entries: [(path: String, kind: AskFileRecord.Kind, days: Double)] = []
-        for number in 0 ..< 10 { entries.append(("/Users/test/r/report-\(number).txt", .file, Double(number))) }
+        for number in 0 ..< 24 { entries.append(("/Users/test/r/report-\(number).txt", .file, Double(number))) }
         let many = AskTestFileIndex(entries)
         let results = try #require(resolve("report", files: many, apps: false))
         #expect(results.files.filter { !$0.isFolder }.count == AskQuickResults.fileLimit)

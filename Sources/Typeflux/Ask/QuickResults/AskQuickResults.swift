@@ -186,7 +186,8 @@ struct AskQuickResults: Equatable {
     /// At most this many of each kind in the launcher; files beyond it are behind "Show all".
     static let appLimit = 5
     static let paneLimit = 3
-    static let fileLimit = 6
+    /// Keep enough files to fill the expanded launcher; overflow scrolls in place.
+    static let fileLimit = 20
     static let folderLimit = 3
     /// A file needs this much to lead (an exact name, its start, initials or pinyin)…
     static let strongFileScore = 0.88
