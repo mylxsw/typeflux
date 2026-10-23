@@ -19,6 +19,33 @@ struct AskComposerNoticeTests {
         #expect(notices.map(\.kind) == [.screenshot])
     }
 
+    @Test func noSpeechVoiceNoticeIsHiddenInEveryLanguage() {
+        let previousLanguage = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        for language in AppLanguage.allCases {
+            AppLocalization.shared.setLanguage(language)
+            let notices = AskComposerNotice.resolve(
+                sendError: nil, voiceError: L("workflow.transcription.noSpeech"),
+                attachment: "file", screenshot: nil
+            )
+            #expect(notices.map(\.kind) == [.attachment])
+        }
+    }
+
+    @Test func otherVoiceErrorsAndNonVoiceNoticesRemainVisible() {
+        for message in [L("workflow.recording.tooShort"), "Microphone permission denied", "Network unavailable"] {
+            let notices = AskComposerNotice.resolve(
+                sendError: nil, voiceError: message, attachment: nil, screenshot: nil
+            )
+            #expect(notices == [AskComposerNotice(kind: .voice, text: message)])
+        }
+        let message = L("workflow.transcription.noSpeech")
+        let notices = AskComposerNotice.resolve(
+            sendError: message, voiceError: message, attachment: message, screenshot: message
+        )
+        #expect(notices.map(\.kind) == [.sendError, .attachment, .screenshot])
+    }
+
     @Test func noticeToneAndSymbolFollowTheirKind() {
         let notices = AskComposerNotice.resolve(sendError: "a", voiceError: "b", attachment: "c", screenshot: "d")
         #expect(notices.map(\.tone) == [.warning, .warning, .warning, .info])
@@ -82,7 +109,7 @@ struct AskComposerNoticeTests {
 @Suite("Ask launcher notices", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherNoticeLayoutTests {
-    @Test func confirmationsKeepTheHeightAndNoticesAddOneRow() async throws {
+    @Test func confirmationsAndNoticesKeepExpandedLauncherHeight() async throws {
         _ = NSApplication.shared
         let fixture = try AskTestFixture()
         // This test measures notices; asynchronous search can temporarily add an Ask AI row.
@@ -107,7 +134,7 @@ struct AskLauncherNoticeLayoutTests {
 
         // Typed text hides the suggestions, so only notices change the height.
         fixture.model.launcherDraft.text = "Question"
-        let resting = AskMetrics.launcherHeight(editor: 32, banners: 0)
+        let resting = AskLauncherWindowMode.expandedHeight
         try await settle { abs(reported - resting) <= 4 }
         #expect(abs(reported - resting) <= 4)
 
@@ -117,9 +144,15 @@ struct AskLauncherNoticeLayoutTests {
         #expect(abs(reported - resting) <= 4)
         fixture.model.commandFeedback = nil
 
-        // A notice adds one row inside the card.
+        // No speech keeps the composer at its resting height.
+        fixture.model.voiceInput.error = L("workflow.transcription.noSpeech")
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(abs(reported - resting) <= 4)
+        fixture.model.voiceInput.error = nil
+
+        // A notice occupies a row inside the fixed-height launcher.
         fixture.model.launcherScreenshotNotice = "Screenshot removed"
-        let oneRow = AskMetrics.launcherHeight(editor: 32, banners: 1)
+        let oneRow = resting
         try await settle { abs(reported - oneRow) <= 4 }
         #expect(abs(reported - oneRow) <= 4)
 

@@ -34,6 +34,8 @@ struct AskComposerNotice: Identifiable, Equatable {
         ]
         return candidates.compactMap { kind, text in
             guard let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+            // Silence is an uneventful cancellation in the composer; other surfaces keep their notice.
+            if kind == .voice, text == L("workflow.transcription.noSpeech") { return nil }
             return AskComposerNotice(kind: kind, text: text)
         }
         .sorted { $0.kind < $1.kind }
