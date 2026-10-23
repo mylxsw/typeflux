@@ -227,7 +227,7 @@ struct AskComposerAddMenuTests {
         #expect(find("ask.add.storage.cloud", in: started) == nil, "A started conversation keeps where it is stored")
     }
 
-    @Test func environmentMenuPicksPermissionAndOffersFolders() async throws {
+    @Test func newTaskPermissionMenuOmitsDuplicateFolders() async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession(); AskGlassMenuPresenter.shared.hide() }
         fixture.model.setConversationKind(.work, launcher: false)
@@ -240,7 +240,7 @@ struct AskComposerAddMenuTests {
         try await fixture.wait { AskGlassMenuPresenter.shared.panel?.isVisible == true }
         let panel = try #require(AskGlassMenuPresenter.shared.panel)
         try await settle(panel)
-        #expect(find("ask.env.addFolder", in: panel) != nil)
+        #expect(find("ask.env.addFolder", in: panel) == nil, "The new task bar owns folder management")
         for mode in AskPermissionMode.allCases {
             #expect(find("ask.env.mode." + mode.rawValue, in: panel) != nil)
         }
@@ -250,16 +250,23 @@ struct AskComposerAddMenuTests {
         try await fixture.wait { !AskGlassMenuPresenter.shared.isShowing }
     }
 
-    @Test func foldersStayInEnvironmentMenuAndCanBeRemovedIndividually() async throws {
+    @Test(arguments: [false, true])
+    func launcherAndStartedTaskFoldersCanBeRemovedIndividually(launcher: Bool) async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession(); AskGlassMenuPresenter.shared.hide() }
-        fixture.model.setConversationKind(.work, launcher: false)
+        fixture.model.setConversationKind(.work, launcher: launcher)
+        if !launcher {
+            fixture.model.draft.text = "Start task"
+            fixture.model.submitDraft()
+            try await fixture.wait { fixture.model.selectedId != nil && fixture.model.busyIds.isEmpty }
+        }
         let first = AskAttachment(kind: .folder, name: "Project", path: "/tmp/project")
         let second = AskAttachment(kind: .folder, name: "Docs", path: "/tmp/docs")
         let file = AskAttachment(kind: .file, name: "notes.txt", text: "Notes")
-        fixture.model.draft.attachments = [first, second, file]
-        #expect(AskComposer.inlineAttachments(fixture.model.draft) == [file])
-        let window = host(AskWorkEnvironmentButton(model: fixture.model), size: NSSize(width: 400, height: 80))
+        if launcher { fixture.model.launcherDraft.attachments = [first, second, file] }
+        else { fixture.model.draft.attachments = [first, second, file] }
+        #expect(AskComposer.inlineAttachments(launcher ? fixture.model.launcherDraft : fixture.model.draft) == [file])
+        let window = host(AskWorkEnvironmentButton(model: fixture.model, launcher: launcher), size: NSSize(width: 400, height: 80))
         defer { window.close() }
         try await settle(window)
         try press("ask.composer.permissionMode", in: window)
@@ -272,7 +279,7 @@ struct AskComposerAddMenuTests {
         try await settle(panel)
         #expect(find("ask.env.folder." + first.id, in: panel) == nil)
         #expect(find("ask.env.folder." + second.id, in: panel) != nil)
-        #expect(fixture.model.draft.attachments == [second, file])
+        #expect((launcher ? fixture.model.launcherDraft : fixture.model.draft).attachments == [second, file])
     }
 
     @Test func temporarySidebarRowSeparatesResumeAndCloseActions() async throws {

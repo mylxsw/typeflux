@@ -184,7 +184,8 @@ struct AskHostElsewhereNotice: View {
 }
 
 /// A task's environment in one control: the tool permission's icon and name, then the folders it
-/// works in. The menu adds folders, at the start or during the task, and picks the mode.
+/// works in. New tasks manage folders in the bar below the composer; the launcher
+/// and started tasks keep folder management in this menu.
 /// The launcher keeps its bar's empty space for dragging, so it shows the shield alone.
 struct AskWorkEnvironmentButton: View {
     @ObservedObject var model: AskConversationModel
@@ -253,11 +254,14 @@ struct AskWorkEnvironmentButton: View {
 
     private var menu: some View {
         VStack(alignment: .leading, spacing: 0) {
-            AskWorkFolderList(model: model, launcher: launcher) { presented = false }
-            Rectangle().fill(AskTheme.separator).frame(height: 0.5).padding(.horizontal, 10).padding(.vertical, 6)
+            if launcher || !model.canChangeConversationKind(launcher: false) {
+                AskWorkFolderList(model: model, launcher: launcher) { presented = false }
+                Rectangle().fill(AskTheme.separator).frame(height: 0.5).padding(.horizontal, 10).padding(.vertical, 6)
+            }
             AskWorkFolderList.header(L("ask.mode.title"))
             ForEach(AskPermissionMode.allCases, id: \.self) { option in
-                AskPopoverRow(title: option.title, caption: option.detail, selected: option == mode, action: {
+                AskPopoverRow(title: option.title, caption: option.detail, selected: option == mode,
+                              selectionTint: AskPermissionModeMenu.tint(option), action: {
                     presented = false
                     model.setPermissionMode(option, launcher: launcher)
                 }, accessory: {

@@ -1,10 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// The composer's tool permission chooser. Each mode has its own colour so the
-/// current level reads at a glance: strict green, standard blue, YOLO orange.
-/// The label is always drawn in that colour, without a background.
-/// In the menu only the current mode is coloured, in place of a checkmark.
+/// The composer's tool permission chooser. Only YOLO uses a warning colour;
+/// strict and standard stay neutral in the label and menu.
 struct AskPermissionModeMenu: View {
     var mode: AskPermissionMode
     /// The symbol alone; YOLO always spells itself out.
@@ -17,8 +15,7 @@ struct AskPermissionModeMenu: View {
 
     static func tint(_ mode: AskPermissionMode) -> Color {
         switch mode {
-        case .strict: StudioTheme.success
-        case .standard: StudioTheme.accent
+        case .strict, .standard: StudioTheme.textSecondary
         case .yolo: StudioTheme.warning
         }
     }
@@ -41,12 +38,14 @@ struct AskPermissionModeMenu: View {
             .withSymbolConfiguration(.init(pointSize: 13, weight: .medium))
     }
 
-    /// A menu redraws template symbols in the text colour. Draw the current
-    /// mode into a plain image filled with its appearance-specific colour;
-    /// other modes use the same configured symbol as a neutral template.
+    /// A menu redraws template symbols in the text colour. Only selected YOLO
+    /// needs a plain image to preserve its appearance-specific warning colour.
     static func menuImage(_ option: AskPermissionMode, selected: Bool, dark: Bool) -> NSImage? {
         guard let symbol = menuSymbolImage(option) else { return nil }
-        guard selected else { return symbol }
+        guard selected, option == .yolo else {
+            if selected { symbol.accessibilityDescription = L("ask.mode.current") }
+            return symbol
+        }
         guard let appearance = NSAppearance(named: dark ? .darkAqua : .aqua) else { return nil }
         let dynamic = NSColor(tint(option))
         var color = dynamic
@@ -72,7 +71,7 @@ struct AskPermissionModeMenu: View {
                         Label {
                             Text(option.title + " · " + option.detail)
                         } icon: {
-                            Image(nsImage: image).renderingMode(mode == option ? .original : .template)
+                            Image(nsImage: image).renderingMode(mode == option && option == .yolo ? .original : .template)
                         }
                     } else {
                         Label(option.title + " · " + option.detail, systemImage: option.symbol)

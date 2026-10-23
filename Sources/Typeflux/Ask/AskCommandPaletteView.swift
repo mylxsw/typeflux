@@ -130,8 +130,8 @@ private struct AskCommandRow: View {
         return colorScheme == .light ? AskTheme.launcherSelection : AskTheme.accent.opacity(0.14)
     }
 
-    /// A permission mode row is coloured by its mode when it is the current one,
-    /// and stays neutral otherwise, highlighted or not, matching the composer's menu.
+    /// Only the current YOLO permission row uses a warning colour; other modes
+    /// stay neutral, highlighted or not, matching the composer's menu.
     private var modeTint: Color? {
         guard case let .pickPermissionMode(mode) = command.action else { return nil }
         return AskPermissionModeMenu.tint(mode)

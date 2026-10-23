@@ -4,7 +4,7 @@ import Testing
 @testable import Typeflux
 
 /// Footer controls rendered natively: switches highlight only their icons,
-/// and the permission menu is drawn in its mode's colour, not the launcher's accent.
+/// and only YOLO uses colour in the permission menu.
 @Suite("Launcher palette rendering", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherPaletteRenderTests {
@@ -12,7 +12,7 @@ struct AskLauncherPaletteRenderTests {
         var blue = 0, red = 0, grey = 0, green = 0, orange = 0
     }
 
-    @Test func `permission menu label is drawn in its mode colour`() async throws {
+    @Test func `only YOLO permission labels use colour`() async throws {
         func census(_ mode: AskPermissionMode, bare: Bool, _ appearance: NSAppearance.Name) async throws -> Census {
             let menu = AskPermissionModeMenu(mode: mode, compact: true, bare: bare, onSelect: { _ in })
                 .tint(AskTheme.accent)
@@ -22,25 +22,48 @@ struct AskLauncherPaletteRenderTests {
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             for bare in [false, true] {
                 let strict = try await census(.strict, bare: bare, appearance)
-                #expect(strict.green > 0 && strict.blue == 0 && strict.orange == 0, "strict is green")
+                #expect(strict.green == 0 && strict.blue == 0 && strict.orange == 0, "strict stays neutral")
                 let standard = try await census(.standard, bare: bare, appearance)
-                #expect(standard.blue > 0 && standard.green == 0 && standard.orange == 0, "standard is blue")
+                #expect(standard.blue == 0 && standard.green == 0 && standard.orange == 0, "standard stays neutral")
                 let yolo = try await census(.yolo, bare: bare, appearance)
                 #expect(yolo.orange > 0 && yolo.blue == 0 && yolo.green == 0, "YOLO is orange")
             }
         }
     }
 
-    @Test func `permission modes each have their own colour`() {
-        #expect(AskPermissionModeMenu.tint(.strict) == StudioTheme.success)
-        #expect(AskPermissionModeMenu.tint(.standard) == StudioTheme.accent)
+    @Test func environmentButtonAndSelectionCheckStayNeutralOutsideYOLO() async throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        fixture.model.setConversationKind(.work, launcher: false)
+        for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+            for mode in AskPermissionMode.allCases {
+                fixture.model.setPermissionMode(mode, launcher: false)
+                let button = try census(await render(
+                    AskWorkEnvironmentButton(model: fixture.model, compact: true),
+                    size: NSSize(width: 120, height: 40), appearance: appearance))
+                let row = try census(await render(
+                    AskPopoverRow(title: mode.title, caption: mode.detail, selected: true,
+                                  selectionTint: AskPermissionModeMenu.tint(mode), action: {}, accessory: {
+                        Image(systemName: mode.symbol).foregroundStyle(AskPermissionModeMenu.tint(mode))
+                    }), size: NSSize(width: 320, height: 64), appearance: appearance))
+                for pixels in [button, row] {
+                    #expect(pixels.blue == 0 && pixels.green == 0)
+                    #expect((pixels.orange > 0) == (mode == .yolo))
+                }
+            }
+        }
+    }
+
+    @Test func `only YOLO has a warning tint`() {
+        #expect(AskPermissionModeMenu.tint(.strict) == StudioTheme.textSecondary)
+        #expect(AskPermissionModeMenu.tint(.standard) == StudioTheme.textSecondary)
         #expect(AskPermissionModeMenu.tint(.yolo) == StudioTheme.warning)
         for mode in AskPermissionMode.allCases {
             #expect(AskPermissionModeMenu.labelColor(mode) == AskPermissionModeMenu.tint(mode))
         }
     }
 
-    @Test func `only the current mode gets a coloured menu image`() throws {
+    @Test func `only selected YOLO gets a coloured menu image`() throws {
         let size = try #require(AskPermissionModeMenu.menuSymbolImage(.strict)).size
         for mode in AskPermissionMode.allCases {
             let neutral = try #require(AskPermissionModeMenu.menuImage(mode, selected: false, dark: false))
@@ -51,19 +74,16 @@ struct AskLauncherPaletteRenderTests {
             let appearance = try #require(NSAppearance(named: dark ? .darkAqua : .aqua))
             for mode in AskPermissionMode.allCases {
                 let image = try #require(AskPermissionModeMenu.menuImage(mode, selected: true, dark: dark))
-                #expect(!image.isTemplate, "a template image would be redrawn in the text colour")
+                #expect(image.isTemplate == (mode != .yolo))
                 #expect(image.size == size, "selection keeps the same icon size")
                 #expect(image.accessibilityDescription == L("ask.mode.current"))
+                guard mode == .yolo else { continue }
                 let census = try census(draw(image))
                 var expected = NSColor.clear
                 appearance.performAsCurrentDrawingAppearance {
                     expected = NSColor(AskPermissionModeMenu.tint(mode)).usingColorSpace(.sRGB) ?? .clear
                 }
-                switch mode {
-                case .strict: #expect(census.green > 0 && census.blue == 0 && census.orange == 0)
-                case .standard: #expect(census.blue > 0 && census.green == 0 && census.orange == 0)
-                case .yolo: #expect(census.orange > 0 && census.blue == 0 && census.green == 0)
-                }
+                #expect(census.orange > 0 && census.blue == 0 && census.green == 0)
                 #expect(try dominant(draw(image)).isClose(to: expected),
                         "resolved for the \(dark ? "dark" : "light") menu")
             }
@@ -71,7 +91,7 @@ struct AskLauncherPaletteRenderTests {
     }
 
     @Test func `the current mode's menu colour follows the appearance`() throws {
-        for mode in AskPermissionMode.allCases {
+        for mode in [AskPermissionMode.yolo] {
             let light = try dominant(draw(#require(AskPermissionModeMenu.menuImage(mode, selected: true, dark: false))))
             let dark = try dominant(draw(#require(AskPermissionModeMenu.menuImage(mode, selected: true, dark: true))))
             #expect(!light.isClose(to: dark, tolerance: 0.04), "\(mode) uses its light and dark theme colours")
@@ -156,8 +176,8 @@ struct AskLauncherPaletteRenderTests {
                 .font(.system(size: AskMetrics.footerStatusSymbolSize, weight: .semibold))
                 .foregroundStyle(StudioTheme.accent)
         )
-        let shield = try await blueMetrics(AskPermissionModeMenu(mode: .standard, compact: true, bare: true,
-                                                                onSelect: { _ in }))
+        let shield = try await blueMetrics(Image(nsImage: try #require(AskPermissionModeMenu.toolbarImage(.standard)))
+                .renderingMode(.template).foregroundStyle(StudioTheme.accent))
         let camera = try await blueMetrics(AskIconChipFace(item: .init(kind: .screenshot,
             systemImage: "camera.viewfinder", style: .active, title: "Screenshot")))
         let brain = try await blueMetrics(AskIconChipFace(item: .init(kind: .memory,

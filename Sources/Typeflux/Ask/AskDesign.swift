@@ -1509,6 +1509,8 @@ struct AskPopoverRow<Accessory: View>: View {
     /// Listed but not choosable, e.g. a model that cannot read this conversation's images.
     var enabled = true
     var modelIcon: ModelIcon? = nil
+    /// Override the selection and hover accent for controls with semantic colours.
+    var selectionTint: Color? = nil
     var action: () -> Void
     @ViewBuilder var accessory: () -> Accessory
     @State private var hovering = false
@@ -1518,7 +1520,7 @@ struct AskPopoverRow<Accessory: View>: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: "checkmark").font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(AskTheme.accentText)
+                    .foregroundStyle(selectionTint ?? AskTheme.accentText)
                     .frame(width: 14)
                     .opacity(selected ? 1 : 0)
                 if let modelIcon { modelIcon }
@@ -1549,7 +1551,7 @@ struct AskPopoverRow<Accessory: View>: View {
             .padding(.vertical, 5)
             .frame(maxWidth: .infinity, alignment: .leading)
             // A soft hover wash matches the launcher and keeps text colours stable.
-            .background(hovering ? AskTheme.accentSoft : Color.clear,
+            .background(hovering ? selectionTint?.opacity(0.1) ?? AskTheme.accentSoft : Color.clear,
                         in: RoundedRectangle(cornerRadius: Self.corner(style: style), style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: Self.corner(style: style), style: .continuous))
         }
