@@ -2195,7 +2195,6 @@
 "ask.env.folders" = "工作文件夹";
 "ask.env.addFolder" = "添加文件夹…";
 "ask.env.addFolder.detail" = "也可以把文件夹直接拖入输入框";
-"ask.env.readWrite" = "读写";
 "ask.attach.files" = "发送文件或图片";
 "ask.attach.folder" = "选择文件夹";
 "ask.attach.pickFiles" = "选择要发给对话的文件或图片";

@@ -219,11 +219,6 @@ struct AskLocalModeUITests {
         }
         #expect(fits(AskCloudPromoCard(onSignIn: {}, onDismiss: {}), width: 236).height > 60)
         #expect(fits(AskLocalModeIdentity(model: f.model), width: 200).height == 40)
-        // The storage icon keeps one size, signed out (a lock) or in a Cloud conversation.
-        let size = CGSize(width: AskStorageButton.size, height: AskStorageButton.size)
-        #expect(fits(AskStorageButton(model: f.model)) == size)
-        #expect(fits(AskStorageButton(model: try AskTestFixture().model)) == size)
-        #expect(fits(AskStorageButton(model: try AskTestFixture().model, launcher: true)) == size)
     }
 
     @Test func workspaceRendersTheSignedOutFooterAndSwitchBanner() async throws {

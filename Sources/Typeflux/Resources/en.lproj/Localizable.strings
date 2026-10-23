@@ -2195,7 +2195,6 @@
 "ask.env.folders" = "Working folders";
 "ask.env.addFolder" = "Add Folder…";
 "ask.env.addFolder.detail" = "You can also drop a folder into the composer";
-"ask.env.readWrite" = "Read & write";
 "ask.attach.files" = "Send Files or Images";
 "ask.attach.folder" = "Choose Folder";
 "ask.attach.pickFiles" = "Choose files or images to send to Chat";

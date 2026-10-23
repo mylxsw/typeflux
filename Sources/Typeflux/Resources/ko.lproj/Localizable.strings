@@ -2185,7 +2185,6 @@
 "ask.env.folders" = "작업 폴더";
 "ask.env.addFolder" = "폴더 추가…";
 "ask.env.addFolder.detail" = "입력창에 폴더를 끌어다 놓아도 됩니다";
-"ask.env.readWrite" = "읽기·쓰기";
 "ask.attach.files" = "파일 또는 이미지 보내기";
 "ask.attach.folder" = "폴더 선택";
 "ask.attach.pickFiles" = "대화에 보낼 파일이나 이미지 선택";

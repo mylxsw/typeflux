@@ -2192,7 +2192,6 @@
 "ask.env.folders" = "工作資料夾";
 "ask.env.addFolder" = "新增資料夾…";
 "ask.env.addFolder.detail" = "也可以把資料夾直接拖入輸入框";
-"ask.env.readWrite" = "讀寫";
 "ask.attach.files" = "傳送檔案或圖片";
 "ask.attach.folder" = "選擇資料夾";
 "ask.attach.pickFiles" = "選擇要傳給對話的檔案或圖片";

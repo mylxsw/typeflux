@@ -2185,7 +2185,6 @@
 "ask.env.folders" = "作業フォルダ";
 "ask.env.addFolder" = "フォルダを追加…";
 "ask.env.addFolder.detail" = "入力欄にフォルダをドロップしても追加できます";
-"ask.env.readWrite" = "読み書き";
 "ask.attach.files" = "ファイル・画像を送信";
 "ask.attach.folder" = "フォルダを選択";
 "ask.attach.pickFiles" = "チャット に送るファイルや画像を選択";

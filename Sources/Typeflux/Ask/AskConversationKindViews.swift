@@ -294,7 +294,6 @@ struct AskWorkEnvironmentButton: View {
             Text(title).font(.system(size: 13)).foregroundStyle(StudioTheme.textPrimary)
                 .lineLimit(1).truncationMode(.middle)
             Spacer(minLength: 8)
-            Text(L("ask.env.readWrite")).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
         }
         .padding(.horizontal, 14).frame(height: 30)
     }

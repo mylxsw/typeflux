@@ -147,8 +147,10 @@ struct AskComposerResponsiveTests {
         defer { window.close(); AskGlassMenuPresenter.shared.hide() }
         try await settle(host)
         // The narrow footer no longer needs its own context menu: the switches are in "+".
-        #expect((try? accessibilityElement(identifier: "ask.context.menu", in: window)) == nil)
-        #expect((try? accessibilityElement(identifier: "ask.context.screenshot.toggle", in: window)) == nil)
+        let contextMenu = try? accessibilityElement(identifier: "ask.context.menu", in: window)
+        let screenshotChip = try? accessibilityElement(identifier: "ask.context.screenshot.toggle", in: window)
+        #expect(contextMenu == nil)
+        #expect(screenshotChip == nil)
         try press(accessibilityElement(identifier: "ask.composer.attach", in: window))
         try await fixture.wait { AskGlassMenuPresenter.shared.panel?.isVisible == true }
         let panel = try #require(AskGlassMenuPresenter.shared.panel)

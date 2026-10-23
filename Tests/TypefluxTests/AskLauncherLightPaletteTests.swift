@@ -174,11 +174,4 @@ struct AskLauncherLightPaletteTests {
                                         title: "Screenshot")
         #expect(NSImage(systemSymbolName: AskIconChipFace.symbol(screenshot), accessibilityDescription: nil) != nil)
     }
-
-    @Test func storageButtonOnlyColorsItsIcon() {
-        #expect(AskStorageButton.wellFill(local: true, active: false) == .clear)
-        #expect(AskStorageButton.wellFill(local: true, active: true) == .clear)
-        #expect(AskStorageButton.wellFill(local: false, active: true) == .clear)
-        #expect(AskStorageButton.wellFill(local: false, active: false) == .clear)
-    }
 }

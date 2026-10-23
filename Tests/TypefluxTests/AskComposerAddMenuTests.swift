@@ -27,15 +27,15 @@ struct AskComposerAddMenuTests {
         #expect(switches.allSatisfy(\.enabled))
     }
 
-    @Test func screenshotSwitchReflectsEveryCaptureState() {
+    @Test func screenshotSwitchReflectsEveryCaptureState() throws {
         let image = NSImage(size: NSSize(width: 4, height: 4))
         func screenshot(_ state: AskScreenshotState, action: Bool = true) -> AskAddMenuSwitch? {
             AskAddMenuSwitch.make(items: items(screenshot: state), selectionText: nil, screenshot: image,
                                   actions: { _ in action ? {} : nil }).first
         }
-        let off = try? #require(screenshot(.off))
-        #expect(off?.isOn == false)
-        #expect(off?.detail == L("ask.add.screenshot.offDetail"))
+        let off = try #require(screenshot(.off))
+        #expect(!off.isOn)
+        #expect(off.detail == L("ask.add.screenshot.offDetail"))
         let attached = screenshot(.attached)
         #expect(attached?.isOn == true)
         #expect(attached?.detail == L("ask.context.screen.scope"))
