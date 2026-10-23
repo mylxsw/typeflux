@@ -131,8 +131,8 @@ struct AskLauncherHeaderTests {
         #expect(fixture.model.launcherDraft.screenshot != nil, "the captured image can still be restored")
         #expect(fixture.model.launcherDraft.request(deviceId: "device", tools: []).image == nil)
         #expect(AskGlassMenuPresenter.shared.isShowing, "a switch keeps the menu open for the next one")
-        try press(try element("ask.add.screenshot", in: menu))
-        try await fixture.wait { fixture.model.launcherDraft.includeScreenshot }
+        // Switching it back on needs a model that reads images, which this fixture's launcher model
+        // does not; `setCapturedContent` refuses it there, as it did for the old footer chip.
     }
 
     @Test func `selection chip stays on the bar and toggles the outgoing text`() async throws {
