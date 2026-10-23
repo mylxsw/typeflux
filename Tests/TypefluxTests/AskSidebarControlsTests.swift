@@ -40,11 +40,14 @@ struct AskSidebarControlsTests {
             let frame = try #require(button.value(forKey: "accessibilityFrame") as? NSValue).rectValue
             widths.append(frame.width)
             #expect(frame.height == AskMetrics.composerControlHeight)
-            // Shield, folder, chevron and padding beside a name capped at 160pt.
-            #expect(frame.width <= 160 + 80)
+            // Permission icon and title, folder, chevron and padding beside a folder name capped at 160pt.
+            let modeTitleWidth = (AskPermissionMode.standard.title as NSString).size(withAttributes: [
+                .font: NSFont.systemFont(ofSize: 11.5, weight: .semibold)
+            ]).width
+            #expect(frame.width <= 160 + 80 + modeTitleWidth)
         }
         if compact {
-            #expect(Set(widths).count == 1, "The compact control shows the shield alone, whatever the folder.")
+            #expect(Set(widths).count == 1, "The compact control keeps the permission icon and name, whatever the folder.")
         } else {
             #expect(widths[1] < widths[0], "A shorter folder name releases space to adjacent controls.")
             #expect(widths[2] > widths[0], "A long name grows the control up to its cap, then truncates.")

@@ -102,13 +102,13 @@ struct AskHostElsewhereNotice: View {
     }
 }
 
-/// A task's environment in one control: the tool permission's shield, then the folders it
+/// A task's environment in one control: the tool permission's icon and name, then the folders it
 /// works in. The menu adds folders, at the start or during the task, and picks the mode.
 /// The launcher keeps its bar's empty space for dragging, so it shows the shield alone.
 struct AskWorkEnvironmentButton: View {
     @ObservedObject var model: AskConversationModel
     var launcher = false
-    /// The shield alone (YOLO still spells itself out outside the launcher).
+    /// Hide folder details while keeping the permission name outside the launcher.
     var compact = false
     @State private var presented = false
     @State private var hovering = false
@@ -134,8 +134,9 @@ struct AskWorkEnvironmentButton: View {
                 Image(systemName: mode.symbol)
                     .font(.system(size: AskMetrics.footerStatusSymbolSize, weight: .semibold))
                     .foregroundStyle(AskPermissionModeMenu.tint(mode))
-                if mode == .yolo, !launcher {
-                    Text(verbatim: "YOLO").font(.system(size: 11.5, weight: .semibold))
+                if !launcher {
+                    Text(verbatim: mode == .yolo ? "YOLO" : mode.title)
+                        .font(.system(size: 11.5, weight: .semibold))
                         .foregroundStyle(AskPermissionModeMenu.tint(mode))
                 }
                 if !compact {
