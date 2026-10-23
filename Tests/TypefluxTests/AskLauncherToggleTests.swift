@@ -89,7 +89,18 @@ struct AskLauncherToggleTests {
 
         controller.prewarmLauncher()
         #expect(selections.isEmpty)
-        controller.showLauncher()
+        let diagnostics = ShortcutLatencyEventCollector(), trace = diagnosticTestTrace(.launcher)
+        ShortcutLatency.$eventSink.withValue(diagnostics.sink) {
+            ShortcutLatency.$current.withValue(trace) { controller.showLauncher() }
+        }
+        #expect(diagnostics.stages == [.statePreparationStarted, .statePreparationFinished,
+                                       .appsRefreshStarted, .appsRefreshFinished, .contextRequestStarted,
+                                       .contextRequestFinished,
+                                       .windowCached, .windowAcquisitionStarted, .windowAcquisitionFinished,
+                                       .layoutStarted, .layoutFinished, .windowShowStarted, .windowShowFinished,
+                                       .windowOrdered, .focusStarted, .focusFinished, .monitorsStarted,
+                                       .monitorsFinished])
+        #expect(diagnostics.events.allSatisfy { $0.trace == trace })
         #expect(selections == ["test.input-method"])
 
         // Refocusing an open launcher must preserve a manual input-source change.

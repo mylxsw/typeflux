@@ -102,6 +102,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
 
     func present(_ model: ClipboardPanelModel) {
         defer { ShortcutLatency.windowOrdered(presentedWindow) }
+        ShortcutLatency.record(.statePreparationStarted)
         let continuingSession = isPresented && self.model === model
         previewWidthAnimator.stop()
         shelf.dismiss()
@@ -117,24 +118,34 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
             entryObservation = model.$entries.dropFirst().sink { [weak self] entries in self?.thumbnails.changed(entries) }
         }
         focusRequest += 1
+        ShortcutLatency.record(.statePreparationFinished)
         if style == .shelf {
             presentShelf(model)
             return
         }
         layout.setWidth(ClipboardPanelView.size(showsPreview: model.showsPreview).width)
-        let panel = panel(for: model)
+        ShortcutLatency.record(self.panel == nil ? .windowUncached : .windowCached)
+        let panel = ShortcutLatency
+            .measure(.windowAcquisitionStarted, .windowAcquisitionFinished) { self.panel(for: model) }
+        ShortcutLatency.record(.layoutStarted)
         applyAppearance(to: panel)
         panel.alphaValue = 1
         panel.setContentSize(ClipboardPanelView.size(showsPreview: model.showsPreview))
         hostingView?.frame = NSRect(origin: .zero, size: panel.frame.size)
         position(panel)
-        previewCenterX = settingsStore.clipboardPanelPosition == .mouse ? panel.frame.midX : panel.screen?.visibleFrame.midX
+        previewCenterX = settingsStore.clipboardPanelPosition == .mouse ? panel.frame.midX : panel.screen?.visibleFrame
+            .midX
+        ShortcutLatency.record(.layoutFinished)
+        ShortcutLatency.record(.windowShowStarted)
         panel.makeKeyAndOrderFront(nil)
-        focusSignal.request()
+        ShortcutLatency.record(.windowShowFinished)
+        ShortcutLatency.measure(.focusStarted, .focusFinished) { focusSignal.request() }
+        ShortcutLatency.record(.monitorsStarted)
         installMonitors()
         previewObservation = model.$showsPreview.dropFirst().removeDuplicates().sink { [weak self] shows in
             self?.resizeForPreview(shows)
         }
+        ShortcutLatency.record(.monitorsFinished)
     }
 
     private func setPanelStyle(_ selectedStyle: ClipboardPanelStyle, for model: ClipboardPanelModel) {
@@ -417,8 +428,10 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
 
     private func presentShelf(_ model: ClipboardPanelModel) {
         let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
-        let panel = panel(for: model)
-        applyAppearance(to: panel)
+        ShortcutLatency.record(self.panel == nil ? .windowUncached : .windowCached)
+        let panel = ShortcutLatency
+            .measure(.windowAcquisitionStarted, .windowAcquisitionFinished) { self.panel(for: model) }
+        ShortcutLatency.measure(.layoutStarted, .layoutFinished) { applyAppearance(to: panel) }
         shelf.present(
             panel, model: model, screen: screen, animated: !reduceMotion(),
             previewRoot: { [weak self] model in
@@ -430,8 +443,8 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
                     .interfaceStyle(following: interfaceStyleObserver))
             }
         )
-        focusSignal.request()
-        installMonitors()
+        ShortcutLatency.measure(.focusStarted, .focusFinished) { focusSignal.request() }
+        ShortcutLatency.measure(.monitorsStarted, .monitorsFinished) { installMonitors() }
     }
 
     // MARK: - Quick Look

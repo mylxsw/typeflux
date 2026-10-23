@@ -69,56 +69,97 @@ final class RingHotkeyTests: XCTestCase {
         XCTAssertNil(model.setHotkey(.rightOptionActivation, for: .ring))
         XCTAssertEqual(SettingsStore(defaults: defaults).actionHotkeys[.ring]?.signature,
                        HotkeyBinding.rightOptionActivation.signature)
-        let service = EventTapHotkeyService(settingsStore: store)
-        service.refreshBindings()
-        var events: [String] = []
-        service.onShortcutRequested = { if $0 == .action(.ring) { events.append("press") } }
-        service.onShortcutReleased = { if $0 == .action(.ring) { events.append("release") } }
-        service.onShortcutCancelled = { if $0 == .action(.ring) { events.append("cancel") } }
-        let flags = HotkeyBinding.rightOptionActivation.modifierFlags
-        func send(_ type: HotkeyPhysicalEventType, _ key: Int, _ value: UInt) -> Bool {
-            service.processPhysicalEvent(eventType: type, keyCode: key, modifierFlags: value,
-                                         isRepeat: false, canConsume: true, timestamp: 1)
+        let collector = ShortcutLatencyEventCollector()
+        await ShortcutLatency.$eventSink.withValue(collector.sink) {
+            let service = EventTapHotkeyService(settingsStore: store, beginShortcutTrace: { feature in
+                let trace = diagnosticTestTrace(feature)
+                ShortcutLatency.record(.recognized, trace: trace)
+                return trace
+            })
+            service.refreshBindings()
+            var events: [String] = []
+            service.onShortcutRequested = {
+                if $0 == .action(.ring) {
+                    events.append("press")
+                }
+            }
+            service.onShortcutReleased = {
+                if $0 == .action(.ring) {
+                    events.append("release")
+                }
+            }
+            service.onShortcutCancelled = {
+                if $0 == .action(.ring) {
+                    events.append("cancel")
+                }
+            }
+            let flags = HotkeyBinding.rightOptionActivation.modifierFlags
+            func send(_ type: HotkeyPhysicalEventType, _ key: Int, _ value: UInt) -> Bool {
+                service.processPhysicalEvent(eventType: type, keyCode: key, modifierFlags: value,
+                                             isRepeat: false, canConsume: true, timestamp: 1)
+            }
+            XCTAssertTrue(send(.flagsChanged, 61, flags))
+            XCTAssertTrue(send(.flagsChanged, 61, 0))
+            XCTAssertTrue(send(.flagsChanged, 61, flags))
+            XCTAssertFalse(send(.keyDown, 8, flags), "the user's normal shortcut must pass through")
+            _ = send(.keyUp, 8, flags)
+            XCTAssertTrue(send(.flagsChanged, 61, 0))
+            _ = send(.flagsChanged, 61, flags)
+            store.setHotkey(nil, for: .ring)
+            service.refreshBindings()
+            XCTAssertFalse(send(.flagsChanged, 61, 0))
+            XCTAssertFalse(send(.flagsChanged, 61, flags))
+            await withCheckedContinuation { continuation in
+                DispatchQueue.main.async { continuation.resume() }
+            }
+            XCTAssertEqual(events, ["press", "release", "press", "cancel", "press", "cancel"])
+            service.stop()
         }
-        XCTAssertTrue(send(.flagsChanged, 61, flags))
-        XCTAssertTrue(send(.flagsChanged, 61, 0))
-        XCTAssertTrue(send(.flagsChanged, 61, flags))
-        XCTAssertFalse(send(.keyDown, 8, flags), "the user's normal shortcut must pass through")
-        _ = send(.keyUp, 8, flags)
-        XCTAssertTrue(send(.flagsChanged, 61, 0))
-        _ = send(.flagsChanged, 61, flags)
-        store.setHotkey(nil, for: .ring)
-        service.refreshBindings()
-        XCTAssertFalse(send(.flagsChanged, 61, 0))
-        XCTAssertFalse(send(.flagsChanged, 61, flags))
-        await withCheckedContinuation { continuation in
-            DispatchQueue.main.async { continuation.resume() }
-        }
-        XCTAssertEqual(events, ["press", "release", "press", "cancel", "press", "cancel"])
-        service.stop()
+        let traces = Dictionary(grouping: collector.events, by: { $0.trace.id })
+        XCTAssertEqual(traces.count, 3)
+        XCTAssertEqual(
+            traces.values.filter { $0.map(\.stage) == [.recognized, .callback, .ringPressed, .ringReleased] }.count,
+            1
+        )
+        XCTAssertEqual(
+            traces.values.filter { $0.map(\.stage) == [.recognized, .callback, .ringPressed, .ringCancelled] }.count,
+            2
+        )
     }
 
     func testPoolReportsPressAndReleaseOfRegisteredShortcuts() async throws {
-        let pool = SystemHotkeyPool(name: "RingHotkeyTests")
-        defer { pool.unregisterAll() }
-        // ⌃⌥⇧F19: unlikely to be taken by anything on the test machine.
-        let binding = HotkeyBinding(keyCode: 80, modifierFlags: UInt(NSEvent.ModifierFlags([.control, .option, .shift])
-                .rawValue))
-        pool.register([.action(.ring): binding])
-        let id = try XCTUnwrap(pool.registrationID(of: .action(.ring)))
-        var pressed: [HotkeyTarget] = []
-        var released: [HotkeyTarget] = []
-        pool.onPressed = { pressed.append($0) }
-        pool.onReleased = { released.append($0) }
+        let collector = ShortcutLatencyEventCollector()
+        try await ShortcutLatency.$eventSink.withValue(collector.sink) {
+            let pool = SystemHotkeyPool(name: "RingHotkeyTests", beginShortcutTrace: { feature in
+                let trace = diagnosticTestTrace(feature)
+                ShortcutLatency.record(.recognized, trace: trace)
+                return trace
+            })
+            defer { pool.unregisterAll() }
+            // ⌃⌥⇧F19: unlikely to be taken by anything on the test machine.
+            let binding = HotkeyBinding(
+                keyCode: 80,
+                modifierFlags: UInt(NSEvent.ModifierFlags([.control, .option, .shift])
+                    .rawValue)
+            )
+            pool.register([.action(.ring): binding])
+            let id = try XCTUnwrap(pool.registrationID(of: .action(.ring)))
+            var pressed: [HotkeyTarget] = []
+            var released: [HotkeyTarget] = []
+            pool.onPressed = { pressed.append($0) }
+            pool.onReleased = { released.append($0) }
 
-        XCTAssertTrue(pool.handlePressed(id: id))
-        XCTAssertTrue(pool.handleReleased(id: id))
-        XCTAssertFalse(pool.handleReleased(id: id + 100))
-        XCTAssertNil(pool.registrationID(of: .action(.openNotes)))
-        for _ in 0..<50 where released.isEmpty {
-            try await Task.sleep(for: .milliseconds(10))
+            XCTAssertTrue(pool.handlePressed(id: id))
+            XCTAssertTrue(pool.handleReleased(id: id))
+            XCTAssertFalse(pool.handleReleased(id: id + 100))
+            XCTAssertNil(pool.registrationID(of: .action(.openNotes)))
+            for _ in 0 ..< 50 where released.isEmpty {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            XCTAssertEqual(pressed, [.action(.ring)])
+            XCTAssertEqual(released, [.action(.ring)])
         }
-        XCTAssertEqual(pressed, [.action(.ring)])
-        XCTAssertEqual(released, [.action(.ring)])
+        XCTAssertEqual(collector.stages, [.recognized, .callback, .ringPressed, .ringReleased])
+        XCTAssertEqual(Set(collector.events.map(\.trace.id)).count, 1)
     }
 }

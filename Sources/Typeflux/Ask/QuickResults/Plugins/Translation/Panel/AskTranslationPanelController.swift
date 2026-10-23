@@ -65,14 +65,19 @@ final class AskTranslationPanelController: NSObject, NSWindowDelegate {
     }
 
     func focus() {
+        ShortcutLatency.record(.focusStarted)
+        defer { ShortcutLatency.record(.focusFinished) }
         panel?.makeKeyAndOrderFront(nil)
+        ShortcutLatency.windowOrdered(panel)
         if let content = panel?.contentView, let editor = editor(in: content) {
             panel?.makeFirstResponder(editor)
         }
     }
 
     func present(selection: CGRect? = nil, focusEditor: Bool = true) {
-        let window = makePanel()
+        ShortcutLatency.record(panel == nil ? .windowUncached : .windowCached)
+        let window = ShortcutLatency.measure(.windowAcquisitionStarted, .windowAcquisitionFinished) { makePanel() }
+        ShortcutLatency.record(.layoutStarted)
         applyAppearance(window)
         let mouse = NSEvent.mouseLocation
         let screen = selection.flatMap { bounds in NSScreen.screens.first { $0.frame.intersects(bounds) } }
@@ -92,14 +97,20 @@ final class AskTranslationPanelController: NSObject, NSWindowDelegate {
             layoutPosition = model.settings.askTranslationSettings.panelPosition
         }
         updateRoot()
+        ShortcutLatency.record(.layoutFinished)
+        ShortcutLatency.record(.windowShowStarted)
         if focusEditor {
             window.makeKeyAndOrderFront(nil)
         } else {
             // Keep the source application's selection focused while capture runs.
             window.orderFrontRegardless()
         }
-        installMonitors()
-        if focusEditor { focus() }
+        ShortcutLatency.record(.windowShowFinished)
+        ShortcutLatency.windowOrdered(window)
+        ShortcutLatency.measure(.monitorsStarted, .monitorsFinished) { installMonitors() }
+        if focusEditor {
+            focus()
+        }
     }
 
     func hide() {

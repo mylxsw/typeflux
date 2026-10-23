@@ -80,17 +80,26 @@ extension WorkflowController {
         Self.historyPanelEntries(history: historyStore, clipboard: clipboardHistoryStore)
     }
 
-    private static func historyPanelEntries(history: any HistoryStore, clipboard: (any ClipboardHistoryStore)?) -> [ClipboardEntry] {
+    private static func historyPanelEntries(history: any HistoryStore, clipboard: (any ClipboardHistoryStore)?,
+                                            latency: ShortcutLatencyTrace? = nil) -> [ClipboardEntry] {
+        ShortcutLatency.record(.historyReadStarted, trace: latency)
         let records = StatusBarMenuSupport.recentTranscriptionRecords(
             from: history.list(limit: Self.historyPanelVoiceLimit * 3, offset: 0, searchQuery: nil),
             limit: Self.historyPanelVoiceLimit
         )
-        return ClipboardFeed.entries(
+        ShortcutLatency.record(.historyReadFinished, trace: latency)
+        let items = ShortcutLatency
+            .measure(.clipboardReadStarted, .clipboardReadFinished, trace: latency) {
+                clipboard?.items(limit: Int(Int32.max)) ?? []
+            }
+        let pins = ShortcutLatency
+            .measure(.pinsReadStarted, .pinsReadFinished, trace: latency) { clipboard?.pinnedVoiceRecordIDs() ?? [] }
+        return ShortcutLatency.measure(.mergeStarted, .mergeFinished, trace: latency) { ClipboardFeed.entries(
             // Trimming bounds the store; pinned items come on top of the unpinned limit.
-            clipboardItems: clipboard?.items(limit: Int(Int32.max)) ?? [],
+            clipboardItems: items,
             voiceRecords: records,
-            pinnedVoiceRecordIDs: clipboard?.pinnedVoiceRecordIDs() ?? []
-        )
+            pinnedVoiceRecordIDs: pins
+        ) }
     }
 
     func reloadHistoryPanel() {
@@ -100,50 +109,74 @@ extension WorkflowController {
 
     private func requestHistoryPanel(opening: Bool) {
         let latency = opening ? ShortcutLatency.current : nil
+        let latencySink = ShortcutLatency.eventSink
         ShortcutLatency.record(.dataStarted, trace: latency)
         let generation = UUID()
         historyPanelLoadGeneration = generation
         isHistoryPickerLoading = true
         // Capture settings on the UI thread; the worker only accesses synchronized stores.
         let history = historyStore, clipboard = clipboardHistoryStore
-        let maintenance = clipboardMaintenance(at: Date())
+        let maintenance = ShortcutLatency
+            .measure(.maintenancePlanStarted, .maintenancePlanFinished, trace: latency) {
+                clipboardMaintenance(at: Date())
+            }
         var entries: [ClipboardEntry] = []
         historyPanelWork.submit({
-            if opening { maintenance() }
-            entries = Self.historyPanelEntries(history: history, clipboard: clipboard)
-            ShortcutLatency.record(.dataFinished, trace: latency)
+            ShortcutLatency.$eventSink.withValue(latencySink) {
+                ShortcutLatency.record(.dataWorkerStarted, trace: latency)
+                if opening {
+                    ShortcutLatency
+                        .measure(.maintenanceStarted, .maintenanceFinished, trace: latency) { maintenance() }
+                }
+                entries = Self.historyPanelEntries(history: history, clipboard: clipboard, latency: latency)
+                ShortcutLatency.record(.dataFinished, trace: latency)
+            }
         }, completion: { [weak self] result in
-            guard let self else { ShortcutLatency.record(.superseded, trace: latency); return }
-            ShortcutLatency.$current.withValue(latency) {
-                guard self.historyPanelLoadGeneration == generation else { ShortcutLatency.record(.superseded); return }
-                self.isHistoryPickerLoading = false
-                switch result {
-                case .failure:
-                    ShortcutLatency.record(.failed)
-                    if self.isHistoryPickerPresented { self.historyPanelModel.showNotice(L("ask.plugin.clip.unavailable")) }
-                    else {
-                        self.overlayController.showNotice(message: L("ask.plugin.clip.unavailable"))
-                        self.overlayController.dismiss(after: 2)
-                    }
-                case .success:
-                    guard !entries.isEmpty else {
-                        ShortcutLatency.record(.blocked)
-                        if opening {
-                            self.overlayController.showNotice(message: L("overlay.historyPicker.empty"))
+            ShortcutLatency.$eventSink.withValue(latencySink) {
+                ShortcutLatency.record(.dataCallback, trace: latency)
+                guard let self else { ShortcutLatency.record(.superseded, trace: latency); return }
+                ShortcutLatency.$current.withValue(latency) {
+                    guard self.historyPanelLoadGeneration == generation
+                    else { ShortcutLatency.record(.superseded); return }
+                    self.isHistoryPickerLoading = false
+                    switch result {
+                    case .failure:
+                        ShortcutLatency.record(.failed)
+                        if self.isHistoryPickerPresented { self.historyPanelModel.showNotice(L("ask.plugin.clip.unavailable")) }
+                        else {
+                            self.overlayController.showNotice(message: L("ask.plugin.clip.unavailable"))
                             self.overlayController.dismiss(after: 2)
-                        } else { self.dismissHistoryPicker() }
-                        return
+                        }
+                    case .success:
+                        guard !entries.isEmpty else {
+                            ShortcutLatency.record(.blocked)
+                            if opening {
+                                self.overlayController.showNotice(message: L("overlay.historyPicker.empty"))
+                                self.overlayController.dismiss(after: 2)
+                            } else {
+                                self.dismissHistoryPicker()
+                            }
+                            return
+                        }
+                        if opening {
+                            // Another feature can start while the read is suspended.
+                            guard !self.isRecording, self.processingTask == nil,
+                                  !self.isPersonaPickerPresented else { ShortcutLatency.record(.blocked); return }
+                            ShortcutLatency.record(.modelUpdateStarted)
+                            self.historyPanelModel.showsPreview = self.settingsStore.clipboardShowsPreview
+                            self.historyPanelModel.isRecordingPaused = self.settingsStore.isClipboardRecordingPaused()
+                            self.historyPanelModel.singleClickPastes = self.settingsStore.clipboardSingleClickPastes
+                            self.historyPanelModel.reset(
+                                entries: entries,
+                                selectFirstUnpinned: self.settingsStore.clipboardSelectsFirstUnpinned
+                            )
+                            ShortcutLatency.record(.modelUpdateFinished)
+                            self.isHistoryPickerPresented = true
+                            self.clipboardPanelPresenter?.present(self.historyPanelModel)
+                        } else if self.isHistoryPickerPresented {
+                            self.historyPanelModel.replaceEntries(entries)
+                        }
                     }
-                    if opening {
-                        // Another feature can start while the read is suspended.
-                        guard !self.isRecording, self.processingTask == nil, !self.isPersonaPickerPresented else { ShortcutLatency.record(.blocked); return }
-                        self.historyPanelModel.showsPreview = self.settingsStore.clipboardShowsPreview
-                        self.historyPanelModel.isRecordingPaused = self.settingsStore.isClipboardRecordingPaused()
-                        self.historyPanelModel.singleClickPastes = self.settingsStore.clipboardSingleClickPastes
-                        self.historyPanelModel.reset(entries: entries, selectFirstUnpinned: self.settingsStore.clipboardSelectsFirstUnpinned)
-                        self.isHistoryPickerPresented = true
-                        self.clipboardPanelPresenter?.present(self.historyPanelModel)
-                    } else if self.isHistoryPickerPresented { self.historyPanelModel.replaceEntries(entries) }
                 }
             }
         })

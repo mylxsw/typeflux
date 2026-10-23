@@ -343,7 +343,12 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         }
         // Already open (its context may still be arriving): just bring the editor back.
         if launcher?.isVisible == true || launchTask != nil {
-            if launcher?.isVisible == true { launcher?.makeKeyAndOrderFront(nil); focusEditor(in: launcher) }
+            if launcher?.isVisible == true {
+                ShortcutLatency
+                    .measure(.focusStarted, .focusFinished) {
+                        launcher?.makeKeyAndOrderFront(nil); focusEditor(in: launcher)
+                    }
+            }
             ShortcutLatency.windowOrdered(launcher)
             if let prepared {
                 let pending = launchTask
@@ -354,16 +359,28 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             }
             return
         }
+        ShortcutLatency.record(.statePreparationStarted)
         let restoredInput = model.resetLauncherForPresentation(at: launcherNow())
         model.launcherWindowMode = settings.askLauncherWindowMode
+        ShortcutLatency.record(.statePreparationFinished)
+        ShortcutLatency.record(.appsRefreshStarted)
         model.quickSearch.setVisible(true)
         model.refreshQuickApps()
-        Task { [model] in await model.refreshLauncherWorkflows() }
+        ShortcutLatency.record(.appsRefreshFinished)
+        Task { [model] in
+            ShortcutLatency.record(.workflowsStarted)
+            defer { ShortcutLatency.record(.workflowsFinished) }
+            await model.refreshLauncherWorkflows()
+        }
+        ShortcutLatency.record(.contextRequestStarted)
         if NSWorkspace.shared.frontmostApplication?.processIdentifier != ProcessInfo.processInfo.processIdentifier {
             tools?.targetApplication = NSWorkspace.shared.frontmostApplication
         }
         let selectionRequest = model.makeLauncherSelectionRequest()
-        let panel = launcherPanel()
+        ShortcutLatency.record(.contextRequestFinished)
+        ShortcutLatency.record(launcher == nil ? .windowUncached : .windowCached)
+        let panel = ShortcutLatency.measure(.windowAcquisitionStarted, .windowAcquisitionFinished) { launcherPanel() }
+        ShortcutLatency.record(.layoutStarted)
         applyAppearance(panel)
         if let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) }) ?? NSScreen.main {
             let frame = screen.visibleFrame
@@ -377,8 +394,12 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         }
         // Take keyboard focus without activating the app and raising its other windows.
         model.setLauncherImagesVisible(true)
+        ShortcutLatency.record(.layoutFinished)
+        ShortcutLatency.record(.windowShowStarted)
         panel.makeKeyAndOrderFront(nil)
+        ShortcutLatency.record(.windowShowFinished)
         ShortcutLatency.windowOrdered(panel)
+        ShortcutLatency.record(.focusStarted)
         // Select after focus: AppKit may restore the editor's previous source
         // when it becomes first responder. Do this only on a fresh opening.
         if focusEditor(in: panel), !settings.askLauncherInputSourceID.isEmpty {
@@ -390,13 +411,16 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             editor.caretRequestID = model.launcherHistoryFillID
             editor.selectAll(nil)
         }
-        installClickMonitors()
+        ShortcutLatency.record(.focusFinished)
+        ShortcutLatency.measure(.monitorsStarted, .monitorsFinished) { installClickMonitors() }
         launchTask = Task { [weak self] in
             guard let self else { return }
             // A cancelled launch must not clear a newer launch task.
             defer { if !Task.isCancelled { launchTask = nil } }
             guard !Task.isCancelled else { return }
+            ShortcutLatency.record(.contextCaptureStarted)
             await model.prepareLauncher(request: selectionRequest)
+            ShortcutLatency.record(.contextCaptureFinished)
             guard !Task.isCancelled else { return }
             prepared?()
         }

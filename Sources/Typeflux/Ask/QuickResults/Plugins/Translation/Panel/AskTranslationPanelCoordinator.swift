@@ -67,6 +67,7 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
     func toggleSelection() {
         if !FeatureProcess.owns(.translation) { FeatureProcess.send(.init(destination: .translation, action: "translationToggle")); return }
         if controller.isPresented {
+            ShortcutLatency.record(.dismissed)
             model.dismiss()
         } else {
             openSelection()
@@ -87,7 +88,9 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
         }
         let initialText = model.text
         selectionTask = Task { [weak self, injector] in
+            ShortcutLatency.record(.translationSelectionStarted)
             let snapshot = await injector.selectionSnapshot(for: .explicitSelectionAction)
+            ShortcutLatency.record(.translationSelectionFinished)
             guard let self, generation == current, !Task.isCancelled else { return }
             selectionTask = nil
             guard controller.isPresented else { return }

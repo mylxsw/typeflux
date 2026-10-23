@@ -3,7 +3,7 @@
 Open **Settings → Advanced → Shortcut Response Diagnostics → Open Diagnostics**.
 Recording is enabled by default and can be disabled in that section. This is local
 diagnostic storage, independent of analytics sharing; it never uploads records.
-Use the launcher, clipboard and screenshot shortcuts in normal work, then inspect
+Use the ring, translation, launcher, clipboard and screenshot shortcuts in normal work, then inspect
 their timelines. The dashboard refreshes every two seconds while mounted. Its
 filters affect the displayed statistics; **Export All Data** exports the complete
 retained snapshot, including other features and unsuccessful/incomplete records.
@@ -22,8 +22,8 @@ retained snapshot, including other features and unsuccessful/incomplete records.
   after submitting the window show request. It is **not compositor completion,
   physical first paint, animation completion, or proof the editor is responsive**.
   Instrumentation never forces drawing or layout to manufacture a display event.
-- Full display paths are instrumented for launcher, clipboard and screenshot
-  selection. Other feature shortcuts include routing/handler timing, with a
+- Full display paths are instrumented for ring, translation, launcher, clipboard
+  and screenshot selection. Other feature shortcuts include routing/handler timing, with a
   separate `handled` outcome; they are not counted as display successes. Voice
   gesture startup remains covered by the existing recording startup diagnostics.
 - `targetCold` means no existing child was registered at routing time, possibly
@@ -72,6 +72,38 @@ durations; asynchronous work can overlap. For analysis, compare matched stages:
 | handlerStarted → windowOrdered | Feature preparation, including nested async work |
 | windowOrdered → visibleNextTurn | Next main queue turn and visibility check |
 
+## Detailed stages (schema version 2)
+
+Paired `Started`/`Finished` events measure the named operation. They do not add
+new waits or change execution order. Match the pair within a trace; for per-screen
+operations also match `itemIndex` (one-based ordinal) and `itemCount` (screen count).
+The dashboard shows the ordinal next to those stages and exports both fields.
+No display identifier or display content is recorded.
+
+| Feature | Additional detail |
+| --- | --- |
+| Ring | Single-modifier and registered chord paths start a trace at recognition. `ringPressed`, `ringReleased` and `ringCancelled` share that trace. `ringShowStarted`/`ringShowFinished` bracket menu presentation, followed by the next-turn visibility probe. Toggle-close and blocked requests remain separate outcomes. |
+| Translation | Window cache reuse/creation, acquisition, layout, ordering, focus and monitor setup. `translationSelectionStarted`/`translationSelectionFinished` measure asynchronous selection capture; this can finish after the first visible event and cause another presentation. Toggle-close is `dismissed`. |
+| Screenshot | `overlayStarted`, `oldOverlayRetired`, per-display `displayView`, `displayPanel` and `displayShow` pairs, focus, initial pointer/magnifier update, and `overlayFinished`. Snapshot capture retains its existing separate pair. |
+| Launcher | State preparation, quick-app refresh, selection request creation, window cache/acquisition, layout, ordering, focus and monitors. Workflow refresh and selection context loading have separate background spans; do not add them to the opening duration if they overlap or finish after visibility. |
+| Clipboard | `dataStarted` to `dataWorkerStarted` includes preparation and scheduling; `maintenancePlanFinished` to `dataWorkerStarted` narrows queue wait plus submission setup. Maintenance preparation/execution, voice history, clipboard history, pins and merge are distinct spans. `dataFinished` to `dataCallback` measures return to the main queue. Presentation model update, window cache/acquisition, layout, ordering, focus and monitors follow separately. Both list and shelf presentations are covered. |
+
+`windowCached`/`windowUncached` describe window reuse, independently of process
+warmth. Layout spans describe the existing content preparation calls; they do not
+force layout completion. Quick-app refresh spans cover refresh/index kickoff and
+icon preparation calls, not completion of background indexing. Focus spans measure
+the focus request calls, not the time
+until the editor can accept a physical key. Shelf animation remains outside the
+visibility completion proxy. Repeated span names (such as a second translation
+presentation) must be matched in event order, not by subtracting the last finish
+from the first start.
+
+Version 1 ring/translation recordings that only reached `handlerFinished` retain
+the `handled` outcome, without a display percentile. Version 2 recordings for these
+features require a visible or explicit non-opening outcome; a missing endpoint is
+`incomplete`. A visibility event takes precedence over later dismissal/cancellation
+in the same trace because the panel did open.
+
 ## Read the same data without the UI
 
 The native command reads the same files with the same parser and summary code:
@@ -97,8 +129,9 @@ open "$HOME/Applications/Typeflux Dev.app" --args --shortcut-diagnostics-window
 
 ## Storage, retention and overhead
 
-- JSONL schema version 1 contains only fixed stage/role names, UUIDs, timestamps,
-  PID, build and dropped-event counts. No shortcut chord, keyword ID, payload,
+- New events use JSONL schema version 2; the reader also accepts version 1.
+  Records contain only fixed stage/role names, UUIDs, timestamps, PID, build,
+  dropped-event counts and optional one-based display ordinal/count. No shortcut chord, keyword ID, payload,
   clipboard text, file path, screenshot, token or underlying error is serialized.
 - A private serial utility queue writes each process's own files; the input and
   UI threads never wait for disk. At most 512 writes can be queued per process;
@@ -182,3 +215,53 @@ automation smoke checks, not verification on the intended interactive machine.
   shortcut-to-window collection and populated-dashboard/export interaction still
   require actual key input. App launch and UI inspection are not presented as
   proof of that full path. No performance conclusion is drawn from these checks.
+
+## Detail instrumentation validation on 2026-10-23
+
+The follow-up changes preserve shortcut ownership, process structure and feature
+execution order. No development application is launched on the remote machine.
+Focused automated checks use synthetic content and injected diagnostic collectors;
+physical shortcut latency and populated dashboard interaction require local testing.
+
+- The initial focused coverage scope executed 199 tests (145 XCTest, 54 Swift
+  Testing) in 127.56 seconds. One existing translation focus assertion failed
+  in the combined run; all diagnostic assertions passed.
+- A 22-method retry after collector concurrency cleanup took 114.17 seconds and
+  reproduced only that focus failure. The focus test passed alone in a 43.24-second
+  command. Diagnostic assertions were then folded into the existing translation
+  cases, avoiding the extra window lifecycle. All 10 translation entry tests passed
+  in 83.94 seconds, retaining the original focus assertion. A later combined run
+  reproduced the focus failure, so its cause is not considered resolved. The final
+  retained scope contains 198 unique test methods; the removed standalone case is
+  excluded. Do not describe this scope as uniformly green.
+- The scope covers recording/parser compatibility, modifier/chord correlation,
+  ring outcomes, translation visibility and capture, launcher preparation,
+  clipboard worker-to-main delivery and list/shelf presentation, synthetic
+  per-display screenshot overlays, RPC and existing shortcut behavior.
+- All five localization files pass `plutil -lint`; all 129 diagnostic keys match
+  and every stage has a label. `git diff --check` passes.
+- Strict SwiftLint on touched source files is not green: it reports line, function
+  and type length, complexity and other existing style rules. Instrumentation also
+  increases some function lengths. No lint-success claim is made; broad style
+  cleanup is outside this diagnostic-only change.
+
+- Synced concurrent upstream commit `34b9c7c2` and rebuilt the final client. The
+  affected launcher/translation scope executed 25 methods: 24 passed; the same
+  translation focus assertion failed in the combined run. Runner wall time was
+  255.42 seconds, including a 217.05-second build. This remains a validation
+  limitation for local testing; the assertion was not weakened and feature focus
+  behavior was not changed to make a remote test pass.
+- Approximate complete command wall times, including coverage report generation
+  where successful, were 127.67, 114.24, 46.57, 89.70 and 255.50 seconds for the
+  initial scope, collector retry, isolated focus check, translation suite and
+  post-rebase scope respectively. Earlier values above are the runner-reported
+  build/discovery/execution times.
+- A union of focused profiles estimated 239/252 changed executable production
+  lines covered (94.84%). However, merging across the upstream baseline and test
+  revisions emitted counter-mismatch warnings in changed upstream functions and
+  test functions. This is an estimate, not a clean formal 90% or project-wide
+  coverage claim. The new populated per-display dashboard rows were not exercised
+  visually; JSON metadata round-trips and localization were checked automatically.
+- No development app, real screen capture or physical shortcut smoke test was
+  launched during this follow-up. Validate the final build locally, including
+  translation focus, and export all diagnostic data for latency analysis.

@@ -392,8 +392,20 @@ final class ScreenshotOverlayTests: XCTestCase {
         var pointer = CGPoint(x: 250, y: 20)
         let controller = ScreenshotOverlayController(primaryDisplayHeight: { 100 }, pointerLocation: { pointer })
         var events: [ScreenshotOverlayEvent] = []
-        controller.present(snapshot()) { events.append($0) }
+        let diagnostics = ShortcutLatencyEventCollector(), trace = diagnosticTestTrace(.screenshot)
+        ShortcutLatency.$eventSink.withValue(diagnostics.sink) {
+            ShortcutLatency.$current.withValue(trace) { controller.present(snapshot()) { events.append($0) } }
+        }
         defer { controller.dismiss() }
+        for stage in [ShortcutLatencyStage.displayViewStarted, .displayViewFinished, .displayPanelStarted,
+                      .displayPanelFinished, .displayShowStarted, .displayShowFinished] {
+            let events = diagnostics.events.filter { $0.stage == stage }
+            XCTAssertEqual(events.map(\.itemIndex), [1, 2])
+            XCTAssertTrue(events.allSatisfy { $0.itemCount == 2 && $0.trace == trace })
+        }
+        XCTAssertEqual(diagnostics.stages.prefix(2), [.overlayStarted, .oldOverlayRetired])
+        XCTAssertEqual(diagnostics.stages.suffix(6), [.focusStarted, .focusFinished, .pointerUpdateStarted,
+                                                      .pointerUpdateFinished, .overlayFinished, .windowOrdered])
 
         XCTAssertTrue(controller.isPresented)
         XCTAssertEqual(controller.panels.count, 2)

@@ -31,6 +31,7 @@ final class ClipboardShelfPresenter {
         _ panel: NSWindow, model: ClipboardPanelModel, screen: NSScreen?, animated: Bool,
         previewRoot: @escaping (ClipboardPanelModel) -> AnyView
     ) {
+        ShortcutLatency.record(.layoutStarted)
         dismiss()
         self.panel = panel
         self.model = model
@@ -47,7 +48,10 @@ final class ClipboardShelfPresenter {
             content.layer?.transform = CATransform3DMakeTranslation(0, -ClipboardShelfScroll.slideDistance, 0)
             CATransaction.commit()
         }
+        ShortcutLatency.record(.layoutFinished)
+        ShortcutLatency.record(.windowShowStarted)
         panel.makeKeyAndOrderFront(nil)
+        ShortcutLatency.record(.windowShowFinished)
         if animated, let layer = panel.contentView?.layer {
             let slide = CABasicAnimation(keyPath: "transform.translation.y")
             slide.fromValue = -ClipboardShelfScroll.slideDistance

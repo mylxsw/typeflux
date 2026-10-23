@@ -128,8 +128,8 @@ struct ShortcutLatencyTests {
         let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
         var invalid = event(.recognized, trace: trace(), at: 99)
         var data = try encoder.encode(invalid); data.append(10)
-        invalid.version = 2
-        data.append(try encoder.encode(invalid)); data.append(10)
+        invalid.version = 3
+        try data.append(encoder.encode(invalid)); data.append(10)
         try data.write(to: directory.appendingPathComponent("events-invalid.jsonl"))
         try Data(count: ShortcutLatencyWriter.maximumFileBytes + 1).write(to: directory.appendingPathComponent("events-oversize.jsonl"))
         let report = try ShortcutLatencyReport.read(directory: directory)

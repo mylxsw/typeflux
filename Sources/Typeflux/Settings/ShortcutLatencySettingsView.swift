@@ -157,7 +157,11 @@ struct ShortcutLatencyDashboard: View {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(L("shortcutDiagnostics.stage." + event.stage.rawValue))
-                        Text(L("shortcutDiagnostics.role." + event.role.rawValue) + " · PID " + String(event.pid) + " · " + event.build)
+                        if let index = event.itemIndex, let count = event.itemCount {
+                            Text(L("shortcutDiagnostics.item", index, count)).font(.caption).foregroundStyle(.secondary)
+                        }
+                        Text(L("shortcutDiagnostics.role." + event.role.rawValue) + " · PID " + String(event.pid) +
+                            " · " + event.build)
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()

@@ -63,32 +63,43 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
     var isPresented: Bool { !panels.isEmpty }
 
     func present(_ snapshot: ScreenSnapshot, onEvent: @escaping (ScreenshotOverlayEvent) -> Void) {
+        ShortcutLatency.record(.overlayStarted, itemCount: snapshot.displays.count)
         dismiss()
+        ShortcutLatency.record(.oldOverlayRetired)
         self.onEvent = onEvent
         let primaryHeight = primaryDisplayHeight()
         let initialModifierFlags = modifierFlags()
-        for display in snapshot.displays {
+        for (index, display) in snapshot.displays.enumerated() {
+            ShortcutLatency.record(.displayViewStarted, itemIndex: index + 1, itemCount: snapshot.displays.count)
             let view = ScreenshotOverlayView(display: display, windows: snapshot.windows,
                                              initialModifierFlags: initialModifierFlags, textMeasurer: textMeasurer,
                                              sensitiveScanner: sensitiveScanner, toolStyles: toolStyles)
+            ShortcutLatency.record(.displayViewFinished, itemIndex: index + 1, itemCount: snapshot.displays.count)
             view.onActivate = { [weak self] view in self?.activate(view) ?? true }
             view.onEvent = { [weak self] view, event in self?.forward(event, from: view) }
+            ShortcutLatency.record(.displayPanelStarted, itemIndex: index + 1, itemCount: snapshot.displays.count)
             let panel = ScreenshotOverlayPanel(
                 frame: ScreenCaptureGeometry.flipped(display.frame, primaryDisplayHeight: primaryHeight)
             )
             panel.onHide = { [weak view] in view?.releaseImage() }
             panel.contentView = view
+            ShortcutLatency.record(.displayPanelFinished, itemIndex: index + 1, itemCount: snapshot.displays.count)
+            ShortcutLatency.record(.displayShowStarted, itemIndex: index + 1, itemCount: snapshot.displays.count)
             panel.orderFrontRegardless()
+            ShortcutLatency.record(.displayShowFinished, itemIndex: index + 1, itemCount: snapshot.displays.count)
             panels.append(panel)
             views.append(view)
         }
         if let view = viewUnderPointer() {
-            focus(view)
+            ShortcutLatency.measure(.focusStarted, .focusFinished) { focus(view) }
             // Show the loupe at once, before the pointer moves.
             let pointer = pointerLocation()
+            ShortcutLatency.record(.pointerUpdateStarted)
             view.pointerMoved(to: CGPoint(x: pointer.x - view.display.frame.minX,
                                           y: pointer.y - view.display.frame.minY))
+            ShortcutLatency.record(.pointerUpdateFinished)
         }
+        ShortcutLatency.record(.overlayFinished, itemCount: snapshot.displays.count)
         ShortcutLatency.windowOrdered(panels.first)
     }
 

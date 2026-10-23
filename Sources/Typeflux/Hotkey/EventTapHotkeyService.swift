@@ -198,6 +198,8 @@ final class EventTapHotkeyService: HotkeyService {
     private var localMonitor: Any?
     private var ringModifierBinding: HotkeyBinding?
     private var ringModifier = RingModifierHotkey()
+    private var ringLatency: ShortcutLatencyTrace?
+    private let beginShortcutTrace: (FeatureRole) -> ShortcutLatencyTrace?
     private var arbiter = HotkeyGestureArbiter()
     private var pendingModifierActivationWorkItem: DispatchWorkItem?
     private var accessibilityRetryWorkItem: DispatchWorkItem?
@@ -210,8 +212,12 @@ final class EventTapHotkeyService: HotkeyService {
     private var lastHistoryRequestAt: Date?
     private var lastScreenshotRequestAt: Date?
 
-    init(settingsStore: SettingsStore) {
+    init(
+        settingsStore: SettingsStore,
+        beginShortcutTrace: @escaping (FeatureRole) -> ShortcutLatencyTrace? = ShortcutLatency.begin
+    ) {
         self.settingsStore = settingsStore
+        self.beginShortcutTrace = beginShortcutTrace
         historySystemHotkey.onPressed = { [weak self] in
             ErrorLogStore.shared.log("Hotkey(System): history")
             self?.requestHistoryPicker()
@@ -519,11 +525,25 @@ final class EventTapHotkeyService: HotkeyService {
     }
 
     private func dispatchRingModifierEvent(_ event: RingModifierHotkey.Event) {
-        DispatchQueue.main.async { [weak self] in
+        if event == .began {
+            ringLatency = beginShortcutTrace(.ring)
+        }
+        let trace = ringLatency
+        if event != .began {
+            ringLatency = nil
+        }
+        ShortcutLatency.deliver(trace) { [weak self] in
             switch event {
-            case .began: self?.onShortcutRequested?(.action(.ring))
-            case .ended: self?.onShortcutReleased?(.action(.ring))
-            case .cancelled: self?.onShortcutCancelled?(.action(.ring))
+            case .began:
+                ShortcutLatency.record(.callback)
+                ShortcutLatency.record(.ringPressed)
+                self?.onShortcutRequested?(.action(.ring))
+            case .ended:
+                ShortcutLatency.record(.ringReleased)
+                self?.onShortcutReleased?(.action(.ring))
+            case .cancelled:
+                ShortcutLatency.record(.ringCancelled)
+                self?.onShortcutCancelled?(.action(.ring))
             }
         }
     }

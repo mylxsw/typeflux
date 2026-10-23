@@ -37,13 +37,16 @@ final class SystemHotkeyPool {
     private var refs: [UInt32: EventHotKeyRef] = [:]
     private var targets: [UInt32: HotkeyTarget] = [:]
     private var eventHandlerRef: EventHandlerRef?
+    private var ringLatency: ShortcutLatencyTrace?
+    private let beginShortcutTrace: (FeatureRole) -> ShortcutLatencyTrace?
 
     var onPressed: ((HotkeyTarget) -> Void)?
     /// The key of a registered chord was let go. Only shortcuts that are held (the ring) use it.
     var onReleased: ((HotkeyTarget) -> Void)?
 
-    init(name: String) {
+    init(name: String, beginShortcutTrace: @escaping (FeatureRole) -> ShortcutLatencyTrace? = ShortcutLatency.begin) {
         self.name = name
+        self.beginShortcutTrace = beginShortcutTrace
         installEventHandler()
     }
 
@@ -91,24 +94,38 @@ final class SystemHotkeyPool {
         }
         refs = [:]
         targets = [:]
+        ringLatency = nil
     }
 
     func handlePressed(id: UInt32) -> Bool {
         guard let target = targets[id] else { return false }
         let role = FeatureHotkeyEvent.destination(for: target)
-        let trace = role == .host ? nil : ShortcutLatency.begin(role)
-        DispatchQueue.main.async { [weak self] in
-            ShortcutLatency.$current.withValue(trace) {
-                ShortcutLatency.record(.callback)
-                self?.onPressed?(target)
+        let trace = role == .host ? nil : beginShortcutTrace(role)
+        if target == .action(.ring) {
+            ringLatency = trace
+        }
+        ShortcutLatency.deliver(trace) { [weak self] in
+            ShortcutLatency.record(.callback)
+            if target == .action(.ring) {
+                ShortcutLatency.record(.ringPressed)
             }
+            self?.onPressed?(target)
         }
         return true
     }
 
     func handleReleased(id: UInt32) -> Bool {
         guard let target = targets[id] else { return false }
-        DispatchQueue.main.async { [weak self] in self?.onReleased?(target) }
+        let trace = target == .action(.ring) ? ringLatency : nil
+        if target == .action(.ring) {
+            ringLatency = nil
+        }
+        ShortcutLatency.deliver(trace) { [weak self] in
+            if target == .action(.ring) {
+                ShortcutLatency.record(.ringReleased)
+            }
+            self?.onReleased?(target)
+        }
         return true
     }
 

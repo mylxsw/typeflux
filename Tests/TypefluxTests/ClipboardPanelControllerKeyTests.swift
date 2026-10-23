@@ -45,6 +45,29 @@ final class ClipboardPanelControllerKeyTests: XCTestCase {
     }
 
     @MainActor
+    func testDiagnosticsSplitPresentationAndReuseTheCachedWindow() async {
+        let diagnostics = ShortcutLatencyEventCollector(), trace = diagnosticTestTrace(.clipboard)
+        await ShortcutLatency.$eventSink.withValue(diagnostics.sink) {
+            await ShortcutLatency.$current.withValue(trace) {
+                controller.present(model)
+                await drainMainQueue()
+            }
+        }
+        XCTAssertEqual(diagnostics.stages, [.statePreparationStarted, .statePreparationFinished, .windowUncached,
+                                            .windowAcquisitionStarted, .windowAcquisitionFinished, .layoutStarted,
+                                            .layoutFinished,
+                                            .windowShowStarted, .windowShowFinished, .focusStarted, .focusFinished,
+                                            .monitorsStarted, .monitorsFinished, .windowOrdered, .visibleNextTurn])
+        controller.dismiss()
+        let reused = ShortcutLatencyEventCollector()
+        ShortcutLatency.$eventSink.withValue(reused.sink) {
+            ShortcutLatency.$current.withValue(trace) { controller.present(model) }
+        }
+        XCTAssertTrue(reused.stages.contains(.windowCached))
+        XCTAssertFalse(reused.stages.contains(.windowUncached))
+    }
+
+    @MainActor
     func testSnippetEditorRoutesTextKeysAndSaveWithoutPasting() throws {
         controller.present(model)
         model.perform(.saveSnippet, at: 0)

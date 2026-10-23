@@ -17,6 +17,20 @@ enum ShortcutLatencyStage: String, Codable, Sendable, CaseIterable {
     case targetWireReceived, targetReceived, readinessStarted, readinessFinished, handlerStarted, handlerFinished
     case dataStarted, dataFinished, captureStarted, captureFinished
     case windowOrdered, visibleNextTurn, dismissed, blocked, failed, superseded
+    case ringPressed, ringReleased, ringCancelled, ringShowStarted, ringShowFinished
+    case statePreparationStarted, statePreparationFinished, appsRefreshStarted, appsRefreshFinished
+    case workflowsStarted, workflowsFinished, contextRequestStarted, contextRequestFinished
+    case contextCaptureStarted, contextCaptureFinished, windowCached, windowUncached
+    case windowAcquisitionStarted, windowAcquisitionFinished, layoutStarted, layoutFinished
+    case windowShowStarted, windowShowFinished, focusStarted, focusFinished, monitorsStarted, monitorsFinished
+    case dataWorkerStarted, dataCallback, maintenancePlanStarted, maintenancePlanFinished
+    case maintenanceStarted, maintenanceFinished, historyReadStarted, historyReadFinished
+    case clipboardReadStarted, clipboardReadFinished, pinsReadStarted, pinsReadFinished
+    case mergeStarted, mergeFinished, modelUpdateStarted, modelUpdateFinished
+    case overlayStarted, overlayFinished, oldOverlayRetired
+    case displayViewStarted, displayViewFinished, displayPanelStarted, displayPanelFinished
+    case displayShowStarted, displayShowFinished, pointerUpdateStarted, pointerUpdateFinished
+    case translationSelectionStarted, translationSelectionFinished
 }
 
 struct ShortcutLatencyEvent: Codable, Sendable {
@@ -28,6 +42,9 @@ struct ShortcutLatencyEvent: Codable, Sendable {
     let role: FeatureRole
     let build: String
     var droppedBefore = 0
+    /// One-based display ordinal and total count; never a display identifier or image.
+    var itemIndex: Int?
+    var itemCount: Int?
 
     var milliseconds: Double { (uptime - trace.uptime) * 1000 }
 }
@@ -35,6 +52,8 @@ struct ShortcutLatencyEvent: Codable, Sendable {
 enum ShortcutLatency {
     @TaskLocal static var current: ShortcutLatencyTrace?
     @TaskLocal static var receivedUptime: TimeInterval?
+    /// Injected observers let focused tests inspect real instrumentation without writing user logs.
+    @TaskLocal static var eventSink: (@Sendable (ShortcutLatencyEvent) -> Void)?
     static let enabledKey = "diagnostics.shortcuts.enabled"
     static var directory: URL { TypefluxDataDirectories.cache.appendingPathComponent("shortcut-latency", isDirectory: true) }
     private static let writer = ShortcutLatencyWriter()
@@ -48,20 +67,56 @@ enum ShortcutLatency {
         return trace
     }
 
-    static func record(_ stage: ShortcutLatencyStage, trace: ShortcutLatencyTrace? = current) {
+    static func record(_ stage: ShortcutLatencyStage, trace: ShortcutLatencyTrace? = current,
+                       itemIndex: Int? = nil, itemCount: Int? = nil) {
         guard let trace else { return }
-        writer.record(.init(trace: trace, stage: stage, uptime: stage == .recognized ? trace.uptime : ProcessInfo.processInfo.systemUptime,
-                            pid: ProcessInfo.processInfo.processIdentifier, role: FeatureProcess.role,
-                            build: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "development"))
+        let event = ShortcutLatencyEvent(
+            version: 2,
+            trace: trace,
+            stage: stage,
+            uptime: stage == .recognized ? trace.uptime : ProcessInfo.processInfo.systemUptime,
+            pid: ProcessInfo.processInfo.processIdentifier,
+            role: FeatureProcess.role,
+            build: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "development",
+            itemIndex: itemIndex,
+            itemCount: itemCount
+        )
+        if let eventSink {
+            eventSink(event)
+        } else {
+            writer.record(event)
+        }
+    }
+
+    static func measure<T>(_ start: ShortcutLatencyStage, _ end: ShortcutLatencyStage,
+                           trace: ShortcutLatencyTrace? = current, itemIndex: Int? = nil, itemCount: Int? = nil,
+                           _ operation: () throws -> T) rethrows -> T {
+        record(start, trace: trace, itemIndex: itemIndex, itemCount: itemCount)
+        defer { record(end, trace: trace, itemIndex: itemIndex, itemCount: itemCount) }
+        return try operation()
+    }
+
+    /// Preserve both correlation and an injected sink across GCD, which does not inherit task locals.
+    static func deliver(_ trace: ShortcutLatencyTrace?, _ operation: @escaping @MainActor () -> Void) {
+        let sink = eventSink
+        DispatchQueue.main.async {
+            $eventSink.withValue(sink) { $current.withValue(trace) { operation() } }
+        }
     }
 
     /// Does not force layout, draw, or wait on the compositor. This is explicitly
     /// a next-main-queue-turn visibility check, not physical screen first paint.
     @MainActor static func windowOrdered(_ window: NSWindow?, trace: ShortcutLatencyTrace? = current) {
         guard let trace, let window else { return }
+        presentationOrdered(trace: trace) { [weak window] in window?.isVisible == true }
+    }
+
+    @MainActor static func presentationOrdered(trace: ShortcutLatencyTrace? = current,
+                                               isVisible: @escaping @MainActor () -> Bool) {
+        guard let trace else { return }
         record(.windowOrdered, trace: trace)
-        DispatchQueue.main.async { [weak window] in
-            record(window?.isVisible == true ? .visibleNextTurn : .superseded, trace: trace)
+        deliver(trace) {
+            record(isVisible() ? .visibleNextTurn : .superseded, trace: trace)
         }
     }
 }

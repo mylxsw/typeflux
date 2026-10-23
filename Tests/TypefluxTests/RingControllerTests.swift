@@ -188,6 +188,27 @@ final class RingControllerTests: XCTestCase {
         XCTAssertEqual(OpieRingMenu.style(.liquidGlass), .liquidGlass)
     }
 
+    func testDiagnosticsCoverShowVisibilityDismissAndBlockedRequests() async {
+        let controller = makeController()
+        defer { withExtendedLifetime(controller) {} }
+        let collector = ShortcutLatencyEventCollector(), trace = diagnosticTestTrace(.ring)
+        ShortcutLatency.$eventSink.withValue(collector.sink) {
+            ShortcutLatency.$current.withValue(trace) { controller.pressBegan() }
+        }
+        await drainMainQueue()
+        XCTAssertEqual(collector.stages, [.ringShowStarted, .ringShowFinished, .windowOrdered, .visibleNextTurn])
+        ShortcutLatency.$eventSink.withValue(collector.sink) {
+            ShortcutLatency.$current.withValue(trace) {
+                controller.pressEnded()
+                controller.pressBegan()
+                controller.isRecordingActive = { true }
+                controller.pressBegan()
+            }
+        }
+        XCTAssertEqual(collector.stages.suffix(2), [.dismissed, .blocked])
+        XCTAssertTrue(collector.events.allSatisfy { $0.trace == trace })
+    }
+
     private func waitUntil(_ condition: @escaping () -> Bool) async throws {
         for _ in 0..<100 where !condition() {
             try await Task.sleep(for: .milliseconds(10))

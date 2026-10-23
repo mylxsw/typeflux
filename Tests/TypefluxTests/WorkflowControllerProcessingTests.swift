@@ -5232,9 +5232,19 @@ extension WorkflowControllerProcessingTests {
     @MainActor func testHistoryProductionWorkerLoadsOffMainAndPresentsAsynchronously() async {
         let harness = makeClipboardPanelHarness(configure: seed)
         harness.controller.historyPanelWork = LatestBackgroundWork(label: "test.clipboard-panel")
-        harness.controller.handleHistoryPickerRequested()
+        let diagnostics = ShortcutLatencyEventCollector(), trace = diagnosticTestTrace(.clipboard)
+        ShortcutLatency.$eventSink.withValue(diagnostics.sink) {
+            ShortcutLatency.$current.withValue(trace) { harness.controller.handleHistoryPickerRequested() }
+        }
         XCTAssertFalse(harness.controller.isHistoryPickerPresented)
         await waitUntil { harness.controller.isHistoryPickerPresented }
+        XCTAssertEqual(diagnostics.stages, [.dataStarted, .maintenancePlanStarted, .maintenancePlanFinished,
+                                            .dataWorkerStarted, .maintenanceStarted, .maintenanceFinished,
+                                            .historyReadStarted, .historyReadFinished, .clipboardReadStarted,
+                                            .clipboardReadFinished,
+                                            .pinsReadStarted, .pinsReadFinished, .mergeStarted, .mergeFinished,
+                                            .dataFinished, .dataCallback, .modelUpdateStarted, .modelUpdateFinished])
+        XCTAssertTrue(diagnostics.events.allSatisfy { $0.trace == trace })
         XCTAssertEqual(harness.presenter.presentCount, 1)
         XCTAssertEqual(harness.model.entries.count, 3)
         harness.controller.dismissHistoryPicker()

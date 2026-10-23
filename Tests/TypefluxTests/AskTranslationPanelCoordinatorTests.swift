@@ -101,7 +101,10 @@ struct AskTranslationPanelCoordinatorTests {
         entry.controller.prewarm()
         #expect(!entry.controller.isPresented)
 
-        entry.openSelection()
+        let collector = ShortcutLatencyEventCollector(), trace = diagnosticTestTrace(.translation)
+        ShortcutLatency.$eventSink.withValue(collector.sink) {
+            ShortcutLatency.$current.withValue(trace) { entry.openSelection() }
+        }
         let window = try #require(entry.controller.presentedWindow)
         #expect(window.isVisible && !window.isKeyWindow)
         #expect(fixture.ai.requests.isEmpty)
@@ -110,6 +113,13 @@ struct AskTranslationPanelCoordinatorTests {
         await fixture.model.waitForTranslation()
         #expect(fixture.model.source == .selection && fixture.model.text == "Selected sentence.")
         #expect(window.isKeyWindow && fixture.ai.requests.count == 1)
+        await drainMainQueue()
+        for stage in [ShortcutLatencyStage.windowCached, .windowAcquisitionStarted, .windowAcquisitionFinished,
+                      .layoutStarted, .layoutFinished, .windowShowStarted, .windowShowFinished,
+                      .windowOrdered, .visibleNextTurn, .translationSelectionStarted, .translationSelectionFinished] {
+            #expect(collector.stages.contains(stage))
+        }
+        #expect(collector.events.allSatisfy { $0.trace == trace })
     }
 
     @Test func `selection capture does not replace text typed while the panel is open`() async {
@@ -135,7 +145,12 @@ struct AskTranslationPanelCoordinatorTests {
 
         entry.toggleSelection()
         #expect(entry.controller.isPresented)
-        entry.toggleSelection()
+        let closing = ShortcutLatencyEventCollector(), closingTrace = diagnosticTestTrace(.translation)
+        ShortcutLatency.$eventSink.withValue(closing.sink) {
+            ShortcutLatency.$current.withValue(closingTrace) { entry.toggleSelection() }
+        }
+        #expect(closing.stages == [.dismissed])
+        #expect(ShortcutLatencyReport(events: closing.events).samples[0].outcome == "dismissed")
         #expect(!entry.controller.isPresented)
         try? await Task.sleep(for: .milliseconds(100))
         #expect(fixture.ai.requests.isEmpty)

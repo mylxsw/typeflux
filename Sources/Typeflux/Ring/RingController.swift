@@ -79,17 +79,21 @@ final class RingController {
 
     func pressBegan() {
         let location = pointerLocation()
-        guard canOpen, !isRecordingActive() else { return }
+        guard canOpen, !isRecordingActive() else { ShortcutLatency.record(.blocked); return }
         switch gesture.pressBegan(isVisible: menu.isVisible, at: location) {
         case .show:
             let front = frontmostApplication()
             previousApplication = front?.processIdentifier == ProcessInfo.processInfo.processIdentifier ? nil : front
             let takesFocus = settingsStore.actionHotkeys[.ring]?.isSingleModifierTrigger != true
-            menu.show(at: location, takesKeyboardFocus: takesFocus)
+            ShortcutLatency.measure(.ringShowStarted, .ringShowFinished) {
+                menu.show(at: location, takesKeyboardFocus: takesFocus)
+            }
+            ShortcutLatency.presentationOrdered { [weak menu] in menu?.isVisible == true }
         case .dismiss:
+            ShortcutLatency.record(.dismissed)
             menu.dismiss()
         case .ignore:
-            break
+            ShortcutLatency.record(.superseded)
         }
     }
 

@@ -14,8 +14,16 @@ struct ShortcutLatencySample: Identifiable, Codable, Sendable {
         for stage in [ShortcutLatencyStage.failed, .blocked, .dismissed, .superseded] {
             if events.contains(where: { $0.stage == stage }) { return stage.rawValue }
         }
-        if ![FeatureRole.launcher, .clipboard, .screenshot].contains(trace.feature),
-           events.contains(where: { $0.stage == .handlerFinished }) { return "handled" }
+        // Old recordings did not instrument ring/translation presentation. Keep
+        // those as unmeasured handlers rather than implying a missing v2 terminal.
+        if [.ring, .translation].contains(trace.feature), events.allSatisfy({ $0.version == 1 }),
+           events.contains(where: { $0.stage == .handlerFinished }) {
+            return "handled"
+        }
+        if ![FeatureRole.launcher, .clipboard, .screenshot, .ring, .translation].contains(trace.feature),
+           events.contains(where: { $0.stage == .handlerFinished }) {
+            return "handled"
+        }
         return "incomplete"
     }
     var visibleMilliseconds: Double? { events.first { $0.stage == .visibleNextTurn }?.milliseconds }
@@ -84,7 +92,7 @@ struct ShortcutLatencyReport: Codable, Sendable {
                 // A live writer may be halfway through the last line. Try it on the next refresh.
                 if index == lines.count - 1, data.last != 10 { continue }
                 guard let event = try? decoder.decode(ShortcutLatencyEvent.self, from: Data(line)),
-                      event.version == 1, event.trace.uptime.isFinite, event.uptime.isFinite,
+                      [1, 2].contains(event.version), event.trace.uptime.isFinite, event.uptime.isFinite,
                       event.uptime >= event.trace.uptime, event.uptime - event.trace.uptime <= 300,
                       event.droppedBefore >= 0 else { invalid += 1; continue }
                 events.append(event)
