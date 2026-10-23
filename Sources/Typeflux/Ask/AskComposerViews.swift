@@ -2691,24 +2691,7 @@ struct AskComposer: View {
             selectionChip
                 .disabled(active)
                 .opacity(Self.recordingDim(active))
-            if layout.condensedFooter {
-                Spacer(minLength: 0)
-            } else {
-                HStack(spacing: 0) {
-                    Spacer(minLength: 8)
-                    // Confirms a command in the footer's empty space, inside the card.
-                    if let feedback = model.capturedContentFeedback(launcher: launcher), !active {
-                        AskCapturedContentFeedbackView(feedback: feedback) {
-                            model.undoCapturedContent(launcher: launcher)
-                        }
-                    } else if let feedback = model.commandFeedback, !active {
-                        AskComposerFootnote(text: feedback)
-                            .transition(.opacity)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: model.commandFeedback)
-            }
+            Spacer(minLength: layout.condensedFooter ? 0 : 8)
             // Keep the recording label's space when it fits. An idle reservation
             // must not push the context entry or send button outside a narrow card.
             if !layout.condensedFooter {
