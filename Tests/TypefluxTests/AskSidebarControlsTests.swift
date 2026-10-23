@@ -70,6 +70,46 @@ struct AskSidebarControlsTests {
         }
     }
 
+    @Test(arguments: [(false, false), (true, false), (true, true)])
+    func productionSidebarKeepsStorageFilterVisibleAndFunctional(signedIn: Bool, hasLocalHistory: Bool) async throws {
+        let defaults = try #require(UserDefaults(suiteName: "sidebar-filter-" + UUID().uuidString))
+        let fixture = try AskTestFixture(localOnly: !signedIn, defaults: defaults)
+        defer { fixture.model.resetSession() }
+        await fixture.api.seed(.init(id: "main", title: "Main conversation", revision: 1,
+                                     updatedAt: Date(), messages: [], kind: "chat"))
+        if hasLocalHistory {
+            await fixture.localAPI.seed(.init(id: "local", title: "Local conversation", revision: 1,
+                                              updatedAt: Date(), messages: [], kind: "chat"))
+        }
+        await fixture.model.refreshHistory()
+        #expect(fixture.model.isSignedIn == signedIn)
+        let window = host(AskConversationView(model: fixture.model).defaultAppStorage(defaults),
+                          dark: true, size: CGSize(width: 1100, height: 720))
+        defer { window.close() }
+        try await settle(window)
+        let element = try #require(find("ask.history.storageFilter", in: window))
+        let frame = try #require(element.value(forKey: "accessibilityFrame") as? NSValue).rectValue
+        #expect(frame.width >= AskHistoryFilterBar.height - 0.5)
+        #expect(window.frame.contains(frame), "The filter stays visible in the production sidebar.")
+        let content = try #require(window.contentView)
+        let control = try #require(descendants(content).compactMap { $0 as? TFNativeMenuControl.MenuButton }
+            .first { $0.accessibilityIdentifier() == "ask.history.storageFilter" })
+        try snapshot(window, name: "sidebar-signedIn-\(signedIn)-local-\(hasLocalHistory)")
+        for filter in [AskHistoryFilter.cloud, .local, .all] {
+            let index = try #require(AskHistoryFilter.allCases.firstIndex(of: filter))
+            let item = try #require(control.menu?.items[index])
+            #expect(NSApp.sendAction(try #require(item.action), to: item.target, from: item))
+            try await settle(window)
+            #expect(control.menu?.items[index].state == .on)
+            let emptyTitle = L("ask.history.empty")
+            let empty = find(emptyTitle, attribute: "accessibilityValue", in: window) != nil
+                || find(emptyTitle, attribute: "accessibilityLabel", in: window) != nil
+            let expectedEmpty = filter == .cloud ? !signedIn : filter == .local && signedIn && !hasLocalHistory
+            try snapshot(window, name: "sidebar-signedIn-\(signedIn)-local-\(hasLocalHistory)-\(filter.rawValue)")
+            #expect(empty == expectedEmpty, "The visible filter must update the actual history list.")
+        }
+    }
+
     @Test(arguments: [false, true])
     func historyTimeAppearsOnlyWhileHovering(busy: Bool) async throws {
         let window = host(HistoryRow(busy: busy))
@@ -106,10 +146,10 @@ struct AskSidebarControlsTests {
         }
     }
 
-    private func host(_ view: some View, dark: Bool = false) -> NSWindow {
+    private func host(_ view: some View, dark: Bool = false, size: CGSize = CGSize(width: 600, height: 60)) -> NSWindow {
         _ = NSApplication.shared
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 600, height: 60),
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size),
                               styleMask: .borderless, backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
@@ -132,12 +172,12 @@ struct AskSidebarControlsTests {
         [view] + view.subviews.flatMap(descendants)
     }
 
-    private func find(_ identifier: String, in window: NSWindow) -> NSObject? {
+    private func find(_ identifier: String, attribute: String = "accessibilityIdentifier", in window: NSWindow) -> NSObject? {
         var seen = Set<ObjectIdentifier>()
         func walk(_ value: Any) -> NSObject? {
             guard let object = value as? NSObject, seen.insert(ObjectIdentifier(object)).inserted else { return nil }
-            if object.responds(to: NSSelectorFromString("accessibilityIdentifier")),
-               object.value(forKey: "accessibilityIdentifier") as? String == identifier { return object }
+            if object.responds(to: NSSelectorFromString(attribute)),
+               object.value(forKey: attribute) as? String == identifier { return object }
             guard object.responds(to: NSSelectorFromString("accessibilityChildren")) else { return nil }
             for child in object.value(forKey: "accessibilityChildren") as? [Any] ?? [] {
                 if let found = walk(child) { return found }

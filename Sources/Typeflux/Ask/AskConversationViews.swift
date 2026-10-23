@@ -549,21 +549,19 @@ struct AskConversationView: View {
         }
     }
 
-    /// The filter only appears once a conversation is kept on this Mac while signed in;
-    /// signed out, every conversation is.
-    private var showsHistoryFilter: Bool { model.isSignedIn && !model.localConversationIds.isEmpty }
+    /// Local rows need a storage mark only while signed in, alongside Cloud history.
+    private var marksLocalHistory: Bool { model.isSignedIn && !model.localConversationIds.isEmpty }
 
     private var visibleConversations: [AskConversationSummary] {
-        let stored = showsHistoryFilter ? historyFilter.apply(model.conversations, isLocal: model.isLocal) : model.conversations
+        let stored = historyFilter.apply(model.conversations, isLocal: model.isLocal)
         return stored.filtered(kind: historyKind)
     }
 
-    /// All / Chat / Work, with where conversations are kept as a compact menu once
-    /// the list mixes Cloud conversations with ones kept on this Mac.
+    /// Keep the storage filter available regardless of account or history contents.
     private var historyFilterPicker: some View {
         HStack(spacing: 6) {
             AskHistoryKindBar(selection: $historyKind)
-            if showsHistoryFilter { AskHistoryStorageMenu(selection: $historyFilter) }
+            AskHistoryStorageMenu(selection: $historyFilter)
         }
     }
 
@@ -682,7 +680,7 @@ struct AskConversationView: View {
             updatedAt: item.updatedAt,
             selected: model.selectedId == item.id,
             busy: model.busyIds.contains(item.id),
-            local: showsHistoryFilter && model.isLocal(item.id),
+            local: marksLocalHistory && model.isLocal(item.id),
             work: item.resolvedKind == .work,
             host: model.hostElsewhere(item),
             selectionSpace: selectionSpace,

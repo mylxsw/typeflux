@@ -104,8 +104,7 @@ struct AskHistoryKindBar: View {
     }
 }
 
-/// Where conversations are kept, as a compact menu beside the kind filter. It only
-/// appears while the list mixes Cloud conversations with ones kept on this Mac.
+/// Where conversations are kept, always available beside the kind filter.
 struct AskHistoryStorageMenu: View {
     @Binding var selection: AskHistoryFilter
     @Environment(\.isEnabled) private var isEnabled
