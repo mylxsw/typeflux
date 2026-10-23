@@ -1702,6 +1702,12 @@ struct AskBottomChromeHeight: PreferenceKey {
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
 
+/// Reports the content column's height, against which the new page places its composer.
+struct AskContentColumnHeight: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}
+
 /// Reports the height of the new page's orb, headline and hint (GUL-464).
 struct AskEmptyHeadingHeight: PreferenceKey {
     static let defaultValue: CGFloat = 0

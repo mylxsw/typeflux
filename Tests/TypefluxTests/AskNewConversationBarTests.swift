@@ -38,6 +38,15 @@ struct AskNewConversationBarTests {
         #expect(placement.composerLift > 0)
     }
 
+    @Test func theContentColumnHeightWinsOverTheWindowHeight() throws {
+        let layout = AskWorkspaceLayout(size: CGSize(width: 1100, height: 800), sidebarCollapsed: false,
+                                        showsUsage: false)
+        let window = try #require(layout.newPagePlacement(heading: 150, composer: 160))
+        let column = try #require(layout.newPagePlacement(heading: 150, composer: 160, height: 772))
+        #expect(column.composerLift < window.composerLift, "A shorter column lifts the composer less")
+        #expect(layout.newPagePlacement(heading: 150, composer: 160, height: 0) == nil)
+    }
+
     @Test func shortOrUnmeasuredPagesKeepTheComposerAtTheBottom() {
         let tall = AskWorkspaceLayout(size: CGSize(width: 1100, height: 800), sidebarCollapsed: false, showsUsage: false)
         #expect(tall.newPagePlacement(heading: 0, composer: 160) == nil)
@@ -96,6 +105,7 @@ struct AskNewConversationBarTests {
     @Test func chatBarOffersMemoryAndStorageChoice() async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession(); AskGlassMenuPresenter.shared.hide() }
+        fixture.model.setConversationKind(.chat, launcher: false)
         fixture.model.draft.memory = AskMemory(global: "short")
         let window = host(AskNewConversationBar(model: fixture.model))
         defer { window.close() }

@@ -51,15 +51,17 @@ struct AskWorkspaceLayout: Equatable {
     static let newPageBias: CGFloat = 0.42
 
     /// Nil when the window is short or the group does not fit: the composer then stays
-    /// at the bottom, where it is in a conversation.
-    func newPagePlacement(heading: CGFloat, composer: CGFloat) -> NewPagePlacement? {
-        guard !isShort, heading > 0, composer > 0 else { return nil }
-        let available = size.height - AskMetrics.titleBarRowHeight
+    /// at the bottom, where it is in a conversation. `height` is the content column's own
+    /// height, which can be less than the window's (the title bar's safe area).
+    func newPagePlacement(heading: CGFloat, composer: CGFloat, height: CGFloat? = nil) -> NewPagePlacement? {
+        let height = height ?? size.height
+        guard !isShort, heading > 0, composer > 0, height > 0 else { return nil }
+        let available = height - AskMetrics.titleBarRowHeight
         let group = heading + Self.newPageGap + composer
         guard group < available else { return nil }
         let headingTop = ((available - group) * Self.newPageBias).rounded()
         let composerTop = AskMetrics.titleBarRowHeight + headingTop + heading + Self.newPageGap
-        let lift = size.height - composer - composerTop
+        let lift = height - composer - composerTop
         guard lift > 0 else { return nil }
         return NewPagePlacement(headingTop: headingTop, composerLift: lift)
     }

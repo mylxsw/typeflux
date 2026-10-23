@@ -28,6 +28,8 @@ struct AskConversationView: View {
     @State private var bottomChromeHeight: CGFloat = 0
     /// The new page's orb, headline and hint, measured to place the composer under them.
     @State private var emptyHeadingHeight: CGFloat = 0
+    /// The content column's height, which the bottom-anchored composer is measured against.
+    @State private var contentColumnHeight: CGFloat = 0
     @State private var transcriptViewportSize: CGSize = .zero
     @State private var transcriptCoveredBottom: CGFloat = 0
     /// Files are dragged over the transcript; they attach to the draft when dropped.
@@ -744,8 +746,12 @@ struct AskConversationView: View {
                 .animation(AskMotion.revealAnimation(reduceMotion: reduceMotion), value: newPagePlacement == nil)
             header
         }
+        .background(GeometryReader { geometry in
+            Color.clear.preference(key: AskContentColumnHeight.self, value: geometry.size.height)
+        })
         .onPreferenceChange(AskBottomChromeHeight.self) { bottomChromeHeight = $0 }
         .onPreferenceChange(AskEmptyHeadingHeight.self) { emptyHeadingHeight = $0 }
+        .onPreferenceChange(AskContentColumnHeight.self) { contentColumnHeight = $0 }
         .onChange(of: model.searchRequest) { _ in openSearch() }
         .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -969,7 +975,8 @@ struct AskConversationView: View {
     /// at the bottom: in a conversation, a short window, or while a notice needs the room.
     private var newPagePlacement: AskWorkspaceLayout.NewPagePlacement? {
         guard model.selectedId == nil, !hasStatus, model.selectedHostElsewhere == nil else { return nil }
-        return layout.newPagePlacement(heading: emptyHeadingHeight, composer: bottomChromeHeight)
+        return layout.newPagePlacement(heading: emptyHeadingHeight, composer: bottomChromeHeight,
+                                       height: contentColumnHeight)
     }
 
     private var emptyState: some View {
