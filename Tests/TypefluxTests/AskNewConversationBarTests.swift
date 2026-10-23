@@ -57,14 +57,15 @@ struct AskNewConversationBarTests {
 
     // MARK: - Rendering
 
-    @Test(arguments: [false, true])
-    func barCornersDoNotLeaveSquareLedges(dark: Bool) async throws {
+    @Test(arguments: [false, true], InterfaceStyle.allCases)
+    func barKeepsSquareTopCornersInsideTheComposerEdge(dark: Bool, style: InterfaceStyle) async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
         let size = NSSize(width: 600, height: 34)
         let backdrop = Color(red: 0.15, green: 0.2, blue: 0.25)
         let window = host(AskNewConversationBar(model: fixture.model)
             .environment(\.colorScheme, dark ? .dark : .light)
+            .environment(\.interfaceStyle, style)
             .background(backdrop), size: size)
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         defer { window.close() }
@@ -83,11 +84,20 @@ struct AskNewConversationBarTests {
                 abs(first.blueComponent - second.blueComponent))
         }
         let background = try color(2, 2)
-        for x: CGFloat in [16, size.width - 17] {
-            for y: CGFloat in [2, size.height - 3] {
-                #expect(try difference(color(x, y), background) < 0.001,
-                        "All four corners must expose the backdrop instead of a square bar edge")
-            }
+        let inset: CGFloat = style.usesGlass ? 43 : 19
+        let composerEdge = RoundedRectangle(cornerRadius: style.ask.composerCorner, style: .continuous)
+            .path(in: CGRect(x: 0, y: 0, width: size.width, height: 100))
+        #expect(composerEdge.contains(CGPoint(x: inset, y: 99.999)),
+                "The bar must begin under the composer's actual continuous corner, not its nominal radius")
+        for x in [inset - 2, size.width - inset + 1] {
+            #expect(try difference(color(x, 2), background) < 0.001,
+                    "The bar must not extend beyond the composer's straight bottom edge")
+        }
+        for x in [inset + 2, size.width - inset - 3] {
+            #expect(try difference(color(x, 2), background) > 0.001,
+                    "The top corners stay square so the bar joins the composer without gaps")
+            #expect(try difference(color(x, size.height - 3), background) < 0.001,
+                    "Only the bottom corners are rounded")
         }
         #expect(try difference(color(size.width / 2, size.height / 2), background) > 0.001,
                 "The bar must still draw its surface between the controls")
