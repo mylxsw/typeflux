@@ -1425,17 +1425,22 @@ private struct AskMessageView: View {
                     AskSentReferences(references: references, locate: onLocate)
                 }
                 if let files = message.attachments, !files.isEmpty {
-                    AskFlowLayout(spacing: 6, alignment: .trailing) {
-                        ForEach(files) { AskSentFileChip(attachment: $0) }
+                    // Images and documents keep their large previews after sending (GUL-464).
+                    AskFlowLayout(spacing: 8, alignment: .trailing) {
+                        ForEach(files) { file in
+                            if file.kind == .folder {
+                                AskSentFileChip(attachment: file)
+                            } else {
+                                AskAttachmentTile(attachment: file, side: AskContentTile.sentSide)
+                            }
+                        }
                     }
                 }
                 let tools = (message.skills ?? []).map { AskChosenTool(kind: .skill, name: $0.name) }
                     + (message.mcpServers ?? []).map { AskChosenTool(kind: .mcpServer, name: $0) }
                 if !tools.isEmpty {
-                    AskFlowLayout(spacing: 6, alignment: .trailing) {
-                        ForEach(tools) { tool in
-                            AskSentAttachmentChip(title: tool.caption + " · " + tool.name, systemImage: tool.symbol)
-                        }
+                    AskFlowLayout(spacing: 5, alignment: .trailing) {
+                        ForEach(tools) { AskChosenToolToken(tool: $0) }
                     }
                 }
                 if !message.text.isEmpty {
@@ -1652,20 +1657,5 @@ struct AskSentFileChip: View {
         .onDisappear { imageModel.cancel(); previewing = false }
     }
 
-    @ViewBuilder private var preview: some View {
-        if let image = thumbnail {
-            Image(nsImage: image).resizable().scaledToFit().frame(maxWidth: 650, maxHeight: 520).padding()
-        } else if attachment.image != nil {
-            Text(L("ask.image.previewUnavailable")).padding()
-        } else {
-            ScrollView {
-                Text(String((attachment.text ?? "").prefix(20000)))
-                    .font(.system(size: 12, design: .monospaced))
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .frame(width: 480, height: 320)
-            .padding(14)
-        }
-    }
+    private var preview: some View { AskAttachmentPreview(attachment: attachment, image: thumbnail) }
 }

@@ -78,6 +78,22 @@ struct AskAddMenuContext {
     /// The app whose information was removed from this question, to offer it again.
     var sourceToRestore: String?
     var restoreSource: () -> Void = {}
+    /// Installed skills, offered on their own page; empty hides the row (the launcher).
+    var skills: [AskSkillSummary] = []
+    var chosenSkills: [String] = []
+    var skillLimit = AskConversationModel.maximumChosenSkills
+    var toggleSkill: (String) -> Void = { _ in }
+
+    /// The skills row's detail: what is chosen, or that skills apply on their own.
+    var skillsSummary: String {
+        chosenSkills.isEmpty ? L("ask.add.skills.auto", skills.count)
+            : L("ask.add.skills.chosen", chosenSkills.joined(separator: ", "))
+    }
+
+    /// A skill not yet chosen cannot be added once the limit is reached.
+    func canChoose(_ skill: AskSkillSummary) -> Bool {
+        chosenSkills.contains(skill.name) || chosenSkills.count < skillLimit
+    }
 }
 
 /// The "+" menu: add files, then what rides along with this question, then where a
@@ -85,10 +101,23 @@ struct AskAddMenuContext {
 struct AskComposerAddMenu: View {
     static let width: CGFloat = 340
 
+    enum Page { case main, skills }
+
     let context: AskAddMenuContext
     var pickFiles: () -> Void
+    @State var page: Page = .main
 
     var body: some View {
+        Group {
+            if page == .skills { skillsPage } else { mainPage }
+        }
+        .padding(.vertical, 6)
+        .frame(width: Self.width, alignment: .leading)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("ask.add.menu")
+    }
+
+    private var mainPage: some View {
         VStack(alignment: .leading, spacing: 0) {
             AskAddMenuRow(symbol: "paperclip", title: L("ask.add.files"), detail: nil,
                           action: pickFiles) {
@@ -111,11 +140,59 @@ struct AskComposerAddMenu: View {
                 AskStorageSegments(choices: storage.choices, selection: storage.kind, choose: context.chooseStorage)
                     .padding(.horizontal, 10)
             }
+            if !context.skills.isEmpty {
+                separator
+                header(L("ask.add.skills.header"))
+                AskAddMenuRow(symbol: "bolt", title: L("ask.add.skills"), detail: context.skillsSummary,
+                              active: !context.chosenSkills.isEmpty, action: { page = .skills }) {
+                    Image(systemName: "chevron.right").font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                }
+                .accessibilityIdentifier("ask.add.skills")
+            }
         }
-        .padding(.vertical, 6)
-        .frame(width: Self.width, alignment: .leading)
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("ask.add.menu")
+    }
+
+    /// Skills on their own page, so a long list never crowds the menu. Each row toggles.
+    private var skillsPage: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button { page = .main } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.left").font(.system(size: 10, weight: .semibold))
+                    Text(L("ask.add.skills"))
+                }
+                .font(.system(size: 12.5))
+                .foregroundStyle(StudioTheme.textSecondary)
+                .padding(.horizontal, 8).padding(.vertical, 4)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.leading, 6).padding(.bottom, 4)
+            .accessibilityIdentifier("ask.add.skills.back")
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(context.skills, id: \.name) { skill in
+                        let chosen = context.chosenSkills.contains(skill.name)
+                        AskAddMenuRow(symbol: skill.builtin ? "bolt" : "shippingbox", title: skill.name,
+                                      detail: skill.description, active: chosen,
+                                      enabled: context.canChoose(skill),
+                                      action: { context.toggleSkill(skill.name) }) {
+                            if chosen {
+                                Image(systemName: "checkmark").font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(AskTheme.accent)
+                            }
+                        }
+                        .accessibilityAddTraits(chosen ? .isSelected : [])
+                        .accessibilityIdentifier("ask.add.skill." + skill.name)
+                    }
+                }
+            }
+            .frame(maxHeight: 320)
+            Text(L("ask.add.skills.footer", context.skillLimit))
+                .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 14).padding(.top, 6)
+        }
     }
 
     private var separator: some View {
