@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Testing
 @testable import Typeflux
@@ -14,6 +15,95 @@ struct FeatureHandoffTests {
 
     @Test func settingsShortcutGoesDirectlyToItsWindowProcess() {
         #expect(FeatureHotkeyEvent.destination(for: .action(.openStudio)) == .settings)
+    }
+
+    @Test(arguments: ["", "chat", "activeChat", "otherPlugin", "fy Translate this"])
+    func openingWithoutDraftTransferDismissesSourceAfterChatAccepts(input: String) async throws {
+        let source = try AskTestFixture(), destination = try AskTestFixture()
+        defer { source.model.resetSession(); destination.model.resetSession() }
+        source.model.launcherDraft.text = input
+        if input == "activeChat" || input == "otherPlugin" {
+            source.model.plugins.enter(input == "activeChat" ? AskOpenChatPlugin.keywords[0] : AskTranslatePlugin.keywords[0])
+            source.model.launcherDraft.text = input == "activeChat" ? "" : "Keep plugin input"
+        }
+        let draft = source.model.launcherDraft, keyword = source.model.plugins.keyword
+        var dismissed = false, opened = false
+        source.model.onDismissLauncher = { dismissed = true }
+        destination.model.onShowConversation = { opened = true }
+        source.model.featureRoute = { command in
+            #expect(command.destination == .chat && command.action == "showChat")
+            #expect(!dismissed && source.model.isOpeningChat)
+            destination.model.onShowConversation?()
+            return Data()
+        }
+        #expect(await source.model.openFeatureChat())
+        #expect(opened && dismissed && !source.model.isOpeningChat)
+        if input == "otherPlugin" || input.hasPrefix("fy ") {
+            #expect(source.model.launcherDraft == draft)
+            #expect(source.model.plugins.keyword == keyword)
+        } else {
+            #expect(source.model.launcherDraft.text.isEmpty)
+            #expect(!source.model.plugins.isActive)
+        }
+        #expect(await destination.api.sends.isEmpty)
+    }
+
+    @Test(arguments: ["failure", "edit", "keyword", "account", "cancel"])
+    func lateOrFailedEmptyOpenKeepsSourceVisible(change: String) async throws {
+        let source = try AskTestFixture()
+        defer { source.model.resetSession() }
+        source.model.launcherDraft.text = "chat"
+        var dismissed = false
+        source.model.onDismissLauncher = { dismissed = true }
+        source.model.featureRoute = { _ in
+            switch change {
+            case "failure": throw FeatureRPC.Failure.timedOut
+            case "edit": source.model.launcherDraft.text = "New input"
+            case "keyword": source.model.plugins.enter(AskTranslatePlugin.keywords[0])
+            case "account": source.sessionState.owner = "another"
+            default: withUnsafeCurrentTask { $0?.cancel() }
+            }
+            return Data()
+        }
+        let result = await Task { await source.model.openFeatureChat() }.value
+        #expect(result == (change == "edit" || change == "keyword"))
+        #expect(!dismissed && !source.model.isOpeningChat)
+        #expect(source.model.launcherDraft.text == (change == "edit" ? "New input" : "chat"))
+    }
+
+    @Test func emptyOpenWaitsForRecordingAndDoesNotRouteTwice() async throws {
+        let source = try AskTestFixture()
+        defer { source.model.resetSession() }
+        source.model.recordingIsActive = { true }
+        source.model.featureRoute = { _ in
+            Issue.record("A blocked open must not route")
+            return Data()
+        }
+        #expect(await !source.model.openFeatureChat())
+        source.model.recordingIsActive = { false }
+        source.model.featureRoute = { _ in
+            #expect(await !source.model.openFeatureChat())
+            return Data()
+        }
+        #expect(await source.model.openFeatureChat())
+    }
+
+    @Test func remoteChatOpenDismissesTheActualLauncherWindow() async throws {
+        _ = NSApplication.shared
+        let source = try AskTestFixture()
+        let controller = AskConversationWindowController(settings: source.model.modelLibrary.settings, model: source.model)
+        defer { controller.dismissLauncher(); source.model.resetSession() }
+        var prepared = false
+        controller.showLauncher { prepared = true }
+        try await source.wait { prepared }
+        source.model.plugins.enter(AskOpenChatPlugin.keywords[0])
+        source.model.launcherDraft.text = ""
+        source.model.featureRoute = { _ in
+            #expect(controller.launcherWindow?.isVisible == true)
+            return Data()
+        }
+        #expect(await source.model.openFeatureChat())
+        #expect(controller.launcherWindow?.isVisible == false)
     }
 
     @Test func fullDraftMovesOnlyAfterDestinationAcceptsIt() async throws {

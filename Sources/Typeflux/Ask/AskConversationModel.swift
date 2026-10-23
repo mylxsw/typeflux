@@ -451,6 +451,7 @@ final class AskConversationModel: ObservableObject {
     @Published var controllingConversationId: String?
 
     var onShowConversation: (() -> Void)?
+    var onDismissLauncher: (() -> Void)?
     var onOpenSettings: ((StudioSection) -> Void)?
     var onOpenFeedback: (() -> Void)?
     /// Opens the usage guide, searching for the text when it is not empty; set by the app.

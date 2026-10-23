@@ -304,6 +304,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
     private func bindCallbacks() {
         model.onShowConversation = { [weak self] in self?.showConversation() }
+        model.onDismissLauncher = { [weak self] in self?.dismissLauncher() }
         model.onShowLauncher = { [weak self] then in self?.showLauncher(then: then) }
         model.onControlChanged = { [weak self] active in self?.showControl(active) }
         model.onCreditsExhausted = {

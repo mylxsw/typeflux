@@ -47,6 +47,7 @@ extension AskConversationModel {
     }
 
     func openFeatureChat() async -> Bool {
+        guard !Task.isCancelled, canOpenChatFromLauncher else { confirm(L("ask.openChat.wait")); return false }
         if plugins.keyword?.pluginID == AskQuickAskPlugin.id, quickAsk?.conversationId != nil {
             return await openQuickAskInChat()
         }
@@ -60,12 +61,27 @@ extension AskConversationModel {
             default: break
             }
         }
-        if otherPlugin {
-            do { _ = try await featureRoute(.init(destination: .chat, action: "showChat")); return true }
-            catch { confirm(L("ask.cache.failed")); return false }
-        }
-        if !incoming.hasChatInput {
-            do { _ = try await featureRoute(.init(destination: .chat, action: "showChat")); return true }
+        if otherPlugin || !incoming.hasChatInput {
+            let source = launcherDraft, keyword = plugins.keyword
+            let account = session()?.owner, generation = AuthState.shared.sessionGeneration
+            isOpeningChat = true
+            defer { isOpeningChat = false }
+            do {
+                _ = try await featureRoute(.init(destination: .chat, action: "showChat"))
+                guard !Task.isCancelled, session()?.owner == account,
+                      AuthState.shared.sessionGeneration == generation else { return false }
+                if launcherDraft == source, plugins.keyword == keyword {
+                    captureGeneration = UUID()
+                    if !otherPlugin {
+                        plugins.deactivate()
+                        launcherDraft.text = ""
+                    }
+                    persistDrafts()
+                    // The chat process cannot dismiss the source process's panel.
+                    onDismissLauncher?()
+                }
+                return true
+            }
             catch { confirm(L("ask.cache.failed")); return false }
         }
         return await transferFeatureDraft(incoming, submit: false)
