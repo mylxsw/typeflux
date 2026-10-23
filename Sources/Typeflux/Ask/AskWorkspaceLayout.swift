@@ -6,14 +6,18 @@ struct AskWorkspaceLayout: Equatable {
     static let defaultWindowSize = CGSize(width: 1165, height: 886)
     static let minimumWindowSize = CGSize(width: 360, height: 280)
     static let comfortableContentWidth: CGFloat = 600
+    static let minimumDockedContentWidth: CGFloat = 420
+    static let minimumDockedPanelWidth: CGFloat = 380
 
     let size: CGSize
     let sidebarCollapsed: Bool
     let showsUsage: Bool
     var rightPanelWidth: CGFloat? = nil
+    /// The browser shares the window with the conversation instead of covering it.
+    var docksRightPanel = false
 
     var usageInline: Bool {
-        showsUsage && size.width >= Self.comfortableContentWidth + usageWidth
+        showsUsage && (docksRightPanel || size.width >= Self.comfortableContentWidth + usageWidth)
     }
 
     var sidebarInline: Bool {
@@ -67,7 +71,16 @@ struct AskWorkspaceLayout: Equatable {
     }
 
     var usageOverlay: Bool { showsUsage && !usageInline }
-    var usageWidth: CGFloat { rightPanelWidth ?? AskMetrics.usagePanelWidth }
+    var usageWidth: CGFloat {
+        let preferred = rightPanelWidth ?? AskMetrics.usagePanelWidth
+        guard docksRightPanel else { return preferred }
+        // Below the two columns' usable minimum, show only the docked browser.
+        // Closing it reveals the same conversation and draft.
+        guard size.width >= Self.minimumDockedContentWidth + Self.minimumDockedPanelWidth else {
+            return max(0, size.width)
+        }
+        return min(max(Self.minimumDockedPanelWidth, preferred), size.width - Self.minimumDockedContentWidth)
+    }
     var drawerWidth: CGFloat { min(usageWidth, max(0, size.width - 16)) }
     var usageOverlayTopInset: CGFloat {
         size.width - drawerWidth < AskMetrics.trafficLightInset ? AskMetrics.titleBarRowHeight - 8 : 0

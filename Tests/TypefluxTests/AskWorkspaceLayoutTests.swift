@@ -4,6 +4,40 @@ import Testing
 
 @Suite("Ask responsive layout")
 struct AskWorkspaceLayoutTests {
+    @Test(arguments: [CGFloat(360), 440, 760, 799, 800, 980, 1026, 1165, 1440, 1800])
+    func browserAlwaysDocksWithoutCoveringTheConversation(width: CGFloat) {
+        for collapsed in [false, true] {
+            for preferred: CGFloat in [100, 380, 560, 1200] {
+                let layout = AskWorkspaceLayout(size: CGSize(width: width, height: 800),
+                    sidebarCollapsed: collapsed, showsUsage: true, rightPanelWidth: preferred, docksRightPanel: true)
+                #expect(layout.usageInline)
+                #expect(!layout.usageOverlay)
+                #expect(layout.mainWidth + layout.usageWidth
+                    + (layout.sidebarInline ? AskMetrics.sidebarWidth : 0) == width)
+                if width >= 800 {
+                    #expect(layout.mainWidth >= AskWorkspaceLayout.minimumDockedContentWidth)
+                    #expect(layout.usageWidth >= AskWorkspaceLayout.minimumDockedPanelWidth)
+                } else {
+                    #expect(layout.mainWidth == 0)
+                    #expect(layout.usageWidth == width)
+                    #expect(!layout.sidebarInline)
+                }
+                if collapsed { #expect(!layout.sidebarInline) }
+            }
+        }
+    }
+
+    @Test func closingBrowserRestoresTheHistoryPreference() {
+        let size = CGSize(width: 1026, height: 800)
+        let open = AskWorkspaceLayout(size: size, sidebarCollapsed: false, showsUsage: true,
+                                      rightPanelWidth: 560, docksRightPanel: true)
+        let closed = AskWorkspaceLayout(size: size, sidebarCollapsed: open.sidebarCollapsed, showsUsage: false)
+        #expect(!open.sidebarInline)
+        #expect(open.mainWidth == 466)
+        #expect(closed.sidebarInline)
+        #expect(closed.mainWidth == size.width - AskMetrics.sidebarWidth)
+    }
+
     @Test(arguments: [CGSize(width: 1180, height: 760), CGSize(width: 760, height: 560),
                       CGSize(width: 440, height: 880), CGSize(width: 960, height: 320),
                       CGSize(width: 440, height: 320), AskWorkspaceLayout.minimumWindowSize])

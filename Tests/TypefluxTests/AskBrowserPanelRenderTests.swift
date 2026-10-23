@@ -27,6 +27,21 @@ struct AskBrowserPanelRenderTests {
 
     private func descendants(_ view: NSView) -> [NSView] { view.subviews + view.subviews.flatMap(descendants) }
 
+    private func find(_ identifier: String, in window: NSWindow) -> NSObject? {
+        var seen = Set<ObjectIdentifier>()
+        func walk(_ value: Any) -> NSObject? {
+            guard let object = value as? NSObject, seen.insert(ObjectIdentifier(object)).inserted else { return nil }
+            if object.responds(to: NSSelectorFromString("accessibilityIdentifier")),
+               object.value(forKey: "accessibilityIdentifier") as? String == identifier { return object }
+            guard object.responds(to: NSSelectorFromString("accessibilityChildren")) else { return nil }
+            for child in object.value(forKey: "accessibilityChildren") as? [Any] ?? [] {
+                if let found = walk(child) { return found }
+            }
+            return nil
+        }
+        return walk(window)
+    }
+
     @discardableResult
     private func render<V: View>(_ root: V, name: String, size: NSSize, dark: Bool = false, minimumPNGBytes: Int = 8000) throws -> NSView {
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],
@@ -92,6 +107,11 @@ struct AskBrowserPanelRenderTests {
     }
 
     @Test func sitesSheetRenders() async throws {
+        _ = NSApplication.shared
+        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+        let previous = NSApp.accessibilityAttributeValue(attribute)
+        NSApp.accessibilitySetValue(true, forAttribute: attribute)
+        defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
         let (workspace, defaults) = makeWorkspace()
         defaults.set(["legacy.invalid": "act"], forKey: AskBrowserSitePolicy.defaultsKey)
         try render(AskBrowserSitesView(workspace: workspace), name: "browser-sites-empty", size: NSSize(width: 560, height: 360))
@@ -107,22 +127,21 @@ struct AskBrowserPanelRenderTests {
         window.contentView = hosting
         window.orderFront(nil)
         defer { window.orderOut(nil); window.close() }
-        var rows = 0
+        let hosts = ["https://example.com", "https://mail.google.com"]
+        let labels = hosts.map { L("ask.web.permission.label", $0) }
+        var pickers: [SettingsBehaviorTestSupport.Element] = []
         for _ in 0 ..< 100 {
             hosting.layoutSubtreeIfNeeded()
-            rows = descendants(hosting).filter { view in
-                view is NSPopUpButton && !view.visibleRect.isEmpty &&
-                    hosting.bounds.contains(hosting.convert(view.bounds, from: view))
-            }.count
-            if rows == 2 { break }
+            pickers = SettingsBehaviorTestSupport.elements(in: window).filter { labels.contains($0.label) }
+            if pickers.count == 2 { break }
             try await Task.sleep(for: .milliseconds(20))
         }
-        #expect(rows == 2, "Both exact-origin controls must be visible inside the sheet")
-        let pickers = descendants(hosting).compactMap { $0 as? NSPopUpButton }
+        #expect(pickers.count == 2, "Both exact-origin controls must be visible inside the sheet")
         for picker in pickers {
-            #expect(picker.itemTitles == AskBrowserSitePermission.choices.map(\.title))
+            let frame = hosting.convert(window.convertFromScreen(picker.frame), from: nil)
+            #expect(frame.width > 0 && frame.height > 0 && hosting.bounds.contains(frame))
         }
-        #expect(pickers.contains { $0.titleOfSelectedItem == AskBrowserSitePermission.read.title },
+        #expect(pickers.contains { $0.label == labels[1] && $0.text == AskBrowserSitePermission.read.title },
                 "Persisted act must select the canonical read/navigation option")
         #expect(workspace.policy.permission(for: "https://mail.google.com") == .act,
                 "Rendering must not rewrite compatibility storage")
@@ -131,15 +150,30 @@ struct AskBrowserPanelRenderTests {
         try snapshot(hosting, name: "browser-sites")
     }
 
-    @Test func conversationWindowOpensThePanelWhenTheAIAsks() async throws {
-        let fixture = try AskTestFixture()
-        let (workspace, _) = makeWorkspace()
+    @Test(arguments: [CGFloat(1400), 1026, 800, 760, 440, 360])
+    func conversationWindowOpensThePanelWhenTheAIAsks(width: CGFloat) async throws {
+        let (workspace, defaults) = makeWorkspace()
+        defaults.set(false, forKey: "ask.sidebarCollapsed")
+        let fixture = try AskTestFixture(defaults: defaults)
+        defer { fixture.model.resetSession() }
         fixture.tools.browserWorkspace = workspace
-        let size = NSSize(width: 1400, height: 820)
+        await fixture.api.seed(.init(id: "browser-chat", title: "Build a browser game", revision: 1,
+                                    updatedAt: Date(), messages: []))
+        await fixture.model.select("browser-chat")
+        fixture.model.draft.text = "Keep this unfinished question"
+        _ = NSApplication.shared
+        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+        let previous = NSApp.accessibilityAttributeValue(attribute)
+        NSApp.accessibilitySetValue(true, forAttribute: attribute)
+        defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
+        let size = NSSize(width: width, height: 820)
         let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
+        window.appearance = NSAppearance(named: .darkAqua)
         let hosting = NSHostingView(rootView: AskConversationView(model: fixture.model)
+            .defaultAppStorage(defaults)
+            .environment(\.colorScheme, .dark)
             .environment(\.askGlassMaterialOverride, .opaque))
         hosting.frame = NSRect(origin: .zero, size: size)
         window.contentView = hosting
@@ -154,8 +188,38 @@ struct AskBrowserPanelRenderTests {
         #expect(workspace.tabs.count == 1, "Opening the panel with no tabs starts a blank one")
         let tab = try #require(workspace.selectedTab)
         #expect(descendants(hosting).contains { $0 === tab.webView })
+        let expected = AskWorkspaceLayout(size: size, sidebarCollapsed: false, showsUsage: true,
+                                           rightPanelWidth: 560, docksRightPanel: true)
+        try await SettingsBehaviorTestSupport.wait {
+            hosting.layoutSubtreeIfNeeded()
+            let frame = hosting.convert(tab.webView.bounds, from: tab.webView)
+            return abs(frame.minX - (width - expected.usageWidth + 8)) < 1
+        }
+        let pageFrame = hosting.convert(tab.webView.bounds, from: tab.webView)
+        #expect(abs(pageFrame.minX - (width - expected.usageWidth + 8)) < 1)
+        #expect(pageFrame.maxX <= width)
+        let editor = try #require(descendants(hosting).compactMap { $0 as? AskComposerTextView.Editor }.first)
+        if expected.mainWidth > 0 {
+            let viewport = try #require(editor.enclosingScrollView)
+            let composerFrame = hosting.convert(viewport.bounds, from: viewport)
+            #expect(composerFrame.maxX <= pageFrame.minX)
+            #expect(editor.isEditable, "The docked browser must leave the conversation interactive")
+            #expect(find("ask.workspace.browser", in: window) != nil)
+        } else {
+            #expect(!editor.isEditable, "A hidden conversation must not keep accepting keyboard input")
+        }
         try await loadPage(tab)
-        try snapshot(hosting, name: "browser-window")
+        try snapshot(hosting, name: "browser-window-\(Int(width))")
+        let close = try #require(find("ask.workspace.drawer.close", in: window))
+        _ = close.perform(NSSelectorFromString("accessibilityPerformPress"))
+        try await Task.sleep(for: .milliseconds(400))
+        hosting.layoutSubtreeIfNeeded()
+        #expect(find("ask.web.panel", in: window) == nil)
+        #expect(editor.isEditable)
+        #expect(fixture.model.draft.text == "Keep this unfinished question")
+        #expect(fixture.model.selectedId == "browser-chat")
+        #expect(await fixture.api.sends.isEmpty)
+        #expect(defaults.bool(forKey: "ask.sidebarCollapsed") == false)
         workspace.tabs.forEach { workspace.close($0) }
     }
 }

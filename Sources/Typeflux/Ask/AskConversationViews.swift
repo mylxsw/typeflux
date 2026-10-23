@@ -148,7 +148,8 @@ struct AskConversationView: View {
     private var layout: AskWorkspaceLayout {
         AskWorkspaceLayout(size: windowSize, sidebarCollapsed: sidebarCollapsed,
                            showsUsage: showsUsage || showsWorkflow || showsBrowserPanel,
-                           rightPanelWidth: showsBrowserPanel ? CGFloat(browserWidth) : (showsWorkflow ? 390 : nil))
+                           rightPanelWidth: showsBrowserPanel ? CGFloat(browserWidth) : (showsWorkflow ? 390 : nil),
+                           docksRightPanel: showsBrowserPanel)
     }
 
     private func accountDidChange() {
@@ -183,19 +184,22 @@ struct AskConversationView: View {
     /// The conversation keeps at least 420pt beside the panel.
     private func resizeBrowser(_ delta: CGFloat?) {
         guard let delta else { browserDragBase = nil; return }
-        let base = browserDragBase ?? CGFloat(browserWidth)
+        let base = browserDragBase ?? layout.usageWidth
         browserDragBase = base
-        let maximum = max(380, windowSize.width - (layout.sidebarInline ? AskMetrics.sidebarWidth : 0) - 420)
-        browserWidth = Double(min(maximum, max(380, base + delta)))
+        let minimum = AskWorkspaceLayout.minimumDockedPanelWidth
+        let maximum = max(minimum, windowSize.width - (layout.sidebarInline ? AskMetrics.sidebarWidth : 0)
+            - AskWorkspaceLayout.minimumDockedContentWidth)
+        browserWidth = Double(min(maximum, max(minimum, base + delta)))
     }
 
     @ViewBuilder private var rightPanel: some View {
         if showsBrowserPanel, let workspace = model.tools.browserWorkspace {
-            AskBrowserPanel(workspace: workspace, floating: layout.usageOverlay,
+            AskBrowserPanel(workspace: workspace,
+                            leadingInset: layout.mainWidth == 0 ? AskMetrics.trafficLightInset : 0,
                             runningConversationId: model.runPhase?.offersStop == true ? model.selectedId : nil,
                             stopRun: { model.stop() }, close: { setBrowser(false) },
-                            resize: layout.usageOverlay ? nil : resizeBrowser)
-                .frame(width: layout.usageInline ? layout.usageWidth : layout.drawerWidth)
+                            resize: layout.mainWidth == 0 ? nil : resizeBrowser)
+                .frame(width: layout.usageWidth)
         } else if showsWorkflow, let session = model.authoringSession {
             AskWorkflowAuthoringPanel(session: session, focusCloseOnAppear: layout.usageOverlay,
                                       floating: layout.usageOverlay, close: {
@@ -226,6 +230,12 @@ struct AskConversationView: View {
                             .transition(AskMotion.panel(edge: .leading, reduceMotion: reduceMotion))
                     }
                     content
+                        .frame(width: layout.mainWidth)
+                        .clipped()
+                        .opacity(layout.mainWidth > 0 ? 1 : 0)
+                        .disabled(layout.mainWidth == 0)
+                        .allowsHitTesting(layout.mainWidth > 0)
+                        .accessibilityHidden(layout.mainWidth == 0)
                     if layout.usageInline {
                         rightPanel
                             .id(model.selectedId)
@@ -235,7 +245,7 @@ struct AskConversationView: View {
                 // One canvas for the whole window; the sidebar column lays its
                 // clearer glass over it, flush with the window edge.
                 .background(AskWindowBackdrop())
-                titleBarTools
+                if layout.mainWidth > 0 { titleBarTools }
             }
             .disabled(hasModal)
             .accessibilityHidden(hasModal)

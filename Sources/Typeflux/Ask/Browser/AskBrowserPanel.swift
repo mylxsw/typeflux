@@ -6,8 +6,8 @@ import WebKit
 /// and the controls the user has while the AI works in it.
 struct AskBrowserPanel: View {
     @ObservedObject var workspace: AskBrowserWorkspace
-    /// Shown as a drawer over the conversation rather than beside it.
-    var floating = false
+    /// Clears the traffic lights when a narrow window shows the browser alone.
+    var leadingInset: CGFloat = 0
     /// The selected conversation while its run is active; only its activity shows controls.
     var runningConversationId: String?
     var stopRun: () -> Void
@@ -30,6 +30,7 @@ struct AskBrowserPanel: View {
     var body: some View {
         VStack(spacing: 0) {
             tabStrip
+                .padding(.leading, leadingInset)
                 .frame(height: AskMetrics.titleBarRowHeight - 1)
             Rectangle().fill(AskTheme.separator).frame(height: 1)
             navigationBar
@@ -52,11 +53,12 @@ struct AskBrowserPanel: View {
             .padding([.horizontal, .bottom], 8)
         }
         .overlay(alignment: .leading) { resizeHandle }
-        .askSidePanel(edge: .trailing, floating: floating)
+        .askSidePanel(edge: .trailing)
         .sheet(isPresented: $showsSites) { AskBrowserSitesView(workspace: workspace) }
         .onAppear(perform: syncAddress)
         .onChange(of: tab?.url) { _ in syncAddress() }
         .onChange(of: workspace.selectedTabId) { _ in syncAddress() }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.web.panel")
     }
 
@@ -96,7 +98,7 @@ struct AskBrowserPanel: View {
             iconButton("key", label: L("ask.web.sites.title")) { showsSites = true }
                 .accessibilityIdentifier("ask.web.sites")
             iconButton("xmark", label: L("ask.web.close"), action: close)
-                .keyboardShortcut(floating ? .cancelAction : nil)
+                .keyboardShortcut("b", modifiers: [.command, .shift])
                 .accessibilityIdentifier("ask.workspace.drawer.close")
         }
         .padding(.trailing, 8)
@@ -287,7 +289,7 @@ extension AskBrowserPanel {
     }
 
     @ViewBuilder private var resizeHandle: some View {
-        if let resize, !floating {
+        if let resize {
             Color.clear
                 .frame(width: 6)
                 .contentShape(Rectangle())
