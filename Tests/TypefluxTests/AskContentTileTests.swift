@@ -220,8 +220,9 @@ struct AskContentTileTests {
         defer { window.close() }
         try await settle(window)
         #expect(find("ask.content.attachment", in: window) != nil)
+        // The row of tokens replaces the skill chip; each token's own identifier is
+        // checked where it renders alone (`tokensAndTilesRenderOnTheirOwn`).
         #expect(find("ask.composer.tokens", in: window) != nil)
-        #expect(find("ask.composer.token.skill:email-reply", in: window) != nil)
     }
 
     @Test func launcherKeepsSkillsAsChipsWithoutTokens() async throws {
