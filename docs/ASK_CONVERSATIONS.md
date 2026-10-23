@@ -554,6 +554,29 @@ GUL-464):
 - The launcher and a compact workspace (`AskComposerLayout.usesContentTiles`) keep the
   single row of chips.
 
+### New conversation page (GUL-464)
+
+What a conversation fixes before its first message lives on the new page and goes
+away with the first message; what can change mid-conversation stays in the composer.
+
+- Title bar: the compose button starts a conversation (⌘N); ⇧⌘N and ⌥⌘N still start
+  a private or temporary one. The new page shows no title capsule, the Chat | Work
+  switch in the middle and an hourglass (`ask.workspace.temporaryToggle`) on the right
+  that turns the next conversation temporary. A started conversation keeps its title,
+  the temporary or "This Mac" chip and its actions.
+- `AskNewConversationBar` hangs under the composer: a task's folders
+  (`AskWorkFolderButton`, the same `AskWorkFolderList` as the task's environment menu),
+  memory when there is any, and where it is kept (`AskStorageBarControl`: Cloud or this
+  Mac signed in, "This Mac" with sign-in signed out, "Not saved" while temporary).
+  The workspace "+" menu therefore offers neither storage nor memory on the new page;
+  the launcher, which has no bar, keeps both. The composer's task control shows only
+  the permission until a started task adds folders.
+- The headline and composer are grouped a little above the middle
+  (`AskWorkspaceLayout.newPagePlacement`): the bottom-anchored composer is lifted under
+  the measured headline and drops back to the bottom with the first message. Short
+  windows, notices on the new page and another device's conversation keep it at the
+  bottom.
+
 ## Liquid Glass workspace refresh (GUL-159, 2026-10-02)
 
 The workspace follows the interactive design board in

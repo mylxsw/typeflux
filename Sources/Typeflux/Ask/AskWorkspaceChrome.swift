@@ -72,19 +72,21 @@ struct AskHeaderIconButton: View {
     var shortcut: String?
     var active = false
     var showsInteriorFill = true
+    /// The colour of the active state when it is not the accent, e.g. temporary sand.
+    var activeTint: Color? = nil
     var action: () -> Void
     @State private var hovering = false
     @Environment(\.interfaceStyle) private var style
 
-    static func ink(active: Bool, hovering: Bool) -> Color {
-        if active { return AskTheme.accent }
+    static func ink(active: Bool, hovering: Bool, activeTint: Color? = nil) -> Color {
+        if active { return activeTint ?? AskTheme.accent }
         return hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary
     }
 
     var body: some View {
         Button(action: action) {
             Image(systemName: symbol).font(.system(size: 13.5, weight: .regular))
-                .foregroundStyle(AskHeaderIconButton.ink(active: active, hovering: hovering))
+                .foregroundStyle(AskHeaderIconButton.ink(active: active, hovering: hovering, activeTint: activeTint))
                 .frame(width: 30, height: 28)
                 .background(showsInteriorFill && (hovering || active) ? AskTheme.hoverFill : Color.clear,
                             in: style.controlShape(height: 28))

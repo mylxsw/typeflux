@@ -251,7 +251,40 @@ struct AskWorkEnvironmentButton: View {
 
     private var menu: some View {
         VStack(alignment: .leading, spacing: 0) {
-            header(L("ask.env.folders"))
+            AskWorkFolderList(model: model, launcher: launcher) { presented = false }
+            Rectangle().fill(AskTheme.separator).frame(height: 0.5).padding(.horizontal, 10).padding(.vertical, 6)
+            AskWorkFolderList.header(L("ask.mode.title"))
+            ForEach(AskPermissionMode.allCases, id: \.self) { option in
+                AskPopoverRow(title: option.title, caption: option.detail, selected: option == mode, action: {
+                    presented = false
+                    model.setPermissionMode(option, launcher: launcher)
+                }, accessory: {
+                    Image(systemName: option.symbol).font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(option == mode
+                            ? AskPermissionModeMenu.tint(option) : StudioTheme.textSecondary)
+                })
+                .accessibilityIdentifier("ask.env.mode." + option.rawValue)
+            }
+        }
+        .padding(.vertical, 6)
+        .frame(width: 320, alignment: .leading)
+    }
+}
+
+/// The folders a task works in: the default workspace or the ones added for the next
+/// message, each removable, then "Add folder" and the grants this session holds.
+/// The task's environment menu and the new conversation's folder button share it.
+struct AskWorkFolderList: View {
+    @ObservedObject var model: AskConversationModel
+    var launcher = false
+    /// Closes the surrounding menu before the open panel appears.
+    var dismiss: () -> Void = {}
+
+    private var draft: AskDraft { launcher ? model.launcherDraft : model.draft }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Self.header(L("ask.env.folders"))
             // A started task already works in its folders (listed below when granted);
             // name only what the next message adds, or the default for a new task.
             let folders = (draft.attachments ?? []).filter { $0.kind == .folder }
@@ -276,7 +309,7 @@ struct AskWorkEnvironmentButton: View {
             }
             AskPopoverRow(title: L("ask.env.addFolder"), caption: nil, selected: false,
                           action: {
-                              presented = false
+                              dismiss()
                               model.pickAttachments(folders: true, launcher: launcher)
                           }, accessory: {
                               Image(systemName: "plus").font(.system(size: 12, weight: .medium))
@@ -284,25 +317,10 @@ struct AskWorkEnvironmentButton: View {
                 .accessibilityIdentifier("ask.env.addFolder")
             AskFolderPermissionControls(model: model, launcher: launcher)
                 .padding(.horizontal, 10)
-            Rectangle().fill(AskTheme.separator).frame(height: 0.5).padding(.horizontal, 10).padding(.vertical, 6)
-            header(L("ask.mode.title"))
-            ForEach(AskPermissionMode.allCases, id: \.self) { option in
-                AskPopoverRow(title: option.title, caption: option.detail, selected: option == mode, action: {
-                    presented = false
-                    model.setPermissionMode(option, launcher: launcher)
-                }, accessory: {
-                    Image(systemName: option.symbol).font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(option == mode
-                            ? AskPermissionModeMenu.tint(option) : StudioTheme.textSecondary)
-                })
-                .accessibilityIdentifier("ask.env.mode." + option.rawValue)
-            }
         }
-        .padding(.vertical, 6)
-        .frame(width: 320, alignment: .leading)
     }
 
-    private func header(_ text: String) -> some View {
+    static func header(_ text: String) -> some View {
         Text(text).font(.system(size: 11, weight: .semibold)).foregroundStyle(StudioTheme.textTertiary)
             .padding(.horizontal, 12).padding(.top, 4).padding(.bottom, 2)
     }

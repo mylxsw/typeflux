@@ -198,27 +198,20 @@ struct AskComposerAddMenuTests {
                 "An excluded selection keeps its grey chip so it can be included again")
     }
 
-    @Test func plusMenuOffersStorageOnlyBeforeTheFirstMessage() async throws {
+    @Test func workspacePlusMenuLeavesStorageAndMemoryToTheBar() async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession(); AskGlassMenuPresenter.shared.hide() }
+        fixture.model.draft.memory = AskMemory(global: "short")
         let window = host(AskComposer(model: fixture.model, launcher: false), size: NSSize(width: 760, height: 240))
         defer { window.close() }
         try await settle(window)
         try press("ask.composer.attach", in: window)
         try await fixture.wait { AskGlassMenuPresenter.shared.panel?.isVisible == true }
         let panel = try #require(AskGlassMenuPresenter.shared.panel)
-        try await settle(panel)
-        #expect(find("ask.add.storage.cloud", in: panel) != nil)
-        try press("ask.add.storage.local", in: panel)
-        try await fixture.wait { fixture.model.storesLocally(launcher: false) }
-        try await settle(panel)
-        #expect(find("ask.add.storage.local", in: panel)?.value(forKey: "accessibilityValue") as? String == L("ask.mode.current"))
-        try press("ask.add.storage.temporary", in: panel)
-        try await settle(panel)
-        #expect(find("ask.add.storage.temporary", in: panel)?.value(forKey: "accessibilityValue") as? String == L("ask.mode.current"))
-        try press("ask.add.storage.local", in: panel)
-        try await settle(panel)
-        #expect(find("ask.add.storage.local", in: panel)?.value(forKey: "accessibilityValue") as? String == L("ask.mode.current"))
+        try await fixture.wait { self.find("ask.add.screenshot", in: panel) != nil }
+        // GUL-464: the new page's bar chooses where it is kept and memory; temporary is its hourglass.
+        #expect(find("ask.add.storage.cloud", in: panel) == nil)
+        #expect(find("ask.add.memory", in: panel) == nil)
         AskGlassMenuPresenter.shared.hide()
 
         fixture.model.draft.text = "Hello"

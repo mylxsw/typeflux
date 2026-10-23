@@ -128,7 +128,7 @@ struct AskComposerResponsiveTests {
         #expect(host.bounds.contains(voice.convert(voice.bounds, to: host)))
     }
 
-    @Test func compactPlusMenuTogglesScreenshotAndMemory() async throws {
+    @Test func compactPlusMenuTogglesScreenshotAndLeavesMemoryToTheBar() async throws {
         _ = NSApplication.shared
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
         defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
@@ -161,11 +161,9 @@ struct AskComposerResponsiveTests {
                 "A failed screenshot remains an explicit checked inclusion toggle, never a misleading retry action.")
         try press(screenshot)
         try await fixture.wait { !fixture.model.draft.includeScreenshot }
+        // A new conversation switches memory in the bar under the composer (GUL-464).
+        #expect(findAccessibilityElement(identifier: "ask.add.memory", in: panel) == nil)
         #expect(!fixture.model.memorySwitchedOff(launcher: false))
-        try press(accessibilityElement(identifier: "ask.add.memory", in: panel))
-        try await fixture.wait { fixture.model.memorySwitchedOff(launcher: false) }
-        try press(accessibilityElement(identifier: "ask.add.memory", in: panel))
-        try await fixture.wait { !fixture.model.memorySwitchedOff(launcher: false) }
     }
 
     private func press(_ element: NSObject) throws {

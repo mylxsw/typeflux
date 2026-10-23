@@ -47,9 +47,9 @@ extension AskComposerInteractionTests {
             #expect(fixture.model.draft.text == "Unsent question", "collapsed: \(collapsed)")
             await fixture.model.select("compose")
             try await Task.sleep(for: .milliseconds(400))
-            // Existing and empty chats share the single title-bar compose action: a menu of kinds.
+            // Existing and empty chats share the single title-bar compose action (GUL-464: it
+            // starts a conversation; temporary is the new page's hourglass).
             try clickHeader(AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.new", in: window))
-            try await chooseNewConversation("ask.workspace.new.cloud")
             try await fixture.wait { fixture.model.selectedId == nil }
             #expect(fixture.model.selectedId == nil)
             try await Task.sleep(for: .milliseconds(400))
@@ -85,12 +85,14 @@ extension AskComposerInteractionTests {
             #expect(fixture.model.selectedId == "compose")
             let point = try AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.new", in: window)
             try click(point, in: window)
-            // The compose button opens the kinds of conversation instead of starting one.
-            try await Task.sleep(for: .milliseconds(200))
-            #expect(fixture.model.selectedId == "compose")
-            try await chooseNewConversation("ask.workspace.new.temporary")
             try await fixture.wait { fixture.model.selectedId == nil }
             #expect(fixture.model.selectedId == nil, "collapsed: \(collapsed)")
+            #expect(!fixture.model.isTemporaryComposer(launcher: false), "collapsed: \(collapsed)")
+            // The new page's hourglass makes it temporary.
+            try await Task.sleep(for: .milliseconds(400))
+            try click(AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.temporaryToggle", in: window),
+                      in: window)
+            try await fixture.wait { fixture.model.isTemporaryComposer(launcher: false) }
             #expect(fixture.model.isTemporaryComposer(launcher: false), "collapsed: \(collapsed)")
             fixture.model.resetSession()
         }
@@ -104,18 +106,6 @@ extension AskComposerInteractionTests {
                                                         clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0))
             NSApp.sendEvent(event)
         }
-    }
-
-    /// Picks a row of the compose menu, which opens in the shared glass menu panel.
-    private func chooseNewConversation(_ identifier: String) async throws {
-        var panel: NSPanel?
-        for _ in 0 ..< 200 {
-            if let shown = AskGlassMenuPresenter.shared.panel, shown.isVisible { panel = shown; break }
-            try await Task.sleep(for: .milliseconds(5))
-        }
-        let menu = try #require(panel, "The compose menu did not open")
-        try await Task.sleep(for: .milliseconds(200))
-        try click(AskWorkspaceTestAccessibility.center(identifier: identifier, in: menu), in: menu)
     }
 }
 

@@ -2186,6 +2186,16 @@
 "ask.add.skills.auto" = "%d 個インストール済み · 未選択のときは AI が必要に応じて使用";
 "ask.add.skills.chosen" = "選択中：%@";
 "ask.add.skills.footer" = "最大 %d 個まで選択できます。選んだスキルはメッセージの前に表示され、空のメッセージで Backspace を押すと最後のスキルを削除します。";
+"ask.bar.memoryOff" = "メモリーオフ";
+"ask.bar.memoryOff.help" = "この会話はメモリーを使わずに始まります。クリックで使用します。";
+"ask.bar.folders.help" = "タスクが作業するフォルダ";
+"ask.bar.notSaved" = "保存しない";
+"ask.bar.notSaved.hint" = "クリックするとこの会話を履歴に残します";
+"ask.bar.signInToSync" = "この Mac に保存されます。サインインすると Typeflux Cloud に同期できます。";
+"ask.bar.storage.header" = "保存先 · 送信後は固定";
+"ask.bar.storage.footer" = "既定値は 設定 → Agent で変更できます。何も残したくない場合は右上の砂時計を使います。";
+"ask.temporary.toggle.on" = "一時チャット：履歴なし、メモリーなし";
+"ask.temporary.toggle.off" = "一時チャットをオフ";
 "ask.env.help" = "タスク環境：作業フォルダとツールの権限";
 "ask.env.folders" = "作業フォルダ";
 "ask.env.addFolder" = "フォルダを追加…";
@@ -2309,8 +2319,6 @@
 "ask.steps.invalid" = "ステップ数は 10～500 の間で選択してください。";
 "ask.temporary.settings.confirm" = "一時的な会話を離れる前に確認";
 "ask.temporary.settings.confirm.subtitle" = "内容のある一時的な会話を、別の会話の作成や表示で終了する前に確認します";
-"ask.new.cloud" = "新しい会話";
-"ask.new.cloud.signedOut" = "Typeflux Cloud にサインインすると使えます";
 "ask.command.temporary" = "一時的な会話";
 "ask.command.temporaryOn" = "この質問で一時的な会話を始めます";
 "ask.command.temporaryOff" = "この質問で通常の会話を始めます";
