@@ -75,7 +75,7 @@ struct AskConversationKindTests {
         #expect(value.dispatchKind == .chat, "an unknown stored kind never gains device tools")
     }
 
-    @Test func summariesCarryTheKindAndFilterByIt() {
+    @Test func summariesCarryTheKind() {
         var work = AskConversation(id: "w", title: "W", revision: 1, updatedAt: Date(), messages: [])
         work.kind = "work"
         let chat = AskConversation(id: "c", title: "C", revision: 1, updatedAt: Date(), messages: [])
@@ -83,9 +83,6 @@ struct AskConversationKindTests {
         let items = [AskConversationSummary(work), AskConversationSummary(chat), legacy]
         #expect(items.map(\.kind) == ["work", "chat", nil])
         #expect(legacy.resolvedKind == .chat)
-        #expect(items.filtered(kind: .work).map(\.id) == ["w"])
-        #expect(items.filtered(kind: .chat).map(\.id) == ["c", "l"])
-        #expect(items.filtered(kind: nil).count == 3)
     }
 
     @Test func kindSurvivesEncoding() throws {

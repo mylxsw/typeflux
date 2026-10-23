@@ -2206,6 +2206,8 @@
 "ask.bar.storage.footer" = "Set the default in Settings → Agent. For nothing kept at all, use the hourglass at the top right.";
 "ask.temporary.toggle.on" = "Temporary chat: no history, no memory";
 "ask.temporary.toggle.off" = "Turn off temporary chat";
+"ask.history.showMore" = "Show %d more";
+"ask.history.showLess" = "Show less";
 "ask.env.help" = "Task environment: working folders and tool permission";
 "ask.env.folders" = "Working folders";
 "ask.env.addFolder" = "Add Folder…";
@@ -2335,10 +2337,6 @@
 "ask.launcher.placeholder.temporary" = "Ask temporarily, not saved";
 "ask.storage.locked" = "A conversation that has started cannot change where it is kept";
 "ask.storage.signedOut" = "While signed out, conversations stay on this Mac";
-"ask.history.filter" = "Filter conversations";
-"ask.history.filter.all" = "All";
-"ask.history.filter.cloud" = "Cloud";
-"ask.history.filter.local" = "This Mac";
 
 // Project workspaces
 "ask.project.title" = "Project files";
@@ -6770,7 +6768,6 @@
 "ask.kind.chatToolRefused" = "A chat cannot use tools that access this Mac. Start a Work conversation for that.";
 "ask.kind.switchedToWork" = "Switched to Work: folders can only be used in Work.";
 "ask.kind.chatFolderRefused" = "A chat cannot take a folder. Start a Work conversation for that.";
-"ask.history.kindFilter" = "Conversation type";
 "ask.kind.foldersRemoved" = "Folders removed: a chat cannot use folders.";
 
 /* Chat and Work, phase 2 (GUL-460) */

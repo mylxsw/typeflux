@@ -2196,6 +2196,8 @@
 "ask.bar.storage.footer" = "기본값은 설정 → Agent에서 바꿀 수 있습니다. 아무것도 남기지 않으려면 오른쪽 위 모래시계를 사용하세요.";
 "ask.temporary.toggle.on" = "임시 채팅: 기록 없음, 메모리 없음";
 "ask.temporary.toggle.off" = "임시 채팅 끄기";
+"ask.history.showMore" = "%d개 더 보기";
+"ask.history.showLess" = "접기";
 "ask.env.help" = "작업 환경: 작업 폴더와 도구 권한";
 "ask.env.folders" = "작업 폴더";
 "ask.env.addFolder" = "폴더 추가…";
@@ -2325,10 +2327,6 @@
 "ask.launcher.placeholder.temporary" = "임시로 질문하기, 저장되지 않음";
 "ask.storage.locked" = "이미 시작한 대화는 저장 위치를 바꿀 수 없습니다";
 "ask.storage.signedOut" = "로그아웃 상태에서는 대화가 이 Mac에 저장됩니다";
-"ask.history.filter" = "대화 필터";
-"ask.history.filter.all" = "전체";
-"ask.history.filter.cloud" = "클라우드";
-"ask.history.filter.local" = "이 Mac";
 
 // Project workspaces
 "ask.project.title" = "프로젝트 파일";
@@ -6770,7 +6768,6 @@
 "ask.kind.chatToolRefused" = "채팅에서는 이 Mac에 접근하는 도구를 사용할 수 없습니다. 새 작업을 시작하세요.";
 "ask.kind.switchedToWork" = "작업으로 전환했습니다: 폴더는 작업에서만 사용할 수 있습니다.";
 "ask.kind.chatFolderRefused" = "채팅에는 폴더를 첨부할 수 없습니다. 새 작업을 시작하세요.";
-"ask.history.kindFilter" = "대화 유형";
 "ask.kind.foldersRemoved" = "폴더를 제거했습니다: 채팅에서는 폴더를 사용할 수 없습니다.";
 
 /* Chat and Work, phase 2 (GUL-460) */

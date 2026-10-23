@@ -375,8 +375,7 @@ this Mac; signing in is optional. The design board is
   choice for a conversation that has not started, explains why a started one is
   fixed, and offers the other kind of new conversation. Signed in, a private
   conversation shows a "Only on this Mac" header chip instead of credits, a lock
-  in the sidebar, and the sidebar gets a Cloud / This Mac menu beside the kind
-  filter once a private conversation exists. The composer edge and send button
+  in the sidebar (the Cloud / This Mac filter menu was removed in GUL-464). The composer edge and send button
   stay neutral (Sky/Sage/Sand tints since `aca44a96`). A new conversation follows the default and its storage is
   switched with the composer icon; ⇧⌘N and the palette
   start a private conversation; `/local` toggles the new draft's storage.
@@ -444,8 +443,8 @@ temporary) and of which model answers.
   (`AskConversationKindSwitch`); the launcher has a small one at the start of its
   bottom bar. A new conversation starts as the kind last sent
   (`ask.lastConversationKind`, chat at first). Work shows "What should this Mac
-  work on?" on the empty page. The sidebar filters All / Chat / Work and marks
-  work rows with a terminal glyph.
+  work on?" on the empty page. The sidebar lists tasks and chats in their own
+  sections (GUL-464; it used to filter All / Chat / Work).
 - Adding a folder to a chat that has not started switches it to work; a started
   chat refuses the folder and keeps the other items. Switching a draft back to
   chat removes its folders.
@@ -576,6 +575,14 @@ away with the first message; what can change mid-conversation stays in the compo
   the measured headline and drops back to the bottom with the first message. Short
   windows, notices on the new page and another device's conversation keep it at the
   bottom.
+
+### Sidebar sections (GUL-464)
+
+The sidebar has no filters. `AskHistorySections` puts tasks first (newest five, then
+"Show n more"; a selected task past the limit stays visible) and chats below by period,
+so a row's kind is read from its section and task rows drop the terminal glyph. Rows
+kept on this Mac keep their lock. Grouping tasks by project folder needs the folder on
+the conversation summary, which the server does not carry yet.
 
 ## Liquid Glass workspace refresh (GUL-159, 2026-10-02)
 

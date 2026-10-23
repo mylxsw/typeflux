@@ -19,8 +19,8 @@ struct AskConversationView: View {
     /// The run whose step-limit prompt the user ended, so it stays dismissed.
     @State private var endedStepLimitRunId: String?
     /// Which conversations the sidebar lists while some are kept on this Mac.
-    @State private var historyFilter = AskHistoryFilter.all
-    @State private var historyKind: AskConversationKind?
+    /// The tasks section shows every task instead of the first few.
+    @State private var tasksExpanded = false
     @State private var searchHover = false
     /// The selected row's pill slides between rows instead of jumping.
     @Namespace private var selectionSpace
@@ -278,7 +278,6 @@ struct AskConversationView: View {
                     .padding(.trailing, 12)
                     .frame(height: AskMetrics.titleBarRowHeight)
                     sidebarSearchField.padding(.horizontal, AskMetrics.sidebarContentInset).padding(.bottom, 8)
-                    historyFilterPicker.padding(.horizontal, AskMetrics.sidebarContentInset).padding(.bottom, 8)
                     historyList
                     accountFooter
                 }
@@ -318,7 +317,6 @@ struct AskConversationView: View {
             Color.clear.frame(height: AskMetrics.sidebarTopInset)
             sidebarSearchField.padding(.horizontal, AskMetrics.sidebarContentInset)
                 .padding(.top, 4).padding(.bottom, 8)
-            historyFilterPicker.padding(.horizontal, AskMetrics.sidebarContentInset).padding(.bottom, 8)
             historyList
             accountFooter
         }
@@ -553,23 +551,12 @@ struct AskConversationView: View {
     /// Local rows need a storage mark only while signed in, alongside Cloud history.
     private var marksLocalHistory: Bool { model.isSignedIn && !model.localConversationIds.isEmpty }
 
-    private var visibleConversations: [AskConversationSummary] {
-        let stored = historyFilter.apply(model.conversations, isLocal: model.isLocal)
-        return stored.filtered(kind: historyKind)
-    }
-
-    /// Keep the storage filter available regardless of account or history contents.
-    private var historyFilterPicker: some View {
-        HStack(spacing: 6) {
-            AskHistoryKindBar(selection: $historyKind)
-            AskHistoryStorageMenu(selection: $historyFilter)
-        }
-    }
-
     private var historyList: some View {
         let now = Date()
         let calendar = Calendar.current
-        let items = AskHistoryPeriod.ordered(visibleConversations, now: now, calendar: calendar)
+        let sections = AskHistorySections.make(model.conversations, expanded: tasksExpanded,
+                                               selectedId: model.selectedId, now: now, calendar: calendar)
+        let items = sections.chats
         return ScrollView {
             LazyVStack(spacing: 2) {
                 if model.historyHasPendingSync {
@@ -591,12 +578,16 @@ struct AskConversationView: View {
                                            onClose: { model.closeTemporaryDraft() })
                         .padding(.top, 4)
                 }
+                if !sections.tasks.isEmpty { tasksSection(sections) }
+                if !sections.tasks.isEmpty, !items.isEmpty {
+                    sectionHeader(L("ask.kind.chat"), identifier: "ask.history.section.chat")
+                }
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                     let period = AskHistoryPeriod.period(for: item.updatedAt, now: now, calendar: calendar)
                     let title = L(period.titleKey)
                     if index == 0 || AskHistoryPeriod.period(for: items[index - 1].updatedAt, now: now,
                                                              calendar: calendar) != period {
-                        groupHeader(title, first: index == 0)
+                        groupHeader(title, first: index == 0 && sections.tasks.isEmpty)
                     }
                     if !collapsedGroups.contains(title) {
                         historyRow(item)
@@ -609,7 +600,7 @@ struct AskConversationView: View {
                         .foregroundStyle(AskTheme.accentText)
                         .padding(.top, 8)
                 }
-                if items.isEmpty, !model.isTemporaryComposer(launcher: false) {
+                if items.isEmpty, sections.tasks.isEmpty, !model.isTemporaryComposer(launcher: false) {
                     Text(L("ask.history.empty"))
                         .font(.system(size: 11.5))
                         .foregroundStyle(StudioTheme.textTertiary)
@@ -628,6 +619,43 @@ struct AskConversationView: View {
         .overlay(alignment: .top) { pullIndicator }
         .clipped()
         .accessibilityAction(named: Text(L("ask.refresh"))) { Task { await model.pullToRefreshHistory() } }
+    }
+
+    /// Tasks, newest first and a few at a time; each row is already marked as work by
+    /// the section, so it drops the terminal glyph.
+    @ViewBuilder private func tasksSection(_ sections: AskHistorySections) -> some View {
+        let title = L("ask.kind.work")
+        groupHeader(title, first: true)
+            .accessibilityIdentifier("ask.history.section.work")
+        if !collapsedGroups.contains(title) {
+            ForEach(sections.tasks, id: \.id) { historyRow($0, marksWork: false) }
+            if sections.hiddenTasks > 0 || tasksExpanded {
+                Button {
+                    withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) { tasksExpanded.toggle() }
+                } label: {
+                    Text(tasksExpanded ? L("ask.history.showLess") : L("ask.history.showMore", sections.hiddenTasks))
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("ask.history.tasks.more")
+            }
+        }
+    }
+
+    /// The chats section's heading above its periods, once there are tasks above it.
+    private func sectionHeader(_ title: String, identifier: String) -> some View {
+        Text(title)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(StudioTheme.textSecondary)
+            .padding(.horizontal, 8)
+            .padding(.top, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityIdentifier(identifier)
     }
 
     private func groupHeader(_ title: String, first: Bool) -> some View {
@@ -684,14 +712,14 @@ struct AskConversationView: View {
         }
     }
 
-    private func historyRow(_ item: AskConversationSummary) -> some View {
+    private func historyRow(_ item: AskConversationSummary, marksWork: Bool = true) -> some View {
         AskHistoryRow(
             title: item.title,
             updatedAt: item.updatedAt,
             selected: model.selectedId == item.id,
             busy: model.busyIds.contains(item.id),
             local: marksLocalHistory && model.isLocal(item.id),
-            work: item.resolvedKind == .work,
+            work: marksWork && item.resolvedKind == .work,
             host: model.hostElsewhere(item),
             selectionSpace: selectionSpace,
             onSelect: {
