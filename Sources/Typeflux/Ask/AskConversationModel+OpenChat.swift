@@ -77,11 +77,28 @@ extension AskConversationModel {
         }
     }
 
-    func loadSavedChatDrafts() async {
+    @discardableResult
+    func loadSavedChatDrafts() async -> Bool {
         let account = owner, sessionOwner = session()?.owner
         guard let saved = try? await cache.savedChatDrafts(owner: account),
-              owner == account, session()?.owner == sessionOwner else { return }
+              owner == account, session()?.owner == sessionOwner else { return false }
         savedChatDrafts = saved.filter { $0.id != activeChatDraftID }
+        return true
+    }
+
+    /// Opening an empty workspace restores input without sending it. Navigation,
+    /// edits, private composers and account changes always take precedence.
+    func restoreSavedChatDraftIfNeeded() async {
+        guard selectedId == nil, activeChatDraftID == nil, !draft.hasChatInput,
+              draft.temporary != true, canOpenChatFromLauncher else { return }
+        let previous = draft, generation = selectionGeneration
+        let account = owner, sessionOwner = session()?.owner
+        guard await loadSavedChatDrafts() else { return }
+        guard !Task.isCancelled, owner == account, session()?.owner == sessionOwner,
+              generation == selectionGeneration, draft == previous,
+              selectedId == nil, activeChatDraftID == nil,
+              let saved = savedChatDrafts.first(where: { $0.draft.temporary != true }) else { return }
+        await restoreChatDraft(saved)
     }
 
     /// Restoring preserves the visible unsent draft before replacing it.

@@ -678,7 +678,13 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         model.setRemoteImagesVisible(true)
         conversationWindow.makeKeyAndOrderFront(nil)
         focusEditor(in: conversationWindow)
-        conversationRefreshTask = Task { await model.refreshHistory(); await model.loadSavedChatDrafts() }
+        conversationRefreshTask?.cancel()
+        let selection = model.selectionGeneration
+        conversationRefreshTask = Task {
+            await model.refreshHistory()
+            guard !Task.isCancelled, selection == model.selectionGeneration else { return }
+            await model.restoreSavedChatDraftIfNeeded()
+        }
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {

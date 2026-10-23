@@ -126,7 +126,7 @@ actor AskConversationCache: AskCaching {
         return try data.map { try AskCoding.decoder().decode(AskDraft.self, from: $0) }
     }
     func savedChatDrafts(owner: String) throws -> [AskSavedChatDraft] {
-        let statement = try prepare("SELECT id,data FROM ask_drafts WHERE owner=? AND id LIKE 'saved-chat:%' ORDER BY id", strings: [owner])
+        let statement = try prepare("SELECT id,data FROM ask_drafts WHERE owner=? AND id LIKE 'saved-chat:%' ORDER BY rowid DESC", strings: [owner])
         defer { sqlite3_finalize(statement) }
         var result: [AskSavedChatDraft] = []
         var status = sqlite3_step(statement)

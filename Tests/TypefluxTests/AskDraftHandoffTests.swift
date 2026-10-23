@@ -202,6 +202,92 @@ struct AskDraftHandoffTests {
 }
 
 extension AskDraftHandoffTests {
+    @Test(arguments: [false, true])
+    func emptyWorkspaceAutomaticallyRestoresNewestSavedDraftWithoutSending(localOnly: Bool) async throws {
+        let f = try AskTestFixture(localOnly: localOnly)
+        defer { f.model.resetSession() }
+        _ = f.model.credentials()
+        let account = f.model.owner
+        try await f.cache.saveDraft(.init(text: "Older"), key: "saved-chat:z", owner: account)
+        let incoming = AskDraft(text: "Latest", includeScreenshot: false, modelRef: "custom:test",
+            references: [.init(messageId: "message", text: "Quote")],
+            attachments: [.init(kind: .file, name: "notes.txt", text: "Notes")], storesLocally: true)
+        try await f.cache.saveDraft(incoming, key: "saved-chat:a", owner: account)
+        try await f.cache.saveDraft(.init(text: "Other account"), key: "saved-chat:other", owner: "another")
+        await f.model.restoreSavedChatDraftIfNeeded()
+        #expect(f.model.draft == incoming)
+        #expect(f.model.activeChatDraftID == "saved-chat:a")
+        #expect(f.model.savedChatDrafts.map(\.draft.text) == ["Older"])
+        #expect(try await f.cache.draft(key: "saved-chat:a", owner: account) == incoming)
+        await f.model.restoreSavedChatDraftIfNeeded()
+        #expect(f.model.draft == incoming)
+        #expect(await f.api.sends.isEmpty)
+        #expect(await f.localAPI.sends.isEmpty)
+    }
+
+    @Test(arguments: ["empty", "text", "attachment", "temporary", "selection", "recording", "loading"])
+    func automaticRestorePreservesCurrentWorkspace(state: String) async throws {
+        let f = try AskTestFixture()
+        defer { f.model.resetSession() }
+        _ = f.model.credentials()
+        if state != "empty" {
+            try await f.cache.saveDraft(.init(text: "Saved"), key: "saved-chat:test", owner: "owner")
+        }
+        switch state {
+        case "text": f.model.draft.text = "New input"
+        case "attachment": f.model.draft.attachments = [.init(kind: .file, name: "new.txt", text: "New")]
+        case "temporary": f.model.newConversation(temporary: true)
+        case "selection":
+            await f.api.seed(.init(id: "existing", title: "Existing", revision: 1, updatedAt: Date(), messages: []))
+            await f.model.select("existing")
+        case "recording": f.model.recordingIsActive = { true }
+        case "loading": f.model.attachmentLoads[f.model.visionDraftKey(launcher: false)] = 1
+        default: break
+        }
+        let previous = f.model.draft, selection = f.model.selectedId
+        await f.model.restoreSavedChatDraftIfNeeded()
+        #expect(f.model.draft == previous && f.model.selectedId == selection)
+        #expect(f.model.activeChatDraftID == nil)
+        #expect(await f.api.sends.isEmpty)
+    }
+
+    @Test(arguments: ["edit", "navigate", "account", "cancel"])
+    func lateAutomaticRestoreCannotReplaceNewerUserIntent(change: String) async throws {
+        let base = try AskConversationCache.inMemory(), gate = HandoffGate()
+        let cache = GatedConversationCache(base: base, beforeSavedDraftsRead: { await gate.waitOnce() }, beforeSave: { _ in })
+        let f = try AskTestFixture(cacheOverride: cache)
+        defer { f.model.resetSession() }
+        _ = f.model.credentials()
+        try await base.saveDraft(.init(text: "Saved"), key: "saved-chat:test", owner: "owner")
+        let task = Task { await f.model.restoreSavedChatDraftIfNeeded() }
+        try await wait { await gate.entered }
+        switch change {
+        case "edit": f.model.draft.text = "Newer input"
+        case "navigate": f.model.newConversation()
+        case "account": f.sessionState.owner = "other"; _ = f.model.credentials()
+        default: task.cancel()
+        }
+        let previous = f.model.draft
+        await gate.release()
+        await task.value
+        #expect(f.model.draft == previous)
+        #expect(f.model.activeChatDraftID == nil)
+        #expect(try await base.draft(key: "saved-chat:test", owner: "owner")?.text == "Saved")
+        #expect(await f.api.sends.isEmpty)
+    }
+
+    @Test func failedAutomaticReadDoesNotRestoreAStaleInMemoryBackup() async throws {
+        let unavailable = RecoveringAskConversationCache(factory: { throw CocoaError(.fileReadNoPermission) })
+        let f = try AskTestFixture(cacheOverride: unavailable)
+        defer { f.model.resetSession() }
+        _ = f.model.credentials()
+        f.model.savedChatDrafts = [.init(id: "saved-chat:stale", draft: .init(text: "Stale"))]
+        await f.model.restoreSavedChatDraftIfNeeded()
+        #expect(f.model.draft.text.isEmpty && f.model.activeChatDraftID == nil)
+        #expect(await f.api.sends.isEmpty)
+        await unavailable.shutdown()
+    }
+
     @Test func successfulSendConsumesBackupOnlyAfterDestinationIsDurable() async throws {
         let f = try AskTestFixture()
         defer { f.model.resetSession() }

@@ -59,7 +59,7 @@ struct AskOpenChatTests {
         let saved = try #require(f.model.savedChatDrafts.first)
         #expect(saved.draft.text == "Original unsent")
         let reopened = try AskConversationCache(url: f.root.appendingPathComponent("cache.sqlite"))
-        #expect(try await reopened.savedChatDrafts(owner: "owner").first?.draft.storesLocally == true)
+        #expect(try await reopened.savedChatDrafts(owner: "owner").first(where: { $0.id == saved.id })?.draft.storesLocally == true)
         #expect(try await reopened.savedChatDrafts(owner: "other").isEmpty)
         await f.model.restoreChatDraft(saved)
         #expect(f.model.draft.text == "Original unsent")

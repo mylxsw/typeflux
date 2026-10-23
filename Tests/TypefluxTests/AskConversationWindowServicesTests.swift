@@ -5,6 +5,31 @@ import Testing
 @MainActor
 @Suite("Conversation workspace service wiring", .serialized, .exclusiveUIState)
 struct AskConversationWindowServicesTests {
+    @Test func openingWorkspaceAutomaticallyRestoresSavedInput() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            let fixture = try Fixture(settings)
+            do {
+                try await fixture.cache.saveDraft(.init(text: "Restore automatically"),
+                    key: "saved-chat:test", owner: "workspace-fixture")
+                let controller = try fixture.makeController(settings)
+                fixture.controller = controller
+                controller.showConversation()
+                await controller.conversationRefreshTask?.value
+                #expect(controller.model.draft.text == "Restore automatically")
+                #expect(controller.model.activeChatDraftID == "saved-chat:test")
+                #expect(await fixture.api.sends.isEmpty)
+                controller.model.draft.text = "Newer edits"
+                controller.showConversation()
+                await controller.conversationRefreshTask?.value
+                #expect(controller.model.draft.text == "Newer edits")
+            } catch {
+                await fixture.close()
+                throw error
+            }
+            await fixture.close()
+        }
+    }
+
     @Test func `launcher opens when conversation storage cannot be opened`() async throws {
         try await SettingsBehaviorTestSupport.withFixture { settings in
             let fixture = try Fixture(settings)

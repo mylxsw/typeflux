@@ -397,12 +397,15 @@ actor GatedConversationCache: AskCaching {
     let beforeSave: @Sendable (AskConversation) async -> Void
     let beforeDraftSave: @Sendable (String) async -> Void
     let afterDraftSave: @Sendable (String, String) async throws -> Void
+    let beforeSavedDraftsRead: @Sendable () async -> Void
     init(base: any AskCaching,
          beforeDraftSave: @escaping @Sendable (String) async -> Void = { _ in },
          afterDraftSave: @escaping @Sendable (String, String) async throws -> Void = { _, _ in },
+         beforeSavedDraftsRead: @escaping @Sendable () async -> Void = {},
          beforeSave: @escaping @Sendable (AskConversation) async -> Void) {
         self.base = base; self.beforeSave = beforeSave
         self.beforeDraftSave = beforeDraftSave; self.afterDraftSave = afterDraftSave
+        self.beforeSavedDraftsRead = beforeSavedDraftsRead
     }
     func save(_ conversation: AskConversation, owner: String) async throws {
         await beforeSave(conversation)
@@ -423,7 +426,10 @@ actor GatedConversationCache: AskCaching {
         try await afterDraftSave(key, owner)
     }
     func draft(key: String, owner: String) async throws -> AskDraft? { try await base.draft(key: key, owner: owner) }
-    func savedChatDrafts(owner: String) async throws -> [AskSavedChatDraft] { try await base.savedChatDrafts(owner: owner) }
+    func savedChatDrafts(owner: String) async throws -> [AskSavedChatDraft] {
+        await beforeSavedDraftsRead()
+        return try await base.savedChatDrafts(owner: owner)
+    }
     func associateTool(id: String, conversationId: String, owner: String) async throws { try await base.associateTool(id: id, conversationId: conversationId, owner: owner) }
     func claimTool(id: String, owner: String) async throws -> Bool { try await base.claimTool(id: id, owner: owner) }
     func saveToolResult(_ result: AskToolResultRequest, owner: String) async throws { try await base.saveToolResult(result, owner: owner) }

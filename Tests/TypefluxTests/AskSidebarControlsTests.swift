@@ -7,6 +7,22 @@ import Testing
 @MainActor
 struct AskSidebarControlsTests {
     @Test(arguments: [false, true])
+    func titleBarOmitsSavedDraftMenu(collapsed: Bool) async throws {
+        let defaults = try #require(UserDefaults(suiteName: "sidebar-drafts-" + UUID().uuidString))
+        defaults.set(collapsed, forKey: "ask.sidebarCollapsed")
+        let fixture = try AskTestFixture(defaults: defaults)
+        defer { fixture.model.resetSession() }
+        fixture.model.savedChatDrafts = [.init(id: "saved-chat:test", draft: .init(text: "Saved input"))]
+        let window = host(AskConversationView(model: fixture.model).defaultAppStorage(defaults),
+                          dark: true, size: CGSize(width: 1100, height: 720))
+        defer { window.close() }
+        try await settle(window)
+        #expect(find(L("ask.drafts.saved"), attribute: "accessibilityLabel", in: window) == nil)
+        #expect(find("ask.workspace.new", in: window) != nil)
+        #expect(find("ask.workspace.sidebar", in: window) != nil)
+    }
+
+    @Test(arguments: [false, true])
     func environmentButtonHugsShortNamesAndCapsLongNames(compact: Bool) async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
