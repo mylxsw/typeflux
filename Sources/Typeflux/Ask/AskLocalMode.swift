@@ -343,61 +343,6 @@ private struct AskLocalModeMenu: ViewModifier {
     }
 }
 
-/// The composer's storage icon: a cloud, or a lock for a conversation kept on this
-/// Mac. It carries no text so it stays quiet; hovering names it, a click explains it.
-struct AskStorageButton: View {
-    @ObservedObject var model: AskConversationModel
-    var launcher = false
-    @ObservedObject var auth: AuthState = .shared
-    @State private var presented = false
-    @State private var hovering = false
-
-    static let size: CGFloat = 26
-
-    var body: some View {
-        let kind = model.storageKind(launcher: launcher)
-        let name = L(kind.titleKey)
-        let active = hovering || presented
-        Button { presented.toggle() } label: {
-            Image(systemName: kind.symbol)
-                .font(.system(size: AskMetrics.footerStatusSymbolSize,
-                              weight: kind != .cloud || active ? .semibold : .medium))
-                .foregroundStyle(Self.iconColor(kind, active: active, signedIn: model.isSignedIn))
-                .frame(width: Self.size, height: Self.size)
-                .background(Self.wellFill(kind, active: active),
-                            in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering = $0 }
-        .help(name + " · " + L("ask.storage.help"))
-        .accessibilityLabel(name)
-        .accessibilityHint(L("ask.storage.help"))
-        .modifier(AskLocalModeMenu(isPresented: $presented,
-                                   status: .make(model: model, signedIn: model.isSignedIn, launcher: launcher),
-                                   model: model, launcher: launcher))
-    }
-
-    /// Sage marks this Mac and sand a temporary conversation; hover or an open menu
-    /// brightens a neutral icon. The icon alone carries the state colour. Signed out,
-    /// every conversation is kept on this Mac, so its lock stays neutral like the cloud.
-    static func iconColor(_ kind: AskStorageKind, active: Bool, signedIn: Bool = true) -> Color {
-        switch kind {
-        case .local where signedIn: AskTheme.privateTint
-        case .temporary: AskTheme.temporaryTint
-        case .cloud, .local: active ? StudioTheme.textPrimary : StudioTheme.textSecondary
-        }
-    }
-
-    /// Keep the icon background transparent in every storage and hover state.
-    static func wellFill(_ kind: AskStorageKind, active: Bool) -> Color {
-        .clear
-    }
-
-    static func iconColor(local: Bool, active: Bool) -> Color { iconColor(local ? .local : .cloud, active: active) }
-    static func wellFill(local: Bool, active: Bool) -> Color { wellFill(local ? .local : .cloud, active: active) }
-}
-
 /// The sidebar footer while signed out: where Ask runs, instead of a lone sign-in link.
 struct AskLocalModeIdentity: View {
     @ObservedObject var model: AskConversationModel

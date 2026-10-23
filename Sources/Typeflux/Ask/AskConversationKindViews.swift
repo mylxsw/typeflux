@@ -182,39 +182,123 @@ struct AskHostElsewhereNotice: View {
     }
 }
 
-/// The folder a new task works in: the first attached folder, or the task's own
-/// workspace. A click picks folders to attach, which grants the task access to them.
-struct AskWorkFolderButton: View {
+/// A task's environment in one control: the tool permission's shield, then the folders it
+/// works in. The menu adds folders, at the start or during the task, and picks the mode.
+/// The launcher keeps its bar's empty space for dragging, so it shows the shield alone.
+struct AskWorkEnvironmentButton: View {
     @ObservedObject var model: AskConversationModel
     var launcher = false
+    /// The shield alone (YOLO still spells itself out outside the launcher).
+    var compact = false
+    @State private var presented = false
     @State private var hovering = false
 
+    /// The folders a task's next message works in: the default workspace, one name, or the first and a count.
     static func title(_ draft: AskDraft) -> String {
         let folders = (draft.attachments ?? []).filter { $0.kind == .folder }
         guard let first = folders.first else { return L("ask.kind.defaultWorkspace") }
         return folders.count == 1 ? first.name : L("ask.kind.folders", first.name, folders.count - 1)
     }
 
+    /// Folders the next message adds to the task.
+    static func hasPendingFolders(_ draft: AskDraft) -> Bool {
+        draft.attachments?.contains { $0.kind == .folder } == true
+    }
+
+    private var mode: AskPermissionMode { model.permissionMode(launcher: launcher) }
+    private var draft: AskDraft { launcher ? model.launcherDraft : model.draft }
+
     var body: some View {
-        let draft = launcher ? model.launcherDraft : model.draft
-        Button { model.pickAttachments(folders: true, launcher: launcher) } label: {
-            HStack(spacing: 4) {
-                Image(systemName: "folder").font(.system(size: 12, weight: .medium))
-                Text(Self.title(draft)).font(.system(size: 12.5)).lineLimit(1).truncationMode(.middle)
+        Button { presented.toggle() } label: {
+            HStack(spacing: 5) {
+                Image(systemName: mode.symbol)
+                    .font(.system(size: AskMetrics.footerStatusSymbolSize, weight: .semibold))
+                    .foregroundStyle(AskPermissionModeMenu.tint(mode))
+                if mode == .yolo, !launcher {
+                    Text(verbatim: "YOLO").font(.system(size: 11.5, weight: .semibold))
+                        .foregroundStyle(AskPermissionModeMenu.tint(mode))
+                }
+                if !compact {
+                    Image(systemName: "folder").font(.system(size: 12, weight: .medium))
+                        .padding(.leading, 2)
+                    Text(Self.title(draft)).font(.system(size: 12.5)).lineLimit(1).truncationMode(.middle)
+                        .frame(maxWidth: 160)
+                        .fixedSize(horizontal: true, vertical: false)
+                }
+                if !launcher {
+                    Image(systemName: "chevron.down").font(.system(size: 8.5, weight: .semibold))
+                        .opacity(0.7)
+                }
             }
-            .foregroundStyle(hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+            .foregroundStyle(hovering || presented ? StudioTheme.textPrimary : StudioTheme.textSecondary)
             .padding(.horizontal, 8)
             .frame(height: AskMetrics.composerControlHeight)
-            .frame(maxWidth: launcher ? 120 : 180)
-            .fixedSize(horizontal: true, vertical: false)
-            .contentShape(Rectangle())
+            .background(hovering || presented ? AskTheme.hoverFill : .clear, in: Capsule())
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        // Like the permission menu it replaces, it keeps its size; the folder name truncates first.
+        .fixedSize()
         .onHover { hovering = $0 }
-        .help(L("ask.kind.folderHelp"))
-        .accessibilityLabel(L("ask.kind.folderHelp"))
+        .help(L("ask.env.help"))
+        .accessibilityLabel(L("ask.mode.title") + ": " + mode.title)
         .accessibilityValue(Self.title(draft))
-        .accessibilityIdentifier("ask.composer.workFolder")
+        .accessibilityIdentifier("ask.composer.permissionMode")
+        .askMenu(isPresented: $presented, glass: true) {
+            AskObservedContent(model: model) { menu }
+        }
+    }
+
+    private var menu: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            header(L("ask.env.folders"))
+            // A started task already works in its folders (listed below when granted);
+            // name only what the next message adds, or the default for a new task.
+            if model.canChangeConversationKind(launcher: launcher) || Self.hasPendingFolders(draft) {
+                folderRow(Self.title(draft))
+            }
+            AskPopoverRow(title: L("ask.env.addFolder"), caption: L("ask.env.addFolder.detail"), selected: false,
+                          action: {
+                              presented = false
+                              model.pickAttachments(folders: true, launcher: launcher)
+                          }, accessory: {
+                              Image(systemName: "plus").font(.system(size: 12, weight: .medium))
+                          })
+                .accessibilityIdentifier("ask.env.addFolder")
+            AskFolderPermissionControls(model: model, launcher: launcher)
+                .padding(.horizontal, 10)
+            Rectangle().fill(AskTheme.separator).frame(height: 0.5).padding(.horizontal, 10).padding(.vertical, 6)
+            header(L("ask.mode.title"))
+            ForEach(AskPermissionMode.allCases, id: \.self) { option in
+                AskPopoverRow(title: option.title, caption: option.detail, selected: option == mode, action: {
+                    presented = false
+                    model.setPermissionMode(option, launcher: launcher)
+                }, accessory: {
+                    Image(systemName: option.symbol).font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(option == mode
+                            ? AskPermissionModeMenu.tint(option) : StudioTheme.textSecondary)
+                })
+                .accessibilityIdentifier("ask.env.mode." + option.rawValue)
+            }
+        }
+        .padding(.vertical, 6)
+        .frame(width: 320, alignment: .leading)
+    }
+
+    private func header(_ text: String) -> some View {
+        Text(text).font(.system(size: 11, weight: .semibold)).foregroundStyle(StudioTheme.textTertiary)
+            .padding(.horizontal, 12).padding(.top, 4).padding(.bottom, 2)
+    }
+
+    private func folderRow(_ title: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "folder").font(.system(size: 12, weight: .medium))
+                .foregroundStyle(StudioTheme.textSecondary).frame(width: 14)
+            Text(title).font(.system(size: 13)).foregroundStyle(StudioTheme.textPrimary)
+                .lineLimit(1).truncationMode(.middle)
+            Spacer(minLength: 8)
+        }
+        .padding(.horizontal, 14).frame(height: 30)
     }
 }
 

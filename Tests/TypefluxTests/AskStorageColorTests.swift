@@ -117,13 +117,7 @@ struct AskStorageColorTests {
         #expect(signedOut.model.markedStorage(launcher: false) == .temporary)
     }
 
-    @Test func theStorageIconIsNeutralUnlessItMarksSomething() {
-        #expect(AskStorageButton.iconColor(.local, active: false) == AskTheme.privateTint)
-        #expect(AskStorageButton.iconColor(.local, active: true, signedIn: true) == AskTheme.privateTint)
-        #expect(AskStorageButton.iconColor(.local, active: false, signedIn: false) == StudioTheme.textSecondary)
-        #expect(AskStorageButton.iconColor(.local, active: true, signedIn: false) == StudioTheme.textPrimary)
-        #expect(AskStorageButton.iconColor(.temporary, active: false, signedIn: false) == AskTheme.temporaryTint)
-        #expect(AskStorageButton.iconColor(.cloud, active: false) == StudioTheme.textSecondary)
+    @Test func storageTintsMarkOnlyWhatNeedsTellingApart() {
         #expect(AskLocalModeCard.tint(.cloud) == AskTheme.cloudTint)
     }
 

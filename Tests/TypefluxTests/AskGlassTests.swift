@@ -49,9 +49,6 @@ struct AskGlassTests {
         #expect(AskVoiceButton.Appearance.iconColor(phase: .idle, hovered: false) == StudioTheme.textSecondary)
         #expect(AskVoiceButton.Appearance.iconColor(phase: .idle, hovered: true) == StudioTheme.textPrimary)
         #expect(AskVoiceButton.Appearance.iconColor(phase: .listening, hovered: false) == AskTheme.accent)
-        #expect(AskStorageButton.iconColor(local: true, active: false) == AskTheme.privateTint)
-        #expect(AskStorageButton.iconColor(local: false, active: false) == StudioTheme.textSecondary)
-        #expect(AskStorageButton.iconColor(local: false, active: true) == StudioTheme.textPrimary)
     }
 
     @Test func onlyTheTopReasoningLevelIsViolet() {

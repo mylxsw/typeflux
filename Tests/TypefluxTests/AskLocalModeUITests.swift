@@ -219,11 +219,6 @@ struct AskLocalModeUITests {
         }
         #expect(fits(AskCloudPromoCard(onSignIn: {}, onDismiss: {}), width: 236).height > 60)
         #expect(fits(AskLocalModeIdentity(model: f.model), width: 200).height == 40)
-        // The storage icon keeps one size, signed out (a lock) or in a Cloud conversation.
-        let size = CGSize(width: AskStorageButton.size, height: AskStorageButton.size)
-        #expect(fits(AskStorageButton(model: f.model)) == size)
-        #expect(fits(AskStorageButton(model: try AskTestFixture().model)) == size)
-        #expect(fits(AskStorageButton(model: try AskTestFixture().model, launcher: true)) == size)
     }
 
     @Test func workspaceRendersTheSignedOutFooterAndSwitchBanner() async throws {
@@ -236,8 +231,8 @@ struct AskLocalModeUITests {
         for size in [NSSize(width: 1180, height: 760), NSSize(width: 960, height: 320)] {
             try await host.resize(to: size)
             try host.assertComposer(text: "Describe this image")
+            // The sidebar says where conversations are kept; the composer no longer repeats it.
             try host.assertVisible(label: L("ask.local.identity"))
-            try host.assertVisible(label: L("ask.storage.local"))
             #expect(!f.model.isSignedIn)
             #expect(f.model.storesLocally(launcher: false))
             #expect(f.model.modelReference(launcher: false) == vision.reference)

@@ -7,32 +7,32 @@ import Testing
 @MainActor
 struct AskSidebarControlsTests {
     @Test(arguments: [false, true])
-    func folderButtonHugsShortNamesAndCapsLongNames(launcher: Bool) async throws {
+    func environmentButtonHugsShortNamesAndCapsLongNames(compact: Bool) async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
-        let limit: CGFloat = launcher ? 120 : 180
+        fixture.model.setConversationKind(.work, launcher: false)
         var widths: [CGFloat] = []
         for name in [nil, "src", String(repeating: "Long folder name ", count: 10)] as [String?] {
-            let attachments: [AskAttachment]? = name.map { [.init(id: "folder", kind: .folder, name: $0)] }
-            fixture.model.draft.attachments = attachments
-            fixture.model.launcherDraft.attachments = attachments
+            fixture.model.draft.attachments = name.map { [.init(id: "folder", kind: .folder, name: $0)] }
             let window = host(HStack {
-                AskWorkFolderButton(model: fixture.model, launcher: launcher)
+                AskWorkEnvironmentButton(model: fixture.model, compact: compact)
                 Spacer(minLength: 0)
             })
             defer { window.close() }
             try await settle(window)
-            let button = try #require(find("ask.composer.workFolder", in: window))
+            let button = try #require(find("ask.composer.permissionMode", in: window))
             let frame = try #require(button.value(forKey: "accessibilityFrame") as? NSValue).rectValue
             widths.append(frame.width)
-            #expect(frame.width <= limit + 0.5)
             #expect(frame.height == AskMetrics.composerControlHeight)
+            // Shield, folder, chevron and padding beside a name capped at 160pt.
+            #expect(frame.width <= 160 + 80)
         }
-        if !launcher {
-            #expect(widths[0] < limit, "The default workspace must not reserve the maximum width.")
+        if compact {
+            #expect(Set(widths).count == 1, "The compact control shows the shield alone, whatever the folder.")
+        } else {
+            #expect(widths[1] < widths[0], "A shorter folder name releases space to adjacent controls.")
+            #expect(widths[2] > widths[0], "A long name grows the control up to its cap, then truncates.")
         }
-        #expect(widths[1] < widths[0], "A shorter folder name releases space to adjacent controls.")
-        #expect(abs(widths[2] - limit) < 0.5, "Long names truncate at the width cap.")
     }
 
     @Test(arguments: [false, true])

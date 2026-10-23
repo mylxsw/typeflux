@@ -3,48 +3,11 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-/// Real mouse events on the composer's memory chip, in the chat window and the
-/// launcher: a click must switch the memory off and a second click back on.
+/// Real mouse events on a context chip. Memory now switches in the "+" menu
+/// (`AskComposerAddMenuTests`); a read-only chip still explains itself on click.
 /// Part of the serialized event-delivery suite: its hold-to-talk tests watch
 /// every mouse-up in the app, so clicks must never overlap with them.
 extension AskComposerInteractionTests {
-    @Test func memoryChipTogglesInTheChatWindow() async throws {
-        let fixture = try AskTestFixture()
-        fixture.model.newConversation()
-        fixture.model.draft.memory = AskMemory(global: "Prefers short answers.", app: nil)
-        let (window, hosting) = try await hostChipView(AskConversationView(model: fixture.model), size: NSSize(width: 1000, height: 640))
-        defer { window.close() }
-        try clickChip(memoryChipAnchors(hosting).last, in: window)
-        try await Task.sleep(for: .milliseconds(150))
-        #expect(fixture.model.draft.memoryOff == true)
-        try clickChip(memoryChipAnchors(hosting).last, in: window)
-        try await Task.sleep(for: .milliseconds(150))
-        #expect(fixture.model.draft.memoryOff == nil)
-        fixture.model.resetSession()
-    }
-
-    @Test func pinnedMemoryTogglesOnClick() async throws {
-        let fixture = try AskTestFixture()
-        var value = AskConversation(id: "pinned", title: "Pinned", revision: 1, updatedAt: Date(), messages: [
-            .init(id: "q", role: "user", text: "Hi", createdAt: Date())
-        ])
-        value.memory = AskMemory(global: "Prefers short answers.", app: nil)
-        await fixture.api.seed(value)
-        await fixture.model.select("pinned")
-        let (window, hosting) = try await hostChipView(AskConversationView(model: fixture.model), size: NSSize(width: 1000, height: 640))
-        defer { window.close() }
-        #expect(!fixture.model.memorySwitchedOff(launcher: false))
-        try clickChip(memoryChipAnchors(hosting).last, in: window)
-        try await Task.sleep(for: .milliseconds(150))
-        #expect(fixture.model.draft.memoryOff == true)
-        #expect(fixture.model.memorySwitchedOff(launcher: false))
-        try clickChip(memoryChipAnchors(hosting).last, in: window)
-        try await Task.sleep(for: .milliseconds(150))
-        #expect(fixture.model.draft.memoryOff == false)
-        #expect(!fixture.model.memorySwitchedOff(launcher: false))
-        fixture.model.resetSession()
-    }
-
     @Test func readOnlyChipExplainsItselfOnClick() async throws {
         let item = AskContextChips.items(screenshot: .unavailable(reason: "This model does not support images"),
                                          source: nil, sourceBundleID: nil, selection: nil, memory: nil,
@@ -61,21 +24,6 @@ extension AskComposerInteractionTests {
         // Opened without the pointer on the chip, it closes by itself.
         try await Task.sleep(nanoseconds: AskContextChips.explainDuration + 300_000_000)
         #expect(!cardShown())
-    }
-
-    @Test func memoryChipTogglesInTheLauncher() async throws {
-        let fixture = try AskTestFixture()
-        await fixture.model.prepareLauncher()
-        fixture.model.launcherDraft.memory = AskMemory(global: "Prefers short answers.", app: nil)
-        fixture.model.launcherDraft.source = nil
-        fixture.model.launcherDraft.selection = nil
-        let (window, hosting) = try await hostChipView(AskLauncherView(model: fixture.model, onDismiss: {}),
-                                               size: NSSize(width: AskMetrics.launcherWidth, height: 120))
-        defer { window.close() }
-        try clickChip(memoryChipAnchors(hosting).last, in: window)
-        try await Task.sleep(for: .milliseconds(150))
-        #expect(fixture.model.launcherDraft.memoryOff == true)
-        fixture.model.resetSession()
     }
 
     private func memoryChipAnchors(_ root: NSView) -> [NSView] {

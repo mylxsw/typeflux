@@ -286,12 +286,12 @@ struct AskChatWorkPhase2Tests {
 
     @Test func `the work folder button names the folders`() {
         var draft = AskDraft()
-        #expect(AskWorkFolderButton.title(draft) == L("ask.kind.defaultWorkspace"))
+        #expect(AskWorkEnvironmentButton.title(draft) == L("ask.kind.defaultWorkspace"))
         draft.attachments = [.init(id: "a", kind: .folder, name: "Downloads")]
-        #expect(AskWorkFolderButton.title(draft) == "Downloads")
+        #expect(AskWorkEnvironmentButton.title(draft) == "Downloads")
         draft.attachments?.append(.init(id: "b", kind: .folder, name: "Desktop"))
         draft.attachments?.append(.init(id: "c", kind: .file, name: "a.txt"))
-        #expect(AskWorkFolderButton.title(draft) == L("ask.kind.folders", "Downloads", 1))
+        #expect(AskWorkEnvironmentButton.title(draft) == L("ask.kind.folders", "Downloads", 1))
     }
 
     @Test func `work drafts get the work placeholder and the sent request carries the kind`() async throws {

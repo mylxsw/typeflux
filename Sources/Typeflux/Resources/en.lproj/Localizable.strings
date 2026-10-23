@@ -2183,7 +2183,18 @@
 
 /* Ask attachments */
 "ask.attach.title" = "Attach";
-"ask.attach.help" = "Attach files, images or a folder (⌘U). You can also paste or drop them here";
+"ask.attach.help" = "Add files or images (⌘U) and choose what rides along with this question";
+"ask.add.files" = "Add files or images";
+"ask.add.files.detail" = "PDFs, images, documents — or paste or drop them in";
+"ask.add.context" = "Include with this question";
+"ask.add.screenshot" = "Screenshot";
+"ask.add.screenshot.offDetail" = "Share your current screen for context";
+"ask.add.selection.detail" = "From %@ · %d lines";
+"ask.add.footer" = "Type / for commands · Drop a folder to work in it";
+"ask.env.help" = "Task environment: working folders and tool permission";
+"ask.env.folders" = "Working folders";
+"ask.env.addFolder" = "Add Folder…";
+"ask.env.addFolder.detail" = "You can also drop a folder into the composer";
 "ask.attach.files" = "Send Files or Images";
 "ask.attach.folder" = "Choose Folder";
 "ask.attach.pickFiles" = "Choose files or images to send to Chat";

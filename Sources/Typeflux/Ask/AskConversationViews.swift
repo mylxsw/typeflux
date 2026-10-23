@@ -759,6 +759,11 @@ struct AskConversationView: View {
     /// Keep the essential actions in one row; the title yields before controls do.
     private var compactHeader: some View {
         HStack(spacing: 4) {
+            // The composer no longer carries a storage icon, so the narrow header marks a
+            // conversation kept on this Mac or a temporary one, as the wide title does.
+            if let marked = model.markedStorage(launcher: false) {
+                AskStorageTitleGlyph(kind: marked).padding(.trailing, 2)
+            }
             if model.selectedId == nil {
                 AskConversationKindSwitch(selection: model.conversationKind(launcher: false), compact: true) {
                     model.setConversationKind($0, launcher: false)

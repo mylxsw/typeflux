@@ -2180,7 +2180,18 @@
 
 /* Ask attachments */
 "ask.attach.title" = "新增附件";
-"ask.attach.help" = "新增檔案、圖片或資料夾（⌘U），也可以直接貼上或拖入";
+"ask.attach.help" = "新增檔案或圖片（⌘U），設定本次提問附帶的內容";
+"ask.add.files" = "新增檔案或圖片";
+"ask.add.files.detail" = "PDF、圖片、文件等，也可直接貼上或拖入";
+"ask.add.context" = "隨本次提問附帶";
+"ask.add.screenshot" = "螢幕截圖";
+"ask.add.screenshot.offDetail" = "附帶目前螢幕，幫助理解你在看什麼";
+"ask.add.selection.detail" = "來自 %@ · %d 行";
+"ask.add.footer" = "輸入 / 呼叫指令 · 拖入資料夾可作為任務的工作資料夾";
+"ask.env.help" = "任務環境：工作資料夾與工具權限";
+"ask.env.folders" = "工作資料夾";
+"ask.env.addFolder" = "新增資料夾…";
+"ask.env.addFolder.detail" = "也可以把資料夾直接拖入輸入框";
 "ask.attach.files" = "傳送檔案或圖片";
 "ask.attach.folder" = "選擇資料夾";
 "ask.attach.pickFiles" = "選擇要傳給對話的檔案或圖片";

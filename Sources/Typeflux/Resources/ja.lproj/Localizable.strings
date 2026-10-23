@@ -2173,7 +2173,18 @@
 
 /* Ask attachments */
 "ask.attach.title" = "添付";
-"ask.attach.help" = "ファイル、画像、フォルダを添付（⌘U）。貼り付けやドラッグでも追加できます";
+"ask.attach.help" = "ファイルや画像を追加（⌘U）し、この質問に含める内容を選びます";
+"ask.add.files" = "ファイルや画像を追加";
+"ask.add.files.detail" = "PDF、画像、書類など。貼り付けやドラッグでも追加できます";
+"ask.add.context" = "この質問に含める";
+"ask.add.screenshot" = "スクリーンショット";
+"ask.add.screenshot.offDetail" = "今の画面を共有して、見ている内容を伝えます";
+"ask.add.selection.detail" = "%@ から · %d 行";
+"ask.add.footer" = "/ でコマンド · フォルダをドロップすると作業フォルダになります";
+"ask.env.help" = "タスク環境：作業フォルダとツールの権限";
+"ask.env.folders" = "作業フォルダ";
+"ask.env.addFolder" = "フォルダを追加…";
+"ask.env.addFolder.detail" = "入力欄にフォルダをドロップしても追加できます";
 "ask.attach.files" = "ファイル・画像を送信";
 "ask.attach.folder" = "フォルダを選択";
 "ask.attach.pickFiles" = "チャット に送るファイルや画像を選択";

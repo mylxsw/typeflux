@@ -217,7 +217,7 @@ struct AskCommandRenderTests {
         let host = Host(VStack(spacing: 12) {
             AskCommandPaletteView(state: state, onPick: { picked.append($0) }, onHighlight: { _ in }, onManage: { managed += 1 })
             AskCommandPaletteView(state: submenu, onPick: { _ in }, onHighlight: { _ in }, onManage: nil)
-            AskAttachChoices { _ in }
+            AskComposerAddMenu(context: AskAddMenuContext(), pickFiles: {})
             HStack {
                 AskAttachButton(model: f.model, launcher: false)
                 AskSlashShortcut(action: {})
