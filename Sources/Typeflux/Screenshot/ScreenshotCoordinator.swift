@@ -65,6 +65,11 @@ final class ScreenshotCoordinator {
     var isRecordingActive: () -> Bool = { false }
     var onRecordingRequested: ((ScreenRecordingFormat, ScreenRecordingTarget?) -> Void)?
 
+    func prewarm() {
+        guard state == .idle else { return }
+        overlay.prewarm()
+    }
+
     init(capture: any ScreenCapturing,
          permission: any ScreenCapturePermissionProviding,
          overlay: any ScreenshotOverlayPresenting,

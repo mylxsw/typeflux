@@ -14,6 +14,7 @@ public final class OpieRadialMenu {
     public private(set) var lastPresentationCenter: NSPoint?
     public var isVisible: Bool { panel?.isVisible == true }
     public var hasKeyboardFocus: Bool { panel?.isKeyWindow == true }
+    var preparedWindow: NSWindow? { panel }
 
     private let size = NSSize(width: 620, height: 620)
     private var panel: MenuPanel?
@@ -48,7 +49,7 @@ public final class OpieRadialMenu {
         if let eventHandler { RemoveEventHandler(eventHandler) }
     }
 
-    /// Pre-rasterizes icons and labels. Calling this after configuring the menu avoids first-open work.
+    /// Prepares graphics, material and a hidden reusable window without taking focus.
     public func prepare() {
         if reusableView == nil {
             reusableView = RadialMenuView(frame: NSRect(origin: .zero, size: size),
@@ -56,6 +57,30 @@ public final class OpieRadialMenu {
         }
         reusableView?.style = style
         reusableView?.prepareGraphics()
+        preparePanel()
+    }
+
+    private func preparePanel() {
+        guard panel == nil, let view = reusableView else { return }
+        let panel = MenuPanel(contentRect: NSRect(origin: .zero, size: size),
+                              styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = false
+        panel.level = .popUpMenu
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
+        panel.hidesOnDeactivate = false
+        panel.isMovable = false
+        panel.acceptsMouseMovedEvents = true
+        panel.isReleasedWhenClosed = false
+        panel.animationBehavior = .none
+        view.onSelect = { [weak self] item in self?.select(item) }
+        view.onClose = { [weak self] in self?.dismiss() }
+        let surface = RadialMenuSurface(frame: NSRect(origin: .zero, size: size), menu: view)
+        panel.contentView = surface
+        self.panel = panel
+        self.view = view
+        self.surface = surface
     }
 
     /// Replaces the actions, including their current titles. Three to eight items fit the layout best.
@@ -93,31 +118,13 @@ public final class OpieRadialMenu {
             y: min(max(screenPoint.y - size.height / 2, visible.minY + 4), visible.maxY - size.height - 4)
         )
         lastPresentationCenter = NSPoint(x: origin.x + size.width / 2, y: origin.y + size.height / 2)
-        let panel = MenuPanel(contentRect: NSRect(origin: origin, size: size),
-                              styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
-        panel.isOpaque = false
-        panel.backgroundColor = .clear
-        panel.hasShadow = false
-        panel.level = .popUpMenu
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
-        panel.hidesOnDeactivate = false
-        panel.isMovable = false
-        panel.acceptsMouseMovedEvents = true
-
-        let view = reusableView ?? RadialMenuView(frame: NSRect(origin: .zero, size: size),
-                                                  items: items, centerTitle: centerTitle)
-        view.frame = NSRect(origin: .zero, size: size)
+        guard let panel, let view else { return }
+        if panel.frame.origin != origin { panel.setFrameOrigin(origin) }
         view.style = style
         view.prepareForOpening()
-        view.onSelect = { [weak self] item in self?.select(item) }
-        view.onClose = { [weak self] in self?.dismiss() }
-        let surface = RadialMenuSurface(frame: NSRect(origin: .zero, size: size), menu: view)
-        panel.contentView = surface
+        surface?.updateGlassShape()
         panel.orderFrontRegardless()
         if takesKeyboardFocus { panel.makeKey() }
-        self.panel = panel
-        self.view = view
-        self.surface = surface
         isDismissing = false
         installEventMonitors()
         view.animateIn()
@@ -125,7 +132,7 @@ public final class OpieRadialMenu {
 
     /// Enables keyboard navigation after a modifier-only tap, without stealing focus during a hold.
     public func focusKeyboard() {
-        guard !isDismissing else { return }
+        guard isVisible, !isDismissing else { return }
         panel?.makeKey()
     }
 
@@ -141,9 +148,6 @@ public final class OpieRadialMenu {
             panel?.orderOut(nil)
             guard let self else { completion?(); return }
             if self.panel === panel {
-                self.panel = nil
-                self.view = nil
-                self.surface = nil
                 self.isDismissing = false
             }
             self.removeEventMonitors()
@@ -154,11 +158,23 @@ public final class OpieRadialMenu {
 
     /// Activates the sector under the current pointer, useful when a host app handles key release itself.
     @discardableResult
-    public func activatePointedItem() -> Bool { view?.activatePointerSelection() ?? false }
+    public func activatePointedItem() -> Bool {
+        guard isVisible, !isDismissing else { return false }
+        return view?.activatePointerSelection() ?? false
+    }
 
-    public func moveSelection(_ delta: Int) { view?.moveSelection(delta) }
-    public func select(index: Int) { view?.select(index: index) }
-    public func activateSelection() { view?.activateSelection() }
+    public func moveSelection(_ delta: Int) {
+        guard isVisible, !isDismissing else { return }
+        view?.moveSelection(delta)
+    }
+    public func select(index: Int) {
+        guard isVisible, !isDismissing else { return }
+        view?.select(index: index)
+    }
+    public func activateSelection() {
+        guard isVisible, !isDismissing else { return }
+        view?.activateSelection()
+    }
 
     /// Registers an optional global shortcut using Carbon key codes and modifier flags.
     /// For example, Control–Option–Space is keyCode 49 and modifiers controlKey | optionKey.

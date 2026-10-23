@@ -6,6 +6,8 @@ import XCTest
 final class ScreenshotCoordinatorTests: XCTestCase {
     private final class Overlay: ScreenshotOverlayPresenting {
         private(set) var presented: [ScreenSnapshot] = []
+        private(set) var prewarms = 0
+        func prewarm() { prewarms += 1 }
         private(set) var fullScreenSelections = 0
         private(set) var dismissals = 0
         var onEvent: ((ScreenshotOverlayEvent) -> Void)?
@@ -191,6 +193,21 @@ final class ScreenshotCoordinatorTests: XCTestCase {
     private func started(_ coordinator: ScreenshotCoordinator, mode: ScreenshotMode = .region) async {
         coordinator.start(mode: mode)
         await coordinator.pendingTask?.value
+    }
+
+    func testPrewarmDoesNotCaptureOrChangeTheSessionAndSkipsActiveSelection() async {
+        let capturer = FakeScreenCapturer(.success(Self.snapshot()))
+        let sut = makeCoordinator(capturer: capturer)
+        sut.prewarm()
+        XCTAssertEqual(overlay.prewarms, 1)
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertTrue(capturer.requests.isEmpty)
+        XCTAssertTrue(overlay.presented.isEmpty)
+        sut.start()
+        await sut.pendingTask?.value
+        sut.prewarm()
+        XCTAssertEqual(overlay.prewarms, 1)
+        sut.cancel()
     }
 
     func testBackgroundRemovedCropReachesRendererBeforeCopyAndSave() async {

@@ -78,6 +78,7 @@ extension AppCoordinator {
         }
         if FeatureProcess.role == .screenshot {
             let capture = di.screenshotCoordinator
+            capture.prewarm()
             capture.followUpHandler = featureScreenshotForwarder
             capture.isRecordingActive = { [weak self] in self?.di.screenRecordingSessions.isCaptureActive ?? false }
             capture.onRecordingRequested = { [weak self] format, region in self?.di.screenRecordingSessions.show(format: format, region: region) }

@@ -388,6 +388,49 @@ final class ScreenshotOverlayTests: XCTestCase {
         ], windows: [])
     }
 
+    func testSystemDisplayPrewarmDoesNotPresentOrTakeFocus() {
+        _ = NSApplication.shared
+        let keyWindow = NSApp.keyWindow
+        let controller = ScreenshotOverlayController()
+        controller.prewarm()
+        XCTAssertFalse(controller.isPresented)
+        XCTAssertTrue(controller.panels.isEmpty && controller.views.isEmpty)
+        XCTAssertTrue(NSApp.keyWindow === keyWindow)
+        controller.prewarm(displays: [])
+    }
+
+    func testPrewarmCreatesOnlyHiddenEmptyWindowsAndFirstCaptureReusesThem() {
+        let controller = ScreenshotOverlayController(primaryDisplayHeight: { 100 }, pointerLocation: { .zero })
+        let displays = snapshot().displays.map { ScreenCaptureContent.Display(id: $0.id, frame: $0.frame, scale: $0.scale) }
+        let prepared = controller.prewarm(displays: displays)
+        XCTAssertEqual(prepared.count, 2)
+        XCTAssertFalse(controller.isPresented)
+        XCTAssertTrue(controller.panels.isEmpty && controller.views.isEmpty)
+        XCTAssertTrue(prepared.allSatisfy { !$0.isVisible && !$0.isKeyWindow && $0.contentView == nil })
+        XCTAssertTrue(controller.prewarm(displays: displays)[0] === prepared[0])
+        controller.present(snapshot()) { _ in }
+        defer { controller.dismiss() }
+        XCTAssertTrue(controller.panels[0] === prepared[0])
+        XCTAssertTrue(controller.panels[1] === prepared[1])
+        XCTAssertTrue(controller.prewarm(displays: []).isEmpty, "Prewarm must not disturb a live capture")
+        XCTAssertTrue(controller.panels.allSatisfy(\.isVisible))
+    }
+
+    func testPrewarmEvictsRemovedDisplaysAndRebuildsChangedGeometry() {
+        let controller = ScreenshotOverlayController(primaryDisplayHeight: { 100 }, pointerLocation: { .zero })
+        let displays = snapshot().displays.map { ScreenCaptureContent.Display(id: $0.id, frame: $0.frame, scale: $0.scale) }
+        let original = controller.prewarm(displays: displays)
+        var changed = displays[0]
+        changed.frame.size.width += 10
+        changed.scale = 1
+        let rebuilt = controller.prewarm(displays: [changed])
+        XCTAssertFalse(rebuilt[0] === original[0])
+        let restored = controller.prewarm(displays: displays)
+        XCTAssertFalse(restored[1] === original[1])
+        XCTAssertTrue(restored.allSatisfy { !$0.isVisible && $0.contentView == nil })
+        controller.prewarm(displays: [])
+    }
+
     func testControllerReusesOnlyNativePanelsAndRetiresOldCaptureCallbacks() {
         let controller = ScreenshotOverlayController(primaryDisplayHeight: { 100 }, pointerLocation: { .zero })
         controller.present(snapshot()) { _ in }

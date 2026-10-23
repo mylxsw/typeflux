@@ -30,6 +30,8 @@ enum ScreenshotOverlayEvent: Equatable {
 /// The frozen displays with the framing interface over them, one panel per display.
 @MainActor
 protocol ScreenshotOverlayPresenting: AnyObject {
+    /// Creates hidden native windows without capturing pixels or taking focus.
+    func prewarm()
     func present(_ snapshot: ScreenSnapshot, onEvent: @escaping (ScreenshotOverlayEvent) -> Void)
     /// Selects the whole display under the pointer.
     func selectFullScreen()
@@ -44,6 +46,7 @@ protocol ScreenshotOverlayPresenting: AnyObject {
 }
 
 extension ScreenshotOverlayPresenting {
+    func prewarm() {}
     func backgroundRemovedImage(displayID: CGDirectDisplayID, rect: CGRect) -> CGImage? { nil }
 }
 

@@ -69,6 +69,51 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
 
     var isPresented: Bool { !panels.isEmpty }
 
+    func prewarm() {
+        let displays = NSScreen.screens.compactMap { screen -> ScreenCaptureContent.Display? in
+            guard let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else { return nil }
+            let id = number.uint32Value
+            let mode = CGDisplayCopyDisplayMode(id)
+            return .init(id: id, frame: CGDisplayBounds(id),
+                         scale: ScreenCaptureGeometry.backingScale(pixelWidth: mode?.pixelWidth ?? 0,
+                                                                   pointWidth: mode?.width ?? 0))
+        }
+        prewarm(displays: displays)
+    }
+
+    @discardableResult
+    func prewarm(displays: [ScreenCaptureContent.Display]) -> [ScreenshotOverlayPanel] {
+        guard !isPresented else { return [] }
+        retireDisconnectedPanels(keeping: Set(displays.map(\.id)))
+        let primaryHeight = primaryDisplayHeight()
+        return displays.map { display in
+            let panel = cachedPanel(id: display.id, frame: ScreenCaptureGeometry.flipped(display.frame,
+                primaryDisplayHeight: primaryHeight), scale: display.scale)
+            panel.contentView = nil
+            return panel
+        }
+    }
+
+    private func retireDisconnectedPanels(keeping displayIDs: Set<CGDirectDisplayID>) {
+        for id in Array(cachedPanels.keys) where !displayIDs.contains(id) {
+            cachedPanels.removeValue(forKey: id)?.panel.close()
+        }
+    }
+
+    private func cachedPanel(id: CGDirectDisplayID, frame: CGRect, scale: CGFloat,
+                             itemIndex: Int? = nil, itemCount: Int? = nil) -> ScreenshotOverlayPanel {
+        if let cached = cachedPanels[id], cached.frame == frame, cached.panel.frame == frame,
+           cached.scale == scale {
+            ShortcutLatency.record(.windowCached, itemIndex: itemIndex, itemCount: itemCount)
+            return cached.panel
+        }
+        ShortcutLatency.record(.windowUncached, itemIndex: itemIndex, itemCount: itemCount)
+        cachedPanels.removeValue(forKey: id)?.panel.close()
+        let panel = ScreenshotOverlayPanel(frame: frame)
+        cachedPanels[id] = CachedPanel(panel: panel, frame: frame, scale: scale)
+        return panel
+    }
+
     func present(_ snapshot: ScreenSnapshot, onEvent: @escaping (ScreenshotOverlayEvent) -> Void) {
         ShortcutLatency.record(.overlayStarted, itemCount: snapshot.displays.count)
         dismiss()
@@ -76,10 +121,7 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
         self.onEvent = onEvent
         let primaryHeight = primaryDisplayHeight()
         let initialModifierFlags = modifierFlags()
-        let displayIDs = Set(snapshot.displays.map(\.id))
-        for id in Array(cachedPanels.keys) where !displayIDs.contains(id) {
-            cachedPanels.removeValue(forKey: id)?.panel.close()
-        }
+        retireDisconnectedPanels(keeping: Set(snapshot.displays.map(\.id)))
         for (index, display) in snapshot.displays.enumerated() {
             ShortcutLatency.record(.displayViewStarted, itemIndex: index + 1, itemCount: snapshot.displays.count)
             let view = ScreenshotOverlayView(display: display, windows: snapshot.windows,
@@ -90,17 +132,8 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
             view.onEvent = { [weak self] view, event in self?.forward(event, from: view) }
             ShortcutLatency.record(.displayPanelStarted, itemIndex: index + 1, itemCount: snapshot.displays.count)
             let frame = ScreenCaptureGeometry.flipped(display.frame, primaryDisplayHeight: primaryHeight)
-            let panel: ScreenshotOverlayPanel
-            if let cached = cachedPanels[display.id], cached.frame == frame, cached.panel.frame == frame,
-               cached.scale == display.scale {
-                ShortcutLatency.record(.windowCached, itemIndex: index + 1, itemCount: snapshot.displays.count)
-                panel = cached.panel
-            } else {
-                ShortcutLatency.record(.windowUncached, itemIndex: index + 1, itemCount: snapshot.displays.count)
-                cachedPanels.removeValue(forKey: display.id)?.panel.close()
-                panel = ScreenshotOverlayPanel(frame: frame)
-                cachedPanels[display.id] = CachedPanel(panel: panel, frame: frame, scale: display.scale)
-            }
+            let panel = cachedPanel(id: display.id, frame: frame, scale: display.scale,
+                                    itemIndex: index + 1, itemCount: snapshot.displays.count)
             panel.onHide = { [weak view] in view?.releaseImage() }
             panel.contentView = view
             ShortcutLatency.record(.displayPanelFinished, itemIndex: index + 1, itemCount: snapshot.displays.count)

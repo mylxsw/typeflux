@@ -23,7 +23,7 @@ enum FeatureProcess {
     private(set) static var peer: FeatureRPC?
     private(set) static var supervisor: FeatureSupervisor?
     static let immediateWarmRoles: [FeatureRole] = [.launcher, .clipboard, .voice]
-    static let deferredWarmRoles: [FeatureRole] = [.ring, .translation]
+    static let deferredWarmRoles: [FeatureRole] = [.ring, .translation, .screenshot]
     static var reportFailure: (@MainActor () -> Void)?
     static var handle: (@MainActor (FeatureCommand) async throws -> Data)?
     private static var ready: Task<Void, Error>?
