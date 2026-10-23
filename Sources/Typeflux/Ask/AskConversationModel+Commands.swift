@@ -20,7 +20,8 @@ struct AskCommandSources {
 }
 
 extension AskConversationModel {
-    static let maximumChosenSkills = 3
+    /// Read by the "+" menu's context too, which is not on the main actor.
+    nonisolated static let maximumChosenSkills = 3
     static let maximumChosenServers = 5
 
     private func currentDraft(launcher: Bool) -> AskDraft { launcher ? launcherDraft : draft }
@@ -66,9 +67,7 @@ extension AskConversationModel {
         context.selectionAvailable = value.selection?.isEmpty == false
         context.selectionOn = value.selection?.isEmpty == false && value.selectionOff != true
         context.memoryOn = !memorySwitchedOff(launcher: launcher)
-        context.skills = commandSources.skills().map {
-            AskSkillSummary(name: $0.name, description: $0.description, builtin: builtins.contains($0.name))
-        }
+        context.skills = installedSkills(builtins: builtins)
         context.mcpServers = commandSources.mcpServers()
         context.chosenSkills = value.skills ?? []
         context.chosenServers = value.mcpServers ?? []
@@ -189,6 +188,19 @@ extension AskConversationModel {
             names.append(name)
         }
         updateDraft(launcher: launcher) { $0[keyPath: keyPath] = names.isEmpty ? nil : names }
+    }
+
+    /// Every installed skill, built-in ones marked, as the palette and "+" menu list them.
+    func installedSkills(builtins: Set<String>? = nil) -> [AskSkillSummary] {
+        let builtins = builtins ?? commandSources.builtinSkillNames()
+        return commandSources.skills().map {
+            AskSkillSummary(name: $0.name, description: $0.description, builtin: builtins.contains($0.name))
+        }
+    }
+
+    /// Chooses a skill for the next message from the "+" menu, or drops it when chosen.
+    func toggleSkill(_ name: String, launcher: Bool) {
+        toggleChoice(name, keyPath: \.skills, limit: Self.maximumChosenSkills, launcher: launcher)
     }
 
     func removeChoice(skill name: String, launcher: Bool) {

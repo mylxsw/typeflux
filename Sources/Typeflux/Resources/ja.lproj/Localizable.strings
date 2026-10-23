@@ -2181,6 +2181,11 @@
 "ask.add.screenshot.offDetail" = "今の画面を共有して、見ている内容を伝えます";
 "ask.add.selection.detail" = "%@ から · %d 行";
 "ask.add.footer" = "/ でコマンド · フォルダをドロップすると作業フォルダになります";
+"ask.add.skills.header" = "スキル";
+"ask.add.skills" = "スキルを選択";
+"ask.add.skills.auto" = "%d 個インストール済み · 未選択のときは AI が必要に応じて使用";
+"ask.add.skills.chosen" = "選択中：%@";
+"ask.add.skills.footer" = "最大 %d 個まで選択できます。選んだスキルはメッセージの前に表示され、空のメッセージで Backspace を押すと最後のスキルを削除します。";
 "ask.env.help" = "タスク環境：作業フォルダとツールの権限";
 "ask.env.folders" = "作業フォルダ";
 "ask.env.addFolder" = "フォルダを追加…";

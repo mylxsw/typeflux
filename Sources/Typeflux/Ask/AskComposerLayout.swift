@@ -29,6 +29,9 @@ struct AskComposerLayout: Equatable {
             + (supplementalHeight > 0 ? supplementalMaximumHeight : 0)
     }
 
+    /// Large content previews need room: only an uncompressed workspace composer shows them.
+    static func usesContentTiles(launcher: Bool, compact: Bool) -> Bool { !launcher && !compact }
+
     var condensedFooter: Bool {
         !launcher && width < 600
     }

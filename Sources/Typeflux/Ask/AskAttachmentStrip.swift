@@ -74,26 +74,81 @@ struct AskAttachmentStripView: View {
     var sourceRefreshHelp: String?
     var onScreenshotAction: (() -> Void)?
     var screenshotCapturing = false
+    /// The workspace draws content as large previews in one scrolling row (GUL-464);
+    /// skills and servers are then shown as tokens by the editor instead.
+    var tiles = false
     @State private var presented: AskContextItem.Kind?
 
     var body: some View {
+        if tiles { tileRow } else { chipFlow }
+    }
+
+    /// Source metadata is a fact about the app, not content to look at, so it keeps
+    /// its chip above the previews.
+    private var tileRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            let chips = items.filter { $0.kind == .source }
+            if !chips.isEmpty {
+                AskFlowLayout(spacing: 6, itemMaxWidth: 420) {
+                    ForEach(chips) { item in chip(item) }
+                }
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(items.filter { $0.kind != .source }) { item in
+                        let capturing = item.kind == .screenshot && screenshotCapturing
+                        AskContentTile(tile: AskContentTileModel.make(item, capturing: capturing),
+                                       image: item.kind == .screenshot && item.style == .neutral ? screenshot : nil,
+                                       screen: item.kind == .screenshot,
+                                       onOpen: previewAction(item),
+                                       onRemove: { presented = nil; onRemove(item.kind) },
+                                       actionLabel: item.style == .warning ? item.hint : nil,
+                                       onAction: item.kind == .screenshot ? onScreenshotAction : nil)
+                            .popover(isPresented: presentation(for: item.kind), arrowEdge: .top) {
+                                details(item)
+                            }
+                            .disabled(capturing && item.kind != .screenshot)
+                            .accessibilityIdentifier("ask.content.\(item.kind.rawValue).tile")
+                            .transition(.scale(scale: 0.8).combined(with: .opacity))
+                    }
+                    ForEach(attachments) { attachment in
+                        AskAttachmentTile(attachment: attachment, onRemove: { onRemoveAttachment(attachment.id) })
+                            .transition(.scale(scale: 0.8).combined(with: .opacity))
+                    }
+                    if loading {
+                        ProgressView().controlSize(.small)
+                            .frame(width: AskContentTile.composerSide, height: AskContentTile.composerSide)
+                            .background(AskTheme.hoverFill.opacity(0.6),
+                                        in: RoundedRectangle(cornerRadius: AskContentTile.corner, style: .continuous))
+                            .accessibilityLabel(L("ask.attach.loading"))
+                    }
+                }
+                .padding(1)
+            }
+        }
+    }
+
+    private func chip(_ item: AskContextItem) -> some View {
+        AskAttachmentChip(item: item,
+                          thumbnail: item.kind == .screenshot && item.style == .neutral ? screenshot : nil,
+                          caption: selectionCaption(item),
+                          onTap: previewAction(item), onRemove: { presented = nil; onRemove(item.kind) },
+                          sourceMetadata: item.kind == .source, restored: item.kind == .source && restored,
+                          capturing: item.kind == .screenshot && screenshotCapturing,
+                          onRefresh: item.kind == .source && restored ? refreshSource : nil,
+                          refreshHelp: sourceRefreshHelp, refreshDisabled: capturing,
+                          actionLabel: item.style == .warning ? item.hint : nil,
+                          onAction: item.kind == .screenshot ? onScreenshotAction : nil)
+            .popover(isPresented: presentation(for: item.kind), arrowEdge: .top) {
+                details(item)
+            }
+            .disabled(capturing && item.kind != .screenshot)
+    }
+
+    private var chipFlow: some View {
         AskFlowLayout(spacing: 6, itemMaxWidth: 420) {
             ForEach(items) { item in
-                AskAttachmentChip(item: item,
-                                  thumbnail: item.kind == .screenshot && item.style == .neutral ? screenshot : nil,
-                                  caption: selectionCaption(item),
-                                  onTap: previewAction(item), onRemove: { presented = nil; onRemove(item.kind) },
-                                  sourceMetadata: item.kind == .source, restored: item.kind == .source && restored,
-                                  capturing: item.kind == .screenshot && screenshotCapturing,
-                                  onRefresh: item.kind == .source && restored ? refreshSource : nil,
-                                  refreshHelp: sourceRefreshHelp, refreshDisabled: capturing,
-                                  actionLabel: item.style == .warning ? item.hint : nil,
-                                  onAction: item.kind == .screenshot ? onScreenshotAction : nil)
-                    .popover(isPresented: presentation(for: item.kind), arrowEdge: .top) {
-                        details(item)
-                    }
-                    .disabled(capturing && item.kind != .screenshot)
-                    .transition(.scale(scale: 0.7).combined(with: .opacity))
+                chip(item).transition(.scale(scale: 0.7).combined(with: .opacity))
             }
             ForEach(attachments) { attachment in
                 AskContextImage(source: attachment.image) { image in
@@ -318,4 +373,61 @@ struct AskChosenTool: Equatable, Identifiable {
     var id: String { kind.rawValue + ":" + name }
     var symbol: String { kind == .skill ? "bolt" : "powerplug" }
     var caption: String { L(kind == .skill ? "ask.command.chip.skill" : "ask.command.chip.mcp") }
+}
+
+/// Chosen skills and MCP servers as tokens at the start of the message: they say how
+/// to answer, so they sit with the words rather than with the files (GUL-464).
+struct AskChosenToolTokens: View {
+    let tools: [AskChosenTool]
+    var onRemove: (AskChosenTool) -> Void
+
+    var body: some View {
+        AskFlowLayout(spacing: 5) {
+            ForEach(tools) { tool in
+                AskChosenToolToken(tool: tool) { onRemove(tool) }
+                    .transition(.scale(scale: 0.8).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: tools.map(\.id))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("ask.composer.tokens")
+    }
+}
+
+struct AskChosenToolToken: View {
+    let tool: AskChosenTool
+    /// Nil in a sent message, where the token only records what was used.
+    var onRemove: (() -> Void)?
+    @State private var hovering = false
+
+    static func tint(_ kind: AskChosenTool.Kind) -> Color { kind == .skill ? .purple : .teal }
+
+    var body: some View {
+        let tint = Self.tint(tool.kind)
+        HStack(spacing: 3) {
+            Image(systemName: tool.symbol).font(.system(size: 9.5, weight: .semibold))
+            Text(tool.name).font(.system(size: 12.5, weight: .medium)).lineLimit(1).truncationMode(.middle)
+            if let onRemove {
+                Button(action: onRemove) {
+                    Image(systemName: "xmark").font(.system(size: 7.5, weight: .bold))
+                        .frame(width: 16, height: 16)
+                        .background(hovering ? tint.opacity(0.2) : .clear, in: RoundedRectangle(cornerRadius: 4))
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help(L("ask.remove"))
+                .accessibilityLabel(L("ask.remove") + " " + tool.name)
+            }
+        }
+        .foregroundStyle(tint)
+        .padding(.leading, 7).padding(.trailing, onRemove == nil ? 7 : 3)
+        .frame(height: 24)
+        .frame(maxWidth: 220)
+        .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .onHover { hovering = $0 }
+        .help(tool.caption + " · " + tool.name)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(tool.caption + " " + tool.name)
+        .accessibilityIdentifier("ask.composer.token." + tool.id)
+    }
 }

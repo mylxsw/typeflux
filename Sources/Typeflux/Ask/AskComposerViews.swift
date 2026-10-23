@@ -173,8 +173,12 @@ struct AskComposer: View {
     @State private var attachmentHeight: CGFloat = 30
     /// Both composers show each included item above the editor.
     private var showsStrip: Bool {
-        !userAttachments.isEmpty || loadingAttachments || !chosenTools.isEmpty || !attachedItems.isEmpty
+        !userAttachments.isEmpty || loadingAttachments || (!usesContentTiles && !chosenTools.isEmpty)
+            || !attachedItems.isEmpty
     }
+    /// The workspace shows content as large previews and chosen skills as tokens by
+    /// the editor; the launcher and a squeezed workspace keep one row of chips (GUL-464).
+    private var usesContentTiles: Bool { AskComposerLayout.usesContentTiles(launcher: launcher, compact: compact) }
     /// Skills and MCP servers chosen with slash commands, shown as chips.
     private var chosenTools: [AskChosenTool] {
         (draft.wrappedValue.skills ?? []).map { AskChosenTool(kind: .skill, name: $0) }
@@ -1942,20 +1946,16 @@ struct AskComposer: View {
                     attachments: userAttachments,
                     loading: loadingAttachments,
                     onRemoveAttachment: { model.removeAttachment($0, launcher: launcher) },
-                    choices: chosenTools,
-                    onRemoveChoice: { choice in
-                        switch choice.kind {
-                        case .skill: model.removeChoice(skill: choice.name, launcher: launcher)
-                        case .mcpServer: model.removeChoice(mcpServer: choice.name, launcher: launcher)
-                        }
-                    },
+                    choices: usesContentTiles ? [] : chosenTools,
+                    onRemoveChoice: removeChoice,
                     draft: draft,
                     restored: launcher && model.launcherContextRestored,
                     capturing: model.capturing,
                     refreshSource: launcher ? { Task { await model.refreshLauncherContext() } } : nil,
                     sourceRefreshHelp: sourceRefreshHelp,
                     onScreenshotAction: screenshotAction,
-                    screenshotCapturing: model.capturingScreenshot
+                    screenshotCapturing: model.capturingScreenshot,
+                    tiles: usesContentTiles
                 )
                 .disabled(active)
                 .background(GeometryReader { geometry in
@@ -2340,6 +2340,20 @@ struct AskComposer: View {
         launcher && key != .enter && model.launcherInputHistoryKey(key)
     }
 
+    private func removeChoice(_ choice: AskChosenTool) {
+        switch choice.kind {
+        case .skill: model.removeChoice(skill: choice.name, launcher: launcher)
+        case .mcpServer: model.removeChoice(mcpServer: choice.name, launcher: launcher)
+        }
+    }
+
+    /// Backspace in an empty editor removes the last token, as in a token field.
+    private func removeLastChoice() -> Bool {
+        guard let last = chosenTools.last else { return false }
+        removeChoice(last)
+        return true
+    }
+
     private func emptyLauncherBackspace() -> Bool {
         if model.launcherHistoryMode { model.leaveLauncherInputHistory(); return true }
         return removeKeyword()
@@ -2367,7 +2381,8 @@ struct AskComposer: View {
             onCommandKey: commandKey,
             onHistoryKey: historyKey,
             onHorizontalArrow: launcher ? moveLauncherHorizontal : nil,
-            onEmptyBackspace: launcher ? emptyLauncherBackspace : nil,
+            onEmptyBackspace: launcher ? emptyLauncherBackspace
+                : usesContentTiles && !chosenTools.isEmpty ? removeLastChoice : nil,
             onOpenChat: launcher ? openChatOrMonitorWindow : nil,
             onContextShortcut: launcher ? toggleContextPanel : nil,
             onAcceptedInput: launcher ? { searchInputTrace = $0 } : nil
@@ -2377,7 +2392,11 @@ struct AskComposer: View {
     }
 
     private var editorRow: some View {
-        HStack(alignment: .top, spacing: 11) {
+        VStack(alignment: .leading, spacing: 6) {
+            if usesContentTiles, !chosenTools.isEmpty {
+                AskChosenToolTokens(tools: chosenTools, onRemove: removeChoice)
+                    .disabled(active)
+            }
             editorField
         }
         .padding(.horizontal, chrome.horizontalInset)
@@ -2779,7 +2798,10 @@ struct AskComposer: View {
             sourceToRestore: value.sourceOff == true ? value.source.flatMap {
                 $0.isEmpty ? nil : AskContextChips.sourceParts($0).app
             } : nil,
-            restoreSource: { model.restoreCapturedContent(.source, launcher: launcher) }
+            restoreSource: { model.restoreCapturedContent(.source, launcher: launcher) },
+            skills: model.installedSkills(),
+            chosenSkills: value.skills ?? [],
+            toggleSkill: { model.toggleSkill($0, launcher: launcher) }
         )
     }
 

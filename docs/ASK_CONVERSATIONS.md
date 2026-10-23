@@ -534,6 +534,26 @@ Production views rendered with synthetic data (`AskTemporaryVisualTests`, set
 ![Compose menu and storage card](images/ask-temporary/menu-and-card-dark.png)
 ![Temporary launcher question](images/ask-temporary/launcher-light.png)
 
+## Composer content and skills (GUL-464)
+
+The workspace composer keeps three kinds of things apart (design board attached to
+GUL-464):
+
+- **Content** the user hands over (attached images and files, the screenshot) is a
+  row of large previews above the editor (`AskContentTile`, 112 pt; `AskAttachmentTile`
+  decodes an attachment and opens it in a popover). Images and the screenshot show the
+  picture; a document shows its first words on a page with a type badge, its name and
+  pages or size. A failed screenshot is a warning tile with its retry action. Source
+  metadata keeps its small chip above the row. Sent messages keep the previews at
+  156 pt; folders stay chips that reveal the folder.
+- **Skills and MCP servers** are instructions, so they are tokens at the start of the
+  message (`AskChosenToolTokens`) instead of chips beside the files; Backspace in an
+  empty editor removes the last one. The "+" menu lists installed skills on their own
+  page ("Choose skills ›"), up to `maximumChosenSkills`; with none chosen the agent still
+  uses skills on its own.
+- The launcher and a compact workspace (`AskComposerLayout.usesContentTiles`) keep the
+  single row of chips.
+
 ## Liquid Glass workspace refresh (GUL-159, 2026-10-02)
 
 The workspace follows the interactive design board in

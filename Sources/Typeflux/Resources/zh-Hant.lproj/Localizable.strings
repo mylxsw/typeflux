@@ -2188,6 +2188,11 @@
 "ask.add.screenshot.offDetail" = "附帶目前螢幕，幫助理解你在看什麼";
 "ask.add.selection.detail" = "來自 %@ · %d 行";
 "ask.add.footer" = "輸入 / 呼叫指令 · 拖入資料夾可作為任務的工作資料夾";
+"ask.add.skills.header" = "技能";
+"ask.add.skills" = "選擇技能";
+"ask.add.skills.auto" = "已安裝 %d 個 · 未選擇時 AI 會按需使用";
+"ask.add.skills.chosen" = "已選：%@";
+"ask.add.skills.footer" = "最多選擇 %d 個。選中的技能顯示在訊息前面；訊息為空時按退格可刪除最後一個。";
 "ask.env.help" = "任務環境：工作資料夾與工具權限";
 "ask.env.folders" = "工作資料夾";
 "ask.env.addFolder" = "新增資料夾…";

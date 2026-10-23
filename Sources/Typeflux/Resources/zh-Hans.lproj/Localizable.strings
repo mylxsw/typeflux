@@ -2191,6 +2191,11 @@
 "ask.add.screenshot.offDetail" = "附带当前屏幕，帮助理解你在看什么";
 "ask.add.selection.detail" = "来自 %@ · %d 行";
 "ask.add.footer" = "输入 / 调用命令 · 拖入文件夹可作为任务的工作文件夹";
+"ask.add.skills.header" = "技能";
+"ask.add.skills" = "选择技能";
+"ask.add.skills.auto" = "已安装 %d 个 · 未选择时 AI 会按需使用";
+"ask.add.skills.chosen" = "已选：%@";
+"ask.add.skills.footer" = "最多选择 %d 个。选中的技能显示在消息前面；消息为空时按退格可删除最后一个。";
 "ask.env.help" = "任务环境：工作文件夹与工具权限";
 "ask.env.folders" = "工作文件夹";
 "ask.env.addFolder" = "添加文件夹…";
