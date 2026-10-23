@@ -34,7 +34,7 @@ struct AskNewConversationMenu: View {
         kind == .cloud && !signedIn ? "ask.new.cloud.signedOut" : kind.detailKey
     }
 
-    /// Starts the chosen kind; the model asks first when that leaves a temporary chat.
+    /// Starts the chosen kind while preserving other temporary chats.
     static func start(_ kind: AskStorageKind, model: AskConversationModel) {
         switch kind {
         case .cloud: model.newConversation(storesLocally: false)
@@ -130,7 +130,8 @@ struct AskTemporaryChip: View {
         .accessibilityHint(L("ask.storage.help"))
         .accessibilityIdentifier("ask.workspace.temporary")
         .askMenu(isPresented: $presented, glass: true) {
-            AskLocalModeCard(status: .make(model: model, signedIn: model.isSignedIn),
+            AskObservedContent(model: model) {
+                AskLocalModeCard(status: .make(model: model, signedIn: model.isSignedIn),
                              onSignIn: {
                                  presented = false
                                  model.onSignIn()
@@ -144,6 +145,7 @@ struct AskTemporaryChip: View {
                                  presented = false
                                  model.endTemporaryConversation()
                              })
+            }
         }
     }
 }
@@ -151,29 +153,48 @@ struct AskTemporaryChip: View {
 /// Pinned above history while a temporary conversation is open or being started:
 /// it is never listed there, so this row is where the sidebar shows the selection.
 struct AskTemporaryHistoryRow: View {
+    var selected = true
+    var onSelect: () -> Void = {}
+    var onClose: () -> Void = {}
+
     var body: some View {
-        HStack(spacing: 7) {
-            Image(systemName: AskStorageKind.temporary.symbol)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(AskTheme.temporaryTint)
-            Text(L("ask.temporary.title"))
-                .font(.system(size: 13))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .lineLimit(1)
-            Spacer(minLength: 4)
-            Text(L("ask.temporary.inProgress"))
-                .font(.system(size: 11))
-                .foregroundStyle(AskTheme.temporaryTint)
+        HStack(spacing: 4) {
+            Button(action: onSelect) {
+                HStack(spacing: 7) {
+                    Image(systemName: AskStorageKind.temporary.symbol)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(AskTheme.temporaryTint)
+                    Text(L("ask.temporary.title"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                        .lineLimit(1)
+                    Spacer(minLength: 4)
+                }
+                .frame(height: 32)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("ask.history.temporary.select")
+            Button(action: onClose) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(AskTheme.temporaryTint)
+                    .frame(width: 24, height: 28)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(L("ask.temporary.end"))
+            .accessibilityLabel(L("ask.temporary.end"))
+            .accessibilityIdentifier("ask.history.temporary.close")
         }
-        .padding(.horizontal, 10)
-        .frame(height: 32)
-        .background(AskTheme.temporaryFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .padding(.leading, 10).padding(.trailing, 4)
+        .background(selected ? AskTheme.temporaryFill : .clear,
+                    in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .strokeBorder(AskTheme.temporaryTint.opacity(AskTheme.temporaryEdgeOpacity),
+            .strokeBorder(AskTheme.temporaryTint.opacity(selected ? AskTheme.temporaryEdgeOpacity : 0.2),
                           style: StrokeStyle(lineWidth: 1, dash: AskTheme.temporaryDash)))
         .padding(.bottom, 4)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.history.temporary")
-        .help(L("ask.temporary.fact.history"))
     }
 }

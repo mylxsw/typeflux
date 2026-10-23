@@ -1,7 +1,7 @@
 import AppKit
 
 /// The temporary conversation (GUL-370): never listed in history, never reading or
-/// writing memory, and gone once the user leaves it or quits. `cloud` records where
+/// writing memory, and kept until explicitly closed or the app quits. `cloud` records where
 /// it runs, fixed by its first model: Typeflux Cloud or the engine on this Mac.
 struct AskTemporaryConversation: Equatable, Sendable {
     var id: String
@@ -41,41 +41,6 @@ enum AskStorageKind: Equatable, CaseIterable, Sendable {
     }
 }
 
-/// What the user chose when leaving a temporary conversation that has messages.
-struct AskTemporaryLeaveDecision: Equatable, Sendable {
-    enum Choice: Equatable, Sendable { case end, keep, cancel }
-
-    var choice: Choice
-    /// "Don't ask again" was checked.
-    var suppress = false
-}
-
-enum AskTemporaryLeaveConfirmation {
-    /// Button order: End is the default, Keep saves it first, Cancel stays.
-    @MainActor static func confirm() -> AskTemporaryLeaveDecision {
-        let alert = NSAlert()
-        alert.messageText = L("ask.temporary.leave.title")
-        alert.informativeText = L("ask.temporary.leave.body")
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: L("ask.temporary.end"))
-        alert.addButton(withTitle: L("ask.temporary.keep"))
-        alert.addButton(withTitle: L("common.cancel"))
-        alert.showsSuppressionButton = true
-        alert.suppressionButton?.title = L("ask.temporary.leave.dontAsk")
-        let response = alert.runModal()
-        return decision(for: response, suppress: alert.suppressionButton?.state == .on)
-    }
-
-    /// Cancelling never stores "don't ask again": nothing was decided.
-    static func decision(for response: NSApplication.ModalResponse, suppress: Bool) -> AskTemporaryLeaveDecision {
-        switch response {
-        case .alertFirstButtonReturn: .init(choice: .end, suppress: suppress)
-        case .alertSecondButtonReturn: .init(choice: .keep, suppress: suppress)
-        default: .init(choice: .cancel)
-        }
-    }
-}
-
 extension AskConversationModel {
     /// The selected conversation, or the next one this composer starts, is temporary.
     func isTemporaryComposer(launcher: Bool) -> Bool {
@@ -84,7 +49,7 @@ extension AskConversationModel {
         return draft.temporary == true
     }
 
-    /// The temporary conversation is the one on screen, so leaving it ends it.
+    /// Whether the selected conversation is temporary.
     var showsTemporaryConversation: Bool { isTemporary(selectedId) }
 
     func storageKind(launcher: Bool) -> AskStorageKind {
@@ -118,8 +83,10 @@ extension AskConversationModel {
             launcherDraft.temporary = on ? true : nil
             if on { launcherDraft.storesLocally = nil }
         } else {
+            let wasTemporary = draft.temporary == true
             draft.temporary = on ? true : nil
             if on { draft.storesLocally = nil }
+            else if wasTemporary { temporaryDraft = nil }
             draft.memory = on ? AskMemory() : globalMemoryForNewDraft()
         }
         persistDrafts()
@@ -137,8 +104,22 @@ extension AskConversationModel {
 
 extension AskConversationModel {
     /// "End temporary chat": nothing to confirm, the user asked for exactly this.
-    func endTemporaryConversation() {
-        discardTemporaryConversation()
+    func endTemporaryConversation(id: String? = nil) {
+        if id != nil || selectedId != nil {
+            discardTemporaryConversation(id: id ?? selectedId)
+        } else {
+            closeTemporaryDraft()
+        }
         confirm(L("ask.temporary.ended"))
+    }
+
+    func closeTemporaryDraft() {
+        if selectedId == nil, draft.temporary == true { newConversation() }
+        temporaryDraft = nil
+        temporaryDraftPermissionMode = .standard
+    }
+
+    func resumeTemporaryDraft() {
+        newConversation(temporary: true)
     }
 }

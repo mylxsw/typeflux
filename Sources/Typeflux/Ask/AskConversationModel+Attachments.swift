@@ -82,7 +82,11 @@ extension AskConversationModel {
 
     /// Lets the user pick files and images, or folders, for the composer.
     func pickAttachments(folders: Bool, launcher: Bool) {
-        let panel = NSOpenPanel()
+        guard attachmentPicker == nil else { return }
+        let panel = makeAttachmentPicker()
+        attachmentPicker = panel
+        let generation = selectionGeneration
+        let presentation = launcherPresentationID
         panel.canChooseFiles = !folders
         panel.canChooseDirectories = folders
         panel.allowsMultipleSelection = true
@@ -90,10 +94,19 @@ extension AskConversationModel {
         panel.prompt = L("ask.attach.add")
         // The launcher is a non-activating panel; the picker needs an active app.
         NSApp.activate(ignoringOtherApps: true)
-        panel.begin { [weak self] response in
-            guard response == .OK else { return }
-            self?.addAttachments(panel.urls.map { .file($0) }, launcher: launcher)
+        presentAttachmentPicker(panel) { [weak self, weak panel] response in
+            guard let self, let panel, attachmentPicker === panel else { return }
+            attachmentPicker = nil
+            guard response == .OK,
+                  launcher ? launcherPresentationID == presentation : selectionGeneration == generation else { return }
+            addAttachments(panel.urls.map { .file($0) }, launcher: launcher)
         }
+    }
+
+    func dismissAttachmentPicker() {
+        let panel = attachmentPicker
+        attachmentPicker = nil
+        panel?.cancel(nil)
     }
 }
 

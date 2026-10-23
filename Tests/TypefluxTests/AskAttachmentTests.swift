@@ -393,6 +393,68 @@ struct AskFolderGrantTests {
 @Suite("Ask attachment composer model", .exclusiveUIState)
 @MainActor
 struct AskAttachmentModelTests {
+    private final class Picker: NSOpenPanel {
+        var pickedURLs: [URL] = []
+        override var urls: [URL] { pickedURLs }
+    }
+
+    @Test func repeatedPickerRequestsShareOneDialogAndAllowMultipleFolders() async throws {
+        let f = try AskTestFixture()
+        defer { f.model.resetSession() }
+        f.model.setConversationKind(.work, launcher: false)
+        let first = try AskAttachmentFixture.directory()
+        let second = try AskAttachmentFixture.directory()
+        defer { try? FileManager.default.removeItem(at: first); try? FileManager.default.removeItem(at: second) }
+        let picker = Picker()
+        picker.pickedURLs = [first, second]
+        f.model.makeAttachmentPicker = { picker }
+        var presentations = 0
+        var finish: ((NSApplication.ModalResponse) -> Void)?
+        f.model.presentAttachmentPicker = { panel, reply in
+            presentations += 1
+            #expect(panel.canChooseDirectories && !panel.canChooseFiles && panel.allowsMultipleSelection)
+            finish = reply
+        }
+        f.model.pickAttachments(folders: true, launcher: false)
+        f.model.pickAttachments(folders: true, launcher: false)
+        f.model.pickAttachments(folders: false, launcher: true)
+        #expect(presentations == 1)
+        finish?(.OK)
+        try await f.wait { !f.model.isLoadingAttachments(launcher: false) }
+        #expect(f.model.draft.attachments?.map(\.path) == [first.path, second.path])
+        #expect(f.model.attachmentPicker == nil)
+        f.model.pickAttachments(folders: true, launcher: false)
+        #expect(presentations == 2)
+        finish?(.cancel)
+        #expect(f.model.attachmentPicker == nil)
+    }
+
+    @Test func pickerResultsCannotAttachToAnotherConversationOrLauncherPresentation() async throws {
+        let f = try AskTestFixture()
+        defer { f.model.resetSession() }
+        let folder = try AskAttachmentFixture.directory()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        for launcher in [false, true] {
+            let picker = Picker()
+            picker.pickedURLs = [folder]
+            f.model.makeAttachmentPicker = { picker }
+            var finish: ((NSApplication.ModalResponse) -> Void)?
+            f.model.presentAttachmentPicker = { _, reply in finish = reply }
+            f.model.pickAttachments(folders: true, launcher: launcher)
+            if launcher { f.model.launcherPresentationID = UUID() }
+            else { f.model.newConversation() }
+            finish?(.OK)
+            #expect(f.model.draft.attachments == nil && f.model.launcherDraft.attachments == nil)
+            #expect(f.model.attachmentPicker == nil)
+        }
+        var lateReply: ((NSApplication.ModalResponse) -> Void)?
+        f.model.presentAttachmentPicker = { _, reply in lateReply = reply }
+        f.model.pickAttachments(folders: false, launcher: false)
+        f.model.resetSession()
+        lateReply?(.OK)
+        #expect(f.model.attachmentPicker == nil && f.model.draft.attachments == nil)
+    }
+
     @Test func resetCancelsBothComposersAndLateWorkCannotApply() async throws {
         let f = try AskTestFixture()
         let gate = DispatchSemaphore(value: 0)

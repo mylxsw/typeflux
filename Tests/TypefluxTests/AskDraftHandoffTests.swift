@@ -116,7 +116,7 @@ struct AskDraftHandoffTests {
         f.model.resetSession(); discarded.model.resetSession()
     }
 
-    @Test func privateDraftsNeverEnterRecoveryAndCancellingTemporaryLeaveKeepsEditors() async throws {
+    @Test func privateDraftsNeverEnterRecoveryAndTemporaryChatSurvivesHandoff() async throws {
         let f = try AskTestFixture()
         defer { f.model.resetSession() }
         f.model.draft = .init(text: "Private unsent", temporary: true)
@@ -129,12 +129,12 @@ struct AskDraftHandoffTests {
         try await f.wait { f.model.selected?.run?.status == "completed" }
         let id = try #require(f.model.selectedId)
         f.model.draft.text = "Private follow-up"
-        f.model.modelLibrary.settings.askConfirmLeavingTemporary = true
-        f.model.confirmTemporaryLeave = { .init(choice: .cancel) }
         f.model.launcherDraft = .init(text: "Keep launcher input")
-        #expect(await !(f.model.openChatFromLauncher()))
-        #expect(f.model.selectedId == id && f.model.draft.text == "Private follow-up")
-        #expect(f.model.launcherDraft.text == "Keep launcher input")
+        #expect(await f.model.openChatFromLauncher())
+        #expect(f.model.selectedId == nil && f.model.draft.text == "Keep launcher input")
+        #expect(f.model.isTemporary(id))
+        await f.model.select(id)
+        #expect(f.model.draft.text == "Private follow-up")
         let saved = try await f.cache.savedChatDrafts(owner: "owner")
         #expect(!saved.contains { $0.draft.text.hasPrefix("Private") })
         #expect(await f.api.sends.count == 1)

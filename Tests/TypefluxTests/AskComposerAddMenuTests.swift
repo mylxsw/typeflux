@@ -211,6 +211,14 @@ struct AskComposerAddMenuTests {
         #expect(find("ask.add.storage.cloud", in: panel) != nil)
         try press("ask.add.storage.local", in: panel)
         try await fixture.wait { fixture.model.storesLocally(launcher: false) }
+        try await settle(panel)
+        #expect(find("ask.add.storage.local", in: panel)?.value(forKey: "accessibilityValue") as? String == L("ask.mode.current"))
+        try press("ask.add.storage.temporary", in: panel)
+        try await settle(panel)
+        #expect(find("ask.add.storage.temporary", in: panel)?.value(forKey: "accessibilityValue") as? String == L("ask.mode.current"))
+        try press("ask.add.storage.local", in: panel)
+        try await settle(panel)
+        #expect(find("ask.add.storage.local", in: panel)?.value(forKey: "accessibilityValue") as? String == L("ask.mode.current"))
         AskGlassMenuPresenter.shared.hide()
 
         fixture.model.draft.text = "Hello"
@@ -246,6 +254,43 @@ struct AskComposerAddMenuTests {
         try await fixture.wait { fixture.model.permissionMode(launcher: false) == .yolo }
         // Choosing a mode closes the menu.
         try await fixture.wait { !AskGlassMenuPresenter.shared.isShowing }
+    }
+
+    @Test func foldersStayInEnvironmentMenuAndCanBeRemovedIndividually() async throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession(); AskGlassMenuPresenter.shared.hide() }
+        fixture.model.setConversationKind(.work, launcher: false)
+        let first = AskAttachment(kind: .folder, name: "Project", path: "/tmp/project")
+        let second = AskAttachment(kind: .folder, name: "Docs", path: "/tmp/docs")
+        let file = AskAttachment(kind: .file, name: "notes.txt", text: "Notes")
+        fixture.model.draft.attachments = [first, second, file]
+        #expect(AskComposer.inlineAttachments(fixture.model.draft) == [file])
+        let window = host(AskWorkEnvironmentButton(model: fixture.model), size: NSSize(width: 400, height: 80))
+        defer { window.close() }
+        try await settle(window)
+        try press("ask.composer.permissionMode", in: window)
+        try await fixture.wait { AskGlassMenuPresenter.shared.panel?.isVisible == true }
+        let panel = try #require(AskGlassMenuPresenter.shared.panel)
+        try await settle(panel)
+        #expect(find("ask.env.folder." + first.id, in: panel) != nil)
+        #expect(find("ask.env.folder." + second.id, in: panel) != nil)
+        try press("ask.env.removeFolder." + first.id, in: panel)
+        try await settle(panel)
+        #expect(find("ask.env.folder." + first.id, in: panel) == nil)
+        #expect(find("ask.env.folder." + second.id, in: panel) != nil)
+        #expect(fixture.model.draft.attachments == [second, file])
+    }
+
+    @Test func temporarySidebarRowSeparatesResumeAndCloseActions() async throws {
+        var selected = 0, closed = 0
+        let window = host(AskTemporaryHistoryRow(selected: false, onSelect: { selected += 1 }, onClose: { closed += 1 }),
+                          size: NSSize(width: 260, height: 60))
+        defer { window.close() }
+        try await settle(window)
+        try press("ask.history.temporary.select", in: window)
+        #expect(selected == 1 && closed == 0)
+        try press("ask.history.temporary.close", in: window)
+        #expect(selected == 1 && closed == 1)
     }
 
     @Test func chatComposerHasNoEnvironmentControl() async throws {
@@ -285,11 +330,26 @@ struct AskComposerAddMenuTests {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
         fixture.model.setConversationKind(.work, launcher: false)
+        fixture.model.draft.attachments = [.init(kind: .folder, name: "Downloads", path: "/tmp/Downloads"),
+                                            .init(kind: .folder, name: "Project", path: "/tmp/Project")]
         fixture.model.draft.selection = "Liquid Glass 是一种动态材质"
         fixture.model.draft.memory = AskMemory(global: "short")
         try await save(AskComposer(model: fixture.model, launcher: false).padding(20)
                         .background(Color(nsColor: .windowBackgroundColor)),
                        size: NSSize(width: 800, height: 170), name: "gul462-window-composer")
+        let environmentWindow = host(AskWorkEnvironmentButton(model: fixture.model), size: NSSize(width: 400, height: 80))
+        defer { environmentWindow.close(); AskGlassMenuPresenter.shared.hide() }
+        try await settle(environmentWindow)
+        try press("ask.composer.permissionMode", in: environmentWindow)
+        try await fixture.wait { AskGlassMenuPresenter.shared.panel?.isVisible == true }
+        let environmentPanel = try #require(AskGlassMenuPresenter.shared.panel)
+        try await settle(environmentPanel)
+        let environmentContent = try #require(environmentPanel.contentView)
+        let environmentBitmap = try #require(environmentContent.bitmapImageRepForCachingDisplay(in: environmentContent.bounds))
+        environmentContent.cacheDisplay(in: environmentContent.bounds, to: environmentBitmap)
+        try #require(environmentBitmap.representation(using: .png, properties: [:]))
+            .write(to: root.appendingPathComponent("work-environment-menu.png"))
+        AskGlassMenuPresenter.shared.hide()
         let text = "Liquid Glass 是一种动态材质，它会折射和反射周围的内容，同时根据光线和动作实时变化。"
         let storage = AskLocalModeStatus(source: "Cloud", offersSignIn: false, local: false, changeable: true,
                                          choices: [.cloud, .local, .temporary])

@@ -81,7 +81,7 @@ struct AskAddMenuContext {
 }
 
 /// The "+" menu: add files, then what rides along with this question, then where a
-/// new conversation is kept. Every row explains itself in one line.
+/// new conversation is kept. Rows keep their titles and controls; failures still show their reason.
 struct AskComposerAddMenu: View {
     static let width: CGFloat = 340
 
@@ -90,7 +90,7 @@ struct AskComposerAddMenu: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            AskAddMenuRow(symbol: "paperclip", title: L("ask.add.files"), detail: L("ask.add.files.detail"),
+            AskAddMenuRow(symbol: "paperclip", title: L("ask.add.files"), detail: nil,
                           action: pickFiles) {
                 Text(verbatim: "⌘U").font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
             }
@@ -110,17 +110,7 @@ struct AskComposerAddMenu: View {
                 header(L("ask.storage.card.title"))
                 AskStorageSegments(choices: storage.choices, selection: storage.kind, choose: context.chooseStorage)
                     .padding(.horizontal, 10)
-                Text(L(storage.kind.detailKey) + " · " + L("ask.storage.card.changeHint"))
-                    .font(.system(size: 11))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 12).padding(.top, 6)
             }
-            Rectangle().fill(AskTheme.separator).frame(height: 0.5).padding(.top, 8)
-            Text(L("ask.add.footer"))
-                .font(.system(size: 11))
-                .foregroundStyle(StudioTheme.textTertiary)
-                .padding(.horizontal, 12).padding(.top, 8).padding(.bottom, 2)
         }
         .padding(.vertical, 6)
         .frame(width: Self.width, alignment: .leading)
@@ -138,7 +128,7 @@ struct AskComposerAddMenu: View {
     }
 
     @ViewBuilder private func switchRow(_ item: AskAddMenuSwitch) -> some View {
-        AskAddMenuRow(symbol: item.symbol, title: item.title, detail: item.detail, active: item.isOn,
+        AskAddMenuRow(symbol: item.symbol, title: item.title, detail: item.warning || !item.enabled ? item.detail : nil, active: item.isOn,
                       warning: item.warning, enabled: item.enabled, action: item.action) {
             HStack(spacing: 10) {
                 if let thumbnail = item.thumbnail {
@@ -267,6 +257,7 @@ struct AskStorageSegments: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(chosen ? .isSelected : [])
+                .accessibilityValue(chosen ? L("ask.mode.current") : "")
                 .accessibilityIdentifier("ask.add.storage." + String(describing: kind))
             }
         }

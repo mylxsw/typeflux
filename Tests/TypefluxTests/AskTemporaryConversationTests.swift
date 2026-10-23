@@ -5,7 +5,7 @@ import Testing
 @testable import Typeflux
 
 /// A temporary conversation (GUL-370) never enters history or memory, lives only in
-/// memory on this Mac, and ends when the user leaves it unless they keep it.
+/// memory on this Mac, and stays available until explicitly closed.
 @Suite("Ask temporary conversations", .serialized, .exclusiveUIState)
 @MainActor
 struct AskTemporaryConversationTests {
@@ -125,23 +125,23 @@ struct AskTemporaryConversationTests {
 
     // MARK: - Leaving
 
-    @Test func leavingAsksAndCancelKeepsTheTemporaryChat() async throws {
+    @Test func switchingConversationsPreservesTheTemporaryChatAndItsDraft() async throws {
         let (fixture, _) = try fixture()
         defer { fixture.model.resetSession() }
         let id = try await startTemporary(fixture)
-        var asked = 0
-        fixture.model.confirmTemporaryLeave = { asked += 1; return .init(choice: .cancel) }
+        fixture.model.draft.text = "Unsent follow-up"
         fixture.model.newConversation()
-        #expect(asked == 1)
-        #expect(fixture.model.selectedId == id)
-        #expect(fixture.model.temporaryConversation?.id == id)
+        #expect(fixture.model.selectedId == nil)
+        #expect(fixture.model.isTemporary(id))
         await fixture.api.seed(.init(id: "other", title: "Other", revision: 1, updatedAt: Date(), messages: []))
         await fixture.model.select("other")
-        #expect(asked == 2)
+        #expect(fixture.model.selectedId == "other")
+        await fixture.model.select(id)
         #expect(fixture.model.selectedId == id)
-        // Re-selecting itself is not leaving.
-        await fixture.model.select(id, reload: true)
-        #expect(asked == 2)
+        #expect(fixture.model.draft.text == "Unsent follow-up")
+        #expect(fixture.model.storageKind(launcher: false) == .temporary)
+        #expect(await fixture.api.deletes.isEmpty)
+        #expect(!fixture.model.conversations.contains { $0.id == id })
     }
 
     @Test func endingDeletesEveryCopyAndForgetsTheConversation() async throws {
@@ -154,9 +154,9 @@ struct AskTemporaryConversationTests {
         let folder = try await workspaces.ensure(owner: fixture.sessionState.owner, conversationId: id)
         try FileManager.default.createDirectory(at: folder.appendingPathComponent("work"), withIntermediateDirectories: true)
         try Data("temporary".utf8).write(to: folder.appendingPathComponent("work/notes.txt"))
-        fixture.model.confirmTemporaryLeave = { .init(choice: .end) }
         await fixture.api.seed(.init(id: "other", title: "Other", revision: 1, updatedAt: Date(), messages: []))
         await fixture.model.select("other")
+        fixture.model.endTemporaryConversation(id: id)
         #expect(fixture.model.selectedId == "other")
         #expect(fixture.model.temporaryConversation == nil)
         #expect(!fixture.model.isTemporary(id))
@@ -167,39 +167,51 @@ struct AskTemporaryConversationTests {
         #expect(!fixture.model.conversations.contains { $0.id == id })
     }
 
-    @Test func dontAskAgainTurnsTheConfirmationOff() async throws {
+    @Test func temporaryDraftCanBeResumedAndExplicitlyClosed() throws {
         let (fixture, _) = try fixture()
         defer { fixture.model.resetSession() }
-        var asked = 0
-        fixture.model.confirmTemporaryLeave = { asked += 1; return .init(choice: .end, suppress: true) }
-        _ = try await startTemporary(fixture)
+        fixture.model.newConversation(temporary: true)
+        fixture.model.draft.text = "Unsent temporary question"
+        fixture.model.setPermissionMode(.yolo, launcher: false)
         fixture.model.newConversation()
-        #expect(asked == 1)
-        #expect(!fixture.model.modelLibrary.settings.askConfirmLeavingTemporary)
-        let second = try await startTemporary(fixture)
+        #expect(!fixture.model.isTemporaryComposer(launcher: false))
+        #expect(fixture.model.temporaryDraft?.text == "Unsent temporary question")
+        fixture.model.chooseStorage(.local, launcher: false)
+        #expect(fixture.model.temporaryDraft?.text == "Unsent temporary question")
+        fixture.model.resumeTemporaryDraft()
+        #expect(fixture.model.draft.text == "Unsent temporary question")
+        #expect(fixture.model.permissionMode(launcher: false) == .yolo)
         fixture.model.newConversation()
-        #expect(asked == 1, "no longer asked")
-        #expect(fixture.model.temporaryConversation == nil)
-        try await eventually { await fixture.api.deletes.contains(second) }
-        fixture.model.modelLibrary.settings.askConfirmLeavingTemporary = true
+        fixture.model.closeTemporaryDraft()
+        #expect(fixture.model.temporaryDraft == nil)
+        fixture.model.newConversation(temporary: true)
+        fixture.model.endTemporaryConversation()
+        #expect(fixture.model.temporaryDraft == nil)
+        #expect(!fixture.model.isTemporaryComposer(launcher: false))
     }
 
-    @Test func anEmptyTemporaryDraftIsLeftWithoutAsking() throws {
+    @Test func anotherTemporaryChatDoesNotDeleteTheFirst() async throws {
         let (fixture, _) = try fixture()
         defer { fixture.model.resetSession() }
-        var asked = 0
-        fixture.model.confirmTemporaryLeave = { asked += 1; return .init(choice: .cancel) }
-        fixture.model.newConversation(temporary: true)
-        fixture.model.newConversation()
-        #expect(asked == 0)
-        #expect(!fixture.model.isTemporaryComposer(launcher: false))
+        let first = try await startTemporary(fixture)
+        let second = try await startTemporary(fixture, text: "Second temporary question")
+        #expect(first != second)
+        #expect(fixture.model.temporaryConversations.map(\.id) == [first, second])
+        await fixture.model.select(first)
+        #expect(fixture.model.selectedId == first)
+        fixture.model.endTemporaryConversation(id: second)
+        #expect(fixture.model.selectedId == first)
+        #expect(fixture.model.isTemporary(first))
+        try await eventually { await fixture.api.deletes.contains(second) }
+        #expect(await fixture.api.deletes.contains(first) == false)
+        fixture.model.endTemporaryConversation(id: "missing")
+        #expect(fixture.model.isTemporary(first))
     }
 
     @Test func endingFromTheHeaderNeedsNoConfirmation() async throws {
         let (fixture, _) = try fixture()
         defer { fixture.model.resetSession() }
         let id = try await startTemporary(fixture)
-        fixture.model.confirmTemporaryLeave = { Issue.record("must not ask"); return .init(choice: .cancel) }
         fixture.model.endTemporaryConversation()
         #expect(fixture.model.selectedId == nil)
         #expect(fixture.model.temporaryConversation == nil)
@@ -230,7 +242,6 @@ struct AskTemporaryConversationTests {
         await fixture.model.refreshHistory()
         #expect(fixture.model.conversations.contains { $0.id == id })
         // Ordinary now: leaving it asks nothing and deletes nothing.
-        fixture.model.confirmTemporaryLeave = { Issue.record("must not ask"); return .init(choice: .cancel) }
         fixture.model.newConversation()
         #expect(await fixture.api.deletes.contains(id) == false)
     }
@@ -239,7 +250,7 @@ struct AskTemporaryConversationTests {
         let (fixture, own) = try fixture()
         defer { fixture.model.resetSession() }
         let id = try await startTemporary(fixture, model: own)
-        fixture.model.confirmTemporaryLeave = { .init(choice: .keep) }
+        fixture.model.keepTemporaryConversation()
         fixture.model.newConversation()
         #expect(fixture.model.selectedId == nil)
         try await fixture.wait { fixture.model.conversations.contains { $0.id == id } }
@@ -267,7 +278,7 @@ struct AskTemporaryConversationTests {
         let (fixture, _) = try fixture()
         defer { fixture.model.resetSession() }
         let first = try await startTemporary(fixture)
-        fixture.model.confirmTemporaryLeave = { .init(choice: .keep) }
+        fixture.model.keepTemporaryConversation()
         fixture.model.newConversation(temporary: true)
         // The next one starts before the keep request has answered.
         fixture.model.draft.text = "Another question"
@@ -386,15 +397,6 @@ struct AskTemporaryConversationTests {
         #expect(AskLocalModeCard.tint(.cloud) == AskTheme.cloudTint)
     }
 
-    @Test func theLeaveDialogMapsItsButtons() {
-        #expect(AskTemporaryLeaveConfirmation.decision(for: .alertFirstButtonReturn, suppress: true)
-            == .init(choice: .end, suppress: true))
-        #expect(AskTemporaryLeaveConfirmation.decision(for: .alertSecondButtonReturn, suppress: false)
-            == .init(choice: .keep))
-        #expect(AskTemporaryLeaveConfirmation.decision(for: .alertThirdButtonReturn, suppress: true)
-            == .init(choice: .cancel), "cancelling never stores don't ask again")
-    }
-
     @Test func theNewConversationMenuStartsEachKind() async throws {
         let signedIn = AskNewConversationMenu.items(signedIn: true, privateByDefault: false)
         #expect(signedIn.map(\.kind) == [.cloud, .local, .temporary])
@@ -432,6 +434,21 @@ struct AskTemporaryConversationTests {
         try await eventually { !FileManager.default.fileExists(atPath: folder.path) }
     }
 
+    @Test func staleTemporaryActionsCannotUseAnotherAccountsCredentials() async throws {
+        for keep in [false, true] {
+            let (fixture, _) = try fixture()
+            let id = try await startTemporary(fixture)
+            fixture.sessionState.owner = "another-account"
+            if keep { fixture.model.keepTemporaryConversation() }
+            else { fixture.model.discardTemporaryConversation(id: id) }
+            try await Task.sleep(for: .milliseconds(20))
+            #expect(fixture.model.temporaryConversations.isEmpty)
+            #expect(await fixture.api.keeps.isEmpty)
+            #expect(await fixture.api.deletes.isEmpty)
+            fixture.model.resetSession()
+        }
+    }
+
     @Test func quittingWaitsForTemporaryWorkspaceRemoval() async throws {
         let workspaceRoot = FileManager.default.temporaryDirectory.appendingPathComponent("ask-quitting-workspaces-" + UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: workspaceRoot) }
@@ -439,8 +456,11 @@ struct AskTemporaryConversationTests {
         let (fixture, _) = try fixture(workspaces: workspaces)
         let id = try await startTemporary(fixture)
         let folder = try await workspaces.ensure(owner: fixture.sessionState.owner, conversationId: id)
+        let second = try await startTemporary(fixture)
+        let secondFolder = try await workspaces.ensure(owner: fixture.sessionState.owner, conversationId: second)
         await fixture.model.discardTemporaryConversationForTermination()
         #expect(!FileManager.default.fileExists(atPath: folder.path))
+        #expect(!FileManager.default.fileExists(atPath: secondFolder.path))
         #expect(fixture.model.temporaryConversation == nil)
     }
 
@@ -466,7 +486,6 @@ struct AskTemporaryConversationTests {
         #expect(size(AskTemporaryChip(model: fixture.model)).width > 40)
         #expect(size(AskLocalModeCard(status: .make(model: fixture.model, signedIn: true),
                                       onSignIn: {})).height > 120)
-        #expect(size(AskTemporarySettingsView(settings: fixture.model.modelLibrary.settings)).height > 40)
     }
 }
 

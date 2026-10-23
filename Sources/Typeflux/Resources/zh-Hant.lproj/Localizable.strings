@@ -2183,7 +2183,7 @@
 "ask.attach.help" = "新增檔案或圖片（⌘U），設定本次提問附帶的內容";
 "ask.add.files" = "新增檔案或圖片";
 "ask.add.files.detail" = "PDF、圖片、文件等，也可直接貼上或拖入";
-"ask.add.context" = "隨本次提問附帶";
+"ask.add.context" = "附加內容";
 "ask.add.screenshot" = "螢幕截圖";
 "ask.add.screenshot.offDetail" = "附帶目前螢幕，幫助理解你在看什麼";
 "ask.add.selection.detail" = "來自 %@ · %d 行";
@@ -2276,7 +2276,7 @@
 "ask.storage.card.changeHint" = "送出第一則訊息後無法更改";
 "ask.storage.card.localOption" = "儲存在本機";
 "ask.storage.card.localDetail" = "對話儲存在這台 Mac";
-"ask.storage.card.temporaryDetail" = "不儲存歷史或記憶，離開後刪除";
+"ask.storage.card.temporaryDetail" = "不進入歷史，不使用記憶，手動關閉後刪除";
 "ask.storage.card.choose" = "這段對話要儲存在哪裡？送出第一則訊息後就不能再改。";
 "ask.storage.card.lockedLocal" = "這段對話只儲存在這台 Mac 上，不會上傳到 Typeflux Cloud。已經開始的對話不能更改儲存位置。";
 "ask.storage.card.lockedCloud" = "這段對話已同步到 Typeflux Cloud。已經開始的對話不能更改儲存位置。";
@@ -2285,7 +2285,7 @@
 "ask.storage.newLocal" = "新增私密對話";
 "ask.storage.newCloud" = "新增雲端對話";
 "ask.storage.temporary" = "臨時";
-"ask.storage.temporary.detail" = "不進入歷史，不使用記憶，離開後即刪除";
+"ask.storage.temporary.detail" = "不進入歷史，不使用記憶，手動關閉後刪除";
 "ask.storage.card.lockedTemporary" = "臨時對話不進歷史、不用記憶；結束後刪除對話和工作空間。";
 "ask.temporary.title" = "臨時對話";
 "ask.temporary.new" = "新增臨時對話";
@@ -3754,7 +3754,7 @@
 "ask.mode.yolo" = "YOLO · 完全授權";
 "ask.mode.strict.detail" = "每次工具呼叫都確認";
 "ask.mode.standard.detail" = "唯讀自動執行，修改前確認";
-"ask.mode.yolo.detail" = "自動執行所有已啟用工具，包括修改、刪除、傳送及付費操作";
+"ask.mode.yolo.detail" = "自動執行全部工具，無需確認";
 "ask.mode.changed" = "權限模式：%@";
 "ask.mode.usage" = "用法：/mode yolo、/mode strict 或 /mode standard";
 "ask.mode.serverUpgrade" = "請升級 Typeflux 雲端服務以使用工具權限模式。";

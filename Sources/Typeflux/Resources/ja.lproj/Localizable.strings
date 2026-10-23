@@ -2269,7 +2269,7 @@
 "ask.storage.card.changeHint" = "最初のメッセージ送信後は変更できません";
 "ask.storage.card.localOption" = "この Mac に保存";
 "ask.storage.card.localDetail" = "会話はこの Mac に保存されます";
-"ask.storage.card.temporaryDetail" = "履歴やメモリーに残さず、離れると削除";
+"ask.storage.card.temporaryDetail" = "履歴・メモリなし。閉じると削除";
 "ask.storage.card.choose" = "この会話をどこに保存しますか？最初のメッセージを送信すると変更できません。";
 "ask.storage.card.lockedLocal" = "この会話はこのMacにのみ保存され、Typeflux Cloud にはアップロードされません。開始済みの会話は保存先を変更できません。";
 "ask.storage.card.lockedCloud" = "この会話は Typeflux Cloud に同期されています。開始済みの会話は保存先を変更できません。";
@@ -2278,7 +2278,7 @@
 "ask.storage.newLocal" = "新しいプライベート会話";
 "ask.storage.newCloud" = "新しいクラウド会話";
 "ask.storage.temporary" = "一時的";
-"ask.storage.temporary.detail" = "履歴に残らず、メモリーも使わず、離れると削除";
+"ask.storage.temporary.detail" = "履歴・メモリなし。閉じると削除";
 "ask.storage.card.lockedTemporary" = "履歴やメモリーには残りません。終了時に会話とワークスペースを削除します。";
 "ask.temporary.title" = "一時的な会話";
 "ask.temporary.new" = "新しい一時的な会話";
@@ -3747,7 +3747,7 @@
 "ask.mode.yolo" = "YOLO · 完全許可";
 "ask.mode.strict.detail" = "ツール呼び出しごとに確認";
 "ask.mode.standard.detail" = "読み取りは自動、変更は確認";
-"ask.mode.yolo.detail" = "書き込み、削除、送信、有料操作を含む有効なツールをすべて自動実行";
+"ask.mode.yolo.detail" = "有効なツールを確認なしで実行";
 "ask.mode.changed" = "権限モード：%@";
 "ask.mode.usage" = "使い方：/mode yolo、/mode strict、/mode standard";
 "ask.mode.serverUpgrade" = "ツール権限モードを使用するにはクラウドサービスを更新してください。";

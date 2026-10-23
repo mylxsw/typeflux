@@ -53,13 +53,45 @@ struct AskConversationWindowLifecycleTests {
         }
     }
 
+    @Test func temporaryChatAndUnsentDraftSurviveClosingAndReopeningWindow() async throws {
+        try await withController { fixture, controller, _ in
+            fixture.model.newConversation(temporary: true)
+            fixture.model.draft.text = "Temporary draft"
+            controller.showConversation()
+            await controller.conversationRefreshTask?.value
+            let window = try #require(controller.conversationWindow)
+            #expect(!controller.windowShouldClose(window))
+            controller.showConversation()
+            await controller.conversationRefreshTask?.value
+            #expect(fixture.model.draft.text == "Temporary draft")
+            #expect(fixture.model.isTemporaryComposer(launcher: false))
+            fixture.model.submitDraft()
+            try await fixture.wait { fixture.model.busyIds.isEmpty && fixture.model.selected?.run?.status == "completed" }
+            let id = try #require(fixture.model.selectedId)
+            fixture.model.draft.text = "Unsent follow-up"
+            #expect(!controller.windowShouldClose(window))
+            controller.showConversation()
+            await controller.conversationRefreshTask?.value
+            #expect(fixture.model.selectedId == id && fixture.model.isTemporary(id))
+            #expect(fixture.model.draft.text == "Unsent follow-up")
+            #expect(await fixture.api.deletes.isEmpty)
+        }
+    }
+
     @Test func controlStopButtonCancelsItsRunAndReturnsToTheConversation() async throws {
         try await withController { fixture, controller, _ in
-            await seed("paused_credits", fixture)
+            // Stop must own an admitted operation, rather than an observer-only snapshot.
+            await fixture.api.setTool(.init(id: "control-tool", type: "function",
+                                            function: .init(name: "browser", arguments: "{\"action\":\"read\"}")))
+            fixture.model.setPermissionMode(.strict, launcher: false)
+            fixture.model.draft.text = "Read a page"
+            fixture.model.submitDraft()
+            try await fixture.wait { !fixture.model.pendingApprovals.isEmpty }
+            let id = try #require(fixture.model.selectedId)
             controller.showConversation()
             await controller.conversationRefreshTask?.value
             let conversation = try #require(controller.conversationWindow)
-            fixture.model.controllingConversationId = "lifecycle"
+            fixture.model.controllingConversationId = id
             fixture.model.onControlChanged?(true)
             let control = try #require(controller.controlWindow)
             let content = try #require(control.contentView)
@@ -143,7 +175,7 @@ struct AskConversationWindowLifecycleTests {
     }
 
     private func seed(_ status: String, _ fixture: AskTestFixture) async {
-        let run = AskRun(id: "lifecycle-run", deviceId: "other-device", status: status, steps: 1,
+        let run = AskRun(id: "lifecycle-run", deviceId: fixture.model.deviceId, status: status, steps: 1,
                          updatedAt: Date(), tools: [], pending: [])
         await fixture.api.seed(.init(id: "lifecycle", title: "Window lifecycle", revision: 1,
                                     updatedAt: Date(), messages: [], run: run))

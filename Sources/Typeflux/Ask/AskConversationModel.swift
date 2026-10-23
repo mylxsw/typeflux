@@ -255,7 +255,11 @@ final class AskConversationModel: ObservableObject {
             launcherDraft.storesLocally = value; launcherDraft.temporary = nil
         } else {
             draft.storesLocally = value
-            if draft.temporary == true { draft.temporary = nil; draft.memory = capture.globalMemory() ?? AskMemory() }
+            if draft.temporary == true {
+                temporaryDraft = nil
+                draft.temporary = nil
+                draft.memory = capture.globalMemory() ?? AskMemory()
+            }
         }
         persistDrafts()
     }
@@ -263,7 +267,7 @@ final class AskConversationModel: ObservableObject {
     /// The conversation is kept on this Mac rather than in the Typeflux Cloud account.
     /// A temporary conversation counts as local while it runs on the user's own model.
     func isLocal(_ id: String) -> Bool {
-        if let temporary = temporaryConversation, temporary.id == id { return !isSignedIn || !temporary.cloud }
+        if let temporary = temporaryConversation(for: id) { return !isSignedIn || !temporary.cloud }
         return !isSignedIn || localConversationIds.contains(id)
     }
 
@@ -334,6 +338,7 @@ final class AskConversationModel: ObservableObject {
     }
     @Published var draft = AskDraft.followUp {
         didSet {
+            if selectedId == nil, draft.temporary == true { temporaryDraft = draft }
             if !isLoadingSelection, draft.includeScreenshot, !screenshotCapability(launcher: false).canAttach {
                 draft.includeScreenshot = false
             }
@@ -363,6 +368,11 @@ final class AskConversationModel: ObservableObject {
     /// Loads in flight per draft key (`visionDraftKey`); sending waits for them.
     @Published var attachmentLoads: [String: Int] = [:]
     let attachmentWork = AskAttachmentWork()
+    var attachmentPicker: NSOpenPanel?
+    var makeAttachmentPicker: () -> NSOpenPanel = { NSOpenPanel() }
+    var presentAttachmentPicker: (NSOpenPanel, @escaping (NSApplication.ModalResponse) -> Void) -> Void = {
+        $0.begin(completionHandler: $1)
+    }
     /// Skills, MCP servers, notes and local mode for slash commands; the window controller fills it in.
     var commandSources = AskCommandSources()
     /// Bumped by the "/search" command; the window opens its search palette.
@@ -384,10 +394,13 @@ final class AskConversationModel: ObservableObject {
     @Published private(set) var conversations: [AskConversationSummary] = []
     /// Conversations stored on this Mac. Signed in, they are listed beside the Cloud ones.
     @Published private(set) var localConversationIds: Set<String> = []
-    /// The one temporary conversation, while it lasts; see `AskConversationModel+Temporary`.
-    @Published private(set) var temporaryConversation: AskTemporaryConversation?
-    /// Asks before a temporary conversation with messages is left; tests answer instead.
-    var confirmTemporaryLeave: @MainActor () -> AskTemporaryLeaveDecision = AskTemporaryLeaveConfirmation.confirm
+    /// Temporary chats stay available in this app session until explicitly closed.
+    @Published private(set) var temporaryConversations: [AskTemporaryConversation] = []
+    var temporaryConversation: AskTemporaryConversation? {
+        temporaryConversation(for: selectedId) ?? temporaryConversations.last
+    }
+    @Published var temporaryDraft: AskDraft?
+    var temporaryDraftPermissionMode: AskPermissionMode = .standard
     @Published private(set) var selected: AskConversation?
     @Published private(set) var selectedId: String? { didSet { if selectedId != oldValue { refreshAnswerNotes() } } }
     /// Answers of the shown conversation that are in the notebook, by message id.
@@ -670,7 +683,7 @@ final class AskConversationModel: ObservableObject {
     /// this Mac, otherwise the Cloud account. A new conversation (nil) follows the draft.
     func credentials(for id: String?) -> AskRoute? {
         guard let account = credentials() else { return nil }
-        if let id, let temporary = temporaryConversation, temporary.id == id { return account.temporary(cloud: temporary.cloud) }
+        if let id, let temporary = temporaryConversation(for: id) { return account.temporary(cloud: temporary.cloud) }
         let local = id.map(isLocal) ?? storesLocally(launcher: false)
         return local ? account.local : account
     }
@@ -681,11 +694,13 @@ final class AskConversationModel: ObservableObject {
         tools.resetFolderSession()
         expiredFolderNotices = []
         quickAsk = nil
-        if let temporary = temporaryConversation, !keepingTemporaryIDs.contains(temporary.id), let workspaces {
+        if let workspaces {
             let account = owner
-            Task {
-                do { try await workspaces.discard(owner: account, conversationId: temporary.id) }
-                catch { ErrorLogStore.shared.log("Ask temporary workspace cleanup failed: \(error.localizedDescription)") }
+            for temporary in temporaryConversations where !keepingTemporaryIDs.contains(temporary.id) {
+                Task {
+                    do { try await workspaces.discard(owner: account, conversationId: temporary.id) }
+                    catch { ErrorLogStore.shared.log("Ask temporary workspace cleanup failed: \(error.localizedDescription)") }
+                }
             }
         }
         releaseLauncherScreenshot()
@@ -693,6 +708,7 @@ final class AskConversationModel: ObservableObject {
         workflowImageCopyTask?.cancel()
         launcherImageScope.invalidate(); conversationImageScope.invalidate()
         cancelAttachmentWork()
+        dismissAttachmentPicker()
         notebookTask?.cancel()
         notebookReadTask?.cancel()
         wordBookTask?.cancel()
@@ -732,7 +748,7 @@ final class AskConversationModel: ObservableObject {
         activeChatDraftID = nil; pendingDraftHandoff = nil; chatDraftSubmissions = [:]
         historyGeneration = UUID(); historyOffset = 0; conversations = []; localConversationIds = []
         // In memory only, so a new session never sees it; the server expires its copy.
-        temporaryConversation = nil; keepingTemporaryIDs = []
+        temporaryConversations = []; temporaryDraft = nil; temporaryDraftPermissionMode = .standard; keepingTemporaryIDs = []
         launcherScreenshotNotice = nil; screenshotNotice = nil; recoveringImages = [:]
         attachmentNotice = nil; launcherAttachmentNotice = nil
         attachmentLoads[visionDraftKey(launcher: true)] = nil
@@ -1019,7 +1035,7 @@ final class AskConversationModel: ObservableObject {
 
     func select(_ rawId: String, reload: Bool = false) async {
         let id = AskConversationID.canonical(rawId)
-        guard leaveTemporaryConversation(for: id) else { return }
+        preserveTemporaryDraft()
         let previousOwner = owner
         let accountChanged = !previousOwner.isEmpty && previousOwner != session()?.owner
         let wasLocal = localConversationIds.contains(id)
@@ -1110,7 +1126,9 @@ final class AskConversationModel: ObservableObject {
     /// `temporary` starts a temporary conversation instead, which never enters history.
     @discardableResult
     func newConversation(storesLocally: Bool? = nil, temporary: Bool = false) -> Bool {
-        guard leaveTemporaryConversation(for: nil) else { return false }
+        preserveTemporaryDraft()
+        let restoredTemporary = temporary ? temporaryDraft : nil
+        let restoredPermission = temporaryDraftPermissionMode
         detachChatDraft()
         draftPermissionMode = .standard
         clearCapturedContentFeedback(launcher: false)
@@ -1128,6 +1146,10 @@ final class AskConversationModel: ObservableObject {
         // A temporary conversation uses none.
         draft.temporary = temporary ? true : nil
         draft.memory = temporary ? AskMemory() : capture.globalMemory() ?? AskMemory()
+        if let restoredTemporary {
+            draft = restoredTemporary
+            draftPermissionMode = restoredPermission
+        }
         return true
     }
 
@@ -1142,8 +1164,8 @@ final class AskConversationModel: ObservableObject {
             Task { _ = await transferFeatureDraft(incoming, submit: true) }
             return
         }
-        // The launcher always starts a new conversation, so it leaves a temporary one.
-        guard leaveTemporaryConversation(for: nil) else { return }
+        // Preserve unfinished temporary input before the launcher opens another conversation.
+        preserveTemporaryDraft()
         // A temporary question leaves no trace in the launcher's input history either.
         if recordInput, launcherDraft.temporary != true { recordLauncherInput(destination: .askAI) }
         submit(launcherDraft, newConversation: true, launcher: true)
@@ -1348,12 +1370,8 @@ final class AskConversationModel: ObservableObject {
         let id = newConversation ? UUID().uuidString.lowercased() : selected!.id
         guard !busyIds.contains(id) else { return false }
         if inline { quickAsk?.conversationId = id }
-        if temporary {
-            // Only one temporary conversation exists; the UI asked before leaving the last one.
-            discardTemporaryConversation()
-            temporaryConversation = AskTemporaryConversation(id: id, cloud: !local)
-        } else if newConversation, local { localConversationIds.insert(id) }
-        let temporaryRun = isTemporary(id)
+        if !temporary, newConversation, local { localConversationIds.insert(id) }
+        let temporaryRun = temporary || isTemporary(id)
         let current = temporaryRun ? account.temporary(cloud: !local) : local ? account.local : account
         if !inline { error = nil }
         operationErrors[id] = nil; busyIds.insert(id)
@@ -1367,6 +1385,7 @@ final class AskConversationModel: ObservableObject {
         let operationId = UUID()
         guard stageFolderSubmission(submitted, conversation: value, route: current,
                                     messageID: messageId, generation: operationId) else { return false }
+        if temporary { temporaryConversations.append(AskTemporaryConversation(id: id, cloud: !local)) }
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
         request.deviceCreate = newConversation ? true : nil
         request.maxSteps = recoveryCheck ? min(modelLibrary.settings.askAgentMaxSteps, 20)
@@ -1395,6 +1414,7 @@ final class AskConversationModel: ObservableObject {
         Self.applyMemoryChoice(submitted, newConversation: newConversation, request: &request, conversation: &value)
         pendingSends[id] = request
         admitted = true
+        if temporary, !launcher { temporaryDraft = nil }
         if launcher, !inline, newConversation { detachChatDraft() }
         if !launcher, !inline, newConversation, clearsDraft, draft == submitted, let key = activeChatDraftID {
             chatDraftSubmissions[id] = .init(key: key, owner: current.account, messageID: messageId)
@@ -2306,7 +2326,7 @@ final class AskConversationModel: ObservableObject {
             try await cache.delete(id: id, owner: current.owner)
             guard owner == current.account else { return }
             conversations.removeAll { $0.id == id }; localConversationIds.remove(id)
-            if temporaryConversation?.id == id { temporaryConversation = nil }
+            temporaryConversations.removeAll { $0.id == id }
             drafts[id] = nil; snapshots[id] = nil; operationErrors[id] = nil; transcriptPositions[id] = nil
             screenshotConsent[id] = nil; permissionModes[id] = nil; approvalStore.revoke(conversation: id)
             if selectedId == id { selectedId = nil; newConversation() }
@@ -2316,45 +2336,38 @@ final class AskConversationModel: ObservableObject {
 
     // MARK: - Temporary conversation
 
-    func isTemporary(_ id: String?) -> Bool { id != nil && temporaryConversation?.id == id }
+    func temporaryConversation(for id: String?) -> AskTemporaryConversation? {
+        guard let id else { return nil }
+        return temporaryConversations.first { $0.id == id }
+    }
 
-    /// What a new conversation's draft offers as memory: only global memory, since no
-    /// source app is trustworthy there.
+    func isTemporary(_ id: String?) -> Bool { temporaryConversation(for: id) != nil }
+
+    /// A new draft only offers global memory, since no source app is trustworthy there.
     func globalMemoryForNewDraft() -> AskMemory { capture.globalMemory() ?? AskMemory() }
 
-    /// Whether moving to `target` (nil for a new conversation) may go ahead. Leaving the
-    /// selected temporary conversation ends it; with messages in it the user is asked
-    /// first, unless they turned that off, and may keep it instead.
-    func leaveTemporaryConversation(for target: String?) -> Bool {
-        guard let temporary = temporaryConversation, temporary.id != target else { return true }
-        let hasContent = !(snapshots[temporary.id]?.messages.isEmpty ?? true)
-        if hasContent, selectedId == temporary.id, modelLibrary.settings.askConfirmLeavingTemporary {
-            let decision = confirmTemporaryLeave()
-            if decision.suppress { modelLibrary.settings.askConfirmLeavingTemporary = false }
-            switch decision.choice {
-            case .cancel: return false
-            case .keep: keepTemporaryConversation(); return true
-            case .end: break
-            }
+    /// Navigation preserves temporary chats and their unfinished input in memory.
+    func preserveTemporaryDraft() {
+        if selectedId == nil, draft.temporary == true {
+            temporaryDraft = draft
+            temporaryDraftPermissionMode = draftPermissionMode
         }
-        discardTemporaryConversation()
-        return true
     }
 
     /// Ends the temporary conversation: stops its run and removes its local
     /// workspace, cache, and server copy.
     @discardableResult
-    func discardTemporaryConversation() -> Task<Void, Never>? {
-        guard let temporary = temporaryConversation, let account = credentials(),
-              temporaryConversation?.id == temporary.id else { return nil }
+    func discardTemporaryConversation(id requestedID: String? = nil) -> Task<Void, Never>? {
+        guard let temporary = requestedID == nil ? temporaryConversation : temporaryConversation(for: requestedID),
+              let account = credentials(), temporaryConversation(for: temporary.id) != nil else { return nil }
         guard !keepingTemporaryIDs.contains(temporary.id) else {
             // Being kept: it is no longer this session's temporary conversation.
-            temporaryConversation = nil
+            temporaryConversations.removeAll { $0.id == temporary.id }
             return nil
         }
         let id = temporary.id, route = account.temporary(cloud: temporary.cloud)
         let activeRun = snapshots[id]?.run.flatMap { $0.isActive ? $0.id : nil }
-        temporaryConversation = nil
+        temporaryConversations.removeAll { $0.id == id }
         operations[id]?.cancel(); operations[id] = nil
         if let operationId = operationIds[id] { operationRuns[operationId] = nil; operationOwners[operationId] = nil }
         operationIds[id] = nil
@@ -2394,21 +2407,24 @@ final class AskConversationModel: ObservableObject {
     }
 
     func discardTemporaryConversationForTermination() async {
-        let temporary = temporaryConversation
+        let temporary = temporaryConversations
         let account = owner
-        let cleanup = discardTemporaryConversation()
-        await cleanup?.value
-        if cleanup == nil, let temporary, !keepingTemporaryIDs.contains(temporary.id), let workspaces {
-            do { try await workspaces.discard(owner: account, conversationId: temporary.id) }
-            catch { ErrorLogStore.shared.log("Ask temporary workspace cleanup failed: \(error.localizedDescription)") }
+        temporaryDraft = nil
+        for conversation in temporary {
+            let cleanup = discardTemporaryConversation(id: conversation.id)
+            await cleanup?.value
+            if cleanup == nil, !keepingTemporaryIDs.contains(conversation.id), let workspaces {
+                do { try await workspaces.discard(owner: account, conversationId: conversation.id) }
+                catch { ErrorLogStore.shared.log("Ask temporary workspace cleanup failed: \(error.localizedDescription)") }
+            }
         }
     }
 
     /// Turns the temporary conversation into an ordinary one kept where it ran:
     /// Typeflux Cloud for a Cloud model, otherwise this Mac. It then shows in history.
     func keepTemporaryConversation() {
-        guard let temporary = temporaryConversation, let account = credentials(),
-              !keepingTemporaryIDs.contains(temporary.id) else { return }
+        guard let temporary = temporaryConversation(for: selectedId), let account = credentials(),
+              temporaryConversation(for: temporary.id) != nil, !keepingTemporaryIDs.contains(temporary.id) else { return }
         let id = temporary.id
         let from = account.temporary(cloud: temporary.cloud), to = temporary.cloud ? account : account.local
         keepingTemporaryIDs.insert(id)
@@ -2424,7 +2440,7 @@ final class AskConversationModel: ObservableObject {
                 if let saved = drafts[id] { try? await cache.saveDraft(saved, key: id, owner: to.owner) }
                 try? await cache.delete(id: id, owner: from.owner)
                 guard owner == account.account else { return }
-                if temporaryConversation?.id == id { temporaryConversation = nil }
+                temporaryConversations.removeAll { $0.id == id }
                 if !temporary.cloud { localConversationIds.insert(id) }
                 snapshots[id] = value
                 if selectedId == id { selected = value }
@@ -3034,7 +3050,7 @@ extension AskConversationModel {
             return
         }
         guard let keyword = plugins.keyword, keyword.pluginID == AskQuickAskPlugin.id else { return }
-        if launcherDraft.temporary == true, !leaveTemporaryConversation(for: nil) { return }
+        preserveTemporaryDraft()
         // Advanced inputs stay in the draft so opening Chat can transfer them intact.
         guard (launcherDraft.attachments ?? []).isEmpty, (launcherDraft.skills ?? []).isEmpty,
               (launcherDraft.mcpServers ?? []).isEmpty else {
@@ -3084,7 +3100,7 @@ extension AskConversationModel {
         guard canOpenChatFromLauncher, let quick = quickAsk,
               quick.owner == owner, session()?.owner == owner,
               quick.persisted, let id = quick.conversationId, snapshots[id] != nil else { return false }
-        guard leaveTemporaryConversation(for: id) else { return false }
+        preserveTemporaryDraft()
         isOpeningChat = true
         defer { isOpeningChat = false }
         let generation = selectionGeneration, previousID = selectedId, previous = draft

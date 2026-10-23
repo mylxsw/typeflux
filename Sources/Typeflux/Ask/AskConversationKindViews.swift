@@ -254,10 +254,27 @@ struct AskWorkEnvironmentButton: View {
             header(L("ask.env.folders"))
             // A started task already works in its folders (listed below when granted);
             // name only what the next message adds, or the default for a new task.
-            if model.canChangeConversationKind(launcher: launcher) || Self.hasPendingFolders(draft) {
-                folderRow(Self.title(draft))
+            let folders = (draft.attachments ?? []).filter { $0.kind == .folder }
+            if folders.isEmpty, model.canChangeConversationKind(launcher: launcher) {
+                folderRow(L("ask.kind.defaultWorkspace"))
             }
-            AskPopoverRow(title: L("ask.env.addFolder"), caption: L("ask.env.addFolder.detail"), selected: false,
+            ForEach(folders) { folder in
+                HStack(spacing: 4) {
+                    folderRow(folder.name)
+                    Button { model.removeAttachment(folder.id, launcher: launcher) } label: {
+                        Image(systemName: "xmark").font(.system(size: 10, weight: .medium))
+                            .frame(width: 26, height: 28).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .accessibilityLabel(L("ask.remove") + ": " + folder.name)
+                    .accessibilityIdentifier("ask.env.removeFolder." + folder.id)
+                }
+                .help(folder.path ?? folder.name)
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("ask.env.folder." + folder.id)
+            }
+            AskPopoverRow(title: L("ask.env.addFolder"), caption: nil, selected: false,
                           action: {
                               presented = false
                               model.pickAttachments(folders: true, launcher: launcher)

@@ -61,9 +61,12 @@ struct HotkeySettingsViewTests {
                         for removedHeading in ["ask.steps.section", "ask.title.section", "ask.temporary.settings.section"] {
                             #expect(!SettingsBehaviorTestSupport.contains(L(removedHeading), in: window))
                         }
+                        #expect(!controls.contains {
+                            $0.value("accessibilityIdentifier") as? String == "agent.settings.confirmLeavingTemporary"
+                        })
                         var previousFrame = trigger.frame
                         for identifier in ["agent.settings.newConversationStorage", "agent.settings.maxSteps",
-                                           "agent.settings.automaticTitles", "agent.settings.confirmLeavingTemporary"] {
+                                           "agent.settings.automaticTitles"] {
                             let nextControl = controls.first {
                                 $0.value("accessibilityIdentifier") as? String == identifier
                             }

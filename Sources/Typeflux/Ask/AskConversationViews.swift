@@ -578,8 +578,17 @@ struct AskConversationView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 8).padding(.vertical, 6)
                 }
-                if model.isTemporaryComposer(launcher: false) {
-                    AskTemporaryHistoryRow().padding(.top, 4)
+                ForEach(model.temporaryConversations, id: \.id) { temporary in
+                    AskTemporaryHistoryRow(selected: model.selectedId == temporary.id,
+                                           onSelect: { Task { await model.select(temporary.id) } },
+                                           onClose: { model.endTemporaryConversation(id: temporary.id) })
+                        .padding(.top, 4)
+                }
+                if model.temporaryDraft != nil {
+                    AskTemporaryHistoryRow(selected: model.selectedId == nil && model.draft.temporary == true,
+                                           onSelect: { model.resumeTemporaryDraft() },
+                                           onClose: { model.closeTemporaryDraft() })
+                        .padding(.top, 4)
                 }
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                     let period = AskHistoryPeriod.period(for: item.updatedAt, now: now, calendar: calendar)

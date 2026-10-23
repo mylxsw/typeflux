@@ -21,8 +21,6 @@ extension AskToolsSettingsView {
             AskAgentStepSettingsView(settings: settings)
             TFDivider.formWithIcon
             AskTitleSettingsView(settings: settings)
-            TFDivider.formWithIcon
-            AskTemporarySettingsView(settings: settings)
         }
         let attention = statuses.filter { $0.level == .attention }
         TFFormSection(title: L("agent.overview.attention.title"), count: attention.isEmpty ? nil : attention.count) {

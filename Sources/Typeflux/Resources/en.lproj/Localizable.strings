@@ -2186,7 +2186,7 @@
 "ask.attach.help" = "Add files or images (⌘U) and choose what rides along with this question";
 "ask.add.files" = "Add files or images";
 "ask.add.files.detail" = "PDFs, images, documents — or paste or drop them in";
-"ask.add.context" = "Include with this question";
+"ask.add.context" = "Context";
 "ask.add.screenshot" = "Screenshot";
 "ask.add.screenshot.offDetail" = "Share your current screen for context";
 "ask.add.selection.detail" = "From %@ · %d lines";
@@ -2279,7 +2279,7 @@
 "ask.storage.card.changeHint" = "Cannot change after the first message";
 "ask.storage.card.localOption" = "Save on this Mac";
 "ask.storage.card.localDetail" = "Conversation stays on this Mac";
-"ask.storage.card.temporaryDetail" = "No history or memory; deleted when you leave";
+"ask.storage.card.temporaryDetail" = "No history or memory; deleted when closed";
 "ask.storage.card.choose" = "Where should this conversation be kept? It cannot change after the first message.";
 "ask.storage.card.lockedLocal" = "This conversation is kept only on this Mac and is never uploaded to Typeflux Cloud. A conversation that has started cannot change where it is kept.";
 "ask.storage.card.lockedCloud" = "This conversation is synced to Typeflux Cloud. A conversation that has started cannot change where it is kept.";
@@ -2288,7 +2288,7 @@
 "ask.storage.newLocal" = "New private conversation";
 "ask.storage.newCloud" = "New Cloud conversation";
 "ask.storage.temporary" = "Temporary";
-"ask.storage.temporary.detail" = "Not in history, no memory; deleted when you leave it";
+"ask.storage.temporary.detail" = "No history or memory; deleted when closed";
 "ask.storage.card.lockedTemporary" = "No history or memory. Ending deletes the chat and its workspace.";
 "ask.temporary.title" = "Temporary chat";
 "ask.temporary.new" = "New temporary chat";
@@ -3757,7 +3757,7 @@
 "ask.mode.yolo" = "YOLO · Full access";
 "ask.mode.strict.detail" = "Confirm every tool call";
 "ask.mode.standard.detail" = "Read automatically; confirm changes";
-"ask.mode.yolo.detail" = "Automatically run all enabled tools, including writes, deletes, sends and paid actions";
+"ask.mode.yolo.detail" = "Run all enabled tools without asking";
 "ask.mode.changed" = "Permission mode: %@";
 "ask.mode.usage" = "Use /mode yolo, /mode strict or /mode standard";
 "ask.mode.serverUpgrade" = "Update Typeflux Cloud to use tool permission modes.";

@@ -17,7 +17,7 @@ struct AskLocalModeStatus: Equatable {
     var usesCloudModel = false
     var usesOnlineModel = false
     var usesCustomModel = false
-    /// The conversation is temporary: in no history list and gone once left.
+    /// The conversation is temporary: in no history list and kept until explicitly closed.
     var temporary = false
     /// The kinds the card offers while `changeable`; Cloud needs a session.
     var choices: [AskStorageKind] = []

@@ -194,12 +194,6 @@ extension SettingsStore {
         get { defaults.bool(forKey: "ask.localMode") }
         set { defaults.set(newValue, forKey: "ask.localMode") }
     }
-
-    /// Ask before ending a temporary Ask conversation that has messages.
-    var askConfirmLeavingTemporary: Bool {
-        get { defaults.object(forKey: "ask.temporary.confirmLeave") as? Bool ?? true }
-        set { defaults.set(newValue, forKey: "ask.temporary.confirmLeave") }
-    }
 }
 
 extension SettingsStore {

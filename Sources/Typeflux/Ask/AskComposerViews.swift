@@ -165,7 +165,10 @@ struct AskComposer: View {
     @State private var editorDropTargeted = false
     @State private var cardDropTargeted = false
     private var dropTargeted: Bool { editorDropTargeted || cardDropTargeted }
-    private var userAttachments: [AskAttachment] { draft.wrappedValue.attachments ?? [] }
+    private var userAttachments: [AskAttachment] { Self.inlineAttachments(draft.wrappedValue) }
+    static func inlineAttachments(_ draft: AskDraft) -> [AskAttachment] {
+        (draft.attachments ?? []).filter { $0.kind != .folder }
+    }
     private var loadingAttachments: Bool { model.isLoadingAttachments(launcher: launcher) }
     @State private var attachmentHeight: CGFloat = 30
     /// Both composers show each included item above the editor.

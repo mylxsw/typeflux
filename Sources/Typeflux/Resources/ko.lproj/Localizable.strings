@@ -2269,7 +2269,7 @@
 "ask.storage.card.changeHint" = "첫 메시지를 보낸 후에는 변경할 수 없습니다";
 "ask.storage.card.localOption" = "이 Mac에 저장";
 "ask.storage.card.localDetail" = "대화가 이 Mac에 저장됩니다";
-"ask.storage.card.temporaryDetail" = "기록이나 메모리 없이, 나가면 삭제";
+"ask.storage.card.temporaryDetail" = "기록·메모리 없음. 닫으면 삭제";
 "ask.storage.card.choose" = "이 대화를 어디에 저장할까요? 첫 메시지를 보낸 뒤에는 바꿀 수 없습니다.";
 "ask.storage.card.lockedLocal" = "이 대화는 이 Mac에만 저장되며 Typeflux Cloud에 업로드되지 않습니다. 이미 시작한 대화는 저장 위치를 바꿀 수 없습니다.";
 "ask.storage.card.lockedCloud" = "이 대화는 Typeflux Cloud에 동기화되어 있습니다. 이미 시작한 대화는 저장 위치를 바꿀 수 없습니다.";
@@ -2278,7 +2278,7 @@
 "ask.storage.newLocal" = "새 비공개 대화";
 "ask.storage.newCloud" = "새 클라우드 대화";
 "ask.storage.temporary" = "임시";
-"ask.storage.temporary.detail" = "기록에 남지 않고 메모리를 쓰지 않으며, 나가면 삭제";
+"ask.storage.temporary.detail" = "기록·메모리 없음. 닫으면 삭제";
 "ask.storage.card.lockedTemporary" = "기록이나 메모리에 남지 않습니다. 종료하면 대화와 작업 공간을 삭제합니다.";
 "ask.temporary.title" = "임시 대화";
 "ask.temporary.new" = "새 임시 대화";
@@ -3747,7 +3747,7 @@
 "ask.mode.yolo" = "YOLO · 전체 허용";
 "ask.mode.strict.detail" = "도구 호출마다 확인";
 "ask.mode.standard.detail" = "읽기는 자동 실행, 변경은 확인";
-"ask.mode.yolo.detail" = "쓰기, 삭제, 전송 및 유료 작업을 포함한 활성 도구를 자동 실행";
+"ask.mode.yolo.detail" = "활성화된 도구를 확인 없이 실행";
 "ask.mode.changed" = "권한 모드: %@";
 "ask.mode.usage" = "사용법: /mode yolo, /mode strict 또는 /mode standard";
 "ask.mode.serverUpgrade" = "도구 권한 모드를 사용하려면 클라우드 서비스를 업데이트하세요.";

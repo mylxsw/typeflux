@@ -31,13 +31,9 @@ struct AskAttachButton: View {
         .accessibilityLabel(L("ask.attach.title"))
         .accessibilityIdentifier("ask.composer.attach")
         .askMenu(isPresented: $expanded, glass: true) {
-            AskObservedContent(model: model) {
-                AskObservedContent(model: screenshot ?? AskContextImageModel()) {
-                    AskComposerAddMenu(context: context()) {
-                        expanded = false
-                        model.pickAttachments(folders: false, launcher: launcher)
-                    }
-                }
+            AskLiveComposerAddMenu(model: model, screenshot: screenshot ?? AskContextImageModel(), context: context) {
+                expanded = false
+                model.pickAttachments(folders: false, launcher: launcher)
             }
         }
         // ⌘U picks files directly, without opening the menu.
@@ -51,6 +47,16 @@ struct AskAttachButton: View {
                 .accessibilityHidden(true)
         }
     }
+}
+
+/// The open panel reads both models in one body so storage and switches update together.
+struct AskLiveComposerAddMenu: View {
+    @ObservedObject var model: AskConversationModel
+    @ObservedObject var screenshot: AskContextImageModel
+    var context: () -> AskAddMenuContext
+    var pickFiles: () -> Void
+
+    var body: some View { AskComposerAddMenu(context: context(), pickFiles: pickFiles) }
 }
 
 /// ⌘/ starts a slash command in the workspace, like typing "/". It has no visible
