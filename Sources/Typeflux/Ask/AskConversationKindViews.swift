@@ -108,28 +108,33 @@ struct AskHistoryKindBar: View {
 /// appears while the list mixes Cloud conversations with ones kept on this Mac.
 struct AskHistoryStorageMenu: View {
     @Binding var selection: AskHistoryFilter
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var hovering = false
 
     var body: some View {
-        Menu {
-            ForEach(AskHistoryFilter.allCases, id: \.self) { filter in
-                Button { selection = filter } label: {
-                    if selection == filter { Label(L(filter.titleKey), systemImage: "checkmark") }
-                    else { Text(L(filter.titleKey)) }
-                }
-            }
-        } label: {
+        let options = AskHistoryFilter.allCases.map { TFOption($0, L($0.titleKey)) }
+        ZStack {
             Image(systemName: selection.symbol ?? "line.3.horizontal.decrease")
                 .font(.system(size: 11.5, weight: .medium))
                 .foregroundStyle(selection == .all ? StudioTheme.textSecondary : AskTheme.accent)
                 .frame(width: AskHistoryFilterBar.height, height: AskHistoryFilterBar.height)
-                .background(AskTheme.hoverFill, in: Circle())
+                .background(hovering ? AskTheme.hoverFill : .clear, in: Circle())
+                .opacity(isEnabled ? 1 : TFMetrics.disabledOpacity)
+                .accessibilityHidden(true)
+                .allowsHitTesting(false)
+            TFNativeMenuControl(
+                entries: TFPopUpSection.entries([TFPopUpSection(options: options)], selection: selection),
+                pullsDown: false, accessibilityTitle: L("ask.history.filter"),
+                accessibilityValue: L(selection.titleKey), identifier: "ask.history.storageFilter", enabled: isEnabled
+            ) { tag in
+                guard options.indices.contains(tag) else { return }
+                selection = options[tag].value
+            }
         }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
         .fixedSize()
+        .onHover { hovering = $0 }
         .help(L("ask.history.filter"))
-        .accessibilityLabel(L("ask.history.filter"))
-        .accessibilityIdentifier("ask.history.storageFilter")
+        .tfMenuContainer("ask.history.storageFilter")
     }
 }
 
@@ -202,6 +207,7 @@ struct AskWorkFolderButton: View {
             .padding(.horizontal, 8)
             .frame(height: AskMetrics.composerControlHeight)
             .frame(maxWidth: launcher ? 120 : 180)
+            .fixedSize(horizontal: true, vertical: false)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

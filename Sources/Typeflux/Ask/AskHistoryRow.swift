@@ -95,11 +95,12 @@ struct AskHistoryRow: View {
             }
             if savingTitle != nil {
                 ProgressView().controlSize(.mini)
-            } else if editorTitle == nil, !busy {
+            } else if editorTitle == nil, !busy, hovering {
                 Text(AskPresentation.historyTimeLabel(updatedAt))
                     .font(.system(size: 11))
                     .foregroundStyle(StudioTheme.textTertiary)
                     .monospacedDigit()
+                    .accessibilityIdentifier("ask.history.time")
             }
         }
         .padding(.leading, style.usesGlass ? 12 : 10)
