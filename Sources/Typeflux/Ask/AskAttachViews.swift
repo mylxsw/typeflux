@@ -11,6 +11,8 @@ struct AskAttachButton: View {
     var disabled = false
     /// Built by the composer each time the menu draws, so the switches show live state.
     var context: () -> AskAddMenuContext = { AskAddMenuContext() }
+    /// The captured screen's decoder, so the menu redraws when its thumbnail is ready.
+    var screenshot: AskContextImageModel?
     @State private var expanded = false
     @State private var hovering = false
 
@@ -30,9 +32,11 @@ struct AskAttachButton: View {
         .accessibilityIdentifier("ask.composer.attach")
         .askMenu(isPresented: $expanded, glass: true) {
             AskObservedContent(model: model) {
-                AskComposerAddMenu(context: context()) {
-                    expanded = false
-                    model.pickAttachments(folders: false, launcher: launcher)
+                AskObservedContent(model: screenshot ?? AskContextImageModel()) {
+                    AskComposerAddMenu(context: context()) {
+                        expanded = false
+                        model.pickAttachments(folders: false, launcher: launcher)
+                    }
                 }
             }
         }

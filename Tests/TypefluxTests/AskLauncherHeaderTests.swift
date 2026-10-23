@@ -367,7 +367,7 @@ struct AskLauncherHeaderTests {
         #expect(find("ask.launcher.openChat", in: window) != nil)
         #expect(find("ask.context.token", in: window) == nil)
         #expect(find("ask.context.settings", in: window) == nil)
-        #expect(find(L("ask.memory"), attribute: "accessibilityLabel", in: window) != nil)
+        #expect(find("ask.context.selection.toggle", in: window) != nil, "the selected text keeps its chip")
     }
 
     @Test func voicePanelFillsTheResultsAreaWithoutResizingTheLauncher() async throws {

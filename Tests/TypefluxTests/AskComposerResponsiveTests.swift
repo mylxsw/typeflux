@@ -147,14 +147,15 @@ struct AskComposerResponsiveTests {
         defer { window.close(); AskGlassMenuPresenter.shared.hide() }
         try await settle(host)
         // The narrow footer no longer needs its own context menu: the switches are in "+".
-        let contextMenu = try? accessibilityElement(identifier: "ask.context.menu", in: window)
-        let screenshotChip = try? accessibilityElement(identifier: "ask.context.screenshot.toggle", in: window)
+        let contextMenu = findAccessibilityElement(identifier: "ask.context.menu", in: window)
+        let screenshotChip = findAccessibilityElement(identifier: "ask.context.screenshot.toggle", in: window)
         #expect(contextMenu == nil)
         #expect(screenshotChip == nil)
         try press(accessibilityElement(identifier: "ask.composer.attach", in: window))
         try await fixture.wait { AskGlassMenuPresenter.shared.panel?.isVisible == true }
         let panel = try #require(AskGlassMenuPresenter.shared.panel)
-        try await settle(try #require(panel.contentView))
+        // A reused panel can still be drawing an earlier menu; wait for this one's rows.
+        try await fixture.wait { findAccessibilityElement(identifier: "ask.add.screenshot", in: panel) != nil }
         let screenshot = try accessibilityElement(identifier: "ask.add.screenshot", in: panel)
         #expect(screenshot.value(forKey: "accessibilityValue") as? String == L("ask.context.selection.enabled"),
                 "A failed screenshot remains an explicit checked inclusion toggle, never a misleading retry action.")
@@ -271,6 +272,11 @@ struct AskComposerResponsiveTests {
     }
 
     private func accessibilityElement(identifier: String, in window: NSWindow) throws -> NSObject {
+        try #require(findAccessibilityElement(identifier: identifier, in: window), "Missing control: \(identifier)")
+    }
+
+    /// The element, or nil without recording an issue, so it can be polled.
+    private func findAccessibilityElement(identifier: String, in window: NSWindow) -> NSObject? {
         var seen = Set<ObjectIdentifier>()
         func find(_ value: Any) -> NSObject? {
             guard let object = value as? NSObject, seen.insert(ObjectIdentifier(object)).inserted else { return nil }
@@ -292,7 +298,7 @@ struct AskComposerResponsiveTests {
         if let content = window.contentView, let element = find(content) {
             return element
         }
-        return try #require(nil as NSObject?, "Missing control: \(identifier)")
+        return nil
     }
 
     private func click(_ element: NSObject, in window: NSWindow) throws {

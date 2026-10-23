@@ -244,7 +244,8 @@ struct AskComposerAddMenuTests {
         }
         try press("ask.env.mode.yolo", in: panel)
         try await fixture.wait { fixture.model.permissionMode(launcher: false) == .yolo }
-        #expect(!AskGlassMenuPresenter.shared.isShowing, "Choosing a mode closes the menu")
+        // Choosing a mode closes the menu.
+        try await fixture.wait { !AskGlassMenuPresenter.shared.isShowing }
     }
 
     @Test func chatComposerHasNoEnvironmentControl() async throws {

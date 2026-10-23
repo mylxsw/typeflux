@@ -231,8 +231,8 @@ struct AskLocalModeUITests {
         for size in [NSSize(width: 1180, height: 760), NSSize(width: 960, height: 320)] {
             try await host.resize(to: size)
             try host.assertComposer(text: "Describe this image")
+            // The sidebar says where conversations are kept; the composer no longer repeats it.
             try host.assertVisible(label: L("ask.local.identity"))
-            try host.assertVisible(label: L("ask.storage.local"))
             #expect(!f.model.isSignedIn)
             #expect(f.model.storesLocally(launcher: false))
             #expect(f.model.modelReference(launcher: false) == vision.reference)

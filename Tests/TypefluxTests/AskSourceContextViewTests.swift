@@ -57,23 +57,22 @@ extension AskComposerInteractionTests {
         defer { window.close(); fixture.model.resetSession() }
         let host = try #require(window.contentView)
         try clickSourceChip(try #require(sourceChipAnchors(host).first), in: window)
-        let sourceMenu = try await waitForSourceControl("ask.attach.title", in: window,
+        let sourceMenu = try await waitForSourceControl("ask.add.files", in: window,
                                                        containing: L("ask.context.restore.source", "Safari"))
         try clickSourceText(L("ask.context.restore.source", "Safari"), in: sourceMenu)
         try await fixture.wait { fixture.model.launcherDraft.sourceOff != true }
         #expect(fixture.model.launcherDraft.selectionOff == true)
+        AskGlassMenuPresenter.shared.hide()
         try await Task.sleep(for: .milliseconds(150))
-        try clickSourceChip(try #require(sourceChipAnchors(host).first), in: window)
-        let selectionMenu = try await waitForSourceControl("ask.attach.title", in: window,
-                                                          containing: L("ask.context.restore.selection", 2))
-        try clickSourceText(L("ask.context.restore.selection", 2), in: selectionMenu)
+        // The excluded selection keeps its grey chip on the bar, the last chip there.
+        try clickSourceChip(try #require(sourceChipAnchors(host).last), in: window)
         try await fixture.wait { fixture.model.launcherDraft.selectionOff != true }
         #expect(fixture.model.launcherDraft.sentSource == "Safari — Example")
         #expect(fixture.model.launcherDraft.sentSelection == "First line\nSecond line")
     }
 
     @Test(arguments: [AppLanguage.simplifiedChinese, .english])
-    func narrowLauncherKeepsContentInIconChipsAndMemoryInTheFooter(_ language: AppLanguage) async throws {
+    func narrowLauncherKeepsTheSelectionChipInTheFooter(_ language: AppLanguage) async throws {
         let previousLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(language)
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
@@ -100,7 +99,7 @@ extension AskComposerInteractionTests {
         try await Task.sleep(for: .milliseconds(100))
         let host = try #require(window.contentView)
         let anchors = sourceChipAnchors(host)
-        #expect(anchors.count >= 3, "The attachment menu, screenshot, and memory remain in the footer")
+        #expect(anchors.count >= 2, "The attachment menu and the selected text remain in the footer")
         for anchor in anchors {
             #expect(host.bounds.contains(anchor.convert(anchor.bounds, to: host)))
         }
@@ -118,13 +117,14 @@ extension AskComposerInteractionTests {
         #expect(fixture.model.launcherDraft.sentSource == "Safari — A long page title that must fit in this window")
         #expect(fixture.model.launcherDraft.sentSelection == "Selected words that need a separate row")
         try clickSourceChip(try #require(anchors.last), in: window)
-        try await fixture.wait { fixture.model.launcherDraft.memoryOff == true }
+        try await fixture.wait { fixture.model.launcherDraft.selectionOff == true }
         #expect(fixture.model.launcherDraft.memory == memory)
+        #expect(fixture.model.launcherDraft.sentSelection == nil)
         try clickSourceChip(try #require(sourceChipAnchors(host).last), in: window)
-        try await fixture.wait { fixture.model.launcherDraft.memoryOff != true }
+        try await fixture.wait { fixture.model.launcherDraft.selectionOff != true }
     }
 
-    @Test func selectedTextPreviewCanRemoveOnlyTheSelection() async throws {
+    @Test func selectedTextChipCanRemoveOnlyTheSelection() async throws {
         let previousLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.english)
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
@@ -135,10 +135,16 @@ extension AskComposerInteractionTests {
         let window = try await hostSourceContext(AskConversationView(model: fixture.model),
                                                 size: NSSize(width: 1100, height: 760))
         defer { window.close(); fixture.model.resetSession() }
-        try clickSourceText("Selected words", in: window)
-        let popover = try await waitForSourceControl("ask.selection.remove", in: window)
-        defer { if popover !== window { popover.orderOut(nil) } }
-        try clickSourceControl("ask.selection.remove", in: popover)
+        let root = try #require(window.contentView)
+        // The selected text is not repeated in the strip above the editor.
+        #expect(try sourceText(in: root, matching: "Selected words").isEmpty)
+        // Its chip is the footer's last icon-sized control, near the window's bottom edge
+        // (wider anchors belong to the environment and model menus).
+        let footerChips = sourceChipAnchors(root).filter {
+            let frame = $0.convert($0.bounds, to: nil)
+            return frame.midY < 120 && abs(frame.width - AskMetrics.composerControlHeight) < 1
+        }
+        try clickSourceChip(try #require(footerChips.last), in: window)
         try await fixture.wait { fixture.model.draft.selectionOff == true }
         #expect(fixture.model.draft.sentSource == "Safari — Example")
         #expect(fixture.model.draft.selection == "Selected words")

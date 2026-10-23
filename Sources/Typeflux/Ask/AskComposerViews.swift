@@ -2750,7 +2750,7 @@ struct AskComposer: View {
     private var composerTools: some View {
         AskAttachButton(model: model, launcher: launcher,
                         disabled: active || (!launcher && model.isLoadingSelection),
-                        context: { addMenuContext })
+                        context: { addMenuContext }, screenshot: screenshotImage)
             .opacity(Self.recordingDim(active))
     }
 
@@ -2841,6 +2841,9 @@ struct AskComposer: View {
         if let item = AskContextChips.launcherItems(contextItems).first(where: { $0.kind == .selection }) {
             AskIconChip(item: item, action: selectionToggle, selection: draft.wrappedValue.selection)
                 .disabled(model.capturing)
+                // A switch never shrinks away: shorter hints and the model name give way first.
+                .fixedSize()
+                .layoutPriority(1)
                 .accessibilityIdentifier("ask.context.selection.toggle")
         }
     }

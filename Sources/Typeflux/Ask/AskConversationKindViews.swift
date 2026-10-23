@@ -237,6 +237,8 @@ struct AskWorkEnvironmentButton: View {
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        // Like the permission menu it replaces, it keeps its size; the folder name truncates first.
+        .fixedSize()
         .onHover { hovering = $0 }
         .help(L("ask.env.help"))
         .accessibilityLabel(L("ask.mode.title") + ": " + mode.title)
