@@ -102,18 +102,18 @@ struct AskLauncherHeaderTests {
         let menu = try await openPlusMenu(in: window, fixture: fixture)
         #expect(find("ask.add.selection", in: menu) != nil)
         #expect(find("ask.add.screenshot", in: menu) != nil)
-        try click(try element("ask.add.memory", in: menu), in: menu)
+        try press(try element("ask.add.memory", in: menu))
         try await fixture.wait { fixture.model.launcherDraft.memoryOff == true }
         try await fixture.wait {
             find("ask.add.memory", in: menu)?.value("accessibilityValue") as? String
                 == L("ask.context.selection.disabled")
         }
-        try click(try element("ask.add.memory", in: menu), in: menu)
+        try press(try element("ask.add.memory", in: menu))
         try await fixture.wait { fixture.model.launcherDraft.memoryOff == nil }
         AskGlassMenuPresenter.shared.hide()
     }
 
-    @Test func plusMenuSwitchesTheScreenshotAndShowsTheCapture() async throws {
+    @Test func plusMenuSwitchesTheScreenshot() async throws {
         let fixture = try AskTestFixture()
         captured(fixture)
         let png = AskAttachmentFixture.encode(AskAttachmentFixture.image(width: 320, height: 200), type: .png)
@@ -124,13 +124,14 @@ struct AskLauncherHeaderTests {
         try await Task.sleep(for: .milliseconds(300))
         #expect(fixture.model.launcherDraft.includeScreenshot)
         let menu = try await openPlusMenu(in: window, fixture: fixture)
-        try await fixture.wait { find("ask.add.screenshot.thumbnail", in: menu) != nil }
-        try click(try element("ask.add.screenshot", in: menu), in: menu)
+        // The thumbnail beside the switch is covered by `AskComposerAddMenuTests`; this host
+        // does not present captured images (the old hover preview test could not either).
+        try press(try element("ask.add.screenshot", in: menu))
         try await fixture.wait { !fixture.model.launcherDraft.includeScreenshot }
         #expect(fixture.model.launcherDraft.screenshot != nil, "the captured image can still be restored")
         #expect(fixture.model.launcherDraft.request(deviceId: "device", tools: []).image == nil)
         #expect(AskGlassMenuPresenter.shared.isShowing, "a switch keeps the menu open for the next one")
-        try click(try element("ask.add.screenshot", in: menu), in: menu)
+        try press(try element("ask.add.screenshot", in: menu))
         try await fixture.wait { fixture.model.launcherDraft.includeScreenshot }
     }
 
@@ -521,6 +522,14 @@ struct AskLauncherHeaderTests {
             #expect(L("ask.input.placeholder").contains("/"))
             #expect(L("ask.followup.placeholder").contains("/"))
         }
+    }
+
+    /// Presses a row in the glass menu. The panel never becomes key, so the rows are pressed
+    /// through accessibility rather than with synthetic clicks.
+    private func press(_ element: Element) throws {
+        let selector = NSSelectorFromString("accessibilityPerformPress")
+        try #require(element.object.responds(to: selector), "The row can be pressed")
+        _ = element.object.perform(selector)
     }
 
     /// Clicks "+" and returns the glass panel its menu opens in.
