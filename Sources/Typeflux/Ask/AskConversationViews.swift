@@ -835,13 +835,6 @@ struct AskConversationView: View {
             if model.selectedId != nil || model.tools.browserWorkspace != nil {
                 HStack(spacing: 2) {
                     if model.selectedId != nil {
-                        if canContinueAsWork {
-                            AskHeaderIconButton(symbol: AskConversationKind.work.symbol,
-                                                label: L("ask.kind.continueAsWork"), shortcut: nil) {
-                                model.continueInNew(.work)
-                            }
-                            .accessibilityIdentifier("ask.workspace.continueAsWork")
-                        }
                         AskHeaderIconButton(symbol: "folder", label: L("ask.workspace.openFolder"), shortcut: nil) {
                             if let id = model.selectedId { Task { await model.openWorkspace(id) } }
                         }
@@ -886,11 +879,6 @@ struct AskConversationView: View {
                 .accessibilityValue(L(showsBrowserPanel ? "ask.context.selection.enabled" : "ask.context.selection.disabled"))
                 .accessibilityIdentifier("ask.workspace.browser")
         }
-    }
-
-    /// A started chat this Mac can continue offers to carry on as work.
-    private var canContinueAsWork: Bool {
-        model.selected != nil && model.selectedHostElsewhere == nil && model.conversationKind(launcher: false) == .chat
     }
 
     /// A temporary conversation is never named, a new one is just "Temporary chat".
