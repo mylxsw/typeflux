@@ -41,6 +41,7 @@ struct AskMessage: Codable, Identifiable, Equatable, Sendable {
     var attachments: [AskAttachment]? = nil
     /// Skills and MCP servers the user chose for this question with a slash command.
     var skills: [AskSkillUse]? = nil
+    var skillCatalog: [AskSkillCatalogEntry]? = nil
     var mcpServers: [String]? = nil
     var harness: AskHarnessContract? = nil
     var diagnostic: AskResultDiagnostic? = nil
@@ -200,6 +201,7 @@ struct AskSendRequest: Codable, Equatable, Sendable {
     var references: [AskReference]? = nil
     var attachments: [AskAttachment]? = nil
     var skills: [AskSkillUse]? = nil
+    var skillCatalog: [AskSkillCatalogEntry]? = nil
     var mcpServers: [String]? = nil
     var memory: AskMemory? = nil
     /// A follow-up asked without the conversation's pinned memory; omitted otherwise.
@@ -249,12 +251,14 @@ struct AskSteerRequest: Codable, Equatable, Sendable {
     var references: [AskReference]? = nil
     var attachments: [AskAttachment]? = nil
     var skills: [AskSkillUse]? = nil
+    var skillCatalog: [AskSkillCatalogEntry]? = nil
     var mcpServers: [String]? = nil
 
     init(runId: String, message: AskSendRequest) {
         self.runId = runId; deviceId = message.deviceId; id = message.id; text = message.text
         selection = message.selection; source = message.source; image = message.image; references = message.references
         attachments = message.attachments; skills = message.skills; mcpServers = message.mcpServers
+        skillCatalog = message.skillCatalog
     }
 }
 
@@ -298,7 +302,8 @@ struct AskDraft: Codable, Equatable, Sendable {
     var selectionOff: Bool? = nil
     /// Files, images and folders the user added; nil when there are none.
     var attachments: [AskAttachment]? = nil
-    /// Skill and MCP server names chosen with a slash command for the next message.
+    /// Nil offers all enabled skills; an empty array offers none. Nonempty names
+    /// restrict the next message's catalog without loading full instructions.
     var skills: [String]? = nil
     var mcpServers: [String]? = nil
     /// Where a new conversation is kept: true on this Mac, false in Typeflux Cloud,

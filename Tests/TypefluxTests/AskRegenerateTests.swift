@@ -37,6 +37,26 @@ struct AskRegenerateTests {
         #expect(sends.count == 1)
     }
 
+    @Test func regenerateUsesTheOriginalSkillScopeInsteadOfTheUnsentDraft() async throws {
+        let f = try AskTestFixture()
+        defer { f.model.resetSession() }
+        f.model.commandSources.skills = { AskBuiltinSkills.all }
+        f.tools.additionalDefinitions = [try #require(AskSkillLibrary().definition(AskBuiltinSkills.all))]
+        f.model.draft.skills = ["meeting-notes"]
+        f.model.draft.text = "Summarize the meeting"
+        f.model.submitDraft()
+        try await f.wait { f.model.selected?.messages.count == 2 && !f.model.isBusy }
+        let original = try #require(await f.api.sends.last?.tools.first(where: { $0.name == "skill" }))
+        #expect(original.description.contains("meeting-notes"))
+        #expect(!original.description.contains("translate-polish"))
+        let answer = try #require(f.model.selected?.messages.last)
+        f.model.draft.skills = ["translate-polish"]
+        f.model.regenerate(answer.id)
+        try await f.wait { f.model.selected?.messages.last?.id != answer.id && !f.model.isBusy }
+        let regenerated = await f.api.regenerations.last?.tools?.first(where: { $0.name == "skill" })
+        #expect(regenerated == original)
+    }
+
     @Test func onlyTheLatestCompleteAnswerCanBeRegenerated() async throws {
         let f = try await answered()
         defer { try? FileManager.default.removeItem(at: f.root) }

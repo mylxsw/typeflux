@@ -55,18 +55,7 @@ struct AskSkillLibrary: Sendable {
     }
 
     func definition(_ skills: [AskSkill]) -> AskToolDefinition? {
-        guard !skills.isEmpty else { return nil }
-        let index = skills.map { "- \($0.name): \($0.description)" }.joined(separator: "\n")
-        let schema: [String: Any] = [
-            "type": "object", "required": ["name"], "additionalProperties": false,
-            "properties": ["name": ["type": "string", "enum": skills.map(\.name)]]
-        ]
-        let description = """
-        Load the full instructions of a skill before doing a task it covers, then follow them. Skills:
-        \(index)
-        """
-        guard let data = try? JSONSerialization.data(withJSONObject: schema, options: .sortedKeys) else { return nil }
-        return AskToolDefinition(name: "skill", description: description, parameters: JSONValue(data: data))
+        AskSkillCatalog.definition(skills.map { .init(name: $0.name, description: $0.description) })
     }
 
     func load(_ name: String) throws -> String {

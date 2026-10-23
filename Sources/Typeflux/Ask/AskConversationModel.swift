@@ -1420,7 +1420,7 @@ final class AskConversationModel: ObservableObject {
             if !inline { lastConversationKind = kind }
         }
         request.clientToolApproval = true
-        request.skills = skillUses(submitted.skills)
+        request.skillCatalog = skillCatalog(submitted.skills)
         request.modelRef = modelRef
         request.reasoningEffort = reasoningEffort.requestValue(for: request.modelRef.flatMap { modelLibrary.registry.resolve($0)?.1 })
         request.memory = newConversation && !temporaryRun && submitted.memoryOff != true
@@ -1438,7 +1438,7 @@ final class AskConversationModel: ObservableObject {
             pendingDraftHandoff = nil
         }
         screenshotConsent[id] = submitted.includeScreenshot ? messageId : nil
-        value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort, references: request.references, attachments: request.attachments, skills: request.skills, mcpServers: request.mcpServers))
+        value.messages.append(.init(id: messageId, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), reasoningEffort: request.reasoningEffort, references: request.references, attachments: request.attachments, skills: request.skills, skillCatalog: request.skillCatalog, mcpServers: request.mcpServers))
         if launcher { persistDrafts() }
         if !inline {
             selectedId = id; selected = value; isLoadingSelection = false; selectionGeneration = UUID()
@@ -1585,6 +1585,10 @@ final class AskConversationModel: ObservableObject {
                                                  tools: value.resolvedKind.offered(await tools.definitions(conversationId: id)), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort, references: message.references,
                                                  attachments: message.attachments)
                     request.maxSteps = modelLibrary.settings.askAgentMaxSteps
+                    request.skills = message.skills
+                    request.skillCatalog = message.skillCatalog
+                    request.mcpServers = message.mcpServers
+                    request.tools = AskSkillCatalog.applying(message.skillCatalog, to: request.tools)
                     try await validateModel(
                         request.modelRef, token: current.token,
                         hasImage: request.sendsImage || value.messages.contains(where: { $0.hasImage })
@@ -1679,7 +1683,8 @@ final class AskConversationModel: ObservableObject {
             defer { monitor.cancel() }
             do {
                 try checkOperation(id, operationId: operationId, account: current.account)
-                let definitions = value.resolvedKind.offered(await tools.definitions(conversationId: id))
+                let definitions = AskSkillCatalog.applying(value.messages.last(where: { $0.role == "user" })?.skillCatalog,
+                    to: value.resolvedKind.offered(await tools.definitions(conversationId: id)))
                 try await validateModel(
                     modelRef, token: current.token,
                     hasImage: value.messages.contains(where: { $0.hasImage })
@@ -1947,6 +1952,13 @@ final class AskConversationModel: ObservableObject {
                 result = persisted
             }
             if result == nil {
+                if !AskSkillCatalog.permits(call, catalog: value.messages.last(where: { $0.role == "user" })?.skillCatalog) {
+                    let failure = AskToolPreparationFailure(AskLocalError.message(L("ask.skills.missing")))
+                    guard let rejected = try await rejectToolPreparation(failure, call: call, value: value,
+                                                                         identity: identity, current: current) else { return }
+                    value = try await deliverToolResult(rejected, identity: identity, current: current, operationId: operationId)
+                    continue
+                }
                 // A chat is never offered device tools; refuse one the model names anyway.
                 if run.approvalTool(for: call) == nil, !value.dispatchKind.offers(call.function.name) {
                     let failure = AskToolPreparationFailure(AskLocalError.message(L("ask.kind.chatToolRefused")))
@@ -2784,7 +2796,7 @@ extension AskConversationModel {
                           sendQueue.owns(flight.claim, in: id) else { return }
                 }
                 var message = item.draft.request(deviceId: flight.device, tools: [], id: item.id)
-                message.skills = skillUses(item.draft.skills)
+                message.skillCatalog = skillCatalog(item.draft.skills)
                 let request = AskSteerRequest(runId: flight.claim.originalRunID ?? "", message: message)
                 let response = try await api.steer(conversationId: id, request: request, token: route.token)
                 guard ownsQueueFlight(flight, conversationID: id) else { return }
@@ -2892,7 +2904,8 @@ extension AskConversationModel {
                 var request = request
                 let offered = inline ? [] : Self.offeredTools(await tools.definitions(conversationId: id),
                                                              temporary: temporaryRun, kind: value.resolvedKind)
-                request.tools = inline ? [] : recoveryCheck ? Self.recoveryObservationTools(offered) : offered
+                let scoped = AskSkillCatalog.applying(request.skillCatalog, to: offered)
+                request.tools = inline ? [] : recoveryCheck ? Self.recoveryObservationTools(scoped) : scoped
                 try checkOperation(id, operationId: operationId, account: current.account)
                 request.memory = request.memory?.usable(owner: current.account, invalidations: memoryInvalidations)
                 pendingSends[id] = request

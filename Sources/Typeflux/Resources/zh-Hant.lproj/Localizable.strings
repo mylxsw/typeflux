@@ -2189,10 +2189,7 @@
 "ask.add.selection.detail" = "來自 %@ · %d 行";
 "ask.add.footer" = "輸入 / 呼叫指令 · 拖入資料夾可作為任務的工作資料夾";
 "ask.add.skills.header" = "技能";
-"ask.add.skills" = "選擇技能";
-"ask.add.skills.auto" = "已安裝 %d 個 · 未選擇時 AI 會按需使用";
-"ask.add.skills.chosen" = "已選：%@";
-"ask.add.skills.footer" = "最多選擇 %d 個。選中的技能顯示在訊息前面；訊息為空時按退格可刪除最後一個。";
+"ask.add.skills" = "技能";
 "ask.bar.memoryOff" = "記憶已關";
 "ask.bar.memoryOff.help" = "這次對話不使用記憶，點擊開啟。";
 "ask.bar.folders.help" = "任務工作的資料夾";
@@ -6944,3 +6941,6 @@
 "ask.history.filter.cloud" = "雲端";
 "ask.history.filter.local" = "僅本機";
 "ask.history.kindFilter" = "對話類型";
+
+"ask.add.skills.all" = "全部";
+"ask.add.skills.none" = "不使用";

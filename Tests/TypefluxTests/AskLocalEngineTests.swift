@@ -69,6 +69,40 @@ final class AskLocalEngineTests: XCTestCase {
         AskToolCall(id: id, type: "function", function: .init(name: name, arguments: args))
     }
 
+    func testSkillCatalogSurvivesSendSteeringRestartAndRegenerate() async throws {
+        let first = [AskSkillCatalogEntry(name: "notes", description: "Summarize meetings")]
+        let second = [AskSkillCatalogEntry(name: "translate", description: "Translate text")]
+        let all = try XCTUnwrap(AskSkillCatalog.definition(first + second))
+        let engine = engine()
+        var input = request("Summarize", tools: [all])
+        input.skillCatalog = first
+        var c = try await engine.send(conversationId: "catalog", request: input, token: "")
+        XCTAssertEqual(c.messages.first?.skillCatalog, first)
+        XCTAssertNil(c.messages.first?.skills)
+        XCTAssertEqual(c.run?.tools.first, AskSkillCatalog.definition(first))
+        XCTAssertFalse(String(describing: try payload(c)).contains("Translate text"))
+
+        var supplement = request("Translate instead")
+        supplement.skillCatalog = second
+        _ = try await engine.steer(conversationId: c.id, request: AskSteerRequest(runId: c.run!.id, message: supplement), token: "")
+        c = try await answer(engine, c, content: "First answer")
+        XCTAssertEqual(c.run?.tools.first, AskSkillCatalog.definition(second))
+        XCTAssertEqual(c.messages.last(where: { $0.role == "user" })?.skillCatalog, second)
+
+        var disable = request("Use no skills")
+        disable.skillCatalog = []
+        _ = try await engine.steer(conversationId: c.id, request: AskSteerRequest(runId: c.run!.id, message: disable), token: "")
+        c = try await answer(engine, c, content: "Second answer")
+        XCTAssertFalse(c.run?.tools.contains { $0.name == "skill" } ?? true)
+        c = try await answer(engine, c, content: "Done")
+        let restarted = self.engine()
+        let loaded = try await restarted.conversation(id: c.id, token: "")
+        XCTAssertEqual(loaded.messages.last(where: { $0.role == "user" })?.skillCatalog, [])
+        let regenerated = try await restarted.regenerate(conversationId: c.id,
+            request: AskRegenerateRequest(messageId: c.messages.last!.id, deviceId: device, tools: [all]), token: "")
+        XCTAssertFalse(regenerated.run?.tools.contains { $0.name == "skill" } ?? true)
+    }
+
     func testRecoveryCheckRemainsReadOnlyAfterRestartAndRetry() async throws {
         let id = UUID().uuidString.lowercased()
         var input = request("Check the previous action")

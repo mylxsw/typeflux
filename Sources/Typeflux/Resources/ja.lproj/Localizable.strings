@@ -2182,10 +2182,7 @@
 "ask.add.selection.detail" = "%@ から · %d 行";
 "ask.add.footer" = "/ でコマンド · フォルダをドロップすると作業フォルダになります";
 "ask.add.skills.header" = "スキル";
-"ask.add.skills" = "スキルを選択";
-"ask.add.skills.auto" = "%d 個インストール済み · 未選択のときは AI が必要に応じて使用";
-"ask.add.skills.chosen" = "選択中：%@";
-"ask.add.skills.footer" = "最大 %d 個まで選択できます。選んだスキルはメッセージの前に表示され、空のメッセージで Backspace を押すと最後のスキルを削除します。";
+"ask.add.skills" = "スキル";
 "ask.bar.memoryOff" = "メモリーオフ";
 "ask.bar.memoryOff.help" = "この会話はメモリーを使わずに始まります。クリックで使用します。";
 "ask.bar.folders.help" = "タスクが作業するフォルダ";
@@ -6942,3 +6939,6 @@
 "ask.history.filter.cloud" = "クラウド";
 "ask.history.filter.local" = "このMac";
 "ask.history.kindFilter" = "会話の種類";
+
+"ask.add.skills.all" = "すべて";
+"ask.add.skills.none" = "使用しない";

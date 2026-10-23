@@ -106,7 +106,7 @@ actor AskTestAPI: AskAPI {
         if values[conversationId] == nil { value.kind = request.kind }
         if value.messages.contains(where: { $0.id == request.id }) { return value }
         value.messages.append(.init(id: request.id, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), references: request.references,
-                                    attachments: request.attachments, skills: request.skills, mcpServers: request.mcpServers))
+                                    attachments: request.attachments, skills: request.skills, skillCatalog: request.skillCatalog, mcpServers: request.mcpServers))
         if !streamsOnSend {
             value.messages.append(.init(id: UUID().uuidString, role: "assistant", text: nextTool == nil ? "This is the answer." : "I can inspect the current page.", toolCalls: nextTool.map { [$0] }, createdAt: Date()))
         }
@@ -322,6 +322,7 @@ final class AskTestTools: AskToolExecuting {
 
     var beforeDefinitions: (() async -> Void)?
     var definitionRequests: [String?] = []
+    var additionalDefinitions: [AskToolDefinition] = []
     var riskOverride: AskToolRisk?
     func risk(of call: AskToolCall) -> AskToolRisk {
         riskOverride ?? (call.function.name.hasPrefix("danger") ? .destructive : AskLocalTools.builtinRisk(call))
@@ -329,7 +330,7 @@ final class AskTestTools: AskToolExecuting {
     func definitions(conversationId: String?) async -> [AskToolDefinition] {
         definitionRequests.append(conversationId)
         await beforeDefinitions?()
-        return AskLocalTools.builtins
+        return AskLocalTools.builtins + additionalDefinitions
     }
     func execute(_ call: AskToolCall, conversationId: String) async throws -> AskLocalToolOutput {
         executions += 1

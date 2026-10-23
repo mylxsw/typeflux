@@ -20,8 +20,6 @@ struct AskCommandSources {
 }
 
 extension AskConversationModel {
-    /// Read by the "+" menu's context too, which is not on the main actor.
-    nonisolated static let maximumChosenSkills = 3
     static let maximumChosenServers = 5
 
     private func currentDraft(launcher: Bool) -> AskDraft { launcher ? launcherDraft : draft }
@@ -162,7 +160,11 @@ extension AskConversationModel {
                 draft.text = typed.isEmpty ? suggestion.title : typed + " " + suggestion.title
             }
         case let .skill(name):
-            toggleChoice(name, keyPath: \.skills, limit: Self.maximumChosenSkills, launcher: launcher)
+            if currentDraft(launcher: launcher).skills == nil {
+                chooseSkills([name], launcher: launcher)
+            } else {
+                toggleSkill(name, launcher: launcher)
+            }
         case let .mcpServer(name):
             toggleChoice(name, keyPath: \.mcpServers, limit: Self.maximumChosenServers, launcher: launcher)
         case let .keyword(id):
@@ -200,13 +202,21 @@ extension AskConversationModel {
 
     /// Chooses a skill for the next message from the "+" menu, or drops it when chosen.
     func toggleSkill(_ name: String, launcher: Bool) {
-        toggleChoice(name, keyPath: \.skills, limit: Self.maximumChosenSkills, launcher: launcher)
+        let available = installedSkills().map(\.name)
+        guard available.contains(name) else { return }
+        var names = currentDraft(launcher: launcher).skills ?? available
+        if let index = names.firstIndex(of: name) { names.remove(at: index) }
+        else { names.append(name) }
+        chooseSkills(names, launcher: launcher)
+    }
+
+    func chooseSkills(_ names: [String]?, launcher: Bool) {
+        updateDraft(launcher: launcher) { $0.skills = names }
     }
 
     func removeChoice(skill name: String, launcher: Bool) {
         updateDraft(launcher: launcher) { draft in
             draft.skills?.removeAll { $0 == name }
-            if draft.skills?.isEmpty == true { draft.skills = nil }
         }
     }
 
@@ -217,14 +227,11 @@ extension AskConversationModel {
         }
     }
 
-    /// The chosen skills with their instructions; a skill removed since is dropped.
-    func skillUses(_ names: [String]?) -> [AskSkillUse]? {
-        guard let names, !names.isEmpty else { return nil }
-        let library = commandSources.skills()
-        let uses = names.compactMap { name in
-            library.first { $0.name == name }.map { AskSkillUse(name: $0.name, instructions: $0.body) }
-        }
-        return uses.isEmpty ? nil : uses
+    /// Only catalog metadata travels with new questions. Removed or disabled
+    /// skills are omitted, never replaced with the entire library.
+    func skillCatalog(_ names: [String]?) -> [AskSkillCatalogEntry] {
+        commandSources.skills().filter { names?.contains($0.name) ?? true }
+            .map { .init(name: $0.name, description: $0.description) }
     }
 
     /// Shows a short confirmation in the composer's footer, then clears it unless

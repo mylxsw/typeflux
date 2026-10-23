@@ -98,17 +98,16 @@ struct AskContentTileTests {
                           AskSkillSummary(name: "pdf-reader", description: "Read PDFs", builtin: false),
                           AskSkillSummary(name: "translate", description: "Translate", builtin: true)]
 
-    @Test func skillsSummarySaysWhatIsChosenOrThatSkillsApplyOnTheirOwn() {
+    @Test func skillsSummaryDistinguishesAllSubsetAndNone() {
         var context = AskAddMenuContext(skills: skills)
-        #expect(context.skillsSummary == L("ask.add.skills.auto", 3))
+        #expect(context.skillsSummary == L("ask.add.skills.all"))
+        #expect(skills.allSatisfy { context.isChosen($0) })
         context.chosenSkills = ["email-reply", "translate"]
-        #expect(context.skillsSummary == L("ask.add.skills.chosen", "email-reply, translate"))
-    }
-
-    @Test func aFullChoiceOnlyAllowsRemoving() {
-        let context = AskAddMenuContext(skills: skills, chosenSkills: ["email-reply"], skillLimit: 1)
-        #expect(context.canChoose(skills[0]), "A chosen skill can always be removed")
-        #expect(!context.canChoose(skills[1]))
+        #expect(context.skillsSummary == "2/3")
+        #expect(context.isChosen(skills[0]))
+        context.chosenSkills = []
+        #expect(context.skillsSummary == L("ask.add.skills.none"))
+        #expect(skills.allSatisfy { !context.isChosen($0) })
     }
 
     private func host<V: View>(_ view: V, size: NSSize = NSSize(width: 420, height: 560)) -> NSWindow {
@@ -152,7 +151,9 @@ struct AskContentTileTests {
 
     @Test func skillsRowOpensAPageThatTogglesSkills() async throws {
         var toggled: [String] = []
-        let context = AskAddMenuContext(skills: skills, chosenSkills: ["translate"], toggleSkill: { toggled.append($0) })
+        var choices: [[String]?] = []
+        let context = AskAddMenuContext(skills: skills, chosenSkills: ["translate"], toggleSkill: { toggled.append($0) },
+                                        chooseSkills: { choices.append($0) })
         let window = host(AskComposerAddMenu(context: context, pickFiles: {}))
         defer { window.close() }
         try await settle(window)
@@ -160,9 +161,20 @@ struct AskContentTileTests {
         try press("ask.add.skills", in: window)
         try await settle(window)
         #expect(find("ask.add.files", in: window) == nil)
+        if let directory = ProcessInfo.processInfo.environment["TYPEFLUX_SKILL_MENU_SNAPSHOTS"], let view = window.contentView {
+            let root = URL(fileURLWithPath: directory)
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            let bitmap = try #require(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+            view.cacheDisplay(in: view.bounds, to: bitmap)
+            let png = try #require(bitmap.representation(using: .png, properties: [:]))
+            try png.write(to: root.appendingPathComponent("skills-selection.png"))
+        }
         try press("ask.add.skill.email-reply", in: window)
         try press("ask.add.skill.translate", in: window)
         #expect(toggled == ["email-reply", "translate"])
+        try press("ask.add.skills.none", in: window)
+        try press("ask.add.skills.all", in: window)
+        #expect(choices.count == 2 && choices[0] == [] && choices[1] == nil)
         try press("ask.add.skills.back", in: window)
         try await settle(window)
         #expect(find("ask.add.files", in: window) != nil)
@@ -178,21 +190,28 @@ struct AskContentTileTests {
 
     // MARK: - Model
 
-    @Test func toggleSkillChoosesRemovesAndRespectsTheLimit() throws {
+    @Test func toggleSkillSupportsAllSubsetNoneAndMoreThanThree() throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
         let model = fixture.model
+        model.commandSources.skills = {
+            ["a", "b", "c", "d", "x"].map { AskSkill(name: $0, description: $0, body: "Instructions") }
+        }
         model.toggleSkill("a", launcher: false)
-        model.toggleSkill("b", launcher: false)
-        #expect(model.draft.skills == ["a", "b"])
-        model.toggleSkill("a", launcher: false)
-        #expect(model.draft.skills == ["b"])
-        model.toggleSkill("b", launcher: false)
-        #expect(model.draft.skills == nil, "No choice is stored as nil")
-        for name in ["a", "b", "c", "d"] { model.toggleSkill(name, launcher: false) }
-        #expect(model.draft.skills?.count == AskConversationModel.maximumChosenSkills)
+        #expect(model.draft.skills == ["b", "c", "d", "x"])
+        model.chooseSkills([], launcher: false)
+        for name in ["a", "b", "c", "d", "x"] { model.toggleSkill(name, launcher: false) }
+        #expect(model.draft.skills?.count == 5)
+        for name in ["a", "b", "c", "d", "x"] { model.toggleSkill(name, launcher: false) }
+        #expect(model.draft.skills == [], "Removing the final skill must not re-enable all skills")
+        model.toggleSkill("missing", launcher: false)
+        #expect(model.draft.skills == [])
+        model.chooseSkills(nil, launcher: false)
+        #expect(model.draft.skills == nil)
+        model.chooseSkills([], launcher: true)
         model.toggleSkill("x", launcher: true)
         #expect(model.launcherDraft.skills == ["x"])
+        #expect(model.draft.skills == nil)
     }
 
     @Test func installedSkillsMarkBuiltInOnes() throws {

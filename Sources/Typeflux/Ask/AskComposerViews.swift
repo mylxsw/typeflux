@@ -2789,8 +2789,9 @@ struct AskComposer: View {
             } : nil,
             restoreSource: { model.restoreCapturedContent(.source, launcher: launcher) },
             skills: model.installedSkills(),
-            chosenSkills: value.skills ?? [],
-            toggleSkill: { model.toggleSkill($0, launcher: launcher) }
+            chosenSkills: value.skills,
+            toggleSkill: { model.toggleSkill($0, launcher: launcher) },
+            chooseSkills: { model.chooseSkills($0, launcher: launcher) }
         )
     }
 

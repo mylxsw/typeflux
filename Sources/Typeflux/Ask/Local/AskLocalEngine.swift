@@ -324,12 +324,12 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         if let locale = request.locale, !locale.isEmpty, locale.count <= 35 { record.locale = locale }
         c.messages.append(AskMessage(id: request.id, role: "user", text: request.text, selection: request.selection, source: request.source,
                                      image: request.image, createdAt: now(), reasoningEffort: request.reasoningEffort, references: request.references,
-                                     attachments: request.attachments, skills: request.skills, mcpServers: request.mcpServers))
+                                     attachments: request.attachments, skills: request.skills, skillCatalog: request.skillCatalog, mcpServers: request.mcpServers))
         c.titlePolicy = request.titlePolicy ?? c.titlePolicy
         c.auxiliaryModelRef = request.auxiliaryModelRef
         c.modelRef = modelRef
         c.run = AskRun(id: UUID().uuidString.lowercased(), deviceId: request.deviceId, status: "running", steps: 0, updatedAt: now(),
-                       tools: request.tools, pending: [], modelRef: modelRef, reasoningEffort: request.reasoningEffort)
+                       tools: AskSkillCatalog.applying(request.skillCatalog, to: request.tools), pending: [], modelRef: modelRef, reasoningEffort: request.reasoningEffort)
         c.run?.maxSteps = try Self.configuredMaxSteps(request.maxSteps)
         c.run?.clientToolApproval = request.clientToolApproval
         c.run?.recoveryCheck = request.recoveryCheck
@@ -521,7 +521,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         waiting.append(AskMessage(id: request.id, role: "user", text: request.text, selection: request.selection, source: request.source,
                                   image: request.image, createdAt: now(), reasoningEffort: run.reasoningEffort,
                                   references: request.references, runId: run.id, steered: true, attachments: request.attachments,
-                                  skills: request.skills, mcpServers: request.mcpServers))
+                                  skills: request.skills, skillCatalog: request.skillCatalog, mcpServers: request.mcpServers))
         record.steering = waiting
         try save(&record)
         return record.conversation
@@ -578,7 +578,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         if let through = c.summaryThrough, through > c.messages.count { c.summaryThrough = c.messages.count }
         c.modelRef = model
         c.run = AskRun(id: UUID().uuidString.lowercased(), deviceId: request.deviceId, status: "running", steps: 0, updatedAt: now(),
-                       tools: request.tools ?? c.run?.tools ?? [], pending: [], modelRef: model, reasoningEffort: prompt.reasoningEffort)
+                       tools: AskSkillCatalog.applying(prompt.skillCatalog, to: request.tools ?? c.run?.tools ?? []), pending: [], modelRef: model, reasoningEffort: prompt.reasoningEffort)
         c.run?.maxSteps = try Self.configuredMaxSteps(request.maxSteps ?? record.conversation.run?.maxSteps)
         c.run?.clientToolApproval = request.clientToolApproval
         c.run?.recoveryCheck = record.conversation.run?.recoveryCheck
@@ -1078,6 +1078,11 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
             message.createdAt = now()
             message.runId = run.id
             record.conversation.messages.append(message)
+            if record.conversation.run?.recoveryCheck != true {
+                let scoped = AskSkillCatalog.applying(message.skillCatalog,
+                    to: record.conversation.run?.tools ?? [], allowAdding: true)
+                record.conversation.run?.tools = scoped
+            }
         }
         record.steering = nil
         record.conversation.run?.extraSteps = min((run.extraSteps ?? 0) + Self.steeringStepBonus * waiting.count, Self.maxExtraSteps)

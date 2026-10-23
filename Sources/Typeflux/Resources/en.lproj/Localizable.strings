@@ -2192,10 +2192,7 @@
 "ask.add.selection.detail" = "From %@ · %d lines";
 "ask.add.footer" = "Type / for commands · Drop a folder to work in it";
 "ask.add.skills.header" = "Skills";
-"ask.add.skills" = "Choose skills";
-"ask.add.skills.auto" = "%d installed · used automatically when none is chosen";
-"ask.add.skills.chosen" = "Chosen: %@";
-"ask.add.skills.footer" = "Choose up to %d. Chosen skills appear before your message; Backspace in an empty message removes the last one.";
+"ask.add.skills" = "Skills";
 "ask.bar.memoryOff" = "Memory off";
 "ask.bar.memoryOff.help" = "This conversation starts without memory. Click to include it.";
 "ask.bar.folders.help" = "Folders this task works in";
@@ -6942,3 +6939,6 @@
 "ask.history.filter.cloud" = "Cloud";
 "ask.history.filter.local" = "This Mac";
 "ask.history.kindFilter" = "Conversation type";
+
+"ask.add.skills.all" = "All";
+"ask.add.skills.none" = "None";

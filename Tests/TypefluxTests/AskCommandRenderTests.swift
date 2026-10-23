@@ -138,7 +138,7 @@ struct AskCommandRenderTests {
         // A skill toggles its chip off again.
         try await type("/meeting", in: editor)
         try await press("\r", keyCode: 36, in: editor)
-        #expect(f.model.draft.skills == nil)
+        #expect(f.model.draft.skills == [])
 
         // Text with no matching command stays text.
         try await type("/zzzz", in: editor)

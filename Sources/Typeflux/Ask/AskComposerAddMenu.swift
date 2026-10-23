@@ -19,7 +19,9 @@ struct AskAddMenuSwitch: Identifiable {
     var thumbnail: NSImage?
     var action: () -> Void
 
-    var id: String { kind.rawValue }
+    var id: String {
+        kind.rawValue
+    }
 
     /// Builds the menu's switches from the composer's context items, in the order the
     /// menu lists them: screenshot, memory, selection. Source information is not a switch.
@@ -38,12 +40,14 @@ struct AskAddMenuSwitch: Identifiable {
                     detail: screenshotDetail(item), isOn: item.style == .active || item.style == .warning,
                     enabled: action != nil, warning: item.style == .warning,
                     thumbnail: item.style == .warning || item.style == .unavailable ? nil : screenshot,
-                    action: action ?? {})
+                    action: action ?? {}
+                )
             case .memory:
                 return AskAddMenuSwitch(
                     kind: kind, symbol: "brain", title: L("ask.memory"),
                     detail: item.detail ?? L("ask.memory.help"), isOn: item.style == .active,
-                    enabled: action != nil, action: action ?? {})
+                    enabled: action != nil, action: action ?? {}
+                )
             case .selection:
                 let lines = selectionText.map(AskPresentation.lineCount) ?? 0
                 let detail = item.sourceAppName.map { L("ask.add.selection.detail", $0, lines) }
@@ -52,7 +56,8 @@ struct AskAddMenuSwitch: Identifiable {
                     kind: kind, symbol: "text.quote", title: L("ask.selection"), detail: detail,
                     isOn: item.style == .active, enabled: action != nil,
                     preview: selectionText.map(AskContextChips.selectionPreview),
-                    action: action ?? {})
+                    action: action ?? {}
+                )
             case .source:
                 return nil
             }
@@ -80,19 +85,19 @@ struct AskAddMenuContext {
     var restoreSource: () -> Void = {}
     /// Installed skills, offered on their own page; empty hides the row (the launcher).
     var skills: [AskSkillSummary] = []
-    var chosenSkills: [String] = []
-    var skillLimit = AskConversationModel.maximumChosenSkills
+    /// Nil selects all; an empty array selects none.
+    var chosenSkills: [String]?
     var toggleSkill: (String) -> Void = { _ in }
+    var chooseSkills: ([String]?) -> Void = { _ in }
 
     /// The skills row's detail: what is chosen, or that skills apply on their own.
     var skillsSummary: String {
-        chosenSkills.isEmpty ? L("ask.add.skills.auto", skills.count)
-            : L("ask.add.skills.chosen", chosenSkills.joined(separator: ", "))
+        guard let chosenSkills else { return L("ask.add.skills.all") }
+        return chosenSkills.isEmpty ? L("ask.add.skills.none") : "\(chosenSkills.count)/\(skills.count)"
     }
 
-    /// A skill not yet chosen cannot be added once the limit is reached.
-    func canChoose(_ skill: AskSkillSummary) -> Bool {
-        chosenSkills.contains(skill.name) || chosenSkills.count < skillLimit
+    func isChosen(_ skill: AskSkillSummary) -> Bool {
+        chosenSkills?.contains(skill.name) ?? true
     }
 }
 
@@ -142,9 +147,9 @@ struct AskComposerAddMenu: View {
             }
             if !context.skills.isEmpty {
                 separator
-                header(L("ask.add.skills.header"))
-                AskAddMenuRow(symbol: "bolt", title: L("ask.add.skills"), detail: context.skillsSummary,
-                              active: !context.chosenSkills.isEmpty, action: { page = .skills }) {
+                AskAddMenuRow(symbol: "bolt", title: L("ask.add.skills"), detail: nil,
+                              active: context.chosenSkills != nil, action: { page = .skills }) {
+                    Text(context.skillsSummary).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
                     Image(systemName: "chevron.right").font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(StudioTheme.textTertiary)
                 }
@@ -156,42 +161,48 @@ struct AskComposerAddMenu: View {
     /// Skills on their own page, so a long list never crowds the menu. Each row toggles.
     private var skillsPage: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Button { page = .main } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "chevron.left").font(.system(size: 10, weight: .semibold))
-                    Text(L("ask.add.skills"))
+            HStack(spacing: 12) {
+                Button { page = .main } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left").font(.system(size: 10, weight: .semibold))
+                        Text(L("ask.add.skills"))
+                    }
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .contentShape(Rectangle())
                 }
-                .font(.system(size: 12.5))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .padding(.horizontal, 8).padding(.vertical, 4)
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+                .padding(.leading, 6).padding(.bottom, 4)
+                .accessibilityIdentifier("ask.add.skills.back")
+                Spacer(minLength: 0)
+                Button(L("ask.add.skills.all")) { context.chooseSkills(nil) }
+                    .accessibilityIdentifier("ask.add.skills.all")
+                Button(L("ask.add.skills.none")) { context.chooseSkills([]) }
+                    .accessibilityIdentifier("ask.add.skills.none")
             }
             .buttonStyle(.plain)
-            .padding(.leading, 6).padding(.bottom, 4)
-            .accessibilityIdentifier("ask.add.skills.back")
+            .font(.system(size: 12))
+            .foregroundStyle(StudioTheme.textSecondary)
+            .padding(.trailing, 14)
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(context.skills, id: \.name) { skill in
-                        let chosen = context.chosenSkills.contains(skill.name)
+                        let chosen = context.isChosen(skill)
                         AskAddMenuRow(symbol: skill.builtin ? "bolt" : "shippingbox", title: skill.name,
-                                      detail: skill.description, active: chosen,
-                                      enabled: context.canChoose(skill),
+                                      detail: nil, active: chosen,
                                       action: { context.toggleSkill(skill.name) }) {
-                            if chosen {
-                                Image(systemName: "checkmark").font(.system(size: 11, weight: .semibold))
-                                    .foregroundStyle(AskTheme.accent)
-                            }
+                            Image(systemName: chosen ? "checkmark.square.fill" : "square")
+                                .font(.system(size: 15))
+                                .foregroundStyle(chosen ? AskTheme.accent : StudioTheme.textTertiary)
                         }
+                        .help(skill.description)
                         .accessibilityAddTraits(chosen ? .isSelected : [])
                         .accessibilityIdentifier("ask.add.skill." + skill.name)
                     }
                 }
             }
             .frame(maxHeight: 320)
-            Text(L("ask.add.skills.footer", context.skillLimit))
-                .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 14).padding(.top, 6)
         }
     }
 
@@ -205,8 +216,15 @@ struct AskComposerAddMenu: View {
     }
 
     @ViewBuilder private func switchRow(_ item: AskAddMenuSwitch) -> some View {
-        AskAddMenuRow(symbol: item.symbol, title: item.title, detail: item.warning || !item.enabled ? item.detail : nil, active: item.isOn,
-                      warning: item.warning, enabled: item.enabled, action: item.action) {
+        AskAddMenuRow(
+            symbol: item.symbol,
+            title: item.title,
+            detail: item.warning || !item.enabled ? item.detail : nil,
+            active: item.isOn,
+            warning: item.warning,
+            enabled: item.enabled,
+            action: item.action
+        ) {
             HStack(spacing: 10) {
                 if let thumbnail = item.thumbnail {
                     Image(nsImage: thumbnail).resizable().aspectRatio(contentMode: .fill)

@@ -378,12 +378,12 @@ struct AskCommandExecutionTests {
         #expect(f.model.draft.includeScreenshot == (f.model.screenshotCapability(launcher: false) == .supported))
     }
 
-    @Test func skillAndServerChipsToggleWithinTheirLimits() throws {
+    @Test func skillSelectionAndServerLimitsAreIndependent() throws {
         let (f, _) = try fixture()
         f.model.runCommand(command(.skill("meeting-notes"), "meeting-notes", kind: .token), launcher: true)
         #expect(f.model.launcherDraft.skills == ["meeting-notes"])
         f.model.runCommand(command(.skill("meeting-notes"), "meeting-notes", kind: .token), launcher: true)
-        #expect(f.model.launcherDraft.skills == nil)
+        #expect(f.model.launcherDraft.skills == [])
         for index in 0 ... AskConversationModel.maximumChosenServers {
             f.model.runCommand(command(.mcpServer("s\(index)"), "s\(index)", kind: .token), launcher: false)
         }
@@ -393,13 +393,13 @@ struct AskCommandExecutionTests {
         #expect(f.model.draft.mcpServers?.contains("s0") == false)
         f.model.draft.skills = ["meeting-notes"]
         f.model.removeChoice(skill: "meeting-notes", launcher: false)
-        #expect(f.model.draft.skills == nil)
+        #expect(f.model.draft.skills == [])
     }
 
-    @Test func chosenSkillsTravelWithTheirInstructions() async throws {
+    @Test func chosenSkillsTravelAsCatalogMetadata() async throws {
         let (f, _) = try fixture()
-        #expect(f.model.skillUses(nil) == nil)
-        #expect(f.model.skillUses(["missing"]) == nil)
+        #expect(f.model.skillCatalog(nil).map(\.name) == ["meeting-notes"])
+        #expect(f.model.skillCatalog(["missing"]).isEmpty)
         f.model.draft.text = "Summarize the call"
         f.model.draft.skills = ["meeting-notes", "missing"]
         f.model.draft.mcpServers = ["github"]
@@ -407,9 +407,25 @@ struct AskCommandExecutionTests {
         try await f.wait { !(f.model.selected?.messages.isEmpty ?? true) }
         try await f.wait { !f.model.isBusy }
         let sent = await f.api.sends.last
-        #expect(sent?.skills == [AskSkillUse(name: "meeting-notes", instructions: "Decisions first.")])
+        #expect(sent?.skills == nil)
+        #expect(sent?.skillCatalog == [AskSkillCatalogEntry(name: "meeting-notes", description: "Notes")])
         #expect(sent?.mcpServers == ["github"])
-        #expect(f.model.selected?.messages.first?.skills?.count == 1)
+        #expect(f.model.selected?.messages.first?.skillCatalog?.count == 1)
+    }
+
+    @Test func aSkillOutsideTheSelectionNeverLoads() async throws {
+        let (f, _) = try fixture()
+        f.model.draft.skills = []
+        f.model.draft.text = "Answer without skills"
+        await f.api.setTool(.init(id: "outside", type: "function",
+            function: .init(name: "skill", arguments: #"{"name":"meeting-notes"}"#)))
+        f.model.submitDraft()
+        try await f.wait { !f.model.isBusy && f.model.selected != nil }
+        #expect(f.tools.executions == 0)
+        let result = await f.api.results.last
+        #expect(result?.isError == true)
+        #expect(result?.harness?.outcome?.eventDispatched == false)
+        #expect(await f.api.sends.last?.skillCatalog == [])
     }
 
     @Test func rememberCopyAndSuggestionsUseTheirSources() throws {

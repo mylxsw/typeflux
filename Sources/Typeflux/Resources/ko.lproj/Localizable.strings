@@ -2182,10 +2182,7 @@
 "ask.add.selection.detail" = "%@에서 · %d줄";
 "ask.add.footer" = "/ 로 명령 실행 · 폴더를 끌어다 놓으면 작업 폴더가 됩니다";
 "ask.add.skills.header" = "스킬";
-"ask.add.skills" = "스킬 선택";
-"ask.add.skills.auto" = "%d개 설치됨 · 선택하지 않으면 AI가 필요할 때 사용";
-"ask.add.skills.chosen" = "선택됨: %@";
-"ask.add.skills.footer" = "최대 %d개까지 선택할 수 있습니다. 선택한 스킬은 메시지 앞에 표시되며, 빈 메시지에서 Backspace를 누르면 마지막 스킬이 제거됩니다.";
+"ask.add.skills" = "스킬";
 "ask.bar.memoryOff" = "메모리 꺼짐";
 "ask.bar.memoryOff.help" = "이 대화는 메모리 없이 시작합니다. 클릭하면 사용합니다.";
 "ask.bar.folders.help" = "작업이 사용하는 폴더";
@@ -6942,3 +6939,6 @@
 "ask.history.filter.cloud" = "클라우드";
 "ask.history.filter.local" = "이 Mac";
 "ask.history.kindFilter" = "대화 유형";
+
+"ask.add.skills.all" = "전체";
+"ask.add.skills.none" = "사용 안 함";
