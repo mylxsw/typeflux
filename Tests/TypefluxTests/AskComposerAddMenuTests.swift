@@ -198,7 +198,7 @@ struct AskComposerAddMenuTests {
                 "An excluded selection keeps its grey chip so it can be included again")
     }
 
-    @Test func workspacePlusMenuLeavesStorageAndMemoryToTheBar() async throws {
+    @Test func workspacePlusMenuTogglesMemoryAndLeavesStorageToTheBar() async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession(); AskGlassMenuPresenter.shared.hide() }
         fixture.model.draft.memory = AskMemory(global: "short")
@@ -209,9 +209,10 @@ struct AskComposerAddMenuTests {
         try await fixture.wait { AskGlassMenuPresenter.shared.panel?.isVisible == true }
         let panel = try #require(AskGlassMenuPresenter.shared.panel)
         try await fixture.wait { self.find("ask.add.screenshot", in: panel) != nil }
-        // GUL-464: the new page's bar chooses where it is kept and memory; temporary is its hourglass.
+        // The new page's bar chooses storage; memory stays in the "+" menu.
         #expect(find("ask.add.storage.cloud", in: panel) == nil)
-        #expect(find("ask.add.memory", in: panel) == nil)
+        try press("ask.add.memory", in: panel)
+        try await fixture.wait { fixture.model.memorySwitchedOff(launcher: false) }
         AskGlassMenuPresenter.shared.hide()
 
         fixture.model.draft.text = "Hello"

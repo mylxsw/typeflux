@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// What a new conversation fixes before its first message, under the composer like
-/// ChatGPT's project bar (GUL-464): a task's folders, memory, and where it is kept.
+/// ChatGPT's project bar (GUL-464): a task's folders and where it is kept.
 /// It goes away once the conversation starts; the header then marks what was chosen.
 /// Settings that can change mid-conversation (permission, model) stay in the composer.
 struct AskNewConversationBar: View {
@@ -23,20 +23,12 @@ struct AskNewConversationBar: View {
         return .choice(local ? .local : .cloud)
     }
 
-    /// Memory can be switched only when there is memory and the question is kept.
-    static func offersMemory(temporary: Bool, memory: AskMemory?) -> Bool {
-        !temporary && memory?.isEmpty == false
-    }
-
     private var temporary: Bool { model.isTemporaryComposer(launcher: false) }
 
     var body: some View {
         HStack(spacing: 2) {
             if model.conversationKind(launcher: false) == .work {
                 AskWorkFolderButton(model: model)
-            }
-            if Self.offersMemory(temporary: temporary, memory: model.draft.memory) {
-                memoryButton
             }
             Spacer(minLength: 8)
             AskStorageBarControl(model: model,
@@ -52,16 +44,6 @@ struct AskNewConversationBar: View {
         .padding(.horizontal, 14)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.newConversation.bar")
-    }
-
-    private var memoryButton: some View {
-        let off = model.memorySwitchedOff(launcher: false)
-        return AskBarButton(symbol: "brain", title: L(off ? "ask.bar.memoryOff" : "ask.memory"),
-                            muted: off, help: L(off ? "ask.bar.memoryOff.help" : "ask.memory.help")) {
-            model.toggleMemory(launcher: false)
-        }
-        .accessibilityValue(L(off ? "ask.context.selection.disabled" : "ask.context.selection.enabled"))
-        .accessibilityIdentifier("ask.newConversation.memory")
     }
 }
 
@@ -137,8 +119,17 @@ struct AskStorageBarControl: View {
             .accessibilityHint(L("ask.bar.notSaved.hint"))
             .accessibilityIdentifier("ask.newConversation.storage")
         case .localOnly:
-            AskBarButton(symbol: AskStorageKind.local.symbol, title: L("ask.storage.local"),
-                         help: L("ask.bar.signInToSync")) { model.onSignIn() }
+            Label {
+                Text(L("ask.storage.local")).font(.system(size: 12))
+            } icon: {
+                Image(systemName: AskStorageKind.local.symbol)
+                    .font(.system(size: 11.5, weight: .medium))
+            }
+                .foregroundStyle(StudioTheme.textSecondary)
+                .padding(.horizontal, 8)
+                .frame(height: 26)
+                .help(L("ask.storage.local.detail"))
+                .accessibilityElement(children: .combine)
                 .accessibilityIdentifier("ask.newConversation.storage")
         case let .choice(kind):
             AskBarButton(symbol: kind.symbol, title: L(kind.titleKey),

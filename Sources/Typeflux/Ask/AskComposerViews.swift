@@ -2761,8 +2761,7 @@ struct AskComposer: View {
             .opacity(Self.recordingDim(active))
     }
 
-    /// The new workspace page chooses memory and storage in its bar (GUL-464), so its
-    /// "+" menu offers neither; the launcher, which has no bar, keeps both.
+    /// The new workspace page chooses storage in its bar (GUL-464); memory stays in "+".
     private var barOwnsConversationSettings: Bool { !launcher && model.selectedId == nil }
 
     /// The "+" menu's switches and storage choice, read when the menu draws.
@@ -2771,7 +2770,7 @@ struct AskComposer: View {
         let storage = AskLocalModeStatus.make(model: model, signedIn: model.isSignedIn, launcher: launcher)
         return AskAddMenuContext(
             switches: AskAddMenuSwitch.make(
-                items: barOwnsConversationSettings ? contextItems.filter { $0.kind != .memory } : contextItems,
+                items: contextItems,
                 selectionText: value.selection.flatMap { $0.isEmpty ? nil : $0 },
                 screenshot: model.capturingScreenshot ? nil : screenshotThumbnail,
                 actions: { kind in

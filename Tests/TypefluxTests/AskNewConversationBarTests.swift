@@ -19,13 +19,6 @@ struct AskNewConversationBarTests {
         #expect(AskNewConversationBar.storage(temporary: false, signedIn: true, local: false) == .choice(.cloud))
     }
 
-    @Test func memoryIsOfferedOnlyWhenThereIsMemoryToKeep() {
-        #expect(AskNewConversationBar.offersMemory(temporary: false, memory: AskMemory(global: "short")))
-        #expect(!AskNewConversationBar.offersMemory(temporary: true, memory: AskMemory(global: "short")))
-        #expect(!AskNewConversationBar.offersMemory(temporary: false, memory: AskMemory()))
-        #expect(!AskNewConversationBar.offersMemory(temporary: false, memory: nil))
-    }
-
     @Test func headlineAndComposerAreGroupedAboveTheMiddle() throws {
         let layout = AskWorkspaceLayout(size: CGSize(width: 1100, height: 800), sidebarCollapsed: false,
                                         showsUsage: false)
@@ -138,7 +131,7 @@ struct AskNewConversationBarTests {
         _ = element.perform(NSSelectorFromString("accessibilityPerformPress"))
     }
 
-    @Test func chatBarOffersMemoryAndStorageChoice() async throws {
+    @Test func chatBarLeavesMemoryInPlusMenuAndOffersStorageChoice() async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession(); AskGlassMenuPresenter.shared.hide() }
         fixture.model.setConversationKind(.chat, launcher: false)
@@ -147,8 +140,8 @@ struct AskNewConversationBarTests {
         defer { window.close() }
         try await settle(window)
         #expect(find("ask.newConversation.folders", in: window) == nil, "A chat works in no folder")
-        try press("ask.newConversation.memory", in: window)
-        try await fixture.wait { fixture.model.memorySwitchedOff(launcher: false) }
+        #expect(find("ask.newConversation.memory", in: window) == nil)
+        #expect(!fixture.model.memorySwitchedOff(launcher: false))
 
         try press("ask.newConversation.storage", in: window)
         try await fixture.wait { AskGlassMenuPresenter.shared.panel?.isVisible == true }
@@ -185,7 +178,7 @@ struct AskNewConversationBarTests {
         try await fixture.wait { !fixture.model.isTemporaryComposer(launcher: false) }
     }
 
-    @Test func signedOutStorageAsksToSignIn() async throws {
+    @Test func signedOutStorageIsAStatusWithoutSignInAction() async throws {
         let fixture = try AskTestFixture(authenticated: false)
         defer { fixture.model.resetSession() }
         var signIns = 0
@@ -193,8 +186,11 @@ struct AskNewConversationBarTests {
         let window = host(AskNewConversationBar(model: fixture.model))
         defer { window.close() }
         try await settle(window)
-        try press("ask.newConversation.storage", in: window)
-        #expect(signIns == 1)
+        let storage = try #require(find("ask.newConversation.storage", in: window))
+        #expect(storage.value(forKey: "accessibilityRole") as? String != NSAccessibility.Role.button.rawValue)
+        let press = NSSelectorFromString("accessibilityPerformPress")
+        if storage.responds(to: press) { _ = storage.perform(press) }
+        #expect(signIns == 0)
     }
 
     @Test func workspaceNewPageHasTheHourglassAndBarButNotOnceStarted() async throws {
