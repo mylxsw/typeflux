@@ -268,10 +268,8 @@ struct AskResponsiveWorkspaceTests {
                            "ask.composer.model", "ask.composer.send"]
         if hasConversation {
             identifiers += ["ask.workspace.usage"]
-            if AskWorkspaceLayout(size: window.frame.size, sidebarCollapsed: false, showsUsage: false).compactContent {
-                identifiers += ["ask.workspace.more"]
-            }
         }
+        #expect(find(identifier: "ask.workspace.more", in: window) == nil)
         for identifier in identifiers {
             assertVisible(try element(identifier: identifier, in: window), in: window)
         }

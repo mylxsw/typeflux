@@ -356,8 +356,8 @@ struct AskConversationView: View {
         .frame(height: AskMetrics.titleBarRowHeight)
         .background {
             if layout.compactContent {
-                // A native Menu creates its items lazily. Register search even
-                // before the compact overflow menu has been opened once.
+                // Keep search available by shortcut when the compact header
+                // has no visible search entry.
                 Button(L("ask.search"), action: openSearch)
                     .keyboardShortcut("k", modifiers: .command)
                     .opacity(0)
@@ -814,28 +814,6 @@ struct AskConversationView: View {
             headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
                 .accessibilityIdentifier("ask.workspace.usage")
             browserButton()
-            Menu {
-                Button(L("ask.search"), action: openSearch).keyboardShortcut("k", modifiers: .command)
-                if model.isTemporaryComposer(launcher: false) {
-                    Label(L("ask.storage.temporary"), systemImage: AskStorageKind.temporary.symbol)
-                } else if model.isSignedIn, model.storesLocally(launcher: false) {
-                    Label(L("ask.storage.local"), systemImage: "lock")
-                }
-                if canContinueAsWork {
-                    Button(L("ask.kind.continueAsWork")) { model.continueInNew(.work) }
-                }
-                if let id = model.selectedId {
-                    Button(L("ask.workspace.openFolder")) { Task { await model.openWorkspace(id) } }
-                    Button(L("ask.delete"), role: .destructive) { deleteId = id }
-                }
-            } label: {
-                Image(systemName: "ellipsis").frame(width: 28, height: 30)
-            }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .accessibilityLabel(L("ask.search.actions"))
-            .accessibilityIdentifier("ask.workspace.more")
         }
         .padding(.leading, AskMetrics.trafficLightInset + AskMetrics.titleBarButtonWidth * 2 + 18)
         .padding(.trailing, 10)
@@ -928,10 +906,11 @@ struct AskConversationView: View {
             AskHeaderIconButton(symbol: model.selectedId == nil ? "sidebar.right" : "globe",
                                 label: L(model.selectedId == nil ? "ask.sidebar.right.toggle" : "ask.web.title"),
                                 shortcut: "⌘⇧B",
-                                active: showsBrowserPanel, showsInteriorFill: showsInteriorFill) {
+                                showsInteriorFill: showsInteriorFill) {
                 setBrowser(!showsBrowserPanel)
             }
                 .keyboardShortcut("b", modifiers: [.command, .shift])
+                .accessibilityValue(L(showsBrowserPanel ? "ask.context.selection.enabled" : "ask.context.selection.disabled"))
                 .accessibilityIdentifier("ask.workspace.browser")
         }
     }

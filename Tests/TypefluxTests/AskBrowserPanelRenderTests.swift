@@ -186,6 +186,7 @@ struct AskBrowserPanelRenderTests {
         try await Task.sleep(for: .milliseconds(400))
         hosting.layoutSubtreeIfNeeded()
         #expect(workspace.tabs.count == 1, "Opening the panel with no tabs starts a blank one")
+        #expect(find("ask.workspace.more", in: window) == nil)
         let tab = try #require(workspace.selectedTab)
         #expect(descendants(hosting).contains { $0 === tab.webView })
         let expected = AskWorkspaceLayout(size: size, sidebarCollapsed: false, showsUsage: true,
