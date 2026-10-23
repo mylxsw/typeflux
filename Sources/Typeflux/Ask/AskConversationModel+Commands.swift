@@ -20,7 +20,8 @@ struct AskCommandSources {
 }
 
 extension AskConversationModel {
-    static let maximumChosenSkills = 3
+    /// Read by the "+" menu's context too, which is not on the main actor.
+    nonisolated static let maximumChosenSkills = 3
     static let maximumChosenServers = 5
 
     private func currentDraft(launcher: Bool) -> AskDraft { launcher ? launcherDraft : draft }
