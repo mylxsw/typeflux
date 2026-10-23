@@ -2,7 +2,7 @@ import Foundation
 
 /// What a file search returns and how it ranks.
 struct AskFileSearchOptions: Equatable, Sendable {
-    enum Order: Equatable, Sendable {
+    enum Order: Codable, Equatable, Sendable {
         case relevance
         /// Most recently changed first, for file mode's ⌘S and an empty query.
         case recent

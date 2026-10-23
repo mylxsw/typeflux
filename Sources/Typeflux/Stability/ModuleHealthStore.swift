@@ -31,6 +31,7 @@ final class ModuleHealthStore: @unchecked Sendable {
 
     static func directory() -> URL {
         let root = TypefluxDataDirectories.data.appendingPathComponent("ModuleHealth", isDirectory: true)
+        if FeatureProcess.enabled { try? FeatureHealthMigration.migrate(root: root, owner: FeatureProcess.role) }
         guard FeatureProcess.enabled, FeatureProcess.role != .host else { return root }
         return root.appendingPathComponent("features/" + FeatureProcess.role.rawValue, isDirectory: true)
     }

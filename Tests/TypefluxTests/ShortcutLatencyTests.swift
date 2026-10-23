@@ -161,3 +161,16 @@ struct ShortcutLatencyTests {
         #expect(decoded.samples[0].events[0].stage == .recognized)
     }
 }
+
+
+extension ShortcutLatencyTests {
+    @Test func processSnapshotsCanBeExportedWithoutShortcutSamples() throws {
+        var report = ShortcutLatencyReport(events: [])
+        #expect(!report.canExport)
+        report.processes = [.init(role: .host, pid: 42, startedAt: 1, uptime: 2, footprintBytes: 1024,
+            cpuNanoseconds: 100, managedOperations: 0, helperSlots: 0)]
+        #expect(report.canExport)
+        let decoded = try JSONDecoder().decode(ShortcutLatencyReport.self, from: JSONEncoder().encode(report))
+        #expect(decoded.canExport && decoded.processes?.first?.footprintBytes == 1024)
+    }
+}

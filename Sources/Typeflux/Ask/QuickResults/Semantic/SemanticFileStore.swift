@@ -8,7 +8,7 @@ private let semanticTransient = unsafeBitCast(-1, to: sqlite3_destructor_type.se
 final class SemanticFileStore: @unchecked Sendable {
     enum Failure: Error { case database, invalidVector }
     /// Files with published content, including partial documents; discovered candidates are separate.
-    struct Counts: Equatable, Sendable {
+    struct Counts: Codable, Equatable, Sendable {
         var documents = 0
         var images = 0
         var audio = 0

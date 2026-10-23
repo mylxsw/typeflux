@@ -8,7 +8,7 @@ struct FeatureHotkeyEvent: Codable, Sendable {
     var message: String?
 }
 
-/// The host keeps existing workflow callbacks; event taps run in their own process.
+/// Feature controllers share one input owner in the host.
 final class FeatureRemoteHotkeys: HotkeyService {
     var recordingStopEnabled: (() -> Bool)?
     var onRecordingStop: (() -> Void)?
@@ -59,42 +59,33 @@ final class FeatureRemoteHotkeys: HotkeyService {
 @MainActor
 final class FeatureShortcutHost {
     static let shared = FeatureShortcutHost()
-    private let service = EventTapHotkeyService(settingsStore: SettingsStore())
-    private var recording = false
+    private struct Bindings: Equatable {
+        let primary: [HotkeyBinding?]
+        let shortcuts: [HotkeyTarget: HotkeyBinding]
+    }
+    private let settings: SettingsStore
+    private var bindings: Bindings?
+    private var currentBindings: Bindings {
+        .init(primary: [settings.activationHotkey, settings.auxiliaryHotkey, settings.askHotkey,
+            settings.personaHotkey, settings.historyHotkey, settings.screenshotHotkey],
+            shortcuts: EventTapHotkeyService.shortcutBindings(in: settings))
+    }
+    private let service: any HotkeyService
+    private let dispatch: @MainActor (FeatureCommand) async throws -> Void
+    init(settings: SettingsStore = SettingsStore(), service: (any HotkeyService)? = nil,
+         dispatch: @escaping @MainActor (FeatureCommand) async throws -> Void = { try await FeatureProcess.dispatch($0) }) {
+        self.settings = settings
+        self.service = service ?? EventTapHotkeyService(settingsStore: settings)
+        self.dispatch = dispatch
+    }
+    private let recording = HotkeyRecordingFlag()
+
+    nonisolated static func recordingPredicate(_ flag: HotkeyRecordingFlag) -> @Sendable () -> Bool {
+        { flag.value }
+    }
 
     func start() {
-        FeatureProcess.handle = { [weak self] command in
-            guard let self else { throw FeatureRPC.Failure.unavailable }
-            #if DEBUG
-            if FeatureIsolationProbe.enabled, command.action == "probeExercise" { return try JSONEncoder().encode(getpid()) }
-            if FeatureIsolationProbe.enabled, command.action == "probeFreeze" {
-                FeatureIsolationProbe.blockMainThread(seconds: 10)
-                return Data()
-            }
-            if FeatureIsolationProbe.enabled, command.action == "probeRoute" {
-                return try await FeatureProcess.route(JSONDecoder().decode(FeatureCommand.self, from: command.payload))
-            }
-            if FeatureIsolationProbe.enabled, command.action == "probeDispatch" {
-                try await FeatureProcess.dispatch(JSONDecoder().decode(FeatureCommand.self, from: command.payload))
-                return Data()
-            }
-            if FeatureIsolationProbe.enabled, command.action == "probeShortcut" {
-                self.event(try JSONDecoder().decode(FeatureHotkeyEvent.self, from: command.payload))
-                return Data()
-            }
-            #endif
-            switch command.action {
-            case "start", "settings": if !FeatureIsolationProbe.enabled { service.start() }
-            case "stop", "shutdown": service.stop()
-            case "settle": service.settleActivationGesture()
-            case "recording": recording = (try? JSONDecoder().decode(Bool.self, from: command.payload)) ?? false
-            case "ping": break
-            default: throw FeatureRPC.Failure.invalidMessage
-            }
-            return Data()
-        }
-        FeatureProcess.configure(api: AskAPIClient())
-        service.recordingStopEnabled = { [weak self] in self?.recording ?? false }
+        service.recordingStopEnabled = Self.recordingPredicate(recording)
         service.onRecordingStop = { [weak self] in self?.event(.init(name: "onRecordingStop")) }
         service.onAuxiliaryPressBegan = { [weak self] value in self?.event(.init(name: "onAuxiliaryPressBegan", context: value)) }
         service.onAuxiliaryPressEnded = { [weak self] value in self?.event(.init(name: "onAuxiliaryPressEnded", context: value)) }
@@ -114,12 +105,28 @@ final class FeatureShortcutHost {
         service.onError = { [weak self] value in self?.event(.init(name: "onError", message: value)) }
     }
 
+    func handle(_ command: FeatureCommand) throws {
+        switch command.action {
+        case "start":
+            if !FeatureIsolationProbe.enabled { service.start(); bindings = currentBindings }
+        case "settings":
+            let next = currentBindings
+            guard next != bindings else { return }
+            if !FeatureIsolationProbe.enabled { service.start(); bindings = next }
+        case "stop", "shutdown": service.stop()
+        case "settle": service.settleActivationGesture()
+        case "recording": recording.value = try JSONDecoder().decode(Bool.self, from: command.payload)
+        case "ping": break
+        default: throw FeatureRPC.Failure.invalidMessage
+        }
+    }
+
     private func send(_ command: FeatureCommand) {
         var command = command
         command.latency = ShortcutLatency.current
         ShortcutLatency.record(.dispatched)
         Task {
-            do { try await FeatureProcess.dispatch(command) }
+            do { try await dispatch(command) }
             catch { ShortcutLatency.record(.failed, trace: command.latency) }
         }
     }

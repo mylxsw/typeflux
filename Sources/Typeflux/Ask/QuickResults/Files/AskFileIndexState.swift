@@ -53,8 +53,8 @@ struct AskFileDirectory: Equatable, Sendable {
 }
 
 /// A file found for the launcher's text.
-struct AskFileHit: Equatable, Sendable, Identifiable {
-    struct Evidence: Equatable, Hashable, Sendable {
+struct AskFileHit: Codable, Equatable, Sendable, Identifiable {
+    struct Evidence: Codable, Equatable, Hashable, Sendable {
         var text: String
         var page: Int?
         var time: TimeInterval?

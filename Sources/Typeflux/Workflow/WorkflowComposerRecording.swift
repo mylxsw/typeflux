@@ -11,6 +11,7 @@ final class WorkflowComposerRecording: AskVoiceRecording {
     private var prepared = false
     private(set) var audioStartedAt: TimeInterval?
     private let isAppBundle: () -> Bool
+    private var onStarted: (@MainActor (TimeInterval) -> Void)?
     private var onLevel: (@MainActor (Float) -> Void)?
     private var onTranscript: (@MainActor (String, Bool) -> Void)?
     /// Holds the audio captured before the realtime recogniser is ready.
@@ -75,6 +76,8 @@ final class WorkflowComposerRecording: AskVoiceRecording {
         )
     }
 
+    func observeStart(_ started: @escaping @MainActor (TimeInterval) -> Void) { onStarted = started }
+
     func observe(level: @escaping @MainActor (Float) -> Void,
                  transcript: @escaping @MainActor (String, Bool) -> Void) {
         onLevel = level
@@ -109,7 +112,8 @@ final class WorkflowComposerRecording: AskVoiceRecording {
             })
             started = true
             workflow.isAudioRecorderStarted = true
-            audioStartedAt = workflow.monotonicNow()
+            let startedAt = workflow.monotonicNow()
+            audioStartedAt = startedAt; onStarted?(startedAt)
             workflow.isAudioRecorderStarting = false
             workflow.appState.setStatus(.recording)
             if let decision = workflow.recordingGestureDecision {
@@ -319,7 +323,7 @@ extension WorkflowController {
             case .press, .stop: voice.stop()
             case let .release(uptime), let .activationTap(uptime): voice.releaseHotkey(at: uptime)
             case let .promote(uptime):
-                if recordingGestureDecision != nil {
+                if FeatureProcess.enabled || recordingGestureDecision != nil {
                     voice.promoteHotkey(at: uptime, locked: settingsStore.auxiliaryHotkey?.pressCount == 2)
                 }
             case .cancel: voice.cancel()

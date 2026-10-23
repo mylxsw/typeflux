@@ -877,12 +877,15 @@ final class AskConversationModel: ObservableObject {
         captureWarning = context.warning; persistDrafts()
     }
 
-    func flushFeatureDrafts() async {
+    @discardableResult
+    func flushFeatureDrafts() async -> Bool {
         persistDrafts()
         await draftSave?.value
         if selectedId == nil, draft.hasChatInput, draft.temporary != true, activeChatDraftID == nil {
-            _ = try? await stageChatDraft(draft, account: owner)
+            do { _ = try await stageChatDraft(draft, account: owner) }
+            catch { return false }
         }
+        return error != L("ask.cache.failed")
     }
 
     func persistDrafts() {
@@ -3171,5 +3174,15 @@ extension AskConversationModel {
             confirm(L("ask.cache.failed"))
             return false
         }
+    }
+}
+
+
+extension AskConversationModel {
+    /// Keep incomplete input and tool runs alive if persistence cannot be proved.
+    var allowsFeatureRetirement: Bool {
+        busyIds.isEmpty && pendingSends.isEmpty && submissionPreflights.isEmpty &&
+            !isLoadingSelection && !capturing && !voiceInput.isOccupied &&
+            !draft.hasChatInput && !launcherDraft.hasChatInput && agentActivityInput.runs.isEmpty
     }
 }

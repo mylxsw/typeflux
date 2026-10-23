@@ -8,6 +8,18 @@ final class AppTerminationBarrier {
 
     nonisolated init() {}
 
+    func beginChecked(cleanup: @escaping @MainActor () async -> Bool,
+                      reply: @escaping @MainActor (Bool) -> Void) -> NSApplication.TerminateReply {
+        if task == nil {
+            task = Task {
+                let confirmed = await cleanup()
+                if !confirmed { task = nil }
+                reply(confirmed)
+            }
+        }
+        return .terminateLater
+    }
+
     func begin(cleanup: @escaping @MainActor () async -> Void,
                reply: @escaping @MainActor () -> Void) -> NSApplication.TerminateReply {
         if task == nil {

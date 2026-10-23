@@ -259,3 +259,23 @@ private actor RegistryRecoveryClient: MCPClient {
         await changed?()
     }
 }
+
+
+extension MCPRegistryRecoveryTests {
+    func testProcessRetirementDisconnectsClientsWithoutDeletingSavedConfiguration() async throws {
+        let server = config()
+        let settings = store()
+        settings.servers = [server]
+        let client = RegistryRecoveryClient()
+        let registry = MCPRegistry(settingsStore: settings, clientFactory: { _ in client })
+        try await registry.addServer(server)
+        await registry.shutdown()
+        let connected = await registry.connectedServerCount
+        let disconnected = await client.disconnects
+        XCTAssertEqual(connected, 0)
+        XCTAssertEqual(disconnected, 1)
+        XCTAssertEqual(settings.servers.map(\.id), [server.id])
+        do { try await registry.addServer(server); XCTFail("A retired registry reconnected") }
+        catch { }
+    }
+}

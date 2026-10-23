@@ -1,7 +1,7 @@
 import Foundation
 
 /// The kinds of files the file mode can be narrowed to, by extension.
-enum AskFileType: String, CaseIterable, Sendable {
+enum AskFileType: String, Codable, CaseIterable, Sendable {
     case all
     case folder
     case document

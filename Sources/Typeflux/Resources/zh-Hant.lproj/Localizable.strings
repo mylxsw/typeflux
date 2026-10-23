@@ -6944,3 +6944,12 @@
 
 "ask.add.skills.all" = "全部";
 "ask.add.skills.none" = "不使用";
+
+// Consolidated process diagnostics
+"shortcutDiagnostics.role.background" = "背景服務";
+"shortcutDiagnostics.processes" = "程序資源";
+"shortcutDiagnostics.process" = "程序";
+"shortcutDiagnostics.memory" = "記憶體";
+"shortcutDiagnostics.operations" = "受管理工作";
+"shortcutDiagnostics.processNote" = "此處顯示業務程序；解碼輔助程序和系統服務另外計算。僅在此視窗開啟時取樣 CPU。";
+"feature.quitNotReady" = "無法確認資料已安全儲存，應用程式仍保持開啟。請等待目前工作結束後再次結束。";

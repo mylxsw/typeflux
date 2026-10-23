@@ -38,7 +38,7 @@ struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
         var ownedApplicationLifetime = false
     }
 
-    enum Termination: Equatable, Sendable {
+    enum Termination: Codable, Equatable, Sendable {
         case exited(Int32)
         case signalled(Int32)
         case timedOut
@@ -46,7 +46,7 @@ struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
         case outputLimit
     }
 
-    struct Result: Sendable {
+    struct Result: Codable, Sendable {
         var termination: Termination
         var exitCode: Int32
         var stdout: String

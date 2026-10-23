@@ -15,6 +15,12 @@ public enum TypefluxApplication {
         if FeatureProcess.role == .host { TypefluxDataDirectories.prepare() }
 
         let app = NSApplication.shared
+        if FeatureProcess.role == .background {
+            app.setActivationPolicy(.prohibited)
+            FeatureBackgroundRuntime.shared.start()
+            app.run()
+            return
+        }
         let settingsStore = SettingsStore()
         let delegate = AppDelegate(settingsStore: settingsStore)
         app.delegate = delegate
@@ -73,10 +79,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 AppIconController.apply(settingsStore.appIconStyle)
             }
         }
-        if FeatureProcess.role == .shortcuts {
-            FeatureShortcutHost.shared.start()
-            return
-        }
         appCoordinator = AppCoordinator()
         appCoordinator?.start()
         if CommandLine.arguments.contains("--shortcut-diagnostics-window") {
@@ -105,13 +107,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         if !FeatureProcess.owns(.host) { FeatureProcess.send(.init(destination: .host, action: "quit")); return .terminateCancel }
         guard let appCoordinator else { return .terminateNow }
-        return termination.begin {
+        return termination.beginChecked {
             if appCoordinator.hasScreenRecording {
                 await appCoordinator.finishScreenRecordingForTermination()
             }
-            await appCoordinator.prepareForTermination()
-        } reply: {
-            sender.reply(toApplicationShouldTerminate: true)
+            return await appCoordinator.prepareForTermination()
+        } reply: { confirmed in
+            sender.reply(toApplicationShouldTerminate: confirmed)
         }
     }
 

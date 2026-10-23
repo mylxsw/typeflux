@@ -167,6 +167,7 @@ final class EventTapHotkeyService: HotkeyService {
     var onShortcutCancelled: ((HotkeyTarget) -> Void)?
     var onError: ((String) -> Void)?
 
+    private let inputLock = NSRecursiveLock()
     private let settingsStore: SettingsStore
 
     private var activationBinding: HotkeyBinding?
@@ -177,6 +178,7 @@ final class EventTapHotkeyService: HotkeyService {
     private var screenshotBinding: HotkeyBinding?
 
     func refreshBindings() {
+        inputLock.lock(); defer { inputLock.unlock() }
         activationBinding = settingsStore.activationHotkey
         auxiliaryBinding = settingsStore.auxiliaryHotkey
         askBinding = settingsStore.askHotkey
@@ -255,14 +257,16 @@ final class EventTapHotkeyService: HotkeyService {
     }
 
     func settleActivationGesture() {
+        inputLock.lock(); defer { inputLock.unlock() }
         arbiter.settleActivationGesture()
     }
 
     func stop() {
+        inputLock.lock(); defer { inputLock.unlock() }
         if let tap = eventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
             if let source = runLoopSource {
-                CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+                CFRunLoopRemoveSource(HotkeyInputRunLoop.shared.value, source, .commonModes)
             }
             CFMachPortInvalidate(tap)
         }
@@ -340,7 +344,8 @@ final class EventTapHotkeyService: HotkeyService {
         eventTap = tap
         let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
         runLoopSource = source
-        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
+        CFRunLoopAddSource(HotkeyInputRunLoop.shared.value, source, .commonModes)
+        CFRunLoopWakeUp(HotkeyInputRunLoop.shared.value)
         CGEvent.tapEnable(tap: tap, enable: true)
     }
 
@@ -399,6 +404,8 @@ final class EventTapHotkeyService: HotkeyService {
     }
 
     fileprivate func handleEventTapEvent(type: CGEventType, event: CGEvent) -> Unmanaged<CGEvent>? {
+        inputLock.lock(); defer { inputLock.unlock() }
+        guard eventTap != nil else { return Unmanaged.passUnretained(event) }
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
             if let tap = eventTap {
                 CGEvent.tapEnable(tap: tap, enable: true)
@@ -432,6 +439,7 @@ final class EventTapHotkeyService: HotkeyService {
         canConsume: Bool,
         timestamp: TimeInterval
     ) -> Bool {
+        inputLock.lock(); defer { inputLock.unlock() }
         guard let eventType else { return false }
 
         if let event = ringModifier.handle(type: eventType, keyCode: keyCode, flags: modifierFlags,
@@ -657,6 +665,7 @@ final class EventTapHotkeyService: HotkeyService {
     }
 
     private func requestHistoryPicker() {
+        inputLock.lock(); defer { inputLock.unlock() }
         let now = Date()
         if let lastHistoryRequestAt,
            now.timeIntervalSince(lastHistoryRequestAt) < Self.duplicateHistoryRequestSuppression {
@@ -675,6 +684,7 @@ final class EventTapHotkeyService: HotkeyService {
 
     /// The event tap and the system hotkey both report one press; deliver it once.
     private func requestScreenshot() {
+        inputLock.lock(); defer { inputLock.unlock() }
         let now = Date()
         if let lastScreenshotRequestAt,
            now.timeIntervalSince(lastScreenshotRequestAt) < Self.duplicateHistoryRequestSuppression {
@@ -701,6 +711,7 @@ final class EventTapHotkeyService: HotkeyService {
 
         let workItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
+            inputLock.lock(); defer { inputLock.unlock() }
             pendingModifierActivationWorkItem = nil
             handleGestureEvents(arbiter.handlePendingModifierActivationTimeout())
         }

@@ -1,7 +1,7 @@
 import AppKit
 import Combine
 
-enum AskVoiceHotkeyEvent {
+enum AskVoiceHotkeyEvent: Codable, Sendable {
     case prepare(auxiliary: Bool, locked: Bool)
     case release(TimeInterval), lock, promote, finish, cancel
 }
@@ -11,6 +11,7 @@ protocol AskVoiceRecording: AnyObject {
     var audioStartedAt: TimeInterval? { get }
     func handleHotkey(_ event: AskVoiceHotkeyEvent)
     func start() async throws
+    func observeStart(_ started: @escaping @MainActor (TimeInterval) -> Void)
     func transcribe() async throws -> String
     func cancel() async
     /// Receives input levels (0...1) and recognised text while recording.
@@ -20,6 +21,7 @@ protocol AskVoiceRecording: AnyObject {
 }
 
 extension AskVoiceRecording {
+    func observeStart(_ started: @escaping @MainActor (TimeInterval) -> Void) {}
     var audioStartedAt: TimeInterval? { nil }
     func handleHotkey(_ event: AskVoiceHotkeyEvent) {}
     func observe(level: @escaping @MainActor (Float) -> Void,

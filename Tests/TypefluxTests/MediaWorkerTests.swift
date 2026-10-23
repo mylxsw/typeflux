@@ -181,3 +181,31 @@ private final class MediaTestState: @unchecked Sendable {
     var cancelled = false
     let entered = DispatchSemaphore(value: 0)
 }
+
+
+extension MediaWorkerTests {
+    func testQueueBackpressureDoesNotConsumeDecoderRecoveryBudget() throws {
+        let worker = MediaWorker(run: { _, _ in throw MediaWorkAdmissionBusy.busy })
+        for _ in 0..<10 {
+            XCTAssertThrowsError(try worker.decode(.image, input: .data(Data([1])))) {
+                XCTAssertEqual($0 as? MediaFailure, .unavailable)
+            }
+            XCTAssertTrue(worker.permits(worker.authorization()))
+        }
+        XCTAssertEqual(worker.activeCount, 0)
+    }
+}
+
+
+extension MediaWorkerTests {
+    func testCancelledRemoteWorkDoesNotConsumeDecoderRecoveryBudget() throws {
+        let worker = MediaWorker(run: { _, _ in throw CancellationError() })
+        for _ in 0..<10 {
+            XCTAssertThrowsError(try worker.decode(.image, input: .data(Data([1])))) {
+                XCTAssertTrue($0 is CancellationError)
+            }
+            XCTAssertTrue(worker.permits(worker.authorization()))
+        }
+        XCTAssertEqual(worker.activeCount, 0)
+    }
+}

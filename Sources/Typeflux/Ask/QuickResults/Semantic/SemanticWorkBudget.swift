@@ -18,7 +18,7 @@ final class SemanticWorkBudget: @unchecked Sendable {
     }
 
     struct Interrupted: Error {}
-    enum Waiting: String, Sendable { case priority, memory, thermal, recovery }
+    enum Waiting: String, Codable, Sendable { case priority, memory, thermal, recovery }
     private var waiting: Waiting?
     private let onWaiting: @Sendable (Waiting?) -> Void
     struct State: Equatable { var pressure = 0; var thermal = 0; var active = false; var paused = false }

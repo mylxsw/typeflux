@@ -3,7 +3,26 @@ import Darwin
 import Foundation
 
 enum FeatureRole: String, Codable, Sendable, CaseIterable {
-    case host, chat, launcher, screenshot, clipboard, shortcuts, settings, voice, ring, notes, wordBook, monitor, help, translation
+    case host, chat, launcher, screenshot, clipboard, shortcuts, settings, voice, ring, notes, wordBook, monitor, help, translation, background
+
+    /// Logical destinations stay stable in diagnostics and saved commands.
+    var processOwner: FeatureRole {
+        switch self {
+        case .chat, .voice, .screenshot, .background: self
+        default: .host
+        }
+    }
+
+    static let processRoles: [FeatureRole] = [.host, .voice, .chat, .screenshot, .background]
+}
+
+struct FeatureRoutedCommand: Codable, Sendable {
+    let command: FeatureCommand
+    let timeoutMilliseconds: Int64
+    init(command: FeatureCommand, timeout: Duration) {
+        self.command = command
+        timeoutMilliseconds = timeout.components.seconds * 1000 + timeout.components.attoseconds / 1_000_000_000_000_000
+    }
 }
 
 struct FeatureCommand: Codable, Sendable {
@@ -22,11 +41,12 @@ enum FeatureProcess {
     nonisolated static var enabled: Bool { configuration.value.enabled }
     private(set) static var peer: FeatureRPC?
     private(set) static var supervisor: FeatureSupervisor?
-    static let immediateWarmRoles: [FeatureRole] = [.launcher, .clipboard, .voice]
-    static let deferredWarmRoles: [FeatureRole] = [.ring, .translation, .screenshot]
+    static let immediateWarmRoles: [FeatureRole] = [.voice, .background]
+    static let deferredWarmRoles: [FeatureRole] = []
     static var reportFailure: (@MainActor () -> Void)?
     static var handle: (@MainActor (FeatureCommand) async throws -> Data)?
     private static var ready: Task<Void, Error>?
+    private static var deferredWarmup: Task<Void, Never>?
     private static var services: Task<Void, Never>?
     private static var preferencesUpdate: Task<Void, Never>?
     private static var observers: [NSObjectProtocol] = []
@@ -38,7 +58,7 @@ enum FeatureProcess {
     static func install(arguments: [String]) throws {
         if arguments.isEmpty { configuration.install(.host); return }
         guard arguments.first == "--feature-process" else { configuration.install(.host); return }
-        guard arguments.count == 4, let selected = FeatureRole(rawValue: arguments[1]), selected != .host,
+        guard arguments.count == 4, let selected = FeatureRole(rawValue: arguments[1]), selected != .host, selected.processOwner == selected,
               arguments[2] == "--ipc-fd", arguments[3] == "100" else { throw FeatureRPC.Failure.invalidMessage }
         configuration.install(selected)
         peer = try FeatureRPC(descriptor: 100)
@@ -113,9 +133,9 @@ enum FeatureProcess {
             }
             // Avoid competing with the initial warmup. Ping never presents a window
             // or registers shortcuts, and sequential startup bounds additional work.
-            if !FeatureIsolationProbe.enabled {
+            if !FeatureIsolationProbe.enabled, !deferredWarmRoles.isEmpty {
                 let warmSupervisor = supervisor
-                Task {
+                deferredWarmup = Task {
                     await preparation?.value
                     do { try await Task.sleep(for: .seconds(2)) } catch { return }
                     for role in deferredWarmRoles {
@@ -136,14 +156,20 @@ enum FeatureProcess {
         }
     }
 
+    static func preventWarmup() {
+        deferredWarmup?.cancel(); deferredWarmup = nil
+        preferencesUpdate?.cancel(); preferencesUpdate = nil
+    }
+
     static func waitForServices() async { await services?.value }
 
-    nonisolated static func owns(_ destination: FeatureRole) -> Bool { !enabled || role == destination }
+    nonisolated static func owns(_ destination: FeatureRole) -> Bool { !enabled || role == destination.processOwner }
 
     static func route(_ command: FeatureCommand, timeout: Duration = .seconds(10)) async throws -> Data {
-        if command.destination == role, role != .host { return try await receive(command) }
+        guard timeout > .zero, timeout <= .seconds(180) else { throw FeatureRPC.Failure.invalidMessage }
+        if command.destination.processOwner == role, role != .host { return try await receive(command) }
         if let peer {
-            return try await peer.call("route", command, timeout: timeout)
+            return try await peer.call("route", FeatureRoutedCommand(command: command, timeout: timeout), timeout: timeout)
         }
         guard let supervisor else { throw FeatureRPC.Failure.unavailable }
         return try await supervisor.route(command, timeout: timeout)
@@ -173,6 +199,7 @@ enum FeatureProcess {
     }
 
     private static func receiveTraced(_ command: FeatureCommand) async throws -> Data {
+        if command.action == "resourceSnapshot" { return try JSONEncoder().encode(FeatureResourceSnapshot.capture()) }
         ShortcutLatency.record(.targetReceived)
         if command.action == "changed" {
             let name = Notification.Name(String(decoding: command.payload, as: UTF8.self))
@@ -193,7 +220,7 @@ enum FeatureProcess {
         ShortcutLatency.record(.readinessStarted)
         try await ready?.value
         ShortcutLatency.record(.readinessFinished)
-        guard command.destination == role, let handle else { throw FeatureRPC.Failure.unavailable }
+        guard command.destination.processOwner == role, let handle else { throw FeatureRPC.Failure.unavailable }
         ShortcutLatency.record(.handlerStarted)
         do {
             let result = try await handle(command)
@@ -207,7 +234,7 @@ enum FeatureProcess {
 }
 
 /// The supervisor has no AppKit dependency and never waits synchronously for UI.
-/// Each feature has its own socket, queue, request budget and child process.
+/// Each isolated owner has its own socket, queue, request budget and child process.
 actor FeatureSupervisor {
     private struct Child {
         let peer: FeatureRPC
@@ -222,11 +249,11 @@ actor FeatureSupervisor {
     private var children: [FeatureRole: Child] = [:]
     private var starting: [FeatureRole: Task<Child, Error>] = [:]
     private var stopped = false
-    private var shortcutWatchdog: Task<Void, Never>?
     private var launches: [FeatureRole: [ContinuousClock.Instant]] = [:]
     private var channelGenerations: [FeatureRole: UUID] = [:]
     private var liveChannels: Set<UUID> = []
     private var callsInFlight: [UUID: Int] = [:]
+    private var routesInFlight: [FeatureRole: Int] = [:]
     private var focusedRole: FeatureRole = .host
     private var focusUptime: TimeInterval = 0
     private var voiceOwner: FeatureRole?
@@ -244,10 +271,11 @@ actor FeatureSupervisor {
         values.merge(TypefluxDataDirectories.featureEnvironment) { _, value in value }
         self.environment = environment ?? values
     }
-    deinit { shortcutWatchdog?.cancel(); for child in children.values { child.process.cancel() } }
+    deinit { for child in children.values { child.process.cancel() } }
 
     func route(_ command: FeatureCommand, timeout: Duration = .seconds(10)) async throws -> Data {
-        try await ShortcutLatency.$current.withValue(command.latency) {
+        guard timeout > .zero, timeout <= .seconds(180) else { throw FeatureRPC.Failure.invalidMessage }
+        return try await ShortcutLatency.$current.withValue(command.latency) {
             do { return try await routeTraced(command, timeout: timeout) }
             catch { ShortcutLatency.record(.failed); throw error }
         }
@@ -255,8 +283,42 @@ actor FeatureSupervisor {
 
     private func routeTraced(_ command: FeatureCommand, timeout: Duration) async throws -> Data {
         ShortcutLatency.record(.hostRouting)
-        guard !stopped else { throw FeatureRPC.Failure.unavailable }
+        let draining = command.destination == .background && command.action.hasPrefix("media.") && children[.background] != nil
+        let stateUpdate = command.destination == .host && ["status", "voiceState", "focus", "changed"].contains(command.action)
+        guard !stopped || draining || stateUpdate else { throw FeatureRPC.Failure.unavailable }
         if command.destination == .host {
+            if command.action == "retireFeature" {
+                guard let role = FeatureRole(rawValue: String(decoding: command.payload, as: UTF8.self)),
+                      [.chat, .screenshot, .background].contains(role), (routesInFlight[role] ?? 0) == 0,
+                      let child = children[role] else { return Data() }
+                let channel = channelGenerations[role]
+                let reply = try await child.peer.request("ui", payload: JSONEncoder().encode(FeatureCommand(destination: role, action: "idleAllowed")), timeout: .seconds(2))
+                guard try JSONDecoder().decode(Bool.self, from: reply), (routesInFlight[role] ?? 0) == 0,
+                      channelGenerations[role] == channel else { return Data() }
+                children[role] = nil
+                do {
+                    _ = try await child.peer.request("ui", payload: JSONEncoder().encode(FeatureCommand(destination: role, action: "shutdown")), timeout: .seconds(10))
+                } catch {
+                    if channelGenerations[role] == channel { children[role] = child }
+                    return Data()
+                }
+                await child.peer.stop(); child.process.cancel(); await child.process.value
+                return Data()
+            }
+            if command.action == "resources" {
+                var snapshots = [FeatureResourceSnapshot.capture(role: .host)]
+                for (role, child) in children {
+                    if let data = try? await child.peer.request("ui", payload: JSONEncoder().encode(FeatureCommand(destination: role, action: "resourceSnapshot")), timeout: .seconds(1)),
+                       let snapshot = try? JSONDecoder().decode(FeatureResourceSnapshot.self, from: data) { snapshots.append(snapshot) }
+                }
+                return try JSONEncoder().encode(snapshots.sorted { $0.role.rawValue < $1.role.rawValue })
+            }
+            if command.action == "indexSnapshot" {
+                for (role, child) in children where role == .chat {
+                    Task { _ = try? await child.peer.request("ui", payload: JSONEncoder().encode(FeatureCommand(destination: role, action: "indexSnapshot", payload: command.payload))) }
+                }
+                return try await FeatureProcess.receive(command)
+            }
             if command.action == "status" {
                 let status = try JSONDecoder().decode(FeatureStatus.self, from: command.payload)
                 pendingStatuses[status.role] = status
@@ -311,7 +373,7 @@ actor FeatureSupervisor {
             }
             if command.action == "claimVoice" {
                 guard let role = FeatureRole(rawValue: String(decoding: command.payload, as: UTF8.self)),
-                      [FeatureRole.voice, .chat, .launcher].contains(role) else { throw FeatureRPC.Failure.invalidMessage }
+                      [FeatureRole.voice, .chat, .launcher, .host].contains(role) else { throw FeatureRPC.Failure.invalidMessage }
                 let accepted = voiceOwner == nil || voiceOwner == role
                 if accepted { voiceOwner = role }
                 return try JSONEncoder().encode(accepted)
@@ -327,10 +389,10 @@ actor FeatureSupervisor {
             if command.action == "hotkey", let event = try? JSONDecoder().decode(FeatureHotkeyEvent.self, from: command.payload),
                event.target == nil, event.name != "onPersonaPickerRequested", event.name != "onError" {
                 let target = voiceOwner ?? focusedRole
-                if target == .chat || target == .launcher || target == .voice {
+                if target == .chat || target == .launcher || target == .voice || (target == .host && focusedRole == .host && voiceOwner == .host) {
                     return try await route(.init(destination: target, action: "hotkey", payload: command.payload), timeout: timeout)
                 }
-                return try await route(.init(destination: .voice, action: "hotkey", payload: command.payload), timeout: timeout)
+                return try await FeatureProcess.receive(command)
             }
             if command.action == "hotkey", let event = try? JSONDecoder().decode(FeatureHotkeyEvent.self, from: command.payload), event.name == "onPersonaPickerRequested" {
                 return try await route(.init(destination: .voice, action: "hotkey", payload: command.payload), timeout: timeout)
@@ -340,8 +402,15 @@ actor FeatureSupervisor {
         if command.destination == .launcher, command.action == "toggleLauncher", let voiceOwner {
             Task { _ = try? await self.route(.init(destination: voiceOwner, action: "cancelRecording")) }
         }
-        ShortcutLatency.record(children[command.destination] == nil ? .targetCold : .targetWarm)
-        let child = try await child(for: command.destination)
+        if command.destination.processOwner == .host {
+            ShortcutLatency.record(.targetWarm)
+            return try await FeatureProcess.receive(command)
+        }
+        ShortcutLatency.record(children[command.destination.processOwner] == nil ? .targetCold : .targetWarm)
+        let owner = command.destination.processOwner
+        routesInFlight[owner, default: 0] += 1
+        defer { routesInFlight[owner, default: 1] -= 1 }
+        let child = try await child(for: owner)
         return try await child.peer.request("ui", payload: JSONEncoder().encode(command), timeout: timeout)
     }
 
@@ -422,30 +491,68 @@ actor FeatureSupervisor {
         return try JSONEncoder().encode(auth)
     }
 
-    func shutdown() async {
+    @discardableResult
+
+    func shutdown() async -> Bool {
         stopped = true
-        shortcutWatchdog?.cancel(); shortcutWatchdog = nil
         for task in starting.values { task.cancel() }
         starting.removeAll()
         let owned = children
-        children.removeAll()
-        await withTaskGroup(of: Void.self) { group in
-            for (role, child) in owned {
+        // Keep existing service routes available while presentation owners drain.
+        var failed = Set<FeatureRole>()
+        await withTaskGroup(of: FeatureRole?.self) { group in
+            for (role, child) in owned where role != .background {
                 group.addTask {
-                    _ = try? await child.peer.request("ui", payload: JSONEncoder().encode(
+                    do {
+                    _ = try await child.peer.request("ui", payload: JSONEncoder().encode(
                         FeatureCommand(destination: role, action: "shutdown")), timeout: .seconds(30))
-                    await child.peer.stop()
-                    child.process.cancel()
-                    await child.process.value
+                    await child.peer.stop();
+                    child.process.cancel(); await child.process.value
+                        return nil
+                    } catch { return role }
+                }
+            }
+            for await role in group {
+                if let role {
+                    failed.insert(role)
                 }
             }
         }
+        // Never kill a window owner that could not confirm durable draft/audio cleanup.
+        if !failed.isEmpty {
+            stopped = false; return false
+        }
+        if let child = owned[.background] {
+            do {
+                _ = try await child.peer.request("ui", payload: JSONEncoder().encode(
+                    FeatureCommand(destination: .background, action: "shutdown")
+                ), timeout: .seconds(10))
+                await child.peer.stop(); child.process.cancel();
+                    await child.process.value
+                } catch { stopped = false; return false
+            }
+        }
+        children.removeAll()
+        return true
     }
 
     private func childExited(role: FeatureRole, channel: UUID) {
         liveChannels.remove(channel)
-        moduleStates[role] = nil
         if channelGenerations[role] == channel {
+            moduleStates[role] = nil
+            if role != .background, !stopped, let backend = children[.background] {
+                let inactive = FeatureForegroundActivity(busy: false)
+                Task {
+                    _ = try? await backend.peer.request("ui", payload: JSONEncoder().encode(FeatureCommand(destination: .background,
+                        action: "media.ownerExited", payload: JSONEncoder().encode(role))))
+                    _ = try? await backend.peer.request("ui", payload: JSONEncoder().encode(FeatureCommand(destination: .background,
+                        action: "semantic.busy." + role.rawValue, payload: JSONEncoder().encode(inactive))))
+                    if role == .voice {
+                        _ = try? await backend.peer.request("ui", payload: JSONEncoder().encode(FeatureCommand(destination: .background,
+                            action: "semantic.busy.voiceEditor", payload: JSONEncoder().encode(inactive))))
+                    }
+                }
+            }
             children[role] = nil
             if focusedRole == role { focusedRole = .host }
             if voiceOwner == role {
@@ -456,30 +563,12 @@ actor FeatureSupervisor {
                 FeatureActivityMirror.shared.remove(role)
                 if role == .voice { _ = try? await FeatureProcess.receive(.init(destination: .host, action: "voiceStatus", payload: JSONEncoder().encode(AppStatus.idle))) }
             }
-            if role == .shortcuts, !stopped {
-                Task {
-                    try? await Task.sleep(for: .milliseconds(250))
-                    _ = try? await self.route(.init(destination: .shortcuts, action: "start"))
-                }
-            }
-        }
-    }
 
-    private func checkShortcuts(channel: UUID) async -> Bool {
-        guard !stopped, channelGenerations[.shortcuts] == channel, let child = children[.shortcuts] else { return false }
-        do {
-            _ = try await child.peer.request("ui", payload: JSONEncoder().encode(FeatureCommand(destination: .shortcuts, action: "ping")), timeout: .seconds(2))
-            return true
-        } catch {
-            guard !stopped, !Task.isCancelled, channelGenerations[.shortcuts] == channel else { return false }
-            // The event-tap process owns no drafts or external actions, so it can be replaced safely.
-            child.process.cancel()
-            await child.process.value
-            return false
         }
     }
 
     private func child(for role: FeatureRole) async throws -> Child {
+        guard role != .host, role.processOwner == role else { throw FeatureRPC.Failure.invalidMessage }
         if let child = children[role] { return child }
         if let task = starting[role] { return try await task.value }
         ShortcutLatency.record(.spawnRequested)
@@ -511,8 +600,9 @@ actor FeatureSupervisor {
                     return try JSONEncoder().encode(FeatureRPC.Empty())
                 }
                 if method == "route", let self {
-                    let command = try JSONDecoder().decode(FeatureCommand.self, from: payload)
-                    let result = try await self.route(command)
+                    let request = try JSONDecoder().decode(FeatureRoutedCommand.self, from: payload)
+                    guard (1...180000).contains(request.timeoutMilliseconds) else { throw FeatureRPC.Failure.invalidMessage }
+                    let result = try await self.route(request.command, timeout: .milliseconds(request.timeoutMilliseconds))
                     return try JSONEncoder().encode(result)
                 }
                 throw FeatureRPC.Failure.invalidMessage
@@ -543,17 +633,6 @@ actor FeatureSupervisor {
             starting[role] = nil
             if stopped || !liveChannels.contains(channel) { await child.peer.stop(); child.process.cancel(); throw FeatureRPC.Failure.unavailable }
             children[role] = child
-            if role == .shortcuts {
-                shortcutWatchdog?.cancel()
-                shortcutWatchdog = Task { [weak self, peer = child.peer] in
-                    // Cold startup may include permission setup. Heartbeats begin after readiness.
-                    _ = try? await peer.request("ui", payload: JSONEncoder().encode(FeatureCommand(destination: .shortcuts, action: "ping")), timeout: .seconds(30))
-                    while !Task.isCancelled {
-                        do { try await Task.sleep(for: .seconds(2)) } catch { return }
-                        guard await self?.checkShortcuts(channel: channel) == true else { return }
-                    }
-                }
-            }
             return child
         } catch { starting[role] = nil; liveChannels.remove(channel); throw error }
     }
@@ -599,6 +678,14 @@ struct FeatureFocus: Codable, Sendable {
     let focused: Bool
     let uptime: TimeInterval
 }
+struct FeatureForegroundActivity: Codable, Sendable {
+    let busy: Bool
+    let uptime: TimeInterval
+    init(busy: Bool, uptime: TimeInterval = ProcessInfo.processInfo.systemUptime) {
+        self.busy = busy; self.uptime = uptime
+    }
+}
+
 struct FeatureVoiceState: Codable, Sendable {
     let role: FeatureRole
     let recording: Bool
@@ -624,13 +711,14 @@ private final class FeatureParentLifetime: @unchecked Sendable {
 extension FeatureRole {
     var modules: [ModuleID] {
         switch self {
-        case .host: [.conversations, .notebook, .wordBook]
+        case .host: [.conversations, .notebook, .wordBook, .nativeSystem, .mediaExtraction, .mediaPreviews, .clipboardThumbnails, .textRecognition, .clipboardOCR, .clipboardMetadata, .mediaPlayback]
+        case .background: [.fileIndex, .semanticValidation, .semanticIndexReading, .semanticPriorityReading, .semanticQueryInference, .semanticIndexInference, .semanticMediaInference]
         case .shortcuts, .settings: []
         case .voice: [.whisperInference]
         case .ring, .monitor: [.nativeSystem]
         case .screenshot: [.frameRegistration, .textRecognition, .recordingTimeline, .recordingExport, .mediaPreviews, .mediaExtraction]
         case .clipboard: [.clipboardThumbnails, .clipboardOCR, .clipboardMetadata, .mediaPlayback, .mediaPreviews, .mediaExtraction]
-        case .chat: [.notebook, .wordBook, .nativeSystem, .whisperInference, .mediaExtraction, .mediaPreviews, .textRecognition, .fileIndex, .semanticValidation, .semanticPriorityReading, .semanticQueryInference, .mediaPlayback]
+        case .chat: [.notebook, .wordBook, .nativeSystem, .mediaExtraction, .mediaPreviews, .textRecognition, .mediaPlayback]
         case .launcher: ModuleID.allCases.filter { $0 != .conversations }
         case .notes, .wordBook, .help, .translation: [.notebook, .wordBook, .textRecognition, .mediaPreviews, .mediaExtraction]
         }

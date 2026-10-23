@@ -6942,3 +6942,12 @@
 
 "ask.add.skills.all" = "すべて";
 "ask.add.skills.none" = "使用しない";
+
+// Consolidated process diagnostics
+"shortcutDiagnostics.role.background" = "バックグラウンドサービス";
+"shortcutDiagnostics.processes" = "プロセスのリソース";
+"shortcutDiagnostics.process" = "プロセス";
+"shortcutDiagnostics.memory" = "メモリ";
+"shortcutDiagnostics.operations" = "管理対象の処理";
+"shortcutDiagnostics.processNote" = "アプリのプロセスを表示します。デコーダーとシステムサービスは別です。このウインドウを開いている間だけ CPU を計測します。";
+"feature.quitNotReady" = "データの保存を確認できなかったため、アプリを開いたままにしています。処理の完了後にもう一度終了してください。";

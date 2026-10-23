@@ -39,6 +39,8 @@ struct ShortcutLatencyReport: Codable, Sendable {
         let p50Milliseconds: Double?
         let p95Milliseconds: Double?
     }
+    var processes: [FeatureResourceSnapshot]? = nil
+    var canExport: Bool { !samples.isEmpty || !(processes?.isEmpty ?? true) }
     let generatedAt: Date
     let samples: [ShortcutLatencySample]
     let summaries: [Summary]

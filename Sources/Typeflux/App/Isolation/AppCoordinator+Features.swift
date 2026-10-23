@@ -8,8 +8,21 @@ extension AppCoordinator {
         featureStatusTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.publishFeatureStatus() }
         }
+        if FeatureProcess.role == .background {
+            Task {
+                await featureModuleStartup?.value
+                AskFileIndex.shared.start()
+                await SemanticFileSearchService.shared.startForApplication(using: di.moduleRegistry, startModules: false)
+            }
+            return
+        }
+        if FeatureProcess.role == .screenshot {
+            configureFeatureCapture()
+            return
+        }
         let workflow = makeWorkflowController()
         workflowController = workflow
+        workflow.onForegroundActivityChanged = { SemanticFileSearchService.shared.setForegroundBusy($0) }
         workflow.start(registerHotkeys: false, backgroundWarmup: FeatureProcess.role == .voice && !FeatureIsolationProbe.enabled)
         if FeatureProcess.role == .ring {
             startRing(screenshotCoordinator: di.screenshotCoordinator)
@@ -28,7 +41,7 @@ extension AppCoordinator {
         if [FeatureRole.chat, .launcher, .notes, .wordBook, .help, .translation].contains(FeatureProcess.role),
            let controller = di.askConversationWindowController {
             let model = controller.model
-            model.voiceInput.recorder = WorkflowComposerRecording(workflow)
+            model.voiceInput.recorder = FeatureProcess.enabled ? FeatureVoiceRecording() : WorkflowComposerRecording(workflow)
             workflow.composerVoiceInput = model.voiceInput
             model.screenshotTextRecognizer = TiledImageTextRecognizer(base: di.imageTextRecognizer)
             di.translationPanel.otherScreenshotHandler = model
@@ -85,7 +98,35 @@ extension AppCoordinator {
         }
     }
 
+    private func configureFeatureCapture() {
+        let capture = di.screenshotCoordinator
+        capture.prewarm()
+        capture.followUpHandler = featureScreenshotForwarder
+        capture.isRecordingActive = { [weak self] in self?.di.screenRecordingSessions.isCaptureActive ?? false }
+        capture.onRecordingRequested = { [weak self] format, region in
+            self?.di.screenRecordingSessions.show(format: format, region: region)
+        }
+    }
+
+    var allowsFeatureRetirement: Bool {
+        guard !NSApp.windows.contains(where: { $0.isVisible }), ManagedProcess.activeApplicationProcesses == 0,
+              !featureScreenshotForwarder.isBusy, !FeatureScreenshotForwarder.shared.isBusy else { return false }
+        switch FeatureProcess.role {
+        case .chat: return di.existingAskConversationWindowController?.model.allowsFeatureRetirement ?? true
+        case .screenshot:
+            return di.screenshotCoordinator.state == .idle && di.screenshotCoordinator.pins.pinCount == 0 && !di.screenRecordingSessions.isBusy
+        default: return false
+        }
+    }
+
     func publishFeatureStatus() {
+        if FeatureProcess.enabled, featureIdleRequest == nil,
+           featureIdlePolicy.shouldRetire(role: FeatureProcess.role, blocked: !allowsFeatureRetirement, uptime: ProcessInfo.processInfo.systemUptime) {
+            featureIdleRequest = Task { [weak self] in
+                defer { self?.featureIdleRequest = nil }
+                _ = try? await FeatureProcess.route(.init(destination: .host, action: "retireFeature", payload: Data(FeatureProcess.role.rawValue.utf8)))
+            }
+        }
         let role = FeatureProcess.role
         let status = FeatureStatus(role: role,
             activity: di.existingAskConversationWindowController?.model.agentActivityInput ?? .init(),
@@ -98,7 +139,7 @@ extension AppCoordinator {
             }))
         guard let payload = try? JSONEncoder().encode(status) else { return }
         FeatureProcess.send(.init(destination: .host, action: "status", payload: payload))
-        if role == .launcher, featureQuickUpdate == nil, let model = di.existingAskConversationWindowController?.model,
+        if FeatureProcess.owns(.launcher), featureQuickUpdate == nil, let model = di.existingAskConversationWindowController?.model,
            model.quickAsk?.handedOff == true, let id = model.quickAsk?.conversationId, let run = model.snapshots[id]?.run {
             let value = FeatureQuickProgress(owner: model.owner, id: id, runID: run.id,
                 complete: !run.isActive, progress: model.inferenceProgress[id])
@@ -192,23 +233,46 @@ extension AppCoordinator {
             }
         }
         #endif
+        if command.action.hasPrefix("voice."), command.action != "voice.update" {
+            guard FeatureProcess.role == .voice, let workflowController else { throw FeatureRPC.Failure.invalidMessage }
+            return try await featureVoiceOwner.handle(command, workflow: workflowController)
+        }
+        if command.destination == .shortcuts {
+            try FeatureShortcutHost.shared.handle(command)
+            return Data()
+        }
         switch command.action {
+        case "voice.update": FeatureVoiceRecording.receive(try JSONDecoder().decode(FeatureVoiceUpdate.self, from: command.payload))
+        case "indexSnapshot":
+            let snapshot = try JSONDecoder().decode(FeatureIndexSnapshot.self, from: command.payload)
+            AskFileIndex.shared.applyRemoteStatus(snapshot.names)
+            SemanticFileSearchService.shared.applyRemoteSnapshot(snapshot.content)
+        case "idleAllowed": return try JSONEncoder().encode(allowsFeatureRetirement)
         case "ping": return Data()
         case "recoverModule":
             let request = try JSONDecoder().decode(FeatureModuleRecovery.self, from: command.payload)
             guard FeatureProcess.role.modules.contains(request.id), let entry = di.moduleRegistry.registrations.first(where: { $0.id == request.id }) else { throw FeatureRPC.Failure.invalidMessage }
             return try JSONEncoder().encode(await entry.recover(request.reset))
         case "voiceStatus": di.appState.setStatus(try JSONDecoder().decode(AppStatus.self, from: command.payload))
+        case "workflowPress":
+            guard FeatureProcess.role == .voice else { throw FeatureRPC.Failure.invalidMessage }
+            let request = try JSONDecoder().decode(FeatureWorkflowPress.self, from: command.payload)
+            workflowController?.handlePressBegan(intent: request.asksSelection ? .askSelection : .dictation,
+                startLocked: request.locked, hotkeyDetectedAt: request.detectedAt, hotkeyUptime: request.uptime, auxiliary: request.auxiliary)
         case "cancelRecording": workflowController?.cancelRecording()
         case "dictation": workflowController?.handlePressBegan(intent: .dictation, startLocked: true)
         case "persona": workflowController?.handlePersonaPickerRequested()
         case "retryHistory": workflowController?.retry(record: try JSONDecoder().decode(HistoryRecord.self, from: command.payload))
         case "shutdown":
-            if di.screenRecordingSessions.isBusy { await di.screenRecordingSessions.prepareForTermination() }
-            await di.existingAskConversationWindowController?.model.flushFeatureDrafts()
-            await prepareForTermination()
+            guard workflowController?.isRecording != true, workflowController?.processingTask == nil,
+                  featureVoiceOwner.editorOwner == nil, !featureScreenshotForwarder.isBusy, !FeatureScreenshotForwarder.shared.isBusy,
+                  di.existingAskConversationWindowController?.model.voiceInput.isOccupied != true else { throw FeatureRPC.Failure.busy }
+            if FeatureProcess.role == .screenshot, di.screenRecordingSessions.isBusy { await di.screenRecordingSessions.prepareForTermination() }
+            guard await di.existingAskConversationWindowController?.model.flushFeatureDrafts() != false else { throw FeatureRPC.Failure.unavailable }
+            guard await prepareForTermination() else { throw FeatureRPC.Failure.unavailable }
             FeatureIsolationProbe.flushCoverage()
         case "settings":
+            if FeatureProcess.role == .host { try FeatureShortcutHost.shared.handle(.init(destination: .shortcuts, action: "settings")) }
             di.modelLibrary.reloadFeaturePreferences()
             AskModelLibrary.shared.reloadFeaturePreferences()
             AppLocalization.shared.setLanguage(di.settingsStore.appLanguage)
@@ -266,6 +330,7 @@ extension AppCoordinator {
             let transfer = try JSONDecoder().decode(FeatureChatHandoff.self, from: command.payload)
             return try JSONEncoder().encode(await controller.model.receiveFeatureHandoff(transfer))
         case "toggleClipboard": workflowController?.handleHistoryPickerRequested()
+        case "screenRecording": di.screenRecordingSessions.show()
         case "screenshot":
             let value = command.payload.isEmpty ? FeatureScreenshotRequest(mode: .region, followUp: nil)
                 : try JSONDecoder().decode(FeatureScreenshotRequest.self, from: command.payload)
@@ -273,16 +338,25 @@ extension AppCoordinator {
             di.screenshotCoordinator.start(mode: mode, followUp: value.followUp.flatMap(ScreenshotFollowUp.init(rawValue:)))
         case "screenshotFollowUp":
             let value = try JSONDecoder().decode(FeatureScreenshotImage.self, from: command.payload)
-            guard let kind = ScreenshotFollowUp(rawValue: value.followUp),
-                  let image = NSImage(data: value.png)?.cgImage(forProposedRect: nil, context: nil, hints: nil)
-            else { throw FeatureRPC.Failure.invalidMessage }
+            guard value.generation == AuthState.shared.sessionGeneration,
+                  let kind = ScreenshotFollowUp(rawValue: value.followUp) else { throw FeatureRPC.Failure.invalidMessage }
+            let image = try await Task.detached(priority: .userInitiated) { try FeatureImageTransfer.read(value.imageID) }.value
+            guard value.generation == AuthState.shared.sessionGeneration else { throw FeatureRPC.Failure.cancelled }
             let snapshot = ScreenshotFollowUpImage(image: image, scale: value.scale, isLongImage: value.isLongImage)
             if kind == .translate { di.translationPanel.openScreenshot(snapshot) }
             else { di.askConversationWindowController?.model.handle(kind, image: snapshot) }
         case "restorePins": di.screenshotCoordinator.pins.restoreMouse()
         case "closePins": di.screenshotCoordinator.pins.closeAll()
-        case "hotkey":
+        case "hotkey", "composerHotkey":
             let event = try JSONDecoder().decode(FeatureHotkeyEvent.self, from: command.payload)
+            if FeatureProcess.role == .voice, let owner = featureVoiceOwner.editorOwner, event.target == nil {
+                return try await FeatureProcess.route(.init(destination: owner, action: "composerHotkey", payload: command.payload))
+            }
+            if [.host, .chat].contains(FeatureProcess.role), event.target == nil,
+               workflowController?.composerVoiceInput?.isOccupied != true,
+               ((NSApp.keyWindow?.firstResponder as? AskComposerTextView.Editor).map { !$0.isEditable || $0.hasMarkedText() } ?? true) {
+                return try await FeatureProcess.route(.init(destination: .voice, action: "hotkey", payload: command.payload))
+            }
             if let target = event.target {
                 if event.name == "onShortcutRequested" { handleShortcut(target, screenshotCoordinator: di.screenshotCoordinator) }
                 else { (di.hotkeyService as? FeatureRemoteHotkeys)?.receive(event) }
@@ -345,7 +419,8 @@ struct FeatureScreenshotRequest: Codable, Sendable {
 }
 
 struct FeatureScreenshotImage: Codable, Sendable {
-    let png: Data
+    let imageID: UUID
+    let generation: Int
     let scale: CGFloat
     let isLongImage: Bool
     let followUp: String
@@ -355,21 +430,26 @@ struct FeatureScreenshotImage: Codable, Sendable {
 final class FeatureScreenshotForwarder: ScreenshotFollowUpHandling {
     static let shared = FeatureScreenshotForwarder()
     private let toast = ScreenshotToastController()
+    private var pendingTransfers = 0
+    var isBusy: Bool { pendingTransfers > 0 }
 
     func handle(_ followUp: ScreenshotFollowUp, image: ScreenshotFollowUpImage) {
-        // Keep independent captures, but never silently discard an undelivered image.
+        pendingTransfers += 1
+        let generation = AuthState.shared.sessionGeneration
         Task {
+            defer { pendingTransfers -= 1 }
             do {
                 let png = try await Task.detached { try ScreenshotImageExporter.png(image.image, scale: image.scale) }.value
-                let value = FeatureScreenshotImage(png: png, scale: image.scale, isLongImage: image.isLongImage, followUp: followUp.rawValue)
-                do {
+                let outcome = try await FeatureImageDelivery.deliver(png, send: { id in
+                    let value = FeatureScreenshotImage(imageID: id, generation: generation, scale: image.scale,
+                        isLongImage: image.isLongImage, followUp: followUp.rawValue)
                     _ = try await FeatureProcess.route(.init(destination: followUp == .translate ? .translation : .launcher,
                         action: "screenshotFollowUp", payload: JSONEncoder().encode(value)))
-                } catch {
+                }, save: { data in
                     let directory = SettingsStore().screenshotSaveDirectory
-                    let saved = try await Task.detached { try ScreenshotOutput().save(png, in: directory, date: Date()) }.value
-                    toast.show(.followUpSaved(saved))
-                }
+                    return try await Task.detached { try ScreenshotOutput().save(data, in: directory, date: Date()) }.value
+                })
+                if case let .saved(url) = outcome { toast.show(.followUpSaved(url)) }
             } catch {
                 toast.show(.failed)
                 ErrorLogStore.shared.log("Screenshot follow-up could not be delivered or saved")

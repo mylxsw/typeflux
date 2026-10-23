@@ -24,3 +24,17 @@ struct AppTerminationBarrierTests {
         #expect(replies == 1)
     }
 }
+
+
+extension AppTerminationBarrierTests {
+    @Test func failedSaveCancelsQuitAndAllowsAnExplicitRetry() async throws {
+        let barrier = AppTerminationBarrier()
+        var replies: [Bool] = []
+        #expect(barrier.beginChecked(cleanup: { false }, reply: { replies.append($0) }) == .terminateLater)
+        for _ in 0..<100 where replies.isEmpty { try await Task.sleep(for: .milliseconds(5)) }
+        #expect(replies == [false])
+        #expect(barrier.beginChecked(cleanup: { true }, reply: { replies.append($0) }) == .terminateLater)
+        for _ in 0..<100 where replies.count < 2 { try await Task.sleep(for: .milliseconds(5)) }
+        #expect(replies == [false, true])
+    }
+}

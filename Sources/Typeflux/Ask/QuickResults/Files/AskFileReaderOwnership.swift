@@ -108,10 +108,13 @@ final class AskFileReaderProcess: SemanticBudgetChild, @unchecked Sendable {
     private let ownership: AskFileReaderOwnership
     private let reaper: OwnedProcessReaper
     private var stopped = false
+    private let helperLease: FeatureHelperBudget.Lease?
 
     init(executable: URL, arguments: [String], input: Int32, output: Int32,
          qualityOfService: QualityOfService?, ownership: AskFileReaderOwnership,
          reaper: OwnedProcessReaper, isCancelled: () -> Bool) throws {
+        helperLease = FeatureProcess.enabled && FeatureProcess.role == .background && arguments.first != "file-index-worker"
+            ? try FeatureHelperBudget.shared.acquire(deadline: Date().addingTimeInterval(3), cancelled: isCancelled) : nil
         let id = try ownership.reserve(isCancelled: isCancelled)
         do {
             try reaper.reserve()
@@ -152,8 +155,8 @@ final class AskFileReaderProcess: SemanticBudgetChild, @unchecked Sendable {
         // A failed observation never authorizes a signal; collection still owns
         // the reservation (ECHILD is handled by the reaper without a kill).
         if result == 0 { kill(-pid, SIGKILL); kill(pid, SIGKILL) }
-        let ownership = ownership, id = id
-        reaper.collect(pid) { ownership.reaped(id) }
+        let ownership = ownership, id = id, helperLease = helperLease
+        reaper.collect(pid) { ownership.reaped(id); helperLease?.finish() }
     }
     private static func spawn(_ executable: URL, _ arguments: [String], _ input: Int32, _ output: Int32,
                               _ quality: QualityOfService?) throws -> pid_t {

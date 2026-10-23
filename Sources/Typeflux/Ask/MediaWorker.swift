@@ -36,7 +36,7 @@ final class MediaWorker: @unchecked Sendable {
 
     init(executable: URL = MediaWorker.helperURL, timeout: TimeInterval = 30, requiresLifecycle: Bool = false,
          uptime: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
-         run: @escaping Runner = { try ManagedProcess().runBlocking($0, isCancelled: $1) }) {
+         run: @escaping Runner = { try FeatureMediaExecution.run($0, cancelled: $1) }) {
         self.requiresLifecycle = requiresLifecycle
         self.executable = executable; self.timeout = timeout; self.uptime = uptime; self.run = run
     }
@@ -117,6 +117,7 @@ final class MediaWorker: @unchecked Sendable {
             let result: ManagedProcess.Result
             do { result = try run(process, cancelled) }
             catch {
+                if error is MediaWorkAdmissionBusy || error is CancellationError { throw error }
                 lease.infrastructureFailed = true
                 let code = error as NSError
                 lease.configurationFailure = code.domain == NSPOSIXErrorDomain && [Int(EACCES), Int(EPERM), Int(ENOENT), Int(ENOEXEC)].contains(code.code)
@@ -185,6 +186,8 @@ final class MediaWorker: @unchecked Sendable {
             gate?.succeeded(generation)
             return value
         } catch {
+            if error is MediaWorkAdmissionBusy { throw MediaFailure.unavailable }
+            if error is CancellationError { throw error }
             if !cancelled() {
                 if let gate, lease.infrastructureFailed { gate.failed(generation, configuration: lease.configurationFailure) }
                 else if gate == nil, (error as? MediaFailure) != .unreadable, (error as? MediaFailure) != .tooLarge {

@@ -687,6 +687,14 @@ final class WorkflowController {
         auxiliary: Bool = false
     ) {
         if routeComposerVoice(.press(intent: intent, locked: startLocked, auxiliary: auxiliary, uptime: hotkeyUptime)) { return }
+        if !FeatureProcess.owns(.voice) {
+            let request = FeatureWorkflowPress(asksSelection: intent == .askSelection, locked: startLocked,
+                detectedAt: hotkeyDetectedAt, uptime: hotkeyUptime, auxiliary: auxiliary)
+            if let payload = try? JSONEncoder().encode(request) {
+                FeatureProcess.send(.init(destination: .voice, action: "workflowPress", payload: payload))
+            }
+            return
+        }
         RecordingStartupLatencyTrace.shared.mark("workflow.press_began.\(intent.traceName)")
         if isPersonaPickerPresented {
             dismissPersonaPicker()

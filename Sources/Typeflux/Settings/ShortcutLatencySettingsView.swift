@@ -43,7 +43,7 @@ final class ShortcutLatencyWindowController: NSObject, NSWindowDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    func windowWillClose(_ notification: Notification) {
+    func windowWillClose(_: Notification) {
         window?.contentView = nil
         window = nil
     }
@@ -51,7 +51,9 @@ final class ShortcutLatencyWindowController: NSObject, NSWindowDelegate {
 
 @MainActor
 struct ShortcutLatencyDashboard: View {
+    @State private var processCPU: [String: Double] = [:]
     @State private var report = ShortcutLatencyReport(events: [])
+    init(report: ShortcutLatencyReport = ShortcutLatencyReport(events: [])) { _report = State(initialValue: report) }
     @State private var selected: UUID?
     @State private var feature = "all"
     @State private var temperature = "all"
@@ -73,13 +75,35 @@ struct ShortcutLatencyDashboard: View {
                 Spacer()
                 Button(L("shortcutDiagnostics.refresh")) { Task { await refresh() } }.disabled(refreshing)
                 Button(L("shortcutDiagnostics.folder")) { NSWorkspace.shared.open(ShortcutLatency.directory) }
-                Button(L("shortcutDiagnostics.export")) { export() }.disabled(report.samples.isEmpty)
+                Button(L("shortcutDiagnostics.export")) { export() }.disabled(!report.canExport)
+            }
+            if let processes = report.processes, !processes.isEmpty {
+                DisclosureGroup(L("shortcutDiagnostics.processes")) {
+                    Grid(alignment: .leading, horizontalSpacing: 20) {
+                        GridRow {
+                            Text(L("shortcutDiagnostics.process")); Text("PID")
+                            Text(L("shortcutDiagnostics.memory")); Text("CPU")
+                            Text(L("shortcutDiagnostics.operations"))
+                        }.fontWeight(.medium)
+                        ForEach(processes) { process in
+                            GridRow {
+                                Text(L("shortcutDiagnostics.role." + process.role.rawValue))
+                                Text(String(process.pid))
+                                Text(process.footprintBytes
+                                    .map { String(format: "%.1f MiB", Double($0) / 1_048_576) } ?? "—")
+                                Text(processCPU[process.id].map { String(format: "%.1f%%", $0) } ?? "—")
+                                Text(String(process.managedOperations))
+                            }.monospacedDigit()
+                        }
+                    }.font(.caption).frame(maxWidth: .infinity, alignment: .leading)
+                    Text(L("shortcutDiagnostics.processNote")).font(.caption).foregroundStyle(.secondary)
+                }
             }
             Text(L("shortcutDiagnostics.boundary")).font(.callout).foregroundStyle(.secondary)
             HStack {
                 Picker(L("shortcutDiagnostics.feature"), selection: $feature) {
                     Text(L("shortcutDiagnostics.all")).tag("all")
-                    ForEach(FeatureRole.allCases.filter { $0 != .host && $0 != .shortcuts }, id: \.rawValue) { role in
+                    ForEach(FeatureRole.allCases.filter { $0 != .host && $0 != .shortcuts && $0 != .background }, id: \.rawValue) { role in
                         Text(L("shortcutDiagnostics.role." + role.rawValue)).tag(role.rawValue)
                     }
                 }.frame(maxWidth: 280)
@@ -188,7 +212,18 @@ struct ShortcutLatencyDashboard: View {
         let result = await Task.detached(priority: .utility) { Result { try ShortcutLatencyReport.read(directory: directory) } }.value
         guard !Task.isCancelled else { return }
         switch result {
-        case let .success(value): report = value; failure = false
+        case var .success(value):
+            if FeatureProcess.enabled,
+               let data = try? await FeatureProcess.route(.init(destination: .host, action: "resources")),
+               let processes = try? JSONDecoder().decode([FeatureResourceSnapshot].self, from: data) {
+                processCPU = Dictionary(uniqueKeysWithValues: processes.compactMap { current in
+                    guard let previous = report.processes?.first(where: { $0.id == current.id }),
+                          let cpu = current.cpuPercent(since: previous) else { return nil }
+                    return (current.id, cpu)
+                })
+                value.processes = processes
+            }
+            report = value; failure = false
         case .failure: failure = true
         }
     }

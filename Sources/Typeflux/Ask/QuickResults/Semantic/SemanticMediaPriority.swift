@@ -1,6 +1,6 @@
 import Foundation
 
-enum SemanticMediaPriority: Int, CaseIterable, Sendable {
+enum SemanticMediaPriority: Int, Codable, CaseIterable, Sendable {
     case document, image, audio, video
 
     static let images: Set<String> = ["png", "jpg", "jpeg", "gif", "heic", "heif", "webp", "tiff", "tif", "bmp"]

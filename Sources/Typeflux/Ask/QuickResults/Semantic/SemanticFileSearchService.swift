@@ -10,9 +10,9 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         settings: SettingsStore(),
         supported: !AskFileIndex.isTesting && SemanticFilePolicy.supported,
         automaticStart: !AskFileIndex.isTesting,
-        requiresReaderLifecycle: true, requiresModelLifecycle: true, deferInitialStart: true
+        requiresReaderLifecycle: true, requiresModelLifecycle: true, deferInitialStart: true, remote: FeatureProcess.enabled && FeatureProcess.role != .background
     )
-    enum Phase: Equatable { case off, preparing, modelRequired, downloading(Double), indexing, ready, paused, failed }
+    enum Phase: Codable, Equatable { case off, preparing, modelRequired, downloading(Double), indexing, ready, paused, failed }
     @Published private(set) var phase: Phase = .off
     @Published private(set) var files = 0
     @Published private(set) var chunks = 0
@@ -29,10 +29,13 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     @Published private(set) var modelReady = false
     @Published private(set) var preferences: SemanticFileSettings
     let supported: Bool
-    enum QueryState: Equatable { case idle, warming, searching, degraded }
+    enum QueryState: Codable, Equatable { case idle, warming, searching, degraded }
     @Published private(set) var queryState: QueryState = .idle
+    private let remote: Bool
+    private var remoteEnabled = false
     var isEnabled: Bool {
-        supported && preferences.enabled && settings.semanticFileSearch.enabled && settings.askQuickFileSearchEnabled
+        if remote { return remoteEnabled && settings.semanticFileSearch.enabled && settings.askQuickFileSearchEnabled }
+        return supported && preferences.enabled && settings.semanticFileSearch.enabled && settings.askQuickFileSearchEnabled
             && store != nil && scope != nil && (modelReady || hasPublishedContent) && !removing && fingerprint ==
             settingsFingerprint
     }
@@ -137,7 +140,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
          makeEncoder: (@Sendable (URL, URL) -> any SemanticEmbedding)? = nil,
          makeQuery: (@Sendable (URL, URL) -> any SemanticQueryEmbedding)? = nil,
          embeddingOwners: SemanticEmbeddingOwners? = nil,
-         requiresReaderLifecycle: Bool = false, requiresModelLifecycle: Bool = false, deferInitialStart: Bool = false,
+         requiresReaderLifecycle: Bool = false, requiresModelLifecycle: Bool = false, deferInitialStart: Bool = false, remote: Bool = false,
          watcherDelivery: SemanticWatcherDelivery = SemanticWatcherDelivery(),
          eventHistory: @escaping @Sendable ([String]) -> (UInt64, String?) = {
              (AskFSEventsWatcher.currentEventID, AskFSEventsWatcher.historySignature(paths: $0))
@@ -145,6 +148,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
          progressDelivery: SemanticIndexProgressDelivery = SemanticIndexProgressDelivery(),
          downloadProgress: SemanticDownloadProgressDelivery = SemanticDownloadProgressDelivery(),
          countSnapshot: @escaping @Sendable (SemanticFileStore) throws -> SemanticFileStore.Counts = { try $0.counts() }) {
+        self.remote = remote
         self.watcherDelivery = watcherDelivery; self.eventHistory = eventHistory
         self.progressDelivery = progressDelivery; self.countSnapshot = countSnapshot
         self.downloadProgress = downloadProgress
@@ -156,7 +160,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         self.models = models; self.readers = SemanticFileReaders(makeReader: makeReader, requiresLifecycle: requiresReaderLifecycle)
         self.makeEncoder = makeEncoder; self.makeQuery = makeQuery; self.embeddingOwners = embeddingOwners ?? SemanticEmbeddingOwners(requiresLifecycle: requiresModelLifecycle)
         self.preferences = settings.semanticFileSearch
-        guard automaticStart else { return }
+        guard automaticStart, !remote else { return }
         let authority = settingsAuthority, defaults = settings.defaults
         observers.append(NotificationCenter.default.publisher(for: SemanticSettingsChange.notification)
             .sink { notification in
@@ -199,6 +203,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     }
 
     func setForegroundBusy(_ busy: Bool) {
+        if remote { remoteSend("busy." + FeatureProcess.role.rawValue, value: FeatureForegroundActivity(busy: busy)); return }
         guard self.busy != busy else { return }
         self.busy = busy
         if busy {
@@ -210,6 +215,11 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     }
 
     @discardableResult func setEnabled(_ enabled: Bool) -> Bool {
+        if remote {
+            guard !enabled || (supported && settings.askQuickFileSearchEnabled) else { return false }
+            var next = settings.semanticFileSearch; next.enabled = enabled; settings.semanticFileSearch = next
+            remoteSend("enabled", value: enabled); return true
+        }
         guard !enabled || (supported && settings.askQuickFileSearchEnabled) else { return false }
         var next = settings.semanticFileSearch
         next.enabled = enabled
@@ -224,6 +234,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     }
 
     func pause(_ paused: Bool) {
+        if remote { remoteSend("pause", value: paused); return }
         manuallyPaused = paused; refreshPause()
     }
 
@@ -254,6 +265,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
 
     /// Called once by application startup, never by a health factory or recovery.
     func startForApplication(using registry: ModuleRegistry, startModules: Bool = true) async {
+        if remote { remoteSend("start", value: false); return }
         if startModules { _ = await registry.startAll() }
         guard !Task.isCancelled else { return }
         start(force: true)
@@ -261,9 +273,14 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
 
     // Keep generation checks beside every suspension in this lifecycle transition.
     // swiftlint:disable:next function_body_length cyclomatic_complexity
-    func start(force: Bool = false) { start(force: force, renewReaderAuthorization: true) }
+    func start(force: Bool = false) {
+        if remote { remoteSend("start", value: force); return }
+        start(force: force, renewReaderAuthorization: true)
+    }
 
-    func rescanAll() { nextReason = .rebuild; start(force: true, renewReaderAuthorization: true, fullScan: true) }
+    func rescanAll() {
+        if remote { remoteSend("rescan", value: false); return }
+        nextReason = .rebuild; start(force: true, renewReaderAuthorization: true, fullScan: true) }
 
     private func start(force: Bool, renewReaderAuthorization: Bool, fullScan: Bool = false) {
         guard !removing else { return }
@@ -720,6 +737,7 @@ extension SemanticFileSearchService {
     }
 
     func downloadModel() {
+        if remote { remoteSend("download", value: false); return }
         guard supported, download == nil, preferences.enabled, !removing,
               !token.isCancelled, fingerprint == settingsFingerprint else { return }
         let mutation: SemanticEmbeddingOwners.Mutation
@@ -788,11 +806,13 @@ extension SemanticFileSearchService {
     }
 
     func cancelDownload() {
+        if remote { remoteSend("cancelDownload", value: false); return }
         downloadProgress.invalidate()
         download?.cancel()
     }
 
     func prepareModelIfNeeded() async {
+        if remote { _ = await remoteRequest("prepare", value: false) as FeatureRPC.Empty?; return }
         let lifecycle = token, fingerprint = settingsFingerprint
         await self.work?.value
         guard !Task.isCancelled, !lifecycle.isCancelled, fingerprint == settingsFingerprint else { return }
@@ -803,6 +823,7 @@ extension SemanticFileSearchService {
 
     /// Stop every writer before removing artifacts. The name index is never touched.
     func clear(removeModel: Bool = false) async {
+        if remote { _ = await remoteRequest("clear", value: removeModel) as FeatureRPC.Empty?; return }
         guard !removing else { return }
         removing = true
         let pendingCounts = countRefresh
@@ -873,6 +894,7 @@ extension SemanticFileSearchService {
     }
 
     func rebuild() async {
+        if remote { _ = await remoteRequest("rebuild", value: false) as FeatureRPC.Empty?; return }
         let scope = settings.askLauncherSearchSettings.fileIndexFingerprint
         await clear()
         // Scope edits during clearing win; never restore an outdated filename-search scope.
@@ -883,6 +905,7 @@ extension SemanticFileSearchService {
 
     func processingPage(_ section: SemanticFileStore.ProcessingSection, offset: Int,
                         limit: Int = 50) async -> SemanticFileStore.ProcessingPage? {
+        if remote { return await remoteRequest("page", value: FeatureProcessingPage(section: section, offset: offset, limit: limit)) }
         guard let database = store, let fingerprint,
               ownsLifecycle(token, fingerprint: fingerprint) else { return nil }
         let lifecycle = token
@@ -894,6 +917,7 @@ extension SemanticFileSearchService {
     }
 
     func canRetryProcessingItem(_ item: SemanticFileStore.ProcessingItem) -> Bool {
+        if remote { return item.canRetry && isEnabled && modelReady }
         guard item.canRetry, supported, preferences.enabled, settings.semanticFileSearch.enabled,
               settings.askQuickFileSearchEnabled, modelReady, let fingerprint,
               ownsLifecycle(token, fingerprint: fingerprint),
@@ -904,6 +928,7 @@ extension SemanticFileSearchService {
 
     /// Queue one selection without restarting discovery or resetting unrelated generations.
     func retryProcessingItem(_ item: SemanticFileStore.ProcessingItem) async -> Bool {
+        if remote { return await remoteRequest("retry", value: item) ?? false }
         guard !Task.isCancelled, canRetryProcessingItem(item), let database = store,
               let fingerprint else { return false }
         let lifecycle = token
@@ -932,6 +957,7 @@ extension SemanticFileSearchService {
 
 extension SemanticFileSearchService {
     func endSearch() {
+        if remote { remoteSend("endSearch", value: false); return }
         prewarmRequested = false
         warmup?.cancel(); warmup = nil
         if queryState == .warming {
@@ -940,6 +966,7 @@ extension SemanticFileSearchService {
     }
 
     func prepareForSearch() {
+        if remote { remoteSend("prepareSearch", value: false); return }
         prewarmRequested = true
         guard isEnabled, !busy, !thermalConstrained(), warmup == nil, let queryValidator, let scope else { return }
         let queryWorker = modelReady ? queryWorker : nil
@@ -980,6 +1007,12 @@ extension SemanticFileSearchService {
     // swiftlint:disable:next function_body_length cyclomatic_complexity
     func search(_ text: String, type: AskFileType, limit: Int,
                 progress: @escaping @MainActor @Sendable ([AskFileHit]) -> Void) async -> [AskFileHit] {
+        if remote {
+            let result: [AskFileHit] = await remoteRequest("search", value: FeatureSemanticQuery(text: text, type: type, limit: min(100, max(0, limit)))) ?? []
+            guard !Task.isCancelled else { return [] }
+            progress(result)
+            return result
+        }
         guard limit > 0, isEnabled, let query = SemanticFilePolicy.query(text, type: type),
               let store, let scope, let queryValidator else { return [] }
         let lifecycle = token, cancellation = AskSearchCancellation()
@@ -1095,5 +1128,44 @@ extension SemanticFileSearchService {
             }
             return await fallback()
         }
+    }
+}
+
+
+extension SemanticFileSearchService {
+    func remoteSend<Value: Encodable & Sendable>(_ action: String, value: Value) {
+        guard let data = try? JSONEncoder().encode(value) else { return }
+        FeatureProcess.send(.init(destination: .background, action: "semantic." + action, payload: data))
+    }
+
+    private func remoteRequest<Value: Encodable & Sendable, Result: Decodable & Sendable>(_ action: String, value: Value) async -> Result? {
+        guard let data = try? JSONEncoder().encode(value) else { return nil }
+        return try? await FeatureBackgroundCall.request(.init(destination: .background, action: "semantic." + action, payload: data))
+    }
+
+    func backgroundSnapshot() -> FeatureSemanticSnapshot {
+        .init(phase: phase, files: files, chunks: chunks, hasPublishedContent: hasPublishedContent, indexedCounts: indexedCounts, skipped: skipped, mediaDownload: mediaDownload, mediaFailed: mediaFailed, resourceWaitReason: resourceWaitReason, diagnostics: diagnostics, indexProgress: indexProgress, currentProcessingPath: currentProcessingPath, blocked: blocked, modelReady: modelReady, preferences: preferences, queryState: queryState, manuallyPaused: manuallyPaused, enabled: isEnabled)
+    }
+
+    func applyRemoteSnapshot(_ snapshot: FeatureSemanticSnapshot) {
+        guard remote else { return }
+        remoteEnabled = snapshot.enabled
+        if phase != snapshot.phase { phase = snapshot.phase }
+        if files != snapshot.files { files = snapshot.files }
+        if chunks != snapshot.chunks { chunks = snapshot.chunks }
+        if hasPublishedContent != snapshot.hasPublishedContent { hasPublishedContent = snapshot.hasPublishedContent }
+        if indexedCounts != snapshot.indexedCounts { indexedCounts = snapshot.indexedCounts }
+        if skipped != snapshot.skipped { skipped = snapshot.skipped }
+        if mediaDownload != snapshot.mediaDownload { mediaDownload = snapshot.mediaDownload }
+        if mediaFailed != snapshot.mediaFailed { mediaFailed = snapshot.mediaFailed }
+        if resourceWaitReason != snapshot.resourceWaitReason { resourceWaitReason = snapshot.resourceWaitReason }
+        if diagnostics != snapshot.diagnostics { diagnostics = snapshot.diagnostics }
+        if indexProgress != snapshot.indexProgress { indexProgress = snapshot.indexProgress }
+        if currentProcessingPath != snapshot.currentProcessingPath { currentProcessingPath = snapshot.currentProcessingPath }
+        if blocked != snapshot.blocked { blocked = snapshot.blocked }
+        if modelReady != snapshot.modelReady { modelReady = snapshot.modelReady }
+        if preferences != snapshot.preferences { preferences = snapshot.preferences }
+        if queryState != snapshot.queryState { queryState = snapshot.queryState }
+        if manuallyPaused != snapshot.manuallyPaused { manuallyPaused = snapshot.manuallyPaused }
     }
 }

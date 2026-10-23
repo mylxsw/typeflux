@@ -2,8 +2,8 @@ import AppKit
 import Foundation
 
 /// Where the file index stands, for the launcher's notice and the settings page.
-struct AskFileIndexStatus: Equatable, Sendable {
-    enum Phase: Equatable, Sendable {
+struct AskFileIndexStatus: Codable, Equatable, Sendable {
+    enum Phase: Codable, Equatable, Sendable {
         case off
         /// Reading the saved index.
         case loading
@@ -59,7 +59,7 @@ protocol AskFileSearching: AnyObject, Sendable {
 /// index and changes it; searches read the last published copy without waiting.
 final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     /// Off inside test runs: a test must never scan the Mac it runs on. Tests inject their own index.
-    static let shared = AskFileIndex(configuration: isTesting ? { (false, AskLauncherSearchSettings()) } : storedConfiguration, ownership: AskFileReaderOwnership(requiresLifecycle: true))
+    static let shared = AskFileIndex(configuration: isTesting ? { (false, AskLauncherSearchSettings()) } : storedConfiguration, ownership: AskFileReaderOwnership(requiresLifecycle: true), remote: FeatureProcess.enabled && FeatureProcess.role != .background)
 
     static var isTesting: Bool {
         NSClassFromString("XCTest.XCTestCase") != nil || NSClassFromString("XCTestCase") != nil
@@ -70,6 +70,8 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     /// The building index is published this often, so results appear while it grows.
     static let publishEvery = 20000
 
+    private let remote: Bool
+    private let remoteStatus = FeatureIndexStatusCache()
     private let configuration: () -> (enabled: Bool, settings: AskLauncherSearchSettings)
     private let fullDiskAccess: () -> Bool
     private let snapshotURL: URL
@@ -113,7 +115,8 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
          snapshotURL: URL = AskFileIndex.defaultSnapshotURL, defaults: UserDefaults = .standard,
          home: String = NSHomeDirectory(), ownership: AskFileReaderOwnership = AskFileReaderOwnership(), makeReader: (() -> AskFileReading)? = nil,
          makeWatcher: @escaping () -> AskFileWatching = { AskFSEventsWatcher() },
-         searchCandidates: AskFileSearchCandidates = AskFileSearchCandidates()) {
+         searchCandidates: AskFileSearchCandidates = AskFileSearchCandidates(), remote: Bool = false) {
+        self.remote = remote
         self.configuration = configuration
         self.fullDiskAccess = fullDiskAccess
         self.snapshotURL = snapshotURL
@@ -149,6 +152,7 @@ extension AskFileIndex {
     // MARK: - Reading
 
     func search(_ query: AskSearchQuery, options: AskFileSearchOptions) -> [AskFileHit] {
+        if remote { return remoteSearch(query.text, options: options) }
         let (state, usage, revision) = lock.withLock { (published, usageCounts, publishedRevision) }
         var options = options
         options.usage = usage
@@ -156,13 +160,15 @@ extension AskFileIndex {
     }
 
     func recent(options: AskFileSearchOptions) -> [AskFileHit] {
-        lock.withLock { published }.recent(options: options)
+        if remote { return remoteSearch(nil, options: options) }
+        return lock.withLock { published }.recent(options: options)
     }
 
-    var status: AskFileIndexStatus { lock.withLock { currentStatus } }
+    var status: AskFileIndexStatus { remote ? remoteStatus.value : lock.withLock { currentStatus } }
     var usage: [String: Int] { lock.withLock { usageCounts } }
 
     func recordOpen(_ path: String) {
+        if remote { FeatureProcess.send(.init(destination: .background, action: "files.open", payload: Data(path.utf8))); return }
         let snapshot = lock.withLock { () -> [String: Int] in
             usageCounts[path, default: 0] += 1
             if usageCounts.count > Self.maximumUsage,
@@ -203,6 +209,7 @@ extension AskFileIndex {
     }
 
     func start() {
+        if remote { FeatureProcess.send(.init(destination: .background, action: "files.start")); return }
         let (enabled, settings) = configuration()
         let signature = String(enabled) + settings.fileIndexFingerprint
         lock.withLock {
@@ -255,6 +262,7 @@ extension AskFileIndex {
     }
 
     func rebuild() {
+        if remote { FeatureProcess.send(.init(destination: .background, action: "files.rebuild")); return }
         let (enabled, settings) = configuration()
         guard enabled, readerOwnership.permitsWork else { return }
         let run = lock.withLock { suspended = false; preparationGeneration += 1; generation += 1; return generation }
@@ -282,6 +290,7 @@ extension AskFileIndex {
     }
 
     func clear() {
+        if remote { FeatureProcess.send(.init(destination: .background, action: "files.clear")); return }
         lock.withLock {
             target = nil
             suspended = false
@@ -294,6 +303,7 @@ extension AskFileIndex {
     private func isCurrent(_ run: Int) -> Bool { lock.withLock { generation == run && !suspended && readerOwnership.permitsWork } }
 
     func forget(_ path: String) {
+        if remote { FeatureProcess.send(.init(destination: .background, action: "files.forget", payload: Data(path.utf8))); return }
         queue.async { [weak self] in
             guard let self else { return }
             // An explicit removal may reduce the authorized cache while paused;
@@ -584,5 +594,22 @@ extension AskFileIndex {
 
     private func modificationDate(of url: URL) -> Date? {
         (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
+    }
+}
+
+
+extension AskFileIndex {
+    func applyRemoteStatus(_ status: AskFileIndexStatus) {
+        guard remote else { return }
+        if remoteStatus.update(status) { NotificationCenter.default.post(name: Self.didChange, object: self) }
+    }
+
+    private func remoteSearch(_ text: String?, options: AskFileSearchOptions) -> [AskFileHit] {
+        guard !Thread.isMainThread, options.cancellation?.isCancelled != true else { return [] }
+        let request = FeatureFileQuery(text: text, limit: min(100, max(0, options.limit)), fuzzy: options.fuzzy,
+                                       type: options.type, order: options.order, now: options.now)
+        guard let data = try? JSONEncoder().encode(request) else { return [] }
+        return FeatureBackgroundCall.blocking(.init(destination: .background, action: "files.search", payload: data),
+            cancelled: { options.cancellation?.isCancelled == true }) ?? []
     }
 }

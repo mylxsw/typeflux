@@ -6942,3 +6942,12 @@
 
 "ask.add.skills.all" = "全部";
 "ask.add.skills.none" = "不使用";
+
+// Consolidated process diagnostics
+"shortcutDiagnostics.role.background" = "后台服务";
+"shortcutDiagnostics.processes" = "进程资源";
+"shortcutDiagnostics.process" = "进程";
+"shortcutDiagnostics.memory" = "内存";
+"shortcutDiagnostics.operations" = "受管理任务";
+"shortcutDiagnostics.processNote" = "这里显示业务进程；解码辅助进程和系统服务另外计算。仅在此窗口打开时采样 CPU。";
+"feature.quitNotReady" = "未能确认数据已安全保存，应用仍保持打开。请等待当前任务结束后再次退出。";

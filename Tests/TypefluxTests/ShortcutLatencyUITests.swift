@@ -22,3 +22,14 @@ struct ShortcutLatencyUITests {
     }
 
 }
+
+extension ShortcutLatencyUITests {
+    @Test func rendersResourceSnapshotsWithoutRequestingAppProcesses() {
+        var report = ShortcutLatencyReport(events: [])
+        report.processes = [FeatureResourceSnapshot.capture(role: .host)]
+        let view = NSHostingView(rootView: ShortcutLatencyDashboard(report: report))
+        view.frame = .init(x: 0, y: 0, width: 1080, height: 720)
+        view.layoutSubtreeIfNeeded()
+        #expect(view.fittingSize.width > 0)
+    }
+}

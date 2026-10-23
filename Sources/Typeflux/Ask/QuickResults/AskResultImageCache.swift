@@ -30,6 +30,16 @@ final class AskResultImageCache {
         self.loader = loader ?? { _ in nil }
         self.imagesInViews = loader == nil
         cache.countLimit = 256
+        cache.totalCostLimit = 64 * 1024 * 1024
+    }
+
+    private static func cost(_ image: NSImage) -> Int {
+        image.representations.reduce(0) { total, representation in
+            let pixels = max(0, representation.pixelsWide).multipliedReportingOverflow(by: max(0, representation.pixelsHigh))
+            let bytes = pixels.partialValue.multipliedReportingOverflow(by: 4)
+            guard !pixels.overflow, !bytes.overflow, total <= Int.max - bytes.partialValue else { return Int.max }
+            return total + bytes.partialValue
+        }
     }
 
     private func cacheKey(_ key: Key) -> NSString {
@@ -53,7 +63,7 @@ final class AskResultImageCache {
         let key = await Self.resolved(key)
         guard !Task.isCancelled else { return nil }
         if let image = cached(key) {
-            cache.setObject(image, forKey: cacheKey(original))
+            cache.setObject(image, forKey: cacheKey(original), cost: Self.cost(image))
             return image
         }
         let client = UUID()
@@ -69,10 +79,10 @@ final class AskResultImageCache {
         return await withTaskCancellationHandler {
             let image = await task.value.image
             if !Task.isCancelled, let image {
-                cache.setObject(image, forKey: cacheKey(key))
+                cache.setObject(image, forKey: cacheKey(key), cost: Self.cost(image))
                 // View bodies use the original URL synchronously; keep its last
                 // good image while the next async request resolves any retargeting.
-                cache.setObject(image, forKey: cacheKey(original))
+                cache.setObject(image, forKey: cacheKey(original), cost: Self.cost(image))
             }
             release(key, client: client)
             return Task.isCancelled ? nil : image

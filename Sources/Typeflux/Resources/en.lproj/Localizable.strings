@@ -6942,3 +6942,12 @@
 
 "ask.add.skills.all" = "All";
 "ask.add.skills.none" = "None";
+
+// Consolidated process diagnostics
+"shortcutDiagnostics.role.background" = "Background service";
+"shortcutDiagnostics.processes" = "Process resources";
+"shortcutDiagnostics.process" = "Process";
+"shortcutDiagnostics.memory" = "Memory";
+"shortcutDiagnostics.operations" = "Managed operations";
+"shortcutDiagnostics.processNote" = "Business processes only. Decoder helpers and system services are separate. CPU is sampled while this window is open.";
+"feature.quitNotReady" = "Typeflux could not safely finish saving. The app is still open; try quitting again after the current task finishes.";

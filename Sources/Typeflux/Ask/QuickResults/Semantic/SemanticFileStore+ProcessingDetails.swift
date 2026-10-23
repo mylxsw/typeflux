@@ -3,9 +3,9 @@ import Foundation
 import SQLite3
 
 extension SemanticFileStore {
-    enum ProcessingSection: Equatable, Sendable { case completed, pending }
+    enum ProcessingSection: Codable, Equatable, Sendable { case completed, pending }
 
-    struct ProcessingItem: Identifiable, Sendable {
+    struct ProcessingItem: Codable, Identifiable, Sendable {
         let path: String
         var state: String
         let priority: SemanticMediaPriority
@@ -39,7 +39,7 @@ extension SemanticFileStore {
         }
     }
 
-    struct ProcessingPage: Sendable {
+    struct ProcessingPage: Codable, Sendable {
         var items: [ProcessingItem]
         let total: Int
     }

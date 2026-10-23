@@ -3,7 +3,7 @@ import Foundation
 enum SemanticMediaFailure: Error { case unavailable(Error) }
 
 enum SemanticFileIndexer {
-    struct Summary: Equatable, Sendable {
+    struct Summary: Codable, Equatable, Sendable {
         var files = 0
         var skipped = 0
         var scanned = 0

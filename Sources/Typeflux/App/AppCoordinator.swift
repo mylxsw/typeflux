@@ -24,9 +24,12 @@ final class AppCoordinator {
         }
     )
 
+    var featureIdlePolicy = FeatureIdlePolicy()
+    var featureIdleRequest: Task<Void, Never>?
     var featureStatusTimer: Timer?
     var featureQuickUpdate: Task<Void, Never>?
     var lastFeatureQuickProgress: FeatureQuickProgress?
+    let featureVoiceOwner = FeatureVoiceOwner()
     let featureTranslations = FeatureTranslationBridge()
     let featureScreenshotForwarder = FeatureScreenshotForwarder()
     private var moduleStartup: Task<Void, Never>?
@@ -49,6 +52,7 @@ final class AppCoordinator {
             }
             FeatureProcess.configure(api: AskConversationWindowController.makeAPI(settings: di.settingsStore, modelLibrary: di.modelLibrary), cache: di.conversationCache, preparation: featureModuleStartup)
             if FeatureProcess.role != .host { startFeature(); return }
+            FeatureShortcutHost.shared.start()
             featureStatusTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
                 Task { @MainActor in self?.publishFeatureStatus() }
             }
@@ -61,7 +65,8 @@ final class AppCoordinator {
             let previewReady = (try? await di.moduleRegistry.start(.mediaPreviews)) != nil
             async let iconWarmup = previewReady
                 ? (try? AskFinderIcon.decode(.init(kind: .type, value: "public.folder"))) : nil
-            await SemanticFileSearchService.shared.startForApplication(using: di.moduleRegistry)
+            if !FeatureProcess.enabled { await SemanticFileSearchService.shared.startForApplication(using: di.moduleRegistry) }
+            else { SemanticFileSearchService.shared.start() }
             _ = await iconWarmup
         }
         di.analyticsReporter.reportFirstOpenIfNeeded()
@@ -137,7 +142,7 @@ final class AppCoordinator {
             // Build the launcher while the app is idle, so the first ⌥Space shows it at once.
             DispatchQueue.main.async { [weak ask] in ask?.prewarmLauncher() }
             let voice = ask.model.voiceInput
-            voice.recorder = WorkflowComposerRecording(workflowController)
+            voice.recorder = FeatureProcess.enabled ? FeatureVoiceRecording() : WorkflowComposerRecording(workflowController)
             workflowController.composerVoiceInput = voice
             ask.model.recordingIsActive = { [weak workflowController] in workflowController?.isRecording ?? false }
             let monitor = ask.model.systemMonitorWindow
@@ -161,11 +166,13 @@ final class AppCoordinator {
             screenRecordingCoordinator?.show(format: format, region: region)
         }
         di.hotkeyService.onScreenshotRequested = { [weak screenshotCoordinator] in
-            screenshotCoordinator?.start(mode: .region)
+            if FeatureProcess.enabled { FeatureProcess.send(FeatureScreenshotRequest(mode: .region, followUp: nil).command) }
+            else { screenshotCoordinator?.start(mode: .region) }
         }
         if let model = di.askConversationWindowController?.model {
             model.onStartScreenshot = { [weak screenshotCoordinator] mode, followUp in
-                screenshotCoordinator?.start(mode: mode, followUp: followUp)
+                if FeatureProcess.enabled { FeatureProcess.send(FeatureScreenshotRequest(mode: mode, followUp: followUp).command) }
+                else { screenshotCoordinator?.start(mode: mode, followUp: followUp) }
             }
             model.screenshotTextRecognizer = TiledImageTextRecognizer(base: di.imageTextRecognizer)
             model.onTranslateScreenshot = { [weak self] image in self?.di.translationPanel.openScreenshot(image) }
@@ -221,12 +228,17 @@ final class AppCoordinator {
                 self?.di.askConversationWindowController?.showConversation()
             },
             onScreenshot: { [weak screenshotCoordinator] in
-                screenshotCoordinator?.start(mode: .region)
+                if FeatureProcess.enabled { FeatureProcess.send(FeatureScreenshotRequest(mode: .region, followUp: nil).command) }
+            else { screenshotCoordinator?.start(mode: .region) }
             },
             onScreenshotText: { [weak screenshotCoordinator] in
-                screenshotCoordinator?.start(mode: .region, followUp: .recognizeText)
+                if FeatureProcess.enabled { FeatureProcess.send(FeatureScreenshotRequest(mode: .region, followUp: .recognizeText).command) }
+                else { screenshotCoordinator?.start(mode: .region, followUp: .recognizeText) }
             },
-            onScreenRecording: { [weak screenRecordingCoordinator] in screenRecordingCoordinator?.show() },
+            onScreenRecording: { [weak screenRecordingCoordinator] in
+                if FeatureProcess.enabled { FeatureProcess.send(.init(destination: .screenshot, action: "screenRecording")) }
+                else { screenRecordingCoordinator?.show() }
+            },
             pinnedScreenshots: { [weak screenshotCoordinator] in
                 FeatureProcess.enabled ? (FeatureActivityMirror.shared.pins, FeatureActivityMirror.shared.clickThroughPins) : (screenshotCoordinator?.pins.pinCount ?? 0, screenshotCoordinator?.pins.clickThroughCount ?? 0)
             },
@@ -345,11 +357,27 @@ final class AppCoordinator {
         await di.screenRecordingSessions.prepareForTermination()
     }
 
-    func prepareForTermination() async {
+    @discardableResult
+    func prepareForTermination() async -> Bool {
+        FeatureProcess.preventWarmup()
+        if FeatureProcess.owns(.host), FeatureProcess.enabled { try? FeatureShortcutHost.shared.handle(.init(destination: .shortcuts, action: "stop")) }
+        let model = di.existingAskConversationWindowController?.model
+        let draftsSaved = await model?.flushFeatureDrafts()
+        if model?.voiceInput.isOccupied == true || draftsSaved == false {
+            if FeatureProcess.owns(.host), FeatureProcess.enabled { try? FeatureShortcutHost.shared.handle(.init(destination: .shortcuts, action: "start")) }
+            di.overlayController.showNotice(message: L("feature.quitNotReady"))
+            return false
+        }
+        await model?.shutdownCommandJobs()
+        if FeatureProcess.role == .host, await FeatureProcess.supervisor?.shutdown() == false {
+            try? FeatureShortcutHost.shared.handle(.init(destination: .shortcuts, action: "start"))
+            di.overlayController.showNotice(message: L("feature.quitNotReady"))
+            return false
+        }
         featureStatusTimer?.invalidate(); featureStatusTimer = nil
         featureQuickUpdate?.cancel(); featureQuickUpdate = nil
         featureModuleStartup?.cancel()
-        if FeatureProcess.role == .host { await FeatureProcess.supervisor?.shutdown() }
+        await featureVoiceOwner.cancel()
         await di.existingAskConversationWindowController?.model.shutdownCommandJobs()
         await di.existingAskConversationWindowController?.model.discardTemporaryConversationForTermination()
         workflowController?.clipboardAction.preventNewWork()
@@ -382,6 +410,8 @@ final class AppCoordinator {
         await di.recordingExportWorkers.shutdown()
         await di.recordingTimelineWorkers.shutdown()
         await di.moduleRegistry.shutdown()
+        await di.mcpRegistry.shutdown()
+        return true
     }
 
     func stop() {
@@ -490,7 +520,8 @@ final class AppCoordinator {
         case .ask:
             di.askConversationWindowController?.toggleLauncher()
         case .screenshot:
-            screenshotCoordinator?.start(mode: .region)
+            if FeatureProcess.enabled { FeatureProcess.send(FeatureScreenshotRequest(mode: .region, followUp: nil).command) }
+            else { screenshotCoordinator?.start(mode: .region) }
         case .clipboard:
             workflowController?.handleHistoryPickerRequested()
         case .persona:

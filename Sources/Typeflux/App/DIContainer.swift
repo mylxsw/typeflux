@@ -179,7 +179,8 @@ final class DIContainer {
         let storageRegistrations = storage.registry.registrations.filter {
             $0.id != .conversations || FeatureProcess.owns(.host)
         }
-        moduleRegistry = ModuleRegistry(storageRegistrations + mediaModules.registrations + semanticReaderModules.registrations + semanticModelModules.registrations + [nativeSystemModule.registration, whisperInferenceModule.registration, playbackModule.registration, fileIndexModule.registration])
+        let registrations = storageRegistrations + mediaModules.registrations + semanticReaderModules.registrations + semanticModelModules.registrations + [nativeSystemModule.registration, whisperInferenceModule.registration, playbackModule.registration, fileIndexModule.registration]
+        moduleRegistry = ModuleRegistry(registrations.filter { !FeatureProcess.enabled || FeatureProcess.role.modules.contains($0.id) })
         modelLibrary = AskModelLibrary(defaults: settingsStore.defaults, automaticallyLoadsCatalog: !FeatureIsolationProbe.enabled)
         let screenCapturePermission = FeatureIsolationProbe.enabled
             ? ScreenCapturePermission(preflight: { true }, requestAccess: { true }, openURL: { _ in })
@@ -190,10 +191,10 @@ final class DIContainer {
         SettingsWindowController.shared.modelLibrary = modelLibrary
         hotkeyService = FeatureProcess.enabled
             ? FeatureRemoteHotkeys() : EventTapHotkeyService(settingsStore: settingsStore)
-        audioRecorder = SwitchableAudioRecorder(
+        audioRecorder = FeatureProcess.owns(.voice) ? SwitchableAudioRecorder(
             settingsStore: settingsStore,
             audioDeviceManager: audioDeviceManager
-        )
+        ) : FeatureAudioRecorder()
         overlayController = OverlayController(appState: appState, settingsStore: settingsStore)
         clipboard = SystemClipboardService()
         outputPostProcessor = OpenCCOutputPostProcessor(settingsStore: settingsStore)

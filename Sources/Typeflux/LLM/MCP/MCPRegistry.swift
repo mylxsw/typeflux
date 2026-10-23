@@ -2,6 +2,7 @@ import Foundation
 
 /// MCP server registry actor.
 actor MCPRegistry {
+    private var stopped = false
     private var servers: [UUID: any MCPClient] = [:]
     private var serverConfigs: [UUID: MCPServerConfig] = [:]
     /// Keyed by server and tool name: two servers may expose tools with the same name.
@@ -30,6 +31,7 @@ actor MCPRegistry {
     /// Registers or reconnects a server; concurrent callers share one attempt.
     func addServer(_ config: MCPServerConfig) async throws {
         try Task.checkCancellation()
+        guard !stopped else { throw MCPClientError.notConnected }
         if let task = connecting[config.id] {
             try await task.value
             return
@@ -100,6 +102,13 @@ actor MCPRegistry {
         cachedTools = cachedTools.filter { $0.key.serverId != id }
         toolRevisions = toolRevisions.filter { $0.key.serverId != id }
         await client?.disconnect()
+    }
+
+    /// Retires only live connections, retaining the user's persisted server list.
+    func shutdown() async {
+        stopped = true
+        let ids = Set(servers.keys).union(connecting.keys)
+        for id in ids { await removeServer(id: id) }
     }
 
     /// Returns all MCP tools.
