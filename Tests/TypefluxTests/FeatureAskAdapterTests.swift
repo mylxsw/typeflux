@@ -6,17 +6,45 @@ import Testing
 @Suite(.serialized, .exclusiveUIState)
 @MainActor
 struct FeatureAskAdapterTests {
-    private func pair(api: AskTestAPI, cache: any AskCaching) async throws -> (FeatureRPC, FeatureRPC) {
+    private func pair(api: AskTestAPI, cache: any AskCaching,
+                      allowedOwners: Set<String>? = nil) async throws -> (FeatureRPC, FeatureRPC) {
         var sockets: [Int32] = [-1, -1]
         #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets) == 0)
         let client = try FeatureRPC(descriptor: sockets[0]), server = try FeatureRPC(descriptor: sockets[1])
         await client.start { _, _ in throw FeatureRPC.Failure.invalidMessage }
         await server.start { method, payload in
             let call = try JSONDecoder().decode(FeatureAskCall.self, from: payload)
+            if method.hasPrefix("cache."), let allowedOwners {
+                let identity = try JSONDecoder().decode(CacheOwner.self, from: call.payload)
+                guard allowedOwners.contains(identity.owner) else {
+                    return try JSONEncoder().encode(FeatureAskReply(payload: nil, error: .init(AuthError.unauthorized)))
+                }
+            }
             if method.hasPrefix("cache.") { return try await FeatureAskCache.handle(method, payload: call.payload, api: cache) }
             return try await FeatureAskAPI.handle(method, payload: call.payload, api: api)
         }
         return (client, server)
+    }
+
+    private struct CacheOwner: Decodable { let owner: String }
+
+    @Test(arguments: [false, true])
+    func coldChatDraftSaveInitializesOwnerBeforeCrossingTheHostBoundary(signedIn: Bool) async throws {
+        let storage = try AskConversationCache.inMemory()
+        let (client, server) = try await pair(api: AskTestAPI(), cache: storage, allowedOwners: ["local", "owner"])
+        let cache = FeatureAskCache(connection: client, generation: { 0 })
+        let fixture = try AskTestFixture(localOnly: !signedIn, cacheOverride: cache)
+        defer { fixture.model.resetSession() }
+        #expect(fixture.model.owner.isEmpty)
+        // Confirm this fixture enforces the production host's owner boundary.
+        await #expect(throws: (any Error).self) { try await cache.saveDraft(.followUp, key: "launcher", owner: "") }
+        await fixture.model.flushFeatureDrafts()
+        let account = signedIn ? "owner" : "local"
+        #expect(fixture.model.owner == account)
+        #expect(fixture.model.error == nil)
+        #expect(try await storage.draft(key: "launcher", owner: account) != nil)
+        #expect(try await storage.draft(key: "launcher", owner: "") == nil)
+        await client.stop(); await server.stop()
     }
 
     @Test func productionChatOperationsRoundTripThroughTheTypedChannel() async throws {

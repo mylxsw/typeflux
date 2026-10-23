@@ -16,13 +16,28 @@ struct AskResponsiveWorkspaceTests {
         defer { session.restore() }
         let host = try await makeHost(scene: "empty")
         defer { host.close() }
+        await host.controller.conversationRefreshTask?.value
+        await host.fixture.model.flushFeatureDrafts()
+        try await settle(host.window)
         #expect(find(label: L("imagegen.recovery.title"), in: host.window) == nil)
 
         var feedbackOpened = false
         host.fixture.model.onOpenFeedback = { feedbackOpened = true }
+        let originalInput = try editor(in: host.window)
+        let originalTop = originalInput.convert(originalInput.bounds, to: nil).maxY
         host.fixture.model.error = L("ask.cache.failed")
         try await settle(host.window)
-        try click(try element(label: L("feedback.direct.title"), in: host.window), in: host.window)
+        #expect(host.fixture.model.error == L("ask.cache.failed"))
+        let input = try editor(in: host.window)
+        #expect(input === originalInput, "A notice must preserve the live editor")
+        let inputFrame = input.convert(input.bounds, to: nil)
+        #expect(inputFrame.minY > 100, "A warning must not push the new chat composer to the window bottom")
+        #expect(abs(inputFrame.maxY - originalTop) < 100, "Only the notice's measured height should move the composer")
+        let feedback = try element(label: L("feedback.direct.title"), in: host.window)
+        #expect(host.window.convertFromScreen(feedback.accessibilityFrame()).minY > inputFrame.maxY,
+                "The warning must remain above the composer")
+        assertVisible(feedback, in: host.window)
+        try click(feedback, in: host.window)
         #expect(feedbackOpened)
         #expect(find(label: L("settings.services.recover"), in: host.window) == nil)
     }

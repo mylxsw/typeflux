@@ -416,6 +416,40 @@ struct AskTestFixture {
 @Suite("Ask conversations", .exclusiveUIState)
 @MainActor
 struct AskConversationTests {
+    @Test func draftSaveWaitsForAnAvailableSession() async throws {
+        let fixture = try AskTestFixture(authenticated: false)
+        defer { fixture.model.resetSession() }
+        fixture.model.draft.text = "Keep this question"
+        await fixture.model.flushFeatureDrafts()
+        #expect(fixture.model.owner.isEmpty)
+        #expect(try await fixture.cache.draft(key: "launcher", owner: "") == nil)
+        #expect(fixture.model.error == nil)
+        #expect(fixture.model.draft.text == "Keep this question")
+    }
+
+    @Test func draftSaveFailureRemainsVisibleAndPreservesTheQuestion() async throws {
+        let fixture = try AskTestFixture(localOnly: true)
+        defer { fixture.model.resetSession() }
+        try await fixture.cache.execute("""
+            CREATE TRIGGER reject_draft BEFORE INSERT ON ask_drafts
+            BEGIN SELECT RAISE(FAIL, 'Synthetic storage failure'); END
+            """, strings: [])
+        fixture.model.draft.text = "Keep this question"
+        await fixture.model.flushFeatureDrafts()
+        #expect(fixture.model.error == L("ask.cache.failed"))
+        #expect(fixture.model.draft.text == "Keep this question")
+    }
+
+    @Test func sessionResetCancelsPendingDraftSaveWithoutShowingAStorageWarning() async throws {
+        let fixture = try AskTestFixture(localOnly: true)
+        fixture.model.persistDrafts()
+        fixture.model.resetSession()
+        try await Task.sleep(for: .milliseconds(450))
+        #expect(fixture.model.owner.isEmpty)
+        #expect(fixture.model.error == nil)
+        #expect(try await fixture.cache.draft(key: "launcher", owner: "local") == nil)
+    }
+
     @Test func successfulDraftSaveClearsStorageWarningWithoutASelectedConversation() async throws {
         let fixture = try AskTestFixture(localOnly: true)
         defer { fixture.model.resetSession() }

@@ -883,6 +883,12 @@ final class AskConversationModel: ObservableObject {
     }
 
     func persistDrafts() {
+        // A cold chat window dismisses the launcher before refreshHistory()
+        // initializes the account. Never send an empty owner to the host cache.
+        if owner.isEmpty {
+            guard let current = session(), !current.owner.isEmpty else { return }
+            owner = current.owner
+        }
         draftSave?.cancel()
         // While a queued message is open in the composer, the conversation's own draft is the stash.
         let editing = sendQueue.editing.flatMap { $0.conversationId == selectedId ? $0.stash : nil }
@@ -898,6 +904,7 @@ final class AskConversationModel: ObservableObject {
         draftSave = Task { [cache] in
             do {
                 try await Task.sleep(for: .milliseconds(300))
+                guard self.owner == owner else { return }
                 try await cache.saveDraft(launcher, key: "launcher", owner: owner)
                 try Task.checkCancellation()
                 if let recoveryKey {
@@ -907,9 +914,14 @@ final class AskConversationModel: ObservableObject {
                 if let id, self.owner == owner, !deletedConversationIDs.contains(id) {
                     try await cache.saveDraft(followUp, key: id, owner: followUpOwner)
                 }
-                if self.error == L("ask.cache.failed"),
+                if self.owner == owner, self.error == L("ask.cache.failed"),
                    !self.selectedRecoveryEntries.contains(where: \.readUnavailable) { self.error = nil }
-            } catch is CancellationError {} catch { self.error = L("ask.cache.failed") }
+            } catch is CancellationError {} catch {
+                guard !Task.isCancelled, self.owner == owner else { return }
+                let failure = error as NSError
+                ErrorLogStore.shared.log("Ask draft save failed: \(failure.domain) (\(failure.code))")
+                self.error = L("ask.cache.failed")
+            }
         }
     }
 

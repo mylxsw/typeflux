@@ -949,9 +949,9 @@ struct AskConversationView: View {
     }
 
     /// The headline and composer grouped near the middle, or nil to keep the composer
-    /// at the bottom: in a conversation, a short window, or while a notice needs the room.
+    /// at the bottom: in a conversation, a short window, or when the group does not fit.
     private var newPagePlacement: AskWorkspaceLayout.NewPagePlacement? {
-        guard model.selectedId == nil, !hasStatus, model.selectedHostElsewhere == nil else { return nil }
+        guard model.selectedId == nil, model.selectedHostElsewhere == nil else { return nil }
         return layout.newPagePlacement(heading: emptyHeadingHeight, composer: bottomChromeHeight,
                                        height: contentColumnHeight)
     }
@@ -975,15 +975,17 @@ struct AskConversationView: View {
                         }
                         if !layout.isShort { emptyHint }
                     }
-                    .background(GeometryReader { geometry in
-                        Color.clear.preference(key: AskEmptyHeadingHeight.self, value: geometry.size.height)
-                    })
                     if hasStatus {
                         statusColumn
                             .frame(maxWidth: AskMetrics.transcriptMaxWidth)
                             .padding(.top, 20)
                     }
                 }
+                // Notices belong to the opening group, so they reserve space
+                // above the composer without forcing it to the window bottom.
+                .background(GeometryReader { geometry in
+                    Color.clear.preference(key: AskEmptyHeadingHeight.self, value: geometry.size.height)
+                })
                 .padding(.horizontal, layout.horizontalInset)
                 .padding(.top, placement?.headingTop ?? (layout.isShort ? 6 : 16))
                 .padding(.bottom, placement == nil ? (layout.isShort ? 6 : 16) : 0)
