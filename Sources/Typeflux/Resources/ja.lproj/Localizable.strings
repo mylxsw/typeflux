@@ -2196,6 +2196,8 @@
 "ask.bar.storage.footer" = "既定値は 設定 → Agent で変更できます。何も残したくない場合は右上の砂時計を使います。";
 "ask.temporary.toggle.on" = "一時チャット：履歴なし、メモリーなし";
 "ask.temporary.toggle.off" = "一時チャットをオフ";
+"ask.history.showMore" = "さらに %d 件表示";
+"ask.history.showLess" = "閉じる";
 "ask.env.help" = "タスク環境：作業フォルダとツールの権限";
 "ask.env.folders" = "作業フォルダ";
 "ask.env.addFolder" = "フォルダを追加…";
@@ -2325,10 +2327,6 @@
 "ask.launcher.placeholder.temporary" = "一時的に質問（保存しません）";
 "ask.storage.locked" = "開始済みの会話は保存先を変更できません";
 "ask.storage.signedOut" = "サインアウト中、会話はこのMacに保存されます";
-"ask.history.filter" = "会話を絞り込む";
-"ask.history.filter.all" = "すべて";
-"ask.history.filter.cloud" = "クラウド";
-"ask.history.filter.local" = "このMac";
 
 // Project workspaces
 "ask.project.title" = "プロジェクトファイル";
@@ -6770,7 +6768,6 @@
 "ask.kind.chatToolRefused" = "チャットではこの Mac にアクセスするツールを使えません。タスクを新しく始めてください。";
 "ask.kind.switchedToWork" = "タスクに切り替えました：フォルダはタスクでのみ使えます。";
 "ask.kind.chatFolderRefused" = "チャットにはフォルダを添付できません。タスクを新しく始めてください。";
-"ask.history.kindFilter" = "会話の種類";
 "ask.kind.foldersRemoved" = "フォルダを外しました：チャットではフォルダを使えません。";
 
 /* Chat and Work, phase 2 (GUL-460) */

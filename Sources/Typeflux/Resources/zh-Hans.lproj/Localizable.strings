@@ -2206,6 +2206,8 @@
 "ask.bar.storage.footer" = "默认值可在 设置 → Agent 中修改。想完全不留痕迹，请用右上角的沙漏。";
 "ask.temporary.toggle.on" = "临时对话：不进历史、不用记忆";
 "ask.temporary.toggle.off" = "关闭临时对话";
+"ask.history.showMore" = "显示更多（%d）";
+"ask.history.showLess" = "收起";
 "ask.env.help" = "任务环境：工作文件夹与工具权限";
 "ask.env.folders" = "工作文件夹";
 "ask.env.addFolder" = "添加文件夹…";
@@ -2335,10 +2337,6 @@
 "ask.launcher.placeholder.temporary" = "临时提问，不保存";
 "ask.storage.locked" = "已经开始的对话不能更改存储位置";
 "ask.storage.signedOut" = "未登录时，对话只保存在这台 Mac 上";
-"ask.history.filter" = "筛选对话";
-"ask.history.filter.all" = "全部";
-"ask.history.filter.cloud" = "云端";
-"ask.history.filter.local" = "仅本机";
 
 // Project workspaces
 "ask.project.title" = "项目文件";
@@ -6770,7 +6768,6 @@
 "ask.kind.chatToolRefused" = "聊天不能使用访问这台 Mac 的工具，请新开一个任务。";
 "ask.kind.switchedToWork" = "已切换为任务：文件夹只能在任务中使用。";
 "ask.kind.chatFolderRefused" = "聊天不能附加文件夹，请新开一个任务。";
-"ask.history.kindFilter" = "对话类型";
 "ask.kind.foldersRemoved" = "已移除文件夹：聊天不能使用文件夹。";
 
 /* Chat and Work, phase 2 (GUL-460) */
