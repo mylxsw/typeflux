@@ -6870,7 +6870,7 @@
 "shortcutDiagnostics.stage.ringReleased" = "Ring shortcut released";
 "shortcutDiagnostics.stage.ringCancelled" = "Ring shortcut cancelled";
 "shortcutDiagnostics.stage.windowCached" = "Reuse cached window";
-"shortcutDiagnostics.stage.windowUncached" = "Create window for first use";
+"shortcutDiagnostics.stage.windowUncached" = "Create a new window";
 "shortcutDiagnostics.stage.dataWorkerStarted" = "History worker entered";
 "shortcutDiagnostics.stage.dataCallback" = "History callback on main queue";
 "shortcutDiagnostics.stage.oldOverlayRetired" = "Previous screenshot overlay cleared";
@@ -6922,3 +6922,9 @@
 "shortcutDiagnostics.stage.pointerUpdateFinished" = "Initial pointer / magnifier update finished";
 "shortcutDiagnostics.stage.translationSelectionStarted" = "Translation selection read started";
 "shortcutDiagnostics.stage.translationSelectionFinished" = "Translation selection read finished";
+
+/* Opening snapshot diagnostics */
+"shortcutDiagnostics.stage.dataCacheHit" = "Opening snapshot reused; refreshing in background";
+"shortcutDiagnostics.stage.dataCacheMiss" = "Opening snapshot unavailable; loading history";
+"shortcutDiagnostics.stage.mediaActivationStarted" = "Launcher media activation started";
+"shortcutDiagnostics.stage.mediaActivationFinished" = "Launcher media activation finished";

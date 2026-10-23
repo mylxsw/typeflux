@@ -388,6 +388,44 @@ final class ScreenshotOverlayTests: XCTestCase {
         ], windows: [])
     }
 
+    func testControllerReusesOnlyNativePanelsAndRetiresOldCaptureCallbacks() {
+        let controller = ScreenshotOverlayController(primaryDisplayHeight: { 100 }, pointerLocation: { .zero })
+        controller.present(snapshot()) { _ in }
+        let originalPanels = controller.panels, originalViews = controller.views
+        originalViews[0].selectAll()
+        XCTAssertNotNil(originalViews[0].selection.rect)
+        controller.dismiss()
+        XCTAssertTrue(originalPanels.allSatisfy { !$0.isVisible && $0.contentView == nil })
+        XCTAssertTrue(originalViews.allSatisfy { $0.onEvent == nil && $0.onActivate == nil })
+        XCTAssertTrue(originalViews.allSatisfy { $0.layer?.sublayers?.first?.contents == nil })
+        let diagnostics = ShortcutLatencyEventCollector(), trace = diagnosticTestTrace(.screenshot)
+        ShortcutLatency.$eventSink.withValue(diagnostics.sink) {
+            ShortcutLatency.$current.withValue(trace) { controller.present(snapshot()) { _ in } }
+        }
+        defer { controller.dismiss() }
+        XCTAssertTrue(controller.panels[0] === originalPanels[0])
+        XCTAssertTrue(controller.panels[1] === originalPanels[1])
+        XCTAssertFalse(controller.views[0] === originalViews[0])
+        XCTAssertNil(controller.views[0].selection.rect)
+        XCTAssertEqual(diagnostics.events.filter { $0.stage == .windowCached }.map(\.itemIndex), [1, 2])
+        XCTAssertFalse(diagnostics.stages.contains(.windowUncached))
+    }
+
+    func testControllerRebuildsChangedDisplaysAndEvictsDisconnectedPanels() {
+        let controller = ScreenshotOverlayController(primaryDisplayHeight: { 100 }, pointerLocation: { .zero })
+        controller.present(snapshot()) { _ in }
+        let original = controller.panels
+        let resized = ScreenSnapshot(displays: [Self.display(id: 1, frame: CGRect(x: 0, y: 0, width: 100, height: 100), scale: 1)], windows: [])
+        controller.present(resized) { _ in }
+        XCTAssertEqual(controller.panels.count, 1)
+        XCTAssertFalse(controller.panels[0] === original[0])
+        XCTAssertFalse(original[0].isVisible)
+        XCTAssertFalse(original[1].isVisible)
+        controller.present(snapshot()) { _ in }
+        XCTAssertFalse(controller.panels[1] === original[1], "A disconnected display must not stay in the pool")
+        controller.dismiss()
+    }
+
     func testControllerShowsOnePanelPerDisplayAndConvertsRegions() throws {
         var pointer = CGPoint(x: 250, y: 20)
         let controller = ScreenshotOverlayController(primaryDisplayHeight: { 100 }, pointerLocation: { pointer })
@@ -482,15 +520,23 @@ final class ScreenshotOverlayTests: XCTestCase {
         controller.dismiss()
     }
 
-    func testPresentingAgainReplacesTheOldPanels() {
+    func testPresentingAgainReplacesOldContentAndReusesThePanels() {
         let controller = ScreenshotOverlayController(primaryDisplayHeight: { 100 }, pointerLocation: { .zero })
-        controller.present(snapshot()) { _ in }
-        let old = controller.panels
-        controller.present(snapshot()) { _ in }
+        var oldEvents = 0, newEvents = 0
+        controller.present(snapshot()) { _ in oldEvents += 1 }
+        let old = controller.panels, oldViews = controller.views
+        controller.present(snapshot()) { _ in newEvents += 1 }
         defer { controller.dismiss() }
 
         XCTAssertEqual(controller.panels.count, 2)
-        XCTAssertTrue(old.allSatisfy { !$0.isVisible })
+        XCTAssertTrue(controller.panels[0] === old[0] && controller.panels[1] === old[1])
+        XCTAssertTrue(old.allSatisfy(\.isVisible))
+        XCTAssertFalse(controller.views[0] === oldViews[0])
+        oldViews[0].handleKeyDown(Key.escape, modifiers: [])
+        XCTAssertEqual(oldEvents, 0)
+        XCTAssertEqual(newEvents, 0)
+        controller.views[0].handleKeyDown(Key.escape, modifiers: [])
+        XCTAssertEqual(newEvents, 1)
     }
 
     // MARK: Toast and guide

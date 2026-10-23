@@ -32,6 +32,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private(set) var conversationWindow: NSWindow?
     private var controlPanel: AskFloatingPanel?
     private var launchTask: Task<Void, Never>?
+    private var launcherRefreshTask: Task<Void, Never>?
     var launcherNow: () -> Date = Date.init
     private(set) var conversationRefreshTask: Task<Void, Never>?
     private(set) var maintenanceTasks: [Task<Void, Never>] = []
@@ -363,11 +364,17 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         let restoredInput = model.resetLauncherForPresentation(at: launcherNow())
         model.launcherWindowMode = settings.askLauncherWindowMode
         ShortcutLatency.record(.statePreparationFinished)
-        ShortcutLatency.record(.appsRefreshStarted)
         model.quickSearch.setVisible(true)
-        model.refreshQuickApps()
-        ShortcutLatency.record(.appsRefreshFinished)
-        Task { [model] in
+        // Present cached home content first. Index/icon and workflow refreshes
+        // run after an initial frame opportunity and are cancelled on dismissal.
+        launcherRefreshTask?.cancel()
+        launcherRefreshTask = Task { [weak self] in
+            do { try await Task.sleep(for: .milliseconds(16)) } catch { return }
+            guard let self, launcher?.isVisible == true else { return }
+            ShortcutLatency.measure(.mediaActivationStarted, .mediaActivationFinished) {
+                model.setLauncherImagesVisible(true)
+            }
+            ShortcutLatency.measure(.appsRefreshStarted, .appsRefreshFinished) { model.refreshQuickApps() }
             ShortcutLatency.record(.workflowsStarted)
             defer { ShortcutLatency.record(.workflowsFinished) }
             await model.refreshLauncherWorkflows()
@@ -385,15 +392,14 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         if let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) }) ?? NSScreen.main {
             let frame = screen.visibleFrame
             let anchor = launcherAnchor(on: screen)
-            panel.setFrame(AskLauncherPlacement.preferredFrame(on: frame, anchor: anchor,
-                           height: model.launcherIsCollapsed ? AskLauncherWindowMode.simpleHeight : launcherHeight),
-                           display: false)
+            let preferredFrame = AskLauncherPlacement.preferredFrame(on: frame, anchor: anchor,
+                height: model.launcherIsCollapsed ? AskLauncherWindowMode.simpleHeight : launcherHeight)
+            if panel.frame != preferredFrame { panel.setFrame(preferredFrame, display: false) }
             model.launcherViewport.show(panel.frame.height)
             filePreview.visibleHeight = nil
             launcherOpeningTop = AskLauncherPlacement.top(on: frame, anchor: anchor)
         }
         // Take keyboard focus without activating the app and raising its other windows.
-        model.setLauncherImagesVisible(true)
         ShortcutLatency.record(.layoutFinished)
         ShortcutLatency.record(.windowShowStarted)
         panel.makeKeyAndOrderFront(nil)
@@ -596,6 +602,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         // their buttons do not reopen into a stale state next time.
         AskGlassMenuPresenter.shared.hide()
         model.voiceInput.cancel()
+        launcherRefreshTask?.cancel()
+        launcherRefreshTask = nil
         launchTask?.cancel()
         launchTask = nil
         let wasVisible = launcher?.isVisible == true

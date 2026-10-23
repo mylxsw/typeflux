@@ -32,6 +32,13 @@ final class ScreenshotOverlayPanel: NSPanel {
 final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
     private(set) var panels: [ScreenshotOverlayPanel] = []
     private(set) var views: [ScreenshotOverlayView] = []
+    private struct CachedPanel {
+        let panel: ScreenshotOverlayPanel
+        let frame: CGRect
+        let scale: CGFloat
+    }
+    // Keep native windows, never the previous capture or editor view.
+    private var cachedPanels: [CGDirectDisplayID: CachedPanel] = [:]
     private var onEvent: ((ScreenshotOverlayEvent) -> Void)?
     private let primaryDisplayHeight: () -> CGFloat
     /// The pointer in global Quartz points.
@@ -69,6 +76,10 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
         self.onEvent = onEvent
         let primaryHeight = primaryDisplayHeight()
         let initialModifierFlags = modifierFlags()
+        let displayIDs = Set(snapshot.displays.map(\.id))
+        for id in Array(cachedPanels.keys) where !displayIDs.contains(id) {
+            cachedPanels.removeValue(forKey: id)?.panel.close()
+        }
         for (index, display) in snapshot.displays.enumerated() {
             ShortcutLatency.record(.displayViewStarted, itemIndex: index + 1, itemCount: snapshot.displays.count)
             let view = ScreenshotOverlayView(display: display, windows: snapshot.windows,
@@ -78,9 +89,18 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
             view.onActivate = { [weak self] view in self?.activate(view) ?? true }
             view.onEvent = { [weak self] view, event in self?.forward(event, from: view) }
             ShortcutLatency.record(.displayPanelStarted, itemIndex: index + 1, itemCount: snapshot.displays.count)
-            let panel = ScreenshotOverlayPanel(
-                frame: ScreenCaptureGeometry.flipped(display.frame, primaryDisplayHeight: primaryHeight)
-            )
+            let frame = ScreenCaptureGeometry.flipped(display.frame, primaryDisplayHeight: primaryHeight)
+            let panel: ScreenshotOverlayPanel
+            if let cached = cachedPanels[display.id], cached.frame == frame, cached.panel.frame == frame,
+               cached.scale == display.scale {
+                ShortcutLatency.record(.windowCached, itemIndex: index + 1, itemCount: snapshot.displays.count)
+                panel = cached.panel
+            } else {
+                ShortcutLatency.record(.windowUncached, itemIndex: index + 1, itemCount: snapshot.displays.count)
+                cachedPanels.removeValue(forKey: display.id)?.panel.close()
+                panel = ScreenshotOverlayPanel(frame: frame)
+                cachedPanels[display.id] = CachedPanel(panel: panel, frame: frame, scale: display.scale)
+            }
             panel.onHide = { [weak view] in view?.releaseImage() }
             panel.contentView = view
             ShortcutLatency.record(.displayPanelFinished, itemIndex: index + 1, itemCount: snapshot.displays.count)
@@ -127,8 +147,13 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
         for panel in panels {
             panel.orderOut(nil)
             panel.contentView = nil
+            panel.onHide = nil
         }
-        views.forEach { $0.releaseImage() }
+        views.forEach {
+            $0.onActivate = nil
+            $0.onEvent = nil
+            $0.releaseImage()
+        }
         panels = []
         views = []
         onEvent = nil

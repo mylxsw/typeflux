@@ -130,8 +130,10 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         ShortcutLatency.record(.layoutStarted)
         applyAppearance(to: panel)
         panel.alphaValue = 1
-        panel.setContentSize(ClipboardPanelView.size(showsPreview: model.showsPreview))
-        hostingView?.frame = NSRect(origin: .zero, size: panel.frame.size)
+        let contentSize = ClipboardPanelView.size(showsPreview: model.showsPreview)
+        if panel.contentView?.frame.size != contentSize { panel.setContentSize(contentSize) }
+        let contentFrame = NSRect(origin: .zero, size: panel.frame.size)
+        if hostingView?.frame != contentFrame { hostingView?.frame = contentFrame }
         position(panel)
         previewCenterX = settingsStore.clipboardPanelPosition == .mouse ? panel.frame.midX : panel.screen?.visibleFrame
             .midX
@@ -241,6 +243,9 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
             backing: .buffered,
             defer: false
         )
+        // The shelf animates its content explicitly; AppKit must not add a
+        // second native show/hide transition to either presentation style.
+        panel.animationBehavior = .none
         panel.quickLookController = self
         panel.onHide = { [weak self] in
             self?.thumbnails.end(); self?.entryObservation = nil
@@ -272,10 +277,11 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         guard let screen else { return }
         let anchor = settingsStore.askLauncherPosition == .lastPosition
             ? settingsStore.askLauncherAnchors[AskLauncherPlacement.key(for: screen)] : nil
-        panel.setFrameOrigin(ClipboardPanelPlacement.frame(
+        let origin = ClipboardPanelPlacement.frame(
             size: panel.frame.size, screen: screen.visibleFrame, position: settingsStore.clipboardPanelPosition,
             launcherAnchor: anchor, mouse: NSEvent.mouseLocation
-        ).origin)
+        ).origin
+        if panel.frame.origin != origin { panel.setFrameOrigin(origin) }
     }
 
     private func applyAppearance(to panel: NSPanel) {

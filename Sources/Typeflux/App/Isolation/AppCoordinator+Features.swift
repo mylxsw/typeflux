@@ -23,6 +23,7 @@ extension AppCoordinator {
             if !FeatureIsolationProbe.enabled { di.clipboardMonitor.start() }
             workflow.enforceClipboardRetentionPolicy()
             di.clipboardPanelController.prewarm(workflow.historyPanelModel)
+            workflow.prewarmHistoryPanelSnapshot()
         }
         if [FeatureRole.chat, .launcher, .notes, .wordBook, .help, .translation].contains(FeatureProcess.role),
            let controller = di.askConversationWindowController {
@@ -67,6 +68,7 @@ extension AppCoordinator {
             }
         }
         if FeatureProcess.role == .translation {
+            di.translationPanel.controller.prewarm()
             di.translationPanelModel.onSettings = { [weak self] in
                 guard let self else { return }
                 SettingsWindowController.shared.show(settingsStore: di.settingsStore, historyStore: di.historyStore,

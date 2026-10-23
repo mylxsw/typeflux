@@ -23,6 +23,8 @@ enum ShortcutLatencyStage: String, Codable, Sendable, CaseIterable {
     case contextCaptureStarted, contextCaptureFinished, windowCached, windowUncached
     case windowAcquisitionStarted, windowAcquisitionFinished, layoutStarted, layoutFinished
     case windowShowStarted, windowShowFinished, focusStarted, focusFinished, monitorsStarted, monitorsFinished
+    case mediaActivationStarted, mediaActivationFinished
+    case dataCacheHit, dataCacheMiss
     case dataWorkerStarted, dataCallback, maintenancePlanStarted, maintenancePlanFinished
     case maintenanceStarted, maintenanceFinished, historyReadStarted, historyReadFinished
     case clipboardReadStarted, clipboardReadFinished, pinsReadStarted, pinsReadFinished

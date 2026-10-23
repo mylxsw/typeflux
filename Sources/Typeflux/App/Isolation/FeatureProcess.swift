@@ -22,6 +22,8 @@ enum FeatureProcess {
     nonisolated static var enabled: Bool { configuration.value.enabled }
     private(set) static var peer: FeatureRPC?
     private(set) static var supervisor: FeatureSupervisor?
+    static let immediateWarmRoles: [FeatureRole] = [.launcher, .clipboard, .voice]
+    static let deferredWarmRoles: [FeatureRole] = [.ring, .translation]
     static var reportFailure: (@MainActor () -> Void)?
     static var handle: (@MainActor (FeatureCommand) async throws -> Data)?
     private static var ready: Task<Void, Error>?
@@ -30,7 +32,7 @@ enum FeatureProcess {
     private static var observers: [NSObjectProtocol] = []
     private static var preferences: NSDictionary?
     private static var applyingNotification = false
-    nonisolated static let sharedNotifications: [Notification.Name] = [.askNotesDidChange, .askWordBookDidChange, .historyStoreDidChange, .askLauncherInputHistoryDidChange, .vocabularyStoreDidChange]
+    nonisolated static let sharedNotifications: [Notification.Name] = [.askNotesDidChange, .askWordBookDidChange, .historyStoreDidChange, .clipboardHistoryDidChange, .askLauncherInputHistoryDidChange, .vocabularyStoreDidChange]
     private static var parentMonitor: DispatchSourceTimer?
 
     static func install(arguments: [String]) throws {
@@ -108,8 +110,21 @@ enum FeatureProcess {
             }
         } else {
             supervisor = FeatureSupervisor(api: api, cache: cache, auth: FeatureAuth.capture(), preparation: preparation)
-            for role in [FeatureRole.launcher, .clipboard, .voice] {
+            for role in immediateWarmRoles {
                 Task { _ = try? await supervisor?.route(.init(destination: role, action: "ping"), timeout: .seconds(30)) }
+            }
+            // Avoid competing with the initial warmup. Ping never presents a window
+            // or registers shortcuts, and sequential startup bounds additional work.
+            if !FeatureIsolationProbe.enabled {
+                let warmSupervisor = supervisor
+                Task {
+                    await preparation?.value
+                    do { try await Task.sleep(for: .seconds(2)) } catch { return }
+                    for role in deferredWarmRoles {
+                        guard !Task.isCancelled else { return }
+                        _ = try? await warmSupervisor?.route(.init(destination: role, action: "ping"), timeout: .seconds(30))
+                    }
+                }
             }
             for name in [Notification.Name.authDidLogin, .authDidLogout, .authTokenDidRefresh, .authSubscriptionDidChange] {
                 observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { _ in

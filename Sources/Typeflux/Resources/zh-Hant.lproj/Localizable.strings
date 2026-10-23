@@ -6872,7 +6872,7 @@
 "shortcutDiagnostics.stage.ringReleased" = "圓環快捷鍵放開";
 "shortcutDiagnostics.stage.ringCancelled" = "圓環快捷鍵取消";
 "shortcutDiagnostics.stage.windowCached" = "重用既有視窗";
-"shortcutDiagnostics.stage.windowUncached" = "首次建立視窗";
+"shortcutDiagnostics.stage.windowUncached" = "建立新視窗";
 "shortcutDiagnostics.stage.dataWorkerStarted" = "歷史讀取工作開始執行";
 "shortcutDiagnostics.stage.dataCallback" = "歷史讀取回到主佇列";
 "shortcutDiagnostics.stage.oldOverlayRetired" = "舊截圖覆蓋層清理完成";
@@ -6924,3 +6924,9 @@
 "shortcutDiagnostics.stage.pointerUpdateFinished" = "初始指標及放大鏡更新：完成";
 "shortcutDiagnostics.stage.translationSelectionStarted" = "翻譯選取文字讀取：开始";
 "shortcutDiagnostics.stage.translationSelectionFinished" = "翻譯選取文字讀取：完成";
+
+/* Opening snapshot diagnostics */
+"shortcutDiagnostics.stage.dataCacheHit" = "重用開啟快照，背景重新整理";
+"shortcutDiagnostics.stage.dataCacheMiss" = "無有效開啟快照，讀取歷史";
+"shortcutDiagnostics.stage.mediaActivationStarted" = "啟動器媒體載入啟用：開始";
+"shortcutDiagnostics.stage.mediaActivationFinished" = "啟動器媒體載入啟用：完成";

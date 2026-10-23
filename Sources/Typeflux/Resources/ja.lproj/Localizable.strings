@@ -6870,7 +6870,7 @@
 "shortcutDiagnostics.stage.ringReleased" = "リングのショートカット解放";
 "shortcutDiagnostics.stage.ringCancelled" = "リングのショートカット取消";
 "shortcutDiagnostics.stage.windowCached" = "既存ウインドウを再利用";
-"shortcutDiagnostics.stage.windowUncached" = "初回ウインドウ作成";
+"shortcutDiagnostics.stage.windowUncached" = "新規ウインドウ作成";
 "shortcutDiagnostics.stage.dataWorkerStarted" = "履歴読み込みタスク開始";
 "shortcutDiagnostics.stage.dataCallback" = "履歴読み込みがメインキューに復帰";
 "shortcutDiagnostics.stage.oldOverlayRetired" = "前のスクリーンショット表示を消去";
@@ -6922,3 +6922,9 @@
 "shortcutDiagnostics.stage.pointerUpdateFinished" = "初期ポインタ・拡大鏡の更新：完了";
 "shortcutDiagnostics.stage.translationSelectionStarted" = "翻訳する選択テキストの読み込み：開始";
 "shortcutDiagnostics.stage.translationSelectionFinished" = "翻訳する選択テキストの読み込み：完了";
+
+/* Opening snapshot diagnostics */
+"shortcutDiagnostics.stage.dataCacheHit" = "表示用キャッシュを再利用し、バックグラウンドで更新";
+"shortcutDiagnostics.stage.dataCacheMiss" = "有効な表示用キャッシュがないため履歴を読み込み";
+"shortcutDiagnostics.stage.mediaActivationStarted" = "ランチャーメディアの有効化：開始";
+"shortcutDiagnostics.stage.mediaActivationFinished" = "ランチャーメディアの有効化：完了";

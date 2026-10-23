@@ -5238,7 +5238,7 @@ extension WorkflowControllerProcessingTests {
         }
         XCTAssertFalse(harness.controller.isHistoryPickerPresented)
         await waitUntil { harness.controller.isHistoryPickerPresented }
-        XCTAssertEqual(diagnostics.stages, [.dataStarted, .maintenancePlanStarted, .maintenancePlanFinished,
+        XCTAssertEqual(diagnostics.stages, [.dataCacheMiss, .dataStarted, .maintenancePlanStarted, .maintenancePlanFinished,
                                             .dataWorkerStarted, .maintenanceStarted, .maintenanceFinished,
                                             .historyReadStarted, .historyReadFinished, .clipboardReadStarted,
                                             .clipboardReadFinished,
@@ -5263,5 +5263,139 @@ extension WorkflowControllerProcessingTests {
         work.finish(1)
         XCTAssertFalse(harness.controller.isHistoryPickerPresented)
         XCTAssertEqual(harness.presenter.presentCount, 1)
+    }
+}
+
+
+extension WorkflowControllerProcessingTests {
+    @MainActor func testHistoryCachedOpenPresentsBeforeReadAndRefreshKeepsSearch() {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.controller.handleHistoryPickerRequested()
+        harness.controller.dismissHistoryPicker()
+        let work = DeferredHistoryWork()
+        harness.controller.historyPanelWork = work
+        let events = ShortcutLatencyEventCollector(), trace = diagnosticTestTrace(.clipboard)
+        ShortcutLatency.$eventSink.withValue(events.sink) {
+            ShortcutLatency.$current.withValue(trace) { harness.controller.handleHistoryPickerRequested() }
+        }
+        XCTAssertTrue(harness.controller.isHistoryPickerPresented)
+        XCTAssertTrue(harness.controller.isHistoryPickerLoading)
+        XCTAssertEqual(harness.presenter.presentCount, 2)
+        XCTAssertEqual(events.stages.first, .dataCacheHit)
+        harness.model.query = "copied"
+        let selected = harness.model.selectedEntry?.id
+        harness.store.record(.text("another entry"), source: nil, at: Date())
+        work.finish(0)
+        XCTAssertEqual(harness.model.query, "copied")
+        XCTAssertEqual(harness.model.selectedEntry?.id, selected)
+        XCTAssertTrue(harness.model.entries.contains { $0.text == "another entry" })
+        XCTAssertEqual(harness.presenter.presentCount, 2, "refresh must not present or refocus the panel again")
+        harness.controller.dismissHistoryPicker()
+    }
+
+    @MainActor func testHistoryHiddenInvalidationDiscardsCacheAndRewarmsWithoutOpening() async {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.controller.prewarmHistoryPanelSnapshot()
+        XCTAssertNotNil(harness.controller.historyPanelSnapshot)
+        XCTAssertFalse(harness.controller.isHistoryPickerLoading)
+        XCTAssertEqual(harness.presenter.presentCount, 0)
+        harness.store.deleteUnpinned(sourceBundleID: nil)
+        harness.controller.reloadHistoryPanel()
+        XCTAssertNil(harness.controller.historyPanelSnapshot)
+        await waitUntil { harness.controller.historyPanelSnapshot != nil }
+        XCTAssertTrue(harness.controller.historyPanelSnapshot?.entries.isEmpty == true)
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+        XCTAssertEqual(harness.presenter.presentCount, 0)
+        harness.controller.handleHistoryPickerRequested()
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+    }
+
+    @MainActor func testHistoryPrivacyBoundaryCancelsReadAndDiscardsSnapshot() {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.controller.prewarmHistoryPanelSnapshot()
+        let work = DeferredHistoryWork()
+        harness.controller.historyPanelWork = work
+        harness.controller.handleHistoryPickerRequested()
+        XCTAssertTrue(harness.controller.isHistoryPickerPresented)
+        harness.controller.retireHistoryPanelSnapshot()
+        XCTAssertNil(harness.controller.historyPanelSnapshot)
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+        work.finish(0)
+        XCTAssertNil(harness.controller.historyPanelSnapshot)
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+    }
+
+    @MainActor func testHistoryInvalidationDuringFirstReadRetriesBeforePresentation() {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        let work = DeferredHistoryWork()
+        harness.controller.historyPanelWork = work
+        harness.controller.handleHistoryPickerRequested()
+        harness.controller.reloadHistoryPanel()
+        work.finish(0)
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+        XCTAssertNil(harness.controller.historyPanelSnapshot)
+        XCTAssertEqual(work.requests.count, 2)
+        work.finish(1)
+        XCTAssertTrue(harness.controller.isHistoryPickerPresented)
+        XCTAssertNotNil(harness.controller.historyPanelSnapshot)
+        harness.controller.dismissHistoryPicker()
+    }
+
+    @MainActor func testHistoryCachePolicyChangeAndStoreReplacementRequireFreshReads() {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.controller.prewarmHistoryPanelSnapshot()
+        let work = DeferredHistoryWork()
+        harness.controller.historyPanelWork = work
+        harness.controller.settingsStore.clipboardRetention = .oneYear
+        harness.controller.handleHistoryPickerRequested()
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+        work.finish(0)
+        harness.controller.dismissHistoryPicker()
+        harness.controller.clipboardHistoryStore = InMemoryClipboardHistoryStore()
+        harness.controller.handleHistoryPickerRequested()
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+        work.finish(1)
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+    }
+
+    @MainActor func testHistoryCacheRefreshEmptyAndFailureDoNotReopenDismissedPanels() {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        harness.controller.prewarmHistoryPanelSnapshot()
+        let work = DeferredHistoryWork()
+        harness.controller.historyPanelWork = work
+        harness.controller.handleHistoryPickerRequested()
+        harness.store.deleteUnpinned(sourceBundleID: nil)
+        work.finish(0)
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+        harness.store.record(.text("new content"), source: nil, at: Date())
+        harness.controller.handleHistoryPickerRequested()
+        work.finish(1)
+        harness.controller.dismissHistoryPicker()
+        harness.controller.handleHistoryPickerRequested()
+        XCTAssertTrue(harness.controller.isHistoryPickerPresented)
+        work.finish(2, result: .failure(BackgroundWorkFailure.timedOut))
+        XCTAssertNotNil(harness.model.notice)
+        harness.controller.dismissHistoryPicker()
+        XCTAssertFalse(harness.controller.isHistoryPickerPresented)
+    }
+}
+
+
+extension WorkflowControllerProcessingTests {
+    @MainActor func testHistoryPendingWarmupNeverConsumesTheOpeningShortcut() {
+        let harness = makeClipboardPanelHarness(configure: seed)
+        let work = DeferredHistoryWork()
+        harness.controller.historyPanelWork = work
+        harness.controller.prewarmHistoryPanelSnapshot()
+        XCTAssertFalse(harness.controller.isHistoryPickerLoading)
+        harness.controller.handleHistoryPickerRequested()
+        XCTAssertTrue(harness.controller.isHistoryPickerLoading)
+        XCTAssertEqual(work.requests.count, 2)
+        work.finish(0)
+        XCTAssertNil(harness.controller.historyPanelSnapshot)
+        XCTAssertEqual(harness.presenter.presentCount, 0)
+        work.finish(1)
+        XCTAssertEqual(harness.presenter.presentCount, 1)
+        harness.controller.dismissHistoryPicker()
     }
 }

@@ -53,6 +53,7 @@ final class ClipboardPanelControllerKeyTests: XCTestCase {
                 await drainMainQueue()
             }
         }
+        XCTAssertEqual(controller.presentedWindow?.animationBehavior, NSWindow.AnimationBehavior.none)
         XCTAssertEqual(diagnostics.stages, [.statePreparationStarted, .statePreparationFinished, .windowUncached,
                                             .windowAcquisitionStarted, .windowAcquisitionFinished, .layoutStarted,
                                             .layoutFinished,

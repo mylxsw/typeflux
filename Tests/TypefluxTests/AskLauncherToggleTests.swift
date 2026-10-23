@@ -94,7 +94,7 @@ struct AskLauncherToggleTests {
             ShortcutLatency.$current.withValue(trace) { controller.showLauncher() }
         }
         #expect(diagnostics.stages == [.statePreparationStarted, .statePreparationFinished,
-                                       .appsRefreshStarted, .appsRefreshFinished, .contextRequestStarted,
+                                       .contextRequestStarted,
                                        .contextRequestFinished,
                                        .windowCached, .windowAcquisitionStarted, .windowAcquisitionFinished,
                                        .layoutStarted, .layoutFinished, .windowShowStarted, .windowShowFinished,
@@ -120,6 +120,42 @@ struct AskLauncherToggleTests {
         settings.askLauncherInputSourceID = ""
         controller.showLauncher()
         #expect(selections.count == 2, "None preserves the current source on a fresh opening")
+    }
+
+    @Test func deferredHomeRefreshRunsOnlyForAnOpenLauncher() async throws {
+        let fixture = try AskTestFixture(authenticated: false)
+        let suite = "launcher-deferred-refresh-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        let controller = AskConversationWindowController(settings: SettingsStore(defaults: defaults), model: fixture.model)
+        defer { controller.dismissLauncher(); fixture.model.resetSession(); defaults.removePersistentDomain(forName: suite) }
+        controller.prewarmLauncher()
+        let cancelled = ShortcutLatencyEventCollector(), trace = diagnosticTestTrace(.launcher)
+        await ShortcutLatency.$eventSink.withValue(cancelled.sink) {
+            await ShortcutLatency.$current.withValue(trace) {
+                controller.showLauncher()
+                #expect(!cancelled.stages.contains(.appsRefreshStarted))
+                controller.dismissLauncher()
+                try? await Task.sleep(for: .milliseconds(40))
+            }
+        }
+        #expect(!cancelled.stages.contains(.appsRefreshStarted))
+        #expect(!cancelled.stages.contains(.mediaActivationStarted))
+        let active = ShortcutLatencyEventCollector()
+        await ShortcutLatency.$eventSink.withValue(active.sink) {
+            await ShortcutLatency.$current.withValue(trace) {
+                controller.showLauncher()
+                for _ in 0..<100 where !active.stages.contains(.appsRefreshFinished) {
+                    try? await Task.sleep(for: .milliseconds(10))
+                }
+            }
+        }
+        #expect(active.stages.contains(.appsRefreshStarted))
+        #expect(active.stages.contains(.appsRefreshFinished))
+        #expect(active.stages.contains(.mediaActivationStarted))
+        #expect(active.stages.contains(.mediaActivationFinished))
+        let ordered = try #require(active.stages.firstIndex(of: .windowOrdered))
+        let refresh = try #require(active.stages.firstIndex(of: .appsRefreshStarted))
+        #expect(ordered < refresh)
     }
 
     @Test func `unconfigured launcher does not switch input source`() throws {

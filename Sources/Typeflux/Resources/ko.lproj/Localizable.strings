@@ -6870,7 +6870,7 @@
 "shortcutDiagnostics.stage.ringReleased" = "링 단축키 놓음";
 "shortcutDiagnostics.stage.ringCancelled" = "링 단축키 취소";
 "shortcutDiagnostics.stage.windowCached" = "기존 윈도우 재사용";
-"shortcutDiagnostics.stage.windowUncached" = "최초 윈도우 생성";
+"shortcutDiagnostics.stage.windowUncached" = "새 윈도우 생성";
 "shortcutDiagnostics.stage.dataWorkerStarted" = "기록 읽기 작업 시작";
 "shortcutDiagnostics.stage.dataCallback" = "기록 읽기 메인 큐 복귀";
 "shortcutDiagnostics.stage.oldOverlayRetired" = "이전 스크린샷 오버레이 정리 완료";
@@ -6922,3 +6922,9 @@
 "shortcutDiagnostics.stage.pointerUpdateFinished" = "초기 포인터 / 돋보기 업데이트: 완료";
 "shortcutDiagnostics.stage.translationSelectionStarted" = "번역할 선택 텍스트 읽기: 시작";
 "shortcutDiagnostics.stage.translationSelectionFinished" = "번역할 선택 텍스트 읽기: 완료";
+
+/* Opening snapshot diagnostics */
+"shortcutDiagnostics.stage.dataCacheHit" = "표시 캐시 재사용, 백그라운드 새로고침";
+"shortcutDiagnostics.stage.dataCacheMiss" = "유효한 표시 캐시 없음, 기록 읽기";
+"shortcutDiagnostics.stage.mediaActivationStarted" = "런처 미디어 활성화: 시작";
+"shortcutDiagnostics.stage.mediaActivationFinished" = "런처 미디어 활성화: 완료";

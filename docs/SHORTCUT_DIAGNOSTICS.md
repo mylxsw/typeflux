@@ -165,8 +165,9 @@ open "$HOME/Applications/Typeflux Dev.app" --args --shortcut-diagnostics-window
    benchmark; neither this visibility proxy nor app launch proves physical first
    paint. Use Instruments or an independent screen/input measurement if needed.
 
-This change records the existing behavior; it does not merge processes, change
-shortcut ownership, remove readiness gates or move window prewarming.
+The initial instrumentation recorded existing behavior without changing process
+structure, shortcut ownership, readiness gates or prewarming. The optimization
+follow-up below changes preparation and cache timing separately.
 
 ## Validation on 2026-10-23
 
@@ -265,3 +266,105 @@ physical shortcut latency and populated dashboard interaction require local test
 - No development app, real screen capture or physical shortcut smoke test was
   launched during this follow-up. Validate the final build locally, including
   translation focus, and export all diagnostic data for latency analysis.
+
+## Shortcut preparation optimizations
+
+- Screenshot overlays retain only native panels, keyed by display ID, geometry
+  and scale. Each capture receives a fresh view, source image and editor state.
+  Dismissal detaches content, cancels image work and clears callbacks. Disconnected
+  or changed displays evict their panels; the pool is bounded by the last display
+  set. Per-display `windowCached`/`windowUncached` events show reuse alongside the
+  existing creation/show spans. The snapshot capture itself is unchanged.
+- Clipboard opening snapshots stay in memory and are valid for at most 30 seconds
+  of monotonic time, or until the earliest unpinned clipboard retention boundary.
+  Pin/snippet/voice retention rules remain distinct. Store changes invalidate the
+  snapshot. Clipboard-change notifications use the existing content-free process
+  notification bridge, so deletions from the settings process also invalidate it.
+  Hidden updates coalesce for 150 ms before pre-reading off the main
+  queue. Startup also pre-reads without setting the panel's loading/open state.
+  Account transitions cancel reads, close the panel and retire cached data.
+- A valid snapshot is presented immediately, followed by a fresh maintenance/read
+  in the existing bounded worker. Policy, store identity, request generation and
+  invalidation revision prevent outdated reads from restoring stale snapshots.
+  Refresh updates preserve query/selection and do not show or focus the window
+  again. Empty refreshed history closes the panel; a refresh failure keeps an
+  already presented panel with its existing notice behavior. Cold/cache-miss opens
+  still wait for the fresh read. No cache is written to disk.
+- `dataCacheHit`/`dataCacheMiss` identify that opening path. On a cache hit,
+  `windowOrdered` can precede `dataStarted` and `dataFinished`; background-read
+  duration must not be added to the initial visible duration. Repeated model-update
+  spans describe the initial snapshot and the later refresh separately.
+- Launcher opening shows cached home content and takes focus before refreshing
+  app/index/workflow data and enabling media loads. A cancellable 16 ms delay gives
+  presentation an initial scheduling opportunity; it does not prove physical
+  first paint. `mediaActivationStarted`/`mediaActivationFinished` measure media
+  activation separately. Dismissal cancels pending refresh. Existing selection
+  capture and text-entry semantics remain in place.
+- Launcher and clipboard avoid redundant native geometry assignments. Clipboard
+  native show/hide animations are disabled; the shelf retains its explicit content
+  animation. Native ordering/focus calls are otherwise unchanged. The logs do not
+  yet establish how much of their earlier spikes came from deferred drawing or
+  system window interaction, so actual improvement needs local measurement.
+- Essential launcher/clipboard/voice startup remains immediate. After bootstrap
+  preparation and a two-second delay, the host pings ring and translation in
+  sequence. Translation prepares its hidden panel, and ring keeps its existing
+  hidden preparation. No extra shortcut listeners or process roles are introduced.
+  These two existing processes now become resident earlier, increasing idle memory
+  use; triggers before prewarming finishes can still be cold.
+- Remote verification must not launch the development app. Synthetic native-window
+  tests and builds are permitted; local physical shortcuts, multi-display changes,
+  screenshot freshness and actual before/after latency remain separate checks.
+
+### Optimization verification (2026-10-23)
+
+- App builds passed; the final pre-test incremental build took 21.88 seconds.
+  No development app was launched. Native-window tests used synthetic captures;
+  physical shortcuts and real display capture were not exercised.
+- Primary focused coverage selected 231 methods: 168 XCTest and 63 Swift Testing.
+  Complete command wall time was 258.08 seconds (runner: 257.94 seconds, including
+  preparation/discovery). All new optimization assertions passed. One old screenshot
+  test still required every presentation to replace its native panels, contrary to
+  the new reuse contract. It was updated to verify reused windows, fresh content,
+  retired callbacks and delivery exclusively to the new session.
+- Only that screenshot method was retried, together with the separately planned
+  translation-entry suite to isolate native focus state. All 11 methods passed;
+  complete command wall time was 75.99 seconds (runner: 72.99 seconds):
+
+  ```bash
+  ./scripts/coverage.sh --suite AskTranslationPanelCoordinatorTests --filter ScreenshotOverlayTests/testPresentingAgainReplacesOldContentAndReusesThePanels
+  ```
+
+- Follow-up cache review found that settings can mutate the shared clipboard store
+  in another process. The existing notification bridge now includes clipboard
+  changes. A content-free loopback test, clipboard settings and the panel change
+  observer were validated together: 19 methods passed in 19.16 seconds complete
+  command wall time (runner: 13.55 seconds):
+
+  ```bash
+  ./scripts/coverage.sh --suite ClipboardPanelSnapshotTests --suite ClipboardSettingsTests --filter WorkflowControllerProcessingTests/testClipboardChangesReloadTheOpenPanel
+  ```
+
+  One preceding scope-selection attempt used the nonexistent name
+  `ClipboardSettingsModelTests`; the runner rejected it before executing tests
+  (67.90 seconds including preparation). The corrected explicit scope above did
+  not fall back to broader tests.
+- The retained scopes cover 255 unique current test methods, with the replaced
+  screenshot case counted once. Primary suites were ClipboardPanelSnapshotTests,
+  ShortcutLatencyTests, ShortcutLatencyDetailTests, ShortcutLatencyUITests,
+  RingControllerTests, RingHotkeyTests, ScreenshotOverlayTests,
+  ScreenshotCoordinatorTests, ClipboardPanelControllerKeyTests,
+  ClipboardShelfPresentationTests, AskLauncherToggleTests, AskContextImageTests,
+  ContextImageAuthorityTests, ContextImageSourceOwnershipTests,
+  AskTranslationPanelControllerTests, FeatureRPCTests and FeatureModuleHealthTests.
+  An additional filter selected all WorkflowControllerProcessingTests/testHistory*
+  methods and the clipboard harness's paste/copy/delete/pin/settings cases.
+- Changed executable production-line coverage was 158/174 (90.80%), using
+  separately exported, matching-binary focused profiles and their line-level union.
+  Uncovered lines are the actual startup calls and deferred process-launch task;
+  process startup was not exercised by launching an application. This is not
+  project-wide or branch coverage. The HTML report represents only the latest
+  individual scope, not the union.
+- All five localization files pass `plutil -lint`; all 133 diagnostic keys match.
+  `git diff --check` passes. No strict SwiftLint success or full-project test claim
+  is made. Actual latency reduction, idle-memory cost of prewarming and native
+  WindowServer behavior still need measurement on the local interactive Mac.

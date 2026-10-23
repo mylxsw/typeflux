@@ -6870,7 +6870,7 @@
 "shortcutDiagnostics.stage.ringReleased" = "圆环快捷键松开";
 "shortcutDiagnostics.stage.ringCancelled" = "圆环快捷键取消";
 "shortcutDiagnostics.stage.windowCached" = "复用已有窗口";
-"shortcutDiagnostics.stage.windowUncached" = "首次创建窗口";
+"shortcutDiagnostics.stage.windowUncached" = "创建新窗口";
 "shortcutDiagnostics.stage.dataWorkerStarted" = "历史读取任务开始执行";
 "shortcutDiagnostics.stage.dataCallback" = "历史读取回到主队列";
 "shortcutDiagnostics.stage.oldOverlayRetired" = "旧截图覆盖层清理完成";
@@ -6922,3 +6922,9 @@
 "shortcutDiagnostics.stage.pointerUpdateFinished" = "初始指针及放大镜更新：完成";
 "shortcutDiagnostics.stage.translationSelectionStarted" = "翻译选中文字读取：开始";
 "shortcutDiagnostics.stage.translationSelectionFinished" = "翻译选中文字读取：完成";
+
+/* Opening snapshot diagnostics */
+"shortcutDiagnostics.stage.dataCacheHit" = "复用打开快照，后台刷新";
+"shortcutDiagnostics.stage.dataCacheMiss" = "无有效打开快照，读取历史";
+"shortcutDiagnostics.stage.mediaActivationStarted" = "启动器媒体加载启用：开始";
+"shortcutDiagnostics.stage.mediaActivationFinished" = "启动器媒体加载启用：完成";

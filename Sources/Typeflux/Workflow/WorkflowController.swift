@@ -213,11 +213,16 @@ final class WorkflowController {
     var isHistoryPickerPresented = false
     var isHistoryPickerLoading = false
     var historyPanelLoadGeneration = UUID()
+    var historyPanelWarmupTask: Task<Void, Never>?
+    var historyPanelSnapshot: ClipboardPanelSnapshot?
+    var historyPanelCacheRevision = UUID()
     var historyPanelWork: any LatestBackgroundWorking = LatestBackgroundWork(label: "typeflux.clipboard-panel-read")
     var clipboardMaintenanceWork: any LatestBackgroundWorking = LatestBackgroundWork(label: "typeflux.clipboard-maintenance")
     /// The clipboard panel's state; the panel opens from the history hotkey.
     let historyPanelModel = ClipboardPanelModel()
-    var clipboardHistoryStore: ClipboardHistoryStore?
+    var clipboardHistoryStore: ClipboardHistoryStore? {
+        didSet { historyPanelSnapshot = nil; historyPanelCacheRevision = UUID() }
+    }
     var clipboardPanelPresenter: ClipboardPanelPresenting?
     let clipboardAction = ClipboardContentAction()
     var clipboardActionGeneration = UUID()
@@ -225,6 +230,7 @@ final class WorkflowController {
     var clipboardHistoryObserver: NSObjectProtocol?
     var transcriptionHistoryObserver: NSObjectProtocol?
     var clipboardPauseObserver: NSObjectProtocol?
+    var historyPanelPrivacyObservers: [NSObjectProtocol] = []
     var lastPaidCreditExhaustedPromptPresentedAt: Date?
     let analyticsLock = NSLock()
     var pendingDictationAnalyticsContext: DictationAnalyticsContext?
@@ -327,6 +333,8 @@ final class WorkflowController {
     }
 
     deinit {
+        historyPanelWarmupTask?.cancel()
+        historyPanelPrivacyObservers.forEach(NotificationCenter.default.removeObserver)
         if let clipboardPauseObserver {
             NotificationCenter.default.removeObserver(clipboardPauseObserver)
         }
