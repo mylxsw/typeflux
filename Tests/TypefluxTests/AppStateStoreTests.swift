@@ -1,7 +1,39 @@
 @testable import Typeflux
+import Combine
 import XCTest
 
 final class AppStateStoreTests: XCTestCase {
+    @MainActor
+    func testRepeatedStatusDoesNotPublishAndChangedFailureStillPublishes() {
+        let store = AppStateStore()
+        var values: [AppStatus] = []
+        let subscription = store.$status.sink { values.append($0) }
+        defer { subscription.cancel() }
+        for _ in 0..<20 { store.setStatus(.idle) }
+        store.setStatus(.recording)
+        store.setStatus(.recording)
+        store.setStatus(.failed(message: "first"))
+        store.setStatus(.failed(message: "first"))
+        store.setStatus(.failed(message: "second"))
+        XCTAssertEqual(values, [.idle, .recording, .failed(message: "first"), .failed(message: "second")])
+    }
+
+    @MainActor
+    func testBackgroundStatusesAreComparedAfterDeliveryToMainQueue() async {
+        let store = AppStateStore()
+        var values: [AppStatus] = []
+        let subscription = store.$status.sink { values.append($0) }
+        defer { subscription.cancel() }
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global().async {
+                for _ in 0..<20 { store.setStatus(.recording) }
+                store.setStatus(.idle)
+                DispatchQueue.main.async { continuation.resume() }
+            }
+        }
+        XCTAssertEqual(values, [.idle, .recording, .idle])
+    }
+
     func testInitialStatusIsIdle() {
         let store = AppStateStore()
         XCTAssertEqual(store.status, .idle)

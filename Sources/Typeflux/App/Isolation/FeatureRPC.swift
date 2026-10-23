@@ -213,7 +213,17 @@ private final class FeatureRPCWire: @unchecked Sendable {
                 if count > 0 { offset += count; continue }
                 guard count < 0, errno == EAGAIN || errno == EINTR else { throw FeatureRPC.Failure.unavailable }
                 var item = pollfd(fd: descriptor, events: Int16(writing ? POLLOUT : POLLIN), revents: 0)
-                _ = poll(&item, 1, 20)
+                // shutdown() wakes idle readers. Only an in-progress frame needs
+                // a timeout; an empty channel must not wake every 20 ms.
+                let timeout: Int32
+                if let deadline {
+                    let remaining = ContinuousClock.now.duration(to: deadline).components
+                    let milliseconds = Double(remaining.seconds) * 1000 + Double(remaining.attoseconds) / 1e15
+                    timeout = Int32(max(0, min(Double(Int32.max), milliseconds.rounded(.up))))
+                } else {
+                    timeout = -1
+                }
+                guard poll(&item, 1, timeout) >= 0 || errno == EINTR else { throw FeatureRPC.Failure.unavailable }
             }
         }
     }

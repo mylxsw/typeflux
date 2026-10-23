@@ -193,7 +193,10 @@ struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
             var descriptors = [pollfd(fd: out.reader, events: Int16(POLLIN), revents: 0),
                                pollfd(fd: err.reader, events: Int16(POLLIN), revents: 0),
                                pollfd(fd: input?.writer ?? -1, events: Int16(POLLOUT), revents: 0)]
-            poll(&descriptors, nfds_t(descriptors.count), 5)
+            // Long-lived GUI children usually have no output. Keep their idle
+            // checks bounded at 4 Hz, retaining fast tool deadlines and cleanup.
+            let idleApplication = request.ownedApplicationLifetime && lifecycle.cleanupDeadline == nil
+            poll(&descriptors, nfds_t(descriptors.count), idleApplication ? 250 : 5)
         }
         // WNOWAIT retained PID ownership through the final group signal. A stuck
         // child stays in the bounded reaper instead of blocking this continuation.

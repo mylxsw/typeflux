@@ -5,7 +5,7 @@ enum ModuleState: String, Sendable, Codable {
 }
 
 /// Content-free diagnostics. Never retain an underlying error's message here.
-struct ModuleHealth: Sendable, Codable {
+struct ModuleHealth: Sendable, Codable, Equatable {
     let state: ModuleState
     let generation: UUID
     let pendingStarts: Int

@@ -4,6 +4,26 @@ import XCTest
 
 final class StatusBarMenuSupportTests: XCTestCase {
     @MainActor
+    func testRepeatedIdleHeartbeatsKeepTheMenuAndRealStatusChangesRefreshIt() async throws {
+        let suite = "StatusHeartbeatTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let state = AppStateStore()
+        let controller = StatusBarController(appState: state, settingsStore: SettingsStore(defaults: defaults),
+            historyStore: EmptyHistoryStore())
+        controller.start()
+        defer { controller.stop() }
+        try await Task.sleep(for: .milliseconds(50))
+        let menu = try XCTUnwrap(controller.menu)
+        for _ in 0..<20 { state.setStatus(.idle) }
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertTrue(controller.menu === menu)
+        state.setStatus(.recording)
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertFalse(controller.menu === menu)
+    }
+
+    @MainActor
     func testOpenTypefluxMenuEntryOpensConversationDirectlyWithoutDuplicateAskEntry() throws {
         if ProcessInfo.processInfo.environment["CI"] == "true" {
             throw XCTSkip("Requires a GUI WindowServer session")

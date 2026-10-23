@@ -1,7 +1,7 @@
 import Combine
 import Foundation
 
-struct FeatureStatus: Codable, Sendable {
+struct FeatureStatus: Codable, Sendable, Equatable {
     let role: FeatureRole
     let activity: AgentActivityInput
     let pins: Int
@@ -27,8 +27,15 @@ final class FeatureActivityMirror: AgentActivityControlling {
     var clickThroughPins: Int { states[.screenshot]?.clickThroughPins ?? 0 }
     var agentActivityInput: AgentActivityInput { .init(runs: states.values.flatMap(\.activity.runs)) }
     var agentActivityChanges: AnyPublisher<Void, Never> { changes.eraseToAnyPublisher() }
-    func remove(_ role: FeatureRole) { states[role] = nil; changes.send() }
-    func receive(_ status: FeatureStatus) { states[status.role] = status; changes.send() }
+    func remove(_ role: FeatureRole) {
+        guard states.removeValue(forKey: role) != nil else { return }
+        changes.send()
+    }
+    func receive(_ status: FeatureStatus) {
+        guard states[status.role] != status else { return }
+        states[status.role] = status
+        changes.send()
+    }
     func stopAgentRun(_ id: String) {
         guard let role = states.first(where: { $0.value.activity.runs.contains { $0.id == id } })?.key else { return }
         FeatureProcess.send(.init(destination: role, action: "stopConversation", payload: Data(id.utf8)))

@@ -12,10 +12,11 @@ final class AppStateStore: ObservableObject {
 
     func setStatus(_ status: AppStatus) {
         if Thread.isMainThread {
-            self.status = status
+            if self.status != status { self.status = status }
         } else {
             DispatchQueue.main.async { [weak self] in
-                self?.status = status
+                guard let self, self.status != status else { return }
+                self.status = status
             }
         }
     }

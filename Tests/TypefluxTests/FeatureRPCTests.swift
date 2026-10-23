@@ -5,6 +5,34 @@ import Testing
 
 @Suite(.serialized)
 struct FeatureRPCTests {
+    @Test func closingAnIdlePeerWakesItsReader() async throws {
+        let (a, b) = try pair()
+        await a.start { _, data in data }
+        await b.start { _, data in data }
+        try await Task.sleep(for: .milliseconds(30))
+        await b.stop()
+        try await Task.sleep(for: .milliseconds(30))
+        await #expect(throws: FeatureRPC.Failure.unavailable) {
+            try await a.request("closed", payload: Data(), timeout: .milliseconds(200))
+        }
+        await a.stop()
+    }
+
+    @Test func incompletePayloadStillHasABoundedReadDeadline() async throws {
+        var descriptors: [Int32] = [-1, -1]
+        #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors) == 0)
+        let peer = try FeatureRPC(descriptor: descriptors[0])
+        defer { close(descriptors[1]) }
+        await peer.start { _, data in data }
+        var size = UInt32(100).bigEndian
+        _ = withUnsafeBytes(of: &size) { Darwin.write(descriptors[1], $0.baseAddress, $0.count) }
+        try await Task.sleep(for: .milliseconds(5300))
+        await #expect(throws: FeatureRPC.Failure.unavailable) {
+            try await peer.request("closed", payload: Data(), timeout: .milliseconds(200))
+        }
+        await peer.stop()
+    }
+
     private func pair() throws -> (FeatureRPC, FeatureRPC) {
         var descriptors: [Int32] = [-1, -1]
         #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors) == 0)
