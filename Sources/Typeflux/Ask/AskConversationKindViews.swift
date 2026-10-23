@@ -275,7 +275,8 @@ struct AskWorkEnvironmentButton: View {
                     model.setPermissionMode(option, launcher: launcher)
                 }, accessory: {
                     Image(systemName: option.symbol).font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(option == mode ? AskPermissionModeMenu.tint(option) : StudioTheme.textSecondary)
+                        .foregroundStyle(option == mode
+                            ? AskPermissionModeMenu.tint(option) : StudioTheme.textSecondary)
                 })
                 .accessibilityIdentifier("ask.env.mode." + option.rawValue)
             }
