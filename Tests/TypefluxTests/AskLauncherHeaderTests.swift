@@ -534,10 +534,13 @@ struct AskLauncherHeaderTests {
 
     /// Clicks "+" and returns the glass panel its menu opens in.
     private func openPlusMenu(in window: NSWindow, fixture: AskTestFixture) async throws -> NSWindow {
-        try click(try element("ask.composer.attach", in: window), in: window)
-        try await fixture.wait { AskGlassMenuPresenter.shared.panel?.isVisible == true }
+        AskGlassMenuPresenter.shared.hide()
+        try press(try element("ask.composer.attach", in: window))
+        try await fixture.wait { AskGlassMenuPresenter.shared.isShowing }
+        #expect(AskGlassMenuPresenter.shared.isShowing, "+ opened its menu")
         let panel = try #require(AskGlassMenuPresenter.shared.panel)
         try await fixture.wait { find("ask.add.menu", in: panel) != nil }
+        #expect(find("ask.add.menu", in: panel) != nil, "the panel shows the + menu")
         return panel
     }
 

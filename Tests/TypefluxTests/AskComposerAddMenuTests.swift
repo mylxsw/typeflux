@@ -260,4 +260,51 @@ struct AskComposerAddMenuTests {
         try await settle(window)
         #expect(find("ask.composer.permissionMode", in: window) != nil)
     }
+
+    // MARK: - Snapshots
+
+    /// Renders the redesign for review when `TYPEFLUX_ASK_SNAPSHOTS` names a directory.
+    @Test func renderComposerRedesign() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
+        let root = URL(fileURLWithPath: directory)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        func save<V: View>(_ view: V, size: NSSize, name: String) async throws {
+            let window = host(view, size: size)
+            defer { window.close() }
+            window.appearance = NSAppearance(named: .darkAqua)
+            try await settle(window)
+            let content = try #require(window.contentView)
+            let bitmap = try #require(content.bitmapImageRepForCachingDisplay(in: content.bounds))
+            content.cacheDisplay(in: content.bounds, to: bitmap)
+            try #require(bitmap.representation(using: .png, properties: [:]))
+                .write(to: root.appendingPathComponent(name + ".png"))
+        }
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        fixture.model.setConversationKind(.work, launcher: false)
+        fixture.model.draft.selection = "Liquid Glass 是一种动态材质"
+        fixture.model.draft.memory = AskMemory(global: "short")
+        try await save(AskComposer(model: fixture.model, launcher: false).padding(20)
+                        .background(Color(nsColor: .windowBackgroundColor)),
+                       size: NSSize(width: 800, height: 170), name: "gul462-window-composer")
+        let text = "Liquid Glass 是一种动态材质，它会折射和反射周围的内容，同时根据光线和动作实时变化。"
+        let storage = AskLocalModeStatus(source: "Cloud", offersSignIn: false, local: false, changeable: true,
+                                         choices: [.cloud, .local, .temporary])
+        let menu = AskAddMenuContext(
+            switches: AskAddMenuSwitch.make(items: items(screenshot: .attached, source: "Safari — Docs",
+                                                         selection: text, memory: AskMemory(global: "m")),
+                                            selectionText: text, actions: { _ in {} }),
+            storage: storage)
+        try await save(AskGlassCardSurface(kind: .menu) { AskComposerAddMenu(context: menu, pickFiles: {}) }
+                        .padding(20).background(Color(nsColor: .windowBackgroundColor)),
+                       size: NSSize(width: 400, height: 480), name: "gul462-plus-menu")
+        await fixture.model.prepareLauncher()
+        fixture.model.launcherDraft.selection = text
+        fixture.model.launcherDraft.memory = AskMemory(global: "m")
+        try await save(AskLauncherView(model: fixture.model, onDismiss: {}),
+                       size: NSSize(width: AskMetrics.launcherWidth, height: 200), name: "gul462-launcher")
+    }
 }
