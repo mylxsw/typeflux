@@ -6,6 +6,7 @@ import SwiftUI
 struct AskConversationKindSwitch: View {
     let selection: AskConversationKind
     var compact = false
+    var showsLabels = true
     var onSelect: (AskConversationKind) -> Void
     @Environment(\.interfaceStyle) private var style
 
@@ -18,7 +19,7 @@ struct AskConversationKindSwitch: View {
                 Button { onSelect(kind) } label: {
                     HStack(spacing: 6) {
                         Image(systemName: kind.symbol).font(.system(size: compact ? 11 : 12, weight: .medium))
-                        if !compact {
+                        if !compact && showsLabels {
                             Text(L(kind.titleKey))
                                 .font(.system(size: 13, weight: chosen ? .semibold : .regular))
                                 .lineLimit(1)

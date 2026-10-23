@@ -33,6 +33,8 @@ struct AskConversationKindVisualTests {
             for dark in [false, true] {
                 try await render(AskConversationView(model: fixture.model), size: NSSize(width: 1100, height: 720),
                                  dark: dark, file: root.appendingPathComponent("new-\(kind.rawValue)-\(dark ? "dark" : "light").png"))
+                try await render(AskConversationView(model: fixture.model), size: NSSize(width: 440, height: 720),
+                                 dark: dark, file: root.appendingPathComponent("new-\(kind.rawValue)-compact-\(dark ? "dark" : "light").png"))
             }
         }
         for kind in AskConversationKind.allCases {

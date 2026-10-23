@@ -800,7 +800,7 @@ struct AskConversationView: View {
                 AskStorageTitleGlyph(kind: marked).padding(.trailing, 2)
             }
             if model.selectedId == nil {
-                AskConversationKindSwitch(selection: model.conversationKind(launcher: false), compact: true) {
+                AskConversationKindSwitch(selection: model.conversationKind(launcher: false), showsLabels: false) {
                     model.setConversationKind($0, launcher: false)
                 }
                 .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
