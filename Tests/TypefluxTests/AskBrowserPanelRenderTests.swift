@@ -70,9 +70,12 @@ struct AskBrowserPanelRenderTests {
         }
     }
 
+    /// The side panel showing the browser's selected page, or its Files tab when no page is open.
     private func panel(_ workspace: AskBrowserWorkspace, runActive: Bool = false) -> some View {
-        AskBrowserPanel(workspace: workspace, runningConversationId: runActive ? "c1" : nil,
-                        stopRun: {}, close: {}, resize: { _ in })
+        let panel = AskSidePanel(browser: workspace)
+        if let tab = workspace.selectedTab { panel.select(.web(tab.id)) }
+        return AskSidePanelView(panel: panel, context: AskSidePanelContext(runningConversationId: runActive ? "c1" : nil),
+                                close: {}, resize: { _ in })
     }
 
     @Test func panelStatesRender() async throws {
@@ -205,7 +208,7 @@ struct AskBrowserPanelRenderTests {
             let composerFrame = hosting.convert(viewport.bounds, from: viewport)
             #expect(composerFrame.maxX <= pageFrame.minX)
             #expect(editor.isEditable, "The docked browser must leave the conversation interactive")
-            #expect(find("ask.workspace.browser", in: window) != nil)
+            #expect(find("ask.workspace.sidePanel", in: window) != nil)
         } else {
             #expect(!editor.isEditable, "A hidden conversation must not keep accepting keyboard input")
         }

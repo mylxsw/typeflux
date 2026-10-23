@@ -2,23 +2,18 @@ import AppKit
 import SwiftUI
 import WebKit
 
-/// The embedded browser beside the conversation: tabs, address bar, the page,
-/// and the controls the user has while the AI works in it.
+/// A web tab of the side panel: address bar, the page, and the controls the user has
+/// while the AI works in it. `AskSidePanelView` draws the tab strip around it.
 struct AskBrowserPanel: View {
     @ObservedObject var workspace: AskBrowserWorkspace
-    /// Clears the traffic lights when a narrow window shows the browser alone.
-    var leadingInset: CGFloat = 0
     /// The selected conversation while its run is active; only its activity shows controls.
     var runningConversationId: String?
     var stopRun: () -> Void
-    var close: () -> Void
-    /// Drag of the leading edge since the drag began, in points (positive widens);
-    /// nil when the drag ends.
-    var resize: ((CGFloat?) -> Void)?
+    /// Bumped when the user opens a new tab, to type its address.
+    var focusRequest = 0
     @State private var address = ""
     @State private var editingAddress = false
     @State private var showsSites = false
-    @State private var dragStart: CGFloat?
     @FocusState private var addressFocused: Bool
 
     private var tab: AskBrowserTab? { workspace.selectedTab }
@@ -29,10 +24,6 @@ struct AskBrowserPanel: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            tabStrip
-                .padding(.leading, leadingInset)
-                .frame(height: AskMetrics.titleBarRowHeight - 1)
-            Rectangle().fill(AskTheme.separator).frame(height: 1)
             navigationBar
             ZStack {
                 if let tab {
@@ -52,12 +43,14 @@ struct AskBrowserPanel: View {
             }
             .padding([.horizontal, .bottom], 8)
         }
-        .overlay(alignment: .leading) { resizeHandle }
-        .askSidePanel(edge: .trailing)
         .sheet(isPresented: $showsSites) { AskBrowserSitesView(workspace: workspace) }
         .onAppear(perform: syncAddress)
         .onChange(of: tab?.url) { _ in syncAddress() }
         .onChange(of: workspace.selectedTabId) { _ in syncAddress() }
+        .onChange(of: focusRequest) { _ in
+            address = ""
+            addressFocused = true
+        }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.web.panel")
     }
@@ -65,49 +58,6 @@ struct AskBrowserPanel: View {
     private func syncAddress() {
         guard !editingAddress else { return }
         address = tab?.url?.absoluteString ?? ""
-    }
-
-    // MARK: - Tabs
-
-    private var tabStrip: some View {
-        HStack(spacing: 4) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 4) {
-                    ForEach(workspace.tabs) { item in
-                        AskBrowserTabButton(tab: item, selected: item.id == workspace.selectedTabId,
-                                            agent: agentConversation && workspace.activity?.tabId == item.id,
-                                            select: { workspace.select(item) },
-                                            close: { workspace.close(item) })
-                    }
-                }
-                .padding(.leading, 10)
-            }
-            Menu {
-                Button(L("ask.web.newTab")) { openNewTab(isPrivate: false) }
-                Button(L("ask.web.newPrivateTab")) { openNewTab(isPrivate: true) }
-            } label: {
-                Image(systemName: "plus").font(.system(size: 13)).frame(width: 26, height: 26)
-            } primaryAction: {
-                openNewTab(isPrivate: false)
-            }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .help(L("ask.web.newTab"))
-            .accessibilityIdentifier("ask.web.newTab")
-            iconButton("key", label: L("ask.web.sites.title")) { showsSites = true }
-                .accessibilityIdentifier("ask.web.sites")
-            iconButton("xmark", label: L("ask.web.close"), action: close)
-                .keyboardShortcut("b", modifiers: [.command, .shift])
-                .accessibilityIdentifier("ask.workspace.drawer.close")
-        }
-        .padding(.trailing, 8)
-    }
-
-    private func openNewTab(isPrivate: Bool) {
-        _ = try? workspace.newTab(isPrivate: isPrivate)
-        address = ""
-        addressFocused = true
     }
 
     // MARK: - Address bar
@@ -286,69 +236,6 @@ extension AskBrowserPanel {
         .disabled(!enabled)
         .help(label)
         .accessibilityLabel(label)
-    }
-
-    @ViewBuilder private var resizeHandle: some View {
-        if let resize {
-            Color.clear
-                .frame(width: 6)
-                .contentShape(Rectangle())
-                .onHover { inside in
-                    if inside { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
-                }
-                .gesture(DragGesture(minimumDistance: 1, coordinateSpace: .global)
-                    .onChanged { value in
-                        let start = dragStart ?? value.startLocation.x
-                        dragStart = start
-                        resize(start - value.location.x)
-                    }
-                    .onEnded { _ in dragStart = nil; resize(nil) })
-                .accessibilityHidden(true)
-        }
-    }
-}
-
-/// One tab in the strip.
-private struct AskBrowserTabButton: View {
-    @ObservedObject var tab: AskBrowserTab
-    var selected: Bool
-    var agent: Bool
-    var select: () -> Void
-    var close: () -> Void
-    @State private var hovering = false
-
-    var body: some View {
-        HStack(spacing: 6) {
-            ZStack(alignment: .topLeading) {
-                Image(systemName: tab.isPrivate ? "eyeglasses" : "globe")
-                    .font(.system(size: 11))
-                    .foregroundStyle(StudioTheme.textTertiary)
-                if agent { Circle().fill(AskTheme.accent).frame(width: 6, height: 6).offset(x: -3, y: -3) }
-            }
-            Text(tab.displayTitle)
-                .font(.system(size: 12))
-                .lineLimit(1)
-                .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                .frame(maxWidth: 140, alignment: .leading)
-            Button(action: close) {
-                Image(systemName: "xmark").font(.system(size: 8.5, weight: .bold))
-                    .frame(width: 16, height: 16)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .opacity(hovering || selected ? 1 : 0)
-            .accessibilityLabel(L("ask.web.closeTab"))
-        }
-        .padding(.leading, 10).padding(.trailing, 5)
-        .frame(height: 28)
-        .background(selected ? AskTheme.controlSurface : (hovering ? AskTheme.hoverFill : .clear),
-                    in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .contentShape(Rectangle())
-        .onTapGesture(perform: select)
-        .onHover { hovering = $0 }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(tab.displayTitle)
-        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 
