@@ -186,11 +186,13 @@ struct AskComposer: View {
     /// Read once when the palette opens; running a command closes it.
     @State private var commandContext: AskCommandContext?
     /// The workspace shows the content that is sent above the editor; the
-    /// launcher inspects it from the bottom bar.
+    /// launcher inspects it from the bottom bar. Selected text has its chip on the
+    /// bar in both, so it is not repeated here.
     private var attachedItems: [AskContextItem] {
         guard !launcher else { return [] }
         return AskAttachmentStrip.contentItems(draft: draft.wrappedValue, screenshotState: screenshotState,
                                                capturing: model.capturingScreenshot)
+            .filter { $0.kind != .selection }
     }
     /// The launcher's captured app, selection and screenshot; nil when nothing was captured.
     private var contextToken: AskLauncherContext.Token? {
@@ -2479,12 +2481,6 @@ struct AskComposer: View {
             }
             .disabled(active)
             composerTools
-            modelMenu
-            permissionModeMenu
-            Rectangle().fill(AskTheme.launcherSeparator).frame(width: 1, height: 18).padding(.horizontal, 4)
-            contextChips
-                .disabled(active)
-                .opacity(Self.recordingDim(active))
                 // Command-K keeps the context panel reachable without adding a footer control.
                 // It is a glass menu like the composer's others: the same material, and Esc closes only it.
                 .askMenu(isPresented: $contextPanelOpen, glass: true) {
@@ -2492,6 +2488,11 @@ struct AskComposer: View {
                         AskObservedContent(model: screenshotImage) { contextPanel }
                     }
                 }
+            modelMenu
+            permissionModeMenu
+            selectionChip
+                .disabled(active)
+                .opacity(Self.recordingDim(active))
             // In the launcher the empty space moves the panel; it lays out exactly like the spacer.
             Spacer(minLength: 8)
                 .frame(maxHeight: .infinity)
@@ -2664,19 +2665,14 @@ struct AskComposer: View {
         HStack(spacing: 4) {
             composerTools
             permissionModeMenu
-            // "How to ask" and "what rides along" are separated by a rule.
+            // Screenshot and memory switch in the "+" menu; only selected text keeps a chip.
+            selectionChip
+                .disabled(active)
+                .opacity(Self.recordingDim(active))
             if layout.condensedFooter {
-                contextMenu
-                    .disabled(active)
-                    .opacity(Self.recordingDim(active))
                 Spacer(minLength: 0)
             } else {
-                Rectangle().fill(AskTheme.separator).frame(width: 1, height: 18).padding(.horizontal, 4)
                 HStack(spacing: 0) {
-                    contextChips
-                        .disabled(active)
-                        .opacity(Self.recordingDim(active))
-                        .layoutPriority(1)
                     Spacer(minLength: 8)
                     // Confirms a command in the footer's empty space, inside the card.
                     if let feedback = model.capturedContentFeedback(launcher: launcher), !active {
@@ -2735,35 +2731,53 @@ struct AskComposer: View {
         }
     }
 
-    /// Only work uses tools, so a chat has no permission mode to show. A new task also
-    /// shows the folder it will work in.
+    /// Only work uses tools, so a chat has no permission mode to show. A task shows one
+    /// control for where it works and with what permission: its folders and tool mode.
     @ViewBuilder private var permissionModeMenu: some View {
         if model.conversationKind(launcher: launcher) == .work {
-            permissionMenuControl
-            // The launcher's bar keeps its empty space for dragging; folders attach with +.
-            if !launcher, model.canChangeConversationKind(launcher: false) {
-                AskWorkFolderButton(model: model, launcher: false)
-                    .disabled(active)
-            }
+            // A started task's folders are its own; only folders added for the next message are named.
+            AskWorkEnvironmentButton(model: model, launcher: launcher,
+                                     compact: launcher || layout.condensedFooter
+                                         || (!model.canChangeConversationKind(launcher: false)
+                                             && !AskWorkEnvironmentButton.hasPendingFolders(draft.wrappedValue)))
+                .disabled(active || (!launcher && model.isLoadingSelection))
+                .opacity(Self.recordingDim(active))
         }
     }
 
-    private var permissionMenuControl: some View {
-        AskPermissionModeMenu(mode: model.permissionMode(launcher: launcher),
-                              compact: launcher || layout.width < 800, bare: launcher) { mode in
-            model.setPermissionMode(mode, launcher: launcher)
-        }
-        .disabled(active || (!launcher && model.isLoadingSelection))
-    }
-
-    /// Attach and storage stay at the leading edge of both composers.
-    @ViewBuilder private var composerTools: some View {
+    /// "+" stays at the leading edge of both composers. Where a new conversation is
+    /// kept is chosen in its menu; once started, the header marks it.
+    private var composerTools: some View {
         AskAttachButton(model: model, launcher: launcher,
-                        disabled: active || (!launcher && model.isLoadingSelection))
+                        disabled: active || (!launcher && model.isLoadingSelection),
+                        context: { addMenuContext })
             .opacity(Self.recordingDim(active))
-        AskStorageButton(model: model, launcher: launcher)
-            .disabled(active)
-            .opacity(Self.recordingDim(active))
+    }
+
+    /// The "+" menu's switches and storage choice, read when the menu draws.
+    private var addMenuContext: AskAddMenuContext {
+        let value = draft.wrappedValue
+        let storage = AskLocalModeStatus.make(model: model, signedIn: model.isSignedIn, launcher: launcher)
+        return AskAddMenuContext(
+            switches: AskAddMenuSwitch.make(
+                items: contextItems,
+                selectionText: value.selection.flatMap { $0.isEmpty ? nil : $0 },
+                screenshot: model.capturingScreenshot ? nil : screenshotThumbnail,
+                actions: { kind in
+                    switch kind {
+                    case .screenshot: screenshotToggleAction
+                    case .memory: active ? nil : memoryToggle
+                    case .selection: model.capturing || active ? nil : selectionToggle
+                    case .source: nil
+                    }
+                }),
+            storage: storage.changeable ? storage : nil,
+            chooseStorage: { model.chooseStorage($0, launcher: launcher) },
+            sourceToRestore: value.sourceOff == true ? value.source.flatMap {
+                $0.isEmpty ? nil : AskContextChips.sourceParts($0).app
+            } : nil,
+            restoreSource: { model.restoreCapturedContent(.source, launcher: launcher) }
+        )
     }
 
     private var modelMenu: some View {
@@ -2781,38 +2795,6 @@ struct AskComposer: View {
         // In the launcher the model outranks the key hints, which shorten instead.
         .layoutPriority(launcher ? 1 : 0)
         .accessibilityIdentifier("ask.composer.model")
-    }
-
-    /// Secondary switches remain reachable without pushing primary actions out
-    /// of a narrow footer. They use the same actions as the full-size chips.
-    private var contextMenu: some View {
-        Menu {
-            ForEach(contextItems.filter { $0.kind == .screenshot || $0.kind == .memory }) { item in
-                Toggle(isOn: Binding(
-                    get: { item.kind == .screenshot ? draft.wrappedValue.includeScreenshot : item.style == .active },
-                    set: { _ in
-                        if item.kind == .screenshot { screenshotToggleAction?() } else { memoryToggle() }
-                    }
-                )) {
-                    Label(item.kind == .screenshot ? L("ask.screenshot") : item.title, systemImage: item.systemImage)
-                }
-                .disabled(item.kind == .screenshot && screenshotToggleAction == nil)
-            }
-            if let onToggleUsage {
-                Divider()
-                Button(action: onToggleUsage) { Label(L("ask.usage.title"), systemImage: "chart.pie") }
-            }
-        } label: {
-            Image(systemName: "slider.horizontal.3")
-                .font(.system(size: 13))
-                .frame(width: 26, height: AskMetrics.composerControlHeight)
-        }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .help(L("ask.context"))
-        .accessibilityLabel(L("ask.context"))
-        .accessibilityIdentifier("ask.context.menu")
     }
 
     /// While the microphone is busy the settings and context recede, so the
@@ -2853,42 +2835,14 @@ struct AskComposer: View {
         return value.includeScreenshot ? .attached : .off
     }
 
-    /// The footer holds switches; the launcher previews its screenshot on hover.
-    private var contextChips: some View {
-        HStack(spacing: AskContextChips.spacing) {
-            ForEach(launcher ? AskContextChips.launcherItems(contextItems)
-                : contextItems.filter { $0.kind == .screenshot || $0.kind == .memory }) { item in
-                if item.kind == .screenshot {
-                    AskIconChip(item: screenshotSwitch(item), action: screenshotToggleAction,
-                                screenshot: screenshotHoverPreview)
-                        .accessibilityIdentifier("ask.context.screenshot.toggle")
-                } else if item.kind == .selection {
-                    AskIconChip(item: item, action: selectionToggle, selection: draft.wrappedValue.selection)
-                        .disabled(model.capturing)
-                        .accessibilityIdentifier("ask.context.selection.toggle")
-                } else {
-                    AskIconChip(item: item, action: memoryToggle)
-                        .accessibilityIdentifier("ask.context.memory.toggle")
-                }
-            }
+    /// Selected text is the one context state shown on the bar, as the launcher's icon
+    /// chip: accent while included, grey while left out, its text previewed on hover.
+    @ViewBuilder private var selectionChip: some View {
+        if let item = AskContextChips.launcherItems(contextItems).first(where: { $0.kind == .selection }) {
+            AskIconChip(item: item, action: selectionToggle, selection: draft.wrappedValue.selection)
+                .disabled(model.capturing)
+                .accessibilityIdentifier("ask.context.selection.toggle")
         }
-        .fixedSize()
-    }
-
-    private var screenshotHoverPreview: NSImage? {
-        guard launcher, !active, !model.capturingScreenshot else { return nil }
-        switch screenshotState {
-        case .attached, .off: return screenshotThumbnail
-        case .failed, .unavailable: return nil
-        }
-    }
-
-    private func screenshotSwitch(_ item: AskContextItem) -> AskContextItem {
-        var item = item
-        if draft.wrappedValue.includeScreenshot {
-            item.hint = L("ask.context.screenshot.removeHint")
-        }
-        return item
     }
 
     private var screenshotToggleAction: (() -> Void)? {
@@ -2999,7 +2953,7 @@ struct AskComposer: View {
 }
 
 /// Redraws content shown outside the composer (a glass menu) as the model changes.
-private struct AskObservedContent<Model: ObservableObject, Content: View>: View {
+struct AskObservedContent<Model: ObservableObject, Content: View>: View {
     @ObservedObject var model: Model
     @ViewBuilder var content: () -> Content
 

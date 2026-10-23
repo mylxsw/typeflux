@@ -266,9 +266,6 @@ struct AskResponsiveWorkspaceTests {
         #expect(window.contentView?.hitTest(point) === voice, "An overlay must not swallow voice clicks.")
         var identifiers = ["ask.workspace.sidebar", "ask.workspace.new", "ask.composer.attach",
                            "ask.composer.model", "ask.composer.send"]
-        if AskWorkspaceLayout(size: window.frame.size, sidebarCollapsed: false, showsUsage: false).compactContent {
-            identifiers += ["ask.context.menu"]
-        }
         if hasConversation {
             identifiers += ["ask.workspace.usage"]
             if AskWorkspaceLayout(size: window.frame.size, sidebarCollapsed: false, showsUsage: false).compactContent {

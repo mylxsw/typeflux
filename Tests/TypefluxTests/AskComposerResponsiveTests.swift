@@ -128,11 +128,7 @@ struct AskComposerResponsiveTests {
         #expect(host.bounds.contains(voice.convert(voice.bounds, to: host)))
     }
 
-    // Run native NSMenu interactions in their own process: in SwiftPM's test
-    // host, this test can interrupt subsequent window tests after it completes.
-    // TYPEFLUX_ASK_CONTEXT_MENU_TESTS=1 swift test --no-parallel --filter 'AskComposerResponsiveTests.*compactContextMenu'
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_ASK_CONTEXT_MENU_TESTS"] == "1"))
-    func compactContextMenuTogglesMemoryAndOpensUsage() async throws {
+    @Test func compactPlusMenuTogglesScreenshotAndMemory() async throws {
         _ = NSApplication.shared
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
         defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
@@ -140,40 +136,39 @@ struct AskComposerResponsiveTests {
         fixture.model.draft.memory = AskMemory(global: "Use short answers")
         fixture.model.draft.includeScreenshot = true
         fixture.model.captureWarning = L("ask.capture.permission")
-        var usageOpens = 0
         let window = makeWindow()
         let host = NSHostingView(rootView: VStack {
             Spacer(minLength: 0)
-            AskComposer(model: fixture.model, compact: true, launcher: false,
-                        onToggleUsage: { usageOpens += 1 })
+            AskComposer(model: fixture.model, compact: true, launcher: false)
         })
         host.sizingOptions = []
         window.contentView = host
         window.makeKeyAndOrderFront(nil)
-        defer { window.close() }
+        defer { window.close(); AskGlassMenuPresenter.shared.hide() }
         try await settle(host)
-        let context = try accessibilityElement(identifier: "ask.context.menu", in: window)
-        let contextRect = try #require(context.value(forKey: "accessibilityFrame") as? NSValue).rectValue
-        let button = try #require(descendants(host).compactMap { $0 as? NSPopUpButton }.first { candidate in
-            let frame = window.convertToScreen(candidate.convert(candidate.bounds, to: nil))
-            return contextRect.contains(NSPoint(x: frame.midX, y: frame.midY))
-        })
-        let memoryTitle = try #require(fixture.model.draft.memory?.chipTitle)
-        let screenshotState = try selectMenuItem(L("ask.screenshot"), using: button)
-        #expect(screenshotState == .on)
-        #expect(!fixture.model.draft.includeScreenshot,
+        // The narrow footer no longer needs its own context menu: the switches are in "+".
+        #expect((try? accessibilityElement(identifier: "ask.context.menu", in: window)) == nil)
+        #expect((try? accessibilityElement(identifier: "ask.context.screenshot.toggle", in: window)) == nil)
+        try press(accessibilityElement(identifier: "ask.composer.attach", in: window))
+        try await fixture.wait { AskGlassMenuPresenter.shared.panel?.isVisible == true }
+        let panel = try #require(AskGlassMenuPresenter.shared.panel)
+        try await settle(try #require(panel.contentView))
+        let screenshot = try accessibilityElement(identifier: "ask.add.screenshot", in: panel)
+        #expect(screenshot.value(forKey: "accessibilityValue") as? String == L("ask.context.selection.enabled"),
                 "A failed screenshot remains an explicit checked inclusion toggle, never a misleading retry action.")
-        try await settle(host)
+        try press(screenshot)
+        try await fixture.wait { !fixture.model.draft.includeScreenshot }
         #expect(!fixture.model.memorySwitchedOff(launcher: false))
-        try selectMenuItem(memoryTitle, using: button)
-        try await settle(host)
-        #expect(fixture.model.memorySwitchedOff(launcher: false))
-        try selectMenuItem(memoryTitle, using: button)
-        try await settle(host)
-        #expect(!fixture.model.memorySwitchedOff(launcher: false))
-        try selectMenuItem(L("ask.usage.title"), using: button)
-        try await settle(host)
-        #expect(usageOpens == 1)
+        try press(accessibilityElement(identifier: "ask.add.memory", in: panel))
+        try await fixture.wait { fixture.model.memorySwitchedOff(launcher: false) }
+        try press(accessibilityElement(identifier: "ask.add.memory", in: panel))
+        try await fixture.wait { !fixture.model.memorySwitchedOff(launcher: false) }
+    }
+
+    private func press(_ element: NSObject) throws {
+        let selector = NSSelectorFromString("accessibilityPerformPress")
+        try #require(element.responds(to: selector), "The element can be pressed")
+        _ = element.perform(selector)
     }
 
     @Test func narrowQueuedEditKeepsVoiceSaveAndCancelReachable() async throws {

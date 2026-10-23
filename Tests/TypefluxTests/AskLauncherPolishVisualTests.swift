@@ -124,7 +124,7 @@ struct AskLauncherPolishVisualTests {
             hosting.addSubview(anchor)
             window.orderFrontRegardless()
             try await Task.sleep(for: .milliseconds(300))
-            AskGlassMenuPresenter.shared.show(AskAttachChoices(choose: { _ in }),
+            AskGlassMenuPresenter.shared.show(AskComposerAddMenu(context: AskAddMenuContext(), pickFiles: {}),
                                               owner: UUID(), anchor: anchor) {}
             try await Task.sleep(for: .milliseconds(900))
             let menu = AskGlassMenuPresenter.shared.panel?.frame ?? .zero
@@ -232,7 +232,7 @@ struct AskLauncherPolishVisualTests {
                 .environment(\.askGlassMaterialOverride, .opaque)
                 .frame(width: 680, height: 240, alignment: .top)
             let menu = AskGlassCardSurface(kind: .menu) {
-                AskAttachChoices(choose: { _ in })
+                AskComposerAddMenu(context: AskAddMenuContext(), pickFiles: {})
             }
             .environment(\.askGlassMaterialOverride, .visualEffect)
             .fixedSize()

@@ -94,7 +94,7 @@ struct AskLauncherMotionTests {
         let homeHeight = window.frame.height
         let editor = try #require(editor(in: content))
         let openChat = try element("ask.launcher.openChat", in: window)
-        let screenshot = try element("ask.context.screenshot.toggle", in: window)
+        let screenshot = try element("ask.composer.model", in: window)
         let top = window.frame.maxY
         let headerInset = top - openChat.frame.midY
         let footerInset = screenshot.frame.midY - window.frame.minY

@@ -2183,7 +2183,19 @@
 
 /* Ask attachments */
 "ask.attach.title" = "添加附件";
-"ask.attach.help" = "添加文件、图片或文件夹（⌘U），也可以直接粘贴或拖入";
+"ask.attach.help" = "添加文件或图片（⌘U），设置本次提问附带的内容";
+"ask.add.files" = "添加文件或图片";
+"ask.add.files.detail" = "PDF、图片、文档等，也可直接粘贴或拖入";
+"ask.add.context" = "随本次提问附带";
+"ask.add.screenshot" = "屏幕截图";
+"ask.add.screenshot.offDetail" = "附带当前屏幕，帮助理解你在看什么";
+"ask.add.selection.detail" = "来自 %@ · %d 行";
+"ask.add.footer" = "输入 / 调用命令 · 拖入文件夹可作为任务的工作文件夹";
+"ask.env.help" = "任务环境：工作文件夹与工具权限";
+"ask.env.folders" = "工作文件夹";
+"ask.env.addFolder" = "添加文件夹…";
+"ask.env.addFolder.detail" = "也可以把文件夹直接拖入输入框";
+"ask.env.readWrite" = "读写";
 "ask.attach.files" = "发送文件或图片";
 "ask.attach.folder" = "选择文件夹";
 "ask.attach.pickFiles" = "选择要发给对话的文件或图片";

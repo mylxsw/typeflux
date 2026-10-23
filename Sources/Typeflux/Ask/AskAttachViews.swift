@@ -2,12 +2,15 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// The composer's "+" control: pick files and images to send, or grant
-/// read-only access to a folder. Pasting and dropping work in the editor.
+/// The composer's "+" control: add files and images, and switch what rides along
+/// with the question (screenshot, memory, selected text) and, before the first
+/// message, where the conversation is kept. Pasting and dropping work in the editor.
 struct AskAttachButton: View {
     @ObservedObject var model: AskConversationModel
     var launcher: Bool
     var disabled = false
+    /// Built by the composer each time the menu draws, so the switches show live state.
+    var context: () -> AskAddMenuContext = { AskAddMenuContext() }
     @State private var expanded = false
     @State private var hovering = false
 
@@ -26,21 +29,12 @@ struct AskAttachButton: View {
         .accessibilityLabel(L("ask.attach.title"))
         .accessibilityIdentifier("ask.composer.attach")
         .askMenu(isPresented: $expanded, glass: true) {
-            VStack(alignment: .leading, spacing: 8) {
-                AskAttachChoices(sourceToRestore: sourceToRestore, selectionLinesToRestore: selectionLinesToRestore,
-                                 restoreEnabled: !model.capturing,
-                                 restore: { kind in
-                                     expanded = false
-                                     model.restoreCapturedContent(kind, launcher: launcher)
-                                 }, choose: { choice in
-                                     expanded = false
-                                     switch choice {
-                                     case .files: model.pickAttachments(folders: false, launcher: launcher)
-                                     case .folder: model.pickAttachments(folders: true, launcher: launcher)
-                                     }
-                                 })
-                AskFolderPermissionControls(model: model, launcher: launcher)
-            }.padding(8).frame(maxWidth: 340)
+            AskObservedContent(model: model) {
+                AskComposerAddMenu(context: context()) {
+                    expanded = false
+                    model.pickAttachments(folders: false, launcher: launcher)
+                }
+            }
         }
         // ⌘U picks files directly, without opening the menu.
         .background {
@@ -52,20 +46,6 @@ struct AskAttachButton: View {
                 .frame(width: 0, height: 0)
                 .accessibilityHidden(true)
         }
-    }
-
-    private var draft: AskDraft {
-        launcher ? model.launcherDraft : model.draft
-    }
-
-    private var sourceToRestore: String? {
-        guard draft.sourceOff == true, let source = draft.source, !source.isEmpty else { return nil }
-        return AskContextChips.sourceParts(source).app
-    }
-
-    private var selectionLinesToRestore: Int? {
-        guard draft.selectionOff == true, let selection = draft.selection, !selection.isEmpty else { return nil }
-        return AskPresentation.lineCount(selection)
     }
 }
 
@@ -83,49 +63,6 @@ struct AskSlashShortcut: View {
             .opacity(0)
             .frame(width: 0, height: 0)
             .accessibilityHidden(true)
-    }
-}
-
-struct AskAttachChoices: View {
-    enum Choice { case files, folder }
-
-    var sourceToRestore: String?
-    var selectionLinesToRestore: Int?
-    var restoreEnabled = true
-    var restore: (AskCapturedContentKind) -> Void = { _ in }
-    var choose: (Choice) -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            row("ask.attach.files", "paperclip", .files)
-            row("ask.attach.folder", "folder", .folder)
-            if sourceToRestore != nil || selectionLinesToRestore != nil {
-                Divider().padding(.vertical, 5)
-                if let sourceToRestore {
-                    restoreRow(L("ask.context.restore.source", sourceToRestore), "app", .source)
-                }
-                if let selectionLinesToRestore {
-                    restoreRow(L("ask.context.restore.selection", selectionLinesToRestore),
-                               "text.alignleft", .selection)
-                }
-            }
-        }
-        .padding(.vertical, 6)
-        .frame(width: sourceToRestore == nil && selectionLinesToRestore == nil ? 250 : 280)
-    }
-
-    private func restoreRow(_ title: String, _ symbol: String, _ kind: AskCapturedContentKind) -> some View {
-        AskPopoverRow(title: title, selected: false, enabled: restoreEnabled, action: { restore(kind) }, accessory: {
-            Image(systemName: symbol).font(.system(size: 12, weight: .medium))
-        })
-        .accessibilityIdentifier(kind == .source ? "ask.context.restore.source" : "ask.context.restore.selection")
-    }
-
-    private func row(_ title: String, _ symbol: String, _ choice: Choice) -> some View {
-        AskPopoverRow(title: L(title), selected: false,
-                      action: { choose(choice) }, accessory: {
-                          Image(systemName: symbol).font(.system(size: 12, weight: .medium))
-                      })
     }
 }
 

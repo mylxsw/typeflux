@@ -64,7 +64,7 @@ struct AskLauncherHeaderTests {
         }
     }
 
-    @Test func capturedContextLeavesTheEditorClearAndKeepsTheOriginalFooterSwitches() async throws {
+    @Test func capturedContextLeavesTheEditorClearAndMovesItsSwitchesIntoThePlusMenu() async throws {
         let fixture = try AskTestFixture()
         captured(fixture)
         let (window, reported) = host(fixture)
@@ -83,28 +83,58 @@ struct AskLauncherHeaderTests {
         let home = AskLauncherSuggestions.height(for: fixture.model.launcherHome())
         #expect(home > 0)
         #expect(model.frame.maxY < editorFrame.minY - home + 8)
-        let screenshot = try element("ask.context.screenshot.toggle", in: window)
-        let memory = try #require(find(L("ask.memory"), attribute: "accessibilityLabel", in: window))
+        // Screenshot and memory switch in the "+" menu; only the selected text keeps its chip.
+        #expect(find("ask.context.screenshot.toggle", in: window) == nil)
+        #expect(find("ask.context.memory.toggle", in: window) == nil)
         #expect(find("ask.context.settings", in: window) == nil)
-        #expect(abs(memory.frame.midY - model.frame.midY) < 2)
-        #expect(abs(screenshot.frame.midY - model.frame.midY) < 2)
+        let selection = try element("ask.context.selection.toggle", in: window)
+        #expect(abs(selection.frame.midY - model.frame.midY) < 2)
+        #expect(selection.frame.minX > model.frame.maxX, "the selected text follows the model")
         let footerCenter = window.frame.minY + AskMetrics.launcherGutter + AskComposerChrome.launcher.footerHeight / 2
-        #expect(abs(screenshot.frame.midY - footerCenter) <= 2, "controls stay centred in the taller bottom bar")
-        #expect(memory.frame.width == AskMetrics.composerControlHeight)
-        #expect(abs(memory.frame.minX - screenshot.frame.maxX - AskContextChips.spacing) < 1)
+        #expect(abs(selection.frame.midY - footerCenter) <= 2, "controls stay centred in the taller bottom bar")
+        #expect(selection.frame.width == AskMetrics.composerControlHeight)
         let request = fixture.model.launcherDraft.request(deviceId: "device", tools: [])
         #expect(request.source == fixture.model.launcherDraft.source)
         #expect(request.selection == "first line\nsecond line")
         // The expanded launcher keeps one height; the home fills it.
         let expected = AskLauncherWindowMode.expandedHeight
         #expect(abs(reported.height - expected) <= 4, "reported \(reported.height), expected \(expected)")
-        try click(memory, in: window)
+        let menu = try await openPlusMenu(in: window, fixture: fixture)
+        #expect(find("ask.add.selection", in: menu) != nil)
+        #expect(find("ask.add.screenshot", in: menu) != nil)
+        try click(try element("ask.add.memory", in: menu), in: menu)
         try await fixture.wait { fixture.model.launcherDraft.memoryOff == true }
-        try click(try #require(find(L("ask.memory"), attribute: "accessibilityLabel", in: window)), in: window)
+        try await fixture.wait {
+            find("ask.add.memory", in: menu)?.value("accessibilityValue") as? String
+                == L("ask.context.selection.disabled")
+        }
+        try click(try element("ask.add.memory", in: menu), in: menu)
         try await fixture.wait { fixture.model.launcherDraft.memoryOff == nil }
+        AskGlassMenuPresenter.shared.hide()
     }
 
-    @Test func `selection switch stays after memory and toggles the outgoing text`() async throws {
+    @Test func plusMenuSwitchesTheScreenshotAndShowsTheCapture() async throws {
+        let fixture = try AskTestFixture()
+        captured(fixture)
+        let png = AskAttachmentFixture.encode(AskAttachmentFixture.image(width: 320, height: 200), type: .png)
+        fixture.model.launcherDraft.screenshot = "data:image/png;base64," + png.base64EncodedString()
+        fixture.model.launcherDraft.capturedAt = Date()
+        let (window, _) = host(fixture)
+        defer { window.orderOut(nil); window.close(); fixture.model.resetSession(); AskGlassMenuPresenter.shared.hide() }
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(fixture.model.launcherDraft.includeScreenshot)
+        let menu = try await openPlusMenu(in: window, fixture: fixture)
+        try await fixture.wait { find("ask.add.screenshot.thumbnail", in: menu) != nil }
+        try click(try element("ask.add.screenshot", in: menu), in: menu)
+        try await fixture.wait { !fixture.model.launcherDraft.includeScreenshot }
+        #expect(fixture.model.launcherDraft.screenshot != nil, "the captured image can still be restored")
+        #expect(fixture.model.launcherDraft.request(deviceId: "device", tools: []).image == nil)
+        #expect(AskGlassMenuPresenter.shared.isShowing, "a switch keeps the menu open for the next one")
+        try click(try element("ask.add.screenshot", in: menu), in: menu)
+        try await fixture.wait { fixture.model.launcherDraft.includeScreenshot }
+    }
+
+    @Test func `selection chip stays on the bar and toggles the outgoing text`() async throws {
         let fixture = try AskTestFixture()
         captured(fixture)
         let previousLanguage = AppLocalization.shared.language
@@ -120,9 +150,8 @@ struct AskLauncherHeaderTests {
         try await Task.sleep(for: .milliseconds(300))
         let original = fixture.model.launcherDraft
         let selection = try element("ask.context.selection.toggle", in: window)
-        let memory = try element("ask.context.memory.toggle", in: window)
-        #expect(abs(selection.frame.minX - memory.frame.maxX - AskContextChips.spacing) < 1)
-        #expect(abs(selection.frame.midY - memory.frame.midY) < 2)
+        let model = try element("ask.composer.model", in: window)
+        #expect(abs(selection.frame.midY - model.frame.midY) < 2)
         try saveSnapshot(#require(window.contentView), name: "selection-toggle-enabled")
         try hover(selection, in: window, inside: true)
         let card = try await hoverCard(in: window, fixture: fixture)
@@ -164,7 +193,11 @@ struct AskLauncherHeaderTests {
         defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
         try await Task.sleep(for: .milliseconds(300))
         #expect(find("ask.context.selection.toggle", in: window) == nil)
-        #expect(find("ask.context.memory.toggle", in: window) != nil)
+        #expect(find("ask.context.memory.toggle", in: window) == nil)
+        let menu = try await openPlusMenu(in: window, fixture: fixture)
+        #expect(find("ask.add.selection", in: menu) == nil)
+        #expect(find("ask.add.memory", in: menu) != nil)
+        AskGlassMenuPresenter.shared.hide()
     }
 
     @Test func headerSendsTheQuestionInsteadOfTransferringAnUnsentDraft() async throws {
@@ -372,57 +405,6 @@ struct AskLauncherHeaderTests {
         return last
     }
 
-    @Test func screenshotHoverPreviewsTheCaptureWithoutTakingFocusOrTheToggleClick() async throws {
-        let previousLanguage = AppLocalization.shared.language
-        AppLocalization.shared.setLanguage(.simplifiedChinese)
-        defer { AppLocalization.shared.setLanguage(previousLanguage) }
-        let fixture = try AskTestFixture()
-        captured(fixture)
-        let png = AskAttachmentFixture.encode(AskAttachmentFixture.image(width: 320, height: 200), type: .png)
-        fixture.model.launcherDraft.screenshot = "data:image/png;base64," + png.base64EncodedString()
-        fixture.model.launcherDraft.capturedAt = Date()
-        let (window, reported) = host(fixture)
-        defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
-        try await Task.sleep(for: .milliseconds(300))
-        let editor = try #require(descendants(window.contentView!).compactMap { $0 as? AskComposerTextView.Editor }.first)
-        window.makeFirstResponder(editor)
-        let restingHeight = reported.height
-        let screenshot = try element("ask.context.screenshot.toggle", in: window)
-        try hover(screenshot, in: window, inside: true)
-        let card = try await hoverCard(in: window, fixture: fixture, phase: "initial capture hover")
-        #expect(find("ask.context.screenshot.hoverPreview", in: card) != nil)
-        #expect(card.ignoresMouseEvents && !card.canBecomeKey)
-        #expect(window.firstResponder === editor)
-        #expect(abs(reported.height - restingHeight) <= 1, "preview does not resize the launcher")
-        try saveSnapshot(window.contentView!, name: "launcher")
-        try saveSnapshot(try #require(card.contentView), name: "screenshot-hover")
-        let point = window.convertPoint(fromScreen: NSPoint(x: screenshot.frame.midX, y: screenshot.frame.midY))
-        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-            NSApp.sendEvent(try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
-                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil,
-                eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0)))
-        }
-        try await fixture.wait { !fixture.model.launcherDraft.includeScreenshot }
-        #expect(!card.isVisible)
-        #expect(fixture.model.launcherDraft.screenshot != nil, "the captured image can still be restored")
-        #expect(fixture.model.launcherDraft.request(deviceId: "device", tools: []).image == nil)
-        try hover(try element("ask.context.screenshot.toggle", in: window), in: window, inside: false)
-        // Separate synthetic exit/entry events by a render cycle so SwiftUI commits the exit
-        // instead of coalescing both events into an unchanged hover state.
-        try await Task.sleep(for: .milliseconds(20))
-        window.contentView?.layoutSubtreeIfNeeded()
-        try hover(try element("ask.context.screenshot.toggle", in: window), in: window, inside: true)
-        _ = try await hoverCard(in: window, fixture: fixture, phase: "disabled capture exit/reentry")
-        #expect(find("ask.context.screenshot.hoverPreview", in: card) != nil,
-                "a screenshot switched off can be previewed before restoring it")
-        fixture.model.launcherDraft.screenshot = nil
-        try await Task.sleep(for: .milliseconds(200))
-        #expect(!card.isVisible || find("ask.context.screenshot.hoverPreview", in: card) == nil,
-                "an open card must update when its capture disappears")
-        try hover(try element("ask.context.screenshot.toggle", in: window), in: window, inside: false)
-        #expect(!card.isVisible)
-    }
-
     @Test func commandKOpensAndClosesContextSettingsWithoutAnExtraFooterButton() async throws {
         let fixture = try AskTestFixture()
         captured(fixture)
@@ -541,41 +523,13 @@ struct AskLauncherHeaderTests {
         }
     }
 
-    @Test func hoverUsesTheCaptureThatArrivesDuringItsDelay() async throws {
-        let fixture = try AskTestFixture()
-        captured(fixture)
-        let (window, _) = host(fixture)
-        defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
-        try await Task.sleep(for: .milliseconds(300))
-        let screenshot = try element("ask.context.screenshot.toggle", in: window)
-        try hover(screenshot, in: window, inside: true)
-        try await Task.sleep(for: .milliseconds(20))
-        let png = AskAttachmentFixture.encode(AskAttachmentFixture.image(width: 320, height: 200), type: .png)
-        fixture.model.launcherDraft.screenshot = "data:image/png;base64," + png.base64EncodedString()
-        fixture.model.launcherDraft.capturedAt = Date()
-        let card = try await hoverCard(in: window, fixture: fixture)
-        #expect(find("ask.context.screenshot.hoverPreview", in: card) != nil,
-                "the hover task must use the latest capture, not its initial empty snapshot")
-        try hover(screenshot, in: window, inside: false)
-    }
-
-    @Test(arguments: ["missing", "invalid", "failed"])
-    func screenshotHoverWithoutAUsableCaptureShowsOnlyItsExplanation(_ state: String) async throws {
-        let fixture = try AskTestFixture()
-        captured(fixture)
-        fixture.model.launcherDraft.capturedAt = Date()
-        if state == "invalid" { fixture.model.launcherDraft.screenshot = "invalid-image" }
-        if state == "failed" { fixture.model.captureWarning = L("ask.capture.unavailable") }
-        let (window, _) = host(fixture)
-        defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
-        try await Task.sleep(for: .milliseconds(300))
-        let screenshot = try element("ask.context.screenshot.toggle", in: window)
-        try hover(screenshot, in: window, inside: true)
-        let card = try await hoverCard(in: window, fixture: fixture)
-        #expect(find("ask.context.screenshot.hoverPreview", in: card) == nil)
-        #expect(card.frame.height < 180, "no empty image placeholder")
-        try hover(screenshot, in: window, inside: false)
-        #expect(!card.isVisible)
+    /// Clicks "+" and returns the glass panel its menu opens in.
+    private func openPlusMenu(in window: NSWindow, fixture: AskTestFixture) async throws -> NSWindow {
+        try click(try element("ask.composer.attach", in: window), in: window)
+        try await fixture.wait { AskGlassMenuPresenter.shared.panel?.isVisible == true }
+        let panel = try #require(AskGlassMenuPresenter.shared.panel)
+        try await fixture.wait { find("ask.add.menu", in: panel) != nil }
+        return panel
     }
 
     private func hoverCard(in window: NSWindow, fixture: AskTestFixture,

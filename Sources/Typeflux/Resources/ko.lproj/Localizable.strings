@@ -2173,7 +2173,19 @@
 
 /* Ask attachments */
 "ask.attach.title" = "첨부";
-"ask.attach.help" = "파일, 이미지 또는 폴더 첨부(⌘U). 붙여넣거나 끌어다 놓을 수도 있습니다";
+"ask.attach.help" = "파일이나 이미지를 추가(⌘U)하고 이번 질문에 함께 보낼 내용을 고릅니다";
+"ask.add.files" = "파일 또는 이미지 추가";
+"ask.add.files.detail" = "PDF, 이미지, 문서 등 · 붙여넣거나 끌어다 놓을 수도 있습니다";
+"ask.add.context" = "이번 질문에 포함";
+"ask.add.screenshot" = "스크린샷";
+"ask.add.screenshot.offDetail" = "현재 화면을 함께 보내 맥락을 전달합니다";
+"ask.add.selection.detail" = "%@에서 · %d줄";
+"ask.add.footer" = "/ 로 명령 실행 · 폴더를 끌어다 놓으면 작업 폴더가 됩니다";
+"ask.env.help" = "작업 환경: 작업 폴더와 도구 권한";
+"ask.env.folders" = "작업 폴더";
+"ask.env.addFolder" = "폴더 추가…";
+"ask.env.addFolder.detail" = "입력창에 폴더를 끌어다 놓아도 됩니다";
+"ask.env.readWrite" = "읽기·쓰기";
 "ask.attach.files" = "파일 또는 이미지 보내기";
 "ask.attach.folder" = "폴더 선택";
 "ask.attach.pickFiles" = "대화에 보낼 파일이나 이미지 선택";
