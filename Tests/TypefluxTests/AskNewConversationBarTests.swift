@@ -4,7 +4,7 @@ import Testing
 @testable import Typeflux
 
 /// GUL-464: what a new conversation fixes before its first message sits on the new
-/// page (the chat/work switch, the hourglass and the bar under the composer); the
+/// page (the chat/work switch and the storage menu under the composer); the
 /// composer keeps only what can change mid-conversation.
 @Suite("Ask new conversation page", .serialized, .exclusiveUIState)
 @MainActor
@@ -175,46 +175,62 @@ struct AskNewConversationBarTests {
         #expect(find("ask.env.mode.yolo", in: panel) == nil, "Permission stays in the composer")
     }
 
-    @Test func temporaryBarSaysNotSavedAndCanTurnItOff() async throws {
+    @Test(arguments: [false, true], [AskStorageKind.local, .temporary])
+    func storageMenuSwitchesBothWaysWithoutClearingTheDraft(signedIn: Bool, destination: AskStorageKind) async throws {
+        let fixture = try AskTestFixture(authenticated: signedIn)
+        defer { fixture.model.resetSession(); AskGlassMenuPresenter.shared.hide() }
+        var signIns = 0
+        fixture.model.onSignIn = { signIns += 1 }
+        fixture.model.draft.text = "Unsent question"
+        fixture.model.chooseStorage(destination == .temporary ? .local : .temporary, launcher: false)
+        let original = fixture.model.storageKind(launcher: false)
+        let window = host(AskNewConversationBar(model: fixture.model))
+        defer { window.close() }
+        try await settle(window)
+        try press("ask.newConversation.storage", in: window)
+        try await fixture.wait { AskGlassMenuPresenter.shared.panel?.isVisible == true }
+        let panel = try #require(AskGlassMenuPresenter.shared.panel)
+        try await fixture.wait { self.find("ask.newConversation.storage.temporary", in: panel) != nil }
+        #expect((find("ask.newConversation.storage.cloud", in: panel) != nil) == signedIn)
+        #expect(find("ask.newConversation.storage.local", in: panel) != nil)
+        #expect(fixture.model.storageKind(launcher: false) == original, "Opening the menu must not change storage")
+        try press("ask.newConversation.storage." + String(describing: destination), in: panel)
+        try await fixture.wait { fixture.model.storageKind(launcher: false) == destination }
+        #expect(fixture.model.draft.text == "Unsent question")
+        #expect(signIns == 0)
+        try await fixture.wait { AskGlassMenuPresenter.shared.panel?.isVisible != true }
+    }
+
+    @Test func temporaryMenuCanChooseCloud() async throws {
         let fixture = try AskTestFixture()
-        defer { fixture.model.resetSession() }
-        fixture.model.draft.memory = AskMemory(global: "short")
+        defer { fixture.model.resetSession(); AskGlassMenuPresenter.shared.hide() }
         fixture.model.setTemporary(true, launcher: false)
         let window = host(AskNewConversationBar(model: fixture.model))
         defer { window.close() }
         try await settle(window)
-        #expect(find("ask.newConversation.memory", in: window) == nil, "A temporary chat uses no memory")
         try press("ask.newConversation.storage", in: window)
-        try await fixture.wait { !fixture.model.isTemporaryComposer(launcher: false) }
+        try await fixture.wait { AskGlassMenuPresenter.shared.panel?.isVisible == true }
+        let panel = try #require(AskGlassMenuPresenter.shared.panel)
+        try await fixture.wait { self.find("ask.newConversation.storage.cloud", in: panel) != nil }
+        try press("ask.newConversation.storage.cloud", in: panel)
+        try await fixture.wait { fixture.model.storageKind(launcher: false) == .cloud }
     }
 
-    @Test func signedOutStorageIsAStatusWithoutSignInAction() async throws {
-        let fixture = try AskTestFixture(authenticated: false)
-        defer { fixture.model.resetSession() }
-        var signIns = 0
-        fixture.model.onSignIn = { signIns += 1 }
-        let window = host(AskNewConversationBar(model: fixture.model))
-        defer { window.close() }
-        try await settle(window)
-        let storage = try #require(find("ask.newConversation.storage", in: window))
-        #expect(storage.value(forKey: "accessibilityRole") as? String != NSAccessibility.Role.button.rawValue)
-        let press = NSSelectorFromString("accessibilityPerformPress")
-        if storage.responds(to: press) { _ = storage.perform(press) }
-        #expect(signIns == 0)
-    }
-
-    @Test func workspaceNewPageHasTheHourglassAndBarButNotOnceStarted() async throws {
+    @Test(arguments: [CGFloat(600), 1100])
+    func workspaceNewPageOffersTemporaryInTheBarButNotTheHeader(width: CGFloat) async throws {
         let fixture = try AskTestFixture()
-        defer { fixture.model.resetSession() }
-        let window = host(AskConversationView(model: fixture.model), size: NSSize(width: 1100, height: 760))
+        defer { fixture.model.resetSession(); AskGlassMenuPresenter.shared.hide() }
+        let window = host(AskConversationView(model: fixture.model), size: NSSize(width: width, height: 760))
         defer { window.close() }
         try await settle(window)
         #expect(find("ask.newConversation.bar", in: window) != nil)
-        try press("ask.workspace.temporaryToggle", in: window)
+        #expect(find("ask.workspace.temporaryToggle", in: window) == nil)
+        try press("ask.newConversation.storage", in: window)
+        try await fixture.wait { AskGlassMenuPresenter.shared.panel?.isVisible == true }
+        let panel = try #require(AskGlassMenuPresenter.shared.panel)
+        try await fixture.wait { self.find("ask.newConversation.storage.temporary", in: panel) != nil }
+        try press("ask.newConversation.storage.temporary", in: panel)
         try await fixture.wait { fixture.model.isTemporaryComposer(launcher: false) }
-        try await settle(window)
-        try press("ask.workspace.temporaryToggle", in: window)
-        try await fixture.wait { !fixture.model.isTemporaryComposer(launcher: false) }
 
         fixture.model.draft.text = "Hello"
         fixture.model.submitDraft()

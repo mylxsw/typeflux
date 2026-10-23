@@ -14,8 +14,16 @@ struct AskNewConversationBar: View {
         case choice(AskStorageKind)
         /// Signed out: every conversation stays on this Mac.
         case localOnly
-        /// Nothing is kept; the header's hourglass turns it off.
+        /// Nothing is kept; the menu can switch back to persistent storage.
         case temporary
+
+        var kind: AskStorageKind {
+            switch self {
+            case let .choice(kind): kind
+            case .localOnly: .local
+            case .temporary: .temporary
+            }
+        }
     }
 
     static func storage(temporary: Bool, signedIn: Bool, local: Bool) -> Storage {
@@ -123,59 +131,45 @@ struct AskWorkFolderButton: View {
     }
 }
 
-/// Where the new conversation is kept: a choice while signed in, "This Mac" signed out,
-/// "Not saved" while temporary. Temporary itself is the header's hourglass.
+/// One menu chooses cloud, local or temporary storage before the first message.
 struct AskStorageBarControl: View {
     @ObservedObject var model: AskConversationModel
     let storage: AskNewConversationBar.Storage
     @State private var presented = false
 
-    var body: some View {
+    private var tint: Color? {
         switch storage {
-        case .temporary:
-            AskBarButton(symbol: AskStorageKind.temporary.symbol, title: L("ask.bar.notSaved"),
-                         tint: AskTheme.temporaryTint, help: L("ask.storage.temporary.detail")) {
-                model.setTemporary(false, launcher: false)
-            }
-            .accessibilityHint(L("ask.bar.notSaved.hint"))
+        case .temporary: AskTheme.temporaryTint
+        case .choice(.local): AskLocalModeCard.tint(.local)
+        default: nil
+        }
+    }
+
+    var body: some View {
+        AskBarButton(symbol: storage.kind.symbol, title: L(storage.kind.titleKey),
+                     tint: tint, chevron: true, help: L("ask.storage.card.title")) { presented.toggle() }
             .accessibilityIdentifier("ask.newConversation.storage")
-        case .localOnly:
-            Label {
-                Text(L("ask.storage.local")).font(.system(size: 12))
-            } icon: {
-                Image(systemName: AskStorageKind.local.symbol)
-                    .font(.system(size: 11.5, weight: .medium))
-            }
-                .foregroundStyle(StudioTheme.textSecondary)
-                .padding(.horizontal, 8)
-                .frame(height: 26)
-                .help(L("ask.storage.local.detail"))
-                .accessibilityElement(children: .combine)
-                .accessibilityIdentifier("ask.newConversation.storage")
-        case let .choice(kind):
-            AskBarButton(symbol: kind.symbol, title: L(kind.titleKey),
-                         tint: kind == .local ? AskLocalModeCard.tint(.local) : nil, chevron: true,
-                         help: L("ask.storage.card.title")) { presented.toggle() }
-                .accessibilityIdentifier("ask.newConversation.storage")
-                .askMenu(isPresented: $presented, glass: true) {
-                    AskStorageChoiceMenu(selection: kind) { choice in
+            .askMenu(isPresented: $presented, glass: true) {
+                AskObservedContent(model: model) {
+                    AskStorageChoiceMenu(selection: model.storageKind(launcher: false), signedIn: model.isSignedIn) { choice in
                         presented = false
                         model.chooseStorage(choice, launcher: false)
                     }
                 }
-        }
+            }
     }
 }
 
-/// Cloud or this Mac, each with what it means. Fixed once the conversation starts.
+/// Storage choices, including temporary chats. Cloud requires a signed-in account.
 struct AskStorageChoiceMenu: View {
     let selection: AskStorageKind
+    let signedIn: Bool
     var choose: (AskStorageKind) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             AskWorkFolderList.header(L("ask.bar.storage.header"))
-            ForEach([AskStorageKind.cloud, .local], id: \.self) { kind in
+            ForEach(signedIn ? [AskStorageKind.cloud, .local, .temporary] : [.local, .temporary], id: \.self) { kind in
                 AskAddMenuRow(symbol: kind.symbol, title: L(kind.titleKey), detail: L(kind.detailKey),
                               active: kind == selection, action: { choose(kind) }) {
                     if kind == selection {
@@ -186,10 +180,12 @@ struct AskStorageChoiceMenu: View {
                 .accessibilityAddTraits(kind == selection ? .isSelected : [])
                 .accessibilityIdentifier("ask.newConversation.storage." + String(describing: kind))
             }
-            Text(L("ask.bar.storage.footer"))
-                .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 14).padding(.top, 6)
+            if signedIn {
+                Text(L("ask.bar.storage.footer"))
+                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 14).padding(.top, 6)
+            }
         }
         .padding(.vertical, 6)
         .frame(width: 300, alignment: .leading)

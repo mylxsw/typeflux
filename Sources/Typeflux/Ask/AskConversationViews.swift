@@ -408,7 +408,7 @@ struct AskConversationView: View {
     }
 
     /// The window's one "new chat" entry starts a conversation, like ChatGPT's (GUL-464).
-    /// Temporary is the new page's hourglass and Cloud or this Mac its bar; the
+    /// The new page's storage menu chooses cloud, local or temporary; the
     /// shortcuts still start each kind directly.
     private var composeButton: some View {
         titleBarButton("square.and.pencil", label: L("ask.new"), shortcut: "⌘N") { model.newConversation() }
@@ -804,7 +804,6 @@ struct AskConversationView: View {
                     model.setConversationKind($0, launcher: false)
                 }
                 .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
-                temporaryToggle
             } else {
                 Text(headerTitle ?? model.selected?.title ?? L("ask.new"))
                     .font(.system(size: 12.5, weight: .semibold))
@@ -875,10 +874,7 @@ struct AskConversationView: View {
                 .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             }
             Spacer(minLength: 8)
-            if model.selectedId == nil {
-                // The new page names nothing: the switch and the headline say what it is.
-                temporaryToggle
-            } else {
+            if model.selectedId != nil {
                 switch model.markedStorage(launcher: false) {
                 case .temporary: AskTemporaryChip(model: model, showsTitle: layout.mainWidth >= 760)
                 case .local: AskLocalChip(model: model, showsTitle: layout.mainWidth >= 760)
@@ -925,20 +921,6 @@ struct AskConversationView: View {
                 model.setConversationKind(kind, launcher: false)
             }
         }
-    }
-
-    /// ChatGPT's temporary chat switch: only on the new page, where it can still change.
-    private var temporaryToggle: some View {
-        let on = model.isTemporaryComposer(launcher: false)
-        return AskHeaderIconButton(symbol: on ? "hourglass.circle.fill" : AskStorageKind.temporary.symbol,
-                                   label: L(on ? "ask.temporary.toggle.off" : "ask.temporary.toggle.on"),
-                                   shortcut: "⌥⌘N", active: on, activeTint: AskTheme.temporaryTint) {
-            withAnimation(AskMotion.revealAnimation(reduceMotion: reduceMotion)) {
-                model.toggleTemporary(launcher: false)
-            }
-        }
-        .accessibilityValue(L(on ? "ask.context.selection.enabled" : "ask.context.selection.disabled"))
-        .accessibilityIdentifier("ask.workspace.temporaryToggle")
     }
 
     @ViewBuilder private func browserButton(showsInteriorFill: Bool = true) -> some View {

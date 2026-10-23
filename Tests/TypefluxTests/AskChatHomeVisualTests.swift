@@ -3,8 +3,8 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-/// GUL-464 surfaces rendered with synthetic data: the new page with its bar and
-/// hourglass, large content previews, skill tokens and the sidebar's sections. Set
+/// GUL-464 surfaces rendered with synthetic data: the new page with its storage bar,
+/// large content previews, skill tokens and the sidebar's sections. Set
 /// `TYPEFLUX_CHAT_HOME_SNAPSHOTS` to a directory to write them; otherwise it does nothing.
 @Suite("Ask chat home snapshots", .serialized, .exclusiveUIState)
 @MainActor
@@ -64,6 +64,14 @@ struct AskChatHomeVisualTests {
         try await render(AskConversationView(model: fixture.model), size: size, dark: true,
                          file: root.appendingPathComponent("new-temporary-dark.png"))
         fixture.model.toggleTemporary(launcher: false)
+
+        for signedIn in [false, true] {
+            for dark in [false, true] {
+                try await render(AskStorageChoiceMenu(selection: .temporary, signedIn: signedIn) { _ in },
+                                 size: NSSize(width: 300, height: signedIn ? 230 : 156), dark: dark,
+                                 file: root.appendingPathComponent("storage-\(signedIn ? "signed-in" : "signed-out")-\(dark ? "dark" : "light").png"))
+            }
+        }
 
         fixture.model.draft.text = "对比这些材料，整理成一份竞品调研"
         fixture.model.draft.attachments = Self.attachments

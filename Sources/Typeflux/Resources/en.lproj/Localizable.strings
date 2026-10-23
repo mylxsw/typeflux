@@ -2199,11 +2199,9 @@
 "ask.bar.memoryOff" = "Memory off";
 "ask.bar.memoryOff.help" = "This conversation starts without memory. Click to include it.";
 "ask.bar.folders.help" = "Folders this task works in";
-"ask.bar.notSaved" = "Not saved";
-"ask.bar.notSaved.hint" = "Click to keep this conversation in history";
 "ask.bar.signInToSync" = "Kept on this Mac. Sign in to sync conversations to Typeflux Cloud.";
 "ask.bar.storage.header" = "Where it is kept · fixed once sent";
-"ask.bar.storage.footer" = "Set the default in Settings → Agent. For nothing kept at all, use the hourglass at the top right.";
+"ask.bar.storage.footer" = "Set the default in Settings → Agent.";
 "ask.temporary.toggle.on" = "Temporary chat: no history, no memory";
 "ask.temporary.toggle.off" = "Turn off temporary chat";
 "ask.history.showMore" = "Show %d more";

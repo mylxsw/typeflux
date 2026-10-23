@@ -2189,11 +2189,9 @@
 "ask.bar.memoryOff" = "メモリーオフ";
 "ask.bar.memoryOff.help" = "この会話はメモリーを使わずに始まります。クリックで使用します。";
 "ask.bar.folders.help" = "タスクが作業するフォルダ";
-"ask.bar.notSaved" = "保存しない";
-"ask.bar.notSaved.hint" = "クリックするとこの会話を履歴に残します";
 "ask.bar.signInToSync" = "この Mac に保存されます。サインインすると Typeflux Cloud に同期できます。";
 "ask.bar.storage.header" = "保存先 · 送信後は固定";
-"ask.bar.storage.footer" = "既定値は 設定 → Agent で変更できます。何も残したくない場合は右上の砂時計を使います。";
+"ask.bar.storage.footer" = "既定値は 設定 → Agent で変更できます。";
 "ask.temporary.toggle.on" = "一時チャット：履歴なし、メモリーなし";
 "ask.temporary.toggle.off" = "一時チャットをオフ";
 "ask.history.showMore" = "さらに %d 件表示";

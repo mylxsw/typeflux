@@ -2199,11 +2199,9 @@
 "ask.bar.memoryOff" = "记忆已关";
 "ask.bar.memoryOff.help" = "这次对话不使用记忆，点击开启。";
 "ask.bar.folders.help" = "任务工作的文件夹";
-"ask.bar.notSaved" = "不保存";
-"ask.bar.notSaved.hint" = "点击以把这次对话保存到历史";
 "ask.bar.signInToSync" = "保存在这台 Mac。登录后可将对话同步到 Typeflux Cloud。";
 "ask.bar.storage.header" = "保存位置 · 发送后固定";
-"ask.bar.storage.footer" = "默认值可在 设置 → Agent 中修改。想完全不留痕迹，请用右上角的沙漏。";
+"ask.bar.storage.footer" = "默认值可在 设置 → Agent 中修改。";
 "ask.temporary.toggle.on" = "临时对话：不进历史、不用记忆";
 "ask.temporary.toggle.off" = "关闭临时对话";
 "ask.history.showMore" = "显示更多（%d）";

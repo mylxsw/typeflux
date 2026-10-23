@@ -36,7 +36,7 @@ struct AskTemporaryVisualTests {
                              dark: dark, file: root.appendingPathComponent("workspace-chat-\(dark ? "dark" : "light").png"))
         }
         try await render(VStack(alignment: .leading, spacing: 16) {
-            AskStorageChoiceMenu(selection: .cloud) { _ in }
+            AskStorageChoiceMenu(selection: .cloud, signedIn: true) { _ in }
             AskLocalModeCard(status: .make(model: fixture.model, signedIn: true), onSignIn: {})
         }.padding(16).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).background(AskTheme.surface),
                          size: NSSize(width: 380, height: 560), dark: true,

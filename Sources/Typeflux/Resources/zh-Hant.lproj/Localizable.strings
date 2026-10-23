@@ -2196,11 +2196,9 @@
 "ask.bar.memoryOff" = "記憶已關";
 "ask.bar.memoryOff.help" = "這次對話不使用記憶，點擊開啟。";
 "ask.bar.folders.help" = "任務工作的資料夾";
-"ask.bar.notSaved" = "不保存";
-"ask.bar.notSaved.hint" = "點擊以把這次對話保存到歷史";
 "ask.bar.signInToSync" = "保存在這台 Mac。登入後可將對話同步到 Typeflux Cloud。";
 "ask.bar.storage.header" = "保存位置 · 傳送後固定";
-"ask.bar.storage.footer" = "預設值可在 設定 → Agent 中修改。想完全不留痕跡，請用右上角的沙漏。";
+"ask.bar.storage.footer" = "預設值可在 設定 → Agent 中修改。";
 "ask.temporary.toggle.on" = "臨時對話：不進歷史、不用記憶";
 "ask.temporary.toggle.off" = "關閉臨時對話";
 "ask.history.showMore" = "顯示更多（%d）";

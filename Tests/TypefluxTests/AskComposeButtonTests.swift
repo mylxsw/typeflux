@@ -48,7 +48,7 @@ extension AskComposerInteractionTests {
             await fixture.model.select("compose")
             try await Task.sleep(for: .milliseconds(400))
             // Existing and empty chats share the single title-bar compose action (GUL-464: it
-            // starts a conversation; temporary is the new page's hourglass).
+            // starts a conversation; its storage menu offers temporary).
             try clickHeader(AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.new", in: window))
             try await fixture.wait { fixture.model.selectedId == nil }
             #expect(fixture.model.selectedId == nil)
@@ -88,10 +88,16 @@ extension AskComposerInteractionTests {
             try await fixture.wait { fixture.model.selectedId == nil }
             #expect(fixture.model.selectedId == nil, "collapsed: \(collapsed)")
             #expect(!fixture.model.isTemporaryComposer(launcher: false), "collapsed: \(collapsed)")
-            // The new page's hourglass makes it temporary.
+            // The new page's storage dropdown makes it temporary.
             try await Task.sleep(for: .milliseconds(400))
-            try click(AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.temporaryToggle", in: window),
+            defer { AskGlassMenuPresenter.shared.hide() }
+            try click(AskWorkspaceTestAccessibility.center(identifier: "ask.newConversation.storage", in: window),
                       in: window)
+            try await fixture.wait { AskGlassMenuPresenter.shared.panel?.isVisible == true }
+            let panel = try #require(AskGlassMenuPresenter.shared.panel)
+            try await Task.sleep(for: .milliseconds(150))
+            try click(AskWorkspaceTestAccessibility.center(identifier: "ask.newConversation.storage.temporary", in: panel),
+                      in: panel)
             try await fixture.wait { fixture.model.isTemporaryComposer(launcher: false) }
             #expect(fixture.model.isTemporaryComposer(launcher: false), "collapsed: \(collapsed)")
             fixture.model.resetSession()

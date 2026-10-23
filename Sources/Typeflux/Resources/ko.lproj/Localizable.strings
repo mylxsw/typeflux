@@ -2189,11 +2189,9 @@
 "ask.bar.memoryOff" = "메모리 꺼짐";
 "ask.bar.memoryOff.help" = "이 대화는 메모리 없이 시작합니다. 클릭하면 사용합니다.";
 "ask.bar.folders.help" = "작업이 사용하는 폴더";
-"ask.bar.notSaved" = "저장 안 함";
-"ask.bar.notSaved.hint" = "클릭하면 이 대화를 기록에 남깁니다";
 "ask.bar.signInToSync" = "이 Mac에 저장됩니다. 로그인하면 Typeflux Cloud에 동기화할 수 있습니다.";
 "ask.bar.storage.header" = "저장 위치 · 보낸 후 고정";
-"ask.bar.storage.footer" = "기본값은 설정 → Agent에서 바꿀 수 있습니다. 아무것도 남기지 않으려면 오른쪽 위 모래시계를 사용하세요.";
+"ask.bar.storage.footer" = "기본값은 설정 → Agent에서 바꿀 수 있습니다.";
 "ask.temporary.toggle.on" = "임시 채팅: 기록 없음, 메모리 없음";
 "ask.temporary.toggle.off" = "임시 채팅 끄기";
 "ask.history.showMore" = "%d개 더 보기";
