@@ -31,8 +31,9 @@ final class GlobalSoulConsolidator {
             GlobalSoulMemoryStore.shared.clearPending()
         }
         if authObservers.isEmpty {
+            authObservers.append(SettingsChangeObserver.observe { [weak self] in self?.schedule() })
             for name in [Notification.Name.authDidLogin, .authDidLogout,
-                         .authTokenDidRefresh, UserDefaults.didChangeNotification] {
+                         .authTokenDidRefresh] {
                 authObservers.append(NotificationCenter.default.addObserver(
                     forName: name, object: nil, queue: .main
                 ) { [weak self] _ in

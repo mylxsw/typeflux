@@ -456,11 +456,7 @@ final class WorkflowController {
         // Pre-warm the local STT model on startup, and re-warm whenever
         // the user switches provider or model in Settings.
         preheatLocalModelIfNeeded()
-        localModelPreheatObserver = NotificationCenter.default.addObserver(
-            forName: UserDefaults.didChangeNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
+        localModelPreheatObserver = SettingsChangeObserver.observe { [weak self] in
             self?.preheatLocalModelIfNeeded()
         }
     }

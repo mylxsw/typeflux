@@ -69,16 +69,14 @@ enum FeatureProcess {
             UserDefaults.standard.synchronize()
         }
         preferences = UserDefaults.standard.dictionaryRepresentation() as NSDictionary
-        observers.append(NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { _ in
-            MainActor.assumeIsolated {
-                let next = UserDefaults.standard.dictionaryRepresentation() as NSDictionary
-                guard preferences?.isEqual(next) != true else { return }
-                preferences = next
-                preferencesUpdate?.cancel()
-                preferencesUpdate = Task {
-                    do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
-                    send(.init(destination: .host, action: "preferences"))
-                }
+        observers.append(SettingsChangeObserver.observe {
+            let next = UserDefaults.standard.dictionaryRepresentation() as NSDictionary
+            guard preferences?.isEqual(next) != true else { return }
+            preferences = next
+            preferencesUpdate?.cancel()
+            preferencesUpdate = Task {
+                do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
+                send(.init(destination: .host, action: "preferences"))
             }
         })
         for name in sharedNotifications {
