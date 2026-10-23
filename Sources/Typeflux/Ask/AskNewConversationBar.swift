@@ -46,8 +46,9 @@ struct AskNewConversationBar: View {
         .padding(.horizontal, 8)
         .frame(height: 34)
         .background(AskTheme.hoverFill.opacity(0.5),
-                    in: UnevenRoundedRectangleShape(bottomRadius: 14))
-        .overlay(UnevenRoundedRectangleShape(bottomRadius: 14).stroke(AskTheme.border, lineWidth: 0.5))
+                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .strokeBorder(AskTheme.border, lineWidth: 0.5))
         .padding(.horizontal, 14)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.newConversation.bar")
@@ -61,25 +62,6 @@ struct AskNewConversationBar: View {
         }
         .accessibilityValue(L(off ? "ask.context.selection.disabled" : "ask.context.selection.enabled"))
         .accessibilityIdentifier("ask.newConversation.memory")
-    }
-}
-
-/// A rectangle rounded only at the bottom, so the bar hangs from the composer card.
-/// (`UnevenRoundedRectangle` needs macOS 14.)
-struct UnevenRoundedRectangleShape: Shape {
-    var bottomRadius: CGFloat
-
-    func path(in rect: CGRect) -> Path {
-        let r = min(bottomRadius, rect.height / 2, rect.width / 2)
-        var path = Path()
-        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - r))
-        path.addQuadCurve(to: CGPoint(x: rect.maxX - r, y: rect.maxY), control: CGPoint(x: rect.maxX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.minX + r, y: rect.maxY))
-        path.addQuadCurve(to: CGPoint(x: rect.minX, y: rect.maxY - r), control: CGPoint(x: rect.minX, y: rect.maxY))
-        path.closeSubpath()
-        return path
     }
 }
 

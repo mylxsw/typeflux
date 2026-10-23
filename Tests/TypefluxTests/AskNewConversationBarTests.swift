@@ -64,6 +64,42 @@ struct AskNewConversationBarTests {
 
     // MARK: - Rendering
 
+    @Test(arguments: [false, true])
+    func barCornersDoNotLeaveSquareLedges(dark: Bool) async throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        let size = NSSize(width: 600, height: 34)
+        let backdrop = Color(red: 0.15, green: 0.2, blue: 0.25)
+        let window = host(AskNewConversationBar(model: fixture.model)
+            .environment(\.colorScheme, dark ? .dark : .light)
+            .background(backdrop), size: size)
+        window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        defer { window.close() }
+        try await settle(window)
+        let view = try #require(window.contentView)
+        let bitmap = try #require(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+        let scaleX = CGFloat(bitmap.pixelsWide) / size.width
+        let scaleY = CGFloat(bitmap.pixelsHigh) / size.height
+        func color(_ x: CGFloat, _ y: CGFloat) throws -> NSColor {
+            try #require(bitmap.colorAt(x: Int(x * scaleX), y: Int(y * scaleY))?.usingColorSpace(.deviceRGB))
+        }
+        func difference(_ first: NSColor, _ second: NSColor) -> CGFloat {
+            max(abs(first.redComponent - second.redComponent),
+                abs(first.greenComponent - second.greenComponent),
+                abs(first.blueComponent - second.blueComponent))
+        }
+        let background = try color(2, 2)
+        for x: CGFloat in [16, size.width - 17] {
+            for y: CGFloat in [2, size.height - 3] {
+                #expect(try difference(color(x, y), background) < 0.001,
+                        "All four corners must expose the backdrop instead of a square bar edge")
+            }
+        }
+        #expect(try difference(color(size.width / 2, size.height / 2), background) > 0.001,
+                "The bar must still draw its surface between the controls")
+    }
+
     private func host<V: View>(_ view: V, size: NSSize = NSSize(width: 760, height: 160)) -> NSWindow {
         _ = NSApplication.shared
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
