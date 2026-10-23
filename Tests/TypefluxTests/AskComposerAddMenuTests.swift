@@ -24,7 +24,8 @@ struct AskComposerAddMenuTests {
             selectionText: "a\nb", actions: { _ in {} })
         #expect(switches.map(\.kind) == [.screenshot, .memory, .selection])
         #expect(switches.map(\.title) == [L("ask.add.screenshot"), L("ask.memory"), L("ask.selection")])
-        #expect(switches.allSatisfy(\.enabled))
+        let allEnabled = switches.allSatisfy { $0.enabled }
+        #expect(allEnabled)
     }
 
     @Test func screenshotSwitchReflectsEveryCaptureState() throws {
@@ -54,14 +55,18 @@ struct AskComposerAddMenuTests {
     @Test func memorySwitchDescribesNewAndPinnedMemory() {
         let fresh = AskAddMenuSwitch.make(items: items(memory: AskMemory(global: "short"), memoryOff: true),
                                           selectionText: nil, actions: { _ in {} })
-        #expect(fresh.first { $0.kind == .memory }?.isOn == false)
-        #expect(fresh.first { $0.kind == .memory }?.detail == L("ask.memory.help"))
+        let freshMemory = fresh.last
+        #expect(freshMemory?.kind == .memory)
+        #expect(freshMemory?.isOn == false)
+        #expect(freshMemory?.detail == L("ask.memory.help"))
         let pinned = AskAddMenuSwitch.make(items: items(pinned: AskMemory(global: "short")),
                                            selectionText: nil, actions: { _ in {} })
-        #expect(pinned.first { $0.kind == .memory }?.isOn == true)
-        #expect(pinned.first { $0.kind == .memory }?.detail == L("ask.memory.pinned"))
+        let pinnedMemory = pinned.last
+        #expect(pinnedMemory?.kind == .memory)
+        #expect(pinnedMemory?.isOn == true)
+        #expect(pinnedMemory?.detail == L("ask.memory.pinned"))
         let none = AskAddMenuSwitch.make(items: items(), selectionText: nil, actions: { _ in {} })
-        #expect(!none.contains { $0.kind == .memory }, "No memory, no switch")
+        #expect(none.map(\.kind) == [.screenshot], "No memory, no switch")
     }
 
     @Test func selectionSwitchNamesItsAppLinesAndPreview() throws {
