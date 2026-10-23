@@ -176,13 +176,12 @@ struct AskComposer: View {
         !userAttachments.isEmpty || loadingAttachments || (!usesContentTiles && !chosenTools.isEmpty)
             || !attachedItems.isEmpty
     }
-    /// The workspace shows content as large previews and chosen skills as tokens by
-    /// the editor; the launcher and a squeezed workspace keep one row of chips (GUL-464).
+    /// The workspace shows content as large previews; the launcher and a squeezed
+    /// workspace keep one row of chips (GUL-464).
     private var usesContentTiles: Bool { AskComposerLayout.usesContentTiles(launcher: launcher, compact: compact) }
-    /// Skills and MCP servers chosen with slash commands, shown as chips.
+    /// MCP servers remain visible as chips; skill scope lives in the skills menu.
     private var chosenTools: [AskChosenTool] {
-        (draft.wrappedValue.skills ?? []).map { AskChosenTool(kind: .skill, name: $0) }
-            + (draft.wrappedValue.mcpServers ?? []).map { AskChosenTool(kind: .mcpServer, name: $0) }
+        (draft.wrappedValue.mcpServers ?? []).map { AskChosenTool(kind: .mcpServer, name: $0) }
     }
     /// The slash command palette.
     @State private var palette = AskCommandPaletteState()

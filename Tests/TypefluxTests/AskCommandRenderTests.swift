@@ -135,7 +135,7 @@ struct AskCommandRenderTests {
         try await press("\r", keyCode: 36, in: editor)
         #expect(f.model.memorySwitchedOff(launcher: false) != memory)
 
-        // A skill toggles its chip off again.
+        // A slash command can still toggle the skill scope.
         try await type("/meeting", in: editor)
         try await press("\r", keyCode: 36, in: editor)
         #expect(f.model.draft.skills == [])
@@ -153,6 +153,21 @@ struct AskCommandRenderTests {
         #expect(f.model.draft.text == "/search")
         try await press("\r", keyCode: 36, in: editor)
         #expect(f.model.searchRequest == 1)
+    }
+
+    @Test(arguments: [false, true]) func emptyBackspaceDoesNotChangeHiddenSkillSelection(compact: Bool) async throws {
+        let (f, _) = try fixture()
+        defer { f.model.resetSession() }
+        f.model.draft.skills = ["meeting-notes"]
+        let host = Host(AskComposer(model: f.model, compact: compact, launcher: false),
+                        size: NSSize(width: compact ? 360 : 760, height: 260))
+        defer { host.close() }
+        try await settle()
+        host.draw()
+        let editor = try #require(host.editor)
+        host.window.makeFirstResponder(editor)
+        try await press("\u{7f}", keyCode: 51, in: editor)
+        #expect(f.model.draft.skills == ["meeting-notes"])
     }
 
     @Test func launcherSlashTextDoesNotGrowTheCard() async throws {

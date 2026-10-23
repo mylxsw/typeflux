@@ -3,8 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-/// GUL-464: content rides with a message as large previews, and chosen skills read as
-/// tokens by the words instead of sharing the attachment row.
+/// Content previews and server tokens stay visible; skill scope lives in the menu.
 @Suite("Ask content tiles and skill tokens", .serialized, .exclusiveUIState)
 @MainActor
 struct AskContentTileTests {
@@ -230,7 +229,7 @@ struct AskContentTileTests {
 
     // MARK: - Composer integration
 
-    @Test func workspaceShowsLargePreviewsAndSkillTokens() async throws {
+    @Test func workspaceKeepsPreviewsAndServerTokensWithoutSkillTokens() async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
         fixture.model.draft.attachments = [AskAttachment(kind: .file, name: "plan.pdf", text: "Roadmap", pages: 2)]
@@ -239,12 +238,16 @@ struct AskContentTileTests {
         defer { window.close() }
         try await settle(window)
         #expect(find("ask.content.attachment", in: window) != nil)
-        // The row of tokens replaces the skill chip; each token's own identifier is
-        // checked where it renders alone (`tokensAndTilesRenderOnTheirOwn`).
+        #expect(find("ask.composer.tokens", in: window) == nil)
+        #expect(fixture.model.draft.skills == ["email-reply"])
+        fixture.model.draft.mcpServers = ["github"]
+        try await settle(window)
         #expect(find("ask.composer.tokens", in: window) != nil)
+        #expect(fixture.model.draft.mcpServers == ["github"])
+        #expect(find("ask.composer.token.skill:email-reply", in: window) == nil)
     }
 
-    @Test func launcherKeepsSkillsAsChipsWithoutTokens() async throws {
+    @Test func launcherDoesNotShowSkillTokens() async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
         fixture.model.launcherDraft.skills = ["email-reply"]
