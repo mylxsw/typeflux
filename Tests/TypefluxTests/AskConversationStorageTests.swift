@@ -154,6 +154,17 @@ struct AskConversationStorageTests {
         }
     }
 
+    @Test func filterBarPicksAFilter() {
+        var selection = AskHistoryFilter.all
+        let binding = Binding(get: { selection }, set: { selection = $0 })
+        let hosting = NSHostingView(rootView: AskHistoryFilterBar(selection: binding).frame(width: 240))
+        hosting.layoutSubtreeIfNeeded()
+        #expect(abs(hosting.fittingSize.height - AskHistoryFilterBar.height) < 1)
+        #expect(AskHistoryFilter.all.symbol == nil)
+        #expect(AskHistoryFilter.cloud.symbol == "cloud")
+        #expect(AskHistoryFilter.local.symbol == "lock")
+    }
+
     @Test func settingsStoreTheDefault() throws {
         let defaults = try #require(UserDefaults(suiteName: "ask-storage-settings-" + UUID().uuidString))
         let settings = SettingsStore(defaults: defaults)
@@ -302,7 +313,7 @@ struct AskConversationStorageTests {
             == "ask.local.card.body")
     }
 
-    @Test func rowsAreInsertedByDate() {
+    @Test func rowsAreInsertedByDateAndFiltered() {
         let date = { (offset: TimeInterval) in Date(timeIntervalSince1970: 1_800_000_000 + offset) }
         let list = [AskConversationSummary(id: "a", title: "A", updatedAt: date(30)),
                     AskConversationSummary(id: "b", title: "B", updatedAt: date(10))]
@@ -311,6 +322,11 @@ struct AskConversationStorageTests {
              .init(id: "a", title: "dup", updatedAt: date(99))], into: list)
         #expect(added.map(\.id) == ["a", "p", "b", "q"])
         #expect(added.first?.title == "A")
+        let isLocal = { (id: String) in id == "p" || id == "q" }
+        #expect(AskHistoryFilter.all.apply(added, isLocal: isLocal).map(\.id) == ["a", "p", "b", "q"])
+        #expect(AskHistoryFilter.cloud.apply(added, isLocal: isLocal).map(\.id) == ["a", "b"])
+        #expect(AskHistoryFilter.local.apply(added, isLocal: isLocal).map(\.id) == ["p", "q"])
+        #expect(AskHistoryFilter.local.titleKey == "ask.history.filter.local")
     }
 
     @Test func storageCopyExistsInEveryLanguage() throws {
@@ -320,7 +336,9 @@ struct AskConversationStorageTests {
                     "ask.storage.card.temporaryDetail", "ask.storage.card.lockedLocal",
                     "ask.storage.card.lockedCloud", "ask.storage.card.localNote", "ask.storage.card.cloudNote",
                     "ask.local.card.body",
-                    "ask.storage.newLocal", "ask.storage.newCloud", "ask.storage.locked", "ask.storage.signedOut"]
+                    "ask.storage.newLocal", "ask.storage.newCloud", "ask.storage.locked", "ask.storage.signedOut",
+                    "ask.history.filter", "ask.history.filter.all", "ask.history.filter.cloud",
+                    "ask.history.filter.local"]
         for language in AppLanguage.allCases {
             let path = try #require(language.bundleLocalizationCandidates.compactMap {
                 Bundle.module.path(forResource: $0, ofType: "lproj")

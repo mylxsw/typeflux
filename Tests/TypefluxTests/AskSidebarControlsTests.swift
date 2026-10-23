@@ -54,63 +54,125 @@ struct AskSidebarControlsTests {
         }
     }
 
-    // MARK: - Sections (GUL-464)
-
-    private func summaries(tasks: Int, chats: Int, now: Date) -> [AskConversationSummary] {
-        (0 ..< tasks).map { AskConversationSummary(id: "t\($0)", title: "Task \($0)",
-                                                    updatedAt: now.addingTimeInterval(-Double($0) * 60), kind: "work") }
-            + (0 ..< chats).map { AskConversationSummary(id: "c\($0)", title: "Chat \($0)",
-                                                         updatedAt: now.addingTimeInterval(-Double($0) * 90)) }
-    }
-
-    @Test func sectionsPutAFewTasksFirstThenChats() {
-        let now = Date()
-        let items = summaries(tasks: 8, chats: 3, now: now)
-        let sections = AskHistorySections.make(items, expanded: false, selectedId: nil, now: now, calendar: .current)
-        #expect(sections.tasks.map(\.id) == ["t0", "t1", "t2", "t3", "t4"])
-        #expect(sections.hiddenTasks == 3)
-        #expect(sections.chats.map(\.id) == ["c0", "c1", "c2"], "Legacy summaries without a kind are chats")
-        let expanded = AskHistorySections.make(items, expanded: true, selectedId: nil, now: now, calendar: .current)
-        #expect(expanded.tasks.count == 8 && expanded.hiddenTasks == 0)
-    }
-
-    @Test func aSelectedTaskPastTheLimitStaysVisible() {
-        let now = Date()
-        let items = summaries(tasks: 8, chats: 0, now: now)
-        let sections = AskHistorySections.make(items, expanded: false, selectedId: "t7", now: now, calendar: .current)
-        #expect(sections.tasks.map(\.id) == ["t0", "t1", "t2", "t3", "t4", "t7"])
-        #expect(sections.hiddenTasks == 2)
-        let few = AskHistorySections.make(summaries(tasks: 2, chats: 1, now: now), expanded: false,
-                                          selectedId: "c0", now: now, calendar: .current)
-        #expect(few.tasks.count == 2 && few.hiddenTasks == 0)
-    }
-
     @Test(arguments: [false, true])
-    func productionSidebarShowsTasksThenChatsWithoutFilters(signedIn: Bool) async throws {
-        let defaults = try #require(UserDefaults(suiteName: "sidebar-sections-" + UUID().uuidString))
-        let fixture = try AskTestFixture(localOnly: !signedIn, defaults: defaults)
-        defer { fixture.model.resetSession() }
-        let now = Date()
-        for item in summaries(tasks: 7, chats: 2, now: now) {
-            await fixture.api.seed(.init(id: item.id, title: item.title, revision: 1, updatedAt: item.updatedAt,
-                                         messages: [], kind: item.kind ?? "chat"))
-        }
-        await fixture.model.refreshHistory()
-        let window = host(AskConversationView(model: fixture.model).defaultAppStorage(defaults),
-                          dark: true, size: CGSize(width: 1100, height: 720))
+    func unfilteredStorageIconIsNeutralAndMenuStillSelects(dark: Bool) async throws {
+        let state = StorageSelection()
+        let window = host(StorageMenu(state: state), dark: dark)
         defer { window.close() }
         try await settle(window)
-        #expect(find("ask.history.storageFilter", in: window) == nil)
-        #expect(find("ask.history.kind.all", in: window) == nil)
-        #expect(find("ask.history.section.work", in: window) != nil)
-        #expect(find("ask.history.section.chat", in: window) != nil)
-        try snapshot(window, name: "sidebar-sections-signedIn-\(signedIn)")
-        let more = try #require(find("ask.history.tasks.more", in: window))
-        #expect(more.value(forKey: "accessibilityLabel") as? String == L("ask.history.showMore", 2))
-        _ = more.perform(NSSelectorFromString("accessibilityPerformPress"))
+        let content = try #require(window.contentView)
+        let control = try #require(descendants(content).compactMap { $0 as? TFNativeMenuControl.MenuButton }.first)
+        #expect(control.isEnabled)
+        let menu = try #require(control.menu)
+        #expect(menu.items.map(\.title) == AskHistoryFilter.allCases.map { L($0.titleKey) })
+        #expect(menu.items.filter { $0.state == .on }.map(\.tag) == [0])
+
+        let bitmap = try #require(content.bitmapImageRepForCachingDisplay(in: content.bounds))
+        content.cacheDisplay(in: content.bounds, to: bitmap)
+        var bluePixels = 0
+        for y in 0 ..< bitmap.pixelsHigh {
+            for x in 0 ..< bitmap.pixelsWide {
+                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { continue }
+                if color.blueComponent > color.redComponent + 0.15,
+                   color.blueComponent > color.greenComponent + 0.08 { bluePixels += 1 }
+            }
+        }
+        #expect(bluePixels == 0, "All conversations must not inherit the system's blue menu tint.")
+        try snapshot(window, name: "storage-all-\(dark ? "dark" : "light")")
+
+        for (index, filter) in AskHistoryFilter.allCases.enumerated().reversed() {
+            let item = menu.items[index]
+            #expect(NSApp.sendAction(try #require(item.action), to: item.target, from: item))
+            #expect(state.value == filter)
+            try await settle(window)
+            #expect(control.menu?.items.filter { $0.state == .on }.map(\.tag) == [index])
+        }
+    }
+
+    @Test(arguments: [(false, false, false), (true, false, false), (true, true, false), (true, true, true)])
+    func productionSidebarCombinesKindAndStorageFilters(signedIn: Bool, hasLocalHistory: Bool,
+                                                        drawer: Bool) async throws {
+        let defaults = try #require(UserDefaults(suiteName: "sidebar-filter-" + UUID().uuidString))
+        let fixture = try AskTestFixture(localOnly: !signedIn, defaults: defaults)
+        defer { fixture.model.resetSession() }
+        await fixture.api.seed(.init(id: "main", title: "Main conversation", revision: 1,
+                                     updatedAt: Date(), messages: [], kind: "chat"))
+        await fixture.api.seed(.init(id: "main-task", title: "Main task", revision: 1,
+                                     updatedAt: Date(), messages: [], kind: "work"))
+        if hasLocalHistory {
+            await fixture.localAPI.seed(.init(id: "local", title: "Local conversation", revision: 1,
+                                              updatedAt: Date(), messages: [], kind: "chat"))
+            await fixture.localAPI.seed(.init(id: "local-task", title: "Local task", revision: 1,
+                                              updatedAt: Date(), messages: [], kind: "work"))
+        }
+        await fixture.model.refreshHistory()
+        #expect(fixture.model.isSignedIn == signedIn)
+        let window = host(AskConversationView(model: fixture.model).defaultAppStorage(defaults),
+                          dark: true, size: CGSize(width: drawer ? 440 : 1100, height: 720))
+        defer { window.close() }
         try await settle(window)
-        let less = try #require(find("ask.history.tasks.more", in: window))
-        #expect(less.value(forKey: "accessibilityLabel") as? String == L("ask.history.showLess"))
+        if drawer {
+            let toggle = try #require(find("ask.workspace.sidebar", in: window))
+            _ = toggle.perform(NSSelectorFromString("accessibilityPerformPress"))
+            try await settle(window)
+        }
+        for identifier in ["ask.history.storageFilter", "ask.history.kind.all", "ask.history.kind.chat", "ask.history.kind.work"] {
+            let element = try #require(find(identifier, in: window))
+            let frame = try #require(element.value(forKey: "accessibilityFrame") as? NSValue).rectValue
+            #expect(frame.width >= AskHistoryFilterBar.height - 0.5)
+            #expect(window.frame.contains(frame), "Both filters stay visible, including in the drawer.")
+        }
+        #expect(find("ask.history.section.work", in: window) == nil)
+        #expect(find("ask.history.section.chat", in: window) == nil)
+        let content = try #require(window.contentView)
+        let control = try #require(descendants(content).compactMap { $0 as? TFNativeMenuControl.MenuButton }
+            .first { $0.accessibilityIdentifier() == "ask.history.storageFilter" })
+        let name = "sidebar-signedIn-\(signedIn)-local-\(hasLocalHistory)-drawer-\(drawer)"
+        try snapshot(window, name: name)
+        let mainIds: Set<String> = ["main", "main-task"]
+        let localIds: Set<String> = hasLocalHistory ? ["local", "local-task"] : []
+        let storageIds: [AskHistoryFilter: Set<String>] = [
+            .all: mainIds.union(localIds),
+            .cloud: signedIn ? mainIds : [],
+            .local: signedIn ? localIds : mainIds,
+        ]
+        let kindIds: [AskConversationKind: Set<String>] = [
+            .chat: ["main", "local"], .work: ["main-task", "local-task"],
+        ]
+        for filter in [AskHistoryFilter.cloud, .local, .all] {
+            let index = try #require(AskHistoryFilter.allCases.firstIndex(of: filter))
+            let item = try #require(control.menu?.items[index])
+            #expect(NSApp.sendAction(try #require(item.action), to: item.target, from: item))
+            try await settle(window)
+            #expect(control.menu?.items[index].state == .on)
+            for kind in [.work, .chat, nil] as [AskConversationKind?] {
+                let tab = try #require(find("ask.history.kind." + (kind?.rawValue ?? "all"), in: window))
+                _ = tab.perform(NSSelectorFromString("accessibilityPerformPress"))
+                try await settle(window)
+                let stored = try #require(storageIds[filter])
+                let expected = kind.map { stored.intersection(kindIds[$0] ?? []) } ?? stored
+                for row in fixture.model.conversations {
+                    #expect((find("ask.history.row." + row.id, in: window) != nil) == expected.contains(row.id),
+                            "Kind and storage filters must both update the production list: \(filter), \(String(describing: kind)), \(row.id)")
+                }
+                #expect(containsText(L("ask.history.empty"), in: window) == expected.isEmpty)
+            }
+            try snapshot(window, name: name + "-" + filter.rawValue)
+        }
+    }
+
+    @Test func emptySidebarKeepsBothFiltersAvailable() async throws {
+        let defaults = try #require(UserDefaults(suiteName: "sidebar-empty-" + UUID().uuidString))
+        let fixture = try AskTestFixture(localOnly: true, defaults: defaults)
+        defer { fixture.model.resetSession() }
+        let window = host(AskConversationView(model: fixture.model).defaultAppStorage(defaults),
+                          size: CGSize(width: 1100, height: 720))
+        defer { window.close() }
+        try await settle(window)
+        for identifier in ["ask.history.storageFilter", "ask.history.kind.all", "ask.history.kind.chat", "ask.history.kind.work"] {
+            #expect(find(identifier, in: window) != nil)
+        }
+        #expect(containsText(L("ask.history.empty"), in: window))
     }
 
     @Test(arguments: [false, true])
@@ -127,6 +189,15 @@ struct AskSidebarControlsTests {
         try hover(window, inside: false)
         try await settle(window)
         #expect(find("ask.history.time", in: window) == nil)
+    }
+
+    private final class StorageSelection: ObservableObject {
+        @Published var value = AskHistoryFilter.all
+    }
+
+    private struct StorageMenu: View {
+        @ObservedObject var state: StorageSelection
+        var body: some View { AskHistoryStorageMenu(selection: $state.value) }
     }
 
     private struct HistoryRow: View {
@@ -164,6 +235,11 @@ struct AskSidebarControlsTests {
 
     private func descendants(_ view: NSView) -> [NSView] {
         [view] + view.subviews.flatMap(descendants)
+    }
+
+    private func containsText(_ text: String, in window: NSWindow) -> Bool {
+        find(text, attribute: "accessibilityValue", in: window) != nil
+            || find(text, attribute: "accessibilityLabel", in: window) != nil
     }
 
     private func find(_ identifier: String, attribute: String = "accessibilityIdentifier", in window: NSWindow) -> NSObject? {

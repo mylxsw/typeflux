@@ -61,6 +61,71 @@ struct AskLocalModeStatus: Equatable {
     }
 }
 
+/// The sidebar's filter while conversations are kept both in Typeflux Cloud and on this Mac.
+enum AskHistoryFilter: String, CaseIterable {
+    case all, cloud, local
+
+    var titleKey: String { "ask.history.filter." + rawValue }
+
+    var symbol: String? {
+        switch self {
+        case .all: nil
+        case .cloud: "cloud"
+        case .local: "lock"
+        }
+    }
+
+    func apply(_ items: [AskConversationSummary], isLocal: (String) -> Bool) -> [AskConversationSummary] {
+        switch self {
+        case .all: items
+        case .cloud: items.filter { !isLocal($0.id) }
+        case .local: items.filter { isLocal($0.id) }
+        }
+    }
+}
+
+/// The sidebar's filter as one full-width segmented bar: a translucent well with the
+/// chosen segment raised, so it reads as part of the glass panel.
+struct AskHistoryFilterBar: View {
+    @Binding var selection: AskHistoryFilter
+    static let height: CGFloat = 28
+    @Environment(\.interfaceStyle) private var style
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(AskHistoryFilter.allCases, id: \.self) { filter in
+                let chosen = selection == filter
+                Button { selection = filter } label: {
+                    HStack(spacing: 4) {
+                        if let symbol = filter.symbol {
+                            Image(systemName: symbol).font(.system(size: 10.5, weight: .medium))
+                        }
+                        Text(L(filter.titleKey)).font(.system(size: 12, weight: chosen ? .semibold : .regular))
+                    }
+                    .foregroundStyle(chosen ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: Self.height - 4)
+                    .background {
+                        if chosen {
+                            RoundedRectangle(cornerRadius: style.ask.filterCorner - 2, style: .continuous)
+                                .fill(style.usesGlass ? AskTheme.controlSurface : AskClassic.card)
+                                .shadow(color: .black.opacity(0.18), radius: 1.5, y: 1)
+                        }
+                    }
+                    .contentShape(RoundedRectangle(cornerRadius: style.ask.filterCorner - 2, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(chosen ? .isSelected : [])
+            }
+        }
+        .padding(2)
+        .frame(height: Self.height)
+        .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: style.ask.filterCorner, style: .continuous))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(L("ask.history.filter"))
+    }
+}
+
 /// The card behind the composer's storage icon: where the conversation is kept,
 /// the choice while it has not started, and the way to the other kind.
 struct AskLocalModeCard: View {

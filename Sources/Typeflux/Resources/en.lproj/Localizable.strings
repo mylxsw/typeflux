@@ -6936,3 +6936,9 @@
 "shortcutDiagnostics.stage.dataCacheMiss" = "Opening snapshot unavailable; loading history";
 "shortcutDiagnostics.stage.mediaActivationStarted" = "Launcher media activation started";
 "shortcutDiagnostics.stage.mediaActivationFinished" = "Launcher media activation finished";
+
+"ask.history.filter" = "Filter conversations";
+"ask.history.filter.all" = "All";
+"ask.history.filter.cloud" = "Cloud";
+"ask.history.filter.local" = "This Mac";
+"ask.history.kindFilter" = "Conversation type";

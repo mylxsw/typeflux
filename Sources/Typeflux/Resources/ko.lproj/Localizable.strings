@@ -6936,3 +6936,9 @@
 "shortcutDiagnostics.stage.dataCacheMiss" = "유효한 표시 캐시 없음, 기록 읽기";
 "shortcutDiagnostics.stage.mediaActivationStarted" = "런처 미디어 활성화: 시작";
 "shortcutDiagnostics.stage.mediaActivationFinished" = "런처 미디어 활성화: 완료";
+
+"ask.history.filter" = "대화 필터";
+"ask.history.filter.all" = "전체";
+"ask.history.filter.cloud" = "클라우드";
+"ask.history.filter.local" = "이 Mac";
+"ask.history.kindFilter" = "대화 유형";

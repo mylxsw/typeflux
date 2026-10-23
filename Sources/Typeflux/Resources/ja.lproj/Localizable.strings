@@ -6936,3 +6936,9 @@
 "shortcutDiagnostics.stage.dataCacheMiss" = "有効な表示用キャッシュがないため履歴を読み込み";
 "shortcutDiagnostics.stage.mediaActivationStarted" = "ランチャーメディアの有効化：開始";
 "shortcutDiagnostics.stage.mediaActivationFinished" = "ランチャーメディアの有効化：完了";
+
+"ask.history.filter" = "会話を絞り込む";
+"ask.history.filter.all" = "すべて";
+"ask.history.filter.cloud" = "クラウド";
+"ask.history.filter.local" = "このMac";
+"ask.history.kindFilter" = "会話の種類";

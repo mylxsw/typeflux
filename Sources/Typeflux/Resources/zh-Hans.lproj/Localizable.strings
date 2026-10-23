@@ -6936,3 +6936,9 @@
 "shortcutDiagnostics.stage.dataCacheMiss" = "无有效打开快照，读取历史";
 "shortcutDiagnostics.stage.mediaActivationStarted" = "启动器媒体加载启用：开始";
 "shortcutDiagnostics.stage.mediaActivationFinished" = "启动器媒体加载启用：完成";
+
+"ask.history.filter" = "筛选对话";
+"ask.history.filter.all" = "全部";
+"ask.history.filter.cloud" = "云端";
+"ask.history.filter.local" = "仅本机";
+"ask.history.kindFilter" = "对话类型";

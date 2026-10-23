@@ -4,7 +4,7 @@ import Testing
 @testable import Typeflux
 
 /// GUL-464 surfaces rendered with synthetic data: the new page with its storage bar,
-/// large content previews, skill tokens and the sidebar's sections. Set
+/// large content previews, skill tokens and the sidebar's filters. Set
 /// `TYPEFLUX_CHAT_HOME_SNAPSHOTS` to a directory to write them; otherwise it does nothing.
 @Suite("Ask chat home snapshots", .serialized, .exclusiveUIState)
 @MainActor
