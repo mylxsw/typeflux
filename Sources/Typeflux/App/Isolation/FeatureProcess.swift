@@ -10,6 +10,7 @@ struct FeatureCommand: Codable, Sendable {
     let destination: FeatureRole
     let action: String
     var payload: Data = Data()
+    var latency: ShortcutLatencyTrace? = nil
 }
 
 /// Installed only by the real application entry point. Injected test controllers
@@ -98,6 +99,7 @@ enum FeatureProcess {
                 await peer.start { method, payload in
                     guard method == "ui" else { throw FeatureRPC.Failure.invalidMessage }
                     let command = try JSONDecoder().decode(FeatureCommand.self, from: payload)
+                    ShortcutLatency.record(.targetWireReceived, trace: command.latency)
                     return try await receive(command)
                 }
                 let snapshot: FeatureAuth = try await peer.call("bootstrap", FeatureRPC.Empty())
@@ -140,6 +142,8 @@ enum FeatureProcess {
     }
 
     nonisolated static func send(_ command: FeatureCommand) {
+        var command = command
+        command.latency = command.latency ?? ShortcutLatency.current
         Task { @MainActor in
             do { _ = try await route(command) }
             catch {
@@ -150,6 +154,13 @@ enum FeatureProcess {
     }
 
     static func receive(_ command: FeatureCommand) async throws -> Data {
+        try await ShortcutLatency.$current.withValue(command.latency) {
+            try await receiveTraced(command)
+        }
+    }
+
+    private static func receiveTraced(_ command: FeatureCommand) async throws -> Data {
+        ShortcutLatency.record(.targetReceived)
         if command.action == "changed" {
             let name = Notification.Name(String(decoding: command.payload, as: UTF8.self))
             guard sharedNotifications.contains(name) else { throw FeatureRPC.Failure.invalidMessage }
@@ -166,9 +177,19 @@ enum FeatureProcess {
             try JSONDecoder().decode(FeatureAuth.self, from: command.payload).apply()
             return Data()
         }
+        ShortcutLatency.record(.readinessStarted)
         try await ready?.value
+        ShortcutLatency.record(.readinessFinished)
         guard command.destination == role, let handle else { throw FeatureRPC.Failure.unavailable }
-        return try await handle(command)
+        ShortcutLatency.record(.handlerStarted)
+        do {
+            let result = try await handle(command)
+            ShortcutLatency.record(.handlerFinished)
+            return result
+        } catch {
+            ShortcutLatency.record(.failed)
+            throw error
+        }
     }
 }
 
@@ -213,6 +234,14 @@ actor FeatureSupervisor {
     deinit { shortcutWatchdog?.cancel(); for child in children.values { child.process.cancel() } }
 
     func route(_ command: FeatureCommand, timeout: Duration = .seconds(10)) async throws -> Data {
+        try await ShortcutLatency.$current.withValue(command.latency) {
+            do { return try await routeTraced(command, timeout: timeout) }
+            catch { ShortcutLatency.record(.failed); throw error }
+        }
+    }
+
+    private func routeTraced(_ command: FeatureCommand, timeout: Duration) async throws -> Data {
+        ShortcutLatency.record(.hostRouting)
         guard !stopped else { throw FeatureRPC.Failure.unavailable }
         if command.destination == .host {
             if command.action == "status" {
@@ -298,6 +327,7 @@ actor FeatureSupervisor {
         if command.destination == .launcher, command.action == "toggleLauncher", let voiceOwner {
             Task { _ = try? await self.route(.init(destination: voiceOwner, action: "cancelRecording")) }
         }
+        ShortcutLatency.record(children[command.destination] == nil ? .targetCold : .targetWarm)
         let child = try await child(for: command.destination)
         return try await child.peer.request("ui", payload: JSONEncoder().encode(command), timeout: timeout)
     }
@@ -439,6 +469,7 @@ actor FeatureSupervisor {
     private func child(for role: FeatureRole) async throws -> Child {
         if let child = children[role] { return child }
         if let task = starting[role] { return try await task.value }
+        ShortcutLatency.record(.spawnRequested)
         let now = ContinuousClock.now
         launches[role] = (launches[role] ?? []).filter { $0.duration(to: now) < .seconds(60) }
         guard (launches[role]?.count ?? 0) < 3 else { throw FeatureRPC.Failure.busy }
@@ -462,6 +493,7 @@ actor FeatureSupervisor {
                 }
                 if method == "dispatch", role == .shortcuts, let self {
                     let command = try JSONDecoder().decode(FeatureCommand.self, from: payload)
+                    ShortcutLatency.record(.hostReceived, trace: command.latency)
                     Task { _ = try? await self.route(command) }
                     return try JSONEncoder().encode(FeatureRPC.Empty())
                 }
@@ -472,6 +504,7 @@ actor FeatureSupervisor {
                 }
                 throw FeatureRPC.Failure.invalidMessage
             }
+            let latency = ShortcutLatency.current
             let process = Task.detached {
                 let directory = open("/", O_RDONLY | O_DIRECTORY | O_CLOEXEC)
                 defer { if directory >= 0 { close(directory) }; inherited.closeOnce() }
@@ -480,7 +513,7 @@ actor FeatureSupervisor {
                         arguments: ["--feature-process", role.rawValue, "--ipc-fd", "100"],
                         environment: childEnvironment,
                         directoryDescriptor: directory, timeout: 86400,
-                        outputLimit: 64 * 1024, onStarted: { inherited.closeOnce() },
+                        outputLimit: 64 * 1024, onStarted: { inherited.closeOnce(); ShortcutLatency.record(.processStarted, trace: latency) },
                         stderrLimit: 64 * 1024, immediateCleanupOnExit: true, ipcDescriptor: inherited.descriptor, ownedApplicationLifetime: true))
                     if childEnvironment["TYPEFLUX_FEATURE_FIXTURE"] == "1", let result {
                         print("FEATURE_EXIT role=\(role.rawValue) code=\(result.exitCode) stderr=\(result.stderr)")

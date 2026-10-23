@@ -115,7 +115,13 @@ final class FeatureShortcutHost {
     }
 
     private func send(_ command: FeatureCommand) {
-        Task { try? await FeatureProcess.dispatch(command) }
+        var command = command
+        command.latency = ShortcutLatency.current
+        ShortcutLatency.record(.dispatched)
+        Task {
+            do { try await FeatureProcess.dispatch(command) }
+            catch { ShortcutLatency.record(.failed, trace: command.latency) }
+        }
     }
 
     private func event(_ event: FeatureHotkeyEvent) {

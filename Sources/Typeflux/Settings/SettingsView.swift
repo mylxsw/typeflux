@@ -850,6 +850,7 @@ struct StudioView: View {
     private var advancedSettingsPage: some View {
         VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
             ModuleHealthSettingsView(model: moduleHealth)
+            ShortcutLatencySettingsView()
             TFFormSection {
                 /*
                   Local optimization is hidden because SenseVoice availability and the

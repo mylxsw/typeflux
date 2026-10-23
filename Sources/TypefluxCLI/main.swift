@@ -7,6 +7,8 @@ struct TypefluxCLI {
     static func main() async {
         var arguments = Array(CommandLine.arguments.dropFirst())
         switch arguments.first {
+        case "shortcut-diagnostics":
+            exit(ShortcutDiagnosticsCommand.run(arguments: Array(arguments.dropFirst())))
         case "file-index-worker":
             exit(AskFileWorkerCommand.run())
         case "clipboard-capture-worker":

@@ -318,6 +318,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             FeatureProcess.send(.init(destination: .launcher, action: "toggleLauncher")); return
         }
         if launchTask != nil || launcher?.isVisible == true {
+            ShortcutLatency.record(.dismissed)
             dismissLauncher()
         } else {
             showLauncher()
@@ -343,6 +344,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         // Already open (its context may still be arriving): just bring the editor back.
         if launcher?.isVisible == true || launchTask != nil {
             if launcher?.isVisible == true { launcher?.makeKeyAndOrderFront(nil); focusEditor(in: launcher) }
+            ShortcutLatency.windowOrdered(launcher)
             if let prepared {
                 let pending = launchTask
                 Task { @MainActor in
@@ -376,6 +378,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         // Take keyboard focus without activating the app and raising its other windows.
         model.setLauncherImagesVisible(true)
         panel.makeKeyAndOrderFront(nil)
+        ShortcutLatency.windowOrdered(panel)
         // Select after focus: AppKit may restore the editor's previous source
         // when it becomes first responder. Do this only on a fresh opening.
         if focusEditor(in: panel), !settings.askLauncherInputSourceID.isEmpty {

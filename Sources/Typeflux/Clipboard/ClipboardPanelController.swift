@@ -101,6 +101,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     }
 
     func present(_ model: ClipboardPanelModel) {
+        defer { ShortcutLatency.windowOrdered(presentedWindow) }
         let continuingSession = isPresented && self.model === model
         previewWidthAnimator.stop()
         shelf.dismiss()

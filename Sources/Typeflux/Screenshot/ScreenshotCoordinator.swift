@@ -109,7 +109,7 @@ final class ScreenshotCoordinator {
         guard FeatureProcess.owns(.screenshot) else {
             FeatureProcess.send(FeatureScreenshotRequest(mode: mode, followUp: followUp).command); return
         }
-        guard !isRecordingActive() else { toast.show(.busy); return }
+        guard !isRecordingActive() else { ShortcutLatency.record(.blocked); toast.show(.busy); return }
         if mode == .recording || mode == .gif {
             guard state == .idle else { toast.show(.busy); return }
             onRecordingRequested?(mode == .gif ? .gif : .mp4, nil)
@@ -119,14 +119,17 @@ final class ScreenshotCoordinator {
         case .idle:
             break
         case .selecting, .editing:
+            ShortcutLatency.record(.dismissed)
             overlay.selectFullScreen()
             state = .editing
             return
         case .capturing, .finishing, .scrolling, .editingLongImage:
+            ShortcutLatency.record(.blocked)
             toast.show(.busy)
             return
         }
         guard permission.isGranted else {
+            ShortcutLatency.record(.blocked)
             presentPermissionGuide(mode: mode, followUp: followUp)
             return
         }
@@ -136,12 +139,14 @@ final class ScreenshotCoordinator {
         let session = session
         let capture = capture
         pendingTask = Task { [weak self] in
+            ShortcutLatency.record(.captureStarted)
             let result: Result<ScreenSnapshot, Error>
             do {
                 result = try await .success(capture.snapshot(ScreenCaptureRequest(windowExclusion: .screenshotControls)))
             } catch {
                 result = .failure(error)
             }
+            ShortcutLatency.record(.captureFinished)
             self?.didCapture(result, mode: mode, followUp: followUp, session: session)
         }
     }
@@ -202,7 +207,7 @@ final class ScreenshotCoordinator {
     private func didCapture(_ result: Result<ScreenSnapshot, Error>, mode: ScreenshotMode,
                             followUp: ScreenshotFollowUp?, session: Int) {
         // Esc during the capture ends the session; its late result is dropped.
-        guard session == self.session, state == .capturing else { return }
+        guard session == self.session, state == .capturing else { ShortcutLatency.record(.superseded); return }
         switch result {
         case let .success(snapshot):
             self.snapshot = snapshot
@@ -215,6 +220,7 @@ final class ScreenshotCoordinator {
                 if state == .selecting { state = .editing }
             }
         case let .failure(error):
+            ShortcutLatency.record(.failed)
             teardown()
             if (error as? ScreenCaptureError) == .permissionDenied {
                 presentPermissionGuide(mode: mode, followUp: followUp)

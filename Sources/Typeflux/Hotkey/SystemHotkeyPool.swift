@@ -95,7 +95,14 @@ final class SystemHotkeyPool {
 
     func handlePressed(id: UInt32) -> Bool {
         guard let target = targets[id] else { return false }
-        DispatchQueue.main.async { [weak self] in self?.onPressed?(target) }
+        let role = FeatureHotkeyEvent.destination(for: target)
+        let trace = role == .host ? nil : ShortcutLatency.begin(role)
+        DispatchQueue.main.async { [weak self] in
+            ShortcutLatency.$current.withValue(trace) {
+                ShortcutLatency.record(.callback)
+                self?.onPressed?(target)
+            }
+        }
         return true
     }
 

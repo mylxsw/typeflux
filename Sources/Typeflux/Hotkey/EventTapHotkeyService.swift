@@ -102,8 +102,9 @@ private final class SystemHotkeyRegistrar {
     }
 
     fileprivate func handlePressed() {
+        let received = ProcessInfo.processInfo.systemUptime
         DispatchQueue.main.async { [weak self] in
-            self?.onPressed?()
+            ShortcutLatency.$receivedUptime.withValue(received) { self?.onPressed?() }
         }
     }
 
@@ -604,8 +605,12 @@ final class EventTapHotkeyService: HotkeyService {
             case .begin(.ask):
                 ErrorLogStore.shared.log("Hotkey(NSEvent): ask down")
                 RecordingStartupLatencyTrace.shared.mark("hotkey.ask_begin")
+                let trace = ShortcutLatency.begin(.launcher)
                 DispatchQueue.main.async { [weak self] in
-                    self?.onAskPressBegan?(context)
+                    ShortcutLatency.$current.withValue(trace) {
+                        ShortcutLatency.record(.callback)
+                        self?.onAskPressBegan?(context)
+                    }
                 }
             case .end(.ask):
                 ErrorLogStore.shared.log("Hotkey(NSEvent): ask up")
@@ -639,8 +644,12 @@ final class EventTapHotkeyService: HotkeyService {
             return
         }
         lastHistoryRequestAt = now
+        let trace = ShortcutLatency.begin(.clipboard)
         DispatchQueue.main.async { [weak self] in
-            self?.onHistoryRequested?()
+            ShortcutLatency.$current.withValue(trace) {
+                ShortcutLatency.record(.callback)
+                self?.onHistoryRequested?()
+            }
         }
     }
 
@@ -652,8 +661,12 @@ final class EventTapHotkeyService: HotkeyService {
             return
         }
         lastScreenshotRequestAt = now
+        let trace = ShortcutLatency.begin(.screenshot)
         DispatchQueue.main.async { [weak self] in
-            self?.onScreenshotRequested?()
+            ShortcutLatency.$current.withValue(trace) {
+                ShortcutLatency.record(.callback)
+                self?.onScreenshotRequested?()
+            }
         }
     }
 

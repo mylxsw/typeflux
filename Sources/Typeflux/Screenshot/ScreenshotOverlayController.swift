@@ -89,6 +89,7 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
             view.pointerMoved(to: CGPoint(x: pointer.x - view.display.frame.minX,
                                           y: pointer.y - view.display.frame.minY))
         }
+        ShortcutLatency.windowOrdered(panels.first)
     }
 
     func selectFullScreen() {

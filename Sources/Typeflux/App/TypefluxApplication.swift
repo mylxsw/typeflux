@@ -79,6 +79,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         appCoordinator = AppCoordinator()
         appCoordinator?.start()
+        if CommandLine.arguments.contains("--shortcut-diagnostics-window") {
+            ShortcutLatencyWindowController.shared.show()
+        }
         if ComponentGalleryAccess.opensAtLaunch() {
             Task { @MainActor in ComponentGalleryWindowController.shared.show() }
         }
