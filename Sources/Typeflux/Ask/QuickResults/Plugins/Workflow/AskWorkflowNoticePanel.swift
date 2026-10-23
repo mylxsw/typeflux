@@ -14,7 +14,7 @@ final class AskWorkflowNoticePanel {
     }
 
     func show(_ text: String) {
-        overlay.showPassiveNotice(message: text)
+        overlay.showNotice(message: text)
         overlay.dismiss(after: duration)
         AskAnnouncer.announce(text)
     }

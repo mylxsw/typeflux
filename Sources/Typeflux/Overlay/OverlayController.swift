@@ -388,7 +388,7 @@ final class OverlayController {
         ) { [weak self] _ in
             guard let self, window?.isVisible == true else { return }
             placementScreen = nil
-            refreshWindow()
+            refreshWindow(preservingDismissal: true)
         }
         model.onCapsuleHoverChanged = { [weak self] hovering in
             self?.handleCapsuleHover(hovering)
@@ -818,6 +818,7 @@ final class OverlayController {
         }
         dismissWorkItem?.cancel()
         stopProcessingProgress()
+        ensureWindow()
         model.noticeDismissible = true
         model.presentation = .notice
         model.statusText = L("overlay.notice.title")
@@ -1095,11 +1096,14 @@ final class OverlayController {
         }
     }
 
-    private func refreshWindow() {
+    private func refreshWindow(preservingDismissal: Bool = false) {
         guard let window else { return }
-        dismissWorkItem?.cancel()
-        dismissWorkItem = nil
-        visibilityTransitionID = UUID()
+        // Preference synchronization updates geometry without extending a notice's lifetime.
+        if !preservingDismissal {
+            dismissWorkItem?.cancel()
+            dismissWorkItem = nil
+            visibilityTransitionID = UUID()
+        }
         let transitionID = visibilityTransitionID
         if let panel = window as? OverlayPanel {
             panel.allowsKeyboardFocus = model.presentation.acceptsKeyboardFocus
@@ -2497,6 +2501,7 @@ private struct OverlayView: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("overlay.dismiss")
             } else {
                 Image(systemName: "xmark")
                     .font(.system(size: 15.5, weight: .medium))

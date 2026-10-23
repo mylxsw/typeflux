@@ -20,15 +20,60 @@ struct AskWorkflowNoticeTests {
         notice.show(L("workflow.result.copied"))
         let window = try #require(notice.presentedWindow)
         #expect(window === overlay.presentedWindow)
-        #expect(overlay.isShowingPassiveNotice)
-        #expect(window.isVisible && window.ignoresMouseEvents && !window.canBecomeKey)
+        #expect(!overlay.isShowingPassiveNotice)
+        #expect(window.isVisible && !window.ignoresMouseEvents && !window.canBecomeKey)
         #expect(NSApplication.shared.keyWindow === keyWindow)
         #expect(window.frame.width == NoticeToastLayout.width)
         try await Task.sleep(for: .milliseconds(100))
         try capture(window, name: "workflow-copied-\(style.rawValue)")
+        NotificationCenter.default.post(name: .voiceCapsuleDidChange, object: nil)
         try await Task.sleep(for: .milliseconds(2500))
         #expect(notice.isVisible, "feedback remains visible beyond the old two-second timeout")
+        NotificationCenter.default.post(name: .voiceCapsuleDidChange, object: nil)
         try await waitUntilHidden(notice)
+    }
+
+    @Test(arguments: InterfaceStyle.allCases)
+    func `close button dismisses feedback without taking keyboard focus`(style: InterfaceStyle) async throws {
+        _ = NSApplication.shared
+        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+        let previousAccessibility = NSApp.accessibilityAttributeValue(attribute)
+        NSApp.accessibilitySetValue(true, forAttribute: attribute)
+        defer { NSApp.accessibilitySetValue(previousAccessibility, forAttribute: attribute) }
+        let suite = "AskWorkflowNoticeCloseTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(style.rawValue, forKey: "ui.overlayStyle")
+        let overlay = OverlayController(appState: AppStateStore(), settingsStore: SettingsStore(defaults: defaults))
+        defer { overlay.dismissImmediately() }
+        let notice = AskWorkflowNoticePanel(overlay: overlay)
+        notice.duration = 30
+        let keyWindow = NSApplication.shared.keyWindow
+        notice.show("Copied")
+        let window = try #require(notice.presentedWindow)
+        try await Task.sleep(for: .milliseconds(100))
+        window.contentView?.layoutSubtreeIfNeeded()
+        var seen = Set<ObjectIdentifier>()
+        func findCloseButton(_ node: NSObject) -> NSObject? {
+            guard seen.insert(ObjectIdentifier(node)).inserted else { return nil }
+            if node.responds(to: NSSelectorFromString("accessibilityIdentifier")),
+               node.value(forKey: "accessibilityIdentifier") as? String == "overlay.dismiss" { return node }
+            guard node.responds(to: NSSelectorFromString("accessibilityChildren")) else { return nil }
+            for child in node.value(forKey: "accessibilityChildren") as? [NSObject] ?? [] {
+                if let button = findCloseButton(child) { return button }
+            }
+            return nil
+        }
+        let button = try #require(findCloseButton(window) ?? window.contentView.flatMap(findCloseButton))
+        let frame = try #require(button.value(forKey: "accessibilityFrame") as? NSRect)
+        let point = window.convertPoint(fromScreen: NSPoint(x: frame.midX, y: frame.midY))
+        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+            NSApp.sendEvent(try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
+                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+                context: nil, eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0)))
+        }
+        try await waitUntilHidden(notice)
+        #expect(NSApplication.shared.keyWindow === keyWindow)
     }
 
     @Test func `a new notice restarts its dismissal`() async throws {
@@ -68,7 +113,7 @@ struct AskWorkflowNoticeTests {
             #expect(pasteboard.string(forType: .string) == "result")
             let notice = AskWorkflowNoticePanel.shared
             #expect(notice.isVisible, "the model's default presenter survives launcher dismissal")
-            #expect(notice.presentedWindow?.ignoresMouseEvents == true)
+            #expect(notice.presentedWindow?.ignoresMouseEvents == false)
             try await waitUntilHidden(notice, attempts: 400)
         }
     }
@@ -102,7 +147,7 @@ struct AskWorkflowNoticeTests {
         notice.show("Copied")
         #expect(recording.recordingPresentationForTesting == .recordingHold)
         #expect(recording.presentedWindow?.isVisible == true)
-        #expect(feedback.isShowingPassiveNotice && notice.isVisible)
+        #expect(!feedback.isShowingPassiveNotice && notice.isVisible)
     }
 
     private func waitUntilHidden(_ notice: AskWorkflowNoticePanel, attempts: Int = 150) async throws {
