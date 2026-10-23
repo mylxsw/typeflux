@@ -2701,7 +2701,8 @@ struct AskComposer: View {
                 }
                 .layoutPriority(active ? 1 : -1)
             }
-            if !launcher, !layout.condensedFooter, onToggleUsage != nil, let context = model.usageContext {
+            if !launcher, !layout.condensedFooter, onToggleUsage != nil,
+               let context = model.usageContext, context.remaining != nil {
                 AskContextUsageButton(context: context) { onToggleUsage?() }
             }
             modelMenu

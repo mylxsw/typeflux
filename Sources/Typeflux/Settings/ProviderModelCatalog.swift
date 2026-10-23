@@ -1,3 +1,4 @@
+import CoreFoundation
 import Foundation
 
 protocol ProviderModelCatalog {
@@ -92,6 +93,22 @@ struct HTTPProviderModelCatalog: ProviderModelCatalog {
                let inputs = architecture["input_modalities"] as? [String] {
                 model.vision = inputs.contains("image")
             }
+            let perRequest = row["top_provider"] as? [String: Any] ?? [:]
+            model.contextWindowTokens = positiveTokenLimit(row["context_window_tokens"])
+                ?? positiveTokenLimit(row["context_window"])
+                ?? positiveTokenLimit(row["context_length"])
+                ?? positiveTokenLimit(row["inputTokenLimit"])
+                ?? positiveTokenLimit(row["max_input_tokens"])
+            // OpenRouter may advertise a smaller limit for the selected endpoint.
+            if let endpointLimit = positiveTokenLimit(perRequest["context_length"]) {
+                model.contextWindowTokens = min(model.contextWindowTokens ?? endpointLimit, endpointLimit)
+            }
+            model.maxOutputTokens = positiveTokenLimit(row["max_output_tokens"])
+                ?? positiveTokenLimit(row["outputTokenLimit"])
+                ?? positiveTokenLimit(row["max_tokens"])
+            if let endpointLimit = positiveTokenLimit(perRequest["max_completion_tokens"]) {
+                model.maxOutputTokens = min(model.maxOutputTokens ?? endpointLimit, endpointLimit)
+            }
             return model
         }
         var cursor = body["nextPageToken"] as? String
@@ -101,5 +118,13 @@ struct HTTPProviderModelCatalog: ProviderModelCatalog {
             cursor = last
         }
         return Page(models: models, cursor: cursor?.isEmpty == true ? nil : cursor)
+    }
+
+    private static func positiveTokenLimit(_ value: Any?) -> Int? {
+        guard let number = value as? NSNumber,
+              CFGetTypeID(number) != CFBooleanGetTypeID(),
+              number.doubleValue > 0, number.doubleValue <= 10_000_000,
+              number.doubleValue.rounded(.towardZero) == number.doubleValue else { return nil }
+        return number.intValue
     }
 }

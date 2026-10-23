@@ -350,7 +350,7 @@ struct AskModelChoices: View {
 
     /// "205K context · 16.4K output": compact numbers instead of raw token counts.
     static func caption(_ model: RegisteredModel) -> String? {
-        guard let context = model.contextWindowTokens, let output = model.maxOutputTokens else { return nil }
+        guard let context = model.effectiveContextWindowTokens, let output = model.effectiveMaxOutputTokens else { return nil }
         return String(format: L("ask.models.capacity"),
                       AccountUsageDisplayFormatter.count(Int64(context)),
                       AccountUsageDisplayFormatter.count(Int64(output)))
@@ -387,7 +387,7 @@ struct AskModelChoices: View {
                     ))
                     .lineLimit(recoveryProviders == nil ? nil : 2)
                     .truncationMode(.middle)
-                    if recoveryProviders == nil, let context = model.contextWindowTokens, let output = model.maxOutputTokens {
+                    if recoveryProviders == nil, let context = model.effectiveContextWindowTokens, let output = model.effectiveMaxOutputTokens {
                         Text(String(format: L("models.cloud.parameters"), context, output))
                             .font(.caption2).foregroundStyle(.secondary)
                     }

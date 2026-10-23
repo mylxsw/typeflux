@@ -43,6 +43,7 @@ struct AskContextUsageButton: View {
         .onHover { hovering = $0 }
         .help(summary)
         .accessibilityLabel(summary)
+        .accessibilityIdentifier("ask.usage.contextButton")
     }
 
     private var summary: String {
@@ -101,7 +102,7 @@ struct AskUsagePanel: View {
                 // Two questions, two cards: "does the next message still fit?"
                 // and "what did this cost?".
                 VStack(alignment: .leading, spacing: compact ? 8 : 12) {
-                    if let context = model.usageContext { contextCard(context) }
+                    if let context = model.usageContext, context.remaining != nil { contextCard(context) }
                     if let budget = model.selected?.run?.budget { AskBudgetView(budget: budget) }
                     if scopeOptions.count > 1 {
                         AskSegmentedControl(options: scopeOptions, selection: $runId)
@@ -196,6 +197,8 @@ struct AskUsagePanel: View {
             if context.summarized { help("ask.usage.summarized") }
             if context.isHigh { help("ask.usage.highHelp") }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("ask.usage.contextCard")
     }
 
     private func totalsCard(_ totals: AskUsageTotals) -> some View {

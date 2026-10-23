@@ -2,6 +2,14 @@
 import XCTest
 
 final class ProviderModelCatalogTests: XCTestCase {
+    func testParsesProviderContextAndOutputLimitsWithoutGuessingInvalidValues() throws {
+        let provider = RegisteredProvider(id: "custom", name: "Relay")
+        let raw = #"{"data":[{"id":"gemini","inputTokenLimit":1048576,"outputTokenLimit":65536},{"id":"claude","max_input_tokens":200000,"max_tokens":8192},{"id":"router","context_length":128000,"top_provider":{"context_length":64000,"max_completion_tokens":4096},"max_output_tokens":8192},{"id":"explicit","context_window_tokens":32000,"max_output_tokens":2000},{"id":"invalid","context_length":true,"max_output_tokens":-5},{"id":"fraction","context_length":3.5,"max_tokens":10000001},{"id":"empty"},{"id":"alternate","context_window":16000,"max_output_tokens":2048},{"id":"endpoint","top_provider":{"context_length":64000,"max_completion_tokens":4096}}]}"#
+        let models = try HTTPProviderModelCatalog.parse(Data(raw.utf8), provider: provider).models
+        XCTAssertEqual(models.map(\.contextWindowTokens), [1048576, 200000, 64000, 32000, nil, nil, nil, 16000, 64000])
+        XCTAssertEqual(models.map(\.maxOutputTokens), [65536, 8192, 4096, 2000, nil, nil, nil, 2048, 4096])
+    }
+
     func testParsesNativeAndCompatibleCatalogsWithoutHidingExcludedModels() throws {
         let openAI = RegisteredProvider(id: "openAI", name: "OpenAI", remote: .openAI)
         let page = try HTTPProviderModelCatalog.parse(

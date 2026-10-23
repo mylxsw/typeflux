@@ -85,9 +85,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                 return AskLocalEngine(directory: directory,
                     budgetEnabled: search.defaults.bool(forKey: "ask.budgetEnabled"), contextLimits: { reference in
                         let model = ModelRegistry.read(search.defaults)?.resolve(reference)?.1
-                        return AskContextLimits(window: model?.contextWindowTokens ?? 32768,
-                                                maxOutput: model?.maxOutputTokens ?? 4096,
-                                                known: model?.contextWindowTokens != nil)
+                        return AskContextLimits(window: model?.effectiveContextWindowTokens ?? 32768,
+                                                maxOutput: model?.effectiveMaxOutputTokens ?? 4096,
+                                                known: model?.effectiveContextWindowTokens != nil)
                     }, summarize: { inference, run, device in
                         let credential = try? await token()
                         return await AskAuxiliaryInference.complete(inference, run: run, device: device,
@@ -99,9 +99,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             search.configuration
         }), budgetEnabled: settings.defaults.bool(forKey: "ask.budgetEnabled"), contextLimits: { reference in
             let model = ModelRegistry.read(search.defaults)?.resolve(reference)?.1
-            return AskContextLimits(window: model?.contextWindowTokens ?? 32768,
-                                    maxOutput: model?.maxOutputTokens ?? 4096,
-                                    known: model?.contextWindowTokens != nil)
+            return AskContextLimits(window: model?.effectiveContextWindowTokens ?? 32768,
+                                    maxOutput: model?.effectiveMaxOutputTokens ?? 4096,
+                                    known: model?.effectiveContextWindowTokens != nil)
         }, summarize: makeSummary(modelLibrary: modelLibrary, modelClient: modelClient),
         // Signed in, a conversation kept on this Mac may answer with Cloud models; the
         // window runs those inferences with the session token, never storing history.

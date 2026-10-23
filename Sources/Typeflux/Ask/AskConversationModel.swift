@@ -21,11 +21,14 @@ final class AskConversationModel: ObservableObject {
     var usageContext: AskContextUsage? {
         guard var context = selected?.contextUsage else { return nil }
         let ref = modelReference(launcher: false)
+        let entry = modelLibrary.registry.resolve(ref)?.1
         if ref != context.modelRef {
             context.modelRef = ref
-            let entry = modelLibrary.registry.resolve(ref)?.1
-            context.capacity = entry?.contextWindowTokens
-            context.outputReserve = min(4096, entry?.maxOutputTokens ?? 4096)
+            context.capacity = entry?.effectiveContextWindowTokens
+            context.outputReserve = min(4096, entry?.effectiveMaxOutputTokens ?? 4096)
+        } else if context.remaining == nil {
+            // Older snapshots may predate discovery of the selected model's capacity.
+            context.capacity = entry?.effectiveContextWindowTokens
         }
         return context
     }

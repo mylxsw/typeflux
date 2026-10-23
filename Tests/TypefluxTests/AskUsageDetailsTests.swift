@@ -115,10 +115,12 @@ struct AskUsageDetailsTests {
     }
     @Test func contextCardRendersNormalNearFullAndUnknownCapacity() async throws {
         _ = NSApplication.shared
+        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
         let reference = fixture.model.modelReference(launcher: false)
-        for (index, values) in [(23_700, Optional(204_800)), (204_544, Optional(204_800)), (23_700, nil)].enumerated() {
+        for (index, values) in [(23_700, Optional(204_800)), (204_544, Optional(204_800)), (23_700, nil), (23_700, Optional(0))].enumerated() {
             let (input, capacity) = values
             var value = AskConversation(id: "context-card-\(index)", title: "Synthetic", revision: 1,
                                         updatedAt: Date(), messages: [])
@@ -127,7 +129,7 @@ struct AskUsageDetailsTests {
             await fixture.api.seed(value)
             await fixture.model.select(value.id, reload: true)
             let context = try #require(fixture.model.usageContext)
-            #expect(context.remaining == capacity.map { $0 - input })
+            #expect(context.remaining == capacity.flatMap { $0 > 0 ? $0 - input : nil })
             let host = NSHostingView(rootView: AskUsagePanel(model: fixture.model, runId: .constant(nil), close: {})
                 .frame(width: 420, height: 600))
             let window = NSWindow(contentRect: NSRect(x: -10000, y: -10000, width: 420, height: 600),
@@ -136,10 +138,65 @@ struct AskUsageDetailsTests {
             window.contentView = host
             defer { window.close() }
             host.frame = NSRect(x: 0, y: 0, width: 420, height: 600)
+            window.orderFront(nil)
+            try await Task.sleep(for: .milliseconds(100))
             host.layoutSubtreeIfNeeded()
             let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
             host.cacheDisplay(in: host.bounds, to: bitmap)
             #expect(bitmap.pixelsWide > 0 && bitmap.pixelsHigh > 0)
+            #expect(hasAccessibilityID("ask.usage.contextCard", in: window) == (context.remaining != nil))
+            let composer = NSHostingView(rootView: AskComposer(model: fixture.model, availableWidth: 800,
+                launcher: false, onToggleUsage: {}).frame(width: 800))
+            let composerWindow = NSWindow(contentRect: NSRect(x: -10000, y: -10000, width: 800, height: 200),
+                styleMask: [.borderless], backing: .buffered, defer: false)
+            composerWindow.isReleasedWhenClosed = false
+            composerWindow.contentView = composer
+            defer { composerWindow.close() }
+            composerWindow.orderFront(nil)
+            try await Task.sleep(for: .milliseconds(100))
+            composer.layoutSubtreeIfNeeded()
+            #expect(hasAccessibilityID("ask.usage.contextButton", in: composerWindow) == (context.remaining != nil))
         }
+    }
+
+    @Test func savedUnknownContextResolvesFromCatalogAndModelSwitchClearsStaleCapacity() async throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        let known = RegisteredModel(id: "gpt-4o", name: "Known", reference: "custom:known")
+        let unknown = RegisteredModel(id: "coding/auto", name: "Auto", reference: "custom:auto")
+        try fixture.model.modelLibrary.addModels([known, unknown], providerID: "custom")
+        #expect(AskModelChoices.caption(known) != nil)
+        #expect(AskModelChoices.caption(unknown) == nil)
+        var value = AskConversation(id: "context-fallback", title: "Saved", revision: 1, updatedAt: Date(), messages: [])
+        value.modelRef = known.reference
+        value.contextUsage = .init(modelRef: known.reference, inputTokens: 14_000, outputReserve: 4096,
+            capacity: nil, summarized: false)
+        await fixture.api.seed(value)
+        await fixture.model.select(value.id)
+        #expect(fixture.model.usageContext?.capacity == 128_000)
+        #expect(fixture.model.usageContext?.remaining == 114_000)
+        fixture.model.draft.modelRef = unknown.reference
+        #expect(fixture.model.usageContext?.modelRef == unknown.reference)
+        #expect(fixture.model.usageContext?.capacity == nil)
+        fixture.model.draft.modelRef = known.reference
+        value.contextUsage?.capacity = 32_000
+        value.revision += 1
+        await fixture.api.seed(value)
+        await fixture.model.select(value.id, reload: true)
+        #expect(fixture.model.usageContext?.capacity == 32_000)
+        fixture.model.draft.modelRef = "custom:removed"
+        #expect(fixture.model.usageContext?.capacity == nil)
+    }
+
+    private func hasAccessibilityID(_ identifier: String, in window: NSWindow) -> Bool {
+        var seen = Set<ObjectIdentifier>()
+        func find(_ value: Any) -> Bool {
+            guard let object = value as? NSObject, seen.insert(ObjectIdentifier(object)).inserted else { return false }
+            if object.responds(to: NSSelectorFromString("accessibilityIdentifier")),
+               object.value(forKey: "accessibilityIdentifier") as? String == identifier { return true }
+            guard object.responds(to: NSSelectorFromString("accessibilityChildren")) else { return false }
+            return (object.value(forKey: "accessibilityChildren") as? [Any] ?? []).contains(where: find)
+        }
+        return find(window)
     }
 }

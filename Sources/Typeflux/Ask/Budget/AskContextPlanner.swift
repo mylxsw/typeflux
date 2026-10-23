@@ -24,8 +24,8 @@ enum AskContextPlanner {
     static func devicePayload(_ raw: String, model: RegisteredModel, budgeted: Bool) throws -> String {
         guard let payload = try JSONSerialization.jsonObject(with: Data(raw.utf8)) as? [String: Any]
         else { throw AskBudgetError.invalid }
-        let limits = AskContextLimits(window: model.contextWindowTokens ?? 32768,
-                                      maxOutput: model.maxOutputTokens ?? 4096, known: model.contextWindowTokens != nil)
+        let limits = AskContextLimits(window: model.effectiveContextWindowTokens ?? 32768,
+                                      maxOutput: model.effectiveMaxOutputTokens ?? 4096, known: model.effectiveContextWindowTokens != nil)
         var projected = AskContextCompaction.compact(payload, window: limits.window)
         if budgeted { projected = try plan(projected, limits: limits).payload }
         projected["typeflux_context_window"] = limits.window
