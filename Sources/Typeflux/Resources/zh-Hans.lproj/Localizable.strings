@@ -2196,6 +2196,16 @@
 "ask.add.skills.auto" = "已安装 %d 个 · 未选择时 AI 会按需使用";
 "ask.add.skills.chosen" = "已选：%@";
 "ask.add.skills.footer" = "最多选择 %d 个。选中的技能显示在消息前面；消息为空时按退格可删除最后一个。";
+"ask.bar.memoryOff" = "记忆已关";
+"ask.bar.memoryOff.help" = "这次对话不使用记忆，点击开启。";
+"ask.bar.folders.help" = "任务工作的文件夹";
+"ask.bar.notSaved" = "不保存";
+"ask.bar.notSaved.hint" = "点击以把这次对话保存到历史";
+"ask.bar.signInToSync" = "保存在这台 Mac。登录后可将对话同步到 Typeflux Cloud。";
+"ask.bar.storage.header" = "保存位置 · 发送后固定";
+"ask.bar.storage.footer" = "默认值可在 设置 → Agent 中修改。想完全不留痕迹，请用右上角的沙漏。";
+"ask.temporary.toggle.on" = "临时对话：不进历史、不用记忆";
+"ask.temporary.toggle.off" = "关闭临时对话";
 "ask.env.help" = "任务环境：工作文件夹与工具权限";
 "ask.env.folders" = "工作文件夹";
 "ask.env.addFolder" = "添加文件夹…";
@@ -2319,8 +2329,6 @@
 "ask.steps.invalid" = "请选择 10 到 500 之间的步数。";
 "ask.temporary.settings.confirm" = "离开临时对话前确认";
 "ask.temporary.settings.confirm.subtitle" = "临时对话里有内容时，新建或打开其他对话前先询问";
-"ask.new.cloud" = "新对话";
-"ask.new.cloud.signedOut" = "登录 Typeflux Cloud 后可用";
 "ask.command.temporary" = "临时对话";
 "ask.command.temporaryOn" = "这次提问将开始一段临时对话";
 "ask.command.temporaryOff" = "这次提问将开始一段普通对话";

@@ -2186,6 +2186,16 @@
 "ask.add.skills.auto" = "%d개 설치됨 · 선택하지 않으면 AI가 필요할 때 사용";
 "ask.add.skills.chosen" = "선택됨: %@";
 "ask.add.skills.footer" = "최대 %d개까지 선택할 수 있습니다. 선택한 스킬은 메시지 앞에 표시되며, 빈 메시지에서 Backspace를 누르면 마지막 스킬이 제거됩니다.";
+"ask.bar.memoryOff" = "메모리 꺼짐";
+"ask.bar.memoryOff.help" = "이 대화는 메모리 없이 시작합니다. 클릭하면 사용합니다.";
+"ask.bar.folders.help" = "작업이 사용하는 폴더";
+"ask.bar.notSaved" = "저장 안 함";
+"ask.bar.notSaved.hint" = "클릭하면 이 대화를 기록에 남깁니다";
+"ask.bar.signInToSync" = "이 Mac에 저장됩니다. 로그인하면 Typeflux Cloud에 동기화할 수 있습니다.";
+"ask.bar.storage.header" = "저장 위치 · 보낸 후 고정";
+"ask.bar.storage.footer" = "기본값은 설정 → Agent에서 바꿀 수 있습니다. 아무것도 남기지 않으려면 오른쪽 위 모래시계를 사용하세요.";
+"ask.temporary.toggle.on" = "임시 채팅: 기록 없음, 메모리 없음";
+"ask.temporary.toggle.off" = "임시 채팅 끄기";
 "ask.env.help" = "작업 환경: 작업 폴더와 도구 권한";
 "ask.env.folders" = "작업 폴더";
 "ask.env.addFolder" = "폴더 추가…";
@@ -2309,8 +2319,6 @@
 "ask.steps.invalid" = "단계 수는 10에서 500 사이로 선택하세요.";
 "ask.temporary.settings.confirm" = "임시 대화를 떠나기 전에 확인";
 "ask.temporary.settings.confirm.subtitle" = "내용이 있는 임시 대화를 다른 대화를 만들거나 열어 끝내기 전에 묻습니다";
-"ask.new.cloud" = "새 대화";
-"ask.new.cloud.signedOut" = "Typeflux Cloud에 로그인하면 사용할 수 있습니다";
 "ask.command.temporary" = "임시 대화";
 "ask.command.temporaryOn" = "이 질문으로 임시 대화를 시작합니다";
 "ask.command.temporaryOff" = "이 질문으로 일반 대화를 시작합니다";

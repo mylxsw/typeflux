@@ -397,30 +397,6 @@ struct AskTemporaryConversationTests {
         #expect(AskLocalModeCard.tint(.cloud) == AskTheme.cloudTint)
     }
 
-    @Test func theNewConversationMenuStartsEachKind() async throws {
-        let signedIn = AskNewConversationMenu.items(signedIn: true, privateByDefault: false)
-        #expect(signedIn.map(\.kind) == [.cloud, .local, .temporary])
-        #expect(signedIn.map(\.shortcut) == ["⌘N", "⇧⌘N", "⌥⌘N"])
-        let allEnabled = signedIn.allSatisfy { $0.enabled }
-        #expect(allEnabled)
-        let privateDefault = AskNewConversationMenu.items(signedIn: true, privateByDefault: true)
-        #expect(privateDefault.map(\.shortcut) == ["", "⌘N", "⌥⌘N"])
-        let signedOut = AskNewConversationMenu.items(signedIn: false, privateByDefault: false)
-        #expect(signedOut.map(\.enabled) == [false, true, true])
-        #expect(AskNewConversationMenu.detailKey(.cloud, signedIn: false) == "ask.new.cloud.signedOut")
-        #expect(AskNewConversationMenu.detailKey(.temporary, signedIn: true) == "ask.storage.temporary.detail")
-        #expect(AskNewConversationMenu.titleKey(.cloud) == "ask.new.cloud")
-
-        let (fixture, _) = try fixture()
-        defer { fixture.model.resetSession() }
-        AskNewConversationMenu.start(.temporary, model: fixture.model)
-        #expect(fixture.model.isTemporaryComposer(launcher: false))
-        AskNewConversationMenu.start(.local, model: fixture.model)
-        #expect(fixture.model.storageKind(launcher: false) == .local)
-        AskNewConversationMenu.start(.cloud, model: fixture.model)
-        #expect(fixture.model.storageKind(launcher: false) == .cloud)
-    }
-
     @Test func signingOutForgetsTheTemporaryChat() async throws {
         let workspaceRoot = FileManager.default.temporaryDirectory.appendingPathComponent("ask-signed-out-workspaces-" + UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: workspaceRoot) }
@@ -481,7 +457,6 @@ struct AskTemporaryConversationTests {
             let host = NSHostingView(rootView: view.environment(\.interfaceStyle, .liquidGlass))
             return host.fittingSize
         }
-        #expect(size(AskNewConversationMenu(model: fixture.model) {}).height > 100)
         #expect(size(AskTemporaryHistoryRow()).height >= 32)
         #expect(size(AskTemporaryChip(model: fixture.model)).width > 40)
         #expect(size(AskLocalModeCard(status: .make(model: fixture.model, signedIn: true),

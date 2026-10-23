@@ -2193,6 +2193,16 @@
 "ask.add.skills.auto" = "已安裝 %d 個 · 未選擇時 AI 會按需使用";
 "ask.add.skills.chosen" = "已選：%@";
 "ask.add.skills.footer" = "最多選擇 %d 個。選中的技能顯示在訊息前面；訊息為空時按退格可刪除最後一個。";
+"ask.bar.memoryOff" = "記憶已關";
+"ask.bar.memoryOff.help" = "這次對話不使用記憶，點擊開啟。";
+"ask.bar.folders.help" = "任務工作的資料夾";
+"ask.bar.notSaved" = "不保存";
+"ask.bar.notSaved.hint" = "點擊以把這次對話保存到歷史";
+"ask.bar.signInToSync" = "保存在這台 Mac。登入後可將對話同步到 Typeflux Cloud。";
+"ask.bar.storage.header" = "保存位置 · 傳送後固定";
+"ask.bar.storage.footer" = "預設值可在 設定 → Agent 中修改。想完全不留痕跡，請用右上角的沙漏。";
+"ask.temporary.toggle.on" = "臨時對話：不進歷史、不用記憶";
+"ask.temporary.toggle.off" = "關閉臨時對話";
 "ask.env.help" = "任務環境：工作資料夾與工具權限";
 "ask.env.folders" = "工作資料夾";
 "ask.env.addFolder" = "新增資料夾…";
@@ -2316,8 +2326,6 @@
 "ask.steps.invalid" = "請選擇 10 到 500 之間的步數。";
 "ask.temporary.settings.confirm" = "離開臨時對話前確認";
 "ask.temporary.settings.confirm.subtitle" = "臨時對話裡有內容時，新增或開啟其他對話前先詢問";
-"ask.new.cloud" = "新對話";
-"ask.new.cloud.signedOut" = "登入 Typeflux Cloud 後可用";
 "ask.command.temporary" = "臨時對話";
 "ask.command.temporaryOn" = "這次提問將開始一段臨時對話";
 "ask.command.temporaryOff" = "這次提問將開始一段一般對話";

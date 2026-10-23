@@ -12,7 +12,6 @@ struct AskConversationView: View {
     @State private var browserDragBase: CGFloat?
     @State private var usageRunId: String?
     @State private var deleteId: String?
-    @State private var newMenuOpen = false
     @State private var pullDistance: CGFloat = 0
     @State private var restoredTranscript: String?
     @State private var isSearching = false
@@ -27,6 +26,10 @@ struct AskConversationView: View {
     @Namespace private var selectionSpace
     /// Height of the banners and composer floating over the transcript's bottom edge.
     @State private var bottomChromeHeight: CGFloat = 0
+    /// The new page's orb, headline and hint, measured to place the composer under them.
+    @State private var emptyHeadingHeight: CGFloat = 0
+    /// The content column's height, which the bottom-anchored composer is measured against.
+    @State private var contentColumnHeight: CGFloat = 0
     @State private var transcriptViewportSize: CGSize = .zero
     @State private var transcriptCoveredBottom: CGFloat = 0
     /// Files are dragged over the transcript; they attach to the draft when dropped.
@@ -418,14 +421,12 @@ struct AskConversationView: View {
         }
     }
 
-    /// The window's one "new chat" entry: a menu of the kinds of conversation.
-    /// The shortcuts still start each kind directly.
+    /// The window's one "new chat" entry starts a conversation, like ChatGPT's (GUL-464).
+    /// Temporary is the new page's hourglass and Cloud or this Mac its bar; the
+    /// shortcuts still start each kind directly.
     private var composeButton: some View {
-        titleBarButton("square.and.pencil", label: L("ask.new"), shortcut: nil) { newMenuOpen.toggle() }
+        titleBarButton("square.and.pencil", label: L("ask.new"), shortcut: "⌘N") { model.newConversation() }
             .accessibilityIdentifier("ask.workspace.new")
-            .askMenu(isPresented: $newMenuOpen, glass: true) {
-                AskNewConversationMenu(model: model) { newMenuOpen = false }
-            }
             .background { newConversationShortcuts }
     }
 
@@ -739,9 +740,18 @@ struct AskConversationView: View {
                     Color.clear.preference(key: AskBottomChromeHeight.self, value: geometry.size.height)
                 })
                 .frame(maxHeight: .infinity, alignment: .bottom)
+                // On the new page the composer sits under the headline; the first message
+                // sends it back down to the conversation's place.
+                .offset(y: -(newPagePlacement?.composerLift ?? 0))
+                .animation(AskMotion.revealAnimation(reduceMotion: reduceMotion), value: newPagePlacement == nil)
             header
         }
+        .background(GeometryReader { geometry in
+            Color.clear.preference(key: AskContentColumnHeight.self, value: geometry.size.height)
+        })
         .onPreferenceChange(AskBottomChromeHeight.self) { bottomChromeHeight = $0 }
+        .onPreferenceChange(AskEmptyHeadingHeight.self) { emptyHeadingHeight = $0 }
+        .onPreferenceChange(AskContentColumnHeight.self) { contentColumnHeight = $0 }
         .onChange(of: model.searchRequest) { _ in openSearch() }
         .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -778,6 +788,7 @@ struct AskConversationView: View {
                     model.setConversationKind($0, launcher: false)
                 }
                 .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+                temporaryToggle
             } else {
                 Text(headerTitle ?? model.selected?.title ?? L("ask.new"))
                     .font(.system(size: 12.5, weight: .semibold))
@@ -846,19 +857,17 @@ struct AskConversationView: View {
                 .padding(.trailing, style.usesGlass ? 16 : 6)
                 .frame(height: AskMetrics.headerCapsuleHeight)
                 .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
-            } else {
-                Text(headerTitle ?? L("ask.new"))
-                    .font(.system(size: titleFontSize, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .padding(.horizontal, style.usesGlass ? 16 : 6)
-                    .frame(height: AskMetrics.headerCapsuleHeight)
-                    .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             }
             Spacer(minLength: 8)
-            switch model.markedStorage(launcher: false) {
-            case .temporary: AskTemporaryChip(model: model, showsTitle: layout.mainWidth >= 760)
-            case .local: AskLocalChip(model: model, showsTitle: layout.mainWidth >= 760)
-            case .cloud, nil: EmptyView()
+            if model.selectedId == nil {
+                // The new page names nothing: the switch and the headline say what it is.
+                temporaryToggle
+            } else {
+                switch model.markedStorage(launcher: false) {
+                case .temporary: AskTemporaryChip(model: model, showsTitle: layout.mainWidth >= 760)
+                case .local: AskLocalChip(model: model, showsTitle: layout.mainWidth >= 760)
+                case .cloud, nil: EmptyView()
+                }
             }
             if model.selectedId != nil || model.tools.browserWorkspace != nil {
                 HStack(spacing: 2) {
@@ -900,6 +909,20 @@ struct AskConversationView: View {
                 model.setConversationKind(kind, launcher: false)
             }
         }
+    }
+
+    /// ChatGPT's temporary chat switch: only on the new page, where it can still change.
+    private var temporaryToggle: some View {
+        let on = model.isTemporaryComposer(launcher: false)
+        return AskHeaderIconButton(symbol: on ? "hourglass.circle.fill" : AskStorageKind.temporary.symbol,
+                                   label: L(on ? "ask.temporary.toggle.off" : "ask.temporary.toggle.on"),
+                                   shortcut: "⌥⌘N", active: on, activeTint: AskTheme.temporaryTint) {
+            withAnimation(AskMotion.revealAnimation(reduceMotion: reduceMotion)) {
+                model.toggleTemporary(launcher: false)
+            }
+        }
+        .accessibilityValue(L(on ? "ask.context.selection.enabled" : "ask.context.selection.disabled"))
+        .accessibilityIdentifier("ask.workspace.temporaryToggle")
     }
 
     @ViewBuilder private func browserButton(showsInteriorFill: Bool = true) -> some View {
@@ -948,22 +971,36 @@ struct AskConversationView: View {
         AskHeaderLineButton(kind: kind, label: label, active: active, action: action)
     }
 
+    /// The headline and composer grouped near the middle, or nil to keep the composer
+    /// at the bottom: in a conversation, a short window, or while a notice needs the room.
+    private var newPagePlacement: AskWorkspaceLayout.NewPagePlacement? {
+        guard model.selectedId == nil, !hasStatus, model.selectedHostElsewhere == nil else { return nil }
+        return layout.newPagePlacement(heading: emptyHeadingHeight, composer: bottomChromeHeight,
+                                       height: contentColumnHeight)
+    }
+
     private var emptyState: some View {
         GeometryReader { viewport in
             ScrollView {
+                let placement = newPagePlacement
                 VStack(spacing: 0) {
-                    if !layout.isShort {
-                        AskEmptyStateOrb(voice: model.voiceInput,
-                                         palette: .init(marked: model.markedStorage(launcher: false)))
-                            .padding(.bottom, 20)
+                    VStack(spacing: 0) {
+                        if !layout.isShort {
+                            AskEmptyStateOrb(voice: model.voiceInput,
+                                             palette: .init(marked: model.markedStorage(launcher: false)))
+                                .padding(.bottom, 20)
+                        }
+                        if !layout.isVeryShort {
+                            Text(L(emptyHeadlineKey))
+                                .font(.system(size: layout.isShort ? 20 : 26, weight: .bold))
+                                .foregroundStyle(StudioTheme.textPrimary)
+                                .padding(.bottom, 9)
+                        }
+                        if !layout.isShort { emptyHint }
                     }
-                    if !layout.isVeryShort {
-                        Text(L(model.conversationKind(launcher: false) == .work ? "ask.empty.work" : "ask.empty"))
-                            .font(.system(size: layout.isShort ? 20 : 26, weight: .bold))
-                            .foregroundStyle(StudioTheme.textPrimary)
-                            .padding(.bottom, 9)
-                    }
-                    if !layout.isShort { emptyHint }
+                    .background(GeometryReader { geometry in
+                        Color.clear.preference(key: AskEmptyHeadingHeight.self, value: geometry.size.height)
+                    })
                     if hasStatus {
                         statusColumn
                             .frame(maxWidth: AskMetrics.transcriptMaxWidth)
@@ -971,13 +1008,21 @@ struct AskConversationView: View {
                     }
                 }
                 .padding(.horizontal, layout.horizontalInset)
-                .padding(.vertical, layout.isShort ? 6 : 16)
+                .padding(.top, placement?.headingTop ?? (layout.isShort ? 6 : 16))
+                .padding(.bottom, placement == nil ? (layout.isShort ? 6 : 16) : 0)
                 .frame(maxWidth: .infinity)
-                .frame(minHeight: max(0, viewport.size.height - AskMetrics.titleBarRowHeight - bottomChromeHeight))
+                .frame(minHeight: max(0, viewport.size.height - AskMetrics.titleBarRowHeight - bottomChromeHeight),
+                       alignment: placement == nil ? .center : .top)
             }
             .padding(.top, AskMetrics.titleBarRowHeight)
             .padding(.bottom, bottomChromeHeight)
         }
+    }
+
+    /// The temporary page says what it is; otherwise the kind sets the question.
+    private var emptyHeadlineKey: String {
+        if model.isTemporaryComposer(launcher: false) { return "ask.temporary.title" }
+        return model.conversationKind(launcher: false) == .work ? "ask.empty.work" : "ask.empty"
     }
 
     /// Summon and voice shortcuts, read from the configured hotkeys.
@@ -1103,10 +1148,16 @@ struct AskConversationView: View {
                     model.continueInNewChat()
                 }
             } else {
-                AskComposer(model: model, compact: layout.isShort, availableWidth: layout.composerWidth,
-                            availableHeight: layout.composerAvailableHeight,
-                            launcher: false, onToggleUsage: { toggleUsage() })
-                    .disabled(model.isLoadingSelection)
+                VStack(spacing: 0) {
+                    AskComposer(model: model, compact: layout.isShort, availableWidth: layout.composerWidth,
+                                availableHeight: layout.composerAvailableHeight,
+                                launcher: false, onToggleUsage: { toggleUsage() })
+                        .disabled(model.isLoadingSelection)
+                    if model.selectedId == nil, !layout.isVeryShort {
+                        AskNewConversationBar(model: model)
+                            .transition(.opacity)
+                    }
+                }
             }
         }
         .frame(maxWidth: AskMetrics.composerMaxWidth)

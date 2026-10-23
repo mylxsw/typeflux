@@ -138,13 +138,13 @@ extension AskComposerInteractionTests {
         let root = try #require(window.contentView)
         // The selected text is not repeated in the strip above the editor.
         #expect(try sourceText(in: root, matching: "Selected words").isEmpty)
-        // Its chip is the footer's last icon-sized control, near the window's bottom edge
-        // (wider anchors belong to the environment and model menus).
-        let footerChips = sourceChipAnchors(root).filter {
-            let frame = $0.convert($0.bounds, to: nil)
-            return frame.midY < 120 && abs(frame.width - AskMetrics.composerControlHeight) < 1
-        }
-        try clickSourceChip(try #require(footerChips.last), in: window)
+        // Its chip is in the composer's footer, which the new page lifts under the
+        // headline (GUL-464); click the chip where it is drawn.
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore() }
+        try await Task.sleep(for: .milliseconds(300))
+        let chip = try AskWorkspaceTestAccessibility.center(identifier: "ask.context.selection.toggle", in: window)
+        try sendSourceClick(at: chip, in: window)
         try await fixture.wait { fixture.model.draft.selectionOff == true }
         #expect(fixture.model.draft.sentSource == "Safari — Example")
         #expect(fixture.model.draft.selection == "Selected words")

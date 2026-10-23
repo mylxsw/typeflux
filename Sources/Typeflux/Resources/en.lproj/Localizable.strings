@@ -2196,6 +2196,16 @@
 "ask.add.skills.auto" = "%d installed · used automatically when none is chosen";
 "ask.add.skills.chosen" = "Chosen: %@";
 "ask.add.skills.footer" = "Choose up to %d. Chosen skills appear before your message; Backspace in an empty message removes the last one.";
+"ask.bar.memoryOff" = "Memory off";
+"ask.bar.memoryOff.help" = "This conversation starts without memory. Click to include it.";
+"ask.bar.folders.help" = "Folders this task works in";
+"ask.bar.notSaved" = "Not saved";
+"ask.bar.notSaved.hint" = "Click to keep this conversation in history";
+"ask.bar.signInToSync" = "Kept on this Mac. Sign in to sync conversations to Typeflux Cloud.";
+"ask.bar.storage.header" = "Where it is kept · fixed once sent";
+"ask.bar.storage.footer" = "Set the default in Settings → Agent. For nothing kept at all, use the hourglass at the top right.";
+"ask.temporary.toggle.on" = "Temporary chat: no history, no memory";
+"ask.temporary.toggle.off" = "Turn off temporary chat";
 "ask.env.help" = "Task environment: working folders and tool permission";
 "ask.env.folders" = "Working folders";
 "ask.env.addFolder" = "Add Folder…";
@@ -2319,8 +2329,6 @@
 "ask.steps.invalid" = "Choose a step limit between 10 and 500.";
 "ask.temporary.settings.confirm" = "Confirm before leaving a temporary chat";
 "ask.temporary.settings.confirm.subtitle" = "Ask before a temporary chat with messages is ended by starting or opening another conversation";
-"ask.new.cloud" = "New conversation";
-"ask.new.cloud.signedOut" = "Sign in to Typeflux Cloud to use it";
 "ask.command.temporary" = "Temporary chat";
 "ask.command.temporaryOn" = "This question starts a temporary chat";
 "ask.command.temporaryOff" = "This question starts an ordinary conversation";

@@ -2758,10 +2758,12 @@ struct AskComposer: View {
     @ViewBuilder private var permissionModeMenu: some View {
         if model.conversationKind(launcher: launcher) == .work {
             // A started task's folders are its own; only folders added for the next message are named.
+            // A new task names its folders in the bar under the composer (GUL-464), so the
+            // composer keeps only the permission; a started task names folders it adds.
             AskWorkEnvironmentButton(model: model, launcher: launcher,
                                      compact: launcher || layout.condensedFooter
-                                         || (!model.canChangeConversationKind(launcher: false)
-                                             && !AskWorkEnvironmentButton.hasPendingFolders(draft.wrappedValue)))
+                                         || model.canChangeConversationKind(launcher: false)
+                                         || !AskWorkEnvironmentButton.hasPendingFolders(draft.wrappedValue))
                 .disabled(active || (!launcher && model.isLoadingSelection))
                 .opacity(Self.recordingDim(active))
         }
@@ -2776,13 +2778,17 @@ struct AskComposer: View {
             .opacity(Self.recordingDim(active))
     }
 
+    /// The new workspace page chooses memory and storage in its bar (GUL-464), so its
+    /// "+" menu offers neither; the launcher, which has no bar, keeps both.
+    private var barOwnsConversationSettings: Bool { !launcher && model.selectedId == nil }
+
     /// The "+" menu's switches and storage choice, read when the menu draws.
     private var addMenuContext: AskAddMenuContext {
         let value = draft.wrappedValue
         let storage = AskLocalModeStatus.make(model: model, signedIn: model.isSignedIn, launcher: launcher)
         return AskAddMenuContext(
             switches: AskAddMenuSwitch.make(
-                items: contextItems,
+                items: barOwnsConversationSettings ? contextItems.filter { $0.kind != .memory } : contextItems,
                 selectionText: value.selection.flatMap { $0.isEmpty ? nil : $0 },
                 screenshot: model.capturingScreenshot ? nil : screenshotThumbnail,
                 actions: { kind in
@@ -2793,7 +2799,7 @@ struct AskComposer: View {
                     case .source: nil
                     }
                 }),
-            storage: storage.changeable ? storage : nil,
+            storage: storage.changeable && !barOwnsConversationSettings ? storage : nil,
             chooseStorage: { model.chooseStorage($0, launcher: launcher) },
             sourceToRestore: value.sourceOff == true ? value.source.flatMap {
                 $0.isEmpty ? nil : AskContextChips.sourceParts($0).app
