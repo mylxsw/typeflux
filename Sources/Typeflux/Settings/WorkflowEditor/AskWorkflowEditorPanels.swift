@@ -347,6 +347,9 @@ struct AskWorkflowAssistantPanel: View {
                 }
                 .onChange(of: assistant.items.count) { _ in withAnimation { reader.scrollTo("bottom") } }
             }
+            if assistant.pendingPermission != nil {
+                AskWorkflowToolPermissionView(assistant: assistant).padding(12)
+            }
             // The assistant waits on this question, so it stays in view above the composer.
             if let run = model.pendingRun {
                 approval(run).padding(.horizontal, 12).padding(.bottom, 10)

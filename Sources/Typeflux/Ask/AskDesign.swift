@@ -262,6 +262,7 @@ enum AskTheme {
     /// `mcpServer` names the server of an MCP tool when the caller knows it.
     static func toolTitle(_ call: AskToolCall, mcpServer: String? = nil) -> String {
         let name = call.function.name
+        if name == AskWorkflowAuthorTools.environmentVersions { return L("agent.permissions.tool.workflow_environment_versions") }
         if ["workflow_start", "workflow_list", "workflow_read", "workflow_environment", "workflow_check_keyword",
             "workflow_propose", "workflow_test", "workflow_save"].contains(name) {
             return L("ask.tool." + name)

@@ -218,7 +218,10 @@ final class DIContainer {
             captureWorker: ClipboardCaptureWorker()
         )
         clipboardPanelController = ClipboardPanelController(settingsStore: settingsStore)
-        mcpRegistry = MCPRegistry()
+        let permissionSettings = settingsStore
+        mcpRegistry = MCPRegistry(onToolsChanged: { definitions, identities in
+            await MainActor.run { permissionSettings.registerToolPermissions(definitions, identities: identities) }
+        })
         analyticsReporter = SettingsAwareAnalyticsEventReporter(settingsStore: settingsStore)
         permissionStatusAnalyticsMonitor = PermissionStatusAnalyticsMonitor(
             defaults: settingsStore.defaults,

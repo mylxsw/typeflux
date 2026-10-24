@@ -76,21 +76,21 @@ extension AskConversationModel {
 
 extension AskConversationModel {
     func toolRisk(_ call: AskToolCall, cloudDefinition: AskToolDefinition?) -> AskToolRisk {
-        guard cloudDefinition != nil else { return tools.risk(of: call) }
-        switch call.function.name {
-        case "web_search", "web_fetch", "web_research", "read_conversation_history": return .read
-        case "update_plan": return .none
-        default: return .destructive
-        }
+        AskToolAuthorization.entry(for: call, discovered: modelLibrary.settings.discoveredToolPermissions).risk
     }
 
     func preparedToolBinding(_ call: AskToolCall, conversationId: String,
                              cloudDefinition: AskToolDefinition?) async throws -> AskToolBinding {
+        let settings = modelLibrary.settings
+        if let definition = cloudDefinition { settings.registerToolPermissions([definition]) }
+        guard settings.toolPermission(call, mode: permissionMode(conversationId: conversationId)) != .deny else {
+            throw AskToolPreparationFailure(AskToolAuthorizationError.denied)
+        }
         guard let definition = cloudDefinition else {
             return try await tools.preparedBinding(for: call, conversationId: conversationId)
         }
         let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
         return .init(target: .init(kind: "network_origin", id: "engine:" + conversationId),
-                     toolVersion: AskToolPolicy.digest(try encoder.encode(definition)), summary: definition.name)
+                     toolVersion: AskToolPolicy.digest(try encoder.encode(definition)) + settings.toolPermissionRevision, summary: definition.name)
     }
 }

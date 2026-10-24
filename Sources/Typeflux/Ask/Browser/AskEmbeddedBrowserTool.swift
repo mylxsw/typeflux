@@ -109,15 +109,9 @@ final class AskEmbeddedBrowserTool {
     }
 
     func risk(_ args: [String: Any]) -> AskToolRisk {
-        let action = action(args)
-        if action == "new_tab", args["url"] == nil { return .none }
-        if action == "open_file" { return .write }
-        let element = (args["ref"] as? String).flatMap { ref in
-            targetTab(args).flatMap { observations[$0.id]?.elements[ref] }
-        }
-        let kind = AskBrowserRisk.kind(action: action, elementName: element?.name)
-        let permission = workspace.policy.permission(for: governingOrigin(args))
-        return AskBrowserRisk.risk(kind, permission: permission)
+        guard let data = try? JSONSerialization.data(withJSONObject: args) else { return .destructive }
+        let call = AskToolCall(id: "risk", function: .init(name: Self.name, arguments: String(decoding: data, as: UTF8.self)))
+        return AskToolAuthorization.entry(for: call).risk
     }
 
     func binding(_ args: [String: Any]) throws -> Binding {
@@ -146,7 +140,7 @@ final class AskEmbeddedBrowserTool {
         // Reads and navigation may repeat for the conversation; each change to a page is approved on its own.
         let reusable = AskBrowserRisk.observeActions.contains(action) || AskBrowserRisk.navigateActions.contains(action)
         return Binding(target: target, summary: summary, reusable: reusable,
-                       requiresExplicitConsent: !reusable && !AskBrowserRisk.neutralActions.contains(action))
+                       requiresExplicitConsent: false)
     }
 
     private func checkAllowed(host: String?) throws {

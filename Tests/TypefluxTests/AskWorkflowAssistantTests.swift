@@ -166,6 +166,9 @@ private func makeAssistant(_ api: any AskAPI, token: String = "token",
                            defaults: UserDefaults? = nil) -> AskWorkflowAssistant {
     let defaults = defaults ?? UserDefaults(suiteName: "wf-assistant-\(UUID().uuidString)")!
     let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+    for entry in AskToolAuthorization.builtins where AskWorkflowAuthorTools.names.contains(entry.tool) {
+        library.settings.setToolPermission(.allow, entry: entry, mode: .standard)
+    }
     return AskWorkflowAssistant(dependencies: .init(api: api, session: { ("owner", token) }, deviceId: "device",
                                                     modelLibrary: library, defaults: defaults))
 }
@@ -331,6 +334,16 @@ struct AskWorkflowAuthorToolsTests {
         #expect(unknown.isError)
     }
 
+    @Test func environmentLookupDoesNotExecuteProgramsButVersionQueryDoes() async throws {
+        let runner = PermissionProbeRunner()
+        let probe = AskWorkflowEnvironmentProbe(runner: runner, searchPath: { "/bin:/usr/bin" })
+        let tools = AskWorkflowAuthorTools(probe: probe)
+        _ = await tools.execute(call("workflow_environment", ["commands": ["ls"]]), host: host())
+        #expect(runner.count == 0)
+        _ = await tools.execute(call("workflow_environment_versions", [:]), host: host())
+        #expect(runner.count > 0)
+    }
+
     @Test func environmentListsInterpretersAndLooksUpCommands() async throws {
         let probe = AskWorkflowEnvironmentProbe(searchPath: { "/bin:/usr/bin" }, osVersion: "macOS 99")
         let tools = AskWorkflowAuthorTools(probe: probe)
@@ -378,6 +391,27 @@ struct AskWorkflowAssistantSessionTests {
         RecordingHost(draft: AskWorkflowDraft(folder: URL(fileURLWithPath: "/tmp/wf-a"),
                                               manifestText: AskWorkflowDraft.format(echoManifest) ?? "",
                                               files: ["main.sh": "x"]))
+    }
+
+    @Test func draftWritesWaitForTheSharedPermissionAndDenialLeavesTheDraftIntact() async throws {
+        let api = AskWorkflowScriptedAPI([
+            .tool("workflow_propose", ["summary": "Change", "manifest": echoManifest,
+                                       "files": [["path": "main.sh", "content": "changed"]]]), .reply("Done")
+        ])
+        let defaults = UserDefaults(suiteName: "workflow-approval-\(UUID().uuidString)")!
+        let assistant = makeAssistant(api, defaults: defaults)
+        let settings = SettingsStore(defaults: defaults)
+        let entry = AskToolAuthorization.builtins.first { $0.tool == "workflow_propose" }!
+        settings.setToolPermission(.ask, entry: entry, mode: .standard)
+        let host = host(); assistant.host = host
+        assistant.bind(workflowID: "local.echo")
+        assistant.send("Change the script")
+        await waitFor { assistant.pendingPermission != nil }
+        #expect(host.authoringDraft.files["main.sh"] == "x")
+        assistant.resolveToolPermission(false)
+        await waitFor { !assistant.isBusy }
+        #expect(host.authoringDraft.files["main.sh"] == "x")
+        #expect(await api.results.first?.isError == true)
     }
 
     @Test func aMessageRunsTheToolsAndShowsTheReply() async throws {
@@ -721,7 +755,7 @@ final class AskWorkflowLogRecorder: @unchecked Sendable {
 struct AskWorkflowEditorModelTests {
     private func model(_ fixture: AskWorkflowFixture,
                        api: any AskAPI = AskWorkflowScriptedAPI([])) -> AskWorkflowEditorModel {
-        let assistant = makeAssistant(api)
+        let assistant = makeAssistant(api, defaults: fixture.settings.defaults)
         let model = AskWorkflowEditorModel(store: fixture.store, settings: fixture.settings, assistant: assistant,
                                            tester: AskWorkflowTester(home: fixture.home.path))
         model.staging = AskWorkflowStaging(root: fixture.home.appendingPathComponent("drafts"))
@@ -921,9 +955,10 @@ struct AskWorkflowEditorModelTests {
         ])
         let model = model(fixture, api: api)
         try model.open(scriptWorkflow(fixture))
-        model.autoTest = false
+        fixture.settings.setToolPermission(.ask,
+            entry: AskToolAuthorization.builtins.first { $0.tool == "workflow_test" }!, mode: .standard)
         model.assistant.send("test")
-        await waitFor { model.pendingRun != nil }
+        await waitFor { model.assistant.pendingPermission != nil }
         let proposalID = model.latestProposal?.id
         model.stopAssistant()
         #expect(!model.assistant.isBusy && model.pendingRun == nil && model.pendingRunContinuation == nil)
@@ -1374,5 +1409,15 @@ struct AskWorkflowCodeViewSelectionTests {
         let inside = [NSValue(range: NSRange(location: 2, length: 3)), NSValue(range: NSRange(location: 9, length: 5))]
         #expect(AskWorkflowCodeView.keptSelection(inside, length: 10).map(\.rangeValue) == [NSRange(location: 2, length: 3)])
         #expect(AskWorkflowCodeView.keptSelection([], length: 0).map(\.rangeValue) == [NSRange(location: 0, length: 0)])
+    }
+}
+
+private final class PermissionProbeRunner: AskWorkflowRunning, @unchecked Sendable {
+    private let lock = NSLock()
+    private var invocations = 0
+    var count: Int { lock.lock(); defer { lock.unlock() }; return invocations }
+    func run(_: AskWorkflowInvocation) -> AsyncThrowingStream<AskWorkflowRunEvent, Error> {
+        lock.lock(); invocations += 1; lock.unlock()
+        return AsyncThrowingStream { $0.finish() }
     }
 }

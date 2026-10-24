@@ -15,6 +15,7 @@ protocol AskWorkflowAuthoringHost: AnyObject {
     func submit(_ proposal: AskWorkflowProposal) -> AskWorkflowProposal
     /// Nil means the run did not start or was interrupted; inspect its failure.
     func testLatestProposal(_ inputs: [AskWorkflowTestInput]) async -> [AskWorkflowTestResult]?
+    func testApprovedProposal(_ inputs: [AskWorkflowTestInput]) async -> [AskWorkflowTestResult]?
 }
 
 enum AskWorkflowAuthoringTestFailure: Equatable {
@@ -34,10 +35,13 @@ enum AskWorkflowAuthoringTestFailure: Equatable {
 }
 
 extension AskWorkflowAuthoringHost {
+    func testApprovedProposal(_ inputs: [AskWorkflowTestInput]) async -> [AskWorkflowTestResult]? {
+        await testLatestProposal(inputs)
+    }
     var authoringTestFailure: AskWorkflowAuthoringTestFailure? { nil }
 }
 
-/// The five tools the workflow assistant gets, and nothing else: no files, desktop,
+/// The tools the workflow assistant gets, and nothing else: no files, desktop,
 /// browser or MCP tools. Every effect goes through a proposal or a test run the
 /// host controls. See `docs/design/ask-workflow-editor.md` §10.4.
 @MainActor
@@ -45,16 +49,18 @@ struct AskWorkflowAuthorTools {
     // Plain names: readable off the main actor, e.g. by conversation-kind rules.
     nonisolated static let read = "workflow_read"
     nonisolated static let environment = "workflow_environment"
+    nonisolated static let environmentVersions = "workflow_environment_versions"
     nonisolated static let checkKeyword = "workflow_check_keyword"
     nonisolated static let propose = "workflow_propose"
     nonisolated static let test = "workflow_test"
-    nonisolated static let names: Set<String> = [read, environment, checkKeyword, propose, test]
+    nonisolated static let names: Set<String> = [read, environment, environmentVersions, checkKeyword, propose, test]
 
     /// Output the model sees from one stream of a test run.
     nonisolated static let outputLimit = 4096
     static let maximumInputs = 5
 
     var probe = AskWorkflowEnvironmentProbe()
+    var hasExecutionApproval = false
 
     struct Output: Equatable {
         var content: String
@@ -72,10 +78,12 @@ struct AskWorkflowAuthorTools {
             test run. Pass `path` to read one file.
             """, ["path": ["type": "string"]], required: []),
             definition(environment, """
-            List the script interpreters installed on this Mac with their versions, and look up commands on the \
+            List the paths of script interpreters installed on this Mac, and look up commands on the \
             PATH (only looked up, never run). No workflow draft is required. Pass executable names such as \
             curl or python3, never URLs or website names. A tool error is not evidence that a command is missing.
             """, ["commands": ["type": "array", "items": ["type": "string"], "maxItems": 20]], required: []),
+            definition(environmentVersions, "Run installed interpreters with --version after approval. No workflow draft is required.",
+                       [:], required: []),
             definition(checkKeyword, "Check whether a launcher keyword is free to use.",
                        ["keyword": ["type": "string"]], required: ["keyword"]),
             definition(propose, """
@@ -125,6 +133,7 @@ struct AskWorkflowAuthorTools {
         switch call.function.name {
         case Self.read: return read(arguments, host: host)
         case Self.environment: return await environment(arguments)
+        case Self.environmentVersions: return await environment(arguments, includeVersions: true)
         case Self.checkKeyword: return checkKeyword(arguments, host: host)
         case Self.propose: return propose(arguments, host: host)
         case Self.test: return await test(arguments, host: host)
@@ -167,9 +176,9 @@ struct AskWorkflowAuthorTools {
         )
     }
 
-    func environment(_ arguments: [String: Any]) async -> Output {
+    func environment(_ arguments: [String: Any], includeVersions: Bool = false) async -> Output {
         let commands = (arguments["commands"] as? [String] ?? []).prefix(20).map(\.self)
-        let report = await probe.report(commands: commands)
+        let report = await probe.report(commands: commands, includeVersions: includeVersions)
         return Output(content: report, isError: false, summary: L("ask.workflow.assistant.tool.environment"))
     }
 
@@ -259,7 +268,7 @@ struct AskWorkflowAuthorTools {
                 "nextStep": "Read the draft and submit a valid workflow_propose before testing. No script ran."
             ]), isError: true, summary: L("ask.workflow.assistant.tool.testNotRun"))
         }
-        guard let results = await host.testLatestProposal(inputs) else {
+        guard let results = await (hasExecutionApproval ? host.testApprovedProposal(inputs) : host.testLatestProposal(inputs)) else {
             return Output(
                 content: (host.authoringTestFailure ?? (Task.isCancelled ? .cancelled
                     : .unavailable("No test result was returned"))).content,
@@ -329,7 +338,10 @@ actor AskWorkflowEnvironmentProbe {
     private let osVersion: String
 
     init(runner: any AskWorkflowRunning = AskWorkflowRunner(),
-         searchPath: @escaping @Sendable () async -> String = { await AskWorkflowPath.searchPath() },
+         searchPath: @escaping @Sendable () async -> String = {
+             // A read-only lookup must not source login-shell profiles.
+             AskWorkflowPath.combine(ProcessInfo.processInfo.environment["PATH"] ?? "")
+         },
          osVersion: String = ProcessInfo.processInfo.operatingSystemVersionString) {
         self.runner = runner
         self.searchPath = searchPath
@@ -338,17 +350,18 @@ actor AskWorkflowEnvironmentProbe {
 
     /// A JSON object: the macOS version, each interpreter's version and path (null when
     /// missing), and each requested command's path (null when missing).
-    func report(commands: [String]) async -> String {
+    func report(commands: [String], includeVersions: Bool = true) async -> String {
         let path = await searchPath()
-        if runtimes == nil {
-            runtimes = await versions(path: path)
-        }
+        if includeVersions, runtimes == nil { runtimes = await versions(path: path) }
+        let paths = Dictionary(uniqueKeysWithValues: Self.interpreters.map {
+            ($0, AskWorkflowPath.resolve($0, searchPath: path)?.path as Any? ?? NSNull())
+        })
         var found: [String: Any] = [:]
         for name in commands {
             guard name.range(of: "^[A-Za-z0-9._+-]{1,64}$", options: .regularExpression) != nil else { continue }
             found[name] = AskWorkflowPath.resolve(name, searchPath: path)?.path ?? NSNull()
         }
-        return AskWorkflowAuthorTools.json(["macOS": osVersion, "runtimes": runtimes ?? [:], "commands": found])
+        return AskWorkflowAuthorTools.json(["macOS": osVersion, "runtimes": includeVersions ? (runtimes ?? [:]) : paths, "commands": found])
     }
 
     private func versions(path: String) async -> [String: Any] {

@@ -43,7 +43,7 @@ final class AskSkillAuthorizationTests: XCTestCase {
         XCTAssertFalse(after.contains { $0.name == "run_code" || $0.name == "files" })
         XCTAssertFalse(settings.askCodeExecutionEnabled)
         XCTAssertTrue(settings.askFileAccessFolders.isEmpty)
-        XCTAssertEqual(tools.risk(of: code), .write)
+        XCTAssertEqual(tools.risk(of: code), .destructive)
         XCTAssertEqual(tools.risk(of: call("unknown_tool", "{}")), .destructive)
         let afterBinding = try await tools.approvalBinding(for: memory, conversationId: "test")
         XCTAssertEqual(binding, afterBinding)

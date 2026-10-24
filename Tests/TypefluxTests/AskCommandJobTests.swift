@@ -111,7 +111,7 @@ final class AskCommandJobTests: XCTestCase {
         )
         for (action, risk, recovery) in [
             ("start", AskToolRisk.destructive, false),
-            ("stop", .write, false),
+            ("stop", .destructive, false),
             ("status", .read, true),
             ("logs", .read, true)
         ] {
@@ -275,7 +275,8 @@ final class AskCommandJobTests: XCTestCase {
         try secure.createFile(handle + ".json", data: JSONEncoder().encode(record))
         let unknown = UUID().uuidString.lowercased() + ".json"
         record.version = 99
-        try secure.createFile(unknown, data: JSONEncoder().encode(record))
+        let unknownData = try JSONEncoder().encode(record)
+        try secure.createFile(unknown, data: unknownData)
         try secure.createFile(UUID().uuidString.lowercased() + ".json", data: Data("bad".utf8))
         let store = try AskCommandJobStore(root: directory), scope = bind(store, persistent: true)
         XCTAssertThrowsError(try AskCommandJobStore(root: directory)) // Exclusive instance lock.
@@ -283,7 +284,7 @@ final class AskCommandJobTests: XCTestCase {
         XCTAssertEqual(status.state, "interrupted"); XCTAssertTrue(status.outcomeAmbiguous)
         XCTAssertEqual(try store.logs(handle, scope: scope, stream: .stdout, offset: 0, limit: 20).text, "historical")
         XCTAssertEqual(try store.stop(handle, scope: scope).state, "interrupted")
-        XCTAssertEqual(try secure.readFile(unknown, limit: 196_608), try JSONEncoder().encode(record))
+        XCTAssertEqual(try secure.readFile(unknown, limit: 196_608), unknownData)
         try store.cancelConversation(owner: "owner", conversation: "chat")
         XCTAssertThrowsError(try store.status(handle, scope: scope))
         await store.shutdown()

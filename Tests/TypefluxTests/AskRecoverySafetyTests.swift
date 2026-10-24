@@ -275,10 +275,6 @@ struct AskRecoverySafetyTests {
             fixture.tools.riskOverride = .read // A trusted site's presentation cannot authorize effects.
             fixture.model.setPermissionMode(mode, launcher: false)
             fixture.model.resume()
-            if action == "read", mode == .strict {
-                try await fixture.wait { !fixture.model.pendingApprovals.isEmpty }
-                fixture.model.approve(conversationId: value.id, allowed: true)
-            }
             try await fixture.wait { fixture.model.busyIds.isEmpty }
             #expect(fixture.tools.executions == (action == "read" ? 1 : 0))
             #expect(await fixture.api.results.count == 1)

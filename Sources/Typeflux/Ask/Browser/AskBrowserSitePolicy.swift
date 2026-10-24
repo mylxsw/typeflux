@@ -7,8 +7,8 @@ enum AskBrowserSitePermission: String, CaseIterable, Codable, Sendable {
     case off, ask, read, act
 
     /// Compatibility values remain decodable; presentation offers one read/navigation choice.
-    static let choices: [Self] = [.off, .ask, .read]
-    var presented: Self { self == .act ? .read : self }
+    static let choices: [Self] = [.off, .read]
+    var presented: Self { self == .off ? .off : .read }
     var title: String { L("ask.web.permission." + presented.rawValue) }
 }
 
@@ -135,8 +135,7 @@ final class AskBrowserSitePolicy: ObservableObject {
     }
 }
 
-/// Maps a `web_browser` call to an approval risk. Tiers decide when Standard mode
-/// asks the user; site permission `off` is enforced separately at execution.
+/// Browser action families. Tool authorization is centralized; site denial is enforced at execution.
 enum AskBrowserRisk {
     enum Kind: Equatable { case none, observe, navigate, write, sensitive }
 
@@ -173,14 +172,14 @@ enum AskBrowserRisk {
         }
     }
 
-    static func risk(_ kind: Kind, permission: AskBrowserSitePermission) -> AskToolRisk {
-        switch (kind, permission) {
-        case (.none, _): .none
-        case (.sensitive, _): .destructive
-        // Execution refuses `off`; nothing is gained by asking first.
-        case (_, .off): .read
-        case (.observe, .ask), (.navigate, .ask), (.write, .ask), (.write, .read): .write
-        case (.observe, _), (.navigate, _), (.write, .act): .read
+    static func risk(_ kind: Kind, permission _: AskBrowserSitePermission) -> AskToolRisk {
+        let action: String
+        switch kind {
+        case .none: action = "wait"
+        case .observe: action = "read"
+        case .navigate: action = "open"
+        case .write, .sensitive: action = "click"
         }
+        return AskToolAuthorization.builtins.first { $0.tool == "web_browser" && $0.action == action }!.risk
     }
 }

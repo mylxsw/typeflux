@@ -205,8 +205,6 @@ struct AskWorkflowEditorView: View {
 
     private var moreMenu: some View {
         Menu {
-            Toggle(L("ask.workflow.assistant.autoTestMenu"), isOn: $model.autoTest)
-            Divider()
             if let folder = model.folder {
                 Button(L("ask.workflow.reveal")) { NSWorkspace.shared.activateFileViewerSelecting([folder]) }
             }

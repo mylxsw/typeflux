@@ -165,10 +165,11 @@ struct AskLocalApprovalTests {
         _ = try await tools.executeApproved(wait, conversationId: "c", binding: binding) { checks += 1 }
         #expect(checks >= 2)
         let screenshot = try call("computer", ["action": "screenshot"])
-        if !NSScreen.screens.isEmpty {
-            let display = try await tools.approvalBinding(for: screenshot, conversationId: "c")
-            #expect(display.target.id.hasPrefix("display:")); #expect(!display.allowsReuse)
+        tools.screenObservation.target = {
+            .init(display: 1, binding: .init(kind: "desktop_window", id: "display:1", version: "fixture"))
         }
+        let display = try await tools.approvalBinding(for: screenshot, conversationId: "c")
+        #expect(display.target.id == "display:1"); #expect(!display.allowsReuse)
     }
 
     @Test func nativeEvidenceFailsClosedForAnUnavailableProcess() {

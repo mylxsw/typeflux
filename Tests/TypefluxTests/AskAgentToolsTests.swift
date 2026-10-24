@@ -190,17 +190,17 @@ final class AskAgentToolsTests: XCTestCase {
         XCTAssertTrue(names.contains("run_command"))
 
         let risks: [(String, [String: Any], AskToolRisk)] = [
-            ("skill", ["name": "x"], .none), ("computer", ["action": "inspect"], .read), ("computer", ["action": "wait"], .read),
+            ("skill", ["name": "x"], .read), ("computer", ["action": "inspect"], .read), ("computer", ["action": "wait"], .none),
             ("computer", ["action": "drag"], .write), ("browser", ["action": "snapshot"], .read), ("browser", ["action": "back"], .write),
             ("files", ["action": "read", "path": "a"], .read), ("files", ["action": "write", "path": "a"], .write),
-            ("run_code", ["language": "python", "code": "1"], .write),
+            ("run_code", ["language": "python", "code": "1"], .destructive),
             ("run_command", ["command": "printf ok"], .destructive), ("memory", ["action": "list"], .read),
             ("memory", ["action": "remember"], .write), ("unknown", [:], .destructive)
         ]
         for (name, args, risk) in risks {
             XCTAssertEqual(tools.risk(of: call(name, args)), risk, "\(name) \(args)")
         }
-        XCTAssertEqual(AskLocalTools.builtinRisk(AskToolCall(id: "x", function: .init(name: "files", arguments: "not json"))), .write)
+        XCTAssertEqual(AskLocalTools.builtinRisk(AskToolCall(id: "x", function: .init(name: "files", arguments: "not json"))), .destructive)
     }
 
     func testApprovedHostCommandClippingRetainsExitAndFinalSideEffect() async throws {

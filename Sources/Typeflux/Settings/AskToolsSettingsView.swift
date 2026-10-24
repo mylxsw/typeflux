@@ -64,6 +64,8 @@ struct AskToolsSettingsView: View {
             switch pane {
             case .overview:
                 overviewSections
+            case .permissions:
+                AskToolPermissionsSettingsView(settings: settings)
             case .webSearch:
                 searchPane
             case .imageGeneration:

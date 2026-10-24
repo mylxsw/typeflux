@@ -50,6 +50,26 @@ struct AskPermissionModeTests {
         }
     }
 
+    @Test func embeddedBrowserObservationsAreAllowedInEveryMode() throws {
+        let f = try AskTestFixture()
+        defer { f.model.resetSession() }
+        for mode in AskPermissionMode.allCases {
+            f.model.permissionModes["c"] = mode
+            for action in AskBrowserRisk.observeActions {
+                for permission in AskBrowserSitePermission.allCases {
+                    let risk = AskBrowserRisk.risk(.observe, permission: permission)
+                    #expect(f.model.automaticallyApproves(call("web_browser", action), risk: risk, conversationId: "c"))
+                }
+            }
+            for action in ["open", "click", "fill"] {
+                #expect(f.model.automaticallyApproves(call("web_browser", action), risk: .write,
+                                                     conversationId: "c") == (mode == .yolo))
+            }
+            #expect(f.model.automaticallyApproves(call("browser"), risk: .read,
+                                                 conversationId: "c") == (mode != .strict))
+        }
+    }
+
     @Test func commandsStayLocalAndNewConversationsReset() async throws {
         let f = try AskTestFixture()
         defer { f.model.resetSession() }
@@ -110,7 +130,7 @@ struct AskPermissionModeTests {
         #expect(f.model.permissionMode(launcher: false) == mode)
     }
 
-    @Test(arguments: ["files", "run_code", "run_command", "mcp_unknown", "generate_image"])
+    @Test(arguments: ["files", "run_code", "run_command", "generate_image"])
     func yoloResumesPendingWritesAndUnknownTools(_ tool: String) async throws {
         let f = try AskTestFixture()
         defer { f.model.resetSession() }

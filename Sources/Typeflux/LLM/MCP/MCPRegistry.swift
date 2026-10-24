@@ -19,11 +19,14 @@ actor MCPRegistry {
         let name: String
     }
 
+    private let onToolsChanged: (@Sendable ([AskToolDefinition], [String: String]) async -> Void)?
     private let settingsStore: MCPSettingsStore
     private let clientFactory: (MCPServerConfig) -> any MCPClient
 
     init(settingsStore: MCPSettingsStore = MCPSettingsStore(),
-         clientFactory: ((MCPServerConfig) -> any MCPClient)? = nil) {
+         clientFactory: ((MCPServerConfig) -> any MCPClient)? = nil,
+         onToolsChanged: (@Sendable ([AskToolDefinition], [String: String]) async -> Void)? = nil) {
+        self.onToolsChanged = onToolsChanged
         self.settingsStore = settingsStore
         self.clientFactory = clientFactory ?? Self.makeClient(for:)
     }
@@ -46,6 +49,7 @@ actor MCPRegistry {
             guard generations[serverId] == generation else { throw MCPClientError.notConnected }
             connecting[serverId] = nil
             connectionErrors[serverId] = nil
+            await publishAuthorizationInventory()
         } catch {
             if generations[serverId] == generation {
                 await removeServer(id: serverId)
@@ -127,6 +131,25 @@ actor MCPRegistry {
                 $1.tool.toolDef.name
             )
         }
+    }
+
+    func authorizationIdentities() -> [String: String] {
+        let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
+        return Dictionary(uniqueKeysWithValues: AskLocalTools.mcpToolNames(registeredTools()).map { name, entry in
+            (name, entry.serverId.uuidString + AskToolPolicy.digest(
+                (try? encoder.encode(serverConfigs[entry.serverId])) ?? Data()))
+        })
+    }
+
+    private func publishAuthorizationInventory() async {
+        guard let onToolsChanged else { return }
+        let definitions = AskLocalTools.mcpToolNames(registeredTools()).compactMap { name, entry -> AskToolDefinition? in
+            guard let data = try? JSONSerialization.data(withJSONObject: entry.tool.definition.inputSchema.jsonObject,
+                                                        options: .sortedKeys) else { return nil }
+            return .init(name: name, description: String(entry.tool.definition.description.prefix(2000)),
+                         parameters: JSONValue(data: data))
+        }
+        await onToolsChanged(definitions, authorizationIdentities())
     }
 
     /// Tools for the voice agent, which calls them by bare name: a name shared by
@@ -245,6 +268,7 @@ actor MCPRegistry {
                 )
             }
             connectionErrors[serverId] = nil
+            await publishAuthorizationInventory()
         } catch {
             if generations[serverId] == generation {
                 cachedTools = cachedTools.filter { $0.key.serverId != serverId }

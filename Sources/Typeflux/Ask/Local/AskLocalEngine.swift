@@ -783,7 +783,8 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     }
 
     private func isBuiltin(_ call: AskToolCall, _ record: AskLocalRecord) -> Bool {
-        record.builtinTools.contains { $0.name == call.function.name }
+        if call.function.name == AskInternalRecovery.toolName, record.conversation.run?.internalRecovery != nil { return true }
+        return record.builtinTools.contains { $0.name == call.function.name }
             && !(record.conversation.run?.tools ?? []).contains { $0.name == call.function.name }
     }
 
@@ -948,6 +949,12 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         while let first = record.conversation.run?.pending.first {
             try Task.checkCancellation()
             if first.function.name == AskInternalRecovery.toolName, record.conversation.run?.internalRecovery != nil {
+                if record.conversation.run?.clientToolApproval == true, record.approvedCloudCallId != first.id {
+                    record.conversation.run?.status = "waiting_tool"
+                    try save(&record)
+                    return record.conversation
+                }
+                record.approvedCloudCallId = nil
                 finishInternalRecovery(&record, call: first)
                 try save(&record)
                 continue

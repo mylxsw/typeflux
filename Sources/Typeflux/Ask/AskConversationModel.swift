@@ -554,6 +554,8 @@ final class AskConversationModel: ObservableObject {
     private var authObserver: AnyCancellable?
     private var modelObserver: AnyCancellable?
     private var memoryObserver: AnyCancellable?
+    private var pendingToolPermissionRevisions: [String: String] = [:]
+    private var toolPermissionsObserver: AnyCancellable?
     private var notesObserver: AnyCancellable?
     private let defaults: UserDefaults
     private let memoryInvalidations: MemoryInvalidationStore
@@ -594,6 +596,18 @@ final class AskConversationModel: ObservableObject {
         imageAuthObserver = NotificationCenter.default.publisher(for: .authDidLogin)
             .merge(with: NotificationCenter.default.publisher(for: .authTokenDidRefresh)).sink { [weak self] _ in
                 Task { @MainActor in self?.invalidateRemoteImages() }
+            }
+        toolPermissionsObserver = NotificationCenter.default.publisher(for: .askToolPermissionsDidChange)
+            .merge(with: DistributedNotificationCenter.default().publisher(for: .askToolPermissionsDidChange))
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    let revision = self.modelLibrary.settings.toolPermissionRevision
+                    for id in Array(self.approvals.keys) where self.pendingToolPermissionRevisions[id] != revision {
+                        self.approvalStore.revoke(conversation: id)
+                        self.approve(conversationId: id, allowed: false)
+                    }
+                }
             }
         notesObserver = NotificationCenter.default.publisher(for: .askNotesDidChange).sink { [weak self] _ in
             Task { @MainActor in
@@ -757,6 +771,7 @@ final class AskConversationModel: ObservableObject {
         queueFlights = [:]; queuedSubmissions = [:]; queuedSubmissionSelections = [:]; queuedOperations = []
         sendQueue = AskSendQueue(); steeringIds = []
         screenshotConsent = [:]
+        pendingToolPermissionRevisions = [:]
         cloudApprovals = [:]
         permissionModes = [:]; launcherPermissionMode = .standard; draftPermissionMode = .standard
         draftSave?.cancel(); draftSaveConversationID = nil; deletedConversationIDs = []; captureGeneration = UUID(); selectionGeneration = UUID()
@@ -1739,6 +1754,7 @@ final class AskConversationModel: ObservableObject {
         if let operationId { try checkOperation(incoming.id, operationId: operationId, account: route.account) }
         guard owner == route.account, session()?.owner == route.account,
               !deletedConversationIDs.contains(incoming.id) else { throw CancellationError() }
+        modelLibrary.settings.registerToolPermissions(incoming.run?.cloudTools ?? [])
         reconcileConfirmedSupplements(fromAuthenticated: incoming)
         if let previous = snapshots[incoming.id], !incoming.isNewer(than: previous) {
             if previous.revision > incoming.revision || previous.run?.id == incoming.run?.id {
@@ -1998,7 +2014,7 @@ final class AskConversationModel: ObservableObject {
                 // not to the cache partition a private conversation uses.
                 tools.bindExecution(ownerId: current.account, conversationId: value.id, runId: run.id,
                                 deviceId: deviceId, persistent: !isTemporary(value.id))
-                // Consent comes from the submitted draft, never from historical images or live UI state.
+                // Resolve the offered definition before applying the local authorization table.
                 let cloudDefinition = run.approvalTool(for: call)
                 let binding: AskToolBinding
                 do {
@@ -2011,12 +2027,14 @@ final class AskConversationModel: ObservableObject {
                 }
                 try Task.checkCancellation()
                 guard session()?.owner == current.account else { throw CancellationError() }
+                let permissionRevision = modelLibrary.settings.toolPermissionRevision
+                pendingToolPermissionRevisions[value.id] = permissionRevision
                 let request = AskToolPolicy.request(call: call, owner: current.account, conversation: value.id,
                                                     run: run.id, step: String(run.steps), binding: binding,
                                                     risk: toolRisk(call, cloudDefinition: cloudDefinition), reuseEnabled: false,
                                                     now: approvalStore.now())
                 let grantID: String?
-                if !binding.requiresExplicitConsent, automaticallyApproves(
+                if automaticallyApproves(
                     call,
                     risk: request.risk,
                     conversationId: value.id
@@ -2072,12 +2090,17 @@ final class AskConversationModel: ObservableObject {
                         try Task.checkCancellation()
                         guard session()?.owner == current.account else { throw CancellationError() }
                         _ = try AskAgentBinding.resolve(snapshots[value.id]?.run?.agentBinding)
-                        guard bindingNow == request.binding,
+                        guard modelLibrary.settings.toolPermissionRevision == permissionRevision,
+                              bindingNow == request.binding,
                               approvalStore.consume(grantID, for: request) else {
                             throw AskLocalError.message(L("ask.approval.changed"))
                         }
                         tools.setExecutionDeadline(run.budgetEnabled == true ? run.budgetDeadline : nil, conversationId: value.id)
                         let authorize = { [self] in
+                            guard self.modelLibrary.settings.toolPermissionRevision == permissionRevision,
+                                  self.modelLibrary.settings.toolPermission(call, mode: self.permissionMode(conversationId: value.id)) != .deny else {
+                                throw AskLocalError.message(L("ask.approval.changed"))
+                            }
                             _ = try AskAgentBinding.resolve(self.snapshots[identity.conversationId]?.run?.agentBinding)
                             try self.checkOperation(identity.conversationId, operationId: operationId, account: current.account)
                             if self.snapshots[identity.conversationId]?.run?.recoveryCheck == true,
@@ -2191,22 +2214,14 @@ final class AskConversationModel: ObservableObject {
         return approvalStore.reusableGrant(for: request) != nil
     }
 
-    /// Screen capture needs an opened data scope in standard mode, just like files need a root.
+    /// The UI-owned authorization table is the only source of automatic tool approval.
     func automaticallyApproves(_ call: AskToolCall, risk: AskToolRisk, conversationId: String) -> Bool {
-        // Personal notes always need explicit consent. Other tools follow the selected mode.
-        if call.function.name == AskNotebookTool.name { return false }
-        let mode = permissionMode(conversationId: conversationId)
-        if mode == .standard, call.function.name == "computer",
-           (try? AskLocalTools.arguments(call.function.arguments)["action"] as? String) == "screenshot" {
-            guard let messageID = screenshotConsent[conversationId],
-                  snapshots[conversationId]?.messages.last(where: { $0.role == "user" })?.id == messageID else { return false }
-        }
-        return mode.automaticallyAllows(risk)
+        modelLibrary.settings.toolPermission(call, mode: permissionMode(conversationId: conversationId)) == .allow
     }
 
     func resumeAutomaticallyApprovedTool(_ id: String) {
         guard let pending = approvalRequests[id],
-              let call = pendingApprovals[id], !pending.request.binding.requiresExplicitConsent,
+              let call = pendingApprovals[id],
               automaticallyApproves(call, risk: pending.request.risk, conversationId: id) else { return }
         approve(conversationId: id, allowed: true, expectedApprovalID: pending.id)
     }

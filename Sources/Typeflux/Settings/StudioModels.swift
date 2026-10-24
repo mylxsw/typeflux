@@ -240,6 +240,7 @@ enum AgentSettingsPaneGroup: String, CaseIterable {
 /// Panes of the Agent settings page, one per capability, in display order.
 enum AgentSettingsPane: String, CaseIterable, Identifiable, SettingsPaneItem {
     case overview
+    case permissions
     case webSearch
     case imageGeneration
     case files
@@ -255,7 +256,7 @@ enum AgentSettingsPane: String, CaseIterable, Identifiable, SettingsPaneItem {
 
     var group: AgentSettingsPaneGroup {
         switch self {
-        case .overview: .general
+        case .overview, .permissions: .general
         case .webSearch, .imageGeneration, .files, .codeExecution, .automation: .capabilities
         case .skills, .mcpServers: .extensions
         case .memory: .personalization
@@ -265,7 +266,7 @@ enum AgentSettingsPane: String, CaseIterable, Identifiable, SettingsPaneItem {
     /// The capability configured in this pane, whose state the pane list shows.
     var capability: AgentCapability? {
         switch self {
-        case .overview, .memory: nil
+        case .overview, .permissions, .memory: nil
         case .webSearch: .webSearch
         case .imageGeneration: .imageGeneration
         case .files: .files
@@ -279,6 +280,7 @@ enum AgentSettingsPane: String, CaseIterable, Identifiable, SettingsPaneItem {
     var title: String {
         switch self {
         case .overview: L("agent.section.overview")
+        case .permissions: L("agent.permissions.title")
         case .memory: L("agent.section.memory")
         default: capability?.title ?? ""
         }
@@ -287,6 +289,7 @@ enum AgentSettingsPane: String, CaseIterable, Identifiable, SettingsPaneItem {
     var symbol: String {
         switch self {
         case .overview: "square.grid.2x2"
+        case .permissions: "checkmark.shield"
         case .memory: "brain"
         default: capability?.symbol ?? ""
         }

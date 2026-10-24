@@ -56,6 +56,7 @@ struct AskWorkflowNewSheet: View {
             if mode != .assistant {
                 nameFields
             }
+            if assistant.pendingPermission != nil { AskWorkflowToolPermissionView(assistant: assistant) }
             footer
         }
         .padding(22)

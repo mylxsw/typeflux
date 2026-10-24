@@ -73,6 +73,7 @@ struct AskRun: Codable, Equatable, Sendable {
 
     func approvalTool(for call: AskToolCall) -> AskToolDefinition? {
         guard clientToolApproval == true else { return nil }
+        if internalRecovery != nil, call.function.name == AskInternalRecovery.toolName { return AskInternalRecovery.tool }
         return cloudTools?.first { $0.name == call.function.name }
     }
 

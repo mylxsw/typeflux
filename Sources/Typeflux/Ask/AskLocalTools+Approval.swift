@@ -89,10 +89,6 @@ extension AskLocalTools {
             if let destination = args["url"] as? String {
                 summary += " → " + destination
             }
-            if call.function.name == "browser" {
-                explicitConsent = !["read", "snapshot", "open", "back", "scroll"]
-                    .contains(args["action"] as? String ?? "")
-            }
         // An observation is single-use evidence, never a reusable authorization.
         default: throw AskLocalError.message(L("ask.tool.unavailable"))
         }

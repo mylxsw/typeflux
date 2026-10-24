@@ -21,9 +21,9 @@ extension AskLocalTools {
             ]
         ]
         return try .init(name: "project_files", description: """
-        Open a task workspace after approval, then read, stage edits, review and export a unified patch.
+        Open an authorized task workspace, then read, stage edits, review and export a unified patch.
         Source files (including existing dirty files) are preserved. Edits live in a private change manifest;
-        this tool does not apply patches to the source or run programs. Every call requires approval.
+        this tool does not apply patches to the source or run programs. Edits follow the configured permission policy.
         open returns workspace.id and workspace.version. read returns a file version (or 'missing' for a
         new file), numbered UTF-8 lines and nextOffset. write/edit require that exact expected_version.
         Source changes cause conflicts: revert discards only this run's staged edits, then read again.

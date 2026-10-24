@@ -330,6 +330,19 @@ struct AskWorkflowAuthoringTests {
         model.submitLauncher()
         for _ in 0..<1500 where model.pendingApprovals.isEmpty { try await Task.sleep(for: .milliseconds(2)) }
         let id = try #require(model.selectedId)
+        for name in ["workflow_start", "workflow_propose"] {
+            for _ in 0..<1500 where model.pendingApprovals[id]?.function.name != name {
+                try await Task.sleep(for: .milliseconds(2))
+            }
+            #expect(model.pendingApprovals[id]?.function.name == name)
+            model.approve(conversationId: id, allowed: true)
+            for _ in 0..<1500 where model.pendingApprovals[id]?.function.name == name {
+                try await Task.sleep(for: .milliseconds(2))
+            }
+        }
+        for _ in 0..<1500 where model.pendingApprovals[id]?.function.name != "workflow_test" {
+            try await Task.sleep(for: .milliseconds(2))
+        }
         #expect(model.pendingApprovals[id]?.function.name == "workflow_test")
         let session = try #require(model.authoringSession)
         #expect(session.lastTestResult == nil && fixture.store.workflows.isEmpty)

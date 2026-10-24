@@ -20,7 +20,7 @@ struct AskToolPreparationFailure: LocalizedError {
         case AskObservationError.invalid:
             message = L("ask.tool.invalid")
             status = .invalid
-        case AskProjectError.denied, AskArtifactError.denied,
+        case AskToolAuthorizationError.denied, AskProjectError.denied, AskArtifactError.denied,
              AskProjectRuntimeError.disabled, AskProjectRuntimeError.denied:
             message = error.localizedDescription
             status = .denied

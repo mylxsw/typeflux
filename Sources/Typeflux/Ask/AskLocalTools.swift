@@ -277,6 +277,7 @@ final class AskLocalTools: AskToolExecuting {
             result.append(.init(name: name, description: String(tool.definition.description.prefix(2000)), parameters: JSONValue(data: schema)))
             if result.count == 64 { break }
         }
+        settings?.registerToolPermissions(result, identities: await registry.authorizationIdentities())
         return result
     }
 
@@ -284,39 +285,11 @@ final class AskLocalTools: AskToolExecuting {
 
     /// External annotations are hints, never evidence of a trusted read-only tool.
     func risk(of call: AskToolCall) -> AskToolRisk {
-        if mcpTools[call.function.name] != nil { return .destructive }
-        if Self.workflowChatNames.contains(call.function.name) {
-            return call.function.name == AskWorkflowAuthorTools.test ? .destructive : .read
-        }
-        if call.function.name == AskEmbeddedBrowserTool.name, let embeddedBrowser {
-            // Site permissions decide; a call that cannot be parsed is treated as the worst case.
-            guard let args = try? Self.jsonArguments(call.function.arguments) else { return .destructive }
-            return embeddedBrowser.risk(args)
-        }
-        return Self.builtinRisk(call)
+        AskToolAuthorization.entry(for: call, discovered: settings?.discoveredToolPermissions ?? []).risk
     }
 
     nonisolated static func builtinRisk(_ call: AskToolCall) -> AskToolRisk {
-        let args = (try? jsonArguments(call.function.arguments)) ?? [:]
-        let action = args["action"] as? String ?? ""
-        switch (call.function.name, action) {
-        case ("skill", _): return .none
-        case (AskEmbeddedBrowserTool.name, _):
-            return AskBrowserRisk.observeActions.contains(action) || AskBrowserRisk.neutralActions.contains(action)
-                ? .read : .write
-        case ("computer", "screenshot"), ("computer", "inspect"), ("computer", "wait"),
-             ("browser", "read"), ("browser", "snapshot"), ("memory", "list"): return .read
-        case ("files", _): return AskFileTools.risk(action: action)
-        case ("artifact", _), ("generate_image", _): return .write
-        case ("project_terminal", _): return ["status", "output"].contains(action) ? .read : .write
-        case ("project_files", _): return ["list", "read", "review", "export"].contains(action) ? .read : .write
-        case (AskNotebookTool.name, _): return AskNotebookTool.risk(action: action)
-        case ("command_job", "status"), ("command_job", "logs"): return .read
-        case ("command_job", "stop"): return .write
-        case ("command_job", _), ("run_command", _): return .destructive
-        case ("computer", _), ("browser", _), ("run_code", _), ("memory", _): return .write
-        default: return .destructive
-        }
+        AskToolAuthorization.entry(for: call).risk
     }
 
     nonisolated static func isSupportedBrowser(_ bundleIdentifier: String?) -> Bool {

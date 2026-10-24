@@ -24,6 +24,27 @@ final class AskMCPToolsTests: XCTestCase {
         )
     }
 
+    func testConnectedToolsPublishPermissionsBeforeAnyConversationUsesThem() async throws {
+        let server = config("Inventory")
+        let client = MockMCPClient()
+        await client.setMockTools([tool("search")])
+        let settings = SettingsStore(defaults: UserDefaults(suiteName: "mcp-permissions-\(UUID().uuidString)")!)
+        let registry = MCPRegistry(settingsStore: MCPSettingsStore(defaults: settings.defaults),
+                                   clientFactory: { _ in client }, onToolsChanged: { definitions, identities in
+            await MainActor.run { settings.registerToolPermissions(definitions, identities: identities) }
+        })
+        try await registry.addServer(server)
+        let entry = try XCTUnwrap(settings.discoveredToolPermissions.first { $0.tool == "mcp_search" })
+        XCTAssertEqual(settings.toolPermission(entry, mode: .standard), .ask)
+        settings.setToolPermission(.allow, entry: entry, mode: .standard)
+        try await registry.refreshTools(for: server.id)
+        XCTAssertEqual(settings.toolPermission(settings.discoveredToolPermissions.first!, mode: .standard), .allow)
+        await client.setMockTools([tool("search"), tool("new_tool")])
+        try await registry.refreshTools(for: server.id)
+        XCTAssertTrue(settings.discoveredToolPermissions.contains { $0.tool == "mcp_new_tool" })
+        await registry.removeServer(id: server.id)
+    }
+
     func testToolsWithTheSameNameOnTwoServersAreBothKept() async throws {
         let github = config("GitHub"), files = config("文件")
         let first = MockMCPClient(), second = MockMCPClient()

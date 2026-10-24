@@ -471,13 +471,21 @@ extension AskWorkflowEditorModel: AskWorkflowAuthoringHost {
     }
 
     func testLatestProposal(_ inputs: [AskWorkflowTestInput]) async -> [AskWorkflowTestResult]? {
+        await testProposal(inputs, approved: false)
+    }
+
+    func testApprovedProposal(_ inputs: [AskWorkflowTestInput]) async -> [AskWorkflowTestResult]? {
+        await testProposal(inputs, approved: true)
+    }
+
+    private func testProposal(_ inputs: [AskWorkflowTestInput], approved: Bool) async -> [AskWorkflowTestResult]? {
         authoringTestFailure = .cancelled
         guard !Task.isCancelled else { return nil }
         guard let proposal = latestProposal, let base = draft else {
             authoringTestFailure = .unavailable("No proposal is available")
             return nil
         }
-        if !autoTest || AskWorkflowRiskScanner.needsApproval(proposal.risks, baseline: approvedRisks) {
+        if !approved && (!autoTest || AskWorkflowRiskScanner.needsApproval(proposal.risks, baseline: approvedRisks)) {
             let risks = autoTest ?
                 (approvedRisks.map { proposal.risks.subtracting($0) } ?? proposal.risks.filter(\.isHigh))
                 : proposal.risks

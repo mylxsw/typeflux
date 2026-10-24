@@ -68,10 +68,10 @@ extension AskLocalTools {
                 "instructions": instructions
             ]))
         }
-        if call.function.name == AskWorkflowAuthorTools.environment {
+        if [AskWorkflowAuthorTools.environment, AskWorkflowAuthorTools.environmentVersions].contains(call.function.name) {
             var tools = AskWorkflowAuthorTools()
             tools.probe = workflowEnvironmentProbe
-            let output = await tools.environment(args)
+            let output = await tools.environment(args, includeVersions: call.function.name == AskWorkflowAuthorTools.environmentVersions)
             var report = (try? JSONSerialization.jsonObject(with: Data(output.content.utf8))) as? [String: Any] ?? [:]
             report["hasDraft"] = authoring.session(conversationId) != nil
             report["nextStep"] = "For a reusable tool, use workflow_list for authoring instructions and existing tools, then workflow_start if there is no draft. URLs and domains are websites, not executable commands."

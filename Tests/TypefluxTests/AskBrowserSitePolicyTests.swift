@@ -118,18 +118,13 @@ final class AskBrowserSitePolicyTests: XCTestCase {
     }
 
     func testRiskTable() {
-        typealias Risk = AskBrowserRisk
-        XCTAssertEqual(Risk.risk(.none, permission: .off), .none)
-        XCTAssertEqual(Risk.risk(.sensitive, permission: .act), .destructive)
-        XCTAssertEqual(Risk.risk(.write, permission: .off), .read, "Off is refused at execution, not asked")
-        for kind in [Risk.Kind.observe, .navigate, .write] {
-            XCTAssertEqual(Risk.risk(kind, permission: .ask), .write)
+        for permission in AskBrowserSitePermission.allCases {
+            XCTAssertEqual(AskBrowserRisk.risk(.none, permission: permission), .none)
+            XCTAssertEqual(AskBrowserRisk.risk(.observe, permission: permission), .read)
+            XCTAssertEqual(AskBrowserRisk.risk(.navigate, permission: permission), .write)
+            XCTAssertEqual(AskBrowserRisk.risk(.write, permission: permission), .destructive)
+            XCTAssertEqual(AskBrowserRisk.risk(.sensitive, permission: permission), .destructive)
         }
-        XCTAssertEqual(Risk.risk(.observe, permission: .read), .read)
-        XCTAssertEqual(Risk.risk(.navigate, permission: .read), .read)
-        XCTAssertEqual(Risk.risk(.write, permission: .read), .write)
-        XCTAssertEqual(Risk.risk(.write, permission: .act), .read)
-        XCTAssertEqual(Risk.risk(.observe, permission: .act), .read)
     }
 
     func testAddressBarInput() throws {
@@ -157,19 +152,19 @@ final class AskBrowserSitePolicyTests: XCTestCase {
 }
 
 extension AskBrowserSitePolicyTests {
-    func testPresentationOffersThreeChoicesAndCanonicalizesOnlyNewSelections() throws {
+    func testPresentationOffersAccessChoicesAndCanonicalizesOnlyNewSelections() throws {
         typealias Permission = AskBrowserSitePermission
-        XCTAssertEqual(Permission.choices, [.off, .ask, .read])
+        XCTAssertEqual(Permission.choices, [.off, .read])
         XCTAssertEqual(Permission.act.presented, .read)
         for permission in Permission.choices { XCTAssertEqual(permission.presented, permission) }
         XCTAssertEqual(Permission.act.title, Permission.read.title)
-        XCTAssertEqual(Set(Permission.choices.map(\.title)).count, 3)
+        XCTAssertEqual(Set(Permission.choices.map(\.title)).count, 2)
         for language in AppLanguage.allCases {
             let bundle = try XCTUnwrap(language.bundleLocalizationCandidates.lazy
                 .compactMap { Bundle.appResources.path(forResource: $0, ofType: "lproj") }.first.flatMap(Bundle.init(path:)))
             let titles = Permission.choices.map { bundle.localizedString(forKey: "ask.web.permission." + $0.rawValue,
                                                                         value: nil, table: nil) }
-            XCTAssertEqual(Set(titles).count, 3)
+            XCTAssertEqual(Set(titles).count, 2)
             XCTAssertEqual(titles.last, bundle.localizedString(forKey: "ask.web.permission.act", value: nil, table: nil))
         }
         let store = defaults()
@@ -186,7 +181,7 @@ extension AskBrowserSitePolicyTests {
         XCTAssertEqual((store.dictionary(forKey: key) as? [String: String])?[origin], "read")
         for permission in [Permission.act, .read] {
             for kind in [AskBrowserRisk.Kind.observe, .navigate] {
-                XCTAssertEqual(AskBrowserRisk.risk(kind, permission: permission), .read)
+                XCTAssertEqual(AskBrowserRisk.risk(kind, permission: permission), kind == .observe ? .read : .write)
             }
             XCTAssertEqual(AskBrowserRisk.risk(.sensitive, permission: permission), .destructive)
         }

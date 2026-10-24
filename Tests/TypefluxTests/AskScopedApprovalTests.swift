@@ -220,7 +220,8 @@ struct AskScopedApprovalTests {
         #expect(f.tools.executions == 0)
         #expect(await f.api.steers.count == 1)
         let request = try #require(await f.api.steers.first)
-        #expect(request.skills == [AskSkillUse(name: "inspect", instructions: "Inspect before acting.")])
+        #expect(request.skills == nil)
+        #expect(request.skillCatalog?.map(\.name) == ["inspect"])
         #expect(request.attachments?.first?.text == "New target")
         #expect(request.mcpServers == ["local-tools"])
     }
@@ -228,7 +229,7 @@ struct AskScopedApprovalTests {
 
 extension AskScopedApprovalTests {
     @Test(arguments: ["click", "fill"], [AskBrowserSitePermission.read, .act])
-    func `actual embedded browser mutations still ask in yolo mode`(action: String, permission: AskBrowserSitePermission) async throws {
+    func `explicit table rules require browser approval even in yolo mode`(action: String, permission: AskBrowserSitePermission) async throws {
         let defaults = try #require(UserDefaults(suiteName: UUID().uuidString))
         let tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)),
                                   settings: SettingsStore(defaults: defaults), owner: { "owner" })
@@ -243,6 +244,8 @@ extension AskScopedApprovalTests {
         tools.embeddedBrowser = AskEmbeddedBrowserTool(workspace: workspace)
         let fixture = try AskTestFixture(toolsOverride: tools)
         defer { fixture.model.resetSession() }
+        fixture.model.modelLibrary.settings.setToolPermission(.ask,
+            entry: AskToolAuthorization.entry(for: call("web_browser", action)), mode: .yolo)
         fixture.model.setPermissionMode(.yolo, launcher: true)
         await fixture.api.setTool(call("web_browser", action))
         fixture.model.launcherDraft = .followUp

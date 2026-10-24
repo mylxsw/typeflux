@@ -26,10 +26,16 @@ struct AskInternalRecoveryTests {
         return try await api.send(conversationId: id, request: request, token: token)
     }
 
-    private func answer(_ api: any AskAPI, _ c: AskConversation, calls: [AskToolCall] = [], text: String = "", token: String = "") async throws -> AskConversation {
+    private func answer(_ api: any AskAPI, _ c: AskConversation, calls: [AskToolCall] = [], text: String = "", token: String = "", approveControl: Bool = true) async throws -> AskConversation {
         let run = try #require(c.run), inference = try #require(run.inference)
-        return try await api.inferenceResult(conversationId: c.id, request: .init(runId: run.id,
+        let response = try await api.inferenceResult(conversationId: c.id, request: .init(runId: run.id,
             deviceId: device, inferenceId: inference.id, content: text, toolCalls: calls), token: token)
+        if approveControl, let control = response.run?.pending.first,
+           control.function.name == AskInternalRecovery.toolName, response.run?.status == "waiting_tool" {
+            return try await api.result(conversationId: c.id, request: .init(approveExecution: true, runId: run.id, deviceId: device,
+                toolCallId: control.id, content: "Authorized", isError: false), token: token)
+        }
+        return response
     }
 
     private func result(_ api: any AskAPI, _ c: AskConversation, id: String, status: String = "ok", token: String = "") async throws -> AskConversation {
@@ -37,6 +43,23 @@ struct AskInternalRecoveryTests {
         return try await api.result(conversationId: c.id, request: .init(runId: run.id, deviceId: device,
             toolCallId: id, content: status == "ok" ? "Fresh solver.js contents: corrected algorithm" : "Result unavailable",
             isError: status != "ok", harness: .init(version: 1, outcome: .init(status: status, eventDispatched: status == "invalid" ? false : nil))), token: token)
+    }
+
+    @Test func recoveryControlWaitsForTheCentralAuthorizationBoundary() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let engine = AskLocalEngine(directory: root)
+        var c = try await start(engine)
+        c = try await answer(engine, c, calls: [call("edit", "edit")])
+        c = try await result(engine, c, id: "edit", status: "unknown")
+        c = try await answer(engine, c, calls: [finish([], resolution: "blocked")], approveControl: false)
+        #expect(c.run?.status == "waiting_tool")
+        #expect(c.run?.internalRecovery?.phase == .inspecting)
+        let pending = try #require(c.run?.pending.first)
+        #expect(c.run?.approvalTool(for: pending)?.name == AskInternalRecovery.toolName)
+        c = try await engine.result(conversationId: c.id, request: .init(approveExecution: false, runId: c.run!.id, deviceId: device,
+            toolCallId: pending.id, content: "Denied", isError: true), token: "")
+        #expect(c.run?.internalRecovery?.phase != .blocked)
     }
 
     private func payload(_ c: AskConversation) throws -> [String: Any] {

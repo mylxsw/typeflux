@@ -168,14 +168,14 @@ final class AskBrowserWorkspaceTests: XCTestCase {
             AskToolCall(id: "1", function: .init(name: "web_browser", arguments: arguments))
         }
         XCTAssertEqual(AskLocalTools.builtinRisk(call(#"{"action":"read"}"#)), .read)
-        XCTAssertEqual(AskLocalTools.builtinRisk(call(#"{"action":"click"}"#)), .write)
+        XCTAssertEqual(AskLocalTools.builtinRisk(call(#"{"action":"click"}"#)), .destructive)
         do {
             _ = try await tools.approvalBinding(for: call(#"{"action":"tabs"}"#), conversationId: "c1")
             XCTFail("No browser configured")
         } catch {}
         let workspace = makeWorkspace()
         tools.embeddedBrowser = AskEmbeddedBrowserTool(workspace: workspace)
-        XCTAssertEqual(tools.risk(of: call(#"{"action":"tabs"}"#)), AskToolRisk.none)
+        XCTAssertEqual(tools.risk(of: call(#"{"action":"tabs"}"#)), AskToolRisk.read)
         XCTAssertEqual(tools.risk(of: call("not json")), .destructive)
         let binding = try await tools.approvalBinding(for: call(#"{"action":"tabs"}"#), conversationId: "c1")
         XCTAssertEqual(binding.target.kind, "browser_tab")

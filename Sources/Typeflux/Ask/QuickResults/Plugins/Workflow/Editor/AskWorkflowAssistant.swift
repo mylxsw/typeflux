@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 /// The workflow assistant: one Ask conversation per workflow, run through the same
 /// routed API as the Ask window (Typeflux Cloud when signed in, the on-device engine
@@ -43,6 +44,18 @@ final class AskWorkflowAssistant: ObservableObject {
     /// What the model is writing right now.
     @Published private(set) var preview = ""
     @Published var error: String?
+    @Published private(set) var pendingPermission: AskToolCall?
+    private var permissionObserver: AnyCancellable?
+    private var pendingPermissionRevision: String?
+    private var permissionContinuation: CheckedContinuation<Bool, Never>?
+
+    func resolveToolPermission(_ allowed: Bool) {
+        pendingPermission = nil
+        let continuation = permissionContinuation
+        permissionContinuation = nil
+        continuation?.resume(returning: allowed)
+    }
+
     private(set) var conversationID: String?
     private(set) var isLocal = false
 
@@ -60,6 +73,15 @@ final class AskWorkflowAssistant: ObservableObject {
 
     init(dependencies: Dependencies) {
         self.dependencies = dependencies
+        permissionObserver = NotificationCenter.default.publisher(for: .askToolPermissionsDidChange)
+            .merge(with: DistributedNotificationCenter.default().publisher(for: .askToolPermissionsDidChange))
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self, self.pendingPermission != nil,
+                          self.pendingPermissionRevision != self.dependencies.modelLibrary.settings.toolPermissionRevision else { return }
+                    self.resolveToolPermission(false)
+                }
+            }
     }
 
     // MARK: - Sending
@@ -140,6 +162,7 @@ final class AskWorkflowAssistant: ObservableObject {
 
     /// Stops the current answer; the run is cancelled on the server too.
     func stop() {
+        resolveToolPermission(false)
         generation = UUID()
         task?.cancel()
         task = nil
@@ -254,8 +277,28 @@ final class AskWorkflowAssistant: ObservableObject {
                 summary: L("ask.workflow.assistant.tool.unknown")
             )
         }
+        let settings = dependencies.modelLibrary.settings
+        settings.registerToolPermissions(AskWorkflowAuthorTools.definitions)
+        let revision = settings.toolPermissionRevision
+        let draft = host.authoringDraft
+        let permission = settings.toolPermission(call, mode: .standard)
+        var allowed = permission == .allow
+        if permission == .ask {
+            pendingPermissionRevision = revision
+            pendingPermission = call
+            allowed = await withCheckedContinuation { permissionContinuation = $0 }
+        }
+        try checkCurrent(current)
+        guard allowed, settings.toolPermissionRevision == revision,
+              host.authoringDraft.manifestText == draft.manifestText, host.authoringDraft.files == draft.files,
+              settings.toolPermission(call, mode: .standard) != .deny else {
+            return .init(content: L("agent.permissions.denied"), isError: true,
+                         summary: L("agent.permissions.denied"))
+        }
         preview = ""
-        let output = await tools.execute(call, host: host)
+        var approvedTools = tools
+        approvedTools.hasExecutionApproval = true
+        let output = await approvedTools.execute(call, host: host)
         try checkCurrent(current)
         items.append(.tool(id: UUID(), summary: output.summary, failed: output.isError))
         if let proposal = output.proposalID {

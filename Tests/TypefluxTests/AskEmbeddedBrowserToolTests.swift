@@ -94,7 +94,7 @@ final class AskEmbeddedBrowserToolTests: XCTestCase {
         let binding = try tool.binding(args)
         XCTAssertEqual(binding.target.path, file.path)
         XCTAssertFalse(binding.reusable)
-        XCTAssertEqual(tool.risk(args), .write)
+        XCTAssertEqual(tool.risk(args), .destructive)
         let opened = try await run(args)
         XCTAssertTrue(opened.content.contains("Opened local HTML in tab 1"))
         let tab = try XCTUnwrap(workspace.selectedTab)
@@ -215,8 +215,8 @@ final class AskEmbeddedBrowserToolTests: XCTestCase {
         let observed = try await snapshot()
         let unread = try XCTUnwrap(observed.refs["Unread"])
         let pay = try XCTUnwrap(observed.refs["Pay now"])
-        XCTAssertEqual(tool.risk(["action": "snapshot"]), .write, "Unknown sites ask")
-        XCTAssertEqual(tool.risk(["action": "tabs"]), .none)
+        XCTAssertEqual(tool.risk(["action": "snapshot"]), .read, "Reading does not require a site grant")
+        XCTAssertEqual(tool.risk(["action": "tabs"]), .read)
         XCTAssertEqual(tool.risk(["action": "new_tab"]), .none)
         workspace.policy.set(.act, for: "https://fixture.invalid")
         XCTAssertEqual(tool.risk(["action": "snapshot"]), .read)
@@ -397,7 +397,7 @@ extension AskEmbeddedBrowserToolTests {
         workspace.policy.set(.act, for: "https://fixture.invalid")
         for action in ["click", "fill"] {
             let binding = try tool.binding(["action": action])
-            XCTAssertTrue(binding.requiresExplicitConsent)
+            XCTAssertFalse(binding.requiresExplicitConsent, "The authorization table owns the approval decision")
             XCTAssertFalse(binding.reusable)
             XCTAssertEqual(tool.risk(["action": action]), .destructive)
         }
