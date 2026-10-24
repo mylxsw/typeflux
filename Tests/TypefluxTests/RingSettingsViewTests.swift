@@ -40,8 +40,8 @@ struct RingSettingsViewTests {
         .padding(28)
     }
 
-    @Test("settings page renders in both appearances, with and without actions")
-    func page() async throws {
+    @Test
+    func `settings page renders in both appearances, with and without actions`() async throws {
         let suiteName = "RingSettingsViewTests-\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -63,30 +63,137 @@ struct RingSettingsViewTests {
                          size: NSSize(width: 860, height: 760), name: "ring-settings-empty", light: true)
     }
 
-    @Test("editor renders every action type")
-    func editor() async throws {
-        for type in RingActionType.allCases {
-            var draft = RingActionDraft.new()
-            draft.setType(type)
-            if type == .feature {
-                draft.choose(.feature(.translate), title: RingFeature.translate.title,
-                             symbol: RingFeature.translate.symbol)
-            }
-            if type == .url { draft.setText("not a url") }
-            try await render(RingActionEditorSheet(draft: draft, keywords: [], onSave: { _ in }, onDelete: {},
-                                                   onCancel: {}),
-                             size: NSSize(width: 480, height: 330), name: "ring-editor-\(type.rawValue)",
-                             light: type != .system)
-        }
-        let existing = RingAction(kind: .keys(HotkeyBinding(keyCode: 21, modifierFlags: 1_179_648)), title: "Shot",
-                                  symbol: "keyboard")
-        try await render(RingActionEditorSheet(draft: RingActionDraft(editing: existing), keywords: [],
-                                               onSave: { _ in }, onDelete: {}, onCancel: {}),
-                         size: NSSize(width: 480, height: 330), name: "ring-editor-edit", light: true)
+    private var sample: [RingAction] {
+        RingConfiguration.defaultActions()
     }
 
-    @Test("the OpieMenu adapter shows, aims and closes the real ring")
-    func opieAdapter() async throws {
+    private var library: RingActionLibrary {
+        RingActionLibrary(keywords: [KeywordHotkeyOption(keyword: AskKeyword(keyword: "fy", pluginID: "translate"),
+                                                         name: "Translate")],
+                          apps: [RingLibraryApp(name: "Finder", bundleIdentifier: "com.apple.finder")],
+                          shortcuts: ["Pomodoro"])
+    }
+
+    private func canvas(_ actions: [RingAction], state: RingInspectorState, preview: RingLibraryItem? = nil,
+                        issues: Set<UUID> = [], trying: Bool = false) -> some View {
+        let slots = RingStudioLayout.slots(actions: actions, state: state, preview: preview)
+        let mode: RingStudioCanvas.Mode = switch state {
+        case .overview: .overview
+        case .edit: .editing
+        case .library(.insert): .inserting
+        case .library(.replace): .replacing
+        }
+        var insertion = RingStudioLayout.insertionIndexes(count: actions.count)
+        if case .library(.insert) = state {
+            insertion = []
+        }
+        return RingStudioCanvas(slots: slots,
+                                selectedIndex: RingStudioLayout.selectedIndex(in: slots, state: state, drag: nil),
+                                mode: mode, style: .frosted, centerTitle: "Typeflux", actionCount: actions.count,
+                                insertionIndexes: insertion, issues: issues, drag: .constant(nil),
+                                isTrying: .constant(trying))
+    }
+
+    @Test
+    func `studio canvas renders every state`() async throws {
+        let actions = sample
+        let size = NSSize(width: 400, height: 520)
+        try await render(canvas(actions, state: .overview), size: size, name: "ring-canvas-overview", light: true)
+        try await render(canvas(actions, state: .edit(actions[2].id), issues: [actions[4].id]), size: size,
+                         name: "ring-canvas-edit", light: false)
+        try await render(canvas(actions, state: .library(.insert(index: 3))), size: size, name: "ring-canvas-gap",
+                         light: true)
+        try await render(canvas(actions, state: .library(.insert(index: 3)),
+                                preview: RingActionLibrary.item(for: RingSystemAction.darkMode)),
+                         size: size, name: "ring-canvas-preview", light: true)
+        try await render(canvas([], state: .library(.insert(index: 0))), size: size, name: "ring-canvas-empty",
+                         light: true)
+        let full = actions + [RingAction.feature(.notes), .feature(.chat)]
+        try await render(canvas(full, state: .overview, trying: true), size: size, name: "ring-canvas-full-try",
+                         light: false)
+    }
+
+    @Test
+    func `library panel renders home, a type, search and typed targets`() async throws {
+        let size = NSSize(width: 380, height: 520)
+        let actions = sample
+        try await render(RingLibraryPanel(target: .insert(index: 3), actions: actions, library: library,
+                                          isLoadingApps: false, preview: .constant(nil)),
+                         size: size, name: "ring-library-home", light: true)
+        try await render(RingLibraryPanel(target: .replace(actions[0].id), actions: actions, library: library,
+                                          isLoadingApps: true, preview: .constant(nil)),
+                         size: size, name: "ring-library-replace", light: false)
+        try await render(RingLibraryPanel(target: .insert(index: 0), actions: [], library: library,
+                                          isLoadingApps: false, preview: .constant(nil)),
+                         size: size, name: "ring-library-first", light: true)
+        for type in RingActionLibrary.types {
+            try await render(RingLibraryPanel(target: .insert(index: 1), actions: actions, library: library,
+                                              isLoadingApps: type == .app, preview: .constant(nil), category: type,
+                                              url: type == .url ? "github.com" : ""),
+                             size: size, name: "ring-library-type-\(type.rawValue)", light: type != .keys)
+        }
+        try await render(RingLibraryPanel(target: .insert(index: 1), actions: actions, library: RingActionLibrary(),
+                                          isLoadingApps: true, preview: .constant(nil), category: .app),
+                         size: size, name: "ring-library-apps-loading", light: true)
+        try await render(RingLibraryPanel(target: .insert(index: 1), actions: actions, library: library,
+                                          isLoadingApps: false, preview: .constant(nil), category: .url,
+                                          url: "not a url"),
+                         size: size, name: "ring-library-url-invalid", light: true)
+        try await render(RingLibraryPanel(target: .insert(index: 1), actions: actions, library: library,
+                                          isLoadingApps: false, preview: .constant(nil), query: "s"),
+                         size: size, name: "ring-library-search", light: true)
+        try await render(RingLibraryPanel(target: .insert(index: 1), actions: actions, library: library,
+                                          isLoadingApps: false, preview: .constant(nil), query: "zzzz"),
+                         size: size, name: "ring-library-no-results", light: false)
+        try await render(RingLibraryPanel(target: .insert(index: 1), actions: actions, library: library,
+                                          isLoadingApps: false, preview: .constant(nil), category: .shortcut,
+                                          query: "zzzz"),
+                         size: size, name: "ring-library-shortcut-typed", light: true)
+        try await render(RingLibraryPanel(target: .insert(index: 1), actions: actions, library: RingActionLibrary(),
+                                          isLoadingApps: false, preview: .constant(nil), category: .keyword),
+                         size: size, name: "ring-library-empty-type", light: true)
+        let row = RingLibraryRow(item: RingActionLibrary.item(for: RingFeature.screenshot), query: "shot",
+                                 isHighlighted: true, isAdded: true, pickTitle: "Add") {}
+        try await render(row, size: NSSize(width: 360, height: 46), name: "ring-library-row", light: true)
+        for type in RingActionLibrary.types {
+            try await render(RingTypeCard(type: type, count: library.count(of: type)) {},
+                             size: NSSize(width: 170, height: 96), name: "ring-library-card-\(type.rawValue)",
+                             light: type != .system)
+        }
+    }
+
+    @Test
+    func `inspector renders the overview and every editable target`() async throws {
+        let size = NSSize(width: 380, height: 520)
+        let actions = sample
+        let detail: (RingAction) -> String = { RingSettingsPresentation.summary(of: $0) }
+        try await render(RingInspectorOverview(actions: actions, issues: [actions[1].id: "Gone"], detail: detail),
+                         size: size, name: "ring-overview", light: true)
+        let full = actions + [RingAction.feature(.notes), .feature(.chat)]
+        try await render(RingInspectorOverview(actions: full, issues: [:], detail: detail), size: size,
+                         name: "ring-overview-full", light: false)
+        let binding = HotkeyBinding(keyCode: 13, modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue))
+        let targets: [(String, RingAction, String?)] = [
+            ("feature", actions[0], nil),
+            ("url", RingAction(kind: .url("typeflux"), title: "typeflux", symbol: "link"), L("ring.error.invalidURL")),
+            ("folder", RingAction(kind: .folder(path: "~/Downloads"), title: "Downloads", symbol: "folder"), nil),
+            ("shortcut", RingAction(kind: .shortcut(name: "Pomodoro"), title: "Focus", symbol: "timer"), nil),
+            ("keys", RingAction(kind: .keys(binding), title: "Close", symbol: "keyboard"), nil),
+            ("app", RingAction(kind: .app(bundleIdentifier: "com.apple.finder", name: "Finder"), title: "Finder",
+                               symbol: "app"), nil)
+        ]
+        for (name, action, issue) in targets {
+            try await render(RingActionInspector(action: action, index: 2, count: 6, issue: issue,
+                                                 defaultTitle: RingActionLibrary.defaultTitle(for: action.kind),
+                                                 targetSummary: RingSettingsPresentation.summary(of: action)),
+                             size: size, name: "ring-inspector-\(name)", light: name != "keys")
+        }
+        try await render(RingDirectionDots(index: 1, count: 3), size: NSSize(width: 30, height: 30),
+                         name: "ring-direction-dots", light: true)
+    }
+
+    @Test
+    func `the OpieMenu adapter shows, aims and closes the real ring`() {
         _ = NSApplication.shared
         let menu = OpieRingMenu()
         var selected: [String] = []
@@ -116,8 +223,8 @@ struct RingSettingsViewTests {
         #expect(!menu.isVisible)
     }
 
-    @Test("preview maps points to slices clockwise from the top")
-    func previewGeometry() {
+    @Test
+    func `preview maps points to slices clockwise from the top`() {
         let geometry = RingPreviewGeometry(size: 300, count: 4)
         #expect(geometry.index(at: geometry.center) == nil)
         #expect(geometry.index(at: CGPoint(x: 150, y: 150 - geometry.outerRadius + 4)) == 0)

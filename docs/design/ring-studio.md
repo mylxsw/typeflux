@@ -1,6 +1,6 @@
-# 圆环设置 v3（Ring Studio）设计方案
+> 状态：已确认并实现（GUL-470）。可交互设计稿：`docs/design/ring-studio.html`（顶栏可切换场景：默认 / 空圆环 / 已满 / 有失效项，以及浅色 / 深色）。截图在 `docs/design/ring-studio/`。原圆环交互见 `ring.md`，本方案只改「设置 → 圆环」页，运行时圆环和 `RingConfiguration` 存储格式不变。
 
-> 状态：待确认（GUL-470）。可交互设计稿：`docs/design/ring-studio.html`（顶栏可切换场景：默认 / 空圆环 / 已满 / 有失效项，以及浅色 / 深色）。截图在 `docs/design/ring-studio/`。原圆环交互见 `ring.md`，本方案只改「设置 → 圆环」页，运行时圆环和 `RingConfiguration` 存储格式不变。
+> 实现说明：撤销通过撤销条上的「撤销」按钮完成，没有绑定 ⌘Z，以免和名称输入框的文字撤销冲突。⌥← / ⌥→、数字键、+ 和 ↩ 依赖 `onKeyPress`，需要 macOS 14；macOS 13 上方向键选择、Delete 和 Esc 仍然可用。操作库里用 ↓ 在结果中循环、↩ 添加。
 
 ## 0. 一页结论
 
@@ -18,7 +18,7 @@
 | 看不到加进去会是什么样 | 悬停或用方向键选中一项，圆环里的虚线空位实时显示它的图标和名字 |
 | 编辑也要开 Sheet，改完点「保存」 | 编辑面板不是弹窗，改动直接写进圆环 |
 | 排序只能在列表里拖，或用菜单「上移 / 下移」 | 在圆环上直接拖图标；也可以用「逆 / 顺时针」按钮或 ⌥← / ⌥→ |
-| 删除、恢复默认要先确认 | 直接执行，toast 提供「撤销」，也可以按 ⌘Z |
+| 删除、恢复默认要先确认 | 直接执行，撤销条提供「撤销」 |
 | 满 8 个时，原因藏在 tooltip 里 | ⊕ 消失；左上角显示「已满 8 / 8」；列表末尾说明为什么满、接下来怎么做 |
 
 ## 1. 现状问题
@@ -101,7 +101,6 @@
 | ↩ | 编辑选中项，焦点放在名称上 |
 | Delete | 删除选中项，可撤销 |
 | Esc | 取消添加，或退出编辑 |
-| ⌘Z | 撤销 |
 | 操作库中 ↑ / ↓ / ↩ / Esc | 移动选择（圆环同步预览）/ 添加 / 依次清空搜索、返回上一级、关闭 |
 
 ## 6. 边界情况
@@ -118,12 +117,13 @@
 
 ## 7. 实现映射
 
-| 模块 | 改动 |
+| 模块 | 职责 |
 |---|---|
 | `RingConfiguration` / `RingAction` | 不变，无需迁移 |
-| `RingSettingsModel` | 新增 `insert(_:at:)`、`replaceKind(of:with:title:symbol:)`、`move(_:to:)`，以及有界撤销栈 `undo()`（20 步）。`save` 只用于更新已有项 |
-| `RingPreviewView` → `RingStudioCanvas` | 加入插入点（⊕）、占位扇区、悬停预览、选中描边、序号、拖动排序和试用模式；命中判断复用现有角度计算。⊕ 和扇区都要提供无障碍元素 |
-| 新增 `RingInspector` | `enum RingInspectorState { case overview, library(RingLibraryTarget), edit(UUID) }`；`RingLibraryTarget` 为 `.insert(at:)` 或 `.replace(UUID)` |
-| 新增 `RingActionLibrary` | 把 `RingFeature`、`RingSystemAction`、关键词（`HotkeySettingsModel.options`）、`PersonaAppDiscovery` 应用、快捷指令（`/usr/bin/shortcuts list`，失败时退回手动输入）和常用文件夹聚合成可搜索的条目 |
-| 删除 | `RingActionEditorSheet`、删除确认 alert、恢复默认确认 alert |
-| 测试 | `RingSettingsModelTests`：insert / replace / move / undo，以及上限和越界。新增 `RingActionLibraryTests`：搜索、网址和路径识别、「已添加」标记。`RingSettingsPresentationTests`：方向名和序号 |
+| `RingSettingsModel` | `insert(_:at:)`、`edit(_:_:)`、`replace(_:with:)`、`move(_:to:)` / `move(_:by:)`（绕圈），以及有界撤销栈（20 步）和撤销条文案 `lastChange` |
+| `RingStudioController` | 检查器状态机：总览、操作库（插入或更换）、编辑；处理点击、拖动和按键，状态随圆环变化自动校正 |
+| `RingStudioLayout` | 纯函数：插入空位、悬停预览、更换预览、拖动时的顺序、⊕ 位置 |
+| `RingStudioCanvas` + `RingStudioRing` | 画布（⊕、拖动、试一试、按键）和圆环绘制（选中描边、序号、失效标记） |
+| `RingActionLibrary` | 把功能、系统操作、关键词、应用（`PersonaAppDiscovery`）、快捷指令（`/usr/bin/shortcuts list`）、常用组合键和常用文件夹汇总成可搜索条目；识别输入的网址和路径 |
+| `RingInspectorOverview` / `RingLibraryPanel` / `RingActionInspector` | 检查器的三种状态 |
+| 已删除 | `RingActionEditorSheet`、删除确认 alert、恢复默认确认 alert |
