@@ -48,8 +48,10 @@ struct WorldClockPreferences: Equatable, Sendable {
 
     /// First-use cities and their zones; the zones are spelled out so defaults never load the city table.
     static let defaultCities: [(id: String, zone: String)] = [
+        ("utc:+0000", "GMT"),
         ("sanfrancisco", "America/Los_Angeles"), ("newyork", "America/New_York"), ("london", "Europe/London"),
-        ("tokyo", "Asia/Tokyo"), ("beijing", "Asia/Shanghai")
+        ("berlin", "Europe/Berlin"), ("mumbai", "Asia/Kolkata"), ("beijing", "Asia/Shanghai"),
+        ("tokyo", "Asia/Tokyo"), ("sydney", "Australia/Sydney")
     ]
     static let steps = [15, 30, 60]
 
@@ -58,7 +60,7 @@ struct WorldClockPreferences: Equatable, Sendable {
             cityIDs = stored
         } else {
             // The local zone is already the first row; leave its city out.
-            cityIDs = Array(Self.defaultCities.filter { $0.zone != localZone.identifier }.map(\.id).prefix(4))
+            cityIDs = Self.defaultCities.filter { $0.zone != localZone.identifier }.map(\.id)
         }
         labels = options[Self.labelsOption].flatMap(Self.decodeLabels) ?? [:]
         hourFormat = options[Self.hourFormatOption].flatMap(HourFormat.init(rawValue:)) ?? .system

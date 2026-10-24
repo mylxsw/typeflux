@@ -40,6 +40,23 @@ struct WorldClockLauncherModelTests {
         }
     }
 
+    @Test func `the default list exposes UTC and every representative city`() {
+        withEnglish {
+            let model = Self.model(options: [WorldClockPreferences.hourFormatOption: "24"])
+            defer { model.close() }
+            #expect(model.listCities.map(\.id) == ["shanghai", "utc:+0000", "sanfrancisco", "newyork", "london",
+                                                   "berlin", "mumbai", "tokyo", "sydney"])
+            model.select(1)
+            #expect(model.handle(.commandC, inputEmpty: true) == .copy("UTC Thu, Oct 22 10:24"))
+            model.update("UTC")
+            #expect(model.primaryTitle == "Copy")
+            #expect(model.handle(.enter, inputEmpty: false) == .copy("UTC Thu, Oct 22 10:24"))
+            model.update("")
+            model.select(model.listCities.count - 1)
+            #expect(model.chosenCity?.id == "sydney")
+        }
+    }
+
     @Test func `arrows move the time in round steps and command T returns`() {
         withEnglish {
             let model = Self.model()

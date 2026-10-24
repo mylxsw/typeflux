@@ -81,6 +81,11 @@ struct WorldClockPresenterTests {
             #expect(offset.transition == "Fixed offset, no daylight saving")
             #expect(offset.detail == "UTC+5:30")
 
+            let utc = presenter.row(try city("utc:+0000"), at: WorldClockFixtures.now, timeline: timeline)
+            #expect(utc.name == "UTC" && utc.time == "10:24")
+            #expect(!utc.isDaylightSaving && utc.detail == "UTC")
+            #expect(utc.transition == "Fixed offset, no daylight saving")
+
             let local = presenter.row(try city("beijing"), isLocal: true, at: WorldClockFixtures.now,
                                       timeline: timeline)
             #expect(local.subtitle.hasSuffix(" · Local") && local.period == .twilight)
@@ -137,18 +142,46 @@ struct WorldClockPresenterTests {
             #expect(summary == "Shanghai 18:24 · New York 06:24 · London 11:24")
         }
     }
+
+    @Test func `the default hint includes UTC as a reference`() {
+        withEnglish {
+            let summary = AskWorldClockPlugin.summary(
+                options: [WorldClockPreferences.hourFormatOption: "24"],
+                now: WorldClockFixtures.now, language: .english, localZone: WorldClockFixtures.shanghai
+            )
+            #expect(summary == "Shanghai 18:24 · UTC 10:24 · San Francisco 03:24 · New York 06:24 · London 11:24")
+        }
+    }
 }
 
 @Suite("World clock preferences")
 struct WorldClockPreferencesTests {
-    @Test func `defaults skip the local zone`() {
+    @Test func `defaults cover representative zones and skip the local zone`() {
         let shanghai = WorldClockPreferences(options: [:], localZone: WorldClockFixtures.shanghai)
-        #expect(shanghai.cityIDs == ["sanfrancisco", "newyork", "london", "tokyo"])
+        #expect(shanghai.cityIDs == ["utc:+0000", "sanfrancisco", "newyork", "london", "berlin", "mumbai",
+                                     "tokyo", "sydney"])
         let tokyo = WorldClockPreferences(options: [:], localZone: TimeZone(identifier: "Asia/Tokyo")!)
-        #expect(tokyo.cityIDs == ["sanfrancisco", "newyork", "london", "beijing"])
+        #expect(tokyo.cityIDs == ["utc:+0000", "sanfrancisco", "newyork", "london", "berlin", "mumbai",
+                                  "beijing", "sydney"])
+        let singapore = WorldClockPreferences(options: [:], localZone: TimeZone(identifier: "Asia/Singapore")!)
+        #expect(singapore.cityIDs.contains("beijing") && singapore.cityIDs.count == 9)
+        let utc = WorldClockPreferences(options: [:], localZone: TimeZone(secondsFromGMT: 0)!)
+        #expect(!utc.cityIDs.contains("utc:+0000") && utc.cityIDs.count == 8)
+        let london = WorldClockPreferences(options: [:], localZone: TimeZone(identifier: "Europe/London")!)
+        #expect(london.cityIDs.contains("utc:+0000") && !london.cityIDs.contains("london"))
         #expect(shanghai.workStart == 540 && shanghai.workEnd == 1080 && shanghai.workdays == [2, 3, 4, 5, 6])
         #expect(shanghai.step == 30 && shanghai.hintCount == 4 && shanghai.copyFormat == .full)
         #expect(shanghai.meetingAbbreviations && shanghai.hourFormat == .system)
+    }
+
+    @Test func `saved lists including empty lists retain the users choices`() {
+        for ids in [[], ["newyork", "london"], ["sanfrancisco", "newyork", "london", "tokyo"]] as [[String]] {
+            var preferences = WorldClockPreferences(localZone: WorldClockFixtures.shanghai)
+            preferences.cityIDs = ids
+            var options: [String: String] = [:]
+            preferences.write(into: &options)
+            #expect(WorldClockPreferences(options: options, localZone: WorldClockFixtures.shanghai).cityIDs == ids)
+        }
     }
 
     @Test func `settings round trip and keep unknown options`() {
@@ -198,7 +231,7 @@ struct WorldClockPreferencesTests {
             WorldClockPreferences.hourFormatOption: "36",
             WorldClockPreferences.meetingZonesOption: "false"
         ], localZone: WorldClockFixtures.shanghai)
-        #expect(preferences.cityIDs.count == 4 && preferences.labels.isEmpty)
+        #expect(preferences.cityIDs.count == 8 && preferences.labels.isEmpty)
         #expect(preferences.workStart == 540 && preferences.workEnd == 1080)
         #expect(preferences.workdays.isEmpty)
         #expect(preferences.step == 30 && preferences.hintCount == 6)
