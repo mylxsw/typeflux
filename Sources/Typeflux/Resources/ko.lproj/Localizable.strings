@@ -6796,8 +6796,8 @@
 "ask.upload.failed" = "업로드하지 못했습니다. 나중에 다시 시도하세요.";
 
 /* Local shortcut response diagnostics. */
-"shortcutDiagnostics.title" = "단축키 응답 진단";
-"shortcutDiagnostics.privacy" = "이 Mac에만 저장됩니다. 텍스트, 클립보드 내용, 이미지, 키 조합은 기록하지 않습니다. 파일당 256 KiB, 최대 64개, 마지막 갱신부터 7일간 보관합니다.";
+"shortcutDiagnostics.title" = "진단 센터";
+"shortcutDiagnostics.privacy" = "이 Mac에만 저장됩니다. 텍스트, 클립보드 내용, 이미지, 키 조합은 기록하지 않습니다. 파일당 256 KiB, 최대 16개, 마지막 갱신부터 7일간 보관합니다.";
 "shortcutDiagnostics.record" = "응답 시간 기록";
 "shortcutDiagnostics.scope" = "링, 번역, 런처, 클립보드, 스크린샷의 표시 과정을 기록합니다. 다른 기능은 명령 전달 경로를 기록합니다.";
 "shortcutDiagnostics.inspect" = "시간 및 이벤트 타임라인 확인";
@@ -6821,7 +6821,7 @@
 "shortcutDiagnostics.select" = "샘플을 선택하여 각 단계를 확인하세요.";
 "shortcutDiagnostics.timeline" = "이벤트 타임라인";
 "shortcutDiagnostics.columns" = "오른쪽은 인식 이후 경과 시간, 아래는 이전 이벤트와의 간격입니다.";
-"shortcutDiagnostics.summaryNote" = "2초마다 갱신 · 최근 1,000개 샘플 · P50/P95는 선택 조건에서 표시된 기록만 포함합니다. 미완료는 처리 중이거나 이벤트가 누락되었을 수 있습니다.";
+"shortcutDiagnostics.summaryNote" = "5초마다 갱신 · 최근 200개 샘플 · P50/P95는 선택 조건에서 표시된 기록만 포함합니다. 미완료는 처리 중이거나 이벤트가 누락되었을 수 있습니다.";
 "shortcutDiagnostics.role.host" = "메인 프로세스";
 "shortcutDiagnostics.role.shortcuts" = "단축키";
 "shortcutDiagnostics.role.launcher" = "런처";
@@ -7005,3 +7005,48 @@
 "ask.settings.links.subtitle" = "채팅 메시지의 링크. ⌘ + 클릭은 항상 시스템 브라우저로 엽니다.";
 "ask.settings.links.sidePanel" = "사이드 패널";
 "ask.settings.links.browser" = "시스템 브라우저";
+
+// Unified diagnostics
+"diagnostics.title" = "진단 센터";
+"diagnostics.export" = "선택 기간 내보내기";
+"diagnostics.range" = "기간";
+"diagnostics.range.hour" = "최근 1시간";
+"diagnostics.range.day" = "최근 24시간";
+"diagnostics.range.all" = "보관된 전체 데이터";
+"diagnostics.range.custom" = "사용자 지정";
+"diagnostics.from" = "시작";
+"diagnostics.to" = "종료";
+"diagnostics.invalidRange" = "시작은 종료 이전이어야 합니다.";
+"diagnostics.timeNote" = "현지 시간 기준입니다. 시작 시각으로 필터링하고 전체 타임라인을 유지합니다. 보관 한도로 누락될 수 있습니다.";
+"diagnostics.section" = "분류";
+"diagnostics.overview" = "실행 개요";
+"diagnostics.shortcuts" = "단축키 응답";
+"diagnostics.current" = "현재 스냅샷 · 기간 필터 제외";
+"diagnostics.modules" = "현재 모듈 상태 · 활성 작업 수";
+"diagnostics.failure" = "오류:";
+"diagnostics.unavailable" = "사용 불가 또는 미수집";
+"diagnostics.hangs" = "선택 기간의 멈춤 기록";
+"diagnostics.hangNote" = "보관된 자동 스택 기록을 최대 5개 표시합니다. 기록이 없어도 멈춤이 없었다는 뜻은 아닙니다. 폴더에서 확인하세요.";
+"diagnostics.hangFolder" = "멈춤 기록 폴더 열기";
+"diagnostics.noHangs" = "이 기간에 보관된 기록이 없습니다";
+"diagnostics.unreadableHangs" = "읽을 수 없는 기록: %d";
+"diagnostics.exportNote" = "선택 기간의 전체 기능, 현재 리소스 및 상태, 멈춤 메타데이터를 내보냅니다. 대화와 원본 스택은 제외합니다. 패널이 열려 있을 때만 5초마다 갱신합니다.";
+"diagnostics.partial" = "일부 수집에 실패했습니다. 내보내기에 누락 출처가 표시됩니다.";
+"diagnostics.updated" = "최근 갱신:";
+"diagnostics.state.stopped" = "중지";
+"diagnostics.state.starting" = "시작 중";
+"diagnostics.state.ready" = "사용 가능";
+"diagnostics.state.recovering" = "복구 중";
+"diagnostics.state.circuitOpen" = "대기 중";
+"diagnostics.state.degraded" = "사용 불가";
+"diagnostics.state.disabled" = "비활성";
+"diagnostics.failure.unavailable" = "사용 불가";
+"diagnostics.failure.overloaded" = "과부하";
+"diagnostics.failure.disabled" = "비활성";
+"diagnostics.failure.invalidPolicy" = "정책 오류";
+"diagnostics.failure.quarantined" = "반복 오류로 중지";
+"diagnostics.failure.healthPersistence" = "상태 저장 오류";
+"diagnostics.failure.startupTimeout" = "시작 시간 초과";
+"diagnostics.failure.operationTimeout" = "작업 시간 초과";
+"diagnostics.failure.cleanupTimeout" = "정리 시간 초과";
+"diagnostics.failure.invalidated" = "무효화됨";

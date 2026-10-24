@@ -1,12 +1,44 @@
 # Shortcut response diagnostics
 
-Open **Settings → Advanced → Shortcut Response Diagnostics → Open Diagnostics**.
-Recording is enabled by default and can be disabled in that section. This is local
-diagnostic storage, independent of analytics sharing; it never uploads records.
-Use the ring, translation, launcher, clipboard and screenshot shortcuts in normal work, then inspect
-their timelines. The dashboard refreshes every two seconds while mounted. Its
-filters affect the displayed statistics; **Export All Data** exports the complete
-retained snapshot, including other features and unsuccessful/incomplete records.
+Open **Settings → Advanced → Diagnostics → Open Diagnostics**.
+Shortcut timing recording is enabled by default and can be disabled there. All
+records remain local and independent of analytics sharing; nothing is uploaded.
+
+The panel has two categories:
+
+- **Runtime overview:** current business-process footprint, CPU between consecutive
+  observations, active operations, current module health/failure classifications,
+  and metadata for retained automatic main-thread hang samples. Raw stack files
+  can be inspected through **Open hang folder**; they are not embedded in JSON.
+- **Shortcut response:** ring, translation, launcher, clipboard and screenshot
+  timelines, feature/process-state filters, sample counts and P50/P95.
+
+Choose last hour, last 24 hours, all retained data, or a custom local date/time
+range. Endpoints are inclusive. Shortcut filtering uses trace start dates and
+keeps complete timelines, including stages after the selected end. Filtering is
+performed before sample/event limits so older selected periods remain accessible.
+The panel refreshes every five seconds while open and stops when closed.
+
+**Export selected period** produces `typeflux-diagnostics.json`, a versioned JSON
+bundle with the selected UTC boundaries, bounded shortcut report, current process
+resources/module health and hang metadata. It always includes all features in
+that period, independent of the shortcut category's feature/temperature filters.
+`currentSnapshotAt` marks the current snapshot; current metrics are not historical
+metrics for a selected past period. `previousProcesses`, when available, allows
+CPU deltas to be reproduced using matching process lifetimes and monotonic clocks.
+Unavailable sources are listed in `collectionFailures`; they are never silently
+presented as healthy. An empty retained hang list does not prove absence of hangs.
+
+Exports remain capped at 2 MiB and exclude private payloads, raw stacks and paths.
+Shortcut storage retains at most 16 × 256 KiB files, expiring after seven days
+without updates. Existing 200-sample/2,048-event display bounds still apply;
+`droppedEvents` indicates omitted events. `invalidLines`, `rejectedRecords` and
+`unreadableFiles` describe scanned input integrity across the retained files,
+including records that cannot be assigned to the selected period. Rejection
+reasons distinguish undecodable data, protocol version, invalid clocks/fields,
+and stages more than five minutes after their trace start. This is not the same
+as a measured shortcut failure. Existing CLI output remains the legacy shortcut
+schema for compatibility; the panel export nests it under `shortcuts`.
 
 ## Measurement contract
 

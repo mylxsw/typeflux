@@ -6798,8 +6798,8 @@
 "ask.upload.failed" = "上傳失敗，請稍後再試。";
 
 /* Local shortcut response diagnostics. */
-"shortcutDiagnostics.title" = "快捷鍵回應診斷";
-"shortcutDiagnostics.privacy" = "僅儲存在本機，不記錄文字、剪貼簿內容、圖片或按鍵組合。每個日誌檔案最多 256 KiB，保留最多 64 個檔案，7 天未更新的日誌會到期。";
+"shortcutDiagnostics.title" = "診斷中心";
+"shortcutDiagnostics.privacy" = "僅儲存在本機，不記錄文字、剪貼簿內容、圖片或按鍵組合。每個日誌檔案最多 256 KiB，保留最多 16 個檔案，7 天未更新的日誌會到期。";
 "shortcutDiagnostics.record" = "記錄回應耗時";
 "shortcutDiagnostics.scope" = "記錄圓環、翻譯、啟動器、剪貼簿和截圖的顯示流程；其他功能記錄快捷鍵命令路由。";
 "shortcutDiagnostics.inspect" = "查看耗時與完整階段記錄";
@@ -6823,7 +6823,7 @@
 "shortcutDiagnostics.select" = "選取一筆記錄查看各階段耗時。";
 "shortcutDiagnostics.timeline" = "階段時間軸";
 "shortcutDiagnostics.columns" = "右側為識別動作後的累計耗時，下方為與上一事件的間隔。";
-"shortcutDiagnostics.summaryNote" = "每 2 秒重新整理 · 最近保留的 1,000 筆樣本 · P50/P95 僅統計篩選範圍內已顯示視窗的記錄。未完成記錄可能仍在執行，也可能缺少事件。";
+"shortcutDiagnostics.summaryNote" = "每 5 秒重新整理 · 最近保留的 200 筆樣本 · P50/P95 僅統計篩選範圍內已顯示視窗的記錄。未完成記錄可能仍在執行，也可能缺少事件。";
 "shortcutDiagnostics.role.host" = "主處理程序";
 "shortcutDiagnostics.role.shortcuts" = "快捷鍵";
 "shortcutDiagnostics.role.launcher" = "啟動器";
@@ -7007,3 +7007,48 @@
 "ask.settings.links.subtitle" = "對話訊息中的連結。⌘ + 點擊一律使用系統瀏覽器。";
 "ask.settings.links.sidePanel" = "側邊欄";
 "ask.settings.links.browser" = "系統瀏覽器";
+
+// Unified diagnostics
+"diagnostics.title" = "診斷中心";
+"diagnostics.export" = "匯出所選時段";
+"diagnostics.range" = "時間範圍";
+"diagnostics.range.hour" = "最近 1 小時";
+"diagnostics.range.day" = "最近 24 小時";
+"diagnostics.range.all" = "全部保留資料";
+"diagnostics.range.custom" = "自訂";
+"diagnostics.from" = "從";
+"diagnostics.to" = "至";
+"diagnostics.invalidRange" = "開始時間不能晚於結束時間。";
+"diagnostics.timeNote" = "時間使用本地時區。按觸發時間篩選並保留完整事件鏈；輪替或容量限制可能造成缺漏。";
+"diagnostics.section" = "分類";
+"diagnostics.overview" = "執行概覽";
+"diagnostics.shortcuts" = "快速鍵回應";
+"diagnostics.current" = "目前快照 · 不受時間篩選影響";
+"diagnostics.modules" = "目前模組健康 · 活躍工作數";
+"diagnostics.failure" = "故障：";
+"diagnostics.unavailable" = "暫不可用或尚未收集";
+"diagnostics.hangs" = "所選時段內的停頓採樣";
+"diagnostics.hangNote" = "列出本機保留的最多 5 份自動堆疊採樣。沒有記錄不代表沒有停頓，可開啟停頓資料夾查看。";
+"diagnostics.hangFolder" = "開啟停頓資料夾";
+"diagnostics.noHangs" = "該時段無保留採樣";
+"diagnostics.unreadableHangs" = "無法讀取的停頓記錄：%d";
+"diagnostics.exportNote" = "匯出包含所選時段的全部功能、目前進程資源與模組健康及停頓採樣資訊，不含對話與原始堆疊。面板開啟時每 5 秒更新，關閉後停止輪詢。";
+"diagnostics.partial" = "部分資料來源收集失敗，匯出會標明缺漏來源。";
+"diagnostics.updated" = "最近更新：";
+"diagnostics.state.stopped" = "未啟動";
+"diagnostics.state.starting" = "啟動中";
+"diagnostics.state.ready" = "可用";
+"diagnostics.state.recovering" = "恢復中";
+"diagnostics.state.circuitOpen" = "冷卻中";
+"diagnostics.state.degraded" = "不可用";
+"diagnostics.state.disabled" = "已停用";
+"diagnostics.failure.unavailable" = "不可用";
+"diagnostics.failure.overloaded" = "工作過多";
+"diagnostics.failure.disabled" = "已停用";
+"diagnostics.failure.invalidPolicy" = "策略無效";
+"diagnostics.failure.quarantined" = "連續失敗後暫停";
+"diagnostics.failure.healthPersistence" = "健康狀態儲存失敗";
+"diagnostics.failure.startupTimeout" = "啟動逾時";
+"diagnostics.failure.operationTimeout" = "工作逾時";
+"diagnostics.failure.cleanupTimeout" = "回收逾時";
+"diagnostics.failure.invalidated" = "已失效";

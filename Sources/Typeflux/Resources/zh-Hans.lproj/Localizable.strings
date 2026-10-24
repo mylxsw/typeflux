@@ -6796,8 +6796,8 @@
 "ask.upload.failed" = "上传失败，请稍后再试。";
 
 /* Local shortcut response diagnostics. */
-"shortcutDiagnostics.title" = "快捷键响应诊断";
-"shortcutDiagnostics.privacy" = "仅保存在本机，不记录文本、剪贴板内容、图片或按键组合。每个日志文件最多 256 KiB，保留最多 64 个文件，7 天未更新的日志会过期。";
+"shortcutDiagnostics.title" = "诊断中心";
+"shortcutDiagnostics.privacy" = "仅保存在本机，不记录文本、剪贴板内容、图片或按键组合。每个日志文件最多 256 KiB，保留最多 16 个文件，7 天未更新的日志会过期。";
 "shortcutDiagnostics.record" = "记录响应耗时";
 "shortcutDiagnostics.scope" = "记录圆环、翻译、启动器、剪贴板和截图的展示链路；其他功能记录快捷键命令路由。";
 "shortcutDiagnostics.inspect" = "查看耗时和完整阶段记录";
@@ -6821,7 +6821,7 @@
 "shortcutDiagnostics.select" = "选择一条记录查看各阶段耗时。";
 "shortcutDiagnostics.timeline" = "阶段时间线";
 "shortcutDiagnostics.columns" = "右侧为识别动作后的累计耗时，下方为与上一事件的间隔。";
-"shortcutDiagnostics.summaryNote" = "每 2 秒刷新 · 最近保留的 1,000 条样本 · P50/P95 仅统计筛选范围内已显示窗口的记录。未完成记录可能仍在执行，也可能缺失事件。";
+"shortcutDiagnostics.summaryNote" = "每 5 秒刷新 · 最近保留的 200 条样本 · P50/P95 仅统计筛选范围内已显示窗口的记录。未完成记录可能仍在执行，也可能缺失事件。";
 "shortcutDiagnostics.role.host" = "主进程";
 "shortcutDiagnostics.role.shortcuts" = "快捷键";
 "shortcutDiagnostics.role.launcher" = "启动器";
@@ -7005,3 +7005,48 @@
 "ask.settings.links.subtitle" = "对话消息中的链接。⌘ + 点击始终使用系统浏览器。";
 "ask.settings.links.sidePanel" = "侧边栏";
 "ask.settings.links.browser" = "系统浏览器";
+
+// Unified diagnostics
+"diagnostics.title" = "诊断中心";
+"diagnostics.export" = "导出所选时间段";
+"diagnostics.range" = "时间范围";
+"diagnostics.range.hour" = "最近 1 小时";
+"diagnostics.range.day" = "最近 24 小时";
+"diagnostics.range.all" = "全部保留数据";
+"diagnostics.range.custom" = "自定义";
+"diagnostics.from" = "从";
+"diagnostics.to" = "至";
+"diagnostics.invalidRange" = "开始时间不能晚于结束时间。";
+"diagnostics.timeNote" = "时间使用本地时区。按触发时间筛选，保留完整事件链；日志轮换或容量限制可能导致缺失。";
+"diagnostics.section" = "分类";
+"diagnostics.overview" = "运行概览";
+"diagnostics.shortcuts" = "快捷键响应";
+"diagnostics.current" = "当前快照 · 不受时间筛选影响";
+"diagnostics.modules" = "当前模块健康 · 活跃任务数";
+"diagnostics.failure" = "故障：";
+"diagnostics.unavailable" = "暂不可用或尚未采集";
+"diagnostics.hangs" = "所选时间段内的卡顿采样";
+"diagnostics.hangNote" = "列出本机保留的最多 5 份自动堆栈采样。没有记录不代表没有卡顿，可打开卡顿文件夹查看堆栈。";
+"diagnostics.hangFolder" = "打开卡顿文件夹";
+"diagnostics.noHangs" = "该时段无保留采样";
+"diagnostics.unreadableHangs" = "无法读取的卡顿记录：%d";
+"diagnostics.exportNote" = "导出包含所选时段的全部功能、当前进程资源与模块健康、卡顿采样信息，不含会话内容与原始堆栈。面板打开时每 5 秒刷新，关闭后停止轮询。";
+"diagnostics.partial" = "部分数据源采集失败，导出会标明缺失来源。";
+"diagnostics.updated" = "最近刷新：";
+"diagnostics.state.stopped" = "未启动";
+"diagnostics.state.starting" = "启动中";
+"diagnostics.state.ready" = "可用";
+"diagnostics.state.recovering" = "恢复中";
+"diagnostics.state.circuitOpen" = "冷却中";
+"diagnostics.state.degraded" = "不可用";
+"diagnostics.state.disabled" = "已禁用";
+"diagnostics.failure.unavailable" = "不可用";
+"diagnostics.failure.overloaded" = "任务过多";
+"diagnostics.failure.disabled" = "已禁用";
+"diagnostics.failure.invalidPolicy" = "策略无效";
+"diagnostics.failure.quarantined" = "连续失败后暂停";
+"diagnostics.failure.healthPersistence" = "健康状态存储失败";
+"diagnostics.failure.startupTimeout" = "启动超时";
+"diagnostics.failure.operationTimeout" = "任务超时";
+"diagnostics.failure.cleanupTimeout" = "回收超时";
+"diagnostics.failure.invalidated" = "已失效";

@@ -44,6 +44,7 @@ struct ShortcutLatencyReport: Codable, Sendable {
         let p95Milliseconds: Double?
     }
     var processes: [FeatureResourceSnapshot]? = nil
+    var rejectedRecords: [String: Int]? = nil
     var canExport: Bool { !samples.isEmpty || !(processes?.isEmpty ?? true) }
     let generatedAt: Date
     let samples: [ShortcutLatencySample]
@@ -100,6 +101,7 @@ struct ShortcutLatencyReport: Codable, Sendable {
         var result = Self(events: selected.flatMap(\.events), unreadableFiles: unreadableFiles,
                           invalidLines: invalidLines, now: generatedAt)
         result.processes = processes
+        result.rejectedRecords = rejectedRecords
         result.droppedEvents = droppedEvents
         return result
     }
@@ -116,12 +118,13 @@ struct ShortcutLatencyReport: Codable, Sendable {
             let events = snapshot.samples.dropLast().flatMap(\.events)
             var reduced = Self(events: events, unreadableFiles: unreadableFiles, invalidLines: invalidLines, now: generatedAt)
             reduced.processes = processes
+            reduced.rejectedRecords = rejectedRecords
             reduced.droppedEvents = snapshot.droppedEvents + last.events.count
             snapshot = reduced
         }
     }
 
-    static func read(directory: URL = ShortcutLatency.directory, now: Date = Date()) throws -> Self {
+    static func read(directory: URL = ShortcutLatency.directory, now: Date = Date(), interval: DateInterval? = nil) throws -> Self {
         guard FileManager.default.fileExists(atPath: directory.path) else { return .init(events: [], now: now) }
         let files = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.contentModificationDateKey, .fileSizeKey])
             .filter { $0.lastPathComponent.hasPrefix("events-") && $0.pathExtension == "jsonl" }
@@ -132,6 +135,8 @@ struct ShortcutLatencyReport: Codable, Sendable {
             }
         let decoder = JSONDecoder(); decoder.dateDecodingStrategy = .iso8601
         var events: [ShortcutLatencyEvent] = [], unreadable = 0, invalid = 0
+        var rejected: [String: Int] = [:]
+        func reject(_ reason: String) { invalid += 1; rejected[reason, default: 0] += 1 }
         for file in files.prefix(ShortcutLatencyWriter.maximumFiles) {
             guard let attributes = try? file.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey]),
                   (attributes.fileSize ?? Int.max) <= ShortcutLatencyWriter.maximumFileBytes,
@@ -141,15 +146,24 @@ struct ShortcutLatencyReport: Codable, Sendable {
             for (index, line) in lines.enumerated() {
                 // A live writer may be halfway through the last line. Try it on the next refresh.
                 if index == lines.count - 1, data.last != 10 { continue }
-                guard let event = try? decoder.decode(ShortcutLatencyEvent.self, from: Data(line)),
-                      [1, 2].contains(event.version), event.trace.uptime.isFinite, event.uptime.isFinite,
-                      event.uptime >= event.trace.uptime, event.uptime - event.trace.uptime <= 300,
-                      event.droppedBefore >= 0, event.droppedBefore <= 1_000_000,
-                      event.build.utf8.count <= 128 else { invalid += 1; continue }
-                events.append(event)
+                guard let event = try? decoder.decode(ShortcutLatencyEvent.self, from: Data(line)) else {
+                    reject("undecodable"); continue
+                }
+                guard [1, 2].contains(event.version) else { reject("unsupportedVersion"); continue }
+                guard event.trace.uptime.isFinite, event.uptime.isFinite, event.uptime >= event.trace.uptime else {
+                    reject("invalidClock"); continue
+                }
+                guard event.uptime - event.trace.uptime <= 300 else { reject("traceOlderThanFiveMinutes"); continue }
+                guard event.droppedBefore >= 0, event.droppedBefore <= 1_000_000,
+                      event.build.utf8.count <= 128 else { reject("invalidFields"); continue }
+                if interval.map({ event.trace.date >= $0.start && event.trace.date <= $0.end }) ?? true {
+                    events.append(event)
+                }
             }
         }
-        return .init(events: events, unreadableFiles: unreadable, invalidLines: invalid, now: now)
+        var report = Self(events: events, unreadableFiles: unreadable, invalidLines: invalid, now: now)
+        report.rejectedRecords = rejected
+        return report
     }
 
     static func percentile(_ values: [Double], fraction: Double) -> Double? {

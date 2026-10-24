@@ -6796,8 +6796,8 @@
 "ask.upload.failed" = "Couldn't upload. Try again later.";
 
 /* Local shortcut response diagnostics. */
-"shortcutDiagnostics.title" = "Shortcut Response Diagnostics";
-"shortcutDiagnostics.privacy" = "Saved only on this Mac. No text, clipboard content, images or key combinations. Logs rotate at 256 KiB per file, retain up to 64 files and expire after 7 days without updates.";
+"shortcutDiagnostics.title" = "Diagnostics";
+"shortcutDiagnostics.privacy" = "Saved only on this Mac. No text, clipboard content, images or key combinations. Logs rotate at 256 KiB per file, retain up to 16 files and expire after 7 days without updates.";
 "shortcutDiagnostics.record" = "Record response timing";
 "shortcutDiagnostics.scope" = "Trace ring, translation, launcher, clipboard and screenshot display; other feature shortcuts include command routing.";
 "shortcutDiagnostics.inspect" = "Inspect timing and event timelines";
@@ -6821,7 +6821,7 @@
 "shortcutDiagnostics.select" = "Select a sample to inspect its stages.";
 "shortcutDiagnostics.timeline" = "Event timeline";
 "shortcutDiagnostics.columns" = "Right: time since recognition; below: gap since the previous event.";
-"shortcutDiagnostics.summaryNote" = "Auto-refresh every 2 seconds · Latest 1,000 retained samples · P50/P95 include only visible outcomes in the selected filters. Incomplete records may still be in flight or missing events.";
+"shortcutDiagnostics.summaryNote" = "Auto-refresh every 5 seconds · Latest 200 retained samples · P50/P95 include only visible outcomes in the selected filters. Incomplete records may still be in flight or missing events.";
 "shortcutDiagnostics.role.host" = "Main process";
 "shortcutDiagnostics.role.shortcuts" = "Shortcuts";
 "shortcutDiagnostics.role.launcher" = "Launcher";
@@ -7005,3 +7005,48 @@
 "ask.settings.links.subtitle" = "Links in Chat messages. ⌘-click always opens the system browser.";
 "ask.settings.links.sidePanel" = "Side panel";
 "ask.settings.links.browser" = "System browser";
+
+// Unified diagnostics
+"diagnostics.title" = "Diagnostics";
+"diagnostics.export" = "Export selected period";
+"diagnostics.range" = "Time range";
+"diagnostics.range.hour" = "Last hour";
+"diagnostics.range.day" = "Last 24 hours";
+"diagnostics.range.all" = "All retained data";
+"diagnostics.range.custom" = "Custom";
+"diagnostics.from" = "From";
+"diagnostics.to" = "To";
+"diagnostics.invalidRange" = "Start must be before or equal to end.";
+"diagnostics.timeNote" = "Times use your local timezone. Selects shortcuts by start time, keeping their entire timeline. Records may be missing due to rotation or size limits.";
+"diagnostics.section" = "Category";
+"diagnostics.overview" = "Runtime overview";
+"diagnostics.shortcuts" = "Shortcut response";
+"diagnostics.current" = "Current snapshot · independent of time filter";
+"diagnostics.modules" = "Current module health · active operations";
+"diagnostics.failure" = "Failure:";
+"diagnostics.unavailable" = "Unavailable or not collected";
+"diagnostics.hangs" = "Saved hang samples in selected period";
+"diagnostics.hangNote" = "Lists up to 5 locally retained automatic stack samples. No records does not prove there were no stalls. Open the hang folder to inspect stacks.";
+"diagnostics.hangFolder" = "Open hang folder";
+"diagnostics.noHangs" = "No retained samples in this period";
+"diagnostics.unreadableHangs" = "Unreadable hang records: %d";
+"diagnostics.exportNote" = "Export includes all features in the selected period, current process resources and module health, and hang sample metadata. It excludes conversation content and raw stacks. Refreshes every 5 seconds while open; no extra background polling.";
+"diagnostics.partial" = "Some sources could not be collected. Export includes collection failure markers.";
+"diagnostics.updated" = "Last refreshed:";
+"diagnostics.state.stopped" = "Stopped";
+"diagnostics.state.starting" = "Starting";
+"diagnostics.state.ready" = "Available";
+"diagnostics.state.recovering" = "Recovering";
+"diagnostics.state.circuitOpen" = "Cooling down";
+"diagnostics.state.degraded" = "Unavailable";
+"diagnostics.state.disabled" = "Disabled";
+"diagnostics.failure.unavailable" = "Unavailable";
+"diagnostics.failure.overloaded" = "Overloaded";
+"diagnostics.failure.disabled" = "Disabled";
+"diagnostics.failure.invalidPolicy" = "Invalid policy";
+"diagnostics.failure.quarantined" = "Paused after repeated failures";
+"diagnostics.failure.healthPersistence" = "Health storage failure";
+"diagnostics.failure.startupTimeout" = "Startup timed out";
+"diagnostics.failure.operationTimeout" = "Operation timed out";
+"diagnostics.failure.cleanupTimeout" = "Cleanup timed out";
+"diagnostics.failure.invalidated" = "Invalidated";

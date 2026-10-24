@@ -6796,8 +6796,8 @@
 "ask.upload.failed" = "アップロードできませんでした。後でもう一度お試しください。";
 
 /* Local shortcut response diagnostics. */
-"shortcutDiagnostics.title" = "ショートカット応答診断";
-"shortcutDiagnostics.privacy" = "このMacにのみ保存します。テキスト、クリップボード、画像、キーの組み合わせは記録しません。1ファイル256 KiB、最大64ファイル、最終更新から7日間保存します。";
+"shortcutDiagnostics.title" = "診断センター";
+"shortcutDiagnostics.privacy" = "このMacにのみ保存します。テキスト、クリップボード、画像、キーの組み合わせは記録しません。1ファイル256 KiB、最大16ファイル、最終更新から7日間保存します。";
 "shortcutDiagnostics.record" = "応答時間を記録";
 "shortcutDiagnostics.scope" = "リング、翻訳、ランチャー、クリップボード、スクリーンショットの表示を記録します。他の機能はコマンド経路を記録します。";
 "shortcutDiagnostics.inspect" = "時間とイベントの流れを確認";
@@ -6821,7 +6821,7 @@
 "shortcutDiagnostics.select" = "サンプルを選択して各段階を確認します。";
 "shortcutDiagnostics.timeline" = "イベントタイムライン";
 "shortcutDiagnostics.columns" = "右側は認識からの経過時間、下段は前のイベントからの間隔です。";
-"shortcutDiagnostics.summaryNote" = "2秒ごとに更新・直近1,000件・P50/P95は選択条件で可視確認できた記録のみ。未完了は処理中またはイベント欠落の可能性があります。";
+"shortcutDiagnostics.summaryNote" = "5秒ごとに更新・直近200件・P50/P95は選択条件で可視確認できた記録のみ。未完了は処理中またはイベント欠落の可能性があります。";
 "shortcutDiagnostics.role.host" = "メインプロセス";
 "shortcutDiagnostics.role.shortcuts" = "ショートカット";
 "shortcutDiagnostics.role.launcher" = "ランチャー";
@@ -7005,3 +7005,48 @@
 "ask.settings.links.subtitle" = "チャットメッセージ内のリンク。⌘ + クリックは常にシステムのブラウザで開きます。";
 "ask.settings.links.sidePanel" = "サイドパネル";
 "ask.settings.links.browser" = "システムのブラウザ";
+
+// Unified diagnostics
+"diagnostics.title" = "診断センター";
+"diagnostics.export" = "選択期間をエクスポート";
+"diagnostics.range" = "期間";
+"diagnostics.range.hour" = "過去1時間";
+"diagnostics.range.day" = "過去24時間";
+"diagnostics.range.all" = "保存済みの全データ";
+"diagnostics.range.custom" = "カスタム";
+"diagnostics.from" = "開始";
+"diagnostics.to" = "終了";
+"diagnostics.invalidRange" = "開始は終了以前にしてください。";
+"diagnostics.timeNote" = "時刻は現地時間です。起動時刻で絞り込み、全イベントを保持します。保存上限やローテーションで欠落する場合があります。";
+"diagnostics.section" = "種類";
+"diagnostics.overview" = "実行状況";
+"diagnostics.shortcuts" = "ショートカット応答";
+"diagnostics.current" = "現在のスナップショット · 期間指定の対象外";
+"diagnostics.modules" = "現在のモジュール状態 · 実行中の処理数";
+"diagnostics.failure" = "障害：";
+"diagnostics.unavailable" = "未取得または利用不可";
+"diagnostics.hangs" = "選択期間内のハング記録";
+"diagnostics.hangNote" = "最大5件の保存済み自動スタック記録です。記録がなくても停止がなかったとは限りません。フォルダで詳細を確認できます。";
+"diagnostics.hangFolder" = "ハング記録フォルダを開く";
+"diagnostics.noHangs" = "この期間の保存記録はありません";
+"diagnostics.unreadableHangs" = "読み取れない記録：%d";
+"diagnostics.exportNote" = "全機能の選択期間データ、現在のリソースと状態、ハングのメタデータを出力します。会話と生スタックは含みません。表示中のみ5秒ごとに更新します。";
+"diagnostics.partial" = "一部の取得に失敗しました。出力に欠落元を記載します。";
+"diagnostics.updated" = "最終更新：";
+"diagnostics.state.stopped" = "停止";
+"diagnostics.state.starting" = "起動中";
+"diagnostics.state.ready" = "利用可能";
+"diagnostics.state.recovering" = "復旧中";
+"diagnostics.state.circuitOpen" = "待機中";
+"diagnostics.state.degraded" = "利用不可";
+"diagnostics.state.disabled" = "無効";
+"diagnostics.failure.unavailable" = "利用不可";
+"diagnostics.failure.overloaded" = "過負荷";
+"diagnostics.failure.disabled" = "無効";
+"diagnostics.failure.invalidPolicy" = "設定不正";
+"diagnostics.failure.quarantined" = "連続失敗で停止";
+"diagnostics.failure.healthPersistence" = "状態保存に失敗";
+"diagnostics.failure.startupTimeout" = "起動タイムアウト";
+"diagnostics.failure.operationTimeout" = "処理タイムアウト";
+"diagnostics.failure.cleanupTimeout" = "終了タイムアウト";
+"diagnostics.failure.invalidated" = "無効化済み";
