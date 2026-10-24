@@ -5,6 +5,65 @@ import Testing
 @Suite("Unified diagnostics", .exclusiveUIState)
 @MainActor
 struct DiagnosticsReportTests {
+    @Test(arguments: [DiagnosticsTimeRange.minute1, .minute5, .minute10, .minute15, .minute30, .hour, .day])
+    func `recent presets export inclusive trace boundaries and matching hang metadata`(_ range: DiagnosticsTimeRange) throws {
+        let minutes: [DiagnosticsTimeRange: Double] = [
+            .minute1: 1, .minute5: 5, .minute10: 10, .minute15: 15, .minute30: 30, .hour: 60, .day: 1440
+        ]
+        let now = Date(timeIntervalSince1970: floor(Date().timeIntervalSince1970))
+        let interval = try #require(range.interval(at: now, start: now, end: now))
+        #expect(interval.duration == minutes[range]! * 60)
+        #expect(interval.end == now)
+        let folder = try directory()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
+        var data = Data()
+        for date in [interval.start.addingTimeInterval(-1), interval.start, now, now.addingTimeInterval(1)] {
+            let trace = ShortcutLatencyTrace(id: UUID(), feature: .launcher, date: date, uptime: 100)
+            for stage in [ShortcutLatencyStage.recognized, .visibleNextTurn] {
+                let event = ShortcutLatencyEvent(trace: trace, stage: stage,
+                                                 uptime: stage == .recognized ? 100 : 102,
+                                                 pid: 1, role: .host, build: "fixture")
+                try data.append(encoder.encode(event)); data.append(10)
+            }
+            try Data("PRIVATE STACK".utf8).write(to: folder.appendingPathComponent(
+                "main-\(Int(date.timeIntervalSince1970))-fixture.txt"
+            ))
+        }
+        try data.write(to: folder.appendingPathComponent("events-fixture.jsonl"))
+        let report = try ShortcutLatencyReport.read(directory: folder, now: now, interval: interval)
+        #expect(report.samples.count == 2)
+        #expect(report.samples.allSatisfy { $0.events.count == 2 })
+        let (hangs, _) = try DiagnosticsReport.readHangs(directory: folder, interval: interval)
+        #expect(hangs.count == 2)
+    }
+
+    @Test func `custom and retained ranges preserve their existing semantics`() {
+        let now = Date(timeIntervalSince1970: 1000)
+        #expect(DiagnosticsTimeRange.all.interval(at: now, start: now, end: now) == nil)
+        #expect(DiagnosticsTimeRange.custom.interval(at: now, start: now, end: now)?.duration == 0)
+        #expect(DiagnosticsTimeRange.custom.interval(at: now, start: now.addingTimeInterval(1), end: now) == nil)
+        #expect(DiagnosticsTimeRange.custom.interval(at: now, start: now, end: now.addingTimeInterval(60))?.duration == 60)
+    }
+
+    @Test func `timestamped exports retain successive files and use local calendar time`() throws {
+        let date = Date(timeIntervalSince1970: 1_800_000_000.125)
+        let utc = try #require(TimeZone(secondsFromGMT: 0))
+        let singapore = try #require(TimeZone(secondsFromGMT: 8 * 3600))
+        let first = DiagnosticsReport.exportFilename(at: date, timeZone: utc)
+        #expect(first == "typeflux-diagnostics-2027-01-15_08-00-00-125.json")
+        #expect(DiagnosticsReport.exportFilename(at: date, timeZone: singapore)
+            == "typeflux-diagnostics-2027-01-15_16-00-00-125.json")
+        let next = DiagnosticsReport.exportFilename(at: date.addingTimeInterval(0.001), timeZone: utc)
+        #expect(first != next)
+        let folder = try directory()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        try Data("first".utf8).write(to: folder.appendingPathComponent(first), options: .atomic)
+        try Data("second".utf8).write(to: folder.appendingPathComponent(next), options: .atomic)
+        #expect(try Data(contentsOf: folder.appendingPathComponent(first)) == Data("first".utf8))
+        #expect(try FileManager.default.contentsOfDirectory(atPath: folder.path).count == 2)
+    }
+
     private func directory() throws -> URL {
         let value = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: value, withIntermediateDirectories: true)

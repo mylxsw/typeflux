@@ -7078,3 +7078,15 @@
 "shortcutDiagnostics.stage.windowOrderFinished" = "Native window ordering finished";
 "shortcutDiagnostics.stage.windowKeyStarted" = "Native keyboard focus started";
 "shortcutDiagnostics.stage.windowKeyFinished" = "Native keyboard focus finished";
+
+/* Diagnostics range presets and table headings. */
+"diagnostics.range.minute1" = "Last 1 minute";
+"diagnostics.range.minute5" = "Last 5 minutes";
+"diagnostics.range.minute10" = "Last 10 minutes";
+"diagnostics.range.minute15" = "Last 15 minutes";
+"diagnostics.range.minute30" = "Last 30 minutes";
+"diagnostics.resources" = "Process resources · Now";
+"diagnostics.health" = "Module health · Now";
+"diagnostics.hangSamples" = "Hang samples";
+"diagnostics.module" = "Module";
+"diagnostics.status" = "Status";

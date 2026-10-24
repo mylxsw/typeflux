@@ -32,7 +32,7 @@ final class ShortcutLatencyWindowController: NSObject, NSWindowDelegate {
             let window = NSWindow(contentRect: .init(x: 0, y: 0, width: 1080, height: 720),
                                   styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered,
                                   defer: false)
-            window.title = L("shortcutDiagnostics.title")
+            window.title = L("diagnostics.title")
             window.identifier = .init("shortcutDiagnostics.window")
             window.isReleasedWhenClosed = false
             window.delegate = self
@@ -56,20 +56,22 @@ struct ShortcutLatencyDashboard: View {
     @State private var report = ShortcutLatencyReport(events: [])
     private let automaticRefresh: Bool
     init(report: ShortcutLatencyReport = ShortcutLatencyReport(events: []), bundle: DiagnosticsReport? = nil,
-         automaticRefresh: Bool = true, initialSection: String = "overview") {
+         automaticRefresh: Bool = true, initialSection: String = "overview",
+         initialRange: DiagnosticsTimeRange = .minute5, initialSelectedSample: UUID? = nil) {
         _report = State(initialValue: report)
         _bundle = State(initialValue: bundle)
         self.automaticRefresh = automaticRefresh
         _section = State(initialValue: initialSection)
+        _range = State(initialValue: initialRange)
+        _selected = State(initialValue: initialSelectedSample)
     }
 
     @State private var section = "overview"
-    @State private var range = "day"
+    @State private var range: DiagnosticsTimeRange = .minute5
     @State private var rangeStart = Date().addingTimeInterval(-3600)
     @State private var rangeEnd = Date()
     @State private var bundle: DiagnosticsReport?
     @State private var collectedSelection = ""
-    @State private var processesExpanded = true
     @State private var selected: UUID?
     @State private var feature = "all"
     @State private var temperature = "all"
@@ -82,51 +84,48 @@ struct ShortcutLatencyDashboard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(L("shortcutDiagnostics.title")).font(.title2.bold())
-                Spacer()
-                Button(L("shortcutDiagnostics.refresh")) { Task { await refresh() } }.disabled(refreshing)
-                Button(L("shortcutDiagnostics.folder")) { NSWorkspace.shared.open(ShortcutLatency.directory) }
-                Button(L("diagnostics.export")) { export() }
-                    .disabled(bundle == nil || refreshing || !validRange || collectedSelection != selectionKey)
-            }
-            HStack {
-                Picker(L("diagnostics.range"), selection: $range) {
-                    ForEach(["hour", "day", "all", "custom"], id: \.self) { value in
-                        Text(L("diagnostics.range." + value)).tag(value)
+        VStack(spacing: 0) {
+            header
+            Divider()
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(spacing: 16) {
+                    Picker(L("diagnostics.section"), selection: $section) {
+                        Text(L("diagnostics.overview")).tag("overview")
+                        Text(L("diagnostics.shortcuts")).tag("shortcuts")
                     }
-                }.frame(maxWidth: 320)
-                if range == "custom" {
-                    DatePicker(L("diagnostics.from"), selection: $rangeStart)
-                    DatePicker(L("diagnostics.to"), selection: $rangeEnd)
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .frame(width: 260)
+                    Spacer(minLength: 12)
+                    Picker(L("diagnostics.range"), selection: $range) {
+                        ForEach(DiagnosticsTimeRange.allCases, id: \.self) { value in
+                            Text(L("diagnostics.range." + value.rawValue)).tag(value)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 200)
+                    .help(L("diagnostics.timeNote"))
+                    .accessibilityIdentifier("diagnostics.range")
+                }
+                if range == .custom {
+                    HStack(spacing: 16) {
+                        DatePicker(L("diagnostics.from"), selection: $rangeStart)
+                        DatePicker(L("diagnostics.to"), selection: $rangeEnd)
+                    }
+                }
+                if !validRange {
+                    Text(L("diagnostics.invalidRange")).foregroundStyle(.red)
+                }
+                if section == "overview" {
+                    DiagnosticsOverview(report: report, bundle: bundle, processCPU: processCPU)
+                } else {
+                    shortcutDetails
                 }
             }
-            if !validRange {
-                Text(L("diagnostics.invalidRange")).foregroundStyle(.red)
-            }
-            Text(L("diagnostics.timeNote")).font(.caption).foregroundStyle(.secondary)
-            Picker(L("diagnostics.section"), selection: $section) {
-                Text(L("diagnostics.overview")).tag("overview")
-                Text(L("diagnostics.shortcuts")).tag("shortcuts")
-            }.pickerStyle(.segmented)
-            if section == "overview" {
-                overview
-            } else {
-                shortcutDetails
-            }
-            if failure || exportFailed {
-                Text(L("shortcutDiagnostics.error")).foregroundStyle(.red)
-            }
-            if let bundle, !bundle.collectionFailures.isEmpty {
-                Text(L("diagnostics.partial")).font(.caption).foregroundStyle(.orange)
-            }
-            if let bundle {
-                Text(L("diagnostics.updated") + " " + bundle.generatedAt.formatted()).font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            .padding(20)
+            footer
         }
-        .padding(20)
+        .background(Color(nsColor: .windowBackgroundColor))
         .accessibilityIdentifier("shortcutDiagnostics.dashboard")
         .task(id: selectionKey) {
             guard automaticRefresh else { return }
@@ -142,9 +141,61 @@ struct ShortcutLatencyDashboard: View {
         }
     }
 
+    private var header: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "stethoscope")
+                .font(.system(size: 22, weight: .medium))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 42, height: 42)
+                .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 11))
+            Text(L("diagnostics.title")).font(.title2.weight(.semibold))
+            Spacer()
+            Button { Task { await refresh() } } label: {
+                Image(systemName: "arrow.clockwise").frame(width: 18, height: 18)
+            }
+            .disabled(refreshing)
+            .help(L("shortcutDiagnostics.refresh"))
+            .accessibilityLabel(L("shortcutDiagnostics.refresh"))
+            Button { NSWorkspace.shared.open(ShortcutLatency.directory) } label: {
+                Image(systemName: "folder").frame(width: 18, height: 18)
+            }
+            .help(L("shortcutDiagnostics.folder"))
+            .accessibilityLabel(L("shortcutDiagnostics.folder"))
+            Button { export() } label: {
+                Label(L("diagnostics.export"), systemImage: "square.and.arrow.up")
+            }
+            .buttonStyle(.borderedProminent)
+            .help(L("diagnostics.exportNote"))
+            .disabled(bundle == nil || refreshing || !validRange || collectedSelection != selectionKey)
+            .accessibilityIdentifier("diagnostics.export")
+        }
+        .controlSize(.large)
+        .padding(20)
+    }
+
+    private var footer: some View {
+        HStack(spacing: 8) {
+            if failure || exportFailed {
+                Label(L("shortcutDiagnostics.error"), systemImage: "exclamationmark.circle")
+                    .foregroundStyle(.red)
+            } else if let bundle, !bundle.collectionFailures.isEmpty {
+                Label(L("diagnostics.partial"), systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(.orange)
+            }
+            Spacer()
+            if refreshing { ProgressView().controlSize(.small) }
+            if let bundle {
+                Text(L("diagnostics.updated") + " " + bundle.generatedAt.formatted(date: .omitted, time: .standard))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .font(.caption)
+        .padding(.horizontal, 20)
+        .padding(.bottom, 14)
+    }
+
     private var shortcutDetails: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(L("shortcutDiagnostics.boundary")).font(.callout).foregroundStyle(.secondary)
             HStack {
                 Picker(L("shortcutDiagnostics.feature"), selection: $feature) {
                     Text(L("shortcutDiagnostics.all")).tag("all")
@@ -162,7 +213,7 @@ struct ShortcutLatencyDashboard: View {
                 }.frame(maxWidth: 280)
                 Spacer()
             }
-            HStack(spacing: 24) {
+            HStack(spacing: 12) {
                 metric(L("shortcutDiagnostics.samples"), String(samples.count))
                 metric(L("shortcutDiagnostics.visible"), String(samples.filter { $0.outcome == "visible" }.count))
                 metric(
@@ -208,12 +259,14 @@ struct ShortcutLatencyDashboard: View {
                     }
                 }.frame(minWidth: 470, maxWidth: .infinity)
             }
-            Text(L("shortcutDiagnostics.summaryNote")).font(.caption).foregroundStyle(.secondary)
+            .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
         }
+        .help(L("shortcutDiagnostics.boundary") + " " + L("shortcutDiagnostics.summaryNote"))
     }
 
     private var validRange: Bool {
-        range != "custom" || rangeStart <= rangeEnd
+        range != .custom || rangeStart <= rangeEnd
     }
 
     private var selectionKey: String {
@@ -221,91 +274,17 @@ struct ShortcutLatencyDashboard: View {
     }
 
     private func interval(at now: Date) -> DateInterval? {
-        switch range {
-        case "hour": DateInterval(start: now.addingTimeInterval(-3600), end: now)
-        case "day": DateInterval(start: now.addingTimeInterval(-86400), end: now)
-        case "custom": validRange ? DateInterval(start: rangeStart, end: rangeEnd) : nil
-        default: nil
-        }
-    }
-
-    private var overview: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text(L("diagnostics.current")).font(.headline)
-                if let processes = report.processes, !processes.isEmpty {
-                    DisclosureGroup(L("shortcutDiagnostics.processes"), isExpanded: $processesExpanded) {
-                        Grid(alignment: .leading, horizontalSpacing: 20) {
-                            GridRow {
-                                Text(L("shortcutDiagnostics.process")); Text("PID")
-                                Text(L("shortcutDiagnostics.memory")); Text("CPU")
-                                Text(L("shortcutDiagnostics.operations"))
-                            }.fontWeight(.medium)
-                            ForEach(processes) { process in
-                                GridRow {
-                                    Text(L("shortcutDiagnostics.role." + process.role.rawValue))
-                                    Text(String(process.pid))
-                                    Text(process.footprintBytes
-                                        .map { String(format: "%.1f MiB", Double($0) / 1_048_576) } ?? "—")
-                                    Text(processCPU[process.id].map { String(format: "%.1f%%", $0) } ?? "—")
-                                    Text(String(process.managedOperations))
-                                }.monospacedDigit()
-                            }
-                        }.font(.caption).frame(maxWidth: .infinity, alignment: .leading)
-                        Text(L("shortcutDiagnostics.processNote")).font(.caption).foregroundStyle(.secondary)
-                    }
-                }
-                if report.processes?.isEmpty ?? true {
-                    Text(L("diagnostics.unavailable"))
-                }
-                Text(L("diagnostics.modules")).font(.headline)
-                if let modules = bundle?.currentModules, !modules.isEmpty {
-                    ForEach(modules.keys.sorted(), id: \.self) { id in
-                        if let health = modules[id] {
-                            HStack {
-                                Text(L("settings.services." + id))
-                                Spacer()
-                                Text(L("diagnostics.state." + health.state.rawValue))
-                                Text(String(health.activeOperations)).monospacedDigit()
-                            }
-                            if let failure = health.failure {
-                                Text(L("diagnostics.failure") + " " +
-                                    L("diagnostics.failure." + String(describing: failure)))
-                                    .font(.caption).foregroundStyle(.orange)
-                            }
-                        }
-                    }
-                } else {
-                    Text(L("diagnostics.unavailable"))
-                }
-                Text(L("diagnostics.hangs")).font(.headline)
-                Button(L("diagnostics.hangFolder")) { NSWorkspace.shared.open(DiagnosticsReport.hangDirectory) }
-                Text(L("diagnostics.hangNote")).font(.caption).foregroundStyle(.secondary)
-                if bundle == nil || bundle?.collectionFailures.contains("hangs") == true {
-                    Text(L("diagnostics.unavailable"))
-                } else if bundle?.hangs.isEmpty == true {
-                    Text(L("diagnostics.noHangs"))
-                }
-                ForEach(bundle?.hangs ?? []) { record in
-                    HStack {
-                        Text(record.date.formatted())
-                        Spacer()
-                        Text(ByteCountFormatter.string(fromByteCount: Int64(record.bytes), countStyle: .file))
-                    }
-                }
-                if let count = bundle?.unreadableHangFiles, count > 0 {
-                    Text(L("diagnostics.unreadableHangs", count)).foregroundStyle(.orange)
-                }
-                Text(L("diagnostics.exportNote")).font(.caption).foregroundStyle(.secondary)
-            }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
-        }
+        range.interval(at: now, start: rangeStart, end: rangeEnd)
     }
 
     private func metric(_ title: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title).font(.caption).foregroundStyle(.secondary)
-            Text(value).font(.title3.monospacedDigit())
+            Text(value).font(.system(size: 22, weight: .semibold, design: .rounded).monospacedDigit())
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 10))
     }
 
     private func timeline(_ sample: ShortcutLatencySample) -> some View {
@@ -313,7 +292,6 @@ struct ShortcutLatencyDashboard: View {
             Text(L("shortcutDiagnostics.timeline")).font(.headline)
             Text(sample.trace.id.uuidString).font(.caption.monospaced()).textSelection(.enabled)
             Text(sample.trace.date, style: .date).font(.caption)
-            Text(L("shortcutDiagnostics.columns")).font(.caption).foregroundStyle(.secondary)
             ForEach(Array(sample.events.enumerated()), id: \.offset) { index, event in
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 3) {
@@ -335,6 +313,7 @@ struct ShortcutLatencyDashboard: View {
                 Divider()
             }
         }
+        .help(L("shortcutDiagnostics.columns"))
     }
 
     private func milliseconds(_ value: Double?) -> String {
@@ -369,7 +348,7 @@ struct ShortcutLatencyDashboard: View {
     private func export() {
         guard let snapshot = bundle, validRange, collectedSelection == selectionKey else { return }
         let panel = NSSavePanel()
-        panel.nameFieldStringValue = "typeflux-diagnostics.json"
+        panel.nameFieldStringValue = DiagnosticsReport.exportFilename()
         panel.allowedContentTypes = [.json]
         guard panel.runModal() == .OK, let url = panel.url else { return }
         Task {

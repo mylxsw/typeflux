@@ -13,13 +13,17 @@ The panel has two categories:
 - **Shortcut response:** ring, translation, launcher, clipboard and screenshot
   timelines, feature/process-state filters, sample counts and P50/P95.
 
-Choose last hour, last 24 hours, all retained data, or a custom local date/time
-range. Endpoints are inclusive. Shortcut filtering uses trace start dates and
+Choose the last 1, 5, 10, 15 or 30 minutes (default: 5 minutes), last hour,
+last 24 hours, all retained data, or a custom local date/time range.
+Endpoints are inclusive. Shortcut filtering uses trace start dates and
 keeps complete timelines, including stages after the selected end. Filtering is
 performed before sample/event limits so older selected periods remain accessible.
 The panel refreshes every five seconds while open and stops when closed.
 
-**Export selected period** produces `typeflux-diagnostics.json`, a versioned JSON
+**Export selected period** produces a file such as
+`typeflux-diagnostics-2026-10-24_15-42-23-123.json`. The filename uses the local
+export time, including milliseconds, so successive exports have distinct names.
+It contains a versioned JSON
 bundle with the selected UTC boundaries, bounded shortcut report, current process
 resources/module health and hang metadata. It always includes all features in
 that period, independent of the shortcut category's feature/temperature filters.

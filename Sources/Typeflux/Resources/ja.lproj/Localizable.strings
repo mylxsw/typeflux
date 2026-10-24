@@ -7078,3 +7078,15 @@
 "shortcutDiagnostics.stage.windowOrderFinished" = "ウィンドウ表示終了";
 "shortcutDiagnostics.stage.windowKeyStarted" = "キーボードフォーカス取得開始";
 "shortcutDiagnostics.stage.windowKeyFinished" = "キーボードフォーカス取得終了";
+
+/* Diagnostics range presets and table headings. */
+"diagnostics.range.minute1" = "過去1分";
+"diagnostics.range.minute5" = "過去5分";
+"diagnostics.range.minute10" = "過去10分";
+"diagnostics.range.minute15" = "過去15分";
+"diagnostics.range.minute30" = "過去30分";
+"diagnostics.resources" = "プロセスリソース · 現在";
+"diagnostics.health" = "モジュールの状態 · 現在";
+"diagnostics.hangSamples" = "ハングサンプル";
+"diagnostics.module" = "モジュール";
+"diagnostics.status" = "状態";

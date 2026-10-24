@@ -7080,3 +7080,15 @@
 "shortcutDiagnostics.stage.windowOrderFinished" = "原生視窗顯示：結束";
 "shortcutDiagnostics.stage.windowKeyStarted" = "原生鍵盤焦點取得：開始";
 "shortcutDiagnostics.stage.windowKeyFinished" = "原生鍵盤焦點取得：結束";
+
+/* Diagnostics range presets and table headings. */
+"diagnostics.range.minute1" = "最近 1 分鐘";
+"diagnostics.range.minute5" = "最近 5 分鐘";
+"diagnostics.range.minute10" = "最近 10 分鐘";
+"diagnostics.range.minute15" = "最近 15 分鐘";
+"diagnostics.range.minute30" = "最近 30 分鐘";
+"diagnostics.resources" = "程序資源 · 目前";
+"diagnostics.health" = "模組健康 · 目前";
+"diagnostics.hangSamples" = "卡頓取樣";
+"diagnostics.module" = "模組";
+"diagnostics.status" = "狀態";

@@ -7078,3 +7078,15 @@
 "shortcutDiagnostics.stage.windowOrderFinished" = "原生窗口显示：结束";
 "shortcutDiagnostics.stage.windowKeyStarted" = "原生键盘焦点获取：开始";
 "shortcutDiagnostics.stage.windowKeyFinished" = "原生键盘焦点获取：结束";
+
+/* Diagnostics range presets and table headings. */
+"diagnostics.range.minute1" = "最近 1 分钟";
+"diagnostics.range.minute5" = "最近 5 分钟";
+"diagnostics.range.minute10" = "最近 10 分钟";
+"diagnostics.range.minute15" = "最近 15 分钟";
+"diagnostics.range.minute30" = "最近 30 分钟";
+"diagnostics.resources" = "进程资源 · 当前";
+"diagnostics.health" = "模块健康 · 当前";
+"diagnostics.hangSamples" = "卡顿采样";
+"diagnostics.module" = "模块";
+"diagnostics.status" = "状态";

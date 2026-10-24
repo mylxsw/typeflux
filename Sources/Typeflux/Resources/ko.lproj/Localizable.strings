@@ -7078,3 +7078,15 @@
 "shortcutDiagnostics.stage.windowOrderFinished" = "기본 창 표시 완료";
 "shortcutDiagnostics.stage.windowKeyStarted" = "키보드 포커스 설정 시작";
 "shortcutDiagnostics.stage.windowKeyFinished" = "키보드 포커스 설정 완료";
+
+/* Diagnostics range presets and table headings. */
+"diagnostics.range.minute1" = "최근 1분";
+"diagnostics.range.minute5" = "최근 5분";
+"diagnostics.range.minute10" = "최근 10분";
+"diagnostics.range.minute15" = "최근 15분";
+"diagnostics.range.minute30" = "최근 30분";
+"diagnostics.resources" = "프로세스 리소스 · 현재";
+"diagnostics.health" = "모듈 상태 · 현재";
+"diagnostics.hangSamples" = "멈춤 샘플";
+"diagnostics.module" = "모듈";
+"diagnostics.status" = "상태";
