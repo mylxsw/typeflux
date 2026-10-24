@@ -25,7 +25,7 @@ Engine-owned recovery completion also passes through client authorization when c
 
 ## UI
 
-The page uses TFPaneHeader, TFSegmentedControl, TFSearchField, TFCard, TFDisclosureRow, TFFormRow and TFPopUpButton. Tool groups contain action rows; there are no explanatory subtitles on each row. Technical operation IDs are available on hover. The table supports search and per-mode reset.
+The page uses TFPaneHeader, TFSegmentedControl, TFSearchField, TFCard, TFDisclosureRow, TFFormRow and TFPopUpButton. Tool groups contain action rows; there are no explanatory subtitles on each row. The Permissions pane is last in the Capabilities group. Each operation uses the shared TFFormRow description hint: hovering the row reveals a question-mark icon, and hovering the icon opens its explanation. The table supports search (including technical IDs) and per-mode reset.
 
 The standalone workflow editor assistant uses the same Standard-mode table. Its confirmation is shown with shared form/card/button components before a draft is changed or a subprocess runs. An approved test does not open a second editor-specific approval. Manual user-initiated test runs retain their existing workflow safeguards.
 
@@ -37,3 +37,7 @@ The standalone workflow editor assistant uses the same Standard-mode table. Its 
 - Settings renders were inspected at 460 and 760 points, in light/dark appearances, and in the complete Agent settings shell. The view reuses the shared form controls and adapts to narrow width.
 - An earlier ordinary build succeeded in 94.68 seconds. Two preparatory coverage builds were stopped before executing tests (279.88 and 58.82 seconds) while implementation was still being completed. These are separate from the completed validation times above.
 - No full test suite, signed app relaunch, or production deployment was performed.
+
+### Navigation and description-hint follow-up
+
+The focused AskToolPermissionsSettingsTests and StudioModelsTests scope passed all 47 methods in 235.95 seconds including compilation and discovery. It verifies the pane order, built-in description coverage, unknown-tool fallback, and compact/wide rendering in both appearances. Changed executable line coverage is 11/11 (100%); localization resources are not executable lines. The existing shared hover/popover component was reused without changes.

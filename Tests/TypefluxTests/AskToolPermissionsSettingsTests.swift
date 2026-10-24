@@ -7,13 +7,18 @@ import Testing
 @MainActor
 struct AskToolPermissionsSettingsTests {
     @Test func permissionLabelsAreLocalizedAndNavigationUsesTheSharedPane() {
-        #expect(AgentSettingsPane.permissions.group == .general)
+        #expect(AgentSettingsPane.permissions.group == .capabilities)
         for language in [AppLanguage.simplifiedChinese, .english] {
             AppLocalization.shared.setLanguage(language)
             for entry in AskToolAuthorization.builtins {
                 #expect(!entry.title.hasPrefix("agent.permissions."))
                 #expect(!entry.toolTitle.hasPrefix("agent.permissions."))
+                #expect(!entry.detail.hasPrefix("agent.permissions."))
+                #expect(entry.detail != L("agent.permissions.help.unknown", entry.tool, entry.action))
             }
+            let unknown = AskToolAuthorizationEntry(tool: "custom_tool", action: "custom_action", effect: .unknown)
+            #expect(unknown.detail.contains("custom_tool"))
+            #expect(unknown.detail.contains("custom_action"))
             for permission in AskToolPermission.allCases { #expect(!permission.title.hasPrefix("agent.permissions.")) }
             #expect(!AgentSettingsPane.permissions.title.isEmpty)
         }

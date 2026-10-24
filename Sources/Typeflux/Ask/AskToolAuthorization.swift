@@ -28,6 +28,14 @@ struct AskToolAuthorizationEntry: Codable, Equatable, Identifiable, Sendable {
         let localized = L(key)
         return localized == key ? tool : localized
     }
+    var detail: String {
+        for suffix in [tool + "." + action, action == "*" ? tool : action] {
+            let key = "agent.permissions.help." + suffix
+            let localized = L(key)
+            if localized != key { return localized }
+        }
+        return L("agent.permissions.help.unknown", tool, action)
+    }
     var risk: AskToolRisk {
         switch effect {
         case .read: .read

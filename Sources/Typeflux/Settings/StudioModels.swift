@@ -240,12 +240,12 @@ enum AgentSettingsPaneGroup: String, CaseIterable {
 /// Panes of the Agent settings page, one per capability, in display order.
 enum AgentSettingsPane: String, CaseIterable, Identifiable, SettingsPaneItem {
     case overview
-    case permissions
     case webSearch
     case imageGeneration
     case files
     case codeExecution
     case automation
+    case permissions
     case skills
     case mcpServers
     case memory
@@ -256,8 +256,8 @@ enum AgentSettingsPane: String, CaseIterable, Identifiable, SettingsPaneItem {
 
     var group: AgentSettingsPaneGroup {
         switch self {
-        case .overview, .permissions: .general
-        case .webSearch, .imageGeneration, .files, .codeExecution, .automation: .capabilities
+        case .overview: .general
+        case .webSearch, .imageGeneration, .files, .codeExecution, .automation, .permissions: .capabilities
         case .skills, .mcpServers: .extensions
         case .memory: .personalization
         }

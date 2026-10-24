@@ -60,7 +60,7 @@ struct AskToolPermissionsSettingsView: View {
             }
     }
     private func permissionRow(_ entry: AskToolAuthorizationEntry, title: String) -> some View {
-        TFFormRow(title: title) {
+        TFFormRow(title: title, detail: entry.detail) {
             TFPopUpButton(title: title,
                           options: AskToolPermission.allCases.map { TFOption($0, $0.title) },
                           selection: Binding(get: { settings.toolPermission(entry, mode: mode) },
@@ -68,7 +68,6 @@ struct AskToolPermissionsSettingsView: View {
                           width: TFMetrics.formControlWidth,
                           identifier: "agent.permissions." + entry.id)
         }
-        .help(entry.id)
     }
 
 }
