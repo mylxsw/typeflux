@@ -1,4 +1,5 @@
 import AppKit
+import ImageIO
 
 struct AskCapturedContext: Sendable {
     var selection: String?
@@ -51,6 +52,7 @@ final class AskContextCapture: AskContextCapturing {
     private let accessibilityTrusted: () -> Bool
     private let captureScreenshot: (CGDirectDisplayID?) async throws -> String
     private let sourceTracker: AskSourceApplicationTracker
+    private let screenshotQueue = ScreenshotTaskQueue<String>()
 
     /// - Parameter captureScreenshot: replaces the capture through `capturer`.
     init(
@@ -114,10 +116,28 @@ final class AskContextCapture: AskContextCapturing {
         // the launcher is already on screen and is excluded from the capture.
         let screenshotAllowed = screenCaptureAllowed
         let screenshotTask: Task<String, Error>? = includeScreenshot && screenshotAllowed
-            ? Task { [captureScreenshot] in try await captureScreenshot(displayId) } : nil
+            ? Task { [captureScreenshot, screenshotQueue] in
+                try Task.checkCancellation()
+                return try await screenshotQueue.capture { try await captureScreenshot(displayId) }
+            } : nil
         defer { screenshotTask?.cancel() }
+        return await withTaskCancellationHandler {
+            await captureContext(includeSelection: includeSelection, request: request,
+                                 screenshotTask: screenshotTask, screenshotMissing: includeScreenshot && !screenshotAllowed)
+        } onCancel: {
+            screenshotTask?.cancel()
+        }
+    }
+
+    private func captureContext(includeSelection: Bool, request: ReadOnlySelectionRequest,
+                                screenshotTask: Task<String, Error>?, screenshotMissing: Bool) async -> AskCapturedContext {
+        func discarded(_ status: String) -> AskCapturedContext {
+            request.log(status: status)
+            return AskCapturedContext(selectionStatus: status)
+        }
         // The request was fixed before the launcher took focus and before any
         // draft/operation-queue waits. Never recapture the frontmost app here.
+        ShortcutLatency.record(.contextSelectionStarted)
         let selection: TextSelectionSnapshot
         if !includeSelection {
             selection = TextSelectionSnapshot(source: "selection-not-requested")
@@ -128,6 +148,7 @@ final class AskContextCapture: AskContextCapturing {
         } else {
             selection = TextSelectionSnapshot(source: "permission-missing")
         }
+        ShortcutLatency.record(.contextSelectionFinished)
         request.log(status: selection.source, details: ["phase": "capture-result"])
         guard !Task.isCancelled else { return discarded("capture-cancelled") }
         guard request.matches(processID: frontmostProcessID()), selection.source != "target-changed" else {
@@ -141,9 +162,10 @@ final class AskContextCapture: AskContextCapturing {
             // Source identity stays the same even after asynchronous selection reads.
             memory: memory?.memory(bundleIdentifier: request.bundleIdentifier, appName: request.processName)
         )
-        if includeScreenshot && !screenshotAllowed { result.warning = Self.missingScreenshotWarning(allowed: false) }
+        if screenshotMissing { result.warning = Self.missingScreenshotWarning(allowed: false) }
         if let screenshotTask {
             do { result.screenshot = try await screenshotTask.value }
+            catch is CancellationError { return discarded("capture-cancelled") }
             catch { result.warning = error.localizedDescription }
         }
         guard !Task.isCancelled else { return discarded("capture-cancelled") }
@@ -167,6 +189,7 @@ final class AskContextCapture: AskContextCapturing {
         permission: any ScreenCapturePermissionProviding = ScreenCapturePermission.live,
         capturer: any ScreenCapturing = ScreenCaptureService()
     ) async throws -> Screenshot {
+        try Task.checkCancellation()
         guard permission.isGranted else {
             if requestAccessIfNeeded { permission.requestOnce() }
             throw AskLocalError.message(L("ask.capture.permission"))
@@ -180,23 +203,33 @@ final class AskContextCapture: AskContextCapturing {
             let key = error == .permissionDenied ? "ask.capture.permission" : "ask.capture.unavailable"
             throw AskLocalError.message(L(key))
         }
+        try Task.checkCancellation()
         guard let display = snapshot.displays.first,
-              let dataURL = jpegDataURL(display.image)
+              let dataURL = try await encodedScreenshot(display.image)
         else { throw AskLocalError.message(L("ask.capture.unavailable")) }
         return Screenshot(dataURL: dataURL, displayId: display.id,
                           width: display.image.width, height: display.image.height)
     }
 
+    /// Encoding runs on the generic executor, outside the UI actor. Preserve the
+    /// captured pixels instead of redrawing through a screen-scaled NSImage/TIFF.
+    nonisolated private static func encodedScreenshot(_ image: CGImage) async throws -> String? {
+        try Task.checkCancellation()
+        ShortcutLatency.record(.imageEncodeStarted)
+        defer { ShortcutLatency.record(.imageEncodeFinished) }
+        let result = jpegDataURL(image)
+        try Task.checkCancellation()
+        return result
+    }
+
     /// JPEG at quality 0.6; nil when encoding fails or the result exceeds 2 MB.
-    static func jpegDataURL(_ image: CGImage) -> String? {
-        let target = NSImage(size: NSSize(width: image.width, height: image.height))
-        target.lockFocus()
-        NSImage(cgImage: image, size: .zero).draw(in: NSRect(origin: .zero, size: target.size))
-        target.unlockFocus()
-        guard let tiff = target.tiffRepresentation, let bitmap = NSBitmapImageRep(data: tiff),
-              let data = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.6]),
-              data.count <= 2_000_000 else { return nil }
-        return "data:image/jpeg;base64," + data.base64EncodedString()
+    nonisolated static func jpegDataURL(_ image: CGImage) -> String? {
+        let data = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(data, "public.jpeg" as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(destination, image, [kCGImageDestinationLossyCompressionQuality: 0.6] as CFDictionary)
+        guard CGImageDestinationFinalize(destination),
+              data.length <= 2_000_000 else { return nil }
+        return "data:image/jpeg;base64," + (data as Data).base64EncodedString()
     }
 }
 

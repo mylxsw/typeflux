@@ -98,11 +98,13 @@ final class ScreenshotCoordinatorTests: XCTestCase {
     /// Blocks the capture until the test lets it finish, to look at `capturing`.
     private final class GatedCapturer: ScreenCapturing {
         var continuation: CheckedContinuation<Void, Never>?
+        var calls = 0
         let snapshot: ScreenSnapshot
 
         init(snapshot: ScreenSnapshot) { self.snapshot = snapshot }
 
         func snapshot(_ request: ScreenCaptureRequest) async throws -> ScreenSnapshot {
+            calls += 1
             await withCheckedContinuation { continuation = $0 }
             return snapshot
         }
@@ -351,12 +353,46 @@ final class ScreenshotCoordinatorTests: XCTestCase {
         while capturer.continuation == nil { await Task.yield() }
 
         sut.cancel()
+        XCTAssertTrue(task.isCancelled)
+        XCTAssertNil(sut.pendingTask)
         capturer.continuation?.resume()
         await task.value
 
         XCTAssertEqual(sut.state, .idle)
         XCTAssertTrue(overlay.presented.isEmpty)
         XCTAssertNil(sut.snapshot)
+    }
+
+    func testCancelAndRestartKeepsOnlyLatestCaptureBehindUnfinishedSystemRequest() async throws {
+        let capturer = GatedCapturer(snapshot: Self.snapshot())
+        let sut = makeCoordinator(capturer: capturer)
+        sut.start()
+        let original = try XCTUnwrap(sut.pendingTask)
+        try await SettingsBehaviorTestSupport.wait { capturer.continuation != nil }
+        let oldCallback = try XCTUnwrap(capturer.continuation)
+        capturer.continuation = nil
+        sut.cancel()
+        var originalReturned = false
+        let waiter = Task { await original.value; originalReturned = true }
+        try await SettingsBehaviorTestSupport.wait { originalReturned }
+        XCTAssertEqual(capturer.calls, 1, "Caller cancellation must not wait for the native callback")
+        sut.start()
+        let replaced = try XCTUnwrap(sut.pendingTask)
+        sut.cancel()
+        sut.start()
+        let latest = try XCTUnwrap(sut.pendingTask)
+        await Task.yield()
+        XCTAssertEqual(capturer.calls, 1, "A cancelled system request must continue occupying its slot")
+        oldCallback.resume()
+        try await SettingsBehaviorTestSupport.wait { capturer.calls == 2 && capturer.continuation != nil }
+        capturer.continuation?.resume()
+        capturer.continuation = nil
+        await latest.value
+        await replaced.value
+        await waiter.value
+        XCTAssertEqual(sut.state, .selecting)
+        XCTAssertEqual(overlay.presented.count, 1)
+        XCTAssertTrue(toasts.shown.isEmpty)
     }
 
     // MARK: Permission

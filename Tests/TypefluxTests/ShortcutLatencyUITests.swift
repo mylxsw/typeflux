@@ -70,6 +70,10 @@ extension ShortcutLatencyUITests {
                         "diagnostics.timeNote", "diagnostics.hangNote"] {
                 #expect(bundle.localizedString(forKey: key, value: nil, table: nil) != key)
             }
+            for stage in ShortcutLatencyStage.allCases {
+                let key = "shortcutDiagnostics.stage." + stage.rawValue
+                #expect(bundle.localizedString(forKey: key, value: nil, table: nil) != key)
+            }
         }
     }
 }

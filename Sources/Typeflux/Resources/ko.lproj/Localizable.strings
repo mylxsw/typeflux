@@ -7057,3 +7057,24 @@
 "diagnostics.failure.operationTimeout" = "작업 시간 초과";
 "diagnostics.failure.cleanupTimeout" = "정리 시간 초과";
 "diagnostics.failure.invalidated" = "무효화됨";
+
+// Capture cancellation and native presentation spans.
+"shortcutDiagnostics.stage.captureQueued" = "캡처 작업 대기";
+"shortcutDiagnostics.stage.captureDequeued" = "캡처 작업 시작";
+"shortcutDiagnostics.stage.captureCancelled" = "캡처 작업 취소";
+"shortcutDiagnostics.stage.captureSuperseded" = "새 요청으로 캡처 작업 대체";
+"shortcutDiagnostics.stage.captureDiscarded" = "취소된 캡처 작업 종료";
+"shortcutDiagnostics.stage.contentLoadStarted" = "화면 및 창 목록 조회 시작";
+"shortcutDiagnostics.stage.contentLoadFinished" = "화면 및 창 목록 조회 완료";
+"shortcutDiagnostics.stage.displayCaptureStarted" = "개별 화면 이미지 캡처 시작";
+"shortcutDiagnostics.stage.displayCaptureFinished" = "개별 화면 이미지 캡처 완료";
+"shortcutDiagnostics.stage.imageResizeStarted" = "이미지 크기 조정 시작";
+"shortcutDiagnostics.stage.imageResizeFinished" = "이미지 크기 조정 완료";
+"shortcutDiagnostics.stage.imageEncodeStarted" = "캡처 JPEG 인코딩 시작";
+"shortcutDiagnostics.stage.imageEncodeFinished" = "캡처 JPEG 인코딩 완료";
+"shortcutDiagnostics.stage.contextSelectionStarted" = "선택 영역 읽기 시작";
+"shortcutDiagnostics.stage.contextSelectionFinished" = "선택 영역 읽기 완료";
+"shortcutDiagnostics.stage.windowOrderStarted" = "기본 창 표시 시작";
+"shortcutDiagnostics.stage.windowOrderFinished" = "기본 창 표시 완료";
+"shortcutDiagnostics.stage.windowKeyStarted" = "키보드 포커스 설정 시작";
+"shortcutDiagnostics.stage.windowKeyFinished" = "키보드 포커스 설정 완료";

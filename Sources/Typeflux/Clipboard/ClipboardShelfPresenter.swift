@@ -50,7 +50,7 @@ final class ClipboardShelfPresenter {
         }
         ShortcutLatency.record(.layoutFinished)
         ShortcutLatency.record(.windowShowStarted)
-        panel.makeKeyAndOrderFront(nil)
+        ShortcutPanelPresentation.show(panel)
         ShortcutLatency.record(.windowShowFinished)
         if animated, let layer = panel.contentView?.layer {
             let slide = CABasicAnimation(keyPath: "transform.translation.y")

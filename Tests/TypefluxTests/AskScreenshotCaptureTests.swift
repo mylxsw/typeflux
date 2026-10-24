@@ -135,8 +135,22 @@ struct AskScreenshotCaptureTests {
     @Test func jpegEncodingKeepsTheAspectRatio() throws {
         let url = try #require(AskContextCapture.jpegDataURL(ScreenCaptureTestSupport.image(width: 20, height: 10)))
         let data = try #require(Data(base64Encoded: String(url.dropFirst("data:image/jpeg;base64,".count))))
-        // The bitmap follows the main screen's backing scale, so only the aspect ratio is fixed.
         let bitmap = try #require(NSBitmapImageRep(data: data))
-        #expect(bitmap.pixelsWide == bitmap.pixelsHigh * 2 && bitmap.pixelsHigh >= 10)
+        #expect(bitmap.pixelsWide == 20 && bitmap.pixelsHigh == 10)
+    }
+
+    @Test func jpegEncodingAndSelectionHaveSeparateDiagnosticSpans() async throws {
+        let collector = ShortcutLatencyEventCollector()
+        let capture = AskContextCapture(injector: ContextTextInjector(), permission: FakeScreenCapturePermission(granted: true),
+                                       capturer: FakeScreenCapturer(.success(snapshot())),
+                                       accessibilityTrusted: { true }, frontmostProcessID: { 42 })
+        let context = await ShortcutLatency.$eventSink.withValue(collector.sink) {
+            await ShortcutLatency.$current.withValue(diagnosticTestTrace(.launcher)) {
+                await capture.capture(includeScreenshot: true)
+            }
+        }
+        #expect(context.screenshot != nil && context.selection != nil)
+        #expect(collector.stages.contains(.contextSelectionStarted) && collector.stages.contains(.contextSelectionFinished))
+        #expect(collector.stages.contains(.imageEncodeStarted) && collector.stages.contains(.imageEncodeFinished))
     }
 }

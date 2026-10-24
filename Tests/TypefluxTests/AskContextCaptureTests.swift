@@ -147,6 +147,51 @@ struct AskContextCaptureTests {
         #expect(context.selection == nil)
     }
 
+    @Test func cancellationDuringSelectionImmediatelyCancelsScreenshot() async throws {
+        let injector = ContextTextInjector()
+        let collector = ShortcutLatencyEventCollector()
+        var selection: CheckedContinuation<Void, Never>?
+        var image: CheckedContinuation<String, Never>?
+        injector.onRead = { await withCheckedContinuation { selection = $0 } }
+        let capture = AskContextCapture(injector: injector, permission: FakeScreenCapturePermission(granted: true),
+                                       accessibilityTrusted: { true }, frontmostProcessID: { 42 },
+                                       captureScreenshot: { _ in await withCheckedContinuation { image = $0 } })
+        let task = Task {
+            await ShortcutLatency.$eventSink.withValue(collector.sink) {
+                await ShortcutLatency.$current.withValue(diagnosticTestTrace(.launcher)) {
+                    await capture.capture(includeScreenshot: true)
+                }
+            }
+        }
+        try await SettingsBehaviorTestSupport.wait { selection != nil && image != nil }
+        task.cancel()
+        try await SettingsBehaviorTestSupport.wait { collector.stages.contains(.captureCancelled) }
+        // Cancellation reached the inner screenshot while the AX read was still suspended.
+        selection?.resume()
+        let context = await task.value
+        #expect(context.selectionStatus == "capture-cancelled")
+        #expect(context.screenshot == nil && context.selection == nil)
+        image?.resume(returning: "stale-image")
+        try await SettingsBehaviorTestSupport.wait { collector.stages.contains(.captureDiscarded) }
+    }
+
+    @Test func cancellationWhileAwaitingScreenshotReturnsBeforeSystemCompletion() async throws {
+        let injector = ContextTextInjector()
+        var image: CheckedContinuation<String, Never>?
+        var result: AskCapturedContext?
+        let capture = AskContextCapture(injector: injector, permission: FakeScreenCapturePermission(granted: true),
+                                       accessibilityTrusted: { true }, frontmostProcessID: { 42 },
+                                       captureScreenshot: { _ in await withCheckedContinuation { image = $0 } })
+        let task = Task { result = await capture.capture(includeScreenshot: true, includeSelection: false) }
+        try await SettingsBehaviorTestSupport.wait { image != nil }
+        task.cancel()
+        try await SettingsBehaviorTestSupport.wait { result != nil }
+        #expect(result?.selectionStatus == "capture-cancelled")
+        #expect(result?.screenshot == nil && result?.warning == nil)
+        image?.resume(returning: "late-image")
+        await task.value
+    }
+
     @Test func missingSourceAndPermissionHaveDifferentStatuses() async {
         let injector = ContextTextInjector()
         let capture = AskContextCapture(injector: injector, permission: FakeScreenCapturePermission(granted: true), accessibilityTrusted: { false }, frontmostProcessID: { 42 })

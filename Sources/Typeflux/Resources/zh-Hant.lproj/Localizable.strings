@@ -7059,3 +7059,24 @@
 "diagnostics.failure.operationTimeout" = "工作逾時";
 "diagnostics.failure.cleanupTimeout" = "回收逾時";
 "diagnostics.failure.invalidated" = "已失效";
+
+// Capture cancellation and native presentation spans.
+"shortcutDiagnostics.stage.captureQueued" = "截圖工作進入佇列";
+"shortcutDiagnostics.stage.captureDequeued" = "截圖工作開始執行";
+"shortcutDiagnostics.stage.captureCancelled" = "截圖工作取消";
+"shortcutDiagnostics.stage.captureSuperseded" = "截圖工作被新請求取代";
+"shortcutDiagnostics.stage.captureDiscarded" = "已取消的截圖工作執行結束";
+"shortcutDiagnostics.stage.contentLoadStarted" = "螢幕及視窗列舉：開始";
+"shortcutDiagnostics.stage.contentLoadFinished" = "螢幕及視窗列舉：結束";
+"shortcutDiagnostics.stage.displayCaptureStarted" = "單螢幕影像擷取：開始";
+"shortcutDiagnostics.stage.displayCaptureFinished" = "單螢幕影像擷取：結束";
+"shortcutDiagnostics.stage.imageResizeStarted" = "影像縮放：開始";
+"shortcutDiagnostics.stage.imageResizeFinished" = "影像縮放：結束";
+"shortcutDiagnostics.stage.imageEncodeStarted" = "截圖 JPEG 編碼：開始";
+"shortcutDiagnostics.stage.imageEncodeFinished" = "截圖 JPEG 編碼：結束";
+"shortcutDiagnostics.stage.contextSelectionStarted" = "唯讀選取範圍擷取：開始";
+"shortcutDiagnostics.stage.contextSelectionFinished" = "唯讀選取範圍擷取：結束";
+"shortcutDiagnostics.stage.windowOrderStarted" = "原生視窗顯示：開始";
+"shortcutDiagnostics.stage.windowOrderFinished" = "原生視窗顯示：結束";
+"shortcutDiagnostics.stage.windowKeyStarted" = "原生鍵盤焦點取得：開始";
+"shortcutDiagnostics.stage.windowKeyFinished" = "原生鍵盤焦點取得：結束";

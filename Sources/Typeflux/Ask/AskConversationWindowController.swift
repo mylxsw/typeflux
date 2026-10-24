@@ -348,7 +348,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             if launcher?.isVisible == true {
                 ShortcutLatency
                     .measure(.focusStarted, .focusFinished) {
-                        launcher?.makeKeyAndOrderFront(nil); focusEditor(in: launcher)
+                        if let launcher { ShortcutPanelPresentation.show(launcher) }
+                        focusEditor(in: launcher)
                     }
             }
             ShortcutLatency.windowOrdered(launcher)
@@ -403,7 +404,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         // Take keyboard focus without activating the app and raising its other windows.
         ShortcutLatency.record(.layoutFinished)
         ShortcutLatency.record(.windowShowStarted)
-        panel.makeKeyAndOrderFront(nil)
+        ShortcutPanelPresentation.show(panel)
         ShortcutLatency.record(.windowShowFinished)
         ShortcutLatency.windowOrdered(panel)
         ShortcutLatency.record(.focusStarted)

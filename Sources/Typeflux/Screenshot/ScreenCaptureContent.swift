@@ -17,7 +17,17 @@ struct ScreenCaptureContent {
 
     /// Reads ScreenCaptureKit. Requires Screen Recording access; callers check it first.
     static func system() async throws -> ScreenCaptureContent {
-        let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+        try Task.checkCancellation()
+        // Wait for the actual system callback even after cancellation. The context
+        // screenshot queue must not free its slot while native work is still running.
+        let content: SCShareableContent = try await withCheckedThrowingContinuation { continuation in
+            SCShareableContent.getExcludingDesktopWindows(false, onScreenWindowsOnly: true) { content, error in
+                if let error { continuation.resume(throwing: error) }
+                else if let content { continuation.resume(returning: content) }
+                else { continuation.resume(throwing: ScreenCaptureError.unavailable) }
+            }
+        }
+        try Task.checkCancellation()
         return ScreenCaptureContent(
             displays: content.displays.map { display in
                 let mode = CGDisplayCopyDisplayMode(display.displayID)
@@ -35,6 +45,7 @@ struct ScreenCaptureContent {
                 )
             }, frontToBack: onScreenWindowOrder()),
             capture: { display, excluded, size in
+                try Task.checkCancellation()
                 guard let target = content.displays.first(where: { $0.displayID == display.id }) else {
                     throw ScreenCaptureError.unavailable
                 }
@@ -45,7 +56,15 @@ struct ScreenCaptureContent {
                 config.height = size.height
                 config.showsCursor = false
                 if #available(macOS 14.0, *) {
-                    return try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
+                    let image: CGImage = try await withCheckedThrowingContinuation { continuation in
+                        SCScreenshotManager.captureImage(contentFilter: filter, configuration: config) { image, error in
+                            if let error { continuation.resume(throwing: error) }
+                            else if let image { continuation.resume(returning: image) }
+                            else { continuation.resume(throwing: ScreenCaptureError.unavailable) }
+                        }
+                    }
+                    try Task.checkCancellation()
+                    return image
                 }
                 // The macOS 13 fallback must use the same exclusions as ScreenCaptureKit.
                 let included = onScreenWindowOrder().filter { !excluded.contains($0) }.map { NSNumber(value: $0) }

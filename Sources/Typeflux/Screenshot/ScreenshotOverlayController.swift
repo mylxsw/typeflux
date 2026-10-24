@@ -211,7 +211,7 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
 
     private func focus(_ view: ScreenshotOverlayView) {
         guard let panel = view.window else { return }
-        panel.makeKey()
+        ShortcutLatency.measure(.windowKeyStarted, .windowKeyFinished) { panel.makeKey() }
         panel.makeFirstResponder(view)
     }
 

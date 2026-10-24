@@ -163,12 +163,17 @@ struct AskConversationWindowLifecycleTests {
     @Test func launcherCloseFencesContextImagesAndReopenUsesFreshScope() async throws {
         try await withController { fixture, controller, _ in
             controller.showLauncher()
+            #expect(controller.launcherWindow?.isVisible == true)
+            try await SettingsBehaviorTestSupport.wait { fixture.model.launcherImageScope.visible }
             #expect(fixture.model.launcherImageScope.visible)
             let old = fixture.model.launcherImageScope.epoch
             controller.dismissLauncher()
             #expect(!fixture.model.launcherImageScope.visible)
             #expect(fixture.model.launcherImageScope.epoch != old)
             controller.showLauncher()
+            #expect(controller.launcherWindow?.isVisible == true)
+            // Image activation intentionally follows the panel's first-frame opportunity.
+            try await SettingsBehaviorTestSupport.wait { fixture.model.launcherImageScope.visible }
             #expect(fixture.model.launcherImageScope.visible)
             controller.dismissLauncher()
         }

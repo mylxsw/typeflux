@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Screen capture service")
+@Suite("Screen capture service", .exclusiveUIState)
 struct ScreenCaptureServiceTests {
     private struct Failure: Error {}
 
@@ -162,6 +162,76 @@ struct ScreenCaptureServiceTests {
         let source = Source()
         source.failure = Failure()
         await #expect(throws: Failure.self) { try await service(source).snapshot(ScreenCaptureRequest()) }
+    }
+
+    @Test @MainActor func cancelledEnumerationNeverStartsDisplayCapture() async throws {
+        let source = Source(), collector = ShortcutLatencyEventCollector()
+        var enumeration: CheckedContinuation<Void, Never>?
+        let capturer = ScreenCaptureService(permission: FakeScreenCapturePermission(granted: true)) {
+            await withCheckedContinuation { enumeration = $0 }
+            return source.content()
+        }
+        let task = Task {
+            try await ShortcutLatency.$eventSink.withValue(collector.sink) {
+                try await ShortcutLatency.$current.withValue(diagnosticTestTrace(.screenshot)) {
+                    try await capturer.snapshot(.init())
+                }
+            }
+        }
+        try await SettingsBehaviorTestSupport.wait { enumeration != nil }
+        task.cancel()
+        enumeration?.resume()
+        await #expect(throws: CancellationError.self) { try await task.value }
+        #expect(source.captures.isEmpty)
+        #expect(collector.stages == [.contentLoadStarted, .contentLoadFinished])
+    }
+
+    @Test @MainActor func cancelledDisplayResultIsNotResizedOrPublished() async throws {
+        let collector = ShortcutLatencyEventCollector()
+        var image: CheckedContinuation<CGImage, Never>?
+        let capturer = ScreenCaptureService(permission: FakeScreenCapturePermission(granted: true)) {
+            ScreenCaptureContent(displays: [.init(id: 1, frame: CGRect(x: 0, y: 0, width: 20, height: 10), scale: 1)],
+                                 windows: []) { _, _, _ in
+                await withCheckedContinuation { image = $0 }
+            }
+        }
+        let task = Task {
+            try await ShortcutLatency.$eventSink.withValue(collector.sink) {
+                try await ShortcutLatency.$current.withValue(diagnosticTestTrace(.screenshot)) {
+                    try await capturer.snapshot(.init())
+                }
+            }
+        }
+        try await SettingsBehaviorTestSupport.wait { image != nil }
+        task.cancel()
+        image?.resume(returning: ScreenCaptureTestSupport.image(width: 20, height: 10))
+        await #expect(throws: CancellationError.self) { try await task.value }
+        #expect(collector.stages == [.contentLoadStarted, .contentLoadFinished, .displayCaptureStarted, .displayCaptureFinished])
+    }
+
+    @Test func diagnosticsSeparateEnumerationCaptureAndResizeForEveryDisplay() async throws {
+        let source = Source(), collector = ShortcutLatencyEventCollector()
+        try await ShortcutLatency.$eventSink.withValue(collector.sink) {
+            try await ShortcutLatency.$current.withValue(diagnosticTestTrace(.screenshot)) {
+                _ = try await service(source).snapshot(.init())
+            }
+        }
+        #expect(Array(collector.stages.prefix(2)) == [.contentLoadStarted, .contentLoadFinished])
+        for index in 1...2 {
+            let events = collector.events.filter { $0.itemIndex == index }
+            #expect(events.map(\.stage) == [.displayCaptureStarted, .displayCaptureFinished, .imageResizeStarted, .imageResizeFinished])
+            #expect(events.allSatisfy { $0.itemCount == 2 })
+        }
+    }
+
+    @Test func precancelledCaptureDoesNotEnumerate() async {
+        let source = Source()
+        let task = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            await #expect(throws: CancellationError.self) { try await service(source).snapshot(.init()) }
+        }
+        await task.value
+        #expect(source.loads == 0 && source.captures.isEmpty)
     }
 
     @Test func displaySelection() {

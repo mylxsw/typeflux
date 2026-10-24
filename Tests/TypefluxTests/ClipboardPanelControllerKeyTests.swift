@@ -57,7 +57,8 @@ final class ClipboardPanelControllerKeyTests: XCTestCase {
         XCTAssertEqual(diagnostics.stages, [.statePreparationStarted, .statePreparationFinished, .windowUncached,
                                             .windowAcquisitionStarted, .windowAcquisitionFinished, .layoutStarted,
                                             .layoutFinished,
-                                            .windowShowStarted, .windowShowFinished, .focusStarted, .focusFinished,
+                                            .windowShowStarted, .windowOrderStarted, .windowOrderFinished,
+                                            .windowKeyStarted, .windowKeyFinished, .windowShowFinished, .focusStarted, .focusFinished,
                                             .monitorsStarted, .monitorsFinished, .windowOrdered, .visibleNextTurn])
         controller.dismiss()
         let reused = ShortcutLatencyEventCollector()

@@ -34,6 +34,7 @@ final class ScreenshotCoordinator {
     private(set) var snapshot: ScreenSnapshot?
     /// The capture or delivery in flight, so tests can wait for it.
     private(set) var pendingTask: Task<Void, Never>?
+    private let captureQueue = ScreenshotTaskQueue<ScreenSnapshot>()
     /// A pin's copy or save in flight, so tests can wait for it.
     private(set) var pinTask: Task<Void, Never>?
 
@@ -143,11 +144,14 @@ final class ScreenshotCoordinator {
         followUpOnCommit = followUp
         let session = session
         let capture = capture
+        let captureQueue = captureQueue
         pendingTask = Task { [weak self] in
             ShortcutLatency.record(.captureStarted)
             let result: Result<ScreenSnapshot, Error>
             do {
-                result = try await .success(capture.snapshot(ScreenCaptureRequest(windowExclusion: .screenshotControls)))
+                result = try await .success(captureQueue.capture {
+                    try await capture.snapshot(ScreenCaptureRequest(windowExclusion: .screenshotControls))
+                })
             } catch {
                 result = .failure(error)
             }
@@ -423,6 +427,8 @@ final class ScreenshotCoordinator {
     }
 
     private func teardown() {
+        pendingTask?.cancel()
+        pendingTask = nil
         overlay.dismiss()
         longImageEditor.dismiss()
         snapshot = nil

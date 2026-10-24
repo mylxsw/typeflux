@@ -7057,3 +7057,24 @@
 "diagnostics.failure.operationTimeout" = "任务超时";
 "diagnostics.failure.cleanupTimeout" = "回收超时";
 "diagnostics.failure.invalidated" = "已失效";
+
+// Capture cancellation and native presentation spans.
+"shortcutDiagnostics.stage.captureQueued" = "截图任务进入队列";
+"shortcutDiagnostics.stage.captureDequeued" = "截图任务开始执行";
+"shortcutDiagnostics.stage.captureCancelled" = "截图任务取消";
+"shortcutDiagnostics.stage.captureSuperseded" = "截图任务被新请求替代";
+"shortcutDiagnostics.stage.captureDiscarded" = "已取消的截图任务执行结束";
+"shortcutDiagnostics.stage.contentLoadStarted" = "屏幕及窗口枚举：开始";
+"shortcutDiagnostics.stage.contentLoadFinished" = "屏幕及窗口枚举：结束";
+"shortcutDiagnostics.stage.displayCaptureStarted" = "单屏图像捕获：开始";
+"shortcutDiagnostics.stage.displayCaptureFinished" = "单屏图像捕获：结束";
+"shortcutDiagnostics.stage.imageResizeStarted" = "图像缩放：开始";
+"shortcutDiagnostics.stage.imageResizeFinished" = "图像缩放：结束";
+"shortcutDiagnostics.stage.imageEncodeStarted" = "截图 JPEG 编码：开始";
+"shortcutDiagnostics.stage.imageEncodeFinished" = "截图 JPEG 编码：结束";
+"shortcutDiagnostics.stage.contextSelectionStarted" = "只读选区采集：开始";
+"shortcutDiagnostics.stage.contextSelectionFinished" = "只读选区采集：结束";
+"shortcutDiagnostics.stage.windowOrderStarted" = "原生窗口显示：开始";
+"shortcutDiagnostics.stage.windowOrderFinished" = "原生窗口显示：结束";
+"shortcutDiagnostics.stage.windowKeyStarted" = "原生键盘焦点获取：开始";
+"shortcutDiagnostics.stage.windowKeyFinished" = "原生键盘焦点获取：结束";

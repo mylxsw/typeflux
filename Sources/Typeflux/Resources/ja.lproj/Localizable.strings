@@ -7057,3 +7057,24 @@
 "diagnostics.failure.operationTimeout" = "処理タイムアウト";
 "diagnostics.failure.cleanupTimeout" = "終了タイムアウト";
 "diagnostics.failure.invalidated" = "無効化済み";
+
+// Capture cancellation and native presentation spans.
+"shortcutDiagnostics.stage.captureQueued" = "撮影タスクを待機";
+"shortcutDiagnostics.stage.captureDequeued" = "撮影タスクを開始";
+"shortcutDiagnostics.stage.captureCancelled" = "撮影タスクをキャンセル";
+"shortcutDiagnostics.stage.captureSuperseded" = "新しい撮影タスクに置き換え";
+"shortcutDiagnostics.stage.captureDiscarded" = "キャンセル済み撮影タスクが終了";
+"shortcutDiagnostics.stage.contentLoadStarted" = "画面・ウィンドウ一覧の取得開始";
+"shortcutDiagnostics.stage.contentLoadFinished" = "画面・ウィンドウ一覧の取得終了";
+"shortcutDiagnostics.stage.displayCaptureStarted" = "ディスプレイ画像の撮影開始";
+"shortcutDiagnostics.stage.displayCaptureFinished" = "ディスプレイ画像の撮影終了";
+"shortcutDiagnostics.stage.imageResizeStarted" = "画像リサイズ開始";
+"shortcutDiagnostics.stage.imageResizeFinished" = "画像リサイズ終了";
+"shortcutDiagnostics.stage.imageEncodeStarted" = "撮影画像のJPEG変換開始";
+"shortcutDiagnostics.stage.imageEncodeFinished" = "撮影画像のJPEG変換終了";
+"shortcutDiagnostics.stage.contextSelectionStarted" = "選択範囲の読み取り開始";
+"shortcutDiagnostics.stage.contextSelectionFinished" = "選択範囲の読み取り終了";
+"shortcutDiagnostics.stage.windowOrderStarted" = "ウィンドウ表示開始";
+"shortcutDiagnostics.stage.windowOrderFinished" = "ウィンドウ表示終了";
+"shortcutDiagnostics.stage.windowKeyStarted" = "キーボードフォーカス取得開始";
+"shortcutDiagnostics.stage.windowKeyFinished" = "キーボードフォーカス取得終了";

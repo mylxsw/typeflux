@@ -7057,3 +7057,24 @@
 "diagnostics.failure.operationTimeout" = "Operation timed out";
 "diagnostics.failure.cleanupTimeout" = "Cleanup timed out";
 "diagnostics.failure.invalidated" = "Invalidated";
+
+// Capture cancellation and native presentation spans.
+"shortcutDiagnostics.stage.captureQueued" = "Screenshot task queued";
+"shortcutDiagnostics.stage.captureDequeued" = "Screenshot task started";
+"shortcutDiagnostics.stage.captureCancelled" = "Screenshot task cancelled";
+"shortcutDiagnostics.stage.captureSuperseded" = "Screenshot task replaced by a newer request";
+"shortcutDiagnostics.stage.captureDiscarded" = "Cancelled screenshot task finished";
+"shortcutDiagnostics.stage.contentLoadStarted" = "Screen and window enumeration started";
+"shortcutDiagnostics.stage.contentLoadFinished" = "Screen and window enumeration finished";
+"shortcutDiagnostics.stage.displayCaptureStarted" = "Display image capture started";
+"shortcutDiagnostics.stage.displayCaptureFinished" = "Display image capture finished";
+"shortcutDiagnostics.stage.imageResizeStarted" = "Image resizing started";
+"shortcutDiagnostics.stage.imageResizeFinished" = "Image resizing finished";
+"shortcutDiagnostics.stage.imageEncodeStarted" = "Screenshot JPEG encoding started";
+"shortcutDiagnostics.stage.imageEncodeFinished" = "Screenshot JPEG encoding finished";
+"shortcutDiagnostics.stage.contextSelectionStarted" = "Read-only selection capture started";
+"shortcutDiagnostics.stage.contextSelectionFinished" = "Read-only selection capture finished";
+"shortcutDiagnostics.stage.windowOrderStarted" = "Native window ordering started";
+"shortcutDiagnostics.stage.windowOrderFinished" = "Native window ordering finished";
+"shortcutDiagnostics.stage.windowKeyStarted" = "Native keyboard focus started";
+"shortcutDiagnostics.stage.windowKeyFinished" = "Native keyboard focus finished";

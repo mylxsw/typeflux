@@ -485,7 +485,7 @@ final class ScreenshotOverlayTests: XCTestCase {
             XCTAssertTrue(events.allSatisfy { $0.itemCount == 2 && $0.trace == trace })
         }
         XCTAssertEqual(diagnostics.stages.prefix(2), [.overlayStarted, .oldOverlayRetired])
-        XCTAssertEqual(diagnostics.stages.suffix(6), [.focusStarted, .focusFinished, .pointerUpdateStarted,
+        XCTAssertEqual(diagnostics.stages.suffix(8), [.focusStarted, .windowKeyStarted, .windowKeyFinished, .focusFinished, .pointerUpdateStarted,
                                                       .pointerUpdateFinished, .overlayFinished, .windowOrdered])
 
         XCTAssertTrue(controller.isPresented)

@@ -59,8 +59,10 @@ struct ScreenCaptureService: ScreenCapturing {
     }
 
     func snapshot(_ request: ScreenCaptureRequest) async throws -> ScreenSnapshot {
+        try Task.checkCancellation()
         guard permission.isGranted else { throw ScreenCaptureError.permissionDenied }
-        let content = try await loadContent()
+        let content = try await measuredContent()
+        try Task.checkCancellation()
         let displays = Self.displays(content.displays, matching: request.displays)
         guard !displays.isEmpty else { throw ScreenCaptureError.unavailable }
         let excludedWindows: [CGWindowID]
@@ -69,15 +71,22 @@ struct ScreenCaptureService: ScreenCapturing {
             excludedWindows = content.windows.filter { $0.processID == ownProcessID }.map(\.id)
         case .screenshotControls:
             let controls = Set(await captureControlWindowIDs())
+            try Task.checkCancellation()
             excludedWindows = content.windows.filter { $0.processID == ownProcessID && controls.contains($0.id) }.map(\.id)
         }
         let images = try await withThrowingTaskGroup(of: (Int, CGImage).self) { group in
             for (index, display) in displays.enumerated() {
+                try Task.checkCancellation()
                 let size = ScreenCaptureGeometry.pixelSize(pointSize: display.frame.size, scale: display.scale,
                                                            resolution: request.resolution)
                 group.addTask {
-                    let captured = try await content.capture(display, excludedWindows, size)
+                    try Task.checkCancellation()
+                    let captured = try await Self.capture(content, display: display, excluded: excludedWindows,
+                                                          size: size, index: index + 1, count: displays.count)
+                    try Task.checkCancellation()
                     // The macOS 13 fallback always returns native pixels.
+                    ShortcutLatency.record(.imageResizeStarted, itemIndex: index + 1, itemCount: displays.count)
+                    defer { ShortcutLatency.record(.imageResizeFinished, itemIndex: index + 1, itemCount: displays.count) }
                     guard let image = ScreenCaptureGeometry.resized(captured, to: size) else {
                         throw ScreenCaptureError.unavailable
                     }
@@ -88,12 +97,26 @@ struct ScreenCaptureService: ScreenCapturing {
             for try await (index, image) in group { images[index] = image }
             return images.compactMap { $0 }
         }
+        try Task.checkCancellation()
         return ScreenSnapshot(
             displays: zip(displays, images).map { display, image in
                 ScreenSnapshot.Display(id: display.id, frame: display.frame, scale: display.scale, image: image)
             },
             windows: request.includesWindows ? content.windows.filter { !excludedWindows.contains($0.id) } : []
         )
+    }
+
+    private func measuredContent() async throws -> ScreenCaptureContent {
+        ShortcutLatency.record(.contentLoadStarted)
+        defer { ShortcutLatency.record(.contentLoadFinished) }
+        return try await loadContent()
+    }
+
+    private static func capture(_ content: ScreenCaptureContent, display: ScreenCaptureContent.Display,
+                                excluded: [CGWindowID], size: ScreenPixelSize, index: Int, count: Int) async throws -> CGImage {
+        ShortcutLatency.record(.displayCaptureStarted, itemIndex: index, itemCount: count)
+        defer { ShortcutLatency.record(.displayCaptureFinished, itemIndex: index, itemCount: count) }
+        return try await content.capture(display, excluded, size)
     }
 
     static func displays(_ displays: [ScreenCaptureContent.Display],

@@ -139,7 +139,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
             .midX
         ShortcutLatency.record(.layoutFinished)
         ShortcutLatency.record(.windowShowStarted)
-        panel.makeKeyAndOrderFront(nil)
+        ShortcutPanelPresentation.show(panel)
         ShortcutLatency.record(.windowShowFinished)
         ShortcutLatency.measure(.focusStarted, .focusFinished) { focusSignal.request() }
         ShortcutLatency.record(.monitorsStarted)
