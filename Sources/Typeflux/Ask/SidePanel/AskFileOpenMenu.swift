@@ -114,9 +114,15 @@ struct AskFileOpenMenuItems: View {
     let file: URL
     var actions = AskFileExternalActions()
     var showsShortcuts = true
+    /// Adds the file to the composer; listed first when the conversation can take it.
+    var onReference: (() -> Void)?
     var onError: (String) -> Void = { _ in }
 
     var body: some View {
+        if let onReference {
+            Button(L("ask.sidePanel.reference"), action: onReference)
+            Divider()
+        }
         let defaultApp = actions.defaultApplication(for: file)
         Button(defaultApp.map { L("ask.sidePanel.open.withApp", $0.name) } ?? L("ask.sidePanel.open.default")) {
             actions.openWithDefaultApplication(file)
@@ -143,5 +149,31 @@ struct AskFileOpenMenuItems: View {
         Button(L("ask.sidePanel.saveAs")) {
             do { try actions.saveAs(file) } catch { onError(error.localizedDescription) }
         }
+    }
+}
+
+/// "Reference in message": the file joins the composer as an attachment for the next message.
+struct AskFileReferenceButton: View {
+    var action: () -> Void
+    var size: CGFloat = 24
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "text.badge.plus").font(.system(size: 12))
+                .foregroundStyle(StudioTheme.textSecondary)
+                .frame(width: size, height: size)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(L("ask.sidePanel.reference"))
+        .accessibilityLabel(L("ask.sidePanel.reference"))
+    }
+}
+
+extension View {
+    /// Rows combine their children for VoiceOver, so their hover-only reference button is
+    /// offered as a named action instead.
+    @ViewBuilder func accessibilityReferenceAction(_ action: (() -> Void)?) -> some View {
+        if let action { accessibilityAction(named: L("ask.sidePanel.reference"), action) } else { self }
     }
 }

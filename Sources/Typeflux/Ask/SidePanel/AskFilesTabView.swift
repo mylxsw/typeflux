@@ -137,12 +137,14 @@ struct AskFilesTabView: View {
                                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 8)], spacing: 8) {
                                     ForEach(group.files) { file in
                                         AskWorkspaceFileTile(file: file, url: url(file), open: { open(file) },
+                                                             onReference: reference(file),
                                                              onError: { panel.notice = $0 })
                                     }
                                 }
                             } else {
                                 ForEach(group.files) { file in
                                     AskWorkspaceFileRow(file: file, url: url(file), open: { open(file) },
+                                                        onReference: reference(file),
                                                         onError: { panel.notice = $0 })
                                 }
                             }
@@ -156,6 +158,11 @@ struct AskFilesTabView: View {
 
     private func url(_ file: AskWorkspaceFile) -> URL? {
         panel.filesRoot?.appendingPathComponent(file.relativePath)
+    }
+
+    private func reference(_ file: AskWorkspaceFile) -> (() -> Void)? {
+        guard let referenceFile = context.referenceFile, let url = url(file) else { return nil }
+        return { referenceFile(url) }
     }
 
     private func groupHeader(_ group: AskWorkspaceFileQuery.Group) -> some View {
@@ -243,6 +250,7 @@ private struct AskWorkspaceFileRow: View {
     let file: AskWorkspaceFile
     let url: URL?
     var open: () -> Void
+    var onReference: (() -> Void)?
     var onError: (String) -> Void
     @State private var hovering = false
 
@@ -256,9 +264,14 @@ private struct AskWorkspaceFileRow: View {
                     .foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            if let onReference {
+                AskFileReferenceButton(action: onReference)
+                    .opacity(hovering ? 1 : 0)
+                    .accessibilityIdentifier("ask.sidePanel.files.reference")
+            }
             if let url {
                 Menu {
-                    AskFileOpenMenuItems(file: url, showsShortcuts: false, onError: onError)
+                    AskFileOpenMenuItems(file: url, showsShortcuts: false, onReference: onReference, onError: onError)
                 } label: {
                     Image(systemName: "ellipsis").font(.system(size: 12))
                         .frame(width: 24, height: 24)
@@ -277,12 +290,14 @@ private struct AskWorkspaceFileRow: View {
         .onHover { hovering = $0 }
         .contextMenu {
             Button(L("ask.sidePanel.open.inPanel"), action: open)
-            if let url { AskFileOpenMenuItems(file: url, onError: onError) }
+            if let url { AskFileOpenMenuItems(file: url, onReference: onReference, onError: onError) }
         }
+        .onDrag { AskWorkspaceFileDrag.provider(url) }
         .help(file.relativePath)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
         .accessibilityAction(named: L("ask.sidePanel.open.inPanel"), open)
+        .accessibilityReferenceAction(onReference)
     }
 }
 
@@ -291,6 +306,7 @@ private struct AskWorkspaceFileTile: View {
     let file: AskWorkspaceFile
     let url: URL?
     var open: () -> Void
+    var onReference: (() -> Void)?
     var onError: (String) -> Void
     @State private var hovering = false
 
@@ -311,12 +327,22 @@ private struct AskWorkspaceFileTile: View {
         .onHover { hovering = $0 }
         .contextMenu {
             Button(L("ask.sidePanel.open.inPanel"), action: open)
-            if let url { AskFileOpenMenuItems(file: url, onError: onError) }
+            if let url { AskFileOpenMenuItems(file: url, onReference: onReference, onError: onError) }
         }
+        .onDrag { AskWorkspaceFileDrag.provider(url) }
         .help(file.relativePath + "\n" + AskWorkspaceFileFormat.detail(file))
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
         .accessibilityAction(named: L("ask.sidePanel.open.inPanel"), open)
+        .accessibilityReferenceAction(onReference)
+    }
+}
+
+/// Dragging a file out of the list carries its URL: dropped on the composer or the
+/// conversation it attaches like "Reference in message", and Finder copies it.
+enum AskWorkspaceFileDrag {
+    static func provider(_ url: URL?) -> NSItemProvider {
+        url.map { NSItemProvider(object: $0 as NSURL) } ?? NSItemProvider()
     }
 }
 

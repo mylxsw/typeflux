@@ -6982,6 +6982,13 @@
 "ask.sidePanel.files.earlierMessage" = "較早的訊息";
 "ask.sidePanel.files.add" = "加入檔案…";
 "ask.sidePanel.revealInFinder" = "在 Finder 中顯示";
+"ask.sidePanel.reference" = "引用到輸入框";
+"ask.sidePanel.file.quickLook" = "Quick Look 預覽（唯讀）";
+"ask.sidePanel.start.files" = "對話檔案";
+"ask.sidePanel.start.recent" = "最近打開";
+"ask.sidePanel.files.drop" = "放開以加入目前對話";
+"ask.sidePanel.focus" = "專注檢視";
+"ask.sidePanel.focus.exit" = "結束專注檢視";
 "ask.sidePanel.open.menu" = "外部開啟";
 "ask.sidePanel.open.inPanel" = "在側邊欄開啟";
 "ask.sidePanel.open.withApp" = "用 %@ 開啟";

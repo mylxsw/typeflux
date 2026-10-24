@@ -41,6 +41,41 @@ final class AskArtifactTab: Identifiable {
     }
 }
 
+/// Something the side panel opened lately, offered again on the new tab page.
+enum AskSidePanelRecent: Identifiable, Equatable {
+    case file(AskSidePanelFileAccess.Target, conversationId: String)
+    case web(URL)
+
+    var id: String {
+        switch self {
+        case let .file(target, conversationId): "file:" + conversationId + "\0" + target.path
+        case let .web(url): "web:" + url.absoluteString
+        }
+    }
+
+    var title: String {
+        switch self {
+        case let .file(target, _): AskWorkspaceFile.displayName(target.relativePath)
+        case let .web(url): url.host ?? url.absoluteString
+        }
+    }
+
+    /// The file's path in its workspace, or the page's address.
+    var detail: String {
+        switch self {
+        case let .file(target, _): target.relativePath
+        case let .web(url): url.absoluteString
+        }
+    }
+
+    func matches(_ other: AskSidePanelRecent) -> Bool {
+        switch (self, other) {
+        case let (.web(lhs), .web(rhs)): AskSidePanel.samePage(lhs, rhs)
+        default: self == other
+        }
+    }
+}
+
 /// A tab of the side panel: the pinned Files tab, a web page, a file, or an artifact.
 enum AskSidePanelTab: Identifiable {
     case files
@@ -71,6 +106,7 @@ enum AskSidePanelTab: Identifiable {
 @MainActor
 final class AskSidePanel: ObservableObject {
     nonisolated static let maxFileTabs = 12
+    nonisolated static let maxRecents = 8
 
     enum PanelError: LocalizedError, Equatable {
         case tooManyFileTabs
@@ -95,6 +131,8 @@ final class AskSidePanel: ObservableObject {
     @Published private(set) var filesError: String?
     @Published var fileQuery = AskWorkspaceFileQuery()
     private var filesGeneration = 0
+    /// Files and pages opened lately, newest first, for the new tab page.
+    @Published private(set) var recents: [AskSidePanelRecent] = []
     /// Links the panel opened, by web tab: a page that has not committed yet has no URL.
     private var requestedURLs: [UUID: URL] = [:]
     private var observers: Set<AnyCancellable> = []
@@ -173,10 +211,12 @@ final class AskSidePanel: ObservableObject {
         guard let browser else { return nil }
         if let existing = browser.tabs.first(where: { Self.samePage($0.url ?? requestedURLs[$0.id], url) }) {
             select(.web(existing.id))
+            remember(.web(url))
             return existing
         }
         let tab = try newWebTab(url: url)
         if let tab { requestedURLs[tab.id] = url }
+        remember(.web(url))
         return tab
     }
 
@@ -200,6 +240,7 @@ final class AskSidePanel: ObservableObject {
               kind: AskSidePanelFileKind? = nil) throws -> AskFileTab {
         if let existing = fileTabs.first(where: { $0.target == target && $0.conversationId == conversationId }) {
             selection = .file(existing.id)
+            remember(.file(target, conversationId: conversationId))
             return existing
         }
         guard fileTabs.count + artifactTabs.count < Self.maxFileTabs else { throw PanelError.tooManyFileTabs }
@@ -209,6 +250,7 @@ final class AskSidePanel: ObservableObject {
         fileTabs.append(tab)
         order.append(.file(tab.id))
         selection = .file(tab.id)
+        remember(.file(target, conversationId: conversationId))
         return tab
     }
 
@@ -316,5 +358,80 @@ final class AskSidePanel: ObservableObject {
             filesError = error.localizedDescription
         }
         filesLoading = false
+    }
+}
+
+/// Strip order and the new tab page's recent items.
+extension AskSidePanel {
+    // MARK: Order
+
+    /// Moves a tab before another one in the strip, or to its end when `target` is nil.
+    /// The Files tab stays pinned first: it never moves, and nothing moves before it.
+    func move(_ id: AskSidePanelTab.ID, before target: AskSidePanelTab.ID?) {
+        guard id != .files, id != target, let from = order.firstIndex(of: id) else { return }
+        if let target, target != .files, !order.contains(target) { return }
+        order.remove(at: from)
+        let destination = target.flatMap { target in target == .files ? 0 : order.firstIndex(of: target) }
+        order.insert(id, at: destination ?? order.count)
+    }
+
+    // MARK: Recents
+
+    /// Recently opened files of one conversation, and recent pages, for the new tab page.
+    func recents(conversationId: String?) -> [AskSidePanelRecent] {
+        recents.filter { recent in
+            if case let .file(_, owner) = recent { return owner == conversationId }
+            return true
+        }
+    }
+
+    /// Opens a recent file or page from a new tab's start page; the blank tab it was picked
+    /// on closes, as if the tab had navigated there. Files of other conversations never open.
+    func openRecent(_ recent: AskSidePanelRecent, conversationId: String?) throws {
+        var blank: AskBrowserTab?
+        if case let .web(tab)? = selectedTab, tab.url == nil, requestedURLs[tab.id] == nil { blank = tab }
+        switch recent {
+        case let .file(target, owner):
+            guard owner == conversationId else { return }
+            try open(target, conversationId: owner)
+        case let .web(url):
+            // The blank tab itself shows the page, unless another tab already does.
+            let shown = browser?.tabs.contains { Self.samePage($0.url ?? requestedURLs[$0.id], url) } == true
+            if let blank, !shown {
+                blank.load(url)
+                requestedURLs[blank.id] = url
+                remember(.web(url))
+                return
+            }
+            try openWeb(url)
+        }
+        if let blank, selection != .web(blank.id) { close(.web(blank.id)) }
+    }
+
+    /// Opens a recent item from the start page; a failure shows as the panel's notice.
+    func open(recent: AskSidePanelRecent, conversationId: String?) {
+        do {
+            try openRecent(recent, conversationId: conversationId)
+            notice = nil
+        } catch {
+            notice = error.localizedDescription
+        }
+    }
+
+    /// Drag-and-drop reordering: a tab dragged onto another takes its place, landing after it
+    /// when dragged rightwards and before it when dragged leftwards.
+    func move(_ id: AskSidePanelTab.ID, onto target: AskSidePanelTab.ID) {
+        guard let from = order.firstIndex(of: id), let onto = order.firstIndex(of: target) else {
+            if target == .files { move(id, before: .files) }
+            return
+        }
+        guard from != onto else { return }
+        move(id, before: from < onto ? (onto + 1 < order.count ? order[onto + 1] : nil) : target)
+    }
+
+    fileprivate func remember(_ recent: AskSidePanelRecent) {
+        var list = recents.filter { !$0.matches(recent) }
+        list.insert(recent, at: 0)
+        recents = Array(list.prefix(Self.maxRecents))
     }
 }

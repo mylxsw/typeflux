@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// What the side panel needs from the conversation it sits beside.
 struct AskSidePanelContext {
@@ -18,6 +19,12 @@ struct AskSidePanelContext {
     var stopRun: () -> Void = {}
     /// Scrolls the conversation to a message and highlights it.
     var locateMessage: (String) -> Void = { _ in }
+    /// Adds a file to the composer for the next message; nil without a conversation.
+    var referenceFile: ((URL) -> Void)?
+    /// The panel fills the window (⌘⇧↩).
+    var isFocused = false
+    /// Switches focused viewing; nil hides the toggle.
+    var toggleFocus: (() -> Void)?
 }
 
 /// The panel beside the conversation: one tab strip for the pinned Files tab, web pages and
@@ -33,6 +40,10 @@ struct AskSidePanelView: View {
     var resize: ((CGFloat?) -> Void)?
     @State private var dragStart: CGFloat?
     @State private var addressFocusRequest = 0
+    /// Files from Finder are over the panel; dropping them uploads them to `inputs/`.
+    @State private var dropTargeted = false
+    /// The tab being dragged to a new place in the strip.
+    @State private var draggedTab: AskSidePanelTab.ID?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -45,6 +56,8 @@ struct AskSidePanelView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background { shortcuts }
+        .overlay { if dropTargeted { dropHighlight } }
+        .onDrop(of: [.fileURL], isTargeted: context.conversationId == nil ? nil : $dropTargeted, perform: drop)
         .overlay(alignment: .leading) { resizeHandle }
         .askSidePanel(edge: .trailing)
         .accessibilityElement(children: .contain)
@@ -58,11 +71,13 @@ struct AskSidePanelView: View {
         case .web:
             if let browser = panel.browser {
                 AskBrowserPanel(workspace: browser, runningConversationId: context.runningConversationId,
-                                stopRun: context.stopRun, focusRequest: addressFocusRequest)
+                                stopRun: context.stopRun, focusRequest: addressFocusRequest,
+                                start: startShortcuts)
             }
         case let .file(tab):
             AskFileTabView(tab: tab, roots: context.roots, onError: { panel.notice = $0 },
-                           onLocate: locatableMessage(tab).map { id in { context.locateMessage(id) } })
+                           onLocate: locatableMessage(tab).map { id in { context.locateMessage(id) } },
+                           onReference: context.referenceFile.map { reference in { reference(tab.target.url) } })
                 .id(tab.id)
         case let .artifact(tab):
             AskArtifactTabView(tab: tab)
@@ -90,6 +105,25 @@ struct AskSidePanelView: View {
         }
     }
 
+    private var startShortcuts: AskBrowserStartShortcuts {
+        AskBrowserStartShortcuts(
+            showFiles: context.conversationId == nil ? nil : { panel.showFiles() },
+            recents: panel.recents(conversationId: context.conversationId),
+            openRecent: { panel.open(recent: $0, conversationId: context.conversationId) }
+        )
+    }
+
+    /// Files dragged in from Finder are copied into the conversation's `inputs/`.
+    private func drop(_ providers: [NSItemProvider]) -> Bool {
+        let addFiles = context.addFiles
+        return AskSidePanelDrop.accept(providers, conversationId: context.conversationId) { [panel] urls in
+            panel.showFiles()
+            addFiles(urls)
+        }
+    }
+
+    private var dropHighlight: some View { AskSidePanelDropHighlight() }
+
     // MARK: - Tabs
 
     private var tabStrip: some View {
@@ -104,8 +138,28 @@ struct AskSidePanelView: View {
                 HStack(spacing: 4) {
                     ForEach(panel.tabs.dropFirst(), id: \.id) { item in
                         tabButton(item)
+                            .onDrag {
+                                draggedTab = item.id
+                                return NSItemProvider(object: dragText(item) as NSString)
+                            }
+                            .onDrop(of: [.text], delegate: AskSidePanelTabDrop(target: item.id, panel: panel,
+                                                                               dragged: $draggedTab))
                     }
                 }
+            }
+            if let toggleFocus = context.toggleFocus {
+                Button(action: toggleFocus) {
+                    Image(systemName: context.isFocused ? "arrow.down.right.and.arrow.up.left"
+                        : "arrow.up.left.and.arrow.down.right")
+                        .font(.system(size: 12))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .frame(width: 26, height: 26)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help(L(context.isFocused ? "ask.sidePanel.focus.exit" : "ask.sidePanel.focus") + " (⌘⇧↩)")
+                .accessibilityLabel(L(context.isFocused ? "ask.sidePanel.focus.exit" : "ask.sidePanel.focus"))
+                .accessibilityIdentifier("ask.sidePanel.focus")
             }
             if panel.browser != nil {
                 Menu {
@@ -158,6 +212,16 @@ struct AskSidePanelView: View {
         }
     }
 
+    /// What a dragged tab carries outside the strip: a page's address or a file's path.
+    private func dragText(_ item: AskSidePanelTab) -> String {
+        switch item {
+        case .files: ""
+        case let .web(tab): tab.url?.absoluteString ?? tab.displayTitle
+        case let .file(tab): tab.target.path
+        case let .artifact(tab): tab.name
+        }
+    }
+
     private func newWebTab(isPrivate: Bool) {
         do {
             try panel.newWebTab(isPrivate: isPrivate)
@@ -206,6 +270,79 @@ struct AskSidePanelView: View {
                     .onEnded { _ in dragStart = nil; resize(nil) })
                 .accessibilityHidden(true)
         }
+    }
+}
+
+/// Files dropped on the side panel from Finder: only file URLs, read off the providers.
+enum AskSidePanelDrop {
+    /// Accepts a drop of files for a conversation; `add` gets their URLs once they are read.
+    @MainActor
+    static func accept(_ providers: [NSItemProvider], conversationId: String?,
+                       add: @escaping @MainActor ([URL]) -> Void) -> Bool {
+        guard conversationId != nil else { return false }
+        let fileProviders = providers.filter { $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) }
+        guard !fileProviders.isEmpty else { return false }
+        Task { @MainActor in
+            let urls = await fileURLs(fileProviders)
+            if !urls.isEmpty { add(urls) }
+        }
+        return true
+    }
+
+    static func fileURLs(_ providers: [NSItemProvider]) async -> [URL] {
+        var urls: [URL] = []
+        for provider in providers {
+            if let url = await fileURL(provider) { urls.append(url) }
+        }
+        return urls
+    }
+
+    private static func fileURL(_ provider: NSItemProvider) async -> URL? {
+        await withCheckedContinuation { continuation in
+            _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                continuation.resume(returning: url?.isFileURL == true ? url : nil)
+            }
+        }
+    }
+}
+
+/// Shown while files from Finder are over the panel.
+struct AskSidePanelDropHighlight: View {
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(AskTheme.accentSoft.opacity(0.6))
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(AskTheme.accent, style: StrokeStyle(lineWidth: 2, dash: [6, 4]))
+            Label(L("ask.sidePanel.files.drop"), systemImage: "tray.and.arrow.down")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(AskTheme.accentText)
+        }
+        .padding(8)
+        .allowsHitTesting(false)
+        .accessibilityIdentifier("ask.sidePanel.dropTarget")
+    }
+}
+
+/// Reorders the strip while a tab is dragged over another one.
+private struct AskSidePanelTabDrop: DropDelegate {
+    let target: AskSidePanelTab.ID
+    let panel: AskSidePanel
+    @Binding var dragged: AskSidePanelTab.ID?
+
+    /// Only a tab of this strip; files from Finder go to the panel's upload drop.
+    func validateDrop(info: DropInfo) -> Bool { dragged != nil && !info.hasItemsConforming(to: [.fileURL]) }
+
+    func dropEntered(info: DropInfo) {
+        guard validateDrop(info: info), let dragged, dragged != target else { return }
+        withAnimation(.easeOut(duration: 0.15)) { panel.move(dragged, onto: target) }
+    }
+
+    func dropUpdated(info _: DropInfo) -> DropProposal? { DropProposal(operation: .move) }
+
+    func performDrop(info _: DropInfo) -> Bool {
+        dragged = nil
+        return true
     }
 }
 

@@ -6980,6 +6980,13 @@
 "ask.sidePanel.files.earlierMessage" = "이전 메시지";
 "ask.sidePanel.files.add" = "파일 추가…";
 "ask.sidePanel.revealInFinder" = "Finder에서 보기";
+"ask.sidePanel.reference" = "입력창에서 참조";
+"ask.sidePanel.file.quickLook" = "Quick Look 미리보기(읽기 전용)";
+"ask.sidePanel.start.files" = "대화 파일";
+"ask.sidePanel.start.recent" = "최근 연 항목";
+"ask.sidePanel.files.drop" = "놓아서 이 대화에 추가";
+"ask.sidePanel.focus" = "집중 보기";
+"ask.sidePanel.focus.exit" = "집중 보기 종료";
 "ask.sidePanel.open.menu" = "외부에서 열기";
 "ask.sidePanel.open.inPanel" = "사이드 패널에서 열기";
 "ask.sidePanel.open.withApp" = "%@(으)로 열기";

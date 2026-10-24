@@ -15,6 +15,8 @@ struct AskWorkspaceLayout: Equatable {
     var rightPanelWidth: CGFloat? = nil
     /// The browser shares the window with the conversation instead of covering it.
     var docksRightPanel = false
+    /// The docked panel fills the window (focused viewing); the conversation steps aside.
+    var focusesRightPanel = false
 
     var usageInline: Bool {
         showsUsage && (docksRightPanel || size.width >= Self.comfortableContentWidth + usageWidth)
@@ -74,6 +76,7 @@ struct AskWorkspaceLayout: Equatable {
     var usageWidth: CGFloat {
         let preferred = rightPanelWidth ?? AskMetrics.usagePanelWidth
         guard docksRightPanel else { return preferred }
+        if focusesRightPanel { return max(0, size.width) }
         // Below the two columns' usable minimum, show only the docked browser.
         // Closing it reveals the same conversation and draft.
         guard size.width >= Self.minimumDockedContentWidth + Self.minimumDockedPanelWidth else {

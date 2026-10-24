@@ -6980,6 +6980,13 @@
 "ask.sidePanel.files.earlierMessage" = "以前のメッセージ";
 "ask.sidePanel.files.add" = "ファイルを追加…";
 "ask.sidePanel.revealInFinder" = "Finder で表示";
+"ask.sidePanel.reference" = "入力欄で参照";
+"ask.sidePanel.file.quickLook" = "Quick Look プレビュー（読み取り専用）";
+"ask.sidePanel.start.files" = "会話のファイル";
+"ask.sidePanel.start.recent" = "最近開いた項目";
+"ask.sidePanel.files.drop" = "ドロップしてこの会話に追加";
+"ask.sidePanel.focus" = "集中表示";
+"ask.sidePanel.focus.exit" = "集中表示を終了";
 "ask.sidePanel.open.menu" = "外部で開く";
 "ask.sidePanel.open.inPanel" = "サイドパネルで開く";
 "ask.sidePanel.open.withApp" = "%@ で開く";

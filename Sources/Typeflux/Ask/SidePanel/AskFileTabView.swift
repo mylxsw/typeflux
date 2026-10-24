@@ -11,6 +11,8 @@ struct AskFileTabView: View {
     var onError: (String) -> Void
     /// Scrolls the conversation to the message the file came with; nil when unknown.
     var onLocate: (() -> Void)?
+    /// Adds the file to the composer as context for the next message; nil hides it.
+    var onReference: (() -> Void)?
     var actions = AskFileExternalActions()
     @State private var content: AskSidePanelFileContent?
     @State private var htmlError: String?
@@ -72,6 +74,10 @@ struct AskFileTabView: View {
                 .accessibilityLabel(L("ask.sidePanel.locateMessage"))
                 .accessibilityIdentifier("ask.sidePanel.file.locate")
             }
+            if let onReference {
+                AskFileReferenceButton(action: onReference, size: 26)
+                    .accessibilityIdentifier("ask.sidePanel.file.reference")
+            }
             Button { tab.reload() } label: {
                 Image(systemName: "arrow.clockwise").font(.system(size: 12))
                     .foregroundStyle(StudioTheme.textSecondary)
@@ -81,7 +87,8 @@ struct AskFileTabView: View {
             .help(L("ask.sidePanel.file.reload"))
             .accessibilityLabel(L("ask.sidePanel.file.reload"))
             Menu {
-                AskFileOpenMenuItems(file: tab.target.url, actions: actions, onError: onError)
+                AskFileOpenMenuItems(file: tab.target.url, actions: actions, onReference: onReference,
+                                     onError: onError)
             } label: {
                 Image(systemName: "ellipsis").font(.system(size: 13))
                     .foregroundStyle(StudioTheme.textSecondary)
@@ -174,23 +181,44 @@ struct AskFileTabView: View {
         Text(L("ask.sidePanel.file.truncated")).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
     }
 
-    private var unsupported: some View {
-        let app = actions.defaultApplication(for: tab.target.url)
-        return VStack(spacing: 12) {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: tab.target.path))
-                .resizable().frame(width: 64, height: 64)
-            Text(L("ask.sidePanel.file.unsupported")).font(.system(size: 12.5))
-                .foregroundStyle(StudioTheme.textSecondary)
-            HStack(spacing: 8) {
-                Button(app.map { L("ask.sidePanel.open.withApp", $0.name) } ?? L("ask.sidePanel.open.default")) {
-                    actions.openWithDefaultApplication(tab.target.url)
+    @ViewBuilder private var unsupported: some View {
+        if AskSidePanelQuickLook.previews((tab.target.relativePath as NSString).pathExtension) {
+            VStack(spacing: 0) {
+                AskSidePanelQuickLookView(url: tab.target.url)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .accessibilityIdentifier("ask.sidePanel.file.quickLook")
+                Rectangle().fill(AskTheme.separator).frame(height: 1)
+                HStack(spacing: 8) {
+                    Text(L("ask.sidePanel.file.quickLook")).font(.system(size: 11.5))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    openButtons
                 }
-                .buttonStyle(.borderedProminent)
-                Button(L("ask.sidePanel.revealInFinder")) { actions.revealInFinder(tab.target.url) }
+                .padding(.horizontal, 12)
+                .frame(height: 40)
             }
-            .controlSize(.small)
+        } else {
+            VStack(spacing: 12) {
+                Image(nsImage: NSWorkspace.shared.icon(forFile: tab.target.path))
+                    .resizable().frame(width: 64, height: 64)
+                Text(L("ask.sidePanel.file.unsupported")).font(.system(size: 12.5))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                openButtons
+            }
+            .padding(24)
         }
-        .padding(24)
+    }
+
+    private var openButtons: some View {
+        let app = actions.defaultApplication(for: tab.target.url)
+        return HStack(spacing: 8) {
+            Button(app.map { L("ask.sidePanel.open.withApp", $0.name) } ?? L("ask.sidePanel.open.default")) {
+                actions.openWithDefaultApplication(tab.target.url)
+            }
+            .buttonStyle(.borderedProminent)
+            Button(L("ask.sidePanel.revealInFinder")) { actions.revealInFinder(tab.target.url) }
+        }
+        .controlSize(.small)
     }
 
     private func messageView(symbol: String, text: String) -> some View {

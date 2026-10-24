@@ -10,9 +10,31 @@ extension AskConversationModel {
         return (root, try await workspaces.listFiles(owner: route.account, conversationId: id))
     }
 
+    /// Copies files into `inputs/`. Files already in the workspace, such as a row dragged
+    /// back onto the panel, are not copied again.
     func addSidePanelFiles(_ urls: [URL], conversationId id: String) async throws {
         guard let workspaces, let route = credentials(for: id) else { return }
-        try await workspaces.addFiles(urls, owner: route.account, conversationId: id)
+        let root = workspaces.url(owner: route.account, conversationId: id)
+        let outside = urls.filter { !Self.isInside($0, root: root) }
+        guard !outside.isEmpty else { return }
+        try await workspaces.addFiles(outside, owner: route.account, conversationId: id)
+    }
+
+    /// "Reference in message": a workspace file joins the composer's attachments, as if the
+    /// user had attached it, and rides with the next message. Nothing happens once the user
+    /// has moved to another conversation or the file is attached already.
+    func referenceSidePanelFile(_ url: URL, conversationId id: String) {
+        guard selectedId == id else { return }
+        let path = AskProjectFileAccess.normalizedRoot(url.path)
+        let attached = (draft.attachments ?? []).compactMap(\.localSourcePath).map(AskProjectFileAccess.normalizedRoot)
+        guard !attached.contains(path) else { return }
+        addAttachments([.file(URL(fileURLWithPath: path))], launcher: false)
+    }
+
+    nonisolated static func isInside(_ url: URL, root: URL) -> Bool {
+        let base = AskProjectFileAccess.normalizedRoot(root.path)
+        let path = AskProjectFileAccess.normalizedRoot(url.path)
+        return path == base || path.hasPrefix(base == "/" ? "/" : base + "/")
     }
 
     /// Folders a file tab may read: the conversation's workspace and the folders granted to it.
