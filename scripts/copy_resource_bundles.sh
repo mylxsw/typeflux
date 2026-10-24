@@ -3,7 +3,7 @@ set -euo pipefail
 
 binary_dir="${1:?Expected Swift build output directory}"
 resource_dir="${2:?Expected app resource directory}"
-bundles=(Typeflux_Typeflux.bundle TypefluxChat_TypefluxChat.bundle)
+bundles=(Typeflux_Typeflux.bundle TypefluxChat_TypefluxChat.bundle PermissionFlow_PermissionFlow.bundle)
 
 # Validate first so a missing package cannot produce an app that crashes at launch.
 for bundle in "${bundles[@]}"; do

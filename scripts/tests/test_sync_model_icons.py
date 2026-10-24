@@ -87,7 +87,8 @@ class ResourceBundlePackagingTests(unittest.TestCase):
             source, destination = root / "build", root / "App.app/Contents/Resources"
             source.mkdir()
             destination.mkdir(parents=True)
-            names = ["Typeflux_Typeflux.bundle", "TypefluxChat_TypefluxChat.bundle"]
+            names = ["Typeflux_Typeflux.bundle", "TypefluxChat_TypefluxChat.bundle",
+                     "PermissionFlow_PermissionFlow.bundle"]
             (source / names[0]).mkdir()
             (destination / "keep.txt").write_text("unchanged")
             result = subprocess.run(["bash", str(script), str(source), str(destination)], capture_output=True)
@@ -95,6 +96,10 @@ class ResourceBundlePackagingTests(unittest.TestCase):
             self.assertIn(b"Missing resource bundle", result.stderr)
             self.assertEqual((destination / "keep.txt").read_text(), "unchanged")
             (source / names[1]).mkdir()
+            result = subprocess.run(["bash", str(script), str(source), str(destination)], capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(b"PermissionFlow_PermissionFlow.bundle", result.stderr)
+            (source / names[2]).mkdir()
             for name in names:
                 (source / name / "asset.png").write_bytes(b"fixture")
                 (destination / name).mkdir()

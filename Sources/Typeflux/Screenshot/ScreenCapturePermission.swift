@@ -45,7 +45,9 @@ final class ScreenCapturePermission: ScreenCapturePermissionProviding {
     init(defaults: UserDefaults = .standard,
          preflight: @escaping () -> Bool = { CGPreflightScreenCaptureAccess() },
          requestAccess: @escaping () -> Bool = { CGRequestScreenCaptureAccess() },
-         openURL: @escaping (URL) -> Void = { _ = NSWorkspace.shared.open($0) }) {
+         openURL: @escaping (URL) -> Void = { url in
+             Task { @MainActor in PermissionGuidanceService.shared.open(url) }
+         }) {
         self.defaults = defaults
         self.preflight = preflight
         self.requestAccess = requestAccess

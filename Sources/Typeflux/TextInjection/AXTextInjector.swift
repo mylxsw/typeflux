@@ -561,7 +561,7 @@ final class AXTextInjector: TextInjector {
                 Self.didRequestAccessibility = true
                 if let url =
                     URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                    NSWorkspace.shared.open(url)
+                    PermissionGuidanceService.shared.open(url)
                 }
             }
             return .completed(TextSelectionSnapshot(

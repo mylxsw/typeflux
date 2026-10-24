@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 /// Explains how to grant Screen Recording access when a screenshot cannot start:
@@ -13,6 +14,7 @@ final class ScreenshotPermissionGuideController: ScreenshotPermissionGuidePresen
     private(set) var window: NSPanel?
     private(set) var model = Model()
     private var actions: ScreenshotPermissionGuideActions?
+    private var returnObserver: AnyCancellable?
 
     var isVisible: Bool { window?.isVisible == true }
 
@@ -24,7 +26,7 @@ final class ScreenshotPermissionGuideController: ScreenshotPermissionGuidePresen
         window.title = L("screenshot.permission.title")
         window.contentView = NSHostingView(rootView: ScreenshotPermissionGuideView(
             model: model,
-            openSettings: { [weak self] in self?.actions?.openSettings() },
+            openSettings: { [weak self] in self?.openSettings() },
             recheck: { [weak self] in self?.recheck() },
             restart: { [weak self] in self?.actions?.restart() },
             later: { [weak self] in self?.actions?.later() }
@@ -40,9 +42,23 @@ final class ScreenshotPermissionGuideController: ScreenshotPermissionGuidePresen
     }
 
     func dismiss() {
+        returnObserver = nil
         window?.orderOut(nil)
         window?.contentView = nil
         actions = nil
+    }
+
+    /// Keep the recovery controls available after the external drag guide closes.
+    func openSettings() {
+        guard actions != nil else { return }
+        returnObserver = NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.returnObserver = nil
+                self.window?.makeKeyAndOrderFront(nil)
+            }
+        window?.orderOut(nil)
+        actions?.openSettings()
     }
 
     /// Runs "Check again"; the guide closes itself when access is there.

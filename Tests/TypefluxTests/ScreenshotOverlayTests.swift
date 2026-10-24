@@ -647,6 +647,12 @@ final class ScreenshotOverlayTests: XCTestCase {
         XCTAssertFalse(guide.model.stillMissing)
         XCTAssertEqual(calls, ["recheck", "recheck"])
 
+        guide.openSettings()
+        XCTAssertFalse(guide.isVisible)
+        XCTAssertEqual(calls.last, "settings")
+        NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: nil)
+        XCTAssertTrue(guide.isVisible)
+
         // Showing again starts fresh and reuses the window.
         let window = guide.window
         guide.model.stillMissing = true
@@ -654,7 +660,9 @@ final class ScreenshotOverlayTests: XCTestCase {
         XCTAssertFalse(guide.model.stillMissing)
         XCTAssertTrue(guide.window === window)
 
+        guide.openSettings()
         guide.dismiss()
+        NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: nil)
         XCTAssertFalse(guide.isVisible)
         guide.recheck()
         XCTAssertFalse(guide.model.stillMissing, "No actions after dismissal")

@@ -192,7 +192,7 @@ enum PrivacyGuard {
     @MainActor
     static func openPermissionSettings(for id: PermissionID) async {
         guard let url = permissionSettingsURL(for: id) else { return }
-        NSWorkspace.shared.open(url)
+        PermissionGuidanceService.shared.open(url)
     }
 
     private static func permissionSettingsURL(for id: PermissionID) -> URL? {
@@ -271,7 +271,7 @@ enum PrivacyGuard {
         for (index, url) in urls.enumerated() {
             let delay = DispatchTime.now() + .milliseconds(index * 250)
             DispatchQueue.main.asyncAfter(deadline: delay) {
-                NSWorkspace.shared.open(url)
+                PermissionGuidanceService.shared.open(url)
             }
         }
     }

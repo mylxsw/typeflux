@@ -78,7 +78,7 @@ final class AskConversationModel: ObservableObject {
         NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
     }
     /// Opens links, such as a launcher web search; tests record them instead.
-    var openURL: (URL) -> Void = { url in NSWorkspace.shared.open(url) }
+    var openURL: (URL) -> Void = { url in PermissionGuidanceService.shared.open(url) }
     /// Opens a workflow in the workflow editor; tests record it instead.
     var editWorkflow: @MainActor (String, String?, Int?) -> Void = { id, path, line in
         AskWorkflowEditorWindowController.shared.show(workflowID: id, path: path, line: line)
