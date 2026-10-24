@@ -62,10 +62,7 @@ struct ShortcutLatencyDashboard: View {
     @State private var exportFailed = false
 
     private var samples: [ShortcutLatencySample] {
-        report.samples.filter {
-            (feature == "all" || $0.trace.feature.rawValue == feature)
-                && (temperature == "all" || (temperature == "cold" ? $0.cold == true : $0.cold == false))
-        }
+        report.filteredSamples(feature: feature, temperature: temperature)
     }
 
     var body: some View {
@@ -233,13 +230,11 @@ struct ShortcutLatencyDashboard: View {
         panel.nameFieldStringValue = "typeflux-shortcut-diagnostics.json"
         panel.allowedContentTypes = [.json]
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        let snapshot = report
+        let snapshot = report.selecting(feature: feature, temperature: temperature)
         Task {
             exportFailed = await Task.detached(priority: .utility) {
                 do {
-                    let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
-                    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-                    try encoder.encode(snapshot).write(to: url, options: .atomic)
+                    try snapshot.encodedForExport().write(to: url, options: .atomic)
                     return false
                 } catch { return true }
             }.value

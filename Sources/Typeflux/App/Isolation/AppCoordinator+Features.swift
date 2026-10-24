@@ -349,13 +349,18 @@ extension AppCoordinator {
         case "closePins": di.screenshotCoordinator.pins.closeAll()
         case "hotkey", "composerHotkey":
             let event = try JSONDecoder().decode(FeatureHotkeyEvent.self, from: command.payload)
+            // A released editor session must not bounce its late key event back to voice.
+            if command.action == "composerHotkey", workflowController?.composerVoiceInput?.isOccupied != true {
+                ShortcutLatency.record(.superseded)
+                return Data()
+            }
             if FeatureProcess.role == .voice, let owner = featureVoiceOwner.editorOwner, event.target == nil {
-                return try await FeatureProcess.route(.init(destination: owner, action: "composerHotkey", payload: command.payload))
+                return try await FeatureProcess.route(.init(destination: owner, action: "composerHotkey", payload: command.payload, latency: command.latency))
             }
             if [.host, .chat].contains(FeatureProcess.role), event.target == nil,
                workflowController?.composerVoiceInput?.isOccupied != true,
                ((NSApp.keyWindow?.firstResponder as? AskComposerTextView.Editor).map { !$0.isEditable || $0.hasMarkedText() } ?? true) {
-                return try await FeatureProcess.route(.init(destination: .voice, action: "hotkey", payload: command.payload))
+                return try await FeatureProcess.route(.init(destination: .voice, action: "hotkey", payload: command.payload, latency: command.latency))
             }
             if let target = event.target {
                 if event.name == "onShortcutRequested" { handleShortcut(target, screenshotCoordinator: di.screenshotCoordinator) }

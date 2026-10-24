@@ -83,7 +83,7 @@ final class ModuleHealthSettingsModel: ObservableObject {
         }
     }
 
-    init(registry: ModuleRegistry?, remote: FeatureModuleHealth? = FeatureProcess.enabled && FeatureProcess.role == .settings ? FeatureModuleHealth() : nil) {
+    init(registry: ModuleRegistry?, remote: FeatureModuleHealth? = FeatureProcess.enabled && FeatureProcess.owns(.settings) ? FeatureModuleHealth() : nil) {
         self.remote = remote
         var seen: Set<ModuleID> = []
         if let remote {

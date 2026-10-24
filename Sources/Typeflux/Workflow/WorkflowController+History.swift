@@ -57,7 +57,7 @@ extension WorkflowController {
     }
 
     func handleHistoryPickerRequested() {
-        if FeatureProcess.enabled, FeatureProcess.role != .clipboard {
+        if !FeatureProcess.owns(.clipboard) {
             FeatureProcess.send(.init(destination: .clipboard, action: "toggleClipboard")); return
         }
         clipboardActionGeneration = UUID()

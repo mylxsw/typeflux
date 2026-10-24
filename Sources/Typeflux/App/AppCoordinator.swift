@@ -50,7 +50,7 @@ final class AppCoordinator {
                     }
                 }
             }
-            FeatureProcess.configure(api: AskConversationWindowController.makeAPI(settings: di.settingsStore, modelLibrary: di.modelLibrary), cache: di.conversationCache, preparation: featureModuleStartup)
+            FeatureProcess.configure(api: AskConversationWindowController.makeAPI(settings: di.settingsStore, modelLibrary: di.modelLibrary), cache: di.conversationCache, preparation: FeatureProcess.role == .screenshot ? nil : featureModuleStartup)
             if FeatureProcess.role != .host { startFeature(); return }
             FeatureShortcutHost.shared.start()
             featureStatusTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in

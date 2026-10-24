@@ -278,7 +278,7 @@ final class FeatureBackgroundRuntime {
         switch command.action {
         case "idleAllowed": return try encode(allowsRetirement)
         case "ping": break
-        case "settings": names.start(); content.start(force: true)
+        case "settings": names.start(); content.start()
         case "shutdown":
             stopped = true
             idleTask?.cancel(); try await media.shutdown(); healthObservations.forEach { $0.cancel() }

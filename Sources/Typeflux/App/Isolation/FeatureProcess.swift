@@ -13,6 +13,8 @@ enum FeatureRole: String, Codable, Sendable, CaseIterable {
         }
     }
 
+    func owns(_ destination: FeatureRole) -> Bool { self == destination.processOwner }
+
     static let processRoles: [FeatureRole] = [.host, .voice, .chat, .screenshot, .background]
 }
 
@@ -42,7 +44,7 @@ enum FeatureProcess {
     private(set) static var peer: FeatureRPC?
     private(set) static var supervisor: FeatureSupervisor?
     static let immediateWarmRoles: [FeatureRole] = [.voice, .background]
-    static let deferredWarmRoles: [FeatureRole] = []
+    static let deferredWarmRoles: [FeatureRole] = [.screenshot]
     static var reportFailure: (@MainActor () -> Void)?
     static var handle: (@MainActor (FeatureCommand) async throws -> Data)?
     private static var ready: Task<Void, Error>?
@@ -163,7 +165,7 @@ enum FeatureProcess {
 
     static func waitForServices() async { await services?.value }
 
-    nonisolated static func owns(_ destination: FeatureRole) -> Bool { !enabled || role == destination.processOwner }
+    nonisolated static func owns(_ destination: FeatureRole) -> Bool { !enabled || role.owns(destination) }
 
     static func route(_ command: FeatureCommand, timeout: Duration = .seconds(10)) async throws -> Data {
         guard timeout > .zero, timeout <= .seconds(180) else { throw FeatureRPC.Failure.invalidMessage }
@@ -389,13 +391,13 @@ actor FeatureSupervisor {
             if command.action == "hotkey", let event = try? JSONDecoder().decode(FeatureHotkeyEvent.self, from: command.payload),
                event.target == nil, event.name != "onPersonaPickerRequested", event.name != "onError" {
                 let target = voiceOwner ?? focusedRole
-                if target == .chat || target == .launcher || target == .voice || (target == .host && focusedRole == .host && voiceOwner == .host) {
-                    return try await route(.init(destination: target, action: "hotkey", payload: command.payload), timeout: timeout)
+                if target != .host, [.chat, .launcher, .voice].contains(target) {
+                    return try await route(.init(destination: target, action: "hotkey", payload: command.payload, latency: command.latency), timeout: timeout)
                 }
                 return try await FeatureProcess.receive(command)
             }
             if command.action == "hotkey", let event = try? JSONDecoder().decode(FeatureHotkeyEvent.self, from: command.payload), event.name == "onPersonaPickerRequested" {
-                return try await route(.init(destination: .voice, action: "hotkey", payload: command.payload), timeout: timeout)
+                return try await route(.init(destination: .voice, action: "hotkey", payload: command.payload, latency: command.latency), timeout: timeout)
             }
             return try await FeatureProcess.receive(command)
         }
@@ -486,8 +488,9 @@ actor FeatureSupervisor {
         return result
     }
 
-    private func bootstrap() async throws -> Data {
-        await preparation?.value
+    func bootstrap(for role: FeatureRole) async throws -> Data {
+        // Explicit capture needs auth identity, not the host storage/media startup barrier.
+        if role != .screenshot { await preparation?.value }
         return try JSONEncoder().encode(auth)
     }
 
@@ -589,7 +592,7 @@ actor FeatureSupervisor {
             let inherited = FeatureInheritedDescriptor(pair[1])
             let peer = try FeatureRPC(descriptor: pair[0])
             await peer.start { [weak self] method, payload in
-                if method == "bootstrap", let self { return try await self.bootstrap() }
+                if method == "bootstrap", let self { return try await self.bootstrap(for: role) }
                 if (method.hasPrefix("ask.") || method.hasPrefix("cache.")), [FeatureRole.chat, .launcher, .settings, .notes, .wordBook, .help, .translation].contains(role), let self {
                     return try await self.handleAPI(method, payload: payload, role: role, channel: channel)
                 }

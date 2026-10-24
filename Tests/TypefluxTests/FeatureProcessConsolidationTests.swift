@@ -223,3 +223,67 @@ extension FeatureProcessConsolidationTests {
         await #expect(throws: FeatureRPC.Failure.invalidMessage) { try await FeatureProcess.route(command, timeout: .zero) }
     }
 }
+
+extension FeatureProcessConsolidationTests {
+    @Test func `host recording hotkeys are delivered once without routing to self`() async throws {
+        let previous = FeatureProcess.handle
+        defer { FeatureProcess.handle = previous }
+        let trace = ShortcutLatencyTrace(id: UUID(), feature: .voice, date: Date(), uptime: 1)
+        var received: [FeatureCommand] = []
+        FeatureProcess.handle = { received.append($0); return Data() }
+        let supervisor = FeatureSupervisor(api: AskTestAPI(), cache: try AskConversationCache.inMemory(),
+            auth: FeatureAuth.capture(), executableURL: URL(fileURLWithPath: "/nonexistent/do-not-launch"))
+        _ = try await supervisor.route(.init(destination: .host, action: "claimVoice", payload: Data("host".utf8)))
+        let event = FeatureHotkeyEvent(name: "onRecordingStop")
+        _ = try await supervisor.route(.init(destination: .host, action: "hotkey",
+            payload: JSONEncoder().encode(event), latency: trace))
+        #expect(received.count == 1)
+        #expect(received.first?.latency == trace)
+        #expect(received.first?.action == "hotkey")
+        #expect(await supervisor.shutdown())
+    }
+
+    @Test func `clipboard stays local to the host and remote for real child owners`() {
+        #expect(FeatureRole.host.owns(.clipboard))
+        #expect(FeatureRole.host.owns(.settings))
+        for role in [FeatureRole.voice, .chat, .screenshot, .background] {
+            #expect(!role.owns(.clipboard))
+        }
+    }
+
+    @Test func `capture bootstrap does not wait for unrelated host module startup`() async throws {
+        let gate = CaptureBootstrapGate()
+        let preparation = Task { await gate.wait() }
+        let supervisor = FeatureSupervisor(api: AskTestAPI(), cache: try AskConversationCache.inMemory(),
+            auth: FeatureAuth.capture(), preparation: preparation)
+        // Release even a broken barrier so this regression test cannot hang the runner.
+        let release = Task {
+            try? await Task.sleep(for: .milliseconds(100))
+            await gate.release()
+        }
+        var chatReady = false
+        let chat = Task { _ = try await supervisor.bootstrap(for: .chat); chatReady = true }
+        _ = try await supervisor.bootstrap(for: .screenshot)
+        #expect(await gate.released == false)
+        try await Task.sleep(for: .milliseconds(5))
+        #expect(!chatReady)
+        await release.value
+        await preparation.value
+        try await chat.value
+        #expect(chatReady)
+        #expect(await supervisor.shutdown())
+    }
+}
+
+private actor CaptureBootstrapGate {
+    private(set) var released = false
+    private var continuation: CheckedContinuation<Void, Never>?
+    func wait() async {
+        guard !released else { return }
+        await withCheckedContinuation { continuation = $0 }
+    }
+    func release() {
+        released = true
+        continuation?.resume(); continuation = nil
+    }
+}

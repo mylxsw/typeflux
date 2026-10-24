@@ -76,7 +76,7 @@ struct ShortcutLatencyTests {
             event(.recognized, trace: trace(at: Date(timeIntervalSince1970: Double(index))), at: 100)
         }
         let report = ShortcutLatencyReport(events: events)
-        #expect(report.samples.count == 1000)
+        #expect(report.samples.count == ShortcutLatencyReport.maximumSamples)
         #expect(report.samples.first?.trace.date == Date(timeIntervalSince1970: 1004))
     }
 
@@ -172,5 +172,70 @@ extension ShortcutLatencyTests {
         #expect(report.canExport)
         let decoded = try JSONDecoder().decode(ShortcutLatencyReport.self, from: JSONEncoder().encode(report))
         #expect(decoded.canExport && decoded.processes?.first?.footprintBytes == 1024)
+    }
+}
+
+extension ShortcutLatencyTests {
+    @Test func runawaySamplesAreBoundedAndRetainTheirStartAndTerminalEvent() throws {
+        let trace = trace(.clipboard)
+        var events = [event(.recognized, trace: trace, at: 100)]
+        events += (0..<20_000).map { event(.hostRouting, trace: trace, at: 100 + Double($0) / 1000) }
+        events.append(event(.visibleNextTurn, trace: trace, at: 125))
+        let report = ShortcutLatencyReport(events: events)
+        #expect(report.samples.count == 1)
+        #expect(report.samples[0].events.count == ShortcutLatencyReport.maximumEventsPerSample)
+        #expect(report.samples[0].events.first?.stage == .recognized)
+        #expect(report.samples[0].outcome == "visible")
+        #expect(report.droppedEvents == events.count - ShortcutLatencyReport.maximumEventsPerSample)
+        #expect(try report.encodedForExport().count < 100_000)
+    }
+
+    @Test func exportMatchesVisibleFiltersAndIncludesResourceSnapshots() throws {
+        let first = trace(.clipboard), second = trace(.screenshot)
+        var report = ShortcutLatencyReport(events: [event(.targetWarm, trace: first, at: 100),
+            event(.targetCold, trace: second, at: 100)])
+        report.processes = [.capture(role: .host)]
+        let selected = report.selecting(feature: "clipboard", temperature: "warm")
+        #expect(selected.samples.map(\.id) == [first.id])
+        #expect(selected.summaries.allSatisfy { $0.feature == .clipboard })
+        #expect(selected.processes?.count == 1)
+        #expect(report.selecting(feature: "clipboard", temperature: "cold").samples.isEmpty)
+        let decoder = JSONDecoder(); decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(ShortcutLatencyReport.self, from: selected.encodedForExport())
+        #expect(decoded.samples.count == 1 && decoded.processes?.count == 1)
+    }
+
+    @Test func aggregateExportHasEventAndByteBounds() throws {
+        let events = (0..<250).flatMap { index in
+            let trace = trace(.launcher, at: Date(timeIntervalSince1970: Double(index)))
+            return (0..<150).map { event(.hostRouting, trace: trace, at: 100 + Double($0) / 1000) }
+        }
+        let report = ShortcutLatencyReport(events: events)
+        #expect(report.samples.count <= ShortcutLatencyReport.maximumSamples)
+        #expect(report.samples.flatMap(\.events).count <= ShortcutLatencyReport.maximumEvents)
+        #expect(try report.encodedForExport().count <= ShortcutLatencyReport.maximumExportBytes)
+        #expect(report.droppedEvents > 0)
+    }
+
+    @Test func writerStopsRunawayTracesButAcceptsTerminalAndFollowingShortcut() async throws {
+        let directory = try directory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let writer = ShortcutLatencyWriter(directory: directory), trace = trace(.clipboard)
+        for index in 0..<2000 {
+            writer.record(event(.hostRouting, trace: trace, at: 100 + Double(index) / 1000))
+            if index.isMultiple(of: 100) { await writer.flush() }
+        }
+        await writer.flush()
+        writer.record(event(.failed, trace: trace, at: 103))
+        let next = self.trace(.screenshot)
+        writer.record(event(.recognized, trace: next, at: 100))
+        await writer.flush()
+        let report = try ShortcutLatencyReport.read(directory: directory)
+        #expect(report.samples.count == 2)
+        #expect(report.samples.first { $0.id == trace.id }?.outcome == "failed")
+        #expect(report.droppedEvents >= 1744)
+        let files = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.fileSizeKey])
+        let bytes = try files.reduce(0) { try $0 + ($1.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) }
+        #expect(bytes < 150_000)
     }
 }

@@ -9,7 +9,7 @@ Status: implemented for local acceptance; packaged runtime and resource measurem
 | Host | Menu bar, one global input listener, launcher, clipboard monitor/history, ring, translation, settings, notes, word book, help, system monitor, account refresh and conversation cache | Application lifetime |
 | Voice | Dictation, editor recording, transcription and selected speech model | Warm at startup; retain selected speech model throughout application lifetime |
 | Chat | Chat windows, editor insertion transactions and interactive agent state | On demand; retire after 120 seconds only when hidden and without input, voice, loads or agent work |
-| Screenshot | Capture, editors, pins and screen recording | On demand; retire after 180 seconds only without windows, pins, capture, recording or unsaved sessions |
+| Screenshot | Capture, editors, pins and screen recording | Prewarm after essential host startup and a 2-second delay; start on demand if needed sooner. Retire after 180 seconds only without windows, pins, capture, recording or unsaved sessions |
 | Background | Sole filename/content index service, index management and shared media decoder execution | Warm at startup; retire after 180 seconds only when both indexes are off and no jobs/helpers remain |
 
 These are five **business owners**, including the host (four child owners). They are not a promise of five rows in Activity Monitor: native decoders, document readers, inference helpers, MCP tools and macOS services are separate OS processes. Logical feature destinations remain unchanged in commands and shortcut traces. The supervisor maps destinations to owners before deciding whether to launch a child. Old presentation-role CLI invocations are rejected.
@@ -26,7 +26,7 @@ The selected speech model is not subject to the semantic helper's 60-second idle
 
 One listener serves all global bindings. The event tap drains a dedicated sleeping run loop. A recursive state lock serializes tap events, binding refresh, stop and gesture timers; callbacks cross back to the existing UI boundary. Carbon hotkeys retain their application event delivery and Accessibility fallback. This prevents UI layout from starving the tap, but does not promise that a busy UI thread can present a window instantly.
 
-Each child keeps its private inherited Unix socket. There is no listener port or credential file. Routed timeout budgets now cross both IPC hops, including long transcription and decoder requests. Authentication/session/channel checks on API/cache calls remain in the host.
+Screenshot bootstrap does not wait for host storage/media startup, and capture presentation does not wait for its unrelated media modules. Those modules still start under their normal admission policies before media operations use them. Each child keeps its private inherited Unix socket. There is no listener port or credential file. Routed timeout budgets now cross both IPC hops, including long transcription and decoder requests. Authentication/session/channel checks on API/cache calls remain in the host.
 
 The filename API retains its synchronous protocol for the existing search work queue, but production lookup runs remotely. The bridge refuses to wait on the main thread, has a deadline, and propagates caller cancellation. Content search is asynchronous. UI instances mirror bounded state/results and never start index watchers, open content databases, or load semantic models.
 
@@ -54,7 +54,7 @@ Module health migrates once to new owner directories. The strongest previous res
 
 ## Diagnostics and acceptance
 
-Settings → Shortcut diagnostics now includes business process PID, physical footprint, CPU percentage and managed-operation counters. CPU is derived from cumulative counters only for matching process lifetimes, and sampled while that window is open. Export includes the process snapshots alongside the existing stage-level shortcut data. Unknown counters remain unknown rather than zero. The existing CLI remains a log parser and does not start app processes.
+Settings → Shortcut diagnostics now includes business process PID, physical footprint, CPU percentage and managed-operation counters. CPU is derived from cumulative counters only for matching process lifetimes, and sampled while that window is open. Export includes the process snapshots alongside the existing stage-level shortcut data. Unknown counters remain unknown rather than zero. Diagnostics retain at most 200 samples, 128 events per sample and 2,048 events overall; truncated samples retain their initial 96 and final 32 events. Export follows the visible feature/temperature filters, uses compact JSON and has a 2 MiB byte ceiling. The writer admits at most 256 ordinary events plus 8 terminal events per trace per process and rotates 16 files of at most 256 KiB each; concurrent process rotation can temporarily exceed the file-count target. Omitted events are reported by the existing dropped-event counter. The existing CLI remains a log parser and does not start app processes.
 
 On an interactive Mac:
 

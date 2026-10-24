@@ -53,7 +53,7 @@ struct ClipboardPanelSnapshotTests {
 
     @Test @MainActor func warmupPolicySeparatesEssentialAndDeferredFeatures() {
         #expect(FeatureProcess.immediateWarmRoles == [.voice, .background])
-        #expect(FeatureProcess.deferredWarmRoles.isEmpty)
+        #expect(FeatureProcess.deferredWarmRoles == [.screenshot])
         #expect(Set(FeatureProcess.immediateWarmRoles).isDisjoint(with: FeatureProcess.deferredWarmRoles))
     }
 }

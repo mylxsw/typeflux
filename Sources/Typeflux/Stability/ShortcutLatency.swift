@@ -127,12 +127,14 @@ enum ShortcutLatency {
 /// path. Admission is bounded before dispatch; disk I/O never runs on the caller.
 final class ShortcutLatencyWriter: @unchecked Sendable {
     static let maximumFileBytes = 256 * 1024
-    static let maximumFiles = 64
+    static let maximumFiles = 16
     static let retention: TimeInterval = 7 * 86400
     private let queue = DispatchQueue(label: "typeflux.shortcut-diagnostics", qos: .utility)
     private let lock = NSLock()
     private var pending = 0
     private var dropped = 0
+    private struct TraceAdmission { var events = 0; let uptime: TimeInterval }
+    private var traces: [UUID: TraceAdmission] = [:]
     private let directoryOverride: URL?
     private var file: URL?
     private var bytes = 0
@@ -142,7 +144,17 @@ final class ShortcutLatencyWriter: @unchecked Sendable {
 
     func record(_ event: ShortcutLatencyEvent) {
         let accepted: ShortcutLatencyEvent? = lock.withLock {
-            guard pending < 512 else { dropped += 1; return nil }
+            guard event.uptime.isFinite, event.trace.uptime.isFinite,
+                  (0...300).contains(event.uptime - event.trace.uptime) else { return nil }
+            if traces[event.trace.id] == nil, traces.count >= 256 {
+                // Bound admission bookkeeping independently of the number of shortcuts used.
+                let oldest = traces.min { $0.value.uptime < $1.value.uptime }?.key
+                if let oldest { traces[oldest] = nil }
+            }
+            var admission = traces[event.trace.id] ?? .init(uptime: event.trace.uptime)
+            let terminal = [ShortcutLatencyStage.visibleNextTurn, .failed, .blocked, .dismissed, .superseded].contains(event.stage)
+            guard pending < 512, admission.events < (terminal ? 264 : 256) else { dropped += 1; return nil }
+            admission.events += 1; traces[event.trace.id] = admission
             pending += 1
             var event = event
             event.droppedBefore = dropped; dropped = 0

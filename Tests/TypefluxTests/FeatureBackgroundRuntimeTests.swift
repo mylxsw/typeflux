@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import Testing
 @testable import Typeflux
@@ -148,6 +149,32 @@ extension FeatureBackgroundRuntimeTests {
         #expect(!runtime.isForegroundBusy)
         try await activity("voiceEditor", true, 21)
         #expect(!runtime.isForegroundBusy)
+        _ = try await runtime.handle(.init(destination: .background, action: "shutdown"))
+    }
+}
+
+
+extension FeatureBackgroundRuntimeTests {
+    @Test func unrelatedPreferencesDoNotResetIndexProgressButScopeChangesDo() async throws {
+        let domain = "index-preference-regression-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: domain))
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let settings = SettingsStore(defaults: defaults)
+        let names = AskFileIndex(configuration: { (false, .init()) }, defaults: defaults)
+        let content = SemanticFileSearchService(settings: settings, supported: false, automaticStart: false)
+        let runtime = FeatureBackgroundRuntime(names: names, content: content)
+        let command = FeatureCommand(destination: .background, action: "settings")
+        _ = try await runtime.handle(command)
+        var resets = 0
+        let observation = content.$indexProgress.dropFirst().sink { _ in resets += 1 }
+        defer { observation.cancel() }
+        defaults.set(false, forKey: ShortcutLatency.enabledKey)
+        _ = try await runtime.handle(command)
+        _ = try await runtime.handle(command)
+        #expect(resets == 0, "Unrelated preferences must not discard indexing progress or restart helpers")
+        settings.semanticFileSearch = .init(enabled: true)
+        _ = try await runtime.handle(command)
+        #expect(resets > 0, "Index scope changes must still invalidate the old lifecycle")
         _ = try await runtime.handle(.init(destination: .background, action: "shutdown"))
     }
 }

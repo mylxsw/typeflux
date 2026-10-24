@@ -30,6 +30,10 @@ struct ShortcutLatencySample: Identifiable, Codable, Sendable {
 }
 
 struct ShortcutLatencyReport: Codable, Sendable {
+    static let maximumSamples = 200
+    static let maximumEventsPerSample = 128
+    static let maximumEvents = 2048
+    static let maximumExportBytes = 2 * 1024 * 1024
     struct Summary: Codable, Sendable {
         let feature: FeatureRole
         let temperature: String
@@ -46,15 +50,26 @@ struct ShortcutLatencyReport: Codable, Sendable {
     let summaries: [Summary]
     let unreadableFiles: Int
     let invalidLines: Int
-    let droppedEvents: Int
+    private(set) var droppedEvents: Int
 
     init(events: [ShortcutLatencyEvent], unreadableFiles: Int = 0, invalidLines: Int = 0, now: Date = Date()) {
         generatedAt = now; self.unreadableFiles = unreadableFiles; self.invalidLines = invalidLines
         droppedEvents = events.reduce(0) { $0 + $1.droppedBefore }
-        samples = Dictionary(grouping: events, by: { $0.trace.id }).compactMap { _, values in
+        let grouped = Dictionary(grouping: events, by: { $0.trace.id }).compactMap { _, values -> ShortcutLatencySample? in
             guard let trace = values.first?.trace, values.allSatisfy({ $0.trace == trace }) else { return nil }
-            return ShortcutLatencySample(trace: trace, events: values.sorted { $0.uptime < $1.uptime })
-        }.sorted { $0.trace.date > $1.trace.date }.prefix(1000).map { $0 }
+            let ordered = values.sorted { $0.uptime < $1.uptime }
+            // Keep the start and the tail, including failures/visibility after a routing storm.
+            let bounded = ordered.count <= Self.maximumEventsPerSample ? ordered
+                : Array(ordered.prefix(96)) + Array(ordered.suffix(32))
+            return ShortcutLatencySample(trace: trace, events: bounded)
+        }.sorted { $0.trace.date > $1.trace.date }
+        var retained: [ShortcutLatencySample] = [], count = 0
+        for sample in grouped.prefix(Self.maximumSamples) {
+            guard count + sample.events.count <= Self.maximumEvents else { break }
+            retained.append(sample); count += sample.events.count
+        }
+        samples = retained
+        droppedEvents += events.count - count
         var summaries: [Summary] = []
         for feature in FeatureRole.allCases {
             for temperature in ["all", "cold", "warm", "unknown"] {
@@ -71,6 +86,39 @@ struct ShortcutLatencyReport: Codable, Sendable {
             }
         }
         self.summaries = summaries
+    }
+
+    func filteredSamples(feature: String, temperature: String) -> [ShortcutLatencySample] {
+        samples.filter {
+            (feature == "all" || $0.trace.feature.rawValue == feature) &&
+                (temperature == "all" || ($0.cold.map { $0 ? "cold" : "warm" } ?? "unknown") == temperature)
+        }
+    }
+
+    func selecting(feature: String, temperature: String) -> Self {
+        let selected = filteredSamples(feature: feature, temperature: temperature)
+        var result = Self(events: selected.flatMap(\.events), unreadableFiles: unreadableFiles,
+                          invalidLines: invalidLines, now: generatedAt)
+        result.processes = processes
+        result.droppedEvents = droppedEvents
+        return result
+    }
+
+    /// Compact JSON and a byte ceiling protect exports even when reading old runaway logs.
+    func encodedForExport() throws -> Data {
+        let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.sortedKeys]
+        var snapshot = self
+        while true {
+            let data = try encoder.encode(snapshot)
+            if data.count <= Self.maximumExportBytes { return data }
+            guard let last = snapshot.samples.last else { throw CocoaError(.fileWriteInapplicableStringEncoding) }
+            let events = snapshot.samples.dropLast().flatMap(\.events)
+            var reduced = Self(events: events, unreadableFiles: unreadableFiles, invalidLines: invalidLines, now: generatedAt)
+            reduced.processes = processes
+            reduced.droppedEvents = snapshot.droppedEvents + last.events.count
+            snapshot = reduced
+        }
     }
 
     static func read(directory: URL = ShortcutLatency.directory, now: Date = Date()) throws -> Self {
@@ -96,7 +144,8 @@ struct ShortcutLatencyReport: Codable, Sendable {
                 guard let event = try? decoder.decode(ShortcutLatencyEvent.self, from: Data(line)),
                       [1, 2].contains(event.version), event.trace.uptime.isFinite, event.uptime.isFinite,
                       event.uptime >= event.trace.uptime, event.uptime - event.trace.uptime <= 300,
-                      event.droppedBefore >= 0 else { invalid += 1; continue }
+                      event.droppedBefore >= 0, event.droppedBefore <= 1_000_000,
+                      event.build.utf8.count <= 128 else { invalid += 1; continue }
                 events.append(event)
             }
         }
@@ -121,8 +170,7 @@ public enum ShortcutDiagnosticsCommand {
         do {
             let directory = arguments.count == 2 ? URL(fileURLWithPath: arguments[1], isDirectory: true) : ShortcutLatency.directory
             let report = try ShortcutLatencyReport.read(directory: directory)
-            let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601; encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            print(String(decoding: try encoder.encode(report), as: UTF8.self)); return 0
+            print(String(decoding: try report.encodedForExport(), as: UTF8.self)); return 0
         } catch { fputs("Could not read shortcut diagnostics\n", stderr); return 1 }
     }
 }
