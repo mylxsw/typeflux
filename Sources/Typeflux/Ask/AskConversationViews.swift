@@ -6,10 +6,13 @@ import SwiftUI
 struct AskConversationView: View {
     @ObservedObject var model: AskConversationModel
     @State private var showsUsage = false
-    /// The embedded browser panel; it stays open across conversations.
-    @State private var showsBrowser = false
-    @AppStorage("ask.browser.panelWidth") private var browserWidth: Double = 560
-    @State private var browserDragBase: CGFloat?
+    /// The side panel (files, file tabs and web pages); it stays open across conversations.
+    @State private var showsSidePanel = false
+    /// Held without observing: `AskSidePanelView` observes it, so typing in the Files search
+    /// or switching tabs never re-renders the conversation.
+    @State private var sidePanel: AskSidePanel
+    @AppStorage("ask.browser.panelWidth") private var sidePanelWidth: Double = 560
+    @State private var sidePanelDragBase: CGFloat?
     @State private var usageRunId: String?
     @State private var deleteId: String?
     @State private var pullDistance: CGFloat = 0
@@ -52,6 +55,7 @@ struct AskConversationView: View {
         self.model = model
         self.auth = auth ?? .shared
         _showsUsage = State(initialValue: showsUsage)
+        _sidePanel = State(initialValue: AskSidePanel(browser: model.tools.browserWorkspace))
         _usageRunId = State(initialValue: model.selected?.run?.id)
     }
 
@@ -81,18 +85,28 @@ struct AskConversationView: View {
         }
         // Measure the viewport, rather than the intrinsic width of its children.
         .ignoresSafeArea(.container, edges: .top)
-        .onChange(of: model.selectedId) { _ in
+        .onChange(of: model.selectedId) { id in
             usageRunId = nil
             showsUsage = false
             showsSidebarDrawer = false
+            sidePanel.retainFiles(conversationId: id)
+            if showsSidePanel { refreshSidePanelFiles() }
         }
         .onChange(of: model.authoringSession?.revision) { _ in
-            if model.authoringSession?.isPresented == true { showsUsage = false; showsBrowser = false }
+            if model.authoringSession?.isPresented == true { showsUsage = false; showsSidePanel = false }
         }
-        .onReceive(browserPresentation) { _ in setBrowser(true) }
+        .onReceive(browserPresentation) { _ in
+            sidePanel.presentBrowser()
+            setSidePanel(true)
+        }
         .onChange(of: model.runPhase?.offersStop == true) { active in
             // A finished run no longer controls the browser, and its pause never carries over.
             if !active, let id = model.selectedId { model.tools.browserWorkspace?.endActivity(conversationId: id) }
+            // The run may have added or changed files.
+            if !active {
+                sidePanel.reloadFileTabs()
+                if showsSidePanel { refreshSidePanelFiles() }
+            }
         }
         .onChange(of: layout.sidebarInline) { inline in
             if inline { showsSidebarDrawer = false }
@@ -147,9 +161,9 @@ struct AskConversationView: View {
 
     private var layout: AskWorkspaceLayout {
         AskWorkspaceLayout(size: windowSize, sidebarCollapsed: sidebarCollapsed,
-                           showsUsage: showsUsage || showsWorkflow || showsBrowserPanel,
-                           rightPanelWidth: showsBrowserPanel ? CGFloat(browserWidth) : (showsWorkflow ? 390 : nil),
-                           docksRightPanel: showsBrowserPanel)
+                           showsUsage: showsUsage || showsWorkflow || showsSidePanelView,
+                           rightPanelWidth: showsSidePanelView ? CGFloat(sidePanelWidth) : (showsWorkflow ? 390 : nil),
+                           docksRightPanel: showsSidePanelView)
     }
 
     private func accountDidChange() {
@@ -157,48 +171,90 @@ struct AskConversationView: View {
         Task { await model.refreshAfterAccountChange() }
     }
 
-    private var showsWorkflow: Bool { model.authoringSession?.isPresented == true && !showsUsage && !showsBrowser }
-    private var showsBrowserPanel: Bool { showsBrowser && !showsUsage && model.tools.browserWorkspace != nil }
+    private var showsWorkflow: Bool { model.authoringSession?.isPresented == true && !showsUsage && !showsSidePanel }
+    /// The side panel needs a conversation for its files, or the browser for web pages.
+    private var sidePanelAvailable: Bool { model.selectedId != nil || model.tools.browserWorkspace != nil }
+    private var showsSidePanelView: Bool { showsSidePanel && !showsUsage && sidePanelAvailable }
 
     private var browserPresentation: AnyPublisher<Int, Never> {
         model.tools.browserWorkspace?.$presentationRequest.dropFirst().eraseToAnyPublisher()
             ?? Empty().eraseToAnyPublisher()
     }
 
-    private func setBrowser(_ shown: Bool) {
-        guard shown != showsBrowser || (shown && showsUsage) else { return }
+    private func setSidePanel(_ shown: Bool) {
+        guard shown != showsSidePanel || (shown && showsUsage) else { return }
         withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) {
             showsSidebarDrawer = false
             isSearching = false
             if shown {
                 showsUsage = false
                 model.authoringSession?.isPresented = false
-                if model.tools.browserWorkspace?.tabs.isEmpty == true {
-                    _ = try? model.tools.browserWorkspace?.newTab()
-                }
+                sidePanel.prepareForPresentation()
             }
-            showsBrowser = shown
+            showsSidePanel = shown
+        }
+        if shown { refreshSidePanelFiles() }
+    }
+
+    /// ⌘⇧F: the panel's Files tab.
+    private func showSidePanelFiles() {
+        sidePanel.showFiles()
+        setSidePanel(true)
+    }
+
+    private func refreshSidePanelFiles() {
+        let id = model.selectedId
+        Task {
+            await sidePanel.refreshFiles(conversationId: id) { [model] in
+                guard let id else { return nil }
+                return try await model.sidePanelFiles(id)
+            }
         }
     }
 
+    private func addSidePanelFiles(_ urls: [URL]) {
+        guard let id = model.selectedId else { return }
+        Task {
+            do {
+                try await model.addSidePanelFiles(urls, conversationId: id)
+                refreshSidePanelFiles()
+            } catch {
+                sidePanel.notice = error.localizedDescription
+            }
+        }
+    }
+
+    private var sidePanelContext: AskSidePanelContext {
+        let id = model.selectedId
+        return AskSidePanelContext(
+            conversationId: id,
+            runningConversationId: model.runPhase?.offersStop == true ? id : nil,
+            messageOrder: model.sidePanelMessageOrder,
+            messageTitle: { [model] in model.sidePanelMessageTitle($0) },
+            roots: { [model] in model.sidePanelRoots(id) },
+            refreshFiles: refreshSidePanelFiles,
+            addFiles: addSidePanelFiles,
+            stopRun: { model.stop() }
+        )
+    }
+
     /// The conversation keeps at least 420pt beside the panel.
-    private func resizeBrowser(_ delta: CGFloat?) {
-        guard let delta else { browserDragBase = nil; return }
-        let base = browserDragBase ?? layout.usageWidth
-        browserDragBase = base
+    private func resizeSidePanel(_ delta: CGFloat?) {
+        guard let delta else { sidePanelDragBase = nil; return }
+        let base = sidePanelDragBase ?? layout.usageWidth
+        sidePanelDragBase = base
         let minimum = AskWorkspaceLayout.minimumDockedPanelWidth
         let maximum = max(minimum, windowSize.width - (layout.sidebarInline ? AskMetrics.sidebarWidth : 0)
             - AskWorkspaceLayout.minimumDockedContentWidth)
-        browserWidth = Double(min(maximum, max(minimum, base + delta)))
+        sidePanelWidth = Double(min(maximum, max(minimum, base + delta)))
     }
 
     @ViewBuilder private var rightPanel: some View {
-        if showsBrowserPanel, let workspace = model.tools.browserWorkspace {
-            AskBrowserPanel(workspace: workspace,
-                            leadingInset: layout.mainWidth == 0 ? AskMetrics.trafficLightInset : 0,
-                            runningConversationId: model.runPhase?.offersStop == true ? model.selectedId : nil,
-                            stopRun: { model.stop() }, close: { setBrowser(false) },
-                            resize: layout.mainWidth == 0 ? nil : resizeBrowser)
+        if showsSidePanelView {
+            AskSidePanelView(panel: sidePanel, context: sidePanelContext,
+                             leadingInset: layout.mainWidth == 0 ? AskMetrics.trafficLightInset : 0,
+                             close: { setSidePanel(false) },
+                             resize: layout.mainWidth == 0 ? nil : resizeSidePanel)
                 .frame(width: layout.usageWidth)
         } else if showsWorkflow, let session = model.authoringSession {
             AskWorkflowAuthoringPanel(session: session, focusCloseOnAppear: layout.usageOverlay,
@@ -246,6 +302,7 @@ struct AskConversationView: View {
                 // clearer glass over it, flush with the window edge.
                 .background(AskWindowBackdrop())
                 if layout.mainWidth > 0 { titleBarTools }
+                sidePanelShortcuts
             }
             .disabled(hasModal)
             .accessibilityHidden(hasModal)
@@ -311,7 +368,7 @@ struct AskConversationView: View {
         withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) {
             if !showsSidebarDrawer {
                 showsUsage = false
-                showsBrowser = false
+                showsSidePanel = false
                 model.authoringSession?.isPresented = false
             }
             showsSidebarDrawer = false
@@ -786,7 +843,7 @@ struct AskConversationView: View {
             }
             headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
                 .accessibilityIdentifier("ask.workspace.usage")
-            browserButton()
+            sidePanelButton()
         }
         .padding(.leading, AskMetrics.trafficLightInset + AskMetrics.titleBarButtonWidth * 2 + 18)
         .padding(.trailing, 10)
@@ -832,16 +889,13 @@ struct AskConversationView: View {
                 case .cloud, nil: EmptyView()
                 }
             }
-            if model.selectedId != nil || model.tools.browserWorkspace != nil {
+            if sidePanelAvailable {
                 HStack(spacing: 2) {
                     if model.selectedId != nil {
-                        AskHeaderIconButton(symbol: "folder", label: L("ask.workspace.openFolder"), shortcut: nil) {
-                            if let id = model.selectedId { Task { await model.openWorkspace(id) } }
-                        }
                         headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
                             .accessibilityIdentifier("ask.workspace.usage")
                     }
-                    browserButton(showsInteriorFill: model.selectedId != nil || !style.usesGlass)
+                    sidePanelButton(showsInteriorFill: model.selectedId != nil || !style.usesGlass)
                 }
                 .padding(.horizontal, 3)
                 .frame(height: AskMetrics.headerCapsuleHeight)
@@ -867,18 +921,28 @@ struct AskConversationView: View {
         }
     }
 
-    @ViewBuilder private func browserButton(showsInteriorFill: Bool = true) -> some View {
-        if model.tools.browserWorkspace != nil {
-            AskHeaderIconButton(symbol: model.selectedId == nil ? "sidebar.right" : "globe",
-                                label: L(model.selectedId == nil ? "ask.sidebar.right.toggle" : "ask.web.title"),
-                                shortcut: "⌘⇧B",
-                                showsInteriorFill: showsInteriorFill) {
-                setBrowser(!showsBrowserPanel)
+    /// The usage statistics and this toggle are the header's only actions; the Files tab
+    /// replaces the old folder button and the browser opens from the panel's tab strip.
+    @ViewBuilder private func sidePanelButton(showsInteriorFill: Bool = true) -> some View {
+        if sidePanelAvailable {
+            AskHeaderIconButton(symbol: "sidebar.right", label: L("ask.sidePanel.toggle"), shortcut: "⌘⇧B",
+                                active: showsSidePanelView, showsInteriorFill: showsInteriorFill) {
+                setSidePanel(!showsSidePanelView)
             }
                 .keyboardShortcut("b", modifiers: [.command, .shift])
-                .accessibilityValue(L(showsBrowserPanel ? "ask.context.selection.enabled" : "ask.context.selection.disabled"))
-                .accessibilityIdentifier("ask.workspace.browser")
+                .accessibilityValue(L(showsSidePanelView ? "ask.context.selection.enabled" : "ask.context.selection.disabled"))
+                .accessibilityIdentifier("ask.workspace.sidePanel")
         }
+    }
+
+    /// ⌘⇧F opens the Files tab even while the panel is closed.
+    private var sidePanelShortcuts: some View {
+        Button("") { showSidePanelFiles() }
+            .keyboardShortcut("f", modifiers: [.command, .shift])
+            .disabled(!sidePanelAvailable)
+            .opacity(0)
+            .frame(width: 0, height: 0)
+            .accessibilityHidden(true)
     }
 
     /// A temporary conversation is never named, a new one is just "Temporary chat".
@@ -900,7 +964,7 @@ struct AskConversationView: View {
             showsSidebarDrawer = false
             isSearching = false
             showsUsage = shown
-            if shown { showsBrowser = false }
+            if shown { showsSidePanel = false }
         }
     }
 

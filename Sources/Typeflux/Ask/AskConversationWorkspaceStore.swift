@@ -245,7 +245,7 @@ actor AskConversationWorkspaceStore {
         return Data(base64Encoded: String(raw[raw.index(after: comma)...]))
     }
 
-    private func appendRecords(_ incoming: [FileRecord], root: URL) throws {
+    func appendRecords(_ incoming: [FileRecord], root: URL) throws {
         guard !incoming.isEmpty else { return }
         _ = try directory(".typeflux", root: root)
         let file = root.appendingPathComponent(".typeflux/files.json")
