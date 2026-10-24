@@ -139,4 +139,162 @@ struct AskConversationOrbTests {
         empty.layoutSubtreeIfNeeded()
         #expect(empty.fittingSize.width == 88)
     }
+
+    @Test func drawingKeepsItsGlowAndChangesWithPhaseAndPalette() throws {
+        func image(phase: Double, palette: AskOrbPalette = .brand) throws -> NSBitmapImageRep {
+            let view = AskConversationOrb(palette: palette).drop(phase: phase, energy: 0)
+                .frame(width: 88, height: 88)
+                .padding(44).environment(\.colorScheme, .dark)
+            let renderer = ImageRenderer(content: view)
+            renderer.scale = 2
+            let rendered = try #require(renderer.nsImage)
+            return try #require(rendered.tiffRepresentation.flatMap(NSBitmapImageRep.init(data:)))
+        }
+        let first = try image(phase: 0.15)
+        #expect(first.pixelsWide == 352 && first.pixelsHigh == 352)
+        let center = try #require(first.colorAt(x: 176, y: 176)?.usingColorSpace(.sRGB))
+        #expect(center.alphaComponent > 0.99)
+        // Outside the 88pt drop's layout frame: keep room for the soft glow.
+        let glow = try #require(first.colorAt(x: 176, y: 84))
+        #expect(glow.alphaComponent > 0.01 && glow.alphaComponent < 0.5)
+        let next = try image(phase: 0.6)
+        let local = try image(phase: 0.15, palette: .sage)
+        let nextCenter = try #require(next.colorAt(x: 176, y: 176)?.usingColorSpace(.sRGB))
+        let localCenter = try #require(local.colorAt(x: 176, y: 176)?.usingColorSpace(.sRGB))
+        #expect(abs(center.redComponent - nextCenter.redComponent) > 0.1)
+        #expect(abs(center.redComponent - localCenter.redComponent) > 0.1)
+    }
+
+    @Test func nativeLayersKeepGeometryPaletteAndMotionWithoutSwiftUIFrames() throws {
+        let view = AskOrbAnimation.DropView(frame: CGRect(x: 0, y: 0, width: 176, height: 176))
+        view.configure(size: 88, listening: false, palette: .brand, colorScheme: .dark)
+        view.layout()
+        #expect(view.content.sublayers?.count == 4)
+        #expect(view.fill.frame == CGRect(x: 44, y: 44, width: 88, height: 88))
+        #expect(view.glow.position.x == 88 && abs(view.glow.position.y - 93.28) < 0.000001)
+        #expect(view.glowSurface.filters?.count == 1)
+        let firstColors = try #require(view.fill.colors as? [CGColor])
+        #expect(firstColors == view.glow.colors as? [CGColor])
+        #expect(firstColors.count == AskConversationOrb.flowColors.count)
+        let motion = AskOrbMotion(phase: 0.6, energy: 0.5)
+        view.render(motion)
+        let axis = AskConversationOrb.flow(motion.phase)
+        #expect(view.fill.startPoint == CGPoint(x: axis.start.x, y: axis.start.y))
+        #expect(view.fill.endPoint == CGPoint(x: axis.end.x, y: axis.end.y))
+        #expect(view.glow.opacity == Float(AskConversationOrb.glowOpacity(energy: motion.energy)))
+        let path = try #require((view.fill.mask as? CAShapeLayer)?.path)
+        let expected = AskFluidDropShape(phase: motion.phase, wobble: AskConversationOrb.wobble(energy: motion.energy))
+            .path(in: CGRect(x: 0, y: 0, width: 88, height: 88)).cgPath
+        #expect(path == expected)
+        #expect((view.glow.mask as? CAShapeLayer)?.path == path)
+        #expect(view.fill.animationKeys() == nil)
+        view.configure(size: 60, listening: true, palette: .sage, colorScheme: .light)
+        view.layout()
+        #expect(view.listening)
+        #expect(view.fill.frame.size == CGSize(width: 60, height: 60))
+        #expect(firstColors != view.fill.colors as? [CGColor])
+        #expect(view.timer == nil)
+    }
+
+    @Test func nativeAnimationStopsWhenHiddenAndReusesItsTimerWhileVisible() async {
+        let window = OrbVisibilityTestWindow(contentRect: .zero, styleMask: [], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        defer { window.close() }
+        let view = AskOrbAnimation.DropView(frame: CGRect(x: 0, y: 0, width: 176, height: 176))
+        view.configure(size: 88, listening: false, palette: .brand, colorScheme: .dark)
+        window.contentView = view
+        await drainVisibilityUpdates()
+        #expect(view.timer == nil)
+        window.reportedVisible = true
+        window.reportedOcclusion = [.visible]
+        postVisibility(window)
+        await drainVisibilityUpdates()
+        let timer = view.timer
+        #expect(timer?.isValid == true)
+        #expect(timer?.timeInterval == 1.0 / 30)
+        view.configure(size: 88, listening: true, palette: .brand, colorScheme: .dark)
+        postVisibility(window)
+        await drainVisibilityUpdates()
+        #expect(view.timer === timer)
+        window.reportedOcclusion = []
+        postVisibility(window)
+        await drainVisibilityUpdates()
+        #expect(view.timer == nil && timer?.isValid == false)
+        window.reportedOcclusion = [.visible]
+        postVisibility(window)
+        await drainVisibilityUpdates()
+        #expect(view.timer?.isValid == true)
+        window.contentView = nil
+        await drainVisibilityUpdates()
+        #expect(view.timer == nil)
+    }
+
+    @Test func visibilityFollowsOcclusionHidingAndWindowDetachment() async {
+        let window = OrbVisibilityTestWindow(contentRect: .zero, styleMask: [], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        defer { window.close() }
+        let view = AskOrbVisibility.VisibilityView()
+        var changes: [Bool] = []
+        view.onChange = { changes.append($0) }
+        window.contentView = view
+        await drainVisibilityUpdates()
+        #expect(changes == [false])
+
+        window.reportedVisible = true
+        window.reportedOcclusion = [.visible]
+        postVisibility(window)
+        await drainVisibilityUpdates()
+        #expect(changes == [false, true])
+        #expect(view.hitTest(.zero) == nil)
+        postVisibility(window)
+        await drainVisibilityUpdates()
+        #expect(changes == [false, true])
+
+        window.reportedOcclusion = []
+        postVisibility(window)
+        await drainVisibilityUpdates()
+        #expect(changes.last == false)
+        window.reportedOcclusion = [.visible]
+        postVisibility(window)
+        await drainVisibilityUpdates()
+        #expect(changes.last == true)
+        view.isHidden = true
+        await drainVisibilityUpdates()
+        #expect(changes.last == false)
+        view.isHidden = false
+        await drainVisibilityUpdates()
+        #expect(changes.last == true)
+
+        window.reportedVisible = false
+        postVisibility(window)
+        await drainVisibilityUpdates()
+        #expect(changes.last == false)
+        window.reportedVisible = true
+        postVisibility(window)
+        // A queued visibility report must read the detached view's current state.
+        window.contentView = nil
+        await drainVisibilityUpdates()
+        #expect(changes.last == false)
+        let count = changes.count
+        postVisibility(window)
+        await drainVisibilityUpdates()
+        #expect(changes.count == count)
+    }
+
+    private func postVisibility(_ window: NSWindow) {
+        NotificationCenter.default.post(name: NSWindow.didChangeOcclusionStateNotification, object: window)
+    }
+
+    private func drainVisibilityUpdates() async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+    }
+}
+
+private final class OrbVisibilityTestWindow: NSWindow {
+    var reportedVisible = false
+    var reportedOcclusion: NSWindow.OcclusionState = []
+    override var isVisible: Bool { reportedVisible }
+    override var occlusionState: NSWindow.OcclusionState { reportedOcclusion }
 }

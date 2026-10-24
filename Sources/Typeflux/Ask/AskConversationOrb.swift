@@ -10,8 +10,8 @@ struct AskConversationOrb: View {
     var listening = false
     var palette: AskOrbPalette = .brand
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
     @State private var appeared = false
-    @State private var clock = AskOrbClock()
 
     static let period: TimeInterval = 8
     /// The brand palette, shown for Cloud and whenever nothing needs telling apart.
@@ -64,10 +64,9 @@ struct AskConversationOrb: View {
             if reduceMotion {
                 drop(phase: Self.stillPhase, energy: 0)
             } else {
-                TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
-                    let motion = clock.advance(to: context.date, listening: listening)
-                    drop(phase: motion.phase, energy: motion.energy)
-                }
+                AskOrbAnimation(size: size, listening: listening, palette: palette, colorScheme: colorScheme)
+                    .frame(width: size * 2, height: size * 2)
+                    .frame(width: size, height: size)
             }
         }
         .frame(width: size, height: size)
