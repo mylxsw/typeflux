@@ -298,6 +298,8 @@ struct AskAttachmentTile: View {
     let attachment: AskAttachment
     var side: CGFloat = AskContentTile.composerSide
     var onRemove: (() -> Void)?
+    /// Replaces the preview popover, e.g. a sent file opening in the side panel.
+    var onOpen: (() -> Void)?
     @State private var previewing = false
     @StateObject private var imageModel = AskContextImageModel()
     @Environment(\.askContextImageAccess) private var imageAccess
@@ -315,7 +317,9 @@ struct AskAttachmentTile: View {
     }
 
     private func open() {
-        if attachment.kind == .folder, let path = attachment.path {
+        if let onOpen {
+            onOpen()
+        } else if attachment.kind == .folder, let path = attachment.path {
             NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
         } else {
             previewing = true

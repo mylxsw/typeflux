@@ -9,6 +9,12 @@ actor AskConversationWorkspaceStore {
         var messageId: String?
         var originalPath: String?
         var byteSize: Int?
+        /// `added` or `modified` when a run changed the file; `messageId` is then that run's
+        /// answer. Records written before change tracking have none.
+        var change: String? = nil
+        /// The run's `files` writes and edits of the path, for the change's one-line note.
+        var writes: Int? = nil
+        var edits: Int? = nil
     }
 
     // NSCache is thread-safe; synchronous tool descriptions share resolved paths
@@ -147,18 +153,11 @@ actor AskConversationWorkspaceStore {
         let inputs = root.appendingPathComponent("inputs", isDirectory: true)
         let prefix = String(AskToolPolicy.digest(messageId).dropFirst(7).prefix(16))
         var records: [FileRecord] = []
-        for attachment in attachments where attachment.kind != .folder {
-            let name: String = if let source = attachment.localSourcePath {
-                safeName(URL(fileURLWithPath: source).lastPathComponent)
-            } else if attachment.image != nil {
-                safeName(attachment.name) + ".jpg"
-            } else {
-                safeName(attachment.name) + ".txt"
-            }
+        for attachment in attachments {
+            guard let name = Self.inputName(attachment, messageId: messageId) else { continue }
             let kind = attachment.localSourcePath != nil ? "user_original"
                 : attachment.image != nil ? "processed_image" : "extracted_text"
-            let key = String(AskToolPolicy.digest(attachment.localSourcePath ?? attachment.id).dropFirst(7).prefix(16))
-            let destination = inputs.appendingPathComponent(prefix + "-" + key + "-" + name)
+            let destination = inputs.appendingPathComponent(name)
             if FileManager.default.fileExists(atPath: destination.path) {
                 records.append(.init(path: "inputs/" + destination.lastPathComponent, source: kind,
                                      messageId: messageId, originalPath: attachment.localSourcePath,
@@ -203,10 +202,30 @@ actor AskConversationWorkspaceStore {
         try appendRecords(records, root: root)
     }
 
+    /// The name a sent file is kept under in `inputs/`; folders are not copied.
+    nonisolated static func inputName(_ attachment: AskAttachment, messageId: String) -> String? {
+        guard attachment.kind != .folder else { return nil }
+        let prefix = String(AskToolPolicy.digest(messageId).dropFirst(7).prefix(16))
+        let name: String = if let source = attachment.localSourcePath {
+            safeName(URL(fileURLWithPath: source).lastPathComponent)
+        } else if attachment.image != nil {
+            safeName(attachment.name) + ".jpg"
+        } else {
+            safeName(attachment.name) + ".txt"
+        }
+        let key = String(AskToolPolicy.digest(attachment.localSourcePath ?? attachment.id).dropFirst(7).prefix(16))
+        return prefix + "-" + key + "-" + name
+    }
+
+    /// Where a sent file is kept inside the workspace, such as `inputs/<digest>-<digest>-a.pdf`.
+    nonisolated static func inputPath(_ attachment: AskAttachment, messageId: String) -> String? {
+        inputName(attachment, messageId: messageId).map { "inputs/" + $0 }
+    }
+
     func saveOutput(_ data: Data, name: String, owner: String, conversationId: String) throws -> URL {
         let root = try ensure(owner: owner, conversationId: conversationId)
         let output = try directory("outputs", root: root)
-            .appendingPathComponent(UUID().uuidString.lowercased() + "-" + safeName(name))
+            .appendingPathComponent(UUID().uuidString.lowercased() + "-" + Self.safeName(name))
         try data.write(to: output, options: .atomic)
         try appendRecords([.init(path: "outputs/" + output.lastPathComponent, source: "generated",
                                  messageId: nil, originalPath: nil, byteSize: data.count)], root: root)
@@ -228,7 +247,7 @@ actor AskConversationWorkspaceStore {
         try AskCoding.encoder().encode(conversation).write(to: destination, options: .atomic)
     }
 
-    private func safeName(_ raw: String) -> String {
+    private nonisolated static func safeName(_ raw: String) -> String {
         let name = URL(fileURLWithPath: raw).lastPathComponent
         let cleaned = name.unicodeScalars.map { CharacterSet.controlCharacters.contains($0) || $0 == "/" ? "_" : String($0) }.joined()
         return String(cleaned.prefix(100)).isEmpty ? "file" : String(cleaned.prefix(100))

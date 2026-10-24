@@ -16,6 +16,8 @@ struct AskSidePanelContext {
     var refreshFiles: () -> Void = {}
     var addFiles: ([URL]) -> Void = { _ in }
     var stopRun: () -> Void = {}
+    /// Scrolls the conversation to a message and highlights it.
+    var locateMessage: (String) -> Void = { _ in }
 }
 
 /// The panel beside the conversation: one tab strip for the pinned Files tab, web pages and
@@ -59,9 +61,22 @@ struct AskSidePanelView: View {
                                 stopRun: context.stopRun, focusRequest: addressFocusRequest)
             }
         case let .file(tab):
-            AskFileTabView(tab: tab, roots: context.roots) { panel.notice = $0 }
+            AskFileTabView(tab: tab, roots: context.roots, onError: { panel.notice = $0 },
+                           onLocate: locatableMessage(tab).map { id in { context.locateMessage(id) } })
+                .id(tab.id)
+        case let .artifact(tab):
+            AskArtifactTabView(tab: tab)
                 .id(tab.id)
         }
+    }
+
+    /// The message a file tab's file was recorded with, when it is in this conversation.
+    private func locatableMessage(_ tab: AskFileTab) -> String? {
+        guard let root = panel.filesRoot,
+              AskProjectFileAccess.normalizedRoot(root.path) == AskProjectFileAccess.normalizedRoot(tab.target.root),
+              let id = panel.files.first(where: { $0.relativePath == tab.target.relativePath })?.messageId,
+              context.messageOrder.contains(id) else { return nil }
+        return id
     }
 
     private func open(_ file: AskWorkspaceFile) {
@@ -137,6 +152,9 @@ struct AskSidePanelView: View {
                                   selected: panel.selection == item.id,
                                   select: { panel.select(item.id) }, close: { panel.close(item.id) })
                 .help(tab.target.relativePath)
+        case let .artifact(tab):
+            AskSidePanelTabButton(symbol: "shippingbox", title: tab.name, selected: panel.selection == item.id,
+                                  select: { panel.select(item.id) }, close: { panel.close(item.id) })
         }
     }
 

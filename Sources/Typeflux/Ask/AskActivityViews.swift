@@ -17,6 +17,8 @@ struct AskActivityBlock: View {
     /// The run's step count from `AskRunPhase`, for the block that carries the run.
     var runStep: Int?
     var outputs = AskRunOutputs()
+    /// Files changed by a round that ended without an answer after these steps.
+    var fileChanges: [AskWorkspaceFileChange] = []
     /// The approval for one of this card's steps, shown under its header.
     var approval: AnyView?
     var exportProjectPatch: ((AskWorkspaceRef) throws -> Data)?
@@ -25,6 +27,7 @@ struct AskActivityBlock: View {
     @State private var userExpanded: Bool?
     @State private var hovering = false
     @Environment(\.interfaceStyle) private var style
+    @Environment(\.askSidePanelActions) private var sidePanel
     /// The waiting card's corner: the glass card's, or the flat design's tighter one.
     private var cardCorner: CGFloat { style.usesGlass ? Self.corner : 10 }
 
@@ -49,6 +52,9 @@ struct AskActivityBlock: View {
             }
             if status == .attention { card } else { trace }
             if !outputs.isEmpty { AskRunOutputsView(outputs: outputs).padding(.top, 4) }
+            if let sidePanel, !fileChanges.isEmpty, status != .running {
+                AskFileChangesView(list: AskFileChangeList(changes: fileChanges), actions: sidePanel).padding(.top, 4)
+            }
         }
     }
 
@@ -240,8 +246,19 @@ struct AskToolStepRow: View {
     var exportProjectPatch: ((AskWorkspaceRef) throws -> Data)?
     @State private var expanded = false
     @State private var pane = Pane.arguments
+    @Environment(\.askSidePanelActions) private var sidePanel
 
     static let iconSize: CGFloat = 14
+
+    /// The workspace file a `files` read, write or edit step names, which the side panel can
+    /// show; folders, searches and absolute paths (granted folders) are left out.
+    static func openablePath(_ call: AskToolCall) -> String? {
+        guard call.function.name == "files",
+              let args = try? AskLocalTools.jsonArguments(call.function.arguments),
+              let action = args["action"] as? String, ["read", "write", "edit"].contains(action),
+              let raw = args["path"] as? String, !raw.hasPrefix("/") else { return nil }
+        return AskWorkspaceFileChange.workspacePath(raw, root: "/")
+    }
 
     private var state: AskActivityState {
         if preparing { return .running }
@@ -283,40 +300,54 @@ struct AskToolStepRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Button { withAnimation(.easeOut(duration: 0.18)) { expanded.toggle() } } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: AskPresentation.toolSymbol(call))
-                        .font(.system(size: 10.5))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                        .frame(width: Self.iconSize, height: Self.iconSize)
-                    Text(AskTheme.toolTitle(call))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                        .layoutPriority(1)
-                    if let detail = Self.detail(call, result: result) {
-                        Text(detail).foregroundStyle(StudioTheme.textTertiary)
-                            .lineLimit(1).truncationMode(.middle)
-                    }
-                    Spacer(minLength: 6)
-                    if Self.showsStatus(state) {
-                        Text(statusText).font(.system(size: 11, weight: .medium)).foregroundStyle(state.tint)
+            HStack(spacing: 4) {
+                Button { withAnimation(.easeOut(duration: 0.18)) { expanded.toggle() } } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: AskPresentation.toolSymbol(call))
+                            .font(.system(size: 10.5))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                            .frame(width: Self.iconSize, height: Self.iconSize)
+                        Text(AskTheme.toolTitle(call))
+                            .foregroundStyle(StudioTheme.textSecondary)
                             .lineLimit(1)
+                            .truncationMode(.middle)
                             .layoutPriority(1)
+                        if let detail = Self.detail(call, result: result) {
+                            Text(detail).foregroundStyle(StudioTheme.textTertiary)
+                                .lineLimit(1).truncationMode(.middle)
+                        }
+                        Spacer(minLength: 6)
+                        if Self.showsStatus(state) {
+                            Text(statusText).font(.system(size: 11, weight: .medium)).foregroundStyle(state.tint)
+                                .lineLimit(1)
+                                .layoutPriority(1)
+                        }
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                            .rotationEffect(.degrees(expanded ? 90 : 0))
                     }
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 8, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                        .rotationEffect(.degrees(expanded ? 90 : 0))
+                    .font(.system(size: 12.5))
+                    .frame(minHeight: 22)
+                    .contentShape(Rectangle())
                 }
-                .font(.system(size: 12.5))
-                .frame(minHeight: 22)
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+                .help(Self.tag(call))
+                .accessibilityLabel(AskTheme.toolTitle(call))
+                .accessibilityValue(statusText)
+                // Beside the step, not inside its button: a file it names opens in the side panel.
+                if let sidePanel, let path = Self.openablePath(call), result?.isError != true {
+                    Button { sidePanel.openFile(path) } label: {
+                        Image(systemName: "arrow.up.right.square").font(.system(size: 11))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                            .frame(width: 18, height: 18).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help(L("ask.sidePanel.open.inPanel") + " · " + path)
+                    .accessibilityLabel(L("ask.sidePanel.open.inPanel"))
+                    .accessibilityIdentifier("ask.tool.openFile")
+                }
             }
-            .buttonStyle(.plain)
-            .help(Self.tag(call))
-            .accessibilityLabel(AskTheme.toolTitle(call))
-            .accessibilityValue(statusText)
             if expanded {
                 VStack(alignment: .leading, spacing: 8) {
                     if result != nil {
@@ -356,14 +387,17 @@ struct AskToolStepRow: View {
 struct AskRunOutputsView: View {
     let outputs: AskRunOutputs
     var remoteImages = AskRemoteImageLoader()
+    /// Under an answer, non-image artifacts are listed in its file changes block instead.
+    var showsFileArtifacts = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             ForEach(Array(outputs.generatedImages.enumerated()), id: \.element.assetId) { index, image in
                 AskRemoteImageView(asset: image, enabled: index < 8, loader: remoteImages)
             }
-            ForEach(outputs.storedArtifacts, id: \.id) { ref in
-                AskStoredArtifactCard(ref: ref)
+            ForEach(outputs.storedArtifacts.filter { showsFileArtifacts || $0.mediaType.hasPrefix("image/") },
+                    id: \.id) { ref in
+                AskStoredArtifactCard(ref: ref, name: outputs.storedArtifactNames[ref.id])
             }
             ForEach(outputs.artifacts) { artifact in
                 AskArtifactCard(artifact: artifact)

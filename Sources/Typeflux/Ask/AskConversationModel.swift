@@ -331,6 +331,16 @@ final class AskConversationModel: ObservableObject {
     var pendingDraftHandoff: AskDraftHandoff?
     var chatDraftSubmissions: [String: AskDraftHandoffSubmission] = [:]
     @Published var referenceLocation: String?
+    /// The message "Locate in conversation" scrolled to, highlighted briefly.
+    @Published var highlightedMessageId: String?
+    /// Workspace files before the round in progress, per conversation (`+FileChanges`).
+    var fileBaselines: [String: AskFileBaseline] = [:]
+    /// Each workspace (account and conversation) when its last round ended; the next baseline
+    /// reuses its digests instead of reading unchanged files again.
+    var lastFileSnapshots: [String: AskWorkspaceSnapshot] = [:]
+    /// The selected conversation's recorded file changes, keyed by answer message id.
+    @Published var fileChanges: [String: [AskWorkspaceFileChange]] = [:]
+    var fileChangesConversationId: String?
     @Published var launcherWindowMode: AskLauncherWindowMode = .complete
     @Published var launcherDraft = AskDraft(includeScreenshot: false) {
         didSet {
@@ -2515,6 +2525,7 @@ final class AskConversationModel: ObservableObject {
         operationIds[id] = operationId
         operationGenerations[id] = operationId
         operationOwners[operationId] = .init(account: account, conversationId: id)
+        beginFileTracking(id, account: account)
     }
 
     private func checkOperation(_ id: String, operationId: UUID, account: String) throws {
@@ -2529,6 +2540,7 @@ final class AskConversationModel: ObservableObject {
         operationRuns[operationId] = nil; operationOwners[operationId] = nil
         guard operationIds[id] == operationId else { return }
         operationIds[id] = nil
+        finishFileTracking(id)
         busyIds.remove(id); operations[id] = nil; pendingApprovals[id] = nil
         recoveringImages[id] = nil
         if controllingConversationId == id { controllingConversationId = nil; onControlChanged?(false) }

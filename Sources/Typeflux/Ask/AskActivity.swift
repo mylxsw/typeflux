@@ -10,6 +10,8 @@ struct AskRunOutputs: Equatable {
 
     var artifacts: [Artifact] = []
     var storedArtifacts: [AskArtifactRef] = []
+    /// Entry file names of stored artifacts, by artifact id, from the steps that kept them.
+    var storedArtifactNames: [String: String] = [:]
     var generatedImages: [AskGeneratedImage] = []
     var sources: [URL] = []
 
@@ -120,8 +122,13 @@ enum AskActivity {
                 if let receipt = AskGeneratedImageReceipt.parse(result.resultText) {
                     refs += receipt.generatedImages
                 }
+                let entry = name == "artifact"
+                    ? ((try? AskLocalTools.jsonArguments(call.function.arguments))?["entry"] as? String)
+                        .map { ($0 as NSString).lastPathComponent }.flatMap { $0.isEmpty ? nil : $0 }
+                    : nil
                 for ref in refs where !value.storedArtifacts.contains(where: { $0.id == ref.id }) {
                     value.storedArtifacts.append(ref)
+                    if let entry { value.storedArtifactNames[ref.id] = entry }
                 }
             }
             guard !["computer", "browser", AskEmbeddedBrowserTool.name].contains(name),

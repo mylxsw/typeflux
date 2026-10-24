@@ -8,7 +8,9 @@ created, a workspace keeps its path across updates and time zone changes. The ow
 isolates signed-in accounts. A legacy non-UUID conversation ID uses a SHA-256
 ID suffix. Legacy ID-only directories migrate on next use, using the saved chat
 start time (or the directory creation time if no snapshot is available). Migration
-preserves files and removes empty `inputs`, `outputs`, and `work` directories. The UI opens the exact folder in Finder.
+preserves files and removes empty `inputs`, `outputs`, and `work` directories. The history menu's
+"Show files" opens the conversation's Files tab in the Chat side panel; the Files tab can
+reveal the exact folder in Finder.
 
 The folder contains `inputs/` for copies of submitted files and screenshots,
 `work/` for projects, `outputs/` for generated image files, and `.typeflux/`
@@ -28,13 +30,24 @@ processed form, identified as such in `files.json`. Folder attachments remain
 references to the explicitly attached external folder and are identified in
 the manifest. Cloud conversation messages are mirrored locally. Typeflux does
 not sync workspace files.
+
+Each round (a question and the run that answers it) snapshots `outputs/` and `work/`
+when it starts and again when its run ends; a run paused for a decision or for credits
+keeps its first snapshot. Files that are new or whose content changed are recorded in
+`files.json` with the round's last answer as `messageId`, `change` (`added` or
+`modified`), and the counts of `files` tool `writes` and `edits` for that path. Deleted
+files and files that were only touched are not recorded. Older records have no `change`
+and are not treated as changes. The answer lists these files at its end; reloading the
+history reads them back from `files.json`.
+
 Opening an older chat recovers available
 message data into its workspace; missing original files cannot be recreated.
 
 Deleting an ordinary chat leaves its workspace untouched. Temporary chats use the same
 workspace root; ending one, switching accounts, or exiting the app deletes its workspace.
 Converting a temporary chat to an ordinary chat retains its files.
-Existing immutable artifact storage continues to serve in-chat previews;
+Existing immutable artifact storage continues to serve previews, which open in the
+side panel;
 locally generated images are also copied into `outputs/` for durable user
 access. Server-provided remote image URLs remain references in
 `conversation.json`; they are not downloaded automatically.
