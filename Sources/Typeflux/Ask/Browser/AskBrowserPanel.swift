@@ -11,6 +11,8 @@ struct AskBrowserPanel: View {
     var stopRun: () -> Void
     /// Bumped when the user opens a new tab, to type its address.
     var focusRequest = 0
+    /// The side panel's shortcuts on a new tab: the conversation's files and recent items.
+    var start = AskBrowserStartShortcuts()
     @State private var address = ""
     @State private var editingAddress = false
     @State private var showsSites = false
@@ -29,9 +31,9 @@ struct AskBrowserPanel: View {
                 if let tab {
                     AskBrowserWebView(tab: tab)
                         .id(tab.id)
-                    if tab.url == nil { AskBrowserStartPage(workspace: workspace, tab: tab) }
+                    if tab.url == nil { AskBrowserStartPage(workspace: workspace, tab: tab, shortcuts: start) }
                 } else {
-                    AskBrowserStartPage(workspace: workspace, tab: nil)
+                    AskBrowserStartPage(workspace: workspace, tab: nil, shortcuts: start)
                 }
                 overlays
             }

@@ -264,3 +264,166 @@ extension AskSidePanelConversationTests {
         }
     }
 }
+
+extension AskSidePanelConversationTests {
+    @Test func aReferencedFileJoinsTheComposerAndRidesWithTheNextMessage() async throws {
+        let (fixture, store, base) = try await fixture()
+        defer { try? FileManager.default.removeItem(at: base); fixture.model.resetSession() }
+        let model = fixture.model
+        let owner = try #require(model.credentials(for: "files-chat")).account
+        let root = try await store.ensure(owner: owner, conversationId: "files-chat")
+        try write("region,total\nnorth,12", "outputs/sales.csv", in: root)
+        let url = root.appendingPathComponent("outputs/sales.csv")
+        #expect(model.draft.attachments == nil)
+
+        // Another conversation's reference never reaches this draft.
+        model.referenceSidePanelFile(url, conversationId: "other-chat")
+        model.referenceSidePanelFile(url, conversationId: "files-chat")
+        try await SettingsBehaviorTestSupport.wait { model.draft.attachments?.count == 1 }
+        let chip = try #require(model.draft.attachments?.first)
+        #expect(chip.name == "sales.csv")
+        #expect(chip.text?.contains("north,12") == true)
+        #expect(chip.localSourcePath.map(AskProjectFileAccess.normalizedRoot)
+            == AskProjectFileAccess.normalizedRoot(url.path))
+
+        // Referencing it again keeps one chip.
+        model.referenceSidePanelFile(root.appendingPathComponent("outputs/./sales.csv"), conversationId: "files-chat")
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(model.draft.attachments?.count == 1)
+
+        // The next request carries the file's content as context, without the local path.
+        let request = model.draft.request(deviceId: "device", tools: [])
+        #expect(request.attachments?.first?.text?.contains("north,12") == true)
+        #expect(request.attachments?.first?.localSourcePath == nil)
+
+        // Removing the chip leaves the draft without it.
+        model.removeAttachment(chip.id, launcher: false)
+        #expect(model.draft.attachments == nil)
+    }
+
+    @Test func droppedFilesAreUploadedButWorkspaceFilesAreNotCopiedAgain() async throws {
+        let (fixture, store, base) = try await fixture()
+        defer { try? FileManager.default.removeItem(at: base); fixture.model.resetSession() }
+        let model = fixture.model
+        let owner = try #require(model.credentials(for: "files-chat")).account
+        let root = try await store.ensure(owner: owner, conversationId: "files-chat")
+        try write("draft", "outputs/report.md", in: root)
+        let source = base.appendingPathComponent("notes.txt")
+        try Data("from finder".utf8).write(to: source)
+
+        try await model.addSidePanelFiles([root.appendingPathComponent("outputs/report.md"), source],
+                                          conversationId: "files-chat")
+        var listing = try #require(try await model.sidePanelFiles("files-chat"))
+        let uploads = listing.files.filter { $0.origin == .upload }
+        #expect(uploads.map(\.name) == ["notes.txt"], "Only the file from outside is copied into inputs/")
+        let upload = try #require(uploads.first)
+        #expect(upload.relativePath.hasPrefix("inputs/"))
+        #expect(try Data(contentsOf: root.appendingPathComponent(upload.relativePath)) == Data("from finder".utf8))
+
+        // Dragging a workspace row back onto the panel copies nothing.
+        try await model.addSidePanelFiles([root.appendingPathComponent(upload.relativePath)],
+                                          conversationId: "files-chat")
+        listing = try #require(try await model.sidePanelFiles("files-chat"))
+        #expect(listing.files.filter { $0.origin == .upload }.count == 1)
+
+        // A folder in a drop refuses the drop before anything is copied.
+        let folder = base.appendingPathComponent("folder", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let other = base.appendingPathComponent("other.txt")
+        try Data("other".utf8).write(to: other)
+        await #expect(throws: CocoaError.self) {
+            try await model.addSidePanelFiles([other, folder], conversationId: "files-chat")
+        }
+        listing = try #require(try await model.sidePanelFiles("files-chat"))
+        #expect(listing.files.filter { $0.origin == .upload }.count == 1)
+        #expect(AskConversationModel.isInside(root, root: root))
+        #expect(!AskConversationModel.isInside(URL(fileURLWithPath: root.path + "-sibling/a"), root: root))
+    }
+
+    // swiftlint:disable:next function_body_length
+    @Test func commandShiftReturnFocusesThePanelAndEscapeLeavesIt() async throws {
+        let (fixture, _, base) = try await fixture()
+        defer { try? FileManager.default.removeItem(at: base); fixture.model.resetSession() }
+        _ = NSApplication.shared
+        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+        let previous = NSApp.accessibilityAttributeValue(attribute)
+        NSApp.accessibilitySetValue(true, forAttribute: attribute)
+        defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
+        let suite = "AskSidePanelConversationTests." + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let size = NSSize(width: 1300, height: 760)
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.titled],
+                              backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        let hosting = NSHostingView(rootView: AskConversationView(model: fixture.model)
+            .defaultAppStorage(defaults)
+            .environment(\.askGlassMaterialOverride, .opaque))
+        hosting.frame = NSRect(origin: .zero, size: size)
+        window.contentView = hosting
+        window.makeKeyAndOrderFront(nil)
+        defer { window.orderOut(nil); window.close() }
+        try await SettingsBehaviorTestSupport.wait {
+            hosting.layoutSubtreeIfNeeded()
+            return find("ask.workspace.sidePanel", in: window) != nil
+        }
+
+        // The panel's width, from its accessibility frame.
+        func panelWidth() -> CGFloat {
+            (find("ask.sidePanel", in: window)?.value(forKey: "accessibilityFrame") as? NSValue)?.rectValue.width ?? 0
+        }
+        // Waits for the panel's animation to settle on a state.
+        func settle(_ condition: () -> Bool) async throws {
+            for _ in 0 ..< 60 {
+                try await Task.sleep(for: .milliseconds(100))
+                if condition() { return }
+            }
+            Issue.record("The side panel did not settle; width \(panelWidth())")
+            throw CancellationError()
+        }
+        func press(_ characters: String, keyCode: UInt16, modifiers: NSEvent.ModifierFlags) throws -> Bool {
+            let key = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: modifiers,
+                                                    timestamp: 0, windowNumber: window.windowNumber, context: nil,
+                                                    characters: characters, charactersIgnoringModifiers: characters,
+                                                    isARepeat: false, keyCode: keyCode))
+            return window.performKeyEquivalent(with: key)
+        }
+
+        #expect(try press("f", keyCode: 3, modifiers: [.command, .shift]))
+        try await SettingsBehaviorTestSupport.wait {
+            hosting.layoutSubtreeIfNeeded()
+            return find("ask.sidePanel.filesTab", in: window) != nil
+        }
+        var docked: CGFloat = 0
+        try await settle {
+            let width = panelWidth()
+            defer { docked = width }
+            return width > 0 && width == docked
+        }
+        #expect(docked < size.width - 1, "The panel sits beside the conversation")
+        #expect(try press("\r", keyCode: 36, modifiers: [.command, .shift]))
+        try await settle {
+            abs(panelWidth() - size.width) < 1 && shows(L("ask.sidePanel.focus.exit"), in: window)
+        }
+        #expect(try press("\u{1b}", keyCode: 53, modifiers: []))
+        try await settle {
+            abs(panelWidth() - docked) < 1 && shows(L("ask.sidePanel.focus"), in: window)
+        }
+        // The panel's own button toggles focus too.
+        let toggle = try #require(find("ask.sidePanel.focus", in: window))
+        _ = toggle.perform(NSSelectorFromString("accessibilityPerformPress"))
+        try await settle {
+            abs(panelWidth() - size.width) < 1
+        }
+        // Closing the panel ends focused viewing; it reopens beside the conversation.
+        let close = try #require(find("ask.workspace.drawer.close", in: window))
+        _ = close.perform(NSSelectorFromString("accessibilityPerformPress"))
+        try await settle {
+            find("ask.sidePanel", in: window) == nil
+        }
+        #expect(try press("f", keyCode: 3, modifiers: [.command, .shift]))
+        try await settle {
+            abs(panelWidth() - docked) < 1
+        }
+    }
+}

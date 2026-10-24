@@ -10,7 +10,12 @@ ID suffix. Legacy ID-only directories migrate on next use, using the saved chat
 start time (or the directory creation time if no snapshot is available). Migration
 preserves files and removes empty `inputs`, `outputs`, and `work` directories. The history menu's
 "Show files" opens the conversation's Files tab in the Chat side panel; the Files tab can
-reveal the exact folder in Finder.
+reveal the exact folder in Finder. Files added there or dragged onto the panel from
+Finder are copied into `inputs/` and recorded in `files.json` as `user_added`, without a
+message; files already in the workspace are not copied again. "Reference in Message"
+(file rows, the rows of an answer's file changes, and a file tab's toolbar) or dragging a
+row onto the composer attaches the file to the next message like any other attachment, so
+it is copied into `inputs/` with that message when sent.
 
 The folder contains `inputs/` for copies of submitted files and screenshots,
 `work/` for projects, `outputs/` for generated image files, and `.typeflux/`

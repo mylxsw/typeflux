@@ -4,6 +4,7 @@ import SwiftUI
 struct AskBrowserStartPage: View {
     @ObservedObject var workspace: AskBrowserWorkspace
     var tab: AskBrowserTab?
+    var shortcuts = AskBrowserStartShortcuts()
     @State private var sites: [AskBrowserWorkspace.Site] = []
 
     var body: some View {
@@ -11,6 +12,43 @@ struct AskBrowserStartPage: View {
             VStack(alignment: .leading, spacing: 14) {
                 if tab?.isPrivate == true {
                     note("eyeglasses", L("ask.web.private.detail"))
+                }
+                if let showFiles = shortcuts.showFiles {
+                    Button(action: showFiles) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "folder").foregroundStyle(AskTheme.accent)
+                            Text(L("ask.sidePanel.start.files"))
+                            Spacer(minLength: 0)
+                        }
+                        .font(.system(size: 12.5, weight: .medium))
+                        .padding(.horizontal, 12).frame(height: 38)
+                        .background(AskTheme.controlSurface, in: RoundedRectangle(cornerRadius: 8))
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("ask.sidePanel.start.files")
+                }
+                // A private tab never lists what other tabs opened.
+                if tab?.isPrivate != true, !shortcuts.recents.isEmpty {
+                    Text(L("ask.sidePanel.start.recent")).font(.system(size: 12.5, weight: .semibold))
+                    VStack(spacing: 2) {
+                        ForEach(shortcuts.recents) { recent in
+                            Button { shortcuts.openRecent(recent) } label: {
+                                HStack(spacing: 8) {
+                                    recentIcon(recent)
+                                    Text(recent.title).lineLimit(1).truncationMode(.middle)
+                                    Spacer(minLength: 0)
+                                }
+                                .font(.system(size: 12))
+                                .padding(.horizontal, 10).frame(height: 30)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .help(recent.detail)
+                        }
+                    }
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("ask.sidePanel.start.recent")
                 }
                 if !sites.isEmpty {
                     Text(L("ask.web.signedIn")).font(.system(size: 12.5, weight: .semibold))
@@ -39,6 +77,15 @@ struct AskBrowserStartPage: View {
         .task { sites = await workspace.sites() }
     }
 
+    @ViewBuilder private func recentIcon(_ recent: AskSidePanelRecent) -> some View {
+        switch recent {
+        case let .file(target, _):
+            AskWorkspaceFileIconView(pathExtension: (target.relativePath as NSString).pathExtension, size: 16)
+        case .web:
+            Image(systemName: "globe").foregroundStyle(StudioTheme.textTertiary).frame(width: 16)
+        }
+    }
+
     private func note(_ symbol: String, _ text: String) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: symbol)
@@ -55,6 +102,14 @@ struct AskBrowserStartPage: View {
         guard let url = URL(string: text) else { return }
         if let tab { tab.load(url) } else { _ = try? workspace.newTab(url: url) }
     }
+}
+
+/// What the side panel adds to a new tab's start page; empty outside it.
+struct AskBrowserStartShortcuts {
+    /// Shows the conversation's Files tab; nil without a conversation.
+    var showFiles: (() -> Void)?
+    var recents: [AskSidePanelRecent] = []
+    var openRecent: (AskSidePanelRecent) -> Void = { _ in }
 }
 
 /// Sites & sign-ins: what the AI may do on each site, and signing out.

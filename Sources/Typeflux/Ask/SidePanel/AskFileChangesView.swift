@@ -137,6 +137,10 @@ private struct AskFileChangeRow: View {
     let actions: AskSidePanelActions
     @State private var hovering = false
 
+    private func reference(_ url: URL) -> (() -> Void)? {
+        actions.referenceFile.map { reference in { reference(url) } }
+    }
+
     var body: some View {
         let url = actions.fileURL(change.path)
         HStack(spacing: 10) {
@@ -150,6 +154,10 @@ private struct AskFileChangeRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if hovering, let url {
+                if let onReference = reference(url) {
+                    AskFileReferenceButton(action: onReference, size: 26)
+                        .accessibilityIdentifier("ask.fileChanges.reference")
+                }
                 Button { AskFileExternalActions().openWithDefaultApplication(url) } label: {
                     Image(systemName: "arrow.up.forward.app").font(.system(size: 12))
                         .frame(width: 26, height: 26).contentShape(Rectangle())
@@ -159,7 +167,7 @@ private struct AskFileChangeRow: View {
                 .help(L("ask.sidePanel.open.default"))
                 .accessibilityLabel(L("ask.sidePanel.open.default"))
                 Menu {
-                    AskFileOpenMenuItems(file: url, showsShortcuts: false)
+                    AskFileOpenMenuItems(file: url, showsShortcuts: false, onReference: reference(url))
                 } label: {
                     Image(systemName: "ellipsis").font(.system(size: 12)).frame(width: 26, height: 26)
                 }
@@ -178,12 +186,14 @@ private struct AskFileChangeRow: View {
         .onHover { hovering = $0 }
         .contextMenu {
             Button(L("ask.sidePanel.open.inPanel")) { actions.openFile(change.path) }
-            if let url { AskFileOpenMenuItems(file: url, showsShortcuts: false) }
+            if let url { AskFileOpenMenuItems(file: url, showsShortcuts: false, onReference: reference(url)) }
         }
+        .onDrag { AskWorkspaceFileDrag.provider(url) }
         .help(change.path)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
         .accessibilityAction(named: L("ask.sidePanel.open.inPanel")) { actions.openFile(change.path) }
+        .accessibilityReferenceAction(url.flatMap(reference))
     }
 }
 

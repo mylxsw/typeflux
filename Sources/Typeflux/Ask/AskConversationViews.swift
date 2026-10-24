@@ -11,8 +11,11 @@ struct AskConversationView: View {
     /// Held without observing: `AskSidePanelView` observes it, so typing in the Files search
     /// or switching tabs never re-renders the conversation.
     @State private var sidePanel: AskSidePanel
-    @AppStorage("ask.browser.panelWidth") private var sidePanelWidth: Double = 560
+    /// Dragging the panel's edge sets it; the width is kept for next time.
+    @State private var sidePanelWidth = AskSidePanelWidth.load()
     @State private var sidePanelDragBase: CGFloat?
+    /// The panel fills the window (⌘⇧↩) until Esc or the toggle restores the conversation.
+    @State private var sidePanelFocused = false
     @State private var usageRunId: String?
     @State private var deleteId: String?
     @State private var pullDistance: CGFloat = 0
@@ -168,8 +171,9 @@ struct AskConversationView: View {
     private var layout: AskWorkspaceLayout {
         AskWorkspaceLayout(size: windowSize, sidebarCollapsed: sidebarCollapsed,
                            showsUsage: showsUsage || showsWorkflow || showsSidePanelView,
-                           rightPanelWidth: showsSidePanelView ? CGFloat(sidePanelWidth) : (showsWorkflow ? 390 : nil),
-                           docksRightPanel: showsSidePanelView)
+                           rightPanelWidth: showsSidePanelView ? sidePanelWidth : (showsWorkflow ? 390 : nil),
+                           docksRightPanel: showsSidePanelView,
+                           focusesRightPanel: showsSidePanelView && sidePanelFocused)
     }
 
     private func accountDidChange() {
@@ -196,10 +200,18 @@ struct AskConversationView: View {
                 showsUsage = false
                 model.authoringSession?.isPresented = false
                 sidePanel.prepareForPresentation()
+            } else {
+                sidePanelFocused = false
             }
             showsSidePanel = shown
         }
         if shown { refreshSidePanelFiles() }
+    }
+
+    /// ⌘⇧↩: the panel fills the window, or gives the conversation its room back.
+    private func setSidePanelFocus(_ focused: Bool) {
+        guard focused != sidePanelFocused, !focused || showsSidePanelView else { return }
+        withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) { sidePanelFocused = focused }
     }
 
     /// ⌘⇧F: the panel's Files tab.
@@ -231,10 +243,12 @@ struct AskConversationView: View {
         Task {
             do {
                 try await model.addSidePanelFiles(urls, conversationId: id)
-                refreshSidePanelFiles()
+                sidePanel.notice = nil
             } catch {
                 sidePanel.notice = error.localizedDescription
             }
+            // Files copied before a failure are listed too.
+            refreshSidePanelFiles()
         }
     }
 
@@ -249,7 +263,10 @@ struct AskConversationView: View {
             refreshFiles: refreshSidePanelFiles,
             addFiles: addSidePanelFiles,
             stopRun: { model.stop() },
-            locateMessage: locateMessage
+            locateMessage: locateMessage,
+            referenceFile: id == nil ? nil : referenceFile,
+            isFocused: sidePanelFocused,
+            toggleFocus: { setSidePanelFocus(!sidePanelFocused) }
         )
     }
 
@@ -260,7 +277,8 @@ struct AskConversationView: View {
             openLink: openLink,
             openArtifact: openSidePanelArtifact,
             showFiles: showSidePanelFiles,
-            fileURL: { [model] in model.sidePanelFileURL($0, conversationId: id) }
+            fileURL: { [model] in model.sidePanelFileURL($0, conversationId: id) },
+            referenceFile: id == nil ? nil : referenceFile
         )
     }
 
@@ -313,19 +331,34 @@ struct AskConversationView: View {
 
     /// Scrolls to the message and highlights it; a panel covering the conversation steps aside.
     private func locateMessage(_ messageId: String) {
-        if layout.mainWidth == 0 || layout.usageOverlay { setSidePanel(false) }
+        if sidePanelFocused {
+            setSidePanelFocus(false)
+        } else if layout.mainWidth == 0 || layout.usageOverlay {
+            setSidePanel(false)
+        }
         model.locateMessage(messageId)
     }
 
-    /// The conversation keeps at least 420pt beside the panel.
+    /// "Reference in message": the file joins the composer's attachments. A focused panel
+    /// steps aside so the composer shows it.
+    private func referenceFile(_ url: URL) {
+        guard let id = model.selectedId else { return }
+        setSidePanelFocus(false)
+        model.referenceSidePanelFile(url, conversationId: id)
+    }
+
+    /// The conversation keeps at least 420pt beside the panel; the width is saved when the
+    /// drag ends.
     private func resizeSidePanel(_ delta: CGFloat?) {
-        guard let delta else { sidePanelDragBase = nil; return }
+        guard let delta else {
+            if sidePanelDragBase != nil { AskSidePanelWidth.save(sidePanelWidth) }
+            sidePanelDragBase = nil
+            return
+        }
         let base = sidePanelDragBase ?? layout.usageWidth
         sidePanelDragBase = base
-        let minimum = AskWorkspaceLayout.minimumDockedPanelWidth
-        let maximum = max(minimum, windowSize.width - (layout.sidebarInline ? AskMetrics.sidebarWidth : 0)
-            - AskWorkspaceLayout.minimumDockedContentWidth)
-        sidePanelWidth = Double(min(maximum, max(minimum, base + delta)))
+        sidePanelWidth = AskSidePanelWidth.clamped(base + delta, windowWidth: windowSize.width,
+                                                   sidebarWidth: layout.sidebarInline ? AskMetrics.sidebarWidth : 0)
     }
 
     @ViewBuilder private var rightPanel: some View {
@@ -1014,14 +1047,24 @@ struct AskConversationView: View {
         }
     }
 
-    /// ⌘⇧F opens the Files tab even while the panel is closed.
+    /// ⌘⇧F opens the Files tab even while the panel is closed; ⌘⇧↩ focuses the open panel
+    /// and Esc leaves the focused panel.
     private var sidePanelShortcuts: some View {
-        Button("") { showSidePanelFiles() }
-            .keyboardShortcut("f", modifiers: [.command, .shift])
-            .disabled(!sidePanelAvailable)
-            .opacity(0)
-            .frame(width: 0, height: 0)
-            .accessibilityHidden(true)
+        ZStack {
+            Button("") { showSidePanelFiles() }
+                .keyboardShortcut("f", modifiers: [.command, .shift])
+                .disabled(!sidePanelAvailable)
+            Button("") { setSidePanelFocus(!sidePanelFocused) }
+                .keyboardShortcut(.return, modifiers: [.command, .shift])
+                .disabled(!showsSidePanelView)
+            if sidePanelFocused && showsSidePanelView {
+                Button("") { setSidePanelFocus(false) }
+                    .keyboardShortcut(.cancelAction)
+            }
+        }
+        .opacity(0)
+        .frame(width: 0, height: 0)
+        .accessibilityHidden(true)
     }
 
     /// A temporary conversation is never named, a new one is just "Temporary chat".

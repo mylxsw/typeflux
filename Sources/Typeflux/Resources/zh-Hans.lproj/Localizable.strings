@@ -6980,6 +6980,13 @@
 "ask.sidePanel.files.earlierMessage" = "较早的消息";
 "ask.sidePanel.files.add" = "添加文件…";
 "ask.sidePanel.revealInFinder" = "在 Finder 中显示";
+"ask.sidePanel.reference" = "引用到输入框";
+"ask.sidePanel.file.quickLook" = "Quick Look 预览（只读）";
+"ask.sidePanel.start.files" = "对话文件";
+"ask.sidePanel.start.recent" = "最近打开";
+"ask.sidePanel.files.drop" = "松开以添加到当前对话";
+"ask.sidePanel.focus" = "专注查看";
+"ask.sidePanel.focus.exit" = "退出专注查看";
 "ask.sidePanel.open.menu" = "外部打开";
 "ask.sidePanel.open.inPanel" = "在侧边栏打开";
 "ask.sidePanel.open.withApp" = "用 %@ 打开";

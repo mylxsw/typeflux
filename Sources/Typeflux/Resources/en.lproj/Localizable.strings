@@ -6980,6 +6980,13 @@
 "ask.sidePanel.files.earlierMessage" = "Earlier message";
 "ask.sidePanel.files.add" = "Add Files…";
 "ask.sidePanel.revealInFinder" = "Show in Finder";
+"ask.sidePanel.reference" = "Reference in Message";
+"ask.sidePanel.file.quickLook" = "Quick Look preview (read-only)";
+"ask.sidePanel.start.files" = "Conversation Files";
+"ask.sidePanel.start.recent" = "Recently Opened";
+"ask.sidePanel.files.drop" = "Drop to add to this conversation";
+"ask.sidePanel.focus" = "Focus View";
+"ask.sidePanel.focus.exit" = "Exit Focus View";
 "ask.sidePanel.open.menu" = "Open externally";
 "ask.sidePanel.open.inPanel" = "Open in Side Panel";
 "ask.sidePanel.open.withApp" = "Open with %@";

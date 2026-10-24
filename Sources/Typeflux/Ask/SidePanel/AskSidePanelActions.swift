@@ -15,6 +15,9 @@ struct AskSidePanelActions {
     var showFiles: () -> Void = {}
     /// The file's location on disk for the external-open menu, when it is in the workspace.
     var fileURL: (String) -> URL? = { _ in nil }
+    /// Adds a workspace file to the composer as an attachment for the next message; nil when
+    /// the conversation cannot take one.
+    var referenceFile: ((URL) -> Void)?
 }
 
 extension EnvironmentValues {

@@ -278,3 +278,99 @@ struct AskSidePanelRenderTests {
     }
 }
 
+extension AskSidePanelRenderTests {
+    @Test func officeFilesShowAQuickLookPreviewAndCanBeReferenced() async throws {
+        let root = try workspace()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try Data("PK\u{3}\u{4}not really a document".utf8).write(to: root.appendingPathComponent("outputs/brief.docx"))
+        let panel = AskSidePanel(browser: nil)
+        let target = try AskSidePanelFileAccess.resolve("outputs/brief.docx", workspaceRoot: root)
+        let tab = try panel.open(target, conversationId: "c1")
+        #expect(tab.kind == .unsupported)
+        var referenced: [URL] = []
+        var panelContext = self.context(root)
+        panelContext.referenceFile = { referenced.append($0) }
+        panelContext.toggleFocus = {}
+        panelContext.isFocused = true
+        let labels = try await render(AskSidePanelView(panel: panel, context: panelContext, close: {}),
+                                      name: "side-panel-file-quicklook", settle: .milliseconds(900))
+        #expect(labels.contains(L("ask.sidePanel.file.quickLook")))
+        #expect(labels.contains(L("ask.sidePanel.reference")))
+        #expect(labels.contains(L("ask.sidePanel.focus.exit")))
+        #expect(referenced.isEmpty)
+
+        // Files the panel cannot preview and Quick Look does not cover keep the open buttons.
+        let blob = try AskSidePanelFileAccess.resolve("work/blob.bin", workspaceRoot: root)
+        try panel.open(blob, conversationId: "c1", kind: .unsupported)
+        let fallback = try await render(AskSidePanelView(panel: panel, context: panelContext, close: {}),
+                                        name: "side-panel-file-unsupported")
+        #expect(fallback.contains(L("ask.sidePanel.file.unsupported")))
+        #expect(!fallback.contains(L("ask.sidePanel.file.quickLook")))
+    }
+
+    @Test func filesAndChangesOfferReferencingWhenTheConversationCanTakeIt() async throws {
+        let root = try workspace()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let panel = AskSidePanel(browser: nil)
+        await panel.refreshFiles(conversationId: "c1") { (root, listing(root)) }
+        panel.prepareForPresentation()
+        var panelContext = self.context(root)
+        panelContext.referenceFile = { _ in }
+        let labels = try await render(AskSidePanelView(panel: panel, context: panelContext, close: {}),
+                                      name: "side-panel-files-reference")
+        #expect(labels.contains { $0.contains("sales.csv") })
+        // Without a conversation to take it there is none.
+        let plain = try await render(AskSidePanelView(panel: panel, context: self.context(root), close: {}),
+                                     name: "side-panel-files-plain")
+        #expect(!plain.contains(L("ask.sidePanel.reference")))
+        #expect(plain.contains(L("ask.sidePanel.focus")) == false, "No focus toggle without a handler")
+
+        let list = AskFileChangeList(changes: [.init(path: "outputs/summary.md", kind: .modified)], artifacts: [])
+        let actions = AskSidePanelActions(fileURL: { root.appendingPathComponent($0) }, referenceFile: { _ in })
+        try await render(AskFileChangesView(list: list, actions: actions).padding().frame(width: 560),
+                         name: "file-changes-reference", size: NSSize(width: 600, height: 200))
+
+        let drop = try await render(ZStack { AskTheme.surface; AskSidePanelDropHighlight() }, name: "side-panel-drop")
+        #expect(drop.contains { $0.contains(L("ask.sidePanel.files.drop")) })
+    }
+
+    @Test func newTabsOfferTheConversationsFilesAndRecentItems() async throws {
+        let name = "AskSidePanelRenderTests." + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let browser = AskBrowserWorkspace(policy: AskBrowserSitePolicy(defaults: defaults), dataStore: .nonPersistent())
+        defer { browser.tabs.forEach { browser.close($0) } }
+        let url = try #require(URL(string: "https://example.com/pricing"))
+        var opened: [AskSidePanelRecent] = []
+        var showedFiles = 0
+        let shortcuts = AskBrowserStartShortcuts(
+            showFiles: { showedFiles += 1 },
+            recents: [.file(.init(root: "/workspace", relativePath: "outputs/report.html"), conversationId: "c1"),
+                      .web(url)],
+            openRecent: { opened.append($0) }
+        )
+        let labels = try await render(AskBrowserStartPage(workspace: browser, tab: nil, shortcuts: shortcuts),
+                                      name: "side-panel-new-tab")
+        #expect(labels.contains { $0.contains(L("ask.sidePanel.start.files")) })
+        #expect(labels.contains { $0.contains(L("ask.sidePanel.start.recent")) })
+        #expect(labels.contains { $0.contains("report.html") })
+        #expect(labels.contains { $0.contains("example.com") })
+
+        // A private tab never lists what other tabs opened.
+        let tab = try browser.newTab(isPrivate: true)
+        let privateLabels = try await render(AskBrowserStartPage(workspace: browser, tab: tab, shortcuts: shortcuts),
+                                             name: "side-panel-new-private-tab")
+        #expect(!privateLabels.contains { $0.contains("report.html") })
+        #expect(opened.isEmpty && showedFiles == 0)
+
+        // In the panel, a new web tab's start page carries the panel's shortcuts.
+        let panel = AskSidePanel(browser: browser)
+        let file = try panel.open(.init(root: "/workspace", relativePath: "outputs/report.html"), conversationId: "c1")
+        panel.close(.file(file.id))
+        try panel.newWebTab()
+        let view = AskSidePanelView(panel: panel, context: AskSidePanelContext(conversationId: "c1"), close: {})
+        let inPanel = try await render(view, name: "side-panel-start-page")
+        #expect(inPanel.contains { $0.contains(L("ask.sidePanel.start.files")) })
+        #expect(inPanel.contains { $0.contains("report.html") })
+    }
+}

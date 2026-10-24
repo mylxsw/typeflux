@@ -46,19 +46,31 @@ extension AskConversationWorkspaceStore {
     func addFiles(_ sources: [URL], owner: String, conversationId: String) throws -> [String] {
         let root = try ensure(owner: owner, conversationId: conversationId)
         let inputs = try AskSecureDirectory.openRoot(root).child("inputs", create: true, privateDirectory: true).url
-        var added: [FileRecord] = []
+        // Check every file before copying any, so a folder or an oversized file in a drop
+        // never leaves earlier copies behind without records.
         for source in sources {
             var isDirectory: ObjCBool = false
             guard FileManager.default.fileExists(atPath: source.path, isDirectory: &isDirectory),
                   !isDirectory.boolValue else { throw CocoaError(.fileNoSuchFile) }
-            let bytes = try Data(contentsOf: source, options: .mappedIfSafe)
-            guard bytes.count <= Self.addedFileLimit else { throw CocoaError(.fileReadTooLarge) }
-            let prefix = String(AskToolPolicy.digest(UUID().uuidString).dropFirst(7).prefix(16))
-            let key = String(AskToolPolicy.digest(source.path).dropFirst(7).prefix(16))
-            let name = prefix + "-" + key + "-" + Self.addedName(source.lastPathComponent)
-            try bytes.write(to: inputs.appendingPathComponent(name), options: .withoutOverwriting)
-            added.append(.init(path: "inputs/" + name, source: "user_added", messageId: nil,
-                               originalPath: source.path, byteSize: bytes.count))
+            let size = (try? source.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
+            guard size <= Self.addedFileLimit else { throw CocoaError(.fileReadTooLarge) }
+        }
+        var added: [FileRecord] = []
+        do {
+            for source in sources {
+                let bytes = try Data(contentsOf: source, options: .mappedIfSafe)
+                guard bytes.count <= Self.addedFileLimit else { throw CocoaError(.fileReadTooLarge) }
+                let prefix = String(AskToolPolicy.digest(UUID().uuidString).dropFirst(7).prefix(16))
+                let key = String(AskToolPolicy.digest(source.path).dropFirst(7).prefix(16))
+                let name = prefix + "-" + key + "-" + Self.addedName(source.lastPathComponent)
+                try bytes.write(to: inputs.appendingPathComponent(name), options: .withoutOverwriting)
+                added.append(.init(path: "inputs/" + name, source: "user_added", messageId: nil,
+                                   originalPath: source.path, byteSize: bytes.count))
+            }
+        } catch {
+            // Files copied before the failure stay listed with their records.
+            try? appendRecords(added, root: root)
+            throw error
         }
         try appendRecords(added, root: root)
         return added.compactMap(\.path)
