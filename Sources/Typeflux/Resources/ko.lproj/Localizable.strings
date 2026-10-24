@@ -803,22 +803,14 @@
 "settings.personaAppBindings.picker.runningBadge" = "실행 중";
 
 "settings.shortcuts.activation.title" = "음성 입력";
-"settings.shortcuts.activation.subtitle" = "하나의 단축키를 사용하여 음성 입력을 시작하세요. 길게 눌러 말하거나 빠르게 탭하여 녹음 세션을 잠급니다. 텍스트를 선택하면 스크립트가 해당 선택 항목을 직접 대체합니다.";
-"settings.shortcuts.activation.footnote" = "";
 "settings.shortcuts.ask.title" = "대화";
-"settings.shortcuts.ask.subtitle" = "Fn을 두 번 누르면 녹음이 시작되고 무엇이든 물어볼 수 있습니다. 답변이 팝업으로 나타납니다. 텍스트를 선택한 경우 명시적 편집 요청을 통해 직접 다시 작성할 수도 있습니다.";
-"settings.shortcuts.ask.footnote" = "";
 "settings.shortcuts.launcherPosition.title" = "런처 열기 위치";
 "settings.shortcuts.launcherPosition.center" = "항상 가운데";
 "settings.shortcuts.launcherPosition.last" = "마지막 위치 기억";
 "settings.shortcuts.launcherPosition.center.subtitle" = "포인터가 있는 화면 가운데에 열립니다. 드래그는 이번에만 적용됩니다.";
 "settings.shortcuts.launcherPosition.last.subtitle" = "그 화면에서 마지막으로 둔 위치에 열립니다. 위쪽 가장자리나 빈 곳을 드래그해 옮기세요.";
 "settings.shortcuts.persona.title" = "페르소나 스위처";
-"settings.shortcuts.persona.subtitle" = "중앙 선택 도구를 엽니다. 선택한 텍스트를 사용하면 해당 선택 항목에 페르소나를 직접 적용할 수도 있습니다.";
-"settings.shortcuts.persona.footnote" = "";
 "settings.shortcuts.history.title" = "기록";
-"settings.shortcuts.history.subtitle" = "어디서든 기록 섹션을 즉시 엽니다.";
-"settings.shortcuts.history.footnote" = "";
 "settings.advanced.personaHotkeyApply.title" = "선택한 텍스트에 페르소나 적용";
 "settings.advanced.personaHotkeyApply.subtitle" = "활성화되면 페르소나 단축키는 선택한 텍스트를 먼저 확인하고 기본 페르소나만 전환하는 대신 선택기를 사용하여 해당 선택 항목을 다시 작성합니다.";
 "settings.shortcuts.recording" = "새 바로가기 녹음";

@@ -4,7 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Typeflux** is a macOS menu bar voice input app (Swift, macOS 13+). It implements a "hold to talk, release to insert" workflow: hotkey → record audio → transcribe → inject text into the focused app. It also supports voice-driven text rewriting via LLM.
+**Typeflux** is the open-source AI layer for the Mac (Swift, macOS 13+, menu bar app). One app, reached by a few global shortcuts:
+
+- **Launcher** (`Ask/AskLauncher*`, plugins in `Ask/QuickResults/Plugins/`) — apps, files and file contents, commands, instant results, built-in tools (translation, calendar, system monitor, notes, …) and user workflows behind keywords
+- **AI agent / Chat** (`Ask/`, `LLM/Agent/`, `LLM/MCP/`) — conversations with local tools (files, commands, browser, computer use), skills and MCP
+- **Voice input** (`Workflow/`, `STT/`, `TextInjection/`) — "hold to talk, release to insert": hotkey → record audio → transcribe → optional LLM rewrite → inject text into the focused app
+- **Ring** (`Ring/`) — radial action menu at the pointer
+- **Screenshots and recording** (`Screenshot/`, `TypefluxMedia*`) and **clipboard history** (`Clipboard/`)
+
+The iOS Chat client is in `Apps/iOS`. The sections below cover the voice input pipeline in most detail.
 
 ## Commands
 
@@ -76,7 +84,9 @@ make format
 - `MultimodalLLMTranscriber` — vision-capable LLM for transcription
 - `AliCloudRealtimeTranscriber`, `DoubaoRealtimeTranscriber` — realtime streaming ASR
 - `FreeSTTTranscriber` — free model transcription
-- `Qwen3ASRTranscriber`, `SenseVoiceTranscriber` — additional model implementations
+- `Qwen3ASRTranscriber`, `SenseVoiceTranscriber`, `FunASRTranscriber` — additional on-device model implementations
+- `SonioxTranscriber` — Soniox realtime ASR
+- `TypefluxOfficialTranscriber` — Typeflux Cloud ASR through the realtime-asr gateway
 
 `LiveTranscriptionPreviewer` handles streaming preview display during recording.
 

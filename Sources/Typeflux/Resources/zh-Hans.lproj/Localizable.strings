@@ -812,22 +812,14 @@
 "settings.personaAppBindings.picker.runningBadge" = "运行中";
 
 "settings.shortcuts.activation.title" = "语音输入";
-"settings.shortcuts.activation.subtitle" = "使用一个快捷键开始语音输入。可按住说话，也可快速轻触后锁定录音。若当前已有选区，识别结果会直接覆盖该选区。";
-"settings.shortcuts.activation.footnote" = "";
 "settings.shortcuts.ask.title" = "对话";
-"settings.shortcuts.ask.subtitle" = "连按两次 Fn 即可开始录音提问，回答会在弹窗中展示。若有选中文字，明确的编辑请求也可以直接改写选区。";
-"settings.shortcuts.ask.footnote" = "";
 "settings.shortcuts.launcherPosition.title" = "启动器打开位置";
 "settings.shortcuts.launcherPosition.center" = "始终居中";
 "settings.shortcuts.launcherPosition.last" = "记住上次位置";
 "settings.shortcuts.launcherPosition.center.subtitle" = "在鼠标所在屏幕的正中打开。拖动只影响这一次。";
 "settings.shortcuts.launcherPosition.last.subtitle" = "在这块屏幕上次放下的位置打开。拖动顶部边缘或空白处即可移动。";
 "settings.shortcuts.persona.title" = "人设切换器";
-"settings.shortcuts.persona.subtitle" = "打开居中选择器；如果当前存在选中文本，也可以直接将所选人设应用到这段文本。";
-"settings.shortcuts.persona.footnote" = "";
 "settings.shortcuts.history.title" = "历史记录";
-"settings.shortcuts.history.subtitle" = "在任何地方立即打开历史记录页面。";
-"settings.shortcuts.history.footnote" = "";
 "settings.advanced.personaHotkeyApply.title" = "将人设应用到选中文本";
 "settings.advanced.personaHotkeyApply.subtitle" = "开启后，人设快捷键会先检查是否有选中文本；如果有，就用所选人设直接改写该文本，而不只是切换默认人设。";
 "settings.shortcuts.recording" = "正在录制新的快捷键";
