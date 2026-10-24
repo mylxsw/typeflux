@@ -1,11 +1,58 @@
 import AppKit
 import SwiftUI
 import Testing
+import WebKit
 @testable import Typeflux
 
 @Suite("Ask sidebar and folder controls", .serialized, .exclusiveUIState)
 @MainActor
 struct AskSidebarControlsTests {
+    @Test(arguments: [CGFloat(440), 960], [(false, InterfaceStyle.liquidGlass), (true, .liquidGlass),
+                                         (false, .classic), (true, .classic)])
+    func usageRequiresAConversationBeforeAndAfterOpeningFiles(width: CGFloat,
+                                                            configuration: (Bool, InterfaceStyle)) async throws {
+        let (hasConversation, style) = configuration
+        let suite = "sidebar-usage-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(true, forKey: "ask.sidebarCollapsed")
+        let fixture = try AskTestFixture(defaults: defaults)
+        defer { fixture.model.resetSession() }
+        fixture.tools.browserWorkspace = AskBrowserWorkspace(policy: AskBrowserSitePolicy(defaults: defaults),
+                                                            dataStore: .nonPersistent())
+        if hasConversation {
+            await fixture.api.seed(.init(id: "usage-chat", title: "Existing chat", revision: 1,
+                                        updatedAt: Date(), messages: []))
+            await fixture.model.select("usage-chat")
+        }
+        let window = host(AskConversationView(model: fixture.model)
+            .defaultAppStorage(defaults)
+            .environment(\.interfaceStyle, style)
+            .environment(\.askGlassMaterialOverride, .opaque),
+                          dark: true, size: CGSize(width: width, height: 720))
+        defer { window.close() }
+        try await settle(window)
+        #expect((find("ask.workspace.usage", in: window) != nil) == hasConversation)
+        let toggle = try #require(find("ask.workspace.sidePanel", in: window))
+        _ = toggle.perform(NSSelectorFromString("accessibilityPerformPress"))
+        try await Task.sleep(for: .milliseconds(300))
+        try await settle(window)
+        #expect(find("ask.sidePanel.filesTab", in: window) != nil)
+        if width >= AskWorkspaceLayout.minimumDockedContentWidth + AskWorkspaceLayout.minimumDockedPanelWidth {
+            // Opening Files changes the wide header into the compact header at this width.
+            #expect(find("ask.workspace.sidePanel", in: window) != nil)
+            #expect((find("ask.workspace.usage", in: window) != nil) == hasConversation)
+        }
+        try snapshot(window, name: "usage-files-\(Int(width))-\(hasConversation)-\(style.rawValue)")
+        let close = try #require(find("ask.workspace.drawer.close", in: window))
+        _ = close.perform(NSSelectorFromString("accessibilityPerformPress"))
+        try await Task.sleep(for: .milliseconds(300))
+        try await settle(window)
+        #expect(find("ask.sidePanel", in: window) == nil)
+        #expect(find("ask.workspace.sidePanel", in: window) != nil)
+        #expect((find("ask.workspace.usage", in: window) != nil) == hasConversation)
+    }
+
     @Test(arguments: [false, true])
     func titleBarOmitsSavedDraftMenu(collapsed: Bool) async throws {
         let defaults = try #require(UserDefaults(suiteName: "sidebar-drafts-" + UUID().uuidString))

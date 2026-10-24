@@ -953,8 +953,10 @@ struct AskConversationView: View {
                     .lineLimit(1)
                     .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
             }
-            headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
-                .accessibilityIdentifier("ask.workspace.usage")
+            if model.selectedId != nil {
+                headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
+                    .accessibilityIdentifier("ask.workspace.usage")
+            }
             sidePanelButton()
         }
         .padding(.leading, AskMetrics.trafficLightInset + AskMetrics.titleBarButtonWidth * 2 + 18)
