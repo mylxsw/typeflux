@@ -43,8 +43,7 @@ struct AskFilesTabView: View {
                 .padding(.horizontal, 10)
                 .frame(height: 28)
                 .background(AskTheme.controlSurface, in: Capsule())
-                layoutButton("list.bullet", grid: false)
-                layoutButton("square.grid.2x2", grid: true)
+                layoutButton
                 Button(action: context.refreshFiles) {
                     Image(systemName: "arrow.clockwise").font(.system(size: 12))
                         .foregroundStyle(StudioTheme.textSecondary)
@@ -91,17 +90,18 @@ struct AskFilesTabView: View {
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
-    private func layoutButton(_ symbol: String, grid: Bool) -> some View {
-        Button { showsGrid = grid } label: {
-            Image(systemName: symbol).font(.system(size: 12))
-                .foregroundStyle(showsGrid == grid ? AskTheme.accent : StudioTheme.textSecondary)
+    private var layoutButton: some View {
+        Button { showsGrid.toggle() } label: {
+            Image(systemName: showsGrid ? "square.grid.2x2" : "list.bullet").font(.system(size: 12))
+                .foregroundStyle(StudioTheme.textSecondary)
                 .frame(width: 26, height: 26)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(L(grid ? "ask.sidePanel.files.grid" : "ask.sidePanel.files.list"))
-        .accessibilityLabel(L(grid ? "ask.sidePanel.files.grid" : "ask.sidePanel.files.list"))
-        .accessibilityAddTraits(showsGrid == grid ? .isSelected : [])
+        .help(L(showsGrid ? "ask.sidePanel.files.list" : "ask.sidePanel.files.grid"))
+        .accessibilityLabel(L(showsGrid ? "ask.sidePanel.files.list" : "ask.sidePanel.files.grid"))
+        .accessibilityValue(L(showsGrid ? "ask.sidePanel.files.grid" : "ask.sidePanel.files.list"))
+        .accessibilityIdentifier("ask.sidePanel.files.layout")
     }
 
     static func title(_ origin: AskWorkspaceFile.Origin) -> String {
@@ -226,6 +226,7 @@ struct AskFilesTabView: View {
             .accessibilityIdentifier("ask.sidePanel.files.add")
         }
         .buttonStyle(.borderless)
+        .tint(StudioTheme.textSecondary)
         .font(.system(size: 12))
         .padding(.horizontal, 12)
         .frame(height: 36)

@@ -1038,7 +1038,8 @@ struct AskConversationView: View {
     @ViewBuilder private func sidePanelButton(showsInteriorFill: Bool = true) -> some View {
         if sidePanelAvailable {
             AskHeaderIconButton(symbol: "sidebar.right", label: L("ask.sidePanel.toggle"), shortcut: "⌘⇧B",
-                                active: showsSidePanelView, showsInteriorFill: showsInteriorFill) {
+                                active: showsSidePanelView, showsInteriorFill: showsInteriorFill,
+                                activeTint: StudioTheme.textPrimary) {
                 setSidePanel(!showsSidePanelView)
             }
                 .keyboardShortcut("b", modifiers: [.command, .shift])
