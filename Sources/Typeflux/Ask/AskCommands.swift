@@ -2,7 +2,7 @@ import AppKit
 
 /// What a slash command does once it is chosen.
 enum AskCommandAction: Equatable, Hashable, Sendable {
-    case newConversation, search, regenerate, copyAnswer
+    case newConversation, search, regenerate, copyAnswer, uploadConversation
     case model, reasoning, localMode, temporaryMode, permissionMode, chatMode, workMode
     case attachFiles, attachFolder, screenshot, selection, memory, remember
     /// One of the launcher's starting points, by `AskSuggestion.key`.
@@ -82,6 +82,9 @@ struct AskCommandContext: Equatable, Sendable {
     var reasoningLevels: [AskReasoningEffort] = AskReasoningEffort.defaultLevels
     /// The conversation is kept on this Mac.
     var localMode = false
+    /// Only an existing, non-temporary conversation kept on this Mac can be synchronized.
+    var hasLocalConversation = false
+    var uploadUnavailable: String?
     /// Why the conversation's storage cannot change, e.g. it has already started.
     var storageLocked: String?
     /// The question starts, or the conversation is, a temporary conversation.
@@ -153,6 +156,13 @@ enum AskCommandCatalog {
                        kind: .submenu, disabledReason: busy,
                        trailing: context.models.first { $0.reference == context.currentModel }?.name, aliases: ["moxing", "switch"])
         ]
+        if !context.launcher, context.hasLocalConversation, !context.temporaryMode {
+            result.insert(AskCommand(action: .uploadConversation, name: "sync", title: L("ask.upload.action"),
+                                     detail: L("ask.upload.help"), symbol: "icloud.and.arrow.up", group: .conversation,
+                                     disabledReason: context.uploadUnavailable ?? busy,
+                                     aliases: ["cloud", "tongbu", "shangchuan"]),
+                          at: result.firstIndex { $0.group == .model } ?? result.endIndex)
+        }
         if context.reasoningAvailable {
             result.append(AskCommand(action: .reasoning, name: "think", title: L("ask.command.think"), symbol: "sparkles",
                                      group: .model, kind: .submenu, disabledReason: busy, trailing: context.reasoning.label,

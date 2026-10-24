@@ -132,7 +132,7 @@ struct AskConversationStorageTests {
         #expect(fixture.model.conversations.count == 55)
     }
 
-    @Test func theWorkspaceMarksPrivateConversations() async throws {
+    @Test func theWorkspaceOmitsPrivateConversationMarks() async throws {
         let (fixture, _) = try fixture()
         await fixture.api.seed(summary("a", 30))
         await fixture.localAPI.seed(summary("p", 20))
@@ -147,7 +147,7 @@ struct AskConversationStorageTests {
             for size in [NSSize(width: 1000, height: 760), NSSize(width: 440, height: 320)] {
                 try await host.resize(to: size)
                 try host.assertComposer(text: "Keep this draft private")
-                try host.assertVisible(label: L("ask.storage.local"))
+                host.assertNoStorageMarks()
                 #expect(fixture.model.storesLocally(launcher: false))
                 #expect(fixture.model.selectedId == (newConversation ? nil : "p"))
             }
@@ -253,8 +253,9 @@ struct AskConversationStorageTests {
         #expect(fixture.model.error == nil)
     }
 
-    @Test func signedOutEverythingStaysOnThisMac() throws {
+    @Test func signedOutEverythingStaysOnThisMac() async throws {
         let fixture = try AskTestFixture(localOnly: true)
+        defer { fixture.model.resetSession() }
         #expect(!fixture.model.isSignedIn)
         #expect(fixture.model.storesLocally(launcher: false))
         #expect(fixture.model.storesLocally(launcher: true))
@@ -266,6 +267,16 @@ struct AskConversationStorageTests {
         let context = fixture.model.commandContext(launcher: false)
         #expect(context.localMode)
         #expect(context.storageLocked == L("ask.storage.signedOut"))
+        #expect(!context.hasLocalConversation)
+        await fixture.api.seed(summary("signed-out", 0))
+        await fixture.model.select("signed-out")
+        let sync = try #require(AskCommandCatalog.commands(fixture.model.commandContext(launcher: false))
+            .first { $0.name == "sync" })
+        #expect(sync.disabledReason == L("ask.storage.signedOut"))
+        var confirmations = 0
+        fixture.model.uploadConfirmation = { confirmations += 1; return true }
+        fixture.model.runCommand(sync, launcher: false)
+        #expect(confirmations == 0)
     }
 
     @Test func theLocalCommandIsLockedOnceAConversationStarted() async throws {
@@ -402,6 +413,13 @@ final class AskStorageViewportTestHost {
     func assertVisible(label: String) throws {
         #expect(accessibleFrames(key: "accessibilityLabel", value: label).contains(where: isVisible),
                 "Missing visible storage state: \(label)")
+    }
+
+    func assertNoStorageMarks() {
+        for identifier in ["ask.workspace.storageMark", "ask.workspace.local", "ask.history.localMark"] {
+            #expect(accessibleFrames(key: "accessibilityIdentifier", value: identifier).isEmpty,
+                    "Local conversations must not display a storage mark: \(identifier)")
+        }
     }
 
     private func isVisible(_ frame: NSRect) -> Bool {

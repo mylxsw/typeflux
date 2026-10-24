@@ -137,20 +137,46 @@ struct AskChatWorkPhase2Tests {
 
     @Test func `the window uploads a private conversation after confirming`() async throws {
         let f = try AskTestFixture()
+        defer { f.model.resetSession() }
         f.model.newConversation(storesLocally: true)
         f.model.draft.text = "Keep this private for now"
         f.model.submitDraft()
         try await f.wait { f.model.busyIds.isEmpty && f.model.selected?.run?.status == "completed" }
         let id = try #require(f.model.selectedId)
         #expect(f.model.isLocal(id) && f.model.canUploadSelected)
+        let command = try #require(AskCommandCatalog.commands(f.model.commandContext(launcher: false))
+            .first { $0.name == "sync" })
+        #expect(command.enabled && command.action == .uploadConversation)
+        #expect(!AskCommandCatalog.commands(f.model.commandContext(launcher: true)).contains { $0.name == "sync" })
+        var confirmations = 0
+        f.model.uploadConfirmation = { confirmations += 1; return true }
+        f.model.runCommand(command, launcher: true)
+        #expect(confirmations == 0)
+        var active = try #require(f.model.selected)
+        let route = try #require(f.model.credentials(for: id))
+        active.revision += 1
+        active.run?.id = "sync-blocking-run"
+        active.run?.status = "running"
+        try await f.model.accept(active, route: route)
+        #expect(AskCommandCatalog.commands(f.model.commandContext(launcher: false))
+            .first { $0.name == "sync" }?.enabled == false)
+        f.model.runCommand(command, launcher: false)
+        #expect(confirmations == 0, "A stale command cannot upload an active conversation")
+        active.revision += 1
+        active.run?.status = "completed"
+        try await f.model.accept(active, route: route)
         f.model.uploadConfirmation = { false }
-        f.model.confirmUploadSelected()
+        f.model.runCommand(command, launcher: false)
         #expect(await f.api.imports.isEmpty, "declining uploads nothing")
-        await f.model.uploadSelected()
+        #expect(f.model.isLocal(id))
+        f.model.uploadConfirmation = { true }
+        f.model.runCommand(command, launcher: false)
+        try await f.wait { !f.model.isLocal(id) && !f.model.isBusy }
         #expect(await f.api.imports == [id])
         #expect(!f.model.isLocal(id))
         #expect(!f.model.canUploadSelected, "a synchronized conversation has nothing to upload")
         #expect(f.model.commandFeedback == L("ask.upload.done"))
+        #expect(!AskCommandCatalog.commands(f.model.commandContext(launcher: false)).contains { $0.name == "sync" })
     }
 
     // MARK: - Cloud models in conversations kept on this Mac

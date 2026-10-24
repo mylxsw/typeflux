@@ -55,6 +55,11 @@ extension AskConversationModel {
         context.reasoningAvailable = !context.reasoningLevels.isEmpty
         context.reasoning = displayedReasoningEffort(launcher: launcher)
         context.localMode = storesLocally(launcher: launcher)
+        if !launcher, let id = selectedId, isLocal(id), !isTemporary(id) {
+            context.hasLocalConversation = true
+            context.uploadUnavailable = !isSignedIn ? L("ask.storage.signedOut")
+                : canUploadSelected ? nil : L("ask.command.disabled.busy")
+        }
         context.storageLocked = canChangeStorage(launcher: launcher) ? nil
             : L(isSignedIn ? "ask.storage.locked" : "ask.storage.signedOut")
         context.temporaryMode = isTemporaryComposer(launcher: launcher)
@@ -103,6 +108,9 @@ extension AskConversationModel {
                 commandSources.copy(answer.text)
                 confirm(L("ask.command.copied"))
             }
+        case .uploadConversation:
+            guard !launcher else { return }
+            confirmUploadSelected()
         case .pickPermissionMode(let mode):
             setPermissionMode(mode, launcher: launcher)
         case .model, .reasoning, .permissionMode:

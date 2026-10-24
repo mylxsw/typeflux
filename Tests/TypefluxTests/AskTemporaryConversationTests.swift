@@ -352,6 +352,8 @@ struct AskTemporaryConversationTests {
         _ = try await startTemporary(fixture)
         let locked = fixture.model.commandContext(launcher: false)
         #expect(locked.temporaryMode)
+        #expect(!locked.hasLocalConversation)
+        #expect(!AskCommandCatalog.commands(locked).contains { $0.name == "sync" })
         #expect(locked.temporaryLocked == L("ask.storage.locked"))
         fixture.model.runCommand(command, launcher: false)
         #expect(fixture.model.isTemporaryComposer(launcher: false))

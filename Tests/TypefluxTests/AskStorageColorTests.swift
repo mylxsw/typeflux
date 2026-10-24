@@ -95,7 +95,7 @@ struct AskStorageColorTests {
     @Test func onlyAStorageThatNeedsTellingApartIsMarked() {
         #expect(AskStorageKind.marked(.cloud, signedIn: true) == nil)
         #expect(AskStorageKind.marked(.cloud, signedIn: false) == nil)
-        #expect(AskStorageKind.marked(.local, signedIn: true) == .local)
+        #expect(AskStorageKind.marked(.local, signedIn: true) == nil)
         #expect(AskStorageKind.marked(.local, signedIn: false) == nil, "signed out every chat is on this Mac")
         #expect(AskStorageKind.marked(.temporary, signedIn: true) == .temporary)
         #expect(AskStorageKind.marked(.temporary, signedIn: false) == .temporary)
@@ -106,7 +106,7 @@ struct AskStorageColorTests {
         defer { signedIn.model.resetSession() }
         #expect(signedIn.model.markedStorage(launcher: false) == nil)
         signedIn.model.chooseStorage(.local, launcher: false)
-        #expect(signedIn.model.markedStorage(launcher: false) == .local)
+        #expect(signedIn.model.markedStorage(launcher: false) == nil)
         signedIn.model.chooseStorage(.temporary, launcher: false)
         #expect(signedIn.model.markedStorage(launcher: false) == .temporary)
 
@@ -149,31 +149,8 @@ struct AskStorageColorTests {
 
     // MARK: - Surfaces
 
-    @Test func theLocalMarksRender() throws {
-        let f = try fixture()
-        defer { f.model.resetSession() }
-        f.model.chooseStorage(.local, launcher: false)
-        let chip = fits(AskLocalChip(model: f.model))
-        let iconOnly = fits(AskLocalChip(model: f.model, showsTitle: false))
-        #expect(chip.height > 20 && chip.width > iconOnly.width)
-        for kind in AskStorageKind.allCases {
-            #expect(fits(AskStorageTitleGlyph(kind: kind)).width > 0)
-        }
-        #expect(AskLocalChip.edgeOpacity < AskTheme.temporaryEdgeOpacity, "a kept chat's edge is quieter")
-    }
-
-    private struct Row: View {
-        var local: Bool
-        @Namespace private var selection
-        var body: some View {
-            AskHistoryRow(title: "A", updatedAt: Date(), selected: false, busy: false, local: local,
-                          selectionSpace: selection, onSelect: {}, onDelete: {})
-                .fixedSize()
-        }
-    }
-
-    @Test func aMixedHistoryMarksLocalRowsWithANeutralLock() {
-        #expect(fits(Row(local: true)).width > fits(Row(local: false)).width)
+    @Test func theTemporaryTitleMarkStillRenders() {
+        #expect(fits(AskStorageTitleGlyph(kind: .temporary)).width > 0)
     }
 
     // MARK: - Snapshots

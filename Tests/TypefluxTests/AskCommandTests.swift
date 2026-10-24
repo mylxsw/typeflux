@@ -69,6 +69,27 @@ struct AskSlashQueryTests {
 
 @Suite("Ask command catalog", .exclusiveUIState)
 struct AskCommandCatalogTests {
+    @Test func syncIsOnlyOfferedForAnExistingLocalConversation() throws {
+        var value = AskCommandContext()
+        #expect(command("sync", in: value) == nil)
+        value.hasLocalConversation = true
+        let sync = try #require(command("sync", in: value))
+        #expect(sync.action == .uploadConversation && sync.enabled)
+        #expect(sync.group == .conversation)
+        #expect(sync.title == L("ask.upload.action"))
+        #expect(AskCommandMatcher.filter(AskCommandCatalog.commands(value), query: "sync").first?.command == sync)
+        value.busy = true
+        #expect(command("sync", in: value)?.enabled == false)
+        value.busy = false
+        value.uploadUnavailable = L("ask.storage.signedOut")
+        #expect(command("sync", in: value)?.disabledReason == L("ask.storage.signedOut"))
+        value.launcher = true
+        #expect(command("sync", in: value) == nil)
+        value.launcher = false
+        value.temporaryMode = true
+        #expect(command("sync", in: value) == nil)
+    }
+
     private var context: AskCommandContext {
         var context = AskCommandContext()
         context.models = [.init(reference: "cloud:a", name: "Model A", vision: true), .init(reference: "custom:b", name: "Model B", vision: false)]

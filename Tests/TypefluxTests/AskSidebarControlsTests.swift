@@ -7,6 +7,44 @@ import WebKit
 @Suite("Ask sidebar and folder controls", .serialized, .exclusiveUIState)
 @MainActor
 struct AskSidebarControlsTests {
+    @Test(arguments: [CGFloat(440), 1100], [InterfaceStyle.liquidGlass, .classic])
+    func localConversationsOmitStorageMarks(width: CGFloat, style: InterfaceStyle) async throws {
+        let suite = "sidebar-local-marks-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(false, forKey: "ask.sidebarCollapsed")
+        let fixture = try AskTestFixture(defaults: defaults)
+        defer { fixture.model.resetSession() }
+        await fixture.api.seed(.init(id: "synced", title: "Synced chat", revision: 1,
+                                    updatedAt: Date(), messages: [], kind: "chat"))
+        await fixture.localAPI.seed(.init(id: "local", title: "My task", revision: 1,
+                                         updatedAt: Date(), messages: [], kind: "work"))
+        await fixture.model.refreshHistory()
+        await fixture.model.select("local")
+        #expect(fixture.model.isLocal("local"))
+        let window = host(AskConversationView(model: fixture.model).defaultAppStorage(defaults)
+            .environment(\.interfaceStyle, style).environment(\.askGlassMaterialOverride, .opaque),
+                          dark: true, size: CGSize(width: width, height: 720))
+        defer { window.close() }
+        try await settle(window)
+        #expect(find("ask.workspace.storageMark", in: window) == nil)
+        #expect(find("ask.workspace.local", in: window) == nil)
+        #expect(AskCommandCatalog.commands(fixture.model.commandContext(launcher: false))
+            .contains { $0.name == "sync" && $0.enabled })
+        if width < AskMetrics.sidebarWidth + AskWorkspaceLayout.comfortableContentWidth {
+            let toggle = try #require(find("ask.workspace.sidebar", in: window))
+            _ = toggle.perform(NSSelectorFromString("accessibilityPerformPress"))
+            try await Task.sleep(for: .milliseconds(300))
+            try await settle(window)
+        }
+        let row = try #require(find("ask.history.row.local", in: window))
+        #expect(find("ask.history.row.synced", in: window) != nil)
+        #expect(find("ask.history.localMark", in: window) == nil)
+        let label = row.value(forKey: "accessibilityLabel") as? String ?? ""
+        #expect(label.contains(L(AskConversationKind.work.titleKey)), "The task mark remains in the row label: \(label)")
+        try snapshot(window, name: "local-no-marks-\(Int(width))-\(style.rawValue)")
+    }
+
     @Test(arguments: [CGFloat(440), 960], [(false, InterfaceStyle.liquidGlass), (true, .liquidGlass),
                                          (false, .classic), (true, .classic)])
     func usageRequiresAConversationBeforeAndAfterOpeningFiles(width: CGFloat,

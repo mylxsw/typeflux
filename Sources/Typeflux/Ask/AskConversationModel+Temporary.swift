@@ -30,13 +30,11 @@ enum AskStorageKind: Equatable, CaseIterable, Sendable {
 
     var detailKey: String { titleKey + ".detail" }
 
-    /// The kind the window marks in colour, or nil when nothing needs telling apart:
-    /// Cloud is the quiet default, and signed out every conversation is on this Mac.
-    static func marked(_ kind: AskStorageKind, signedIn: Bool) -> AskStorageKind? {
+    /// Only temporary conversations need a visible storage mark.
+    static func marked(_ kind: AskStorageKind, signedIn _: Bool) -> AskStorageKind? {
         switch kind {
         case .temporary: .temporary
-        case .local: signedIn ? .local : nil
-        case .cloud: nil
+        case .local, .cloud: nil
         }
     }
 }

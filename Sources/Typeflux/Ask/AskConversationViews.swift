@@ -707,9 +707,6 @@ struct AskConversationView: View {
         }
     }
 
-    /// Local rows need a storage mark only while signed in, alongside Cloud history.
-    private var marksLocalHistory: Bool { model.isSignedIn && !model.localConversationIds.isEmpty }
-
     private var visibleConversations: [AskConversationSummary] {
         let stored = historyFilter.apply(model.conversations, isLocal: model.isLocal)
         return stored.filtered(kind: historyKind)
@@ -847,7 +844,6 @@ struct AskConversationView: View {
             updatedAt: item.updatedAt,
             selected: model.selectedId == item.id,
             busy: model.busyIds.contains(item.id),
-            local: marksLocalHistory && model.isLocal(item.id),
             work: item.resolvedKind == .work,
             host: model.hostElsewhere(item),
             selectionSpace: selectionSpace,
@@ -936,8 +932,7 @@ struct AskConversationView: View {
     /// Keep the essential actions in one row; the title yields before controls do.
     private var compactHeader: some View {
         HStack(spacing: 4) {
-            // The composer no longer carries a storage icon, so the narrow header marks a
-            // conversation kept on this Mac or a temporary one, as the wide title does.
+            // Temporary conversations retain their mark in both header layouts.
             if let marked = model.markedStorage(launcher: false) {
                 AskStorageTitleGlyph(kind: marked).padding(.trailing, 2)
             }
@@ -999,8 +994,7 @@ struct AskConversationView: View {
             if model.selectedId != nil {
                 switch model.markedStorage(launcher: false) {
                 case .temporary: AskTemporaryChip(model: model, showsTitle: layout.mainWidth >= 760)
-                case .local: AskLocalChip(model: model, showsTitle: layout.mainWidth >= 760)
-                case .cloud, nil: EmptyView()
+                case .cloud, .local, nil: EmptyView()
                 }
             }
             if sidePanelAvailable {

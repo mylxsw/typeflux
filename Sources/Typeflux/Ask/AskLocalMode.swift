@@ -142,8 +142,6 @@ struct AskLocalModeCard: View {
     var onKeep: () -> Void = {}
     /// Ends the temporary conversation.
     var onEnd: () -> Void = {}
-    /// Uploads a started conversation kept on this Mac to Typeflux Cloud; nil hides it.
-    var onUpload: (() -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -195,12 +193,6 @@ struct AskLocalModeCard: View {
             } else if !status.changeable, !status.offersSignIn {
                 HStack {
                     Spacer(minLength: 0)
-                    if status.local, let onUpload {
-                        Button(L("ask.upload.action"), action: onUpload)
-                            .buttonStyle(AskCapsuleButtonStyle(kind: .primary))
-                            .help(L("ask.upload.help"))
-                            .accessibilityIdentifier("ask.storage.upload")
-                    }
                     Button(L(status.local ? "ask.storage.newCloud" : "ask.storage.newLocal"), action: onStartOther)
                         .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
                 }
@@ -335,9 +327,6 @@ private struct AskLocalModeMenu: ViewModifier {
             }, onEnd: {
                 isPresented = false
                 model.endTemporaryConversation()
-            }, onUpload: launcher || !model.canUploadSelected ? nil : {
-                isPresented = false
-                model.confirmUploadSelected()
             })
         }
     }
@@ -365,46 +354,7 @@ struct AskLocalModeIdentity: View {
     }
 }
 
-/// The header's mark for a conversation kept on this Mac while signed in, beside the
-/// title like the temporary chip but with a thin solid edge: the conversation is kept,
-/// only somewhere else. A click opens the storage card.
-struct AskLocalChip: View {
-    @ObservedObject var model: AskConversationModel
-    var showsTitle = true
-    @Environment(\.interfaceStyle) private var style
-    @State private var presented = false
-
-    static let edgeOpacity = 0.35
-
-    var body: some View {
-        Button { presented.toggle() } label: {
-            HStack(spacing: 5) {
-                Image(systemName: AskStorageKind.local.symbol)
-                if showsTitle { Text(L(AskStorageKind.local.titleKey)) }
-            }
-            .font(.system(size: 12.5, weight: .medium))
-            .foregroundStyle(AskTheme.privateTint)
-            .lineLimit(1)
-            .fixedSize()
-            .padding(.horizontal, style.usesGlass ? 12 : 9)
-            .frame(height: style.ask.headerChipHeight)
-            .background(AskTheme.privateHeaderFill, in: Capsule())
-            .overlay(Capsule().strokeBorder(AskTheme.privateTint.opacity(Self.edgeOpacity), lineWidth: 0.8))
-            .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .help(L(AskStorageKind.local.detailKey))
-        .accessibilityLabel(L(AskStorageKind.local.titleKey))
-        .accessibilityHint(L("ask.storage.help"))
-        .accessibilityIdentifier("ask.workspace.local")
-        .modifier(AskLocalModeMenu(isPresented: $presented,
-                                   status: .make(model: model, signedIn: model.isSignedIn),
-                                   model: model))
-    }
-}
-
-/// The glyph before a conversation's title in the header: a lock on this Mac, an
-/// hourglass for a temporary conversation, nothing for the Cloud default.
+/// The glyph before a temporary conversation's title in the header.
 struct AskStorageTitleGlyph: View {
     let kind: AskStorageKind
 
@@ -413,5 +363,6 @@ struct AskStorageTitleGlyph: View {
             .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(AskLocalModeCard.tint(kind))
             .accessibilityLabel(L(kind.titleKey))
+            .accessibilityIdentifier("ask.workspace.storageMark")
     }
 }
