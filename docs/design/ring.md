@@ -2,6 +2,8 @@
 
 > 状态：设计已确认（GUL-448），已实现。可交互设计稿：`docs/design/ring.html`。替换了鼠标语音输入。
 
+> GUL-470：设置页已改为 Ring Studio（在圆环上直接插入、操作库、即时编辑），见 `ring-studio.md`。
+
 ## 交互
 
 | 手势 | 结果 |
@@ -18,4 +20,4 @@
 - 快捷键：`AppHotkeyAction.ring`，由 `SystemHotkeyPool` 同时上报按下和松开；与其他快捷键共用冲突检查，也出现在「设置 → 快捷键」。首次运行时若 ⌃⌥Space 未被占用则自动设置，只设置一次。圆环关闭或没有操作时不注册。
 - 配置：`RingConfiguration`，存于 `ring.configuration.json`。最多 8 个操作；读取时跳过无法识别的操作。
 - 执行：`RingActionExecutor`。Typeflux 功能和启动器关键词交给 `AppCoordinator` 走与快捷键相同的入口，其余操作通过 `RingSystemEnvironment` 完成。网址只接受 http/https。
-- 设置页：`RingSettingsView`，遵循 `settings-search-unification.md`：说明放在悬停问号里，胶囊按钮，Sheet 底部 [取消][添加]，删除与恢复默认先确认。
+- 设置页：`RingSettingsView` = `RingStudioCanvas`（圆环画布）+ 检查器（`RingInspectorOverview` / `RingLibraryPanel` / `RingActionInspector`），可添加的操作由 `RingActionLibrary` 汇总。没有弹窗，改动即时保存；删除、更换、添加、排序、恢复默认可在撤销条里撤销。详见 `ring-studio.md`。

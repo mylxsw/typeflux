@@ -31,33 +31,87 @@ final class RingSettingsModelTests: XCTestCase {
         XCTAssertEqual(store.ringConfiguration.centerTitle, "A very lon")
     }
 
-    func testSaveAddsReplacesAndRespectsTheLimit() {
+    func testInsertPutsTheSliceWhereAskedAndRespectsTheLimit() {
         let model = RingSettingsModel(settingsStore: store)
-        let added = RingAction.feature(.notes)
-        model.save(added)
-        XCTAssertEqual(model.actions.last, added)
+        let notes = RingAction.feature(.notes)
+        XCTAssertTrue(model.insert(notes, at: 2))
+        XCTAssertEqual(model.actions[2], notes)
+        XCTAssertEqual(store.ringConfiguration.actions[2], notes, "saved at once")
+        XCTAssertFalse(model.insert(notes, at: 0), "an id already on the ring is not added twice")
 
-        var renamed = added
-        renamed.title = "Jot"
-        model.save(renamed)
-        XCTAssertEqual(model.actions.count, 7)
-        XCTAssertEqual(store.ringConfiguration.actions.last?.title, "Jot")
-
-        model.save(.feature(.wordBook))
-        model.save(.feature(.persona))
+        XCTAssertTrue(model.insert(.feature(.wordBook), at: -5))
+        XCTAssertEqual(model.actions.first?.kind, .feature(.wordBook), "a negative index inserts first")
+        XCTAssertFalse(model.insert(.feature(.persona), at: 99), "the ring is full at 8")
         XCTAssertEqual(model.actions.count, RingConfiguration.maxActions)
         XCTAssertFalse(model.actions.contains { $0.kind == .feature(.persona) })
+    }
+
+    func testInsertPastTheEndAppends() {
+        let model = RingSettingsModel(settingsStore: store)
+        let chat = RingAction.feature(.chat)
+        model.insert(chat, at: 42)
+        XCTAssertEqual(model.actions.last, chat)
+    }
+
+    func testEditChangesOneSliceWithoutUndo() throws {
+        let model = RingSettingsModel(settingsStore: store)
+        let first = try XCTUnwrap(model.actions.first)
+        model.edit(first.id) {
+            $0.title = "Talk"
+            $0.symbol = "star"
+        }
+        XCTAssertEqual(model.actions.first?.title, "Talk")
+        XCTAssertEqual(store.ringConfiguration.actions.first?.symbol, "star")
+        XCTAssertFalse(model.canUndo, "renaming and icons are not undo steps")
+        model.edit(UUID()) { $0.title = "Nobody" }
+        XCTAssertFalse(model.actions.contains { $0.title == "Nobody" })
+    }
+
+    func testReplaceKeepsThePlaceAndCustomNames() throws {
+        let model = RingSettingsModel(settingsStore: store)
+        let first = try XCTUnwrap(model.actions.first)
+        let darkMode = RingActionLibrary.item(for: RingSystemAction.darkMode)
+        model.replace(first.id, with: darkMode)
+        XCTAssertEqual(model.actions.first?.id, first.id)
+        XCTAssertEqual(model.actions.first?.kind, .system(.darkMode))
+        XCTAssertEqual(model.actions.first?.title, RingSystemAction.darkMode.title, "a default name follows")
+        XCTAssertEqual(model.actions.first?.symbol, RingSystemAction.darkMode.symbol)
+
+        model.edit(first.id) {
+            $0.title = "Night"
+            $0.symbol = "moon"
+        }
+        model.replace(first.id, with: RingActionLibrary.item(for: RingSystemAction.mute))
+        XCTAssertEqual(model.actions.first?.title, "Night", "a chosen name is kept")
+        XCTAssertEqual(model.actions.first?.symbol, "moon", "a chosen icon is kept")
+        XCTAssertEqual(model.actions.first?.kind, .system(.mute))
+
+        let app = RingLibraryItem(kind: .app(bundleIdentifier: "com.apple.Notes", name: "Notes"), title: "Notes",
+                                  subtitle: "", symbol: "app", group: "")
+        model.replace(first.id, with: app)
+        XCTAssertEqual(model.actions.first?.symbol, "app", "apps always draw their own icon")
+
+        model.undo()
+        XCTAssertEqual(model.actions.first?.kind, .system(.mute))
+        let steps = model.canUndo
+        model.replace(first.id, with: RingActionLibrary.item(for: RingSystemAction.mute))
+        XCTAssertEqual(model.canUndo, steps, "replacing with the same target records nothing")
+        model.replace(UUID(), with: app)
+        XCTAssertEqual(model.actions.count, 6)
     }
 
     func testDeleteDuplicateMoveAndReset() throws {
         let model = RingSettingsModel(settingsStore: store)
         let first = try XCTUnwrap(model.actions.first)
-        model.duplicate(first.id)
+        let copy = try XCTUnwrap(model.duplicate(first.id))
+        XCTAssertEqual(model.actions[1].id, copy)
         XCTAssertEqual(model.actions[1].kind, first.kind)
-        XCTAssertNotEqual(model.actions[1].id, first.id)
+        XCTAssertNotEqual(copy, first.id)
 
         model.move(first.id, by: -1)
-        XCTAssertEqual(model.actions.first?.id, first.id, "the first slice cannot move further up")
+        XCTAssertEqual(model.actions.last?.id, first.id, "moving counter-clockwise from the top wraps around")
+        model.move(first.id, by: 1)
+        XCTAssertEqual(model.actions.first?.id, first.id, "and back")
         model.move(first.id, by: 2)
         XCTAssertEqual(model.actions[2].id, first.id)
         model.move(first.id, to: 99)
@@ -67,19 +121,95 @@ final class RingSettingsModelTests: XCTestCase {
         XCTAssertFalse(model.actions.contains { $0.id == first.id })
         XCTAssertEqual(store.ringConfiguration.actions.count, 6)
 
-        model.duplicate(UUID())
+        XCTAssertNil(model.duplicate(UUID()))
         model.move(UUID(), by: 1)
+        model.move(UUID(), to: 1)
+        model.delete(UUID())
         XCTAssertEqual(model.actions.count, 6)
 
         model.resetActions()
-        XCTAssertEqual(model.actions.map(\.kind), RingConfiguration.defaultActions().map(\.kind))
+        XCTAssertEqual(model.actions, RingConfiguration.defaultActions())
     }
 
     func testDuplicateStopsAtTheLimit() throws {
         let model = RingSettingsModel(settingsStore: store)
         let first = try XCTUnwrap(model.actions.first)
-        for _ in 0..<5 { model.duplicate(first.id) }
+        for _ in 0 ..< 5 {
+            model.duplicate(first.id)
+        }
         XCTAssertEqual(model.actions.count, RingConfiguration.maxActions)
+    }
+
+    func testMoveNeedsTwoSlices() throws {
+        let model = RingSettingsModel(settingsStore: store)
+        var configuration = store.ringConfiguration
+        configuration.actions = [.feature(.notes)]
+        store.ringConfiguration = configuration
+        let only = try XCTUnwrap(model.actions.first)
+        model.move(only.id, by: 1)
+        XCTAssertEqual(model.actions, [only])
+        XCTAssertFalse(model.canUndo)
+    }
+
+    // MARK: - Undo
+
+    func testUndoRestoresEachRecordedChangeInOrder() throws {
+        let model = RingSettingsModel(settingsStore: store)
+        let original = model.actions
+        XCTAssertFalse(model.canUndo)
+        let first = try XCTUnwrap(original.first)
+
+        model.delete(first.id)
+        XCTAssertEqual(model.lastChange, L("ring.undo.deleted", first.title))
+        let chat = RingAction.feature(.chat)
+        model.insert(chat, at: 0)
+        XCTAssertEqual(model.lastChange, L("ring.undo.added", chat.title))
+        model.move(chat.id, to: 3)
+        XCTAssertEqual(model.lastChange, L("ring.undo.moved", chat.title))
+
+        model.undo()
+        XCTAssertEqual(model.actions.first?.id, chat.id)
+        XCTAssertNil(model.lastChange, "undoing hides the bar")
+        model.undo()
+        XCTAssertFalse(model.actions.contains { $0.id == chat.id })
+        model.undo()
+        XCTAssertEqual(model.actions, original)
+        XCTAssertEqual(store.ringConfiguration.actions, original, "undo is saved too")
+        XCTAssertFalse(model.canUndo)
+        model.undo()
+        XCTAssertEqual(model.actions, original, "nothing left to undo")
+    }
+
+    func testResetIsUndoableAndSkippedWhenAlreadyDefault() throws {
+        let model = RingSettingsModel(settingsStore: store)
+        model.resetActions()
+        XCTAssertFalse(model.canUndo, "the defaults are already there")
+        let first = try XCTUnwrap(model.actions.first)
+        model.edit(first.id) { $0.title = "Mine" }
+        model.resetActions()
+        XCTAssertEqual(model.lastChange, L("ring.undo.reset"))
+        model.dismissLastChange()
+        XCTAssertNil(model.lastChange)
+        XCTAssertTrue(model.canUndo, "dismissing the bar keeps the step")
+        model.undo()
+        XCTAssertEqual(model.actions.first?.title, "Mine")
+    }
+
+    func testUndoKeepsOnlyTheLatestSteps() {
+        let model = RingSettingsModel(settingsStore: store)
+        var configuration = store.ringConfiguration
+        configuration.actions = [.feature(.notes), .feature(.chat)]
+        store.ringConfiguration = configuration
+        let id = model.actions[0].id
+        for _ in 0 ..< (RingSettingsModel.undoLimit + 5) {
+            model.move(id, by: 1)
+        }
+        var undone = 0
+        while model.canUndo {
+            model.undo()
+            undone += 1
+        }
+        XCTAssertEqual(undone, RingSettingsModel.undoLimit)
     }
 
     func testFollowsChangesMadeElsewhere() {
@@ -88,94 +218,5 @@ final class RingSettingsModelTests: XCTestCase {
         configuration.actions = []
         store.ringConfiguration = configuration
         XCTAssertTrue(model.actions.isEmpty)
-    }
-
-    // MARK: - Draft
-
-    func testNewDraftNeedsATargetAndSuggestsItsTitle() throws {
-        var draft = RingActionDraft.new()
-        XCTAssertTrue(draft.isNew)
-        XCTAssertFalse(draft.canSave)
-        XCTAssertNil(draft.action)
-
-        draft.choose(.app(bundleIdentifier: "com.apple.Safari", name: "Safari"), title: "Safari")
-        XCTAssertNil(draft.kind, "a target of another type is ignored")
-
-        draft.choose(.feature(.translate), title: RingFeature.translate.title, symbol: RingFeature.translate.symbol)
-        let action = try XCTUnwrap(draft.action)
-        XCTAssertEqual(action.kind, .feature(.translate))
-        XCTAssertEqual(action.title, RingFeature.translate.title)
-        XCTAssertEqual(action.symbol, "character.bubble")
-        XCTAssertEqual(action.id, draft.id)
-    }
-
-    func testTypedNameIsKeptUntilCleared() {
-        var draft = RingActionDraft.new()
-        draft.choose(.feature(.notes), title: "Notes", symbol: "note.text")
-        draft.title = "Jot"
-        draft.choose(.feature(.chat), title: "Chat", symbol: "bubble.left.and.bubble.right")
-        XCTAssertEqual(draft.title, "Jot")
-
-        draft.title = ""
-        draft.choose(.feature(.notes), title: "Notes", symbol: "note.text")
-        XCTAssertEqual(draft.title, "Notes")
-
-        draft.title = "   "
-        XCTAssertFalse(draft.canSave, "a blank name cannot be saved")
-    }
-
-    func testChangingTypeClearsTheTargetAndSuggestion() {
-        var draft = RingActionDraft.new()
-        draft.choose(.feature(.notes), title: "Notes", symbol: "note.text")
-        draft.setType(.system)
-        XCTAssertEqual(draft.type, .system)
-        XCTAssertNil(draft.kind)
-        XCTAssertEqual(draft.title, "")
-        XCTAssertEqual(draft.symbol, RingActionType.system.symbol)
-        draft.setType(.system)
-        XCTAssertEqual(draft.type, .system)
-    }
-
-    func testTextTargets() {
-        var draft = RingActionDraft.new()
-        draft.setType(.url)
-        XCTAssertTrue(draft.usesTextTarget)
-        draft.setText("notaurl")
-        XCTAssertTrue(draft.hasInvalidURL)
-        XCTAssertNil(draft.kind)
-        draft.setText(" https://www.typeflux.app/docs ")
-        XCTAssertFalse(draft.hasInvalidURL)
-        XCTAssertEqual(draft.kind, .url("https://www.typeflux.app/docs"))
-        XCTAssertEqual(draft.title, "typeflux.app")
-
-        draft.setType(.shortcut)
-        draft.setText("Pomodoro")
-        XCTAssertEqual(draft.kind, .shortcut(name: "Pomodoro"))
-        XCTAssertEqual(draft.title, "Pomodoro")
-
-        draft.setType(.folder)
-        XCTAssertNil(draft.kind)
-        draft.setText("~/Downloads")
-        XCTAssertEqual(draft.kind, .folder(path: "~/Downloads"))
-        XCTAssertEqual(draft.title, "Downloads")
-        XCTAssertFalse(draft.hasInvalidURL)
-    }
-
-    func testEditingDraftStartsFromTheAction() throws {
-        let url = RingAction(kind: .url("https://typeflux.app"), title: "Home", symbol: "globe")
-        var draft = RingActionDraft(editing: url)
-        XCTAssertFalse(draft.isNew)
-        XCTAssertEqual(draft.type, .url)
-        XCTAssertEqual(draft.text, "https://typeflux.app")
-        draft.setText("https://example.com")
-        XCTAssertEqual(draft.title, "Home", "an existing name is kept")
-        XCTAssertEqual(try XCTUnwrap(draft.action).id, url.id)
-
-        let app = RingAction(kind: .app(bundleIdentifier: "com.apple.Notes", name: "Notes"), title: "N", symbol: "app")
-        XCTAssertEqual(RingActionDraft(editing: app).kind, app.kind)
-        let shortcut = RingAction(kind: .shortcut(name: "Brief"), title: "Brief", symbol: "timer")
-        XCTAssertEqual(RingActionDraft(editing: shortcut).kind, shortcut.kind)
-        let folder = RingAction(kind: .folder(path: "/tmp"), title: "Tmp", symbol: "folder")
-        XCTAssertEqual(RingActionDraft(editing: folder).kind, folder.kind)
     }
 }

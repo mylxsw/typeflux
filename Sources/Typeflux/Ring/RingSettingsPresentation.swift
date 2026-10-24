@@ -3,6 +3,8 @@ import Foundation
 /// Text and rules for the ring that do not need AppKit, so they are tested directly.
 enum RingSettingsPresentation {
     static let symbol = "circle.circle"
+    /// Longer names do not fit on a slice label.
+    static let titleLimit = 24
 
     /// Symbols offered in the editor's icon picker.
     static let symbolChoices = [
@@ -13,26 +15,17 @@ enum RingSettingsPresentation {
         "terminal", "magnifyingglass", "bookmark"
     ]
 
-    /// The second line of a row's description hint: what the slice runs.
-    static func detail(of action: RingAction, keywordName: (String, String) -> String? = { _, _ in nil }) -> String {
-        let type = action.kind.type.title
+    /// What exactly a slice runs, without its type: the second line of a slice in Settings.
+    static func summary(of action: RingAction, keywordName: (String, String) -> String? = { _, _ in nil }) -> String {
         switch action.kind {
-        case let .feature(feature):
-            return "\(type) · \(feature.detail)"
-        case let .keyword(keyword, pluginID):
-            return "\(type) · \(keyword)" + (keywordName(keyword, pluginID).map { " · \($0)" } ?? "")
-        case let .app(_, name):
-            return "\(type) · \(name)"
-        case let .keys(binding):
-            return "\(type) · \(HotkeyFormat.display(binding))"
-        case let .system(system):
-            return "\(type) · \(system.detail)"
-        case let .shortcut(name):
-            return "\(type) · \(name)"
-        case let .url(url):
-            return "\(type) · \(url)"
-        case let .folder(path):
-            return "\(type) · \(path)"
+        case let .feature(feature): feature.detail
+        case let .system(system): system.detail
+        case let .keyword(keyword, pluginID): keywordName(keyword, pluginID).map { "\(keyword) · \($0)" } ?? keyword
+        case let .app(bundleIdentifier, name): "\(name) · \(bundleIdentifier)"
+        case let .keys(binding): HotkeyFormat.display(binding)
+        case let .shortcut(name): name
+        case let .url(url): url
+        case let .folder(path): path
         }
     }
 
@@ -81,6 +74,24 @@ enum RingSettingsPresentation {
 
     static func expandedFolderPath(_ path: String) -> String {
         (path.trimmingCharacters(in: .whitespacesAndNewlines) as NSString).expandingTildeInPath
+    }
+
+    /// Why a slice cannot run any more, or nil when it can. The checks are passed in so the rule is
+    /// tested without touching the system.
+    static func issue(of action: RingAction, keywordExists: (String, String) -> Bool,
+                      appExists: (String) -> Bool, folderExists: (String) -> Bool) -> String? {
+        switch action.kind {
+        case let .keyword(keyword, pluginID):
+            keywordExists(keyword, pluginID) ? nil : L("ring.issue.keywordMissing", keyword)
+        case let .app(bundleIdentifier, name):
+            appExists(bundleIdentifier) ? nil : L("ring.error.appMissing", name)
+        case let .url(url):
+            webURL(url) == nil ? L("ring.error.invalidURL") : nil
+        case let .folder(path):
+            folderExists(expandedFolderPath(path)) ? nil : L("ring.error.folderMissing", path)
+        case .feature, .system, .keys, .shortcut:
+            nil
+        }
     }
 
     /// The compass direction of slice `index` out of `count`, starting at the top, clockwise.

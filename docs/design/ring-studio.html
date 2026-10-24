@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 圆环设置 v3（Ring Studio）交互设计稿</title>
+<style>
+/* Tokens mirror StudioTheme / TFColors / TFMetrics, same as docs/design/ring.html. */
+:root{--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;--mono:"SF Mono",ui-monospace,Menlo,monospace;--warm:#FFC457}
+.light{--page:#FBFBFC;--side:#F3F4F6;--sideSel:#FFFFFF;--sideSelStroke:rgba(15,23,42,.08);--sideSelText:#1D4ED8;
+  --card:#FFFFFF;--cardStroke:rgba(15,23,42,.09);--control:#F4F4F5;--raised:#FFFFFF;--border:rgba(15,23,42,.10);
+  --accent:#2563EB;--accentHover:#1D4ED8;--accentSoft:rgba(37,99,235,.10);--focus:rgba(37,99,235,.30);
+  --t1:#1D1D1F;--t2:#515154;--t3:#6E6E73;--danger:#DC2626;--success:#16A34A;--overlay:rgba(29,29,31,.06);--press:rgba(29,29,31,.11);
+  --pop:#FFFFFF;--popStroke:rgba(15,23,42,.12);--scrim:rgba(0,0,0,.10);--well:#F6F6F8}
+.dark{--page:#1E1E20;--side:#2C2C34;--sideSel:rgba(255,255,255,.11);--sideSelStroke:transparent;--sideSelText:#EEEEEE;
+  --card:#2A2A2C;--cardStroke:rgba(255,255,255,.115);--control:#323234;--raised:#4F4F51;--border:rgba(255,255,255,.115);
+  --accent:#178CFF;--accentHover:#178CFF;--accentSoft:rgba(23,140,255,.16);--focus:rgba(23,140,255,.30);
+  --t1:#EEEEEE;--t2:#B8B8B8;--t3:#8F8F8F;--danger:#DB5252;--success:#29C76E;--overlay:rgba(238,238,238,.06);--press:rgba(238,238,238,.11);
+  --pop:#2C2C2E;--popStroke:rgba(255,255,255,.14);--scrim:rgba(0,0,0,.25);--well:#242426}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--font);background:#0E0E10;color:#EDEDED;-webkit-font-smoothing:antialiased;overflow:hidden;font-size:13px}
+button{font-family:inherit;color:inherit}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none;display:block}
+
+/* ---------- prototype chrome ---------- */
+.proto-bar{height:48px;display:flex;align-items:center;gap:14px;padding:0 18px;border-bottom:1px solid rgba(255,255,255,.06);background:#121214}
+.proto-bar .brand{font-weight:600;font-size:13px;color:#fff}
+.proto-bar .brand small{color:#8E8E93;font-weight:400;margin-left:6px}
+.ptabs,.pill{display:flex;gap:2px;background:#1C1C1F;padding:3px;border-radius:999px}
+.ptabs button,.pill button{border:0;background:transparent;color:#A1A1A6;font-size:12.5px;padding:5px 13px;border-radius:999px;cursor:pointer}
+.ptabs button.on,.pill button.on{background:#3A3A3D;color:#fff}
+.proto-bar .sp{flex:1}
+.proto-bar .scn{font-size:12px;color:#8E8E93}
+.stage{position:absolute;top:48px;left:0;right:0;bottom:0;display:none}
+.stage.on{display:flex}
+#stage-settings{align-items:center;justify-content:center;background:radial-gradient(1200px 700px at 30% 20%,#2a3550 0,#15171c 55%,#0e0e10 100%)}
+
+/* ---------- window + sidebar ---------- */
+.window{width:min(1180px,calc(100vw - 40px));height:min(820px,calc(100vh - 88px));border-radius:12px;overflow:hidden;display:flex;position:relative;
+  background:var(--page);color:var(--t1);box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 .5px rgba(255,255,255,.12)}
+.sidebar{width:220px;flex:none;padding:10px;display:flex}
+.sidepanel{flex:1;background:var(--side);border-radius:14px;display:flex;flex-direction:column;padding:14px 10px}
+.lights{display:flex;gap:8px;padding:2px 6px 20px}
+.lights i{width:12px;height:12px;border-radius:50%;display:block}
+.logo{display:flex;align-items:center;gap:10px;padding:0 8px 22px;font-weight:700;font-size:17px}
+.logo .mk{width:26px;height:26px;border-radius:50%;background:var(--t1);color:var(--page);display:grid;place-items:center}
+.logo .mk svg{width:17px;height:17px;stroke-width:2.4}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;font-size:13px;color:var(--t1);cursor:default;border:.5px solid transparent}
+.nav a svg{width:16px;height:16px;color:var(--t2)}
+.nav a.on{background:var(--sideSel);border-color:var(--sideSelStroke);color:var(--sideSelText);font-weight:600}
+.nav a.on svg{color:var(--sideSelText)}
+.content{flex:1;overflow:auto;position:relative}
+.page{max-width:900px;margin:0 auto;padding:28px 28px 48px;display:flex;flex-direction:column;gap:24px}
+
+.pane-h{display:flex;align-items:center;gap:14px}
+.pane-h .tile40{width:40px;height:40px;border-radius:10px;background:rgba(37,99,235,.15);color:var(--accent);display:grid;place-items:center}
+.dark .pane-h .tile40{background:rgba(23,140,255,.15)}
+.pane-h .tile40 svg{width:21px;height:21px;stroke-width:2}
+.pane-h h1{font-size:17px;font-weight:600;margin:0}
+.pane-h .sp{flex:1}
+
+.sec{display:flex;flex-direction:column;gap:6px}
+.sec-h{display:flex;align-items:center;gap:7px;min-height:24px;padding:0 4px}
+.sec-h b{font-size:12px;font-weight:600;color:var(--t2)}
+.sec-h .cnt{font-size:11px;color:var(--t3);font-variant-numeric:tabular-nums}
+.sec-h .sp{flex:1}
+.card{background:var(--card);border:.5px solid var(--cardStroke);border-radius:12px}
+.divider{height:.5px;background:var(--border);margin-left:54px}
+.frow{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:52px;position:relative}
+.tile28{width:28px;height:28px;border-radius:7px;background:var(--control);color:var(--t2);display:grid;place-items:center;flex:none}
+.tile28 svg{width:15px;height:15px;stroke-width:2}
+.frow .lbl{flex:1;min-width:180px;display:flex;flex-direction:column;gap:3px}
+.frow .ttl{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+.frow .val{font-size:12px;color:var(--t2)}
+.frow .ctl{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.w220{width:220px}
+
+/* buttons */
+.btn{--h:30px;height:var(--h);min-width:64px;padding:0 14px;border-radius:999px;border:.5px solid var(--border);background:var(--control);color:var(--t1);
+  font-size:13px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;position:relative;white-space:nowrap;transition:transform .25s cubic-bezier(.3,1.5,.5,1)}
+.btn::after{content:"";position:absolute;inset:0;border-radius:inherit;background:transparent;pointer-events:none}
+.btn:hover::after{background:var(--overlay)}
+.btn:active{transform:scale(.97)}
+.btn svg.i{width:12px;height:12px;stroke-width:2.4}
+.btn.primary{background:var(--accent);border-color:transparent;color:#fff;font-weight:600}
+.btn.plain{background:transparent;border-color:transparent}
+.btn.destructive{color:var(--danger)}
+.btn.sm{--h:24px;min-width:0;padding:0 10px;font-size:12px;gap:5px}
+.btn.sm svg.i{width:11px;height:11px}
+.btn.icon{width:var(--h);min-width:0;padding:0}
+.btn.icon svg.i{width:14px;height:14px;stroke-width:2.2}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.btn:focus-visible,.field:focus,.seg:focus-visible,.keyfield:focus-visible,.canvas:focus-visible{outline:1px solid var(--accent);box-shadow:0 0 0 3.5px var(--focus)}
+.switch{width:26px;height:15px;border-radius:999px;background:rgba(120,120,128,.32);position:relative;cursor:pointer;flex:none;transition:.18s;border:0;padding:0}
+.switch::after{content:"";position:absolute;width:13px;height:13px;border-radius:50%;background:#fff;top:1px;left:1px;transition:.18s;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.switch.on{background:var(--accent)}
+.switch.on::after{left:12px}
+.keyfield{height:30px;border-radius:999px;border:.5px solid var(--border);background:var(--control);display:inline-flex;align-items:center;gap:4px;padding:0 4px;cursor:pointer;outline:none}
+.keyfield:hover{box-shadow:inset 0 0 0 999px var(--overlay)}
+.keyfield.rec{outline:1px solid var(--accent);box-shadow:0 0 0 3.5px var(--focus)}
+.kc{min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--raised);border:.5px solid var(--border);box-shadow:0 1px 0 rgba(0,0,0,.08);font-size:12px;font-weight:500;display:inline-grid;place-items:center;color:var(--t1)}
+.keyfield .rec-t{font-size:12.5px;color:var(--accent);padding:0 10px;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.5}}
+.seg{display:flex;height:30px;padding:2px;border-radius:999px;background:var(--control);border:.5px solid var(--border);outline:none}
+.seg button{flex:1;border:0;background:transparent;border-radius:999px;font-size:12.5px;font-weight:500;color:var(--t2);cursor:pointer;padding:0 8px;white-space:nowrap}
+.seg button.on{background:var(--raised);color:var(--t1);font-weight:600;box-shadow:0 1px 1px rgba(0,0,0,.12)}
+.field{height:30px;border-radius:8px;border:.5px solid var(--border);background:var(--control);color:var(--t1);font-size:13px;padding:0 10px;outline:none;font-family:inherit;width:100%}
+.field.mono{font-family:var(--mono);font-size:12px}
+.field.err{border-color:var(--danger)}
+.fmsg{font-size:11.5px;margin-top:5px;color:var(--t3)}
+.fmsg.err{color:var(--danger)}
+
+/* ================= Ring Studio ================= */
+.studio{display:grid;grid-template-columns:440px 1fr;height:520px;overflow:hidden;border-radius:12px}
+.canvas{position:relative;outline:none;overflow:hidden;border-radius:12px 0 0 12px;
+  background:linear-gradient(180deg,rgba(0,0,0,0) 40%,rgba(0,0,0,.28)),radial-gradient(520px 380px at 75% 10%,#5b7bd6 0,transparent 62%),radial-gradient(460px 420px at 0% 100%,#2f8f6b 0,transparent 60%),linear-gradient(135deg,#1d2f5c,#103a33)}
+.canvas .host{position:absolute;left:0;top:30px;width:440px;height:440px;touch-action:none}
+.canvas .host svg.ringsvg{position:absolute;inset:0;width:440px;height:440px;overflow:visible}
+.canvas .blur{position:absolute;left:92px;top:92px;width:256px;height:256px;border-radius:50%;pointer-events:none;
+  -webkit-mask:radial-gradient(circle,transparent 53px,#000 54px);mask:radial-gradient(circle,transparent 53px,#000 54px)}
+.canvas .slot{position:absolute;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;border:1.2px dashed rgba(255,255,255,.55);background:rgba(20,20,24,.35);
+  color:#fff;display:grid;place-items:center;cursor:pointer;padding:0;opacity:.62;transition:opacity .15s,transform .2s cubic-bezier(.3,1.6,.5,1),background .15s;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.canvas .slot svg{width:12px;height:12px;stroke-width:2.6}
+.canvas:hover .slot{opacity:1}
+.canvas .slot:hover,.canvas .slot:focus-visible{transform:scale(1.25);background:var(--accent);border-style:solid;border-color:#fff;outline:none}
+.canvas .slot.dim{opacity:0;pointer-events:none}
+.canvas .first{position:absolute;left:50%;top:250px;transform:translate(-50%,-50%);width:96px;height:96px;border-radius:50%;border:0;background:var(--accent);color:#fff;cursor:pointer;
+  display:grid;place-items:center;box-shadow:0 10px 30px rgba(23,140,255,.45),0 0 0 8px rgba(255,255,255,.08);transition:transform .2s cubic-bezier(.3,1.6,.5,1)}
+.canvas .first:hover{transform:translate(-50%,-50%) scale(1.06)}
+.canvas .first svg{width:30px;height:30px;stroke-width:2.4}
+.canvas .first-t{position:absolute;left:0;right:0;top:322px;text-align:center;color:#fff;font-size:13px;font-weight:600}
+.canvas .first-t small{display:block;color:rgba(255,255,255,.65);font-weight:400;font-size:12px;margin-top:4px}
+.canvas .ctop{position:absolute;left:12px;right:12px;top:10px;display:flex;align-items:center;gap:8px;z-index:3}
+.canvas .ctop .sp{flex:1}
+.cchip{height:24px;padding:0 10px;border-radius:999px;background:rgba(20,20,24,.48);border:.5px solid rgba(255,255,255,.16);color:rgba(255,255,255,.9);font-size:11.5px;
+  display:inline-flex;align-items:center;gap:5px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);cursor:pointer}
+.cchip svg.i{width:12px;height:12px;stroke-width:2.2}
+.cchip.on{background:rgba(255,196,87,.22);border-color:rgba(255,196,87,.6);color:var(--warm)}
+.cchip.static{cursor:default}
+.canvas .chint{position:absolute;left:0;right:0;bottom:12px;text-align:center;font-size:11.5px;color:rgba(255,255,255,.72);pointer-events:none;transition:opacity .2s}
+.canvas .chint .kc{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.18);color:#fff;height:18px;min-width:18px;font-size:10.5px;padding:0 5px}
+.canvas.dragging{cursor:grabbing}
+
+/* inspector */
+.insp{background:var(--card);border-left:.5px solid var(--border);display:flex;flex-direction:column;min-width:0;position:relative;border-radius:0 12px 12px 0}
+.ih{display:flex;align-items:center;gap:8px;padding:12px 12px 10px 16px;min-height:52px}
+.ih .tt{flex:1;min-width:0}
+.ih .tt b{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ih .tt span{display:block;font-size:11.5px;color:var(--t2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ib{flex:1;overflow:auto;padding:0 12px 12px}
+.ifoot{display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:.5px solid var(--border)}
+.ifoot .sp{flex:1}
+.back{border:0;background:transparent;display:inline-flex;align-items:center;gap:2px;color:var(--accent);font-size:12.5px;cursor:pointer;padding:3px 4px 3px 0;border-radius:6px}
+.back svg{width:13px;height:13px;stroke-width:2.4}
+.isearch{position:relative;margin:0 0 10px}
+.isearch input{height:32px;border-radius:999px;padding-left:32px;font-size:13px}
+.isearch svg{position:absolute;left:11px;top:9px;width:14px;height:14px;color:var(--t3)}
+.isearch .kbd{position:absolute;right:8px;top:7px;font-size:11px;color:var(--t3)}
+.grp{font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--t3);padding:10px 4px 5px;display:flex;align-items:center}
+.grp .sp{flex:1}
+.grp .n{font-weight:400}
+.cats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cat{border:.5px solid var(--border);background:var(--well);border-radius:10px;padding:10px 10px 10px 10px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:6px;min-height:86px;position:relative;transition:transform .2s cubic-bezier(.3,1.5,.5,1)}
+.cat:hover{background:var(--overlay);border-color:var(--popStroke)}
+.cat:active{transform:scale(.98)}
+.cat .ct{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:#fff}
+.cat .ct svg{width:15px;height:15px;stroke-width:2}
+.cat b{font-size:12.5px;font-weight:600}
+.cat span{font-size:11px;color:var(--t2);line-height:1.35}
+.cat em{position:absolute;right:10px;top:12px;font-style:normal;font-size:10.5px;color:var(--t3)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{height:28px;padding:0 10px 0 6px;border-radius:999px;border:.5px solid var(--border);background:var(--well);display:inline-flex;align-items:center;gap:6px;font-size:12px;cursor:pointer}
+.chip .ic{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--control);color:var(--t2)}
+.chip .ic svg{width:12px;height:12px}
+.chip:hover,.chip.kb{border-color:var(--accent);color:var(--accent)}
+.item{display:flex;align-items:center;gap:10px;min-height:46px;padding:5px 8px;border-radius:9px;cursor:pointer;position:relative}
+.item .ic{width:30px;height:30px;border-radius:8px;background:var(--control);color:var(--t2);display:grid;place-items:center;flex:none}
+.item .ic svg.i{width:16px;height:16px}
+.item .t{flex:1;min-width:0}
+.item .t b{display:block;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .t small{display:block;font-size:11.5px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.item .tag{font-size:10.5px;color:var(--t3);border:.5px solid var(--border);border-radius:999px;padding:1px 7px;flex:none}
+.item .go{opacity:0;color:var(--accent);flex:none;font-size:11.5px;display:flex;align-items:center;gap:3px}
+.item .go svg{width:12px;height:12px;stroke-width:2.4}
+.item:hover,.item.kb{background:var(--accentSoft)}
+.item:hover .go,.item.kb .go{opacity:1}
+.item:hover .tag,.item.kb .tag{display:none}
+.item.on{background:var(--accentSoft)}
+.item mark{background:transparent;color:var(--accent);font-weight:600}
+.none{padding:30px 12px;text-align:center;color:var(--t2);font-size:12.5px;line-height:1.6}
+.banner{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;background:var(--well);border:.5px solid var(--border);font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:10px}
+.banner svg.i{width:15px;height:15px;color:var(--accent);margin-top:1px}
+.banner.warn svg.i{color:#E8A317}
+.banner b{color:var(--t1)}
+
+/* overview list */
+.orow{display:flex;align-items:center;gap:10px;height:42px;padding:0 8px;border-radius:9px;cursor:pointer;position:relative}
+.orow:hover{background:var(--overlay)}
+.orow.hl{background:var(--accentSoft)}
+.orow.drag{opacity:.35}
+.orow.over::before{content:"";position:absolute;left:8px;right:8px;top:-1px;height:2px;border-radius:2px;background:var(--accent)}
+.orow .num{width:18px;font-size:11px;color:var(--t3);text-align:center;font-variant-numeric:tabular-nums}
+.orow .ic{width:26px;height:26px;border-radius:7px;background:var(--control);color:var(--t2);display:grid;place-items:center;flex:none}
+.orow .ic svg.i{width:14px;height:14px}
+.orow .t{flex:1;min-width:0}
+.orow .t b{display:block;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.orow .t small{display:block;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.orow .dir{font-size:11px;color:var(--t3)}
+.orow .grip{color:var(--t3);opacity:0;cursor:grab}
+.orow:hover .grip{opacity:1}
+.orow .bad{width:7px;height:7px;border-radius:50%;background:#E8A317;flex:none}
+.addrow{display:flex;align-items:center;gap:10px;height:40px;padding:0 8px;border-radius:9px;cursor:pointer;color:var(--accent);font-size:12.5px;font-weight:500;border:0;background:transparent;width:100%}
+.addrow:hover{background:var(--accentSoft)}
+.addrow .ic{width:26px;height:26px;border-radius:7px;border:1.2px dashed currentColor;display:grid;place-items:center;margin-left:28px}
+.addrow .ic svg{width:12px;height:12px;stroke-width:2.6}
+.addrow[disabled]{color:var(--t3);cursor:not-allowed;background:transparent}
+
+/* edit */
+.ehead{display:flex;align-items:center;gap:12px;padding:4px 4px 14px}
+.ehead .big{width:46px;height:46px;border-radius:12px;background:linear-gradient(160deg,#2a2a30,#17171a);color:#fff;display:grid;place-items:center;flex:none;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.14)}
+.ehead .big svg.i{width:22px;height:22px}
+.ehead .t{flex:1;min-width:0}
+.ehead .t input{font-size:15px;font-weight:600;border:0;background:transparent;padding:2px 6px;margin-left:-6px;border-radius:6px;width:100%;color:var(--t1);outline:none;font-family:inherit}
+.ehead .t input:hover{background:var(--overlay)}
+.ehead .t input:focus{background:var(--control);box-shadow:0 0 0 3px var(--focus)}
+.ehead .t small{display:block;font-size:11.5px;color:var(--t2);padding-left:0;margin-top:1px}
+.eblock{border:.5px solid var(--border);border-radius:10px;background:var(--well);margin-bottom:10px}
+.eblock .er{display:flex;align-items:center;gap:10px;padding:9px 10px;min-height:44px}
+.eblock .er+.er{border-top:.5px solid var(--border)}
+.eblock .lab{font-size:12px;color:var(--t2);width:44px;flex:none}
+.eblock .v{flex:1;min-width:0;font-size:12.5px}
+.eblock .v small{display:block;font-size:11px;color:var(--t2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icons{display:grid;grid-template-columns:repeat(9,1fr);gap:2px;padding:6px}
+.icons button{aspect-ratio:1;border-radius:7px;border:0;background:transparent;display:grid;place-items:center;cursor:pointer;color:var(--t1)}
+.icons button svg{width:15px;height:15px}
+.icons button:hover{background:var(--overlay)}
+.icons button.on{background:var(--accent);color:#fff}
+.pos{display:flex;align-items:center;gap:6px}
+.dirpad{width:34px;height:34px;flex:none;position:relative}
+.dirpad svg{width:34px;height:34px}
+
+/* toast */
+.toast{position:absolute;left:50%;bottom:22px;transform:translateX(-50%) translateY(16px);opacity:0;transition:.22s;background:rgba(28,28,30,.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);color:#fff;border:.5px solid rgba(255,255,255,.14);
+  border-radius:999px;padding:6px 6px 6px 16px;font-size:12.5px;display:flex;gap:12px;align-items:center;pointer-events:none;z-index:80;white-space:nowrap}
+.toast.on{opacity:1;transform:translateX(-50%);pointer-events:auto}
+.toast .btn{background:#3A3A3D;color:#fff;border-color:transparent}
+.toast .btn.nobtn{display:none}
+
+/* spec */
+#stage-spec{overflow:auto;background:#151517;justify-content:center}
+.plan{max-width:920px;padding:30px 28px 80px;color:#D8D8DC;font-size:13.5px;line-height:1.75}
+.plan h2{color:#fff;font-size:19px;margin:28px 0 10px}
+.plan h2:first-child{margin-top:0}
+.plan h3{color:#fff;font-size:15px;margin:18px 0 6px}
+.plan table{border-collapse:collapse;width:100%;font-size:12.5px;margin:8px 0}
+.plan td,.plan th{border:1px solid #2E2E31;padding:7px 10px;text-align:left;vertical-align:top}
+.plan th{background:#1F1F22;color:#fff;font-weight:600}
+.plan code{font-family:var(--mono);font-size:12px;background:#232326;padding:1px 5px;border-radius:4px}
+.plan .lead{font-size:14.5px;color:#fff;background:#1E2230;border:1px solid #2B3550;border-radius:12px;padding:14px 18px}
+.fatal{position:fixed;left:16px;bottom:16px;z-index:999;background:#DC2626;color:#fff;padding:10px 14px;border-radius:10px;font-size:12.5px;display:none;max-width:560px}
+</style>
+</head>
+<body>
+<div class="proto-bar">
+  <div class="brand">Typeflux · 圆环设置<small>交互稿 v3 · GUL-470</small></div>
+  <div class="ptabs" id="ptabs">
+    <button data-stage="settings" class="on">① 设置页（可交互）</button>
+    <button data-stage="spec">② 设计说明</button>
+  </div>
+  <div class="sp"></div>
+  <span class="scn">场景</span>
+  <div class="pill" id="scnT"><button data-s="default" class="on">默认</button><button data-s="empty">空圆环</button><button data-s="full">已满 8 个</button><button data-s="broken">有失效项</button></div>
+  <div class="pill" id="themeT"><button data-t="light" class="on">浅色</button><button data-t="dark">深色</button></div>
+</div>
+
+<!-- ============ ① Settings ============ -->
+<div class="stage on" id="stage-settings">
+  <div class="window light" id="win">
+    <aside class="sidebar"><div class="sidepanel">
+      <div class="lights"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i></div>
+      <div class="logo"><span class="mk" data-icon="infinity"></span>Typeflux</div>
+      <nav class="nav">
+        <a><span data-icon="waveform"></span>语音输入</a>
+        <a><span data-icon="cpu"></span>模型</a>
+        <a><span data-icon="puzzle"></span>Agent</a>
+        <a><span data-icon="command"></span>启动器</a>
+        <a class="on"><span data-icon="ring"></span>圆环</a>
+        <a><span data-icon="gear"></span>设置</a>
+      </nav>
+    </div></aside>
+    <main class="content" id="content">
+      <div class="page">
+        <header class="pane-h">
+          <span class="tile40" data-icon="ring"></span><h1>圆环</h1><span class="sp"></span>
+          <button class="switch on" id="enableSw" title="启用圆环" aria-label="启用圆环"></button>
+        </header>
+
+        <section class="sec">
+          <div class="card">
+            <div class="frow">
+              <span class="tile28" data-icon="keyboard"></span>
+              <div class="lbl"><div class="ttl">快捷键</div><div class="val">按住：在鼠标处打开，划向一个操作后松开。轻按：保持打开，用点击或数字键选择。</div></div>
+              <div class="ctl"><div class="keyfield" id="hotkey" tabindex="0" role="button" aria-label="录制圆环快捷键"></div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec">
+          <div class="sec-h"><b>操作</b><span class="cnt" id="cnt"></span><span class="sp"></span>
+            <button class="btn sm plain" id="resetBtn"><span data-icon="reset"></span>恢复默认</button></div>
+          <div class="card studio" id="studio">
+            <div class="canvas" id="canvas" tabindex="0" aria-label="圆环编辑区。方向键选择，⌥ 加方向键移动，Delete 删除，加号键在后面插入。">
+              <div class="ctop">
+                <span class="cchip static" id="capChip"></span>
+                <span class="sp"></span>
+                <button class="cchip" id="tryBtn" title="像真的一样划一下，只提示不执行"><span data-icon="play"></span>试一试</button>
+              </div>
+              <div class="host" id="host"></div>
+              <div class="chint" id="chint"></div>
+            </div>
+            <div class="insp" id="insp"></div>
+          </div>
+        </section>
+
+        <section class="sec">
+          <div class="sec-h"><b>外观</b></div>
+          <div class="card">
+            <div class="frow">
+              <span class="tile28" data-icon="palette"></span>
+              <div class="lbl"><div class="ttl">样式</div><div class="val">液态玻璃需要 macOS 26，更早的系统自动使用磨砂。</div></div>
+              <div class="ctl"><div class="seg" style="width:260px" id="styleSeg" role="radiogroup" aria-label="样式">
+                <button data-v="classic">经典</button><button data-v="frosted">磨砂</button><button data-v="liquid">液态玻璃</button></div></div>
+            </div>
+            <div class="divider"></div>
+            <div class="frow">
+              <span class="tile28" data-icon="text"></span>
+              <div class="lbl"><div class="ttl">中心文字</div><div class="val">显示在圆环中心，最多 10 个字。</div></div>
+              <div class="ctl"><input class="field w220" id="centerTitle" maxlength="10" aria-label="中心文字"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+    <div class="toast" id="toast" role="status"><span id="toastT"></span><button class="btn sm" id="toastB">撤销</button></div>
+  </div>
+</div>
+
+<!-- ============ ② Spec ============ -->
+<div class="stage" id="stage-spec">
+  <div class="plan">
+    <p class="lead">一句话：<b>圆环本身就是编辑器。</b>在圆环上点「+」就在那个位置插入，右侧面板直接浏览、搜索、一键添加，悬停即在圆环里预览；改名、换图标、调位置都实时生效，删除可撤销。没有弹窗，没有「保存」。</p>
+
+    <h2>1. 现状问题</h2>
+    <table>
+      <tr><th>#</th><th>问题</th><th>原因（代码）</th></tr>
+      <tr><td>P1</td><td>添加操作只能追加到末尾，想放到「右下」要再拖或用「上移/下移」多次</td><td><code>TFActionRow「添加操作」</code> → <code>RingSettingsModel.save</code> 追加</td></tr>
+      <tr><td>P2</td><td>添加流程是模态表单：先选「类型」下拉，再在第二个下拉里选目标，再填名称、选图标，最后点「添加」。用户必须先懂分类法，选项全藏在下拉里，看不到全貌</td><td><code>RingActionEditorSheet</code>：<code>TFPopUpButton</code> + <code>TFRichPicker</code></td></tr>
+      <tr><td>P3</td><td>不能跨类型搜索：想要「截图」得先猜它在「Typeflux 功能」还是「系统操作」</td><td>每种类型一个独立 picker</td></tr>
+      <tr><td>P4</td><td>预览是只读的；列表与圆环信息重复，但「第几个＝哪个方向」只能自己数</td><td><code>RingPreviewView</code> 仅点击打开 Sheet</td></tr>
+      <tr><td>P5</td><td>编辑也要开 Sheet、点「保存」，改动在关闭前看不到效果</td><td>同 P2</td></tr>
+      <tr><td>P6</td><td>删除、恢复默认都要确认弹窗，打断节奏</td><td><code>.alert(ring.delete.title)</code></td></tr>
+      <tr><td>P7</td><td>满 8 个时只是「添加」按钮变灰，原因藏在 tooltip</td><td><code>.help(ring.actions.full)</code></td></tr>
+    </table>
+
+    <h2>2. 设计原则</h2>
+    <ol>
+      <li><b>直接操作</b>：在哪里点「+」就加在哪里；拖动圆环上的图标就是调整位置。</li>
+      <li><b>先看见，再决定</b>：所有可选操作平铺可浏览；悬停一项，圆环的空位里立即出现它的图标和名字。</li>
+      <li><b>一次点击完成添加</b>：点选即加入，随后右侧自动进入该项的编辑态，可以顺手改名/换图标（可选，不改也行）。</li>
+      <li><b>无模态、即时生效</b>：与 macOS 系统设置一致，没有「保存/取消」。</li>
+      <li><b>宽容</b>：删除、替换、恢复默认都给「撤销」（⌘Z），不再弹确认。</li>
+      <li><b>键盘等价</b>：每个鼠标操作都有键盘路径，方便高频用户与无障碍。</li>
+    </ol>
+
+    <h2>3. 布局</h2>
+    <p>「操作」卡片变成左右两栏的 <b>Ring Studio</b>：左 440pt 为圆环画布（深色壁纸底，所见即运行时外观），右侧为<b>检查器</b>，有三种状态：</p>
+    <table>
+      <tr><th>状态</th><th>进入方式</th><th>内容</th></tr>
+      <tr><td>总览</td><td>默认；Esc；点击画布空白</td><td>按顺时针列出操作（序号＝数字键，附方向），可拖动排序；末尾「添加操作」（追加到最后）</td></tr>
+      <tr><td>操作库</td><td>点圆环上的 ⊕ / 「添加操作」/ 编辑态的「更换」</td><td>顶部说明插入位置；全局搜索；推荐；8 个类型卡片 → 进入类型列表（带分组和搜索）；快捷键/网址/文件夹类是内联表单</td></tr>
+      <tr><td>编辑</td><td>点圆环上的图标或列表行；添加完成后自动进入</td><td>名称（可直接改）、图标、动作（可「更换」，参数内联编辑）、位置（顺/逆时针移动）、复制、删除</td></tr>
+    </table>
+
+    <h2>4. 关键流程</h2>
+    <h3>4.1 在指定位置添加</h3>
+    <ol>
+      <li>圆环外沿每两个操作之间有一个 ⊕（悬停画布时变亮，悬停 ⊕ 放大变蓝）。</li>
+      <li>点 ⊕ → 圆环立刻在该处让出一个虚线空位（编号随之变化），右侧切到操作库，搜索框获得焦点。</li>
+      <li>悬停/方向键移动到某项 → 空位实时显示该项图标与名称。</li>
+      <li>点击或 ↩ → 加入，空位变实，右侧进入该项编辑态，toast「已添加到右下方 · 撤销」。</li>
+      <li>Esc / 返回 / 点画布空白 → 取消，空位收回。</li>
+    </ol>
+    <h3>4.2 操作库</h3>
+    <ul>
+      <li>搜索覆盖全部类型（功能、关键词、系统、快捷指令、应用、文件夹），结果按类型分组，命中高亮；输入像网址的文本时首项是「打开网址 …」，像路径时是「打开文件夹 …」。</li>
+      <li>未搜索时：「推荐」一行（尚未加入的高频项），下面是 8 个类型卡片，每张写清作用与数量。</li>
+      <li>已在圆环里的项显示「已添加」标签，仍可再加（例如不同名字）。</li>
+      <li>快捷键：大号录制区 + 常用组合预设；网址：输入框 + 实时校验；文件夹：常用文件夹 + 「选择文件夹…」。</li>
+    </ul>
+    <h3>4.3 编辑与排序</h3>
+    <ul>
+      <li>名称、图标、参数实时写入并反映到圆环；名称清空即恢复默认名称。</li>
+      <li>位置：在圆环上直接拖图标到别的扇区；或编辑态「逆时针 / 顺时针」按钮；或 ⌥←/⌥→。</li>
+      <li>「更换」进入操作库替换模式：保留位置；若名称/图标未自定义则随新动作更新。</li>
+    </ul>
+
+    <h2>5. 键盘</h2>
+    <table>
+      <tr><th>按键（画布聚焦）</th><th>作用</th></tr>
+      <tr><td>← / →（或 ↑ / ↓）</td><td>逆/顺时针选择上一个/下一个操作</td></tr>
+      <tr><td>⌥← / ⌥→</td><td>把选中的操作逆/顺时针移动一格</td></tr>
+      <tr><td>1–8</td><td>选中对应序号的操作</td></tr>
+      <tr><td>+ </td><td>在选中项之后插入（未选中则追加）</td></tr>
+      <tr><td>↩</td><td>编辑选中项（聚焦名称）</td></tr>
+      <tr><td>Delete</td><td>删除选中项（可撤销）</td></tr>
+      <tr><td>Esc</td><td>取消添加 / 退出编辑</td></tr>
+      <tr><td>⌘Z</td><td>撤销上一次删除、替换、添加、排序或恢复默认</td></tr>
+      <tr><td>操作库中 ↑ / ↓ / ↩</td><td>在结果中移动（圆环同步预览）并添加</td></tr>
+    </table>
+
+    <h2>6. 边界情况</h2>
+    <table>
+      <tr><th>情况</th><th>处理</th></tr>
+      <tr><td>0 个操作</td><td>画布中心一个大的 ⊕「添加第一个操作」；右侧直接显示操作库</td></tr>
+      <tr><td>已满 8 个</td><td>⊕ 全部隐藏；左上角计数显示「8 / 8 已满」；总览末尾的「添加操作」变为说明：先删除一个，或在编辑中「更换」</td></tr>
+      <tr><td>目标失效（应用已卸载、关键词已删除、网址无效）</td><td>扇区图标变暗并带黄点；总览行带黄点；编辑态顶部黄条「…已不存在」+「更换」</td></tr>
+      <tr><td>名称很长</td><td>圆环标签两行截断（与运行时一致），列表单行截断</td></tr>
+      <tr><td>拖动到原位/拖出圆环</td><td>不产生变化，不进撤销栈</td></tr>
+      <tr><td>圆环已关闭（标题栏开关）</td><td>整个页面降为 45% 不透明且不可操作，与现在一致</td></tr>
+    </table>
+
+    <h2>7. 实现映射（SwiftUI）</h2>
+    <ul>
+      <li>数据结构 <code>RingConfiguration</code> / <code>RingAction</code> 不变，无需迁移。</li>
+      <li><code>RingSettingsModel</code> 新增 <code>insert(_:at:)</code>、<code>replaceKind(of:with:)</code>、<code>move(_:by:)</code>（已有）和一个有界撤销栈（最近 20 步）。</li>
+      <li><code>RingPreviewView</code> → <code>RingStudioCanvas</code>：增加插入槽位、占位扇区、选中描边、拖动排序、序号；hit-test 复用 <code>angleIndex</code>。</li>
+      <li>新增 <code>RingInspector</code>（<code>enum RingInspectorState { overview, library(RingLibraryTarget), edit(UUID) }</code>）。</li>
+      <li>新增 <code>RingActionLibrary</code>：把 <code>RingFeature</code>、<code>RingSystemAction</code>、关键词、<code>PersonaAppDiscovery</code> 应用、快捷指令（<code>/usr/bin/shortcuts list</code>）、常用文件夹聚合成可搜索条目。</li>
+      <li>删除 <code>RingActionEditorSheet</code> 和两处删除确认 alert。</li>
+    </ul>
+  </div>
+</div>
+<div class="fatal" id="fatal"></div>
+
+<script>
+window.addEventListener('error', e => { const f=document.getElementById('fatal'); f.style.display='block'; f.textContent='原型脚本错误：'+e.message; });
+
+/* ================= icons (shared with docs/design/ring.html) ================= */
+const I = {
+  help:'<circle cx="12" cy="12" r="9.5"/><path d="M9.3 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.7 2.5-2.7 4.3M12 17.6h.01"/>',
+  updown:'<path d="M7 9.5l5-5 5 5M7 14.5l5 5 5-5"/>',
+  chevD:'<path d="M6 9l6 6 6-6"/>',
+  infinity:'<path d="M12 12c-2-2.7-3.6-4-5.5-4a4 4 0 0 0 0 8c1.9 0 3.5-1.3 5.5-4zm0 0c2 2.7 3.6 4 5.5 4a4 4 0 0 0 0-8c-1.9 0-3.5 1.3-5.5 4z"/>',
+  waveform:'<path d="M3 10v4M7 6v12M11 3v18M15 7v10M19 10v4"/>',
+  cpu:'<rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx=".5"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',
+  puzzle:'<path d="M14 4a2 2 0 1 0-4 0v1H6a1 1 0 0 0-1 1v4h1a2 2 0 1 1 0 4H5v4a1 1 0 0 0 1 1h4v-1a2 2 0 1 1 4 0v1h4a1 1 0 0 0 1-1v-4h1a2 2 0 1 0 0-4h-1V6a1 1 0 0 0-1-1h-4z"/>',
+  command:'<path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"/>',
+  ring:'<circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="3.6"/><path d="M12 2.5v5.9M12 15.6v5.9M2.5 12h5.9M15.6 12h5.9"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  keyboard:'<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
+  target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  play:'<path d="M7 4.5v15l12-7.5z"/>',
+  reset:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  grip:'<path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="3"/>',
+  dots:'<path d="M5 12h.01M12 12h.01M19 12h.01" stroke-width="3"/>',
+  palette:'<circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 2a10 10 0 0 0 0 20c1 0 1.6-.8 1.6-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7H16a6 6 0 0 0 6-6c0-4.4-4.5-8.4-10-8.4z"/>',
+  text:'<path d="M4 7V5h16v2M9 19h6M12 5v14"/>',
+  chevL:'<path d="M15 18l-6-6 6-6"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  pencil:'<path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>',
+  trash:'<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/>',
+  up:'<path d="M12 19V5M5 12l7-7 7 7"/>', down:'<path d="M12 5v14M19 12l-7 7-7-7"/>',
+  copy:'<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+  warn:'<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+  /* action icons */
+  mic:'<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1M12 18v4M8 22h8"/>',
+  sparkles:'<path d="M11 3l1.9 5.1L18 10l-5.1 1.9L11 17l-1.9-5.1L4 10l5.1-1.9z"/><path d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8z"/>',
+  chat:'<path d="M21 12a8.5 8.5 0 0 1-12.3 7.6L3 21l1.4-5.4A8.5 8.5 0 1 1 21 12z"/>',
+  viewfinder:'<path d="M3 8V6a3 3 0 0 1 3-3h2M16 3h2a3 3 0 0 1 3 3v2M21 16v2a3 3 0 0 1-3 3h-2M8 21H6a3 3 0 0 1-3-3v-2"/><circle cx="12" cy="12" r="3.2"/>',
+  textscan:'<path d="M3 8V6a3 3 0 0 1 3-3h2M16 3h2a3 3 0 0 1 3 3v2M21 16v2a3 3 0 0 1-3 3h-2M8 21H6a3 3 0 0 1-3-3v-2"/><path d="M8 9h8M8 12h8M8 15h5"/>',
+  translate:'<path d="M3 5h9M7.5 3v2M10 5c-.9 3.6-3 6.5-6 8.5M5.6 9c1.3 1.9 3.3 3.4 5.9 4.3"/><path d="M13 21l4-9 4 9M14.4 18h5.2"/>',
+  shotTr:'<path d="M3 8V6a3 3 0 0 1 3-3h2M16 3h2a3 3 0 0 1 3 3v2M8 21H6a3 3 0 0 1-3-3v-2"/><path d="M13 21l3.5-8 3.5 8M14.2 18.5h4.6M7 8h6M10 7v1M11.5 8c-.5 2-1.8 3.6-3.5 4.6"/>',
+  clipboard:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+  note:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
+  book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
+  persona:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M17 4l3 3-3 3M20 7h-4.5"/>',
+  wand:'<path d="M15 4V2M15 10V8M11 6H9M21 6h-2M18 3l-1 1M18 9l-1-1M14 10L3 21"/>',
+  workflow:'<rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/><path d="M9 6h4a3 3 0 0 1 3 3v6"/>',
+  app:'<rect x="3" y="3" width="7" height="7" rx="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.8"/>',
+  link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+  folder:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  contrast:'<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>',
+  mute:'<path d="M11 5L6 9H2v6h4l5 4z"/><path d="M22 9l-6 6M16 9l6 6"/>',
+  mission:'<rect x="2" y="4" width="9" height="7" rx="1.5"/><rect x="13" y="4" width="9" height="7" rx="1.5"/><rect x="2" y="13" width="20" height="7" rx="1.5"/>',
+  lock:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  smile:'<circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>',
+  bolt:'<path d="M13 2L3 14h9l-1 8 10-12h-9z"/>',
+  moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  layers:'<path d="M12 2l10 5-10 5L2 7z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>',
+  terminal:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 9l4 3-4 3M12 15h6"/>',
+  star:'<path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/>',
+  heart:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21.2l8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/>',
+  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  timer:'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/>',
+  mail:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/>',
+};
+Object.assign(I, {
+  x:'<path d="M6 6l12 12M18 6L6 18"/>',
+  chevR:'<path d="M9 18l6-6-6-6"/>',
+  undo:'<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+  ccw:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+  cw:'<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
+  hand:'<path d="M18 11V6a2 2 0 0 0-4 0M14 10V4a2 2 0 0 0-4 0v2M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.4l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15"/>',
+  eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  cursor:'<path d="M4 4l7 17 2.5-7.5L21 11z"/>',
+  star2:'<path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/>',
+});
+const icon = (n, cls='i') => `<svg class="${cls}" viewBox="0 0 24 24">${I[n]||I.star}</svg>`;
+function hydrateIcons(root=document){ root.querySelectorAll('[data-icon]').forEach(e=>{ if(!e.dataset.done){ e.innerHTML=icon(e.dataset.icon); e.dataset.done=1; e.style.display='inline-grid'; } }); }
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ================= catalog ================= */
+const TYPES = [
+  {k:'feature', name:'Typeflux 功能', icon:'infinity', color:'#5B5BD6', desc:'语音输入、对话、截图、翻译…'},
+  {k:'keyword', name:'启动器关键词', icon:'command', color:'#7C3AED', desc:'对选中文字运行关键词或工作流'},
+  {k:'system', name:'系统操作', icon:'contrast', color:'#475569', desc:'深色模式、静音、锁屏…'},
+  {k:'app', name:'打开应用', icon:'app', color:'#0EA5E9', desc:'打开或切换到任意应用'},
+  {k:'keys', name:'发送快捷键', icon:'keyboard', color:'#F97316', desc:'向当前应用发送组合键'},
+  {k:'shortcut', name:'快捷指令', icon:'layers', color:'#EC4899', desc:'运行「快捷指令」里的指令'},
+  {k:'url', name:'打开网址', icon:'link', color:'#16A34A', desc:'在默认浏览器中打开'},
+  {k:'folder', name:'打开文件夹', icon:'folder', color:'#2563EB', desc:'在访达中打开文件夹'},
+];
+const T = Object.fromEntries(TYPES.map(t=>[t.k,t]));
+const CAT = {
+  feature:[
+    {ref:'dictation',title:'语音输入',icon:'mic',sub:'免按住听写，再按一次结束',grp:'输入'},
+    {ref:'ask',title:'对话',icon:'sparkles',sub:'在鼠标处打开启动器，选中文字作为上下文',grp:'输入'},
+    {ref:'translate',title:'翻译选中文字',icon:'translate',sub:'没有选中文字时打开翻译面板',grp:'输入'},
+    {ref:'clipboard',title:'剪贴板历史',icon:'clipboard',sub:'在鼠标附近打开剪贴板面板',grp:'输入'},
+    {ref:'persona',title:'切换人设',icon:'persona',sub:'打开人设切换面板',grp:'输入'},
+    {ref:'screenshot',title:'截图',icon:'viewfinder',sub:'框选区域，可标注、钉图、录屏',grp:'截图'},
+    {ref:'ocr',title:'截图识字',icon:'textscan',sub:'框选区域，识别其中的文字',grp:'截图'},
+    {ref:'shotTranslate',title:'截图翻译',icon:'shotTr',sub:'框选区域，识别后翻译',grp:'截图'},
+    {ref:'chat',title:'对话窗口',icon:'chat',sub:'打开对话窗口',grp:'窗口'},
+    {ref:'notes',title:'笔记',icon:'note',sub:'打开笔记窗口',grp:'窗口'},
+    {ref:'wordbook',title:'单词本',icon:'book',sub:'打开单词本窗口',grp:'窗口'},
+    {ref:'studio',title:'打开 Typeflux',icon:'infinity',sub:'打开 Typeflux 主窗口',grp:'窗口'},
+  ],
+  keyword:[
+    {ref:'fy',title:'翻译',icon:'translate',sub:'fy · 翻译插件',grp:'关键词'},
+    {ref:'rs',title:'润色',icon:'wand',sub:'rs · 自定义提示词',grp:'关键词'},
+    {ref:'sum',title:'总结',icon:'note',sub:'sum · 自定义提示词',grp:'关键词'},
+    {ref:'dict',title:'查词',icon:'book',sub:'dict · 词典',grp:'关键词'},
+    {ref:'wf-weekly',title:'生成周报',icon:'workflow',sub:'工作流 · 已信任',grp:'工作流'},
+    {ref:'wf-mail',title:'整理成邮件',icon:'mail',sub:'工作流 · 已信任',grp:'工作流'},
+  ],
+  system:[
+    {ref:'darkMode',title:'切换深色模式',icon:'contrast',sub:'在浅色与深色外观之间切换',grp:'外观与声音'},
+    {ref:'mute',title:'静音',icon:'mute',sub:'切换系统静音',grp:'外观与声音'},
+    {ref:'awake',title:'防止休眠',icon:'bolt',sub:'切换“保持唤醒”',grp:'外观与声音'},
+    {ref:'mission',title:'调度中心',icon:'mission',sub:'显示所有窗口和桌面',grp:'窗口与桌面'},
+    {ref:'emoji',title:'表情与符号',icon:'smile',sub:'打开系统表情面板',grp:'窗口与桌面'},
+    {ref:'lock',title:'锁定屏幕',icon:'lock',sub:'立即锁定这台 Mac',grp:'安全'},
+  ],
+  shortcut:[
+    {ref:'番茄钟',title:'番茄钟',icon:'timer',sub:'快捷指令',grp:'我的快捷指令'},
+    {ref:'发送到 Things',title:'发送到 Things',icon:'layers',sub:'快捷指令',grp:'我的快捷指令'},
+    {ref:'今日简报',title:'今日简报',icon:'globe',sub:'快捷指令',grp:'我的快捷指令'},
+  ],
+  app:[
+    ['Safari','#1E90FF'],['微信','#07C160'],['Xcode','#1575F9'],['Visual Studio Code','#23A9F2'],['访达','#3EA8F4'],['备忘录','#F5C400'],
+    ['日历','#FF3B30'],['终端','#2B2B2B'],['Slack','#611F69'],['Obsidian','#7C3AED'],['邮件','#2F7CF6'],['信息','#30C759'],
+    ['音乐','#FA2D48'],['Figma','#A259FF'],['Linear','#5E6AD2'],['Notion','#2B2B2B'],
+  ].map(([n,c])=>({ref:n,title:n==='Visual Studio Code'?'VS Code':n,color:c,sub:'应用',grp:'应用'})),
+  folder:[
+    {ref:'~/Downloads',title:'下载',icon:'folder',sub:'~/Downloads',grp:'常用文件夹'},
+    {ref:'~/Documents',title:'文稿',icon:'folder',sub:'~/Documents',grp:'常用文件夹'},
+    {ref:'~/Desktop',title:'桌面',icon:'folder',sub:'~/Desktop',grp:'常用文件夹'},
+    {ref:'~/Projects',title:'Projects',icon:'folder',sub:'~/Projects',grp:'常用文件夹'},
+  ],
+  keys:[
+    {ref:'⌘⇧T',title:'重新打开标签页',icon:'keyboard',sub:'⌘⇧T',grp:'常用组合键'},
+    {ref:'⌘W',title:'关闭窗口',icon:'keyboard',sub:'⌘W',grp:'常用组合键'},
+    {ref:'⌃⌘F',title:'全屏',icon:'keyboard',sub:'⌃⌘F',grp:'常用组合键'},
+    {ref:'⌘`',title:'切换同应用窗口',icon:'keyboard',sub:'⌘`',grp:'常用组合键'},
+    {ref:'⌘⇧5',title:'系统截屏工具',icon:'keyboard',sub:'⌘⇧5',grp:'常用组合键'},
+  ],
+  url:[
+    {ref:'https://github.com',title:'GitHub',icon:'link',sub:'https://github.com',grp:'示例'},
+    {ref:'https://mail.google.com',title:'Gmail',icon:'link',sub:'https://mail.google.com',grp:'示例'},
+  ],
+};
+const RECOMMEND = [['feature','chat'],['system','darkMode'],['feature','shotTranslate'],['keyword','rs'],['system','emoji'],['feature','notes']];
+const ICON_CHOICES = ['mic','sparkles','chat','viewfinder','textscan','translate','clipboard','note','book','persona','wand','workflow','keyboard','link','folder','contrast','mute','mission','lock','smile','bolt','moon','layers','star','heart','globe','timer','mail','command','terminal','infinity','app','eye','cursor','hand','target'];
+const okURL = s => { try { const u=new URL(s); return (u.protocol==='http:'||u.protocol==='https:') && !!u.hostname && u.hostname.includes('.'); } catch(_){ return false; } };
+function catItem(type, ref){ return (CAT[type]||[]).find(x=>x.ref===ref); }
+function itemFor(type, ref){
+  const c=catItem(type,ref); if(c) return {type, ref, title:c.title, icon:c.icon||T[type].icon, sub:c.sub, grp:c.grp, color:c.color};
+  if(type==='url') return {type, ref, title:hostOf(ref), icon:'link', sub:ref};
+  if(type==='folder') return {type, ref, title:ref.split('/').filter(Boolean).pop()||ref, icon:'folder', sub:ref};
+  if(type==='keys') return {type, ref, title:'发送 '+ref, icon:'keyboard', sub:ref};
+  if(type==='shortcut') return {type, ref, title:ref, icon:'layers', sub:'快捷指令'};
+  return {type, ref, title:ref, icon:T[type].icon, sub:''};
+}
+function hostOf(u){ try { return new URL(u).hostname.replace(/^www\./,''); } catch(_){ return u; } }
+let seq=0; const uid = () => 'a'+(++seq)+Math.random().toString(36).slice(2,6);
+function mk(type, ref, extra={}){ const it=itemFor(type,ref); return Object.assign({id:uid(), type, ref, title:it.title, icon:it.icon}, extra); }
+const DEFAULTS = () => [mk('feature','dictation'),mk('feature','ask'),mk('feature','translate'),mk('feature','screenshot'),mk('feature','ocr'),mk('feature','clipboard')];
+const SCENES = {
+  default: DEFAULTS,
+  empty: () => [],
+  full: () => [...DEFAULTS(), mk('system','darkMode'), mk('app','微信')],
+  broken: () => [mk('feature','dictation'), mk('feature','ask'), mk('keyword','old-kw',{title:'旧关键词',icon:'command',broken:'关键词「old-kw」已被删除'}), mk('feature','screenshot'), mk('app','Sketch',{title:'Sketch',broken:'应用「Sketch」已不在这台 Mac 上'}), mk('feature','clipboard')],
+};
+
+/* ================= state ================= */
+const S = { enabled:true, style:'frosted', centerTitle:'Typeflux', hotkey:{mods:['⌃','⌥'],key:'Space'}, actions:DEFAULTS() };
+const UI = { mode:'overview', insertAt:null, replaceId:null, cat:null, query:'', sel:null, preview:null, kb:-1, drag:null, trying:false, tryHover:-1, flash:null };
+const undoStack = [];
+function snapshot(label){ undoStack.push({label, actions:JSON.parse(JSON.stringify(S.actions))}); if(undoStack.length>20) undoStack.shift(); }
+function undo(){ const u=undoStack.pop(); if(!u) return; S.actions=u.actions; if(UI.sel && !S.actions.some(a=>a.id===UI.sel)) { UI.sel=null; UI.mode='overview'; } toast('已撤销：'+u.label, false); renderAll(); }
+
+/* ================= ring geometry & renderer ================= */
+const C=220, R_OUT=128, R_IN=54, R_CENTER=48;
+const pt=(r,a)=>[C+r*Math.cos(a), C-r*Math.sin(a)];
+const itemAngle=(i,n)=>Math.PI/2 - i*2*Math.PI/n;
+function angleIndex(a,n){ const cw=((Math.PI/2 - a)%(2*Math.PI)+2*Math.PI)%(2*Math.PI); return Math.round(cw/(2*Math.PI/n))%n; }
+const DIRN = ['上方','右上方','右侧','右下方','下方','左下方','左侧','左上方'];
+function dirName(i,n){ if(n<=1) return '整圈'; const deg=i*360/n; return DIRN[Math.round(deg/45)%8]; }
+function sectorPath(i,n,inset=0){
+  if(n===1){ return `M${C+R_OUT-inset} ${C}A${R_OUT-inset} ${R_OUT-inset} 0 1 0 ${C-R_OUT+inset} ${C}A${R_OUT-inset} ${R_OUT-inset} 0 1 0 ${C+R_OUT-inset} ${C}Z M${C+R_IN+inset} ${C}A${R_IN+inset} ${R_IN+inset} 0 1 1 ${C-R_IN-inset} ${C}A${R_IN+inset} ${R_IN+inset} 0 1 1 ${C+R_IN+inset} ${C}Z`; }
+  const h=Math.PI/n - inset/R_OUT, h2=Math.PI/n - inset/R_IN, a=itemAngle(i,n);
+  const [x0,y0]=pt(R_OUT-inset,a+h), [x1,y1]=pt(R_OUT-inset,a-h), [x2,y2]=pt(R_IN+inset,a-h2), [x3,y3]=pt(R_IN+inset,a+h2);
+  const big = (2*h>Math.PI)?1:0;
+  return `M${x0} ${y0}A${R_OUT-inset} ${R_OUT-inset} 0 ${big} 1 ${x1} ${y1}L${x2} ${y2}A${R_IN+inset} ${R_IN+inset} 0 ${big} 0 ${x3} ${y3}Z`;
+}
+const glyphW = ch => /[⺀-￿]/.test(ch) ? 10.6 : 6.1;
+const textW = s => [...s].reduce((w,ch)=>w+glyphW(ch),0);
+function fitLine(s,max){ if(textW(s)<=max) return s; let out=''; for(const ch of s){ if(textW(out+ch+'…')>max) break; out+=ch; } return out+'…'; }
+function wrapLabel(s){
+  const MAX=66; s=(s||'').trim(); if(textW(s)<=MAX) return [s];
+  const sp=s.lastIndexOf(' ', Math.ceil(s.length/2)+3);
+  if(sp>0) return [fitLine(s.slice(0,sp),MAX), fitLine(s.slice(sp+1),MAX)];
+  if(/[⺀-￿]/.test(s)){ const cut=Math.ceil(s.length/2); return [s.slice(0,cut), fitLine(s.slice(cut),MAX)]; }
+  return [fitLine(s,MAX*1.5)];
+}
+function appColor(a){ const c=catItem('app',a.ref); return (c&&c.color)||'#555'; }
+function glyph(a, x, y, size, col){
+  if(a.type==='app'){ const s=size/26; return `<g transform="translate(${x} ${y}) scale(${s})" opacity="${a.broken?.4:1}"><rect x="-13" y="-13" width="26" height="26" rx="6.5" fill="${appColor(a)}"/><text y="4.5" text-anchor="middle" font-size="12.5" font-weight="700" fill="#fff" font-family="-apple-system,PingFang SC">${esc((a.title||'?').slice(0,1))}</text></g>`; }
+  return `<g transform="translate(${x-size/2} ${y-size/2}) scale(${size/24})" color="${col}"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${I[a.icon]||I.star}</g></g>`;
+}
+/* display list: actions + insertion placeholder / replacement preview / drag reorder */
+function displayList(){
+  let list=S.actions.map(a=>({...a}));
+  if(UI.drag && UI.drag.active){ const [m]=list.splice(UI.drag.from,1); list.splice(UI.drag.to,0,m); }
+  if(UI.mode==='library' && UI.insertAt!=null){
+    const p = UI.preview ? {...UI.preview, id:'__ph', ph:true, previewing:true} : {id:'__ph', ph:true, title:'新操作', icon:'plus'};
+    list.splice(UI.insertAt,0,p);
+  }
+  if(UI.mode==='library' && UI.replaceId && UI.preview){ const i=list.findIndex(a=>a.id===UI.replaceId); if(i>=0) list[i]={...list[i], ...UI.preview, title:UI.preview.title, previewing:true}; }
+  return list;
+}
+function selIndex(list){
+  if(UI.trying) return UI.tryHover;
+  if(UI.mode==='library' && UI.insertAt!=null) return list.findIndex(a=>a.ph);
+  if(UI.mode==='library' && UI.replaceId) return list.findIndex(a=>a.id===UI.replaceId);
+  if(UI.drag && UI.drag.active) return UI.drag.to;
+  return UI.sel ? list.findIndex(a=>a.id===UI.sel) : -1;
+}
+function ringSVG(list){
+  const n=list.length, style=S.style, sel=selIndex(list);
+  const ringFill = {classic:'url(#gC)', frosted:'rgba(26,26,30,.55)', liquid:'rgba(255,255,255,.08)'}[style];
+  let s=`<svg class="ringsvg" viewBox="0 0 440 440"><defs>
+    <linearGradient id="gC" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#151516"/><stop offset="1" stop-color="#1D1D1F"/></linearGradient>
+    <radialGradient id="hl" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="rgb(238,146,87)" stop-opacity=".62"/><stop offset=".55" stop-color="rgb(184,110,87)" stop-opacity=".28"/><stop offset="1" stop-color="rgb(184,110,87)" stop-opacity="0"/></radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="${style==='liquid'?.65:.24}"/><stop offset=".5" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#fff" stop-opacity="${style==='liquid'?.35:.12}"/></linearGradient>
+    <clipPath id="clip"><path d="M${C+R_OUT} ${C}A${R_OUT} ${R_OUT} 0 1 0 ${C-R_OUT} ${C}A${R_OUT} ${R_OUT} 0 1 0 ${C+R_OUT} ${C}Z M${C+R_IN} ${C}A${R_IN} ${R_IN} 0 1 1 ${C-R_IN} ${C}A${R_IN} ${R_IN} 0 1 1 ${C+R_IN} ${C}Z" clip-rule="evenodd"/></clipPath>
+    <filter id="sh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity=".45"/></filter>
+  </defs>`;
+  if(n===0){
+    return s+`<circle cx="${C}" cy="${C}" r="${R_OUT}" fill="rgba(20,20,24,.25)" stroke="rgba(255,255,255,.35)" stroke-dasharray="5 7"/><circle cx="${C}" cy="${C}" r="${R_IN}" fill="none" stroke="rgba(255,255,255,.2)" stroke-dasharray="4 6"/></svg>`;
+  }
+  s+=`<path d="M${C+R_OUT} ${C}A${R_OUT} ${R_OUT} 0 1 0 ${C-R_OUT} ${C}A${R_OUT} ${R_OUT} 0 1 0 ${C+R_OUT} ${C}Z M${C+R_IN} ${C}A${R_IN} ${R_IN} 0 1 1 ${C-R_IN} ${C}A${R_IN} ${R_IN} 0 1 1 ${C+R_IN} ${C}Z" fill-rule="evenodd" fill="${ringFill}" filter="url(#sh)"/>`;
+  s+=`<g clip-path="url(#clip)">`;
+  // selection / placeholder sector
+  list.forEach((a,i)=>{
+    if(a.ph && !a.previewing) s+=`<path d="${sectorPath(i,n,3)}" fill="rgba(23,140,255,.20)" stroke="#5AB0FF" stroke-width="1.4" stroke-dasharray="5 4"/>`;
+    else if(a.ph) s+=`<path d="${sectorPath(i,n,3)}" fill="rgba(23,140,255,.30)" stroke="#5AB0FF" stroke-width="1.4"/>`;
+  });
+  if(sel>=0 && !list[sel].ph){
+    if(UI.trying){ const [hx,hy]=pt((R_IN+R_OUT)/2+6, itemAngle(sel,n)); s+=`<path d="${sectorPath(sel,n)}" fill="rgba(255,190,120,.07)"/><circle cx="${hx}" cy="${hy}" r="110" fill="url(#hl)"/>`; }
+    else s+=`<path d="${sectorPath(sel,n,3)}" fill="rgba(255,255,255,.13)" stroke="#5AB0FF" stroke-width="1.6"/>`;
+  }
+  if(n>1) for(let i=0;i<n;i++){ const a=itemAngle(i,n)+Math.PI/n; const [x1,y1]=pt(R_IN,a), [x2,y2]=pt(R_OUT,a);
+    s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="rgba(255,255,255,${style==='classic'?.07:.12})"/>`; }
+  s+=`</g>`;
+  s+=`<circle cx="${C}" cy="${C}" r="${R_OUT}" fill="none" stroke="url(#rim)" stroke-width="${style==='liquid'?1.4:1}"/>`;
+  s+=`<circle cx="${C}" cy="${C}" r="${R_IN}" fill="none" stroke="rgba(255,255,255,${style==='liquid'?.35:.12})"/>`;
+  const centerFill={classic:'#1B1B1D',frosted:'rgba(30,30,34,.72)',liquid:'rgba(255,255,255,.1)'}[style];
+  const realN = list.filter(a=>!a.ph).length;
+  s+=`<circle cx="${C}" cy="${C}" r="${R_CENTER}" fill="${centerFill}" stroke="rgba(255,255,255,.1)"/>
+      <text x="${C}" y="${C+1}" text-anchor="middle" fill="#fff" font-size="13" font-weight="700" font-family="-apple-system,PingFang SC,sans-serif">${esc(S.centerTitle||'')}</text>
+      <text x="${C}" y="${C+17}" text-anchor="middle" fill="rgba(255,255,255,.53)" font-size="8" letter-spacing="1" font-family="-apple-system,PingFang SC,sans-serif">${realN} 个操作</text>`;
+  list.forEach((a,i)=>{
+    const ang=itemAngle(i,n), on=i===sel;
+    const [ix,iy]=pt((R_IN+R_OUT)/2+4, ang);
+    const col = a.broken?'rgba(255,255,255,.35)': (on&&UI.trying)?'#FFC457' : a.ph&&!a.previewing ? '#9CD0FF' : 'rgba(255,255,255,.92)';
+    const size = on?28:25;
+    s+=glyph(a, ix, iy, size, col);
+    if(a.broken){ const [bx,by]=pt((R_IN+R_OUT)/2+18, ang+0.12); s+=`<circle cx="${bx}" cy="${by-8}" r="4" fill="#E8A317" stroke="#1b1b1d" stroke-width="1.2"/>`; }
+    // keyboard number near the inner edge
+    if(!a.ph && !UI.trying){ const [nx,ny]=pt(R_IN+10, ang); s+=`<text x="${nx}" y="${ny+3}" text-anchor="middle" font-size="8.5" font-weight="600" fill="rgba(255,255,255,.42)" font-family="-apple-system">${i+1}</text>`; }
+    const lines=wrapLabel(a.title); const [lx,ly]=pt(R_OUT+36, ang);
+    const w=Math.max(...lines.map(textW))+14, h=lines.length*13+8;
+    const pill = a.ph ? 'rgba(23,90,170,.92)' : (on&&UI.trying) ? 'rgba(58,44,24,.95)' : on ? 'rgba(20,60,110,.92)' : 'rgba(24,24,26,.78)';
+    const tc = a.ph ? '#D6ECFF' : (on&&UI.trying) ? '#FFC457' : on ? '#fff' : 'rgba(255,255,255,.75)';
+    s+=`<g transform="translate(${lx} ${ly})"><rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="6" fill="${pill}" stroke="rgba(255,255,255,.08)"/>`;
+    lines.forEach((l,k)=>{ s+=`<text x="0" y="${-h/2+15+k*13}" text-anchor="middle" fill="${tc}" font-size="10.5" font-weight="${on||a.ph?600:500}" font-family="-apple-system,PingFang SC">${esc(l)}</text>`; });
+    s+=`</g>`;
+  });
+  return s+`</svg>`;
+}
+
+/* ================= rendering ================= */
+const $ = id => document.getElementById(id);
+const win=$('win'), host=$('host'), canvas=$('canvas'), insp=$('insp');
+function renderAll(){ renderCanvas(); renderInspector(); renderMeta(); }
+function renderMeta(){
+  const n=S.actions.length, full=n>=8;
+  $('cnt').textContent = n+' / 8';
+  $('capChip').innerHTML = full ? `${icon('warn')}已满 8 / 8` : `${n} / 8 · 还可添加 ${8-n} 个`;
+  $('capChip').style.color = full ? 'var(--warm)' : '';
+  document.querySelectorAll('#styleSeg button').forEach(b=>b.classList.toggle('on', b.dataset.v===S.style));
+  renderHotkey();
+}
+function renderCanvas(){
+  const list=displayList(), n=list.length;
+  const blurOn = S.style!=='classic' && n>0;
+  const f = S.style==='liquid'?'blur(5px) saturate(1.9) brightness(1.05)':'blur(22px) saturate(1.4)';
+  let h = `<div class="blur" style="${blurOn?`backdrop-filter:${f};-webkit-backdrop-filter:${f}`:''}"></div>` + ringSVG(list);
+  // insertion slots on the rim between neighbours
+  const real=S.actions.length;
+  const showSlots = !UI.trying && real>0 && real<8 && !(UI.mode==='library' && UI.insertAt!=null) && !(UI.drag&&UI.drag.active);
+  if(showSlots){
+    for(let g=0; g<real; g++){
+      const a = real===1 ? -Math.PI/2 : itemAngle(g,real)-Math.PI/real;
+      const [x,y]=pt(R_OUT, a);
+      const at=g+1, d=dirName(at, real+1);
+      h+=`<button class="slot" style="left:${x}px;top:${y}px" data-gap="${at}" title="在这里添加（第 ${at+1} 个 · ${d}）" aria-label="在第 ${at+1} 个位置添加操作">${icon('plus')}</button>`;
+    }
+  }
+  if(real===0 && !(UI.mode==='library')){
+    h+=`<button class="first" id="firstBtn" aria-label="添加第一个操作">${icon('plus')}</button><div class="first-t">添加第一个操作<small>之后在圆环上的 ⊕ 处继续添加</small></div>`;
+  }
+  host.innerHTML=h;
+  host.querySelectorAll('.slot').forEach(b=>b.addEventListener('click',e=>{ e.stopPropagation(); openLibrary({insertAt:+b.dataset.gap}); }));
+  const fb=$('firstBtn'); if(fb) fb.addEventListener('click',e=>{ e.stopPropagation(); openLibrary({insertAt:0}); });
+  // hint line
+  const ch=$('chint');
+  if(UI.trying) ch.innerHTML='移到某个方向看它会执行什么；点击模拟松开 · <span class="kc">Esc</span> 结束';
+  else if(UI.mode==='library' && UI.insertAt!=null) ch.innerHTML='悬停右侧任一项，这里实时预览 · <span class="kc">Esc</span> 取消';
+  else if(real===0) ch.innerHTML='';
+  else if(UI.sel) ch.innerHTML='拖动图标换位置 · <span class="kc">⌥</span><span class="kc">←</span><span class="kc">→</span> 移动 · <span class="kc">⌫</span> 删除';
+  else ch.innerHTML='点 ⊕ 在该处添加 · 点图标编辑 · 拖动图标换位置';
+  $('tryBtn').classList.toggle('on', UI.trying);
+  $('tryBtn').innerHTML = UI.trying ? icon('x')+'结束试用' : icon('play')+'试一试';
+  $('tryBtn').disabled = real===0;
+  canvas.classList.toggle('dragging', !!(UI.drag&&UI.drag.active));
+}
+
+/* ---------- inspector ---------- */
+function renderInspector(){
+  if(UI.mode==='library') return renderLibrary();
+  if(UI.mode==='edit' && UI.sel && S.actions.some(a=>a.id===UI.sel)) return renderEdit();
+  UI.mode='overview'; renderOverview();
+}
+function describe(a){
+  const t=T[a.type]; const it=itemFor(a.type,a.ref);
+  if(a.broken) return a.broken;
+  if(a.type==='feature'||a.type==='system') return it.title!==a.title ? t.name+' · '+it.title : it.sub;
+  return t.name+' · '+(a.type==='keyword'?it.sub:a.ref);
+}
+function aIcon(a,px=14){ return a.type==='app' ? `<svg width="${px+6}" height="${px+6}" viewBox="0 0 26 26"><rect width="26" height="26" rx="6.5" fill="${appColor(a)}"/><text x="13" y="17.5" text-anchor="middle" font-size="12.5" font-weight="700" fill="#fff" font-family="-apple-system,PingFang SC">${esc((a.title||'?').slice(0,1))}</text></svg>` : icon(a.icon); }
+
+function renderOverview(){
+  const n=S.actions.length, full=n>=8;
+  if(n===0){ return openLibrary({insertAt:0}, true); }
+  let h=`<div class="ih"><div class="tt"><b>圆环里的 ${n} 个操作</b><span>从正上方开始顺时针，序号就是轻按后可用的数字键</span></div></div><div class="ib" id="olist">`;
+  S.actions.forEach((a,i)=>{
+    h+=`<div class="orow" draggable="true" data-i="${i}" data-id="${a.id}" tabindex="0">
+      <span class="num">${i+1}</span><span class="ic">${aIcon(a)}</span>
+      <div class="t"><b>${esc(a.title)}</b><small>${esc(describe(a))}</small></div>
+      ${a.broken?'<span class="bad" title="需要处理"></span>':''}<span class="dir">${dirName(i,n)}</span><span class="grip">${icon('grip')}</span></div>`;
+  });
+  h+= full ? `<div class="banner warn" style="margin-top:8px">${icon('warn')}<div><b>圆环已满（8 个）。</b>更多操作会让扇区太窄、难以划中。可以先删掉一个，或在编辑里「更换」。</div></div>`
+           : `<button class="addrow" id="addEnd"><span class="ic">${icon('plus')}</span>添加操作<span style="color:var(--t3);font-weight:400;margin-left:auto;font-size:11.5px">也可以直接点圆环上的 ⊕</span></button>`;
+  h+=`</div>`;
+  insp.innerHTML=h;
+  const ae=$('addEnd'); if(ae) ae.onclick=()=>openLibrary({insertAt:S.actions.length});
+  let dragFrom=null;
+  insp.querySelectorAll('.orow').forEach(r=>{
+    const i=+r.dataset.i;
+    r.onclick=()=>select(r.dataset.id);
+    r.onkeydown=e=>{ if(e.key==='Enter'){ select(r.dataset.id); } };
+    r.onmouseenter=()=>{ UI.hoverRow=r.dataset.id; };
+    r.addEventListener('dragstart',e=>{ dragFrom=i; r.classList.add('drag'); e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',String(i)); });
+    r.addEventListener('dragend',()=>{ r.classList.remove('drag'); insp.querySelectorAll('.over').forEach(x=>x.classList.remove('over')); });
+    r.addEventListener('dragover',e=>{ e.preventDefault(); insp.querySelectorAll('.over').forEach(x=>x.classList.remove('over')); r.classList.add('over'); });
+    r.addEventListener('drop',e=>{ e.preventDefault(); if(dragFrom!=null && dragFrom!==i){ moveTo(dragFrom,i); } dragFrom=null; });
+  });
+}
+
+function libraryEntries(){
+  const out=[];
+  for(const t of ['feature','keyword','system','shortcut','app','folder','keys']) for(const c of CAT[t]) out.push(itemFor(t,c.ref));
+  return out;
+}
+const inRing = it => S.actions.some(a=>a.type===it.type && a.ref===it.ref);
+function hl(s,q){ if(!q) return esc(s); const i=s.toLowerCase().indexOf(q.toLowerCase()); if(i<0) return esc(s); return esc(s.slice(0,i))+'<mark>'+esc(s.slice(i,i+q.length))+'</mark>'+esc(s.slice(i+q.length)); }
+function searchResults(q){
+  q=q.trim(); if(!q) return [];
+  const ql=q.toLowerCase(), res=[];
+  if(/^https?:\/\//i.test(q) || /^[\w-]+(\.[\w-]+)+(\/.*)?$/.test(q)){ const u=/^https?:/i.test(q)?q:'https://'+q; if(okURL(u)) res.push({...itemFor('url',u), title:'打开网址 '+hostOf(u), grp:'网址', synth:true}); }
+  if(/^[~\/]/.test(q)) res.push({...itemFor('folder',q), title:'打开文件夹 '+q, grp:'文件夹', synth:true});
+  for(const it of libraryEntries()){
+    const hay=(it.title+' '+(it.sub||'')+' '+T[it.type].name).toLowerCase();
+    if(hay.includes(ql)) res.push({...it, grp:T[it.type].name});
+  }
+  return res;
+}
+let libItems=[];   // flat list of selectable items currently shown (for keyboard nav)
+function libHeader(){
+  const n=S.actions.length;
+  if(UI.replaceId){ const a=S.actions.find(x=>x.id===UI.replaceId); return {t:`更换「${a?a.title:''}」`, s:'位置保持不变；未自定义的名称和图标会随之更新'}; }
+  const pos=UI.insertAt, d=dirName(pos, n+1);
+  return {t: n===0?'添加第一个操作':`添加到第 ${pos+1} 个位置`, s: n===0?'它会占满整个圆环，之后再加会自动均分':`圆环的${d} · 轻按快捷键后按 ${pos+1} 直接选中`};
+}
+function renderLibrary(){
+  const hd=libHeader(), cat=UI.cat, q=UI.query;
+  let h=`<div class="ih">`;
+  if(cat) h+=`<button class="back" id="libBack">${icon('chevL')}全部</button>`;
+  h+=`<div class="tt"><b>${esc(cat?T[cat].name:hd.t)}</b><span>${esc(cat?hd.t+' · '+hd.s.split(' · ')[0]:hd.s)}</span></div>`;
+  h+=`<button class="btn sm icon plain" id="libClose" title="取消（Esc）" aria-label="取消">${icon('x')}</button></div><div class="ib" id="libBody">`;
+  libItems=[];
+  const searchBox = ph => `<div class="isearch">${icon('search')}<input class="field" id="libQ" placeholder="${ph}" value="${esc(q)}" autocomplete="off" spellcheck="false"><span class="kbd">↑↓ ↩</span></div>`;
+  if(!cat){
+    h+=searchBox('搜索全部操作，或粘贴网址 / 路径');
+    if(q.trim()){
+      const res=searchResults(q);
+      if(!res.length) h+=`<div class="none">没有找到「${esc(q)}」<br><span style="color:var(--t3)">试试应用名、功能名，或者直接粘贴一个网址</span></div>`;
+      h+=itemsHTML(res, q, true);
+    } else {
+      const rec = RECOMMEND.map(([t,r])=>itemFor(t,r)).filter(it=>!inRing(it)).slice(0,4);
+      if(rec.length){ h+=`<div class="grp">推荐</div><div class="chips">`; rec.forEach(it=>{ const k=libItems.push(it)-1; h+=`<button class="chip" data-k="${k}"><span class="ic">${icon(it.icon)}</span>${esc(it.title)}</button>`; }); h+=`</div>`; }
+      h+=`<div class="grp">按类型浏览</div><div class="cats">`;
+      TYPES.forEach(t=>{ const c=(CAT[t.k]||[]).length; h+=`<button class="cat" data-cat="${t.k}"><span class="ct" style="background:${t.color}">${icon(t.icon)}</span><b>${t.name}</b><span>${t.desc}</span>${['keys','url'].includes(t.k)?'':`<em>${c}</em>`}</button>`; });
+      h+=`</div>`;
+    }
+  } else if(cat==='keys'){
+    h+=`<div class="grp">录制组合键</div><div class="keyfield" id="keyRec" tabindex="0" style="width:100%;height:44px;border-radius:12px;justify-content:center">${UI.keyRec?'<span class="rec-t">按下要发送的组合键…</span>':'<span style="color:var(--t2);font-size:12.5px">点击后按下组合键，例如 ⌘⇧T</span>'}</div>`;
+    h+=`<div class="fmsg">会发送给打开圆环之前在前台的应用。</div>`;
+    h+=itemsHTML(CAT.keys.map(c=>itemFor('keys',c.ref)), '', false);
+  } else if(cat==='url'){
+    const v=UI.urlDraft||'', u=/^https?:/i.test(v)?v:(v?'https://'+v:''), ok=okURL(u);
+    h+=`<div class="grp">网址</div><div style="display:flex;gap:8px"><input class="field mono ${v&&!ok?'err':''}" id="urlIn" placeholder="https://example.com" value="${esc(v)}" spellcheck="false"><button class="btn primary" id="urlAdd" ${ok?'':'disabled'}>${UI.replaceId?'更换':'添加'}</button></div>`;
+    h+=`<div class="fmsg ${v&&!ok?'err':''}">${v&&!ok?'只支持 http / https 网址':'在默认浏览器中打开。'}</div>`;
+    h+=itemsHTML(CAT.url.map(c=>itemFor('url',c.ref)), '', false);
+  } else {
+    h+=searchBox('在「'+T[cat].name+'」中搜索');
+    const ql=q.trim().toLowerCase();
+    const items=CAT[cat].map(c=>({...itemFor(cat,c.ref), grp:c.grp})).filter(it=>!ql || (it.title+' '+(it.sub||'')).toLowerCase().includes(ql));
+    if(!items.length) h+=`<div class="none">没有匹配的${T[cat].name}</div>`;
+    h+=itemsHTML(items, q.trim(), true);
+    if(cat==='folder') h+=`<button class="addrow" id="pickFolder"><span class="ic">${icon('folder')}</span>选择文件夹…</button>`;
+    if(cat==='shortcut') h+=`<div class="fmsg" style="padding:6px 4px">列表来自「快捷指令」App，新建的指令会自动出现。</div>`;
+  }
+  h+=`</div>`;
+  insp.innerHTML=h;
+  // wire
+  $('libClose').onclick=cancelLibrary;
+  const bk=$('libBack'); if(bk) bk.onclick=()=>{ UI.cat=null; UI.query=''; UI.kb=-1; setPreview(null); renderInspector(); focusQ(); };
+  insp.querySelectorAll('.cat').forEach(b=>b.onclick=()=>{ UI.cat=b.dataset.cat; UI.query=''; UI.kb=-1; UI.urlDraft=''; renderInspector(); focusQ(); });
+  insp.querySelectorAll('[data-k]').forEach(el=>{
+    const it=libItems[+el.dataset.k];
+    el.onmouseenter=()=>{ UI.kb=+el.dataset.k; markKb(); setPreview(it); };
+    el.onmouseleave=()=>{ setPreview(UI.kb>=0&&libItems[UI.kb]&&UI.kb!==+el.dataset.k?libItems[UI.kb]:null); };
+    el.onclick=()=>commit(it);
+  });
+  const qi=$('libQ'); if(qi){ qi.oninput=()=>{ UI.query=qi.value; UI.kb=-1; setPreview(null); const pos=qi.selectionStart; renderInspector(); const n=$('libQ'); n.focus(); n.setSelectionRange(pos,pos); }; qi.onkeydown=libKeys; }
+  const ui=$('urlIn'); if(ui){ ui.oninput=()=>{ UI.urlDraft=ui.value; const v=ui.value, u=/^https?:/i.test(v)?v:'https://'+v; setPreview(okURL(u)?itemFor('url',u):null); const pos=ui.selectionStart; renderInspector(); const n=$('urlIn'); n.focus(); n.setSelectionRange(pos,pos); };
+    ui.onkeydown=e=>{ if(e.key==='Enter'){ const v=ui.value, u=/^https?:/i.test(v)?v:'https://'+v; if(okURL(u)) commit(itemFor('url',u)); } if(e.key==='Escape'){ e.stopPropagation(); ui.blur(); cancelLibrary(); } }; }
+  const ua=$('urlAdd'); if(ua) ua.onclick=()=>{ const v=UI.urlDraft, u=/^https?:/i.test(v)?v:'https://'+v; if(okURL(u)) commit(itemFor('url',u)); };
+  const kr=$('keyRec'); if(kr) kr.onclick=()=>{ UI.keyRec=true; renderInspector(); };
+  const pf=$('pickFolder'); if(pf) pf.onclick=()=>commit(itemFor('folder','~/Pictures/Screenshots'));
+}
+function itemsHTML(items, q, grouped){
+  let h='', last=null;
+  items.forEach(it=>{
+    if(grouped && it.grp!==last){ last=it.grp; const cnt=items.filter(x=>x.grp===it.grp).length; h+=`<div class="grp">${esc(it.grp||'')}<span class="sp"></span><span class="n">${cnt}</span></div>`; }
+    else if(!grouped && last===null){ last=''; h+=`<div class="grp">${esc(it.grp||'常用')}</div>`; }
+    const k=libItems.push(it)-1, a={type:it.type, ref:it.ref, title:it.title, icon:it.icon};
+    h+=`<div class="item" data-k="${k}"><span class="ic">${aIcon(a,16)}</span><div class="t"><b>${hl(it.title,q)}</b><small>${hl(it.sub||'',q)}</small></div>${inRing(it)&&!it.synth?'<span class="tag">已添加</span>':''}<span class="go">${UI.replaceId?'更换':'添加'}${icon('plus')}</span></div>`;
+  });
+  return h;
+}
+function markKb(){ insp.querySelectorAll('[data-k]').forEach(el=>el.classList.toggle('kb', +el.dataset.k===UI.kb)); const el=insp.querySelector(`[data-k="${UI.kb}"]`); if(el) el.scrollIntoView({block:'nearest'}); }
+function libKeys(e){
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); if(!libItems.length) return; UI.kb = e.key==='ArrowDown' ? Math.min(libItems.length-1, UI.kb+1) : Math.max(0, UI.kb-1); markKb(); setPreview(libItems[UI.kb]); }
+  else if(e.key==='Enter'){ e.preventDefault(); const it=libItems[UI.kb>=0?UI.kb:0]; if(it && (UI.kb>=0 || UI.query.trim())) commit(it); }
+  else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); if(UI.query){ UI.query=''; renderInspector(); focusQ(); } else if(UI.cat){ UI.cat=null; renderInspector(); focusQ(); } else cancelLibrary(); }
+}
+function focusQ(){ const q=$('libQ'); if(q) q.focus(); }
+function setPreview(it){ UI.preview = it ? {type:it.type, ref:it.ref, title:it.title, icon:it.icon} : null; renderCanvas(); }
+
+function openLibrary(o, silent){
+  if(o.insertAt!=null && S.actions.length>=8) return toast('圆环最多 8 个操作，先删除一个再添加', false);
+  Object.assign(UI, {mode:'library', insertAt:o.insertAt??null, replaceId:o.replaceId??null, cat:null, query:'', preview:null, kb:-1, urlDraft:'', keyRec:false, trying:false});
+  if(o.insertAt!=null) UI.sel=null;
+  renderCanvas(); renderLibrary(); if(!silent) focusQ();
+}
+function cancelLibrary(){
+  const back = UI.replaceId; Object.assign(UI,{insertAt:null, replaceId:null, preview:null, cat:null, query:'', keyRec:false});
+  if(S.actions.length===0){ UI.mode='library'; UI.insertAt=0; renderAll(); return; }
+  UI.mode = back ? 'edit' : 'overview'; renderAll(); canvas.focus();
+}
+function commit(it){
+  if(UI.replaceId){
+    const a=S.actions.find(x=>x.id===UI.replaceId); if(!a) return cancelLibrary();
+    snapshot('更换「'+a.title+'」');
+    const oldDefault=itemFor(a.type,a.ref);
+    const keepTitle = a.title!==oldDefault.title && !a.broken, keepIcon = a.icon!==oldDefault.icon && !a.broken;
+    Object.assign(a,{type:it.type, ref:it.ref}); delete a.broken;
+    if(!keepTitle) a.title=it.title; if(!keepIcon || a.type==='app') a.icon=it.icon;
+    Object.assign(UI,{mode:'edit', sel:a.id, replaceId:null, preview:null});
+    toast(`已更换为「${it.title}」`, true);
+  } else {
+    if(S.actions.length>=8) return;
+    snapshot('添加「'+it.title+'」');
+    const a={id:uid(), type:it.type, ref:it.ref, title:it.title, icon:it.icon};
+    const at=Math.min(UI.insertAt??S.actions.length, S.actions.length);
+    S.actions.splice(at,0,a);
+    Object.assign(UI,{mode:'edit', sel:a.id, insertAt:null, preview:null});
+    toast(`已添加到圆环的${dirName(at,S.actions.length)}`, true);
+  }
+  renderAll();
+}
+
+/* ---------- edit ---------- */
+function renderEdit(){
+  const i=S.actions.findIndex(a=>a.id===UI.sel), a=S.actions[i], n=S.actions.length, def=itemFor(a.type,a.ref);
+  const t=T[a.type];
+  let h=`<div class="ih"><button class="back" id="edBack">${icon('chevL')}全部操作</button><div class="tt"></div><button class="btn sm icon plain" id="edClose" title="完成（Esc）" aria-label="完成">${icon('x')}</button></div><div class="ib">`;
+  if(a.broken) h+=`<div class="banner warn">${icon('warn')}<div><b>${esc(a.broken)}</b><br>它在圆环里会显示为灰色且不会执行。<button class="btn sm" id="fixBtn" style="margin-top:6px">更换…</button></div></div>`;
+  h+=`<div class="ehead"><span class="big">${aIcon(a,22)}</span><div class="t"><input id="edName" value="${esc(a.title)}" placeholder="${esc(def.title)}" maxlength="24" aria-label="名称"><small>显示在圆环上${a.title!==def.title&&!a.broken?` · <a href="#" id="resetName" style="color:var(--accent)">恢复为「${esc(def.title)}」</a>`:''}</small></div></div>`;
+  // action block
+  h+=`<div class="eblock"><div class="er"><span class="lab">动作</span><span class="tile28" style="background:${t.color};color:#fff">${icon(t.icon)}</span><div class="v">${esc(t.name)}<small>${esc(a.broken?'—':(def.sub||a.ref))}</small></div><button class="btn sm" id="replaceBtn">更换…</button></div>`;
+  if(a.type==='url'){ const ok=okURL(a.ref); h+=`<div class="er"><span class="lab">网址</span><div class="v"><input class="field mono ${ok?'':'err'}" id="edUrl" value="${esc(a.ref)}" spellcheck="false">${ok?'':'<div class="fmsg err">只支持 http / https 网址</div>'}</div></div>`; }
+  if(a.type==='folder') h+=`<div class="er"><span class="lab">路径</span><div class="v"><input class="field mono" id="edPath" value="${esc(a.ref)}" spellcheck="false"></div><button class="btn sm" id="edPick">选择…</button></div>`;
+  if(a.type==='keys') h+=`<div class="er"><span class="lab">组合键</span><div class="v"><div class="keyfield ${UI.keyRec?'rec':''}" id="edKeys" tabindex="0">${UI.keyRec?'<span class="rec-t">按下组合键…</span>':[...a.ref].map(k=>`<span class="kc">${esc(k)}</span>`).join('')}</div></div></div>`;
+  h+=`</div>`;
+  // icon
+  if(a.type==='app') h+=`<div class="eblock"><div class="er"><span class="lab">图标</span><div class="v" style="color:var(--t2)">使用应用自己的图标</div></div></div>`;
+  else { h+=`<div class="eblock"><div class="er" style="padding-bottom:0"><span class="lab">图标</span><div class="v" style="color:var(--t3);font-size:11.5px">${a.icon!==def.icon?`<a href="#" id="resetIcon" style="color:var(--accent)">恢复默认图标</a>`:'默认图标'}</div></div><div class="icons">`;
+    ICON_CHOICES.forEach(nm=>{ h+=`<button data-ic="${nm}" class="${a.icon===nm?'on':''}" title="${nm}" aria-label="${nm}">${icon(nm)}</button>`; });
+    h+=`</div></div>`; }
+  // position
+  h+=`<div class="eblock"><div class="er"><span class="lab">位置</span><span class="dirpad">${dirPad(i,n)}</span><div class="v">第 ${i+1} 个 · ${dirName(i,n)}<small>轻按快捷键后按 ${i+1}，或向${dirName(i,n).replace('方','').replace('侧','')}划</small></div>
+      <button class="btn sm icon" id="mvL" title="逆时针移动（⌥←）" aria-label="逆时针移动" ${n<2?'disabled':''}>${icon('ccw')}</button><button class="btn sm icon" id="mvR" title="顺时针移动（⌥→）" aria-label="顺时针移动" ${n<2?'disabled':''}>${icon('cw')}</button></div></div>`;
+  h+=`</div><div class="ifoot"><button class="btn sm" id="dupBtn" ${n>=8?'disabled title="圆环已满"':''}>${icon('copy')}复制</button><span class="sp"></span><button class="btn sm plain destructive" id="delBtn">${icon('trash')}删除</button></div>`;
+  insp.innerHTML=h;
+  $('edBack').onclick=$('edClose').onclick=()=>{ UI.mode='overview'; UI.sel=null; UI.keyRec=false; renderAll(); };
+  const nm=$('edName');
+  nm.oninput=()=>{ a.title=nm.value.trim()?nm.value:def.title; renderCanvas(); };
+  nm.onchange=()=>{ if(!nm.value.trim()){ a.title=def.title; } renderAll(); };
+  nm.onkeydown=e=>{ if(e.key==='Enter'){ nm.blur(); } if(e.key==='Escape'){ e.stopPropagation(); nm.blur(); canvas.focus(); } };
+  const rn=$('resetName'); if(rn) rn.onclick=e=>{ e.preventDefault(); a.title=def.title; renderAll(); };
+  const ri=$('resetIcon'); if(ri) ri.onclick=e=>{ e.preventDefault(); a.icon=def.icon; renderAll(); };
+  insp.querySelectorAll('[data-ic]').forEach(b=>b.onclick=()=>{ a.icon=b.dataset.ic; renderAll(); });
+  $('replaceBtn').onclick=()=>openLibrary({replaceId:a.id});
+  const fx=$('fixBtn'); if(fx) fx.onclick=()=>openLibrary({replaceId:a.id});
+  $('mvL').onclick=()=>moveBy(a.id,-1); $('mvR').onclick=()=>moveBy(a.id,1);
+  $('dupBtn').onclick=()=>{ if(S.actions.length>=8) return; snapshot('复制「'+a.title+'」'); const c={...a,id:uid()}; S.actions.splice(i+1,0,c); UI.sel=c.id; toast('已复制到下一个位置', true); renderAll(); };
+  $('delBtn').onclick=()=>removeAction(a.id);
+  const eu=$('edUrl'); if(eu) eu.onchange=()=>{ snapshot('修改网址'); a.ref=eu.value.trim(); if(a.title===hostOf(def.ref)||a.title===def.title) a.title=hostOf(a.ref); renderAll(); };
+  const ep=$('edPath'); if(ep) ep.onchange=()=>{ a.ref=ep.value.trim()||a.ref; renderAll(); };
+  const pk=$('edPick'); if(pk) pk.onclick=()=>{ a.ref='~/Pictures/Screenshots'; a.title=def.title===a.title?'Screenshots':a.title; renderAll(); };
+  const ek=$('edKeys'); if(ek) ek.onclick=()=>{ UI.keyRec=true; renderInspector(); };
+}
+function dirPad(i,n){
+  let s='<svg viewBox="0 0 34 34">';
+  for(let k=0;k<n;k++){ const a=Math.PI/2-k*2*Math.PI/n; const x=17+12*Math.cos(a), y=17-12*Math.sin(a); s+=`<circle cx="${x}" cy="${y}" r="${k===i?3.4:2}" fill="${k===i?'var(--accent)':'var(--t3)'}" opacity="${k===i?1:.5}"/>`; }
+  return s+'<circle cx="17" cy="17" r="4" fill="none" stroke="var(--t3)" stroke-width="1" opacity=".6"/></svg>';
+}
+
+/* ---------- mutations ---------- */
+function select(id){ Object.assign(UI,{mode:'edit', sel:id, insertAt:null, replaceId:null, preview:null, keyRec:false, trying:false}); renderAll(); }
+function moveTo(from,to){ if(from===to) return; snapshot('调整顺序'); const [m]=S.actions.splice(from,1); S.actions.splice(to,0,m); renderAll(); }
+function moveBy(id,d){ const n=S.actions.length; if(n<2) return; const i=S.actions.findIndex(a=>a.id===id); const j=(i+d+n)%n; snapshot('调整顺序'); const [m]=S.actions.splice(i,1); S.actions.splice(j,0,m); renderAll(); }
+function removeAction(id){
+  const i=S.actions.findIndex(a=>a.id===id); if(i<0) return; const a=S.actions[i];
+  snapshot('删除「'+a.title+'」'); S.actions.splice(i,1);
+  Object.assign(UI,{sel:null, mode:'overview'}); toast(`已删除「${a.title}」`, true); renderAll(); canvas.focus();
+}
+
+/* ---------- canvas pointer: click select, drag reorder, try mode ---------- */
+function hit(e){ const r=host.getBoundingClientRect(); const x=e.clientX-r.left, y=e.clientY-r.top; const d=Math.hypot(x-C,y-C); const n=displayList().length;
+  if(!n) return {zone:'none'}; if(d<R_CENTER) return {zone:'center'}; if(d<R_IN-2||d>R_OUT+6) return {zone:'out', d};
+  return {zone:'ring', i:angleIndex(Math.atan2(-(y-C), x-C), n)}; }
+host.addEventListener('pointerdown', e=>{
+  if(e.target.closest('.slot,.first')) return;
+  canvas.focus();
+  const h=hit(e);
+  if(UI.trying){ if(h.zone==='ring'){ const a=S.actions[h.i]; toast('松开后将执行：'+a.title+(a.broken?'（已失效，不会执行）':''), false); } else if(h.zone==='center') toast('在中心松开：取消，什么都不执行', false); return; }
+  if(UI.mode==='library'){ if(h.zone!=='ring') cancelLibrary(); return; }
+  if(h.zone!=='ring'){ if(UI.sel){ UI.sel=null; UI.mode='overview'; renderAll(); } return; }
+  UI.drag={from:h.i, to:h.i, x:e.clientX, y:e.clientY, active:false, id:S.actions[h.i].id};
+  host.setPointerCapture(e.pointerId);
+});
+host.addEventListener('pointermove', e=>{
+  if(UI.trying){ const h=hit(e); const v=h.zone==='ring'?h.i:-1; if(v!==UI.tryHover){ UI.tryHover=v; renderCanvas(); } return; }
+  const dg=UI.drag; if(!dg) return;
+  if(!dg.active && Math.hypot(e.clientX-dg.x, e.clientY-dg.y)>6){ dg.active=true; UI.sel=dg.id; }
+  if(dg.active){ const r=host.getBoundingClientRect(); const x=e.clientX-r.left, y=e.clientY-r.top; const to=angleIndex(Math.atan2(-(y-C), x-C), S.actions.length); if(to!==dg.to){ dg.to=to; renderCanvas(); } }
+});
+host.addEventListener('pointerup', e=>{
+  const dg=UI.drag; if(!dg) return; UI.drag=null;
+  if(dg.active){ if(dg.to!==dg.from){ snapshot('调整顺序'); const [m]=S.actions.splice(dg.from,1); S.actions.splice(dg.to,0,m); toast(`已移到${dirName(dg.to,S.actions.length)}`, true); } UI.mode='edit'; UI.sel=dg.id; renderAll(); }
+  else select(dg.id);
+});
+host.addEventListener('pointerleave', ()=>{ if(UI.trying && UI.tryHover!==-1){ UI.tryHover=-1; renderCanvas(); } });
+
+canvas.addEventListener('keydown', e=>{
+  if(e.target!==canvas) return;
+  const n=S.actions.length; const i=UI.sel?S.actions.findIndex(a=>a.id===UI.sel):-1;
+  const k=e.key;
+  if(['ArrowRight','ArrowDown','ArrowLeft','ArrowUp'].includes(k) && n){
+    e.preventDefault(); const d=(k==='ArrowRight'||k==='ArrowDown')?1:-1;
+    if(e.altKey && i>=0) return moveBy(UI.sel,d);
+    const j = i<0 ? (d>0?0:n-1) : (i+d+n)%n; select(S.actions[j].id); canvas.focus(); return;
+  }
+  if((k==='Backspace'||k==='Delete') && i>=0){ e.preventDefault(); return removeAction(UI.sel); }
+  if(k==='Enter' && i>=0){ e.preventDefault(); select(UI.sel); const nm=$('edName'); if(nm){ nm.focus(); nm.select(); } return; }
+  if(k==='+'||k==='='){ e.preventDefault(); return openLibrary({insertAt: i>=0?i+1:n}); }
+  if(/^[1-8]$/.test(k) && +k<=n){ select(S.actions[+k-1].id); canvas.focus(); }
+});
+document.addEventListener('keydown', e=>{
+  if(!$('stage-settings').classList.contains('on')) return;
+  if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='z' && !/INPUT/.test(document.activeElement.tagName)){ e.preventDefault(); return undo(); }
+  // key recorders
+  if(UI.keyRec){
+    if(['Meta','Control','Alt','Shift'].includes(e.key)) return;
+    e.preventDefault();
+    if(e.key==='Escape'){ UI.keyRec=false; return renderInspector(); }
+    const combo=modsOf(e).join('')+keyName(e); UI.keyRec=false;
+    if(UI.mode==='library') commit(itemFor('keys',combo));
+    else if(UI.mode==='edit'){ const a=S.actions.find(x=>x.id===UI.sel); if(a){ snapshot('修改组合键'); const wasDefault=a.title===itemFor('keys',a.ref).title; a.ref=combo; if(wasDefault) a.title='发送 '+combo; renderAll(); } }
+    return;
+  }
+  if(hkRec) return;
+  if(e.key==='Escape'){
+    if(UI.trying){ UI.trying=false; UI.tryHover=-1; return renderCanvas(); }
+    if(UI.mode==='library' && !/INPUT/.test(document.activeElement.tagName)) return cancelLibrary();
+    if(UI.mode==='edit' && !/INPUT/.test(document.activeElement.tagName)){ UI.mode='overview'; UI.sel=null; renderAll(); canvas.focus(); }
+  }
+});
+
+/* ---------- hotkey field ---------- */
+let hkRec=false;
+function renderHotkey(){ const el=$('hotkey'); el.classList.toggle('rec',hkRec); el.innerHTML = hkRec ? '<span class="rec-t">按下快捷键…</span>' : [...S.hotkey.mods, S.hotkey.key].map(k=>`<span class="kc">${esc(k)}</span>`).join(''); }
+function keyName(e){ return e.code==='Space'?'Space': e.code.startsWith('Key')?e.code.slice(3): e.code.startsWith('Digit')?e.code.slice(5): e.key.length===1?e.key.toUpperCase():e.key; }
+function modsOf(e){ const m=[]; if(e.ctrlKey)m.push('⌃'); if(e.altKey)m.push('⌥'); if(e.shiftKey)m.push('⇧'); if(e.metaKey)m.push('⌘'); return m; }
+$('hotkey').onclick=()=>{ hkRec=!hkRec; renderHotkey(); };
+document.addEventListener('keydown', e=>{ if(!hkRec) return; if(['Meta','Control','Alt','Shift'].includes(e.key)) return; e.preventDefault(); if(e.key!=='Escape'){ const m=modsOf(e); if(m.length) S.hotkey={mods:m,key:keyName(e)}; } hkRec=false; renderHotkey(); }, true);
+
+/* ---------- misc controls ---------- */
+let toastTimer;
+function toast(text, undoable){
+  const t=$('toast'); $('toastT').textContent=text; $('toastB').classList.toggle('nobtn', !undoable || !undoStack.length);
+  t.classList.add('on'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('on'), undoable?5000:2400);
+}
+$('toastB').onclick=()=>{ $('toast').classList.remove('on'); undo(); };
+$('tryBtn').onclick=()=>{ if(!S.actions.length) return; UI.trying=!UI.trying; UI.tryHover=-1; if(UI.trying){ if(UI.mode==='library') cancelLibrary(); } renderCanvas(); canvas.focus(); };
+$('resetBtn').onclick=()=>{ snapshot('恢复默认'); S.actions=DEFAULTS(); Object.assign(UI,{mode:'overview', sel:null, insertAt:null, replaceId:null}); toast('已恢复默认的 6 个操作', true); renderAll(); };
+$('styleSeg').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; S.style=b.dataset.v; renderAll(); });
+$('centerTitle').value=S.centerTitle;
+$('centerTitle').addEventListener('input', e=>{ S.centerTitle=e.target.value.slice(0,10); renderCanvas(); });
+$('enableSw').onclick=()=>{ S.enabled=!S.enabled; $('enableSw').classList.toggle('on',S.enabled); document.querySelectorAll('#content .sec').forEach(s=>{ s.style.opacity=S.enabled?1:.45; s.style.pointerEvents=S.enabled?'':'none'; }); };
+document.querySelectorAll('#ptabs button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#ptabs button').forEach(x=>x.classList.toggle('on',x===b)); document.querySelectorAll('.stage').forEach(s=>s.classList.toggle('on', s.id==='stage-'+b.dataset.stage)); });
+document.querySelectorAll('#themeT button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#themeT button').forEach(x=>x.classList.toggle('on',x===b)); win.classList.toggle('light',b.dataset.t==='light'); win.classList.toggle('dark',b.dataset.t==='dark'); });
+document.querySelectorAll('#scnT button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#scnT button').forEach(x=>x.classList.toggle('on',x===b)); S.actions=SCENES[b.dataset.s](); undoStack.length=0; Object.assign(UI,{mode:'overview', sel:null, insertAt:null, replaceId:null, trying:false, preview:null}); renderAll(); });
+
+hydrateIcons();
+renderAll();
+// Deep links for screenshots: #add=3, #edit=2, #lib=feature, #search=截图, #scene=full, #theme=dark
+(function(){
+  const p=new URLSearchParams(location.hash.slice(1));
+  if(p.get('theme')) document.querySelector(`#themeT button[data-t="${p.get('theme')}"]`)?.click();
+  if(p.get('scene')) document.querySelector(`#scnT button[data-s="${p.get('scene')}"]`)?.click();
+  if(p.get('tab')) document.querySelector(`#ptabs button[data-stage="${p.get('tab')}"]`)?.click();
+  if(p.get('add')) openLibrary({insertAt:+p.get('add')});
+  if(p.get('lib')){ UI.cat=p.get('lib'); renderInspector(); }
+  if(p.get('search')){ UI.query=p.get('search'); renderInspector(); }
+  if(p.get('hover')){ const k=+p.get('hover'); if(libItems[k]){ UI.kb=k; markKb(); setPreview(libItems[k]); } }
+  if(p.get('edit')) select(S.actions[+p.get('edit')]?.id);
+  if(p.get('try')){ UI.trying=true; UI.tryHover=+p.get('try'); renderCanvas(); }
+})();
+</script>
+</body>
+</html>

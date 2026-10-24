@@ -1,25 +1,38 @@
+import AppKit
 import SwiftUI
 
-/// Settings → Ring: the shortcut, the slices and the look of the ring.
+/// Settings → Ring: the shortcut, the slices and the look of the ring. The slices are edited on
+/// the ring itself (`RingStudioCanvas`) with an inspector beside it; every change is saved at once.
 struct RingSettingsView: View {
+    static let studioHeight: CGFloat = 520
+
     @StateObject private var model: RingSettingsModel
     @StateObject private var shortcuts: HotkeySettingsModel
     @StateObject private var recorder = HotkeyRecorder()
     @State private var isRecording = false
     @State private var hotkeyNotice: String?
-    @State private var editing: RingActionDraft?
-    @State private var pendingDeletion: RingAction?
-    @State private var confirmingReset = false
-    @State private var highlighted: UUID?
+    @StateObject private var studio: RingStudioController
     @State private var centerTitle = ""
+    @State private var apps: [RingLibraryApp] = []
+    @State private var appsState = LoadState.idle
+    @State private var shortcutNames: [String] = []
+    @State private var shortcutsState = LoadState.idle
+
+    private enum LoadState { case idle, loading, loaded }
 
     init(settingsStore: SettingsStore) {
-        _model = StateObject(wrappedValue: RingSettingsModel(settingsStore: settingsStore))
+        let model = RingSettingsModel(settingsStore: settingsStore)
+        _model = StateObject(wrappedValue: model)
+        _studio = StateObject(wrappedValue: RingStudioController(model: model))
         _shortcuts = StateObject(wrappedValue: HotkeySettingsModel(settingsStore: settingsStore, workflows: .shared))
     }
 
     private var configuration: RingConfiguration {
         model.configuration
+    }
+
+    private var actions: [RingAction] {
+        configuration.actions
     }
 
     var body: some View {
@@ -33,28 +46,6 @@ struct RingSettingsView: View {
             recorder.stop()
             isRecording = false
         }
-        .sheet(item: $editing) { draft in
-            RingActionEditorSheet(draft: draft, keywords: shortcuts.options, onSave: { action in
-                model.save(action)
-                editing = nil
-            }, onDelete: {
-                model.delete(draft.id)
-                editing = nil
-            }, onCancel: { editing = nil })
-        }
-        .alert(L("ring.delete.title", pendingDeletion?.title ?? ""), isPresented: Binding(
-            get: { pendingDeletion != nil }, set: { if !$0 { pendingDeletion = nil } }
-        )) {
-            Button(L("common.cancel"), role: .cancel) { pendingDeletion = nil }
-            Button(L("common.delete"), role: .destructive) {
-                if let id = pendingDeletion?.id { model.delete(id) }
-                pendingDeletion = nil
-            }
-        } message: { Text(L("ring.delete.message")) }
-        .alert(L("ring.reset.title"), isPresented: $confirmingReset) {
-            Button(L("common.cancel"), role: .cancel) {}
-            Button(L("ring.reset.confirm"), role: .destructive) { model.resetActions() }
-        } message: { Text(L("ring.reset.message")) }
     }
 
     // MARK: - Shortcut
@@ -86,7 +77,9 @@ struct RingSettingsView: View {
     }
 
     private func toggleRecording() {
-        if isRecording { return stopRecording() }
+        if isRecording {
+            return stopRecording()
+        }
         isRecording = true
         hotkeyNotice = nil
         recorder.start(supportsAuxiliaryBindings: true) { binding in
@@ -109,82 +102,155 @@ struct RingSettingsView: View {
     // MARK: - Actions
 
     private var actionsSection: some View {
-        TFFormSection(title: L("ring.actions.title"), count: configuration.actions.count) {
-            TFButton(title: L("ring.actions.reset"), kind: .plain) { confirmingReset = true }
+        TFFormSection(title: L("ring.actions.title")) {
+            TFButton(title: L("ring.actions.reset"), systemImage: "arrow.counterclockwise", kind: .plain,
+                     size: .small) { studio.resetActions() }
+                .disabled(actions == RingConfiguration.defaultActions())
                 .accessibilityIdentifier("ring.actions.reset")
         } content: {
-            HStack(alignment: .center, spacing: 0) {
-                RingPreviewView(actions: configuration.actions, style: configuration.style,
-                                centerTitle: configuration.centerTitle, highlighted: $highlighted) { id in
-                    if let action = configuration.actions.first(where: { $0.id == id }) {
-                        editing = RingActionDraft(editing: action)
-                    }
-                }
-                .frame(width: 280, height: 280)
-                .padding(10)
+            HStack(spacing: 0) {
+                canvas.frame(width: RingStudioCanvas.size + 20)
+                    // Over the canvas hint, so it never covers the inspector's buttons.
+                    .overlay(alignment: .bottom) { undoBar }
+                    .animation(.easeOut(duration: 0.18), value: model.lastChange)
                 Rectangle().fill(TFColors.border).frame(width: TFMetrics.borderWidth)
-                VStack(spacing: 0) {
-                    actionList
-                    Spacer(minLength: 0)
-                    TFDivider(inset: 0)
-                    TFActionRow(systemImage: "plus", title: L("ring.actions.add")) { editing = .new() }
-                        .disabled(!configuration.canAddAction)
-                        .opacity(configuration.canAddAction ? 1 : TFMetrics.disabledOpacity)
-                        .help(configuration.canAddAction ? "" : L("ring.actions.full", RingConfiguration.maxActions))
-                        .accessibilityIdentifier("ring.actions.add")
-                }
-                .frame(maxWidth: .infinity)
+                inspectorPanel.frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .frame(height: Self.studioHeight)
+        }
+    }
+
+    @ViewBuilder private var undoBar: some View {
+        if let message = model.lastChange {
+            TFUndoBar(message: message, onUndo: { studio.undo() }, onDismiss: { model.dismissLastChange() })
+                .shadow(color: .black.opacity(0.25), radius: 12, y: 4)
+                .padding(.horizontal, 12).padding(.bottom, 10)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .accessibilityIdentifier("ring.undo")
+        }
+    }
+
+    private var canvas: some View {
+        RingStudioCanvas(
+            slots: studio.slots,
+            selectedIndex: studio.selectedIndex,
+            mode: studio.canvasMode,
+            style: configuration.style,
+            centerTitle: configuration.centerTitle,
+            actionCount: actions.count,
+            insertionIndexes: studio.insertionIndexes,
+            issues: Set(issues.keys),
+            drag: $studio.drag,
+            isTrying: $studio.isTrying,
+            onInsert: { studio.show(.library(.insert(index: $0))) },
+            onSelect: { studio.show(.edit($0)) },
+            onMove: { studio.move($0, to: $1) },
+            onBackground: { studio.clickBackground() },
+            onKey: { studio.handle($0) }
+        )
+    }
+
+    @ViewBuilder private var inspectorPanel: some View {
+        switch studio.state {
+        case .overview:
+            RingInspectorOverview(actions: actions, issues: issues, detail: targetSummary(of:),
+                                  onSelect: { studio.show(.edit($0)) },
+                                  onMove: { model.move($0, to: $1) },
+                                  onAdd: { studio.show(.library(.insert(index: actions.count))) })
+        case let .library(target):
+            RingLibraryPanel(target: target, actions: actions, library: library,
+                             isLoadingApps: appsState == .loading, preview: $studio.preview,
+                             onPick: { studio.pick($0, keywordName: keywordName) },
+                             onClose: { studio.cancelLibrary() },
+                             onOpenType: { type in
+                                 if type == .app {
+                                     loadApps()
+                                 }
+                                 if type == .shortcut {
+                                     loadShortcuts()
+                                 }
+                             })
+                             .id(target)
+                             .task {
+                                 loadShortcuts()
+                                 loadApps()
+                             }
+        case let .edit(id):
+            if let index = actions.firstIndex(where: { $0.id == id }) {
+                let action = actions[index]
+                RingActionInspector(
+                    action: action, index: index, count: actions.count, issue: issues[id],
+                    defaultTitle: RingActionLibrary.defaultTitle(for: action.kind, keywordName: keywordName),
+                    targetSummary: targetSummary(of: action),
+                    onRename: { title in model.edit(id) { $0.title = title } },
+                    onSymbol: { symbol in model.edit(id) { $0.symbol = symbol } },
+                    onRetarget: { studio.retarget(id, to: $0, keywordName: keywordName) },
+                    onReplace: { studio.show(.library(.replace(id))) },
+                    onMove: { model.move(id, by: $0) },
+                    onDuplicate: { studio.duplicate(id) },
+                    onDelete: { studio.delete(id) },
+                    onDone: { studio.show(.overview) }
+                )
             }
         }
     }
 
-    @ViewBuilder private var actionList: some View {
-        if configuration.actions.isEmpty {
-            Text(L("ring.actions.empty"))
-                .font(.system(size: 12.5)).foregroundStyle(TFColors.textSecondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity).padding(.vertical, 28).padding(.horizontal, 20)
-        } else {
-            ForEach(Array(configuration.actions.enumerated()), id: \.element.id) { index, action in
-                if index > 0 { TFDivider() }
-                RingActionRow(
-                    action: action,
-                    detail: RingSettingsPresentation.detail(of: action, keywordName: keywordName),
-                    isHighlighted: highlighted == action.id,
-                    menu: menu(for: action, at: index),
-                    onHover: { highlighted = $0 ? action.id : (highlighted == action.id ? nil : highlighted) },
-                    onEdit: { editing = RingActionDraft(editing: action) }
-                )
-                .draggable(action.id.uuidString)
-                .dropDestination(for: String.self) { items, _ in
-                    guard let id = items.first.flatMap(UUID.init(uuidString:)) else { return false }
-                    model.move(id, to: index)
-                    return true
-                }
+    // MARK: - Library data
+
+    private var library: RingActionLibrary {
+        RingActionLibrary(keywords: shortcuts.options, apps: apps, shortcuts: shortcutNames)
+    }
+
+    private func loadApps() {
+        guard appsState == .idle else { return }
+        appsState = .loading
+        Task {
+            let found = await PersonaAppDiscovery.discoverPersonaAppCandidates(scope: .all)
+            var seen = Set<String>()
+            apps = found.compactMap { app in
+                guard let bundle = app.bundleIdentifier, seen.insert(bundle).inserted else { return nil }
+                return RingLibraryApp(name: app.displayName, bundleIdentifier: bundle)
             }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+            appsState = .loaded
         }
     }
+
+    private func loadShortcuts() {
+        guard shortcutsState == .idle else { return }
+        shortcutsState = .loading
+        Task {
+            shortcutNames = await RingShortcutsDiscovery.load()
+            shortcutsState = .loaded
+        }
+    }
+
+    // MARK: - Text
 
     private func keywordName(_ keyword: String, _ pluginID: String) -> String? {
         shortcuts.options.first { $0.keyword.pluginID == pluginID && $0.keyword.contains(keyword) }?.name
     }
 
-    private func menu(for action: RingAction, at index: Int) -> [TFMenuAction] {
-        let count = configuration.actions.count
-        return [
-            .action(L("common.edit"), systemImage: "pencil") { editing = RingActionDraft(editing: action) },
-            .action(L("ring.action.duplicate"), systemImage: "plus.square.on.square",
-                    isEnabled: configuration.canAddAction) { model.duplicate(action.id) },
-            .separator,
-            .action(L("ring.action.moveUp"), systemImage: "arrow.up", isEnabled: index > 0) {
-                model.move(action.id, by: -1)
-            },
-            .action(L("ring.action.moveDown"), systemImage: "arrow.down", isEnabled: index < count - 1) {
-                model.move(action.id, by: 1)
-            },
-            .separator,
-            .action(L("common.delete"), systemImage: "trash", destructive: true) { pendingDeletion = action }
-        ]
+    private func targetSummary(of action: RingAction) -> String {
+        RingSettingsPresentation.summary(of: action, keywordName: keywordName)
+    }
+
+    /// Slices that cannot run any more, with the reason.
+    private var issues: [UUID: String] {
+        var result: [UUID: String] = [:]
+        for action in actions {
+            result[action.id] = RingSettingsPresentation.issue(
+                of: action,
+                keywordExists: { keyword, pluginID in keywordName(keyword, pluginID) != nil },
+                appExists: { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) != nil },
+                folderExists: { path in
+                    var isDirectory: ObjCBool = false
+                    return FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory)
+                        && isDirectory.boolValue
+                }
+            )
+        }
+        return result
     }
 
     // MARK: - Appearance
@@ -204,53 +270,13 @@ struct RingSettingsView: View {
                     .textFieldStyle(TFTextFieldStyle())
                     .onChange(of: centerTitle) { value in
                         let limited = String(value.prefix(RingConfiguration.centerTitleLimit))
-                        if limited != value { centerTitle = limited }
+                        if limited != value {
+                            centerTitle = limited
+                        }
                         model.setCenterTitle(limited)
                     }
                     .accessibilityIdentifier("ring.centerTitle")
             }
         }
-    }
-}
-
-/// A slice in the list. The description sits behind the hover "?" like every settings row.
-struct RingActionRow: View {
-    let action: RingAction
-    let detail: String
-    let isHighlighted: Bool
-    let menu: [TFMenuAction]
-    var onHover: (Bool) -> Void = { _ in }
-    let onEdit: () -> Void
-    @State private var hovering = false
-
-    var body: some View {
-        HStack(spacing: 10) {
-            if let image = RingActionIcon.appIcon(for: action) {
-                Image(nsImage: image).resizable().interpolation(.high)
-                    .frame(width: TFMetrics.iconTileSize, height: TFMetrics.iconTileSize)
-            } else {
-                TFIconTile(systemImage: action.symbol, style: .neutral)
-            }
-            HStack(spacing: 6) {
-                Text(action.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(TFColors.textPrimary)
-                    .lineLimit(1)
-                SettingsDescriptionHint(detail: detail, visible: hovering)
-            }
-            Spacer(minLength: 8)
-            TFMenuButton(title: L("ring.action.more"), systemImage: "ellipsis", kind: .plain, size: .small,
-                         iconOnly: true, actions: menu, identifier: "ring.action.more." + action.id.uuidString)
-                .opacity(hovering ? 1 : 0)
-        }
-        .padding(.horizontal, TFMetrics.rowHorizontalPadding)
-        .frame(minHeight: 44)
-        .background(isHighlighted ? TFColors.selection : (hovering ? TFColors.hoverOverlay : Color.clear))
-        .contentShape(Rectangle())
-        .onHover { hovering = $0; onHover($0) }
-        .onTapGesture(perform: onEdit)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(action.title)
-        .accessibilityHint(detail)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityAction(named: L("common.edit"), onEdit)
     }
 }
