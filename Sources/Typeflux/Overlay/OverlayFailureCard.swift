@@ -227,9 +227,10 @@ private struct OverlayFailureCloseButton: View {
 /// A 2pt line along the bottom edge that runs out when the failure leaves on its own.
 struct OverlayFailureCountdownBar: View {
     let countdown: OverlayFailureCountdown
+    @Environment(\.overlayAnimationsActive) private var animationsActive
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: countdown.isPaused)) { context in
+        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: countdown.isPaused || !animationsActive)) { context in
             GeometryReader { geo in
                 Rectangle()
                     .fill(Color.white.opacity(0.35))

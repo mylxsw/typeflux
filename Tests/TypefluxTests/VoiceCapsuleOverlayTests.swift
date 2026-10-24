@@ -36,6 +36,34 @@ struct VoiceCapsuleOverlayTests {
     }
 
     @Test @MainActor
+    func prewarmingAndDismissalLeaveEverySkinUnpresented() async throws {
+        for style in VoiceCapsuleStyle.allCases {
+            let fixture = try Fixture(style: style)
+            defer { fixture.clean() }
+            let controller = fixture.controller
+            controller.prepareRecordingPresentation()
+            let window = try #require(controller.presentedWindow)
+            #expect(!window.isVisible)
+            #expect(!controller.isCapsulePresentedForTesting)
+            controller.show()
+            try await settle()
+            #expect(controller.isCapsulePresentedForTesting)
+            controller.dismissImmediately()
+            #expect(!window.isVisible)
+            #expect(!controller.isCapsulePresentedForTesting)
+            // The remembered phase remains recording; it must not restart a visual clock.
+            #expect(controller.recordingPresentationForTesting.isRecording)
+            controller.prepareRecordingPresentation()
+            #expect(!controller.isCapsulePresentedForTesting)
+            controller.showProcessing()
+            try await settle()
+            #expect(controller.isCapsulePresentedForTesting)
+            controller.dismissImmediately()
+            #expect(!window.isVisible && !controller.isCapsulePresentedForTesting)
+        }
+    }
+
+    @Test @MainActor
     func cornerCardGrowsBelowTheMenuBarAndLeavesWithoutAConfirmation() async throws {
         let language = AppLocalization.shared.language
         defer { AppLocalization.shared.setLanguage(language) }

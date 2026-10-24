@@ -1,5 +1,18 @@
 import SwiftUI
 
+/// Prewarmed overlay views stay mounted while their panel is hidden. Visual
+/// clocks must follow presentation rather than the last recording phase.
+private struct OverlayAnimationsActiveKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+extension EnvironmentValues {
+    var overlayAnimationsActive: Bool {
+        get { self[OverlayAnimationsActiveKey.self] }
+        set { self[OverlayAnimationsActiveKey.self] = newValue }
+    }
+}
+
 /// The capsule states the corner card and the notch island draw.
 enum VoiceCapsulePhase: Equatable {
     case listening(handsFree: Bool)
@@ -102,6 +115,7 @@ struct VoiceCapsuleOrb: View {
     /// Rings that spread with the voice; the corner card's only level indicator.
     var showsRipples = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.overlayAnimationsActive) private var animationsActive
 
     private static let colors: [Color] = [
         Color(red: 0.31, green: 0.53, blue: 1.0), Color(red: 0.61, green: 0.36, blue: 1.0),
@@ -115,13 +129,23 @@ struct VoiceCapsuleOrb: View {
         return max(0, min(1, (CGFloat(level) - 0.1) / 0.6))
     }
 
+    static func animates(phase: VoiceCapsulePhase, isPresented: Bool, reduceMotion: Bool) -> Bool {
+        isPresented && !reduceMotion && (phase.isListening || phase == .processing)
+    }
+
     var body: some View {
-        let animates = !reduceMotion && (phase.isListening || phase == .processing)
-        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !animates)) { context in
-            orb(angle: animates ? angle(at: context.date) : .zero)
+        Group {
+            if Self.animates(phase: phase, isPresented: animationsActive, reduceMotion: reduceMotion) {
+                TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
+                    orb(angle: angle(at: context.date))
+                }
+            } else {
+                // Remove the clock altogether, keeping a static, prepared view.
+                orb(angle: .zero)
+            }
         }
         .frame(width: diameter, height: diameter)
-        .background { if showsRipples && !reduceMotion { ripples } }
+        .background { if showsRipples && animationsActive && !reduceMotion { ripples } }
         .accessibilityHidden(true)
     }
 

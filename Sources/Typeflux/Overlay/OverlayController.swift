@@ -1934,6 +1934,7 @@ private struct OverlayView: View {
         .opacity(isHiddenCapsule ? 0 : 1)
         .environment(\.interfaceStyle, model.interfaceStyle)
         .environment(\.liquidGlassIntensity, model.glassIntensity)
+        .environment(\.overlayAnimationsActive, model.isPresented)
     }
 
     private var isHiddenCapsule: Bool { model.presentation.isCapsule && !model.isPresented }
