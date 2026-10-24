@@ -4,7 +4,7 @@ import ImageIO
 
 /// Private line-delimited protocol between the index and its disposable file-system worker.
 struct AskFileReadRequest: Codable {
-    enum Operation: String, Codable { case directory, entry, resolve, preview, content, media, embedding }
+    enum Operation: String, Codable { case directory, directoryVersion, entry, resolve, preview, content, media, embedding }
     var operation: Operation
     var path: String
     var scope: AskFileScope?
@@ -152,12 +152,20 @@ public enum AskFileWorkerCommand {
         }
         let descriptor = openDirectory(request.path, blocked: scope.blocked)
         guard descriptor >= 0 else { return AskFileReadResponse(error: errno) }
-        guard let directory = fdopendir(descriptor) else {
-            let code = errno
-            close(descriptor)
-            return AskFileReadResponse(error: code)
+        var initial = stat()
+        guard fstat(descriptor, &initial) == 0 else {
+            let code = errno; close(descriptor); return AskFileReadResponse(error: code)
         }
-        defer { closedir(directory) }
+        if request.operation == .directoryVersion {
+            close(descriptor)
+            return AskFileReadResponse(version: contentVersion(initial))
+        }
+        let iterator: AskDirectoryIterator
+        do {
+            iterator = try AskDirectoryIterator(descriptor: descriptor, reopen: {
+                openDirectory(request.path, blocked: scope.blocked + mounts.excluded)
+            })
+        } catch { return AskFileReadResponse(error: Int32((error as NSError).code)) }
         var batch = AskFileReadResponse()
         var count = 0
         var lastProgress = ProcessInfo.processInfo.systemUptime
@@ -170,23 +178,28 @@ public enum AskFileWorkerCommand {
                 batch = AskFileReadResponse()
                 lastProgress = now
             }
-            errno = 0
-            guard let item = readdir(directory) else {
-                batch.error = errno == 0 ? nil : errno
-                return batch
+            let item: AskDirectoryIterator.Item
+            do {
+                guard let next = try iterator.next() else {
+                    var final = stat()
+                    if fstat(iterator.descriptor, &final) == 0, contentVersion(initial) == contentVersion(final) {
+                        batch.version = contentVersion(final)
+                    }
+                    return batch
+                }
+                item = next
+            } catch {
+                batch.error = Int32((error as NSError).code); return batch
             }
-            let name = withUnsafePointer(to: &item.pointee.d_name) {
-                $0.withMemoryRebound(to: CChar.self, capacity: Int(MAXNAMLEN) + 1) { String(cString: $0) }
-            }
+            let name = item.name
             guard name != ".", name != ".." else { continue }
             let path = (request.path == "/" ? "" : request.path) + "/" + name
-            // d_type is available without opening/statting the child. Filter protected paths first.
-            guard scope.includes(path, isDirectory: item.pointee.d_type == DT_DIR) else { continue }
+            guard scope.includes(path, isDirectory: item.isDirectory) else { continue }
             if let mount = mounts.blocking(path) {
                 batch.skippedMounts = (batch.skippedMounts ?? []) + [mount]
                 continue
             }
-            if let value = entry(name, parent: descriptor, path: path, scope: scope) {
+            if let value = item.entry(parent: iterator.descriptor, path: path, scope: scope) {
                 batch.entries.append(value)
                 count += 1
             }

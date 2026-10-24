@@ -5,6 +5,7 @@ import SwiftUI
 
 struct AskConversationView: View {
     @ObservedObject var model: AskConversationModel
+    private var onCloseWindow: () -> Void
     @State private var showsUsage = false
     /// The side panel (files, file tabs and web pages); it stays open across conversations.
     @State private var showsSidePanel = false
@@ -54,11 +55,13 @@ struct AskConversationView: View {
     @ObservedObject private var auth: AuthState
 
     @MainActor
-    init(model: AskConversationModel, showsUsage: Bool = false, auth: AuthState? = nil) {
+    init(model: AskConversationModel, showsUsage: Bool = false, auth: AuthState? = nil, sidePanel: AskSidePanel? = nil,
+         onCloseWindow: @escaping () -> Void = {}) {
         self.model = model
+        self.onCloseWindow = onCloseWindow
         self.auth = auth ?? .shared
         _showsUsage = State(initialValue: showsUsage)
-        _sidePanel = State(initialValue: AskSidePanel(browser: model.tools.browserWorkspace))
+        _sidePanel = State(initialValue: sidePanel ?? AskSidePanel(browser: model.tools.browserWorkspace))
         _usageRunId = State(initialValue: model.selected?.run?.id)
     }
 
@@ -1033,12 +1036,11 @@ struct AskConversationView: View {
     /// replaces the old folder button and the browser opens from the panel's tab strip.
     @ViewBuilder private func sidePanelButton(showsInteriorFill: Bool = true) -> some View {
         if sidePanelAvailable {
-            AskHeaderIconButton(symbol: "sidebar.right", label: L("ask.sidePanel.toggle"), shortcut: "⌘⇧B",
+            AskHeaderIconButton(symbol: "sidebar.right", label: L("ask.sidePanel.toggle"), shortcut: "⌘O",
                                 active: showsSidePanelView, showsInteriorFill: showsInteriorFill,
                                 activeTint: StudioTheme.textPrimary) {
                 setSidePanel(!showsSidePanelView)
             }
-                .keyboardShortcut("b", modifiers: [.command, .shift])
                 .accessibilityValue(L(showsSidePanelView ? "ask.context.selection.enabled" : "ask.context.selection.disabled"))
                 .accessibilityIdentifier("ask.workspace.sidePanel")
         }
@@ -1048,6 +1050,20 @@ struct AskConversationView: View {
     /// and Esc leaves the focused panel.
     private var sidePanelShortcuts: some View {
         ZStack {
+            Button("") { model.toggleConversationKind(launcher: false) }
+                .keyboardShortcut("m", modifiers: .command)
+            Button("") { setSidePanel(true) }
+                .keyboardShortcut("o", modifiers: .command)
+                .disabled(!sidePanelAvailable)
+            Button("") {
+                if showsSidePanelView {
+                    if sidePanel.canCloseSelection { sidePanel.closeSelected() }
+                    else if sidePanel.tabs.count == 1 { setSidePanel(false) }
+                } else {
+                    onCloseWindow()
+                }
+            }
+            .keyboardShortcut("w", modifiers: .command)
             Button("") { showSidePanelFiles() }
                 .keyboardShortcut("f", modifiers: [.command, .shift])
                 .disabled(!sidePanelAvailable)

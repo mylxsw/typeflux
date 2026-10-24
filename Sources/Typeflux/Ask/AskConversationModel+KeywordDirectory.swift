@@ -42,18 +42,65 @@ extension AskConversationModel {
         return entries
     }
 
-    /// Return runs workflows with optional/no input; Tab only enters their input mode.
-    func enterLauncherSearchEntry(_ entry: AskLauncherSearchEntry, run: Bool = false) {
+    /// Explicit activation skips an empty input page for navigation and capture commands.
+    func launcherImmediateAction(_ keyword: AskKeyword, query: String = "") -> AskPluginAction? {
+        let kind: AskPluginAction.Kind
+        switch keyword.pluginID {
+        case AskOpenChatPlugin.id: kind = .openChat
+        case AskSettingsPlugin.id: kind = .openSettings
+        case AskHelpPlugin.id: kind = .openHelp(query: query)
+        default:
+            if AskScreenshotPlugin.startsCapture(keyword) {
+                kind = AskScreenshotPlugin.captureKind(for: keyword)
+            } else if let command = AskSystemCommand(pluginID: keyword.pluginID) {
+                kind = .systemCommand(command)
+            } else { return nil }
+        }
+        return .init(kind: kind, title: "", symbol: "")
+    }
+
+    /// Keep the visible source unchanged while the destination starts. Search labels
+    /// are removed from a copy of the handoff draft, never by entering a plugin page.
+    func activateLauncherKeyword(_ keyword: AskKeyword, preservingText: Bool = false) -> PluginActionOutcome? {
+        guard let action = launcherImmediateAction(keyword, query: preservingText ? launcherDraft.text : "") else { return nil }
+        if case .openChat = action.kind {
+            let source = launcherDraft, sourceKeyword = plugins.keyword
+            var incoming = source
+            if !preservingText { incoming.text = "" }
+            Task {
+                guard launcherDraft == source, plugins.keyword == sourceKeyword else { return }
+                await openChatFromLauncher(incomingDraft: incoming)
+            }
+            return .stay
+        }
+        return performPluginAction(action)
+    }
+
+    /// Navigation and capture have no input step, including when selected with Tab.
+    func launcherOpensOnSelection(_ keyword: AskKeyword) -> Bool {
+        AskSystemCommand(pluginID: keyword.pluginID) == nil && launcherImmediateAction(keyword) != nil
+    }
+
+    /// Tab completes input-driven features; navigation and capture open immediately.
+    @discardableResult
+    func enterLauncherSearchEntry(_ entry: AskLauncherSearchEntry, run: Bool = false) -> PluginActionOutcome {
         guard let current = launcherSearchEntries(language: AppLocalization.shared.language).first(where: { $0.id == entry.id })
-        else { return }
-        if enterLauncherWorkflow(current.keyword, run: run) { return }
+        else { return .stay }
+        return enterSelectedLauncherKeyword(current.keyword, run: run)
+    }
+
+    func enterSelectedLauncherKeyword(_ keyword: AskKeyword, run: Bool) -> PluginActionOutcome {
+        if run || launcherOpensOnSelection(keyword), let outcome = activateLauncherKeyword(keyword) { return outcome }
+        if enterLauncherWorkflow(keyword, run: run) { return .stay }
         let listsAtOnce = [
             AskAppSearchPlugin.id, AskKillAppPlugin.id, AskPrefixPlugin.id, AskHistoryPlugin.id, AskClipboardPlugin.id, AskNotesPlugin.id,
-            AskBrowserSearchPlugin.tabsID, AskBrowserSearchPlugin.bookmarksID, AskEmojiPlugin.id
+            AskBrowserSearchPlugin.tabsID, AskBrowserSearchPlugin.bookmarksID, AskEmojiPlugin.id,
+            AskCalendarPlugin.id, AskWorldClockPlugin.id, AskSystemMonitorPlugin.id, AskSystemInfoPlugin.id
         ]
-        plugins.enter(current.keyword, waitingForInput: !listsAtOnce.contains(current.keyword.pluginID))
+        plugins.enter(keyword, waitingForInput: !listsAtOnce.contains(keyword.pluginID))
         launcherDraft.text = ""
         plugins.update(text: "", selection: launcherDraft.sentSelection, language: AppLocalization.shared.language)
+        return .stay
     }
 
     /// A selected workflow with a useful empty-input result needs only one Return.

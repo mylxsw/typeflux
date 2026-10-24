@@ -1,6 +1,10 @@
 import Foundation
 
 extension AskConversationModel {
+    func toggleConversationKind(launcher: Bool) {
+        chooseConversationKind(conversationKind(launcher: launcher) == .chat ? .work : .chat, launcher: launcher)
+    }
+
     static let lastConversationKindKey = "ask.lastConversationKind"
 
     /// The kind a new conversation starts as when its draft has not chosen: the last one

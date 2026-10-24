@@ -6,25 +6,19 @@ import Testing
 @Suite("Launcher mode shortcuts", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherKindShortcutTests {
-    @Test func modeKeysRequireCommandAloneAndLeaveSelectedTextForCopying() throws {
-        #expect(AskLauncherKindShortcuts.key(for: .chat) == "C")
-        #expect(AskLauncherKindShortcuts.key(for: .work) == "W")
-        for (code, character, kind) in [(UInt16(8), "c", AskConversationKind.chat), (13, "w", .work)] {
-            for text in [character, character.uppercased(), ""] {
-                #expect(AskLauncherKindShortcuts.kind(for: try event(code, text)) == kind)
-            }
-            for flags: NSEvent.ModifierFlags in [[], .shift, [.command, .shift], [.command, .option], [.command, .control]] {
-                #expect(AskLauncherKindShortcuts.kind(for: try event(code, character, flags)) == nil)
-            }
+    @Test func modeKeyRequiresCommandMAndLeavesCopyAndCloseAlone() throws {
+        for text in ["m", "M", ""] {
+            #expect(AskLauncherKindShortcuts.matches(try event(46, text)))
         }
-        #expect(AskLauncherKindShortcuts.kind(for: try event(8, "c"), hasSelection: true) == nil)
-        #expect(AskLauncherKindShortcuts.kind(for: try event(8, ""), hasSelection: true) == nil)
-        #expect(AskLauncherKindShortcuts.kind(for: try event(13, "w"), hasSelection: true) == .work)
-        #expect(AskLauncherKindShortcuts.kind(for: try event(8, "x")) == nil)
-        #expect(AskLauncherKindShortcuts.kind(for: try event(0, "")) == nil)
+        for flags: NSEvent.ModifierFlags in [[], .shift, [.command, .shift], [.command, .option], [.command, .control]] {
+            #expect(!AskLauncherKindShortcuts.matches(try event(46, "m", flags)))
+        }
+        for (code, text) in [(UInt16(8), "c"), (13, "w"), (0, "")] {
+            #expect(!AskLauncherKindShortcuts.matches(try event(code, text)))
+        }
     }
 
-    @Test func nativeKeyEquivalentsAndKeyDownSwitchOnlyTheLauncher() throws {
+    @Test func nativeModeToggleWorksInBothEditorsAndRespectsMarkedText() throws {
         let window = AskTestVoiceWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 80),
                                         styleMask: .borderless, backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -32,24 +26,19 @@ struct AskLauncherKindShortcutTests {
         let editor = AskComposerTextView.Editor()
         window.contentView = editor
         window.makeFirstResponder(editor)
-        var modes: [AskConversationKind] = []
-        editor.onKindShortcut = { modes.append($0) }
-        #expect(editor.performKeyEquivalent(with: try event(13, "w")))
-        editor.keyDown(with: try event(8, "c"))
-        #expect(modes == [.work, .chat])
-        // Results that offer copying retain Command-C without changing the mode.
-        editor.onCommandKey = { $0 == .commandC }
-        #expect(editor.performKeyEquivalent(with: try event(8, "c")))
-        #expect(modes == [.work, .chat])
-        editor.onCommandKey = nil
-        editor.contextID = "chat:new"
+        var toggles = 0
+        editor.onKindShortcut = { toggles += 1 }
+        for context in ["launcher", "chat:new"] {
+            editor.contextID = context
+            #expect(editor.performKeyEquivalent(with: try event(46, "m")))
+            editor.keyDown(with: try event(46, "m"))
+        }
+        #expect(toggles == 4)
         #expect(!editor.performKeyEquivalent(with: try event(13, "w")))
-        #expect(modes == [.work, .chat])
-        editor.contextID = "launcher"
         editor.setMarkedText("draft", selectedRange: NSRange(location: 0, length: 0),
                              replacementRange: NSRange(location: NSNotFound, length: 0))
-        #expect(!editor.performKeyEquivalent(with: try event(13, "w")))
-        #expect(modes == [.work, .chat])
+        #expect(!editor.performKeyEquivalent(with: try event(46, "m")))
+        #expect(toggles == 4)
     }
 
     @Test(arguments: ["", "An unsent question"])
@@ -58,11 +47,37 @@ struct AskLauncherKindShortcutTests {
         defer { launcher.close() }
         launcher.fixture.model.setConversationKind(.chat, launcher: true)
         launcher.window.makeFirstResponder(launcher.editor)
-        #expect(launcher.editor.performKeyEquivalent(with: try event(13, "w")))
+        #expect(launcher.editor.performKeyEquivalent(with: try event(46, "m")))
         #expect(launcher.fixture.model.conversationKind(launcher: true) == .work)
-        try await launcher.press(8, .command)
+        try await launcher.press(46, .command)
         #expect(launcher.fixture.model.conversationKind(launcher: true) == .chat)
         #expect(launcher.fixture.model.launcherDraft.text == text)
+        #expect(launcher.dismissed == 0)
+        #expect(await launcher.fixture.api.sends.isEmpty)
+    }
+
+    @Test(arguments: ["", "An unsent question"])
+    func windowShortcutTogglesRepeatedlyWithAndWithoutEditorFocus(text: String) async throws {
+        let launcher = try await AskQuickResultsInteractionTests.Launcher(text: text)
+        defer { launcher.close() }
+        let model = launcher.fixture.model
+        model.setConversationKind(.chat, launcher: true)
+        for editorFocused in [false, true] {
+            launcher.window.makeFirstResponder(editorFocused ? launcher.editor : nil)
+            for index in 0 ..< 6 {
+                let key = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: .command,
+                    timestamp: Double(index), windowNumber: launcher.window.windowNumber, context: nil,
+                    characters: "m", charactersIgnoringModifiers: "m", isARepeat: false, keyCode: 46))
+                #expect(launcher.window.performKeyEquivalent(with: key))
+                #expect(model.conversationKind(launcher: true) == (index.isMultiple(of: 2) ? .work : .chat))
+                // Include both rapid presses before a redraw and presses after it.
+                if index.isMultiple(of: 2) {
+                    try await Task.sleep(for: .milliseconds(60))
+                    launcher.window.contentView?.layoutSubtreeIfNeeded()
+                }
+            }
+        }
+        #expect(model.launcherDraft.text == text)
         #expect(launcher.dismissed == 0)
         #expect(await launcher.fixture.api.sends.isEmpty)
     }

@@ -4,28 +4,65 @@ import TypefluxMediaProtocol
 /// No app-lifetime pixel cache. Visible, authorized views own each projection.
 enum ClipboardThumbnailProvider {
     static let maximumEdge = 900
+    static let listEdge = 240
     private static let admission = AskToolPixelBudget(limit: 2)
-    static func decode(_ url: URL, edge: CGFloat, worker: MediaWorker = .clipboardThumbnails) async throws -> AskFilePreviewPDF.Result {
+    private static let warmupBudget = ClipboardWorkBudget(maximumPending: 1)
+    @MainActor static let decodeGate = ClipboardThumbnailDecodeGate()
+
+    /// Capture has already saved the original. Prepare only the small list projection at idle priority.
+    static func prepare(_ item: ClipboardItem) {
+        prepare([ClipboardFeed.entry(for: item)])
+    }
+
+    @discardableResult
+    static func prepare(_ entries: [ClipboardEntry],
+                        using base: @escaping ClipboardThumbnailDecoding = { try await decode($0, edge: $1) }) -> Task<Void, Never>? {
+        let urls = entries.prefix(12).filter { $0.kind == .image || $0.kind == .images }
+            .flatMap { $0.contentURLs.prefix(3) }
+        guard !urls.isEmpty, let generation = warmupBudget.reserve() else { return nil }
+        return Task.detached(priority: .background) {
+            defer { warmupBudget.release() }
+            for url in urls where warmupBudget.accepts(generation) {
+                _ = try? await decodeGate.run(priority: false) {
+                    try await base(url, CGFloat(listEdge))
+                }
+            }
+        }
+    }
+
+    static func decode(_ url: URL, edge: CGFloat, worker: MediaWorker = .clipboardThumbnails,
+                       diskCache: ClipboardThumbnailDiskCache = .shared) async throws -> AskFilePreviewPDF.Result {
         try Task.checkCancellation()
         guard url.isFileURL, url.path.utf8.count <= 4096, !url.path.contains("\0"),
               edge.isFinite, edge >= 1, edge <= CGFloat(maximumEdge) else { throw MediaFailure.invalidProtocol }
+        let authorization = worker.authorization()
+        guard worker.permits(authorization) else { throw MediaFailure.unavailable }
         let slot = try admission.acquire(bytes: 1)
         let pixels = try AskToolPixelBudget.shared.acquire(bytes: Int(edge) * Int(edge) * 4)
         defer { withExtendedLifetime((slot, pixels)) {} }
         let cancellation = AskSearchCancellation()
         return try await withTaskCancellationHandler {
             let result = try await Task.detached(priority: .utility) {
-                if cancellation.isCancelled { throw CancellationError() }
+                if cancellation.isCancelled || !worker.permits(authorization) { throw CancellationError() }
                 let options = MediaPreviewOptions(width: Int(edge), height: Int(edge))
                 // An extension chooses the adapter, never grants proof that the bytes are valid.
                 if ["png", "jpg", "jpeg", "gif", "webp", "tif", "tiff", "heic", "heif", "bmp", "ico", "icns", "avif"].contains(url.pathExtension.lowercased()) {
-                    return try MediaPreviewDisplay.render(url, pixels: .init(width: Int(edge), height: Int(edge)),
+                    let key = diskCache.key(for: url, edge: Int(edge))
+                    if let key, let cached = diskCache.read(key, edge: Int(edge)) {
+                        guard !cancellation.isCancelled, worker.permits(authorization) else { throw CancellationError() }
+                        return cached
+                    }
+                    let result = try MediaPreviewDisplay.render(url, pixels: .init(width: Int(edge), height: Int(edge)),
                         pdf: false, evidence: nil, cancellation: cancellation, worker: worker)
+                    guard !cancellation.isCancelled, worker.permits(authorization) else { throw CancellationError() }
+                    if let key { diskCache.write(result, for: key, edge: Int(edge)) }
+                    return result
                 }
                 return try MediaPreviewDisplay.renderQuickLook(.init(path: url.path, representation: .all),
                     options: options, cancellation: cancellation, worker: worker)
             }.value
             try Task.checkCancellation()
+            guard worker.permits(authorization) else { throw MediaFailure.unavailable }
             return result
         } onCancel: { cancellation.cancel() }
     }
@@ -173,7 +210,7 @@ extension EnvironmentValues {
     private var bytes = 0
     private var pending: [Key: Pending] = [:]
     private var pendingOrder: [Key] = []
-    private let decodeGate = ClipboardThumbnailDecodeGate()
+    private let decodeGate = ClipboardThumbnailProvider.decodeGate
 
     @discardableResult func clear() -> UUID {
         generation = UUID()

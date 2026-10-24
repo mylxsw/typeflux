@@ -46,14 +46,14 @@ extension AskConversationModel {
         }
     }
 
-    func openFeatureChat() async -> Bool {
+    func openFeatureChat(incomingDraft: AskDraft? = nil) async -> Bool {
         guard !Task.isCancelled, canOpenChatFromLauncher else { confirm(L("ask.openChat.wait")); return false }
-        if plugins.keyword?.pluginID == AskQuickAskPlugin.id, quickAsk?.conversationId != nil {
+        if incomingDraft == nil, plugins.keyword?.pluginID == AskQuickAskPlugin.id, quickAsk?.conversationId != nil {
             return await openQuickAskInChat()
         }
-        var incoming = launcherDraft
-        var otherPlugin = plugins.keyword.map { $0.pluginID != AskOpenChatPlugin.id && $0.pluginID != AskQuickAskPlugin.id } ?? false
-        if plugins.keyword == nil {
+        var incoming = incomingDraft ?? launcherDraft
+        var otherPlugin = incomingDraft == nil && (plugins.keyword.map { $0.pluginID != AskOpenChatPlugin.id && $0.pluginID != AskQuickAskPlugin.id } ?? false)
+        if incomingDraft == nil, plugins.keyword == nil {
             switch AskKeywordMatcher.match(incoming.text, keywords: launcherKeywords) {
             case let .hint(keyword) where keyword.pluginID == AskOpenChatPlugin.id: incoming.text = ""
             case let .active(keyword, argument) where keyword.pluginID == AskOpenChatPlugin.id: incoming.text = argument

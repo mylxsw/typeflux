@@ -75,7 +75,7 @@ struct AskSidePanelConversationTests {
         try await fixture.model.addSidePanelFiles([URL(fileURLWithPath: "/missing")], conversationId: "plain")
     }
 
-    @Test func commandShiftFOpensTheFilesTab() async throws {
+    @Test func commandOOpensAndCommandWClosesThePanelThenWindow() async throws {
         let (fixture, store, base) = try await fixture()
         defer { try? FileManager.default.removeItem(at: base); fixture.model.resetSession() }
         let owner = try #require(fixture.model.credentials(for: "files-chat")).account
@@ -89,10 +89,12 @@ struct AskSidePanelConversationTests {
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let size = NSSize(width: 1300, height: 760)
-        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.titled],
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.titled, .closable],
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
-        let hosting = NSHostingView(rootView: AskConversationView(model: fixture.model)
+        let panel = AskSidePanel(browser: nil)
+        let hosting = NSHostingView(rootView: AskConversationView(model: fixture.model, sidePanel: panel,
+            onCloseWindow: { [weak window] in window?.performClose(nil) })
             .defaultAppStorage(defaults)
             .environment(\.askGlassMaterialOverride, .opaque))
         hosting.frame = NSRect(origin: .zero, size: size)
@@ -103,24 +105,46 @@ struct AskSidePanelConversationTests {
         #expect(find("ask.workspace.sidePanel", in: window) != nil)
         #expect(find("ask.sidePanel", in: window) == nil)
 
-        let key = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [.command, .shift],
+        let key = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: .command,
                                                 timestamp: 0, windowNumber: window.windowNumber, context: nil,
-                                                characters: "f", charactersIgnoringModifiers: "f",
-                                                isARepeat: false, keyCode: 3))
+                                                characters: "o", charactersIgnoringModifiers: "o",
+                                                isARepeat: false, keyCode: 31))
         #expect(window.performKeyEquivalent(with: key))
         try await SettingsBehaviorTestSupport.wait {
             hosting.layoutSubtreeIfNeeded()
             return find("ask.sidePanel.filesTab", in: window) != nil
                 && shows("report.md", in: window)
         }
-        // The panel's close button hides it again.
-        let close = try #require(find("ask.workspace.drawer.close", in: window))
-        _ = close.perform(NSSelectorFromString("accessibilityPerformPress"))
+        // Opening an already visible panel leaves it visible.
+        #expect(window.performKeyEquivalent(with: key))
+        let closeKey = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: .command,
+            timestamp: 0, windowNumber: window.windowNumber, context: nil,
+            characters: "w", charactersIgnoringModifiers: "w", isARepeat: false, keyCode: 13))
+        let listing = try #require(try await fixture.model.sidePanelFiles("files-chat"))
+        let file = try #require(listing.files.first { $0.name == "report.md" })
+        let target = try AskSidePanelFileAccess.resolve(file.relativePath, workspaceRoot: listing.root)
+        _ = try panel.open(target, conversationId: "files-chat")
+        hosting.layoutSubtreeIfNeeded()
+        #expect(window.performKeyEquivalent(with: closeKey))
+        #expect(panel.tabs.count == 1)
+        #expect(window.isVisible)
+        #expect(find("ask.sidePanel", in: window) != nil)
+        #expect(window.performKeyEquivalent(with: closeKey))
         try await SettingsBehaviorTestSupport.wait {
             hosting.layoutSubtreeIfNeeded()
             return find("ask.sidePanel", in: window) == nil
         }
+        #expect(window.isVisible)
+        let modeKey = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: .command,
+            timestamp: 0, windowNumber: window.windowNumber, context: nil,
+            characters: "m", charactersIgnoringModifiers: "m", isARepeat: false, keyCode: 46))
+        #expect(window.performKeyEquivalent(with: modeKey))
+        #expect(fixture.model.conversationKind(launcher: false) == .work)
+        #expect(fixture.model.draft.references?.first?.messageId == "files-chat")
+        #expect(window.performKeyEquivalent(with: closeKey))
+        #expect(!window.isVisible)
     }
+
 }
 
 extension AskSidePanelConversationTests {

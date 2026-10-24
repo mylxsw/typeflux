@@ -388,7 +388,7 @@ extension AskFileIndex {
         let estimate = count > 0 ? count : nil
         skippedMounts.removeAll()
         lock.withLock { currentStatus.timedOut = 0; currentStatus.failed = 0; currentStatus.nonLocalMounts = 0 }
-        var lastPublish = ProcessInfo.processInfo.systemUptime
+        var publication = AskFileBuildPublication(now: ProcessInfo.processInfo.systemUptime)
         let startEvent = AskFSEventsWatcher.currentEventID
         working = AskFileIndexState(home: home)
         self.scope = scope
@@ -407,10 +407,12 @@ extension AskFileIndex {
                                  skipped: recordSkip) { entry in
                 insert(entry)
                 let now = ProcessInfo.processInfo.systemUptime
-                if working.count % Self.publishEvery == 0 || now - lastPublish >= (preservePublished ? 2 : 0.25) {
-                    lastPublish = now
-                    if preservePublished { reportBuildProgress(found: working.count, estimate: estimate, run: run) }
-                    else { publish(phase: .building(found: working.count, estimate: estimate)) }
+                switch publication.update(found: working.count, now: now) {
+                case .snapshot where !preservePublished:
+                    publish(phase: .building(found: working.count, estimate: estimate))
+                case .snapshot, .progress:
+                    reportBuildProgress(found: working.count, estimate: estimate, run: run)
+                case .none: break
                 }
                 return true
             }

@@ -7,6 +7,7 @@ struct AskConversationKindSwitch: View {
     let selection: AskConversationKind
     var compact = false
     var showsLabels = true
+    var onToggle: (() -> Void)?
     var onSelect: (AskConversationKind) -> Void
     @Environment(\.interfaceStyle) private var style
 
@@ -39,13 +40,21 @@ struct AskConversationKindSwitch: View {
                     .contentShape(Capsule(style: .continuous))
                 }
                 .buttonStyle(.plain)
-                .modifier(AskLauncherShortcutBadge(key: compact ? AskLauncherKindShortcuts.key(for: kind) : nil,
+                .modifier(AskLauncherShortcutBadge(key: compact && !chosen ? AskLauncherKindShortcuts.key(for: kind) : nil,
                                                    leadingInset: 13, topInset: -6))
                 .help(L(kind.titleKey) + " · " + L(kind.titleKey + ".help")
-                    + (compact ? " · ⌘" + AskLauncherKindShortcuts.key(for: kind) : ""))
+                    + (!chosen ? " · ⌘M" : ""))
                 .accessibilityLabel(L(kind.titleKey))
                 .accessibilityAddTraits(chosen ? .isSelected : [])
                 .accessibilityIdentifier("ask.kind." + kind.rawValue)
+            }
+        }
+        .background {
+            if compact, let onToggle {
+                Button("", action: onToggle)
+                    .keyboardShortcut("m", modifiers: .command)
+                    .opacity(0)
+                    .accessibilityHidden(true)
             }
         }
         .padding(3)

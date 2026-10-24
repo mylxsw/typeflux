@@ -12,6 +12,13 @@ private final class ClipboardThumbnailBlock: @unchecked Sendable {
     func run() throws -> ManagedProcess.Result { lock.withLock { calls += 1 }; gate.wait(); throw MediaFailure.unavailable }
 }
 
+private final class ClipboardThumbnailWorkerCalls: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = 0
+    var count: Int { lock.withLock { value } }
+    func add() { lock.withLock { value += 1 } }
+}
+
 private actor ClipboardThumbnailCalls {
     var count = 0
     func add() { count += 1 }
@@ -51,13 +58,68 @@ private actor ClipboardThumbnailDecodeProbe {
         return .init(images: [context.makeImage()!], numbers: [], pages: 0)
     }
     private func fixture() throws -> URL { try AskAttachmentFixture.directory() }
-    private func worker() throws -> MediaWorker {
+    private func worker(calls: ClipboardThumbnailWorkerCalls? = nil) throws -> MediaWorker {
         let folder = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent(".build/clipboard-thumbnail-validation")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         return MediaWorker(timeout: 3, run: { request, cancelled in
+            calls?.add()
             var request = request; request.environment["LLVM_PROFILE_FILE"] = folder.appendingPathComponent("helper-%p.profraw").path
             return try ManagedProcess().runBlocking(request, isCancelled: cancelled)
         })
+    }
+
+    func testDiskThumbnailsReuseAcrossOpeningsWhileLargePreviewLoadsOriginal() async throws {
+        let folder = try fixture(); defer { try? FileManager.default.removeItem(at: folder) }
+        let cache = ClipboardThumbnailDiskCache(directory: folder.appendingPathComponent("cache"))
+        let calls = ClipboardThumbnailWorkerCalls(), worker = try worker(calls: calls)
+        var files: [URL] = []
+        for index in 0..<6 {
+            let url = folder.appendingPathComponent("image-\(index).png")
+            try ClipboardTestSupport.imageData(width: 2000, height: 1000).write(to: url)
+            files.append(url)
+        }
+        let coldStart = ContinuousClock.now
+        for url in files {
+            let result = try await ClipboardThumbnailProvider.decode(url, edge: 240, worker: worker, diskCache: cache)
+            XCTAssertEqual(result.images.first?.width, 240)
+        }
+        let cold = coldStart.duration(to: .now)
+        XCTAssertEqual(calls.count, 6)
+        let hotStart = ContinuousClock.now
+        for url in files {
+            let result = try await ClipboardThumbnailProvider.decode(url, edge: 240, worker: worker, diskCache: cache)
+            XCTAssertEqual(result.images.first?.height, 120)
+        }
+        let hot = hotStart.duration(to: .now)
+        XCTAssertEqual(calls.count, 6, "Reopening must not launch decoders or read original image bytes")
+        print("Clipboard thumbnail comparison (6 images): first generation=\(cold), disk reuse=\(hot), worker launches on reuse=0")
+        let preview = try await ClipboardThumbnailProvider.decode(files[0], edge: 900, worker: worker, diskCache: cache)
+        XCTAssertEqual(preview.images.first?.width, 900)
+        XCTAssertEqual(calls.count, 7)
+        await worker.shutdown()
+        do {
+            _ = try await ClipboardThumbnailProvider.decode(files[0], edge: 240, worker: worker, diskCache: cache)
+            XCTFail("Cached pixels must not bypass disabled worker authorization")
+        } catch {}
+        XCTAssertEqual(calls.count, 7)
+    }
+
+    func testBackgroundPreparationBoundsRecentEntriesAndUsesOnlyListSize() async throws {
+        let calls = ClipboardThumbnailCalls(), raster = result()
+        let entries = (0..<20).map { index in
+            ClipboardTestSupport.entry(.images, filePaths: (0..<10).map { "/private/\(index)-\($0).png" })
+        }
+        let task = ClipboardThumbnailProvider.prepare(entries, using: { _, edge in
+            XCTAssertEqual(edge, 240)
+            await calls.add()
+            return raster
+        })
+        XCTAssertNotNil(task)
+        await task?.value
+        let count = await calls.count
+        XCTAssertEqual(count, 36, "Only the first 12 entries and at most three images per entry are warmed")
+        XCTAssertNil(ClipboardThumbnailProvider.prepare([]))
+        XCTAssertNil(ClipboardThumbnailProvider.prepare([ClipboardTestSupport.entry(.text, text: "text")]))
     }
     private func settings() -> SettingsStore {
         let suite = "ClipboardThumbnailIsolationTests.\(UUID().uuidString)"

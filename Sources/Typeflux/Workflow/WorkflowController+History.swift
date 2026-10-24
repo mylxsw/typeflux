@@ -168,6 +168,7 @@ extension WorkflowController {
             self.historyPanelSnapshot = ClipboardPanelSnapshot(entries: entries, policy: policy,
                 store: storeIdentity, retentionDays: self.settingsStore.clipboardRetention.days,
                 voiceRetentionDays: self.settingsStore.historyRetentionPolicy.days)
+            ClipboardThumbnailProvider.prepare(entries)
         })
     }
 

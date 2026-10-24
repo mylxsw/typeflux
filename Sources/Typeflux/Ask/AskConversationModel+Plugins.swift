@@ -210,7 +210,7 @@ extension AskConversationModel {
             AskFileSearchPlugin(
                 index: { [weak self] in self.flatMap { $0.quickFilesEnabled ? $0.fileIndex : nil } },
                 settings: { [weak settings] in settings?.askLauncherSearchSettings ?? AskLauncherSearchSettings() },
-                semantic: { [weak self] in self?.semanticSearch }
+                semantic: { [weak self] in self?.fileContentSearch }
             ),
             AskSemanticFileSearchPlugin(
                 semantic: { [weak self] in self?.semanticSearch },
@@ -417,21 +417,7 @@ extension AskConversationModel {
         case let .enterKeyword(id):
             guard let keyword = plugins.availableKeywords.first(where: { $0.id == id && $0.enabled })
             else { return .stay }
-            if enterLauncherWorkflow(keyword, run: true) { return .stay }
-            let listsAtOnce = [
-                AskPrefixPlugin.id,
-                AskAppSearchPlugin.id,
-                AskKillAppPlugin.id,
-                AskHistoryPlugin.id,
-                AskClipboardPlugin.id,
-                AskNotesPlugin.id,
-                AskBrowserSearchPlugin.tabsID,
-                AskBrowserSearchPlugin.bookmarksID
-            ]
-            plugins.enter(keyword, waitingForInput: !listsAtOnce.contains(keyword.pluginID))
-            launcherDraft.text = ""
-            plugins.update(text: "", selection: launcherDraft.sentSelection, language: AppLocalization.shared.language)
-            return .stay
+            return enterSelectedLauncherKeyword(keyword, run: true)
         case let .editWorkflow(id, path, line):
             finishPluginResult()
             editWorkflow(id, path, line)

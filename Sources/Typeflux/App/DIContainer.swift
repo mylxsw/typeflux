@@ -208,7 +208,7 @@ final class DIContainer {
         Logger(subsystem: "ai.gulu.app.typeflux", category: "DIContainer")
             .debug("DIContainer initialized — Logger test message")
         historyStore = SQLiteHistoryStore()
-        clipboardHistoryStore = SQLiteClipboardHistoryStore()
+        clipboardHistoryStore = SQLiteClipboardHistoryStore(thumbnailPreparation: { ClipboardThumbnailProvider.prepare($0) })
         SettingsWindowController.shared.clipboardHistoryStore = clipboardHistoryStore
         let settingsForClipboard = settingsStore
         clipboardMonitor = ClipboardMonitor(

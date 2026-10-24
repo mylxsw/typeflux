@@ -9,9 +9,9 @@ extension AskConversationModel {
     /// All three launcher entries meet here. Saving finishes before navigation;
     /// edits or account changes during that await abort the handoff intact.
     @discardableResult
-    func openChatFromLauncher() async -> Bool {
-        if !FeatureProcess.owns(.chat) { return await openFeatureChat() }
-        if plugins.keyword?.pluginID == AskQuickAskPlugin.id, quickAsk?.conversationId != nil {
+    func openChatFromLauncher(incomingDraft: AskDraft? = nil) async -> Bool {
+        if !FeatureProcess.owns(.chat) { return await openFeatureChat(incomingDraft: incomingDraft) }
+        if incomingDraft == nil, plugins.keyword?.pluginID == AskQuickAskPlugin.id, quickAsk?.conversationId != nil {
             return await openQuickAskInChat()
         }
         guard !Task.isCancelled, canOpenChatFromLauncher else { confirm(L("ask.openChat.wait")); return false }
@@ -22,9 +22,9 @@ extension AskConversationModel {
         let source = launcherDraft, previous = draft, previousID = selectedId
         let generation = selectionGeneration
         let keyword = plugins.keyword
-        var incoming = source
-        var otherPlugin = keyword.map { ![AskOpenChatPlugin.id, AskQuickAskPlugin.id].contains($0.pluginID) } ?? false
-        if keyword == nil {
+        var incoming = incomingDraft ?? source
+        var otherPlugin = incomingDraft == nil && (keyword.map { ![AskOpenChatPlugin.id, AskQuickAskPlugin.id].contains($0.pluginID) } ?? false)
+        if incomingDraft == nil, keyword == nil {
             switch AskKeywordMatcher.match(source.text, keywords: launcherKeywords) {
             case let .hint(found) where found.pluginID == AskOpenChatPlugin.id: incoming.text = ""
             case let .active(found, argument) where found.pluginID == AskOpenChatPlugin.id: incoming.text = argument

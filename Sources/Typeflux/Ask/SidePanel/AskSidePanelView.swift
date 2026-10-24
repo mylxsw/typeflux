@@ -55,7 +55,6 @@ struct AskSidePanelView: View {
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background { shortcuts }
         .overlay { if dropTargeted { dropHighlight } }
         .onDrop(of: [.fileURL], isTargeted: context.conversationId == nil ? nil : $dropTargeted, perform: drop)
         .overlay(alignment: .leading) { resizeHandle }
@@ -229,15 +228,6 @@ struct AskSidePanelView: View {
         } catch {
             panel.notice = error.localizedDescription
         }
-    }
-
-    /// ⌘W closes the selected tab; the Files tab stays.
-    private var shortcuts: some View {
-        Button("") { panel.closeSelected() }
-            .keyboardShortcut("w", modifiers: .command)
-            .disabled(!panel.canCloseSelection)
-            .opacity(0)
-            .accessibilityHidden(true)
     }
 
     private func noticeBanner(_ notice: String) -> some View {

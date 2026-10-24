@@ -105,11 +105,9 @@ struct AskFileTabView: View {
         .frame(height: 44)
     }
 
-    /// ⌘O and ⌘⇧R work while the tab shows, not only while its menu is open.
+    /// Reveal in Finder works while the tab shows.
     private var shortcuts: some View {
         ZStack {
-            Button("") { actions.openWithDefaultApplication(tab.target.url) }
-                .keyboardShortcut("o", modifiers: .command)
             Button("") { actions.revealInFinder(tab.target.url) }
                 .keyboardShortcut("r", modifiers: [.command, .shift])
         }

@@ -481,7 +481,7 @@ struct AskComposer: View {
                                               entries: model.typingLauncherSearchEntries(
                                                   language: AppLocalization.shared.language),
                                               browsers: model.browserSearch, browserSettings: model.browserSearchSettings,
-                                              semantic: model.semanticSearch)
+                                              semantic: model.fileContentSearch)
         if resetActions { quickActions = nil }
         quickSearch.update(text: draft.wrappedValue.text,
                            chinese: AppLocalization.shared.language == .simplifiedChinese,
@@ -569,23 +569,9 @@ struct AskComposer: View {
         case let .feature(index):
             guard results.features.indices.contains(index) else { return }
             let entry = results.features[index]
-            if let command = entry.command, close {
-                performPluginAction(.init(kind: .systemCommand(command), title: entry.title, symbol: entry.symbol))
-            } else if close, entry.keyword.pluginID == AskSettingsPlugin.id {
-                performPluginAction(.init(kind: .openSettings, title: entry.title, symbol: entry.symbol))
-            } else if close, entry.keyword.pluginID == AskHelpPlugin.id {
-                performPluginAction(.init(kind: .openHelp(query: ""), title: entry.title, symbol: entry.symbol))
-            } else if close, AskScreenshotPlugin.startsCapture(entry.keyword) {
-                performPluginAction(.init(kind: AskScreenshotPlugin.captureKind(for: entry.keyword),
-                                          title: entry.title, symbol: entry.symbol))
-            } else if close, entry.keyword.pluginID == AskOpenChatPlugin.id {
-                model.enterLauncherSearchEntry(entry)
-                performPluginAction(.init(kind: .openChat, title: entry.title, symbol: entry.symbol))
-            } else {
-                model.enterLauncherSearchEntry(entry, run: close)
-                pluginHighlight = 0
-                pluginReserve = 0
-            }
+            if model.enterLauncherSearchEntry(entry, run: close) == .close { onDismiss() }
+            pluginHighlight = 0
+            pluginReserve = 0
             return
         case .askAI: model.submitLauncher(); return
         case .showAllFiles: showAllFiles(); return
@@ -850,8 +836,13 @@ struct AskComposer: View {
         return false
     }
 
-    /// Tab enters keyword mode; Return can also run a workflow that needs no input.
+    /// Navigation and capture open on selection; input-driven hints keep completion behavior.
     private func acceptPluginHint(run: Bool = false) -> Bool {
+        if let keyword = plugins.hint, model.launcherOpensOnSelection(keyword),
+           let outcome = model.activateLauncherKeyword(keyword) {
+            if outcome == .close { onDismiss() }
+            return true
+        }
         let enteredWorkflow = run && plugins.hint.map { model.enterLauncherWorkflow($0, run: true) } == true
         guard enteredWorkflow || plugins.acceptHint() else { return false }
         pluginHighlight = 0
@@ -1395,7 +1386,7 @@ struct AskComposer: View {
         canvasHighlight = nil
         pluginHighlight = 0
         pluginReserve = 0
-        model.enterLauncherKeyword(destination.keyword, run: false)
+        if model.enterLauncherKeyword(destination.keyword, run: false) == .close { onDismiss() }
         reportHeight()
     }
 
@@ -1415,7 +1406,7 @@ struct AskComposer: View {
         }
         pluginHighlight = 0
         pluginReserve = 0
-        model.enterLauncherKeyword(keyword, run: run)
+        if model.enterLauncherKeyword(keyword, run: run) == .close { onDismiss() }
         reportHeight()
     }
     private var sendControl: AskSendControl {
@@ -2388,7 +2379,7 @@ struct AskComposer: View {
             onEmptyBackspace: launcher ? emptyLauncherBackspace
                 : usesContentTiles && !chosenTools.isEmpty ? removeLastChoice : nil,
             onOpenChat: launcher ? openChatOrMonitorWindow : nil,
-            onKindShortcut: launcher ? { model.setConversationKind($0, launcher: true) } : nil,
+            onKindShortcut: { model.toggleConversationKind(launcher: launcher) },
             onContextShortcut: launcher ? toggleContextPanel : nil,
             onAcceptedInput: launcher ? { searchInputTrace = $0 } : nil
         )
@@ -2503,9 +2494,9 @@ struct AskComposer: View {
     /// Under the results: the model and switches, then what the keys do now.
     private var launcherBar: some View {
         HStack(spacing: 4) {
-            AskConversationKindSwitch(selection: model.conversationKind(launcher: true), compact: true) {
-                model.setConversationKind($0, launcher: true)
-            }
+            AskConversationKindSwitch(selection: model.conversationKind(launcher: true), compact: true,
+                                      onToggle: { model.toggleConversationKind(launcher: true) },
+                                      onSelect: { model.setConversationKind($0, launcher: true) })
             .disabled(active)
             composerTools
                 // Command-K keeps the context panel reachable without adding a footer control.

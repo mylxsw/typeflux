@@ -246,7 +246,9 @@ extension SemanticFilePolicy {
         let passages = Dictionary(content.map { ($0.path, $0.evidence) }, uniquingKeysWith: { first, _ in first })
         let names = names.map { hit in
             var hit = hit
-            if let evidence = passages[hit.path] {
+            // System text matches carry no passage/location. Keep a filename hit's
+            // original actions and default-Return eligibility when the same file matches both.
+            if let evidence = passages[hit.path], evidence?.segmentKind != "spotlight" {
                 hit.evidence = evidence
             }
             return hit

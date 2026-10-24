@@ -39,7 +39,7 @@ struct ClipboardInlineMedia: View {
                 ClipboardMissingThumbnail()
             } else {
                 ClipboardThumbnailView(
-                    url: entry.contentURLs.first, maxPixelSize: expanded ? 900 : 240, placeholder: "photo",
+                    url: entry.contentURLs.first, maxPixelSize: expanded ? 900 : CGFloat(ClipboardThumbnailProvider.listEdge), placeholder: "photo",
                     contentMode: expanded ? .fit : .fill
                 )
             }
@@ -68,7 +68,7 @@ struct ClipboardInlineMedia: View {
         } else {
             HStack(spacing: 4) {
                 ForEach(urls.prefix(Self.stripLimit), id: \.offset) { _, url in
-                    ClipboardThumbnailView(url: url, maxPixelSize: 168, placeholder: "photo")
+                    ClipboardThumbnailView(url: url, maxPixelSize: CGFloat(ClipboardThumbnailProvider.listEdge), placeholder: "photo")
                         .frame(width: Self.stripTileSize, height: Self.stripTileSize)
                         .clipboardMediaFrame()
                 }

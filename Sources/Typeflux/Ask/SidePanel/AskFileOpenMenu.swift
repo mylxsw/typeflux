@@ -108,7 +108,7 @@ struct AskFileExternalActions {
     }
 }
 
-/// The shared menu items for one file. With `showsShortcuts`, ⌘O and ⌘⇧R are listed beside
+/// The shared menu items for one file. With `showsShortcuts`, ⌘⇧R is listed beside
 /// their items; a file row's hover menu leaves them out, so a list of rows never claims them.
 struct AskFileOpenMenuItems: View {
     let file: URL
@@ -127,7 +127,6 @@ struct AskFileOpenMenuItems: View {
         Button(defaultApp.map { L("ask.sidePanel.open.withApp", $0.name) } ?? L("ask.sidePanel.open.default")) {
             actions.openWithDefaultApplication(file)
         }
-        .keyboardShortcut(showsShortcuts ? KeyboardShortcut("o", modifiers: .command) : nil)
         if AskFileExternalActions.isHTML(file) {
             Button(L("ask.sidePanel.open.browser")) { actions.openInBrowser(file) }
         }

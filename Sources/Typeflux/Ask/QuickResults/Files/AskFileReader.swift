@@ -33,6 +33,7 @@ final class AskFileReader: AskFileReading {
     private var process: AskFileReaderProcess?
     private let ownership: AskFileReaderOwnership
     private let reaper: OwnedProcessReaper
+    private let inventory: AskDirectoryInventory?
     private var streaming = false
     private var input: FileHandle?
     private var output: FileHandle?
@@ -40,13 +41,15 @@ final class AskFileReader: AskFileReading {
 
     init(executable: URL? = nil, arguments: [String] = ["file-index-worker"],
          timeout: TimeInterval = 5, startupTimeout: TimeInterval? = nil, qualityOfService: QualityOfService? = nil,
-         ownership: AskFileReaderOwnership = AskFileReaderOwnership(), reaper: OwnedProcessReaper = .shared) {
+         ownership: AskFileReaderOwnership = AskFileReaderOwnership(), reaper: OwnedProcessReaper = .shared,
+         inventory: AskDirectoryInventory? = .shared) {
         self.executable = executable
         self.arguments = arguments
         self.timeout = timeout
         self.startupTimeout = startupTimeout ?? (executable == nil ? max(30, timeout) : timeout)
         self.qualityOfService = qualityOfService
         self.ownership = ownership; self.reaper = reaper
+        self.inventory = inventory
     }
 
     deinit { stop() }
@@ -90,11 +93,71 @@ final class AskFileReader: AskFileReading {
         return result
     }
 
+    func stream(_ request: AskFileReadRequest, isCancelled: () -> Bool = { false },
+                receive: (AskFileReadResponse) -> Bool) throws {
+        guard request.operation == .directory, let scope = request.scope, let inventory else {
+            return try transfer(request, isCancelled: isCancelled, receive: receive)
+        }
+        // Content discovery only consumes names/kinds; file modification times are validated separately.
+        // Filename rebuilds always read fresh attributes, even when directory membership is unchanged.
+        if request.directoryCursor != nil, let listing = inventory.listing(path: request.path, scope: scope) {
+            var version: String?
+            try transfer(.init(operation: .directoryVersion, path: request.path, scope: scope),
+                         isCancelled: isCancelled) { response in version = response.version ?? version; return true }
+            if version == listing.version {
+                guard ownership.permitsWork, !isCancelled() else { throw AskFileReadError.cancelled }
+                if try serve(listing, request: request, scope: scope, isCancelled: isCancelled, receive: receive) { return }
+            } else { inventory.invalidate(path: request.path, id: listing.id) }
+        }
+        var entries: [AskFileCrawler.Entry] = [], skippedMounts: [String] = []
+        var reusable = request.directoryCursor == nil
+        try transfer(request, isCancelled: isCancelled) { response in
+            if reusable {
+                entries += response.entries
+                skippedMounts += response.skippedMounts ?? []
+                if entries.count > 8192 { reusable = false; entries.removeAll() }
+            }
+            let keep = receive(response)
+            if keep, reusable, response.more != true, response.error == nil, let version = response.version,
+               !isCancelled(), ownership.permitsWork {
+                inventory.store(path: request.path, listing: .init(scope: scope, version: version, entries: entries,
+                                                                  skippedMounts: skippedMounts))
+            }
+            return keep
+        }
+    }
+
+    private func serve(_ listing: AskDirectoryInventory.Listing, request: AskFileReadRequest, scope: AskFileScope,
+                       isCancelled: () -> Bool, receive: (AskFileReadResponse) -> Bool) throws -> Bool {
+        let cursor = request.directoryCursor
+        if let cursor, !cursor.session.isEmpty,
+           cursor.session != listing.id || cursor.version != listing.version { return false }
+        let start = cursor.map { $0.session.isEmpty ? 0 : Int(clamping: $0.inspected) } ?? 0
+        guard start >= 0, start <= listing.entries.count else { return false }
+        guard !streaming, let process else { throw AskFileReadError.unavailable }
+        try ownership.begin(process.id)
+        streaming = true
+        defer { ownership.end(process.id); streaming = false }
+        guard ownership.permitsWork, !isCancelled() else { throw AskFileReadError.cancelled }
+        try SemanticWorkBudget.current?.checkpoint(cancelled: isCancelled)
+        let end = min(listing.entries.count, start + 128)
+        let entries = listing.entries[start ..< end].filter { scope.includes($0.path, isDirectory: $0.kind != .file) }
+        let next = end < listing.entries.count ? AskDirectoryCursor(session: listing.id, version: listing.version,
+                                                                    inspected: Int64(end)) : nil
+        let mounts = start == 0 ? listing.skippedMounts.filter { scope.includes($0, isDirectory: true) } : []
+        _ = receive(AskFileReadResponse(entries: Array(entries), skippedMounts: mounts, version: listing.version, directoryCursor: next,
+                                        inspected: end - start))
+        guard self.process === process, ownership.permits(process.id), !isCancelled() else {
+            throw AskFileReadError.cancelled
+        }
+        return true
+    }
+
     // Each frame/pipe transfer resets the idle deadline; a large advancing directory has no total deadline.
     // Keep resource ownership, cancellation and state checks in one operation.
     // swiftlint:disable:next function_body_length cyclomatic_complexity
-    func stream(_ request: AskFileReadRequest, isCancelled: () -> Bool = { false },
-                receive: (AskFileReadResponse) -> Bool) throws {
+    private func transfer(_ request: AskFileReadRequest, isCancelled: () -> Bool,
+                          receive: (AskFileReadResponse) -> Bool) throws {
         guard !streaming else { throw AskFileReadError.unavailable }
         guard ownership.permitsWork else { throw AskFileReadError.unavailable }
         streaming = true

@@ -64,6 +64,11 @@ final class AskConversationModel: ObservableObject {
     /// Files and folders the launcher can open; tests supply their own.
     var fileIndex: any AskFileSearching = AskFileIndex.shared
     var semanticSearch: (any SemanticFileSearching)?
+    lazy var fileContentSearch = AskFileContentSearch(
+        settings: { [weak self] in self?.launcherSearchSettings ?? .init() },
+        enabled: { [weak self] in self?.quickFilesEnabled == true },
+        semantic: { [weak self] in self?.semanticSearch }
+    )
     /// Whether a found file is still there; tests decide instead.
     var fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }
     var quickLookFile: (AskFileHit) -> Void = { AskQuickLook.shared.toggle($0.url) }

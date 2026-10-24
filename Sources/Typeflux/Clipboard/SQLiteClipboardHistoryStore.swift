@@ -14,13 +14,19 @@ final class SQLiteClipboardHistoryStore: ClipboardHistoryStore {
     /// Images are the only payload stored as data, so they get a tighter cap than other items.
     let maximumImageCount: Int
     private let notificationCenter: NotificationCenter
+    private let thumbnailPreparation: (@Sendable (ClipboardItem) -> Void)?
+    private let thumbnailCache: ClipboardThumbnailDiskCache
     private var database: OpaquePointer?
 
-    init(baseDir: URL, maximumImageCount: Int = 100, notificationCenter: NotificationCenter = .default) {
+    init(baseDir: URL, maximumImageCount: Int = 100, notificationCenter: NotificationCenter = .default,
+         thumbnailPreparation: (@Sendable (ClipboardItem) -> Void)? = nil,
+         thumbnailCache: ClipboardThumbnailDiskCache = .shared) {
         dbURL = baseDir.appendingPathComponent("clipboard.sqlite")
         imagesDirectory = baseDir.appendingPathComponent("clipboard-images", isDirectory: true)
         self.maximumImageCount = maximumImageCount
         self.notificationCenter = notificationCenter
+        self.thumbnailPreparation = thumbnailPreparation
+        self.thumbnailCache = thumbnailCache
         try? FileManager.default.createDirectory(at: imagesDirectory, withIntermediateDirectories: true)
         do {
             try openDatabase()
@@ -30,10 +36,10 @@ final class SQLiteClipboardHistoryStore: ClipboardHistoryStore {
         }
     }
 
-    convenience init() {
+    convenience init(thumbnailPreparation: (@Sendable (ClipboardItem) -> Void)? = nil) {
                 // The image storage limit in settings decides how much image data is kept; the count cap
         // only guards against an unlimited setting filling the list with images.
-        self.init(baseDir: TypefluxDataDirectories.data, maximumImageCount: 1000)
+        self.init(baseDir: TypefluxDataDirectories.data, maximumImageCount: 1000, thumbnailPreparation: thumbnailPreparation)
     }
 
     deinit {
@@ -52,7 +58,10 @@ final class SQLiteClipboardHistoryStore: ClipboardHistoryStore {
                 return nil
             }
         }
-        if item != nil { notifyChange() }
+        if let item {
+            notifyChange()
+            thumbnailPreparation?(item)
+        }
         return item
     }
 
@@ -279,8 +288,12 @@ final class SQLiteClipboardHistoryStore: ClipboardHistoryStore {
     }
 
     private func removeImageFile(of item: ClipboardItem) {
+        for path in item.filePaths {
+            thumbnailCache.remove(for: URL(fileURLWithPath: path))
+        }
         guard let path = item.imagePath, path.hasPrefix(imagesDirectory.path) else { return }
         try? FileManager.default.removeItem(atPath: path)
+        thumbnailCache.remove(for: URL(fileURLWithPath: path))
     }
 
     // MARK: - Schema

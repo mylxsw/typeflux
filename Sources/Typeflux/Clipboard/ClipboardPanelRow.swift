@@ -106,7 +106,6 @@ struct ClipboardPanelRow: View, Equatable {
             if let caption {
                 Text(caption)
                     .font(.system(size: 12))
-                    .foregroundStyle(StudioTheme.textPrimary)
                     .truncationMode(.middle)
                 Circle().frame(width: 2, height: 2)
             }
@@ -123,7 +122,7 @@ struct ClipboardPanelRow: View, Equatable {
             }
         }
         .font(.system(size: 11.5))
-        .foregroundStyle(StudioTheme.textSecondary)
+        .foregroundStyle(StudioTheme.textTertiary)
         .lineLimit(1)
     }
 

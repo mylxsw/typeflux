@@ -71,6 +71,31 @@ struct FeatureHandoffTests {
         #expect(source.model.launcherDraft.text == (change == "edit" ? "New input" : "chat"))
     }
 
+    @Test(arguments: [false, true])
+    func slowDirectOpenNeverEntersAnIntermediatePage(fails: Bool) async throws {
+        let source = try AskTestFixture()
+        defer { source.model.resetSession() }
+        source.model.launcherDraft.text = "Open Chat"
+        let original = source.model.launcherDraft
+        var incoming = original
+        incoming.text = ""
+        var dismissed = false
+        source.model.onDismissLauncher = { dismissed = true }
+        source.model.featureRoute = { command in
+            #expect(command.action == "showChat")
+            #expect(source.model.launcherDraft == original && !source.model.plugins.isActive)
+            try await Task.sleep(for: .seconds(1))
+            #expect(source.model.launcherDraft == original && !source.model.plugins.isActive)
+            #expect(!dismissed)
+            if fails { throw FeatureRPC.Failure.timedOut }
+            return Data()
+        }
+        #expect(await source.model.openFeatureChat(incomingDraft: incoming) == !fails)
+        #expect(dismissed == !fails)
+        #expect(source.model.launcherDraft.text == (fails ? original.text : ""))
+        #expect(!source.model.plugins.isActive)
+    }
+
     @Test func emptyOpenWaitsForRecordingAndDoesNotRouteTwice() async throws {
         let source = try AskTestFixture()
         defer { source.model.resetSession() }
