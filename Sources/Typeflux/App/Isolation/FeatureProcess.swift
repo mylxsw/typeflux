@@ -45,7 +45,6 @@ enum FeatureProcess {
     private(set) static var supervisor: FeatureSupervisor?
     static let immediateWarmRoles: [FeatureRole] = [.voice, .background]
     static let deferredWarmRoles: [FeatureRole] = [.screenshot]
-    static var reportFailure: (@MainActor () -> Void)?
     static var handle: (@MainActor (FeatureCommand) async throws -> Data)?
     private static var ready: Task<Void, Error>?
     private static var deferredWarmup: Task<Void, Never>?
@@ -182,16 +181,12 @@ enum FeatureProcess {
         let _: FeatureRPC.Empty = try await peer.call("dispatch", command)
     }
 
+    private static let sender = FeatureCommandSender(route: { try await route($0) })
+
     nonisolated static func send(_ command: FeatureCommand) {
         var command = command
         command.latency = command.latency ?? ShortcutLatency.current
-        Task { @MainActor in
-            do { _ = try await route(command) }
-            catch {
-                reportFailure?()
-                ErrorLogStore.shared.log("Feature request did not complete: \(command.destination.rawValue)/\(command.action)")
-            }
-        }
+        Task { @MainActor in sender.send(command) }
     }
 
     static func receive(_ command: FeatureCommand) async throws -> Data {
@@ -240,6 +235,7 @@ enum FeatureProcess {
 actor FeatureSupervisor {
     private struct Child {
         let peer: FeatureRPC
+        let stateSender: FeatureCommandSender
         let process: Task<Void, Never>
     }
     private let executableURL: URL
@@ -317,7 +313,7 @@ actor FeatureSupervisor {
             }
             if command.action == "indexSnapshot" {
                 for (role, child) in children where role == .chat {
-                    Task { _ = try? await child.peer.request("ui", payload: JSONEncoder().encode(FeatureCommand(destination: role, action: "indexSnapshot", payload: command.payload))) }
+                    await child.stateSender.send(.init(destination: role, action: "indexSnapshot", payload: command.payload))
                 }
                 return try await FeatureProcess.receive(command)
             }
@@ -634,7 +630,10 @@ actor FeatureSupervisor {
                 await peer.stop()
                 await self?.childExited(role: role, channel: channel)
             }
-            return Child(peer: peer, process: process)
+            let stateSender = await FeatureCommandSender(route: { command in
+                try await peer.request("ui", payload: JSONEncoder().encode(command))
+            })
+            return Child(peer: peer, stateSender: stateSender, process: process)
         }
         starting[role] = task
         do {

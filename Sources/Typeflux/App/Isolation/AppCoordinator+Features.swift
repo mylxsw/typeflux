@@ -58,7 +58,9 @@ extension AppCoordinator {
                     model.translationFanout = self.di.translationEngines.makeSession()
                     model.plugins.replacePlugins(model.makeLauncherPlugins())
                     controller?.dismissLauncher()
-                }, failed: { [weak self] in self?.di.overlayController.showNotice(message: L("feature.unavailable")) })
+                }, failed: {
+                    ErrorLogStore.shared.log("Translation transfer did not complete; source results remain available")
+                })
             }
             model.onOpenHelp = { query in FeatureProcess.send(.init(destination: .host, action: "help", payload: Data(query.utf8))) }
             model.onOpenSettings = { section in

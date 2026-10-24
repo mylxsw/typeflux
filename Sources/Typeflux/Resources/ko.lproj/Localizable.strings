@@ -6674,7 +6674,7 @@
 
 "ask.storage.inUse" = "다른 Typeflux 프로세스가 이 대화를 사용 중입니다. 해당 프로세스를 종료한 후 다시 시도하세요.";
 
-"feature.unavailable" = "이 창이 응답하지 않습니다. 입력 내용은 보존되며 다른 도구는 계속 사용할 수 있습니다。";
+"billing.subscription.refreshFailed" = "구독 정보를 새로 고치지 못했습니다. 다시 시도해 주세요.";
 
 "feature.screenshotSaved" = "대상 창이 응답하지 않아 스크린샷을 저장했습니다.";
 

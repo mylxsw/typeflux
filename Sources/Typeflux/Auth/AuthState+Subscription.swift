@@ -21,7 +21,7 @@ extension AuthState {
             isLoadingSubscription = true
             defer { isLoadingSubscription = false }
             guard await FeatureAuth.refresh(action: "refreshSubscription") else {
-                subscriptionError = L("feature.unavailable"); return nil
+                subscriptionError = L("billing.subscription.refreshFailed"); return nil
             }
             subscriptionError = nil
             return subscription

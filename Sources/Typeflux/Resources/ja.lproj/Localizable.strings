@@ -6674,7 +6674,7 @@
 
 "ask.storage.inUse" = "別の Typeflux プロセスがこの会話データを使用しています。そのプロセスを終了してから再試行してください。";
 
-"feature.unavailable" = "このウインドウは応答していません。入力は保持されています。他のツールは引き続き使えます。";
+"billing.subscription.refreshFailed" = "サブスクリプションを更新できませんでした。もう一度お試しください。";
 
 "feature.screenshotSaved" = "送信先が応答しなかったため、スクリーンショットを保存しました。";
 

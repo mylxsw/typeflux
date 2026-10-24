@@ -223,19 +223,21 @@ final class FeatureBackgroundRuntime {
         publication = Task {
             defer { publication = nil }
             do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.sortedKeys]
             let health = Dictionary(uniqueKeysWithValues: registry?.registrations.compactMap { entry -> (
                 ModuleID,
                 ModuleHealth
             )? in
                 entry.health.current.map { (entry.id, $0) }
             } ?? [])
-            if let payload = try? JSONEncoder().encode(FeatureStatus(role: .background, activity: .init(), pins: 0,
+            if let payload = try? encoder.encode(FeatureStatus(role: .background, activity: .init(), pins: 0,
                                                                      clickThroughPins: 0, voiceStatus: nil,
                                                                      modules: health)) {
                 publish(.init(destination: .host, action: "status", payload: payload))
             }
             let snapshot = FeatureIndexSnapshot(names: names.status, content: content.backgroundSnapshot())
-            if let payload = try? JSONEncoder().encode(snapshot) {
+            if let payload = try? encoder.encode(snapshot) {
                 publish(.init(destination: .host, action: "indexSnapshot", payload: payload))
             }
         }

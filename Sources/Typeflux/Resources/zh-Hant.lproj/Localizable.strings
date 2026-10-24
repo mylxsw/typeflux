@@ -6676,7 +6676,7 @@
 
 "ask.storage.inUse" = "另一個 Typeflux 程序正在使用這些對話，請關閉它後重試。";
 
-"feature.unavailable" = "這個視窗暫時沒有回應。輸入已保留，其他工具仍可使用。";
+"billing.subscription.refreshFailed" = "訂閱資訊重新整理失敗，請重試。";
 
 "feature.screenshotSaved" = "目標視窗沒有回應，截圖已儲存。";
 
