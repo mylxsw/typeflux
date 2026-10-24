@@ -444,7 +444,12 @@ actor FeatureSupervisor {
 
     private func handleAPI(_ method: String, payload: Data, role: FeatureRole, channel: UUID) async throws -> Data {
         let call = try JSONDecoder().decode(FeatureAskCall.self, from: payload)
-        guard channelGenerations[role] == channel, liveChannels.contains(channel), call.generation == auth.generation else {
+        guard channelGenerations[role] == channel, liveChannels.contains(channel) else {
+            AskFailureDiagnostics.shared.record(.cacheAuthorization, error: AuthError.unauthorized, reason: .inactiveChannel, method: method)
+            return try JSONEncoder().encode(FeatureAskReply(payload: nil, error: .init(AuthError.unauthorized)))
+        }
+        guard call.generation == auth.generation else {
+            AskFailureDiagnostics.shared.record(.cacheAuthorization, error: AuthError.unauthorized, reason: .generationMismatch, method: method)
             return try JSONEncoder().encode(FeatureAskReply(payload: nil, error: .init(AuthError.unauthorized)))
         }
         callsInFlight[channel, default: 0] += 1
@@ -455,6 +460,7 @@ actor FeatureSupervisor {
         if method.hasPrefix("cache.") {
             let identity = try JSONDecoder().decode(FeatureCacheIdentity.self, from: call.payload)
             guard identity.owner == "local" || identity.owner == auth.profile?.id else {
+                AskFailureDiagnostics.shared.record(.cacheAuthorization, error: AuthError.unauthorized, reason: .ownerMismatch, method: method)
                 return try JSONEncoder().encode(FeatureAskReply(payload: nil, error: .init(AuthError.unauthorized)))
             }
             let result = try await FeatureAskCache.handle(method, payload: call.payload, api: cache)

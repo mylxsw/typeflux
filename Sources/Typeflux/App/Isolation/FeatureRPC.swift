@@ -26,9 +26,11 @@ actor FeatureRPC {
     private var tickets: [UUID: FeatureRPCTicket] = [:]
     private var incomingBytes: [UUID: Int] = [:]
     private let writer: DispatchQueue
+    private let diagnostics: AskFailureDiagnostics
 
-    init(descriptor: Int32) throws {
-        wire = try FeatureRPCWire(descriptor: descriptor)
+    init(descriptor: Int32, diagnostics: AskFailureDiagnostics = .shared) throws {
+        self.diagnostics = diagnostics
+        wire = try FeatureRPCWire(descriptor: descriptor, diagnostics: diagnostics)
         writer = DispatchQueue(label: "Typeflux.feature-rpc.writer", qos: .userInitiated)
     }
 
@@ -37,7 +39,7 @@ actor FeatureRPC {
     func start(handler: @escaping Handler) {
         guard reader == nil, !closed else { return }
         self.handler = handler
-        let wire = wire
+        let wire = wire, diagnostics = diagnostics
         let reads = DispatchQueue(label: "Typeflux.feature-rpc.reader", qos: .userInitiated)
         reader = Task.detached { [weak self] in
             do {
@@ -49,7 +51,10 @@ actor FeatureRPC {
                     guard let self else { break }
                     await self.receive(message)
                 }
-            } catch { await self?.stop() }
+            } catch {
+                if !Task.isCancelled { diagnostics.record(.rpcRead, error: error) }
+                await self?.stop()
+            }
         }
     }
 
@@ -63,7 +68,10 @@ actor FeatureRPC {
     func request(_ method: String, payload: Data, timeout: Duration = .seconds(10)) async throws -> Data {
         try Task.checkCancellation()
         guard !closed else { throw Failure.unavailable }
-        guard pending.count < 32 else { throw Failure.busy }
+        guard pending.count < 32 else {
+            diagnostics.record(.rpcQueue, error: Failure.busy, reason: .requestLimit, method: method)
+            throw Failure.busy
+        }
         guard !method.isEmpty, method.utf8.count <= 128, payload.count <= FeatureRPCWire.maximumPayload,
               timeout > .zero, timeout <= .seconds(180) else { throw Failure.invalidMessage }
         let id = UUID()
@@ -106,15 +114,24 @@ actor FeatureRPC {
 
     private func receive(_ message: Message) {
         guard !closed else { return }
-        guard message.version == 1 else { stop(); return }
+        guard message.version == 1 else {
+            diagnostics.record(.rpcProtocol, error: Failure.invalidMessage, reason: .invalidVersion)
+            stop(); return
+        }
         guard let method = message.method else {
-            guard (message.payload == nil) != (message.failure == nil) else { stop(); return }
+            guard (message.payload == nil) != (message.failure == nil) else {
+                diagnostics.record(.rpcProtocol, error: Failure.invalidMessage, reason: .malformedReply)
+                stop(); return
+            }
             if let failure = message.failure { finish(message.id, result: .failure(failure)) }
             else if let payload = message.payload { finish(message.id, result: .success(payload)) }
             return
         }
         guard !method.isEmpty, method.utf8.count <= 128, message.failure == nil,
-              let payload = message.payload, incoming[message.id] == nil else { stop(); return }
+              let payload = message.payload, incoming[message.id] == nil else {
+            diagnostics.record(.rpcProtocol, error: Failure.invalidMessage, reason: .malformedRequest)
+            stop(); return
+        }
         guard incoming.count < 32, incomingBytes.values.reduce(0, +) + payload.count <= 192 * 1024 * 1024, let handler else {
             send(.init(version: 1, id: message.id, method: nil, payload: nil, failure: .busy))
             return
@@ -141,14 +158,20 @@ actor FeatureRPC {
 
     private func send(_ message: Message) {
         let count = message.payload?.count ?? 0
-        guard queuedMessages < 64, queuedBytes + count <= 192 * 1024 * 1024 else { stop(); return }
+        guard queuedMessages < 64, queuedBytes + count <= 192 * 1024 * 1024 else {
+            diagnostics.record(.rpcQueue, error: Failure.busy, reason: .queueLimit, method: message.method)
+            stop(); return
+        }
         queuedMessages += 1; queuedBytes += count
-        let wire = wire, ticket = message.method == nil ? nil : tickets[message.id]
+        let wire = wire, diagnostics = diagnostics, ticket = message.method == nil ? nil : tickets[message.id]
         writer.async { [weak self] in
             do {
                 if ticket?.isCancelled != true { try wire.send(message) }
                 Task { await self?.didWrite(count) }
-            } catch { Task { await self?.didWrite(count); await self?.stop() } }
+            } catch {
+                diagnostics.record(.rpcWrite, error: error, method: message.method)
+                Task { await self?.didWrite(count); await self?.stop() }
+            }
         }
     }
 
@@ -162,8 +185,10 @@ private final class FeatureRPCWire: @unchecked Sendable {
     private let descriptor: Int32
     private let lock = NSLock()
     private var stopped = false
+    private let diagnostics: AskFailureDiagnostics
 
-    init(descriptor: Int32) throws {
+    init(descriptor: Int32, diagnostics: AskFailureDiagnostics) throws {
+        self.diagnostics = diagnostics
         var kind: Int32 = 0
         var size = socklen_t(MemoryLayout<Int32>.size)
         guard getsockopt(descriptor, SOL_SOCKET, SO_TYPE, &kind, &size) == 0, kind == SOCK_STREAM else {
@@ -206,12 +231,24 @@ private final class FeatureRPCWire: @unchecked Sendable {
             var offset = 0
             while offset < buffer.count {
                 guard !lock.withLock({ stopped }) else { throw FeatureRPC.Failure.unavailable }
-                if let deadline, ContinuousClock.now >= deadline { throw FeatureRPC.Failure.timedOut }
+                if let deadline, ContinuousClock.now >= deadline {
+                    diagnostics.record(writing ? .rpcWrite : .rpcRead, error: FeatureRPC.Failure.timedOut,
+                        reason: .frameDeadline)
+                    throw FeatureRPC.Failure.timedOut
+                }
                 let base = buffer.baseAddress!.advanced(by: offset)
                 let count = writing ? Darwin.write(descriptor, base, buffer.count - offset)
                     : Darwin.read(descriptor, base, buffer.count - offset)
                 if count > 0 { offset += count; continue }
-                guard count < 0, errno == EAGAIN || errno == EINTR else { throw FeatureRPC.Failure.unavailable }
+                guard count < 0, errno == EAGAIN || errno == EINTR else {
+                    let error: any Error = count == 0 ? FeatureRPC.Failure.unavailable
+                        : NSError(domain: NSPOSIXErrorDomain, code: Int(errno))
+                    if !lock.withLock({ stopped }) {
+                        diagnostics.record(writing ? .rpcWrite : .rpcRead, error: error,
+                            reason: count == 0 ? .peerClosed : .socketError)
+                    }
+                    throw FeatureRPC.Failure.unavailable
+                }
                 var item = pollfd(fd: descriptor, events: Int16(writing ? POLLOUT : POLLIN), revents: 0)
                 // shutdown() wakes idle readers. Only an in-progress frame needs
                 // a timeout; an empty channel must not wake every 20 ms.
@@ -223,7 +260,11 @@ private final class FeatureRPCWire: @unchecked Sendable {
                 } else {
                     timeout = -1
                 }
-                guard poll(&item, 1, timeout) >= 0 || errno == EINTR else { throw FeatureRPC.Failure.unavailable }
+                guard poll(&item, 1, timeout) >= 0 || errno == EINTR else {
+                    diagnostics.record(writing ? .rpcWrite : .rpcRead,
+                        error: NSError(domain: NSPOSIXErrorDomain, code: Int(errno)), reason: .socketError)
+                    throw FeatureRPC.Failure.unavailable
+                }
             }
         }
     }

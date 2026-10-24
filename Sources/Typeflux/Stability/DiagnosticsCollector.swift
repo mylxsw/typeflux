@@ -23,6 +23,10 @@ struct DiagnosticsCollector {
         return try await FeatureModuleHealth().snapshots()
     }
 
+    var readAskFailures: @Sendable (DateInterval?) throws -> [AskFailureDiagnostics.Event] = {
+        try AskFailureDiagnostics.read(interval: $0)
+    }
+
     func collect(
         now: Date = Date(),
         interval: DateInterval?,
@@ -50,9 +54,14 @@ struct DiagnosticsCollector {
         case .failure: records = []; unreadable = 0; failures.append("hangs")
         }
         try Task.checkCancellation()
+        let failureReader = readAskFailures
+        let askFailures: [AskFailureDiagnostics.Event]
+        do { askFailures = try await Task.detached(priority: .utility) { try failureReader(interval) }.value }
+        catch { failures.append("askFailures"); askFailures = [] }
+        try Task.checkCancellation()
         return DiagnosticsReport(generatedAt: now, rangeStart: interval?.start, rangeEnd: interval?.end,
                                  shortcuts: shortcuts, previousProcesses: previousProcesses, currentSnapshotAt: Date(),
                                  currentModules: health, hangs: records,
-                                 unreadableHangFiles: unreadable, collectionFailures: failures)
+                                 unreadableHangFiles: unreadable, collectionFailures: failures, askFailures: askFailures)
     }
 }

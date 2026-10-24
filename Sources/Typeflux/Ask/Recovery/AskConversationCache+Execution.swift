@@ -8,7 +8,7 @@ extension AskConversationCache {
         switch sqlite3_step(statement) {
         case SQLITE_DONE: return nil
         case SQLITE_ROW: break
-        default: throw AskRecoveryError.storage
+        default: throw storageFailure(.sqliteRead, code: .fileReadUnknown)
         }
         let audit = try read(table: "ask_execution", id: id, owner: owner)
             .map { try AskCoding.decoder().decode(AskExecutionAudit.self, from: $0) }
@@ -38,7 +38,7 @@ extension AskConversationCache {
             }
             status = sqlite3_step(statement)
         }
-        guard status == SQLITE_DONE else { throw AskRecoveryError.storage }
+        guard status == SQLITE_DONE else { throw storageFailure(.sqliteRead, code: .fileReadUnknown) }
         return entries
     }
 

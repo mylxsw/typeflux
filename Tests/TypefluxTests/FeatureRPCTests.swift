@@ -5,6 +5,26 @@ import Testing
 
 @Suite(.serialized)
 struct FeatureRPCTests {
+    @Test func peerClosurePersistsTheTransportCause() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let diagnostics = AskFailureDiagnostics(directory: directory)
+        var descriptors: [Int32] = [-1, -1]
+        #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors) == 0)
+        let client = try FeatureRPC(descriptor: descriptors[0], diagnostics: diagnostics)
+        let server = try FeatureRPC(descriptor: descriptors[1])
+        await client.start { _, data in data }; await server.start { _, data in data }
+        await server.stop()
+        for _ in 0..<100 {
+            await diagnostics.flush()
+            if try AskFailureDiagnostics.read(directory: directory).contains(where: { $0.reason == .peerClosed }) { break }
+            try await Task.sleep(for: .milliseconds(2))
+        }
+        let events = try AskFailureDiagnostics.read(directory: directory)
+        #expect(events.contains { $0.reason == .peerClosed && $0.operation == .rpcRead })
+        await client.stop()
+    }
+
     @Test func closingAnIdlePeerWakesItsReader() async throws {
         let (a, b) = try pair()
         await a.start { _, data in data }

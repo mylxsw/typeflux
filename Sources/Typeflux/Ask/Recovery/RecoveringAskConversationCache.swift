@@ -25,7 +25,8 @@ actor RecoveringAskConversationCache: AskCaching {
     private func perform<T: Sendable>(
         _ body: @escaping @Sendable (any AskCaching) async throws -> T
     ) async throws -> T {
-        do { return try await module.perform(body) } catch is ModuleFailure {
+        do { return try await module.perform(body) } catch let error as ModuleFailure {
+            AskFailureDiagnostics.shared.record(.cacheModule, error: error)
             // Preserve the existing fail-closed recovery contract for approvals
             // and execution claims. An unavailable journal is never empty.
             throw AskRecoveryError.storage

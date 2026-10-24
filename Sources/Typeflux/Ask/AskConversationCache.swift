@@ -36,6 +36,7 @@ actor AskConversationCache: AskCaching {
 
     private init(path: String) throws {
         guard sqlite3_open(path, &db) == SQLITE_OK else {
+            AskFailureDiagnostics.shared.record(.sqliteOpen, error: NSError(domain: "SQLite", code: Int(sqlite3_extended_errcode(db))))
             if let db { sqlite3_close(db) }
             throw CocoaError(.fileWriteUnknown)
         }
@@ -55,6 +56,7 @@ actor AskConversationCache: AskCaching {
         BEGIN SELECT RAISE(IGNORE); END;
         """
         guard sqlite3_exec(db, schema, nil, nil, nil) == SQLITE_OK else {
+            AskFailureDiagnostics.shared.record(.sqlitePrepare, error: NSError(domain: "SQLite", code: Int(sqlite3_extended_errcode(db))))
             sqlite3_close(db); db = nil
             throw CocoaError(.fileWriteUnknown)
         }
@@ -90,7 +92,7 @@ actor AskConversationCache: AskCaching {
             }
             status = sqlite3_step(statement)
         }
-        guard status == SQLITE_DONE else { throw CocoaError(.fileReadUnknown) }
+        guard status == SQLITE_DONE else { throw storageFailure(.sqliteRead, code: .fileReadUnknown) }
         return snapshots.values.map { AskConversationSummary($0) }.sorted { $0.updatedAt > $1.updatedAt }
     }
     func delete(id: String, owner: String) throws {
@@ -101,7 +103,7 @@ actor AskConversationCache: AskCaching {
             for table in ["ask_cache", "ask_drafts"] {
                 let statement = try prepare("DELETE FROM \(table) WHERE owner=? AND id IN (?,?)", strings: [owner, AskConversationID.canonical(id), AskConversationID.legacy(id)])
                 defer { sqlite3_finalize(statement) }
-                guard sqlite3_step(statement) == SQLITE_DONE else { throw CocoaError(.fileWriteUnknown) }
+                guard sqlite3_step(statement) == SQLITE_DONE else { throw storageFailure(.sqliteWrite, code: .fileWriteUnknown) }
             }
             try execute("COMMIT", strings: [])
         } catch { try? execute("ROLLBACK", strings: []); throw error }
@@ -112,7 +114,7 @@ actor AskConversationCache: AskCaching {
     func execute(_ sql: String, strings: [String]) throws {
         let statement = try prepare(sql, strings: strings)
         defer { sqlite3_finalize(statement) }
-        guard sqlite3_step(statement) == SQLITE_DONE else { throw CocoaError(.fileWriteUnknown) }
+        guard sqlite3_step(statement) == SQLITE_DONE else { throw storageFailure(.sqliteWrite, code: .fileWriteUnknown) }
     }
     func saveDraft(_ draft: AskDraft, key: String, owner: String) throws {
         guard try read(table: "ask_deleted", id: AskConversationID.canonical(key), owner: owner) == nil else {
@@ -138,14 +140,14 @@ actor AskConversationCache: AskCaching {
             }
             status = sqlite3_step(statement)
         }
-        guard status == SQLITE_DONE else { throw CocoaError(.fileReadUnknown) }
+        guard status == SQLITE_DONE else { throw storageFailure(.sqliteRead, code: .fileReadUnknown) }
         return result
     }
 
     func claimTool(id: String, owner: String) throws -> Bool {
         let statement = try prepare("INSERT OR IGNORE INTO ask_tools(owner,id) VALUES(?,?)", strings: [owner, id])
         defer { sqlite3_finalize(statement) }
-        guard sqlite3_step(statement) == SQLITE_DONE else { throw CocoaError(.fileWriteUnknown) }
+        guard sqlite3_step(statement) == SQLITE_DONE else { throw storageFailure(.sqliteWrite, code: .fileWriteUnknown) }
         return sqlite3_changes(db) == 1
     }
     func saveToolResult(_ result: AskToolResultRequest, owner: String) throws {
@@ -157,7 +159,9 @@ actor AskConversationCache: AskCaching {
 
     func prepare(_ sql: String, strings: [String]) throws -> OpaquePointer {
         var statement: OpaquePointer?
-        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement else { throw CocoaError(.fileReadUnknown) }
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement else {
+            throw storageFailure(.sqlitePrepare, code: .fileReadUnknown)
+        }
         let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
         for (index, value) in strings.enumerated() { sqlite3_bind_text(statement, Int32(index + 1), value, -1, transient) }
         return statement
@@ -167,7 +171,7 @@ actor AskConversationCache: AskCaching {
         defer { sqlite3_finalize(statement) }
         let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
         _ = data.withUnsafeBytes { sqlite3_bind_blob(statement, 3, $0.baseAddress, Int32(data.count), transient) }
-        guard sqlite3_step(statement) == SQLITE_DONE else { throw CocoaError(.fileWriteUnknown) }
+        guard sqlite3_step(statement) == SQLITE_DONE else { throw storageFailure(.sqliteWrite, code: .fileWriteUnknown) }
     }
     func read(table: String, id: String, owner: String) throws -> Data? {
         let statement = try prepare("SELECT data FROM \(table) WHERE owner=? AND id=?", strings: [owner, id])
@@ -175,11 +179,17 @@ actor AskConversationCache: AskCaching {
         switch sqlite3_step(statement) {
         case SQLITE_ROW: return blob(statement)
         case SQLITE_DONE: return nil
-        default: throw CocoaError(.fileReadUnknown)
+        default: throw storageFailure(.sqliteRead, code: .fileReadUnknown)
         }
     }
     func blob(_ statement: OpaquePointer) -> Data? {
         guard let pointer = sqlite3_column_blob(statement, 0) else { return nil }
         return Data(bytes: pointer, count: Int(sqlite3_column_bytes(statement, 0)))
+    }
+
+    func storageFailure(_ operation: AskFailureDiagnostics.Operation, code: CocoaError.Code) -> CocoaError {
+        let underlying = NSError(domain: "SQLite", code: Int(sqlite3_extended_errcode(db)))
+        AskFailureDiagnostics.shared.record(operation, error: underlying)
+        return CocoaError(code, userInfo: [NSUnderlyingErrorKey: underlying])
     }
 }

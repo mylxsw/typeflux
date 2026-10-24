@@ -6,6 +6,40 @@ import Testing
 @Suite(.serialized, .exclusiveUIState)
 @MainActor
 struct FeatureAskAdapterTests {
+    @Test func staleCacheReadRefreshesAuthOnceButNeverReplaysAWrite() async throws {
+        var sockets: [Int32] = [-1, -1]
+        #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets) == 0)
+        let client = try FeatureRPC(descriptor: sockets[0]), server = try FeatureRPC(descriptor: sockets[1])
+        let state = CacheAuthRetryFixture()
+        await client.start { _, data in data }
+        await server.start { try await state.handle($0, payload: $1) }
+        let cache = FeatureAskCache(connection: client, generation: { await state.generation },
+            synchronizeAuth: { _, owner in await state.refresh(owner: owner) })
+        #expect(try await cache.draft(key: "fixture", owner: "owner")?.text == "Unsent")
+        #expect(await state.refreshes == 1)
+        await state.makeStale()
+        await #expect(throws: AuthError.self) {
+            try await cache.saveDraft(.followUp, key: "fixture", owner: "owner")
+        }
+        #expect(await state.refreshes == 1)
+        #expect(await state.writes == 0)
+        await client.stop(); await server.stop()
+    }
+
+    @Test func cacheAuthRefreshCannotSwitchAccountsOrApplyAnOlderGeneration() {
+        let profile = UserProfile(id: "owner", email: "fixture@example.com", name: "Fixture", status: 1,
+            provider: "email", createdAt: "", updatedAt: "")
+        let snapshot = FeatureAuth(generation: 2, token: "fixture-token", expiresAt: nil, profile: profile,
+            subscription: .init(planCode: "free", status: "free", currentPeriodStart: nil, currentPeriodEnd: nil,
+                cancelAtPeriodEnd: false, entitled: true))
+        #expect(snapshot.permitsCacheReadRefresh(owner: "owner", currentOwner: "owner", generation: 1))
+        #expect(snapshot.permitsCacheReadRefresh(owner: "local", currentOwner: "owner", generation: 2))
+        #expect(!snapshot.permitsCacheReadRefresh(owner: "owner", currentOwner: "other", generation: 1))
+        #expect(!snapshot.permitsCacheReadRefresh(owner: "other", currentOwner: "owner", generation: 1))
+        #expect(!snapshot.permitsCacheReadRefresh(owner: "owner", currentOwner: "owner", generation: 3))
+        #expect(!snapshot.permitsCacheReadRefresh(owner: "owner", currentOwner: nil, generation: 1))
+    }
+
     private func pair(api: AskTestAPI, cache: any AskCaching,
                       allowedOwners: Set<String>? = nil) async throws -> (FeatureRPC, FeatureRPC) {
         var sockets: [Int32] = [-1, -1]
@@ -123,5 +157,30 @@ struct FeatureAskAdapterTests {
         try await cache.delete(id: "chat", owner: "owner")
         #expect(try await cache.load(id: "chat", owner: "owner") == nil)
         await client.stop(); await server.stop()
+    }
+}
+
+private actor CacheAuthRetryFixture {
+    private(set) var generation = 0
+    private(set) var refreshes = 0
+    private(set) var writes = 0
+    func refresh(owner: String) -> Bool {
+        guard owner == "owner" else { return false }
+        generation = 1; refreshes += 1
+        return true
+    }
+    func makeStale() { generation = 0 }
+    func handle(_ method: String, payload: Data) throws -> Data {
+        let call = try JSONDecoder().decode(FeatureAskCall.self, from: payload)
+        let reply: FeatureAskReply
+        if call.generation != 1 {
+            reply = .init(payload: nil, error: .init(AuthError.unauthorized))
+        } else if method == "cache.draft.11" {
+            reply = .init(payload: try JSONEncoder().encode(AskDraft(text: "Unsent")), error: nil)
+        } else {
+            writes += 1
+            reply = .init(payload: try JSONEncoder().encode(FeatureRPC.Empty()), error: nil)
+        }
+        return try JSONEncoder().encode(reply)
     }
 }

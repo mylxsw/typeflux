@@ -43,4 +43,26 @@ struct FeatureAuth: Codable, Sendable {
             return true
         } catch { return false }
     }
+
+    /// A missed auth notification must not make reads fail for the lifetime of
+    /// a window. Bootstrap uses the existing private channel, never credentials
+    /// from a file or another process. It cannot switch the visible account.
+    @MainActor static func synchronizeCacheRead(connection: FeatureRPC, owner: String) async -> Bool {
+        guard FeatureProcess.enabled else { return false }
+        do {
+            let snapshot: Self = try await connection.call("bootstrap", FeatureRPC.Empty())
+            let state = AuthState.shared
+            guard snapshot.permitsCacheReadRefresh(owner: owner, currentOwner: state.userProfile?.id,
+                generation: state.sessionGeneration) else { return false }
+            snapshot.apply()
+            return true
+        } catch {
+            AskFailureDiagnostics.shared.record(.cacheAuthorization, error: error)
+            return false
+        }
+    }
+
+    func permitsCacheReadRefresh(owner: String, currentOwner: String?, generation currentGeneration: Int) -> Bool {
+        generation >= currentGeneration && currentOwner == profile?.id && (owner == "local" || owner == profile?.id)
+    }
 }

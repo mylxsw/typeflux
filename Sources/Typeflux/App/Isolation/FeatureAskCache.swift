@@ -4,6 +4,9 @@ import Foundation
 struct FeatureAskCache: AskCaching {
     let connection: FeatureRPC
     var generation: @Sendable () async -> Int = { await MainActor.run { AuthState.shared.sessionGeneration } }
+    var synchronizeAuth: @Sendable (FeatureRPC, String) async -> Bool = { connection, owner in
+        await FeatureAuth.synchronizeCacheRead(connection: connection, owner: owner)
+    }
 
     func execution(id: String, owner: String) async throws -> AskExecutionEntry? { try await invoke("cache.execution.0", Call0(id: id, owner: owner)) }
     func executions(conversationId: String, owner: String) async throws -> [AskExecutionEntry] { try await invoke("cache.executions.1", Call1(conversationId: conversationId, owner: owner)) }
@@ -24,12 +27,35 @@ struct FeatureAskCache: AskCaching {
     func toolResult(id: String, owner: String) async throws -> AskToolResultRequest? { try await invoke("cache.toolResult.16", Call16(id: id, owner: owner)) }
 
     private func invoke<Input: Encodable & Sendable, Output: Decodable & Sendable>(_ method: String, _ value: Input) async throws -> Output {
+        do { return try await invokeOnce(method, value) }
+        catch AuthError.unauthorized {
+            // Only reads may be repeated. Keep the original owner binding even
+            // if login state changes while refreshing the host snapshot.
+            guard Self.readMethods.contains(method),
+                  let identity = try? JSONDecoder().decode(CacheOwner.self, from: JSONEncoder().encode(value)),
+                  await synchronizeAuth(connection, identity.owner) else { throw AuthError.unauthorized }
+            return try await invokeOnce(method, value)
+        }
+    }
+
+    private static let readMethods: Set<String> = ["cache.execution.0", "cache.executions.1", "cache.load.7",
+        "cache.list.8", "cache.draft.11", "cache.savedChatDrafts.12", "cache.toolResult.16"]
+    private struct CacheOwner: Decodable { let owner: String }
+
+    private func invokeOnce<Input: Encodable & Sendable, Output: Decodable & Sendable>(_ method: String, _ value: Input) async throws -> Output {
         let generation = await generation()
         let call = FeatureAskCall(generation: generation, payload: try JSONEncoder().encode(value))
         let reply: FeatureAskReply
         do { reply = try await connection.call(method, call, timeout: .seconds(120)) }
         catch FeatureRPC.Failure.cancelled { throw CancellationError() }
-        if let error = reply.error { throw error.restored }
+        catch {
+            AskFailureDiagnostics.shared.record(.cacheCall, error: error, method: method)
+            throw error
+        }
+        if let error = reply.error {
+            AskFailureDiagnostics.shared.record(.cacheCall, error: error.restored, method: method)
+            throw error.restored
+        }
         guard let payload = reply.payload else { throw FeatureRPC.Failure.invalidMessage }
         return try JSONDecoder().decode(Output.self, from: payload)
     }
@@ -101,7 +127,10 @@ struct FeatureAskCache: AskCaching {
             default: throw FeatureRPC.Failure.invalidMessage
             }
             reply = .init(payload: result, error: nil)
-        } catch { reply = .init(payload: nil, error: .init(error)) }
+        } catch {
+            AskFailureDiagnostics.shared.record(.cacheCall, error: error, method: method)
+            reply = .init(payload: nil, error: .init(error))
+        }
         return try JSONEncoder().encode(reply)
     }
 

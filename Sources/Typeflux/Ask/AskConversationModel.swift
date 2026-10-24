@@ -443,6 +443,9 @@ final class AskConversationModel: ObservableObject {
     @Published var inspectingRecovery = false
     @Published var recoveryWorking = false
     var recoveryGeneration = UUID()
+    var recoveryReadTokens: [String: UUID] = [:]
+    var recoveryReadRetries: [String: Task<Void, Never>] = [:]
+    var recoveryReadRetryDelays: [Duration] = [.milliseconds(250), .seconds(1), .seconds(3)]
     /// At most one automatic reconciliation per run in this process.
     var automaticRecoveryAttempts: Set<String> = []
     var automaticRecoveryEnabled = true
@@ -730,6 +733,8 @@ final class AskConversationModel: ObservableObject {
         quickSearch.cancel()
         quickSearch.results = nil
         recoveryGeneration = UUID(); recoveryWorking = false; inspectingRecovery = false
+        recoveryReadRetries.values.forEach { $0.cancel() }
+        recoveryReadRetries = [:]; recoveryReadTokens = [:]
         recoveryEntries = [:]
         automaticRecoveryAttempts = []
         capturedContentFeedbackTasks.values.forEach { $0.cancel() }
@@ -935,6 +940,7 @@ final class AskConversationModel: ObservableObject {
             } catch is CancellationError {} catch {
                 guard !Task.isCancelled, self.owner == owner else { return }
                 let failure = error as NSError
+                AskFailureDiagnostics.shared.record(.draftSave, error: error)
                 ErrorLogStore.shared.log("Ask draft save failed: \(failure.domain) (\(failure.code))")
                 self.error = L("ask.cache.failed")
             }

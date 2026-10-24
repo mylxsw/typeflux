@@ -77,39 +77,6 @@ extension AskConversationModel {
         }
     }
 
-    func refreshRecovery(_ value: AskConversation, route: AskRoute) async {
-        let generation = recoveryGeneration
-        do {
-            var entries = try await cache.executions(conversationId: value.id, owner: route.owner)
-            if let run = value.run {
-                let keys = run.pending.map { run.id + "/" + $0.id }
-                    + (run.inference.map { ["inference/" + run.id + "/" + $0.id] } ?? [])
-                for key in keys where !entries.contains(where: { $0.id == key }) {
-                    if let entry = try await cache.execution(id: key, owner: route.owner) {
-                        entries.append(entry)
-                    }
-                }
-            }
-            guard generation == recoveryGeneration, owner == route.account,
-                  session()?.owner == route.account else { return }
-            let wasUnavailable = (recoveryEntries[value.id] ?? []).contains(where: \.readUnavailable)
-            recoveryEntries[value.id] = entries.map { entry in
-                guard let identity = entry.audit?.identity else { return entry }
-                // Local history is shared on this Mac, execution authority is not.
-                guard identity.owner == route.account, identity.conversationId == value.id else {
-                    return .init(id: entry.id, audit: nil, receipt: nil)
-                }
-                return entry
-            }
-            if wasUnavailable, error == L("ask.cache.failed") { error = nil }
-        } catch {
-            guard generation == recoveryGeneration, owner == route.account else { return }
-            // A failed read is not an empty journal and cannot authorize dispatch.
-            recoveryEntries[value.id] = [.init(id: "unavailable", audit: nil, receipt: nil)]
-            self.error = L("ask.cache.failed")
-        }
-    }
-
     /// Observation may publish the settled run before its receipt is acknowledged.
     /// Refresh the journal here even if the next snapshot has the same revision
     /// and accept() therefore skips it.

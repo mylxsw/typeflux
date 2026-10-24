@@ -20,6 +20,7 @@ struct DiagnosticsReport: Codable, Sendable {
     let hangs: [HangRecord]
     let unreadableHangFiles: Int
     let collectionFailures: [String]
+    var askFailures: [AskFailureDiagnostics.Event]? = nil
 
     static var hangDirectory: URL {
         TypefluxDataDirectories.cache.appendingPathComponent("hang-diagnostics", isDirectory: true)
