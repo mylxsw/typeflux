@@ -671,6 +671,7 @@ struct AskBanner: View {
                     Text(actionTitle).font(.system(size: 11.5, weight: .semibold))
                         .padding(.horizontal, 10).frame(height: 22)
                         .background(AskTheme.surface, in: Capsule())
+                        .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
             }

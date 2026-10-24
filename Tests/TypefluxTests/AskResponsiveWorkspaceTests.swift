@@ -21,8 +21,8 @@ struct AskResponsiveWorkspaceTests {
         try await settle(host.window)
         #expect(find(label: L("imagegen.recovery.title"), in: host.window) == nil)
 
-        var feedbackOpened = false
-        host.fixture.model.onOpenFeedback = { feedbackOpened = true }
+        var feedbackOpened = 0
+        host.fixture.model.onOpenFeedback = { feedbackOpened += 1 }
         let originalInput = try editor(in: host.window)
         let originalTop = originalInput.convert(originalInput.bounds, to: nil).maxY
         host.fixture.model.error = L("ask.cache.failed")
@@ -38,7 +38,15 @@ struct AskResponsiveWorkspaceTests {
                 "The warning must remain above the composer")
         assertVisible(feedback, in: host.window)
         try click(feedback, in: host.window)
-        #expect(feedbackOpened)
+        #expect(feedbackOpened == 1)
+        // Plain buttons must include the capsule's padding, not just its text.
+        let feedbackFrame = host.window.convertFromScreen(feedback.accessibilityFrame())
+        for x in [feedbackFrame.minX + 3, feedbackFrame.maxX - 3] {
+            let previous = feedbackOpened
+            try click(NSPoint(x: x, y: feedbackFrame.midY), in: host.window)
+            #expect(feedbackOpened == previous + 1, "The full feedback capsule must respond to clicks")
+        }
+        #expect(host.fixture.model.error == L("ask.cache.failed"))
         #expect(find(label: L("settings.services.recover"), in: host.window) == nil)
     }
 
@@ -358,6 +366,10 @@ struct AskResponsiveWorkspaceTests {
     private func click(_ element: AccessibleElement, in window: NSWindow) throws {
         let frame = window.convertFromScreen(element.accessibilityFrame())
         let point = NSPoint(x: frame.midX, y: frame.midY)
+        try click(point, in: window)
+    }
+
+    private func click(_ point: NSPoint, in window: NSWindow) throws {
         for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
             let event = try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
                 timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
