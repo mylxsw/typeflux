@@ -810,22 +810,14 @@
 "settings.personaAppBindings.picker.runningBadge" = "執行中";
 
 "settings.shortcuts.activation.title" = "語音輸入";
-"settings.shortcuts.activation.subtitle" = "使用一組快捷鍵開始語音輸入。可按住說話，也可快速輕觸後鎖定錄音。若目前已有選取內容，識別結果會直接覆蓋該選取範圍。";
-"settings.shortcuts.activation.footnote" = "";
 "settings.shortcuts.ask.title" = "對話";
-"settings.shortcuts.ask.subtitle" = "連按兩次 Fn 即可開始錄音提問，回答會在視窗中展示。若有選取文字，明確的編輯請求也可以直接改寫選取範圍。";
-"settings.shortcuts.ask.footnote" = "";
 "settings.shortcuts.launcherPosition.title" = "啟動器開啟位置";
 "settings.shortcuts.launcherPosition.center" = "永遠置中";
 "settings.shortcuts.launcherPosition.last" = "記住上次位置";
 "settings.shortcuts.launcherPosition.center.subtitle" = "在滑鼠所在螢幕的正中開啟。拖動只影響這一次。";
 "settings.shortcuts.launcherPosition.last.subtitle" = "在這塊螢幕上次放下的位置開啟。拖動頂部邊緣或空白處即可移動。";
 "settings.shortcuts.persona.title" = "人設切換器";
-"settings.shortcuts.persona.subtitle" = "打開置中的選擇器；如果目前有選取文字，也可以直接把所選人設套用到這段文字。";
-"settings.shortcuts.persona.footnote" = "";
 "settings.shortcuts.history.title" = "歷史記錄";
-"settings.shortcuts.history.subtitle" = "在任何地方立即打開歷史記錄頁面。";
-"settings.shortcuts.history.footnote" = "";
 "settings.advanced.personaHotkeyApply.title" = "將人設套用到選取文字";
 "settings.advanced.personaHotkeyApply.subtitle" = "開啟後，人設快捷鍵會先檢查是否有選取文字；如果有，就用所選人設直接改寫該文字，而不只是切換預設人設。";
 "settings.shortcuts.recording" = "正在錄製新的快捷鍵";
