@@ -28,24 +28,21 @@ struct RingActionInspector: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            RingInspectorHeader(backTitle: L("ring.inspector.allActions"), onBack: onDone,
-                                title: "", closeTitle: L("ring.inspector.done"), onClose: onDone)
+            RingInspectorHeader(title: "", closeTitle: L("ring.inspector.done"), onClose: onDone)
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
-                    if let issue {
+                    // A bad web address is already flagged under its field.
+                    if let issue, action.kind.type != .url {
                         RingInspectorBanner(systemImage: "exclamationmark.triangle", tint: TFColors.warning,
-                                            title: issue, message: L("ring.inspector.issueMessage")) {
+                                            title: issue) {
                             TFButton(title: L("ring.inspector.replace"), size: .small, action: onReplace)
-                                .padding(.top, 2)
                         }
                     }
                     nameHeader
                     targetBlock
                     iconBlock
                     block {
-                        row(L("ring.inspector.position")) {
-                            RingPositionControls(index: index, count: count, onMove: onMove)
-                        }
+                        row { RingPositionControls(index: index, count: count, onMove: onMove) }
                     }
                 }
                 .padding(.horizontal, 12).padding(.bottom, 12)
@@ -79,7 +76,7 @@ struct RingActionInspector: View {
     private var nameHeader: some View {
         HStack(spacing: 12) {
             RingIconTile(action: action, size: 46, dark: true)
-            VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
                 TextField(defaultTitle, text: $name)
                     .textFieldStyle(.plain)
                     .font(.system(size: 15, weight: .semibold))
@@ -101,15 +98,10 @@ struct RingActionInspector: View {
                     .onSubmit { nameFocused = false }
                     .accessibilityLabel(L("ring.editor.name"))
                     .accessibilityIdentifier("ring.inspector.name")
-                HStack(spacing: 4) {
-                    Text(L("ring.inspector.nameNote")).foregroundStyle(TFColors.textSecondary)
-                    if action.title != defaultTitle, issue == nil {
-                        Text("·").foregroundStyle(TFColors.textTertiary)
-                        Button(L("ring.inspector.resetName", defaultTitle)) { name = defaultTitle }
-                            .buttonStyle(.plain).foregroundStyle(TFColors.accent).lineLimit(1)
-                    }
+                if action.title != defaultTitle, issue == nil {
+                    TFButton(title: L("ring.inspector.resetName", defaultTitle), systemImage: "arrow.uturn.backward",
+                             kind: .plain, size: .small, iconOnly: true) { name = defaultTitle }
                 }
-                .font(.system(size: 11.5))
             }
         }
         .padding(.vertical, 4)
@@ -119,11 +111,15 @@ struct RingActionInspector: View {
 
     private var targetBlock: some View {
         block {
-            row(L("ring.inspector.action")) {
+            row {
                 TFIconTile(systemImage: action.kind.type.symbol, tint: action.kind.type.tint, size: 26, style: .filled)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(action.kind.type.title).font(.system(size: 12.5)).foregroundStyle(TFColors.textPrimary)
-                    Text(targetSummary).font(.system(size: 11)).foregroundStyle(TFColors.textSecondary).lineLimit(1)
+                    // Only a keyword needs naming here; other targets are the name or the field below.
+                    if case .keyword = action.kind {
+                        Text(targetSummary).font(.system(size: 11)).foregroundStyle(TFColors.textSecondary)
+                            .lineLimit(1)
+                    }
                 }
                 Spacer(minLength: 6)
                 TFButton(title: L("ring.inspector.replace"), size: .small, action: onReplace)
@@ -138,7 +134,7 @@ struct RingActionInspector: View {
         case .url:
             let invalid = RingSettingsPresentation.webURL(text) == nil
             divider
-            row(RingActionType.url.targetLabel) {
+            row {
                 VStack(alignment: .leading, spacing: 4) {
                     TextField("https://", text: $text)
                         .textFieldStyle(TFTextFieldStyle(monospaced: true, isError: invalid))
@@ -156,7 +152,7 @@ struct RingActionInspector: View {
             }
         case .folder:
             divider
-            row(RingActionType.folder.targetLabel) {
+            row {
                 TextField("~/Downloads", text: $text)
                     .textFieldStyle(TFTextFieldStyle(monospaced: true))
                     .onSubmit(commitText)
@@ -170,7 +166,7 @@ struct RingActionInspector: View {
             }
         case .shortcut:
             divider
-            row(RingActionType.shortcut.targetLabel) {
+            row {
                 TextField(L("ring.editor.shortcutPlaceholder"), text: $text)
                     .textFieldStyle(TFTextFieldStyle())
                     .onSubmit(commitText)
@@ -178,7 +174,7 @@ struct RingActionInspector: View {
             }
         case let .keys(binding):
             divider
-            row(RingActionType.keys.targetLabel) {
+            row {
                 RingKeysField(binding: binding) { onRetarget(.keys($0)) }
                     .id(action.id)
             }
@@ -201,25 +197,13 @@ struct RingActionInspector: View {
 
     // MARK: - Icon
 
-    private var iconBlock: some View {
-        block {
-            if case .app = action.kind {
-                row(L("ring.editor.icon")) {
-                    Text(L("ring.editor.useAppIcon")).font(.system(size: 12.5)).foregroundStyle(TFColors.textSecondary)
-                    Spacer()
-                }
-            } else {
-                let defaultSymbol = RingActionLibrary.defaultSymbol(for: action.kind)
-                row(L("ring.editor.icon")) {
-                    Spacer()
-                    if action.symbol != defaultSymbol {
-                        Button(L("ring.inspector.resetIcon")) { onSymbol(defaultSymbol) }
-                            .buttonStyle(.plain).font(.system(size: 11.5)).foregroundStyle(TFColors.accent)
-                    }
-                }
-                RingSymbolGrid(symbols: symbolChoices(including: defaultSymbol), selected: action.symbol,
-                               onPick: onSymbol)
-                    .padding(.horizontal, 6).padding(.bottom, 6)
+    /// Apps always draw their own icon, so they have no icon choice.
+    @ViewBuilder private var iconBlock: some View {
+        if action.kind.type != .app {
+            block {
+                RingSymbolGrid(symbols: symbolChoices(including: RingActionLibrary.defaultSymbol(for: action.kind)),
+                               selected: action.symbol, onPick: onSymbol)
+                    .padding(6)
             }
         }
     }
@@ -262,13 +246,9 @@ struct RingActionInspector: View {
                 .strokeBorder(TFColors.border, lineWidth: TFMetrics.borderWidth))
     }
 
-    private func row(_ label: String, @ViewBuilder _ content: () -> some View) -> some View {
-        HStack(spacing: 10) {
-            Text(label).font(.system(size: 12)).foregroundStyle(TFColors.textSecondary)
-                .frame(width: 52, alignment: .leading)
-            content()
-        }
-        .padding(.horizontal, 10).frame(minHeight: 44)
+    private func row(@ViewBuilder _ content: () -> some View) -> some View {
+        HStack(spacing: 10) { content() }
+            .padding(.horizontal, 10).frame(minHeight: 44)
     }
 }
 
@@ -338,7 +318,6 @@ struct RingKeysField: View {
             HStack(spacing: 6) {
                 HotkeyKeysView(binding: recorder.isRecording ? nil : binding, isRecording: recorder.isRecording)
                 Spacer(minLength: 6)
-                Text(L("ring.editor.rerecord")).font(.system(size: 11)).foregroundStyle(TFColors.textTertiary)
             }
             .padding(.horizontal, 6).frame(height: 32)
             .background(RoundedRectangle(cornerRadius: TFMetrics.fieldCornerRadius, style: .continuous)
@@ -361,13 +340,10 @@ struct RingPositionControls: View {
     let onMove: (Int) -> Void
 
     var body: some View {
-        let direction = RingSettingsPresentation.direction(of: index, count: count)
         RingDirectionDots(index: index, count: count).frame(width: 30, height: 30)
-        VStack(alignment: .leading, spacing: 1) {
-            Text(L("ring.inspector.positionValue", index + 1, direction)).font(.system(size: 12.5))
-            Text(L("ring.inspector.positionNote", index + 1, direction)).font(.system(size: 11))
-                .foregroundStyle(TFColors.textSecondary).lineLimit(2)
-        }
+            .accessibilityElement()
+            .accessibilityLabel(L("ring.inspector.positionValue", index + 1,
+                                  RingSettingsPresentation.direction(of: index, count: count)))
         Spacer(minLength: 6)
         TFButton(title: L("ring.inspector.moveCounterClockwise"), systemImage: "arrow.counterclockwise",
                  size: .small, iconOnly: true) { onMove(-1) }

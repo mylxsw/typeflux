@@ -18,6 +18,12 @@ struct RingLibraryItem: Identifiable, Equatable {
         kind.type
     }
 
+    /// Keywords, keys, folders and web pages are told apart by their second line; built-in actions
+    /// and apps are named well enough by their title.
+    var subtitleIdentifiesTarget: Bool {
+        [.keyword, .keys, .folder, .url].contains(type)
+    }
+
     func action(id: UUID = UUID()) -> RingAction {
         RingAction(id: id, kind: kind, title: title, symbol: symbol)
     }
@@ -98,14 +104,6 @@ struct RingActionLibrary {
             []
         case .folder:
             folders.map { Self.folderItem($0) }
-        }
-    }
-
-    /// The number shown on a type card; nil for types that are typed or recorded.
-    func count(of type: RingActionType) -> Int? {
-        switch type {
-        case .url: nil
-        default: items(of: type).count
         }
     }
 

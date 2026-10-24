@@ -66,11 +66,6 @@ struct RingStudioCanvas: View {
             }
             .frame(width: Self.size, height: Self.size)
             Spacer(minLength: 0)
-            Text(hint)
-                .font(.system(size: 11.5)).foregroundStyle(.white.opacity(0.72))
-                .multilineTextAlignment(.center).lineLimit(2)
-                .padding(.horizontal, 16).padding(.bottom, 12)
-                .accessibilityHidden(true)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Self.desktop)
@@ -118,10 +113,7 @@ struct RingStudioCanvas: View {
     private var topBar: some View {
         HStack(spacing: 8) {
             let full = actionCount >= RingConfiguration.maxActions
-            chip(full ? L("ring.studio.full", actionCount, RingConfiguration.maxActions)
-                : L("ring.studio.capacity", actionCount, RingConfiguration.maxActions,
-                    RingConfiguration.maxActions - actionCount),
-                systemImage: full ? "exclamationmark.triangle" : nil, tint: full ? Self.warm : nil)
+            chip("\(actionCount) / \(RingConfiguration.maxActions)", systemImage: nil, tint: full ? Self.warm : nil)
             Spacer(minLength: 8)
             Button {
                 isTrying.toggle()
@@ -132,7 +124,6 @@ struct RingStudioCanvas: View {
             }
             .buttonStyle(.plain)
             .disabled(actionCount == 0)
-            .help(L("ring.studio.tryHelp"))
             .accessibilityIdentifier("ring.studio.try")
         }
     }
@@ -148,20 +139,6 @@ struct RingStudioCanvas: View {
         .padding(.horizontal, 10).frame(height: 24)
         .background(Capsule().fill(tint.map { $0.opacity(0.2) } ?? Color.black.opacity(0.35)))
         .overlay(Capsule().strokeBorder(tint.map { $0.opacity(0.6) } ?? Color.white.opacity(0.16), lineWidth: 0.5))
-    }
-
-    private var hint: String {
-        if isTrying {
-            guard let tryIndex, slots.indices.contains(tryIndex) else { return L("ring.studio.hint.try") }
-            let action = slots[tryIndex].action
-            return issues.contains(action.id) ? L("ring.studio.hint.tryBroken", action.title)
-                : L("ring.studio.hint.tryRuns", action.title)
-        }
-        switch mode {
-        case .inserting, .replacing: return L("ring.studio.hint.library")
-        case .editing: return L("ring.studio.hint.editing")
-        case .overview: return actionCount == 0 ? "" : L("ring.studio.hint.overview")
-        }
     }
 
     // MARK: - Pointer
@@ -259,7 +236,6 @@ struct RingInsertionButton: View {
         }
         .buttonStyle(.plain)
         .onHover { value in withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) { hovering = value } }
-        .help(L("ring.studio.insertHere", position, direction))
         .accessibilityLabel(L("ring.studio.insertHere", position, direction))
         .accessibilityIdentifier("ring.studio.insert.\(position)")
     }

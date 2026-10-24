@@ -1,11 +1,10 @@
 import SwiftUI
 
-/// The top of every inspector state: an optional back link, a title and a close button.
+/// The top of an inspector state: an optional back link, a title and a close button.
 struct RingInspectorHeader: View {
     var backTitle: String?
     var onBack: (() -> Void)?
     let title: String
-    var subtitle: String?
     var closeTitle: String?
     var onClose: (() -> Void)?
 
@@ -23,14 +22,9 @@ struct RingInspectorHeader: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("ring.inspector.back")
             }
-            VStack(alignment: .leading, spacing: 1) {
-                Text(title).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(TFColors.textPrimary)
-                    .lineLimit(1)
-                if let subtitle {
-                    Text(subtitle).font(.system(size: 11.5)).foregroundStyle(TFColors.textSecondary).lineLimit(2)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            Text(title).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(TFColors.textPrimary)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
             if let onClose {
                 TFButton(title: closeTitle ?? L("common.cancel"), systemImage: "xmark", kind: .plain, size: .small,
                          iconOnly: true, action: onClose)
@@ -38,7 +32,7 @@ struct RingInspectorHeader: View {
             }
         }
         .padding(.leading, 16).padding(.trailing, 10).padding(.top, 12).padding(.bottom, 10)
-        .frame(minHeight: 52)
+        .frame(minHeight: 48)
     }
 }
 
@@ -57,12 +51,10 @@ struct RingInspectorOverview: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            RingInspectorHeader(title: L("ring.overview.title", actions.count),
-                                subtitle: L("ring.overview.subtitle"))
             ScrollView {
                 VStack(spacing: 2) {
                     ForEach(Array(actions.enumerated()), id: \.element.id) { index, action in
-                        RingOverviewRow(index: index, count: actions.count, action: action, detail: detail(action),
+                        RingOverviewRow(index: index, action: action, detail: detail(action),
                                         issue: issues[action.id]) { onSelect(action.id) }
                             .draggable(action.id.uuidString)
                             .dropDestination(for: String.self) { items, _ in
@@ -73,18 +65,14 @@ struct RingInspectorOverview: View {
                     }
                     footer.padding(.top, 4)
                 }
-                .padding(.horizontal, 8).padding(.bottom, 12)
+                .padding(.horizontal, 8).padding(.vertical, 10)
             }
         }
     }
 
+    /// A full ring has no add row; the canvas shows 8 / 8.
     @ViewBuilder private var footer: some View {
-        if isFull {
-            RingInspectorBanner(systemImage: "exclamationmark.triangle", tint: TFColors.warning,
-                                title: L("ring.overview.fullTitle", RingConfiguration.maxActions),
-                                message: L("ring.overview.fullMessage"))
-                .padding(.horizontal, 4)
-        } else {
+        if !isFull {
             Button(action: onAdd) {
                 HStack(spacing: 10) {
                     Image(systemName: "plus").font(.system(size: 11, weight: .bold))
@@ -94,8 +82,6 @@ struct RingInspectorOverview: View {
                         .padding(.leading, 28)
                     Text(L("ring.actions.add")).font(.system(size: 12.5, weight: .medium))
                     Spacer(minLength: 8)
-                    Text(L("ring.overview.addHint")).font(.system(size: 11)).foregroundStyle(TFColors.textTertiary)
-                        .lineLimit(1)
                 }
                 .foregroundStyle(TFColors.accent)
                 .padding(.horizontal, 8).frame(height: 40)
@@ -110,8 +96,8 @@ struct RingInspectorOverview: View {
 /// A slice in the overview list.
 struct RingOverviewRow: View {
     let index: Int
-    let count: Int
     let action: RingAction
+    /// What the slice runs; read by VoiceOver, the row itself shows only the name.
     let detail: String
     let issue: String?
     let onSelect: () -> Void
@@ -122,20 +108,14 @@ struct RingOverviewRow: View {
                 Text("\(index + 1)").font(.system(size: 11)).monospacedDigit().foregroundStyle(TFColors.textTertiary)
                     .frame(width: 18)
                 RingIconTile(action: action, size: 26)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(action.title).font(.system(size: 12.5, weight: .semibold))
-                        .foregroundStyle(TFColors.textPrimary).lineLimit(1)
-                    Text(issue ?? detail).font(.system(size: 11))
-                        .foregroundStyle(issue == nil ? TFColors.textSecondary : TFColors.warning).lineLimit(1)
-                }
+                Text(action.title).font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(TFColors.textPrimary).lineLimit(1)
                 Spacer(minLength: 6)
-                if issue != nil {
-                    Circle().fill(TFColors.warning).frame(width: 7, height: 7).accessibilityHidden(true)
+                if let issue {
+                    Circle().fill(TFColors.warning).frame(width: 7, height: 7).help(issue).accessibilityHidden(true)
                 }
-                Text(RingSettingsPresentation.direction(of: index, count: count)).font(.system(size: 11))
-                    .foregroundStyle(TFColors.textTertiary).lineLimit(1).fixedSize()
             }
-            .padding(.horizontal, 8).frame(height: 42)
+            .padding(.horizontal, 8).frame(height: 36)
             .contentShape(Rectangle())
         }
         .buttonStyle(RingRowButtonStyle())
@@ -187,35 +167,24 @@ struct RingRowButtonStyle: ButtonStyle {
     }
 }
 
-/// A short note with an icon, used for a full ring and for a slice that cannot run.
+/// One line with an icon and an action, for a slice that cannot run.
 struct RingInspectorBanner<Accessory: View>: View {
     let systemImage: String
     let tint: Color
     let title: String
-    let message: String
     @ViewBuilder var accessory: Accessory
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(spacing: 10) {
             Image(systemName: systemImage).font(.system(size: 13, weight: .semibold)).foregroundStyle(tint)
-                .padding(.top, 1)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.system(size: 12, weight: .semibold)).foregroundStyle(TFColors.textPrimary)
-                Text(message).font(.system(size: 12)).foregroundStyle(TFColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                accessory
-            }
-            Spacer(minLength: 0)
+            Text(title).font(.system(size: 12, weight: .medium)).foregroundStyle(TFColors.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 6)
+            accessory
         }
-        .padding(12)
+        .padding(.horizontal, 12).padding(.vertical, 9)
         .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(tint.opacity(0.1)))
         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
             .strokeBorder(tint.opacity(0.3), lineWidth: TFMetrics.borderWidth))
-    }
-}
-
-extension RingInspectorBanner where Accessory == EmptyView {
-    init(systemImage: String, tint: Color, title: String, message: String) {
-        self.init(systemImage: systemImage, tint: tint, title: title, message: message) { EmptyView() }
     }
 }

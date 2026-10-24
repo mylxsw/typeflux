@@ -153,10 +153,10 @@ struct RingSettingsViewTests {
                                           isLoadingApps: false, preview: .constant(nil), category: .keyword),
                          size: size, name: "ring-library-empty-type", light: true)
         let row = RingLibraryRow(item: RingActionLibrary.item(for: RingFeature.screenshot), query: "shot",
-                                 isHighlighted: true, isAdded: true, pickTitle: "Add") {}
+                                 isHighlighted: true, isAdded: true) {}
         try await render(row, size: NSSize(width: 360, height: 46), name: "ring-library-row", light: true)
         for type in RingActionLibrary.types {
-            try await render(RingTypeCard(type: type, count: library.count(of: type)) {},
+            try await render(RingTypeCard(type: type) {},
                              size: NSSize(width: 170, height: 96), name: "ring-library-card-\(type.rawValue)",
                              light: type != .system)
         }

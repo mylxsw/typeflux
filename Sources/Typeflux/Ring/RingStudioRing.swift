@@ -105,7 +105,6 @@ struct RingStudioRing: View {
         let slot = slots[index]
         let angle = geometry.angle(of: index)
         let broken = issues.contains(slot.id)
-        let isNew = slot.role != .action
         let iconColor: Color = broken ? .white.opacity(0.35)
             : highlighted && isTrying ? RingStudioCanvas.warm
             : slot.role == .placeholder ? Color(red: 0.61, green: 0.82, blue: 1) : .white.opacity(0.92)
@@ -119,12 +118,14 @@ struct RingStudioRing: View {
                 }
             }
             .position(geometry.point(at: (geometry.innerRadius + geometry.outerRadius) / 2 + 2, angle: angle))
-        if !isNew, !isTrying {
-            Text("\(index + 1)").font(.system(size: 8, weight: .semibold)).monospacedDigit()
-                .foregroundStyle(.white.opacity(0.42))
-                .position(geometry.point(at: geometry.innerRadius + 9, angle: angle))
+        if slot.role != .placeholder {
+            label(slot, highlighted: highlighted, angle: angle)
         }
-        Text(RingSettingsPresentation.sliceLabel(slot.action.title))
+    }
+
+    private func label(_ slot: RingStudioSlot, highlighted: Bool, angle: CGFloat) -> some View {
+        let isNew = slot.role != .action
+        return Text(RingSettingsPresentation.sliceLabel(slot.action.title))
             .font(.system(size: 9.5, weight: highlighted || isNew ? .semibold : .medium))
             .multilineTextAlignment(.center)
             .foregroundStyle(isNew ? Color(red: 0.84, green: 0.93, blue: 1)

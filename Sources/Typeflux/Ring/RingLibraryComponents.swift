@@ -15,10 +15,6 @@ extension RingActionType {
         case .folder: Color(red: 0.15, green: 0.39, blue: 0.92)
         }
     }
-
-    var libraryDetail: String {
-        L("ring.library.type.\(rawValue).detail")
-    }
 }
 
 /// Recommended items as wrapping chips.
@@ -57,34 +53,22 @@ struct RingLibraryChips: View {
 /// A type in the library's grid.
 struct RingTypeCard: View {
     let type: RingActionType
-    let count: Int?
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .top) {
-                    TFIconTile(systemImage: type.symbol, tint: type.tint, size: 28, style: .filled)
-                    Spacer()
-                    // Nothing found yet reads as "still loading", not as zero.
-                    if let count, count > 0 {
-                        Text("\(count)").font(.system(size: 10.5)).monospacedDigit()
-                            .foregroundStyle(TFColors.textTertiary)
-                    }
-                }
-                Text(type.title).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(TFColors.textPrimary)
+            HStack(spacing: 10) {
+                TFIconTile(systemImage: type.symbol, tint: type.tint, size: 26, style: .filled)
+                Text(type.title).font(.system(size: 12.5, weight: .medium)).foregroundStyle(TFColors.textPrimary)
                     .lineLimit(1)
-                Text(type.libraryDetail).font(.system(size: 11)).foregroundStyle(TFColors.textSecondary)
-                    .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
             }
-            .padding(10)
-            .frame(maxWidth: .infinity, minHeight: 92, alignment: .topLeading)
+            .padding(.horizontal, 10)
+            .frame(maxWidth: .infinity, minHeight: 46)
             .contentShape(Rectangle())
         }
         .buttonStyle(RingCardButtonStyle())
         .accessibilityLabel(type.title)
-        .accessibilityHint(type.libraryDetail)
         .accessibilityIdentifier("ring.library.type.\(type.rawValue)")
     }
 }
@@ -117,9 +101,7 @@ struct RingLibraryRow: View {
     let query: String
     let isHighlighted: Bool
     let isAdded: Bool
-    let pickTitle: String
     let onPick: () -> Void
-    @State private var hovering = false
 
     var body: some View {
         Button(action: onPick) {
@@ -128,26 +110,22 @@ struct RingLibraryRow: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(TFSearchMatcher.highlighted(item.title, query: query)).font(.system(size: 13, weight: .medium))
                         .foregroundStyle(TFColors.textPrimary).lineLimit(1)
-                    if !item.subtitle.isEmpty {
+                    if item.subtitleIdentifiesTarget, !item.subtitle.isEmpty {
                         Text(TFSearchMatcher.highlighted(item.subtitle, query: query)).font(.system(size: 11.5))
                             .foregroundStyle(TFColors.textSecondary).lineLimit(1)
                     }
                 }
                 Spacer(minLength: 6)
-                if hovering || isHighlighted {
-                    Label(pickTitle, systemImage: "plus").font(.system(size: 11.5, weight: .medium))
-                        .foregroundStyle(TFColors.accent).labelStyle(.titleAndIcon)
-                } else if isAdded {
-                    Text(L("ring.library.added")).font(.system(size: 10.5)).foregroundStyle(TFColors.textTertiary)
-                        .padding(.horizontal, 7).padding(.vertical, 1)
-                        .overlay(Capsule().strokeBorder(TFColors.border, lineWidth: TFMetrics.borderWidth))
+                if isAdded {
+                    Image(systemName: "checkmark").font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(TFColors.textTertiary)
+                        .accessibilityLabel(L("ring.library.added"))
                 }
             }
-            .padding(.horizontal, 8).frame(minHeight: 46)
+            .padding(.horizontal, 8).frame(minHeight: 40)
             .contentShape(Rectangle())
         }
         .buttonStyle(RingRowButtonStyle(isHighlighted: isHighlighted))
-        .onHover { hovering = $0 }
         .accessibilityLabel(item.title)
         .accessibilityHint(item.subtitle)
         .accessibilityIdentifier("ring.library.item.\(item.id)")
@@ -218,8 +196,9 @@ struct RingURLForm: View {
                 TFButton(title: pickTitle, kind: .primary) { item.map(onPick) }
                     .disabled(item == nil)
             }
-            TFFieldMessage(text: invalid ? L("ring.editor.urlInvalid") : L("ring.library.urlNote"),
-                           tone: invalid ? .error : .hint)
+            if invalid {
+                TFFieldMessage(text: L("ring.editor.urlInvalid"))
+            }
         }
     }
 }

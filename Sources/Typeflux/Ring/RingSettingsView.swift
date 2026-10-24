@@ -102,7 +102,7 @@ struct RingSettingsView: View {
     // MARK: - Actions
 
     private var actionsSection: some View {
-        TFFormSection(title: L("ring.actions.title"), count: actions.count) {
+        TFFormSection(title: L("ring.actions.title")) {
             TFButton(title: L("ring.actions.reset"), systemImage: "arrow.counterclockwise", kind: .plain,
                      size: .small) { studio.resetActions() }
                 .disabled(actions == RingConfiguration.defaultActions())

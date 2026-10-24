@@ -77,7 +77,6 @@ final class RingSettingsPresentationTests: XCTestCase {
             XCTAssertFalse(type.title.hasPrefix("ring."), type.rawValue)
             XCTAssertFalse(type.targetLabel.hasPrefix("ring."), type.rawValue)
             XCTAssertNotNil(NSImage(systemSymbolName: type.symbol, accessibilityDescription: nil), type.symbol)
-            XCTAssertFalse(type.libraryDetail.hasPrefix("ring."), type.rawValue)
         }
         for group in ["input", "screenshot", "windows", "appearance", "desktop", "security", "keywords", "apps",
                       "commonKeys", "shortcuts", "folders", "typed"] {

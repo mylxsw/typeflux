@@ -31,11 +31,14 @@ final class RingActionLibraryTests: XCTestCase {
         })
     }
 
-    func testCountsAreHiddenForTypedTypes() {
-        XCTAssertNil(library.count(of: .url))
-        XCTAssertEqual(library.count(of: .feature), RingFeature.allCases.count)
-        XCTAssertEqual(library.count(of: .app), 2)
+    func testEveryTypeHasACardAndOnlyTargetsShowASecondLine() {
         XCTAssertEqual(Set(RingActionLibrary.types), Set(RingActionType.allCases), "every type has a card")
+        for type in RingActionLibrary.types {
+            for item in library.items(of: type) {
+                XCTAssertEqual(item.subtitleIdentifiesTarget, [.keyword, .keys, .folder].contains(type), item.title)
+            }
+        }
+        XCTAssertTrue(RingActionLibrary.urlItem("github.com")?.subtitleIdentifiesTarget ?? false)
     }
 
     func testItemsCarryGroupsAndBuildActions() throws {
