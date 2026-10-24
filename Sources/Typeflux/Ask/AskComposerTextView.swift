@@ -39,6 +39,8 @@ struct AskComposerTextView: NSViewRepresentable {
     var onEmptyBackspace: (() -> Bool)?
     /// Launcher-local ⌘O. The model checks recording and draft readiness.
     var onOpenChat: (() -> Void)?
+    /// Launcher-local ⌘C/⌘W, after native selection and result copying.
+    var onKindShortcut: ((AskConversationKind) -> Void)?
     /// ⌘K; true when handled.
     var onContextShortcut: (() -> Bool)?
     /// Carries an opaque timing trace from committed native edits into launcher search.
@@ -90,6 +92,7 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.onEmptyBackspace = onEmptyBackspace
         editor.onContextShortcut = onContextShortcut
         editor.onOpenChat = onOpenChat
+        editor.onKindShortcut = onKindShortcut
         editor.setAccessibilityLabel(placeholder)
         editor.setAccessibilityHelp(L("ask.voice.holdHint"))
         scroll.documentView = editor
@@ -133,6 +136,7 @@ struct AskComposerTextView: NSViewRepresentable {
         editor.onEmptyBackspace = onEmptyBackspace
         editor.onContextShortcut = onContextShortcut
         editor.onOpenChat = onOpenChat
+        editor.onKindShortcut = onKindShortcut
         if editor.font?.pointSize != fontSize { editor.font = .systemFont(ofSize: fontSize) }
         let recalled = editor.caretRequestID != caretRequestID
         if editor.string != text || recalled, !editor.hasMarkedText() {
@@ -196,6 +200,7 @@ struct AskComposerTextView: NSViewRepresentable {
         var onHorizontalArrow: ((Int) -> Bool)?
         var onEmptyBackspace: (() -> Bool)?
         var onOpenChat: (() -> Void)?
+        var onKindShortcut: ((AskConversationKind) -> Void)?
         var onContextShortcut: (() -> Bool)?
         /// A key press is being handled; edits made now were typed.
         private(set) var typing = false
@@ -477,6 +482,17 @@ struct AskComposerTextView: NSViewRepresentable {
             onOpenChat()
             return true
         }
+        private func kindShortcut(_ event: NSEvent) -> Bool {
+            guard contextID == "launcher", !hasMarkedText(), voice?.isActive != true,
+                  let onKindShortcut,
+                  let kind = AskLauncherKindShortcuts.kind(for: event, hasSelection: selectedRange().length > 0)
+            else { return false }
+            // A plugin's copy action keeps priority when the editor has no selection.
+            if kind == .chat, onCommandKey?(.commandC) == true { return true }
+            onKindShortcut(kind)
+            return true
+        }
+
         override func performKeyEquivalent(with event: NSEvent) -> Bool {
             if ignoresRepeatedSubmission(event) { return true }
             if window?.firstResponder === self, voice?.isActive != true, !hasMarkedText(),
@@ -484,6 +500,7 @@ struct AskComposerTextView: NSViewRepresentable {
                 if event.isARepeat, case .number = key { return true }
                 if onHistoryKey?(key) == true { return true }
             }
+            if window?.firstResponder === self, kindShortcut(event) { return true }
             if window?.firstResponder === self, openChatShortcut(event) { return true }
             if window?.firstResponder === self, voice?.isActive != true, !hasMarkedText(),
                let key = AskCommandKey(event), case .number = key {
@@ -507,6 +524,7 @@ struct AskComposerTextView: NSViewRepresentable {
             if ignoresRepeatedSubmission(event) { return }
             if !hasMarkedText(), voice?.isActive != true, let key = AskCommandKey(event),
                onHistoryKey?(key) == true { return }
+            if kindShortcut(event) { return }
             if openChatShortcut(event) { return }
             if event.keyCode == 53, mouseDownEvent != nil { cancelInteraction(); return }
             if voice?.isActive == true {

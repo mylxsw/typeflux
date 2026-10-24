@@ -2383,6 +2383,7 @@ struct AskComposer: View {
             onEmptyBackspace: launcher ? emptyLauncherBackspace
                 : usesContentTiles && !chosenTools.isEmpty ? removeLastChoice : nil,
             onOpenChat: launcher ? openChatOrMonitorWindow : nil,
+            onKindShortcut: launcher ? { model.setConversationKind($0, launcher: true) } : nil,
             onContextShortcut: launcher ? toggleContextPanel : nil,
             onAcceptedInput: launcher ? { searchInputTrace = $0 } : nil
         )

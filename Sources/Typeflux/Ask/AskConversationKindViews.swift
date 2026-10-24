@@ -39,7 +39,10 @@ struct AskConversationKindSwitch: View {
                     .contentShape(Capsule(style: .continuous))
                 }
                 .buttonStyle(.plain)
-                .help(L(kind.titleKey) + " · " + L(kind.titleKey + ".help"))
+                .modifier(AskLauncherShortcutBadge(key: compact ? AskLauncherKindShortcuts.key(for: kind) : nil,
+                                                   leadingInset: 13, topInset: -6))
+                .help(L(kind.titleKey) + " · " + L(kind.titleKey + ".help")
+                    + (compact ? " · ⌘" + AskLauncherKindShortcuts.key(for: kind) : ""))
                 .accessibilityLabel(L(kind.titleKey))
                 .accessibilityAddTraits(chosen ? .isSelected : [])
                 .accessibilityIdentifier("ask.kind." + kind.rawValue)
