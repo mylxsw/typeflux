@@ -1547,7 +1547,7 @@
 "ask.copy" = "Copy";
 "ask.delete" = "Delete conversation";
 "ask.delete.confirm" = "Delete this conversation? Its workspace files will be kept.";
-"ask.workspace.openFolder" = "Open workspace folder";
+"ask.workspace.showFiles" = "Show files";
 "ask.deny" = "Deny";
 "ask.empty" = "What would you like to ask?";
 "ask.followup.placeholder" = "Continue the conversation, / for commands";
@@ -6990,3 +6990,18 @@
 "ask.sidePanel.copyFile" = "Copy File";
 "ask.sidePanel.copyPath" = "Copy Path";
 "ask.sidePanel.saveAs" = "Save As…";
+"ask.fileChanges.title" = "Files changed this round:";
+"ask.fileChanges.added" = "%d added";
+"ask.fileChanges.modified" = "%d modified";
+"ask.fileChanges.tag.added" = "New";
+"ask.fileChanges.tag.modified" = "Modified";
+"ask.fileChanges.showAll" = "View all files";
+"ask.fileChanges.process" = "%d process files (work/)";
+"ask.fileChanges.rewritten" = "Rewritten";
+"ask.fileChanges.edited" = "%d edits";
+"ask.sidePanel.artifact" = "Artifact";
+"ask.sidePanel.locateMessage" = "Locate in conversation";
+"ask.settings.links.title" = "Open links in";
+"ask.settings.links.subtitle" = "Links in Chat messages. ⌘-click always opens the system browser.";
+"ask.settings.links.sidePanel" = "Side panel";
+"ask.settings.links.browser" = "System browser";

@@ -179,4 +179,102 @@ struct AskSidePanelRenderTests {
                                       name: "side-panel-file-denied")
         #expect(labels.contains { $0.contains(L("ask.sidePanel.file.denied")) })
     }
+
+    // MARK: Files changed this round
+
+    @Test func summariesNameHowAModifiedFileChanged() {
+        #expect(AskWorkspaceFileChange(path: "a", kind: .added, writes: 1).summary == nil, "New files need no note")
+        #expect(AskWorkspaceFileChange(path: "a", kind: .modified).summary == nil)
+        #expect(AskWorkspaceFileChange(path: "a", kind: .modified, writes: 1, edits: 2).summary
+            == L("ask.fileChanges.rewritten"))
+        #expect(AskWorkspaceFileChange(path: "a", kind: .modified, edits: 2).summary == L("ask.fileChanges.edited", 2))
+        #expect(AskFileChangesView.countText(added: 2, modified: 1)
+            == L("ask.fileChanges.added", 2) + " · " + L("ask.fileChanges.modified", 1))
+        #expect(AskFileChangesView.countText(added: 0, modified: 3) == L("ask.fileChanges.modified", 3))
+        #expect(AskFileChangesView.countText(added: 0, modified: 0).isEmpty)
+        let ref = AskArtifactRef(id: "abcdef1234", ownerId: "o", conversationId: "c", runId: "r", version: "v",
+                                 mediaType: "text/html", sizeBytes: 1, sha256: "s", cleanup: "none")
+        #expect(AskArtifactTab.defaultName(ref) == L("ask.sidePanel.artifact") + " abcdef12.html")
+        var zip = ref
+        zip.mediaType = "application/vnd.api+json"
+        #expect(AskArtifactTab.defaultName(zip) == L("ask.sidePanel.artifact") + " abcdef12")
+    }
+
+    @Test func theChangesBlockListsFilesAndFoldsWorkFiles() async throws {
+        let ref = AskArtifactRef(id: "artifact-1", ownerId: "o", conversationId: "c1", runId: "r", version: "v",
+                                 mediaType: "text/html", sizeBytes: 2048, sha256: "s", cleanup: "device_30_days")
+        let list = AskFileChangeList(changes: [
+            .init(path: "outputs/1b4e28ba-2fa1-11d2-883f-0016d3cca427-report.html", kind: .added),
+            .init(path: "outputs/summary.md", kind: .modified, edits: 2),
+            .init(path: "work/clean.py", kind: .added), .init(path: "work/notes.txt", kind: .modified)
+        ], artifacts: [.init(ref: ref, name: "dashboard.html")])
+        let root = try workspace()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let actions = AskSidePanelActions(fileURL: { root.appendingPathComponent($0) })
+        for dark in [false, true] {
+            let labels = try await render(AskFileChangesView(list: list, actions: actions).padding().frame(width: 560),
+                                          name: "file-changes" + (dark ? "-dark" : ""),
+                                          size: NSSize(width: 600, height: 320), dark: dark)
+            #expect(labels.contains { $0.contains(L("ask.fileChanges.title")) })
+            #expect(labels.contains { $0.contains(AskFileChangesView.countText(added: 3, modified: 2)) })
+            #expect(labels.contains { $0.contains("report.html") })
+            #expect(labels.contains { $0.contains(L("ask.fileChanges.edited", 2)) })
+            #expect(labels.contains { $0.contains("dashboard.html") })
+            #expect(labels.contains { $0.contains(L("ask.fileChanges.process", 2)) })
+            #expect(!labels.contains { $0.contains("clean.py") }, "Work files stay folded")
+        }
+    }
+
+    @Test func filesAndFileTabsOfferLocatingTheirMessage() async throws {
+        let root = try workspace()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let panel = AskSidePanel(browser: nil)
+        await panel.refreshFiles(conversationId: "c1") { (root, listing(root)) }
+        panel.prepareForPresentation()
+        var located: [String] = []
+        var context = context(root)
+        context.locateMessage = { located.append($0) }
+        let labels = try await render(AskSidePanelView(panel: panel, context: context, close: {}),
+                                      name: "side-panel-files-locate")
+        #expect(labels.filter { $0.contains(L("ask.sidePanel.locateMessage")) }.count == 1,
+                "Only the group of a message in this conversation offers it")
+        let upload = try AskSidePanelFileAccess.resolve("inputs/0123456789abcdef-fedcba9876543210-sales.csv",
+                                                        workspaceRoot: root)
+        try panel.open(upload, conversationId: "c1")
+        let tabLabels = try await render(AskSidePanelView(panel: panel, context: context, close: {}),
+                                         name: "side-panel-file-locate")
+        #expect(tabLabels.contains { $0.contains(L("ask.sidePanel.locateMessage")) })
+        let output = try AskSidePanelFileAccess.resolve("outputs/summary.md", workspaceRoot: root)
+        try panel.open(output, conversationId: "c1")
+        let other = try await render(AskSidePanelView(panel: panel, context: context, close: {}),
+                                     name: "side-panel-file-no-locate")
+        #expect(!other.contains { $0.contains(L("ask.sidePanel.locateMessage")) }, "No message, nothing to locate")
+        #expect(located.isEmpty)
+    }
+
+    @Test func artifactTabsPreviewTheKeptCopy() async throws {
+        let data = Data("complete build log".utf8)
+        let digest = AskToolPolicy.digest(data)
+        let ref = AskArtifactRef(id: "artifact-log", ownerId: "o", conversationId: "c1", runId: "r", version: "v",
+                                 mediaType: "text/plain", sizeBytes: Int64(data.count), sha256: digest,
+                                 cleanup: "device_30_days")
+        let bundle = AskArtifactBundle(manifest: .init(ref: ref, workspace: nil, createdAt: Date(), entry: "build.log",
+                                                       resources: [.init(path: "build.log", mediaType: "text/plain",
+                                                                         sizeBytes: data.count, sha256: digest)]),
+                                       files: ["build.log": data])
+        let panel = AskSidePanel(browser: nil)
+        try panel.open(artifact: ref, name: "build.log", conversationId: "c1")
+        let labels = try await render(AskSidePanelView(panel: panel, context: AskSidePanelContext(conversationId: "c1"),
+                                                       close: {})
+                .environment(\.askArtifactAccess, AskArtifactAccess(load: { _ in bundle }, validate: { _ in })),
+                                      name: "side-panel-artifact")
+        #expect(labels.contains { $0.contains("build.log") })
+        #expect(labels.contains { $0.contains("complete build log") })
+        // Without access the tab says why instead of showing stale content.
+        let denied = try await render(AskSidePanelView(panel: panel, context: AskSidePanelContext(conversationId: "c1"),
+                                                       close: {}),
+                                      name: "side-panel-artifact-unavailable")
+        #expect(denied.contains { $0.contains(AskArtifactError.unavailable.localizedDescription) })
+    }
 }
+

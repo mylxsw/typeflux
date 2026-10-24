@@ -25,16 +25,34 @@ final class AskFileTab: ObservableObject, Identifiable {
     func reload() { revision += 1 }
 }
 
-/// A tab of the side panel: the pinned Files tab, a web page, or a file.
+/// A device-only artifact a run kept (`artifact` tool, generated images), opened in the
+/// side panel instead of a modal preview. It is read through `AskArtifactAccess`, never a path.
+@MainActor
+final class AskArtifactTab: Identifiable {
+    let id = UUID()
+    let conversationId: String
+    let ref: AskArtifactRef
+    let name: String
+
+    init(conversationId: String, ref: AskArtifactRef, name: String) {
+        self.conversationId = conversationId
+        self.ref = ref
+        self.name = name
+    }
+}
+
+/// A tab of the side panel: the pinned Files tab, a web page, a file, or an artifact.
 enum AskSidePanelTab: Identifiable {
     case files
     case web(AskBrowserTab)
     case file(AskFileTab)
+    case artifact(AskArtifactTab)
 
     enum ID: Hashable {
         case files
         case web(UUID)
         case file(UUID)
+        case artifact(UUID)
     }
 
     var id: ID {
@@ -42,6 +60,7 @@ enum AskSidePanelTab: Identifiable {
         case .files: .files
         case let .web(tab): .web(tab.id)
         case let .file(tab): .file(tab.id)
+        case let .artifact(tab): .artifact(tab.id)
         }
     }
 }
@@ -62,6 +81,7 @@ final class AskSidePanel: ObservableObject {
     /// Web and file tabs in strip order; the Files tab is pinned before them.
     @Published private(set) var order: [AskSidePanelTab.ID] = []
     @Published private(set) var fileTabs: [AskFileTab] = []
+    @Published private(set) var artifactTabs: [AskArtifactTab] = []
     /// Nil until the user first picks a tab; opening the panel then shows Files.
     @Published private(set) var selection: AskSidePanelTab.ID?
     @Published var notice: String?
@@ -75,6 +95,8 @@ final class AskSidePanel: ObservableObject {
     @Published private(set) var filesError: String?
     @Published var fileQuery = AskWorkspaceFileQuery()
     private var filesGeneration = 0
+    /// Links the panel opened, by web tab: a page that has not committed yet has no URL.
+    private var requestedURLs: [UUID: URL] = [:]
     private var observers: Set<AnyCancellable> = []
 
     init(browser: AskBrowserWorkspace?) {
@@ -99,6 +121,7 @@ final class AskSidePanel: ObservableObject {
         case .files: return .files
         case let .web(id): return browser?.tab(id: id).map(AskSidePanelTab.web)
         case let .file(id): return fileTabs.first { $0.id == id }.map(AskSidePanelTab.file)
+        case let .artifact(id): return artifactTabs.first { $0.id == id }.map(AskSidePanelTab.artifact)
         }
     }
 
@@ -144,6 +167,31 @@ final class AskSidePanel: ObservableObject {
         return tab
     }
 
+    /// Opens a link in a web tab, or switches to the tab already showing that page.
+    @discardableResult
+    func openWeb(_ url: URL) throws -> AskBrowserTab? {
+        guard let browser else { return nil }
+        if let existing = browser.tabs.first(where: { Self.samePage($0.url ?? requestedURLs[$0.id], url) }) {
+            select(.web(existing.id))
+            return existing
+        }
+        let tab = try newWebTab(url: url)
+        if let tab { requestedURLs[tab.id] = url }
+        return tab
+    }
+
+    /// The same page: an empty `#` or the `/` of an empty path does not make another one.
+    nonisolated static func samePage(_ lhs: URL?, _ rhs: URL) -> Bool {
+        guard let lhs else { return false }
+        func normalized(_ url: URL) -> String {
+            var text = url.absoluteString
+            if text.hasSuffix("#") { text.removeLast() }
+            if url.path.isEmpty || url.path == "/", text.hasSuffix("/") { text.removeLast() }
+            return text
+        }
+        return normalized(lhs) == normalized(rhs)
+    }
+
     // MARK: File tabs
 
     /// Opens a file in a tab, or switches to the tab already showing it.
@@ -154,7 +202,7 @@ final class AskSidePanel: ObservableObject {
             selection = .file(existing.id)
             return existing
         }
-        guard fileTabs.count < Self.maxFileTabs else { throw PanelError.tooManyFileTabs }
+        guard fileTabs.count + artifactTabs.count < Self.maxFileTabs else { throw PanelError.tooManyFileTabs }
         let ext = (target.relativePath as NSString).pathExtension
         let tab = AskFileTab(conversationId: conversationId, target: target,
                              kind: kind ?? AskSidePanelFileKind.kind(forExtension: ext))
@@ -164,10 +212,26 @@ final class AskSidePanel: ObservableObject {
         return tab
     }
 
-    /// File tabs from other conversations close when the conversation changes: a tab
-    /// may only show files its own conversation admitted.
+    /// Opens an artifact in a tab, or switches to the tab already showing it.
+    @discardableResult
+    func open(artifact ref: AskArtifactRef, name: String, conversationId: String) throws -> AskArtifactTab {
+        if let existing = artifactTabs.first(where: { $0.ref.id == ref.id && $0.conversationId == conversationId }) {
+            selection = .artifact(existing.id)
+            return existing
+        }
+        guard fileTabs.count + artifactTabs.count < Self.maxFileTabs else { throw PanelError.tooManyFileTabs }
+        let tab = AskArtifactTab(conversationId: conversationId, ref: ref, name: name)
+        artifactTabs.append(tab)
+        order.append(.artifact(tab.id))
+        selection = .artifact(tab.id)
+        return tab
+    }
+
+    /// File and artifact tabs from other conversations close when the conversation changes:
+    /// a tab may only show files its own conversation admitted.
     func retainFiles(conversationId: String?) {
         for tab in fileTabs where tab.conversationId != conversationId { close(.file(tab.id)) }
+        for tab in artifactTabs where tab.conversationId != conversationId { close(.artifact(tab.id)) }
         if filesConversationId != conversationId {
             filesGeneration += 1
             files = []
@@ -195,6 +259,9 @@ final class AskSidePanel: ObservableObject {
         case let .file(tabId):
             fileTabs.removeAll { $0.id == tabId }
             order.remove(at: index)
+        case let .artifact(tabId):
+            artifactTabs.removeAll { $0.id == tabId }
+            order.remove(at: index)
         }
         if wasSelected { selection = index > 0 ? order[min(index, order.count) - 1] : .files }
     }
@@ -207,6 +274,7 @@ final class AskSidePanel: ObservableObject {
     /// Web tabs the AI opens join the strip; tabs it closes leave it.
     private func reconcile(webTabs: [AskBrowserTab]) {
         let ids = Set(webTabs.map(\.id))
+        requestedURLs = requestedURLs.filter { ids.contains($0.key) }
         let previous = order
         order.removeAll { if case let .web(id) = $0 { !ids.contains(id) } else { false } }
         for tab in webTabs where !order.contains(.web(tab.id)) { order.append(.web(tab.id)) }

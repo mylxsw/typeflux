@@ -1544,7 +1544,7 @@
 "ask.copy" = "Copy";
 "ask.delete" = "Delete conversation";
 "ask.delete.confirm" = "刪除此對話？工作空間中的檔案會保留。";
-"ask.workspace.openFolder" = "開啟工作空間資料夾";
+"ask.workspace.showFiles" = "查看檔案";
 "ask.deny" = "Deny";
 "ask.empty" = "What would you like to ask?";
 "ask.followup.placeholder" = "繼續追問，/ 呼叫指令";
@@ -6992,3 +6992,18 @@
 "ask.sidePanel.copyFile" = "拷貝檔案";
 "ask.sidePanel.copyPath" = "拷貝路徑";
 "ask.sidePanel.saveAs" = "另存新檔…";
+"ask.fileChanges.title" = "本輪檔案變更：";
+"ask.fileChanges.added" = "新增 %d";
+"ask.fileChanges.modified" = "修改 %d";
+"ask.fileChanges.tag.added" = "新增";
+"ask.fileChanges.tag.modified" = "修改";
+"ask.fileChanges.showAll" = "查看全部檔案";
+"ask.fileChanges.process" = "過程檔案 %d 個（work/）";
+"ask.fileChanges.rewritten" = "整體重寫";
+"ask.fileChanges.edited" = "修改 %d 處";
+"ask.sidePanel.artifact" = "產物";
+"ask.sidePanel.locateMessage" = "定位到訊息";
+"ask.settings.links.title" = "連結開啟方式";
+"ask.settings.links.subtitle" = "對話訊息中的連結。⌘ + 點擊一律使用系統瀏覽器。";
+"ask.settings.links.sidePanel" = "側邊欄";
+"ask.settings.links.browser" = "系統瀏覽器";

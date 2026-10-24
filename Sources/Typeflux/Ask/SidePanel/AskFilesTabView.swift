@@ -161,16 +161,26 @@ struct AskFilesTabView: View {
     private func groupHeader(_ group: AskWorkspaceFileQuery.Group) -> some View {
         let title = group.messageId.flatMap(context.messageTitle) ?? L(group.messageId == nil
             ? "ask.sidePanel.files.unassigned" : "ask.sidePanel.files.earlierMessage")
+        let locatable = group.messageId.flatMap { context.messageOrder.contains($0) ? $0 : nil }
         return HStack(spacing: 6) {
             Image(systemName: group.messageId == nil ? "tray" : "text.bubble")
                 .font(.system(size: 10.5))
             Text(title).lineLimit(1)
             Spacer(minLength: 4)
+            if let locatable {
+                Button { context.locateMessage(locatable) } label: {
+                    Text(L("ask.sidePanel.locateMessage")).font(.system(size: 11))
+                        .foregroundStyle(AskTheme.accentText)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("ask.sidePanel.files.locate")
+            }
             Text("\(group.files.count)").monospacedDigit()
         }
         .font(.system(size: 11, weight: .medium))
         .foregroundStyle(StudioTheme.textTertiary)
         .padding(.horizontal, 4)
+        .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isHeader)
     }
 
@@ -311,12 +321,21 @@ private struct AskWorkspaceFileTile: View {
 }
 
 /// The Finder icon for the file's type; never reads the file itself.
-private struct AskWorkspaceFileIconView: View {
-    let file: AskWorkspaceFile
+struct AskWorkspaceFileIconView: View {
+    let pathExtension: String
     let size: CGFloat
 
+    init(pathExtension: String, size: CGFloat) {
+        self.pathExtension = pathExtension
+        self.size = size
+    }
+
+    init(file: AskWorkspaceFile, size: CGFloat) {
+        self.init(pathExtension: file.pathExtension, size: size)
+    }
+
     var body: some View {
-        Image(nsImage: NSWorkspace.shared.icon(for: .init(filenameExtension: file.pathExtension) ?? .data))
+        Image(nsImage: NSWorkspace.shared.icon(for: .init(filenameExtension: pathExtension) ?? .data))
             .resizable()
             .interpolation(.high)
             .frame(width: size, height: size)

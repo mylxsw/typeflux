@@ -13,6 +13,8 @@ struct AskTranscriptText: NSViewRepresentable {
     /// Saves the selected text to the notebook; nil leaves the action out.
     var onSaveNote: ((String) -> Void)?
     @Environment(\.colorScheme) private var colorScheme
+    /// In a conversation window, links open in the side panel (or the browser, by setting).
+    @Environment(\.askSidePanelActions) private var sidePanelActions
 
     func makeNSView(context _: Context) -> Editor {
         let editor = Editor()
@@ -33,6 +35,7 @@ struct AskTranscriptText: NSViewRepresentable {
     func updateNSView(_ editor: Editor, context _: Context) {
         editor.onAsk = onAsk
         editor.onSaveNote = onSaveNote
+        editor.onOpenLink = sidePanelActions?.openLink
         editor.requestContent(text, markdown: markdown, dark: colorScheme == .dark)
     }
 
@@ -63,7 +66,19 @@ struct AskTranscriptText: NSViewRepresentable {
             didSet { if onAsk == nil { askPopover.close() } }
         }
         var onSaveNote: ((String) -> Void)?
+        /// Routes link clicks; nil keeps AppKit's default of opening the URL.
+        var onOpenLink: ((URL, Bool) -> Void)?
         let askPopover = NSPopover()
+
+        override func clicked(onLink link: Any, at charIndex: Int) {
+            guard let url = (link as? URL) ?? (link as? String).flatMap(URL.init(string:)) else { return }
+            if let onOpenLink {
+                onOpenLink(url, NSApp.currentEvent?.modifierFlags.contains(.command) == true)
+            } else if url.scheme?.lowercased() != AskLinkRouter.fileScheme {
+                // A workspace link means nothing outside a conversation window.
+                super.clicked(onLink: link, at: charIndex)
+            }
+        }
 
         var selectedExcerpt: String? {
             let range = selectedRange()
@@ -339,9 +354,12 @@ enum AskMarkdownText {
                     toHaveTrait: .italicFontMask
                 )
             }
-            if let link = node as? Markdown.Link, let destination = link.destination,
-               let url = URL(string: destination), ["https", "http", "mailto"].contains(url.scheme ?? "") {
-                attributes[.link] = url
+            if let link = node as? Markdown.Link, let destination = link.destination {
+                if let url = URL(string: destination), ["https", "http", "mailto"].contains(url.scheme ?? "") {
+                    attributes[.link] = url
+                } else if let url = AskLinkRouter.link(forDestination: destination) {
+                    attributes[.link] = url
+                }
             }
             if node is SoftBreak {
                 append(" ", attributes); return

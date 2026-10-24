@@ -208,7 +208,7 @@ import Testing
                 let receipt = previewModel.projection(for: saved.manifest.ref, access: access).preview!
                 let before = reads
                 // Values only: never host, render, construct a coordinator, open WebKit or run a task/button.
-                _ = AskStoredArtifactCard(ref: saved.manifest.ref, imageModel: imageModel, previewModel: previewModel).body
+                _ = AskStoredArtifactCard(ref: saved.manifest.ref, imageModel: imageModel).body
                 _ = AskArtifactPreviewView(bundle: saved, access: access, close: {}, imageModel: imageModel, source: receipt.source).body
                 live = otherID
                 let fresh = AskArtifactAccess(htmlEnabled: enabled, imageSource: .init(identity: otherID, current: { live }))

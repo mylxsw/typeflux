@@ -62,22 +62,23 @@ extension EnvironmentValues {
 
 struct AskStoredArtifactCard: View {
     let ref: AskArtifactRef
+    /// The entry file's name, when the step that kept the artifact says it.
+    var name: String?
     @Environment(\.askArtifactAccess) private var access
+    @Environment(\.askSidePanelActions) private var sidePanel
     @StateObject private var saveModel = AskArtifactSaveModel()
-    @StateObject private var previewModel = AskArtifactPreviewModel()
     @StateObject private var imageModel = AskArtifactImageModel()
     @State private var copying: Task<Void, Never>?
 
-    @MainActor init(ref: AskArtifactRef, imageModel: AskArtifactImageModel? = nil,
-                    previewModel: AskArtifactPreviewModel? = nil, saveModel: AskArtifactSaveModel? = nil) {
-        self.ref = ref; _imageModel = StateObject(wrappedValue: imageModel ?? AskArtifactImageModel())
-        _previewModel = StateObject(wrappedValue: previewModel ?? AskArtifactPreviewModel())
+    @MainActor init(ref: AskArtifactRef, name: String? = nil, imageModel: AskArtifactImageModel? = nil,
+                    saveModel: AskArtifactSaveModel? = nil) {
+        self.ref = ref; self.name = name
+        _imageModel = StateObject(wrappedValue: imageModel ?? AskArtifactImageModel())
         _saveModel = StateObject(wrappedValue: saveModel ?? AskArtifactSaveModel())
     }
 
     var body: some View {
         let projection = imageModel.projection(for: ref, access: access)
-        let previewProjection = previewModel.projection(for: ref, access: access)
         return VStack(alignment: .leading, spacing: 7) {
             if let thumbnail = projection.image {
                 Image(nsImage: thumbnail).resizable().scaledToFit().frame(maxHeight: 260)
@@ -96,10 +97,12 @@ struct AskStoredArtifactCard: View {
                     .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
             }
             HStack {
+                // Previews open in the side panel beside the conversation, not in a sheet.
                 Button(L("ask.preview")) {
-                    previewModel.open(ref, access: access)
-                    if previewModel.projection(for: ref, access: access).preview != nil { saveModel.cancel() }
+                    saveModel.cancel()
+                    sidePanel?.openArtifact(ref, name ?? AskArtifactTab.defaultName(ref))
                 }
+                .disabled(sidePanel == nil)
                 Button(L("ask.artifact.save")) { save() }
                 if ref.mediaType.hasPrefix("image/") {
                     Button(L("imagegen.copy")) {
@@ -108,7 +111,7 @@ struct AskStoredArtifactCard: View {
                     }.disabled(projection.busy)
                 }
             }
-            if let error = saveModel.projectedError(for: ref, access: access) ?? previewProjection.error ?? projection.error {
+            if let error = saveModel.projectedError(for: ref, access: access) ?? projection.error {
                 Text(error).foregroundStyle(StudioTheme.danger).font(.system(size: 12))
             }
         }
@@ -122,15 +125,6 @@ struct AskStoredArtifactCard: View {
             await imageModel.load(ref, access: access)
         }
         .onDisappear { copying?.cancel(); copying = nil; imageModel.cancel(); saveModel.cancel() }
-        .sheet(isPresented: Binding(get: { previewModel.projection(for: ref, access: access).preview != nil }, set: {
-            if !$0 {
-                previewModel.close()
-            }
-        })) {
-            if let preview = previewModel.projection(for: ref, access: access).preview {
-                AskArtifactPreviewView(bundle: preview.bundle, access: access, close: { previewModel.close() }, source: preview.source)
-            }
-        }
     }
 
     private func save() {
@@ -155,12 +149,15 @@ struct AskArtifactPreviewView: View {
     let access: AskArtifactAccess
     let close: () -> Void
     let source: AskArtifactPreviewSource
+    /// Shown in a side panel tab, which has its own title and close button.
+    let embedded: Bool
     @State private var error: String?
     @StateObject private var imageModel = AskArtifactImageModel()
 
     @MainActor init(bundle: AskArtifactBundle, access: AskArtifactAccess, close: @escaping () -> Void,
-                    imageModel: AskArtifactImageModel? = nil, source: AskArtifactPreviewSource? = nil) {
-        self.bundle = bundle; self.access = access; self.close = close
+                    imageModel: AskArtifactImageModel? = nil, source: AskArtifactPreviewSource? = nil,
+                    embedded: Bool = false) {
+        self.bundle = bundle; self.access = access; self.close = close; self.embedded = embedded
         self.source = source ?? .init(ref: bundle.manifest.ref, access: access)
         _imageModel = StateObject(wrappedValue: imageModel ?? AskArtifactImageModel())
     }
@@ -168,10 +165,12 @@ struct AskArtifactPreviewView: View {
     var body: some View {
         let available = source.ref == bundle.manifest.ref && source.isCurrent(with: access)
         return VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                if available { Text((bundle.manifest.entry as NSString).lastPathComponent).font(.headline) }
-                Spacer()
-                Button(L("ask.artifact.close"), action: close)
+            if !embedded {
+                HStack {
+                    if available { Text((bundle.manifest.entry as NSString).lastPathComponent).font(.headline) }
+                    Spacer()
+                    Button(L("ask.artifact.close"), action: close)
+                }
             }
             if !available {
                 Text(AskArtifactError.denied.localizedDescription)
@@ -210,8 +209,9 @@ struct AskArtifactPreviewView: View {
                 Text(error).foregroundStyle(StudioTheme.danger).lineLimit(8).textSelection(.enabled)
             }
         }
-        .padding(20)
-        .frame(width: 760, height: 560)
+        .padding(embedded ? 12 : 20)
+        .frame(width: embedded ? nil : 760, height: embedded ? nil : 560)
+        .frame(maxWidth: embedded ? .infinity : nil, maxHeight: embedded ? .infinity : nil, alignment: .topLeading)
         .task(id: access.imageTaskID(for: bundle.manifest.ref)) {
             await Self.loadImage(bundle.manifest.ref, source: source, access: access, model: imageModel)
         }

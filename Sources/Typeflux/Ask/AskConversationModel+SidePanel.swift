@@ -32,4 +32,39 @@ extension AskConversationModel {
             .map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
         return line.isEmpty ? nil : String(line.prefix(80))
     }
+
+    /// Resolves a workspace path for a file tab. A file the workspace lacks yet, such as an
+    /// upload from another device, is looked for again after syncing the workspace.
+    func sidePanelTarget(_ path: String, conversationId id: String) async throws -> AskSidePanelFileAccess.Target {
+        func resolve() throws -> AskSidePanelFileAccess.Target {
+            let roots = sidePanelRoots(id)
+            guard let workspace = roots.first else { throw AskSidePanelFileAccess.AccessError.denied }
+            return try AskSidePanelFileAccess.resolve(path, workspaceRoot: URL(fileURLWithPath: workspace),
+                                                      grantedRoots: Array(roots.dropFirst()))
+        }
+        do {
+            return try resolve()
+        } catch let error as AskSidePanelFileAccess.AccessError where error != .tooLarge && !path.hasPrefix("/") {
+            _ = try await syncWorkspace(id)
+            return try resolve()
+        }
+    }
+
+    /// The file's URL for opening it outside Typeflux; only plain paths inside the workspace.
+    func sidePanelFileURL(_ path: String, conversationId id: String?) -> URL? {
+        guard let workspace = sidePanelRoots(id).first,
+              AskWorkspaceFileChange.workspacePath(path, root: workspace) == path else { return nil }
+        return URL(fileURLWithPath: workspace).appendingPathComponent(path)
+    }
+
+    /// Scrolls the transcript to a message and highlights it for a moment.
+    func locateMessage(_ id: String) {
+        referenceLocation = id
+        highlightedMessageId = id
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            guard let self, highlightedMessageId == id else { return }
+            highlightedMessageId = nil
+        }
+    }
 }

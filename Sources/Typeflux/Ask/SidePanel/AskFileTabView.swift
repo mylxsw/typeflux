@@ -9,6 +9,8 @@ struct AskFileTabView: View {
     @ObservedObject var tab: AskFileTab
     var roots: () -> [String]
     var onError: (String) -> Void
+    /// Scrolls the conversation to the message the file came with; nil when unknown.
+    var onLocate: (() -> Void)?
     var actions = AskFileExternalActions()
     @State private var content: AskSidePanelFileContent?
     @State private var htmlError: String?
@@ -58,6 +60,17 @@ struct AskFileTabView: View {
                 .fixedSize()
                 .controlSize(.small)
                 .accessibilityIdentifier("ask.sidePanel.file.mode")
+            }
+            if let onLocate {
+                Button(action: onLocate) {
+                    Image(systemName: "text.bubble").font(.system(size: 12))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .frame(width: 26, height: 26).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help(L("ask.sidePanel.locateMessage"))
+                .accessibilityLabel(L("ask.sidePanel.locateMessage"))
+                .accessibilityIdentifier("ask.sidePanel.file.locate")
             }
             Button { tab.reload() } label: {
                 Image(systemName: "arrow.clockwise").font(.system(size: 12))

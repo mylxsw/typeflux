@@ -1547,7 +1547,7 @@
 "ask.copy" = "复制";
 "ask.delete" = "删除对话";
 "ask.delete.confirm" = "删除此对话？工作空间中的文件会保留。";
-"ask.workspace.openFolder" = "打开工作空间文件夹";
+"ask.workspace.showFiles" = "查看文件";
 "ask.deny" = "拒绝";
 "ask.empty" = "有什么想问的？";
 "ask.followup.placeholder" = "继续追问，/ 调用命令";
@@ -6990,3 +6990,18 @@
 "ask.sidePanel.copyFile" = "复制文件";
 "ask.sidePanel.copyPath" = "复制路径";
 "ask.sidePanel.saveAs" = "另存为…";
+"ask.fileChanges.title" = "本轮文件变更：";
+"ask.fileChanges.added" = "新增 %d";
+"ask.fileChanges.modified" = "修改 %d";
+"ask.fileChanges.tag.added" = "新增";
+"ask.fileChanges.tag.modified" = "修改";
+"ask.fileChanges.showAll" = "查看全部文件";
+"ask.fileChanges.process" = "过程文件 %d 个（work/）";
+"ask.fileChanges.rewritten" = "整体重写";
+"ask.fileChanges.edited" = "修改 %d 处";
+"ask.sidePanel.artifact" = "产物";
+"ask.sidePanel.locateMessage" = "定位到消息";
+"ask.settings.links.title" = "链接打开方式";
+"ask.settings.links.subtitle" = "对话消息中的链接。⌘ + 点击始终使用系统浏览器。";
+"ask.settings.links.sidePanel" = "侧边栏";
+"ask.settings.links.browser" = "系统浏览器";

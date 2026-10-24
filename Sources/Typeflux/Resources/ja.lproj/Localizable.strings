@@ -1537,7 +1537,7 @@
 "ask.copy" = "Copy";
 "ask.delete" = "Delete conversation";
 "ask.delete.confirm" = "この会話を削除しますか？ワークスペースのファイルは残ります。";
-"ask.workspace.openFolder" = "ワークスペースフォルダを開く";
+"ask.workspace.showFiles" = "ファイルを表示";
 "ask.deny" = "Deny";
 "ask.empty" = "What would you like to ask?";
 "ask.followup.placeholder" = "続けて質問、/ でコマンド";
@@ -6990,3 +6990,18 @@
 "ask.sidePanel.copyFile" = "ファイルをコピー";
 "ask.sidePanel.copyPath" = "パスをコピー";
 "ask.sidePanel.saveAs" = "別名で保存…";
+"ask.fileChanges.title" = "このターンのファイル変更：";
+"ask.fileChanges.added" = "追加 %d";
+"ask.fileChanges.modified" = "変更 %d";
+"ask.fileChanges.tag.added" = "新規";
+"ask.fileChanges.tag.modified" = "変更";
+"ask.fileChanges.showAll" = "すべてのファイルを表示";
+"ask.fileChanges.process" = "作業ファイル %d 件（work/）";
+"ask.fileChanges.rewritten" = "全体を書き換え";
+"ask.fileChanges.edited" = "%d 箇所を編集";
+"ask.sidePanel.artifact" = "成果物";
+"ask.sidePanel.locateMessage" = "メッセージへ移動";
+"ask.settings.links.title" = "リンクの開き方";
+"ask.settings.links.subtitle" = "チャットメッセージ内のリンク。⌘ + クリックは常にシステムのブラウザで開きます。";
+"ask.settings.links.sidePanel" = "サイドパネル";
+"ask.settings.links.browser" = "システムのブラウザ";

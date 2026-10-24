@@ -1537,7 +1537,7 @@
 "ask.copy" = "Copy";
 "ask.delete" = "Delete conversation";
 "ask.delete.confirm" = "이 대화를 삭제할까요? 작업 공간의 파일은 보관됩니다.";
-"ask.workspace.openFolder" = "작업 공간 폴더 열기";
+"ask.workspace.showFiles" = "파일 보기";
 "ask.deny" = "Deny";
 "ask.empty" = "What would you like to ask?";
 "ask.followup.placeholder" = "이어서 질문하세요, / 로 명령";
@@ -6990,3 +6990,18 @@
 "ask.sidePanel.copyFile" = "파일 복사";
 "ask.sidePanel.copyPath" = "경로 복사";
 "ask.sidePanel.saveAs" = "다른 이름으로 저장…";
+"ask.fileChanges.title" = "이번 턴의 파일 변경:";
+"ask.fileChanges.added" = "추가 %d";
+"ask.fileChanges.modified" = "수정 %d";
+"ask.fileChanges.tag.added" = "새 파일";
+"ask.fileChanges.tag.modified" = "수정됨";
+"ask.fileChanges.showAll" = "모든 파일 보기";
+"ask.fileChanges.process" = "작업 파일 %d개 (work/)";
+"ask.fileChanges.rewritten" = "전체 재작성";
+"ask.fileChanges.edited" = "%d곳 편집";
+"ask.sidePanel.artifact" = "산출물";
+"ask.sidePanel.locateMessage" = "메시지로 이동";
+"ask.settings.links.title" = "링크 열기 방식";
+"ask.settings.links.subtitle" = "채팅 메시지의 링크. ⌘ + 클릭은 항상 시스템 브라우저로 엽니다.";
+"ask.settings.links.sidePanel" = "사이드 패널";
+"ask.settings.links.browser" = "시스템 브라우저";

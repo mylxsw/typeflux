@@ -98,3 +98,27 @@ import Testing
         #expect(font.fontDescriptor.symbolicTraits.contains(.bold))
     }
 }
+
+extension AskTranscriptPreparationTests {
+    @Test func linksRouteThroughTheConversationAndWorkspacePathsBecomeLinks() throws {
+        let rendered = AskMarkdownText.render("See [the report](outputs/report.html), [site](https://example.com) "
+            + "and [notes](../secret.md).", markdown: true, document: nil)
+        var links: [URL] = []
+        rendered.enumerateAttribute(.link, in: NSRange(location: 0, length: rendered.length)) { value, _, _ in
+            if let url = value as? URL { links.append(url) }
+        }
+        #expect(links.map(\.absoluteString) == ["typeflux-file:outputs/report.html", "https://example.com"])
+
+        let editor = AskTranscriptText.Editor()
+        var opened: [(URL, Bool)] = []
+        editor.onOpenLink = { opened.append(($0, $1)) }
+        editor.clicked(onLink: links[1], at: 0)
+        editor.clicked(onLink: "typeflux-file:work/a.py", at: 0)
+        editor.clicked(onLink: 42, at: 0)
+        #expect(opened.map(\.0.absoluteString) == ["https://example.com", "typeflux-file:work/a.py"])
+        #expect(opened.allSatisfy { !$0.1 }, "No ⌘ held")
+        // Outside a conversation a workspace link does nothing rather than reaching Launch Services.
+        editor.onOpenLink = nil
+        editor.clicked(onLink: links[0], at: 0)
+    }
+}

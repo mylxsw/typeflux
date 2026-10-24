@@ -146,6 +146,12 @@ struct AskConversationView: View {
         .environment(\.askRemoteImageAccess, model.remoteImageAccess)
         .environment(\.askArtifactAccess, model.artifactAccess)
         .environment(\.askTerminalAccess, model.terminalAccess)
+        .environment(\.askSidePanelActions, sidePanelActions)
+        .task(id: model.selectedId) { await model.loadFileChanges(model.selectedId) }
+        .onChange(of: model.fileChanges) { _ in
+            // A finished round recorded its files with its answer: regroup the Files tab.
+            if showsSidePanel { refreshSidePanelFiles() }
+        }
         .onChange(of: model.draft) { _ in model.persistDrafts() }
         .confirmationDialog(
             L("ask.delete.confirm"),
@@ -202,6 +208,14 @@ struct AskConversationView: View {
         setSidePanel(true)
     }
 
+    /// The history menu's "Show files": the conversation's Files tab, selecting it first.
+    private func showFiles(of id: String) async {
+        showsSidebarDrawer = false
+        if model.selectedId != id { await model.select(id) }
+        guard model.selectedId == id else { return }
+        showSidePanelFiles()
+    }
+
     private func refreshSidePanelFiles() {
         let id = model.selectedId
         Task {
@@ -234,8 +248,73 @@ struct AskConversationView: View {
             roots: { [model] in model.sidePanelRoots(id) },
             refreshFiles: refreshSidePanelFiles,
             addFiles: addSidePanelFiles,
-            stopRun: { model.stop() }
+            stopRun: { model.stop() },
+            locateMessage: locateMessage
         )
+    }
+
+    private var sidePanelActions: AskSidePanelActions {
+        let id = model.selectedId
+        return AskSidePanelActions(
+            openFile: openSidePanelFile,
+            openLink: openLink,
+            openArtifact: openSidePanelArtifact,
+            showFiles: showSidePanelFiles,
+            fileURL: { [model] in model.sidePanelFileURL($0, conversationId: id) }
+        )
+    }
+
+    /// A workspace path from a message, a tool step or a sent file, in a file tab.
+    private func openSidePanelFile(_ path: String) {
+        guard let id = model.selectedId else { return }
+        Task {
+            do {
+                let target = try await model.sidePanelTarget(path, conversationId: id)
+                guard model.selectedId == id else { return }
+                try sidePanel.open(target, conversationId: id)
+                sidePanel.notice = nil
+            } catch {
+                guard model.selectedId == id else { return }
+                sidePanel.notice = error.localizedDescription
+            }
+            setSidePanel(true)
+        }
+    }
+
+    private func openSidePanelArtifact(_ ref: AskArtifactRef, name: String) {
+        guard let id = model.selectedId else { return }
+        do {
+            try sidePanel.open(artifact: ref, name: name, conversationId: id)
+            sidePanel.notice = nil
+        } catch {
+            sidePanel.notice = error.localizedDescription
+        }
+        setSidePanel(true)
+    }
+
+    /// Message links follow the "Open links in" setting; ⌘-click always leaves for the browser.
+    private func openLink(_ url: URL, external: Bool) {
+        switch AskLinkRouter.route(url, external: external, opening: model.modelLibrary.settings.askLinkOpening,
+                                   panelAvailable: sidePanel.browser != nil) {
+        case let .browser(url):
+            model.openURL(url)
+        case let .workspaceFile(path):
+            openSidePanelFile(path)
+        case let .sidePanel(url):
+            do {
+                try sidePanel.openWeb(url)
+                sidePanel.notice = nil
+            } catch {
+                sidePanel.notice = error.localizedDescription
+            }
+            setSidePanel(true)
+        }
+    }
+
+    /// Scrolls to the message and highlights it; a panel covering the conversation steps aside.
+    private func locateMessage(_ messageId: String) {
+        if layout.mainWidth == 0 || layout.usageOverlay { setSidePanel(false) }
+        model.locateMessage(messageId)
     }
 
     /// The conversation keeps at least 420pt beside the panel.
@@ -744,7 +823,7 @@ struct AskConversationView: View {
                 Task { await model.select(item.id) }
             },
             onRename: { try await model.renameConversation(item.id, title: $0) },
-            onOpenWorkspace: { Task { await model.openWorkspace(item.id) } },
+            onShowFiles: { Task { await showFiles(of: item.id) } },
             onDelete: { deleteId = item.id }
         )
         .accessibilityIdentifier("ask.history.row." + item.id)
@@ -1226,6 +1305,7 @@ struct AskConversationView: View {
                     LazyVStack(alignment: .leading, spacing: 24) {
                         ForEach(items) { item in
                             transcriptRow(item, items: items, regenerable: regenerable)
+                                .background { locatedHighlight(item) }
                                 .askRiseIn(createdAt: Self.createdAt(item))
                                 .id(item.id)
                                 .background(GeometryReader { geometry in
@@ -1341,6 +1421,23 @@ struct AskConversationView: View {
         }
     }
 
+    /// "Locate in conversation" from the side panel briefly marks the message it scrolled to.
+    @ViewBuilder
+    private func locatedHighlight(_ item: AskTranscriptItem) -> some View {
+        let located: Bool = {
+            guard let id = model.highlightedMessageId else { return false }
+            switch item.kind {
+            case let .message(message): return message.id == id
+            case let .activity(group): return group.messageIds.contains(id)
+            }
+        }()
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(AskTheme.accent.opacity(located ? 0.10 : 0))
+            .padding(-8)
+            .animation(.easeOut(duration: 0.35), value: located)
+            .accessibilityHidden(true)
+    }
+
     @ViewBuilder
     private func transcriptRow(_ item: AskTranscriptItem, items: [AskTranscriptItem], regenerable: String?) -> some View {
         let run = model.selected?.run
@@ -1358,6 +1455,7 @@ struct AskConversationView: View {
                            canRegenerate: regenerable == message.id,
                            onRegenerate: { model.regenerate(message.id) },
                            outputs: item.outputs,
+                           fileChanges: message.role == "assistant" ? model.fileChanges[message.id] ?? [] : [],
                            onSaveNote: model.notes == nil || message.role != "assistant" ? nil
                                : { excerpt in model.performNotebookAction { await model.toggleAnswerNote(message, excerpt: excerpt) } },
                            savedToNotes: model.answerNoteIDs[message.id] != nil)
@@ -1386,6 +1484,7 @@ struct AskConversationView: View {
                              status: status, streamingId: streamingId, approvalToolId: approvalToolId,
                              runStep: live || halted ? phase?.step : nil,
                              outputs: item.outputs,
+                             fileChanges: group.messageIds.flatMap { model.fileChanges[$0] ?? [] },
                              approval: pending.flatMap { pending in
                                  group.calls.contains { $0.id == pending.call.id }
                                      ? AnyView(approvalCard(pending.call, id: pending.id, embedded: true)) : nil
@@ -1461,15 +1560,30 @@ private struct AskMessageView: View {
     var onRegenerate: () -> Void = {}
     /// Images and pages from the tool steps before this answer.
     var outputs = AskRunOutputs()
+    /// Files this answer's round added or modified, recorded when the round ended.
+    var fileChanges: [AskWorkspaceFileChange] = []
     /// Saves the answer, or the given part of it, to the notebook; nil hides the action.
     var onSaveNote: ((String?) -> Void)?
     /// The whole answer is in the notebook.
     var savedToNotes = false
     @State private var copied = false
     @State private var hovering = false
+    @Environment(\.askSidePanelActions) private var sidePanel
 
     var body: some View {
         if message.role == "user" { userMessage } else if message.role != "tool" { assistantMessage }
+    }
+
+    /// The round's files and non-image artifacts; empty when nothing changed.
+    private var changeList: AskFileChangeList {
+        AskFileChangeList(changes: fileChanges, artifacts: AskFileChangeList.artifacts(outputs))
+    }
+
+    /// A sent file opens from the conversation's `inputs/` copy in the side panel.
+    private func openAttachment(_ attachment: AskAttachment) -> (() -> Void)? {
+        guard let sidePanel, let path = AskConversationWorkspaceStore.inputPath(attachment, messageId: message.id)
+        else { return nil }
+        return { sidePanel.openFile(path) }
     }
 
     private var userMessage: some View {
@@ -1486,7 +1600,8 @@ private struct AskMessageView: View {
                             if file.kind == .folder {
                                 AskSentFileChip(attachment: file)
                             } else {
-                                AskAttachmentTile(attachment: file, side: AskContentTile.sentSide)
+                                AskAttachmentTile(attachment: file, side: AskContentTile.sentSide,
+                                                  onOpen: openAttachment(file))
                             }
                         }
                     }
@@ -1540,7 +1655,11 @@ private struct AskMessageView: View {
                 .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
             }
             if !outputs.isEmpty, !isStreaming {
-                AskRunOutputsView(outputs: outputs)
+                AskRunOutputsView(outputs: outputs, showsFileArtifacts: sidePanel == nil)
+                    .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
+            }
+            if !isStreaming, let sidePanel, !changeList.isEmpty {
+                AskFileChangesView(list: changeList, actions: sidePanel)
                     .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
             }
             if message.isError == true { interruptedTag }

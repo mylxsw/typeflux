@@ -84,3 +84,39 @@ extension AskConversationWorkspaceStore {
         return messages
     }
 }
+
+extension AskConversationWorkspaceStore {
+    /// Records the files a run added or modified with the run's answer, so the answer can
+    /// list them again after the conversation is reloaded.
+    func recordChanges(_ changes: [AskWorkspaceFileChange], messageId: String, owner: String,
+                       conversationId: String) throws {
+        guard !changes.isEmpty else { return }
+        let root = try ensure(owner: owner, conversationId: conversationId)
+        try appendRecords(changes.map { change in
+            FileRecord(path: change.path, source: "run_change", messageId: messageId, originalPath: nil,
+                       byteSize: nil, change: change.kind.rawValue,
+                       writes: change.writes > 0 ? change.writes : nil,
+                       edits: change.edits > 0 ? change.edits : nil)
+        }, root: root)
+    }
+
+    /// Each answer's recorded file changes, keyed by message id and ordered by path. Records
+    /// without a change (older ones, uploads, saved outputs) are not changes.
+    nonisolated func listChanges(owner: String, conversationId: String) -> [String: [AskWorkspaceFileChange]] {
+        let file = url(owner: owner, conversationId: conversationId).appendingPathComponent(".typeflux/files.json")
+        guard let data = try? Data(contentsOf: file) else { return [:] }
+        return Self.changes(in: data)
+    }
+
+    nonisolated static func changes(in data: Data) -> [String: [AskWorkspaceFileChange]] {
+        guard let records = try? JSONDecoder().decode([FileRecord].self, from: data) else { return [:] }
+        var byMessage: [String: [String: AskWorkspaceFileChange]] = [:]
+        for record in records {
+            guard let path = record.path, let messageId = record.messageId,
+                  let kind = record.change.flatMap(AskWorkspaceFileChange.Kind.init(rawValue:)) else { continue }
+            byMessage[messageId, default: [:]][path] = AskWorkspaceFileChange(
+                path: path, kind: kind, writes: record.writes ?? 0, edits: record.edits ?? 0)
+        }
+        return byMessage.mapValues { $0.values.sorted { $0.path < $1.path } }
+    }
+}

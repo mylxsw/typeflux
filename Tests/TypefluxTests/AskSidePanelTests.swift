@@ -217,3 +217,64 @@ extension AskSidePanelTests {
         browser.tabs.forEach { browser.close($0) }
     }
 }
+
+extension AskSidePanelTests {
+    private func artifact(_ id: String, type: String = "text/html") -> AskArtifactRef {
+        AskArtifactRef(id: id, ownerId: "owner", conversationId: "c1", runId: "run", version: "v", mediaType: type,
+                       sizeBytes: 12, sha256: "sha", cleanup: "device_30_days")
+    }
+
+    func testArtifactsOpenAsTabsOncePerConversation() throws {
+        let panel = AskSidePanel(browser: nil)
+        let file = try panel.open(target("outputs/a.md"), conversationId: "c1")
+        let report = try panel.open(artifact: artifact("a1"), name: "index.html", conversationId: "c1")
+        XCTAssertEqual(panel.selection, .artifact(report.id))
+        XCTAssertEqual(panel.tabs.map(\.id), [.files, .file(file.id), .artifact(report.id)])
+        if case let .artifact(tab)? = panel.selectedTab { XCTAssertTrue(tab === report) } else { XCTFail("Artifact shown") }
+        XCTAssertTrue(panel.canCloseSelection)
+        panel.showFiles()
+        XCTAssertTrue(try panel.open(artifact: artifact("a1"), name: "other", conversationId: "c1") === report,
+                      "The same artifact switches to its tab")
+        XCTAssertEqual(panel.selection, .artifact(report.id))
+        let elsewhere = try panel.open(artifact: artifact("a1"), name: "index.html", conversationId: "c2")
+        XCTAssertFalse(elsewhere === report)
+
+        // Changing conversation closes artifact tabs of the others.
+        panel.retainFiles(conversationId: "c2")
+        XCTAssertEqual(panel.tabs.map(\.id), [.files, .artifact(elsewhere.id)])
+        panel.closeSelected()
+        XCTAssertEqual(panel.tabs.map(\.id), [.files])
+        XCTAssertEqual(panel.selection, .files)
+    }
+
+    func testArtifactAndFileTabsShareTheCap() throws {
+        let panel = AskSidePanel(browser: nil)
+        for index in 0 ..< AskSidePanel.maxFileTabs - 1 {
+            try panel.open(target("outputs/\(index).txt"), conversationId: "c1")
+        }
+        try panel.open(artifact: artifact("last"), name: "last", conversationId: "c1")
+        XCTAssertThrowsError(try panel.open(artifact: artifact("more"), name: "more", conversationId: "c1")) {
+            XCTAssertEqual($0 as? AskSidePanel.PanelError, .tooManyFileTabs)
+        }
+        XCTAssertThrowsError(try panel.open(target("outputs/more.txt"), conversationId: "c1"))
+    }
+
+    func testOpeningALinkTwiceSwitchesToItsPage() throws {
+        let url = try XCTUnwrap(URL(string: "https://example.com/report"))
+        XCTAssertNil(try AskSidePanel(browser: nil).openWeb(url), "No browser, no page")
+        let browser = makeBrowser()
+        let panel = AskSidePanel(browser: browser)
+        let page = try XCTUnwrap(try panel.openWeb(url))
+        XCTAssertEqual(panel.selection, .web(page.id))
+        panel.showFiles()
+        XCTAssertTrue(try panel.openWeb(url) === page, "The open page is reused before it finishes loading")
+        XCTAssertEqual(panel.selection, .web(page.id))
+        let other = try XCTUnwrap(try panel.openWeb(XCTUnwrap(URL(string: "https://example.com/other"))))
+        XCTAssertFalse(other === page)
+        XCTAssertEqual(browser.tabs.count, 2)
+        // A page the user closed opens again in a new tab.
+        panel.close(.web(page.id))
+        XCTAssertFalse(try panel.openWeb(url) === page)
+        browser.tabs.forEach { browser.close($0) }
+    }
+}

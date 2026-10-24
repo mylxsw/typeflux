@@ -1,14 +1,6 @@
 import AppKit
 
 extension AskConversationModel {
-    func openWorkspace(_ id: String) async {
-        do {
-            if let directory = try await syncWorkspace(id) { NSWorkspace.shared.open(directory) }
-        } catch {
-            self.error = error.localizedDescription
-        }
-    }
-
     @discardableResult
     func syncWorkspace(_ id: String, requireFresh: Bool = false) async throws -> URL? {
         guard let workspaces, let route = credentials(for: id) else { return nil }
