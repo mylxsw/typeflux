@@ -33,7 +33,7 @@ struct ScreenRecordingPreviewView: View {
             if model.gifTooLong {
                 ScreenRecordingGIFLimitBanner(model: model).padding(.horizontal, 16).padding(.bottom, 8)
             }
-            if let error = model.error {
+            if let error = model.error, !model.playback.failed {
                 Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(StudioTheme.danger)
                     .font(.system(size: 12)).frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 10).padding(.vertical, 7)
@@ -69,21 +69,14 @@ struct ScreenRecordingPreviewView: View {
             .buttonStyle(.plain).foregroundStyle(StudioTheme.textSecondary).help(L("recording.shortcuts"))
             .accessibilityLabel(L("recording.shortcuts"))
             .popover(isPresented: $showsShortcuts, arrowEdge: .bottom) { ScreenRecordingShortcutsView() }
-            Menu {
-                Button(L("recording.revealOriginal"), action: model.revealOriginal).disabled(model.sourceURL == nil)
-                Button(L("recording.reloadPreview"), action: model.reloadPreviewPlayback)
-                    .disabled(model.sourceURL == nil || model.playback.isBusy)
-                Divider()
-                Button(L("recording.shortcuts")) { showsShortcuts = true }
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .frame(width: 28, height: 28)
-                    .contentShape(Rectangle())
-            }
-                .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
-                .help(L("recording.more"))
-                .accessibilityLabel(L("recording.more"))
+            TFMenuButton(title: L("recording.more"), systemImage: "ellipsis", kind: .plain,
+                         size: .regular, iconOnly: true, actions: [
+                .action(L("recording.revealOriginal"), isEnabled: model.sourceURL != nil, model.revealOriginal),
+                .action(L("recording.reloadPreview"), isEnabled: model.sourceURL != nil && !model.playback.isBusy,
+                        model.reloadPreviewPlayback),
+                .separator,
+                .action(L("recording.shortcuts")) { showsShortcuts = true }
+            ], identifier: "recording.preview.more")
         }
         .padding(.leading, 78).padding(.trailing, 14)
     }
@@ -115,10 +108,15 @@ struct ScreenRecordingPreviewView: View {
                 .opacity(!model.isPlaying && stageHover ? 1 : 0)
             } else if !model.playback.isBusy, model.state == .preview {
                 VStack(spacing: 10) {
+                    if model.playback.failed {
+                        Text(L("recording.previewUnavailable"))
+                            .font(.system(size: 12)).foregroundStyle(.white.opacity(0.8))
+                            .multilineTextAlignment(.center).padding(.bottom, 4)
+                    }
                     Button(L("recording.reloadPreview"), action: model.reloadPreviewPlayback)
                     Button(L("recording.revealOriginal"), action: model.revealOriginal)
                 }
-                .buttonStyle(ModelActionStyle()).padding(.top, 60)
+                .buttonStyle(ModelActionStyle()).padding(24)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity).frame(minHeight: 180)
@@ -199,10 +197,11 @@ struct ScreenRecordingPreviewView: View {
             .modifier(EditorShortcutHint(key: model.state == .preview ? "esc" : nil,
                                          visible: showsShortcutHints))
             Divider().frame(height: 20)
-            Picker(L("recording.format"), selection: $model.options.format) {
-                Text("MP4").tag(ScreenRecordingFormat.mp4); Text("GIF").tag(ScreenRecordingFormat.gif)
-            }
-            .pickerStyle(.segmented).labelsHidden().frame(width: 108).disabled(model.state == .exporting)
+            TFSegmentedControl(options: [TFOption(ScreenRecordingFormat.mp4, "MP4"), TFOption(.gif, "GIF")],
+                               selection: $model.options.format, size: .regular,
+                               identifier: { "recording.preview.format." + $0.rawValue })
+                .accessibilityLabel(L("recording.format"))
+                .disabled(model.state == .exporting)
             VStack(alignment: .leading, spacing: 2) {
                 Text(outputSpecs).font(.system(size: 12))
                 Text(model.exportSummary).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
@@ -268,7 +267,7 @@ struct ScreenRecordingPlayerView: View {
         ZStack {
             Color.black
             if let image = playback.image { Image(nsImage: image).resizable().scaledToFit() }
-            else { Text(L("recording.previewUnavailable")).font(.caption).foregroundStyle(.white).padding() }
+            else if playback.isBusy { ProgressView().controlSize(.small).tint(.white) }
         }
     }
 }

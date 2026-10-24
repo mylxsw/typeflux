@@ -337,23 +337,32 @@ extension ScreenRecordingCoordinator {
             formatter.dateFormat = "yyyy-MM-dd HH.mm.ss"
             fileName = L("recording.title") + " " + formatter.string(from: Date())
         }
-        mediaTask?.cancel()
-        if playback.isLoaded {
-            let load = loadTimeline
-            mediaTask = Task { [weak self] in
-                do {
-                    let result = try await load(url)
-                    guard let self, !Task.isCancelled, access.allows(), sourceURL == url else { return }
-                    media = result
-                    edit.tracks = ScreenRecordingAudioTrack.tracks(waveforms: result.tracks, options: options)
-                } catch {
-                    guard let self, !Task.isCancelled, access.allows(), sourceURL == url else { return }
-                    media.audio = .unavailable
-                }
-            }
-        }
+        if playback.isLoaded { loadPreviewTimeline(url, access: access) }
         state = .preview
         present(self)
+    }
+
+    private func loadPreviewTimeline(_ url: URL, access: AskImagePresentationAccess) {
+        mediaTask?.cancel()
+        let load = loadTimeline
+        mediaTask = Task { [weak self] in
+            do {
+                let result = try await load(url)
+                guard let self, !Task.isCancelled, access.allows(), sourceURL == url else { return }
+                media = result
+                let tracks = ScreenRecordingAudioTrack.tracks(waveforms: result.tracks, options: options)
+                edit.tracks = tracks.map { track in
+                    var track = track
+                    if let previous = edit.tracks.first(where: { $0.id == track.id }) {
+                        track.included = previous.included; track.volume = previous.volume
+                    }
+                    return track
+                }
+            } catch {
+                guard let self, !Task.isCancelled, access.allows(), sourceURL == url else { return }
+                media.audio = .unavailable
+            }
+        }
     }
 
     func seek(_ seconds: Double) {
@@ -388,6 +397,9 @@ extension ScreenRecordingCoordinator {
                 guard access.allows(), !Task.isCancelled, state == .preview else { return }
                 if duration == 0 { duration = value; trimStart = 0; trimEnd = value }
                 error = nil
+                if media.thumbnails.isEmpty || media.audio == .unavailable {
+                    loadPreviewTimeline(sourceURL, access: access)
+                }
             } catch {
                 if access.allows(), !Task.isCancelled, state == .preview { self.error = L("recording.previewUnavailable") }
             }

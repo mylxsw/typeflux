@@ -142,7 +142,11 @@ import TypefluxMediaProtocol
             try Task.checkCancellation()
             guard access.allows(), isLoaded else { throw MediaFailure.unavailable }
             return duration
-        } catch { stop(); throw error }
+        } catch {
+            stop()
+            failed = !Task.isCancelled && access.allows()
+            throw error
+        }
     }
     var interactionID: UUID { generation }
     func seek(to fraction: Double, interactionID: UUID) {

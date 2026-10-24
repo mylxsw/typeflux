@@ -719,7 +719,10 @@ extension FeatureRole {
         case .shortcuts, .settings: []
         case .voice: [.whisperInference]
         case .ring, .monitor: [.nativeSystem]
-        case .screenshot: [.frameRegistration, .textRecognition, .recordingTimeline, .recordingExport, .mediaPreviews, .mediaExtraction]
+        case .screenshot: [
+            .frameRegistration, .textRecognition, .recordingTimeline, .recordingExport,
+            .mediaPlayback, .mediaPreviews, .mediaExtraction
+        ]
         case .clipboard: [.clipboardThumbnails, .clipboardOCR, .clipboardMetadata, .mediaPlayback, .mediaPreviews, .mediaExtraction]
         case .chat: [.notebook, .wordBook, .nativeSystem, .mediaExtraction, .mediaPreviews, .textRecognition, .mediaPlayback]
         case .launcher: ModuleID.allCases.filter { $0 != .conversations }
