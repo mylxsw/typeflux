@@ -86,7 +86,7 @@ struct LauncherSearchSettingsView: View {
                 TFStatusLabel(text: L(hasFullDiskAccess ? "launcher.search.fda.granted" : "launcher.search.fda.missing"),
                               level: hasFullDiskAccess ? .success : .neutral)
                 if !hasFullDiskAccess {
-                    TFButton(title: L("launcher.search.fda.open")) { NSWorkspace.shared.open(AskFullDiskAccess.settingsURL) }
+                    TFButton(title: L("launcher.search.fda.open")) { PermissionGuidanceService.shared.show(.fullDiskAccess) }
                 }
             }
         }

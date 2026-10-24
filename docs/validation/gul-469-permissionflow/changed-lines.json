@@ -1,0 +1,47 @@
+{
+  "files": {
+    "Sources/Typeflux/Ask/AskConversationModel.swift": {
+      "covered": 1,
+      "executable": 1
+    },
+    "Sources/Typeflux/Privacy/PermissionGuidanceService.swift": {
+      "covered": 64,
+      "executable": 102
+    },
+    "Sources/Typeflux/Privacy/PrivacyGuard.swift": {
+      "covered": 0,
+      "executable": 2
+    },
+    "Sources/Typeflux/Screenshot/ScreenCapturePermission.swift": {
+      "covered": 1,
+      "executable": 3
+    },
+    "Sources/Typeflux/Screenshot/ScreenshotPermissionGuideController.swift": {
+      "covered": 13,
+      "executable": 13
+    },
+    "Sources/Typeflux/Settings/LauncherSearchSettingsView+Browsers.swift": {
+      "covered": 0,
+      "executable": 1
+    },
+    "Sources/Typeflux/Settings/LauncherSearchSettingsView.swift": {
+      "covered": 1,
+      "executable": 1
+    },
+    "Sources/Typeflux/Settings/SemanticFileSearchSettingsView.swift": {
+      "covered": 0,
+      "executable": 1
+    },
+    "Sources/Typeflux/Settings/SettingsPermissionService.swift": {
+      "covered": 1,
+      "executable": 1
+    },
+    "Sources/Typeflux/TextInjection/AXTextInjector.swift": {
+      "covered": 0,
+      "executable": 1
+    }
+  },
+  "covered": 81,
+  "executable": 126,
+  "percent": 64.29
+}

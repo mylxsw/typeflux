@@ -19,6 +19,15 @@
       }
     },
     {
+      "identity" : "permissionflow",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jaywcjlove/PermissionFlow.git",
+      "state" : {
+        "revision" : "65434c9ae04dba97cf52c1dffbe3e4e62b547c82",
+        "version" : "2.11.4"
+      }
+    },
+    {
       "identity" : "swift-algorithms",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-algorithms.git",

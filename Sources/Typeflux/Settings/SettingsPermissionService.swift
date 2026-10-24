@@ -36,7 +36,7 @@ struct SettingsPermissionSystem {
                 _ = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
             },
             fullDiskAccessGranted: { AskFullDiskAccess.isGranted() },
-            openURL: { _ = NSWorkspace.shared.open($0) }
+            openURL: { PermissionGuidanceService.shared.open($0) }
         )
     }
 }

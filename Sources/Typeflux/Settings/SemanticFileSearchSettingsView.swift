@@ -164,7 +164,7 @@ struct SemanticFileSearchSettingsView: View {
         return VStack(alignment: .leading, spacing: 8) {
             Self.caption(L("semantic.permission.message", folders))
             HStack(spacing: TFMetrics.toolbarSpacing) {
-                Self.link(L("semantic.permission.open")) { NSWorkspace.shared.open(AskFullDiskAccess.settingsURL) }
+                Self.link(L("semantic.permission.open")) { PermissionGuidanceService.shared.show(.fullDiskAccess) }
                 Self.link(L("semantic.permission.recheck")) { service.start(force: true) }
             }
             .tfControlSize(.small)

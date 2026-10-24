@@ -17,19 +17,20 @@ class ReleasePackagingTests(unittest.TestCase):
             scripts = root / 'scripts'
             scripts.mkdir()
             for name in ['build_release.sh', 'copy_inference_helper.sh', 'copy_media_helper.sh',
-                         'copy_resource_bundles.sh']:
+                         'copy_resource_bundles.sh', 'copy_chat_window_helper.sh']:
                 shutil.copyfile(ROOT / 'scripts' / name, scripts / name)
             app = root / 'app'
             app.mkdir()
-            for name in ['Info.plist', 'Typeflux.icns', 'TypefluxRuntime.entitlements']:
+            for name in ['Info.plist', 'Typeflux.icns', 'TypefluxRuntime.entitlements', 'ChatWindowHelper-Info.plist']:
                 shutil.copyfile(ROOT / 'app' / name, app / name)
             products = root / 'products'
             products.mkdir()
-            for name in ['Typeflux', 'TypefluxInferenceHelper', 'TypefluxMediaHelper']:
+            for name in ['Typeflux', 'TypefluxInferenceHelper', 'TypefluxMediaHelper', 'TypefluxChatWindowHelper']:
                 binary = products / name
                 binary.write_text('#!/bin/sh\nexit 0\n')
                 binary.chmod(0o755)
-            for name in ['swift-transformers_Hub.bundle', 'Typeflux_Typeflux.bundle', 'TypefluxChat_TypefluxChat.bundle']:
+            for name in ['swift-transformers_Hub.bundle', 'Typeflux_Typeflux.bundle',
+                         'TypefluxChat_TypefluxChat.bundle', 'PermissionFlow_PermissionFlow.bundle']:
                 bundle = products / name
                 bundle.mkdir()
                 (bundle / 'resource.json').write_text('{}')

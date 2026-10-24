@@ -15,7 +15,7 @@ extension LauncherSearchSettingsView {
                 }
                 TFDivider.formWithIcon
                 TFActionRow(systemImage: "lock.open", title: L("launcher.search.fda.open")) {
-                    NSWorkspace.shared.open(AskFullDiskAccess.settingsURL)
+                    PermissionGuidanceService.shared.show(.fullDiskAccess)
                 }
             }
         }

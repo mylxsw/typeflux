@@ -31,6 +31,7 @@ let package = Package(
         .executable(name: "TypefluxInferenceHelper", targets: ["TypefluxInferenceHelper"])
     ],
     dependencies: [
+        .package(url: "https://github.com/jaywcjlove/PermissionFlow.git", exact: "2.11.4"),
         .package(path: "Packages/TypefluxChat"),
         .package(path: "Packages/OpieMenu"),
         .package(url: "https://github.com/jpsim/Yams.git", exact: "6.2.2"),
@@ -61,6 +62,7 @@ let package = Package(
         .target(
             name: "Typeflux",
             dependencies: [
+                .product(name: "PermissionFlow", package: "PermissionFlow"),
                 "TypefluxAudioSafety",
                 "TypefluxChatWindowProtocol",
                 "TypefluxInferenceProtocol",
