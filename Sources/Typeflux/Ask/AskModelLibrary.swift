@@ -61,9 +61,7 @@ final class AskModelLibrary: ObservableObject {
     let defaults: UserDefaults
     let catalog: any ProviderModelCatalog
     @Published private(set) var loading = false
-    var settings: SettingsStore {
-        SettingsStore(defaults: defaults)
-    }
+    let settings: SettingsStore
 
     var providers: [RegisteredProvider] {
         registry.providers
@@ -86,6 +84,7 @@ final class AskModelLibrary: ObservableObject {
         self.catalog = catalog
         self.automaticallyLoadsCatalog = automaticallyLoadsCatalog
         let store = SettingsStore(defaults: defaults)
+        settings = store
         let existing = ModelRegistry.read(defaults)
         registry = existing ?? (defaults.data(forKey: ModelRegistry.storageKey) == nil
             ? ModelRegistry.migrate(settings: store, profiles: Self.readProfiles(defaults)) : ModelRegistry())

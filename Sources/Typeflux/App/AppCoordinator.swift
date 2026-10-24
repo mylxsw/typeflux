@@ -24,6 +24,7 @@ final class AppCoordinator {
         }
     )
 
+    var featurePreferenceChanges: FeaturePreferenceChanges?
     var featureIdlePolicy = FeatureIdlePolicy()
     var featureIdleRequest: Task<Void, Never>?
     var featureStatusTimer: Timer?
@@ -37,6 +38,7 @@ final class AppCoordinator {
 
     // swiftlint:disable:next function_body_length
     func start() {
+        featurePreferenceChanges = FeaturePreferenceChanges(defaults: di.settingsStore.defaults)
         FeatureProcess.reportFailure = { [weak self] in self?.di.overlayController.showNotice(message: L("feature.unavailable")) }
         FeatureProcess.handle = { [weak self] command in
             guard let self else { throw FeatureRPC.Failure.unavailable }

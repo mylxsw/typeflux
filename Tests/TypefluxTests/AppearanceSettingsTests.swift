@@ -8,6 +8,14 @@ import Testing
 struct AppearanceSettingsTests {
     private typealias UI = SettingsBehaviorTestSupport
 
+    private func readyButton(_ label: String, in host: NSView) async throws -> SettingsBehaviorTestSupport.Element {
+        try await UI.wait {
+            host.layoutSubtreeIfNeeded()
+            return UI.elements(in: host).contains { $0.role == NSAccessibility.Role.button.rawValue && $0.label == label }
+        }
+        return try UI.button(label, in: host)
+    }
+
     private func withModel(_ check: (SettingsStore, StudioViewModel) async throws -> Void) async throws {
         try await UI.withFixture { settings in
             let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -56,7 +64,7 @@ struct AppearanceSettingsTests {
     @Test func `rendered choices persist and restore the hidden glass value`() async throws {
         try await withModel { settings, model in
             model.setLiquidGlassIntensity(0.82)
-            try await UI.withWindow(AppearanceSettingsView(viewModel: model), width: 574, height: 1000) { _, host in
+            try await UI.withWindow(AppearanceSettingsView(viewModel: model), width: 574, height: 2000) { _, host in
                 #expect(!UI.contains(L("settings.appIcon.note"), in: host))
                 let texts = UI.elements(in: host).filter { $0.role == NSAccessibility.Role.staticText.rawValue }
                 let iconTitle = try #require(texts.first { $0.text == L("settings.appIcon.title") })
@@ -65,7 +73,7 @@ struct AppearanceSettingsTests {
                 for style in AppIconStyle.allCases {
                     #expect(AppIconController.image(for: style) != nil)
                     #expect(!texts.contains { $0.text == style.displayName })
-                    let button = try UI.button(style.displayName, in: host)
+                    let button = try await readyButton(style.displayName, in: host)
                     #expect(button.frame.width <= 90)
                     #expect(button.frame.height <= 90)
                     try button.press()
@@ -73,18 +81,18 @@ struct AppearanceSettingsTests {
                     #expect(model.appIconStyle == style)
                 }
                 for appearance in AppearanceMode.allCases {
-                    try UI.button(appearance.displayName, in: host).press()
+                    try await readyButton(appearance.displayName, in: host).press()
                     #expect(settings.appearanceMode == appearance)
                     #expect(model.appearanceMode == appearance)
                 }
                 for style in [InterfaceStyle.classic, .liquidGlass] {
-                    try UI.button(style.displayName, in: host).press()
+                    try await readyButton(style.displayName, in: host).press()
                     try await UI.wait { hasSlider(host) == style.usesGlass }
                     #expect(settings.interfaceStyle == style)
                     #expect(model.liquidGlassIntensity == 0.82)
                 }
                 for mode in AskLauncherWindowMode.allCases {
-                    try UI.button(mode.title, in: host).press()
+                    try await readyButton(mode.title, in: host).press()
                     #expect(settings.askLauncherWindowMode == mode)
                     #expect(model.launcherWindowMode == mode)
                 }
@@ -243,14 +251,28 @@ struct AppearanceSettingsTests {
                         let view = AppearanceSettingsView(viewModel: model)
                             .environment(\.colorScheme, dark ? .dark : .light)
                             .background(StudioTheme.windowBackground)
-                        try await UI.withWindow(view, width: width, height: 1000) { window, host in
+                        try await UI.withWindow(view, width: width, height: 2400) { window, host in
                             window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
                             try await Task.sleep(for: .milliseconds(80))
                             host.layoutSubtreeIfNeeded()
-                            let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
                             let labels = [AppearanceMode.system.displayName, InterfaceStyle.classic.displayName,
                                           AskLauncherWindowMode.simple.title, AskLauncherWindowMode.complete.title]
-                                + AppIconStyle.allCases.map(\.displayName)
+                                + AppIconStyle.allCases.map(\.displayName) + VoiceCapsuleStyle.allCases.map(\.displayName)
+                            // Accessibility may still expose the pre-layout frames on macOS 27.
+                            // Wait for the requested controls, not merely a nonempty AX tree.
+                            try await UI.wait {
+                                host.layoutSubtreeIfNeeded()
+                                let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
+                                let elements = UI.elements(in: host)
+                                return labels.allSatisfy { label in
+                                    elements.contains { element in
+                                        element.role == NSAccessibility.Role.button.rawValue && element.label == label &&
+                                            element.frame.width > 0 && element.frame.minX >= bounds.minX - 1 &&
+                                            element.frame.maxX <= bounds.maxX + 1
+                                    }
+                                }
+                            }
+                            let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
                             for label in labels {
                                 let button = try UI.button(label, in: host)
                                 #expect(button.frame.width > 0)

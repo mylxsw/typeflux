@@ -275,9 +275,14 @@ extension AppCoordinator {
             if FeatureProcess.role == .host { try FeatureShortcutHost.shared.handle(.init(destination: .shortcuts, action: "settings")) }
             di.modelLibrary.reloadFeaturePreferences()
             AskModelLibrary.shared.reloadFeaturePreferences()
-            AppLocalization.shared.setLanguage(di.settingsStore.appLanguage)
-            AppAppearance.apply(di.settingsStore.appearanceMode)
-            for name in [Notification.Name.interfaceStyleDidChange, .appearanceModeDidChange, .agentConfigurationDidChange, .appLanguageDidChange, .appIconStyleDidChange, .voiceCapsuleDidChange, .preferredMicrophoneDidChange, .instantVoiceInputDidChange, .personaStoreDidChange, .personaSelectionDidChange, .ringSettingsDidChange, .clipboardRecordingPauseDidChange] {
+            let notifications = featurePreferenceChanges?.notifications(in: di.settingsStore.defaults) ?? []
+            if notifications.contains(.appLanguageDidChange) {
+                AppLocalization.shared.setLanguage(di.settingsStore.appLanguage)
+            }
+            if notifications.contains(.appearanceModeDidChange) {
+                AppAppearance.apply(di.settingsStore.appearanceMode)
+            }
+            for name in notifications {
                 NotificationCenter.default.post(name: name, object: di.settingsStore)
             }
         case "stopConversation":

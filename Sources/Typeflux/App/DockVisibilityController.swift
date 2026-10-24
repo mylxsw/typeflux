@@ -19,7 +19,7 @@ final class DockVisibilityController {
     static let shared = DockVisibilityController(app: NSApplication.shared) {
         // A new Dock tile can start with the bundle icon after a policy change.
         DispatchQueue.main.async {
-            AppIconController.apply(SettingsStore().appIconStyle)
+            AppIconController.apply(SettingsStore().appIconStyle, force: true)
         }
     }
 

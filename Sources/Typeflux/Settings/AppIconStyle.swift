@@ -60,6 +60,7 @@ enum AppIconStyle: String, CaseIterable, Codable, Identifiable {
 
 @MainActor
 enum AppIconController {
+    private static let application = AppIconApplication()
     static func image(for style: AppIconStyle) -> NSImage? {
         let url = Bundle.appResources.url(
             forResource: style.resourceName,
@@ -90,14 +91,37 @@ enum AppIconController {
     }
 
     @discardableResult
-    static func apply(_ style: AppIconStyle) -> Bool {
-        if style == .glassFrosted {
-            NSApp.applicationIconImage = nil
+    static func apply(_ style: AppIconStyle, force: Bool = false) -> Bool {
+        application.apply(style, force: force, load: image(for:)) { image in
+            NSApp.applicationIconImage = image
+            if image != nil { NSApp.dockTile.display() }
+        }
+    }
+}
+
+/// Retain only the selected artwork. Recreating a Dock tile may reinstall it,
+/// but repeated notifications must not decode/rasterize/install an unchanged icon.
+@MainActor
+final class AppIconApplication {
+    private var style: AppIconStyle?
+    private var image: NSImage?
+
+    @discardableResult
+    func apply(_ next: AppIconStyle, force: Bool = false,
+               load: (AppIconStyle) -> NSImage?, install: (NSImage?) -> Void) -> Bool {
+        if style == next {
+            if force { install(image) }
             return true
         }
-        guard let image = image(for: style) else { return false }
-        NSApp.applicationIconImage = image
-        NSApp.dockTile.display()
+        let nextImage: NSImage?
+        if next == .glassFrosted { nextImage = nil }
+        else {
+            guard let loaded = load(next) else { return false }
+            nextImage = loaded
+        }
+        install(nextImage)
+        image = nextImage
+        style = next
         return true
     }
 }

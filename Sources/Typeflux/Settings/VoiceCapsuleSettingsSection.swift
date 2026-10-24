@@ -6,7 +6,7 @@ struct VoiceCapsuleSettingsSection: View {
 
     var body: some View {
         TFFormSection(title: L("voiceCapsule.settings.title")) {
-            HStack(alignment: .top, spacing: 12) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 136), spacing: 12)], alignment: .leading, spacing: 12) {
                 ForEach(VoiceCapsuleStyle.allCases, id: \.self) { style in
                     TFChoiceCard(title: style.displayName, isSelected: preferences.style == style) {
                         preferences.style = style
@@ -81,7 +81,7 @@ struct VoiceCapsuleStylePreview: View {
                 .padding(.top, 28)
             capsule
         }
-        // Four cards share the row, so the screen narrows before the cards overflow.
+        // Keep previews bounded while the style cards wrap in narrow settings panes.
         .frame(minWidth: 112, maxWidth: 160)
         .frame(height: 100)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
