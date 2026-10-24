@@ -16,6 +16,7 @@ final class SemanticIndexEvents: @unchecked Sendable {
     private var database: OpaquePointer?
     private var notificationPending = false
     private var lastSeenEventID: UInt64 = 0
+    private var hasStoredReceipt = false
 
     init(url: URL) throws {
         guard sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX,
@@ -35,8 +36,10 @@ final class SemanticIndexEvents: @unchecked Sendable {
             try execute("CREATE TABLE IF NOT EXISTS coalescing(value INTEGER NOT NULL)")
             try execute("INSERT INTO coalescing SELECT 0 WHERE NOT EXISTS(SELECT 1 FROM coalescing)")
             try execute("CREATE TABLE IF NOT EXISTS watch_cursor(value TEXT NOT NULL)")
+            try execute("CREATE TABLE IF NOT EXISTS watch_scope(scope TEXT NOT NULL,volume_signature TEXT NOT NULL)")
             try execute("INSERT INTO watch_cursor SELECT ? WHERE NOT EXISTS(SELECT 1 FROM watch_cursor)",
                         [String(AskFSEventsWatcher.currentEventID)])
+            hasStoredReceipt = sqlite3_changes(database) == 0
             let row = try prepare("SELECT value FROM watch_cursor", [])
             defer { sqlite3_finalize(row) }
             if sqlite3_step(row) == SQLITE_ROW {
@@ -56,6 +59,44 @@ final class SemanticIndexEvents: @unchecked Sendable {
 
     var eventID: UInt64 {
         lock.withLock { lastSeenEventID }
+    }
+
+    /// The receipt is safe to replay from before extraction finishes: every relevant
+    /// event preceding it is already in this journal or the main index's durable queue.
+    /// Never reuse a receipt from another scope, volume history, or an unbound legacy journal.
+    func resume(scope: AskFileScope, volumeSignature: String?, after completed: UInt64?, latest: UInt64) throws -> UInt64 {
+        let key = try SemanticFileStore.discoveryKey(scope)
+        let baseline = completed.flatMap { $0 <= latest ? $0 : nil } ?? latest
+        return try lock.withLock {
+            let row = try prepare("SELECT scope,volume_signature FROM watch_scope", [])
+            let matches = sqlite3_step(row) == SQLITE_ROW && volumeSignature != nil
+                && String(cString: sqlite3_column_text(row, 0)) == key
+                && String(cString: sqlite3_column_text(row, 1)) == volumeSignature
+            sqlite3_finalize(row)
+            let minimum = completed.flatMap { $0 <= latest ? $0 : nil } ?? 0
+            if matches, lastSeenEventID >= minimum, lastSeenEventID <= latest {
+                return lastSeenEventID
+            }
+            try execute("BEGIN IMMEDIATE")
+            do {
+                try execute("DELETE FROM events")
+                // Legacy or incompatible receipts have no trustworthy provenance.
+                // Persist bounded root catch-up instead of replaying months of raw
+                // filesystem history. An interrupted first scan also needs catch-up
+                // for changes below directories it has already visited.
+                if baseline < latest || (completed == nil && hasStoredReceipt) {
+                    try execute("UPDATE clock SET value=value+1")
+                    for root in scope.roots { try insert(root, subtree: true, scope: scope) }
+                }
+                try execute("DELETE FROM watch_scope")
+                try execute("INSERT INTO watch_scope VALUES(?,?)", [key, volumeSignature ?? ""])
+                try execute("UPDATE watch_cursor SET value=?", [String(latest)])
+                try execute("COMMIT")
+                lastSeenEventID = latest
+                hasStoredReceipt = true
+                return latest
+            } catch { try? execute("ROLLBACK"); throw error }
+        }
     }
 
     private func saveEventID() throws {

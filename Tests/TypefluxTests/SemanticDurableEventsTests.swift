@@ -5,6 +5,45 @@ import Testing
 
 @Suite("Bounded persistent semantic events", .serialized)
 struct SemanticDurableEventsTests {
+    @Test func journalReceiptRequiresMatchingScopeAndVolumeAndRetainsUnfinishedWork() throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("index-events.sqlite"), scope = semanticScope(root.path)
+        let journal = try SemanticIndexEvents(url: url)
+        #expect(try journal.resume(scope: scope, volumeSignature: "volume-a", after: 100, latest: 100) == 100)
+        try journal.append([.init(path: root.path + "/pending.md", rescan: false)], scope: scope,
+                           directory: root.path, eventID: 150, cancelled: { false })
+        journal.close()
+        let reopened = try SemanticIndexEvents(url: url)
+        #expect(try reopened.resume(scope: scope, volumeSignature: "volume-a", after: 100, latest: 210) == 150)
+        #expect(try reopened.pending(), "The replay cursor advances independently of unfinished extraction")
+        #expect(try reopened.resume(scope: scope, volumeSignature: "volume-a", after: nil, latest: 210) == 150)
+        #expect(try reopened.pending(), "An interrupted initial scan must retain received events too")
+        #expect(try reopened.resume(scope: scope, volumeSignature: "volume-b", after: 100, latest: 210) == 210)
+        let store = try SemanticFileStore(url: root.appendingPathComponent("semantic-files.sqlite"))
+        try reopened.transfer(to: store)
+        #expect(try store.nextScanRequest()?.path == root.path,
+                "Untrusted history must persist root catch-up before skipping raw event replay")
+        var changed = scope
+        changed.includeHidden.toggle()
+        #expect(try reopened.resume(scope: changed, volumeSignature: "volume-b", after: 90, latest: 210) == 210)
+        #expect(try reopened.resume(scope: changed, volumeSignature: "volume-b", after: 80, latest: 85) == 85)
+        #expect(try reopened.resume(scope: changed, volumeSignature: nil, after: 70, latest: 85) == 85)
+        #expect(try reopened.resume(scope: changed, volumeSignature: "volume-b", after: nil, latest: 85) == 85)
+    }
+
+    @Test func unboundLegacyReceiptQueuesCatchupForAnInterruptedInitialScan() throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("index-events.sqlite"), scope = semanticScope(root.path)
+        // This is the pre-binding schema: a receipt without scope provenance.
+        let legacy = try SemanticIndexEvents(url: url)
+        legacy.close()
+        let journal = try SemanticIndexEvents(url: url)
+        #expect(try journal.resume(scope: scope, volumeSignature: "volume", after: nil, latest: 100) == 100)
+        let store = try SemanticFileStore(url: root.appendingPathComponent("semantic-files.sqlite"))
+        try journal.transfer(to: store)
+        #expect(try store.nextScanRequest()?.path == root.path)
+    }
+
     @Test func `storm coalesces durably and ignores every owned artifact`() throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let index = root.appendingPathComponent("state")

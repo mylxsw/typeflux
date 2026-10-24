@@ -377,8 +377,9 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                     previousEventID = nil
                 }
                 let savedEventID = previousEventID.flatMap { $0 <= latestEventID ? $0 : nil }
-                let watchEventID = savedEventID ?? latestEventID
-                self.committedEventID = watchEventID
+                let watchEventID = try prepared.2.resume(scope: prepared.0, volumeSignature: signature,
+                                                        after: savedEventID, latest: latestEventID)
+                self.committedEventID = savedEventID ?? watchEventID
                 self.pendingEventID = watchEventID
                 let prunePending = try savedEventID != nil && database.hasPendingPrune()
                 let retryDirectories = savedEventID != nil ? try database.failedDirectories() : []
@@ -392,9 +393,12 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                 watcher.start(paths: eventScope.roots, since: watchEventID) { [weak self] changes, last in
                     guard !token.isCancelled else { return }
                     do {
-                        try events.append(changes, scope: eventScope, directory: directory.path,
-                                          eventID: last, cancelled: { token.isCancelled })
+                        let changed = try events.append(changes, scope: eventScope, directory: directory.path,
+                                                        eventID: last, cancelled: { token.isCancelled })
                         guard !token.isCancelled else { return }
+                        // Ignored writes (including our own WAL files) only advance the
+                        // in-memory receipt. They must not wake another index transaction.
+                        guard changed || changes.isEmpty else { return }
                         delivery.offer(changes, eventID: last, from: source)
                     } catch {
                         Task { @MainActor in

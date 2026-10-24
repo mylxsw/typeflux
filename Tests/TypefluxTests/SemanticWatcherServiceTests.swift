@@ -43,6 +43,33 @@ private final class WatcherEncoder: SemanticEmbedding, @unchecked Sendable {
 @Suite("Semantic watcher checkpoint ownership", .serialized, .exclusiveUIState)
 @MainActor
 struct SemanticWatcherServiceTests {
+    @Test func ignoredArtifactStormDoesNotWakeIndexingAndRestartUsesTheJournalReceipt() async throws {
+        let (service, root, watcher, queue, history, reader, _, store, scope) = try await fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        service.pause(true)
+        for event in 101...200 {
+            watcher.change?([.init(path: root.path + "/semantic-files.sqlite-wal", rescan: false,
+                                   isDirectory: false)], UInt64(event))
+        }
+        #expect(queue.count == 0, "Owned writes must not schedule UI work or another index transaction")
+        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == 100)
+        reader.base.modified += 1
+        watcher.change?([.init(path: reader.base.path, rescan: false)], 201)
+        queue.run()
+        history.advance(220)
+        service.start(force: true)
+        try await SemanticFileServiceTests.wait { service.phase == .paused && watcher.since == 201 }
+        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == 100,
+                "A persisted watcher receipt must not falsely claim extraction has finished")
+        service.pause(false)
+        try await SemanticFileServiceTests.wait {
+            service.phase == .ready && (try? store.completedEventID(scope: scope,
+                volumeSignature: "private-fixture-volume")) == 201
+        }
+        #expect(service.files == 1)
+        await service.clear(removeModel: true)
+    }
+
     private func fixture() async throws -> (SemanticFileSearchService, URL, SemanticFixtureWatcher,
         SemanticProgressScheduler, WatcherHistory, WatcherReader, WatcherEncoder, SemanticFileStore, AskFileScope) {
         let (base, root, reader, models) = try SemanticFileServiceTests().fixture()

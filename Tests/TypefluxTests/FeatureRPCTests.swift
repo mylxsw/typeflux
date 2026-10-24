@@ -129,11 +129,41 @@ struct FeatureRPCTests {
         await a.stop()
     }
 
+    @Test(arguments: [false, true])
+    func cancelledAndTimedOutCallsStopWorkAcrossForwardedChannels(timesOut: Bool) async throws {
+        let (client, relayInput) = try pair(), (relayOutput, server) = try pair()
+        let entered = FeatureRequestCounter(), cancelled = FeatureRequestCounter()
+        await client.start { _, data in data }
+        await relayInput.start { method, data in try await relayOutput.request(method, payload: data) }
+        await relayOutput.start { _, data in data }
+        await server.start { method, data in
+            guard method == "search" else { return data }
+            await entered.increment()
+            do { try await Task.sleep(for: .seconds(30)) }
+            catch {
+                if Task.isCancelled { await cancelled.increment() }
+                throw error
+            }
+            return data
+        }
+        let request = Task {
+            try await client.request("search", payload: Data(), timeout: timesOut ? .milliseconds(500) : .seconds(5))
+        }
+        for _ in 0..<200 where await entered.count == 0 { try await Task.sleep(for: .milliseconds(2)) }
+        #expect(await entered.count == 1)
+        if !timesOut { request.cancel() }
+        await #expect(throws: timesOut ? FeatureRPC.Failure.timedOut : .cancelled) { try await request.value }
+        for _ in 0..<200 where await cancelled.count == 0 { try await Task.sleep(for: .milliseconds(2)) }
+        #expect(await cancelled.count == 1, "Both forwarding hops must propagate cancellation to the computation")
+        #expect(try await client.request("echo", payload: Data([42])) == Data([42]))
+        await client.stop(); await relayInput.stop(); await relayOutput.stop(); await server.stop()
+    }
+
     @Test func invalidRequestsAndDescriptorAreRejected() async throws {
         let descriptor = open("/dev/null", O_RDONLY)
         #expect(throws: FeatureRPC.Failure.invalidMessage) { try FeatureRPC(descriptor: descriptor) }
         let (a, b) = try pair()
-        for name in ["", String(repeating: "a", count: 129)] {
+        for name in ["", "_cancel", String(repeating: "a", count: 129)] {
             await #expect(throws: FeatureRPC.Failure.invalidMessage) { try await a.request(name, payload: Data()) }
         }
         for timeout in [Duration.zero, .seconds(181)] {

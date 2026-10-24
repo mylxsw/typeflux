@@ -521,7 +521,7 @@ struct SemanticIndexRecoveryTests {
             try #require(sqlite3_step(row) == SQLITE_ROW)
             #expect(sqlite3_column_double(row, 0) == 30 && sqlite3_column_double(row, 1) == 42)
             #expect(store.string(row, 2) == "audio" && store.string(row, 3) == "audio-window")
-            #expect(store.string(row, 4) == SemanticFileStore.mediaProvenance)
+            #expect(store.string(row, 4) == SemanticFileStore.mediaVectorProvenance(path, kind: .audio))
         }
         func vectorHits() throws -> [AskFileHit] {
             try store.search(vector: semanticVector(), text: "compatibility", query: .init("compatibility"),

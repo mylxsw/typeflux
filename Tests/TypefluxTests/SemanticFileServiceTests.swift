@@ -55,9 +55,10 @@ final class SemanticFixtureQuery: SemanticQueryEmbedding, @unchecked Sendable {
 
 final class SemanticFixtureWatcher: AskFileWatching {
     var started: [String] = []
+    var since: UInt64?
     var change: (([AskFileChange], UInt64) -> Void)?
-    func start(paths: [String], since _: UInt64?, onChange: @escaping ([AskFileChange], UInt64) -> Void) {
-        started = paths; change = onChange
+    func start(paths: [String], since: UInt64?, onChange: @escaping ([AskFileChange], UInt64) -> Void) {
+        started = paths; self.since = since; change = onChange
     }
 
     func stop() {

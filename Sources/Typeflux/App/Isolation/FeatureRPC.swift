@@ -14,6 +14,7 @@ actor FeatureRPC {
         let failure: Failure?
     }
     typealias Handler = @Sendable (String, Data) async throws -> Data
+    private static let cancelMethod = "_cancel"
     private let wire: FeatureRPCWire
     private var handler: Handler?
     private var reader: Task<Void, Never>?
@@ -72,7 +73,7 @@ actor FeatureRPC {
             diagnostics.record(.rpcQueue, error: Failure.busy, reason: .requestLimit, method: method)
             throw Failure.busy
         }
-        guard !method.isEmpty, method.utf8.count <= 128, payload.count <= FeatureRPCWire.maximumPayload,
+        guard !method.isEmpty, method != Self.cancelMethod, method.utf8.count <= 128, payload.count <= FeatureRPCWire.maximumPayload,
               timeout > .zero, timeout <= .seconds(180) else { throw Failure.invalidMessage }
         let id = UUID()
         return try await withTaskCancellationHandler {
@@ -81,11 +82,11 @@ actor FeatureRPC {
                 tickets[id] = FeatureRPCTicket()
                 deadlines[id] = Task { [weak self] in
                     do { try await Task.sleep(for: timeout) } catch { return }
-                    await self?.finish(id, result: .failure(Failure.timedOut))
+                    await self?.finish(id, result: .failure(Failure.timedOut), cancelRemote: true)
                 }
                 send(.init(version: 1, id: id, method: method, payload: payload, failure: nil))
             }
-        } onCancel: { Task { await self.finish(id, result: .failure(Failure.cancelled)) } }
+        } onCancel: { Task { await self.finish(id, result: .failure(Failure.cancelled), cancelRemote: true) } }
     }
 
     func stop() {
@@ -106,10 +107,16 @@ actor FeatureRPC {
         handler = nil
     }
 
-    private func finish(_ id: UUID, result: Result<Data, Error>) {
+    private func finish(_ id: UUID, result: Result<Data, Error>, cancelRemote: Bool = false) {
         tickets.removeValue(forKey: id)?.cancel()
         deadlines.removeValue(forKey: id)?.cancel()
-        pending.removeValue(forKey: id)?.resume(with: result)
+        guard let continuation = pending.removeValue(forKey: id) else { return }
+        // Cancellation follows the original request on the same ordered wire, including
+        // forwarded calls. Keep the incoming slot occupied until its work actually exits.
+        if cancelRemote, !closed {
+            send(.init(version: 1, id: id, method: Self.cancelMethod, payload: Data(), failure: nil))
+        }
+        continuation.resume(with: result)
     }
 
     private func receive(_ message: Message) {
@@ -117,6 +124,13 @@ actor FeatureRPC {
         guard message.version == 1 else {
             diagnostics.record(.rpcProtocol, error: Failure.invalidMessage, reason: .invalidVersion)
             stop(); return
+        }
+        if message.method == Self.cancelMethod {
+            guard message.payload?.isEmpty == true, message.failure == nil else {
+                stop(); return
+            }
+            incoming[message.id]?.cancel()
+            return
         }
         guard let method = message.method else {
             guard (message.payload == nil) != (message.failure == nil) else {
