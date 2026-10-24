@@ -52,7 +52,6 @@ extension ScreenRecordingWindowController {
                     width: size.width,
                     height: size.height
                 ))
-                panel.isMovableByWindowBackground = true
                 host(
                     ScreenRecordingToolbar(model: model, levelProvider: { [weak self] in
                         self?.preview.level ?? 0

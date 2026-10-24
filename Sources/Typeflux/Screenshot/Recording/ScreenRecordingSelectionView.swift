@@ -83,16 +83,18 @@ final class ScreenRecordingSelectionView: NSView {
             xRadius: model.sourceKind == .window ? 12 : 0,
             yRadius: model.sourceKind == .window ? 12 : 0
         )
-        let accent = ScreenshotOverlayChromeView.accent
+        let frameColor = ScreenshotOverlayChromeView.frameColor
         if model.sourceKind != .region {
-            accent.withAlphaComponent(0.1).setFill(); path.fill()
+            frameColor.withAlphaComponent(0.1).setFill(); path.fill()
         }
-        accent.setStroke(); path.lineWidth = 1.5; path.stroke()
+        NSColor.black.withAlphaComponent(0.65).setStroke(); path.lineWidth = 3.5; path.stroke()
+        frameColor.setStroke(); path.lineWidth = 1.5; path.stroke()
         if model.sourceKind == .region {
             for handle in ScreenshotSelection.Handle.allCases {
                 let point = ScreenshotSelection.point(for: handle, in: rect)
                 let dot = NSBezierPath(ovalIn: CGRect(x: point.x - 4, y: point.y - 4, width: 8, height: 8))
-                NSColor.white.setFill(); dot.fill(); accent.setStroke(); dot.lineWidth = 1.5; dot.stroke()
+                NSColor.black.withAlphaComponent(0.65).setFill(); dot.fill()
+                frameColor.setStroke(); dot.lineWidth = 1.5; dot.stroke()
             }
             drawLabel(
                 "\(Int(rect.width)) × \(Int(rect.height)) pt",

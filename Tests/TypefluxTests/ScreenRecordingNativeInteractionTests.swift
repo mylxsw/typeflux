@@ -46,6 +46,12 @@ struct ScreenRecordingNativeInteractionTests {
         let bitmap = try NSBitmapImageRep(cgImage: #require(context.makeImage()))
         #expect(try #require(bitmap.colorAt(x: 10, y: 10)).alphaComponent > 0.3)
         #expect(try #require(bitmap.colorAt(x: 300, y: 300)).alphaComponent < 0.1)
+        let outline = try #require(bitmap.colorAt(x: 300, y: 150)?.usingColorSpace(.sRGB))
+        #expect(outline.redComponent > 0.5)
+        #expect(abs(outline.redComponent - outline.greenComponent) < 0.01)
+        #expect(abs(outline.redComponent - outline.blueComponent) < 0.01)
+        let handle = try #require(bitmap.colorAt(x: 150, y: 150)?.usingColorSpace(.sRGB))
+        #expect(handle.alphaComponent > 0.5 && handle.redComponent < 0.5)
         try ScreenshotSnapshotSupport.write(#require(bitmap.cgImage), name: "recording-overlay-region")
         try view.keyDown(with: key(code: 48, text: "\t", window: window))
         #expect(fixture.model.sourceKind == .window)
@@ -53,6 +59,67 @@ struct ScreenRecordingNativeInteractionTests {
         #expect(view.hovered == nil)
         try view.keyDown(with: key(code: 48, text: "\t", window: window))
         #expect(fixture.model.sourceKind == .display)
+        await fixture.clean()
+    }
+
+    @Test func `right toolbar grip moves its window and survives selection refreshes`() async throws {
+        _ = NSApplication.shared
+        let fixture = ScreenRecordingCoordinatorTests.Fixture()
+        await fixture.setup()
+        fixture.model.selectSourceKind(.region)
+        let presenter = ScreenRecordingWindowController(preview: ScreenRecordingVisualTests.Devices())
+        presenter.show(fixture.model)
+        defer { presenter.hide() }
+        try await Task.sleep(for: .milliseconds(150))
+        let window = try #require(presenter.window)
+        let content = try #require(window.contentView)
+        func grip(in view: NSView) -> ScreenRecordingToolbarDragView? {
+            if let view = view as? ScreenRecordingToolbarDragView { return view }
+            return view.subviews.lazy.compactMap { grip(in: $0) }.first
+        }
+        let handle = try #require(grip(in: content))
+        #expect(handle.acceptsFirstMouse(for: nil))
+        handle.resetCursorRects()
+        let handleFrame = handle.convert(handle.bounds, to: content)
+        #expect(handleFrame.midX > content.bounds.midX)
+        #expect(handleFrame.width == 16 && handleFrame.height == 30)
+        let hitPoint = handle.convert(CGPoint(x: handle.bounds.midX, y: handle.bounds.midY), to: content.superview)
+        let hit = content.hitTest(hitPoint)
+        #expect(hit === handle)
+        var pointer = window.frame.origin
+        handle.pointerLocation = { pointer }
+        let original = window.frame
+        // A drag without a preceding press must not move the panel.
+        try handle.mouseDragged(with: mouse(.leftMouseDragged, point: .zero, view: handle))
+        #expect(window.frame == original)
+        try handle.mouseDown(with: mouse(.leftMouseDown, point: .zero, view: handle))
+        pointer.x += 4; pointer.y += 60
+        try handle.mouseDragged(with: mouse(.leftMouseDragged, point: .zero, view: handle))
+        presenter.syncChrome()
+        #expect(window.frame.origin == CGPoint(x: original.minX + 4, y: original.minY + 60))
+        pointer.y += 30
+        try handle.mouseDragged(with: mouse(.leftMouseDragged, point: .zero, view: handle))
+        try handle.mouseUp(with: mouse(.leftMouseUp, point: .zero, view: handle))
+        let moved = window.frame
+        #expect(moved.minY == original.minY + 90)
+        pointer.y += 10
+        try handle.mouseDragged(with: mouse(.leftMouseDragged, point: .zero, view: handle))
+        #expect(window.frame == moved)
+        // Moving/resizing the capture region must leave the independently positioned toolbar usable.
+        let screen = try #require(presenter.activeScreen)
+        let displayID = try #require(screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)
+        let selection = try #require(presenter.selectionViews.first { $0.displayID == displayID.uint32Value })
+        try selection.mouseDown(with: mouse(.leftMouseDown, point: CGPoint(x: 100, y: 100), view: selection))
+        try selection.mouseDragged(with: mouse(.leftMouseDragged, point: CGPoint(x: 500, y: 400), view: selection))
+        try selection.mouseUp(with: mouse(.leftMouseUp, point: CGPoint(x: 500, y: 400), view: selection))
+        presenter.syncChrome()
+        #expect(window.frame == moved)
+        try handle.mouseDown(with: mouse(.leftMouseDown, point: .zero, view: handle))
+        pointer.y -= 20
+        try handle.mouseDragged(with: mouse(.leftMouseDragged, point: .zero, view: handle))
+        try handle.mouseUp(with: mouse(.leftMouseUp, point: .zero, view: handle))
+        #expect(window.frame.minY == moved.minY - 20)
+        presenter.hide(); await presenter.deviceTask?.value
         await fixture.clean()
     }
 

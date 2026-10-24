@@ -213,6 +213,11 @@ struct ScreenRecordingUIInteractionTests {
             })
             #expect(start.frame.width > 30 && start.frame.height > 20)
             #expect(window.frame.contains(start.frame))
+            let grip = try #require(SettingsBehaviorTestSupport.elements(in: content).first {
+                $0.value("accessibilityIdentifier") as? String == "recording.toolbar.drag"
+            })
+            #expect(grip.frame.minX >= start.frame.maxX)
+            #expect(grip.label == L("screenshot.edit.dragToolbar"))
             let bitmap = try #require(content.bitmapImageRepForCachingDisplay(in: content.bounds))
             content.cacheDisplay(in: content.bounds, to: bitmap)
             try ScreenshotSnapshotSupport.write(

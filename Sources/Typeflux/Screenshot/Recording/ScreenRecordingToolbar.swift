@@ -25,8 +25,6 @@ struct ScreenRecordingToolbar: View {
                     .background(AskTheme.popoverSurface, in: RoundedRectangle(cornerRadius: 10))
             }
             HStack(spacing: 2) {
-                Image(systemName: "line.3.horizontal").font(.system(size: 9)).foregroundStyle(StudioTheme.textTertiary)
-                    .frame(width: 14, height: 30)
                 segment {
                     ForEach([ScreenRecordingSourceKind.region, .window, .display], id: \.self) { kind in
                         Button { model.selectSourceKind(kind) } label: {
@@ -126,6 +124,13 @@ struct ScreenRecordingToolbar: View {
                         )
                 }.disabled(!model.canStart).opacity(model.canStart ? 1 : 0.4)
                     .keyboardShortcut(.defaultAction).accessibilityIdentifier("recording.start")
+                Image(systemName: "line.3.horizontal")
+                    .rotationEffect(.degrees(90))
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 16, height: 30)
+                    .overlay(ScreenRecordingToolbarDragArea(label: L("screenshot.edit.dragToolbar")))
+                    .help(L("screenshot.edit.dragToolbar"))
             }.padding(4).buttonStyle(.plain).font(.system(size: 12.5))
                 .foregroundStyle(StudioTheme.textPrimary).recordingSurface(corner: 12)
             HStack(spacing: 10) {
