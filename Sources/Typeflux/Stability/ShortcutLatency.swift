@@ -38,6 +38,8 @@ enum ShortcutLatencyStage: String, Codable, Sendable, CaseIterable {
     case imageResizeStarted, imageResizeFinished, imageEncodeStarted, imageEncodeFinished
     case contextSelectionStarted, contextSelectionFinished
     case windowOrderStarted, windowOrderFinished, windowKeyStarted, windowKeyFinished
+    case windowDisplayStarted, windowDisplayFinished
+    case captureAssembled, captureReturned, capturePublished
 }
 
 struct ShortcutLatencyEvent: Codable, Sendable {

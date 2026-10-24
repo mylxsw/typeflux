@@ -85,6 +85,7 @@ final class ScreenshotTaskQueue<Value> {
                         try Task.checkCancellation()
                         if work.cancellation.isCancelled { throw CancellationError() }
                         let image = try await work.operation()
+                        work.record(.captureReturned)
                         try Task.checkCancellation()
                         if work.cancellation.isCancelled { throw CancellationError() }
                         result = .success(image)
@@ -92,6 +93,7 @@ final class ScreenshotTaskQueue<Value> {
                         result = .failure(error)
                     }
                     if work.cancellation.isCancelled { work.record(.captureDiscarded) }
+                    work.record(.capturePublished)
                     work.finish(result)
                 }
             }

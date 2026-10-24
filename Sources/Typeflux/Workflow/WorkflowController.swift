@@ -213,6 +213,7 @@ final class WorkflowController {
     var isHistoryPickerPresented = false
     var isHistoryPickerLoading = false
     var historyPanelLoadGeneration = UUID()
+    var historyPanelMaintenanceGeneration: UUID?
     var historyPanelWarmupTask: Task<Void, Never>?
     var historyPanelSnapshot: ClipboardPanelSnapshot?
     var historyPanelCacheRevision = UUID()

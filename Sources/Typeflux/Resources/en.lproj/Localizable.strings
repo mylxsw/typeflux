@@ -7090,3 +7090,10 @@
 "diagnostics.hangSamples" = "Hang samples";
 "diagnostics.module" = "Module";
 "diagnostics.status" = "Status";
+
+/* Shortcut first-frame publication and capture delivery. */
+"shortcutDiagnostics.stage.windowDisplayStarted" = "First frame drawing started";
+"shortcutDiagnostics.stage.windowDisplayFinished" = "First frame submitted before keyboard focus";
+"shortcutDiagnostics.stage.captureAssembled" = "Display images assembled";
+"shortcutDiagnostics.stage.captureReturned" = "Capture returned to the UI task";
+"shortcutDiagnostics.stage.capturePublished" = "Capture result published to the caller";

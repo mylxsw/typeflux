@@ -7092,3 +7092,10 @@
 "diagnostics.hangSamples" = "卡頓取樣";
 "diagnostics.module" = "模組";
 "diagnostics.status" = "狀態";
+
+/* Shortcut first-frame publication and capture delivery. */
+"shortcutDiagnostics.stage.windowDisplayStarted" = "首幀繪製開始";
+"shortcutDiagnostics.stage.windowDisplayFinished" = "首幀已提交，準備取得鍵盤焦點";
+"shortcutDiagnostics.stage.captureAssembled" = "各螢幕截圖組裝完成";
+"shortcutDiagnostics.stage.captureReturned" = "截圖已返回介面工作";
+"shortcutDiagnostics.stage.capturePublished" = "截圖結果已交付呼叫方";

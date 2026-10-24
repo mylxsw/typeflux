@@ -122,7 +122,7 @@ No display identifier or display content is recorded.
 | Translation | Window cache reuse/creation, acquisition, layout, ordering, focus and monitor setup. `translationSelectionStarted`/`translationSelectionFinished` measure asynchronous selection capture; this can finish after the first visible event and cause another presentation. Toggle-close is `dismissed`. |
 | Screenshot | `overlayStarted`, `oldOverlayRetired`, per-display `displayView`, `displayPanel` and `displayShow` pairs, focus, initial pointer/magnifier update, and `overlayFinished`. Snapshot capture retains its existing separate pair. |
 | Launcher | State preparation, quick-app refresh, selection request creation, window cache/acquisition, layout, ordering, focus and monitors. Workflow refresh and selection context loading have separate background spans; do not add them to the opening duration if they overlap or finish after visibility. |
-| Clipboard | `dataStarted` to `dataWorkerStarted` includes preparation and scheduling; `maintenancePlanFinished` to `dataWorkerStarted` narrows queue wait plus submission setup. Maintenance preparation/execution, voice history, clipboard history, pins and merge are distinct spans. `dataFinished` to `dataCallback` measures return to the main queue. Presentation model update, window cache/acquisition, layout, ordering, focus and monitors follow separately. Both list and shelf presentations are covered. |
+| Clipboard | `dataStarted` to `dataWorkerStarted` includes preparation and scheduling; `maintenancePlanFinished` to `maintenanceStarted` isolates maintenance queue wait; `maintenanceFinished` to `dataWorkerStarted` includes its main-queue completion barrier and read scheduling. Maintenance preparation/execution, voice history, clipboard history, pins and merge are distinct spans. `dataFinished` to `dataCallback` measures return to the main queue. Presentation model update, window cache/acquisition, layout, ordering, focus and monitors follow separately. Both list and shelf presentations are covered. |
 
 `windowCached`/`windowUncached` describe window reuse, independently of process
 warmth. Layout spans describe the existing content preparation calls; they do not
@@ -311,16 +311,24 @@ physical shortcut latency and populated dashboard interaction require local test
   or changed displays evict their panels; the pool is bounded by the last display
   set. Per-display `windowCached`/`windowUncached` events show reuse alongside the
   existing creation/show spans. The snapshot capture itself is unchanged.
-- Clipboard opening snapshots stay in memory and are valid for at most 30 seconds
-  of monotonic time, or until the earliest unpinned clipboard retention boundary.
+  The screenshot owner now stays resident after prewarming; closing the editor
+  still releases captured pixels and views. This trades idle process memory for
+  avoiding repeated process startup. `captureAssembled`, `captureReturned` and
+  `capturePublished` separate image assembly, the return to the UI task and
+  publication to the caller, before the existing `captureFinished` endpoint.
+- Clipboard opening snapshots stay in memory until a store/account/policy change
+  or the earliest clipboard/voice retention boundary. Idle time alone does not
+  invalidate a snapshot; each opening still refreshes from the stores.
   Pin/snippet/voice retention rules remain distinct. Store changes invalidate the
   snapshot. Clipboard-change notifications use the existing content-free process
   notification bridge, so deletions from the settings process also invalidate it.
   Hidden updates coalesce for 150 ms before pre-reading off the main
   queue. Startup also pre-reads without setting the panel's loading/open state.
   Account transitions cancel reads, close the panel and retire cached data.
-- A valid snapshot is presented immediately, followed by a fresh maintenance/read
-  in the existing bounded worker. Policy, store identity, request generation and
+- A valid snapshot is presented immediately, followed by bounded background
+  maintenance and a fresh read. Maintenance finishes on the main queue before
+  the read revision is captured, folding purge/trim notifications into that read
+  instead of restarting it. Policy, store identity, request generation and
   invalidation revision prevent outdated reads from restoring stale snapshots.
   Refresh updates preserve query/selection and do not show or focus the window
   again. Empty refreshed history closes the panel; a refresh failure keeps an
@@ -338,9 +346,11 @@ physical shortcut latency and populated dashboard interaction require local test
   capture and text-entry semantics remain in place.
 - Launcher and clipboard avoid redundant native geometry assignments. Clipboard
   native show/hide animations are disabled; the shelf retains its explicit content
-  animation. Native ordering/focus calls are otherwise unchanged. The logs do not
-  yet establish how much of their earlier spikes came from deferred drawing or
-  system window interaction, so actual improvement needs local measurement.
+  animation. Launcher/clipboard use unconditional nonactivating ordering, draw
+  and flush their first frame before requesting keyboard focus. Screenshot
+  overlays submit all display frames and the pointer/loupe before that request.
+  `windowDisplayStarted`/`windowDisplayFinished` measure submission, not physical
+  display completion. Native focus remains synchronous and separately measured.
 - Essential launcher/clipboard/voice startup remains immediate. After bootstrap
   preparation and a two-second delay, the host pings ring and translation in
   sequence. Translation prepares its hidden panel, and ring keeps its existing

@@ -7090,3 +7090,10 @@
 "diagnostics.hangSamples" = "卡顿采样";
 "diagnostics.module" = "模块";
 "diagnostics.status" = "状态";
+
+/* Shortcut first-frame publication and capture delivery. */
+"shortcutDiagnostics.stage.windowDisplayStarted" = "首帧绘制开始";
+"shortcutDiagnostics.stage.windowDisplayFinished" = "首帧已提交，准备获取键盘焦点";
+"shortcutDiagnostics.stage.captureAssembled" = "各屏幕截图组装完成";
+"shortcutDiagnostics.stage.captureReturned" = "截图已返回界面任务";
+"shortcutDiagnostics.stage.capturePublished" = "截图结果已交付调用方";

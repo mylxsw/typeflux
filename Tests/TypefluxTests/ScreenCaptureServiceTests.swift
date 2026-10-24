@@ -217,6 +217,7 @@ struct ScreenCaptureServiceTests {
             }
         }
         #expect(Array(collector.stages.prefix(2)) == [.contentLoadStarted, .contentLoadFinished])
+        #expect(collector.stages.last == .captureAssembled)
         for index in 1...2 {
             let events = collector.events.filter { $0.itemIndex == index }
             #expect(events.map(\.stage) == [.displayCaptureStarted, .displayCaptureFinished, .imageResizeStarted, .imageResizeFinished])

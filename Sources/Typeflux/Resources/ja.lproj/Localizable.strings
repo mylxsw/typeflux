@@ -7090,3 +7090,10 @@
 "diagnostics.hangSamples" = "ハングサンプル";
 "diagnostics.module" = "モジュール";
 "diagnostics.status" = "状態";
+
+/* Shortcut first-frame publication and capture delivery. */
+"shortcutDiagnostics.stage.windowDisplayStarted" = "最初のフレームの描画を開始";
+"shortcutDiagnostics.stage.windowDisplayFinished" = "キーボードフォーカス前に最初のフレームを送信";
+"shortcutDiagnostics.stage.captureAssembled" = "画面画像の組み立てが完了";
+"shortcutDiagnostics.stage.captureReturned" = "キャプチャがUIタスクに戻りました";
+"shortcutDiagnostics.stage.capturePublished" = "キャプチャ結果を呼び出し元に渡しました";

@@ -6,7 +6,10 @@ struct FeatureIdlePolicy {
         let timeout: TimeInterval
         switch role {
         case .chat: timeout = 120
-        case .screenshot, .background: timeout = 180
+        case .background: timeout = 180
+        // Screenshot pixels and editor views are released on dismissal. Keep the
+        // prewarmed window owner ready for the next global shortcut.
+        case .screenshot: idleSince = nil; return false
         default: idleSince = nil; return false
         }
         if blocked {

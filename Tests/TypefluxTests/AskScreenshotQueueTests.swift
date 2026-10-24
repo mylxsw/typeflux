@@ -77,6 +77,8 @@ struct AskScreenshotQueueTests {
         #expect(dequeued.map(\.trace) == [firstTrace, latestTrace])
         #expect(collector.events.filter { $0.stage == .captureSuperseded }.count == 20)
         #expect(collector.events.filter { $0.stage == .captureDiscarded }.map(\.trace) == [firstTrace])
+        #expect(collector.events.filter { $0.stage == .captureReturned }.map(\.trace) == [firstTrace, latestTrace])
+        #expect(collector.events.filter { $0.stage == .capturePublished }.map(\.trace) == [firstTrace, latestTrace])
     }
 
     @Test func cancelledPendingCaptureNeverReachesNativeAPI() async throws {

@@ -58,6 +58,7 @@ final class ClipboardPanelControllerKeyTests: XCTestCase {
                                             .windowAcquisitionStarted, .windowAcquisitionFinished, .layoutStarted,
                                             .layoutFinished,
                                             .windowShowStarted, .windowOrderStarted, .windowOrderFinished,
+                                            .windowDisplayStarted, .windowDisplayFinished,
                                             .windowKeyStarted, .windowKeyFinished, .windowShowFinished, .focusStarted, .focusFinished,
                                             .monitorsStarted, .monitorsFinished, .windowOrdered, .visibleNextTurn])
         controller.dismiss()

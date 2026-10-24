@@ -98,12 +98,14 @@ struct ScreenCaptureService: ScreenCapturing {
             return images.compactMap { $0 }
         }
         try Task.checkCancellation()
-        return ScreenSnapshot(
+        let snapshot = ScreenSnapshot(
             displays: zip(displays, images).map { display, image in
                 ScreenSnapshot.Display(id: display.id, frame: display.frame, scale: display.scale, image: image)
             },
             windows: request.includesWindows ? content.windows.filter { !excludedWindows.contains($0.id) } : []
         )
+        ShortcutLatency.record(.captureAssembled)
+        return snapshot
     }
 
     private func measuredContent() async throws -> ScreenCaptureContent {

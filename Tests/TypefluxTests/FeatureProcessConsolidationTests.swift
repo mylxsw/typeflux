@@ -88,7 +88,10 @@ struct FeatureProcessConsolidationTests {
             #expect(!retire(role: role, blocked: false, uptime: 10000))
         }
         #expect(!retire(role: .screenshot, blocked: false, uptime: 10000))
-        #expect(retire(role: .screenshot, blocked: false, uptime: 10180))
+        #expect(!retire(role: .screenshot, blocked: false, uptime: 10180))
+        #expect(!retire(role: .screenshot, blocked: false, uptime: 100000))
+        #expect(!retire(role: .background, blocked: false, uptime: 100000))
+        #expect(retire(role: .background, blocked: false, uptime: 100180))
     }
 
     @Test func `CPU requires matching process lifetime and handles missing counters`() throws {

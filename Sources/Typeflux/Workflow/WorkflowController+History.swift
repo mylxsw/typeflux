@@ -135,6 +135,11 @@ extension WorkflowController {
         historyPanelSnapshot = nil
         historyPanelCacheRevision = UUID()
         historyPanelWarmupTask?.cancel()
+        if isHistoryPickerLoading, historyPanelMaintenanceGeneration == historyPanelLoadGeneration {
+            // Maintenance notifications precede the read. Fold them into that
+            // read instead of replacing the opening request with another load.
+            return
+        }
         if isHistoryPickerPresented {
             requestHistoryPanel(opening: false)
         } else if !isHistoryPickerLoading, FeatureProcess.owns(.clipboard) {
@@ -161,7 +166,8 @@ extension WorkflowController {
                   self.historyPanelCacheRevision == revision, self.historyPanelCachePolicy == policy,
                   !self.isHistoryPickerPresented, !self.isHistoryPickerLoading else { return }
             self.historyPanelSnapshot = ClipboardPanelSnapshot(entries: entries, policy: policy,
-                store: storeIdentity, retentionDays: self.settingsStore.clipboardRetention.days)
+                store: storeIdentity, retentionDays: self.settingsStore.clipboardRetention.days,
+                voiceRetentionDays: self.settingsStore.historyRetentionPolicy.days)
         })
     }
 
@@ -172,7 +178,6 @@ extension WorkflowController {
         let latencySink = ShortcutLatency.eventSink
         let policy = historyPanelCachePolicy
         let storeIdentity = clipboardHistoryStore.map(ObjectIdentifier.init)
-        let revision = historyPanelCacheRevision
         var presentedCachedEntries = false
         if opening {
             if let snapshot = historyPanelSnapshot, !snapshot.entries.isEmpty,
@@ -189,24 +194,47 @@ extension WorkflowController {
         let generation = UUID()
         historyPanelLoadGeneration = generation
         isHistoryPickerLoading = true
-        // Capture settings on the UI thread; the worker only accesses synchronized stores.
-        let history = historyStore, clipboard = clipboardHistoryStore
-        let maintenance = ShortcutLatency
-            .measure(.maintenancePlanStarted, .maintenancePlanFinished, trace: latency) {
-                clipboardMaintenance(at: Date())
-            }
-        var entries: [ClipboardEntry] = []
-        historyPanelWork.submit({
-            ShortcutLatency.$eventSink.withValue(latencySink) {
-                ShortcutLatency.record(.dataWorkerStarted, trace: latency)
-                if opening {
-                    ShortcutLatency
-                        .measure(.maintenanceStarted, .maintenanceFinished, trace: latency) { maintenance() }
+        if opening {
+            historyPanelMaintenanceGeneration = generation
+            let maintenance = ShortcutLatency
+                .measure(.maintenancePlanStarted, .maintenancePlanFinished, trace: latency) {
+                    clipboardMaintenance(at: Date())
                 }
-                entries = Self.historyPanelEntries(history: history, clipboard: clipboard, latency: latency)
-                ShortcutLatency.record(.dataFinished, trace: latency)
-            }
-        }, completion: { [weak self] result in
+            // A store posts its change notifications to the main queue before
+            // this completion. Take the read revision only after they arrive.
+            clipboardMaintenanceWork.submit({
+                ShortcutLatency.$eventSink.withValue(latencySink) {
+                    ShortcutLatency.measure(.maintenanceStarted, .maintenanceFinished, trace: latency) { maintenance() }
+                }
+            }, completion: { [weak self] result in
+                guard let self, self.historyPanelLoadGeneration == generation else { return }
+                self.historyPanelMaintenanceGeneration = nil
+                ShortcutLatency.$eventSink.withValue(latencySink) {
+                    ShortcutLatency.$current.withValue(latency) {
+                        self.readHistoryPanel(opening: opening, presentedCachedEntries: presentedCachedEntries,
+                            generation: generation, policy: policy, storeIdentity: storeIdentity,
+                            latency: latency, latencySink: latencySink, preparation: result)
+                    }
+                }
+            })
+        } else {
+            readHistoryPanel(opening: false, presentedCachedEntries: false, generation: generation,
+                policy: policy, storeIdentity: storeIdentity, latency: latency, latencySink: latencySink)
+        }
+    }
+
+    private func readHistoryPanel(opening: Bool, presentedCachedEntries: Bool, generation: UUID,
+                                 policy: String, storeIdentity: ObjectIdentifier?, latency: ShortcutLatencyTrace?,
+                                 latencySink: (@Sendable (ShortcutLatencyEvent) -> Void)?,
+                                 preparation: Result<Void, Error> = .success(())) {
+        guard historyPanelCachePolicy == policy, clipboardHistoryStore.map(ObjectIdentifier.init) == storeIdentity else {
+            requestHistoryPanel(opening: opening && !isHistoryPickerPresented)
+            return
+        }
+        let revision = historyPanelCacheRevision
+        let history = historyStore, clipboard = clipboardHistoryStore
+        var entries: [ClipboardEntry] = []
+        let complete: (Result<Void, Error>) -> Void = { [weak self] result in
             ShortcutLatency.$eventSink.withValue(latencySink) {
                 ShortcutLatency.record(.dataCallback, trace: latency)
                 guard let self else { ShortcutLatency.record(.superseded, trace: latency); return }
@@ -228,7 +256,8 @@ extension WorkflowController {
                             return
                         }
                         self.historyPanelSnapshot = ClipboardPanelSnapshot(entries: entries, policy: policy,
-                            store: storeIdentity, retentionDays: self.settingsStore.clipboardRetention.days)
+                            store: storeIdentity, retentionDays: self.settingsStore.clipboardRetention.days,
+                            voiceRetentionDays: self.settingsStore.historyRetentionPolicy.days)
                         guard !entries.isEmpty else {
                             ShortcutLatency.record(.blocked)
                             if opening && !self.isHistoryPickerPresented {
@@ -240,7 +269,6 @@ extension WorkflowController {
                             return
                         }
                         if opening {
-                            // Another feature can start while the read is suspended.
                             guard !self.isRecording, self.processingTask == nil,
                                   !self.isPersonaPickerPresented else { ShortcutLatency.record(.blocked); return }
                             if presentedCachedEntries {
@@ -258,7 +286,15 @@ extension WorkflowController {
                     }
                 }
             }
-        })
+        }
+        if case .failure = preparation { complete(preparation); return }
+        historyPanelWork.submit({
+            ShortcutLatency.$eventSink.withValue(latencySink) {
+                ShortcutLatency.record(.dataWorkerStarted, trace: latency)
+                entries = Self.historyPanelEntries(history: history, clipboard: clipboard, latency: latency)
+                ShortcutLatency.record(.dataFinished, trace: latency)
+            }
+        }, completion: complete)
     }
 
     func confirmHistorySelection() {
@@ -343,6 +379,7 @@ extension WorkflowController {
 
     func dismissHistoryPicker() {
         historyPanelLoadGeneration = UUID()
+        historyPanelMaintenanceGeneration = nil
         isHistoryPickerLoading = false
         historyPanelWork.cancel()
         Task { @MainActor [weak self] in self?.clipboardAction.cancelPreparation() }

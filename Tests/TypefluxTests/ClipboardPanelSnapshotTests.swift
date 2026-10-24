@@ -4,15 +4,25 @@ import Testing
 
 @Suite("Clipboard opening snapshot", .serialized, .exclusiveUIState)
 struct ClipboardPanelSnapshotTests {
-    @Test func expiresByAgePolicyAndStoreIdentity() {
+    @Test func staysWarmAcrossIdleTimeButRejectsPolicyStoreAndClockChanges() {
         let first = NSObject(), second = NSObject(), now = Date(timeIntervalSince1970: 100_000)
         let snapshot = ClipboardPanelSnapshot(entries: [], policy: "policy", store: ObjectIdentifier(first),
                                                retentionDays: nil, uptime: 100)
         #expect(snapshot.isValid(policy: "policy", store: ObjectIdentifier(first), now: now, uptime: 129))
-        #expect(!snapshot.isValid(policy: "policy", store: ObjectIdentifier(first), now: now, uptime: 130))
+        #expect(snapshot.isValid(policy: "policy", store: ObjectIdentifier(first), now: now, uptime: 130))
+        #expect(snapshot.isValid(policy: "policy", store: ObjectIdentifier(first), now: now, uptime: 3700))
         #expect(!snapshot.isValid(policy: "policy", store: ObjectIdentifier(first), now: now, uptime: 99))
         #expect(!snapshot.isValid(policy: "changed", store: ObjectIdentifier(first), now: now, uptime: 101))
         #expect(!snapshot.isValid(policy: "policy", store: ObjectIdentifier(second), now: now, uptime: 101))
+    }
+
+    @Test func voiceRetentionAlsoExpiresAnOtherwiseWarmSnapshot() {
+        let now = Date(timeIntervalSince1970: 100_000)
+        let entry = ClipboardTestSupport.entry(.voice, date: now.addingTimeInterval(-86400 + 5), isPinned: true)
+        let snapshot = ClipboardPanelSnapshot(entries: [entry], policy: "p", store: nil,
+            retentionDays: nil, voiceRetentionDays: 1, uptime: 100)
+        #expect(snapshot.isValid(policy: "p", store: nil, now: now.addingTimeInterval(4), uptime: 104))
+        #expect(!snapshot.isValid(policy: "p", store: nil, now: now.addingTimeInterval(5), uptime: 105))
     }
 
     @Test func expiresAtTheFirstUnpinnedClipboardRetentionBoundary() {

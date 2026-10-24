@@ -144,13 +144,16 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
             views.append(view)
         }
         if let view = viewUnderPointer() {
-            ShortcutLatency.measure(.focusStarted, .focusFinished) { focus(view) }
             // Show the loupe at once, before the pointer moves.
             let pointer = pointerLocation()
             ShortcutLatency.record(.pointerUpdateStarted)
             view.pointerMoved(to: CGPoint(x: pointer.x - view.display.frame.minX,
                                           y: pointer.y - view.display.frame.minY))
             ShortcutLatency.record(.pointerUpdateFinished)
+        }
+        ShortcutPanelPresentation.display(panels)
+        if let view = viewUnderPointer() {
+            ShortcutLatency.measure(.focusStarted, .focusFinished) { focus(view) }
         }
         ShortcutLatency.record(.overlayFinished, itemCount: snapshot.displays.count)
         ShortcutLatency.windowOrdered(panels.first)

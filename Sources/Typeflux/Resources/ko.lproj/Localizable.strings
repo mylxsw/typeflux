@@ -7090,3 +7090,10 @@
 "diagnostics.hangSamples" = "멈춤 샘플";
 "diagnostics.module" = "모듈";
 "diagnostics.status" = "상태";
+
+/* Shortcut first-frame publication and capture delivery. */
+"shortcutDiagnostics.stage.windowDisplayStarted" = "첫 프레임 그리기 시작";
+"shortcutDiagnostics.stage.windowDisplayFinished" = "키보드 포커스 전에 첫 프레임 제출";
+"shortcutDiagnostics.stage.captureAssembled" = "디스플레이 이미지 조립 완료";
+"shortcutDiagnostics.stage.captureReturned" = "캡처가 UI 작업으로 반환됨";
+"shortcutDiagnostics.stage.capturePublished" = "캡처 결과를 호출자에게 전달함";
