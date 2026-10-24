@@ -43,6 +43,8 @@ extension AskConversationModel {
         context.launcher = launcher
         context.busy = !launcher && (isBusy || isLoadingSelection)
         context.hasAnswer = !launcher && latestAnswer != nil
+        context.canRegenerate = !launcher && latestAnswer.map(canRegenerate) == true
+        context.canAttachFolders = conversationKind(launcher: launcher) == .work || canChangeConversationKind(launcher: launcher)
         // Only models that can take this draft, as the model menu offers them.
         let providers = modelLibrary.selectableProviders(loggedIn: cloudAvailable(launcher: launcher),
                                                          hasImage: requiresVision(launcher: launcher))

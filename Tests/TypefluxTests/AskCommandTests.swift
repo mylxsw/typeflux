@@ -79,10 +79,10 @@ struct AskCommandCatalogTests {
         #expect(sync.title == L("ask.upload.action"))
         #expect(AskCommandMatcher.filter(AskCommandCatalog.commands(value), query: "sync").first?.command == sync)
         value.busy = true
-        #expect(command("sync", in: value)?.enabled == false)
+        #expect(command("sync", in: value) == nil)
         value.busy = false
         value.uploadUnavailable = L("ask.storage.signedOut")
-        #expect(command("sync", in: value)?.disabledReason == L("ask.storage.signedOut"))
+        #expect(command("sync", in: value) == nil)
         value.launcher = true
         #expect(command("sync", in: value) == nil)
         value.launcher = false
@@ -96,6 +96,7 @@ struct AskCommandCatalogTests {
         context.currentModel = "cloud:a"
         context.reasoningAvailable = true
         context.hasAnswer = true
+        context.canRegenerate = true
         context.selectionAvailable = true
         context.skills = [AskSkillSummary(name: "meeting-notes", description: "Notes", builtin: true),
                           AskSkillSummary(name: "new", description: "Clashes with /new", builtin: false)]
@@ -118,25 +119,56 @@ struct AskCommandCatalogTests {
     @Test func availabilityFollowsTheContext() {
         var busy = context
         busy.busy = true
-        #expect(command("model", in: busy)?.enabled == false)
-        #expect(command("regenerate", in: busy)?.enabled == false)
+        #expect(command("model", in: busy) == nil)
+        #expect(command("regenerate", in: busy) == nil)
         #expect(command("new", in: busy)?.enabled == true)
         var empty = context
         empty.hasAnswer = false
+        empty.canRegenerate = false
         empty.selectionAvailable = false
         empty.reasoningAvailable = false
         empty.screenshotUnavailable = "No vision"
-        #expect(command("copy", in: empty)?.enabled == false)
-        #expect(command("selection", in: empty)?.disabledReason == L("ask.command.disabled.noSelection"))
+        #expect(command("copy", in: empty) == nil)
+        #expect(command("selection", in: empty) == nil)
         #expect(command("think", in: empty) == nil)
-        #expect(command("screenshot", in: empty)?.disabledReason == "No vision")
-        #expect(command("explain-screen", in: empty)?.enabled == false)
+        #expect(command("screenshot", in: empty) == nil)
+        #expect(command("explain-screen", in: empty) == nil)
         empty.screenshotOn = true
         #expect(command("screenshot", in: empty)?.enabled == true, "an attached screenshot can always be removed")
         var launcher = context
         launcher.launcher = true
-        #expect(command("regenerate", in: launcher)?.enabled == false)
-        #expect(command("notion", in: context)?.enabled == false)
+        #expect(command("regenerate", in: launcher) == nil)
+        #expect(command("notion", in: context) == nil)
+    }
+
+    @Test func unavailableCommandsStayOutOfSearchAndRecents() {
+        var value = context
+        value.busy = true
+        value.storageLocked = "Already started"
+        value.temporaryLocked = "Already started"
+        value.temporaryMode = true
+        value.canAttachFolders = false
+        let hidden = ["model", "think", "local", "temp", "memory", "regenerate", "notion", "folder"]
+        let commands = AskCommandCatalog.commands(value)
+        #expect(commands.allSatisfy { $0.enabled })
+        for name in hidden {
+            #expect(!commands.contains { $0.name == name })
+            #expect(!AskCommandMatcher.filter(commands, query: name).contains { $0.command.name == name })
+        }
+        let recent = AskCommandCatalog.withRecent(commands, recent: hidden + ["new"])
+        #expect(recent.filter { $0.group == .recent }.map(\.name) == ["new"])
+        #expect(AskCommandCatalog.submenu(.model, context: value).isEmpty)
+        #expect(AskCommandCatalog.submenu(.reasoning, context: value).isEmpty)
+        #expect(!AskCommandCatalog.submenu(.permissionMode, context: value).isEmpty)
+        value.busy = false
+        value.models = []
+        #expect(command("model", in: value) == nil, "A submenu without choices is unavailable")
+        value.canRegenerate = false
+        #expect(command("copy", in: value) != nil)
+        #expect(command("regenerate", in: value) == nil)
+        let disabled = AskCommand(action: .copyAnswer, name: "copy", title: "", symbol: "", group: .conversation,
+                                  disabledReason: "Unavailable")
+        #expect(AskCommandCatalog.withRecent([disabled], recent: ["copy"]).isEmpty)
     }
 
     @Test func togglesShowTheirStateAndChoicesTheirSelection() {

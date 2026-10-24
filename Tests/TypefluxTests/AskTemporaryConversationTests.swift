@@ -337,9 +337,7 @@ struct AskTemporaryConversationTests {
         #expect(fixture.model.isTemporaryComposer(launcher: false))
         #expect(fixture.model.commandFeedback == L("ask.command.temporaryOn"))
         // Memory cannot be switched on for it.
-        let memory = try #require(AskCommandCatalog.commands(fixture.model.commandContext(launcher: false))
-            .first { $0.action == .memory })
-        #expect(memory.disabledReason == L("ask.temporary.noMemory"))
+        #expect(!AskCommandCatalog.commands(fixture.model.commandContext(launcher: false)).contains { $0.action == .memory })
         fixture.model.runCommand(command, launcher: false)
         #expect(!fixture.model.isTemporaryComposer(launcher: false))
         #expect(fixture.model.commandFeedback == L("ask.command.temporaryOff"))

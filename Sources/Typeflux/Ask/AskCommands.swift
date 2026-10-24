@@ -47,7 +47,7 @@ struct AskCommand: Equatable, Identifiable, Sendable {
     var symbol: String
     var group: Group
     var kind: Kind = .action
-    /// Why it cannot run now; such rows stay listed but are skipped.
+    /// Why it cannot run now; unavailable commands are omitted from the catalog.
     var disabledReason: String? = nil
     /// A keyboard shortcut or the current value, shown at the trailing edge.
     var trailing: String? = nil
@@ -74,6 +74,8 @@ struct AskCommandContext: Equatable, Sendable {
     var launcher = false
     var busy = false
     var hasAnswer = false
+    var canRegenerate = false
+    var canAttachFolders = true
     var models: [Model] = []
     var currentModel = ""
     var reasoningAvailable = false
@@ -139,7 +141,7 @@ enum AskCommandCatalog {
                        group: .conversation, trailing: "⌘K", aliases: ["find", "sousuo"]),
             AskCommand(action: .regenerate, name: "regenerate", title: L("ask.command.regenerate"), symbol: "arrow.clockwise",
                        group: .conversation,
-                       disabledReason: context.launcher || !context.hasAnswer ? L("ask.command.disabled.noAnswer") : busy,
+                       disabledReason: context.launcher || !context.canRegenerate ? L("ask.command.disabled.noAnswer") : busy,
                        aliases: ["retry"]),
             AskCommand(action: .copyAnswer, name: "copy", title: L("ask.command.copy"), symbol: "doc.on.doc",
                        group: .conversation,
@@ -178,7 +180,8 @@ enum AskCommandCatalog {
             AskCommand(action: .attachFiles, name: "file", title: L("ask.command.file"), symbol: "paperclip",
                        group: .context, trailing: "⌘U", aliases: ["upload", "image", "attach"]),
             AskCommand(action: .attachFolder, name: "folder", title: L("ask.command.folder"), symbol: "folder",
-                       group: .context, aliases: ["directory"]),
+                       group: .context, disabledReason: context.canAttachFolders ? nil : L("ask.kind.chatFolderRefused"),
+                       aliases: ["directory"]),
             AskCommand(action: .screenshot, name: "screenshot", title: L("ask.command.screenshot"), symbol: "camera.viewfinder",
                        group: .context, kind: .toggle(on: context.screenshotOn),
                        disabledReason: context.screenshotOn ? nil : context.screenshotUnavailable, aliases: ["screen"]),
@@ -221,7 +224,9 @@ enum AskCommandCatalog {
             AskCommand(action: .settings, name: "settings", title: L("ask.command.settings"), symbol: "gearshape",
                        group: .other, trailing: "⌘,")
         ]
-        return disambiguated(result)
+        return disambiguated(result).filter { command in
+            command.enabled && (command.kind != .submenu || !submenu(command.action, context: context).isEmpty)
+        }
     }
 
     /// A skill or server named like a built-in command keeps working under a prefix.
@@ -255,6 +260,7 @@ enum AskCommandCatalog {
                            selected: mode == context.permissionMode, plain: true)
             }
         case .model:
+            guard !context.busy else { return [] }
             return context.models.map { model in
                 AskCommand(action: .pickModel(model.reference), name: model.name, title: "",
                            detail: L(model.vision ? "ask.command.model.vision" : "ask.command.model.text"),
@@ -262,6 +268,7 @@ enum AskCommandCatalog {
                            plain: true)
             }
         case .reasoning:
+            guard !context.busy, context.reasoningAvailable else { return [] }
             return ([.providerDefault] + context.reasoningLevels).map { effort in
                 AskCommand(action: .pickReasoning(effort), name: effort.label, title: "", detail: effort.caption,
                            symbol: "sparkles", group: .model, selected: effort == context.reasoning, plain: true)
@@ -273,13 +280,14 @@ enum AskCommandCatalog {
 
     /// Commands used recently come first, once, ahead of their groups.
     static func withRecent(_ commands: [AskCommand], recent: [String]) -> [AskCommand] {
-        let byName = Dictionary(commands.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
+        let available = commands.filter(\.enabled)
+        let byName = Dictionary(available.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
         let recents = recent.compactMap { byName[$0] }.map { command -> AskCommand in
             var command = command
             command.group = .recent
             return command
         }
-        return recents + commands
+        return recents + available
     }
 }
 

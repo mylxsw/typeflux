@@ -270,9 +270,8 @@ struct AskConversationStorageTests {
         #expect(!context.hasLocalConversation)
         await fixture.api.seed(summary("signed-out", 0))
         await fixture.model.select("signed-out")
-        let sync = try #require(AskCommandCatalog.commands(fixture.model.commandContext(launcher: false))
-            .first { $0.name == "sync" })
-        #expect(sync.disabledReason == L("ask.storage.signedOut"))
+        #expect(!AskCommandCatalog.commands(fixture.model.commandContext(launcher: false)).contains { $0.name == "sync" })
+        let sync = AskCommand(action: .uploadConversation, name: "sync", title: "", symbol: "", group: .conversation)
         var confirmations = 0
         fixture.model.uploadConfirmation = { confirmations += 1; return true }
         fixture.model.runCommand(sync, launcher: false)
@@ -285,9 +284,11 @@ struct AskConversationStorageTests {
         await fixture.model.select("a")
         let context = fixture.model.commandContext(launcher: false)
         #expect(!context.localMode)
+        #expect(!context.canAttachFolders)
+        #expect(!AskCommandCatalog.commands(context).contains { $0.name == "folder" })
         #expect(context.storageLocked == L("ask.storage.locked"))
-        let command = try #require(AskCommandCatalog.commands(context).first { $0.action == .localMode })
-        #expect(command.disabledReason == L("ask.storage.locked"))
+        #expect(!AskCommandCatalog.commands(context).contains { $0.action == .localMode })
+        let command = AskCommand(action: .localMode, name: "local", title: "", symbol: "", group: .model)
         fixture.model.runCommand(command, launcher: false)
         #expect(!fixture.model.storesLocally(launcher: false))
         // The launcher always starts a new conversation, so it can still choose.

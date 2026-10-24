@@ -159,7 +159,7 @@ struct AskChatWorkPhase2Tests {
         active.run?.status = "running"
         try await f.model.accept(active, route: route)
         #expect(AskCommandCatalog.commands(f.model.commandContext(launcher: false))
-            .first { $0.name == "sync" }?.enabled == false)
+            .first { $0.name == "sync" } == nil)
         f.model.runCommand(command, launcher: false)
         #expect(confirmations == 0, "A stale command cannot upload an active conversation")
         active.revision += 1

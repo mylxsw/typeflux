@@ -69,6 +69,36 @@ struct AskCommandRenderTests {
 
     final class Recorder { var notes: [String] = [] }
 
+    @Test func openPaletteHidesCommandsWhenTheirStateChanges() async throws {
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore() }
+        let (fixture, _) = try fixture()
+        defer { fixture.model.resetSession() }
+        let host = Host(VStack {
+            Spacer(minLength: 0)
+            AskComposer(model: fixture.model, launcher: false)
+        })
+        defer { host.close() }
+        try await settle(300)
+        let editor = try #require(host.editor)
+        host.window.makeFirstResponder(editor)
+        func paletteVisible() -> Bool {
+            SettingsBehaviorTestSupport.elements(in: host.window).contains {
+                $0.value("accessibilityIdentifier") as? String == "ask.command.palette"
+            }
+        }
+        try await type("/memory", in: editor)
+        #expect(paletteVisible())
+        fixture.model.setTemporary(true, launcher: false)
+        try await SettingsBehaviorTestSupport.wait { !paletteVisible() }
+        #expect(fixture.model.draft.text == "/memory")
+        fixture.model.setTemporary(false, launcher: false)
+        fixture.model.draft.text = ""
+        try await settle()
+        try await type("/memory", in: editor)
+        #expect(paletteVisible(), "The command becomes visible again when it is available")
+    }
+
     @Test(arguments: [false, true]) func theWorkspacePaletteRunsCommandsFromTheKeyboard(compact: Bool) async throws {
         let (f, recorder) = try fixture()
         let photo = AskAttachment(kind: .image, name: "shot.png",

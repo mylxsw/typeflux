@@ -1552,6 +1552,11 @@ struct AskComposer: View {
                 if height > 0, abs(attachmentHeight - height) > 0.5 { attachmentHeight = height }
             }
             .onChange(of: paletteOpen) { _ in reportHeight() }
+            .onChange(of: paletteOpen ? model.commandContext(launcher: launcher) : nil) { context in
+                guard let context else { return }
+                commandContext = context
+                refreshPalette()
+            }
             .onChange(of: palette) { _ in if launcher { reportHeight() } }
             .onChange(of: active) { recording in
                 if recording { closePalette(); contextPanelOpen = false }
