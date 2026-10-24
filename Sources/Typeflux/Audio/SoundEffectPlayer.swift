@@ -44,8 +44,6 @@ final class SoundEffectPlayer {
         self.settingsStore = settingsStore
         self.isEnabledOverride = isEnabledOverride
         self.playerFactory = playerFactory
-
-        preloadPlayers()
     }
 
     @discardableResult
@@ -91,12 +89,6 @@ final class SoundEffectPlayer {
         }
     }
 
-    private func preloadPlayers() {
-        for effect in Effect.allCases {
-            _ = loadPlayer(for: effect)
-        }
-    }
-
     private func player(for effect: Effect) -> SoundEffectPlayback? {
         if let player = players[effect] {
             return player
@@ -114,8 +106,6 @@ final class SoundEffectPlayer {
 
         do {
             let player = try playerFactory(url)
-            player.volume = effect.volume
-            _ = player.prepareToPlay()
             players[effect] = player
             return player
         } catch {
