@@ -103,6 +103,7 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     private var fingerprint: String?
     private var watcher: AskFileWatching?
     private var watcherRevision = 0
+    private var pendingEvents: (buffer: AskFileChangeBuffer, run: Int)?
     private var preservingPublishedBuild = false
     private var lastEventID: UInt64 = 0
     private var dirty = false
@@ -340,7 +341,9 @@ extension AskFileIndex {
     /// Waits until the queue has done everything asked of it so far; for tests.
     func waitUntilIdle() {
         preparation.sync {}
-        queue.sync {}
+        queue.sync {
+            while let pendingEvents, drainChanges(pendingEvents.buffer, run: pendingEvents.run) {}
+        }
     }
 
     /// Brings the index in line with the settings: off, already right, loaded from disk, or built.
@@ -365,6 +368,7 @@ extension AskFileIndex {
     private func turnOff() {
         watcher?.stop()
         watcher = nil
+        pendingEvents = nil
         fingerprint = nil
         scope = nil
         reader = makeReader()
@@ -388,6 +392,9 @@ extension AskFileIndex {
         let startEvent = AskFSEventsWatcher.currentEventID
         working = AskFileIndexState(home: home)
         self.scope = scope
+        // Keep one live stream during the scan. Replaying its entire history
+        // after each rebuild amplifies bursts from excluded build/cache folders.
+        watch(since: startEvent, run: run)
         if preservePublished { reportBuildProgress(found: 0, estimate: estimate, run: run) }
         else { publish(phase: .building(found: 0, estimate: estimate)) }
         var truncated = false
@@ -414,7 +421,6 @@ extension AskFileIndex {
         lock.withLock { currentStatus.truncated = truncated }
         publish(phase: .ready, updatedAt: Date())
         saveNow(force: true)
-        watch(since: startEvent, run: run)
     }
 
     private func watch(since eventID: UInt64, run: Int) {
@@ -424,14 +430,30 @@ extension AskFileIndex {
         let revision = watcherRevision
         let watcher = makeWatcher()
         self.watcher = watcher
+        let buffer = AskFileChangeBuffer(scope: scope)
+        pendingEvents = (buffer, run)
         let mounts = AskFileMounts.current()
         watcher.start(paths: scope.roots.filter { scope.includes($0, isDirectory: true) && mounts.blocking($0) == nil }, since: eventID) { [weak self] changes, last in
-            self?.queue.async {
+            guard let self, buffer.append(changes, lastEventID: last) else { return }
+            self.queue.asyncAfter(deadline: .now() + 0.5) { [weak self] in
                 guard let self, self.watcherRevision == revision, self.isCurrent(run) else { return }
-                self.apply(changes, run: run)
-                if last > self.lastEventID { self.lastEventID = last }
+                self.drainChanges(buffer, run: run)
             }
         }
+    }
+
+    @discardableResult
+    private func drainChanges(_ buffer: AskFileChangeBuffer, run: Int) -> Bool {
+        guard isCurrent(run), let batch = buffer.take() else { return false }
+        apply(batch.changes, run: run)
+        guard isCurrent(run) else { return true }
+        if batch.lastEventID > lastEventID {
+            lastEventID = batch.lastEventID
+            // Save the advanced cursor on normal shutdown even if every event
+            // was excluded. Otherwise each launch replays the same build history.
+            dirty = true
+        }
+        return true
     }
 
     // MARK: - Changes

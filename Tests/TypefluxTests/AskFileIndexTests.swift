@@ -421,6 +421,84 @@ struct AskFileIndexServiceTests {
         #expect(index.status.phase == .ready)
     }
 
+    @Test func eventBurstsFilterBeforeCreatingReadersAndMergeRepeatedMetadataReads() throws {
+        let root = try makeTree(), snapshot = root.appendingPathExtension("bin")
+        defer {
+            try? FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: snapshot)
+        }
+        let reader = AskRecordingFileReader(), watcher = AskTestFileWatcher()
+        var readers = 0
+        let index = AskFileIndex(configuration: { (true, settings(root)) }, fullDiskAccess: { true },
+                                 snapshotURL: snapshot, home: root.path,
+                                 makeReader: { readers += 1; return reader }, makeWatcher: { watcher })
+        index.start(); index.waitUntilIdle()
+        let previousReaders = readers, previousRequests = reader.requests.count
+        let baseEvent = try #require(AskFileSnapshot.decode(Data(contentsOf: snapshot))).eventID
+        for event in 1 ... 1000 {
+            watcher.send([.init(path: root.path + "/.build/\(event).o", rescan: false, isDirectory: false)], id: baseEvent + UInt64(event))
+        }
+        index.waitUntilIdle()
+        #expect(readers == previousReaders && reader.requests.count == previousRequests)
+        for event in 1001 ... 1100 {
+            watcher.send([.init(path: root.path + "/Notes.md", rescan: false, isDirectory: false)], id: baseEvent + UInt64(event))
+        }
+        index.waitUntilIdle()
+        #expect(readers == previousReaders + 1)
+        #expect(reader.requests.count == previousRequests + 1)
+        #expect(index.search(.init("notes"), options: .init()).first?.name == "Notes.md")
+        watcher.send([.init(path: root.path + "/.build/last.o", rescan: false)], id: baseEvent + 1200)
+        index.waitUntilIdle()
+        index.saveBeforeQuitting(); index.waitUntilIdle()
+        #expect(AskFileSnapshot.decode(try Data(contentsOf: snapshot))?.eventID == baseEvent + 1200)
+    }
+
+    @Test func liveWatcherCatchesChangesMadeAfterADirectoryWasScanned() throws {
+        let root = try makeTree(), snapshot = root.appendingPathExtension("bin")
+        defer {
+            try? FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: snapshot)
+        }
+        let reader = AskRecordingFileReader(), watcher = AskTestFileWatcher()
+        var injected = false
+        reader.respond = { request in
+            let result = AskFileWorkerCommand.handle(request)
+            if request.operation == .directory, request.path == root.path + "/Docs", !injected {
+                injected = true
+                #expect(watcher.paths == [root.path], "the stream must already be live during the scan")
+                let late = root.appendingPathComponent("Docs/ArrivedDuringScan.txt")
+                try Data().write(to: late)
+                watcher.send([.init(path: late.path, rescan: false, isDirectory: false)], id: UInt64.max - 1)
+            }
+            return result
+        }
+        let index = AskFileIndex(configuration: { (true, settings(root)) }, fullDiskAccess: { true },
+                                 snapshotURL: snapshot, home: root.path, makeReader: { reader }, makeWatcher: { watcher })
+        index.start(); index.waitUntilIdle()
+        #expect(injected)
+        #expect(index.search(.init("ArrivedDuringScan"), options: .init()).first?.name == "ArrivedDuringScan.txt")
+    }
+
+    @Test func mergedDirectoryReplacementReconcilesItsOldChildren() throws {
+        let root = try makeTree(), snapshot = root.appendingPathExtension("bin")
+        defer {
+            try? FileManager.default.removeItem(at: root)
+            try? FileManager.default.removeItem(at: snapshot)
+        }
+        let watcher = AskTestFileWatcher()
+        let index = makeIndex(root, snapshot: snapshot, watcher: watcher)
+        index.start(); index.waitUntilIdle()
+        let docs = root.appendingPathComponent("Docs")
+        try FileManager.default.removeItem(at: docs)
+        try FileManager.default.createDirectory(at: docs, withIntermediateDirectories: true)
+        try Data().write(to: docs.appendingPathComponent("Replacement.txt"))
+        watcher.send([.init(path: docs.path, rescan: false, isDirectory: true, structureChanged: true)], id: 1)
+        watcher.send([.init(path: docs.path, rescan: false, isDirectory: true, structureChanged: true)], id: 2)
+        index.waitUntilIdle()
+        #expect(index.search(.init("合同"), options: .init()).isEmpty)
+        #expect(index.search(.init("Replacement"), options: .init()).first?.name == "Replacement.txt")
+    }
+
     @Test func reloadsTheSnapshotAndRebuildsWhenSettingsChange() throws {
         let root = try makeTree()
         defer { try? FileManager.default.removeItem(at: root) }
