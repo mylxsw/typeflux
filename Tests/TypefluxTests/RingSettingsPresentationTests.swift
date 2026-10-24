@@ -27,7 +27,7 @@ final class RingSettingsPresentationTests: XCTestCase {
     }
 
     func testDirectionsGoClockwiseFromTheTop() {
-        XCTAssertEqual((0..<8).map { RingSettingsPresentation.direction(of: $0, count: 8) },
+        XCTAssertEqual((0 ..< 8).map { RingSettingsPresentation.direction(of: $0, count: 8) },
                        ["up", "upRight", "right", "downRight", "down", "downLeft", "left", "upLeft"].map {
                            L("ring.direction." + $0)
                        })
@@ -35,27 +35,30 @@ final class RingSettingsPresentationTests: XCTestCase {
         XCTAssertEqual(RingSettingsPresentation.direction(of: 0, count: 0), "")
     }
 
-    func testDetailNamesTheTypeAndTarget() {
+    func testSummaryNamesTheTarget() {
         let binding = HotkeyBinding(keyCode: 21, modifierFlags: UInt(NSEvent.ModifierFlags.command.rawValue))
         let cases: [(RingActionKind, String)] = [
             (.feature(.notes), RingFeature.notes.detail),
             (.keyword(keyword: "rw", pluginID: "p"), "rw · Polish"),
-            (.app(bundleIdentifier: "x", name: "Safari"), "Safari"),
+            (.app(bundleIdentifier: "com.apple.Safari", name: "Safari"), "Safari · com.apple.Safari"),
             (.keys(binding), HotkeyFormat.display(binding)),
             (.system(.mute), RingSystemAction.mute.detail),
             (.shortcut(name: "Pomodoro"), "Pomodoro"),
             (.url("https://a.b"), "https://a.b"),
             (.folder(path: "~/x"), "~/x")
         ]
-        for (kind, suffix) in cases {
-            let detail = RingSettingsPresentation.detail(of: RingAction(kind: kind, title: "t", symbol: "s")) { _, _ in
+        for (kind, expected) in cases {
+            let summary = RingSettingsPresentation.summary(of: RingAction(
+                kind: kind,
+                title: "t",
+                symbol: "s"
+            )) { _, _ in
                 "Polish"
             }
-            XCTAssertEqual(detail, kind.type.title + " · " + suffix)
+            XCTAssertEqual(summary, expected)
         }
-        XCTAssertEqual(RingSettingsPresentation.detail(of: RingAction(kind: .keyword(keyword: "rw", pluginID: "p"),
-                                                                      title: "t", symbol: "s")),
-                       RingActionType.keyword.title + " · rw")
+        XCTAssertEqual(RingSettingsPresentation.summary(of: RingAction(kind: .keyword(keyword: "rw", pluginID: "p"),
+                                                                       title: "t", symbol: "s")), "rw")
     }
 
     func testEveryEnumHasTextAndSymbols() {
@@ -74,6 +77,10 @@ final class RingSettingsPresentationTests: XCTestCase {
             XCTAssertFalse(type.title.hasPrefix("ring."), type.rawValue)
             XCTAssertFalse(type.targetLabel.hasPrefix("ring."), type.rawValue)
             XCTAssertNotNil(NSImage(systemSymbolName: type.symbol, accessibilityDescription: nil), type.symbol)
+        }
+        for group in ["input", "screenshot", "windows", "appearance", "desktop", "security", "keywords", "apps",
+                      "commonKeys", "shortcuts", "folders", "typed"] {
+            XCTAssertFalse(L("ring.library.group." + group).hasPrefix("ring."), group)
         }
         for style in RingStyle.allCases {
             XCTAssertEqual(style.id, style.rawValue)
@@ -101,5 +108,32 @@ final class RingSettingsPresentationTests: XCTestCase {
                .shortcut(name: "s"), .url("u"), .folder(path: "f")]
         XCTAssertEqual(Set(kinds.map(\.pickerKey)).count, kinds.count)
         XCTAssertEqual(RingActionKind.keyword(keyword: "RW", pluginID: "p").pickerKey, "keyword.p/rw")
+    }
+
+    func testIssuesNameWhatCanNoLongerRun() {
+        func issue(_ kind: RingActionKind, keyword: Bool = true, app: Bool = true, folder: Bool = true) -> String? {
+            RingSettingsPresentation.issue(of: RingAction(kind: kind, title: "T", symbol: "star"),
+                                           keywordExists: { _, _ in keyword }, appExists: { _ in app },
+                                           folderExists: { _ in folder })
+        }
+        XCTAssertNil(issue(.feature(.notes), keyword: false, app: false, folder: false))
+        XCTAssertNil(issue(.system(.mute)))
+        XCTAssertNil(issue(.shortcut(name: "x")))
+        XCTAssertNil(issue(.keys(HotkeyBinding(keyCode: 1, modifierFlags: 0))))
+        XCTAssertNil(issue(.keyword(keyword: "fy", pluginID: "p")))
+        XCTAssertEqual(issue(.keyword(keyword: "fy", pluginID: "p"), keyword: false),
+                       L("ring.issue.keywordMissing", "fy"))
+        XCTAssertNil(issue(.app(bundleIdentifier: "a.b", name: "Sketch")))
+        XCTAssertEqual(issue(.app(bundleIdentifier: "a.b", name: "Sketch"), app: false),
+                       L("ring.error.appMissing", "Sketch"))
+        XCTAssertNil(issue(.url("https://typeflux.app")))
+        XCTAssertEqual(issue(.url("typeflux")), L("ring.error.invalidURL"))
+        XCTAssertNil(issue(.folder(path: "~/Downloads")))
+        XCTAssertEqual(issue(.folder(path: "~/Gone"), folder: false), L("ring.error.folderMissing", "~/Gone"))
+        var checked = ""
+        _ = RingSettingsPresentation.issue(of: RingAction(kind: .folder(path: "~/Docs"), title: "", symbol: ""),
+                                           keywordExists: { _, _ in true }, appExists: { _ in true },
+                                           folderExists: { checked = $0; return true })
+        XCTAssertEqual(checked, NSHomeDirectory() + "/Docs", "the tilde is expanded before checking")
     }
 }
