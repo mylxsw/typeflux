@@ -1,15 +1,15 @@
 <div align="center">
 
-# [Typeflux](https://typeflux.app) - Talk. We'll Type.
+# [Typeflux](https://typeflux.app) — The open-source AI layer for your Mac
 
-Hold `Fn` to dictate, or double-press `Fn` to ask anything. Typeflux delivers lightning-fast, accurate voice-to-text directly into any macOS application. Free, open-source, and supports local models — your voice never has to leave your Mac.
+An AI agent that gets things done, a launcher, voice typing in any app, screenshots and screen recording, and clipboard history — all in one app, each one shortcut away. Free, open source, and works with local models.
 
 [![Tests](https://github.com/mylxsw/typeflux/actions/workflows/test.yml/badge.svg)](https://github.com/mylxsw/typeflux/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/mylxsw/typeflux/graph/badge.svg)](https://codecov.io/gh/mylxsw/typeflux)
 
 English | [简体中文](./README.zh-CN.md)
 
-[![观看视频](https://img.youtube.com/vi/ZxWWUOEgaJ4/maxresdefault.jpg)](https://youtu.be/ZxWWUOEgaJ4)
+[![Watch the video](https://img.youtube.com/vi/ZxWWUOEgaJ4/maxresdefault.jpg)](https://youtu.be/ZxWWUOEgaJ4)
 
 ![product-image](./assets/product-image.png)
 
@@ -20,34 +20,30 @@ English | [简体中文](./README.zh-CN.md)
 
 ## Download
 
-**[⬇ Download latest release (.dmg)](https://github.com/mylxsw/typeflux/releases/latest)**
+**[⬇ Download latest release (.dmg)](https://github.com/mylxsw/typeflux/releases/latest)** · [Release notes](https://typeflux.app/releases)
 
-1. Download `Typeflux.dmg` from the latest release
+1. Download `Typeflux.dmg` from the latest release (Apple silicon and Intel builds are available)
 2. Open the DMG and drag `Typeflux.app` to **Applications**
-3. Launch and grant Microphone + Accessibility permissions
+3. Launch and grant the permissions you need (Microphone and Accessibility for voice typing; Screen Recording for screenshots)
 
-> **macOS 13+** · Free · No subscription · Fully local inference supported
+> **macOS 13+** · Free · No account required to get started
 
 ## Why Typeflux
 
-Most voice input tools force you to switch apps — dictating in one place, then copying and pasting into another. That context switch breaks flow.
+Asking an AI, finding a file, dictating a reply, grabbing a screenshot, pasting something you copied an hour ago — on most Macs these are five different apps. Typeflux puts them behind a handful of shortcuts, so you stay in whatever app you are already using.
 
-Typeflux injects text directly into whichever app you're already using, at the cursor position, the moment you release the hotkey. It feels like typing, just **4× faster** (~200 WPM vs. ~50 WPM).
+It replaces a voice dictation app, a launcher, an AI chat app, a screenshot tool, a screen recorder, a clipboard manager and a translator.
 
-And when you need more than dictation, **Chat** turns your voice into an AI assistant for Q&A, rewriting, translation, and complex workflows.
+## Four Ways In
 
-## How It Works
+| Entry | Default shortcut | What it does |
+|-------|------------------|--------------|
+| **Launcher** | `⌘ Space` | Find apps and files, run commands, get instant results, or ask AI |
+| **AI Agent** | `⌘ Space`, type, then `⌘ ↩` | Hand off a question or a task; the agent can search, read, edit files and operate apps |
+| **Voice Input** | Hold `Fn` | Speak, release, and the text appears at your cursor in any app |
+| **Ring** | Hold `⌃ ⌥ Space` | A radial menu at the pointer — flick toward an action and release |
 
-```
-Hold Fn → Speak → Release → Text appears instantly
-Fn ×2 → Chat → Release → Answer, edit, or action
-```
-
-1. **Press and hold** `Fn` (default hotkey)
-2. **Speak naturally**
-3. **Release** — Typeflux transcribes and injects the text at your cursor
-4. **Double-press** `Fn` to use Chat for Q&A, selected-text edits, and agent workflows
-5. The result is also copied to clipboard as a fallback
+Every shortcut can be changed in **Settings → Shortcuts**. Other defaults: screenshot `⌥⌘A`, clipboard & history panel `⌥⌘O`.
 
 ## Features
 
@@ -55,43 +51,79 @@ Local files, including skills and conversation workspaces, live under
 `~/.typeflux/`. See [local data directory](docs/DATA_DIRECTORY.md) for the
 layout and upgrade behavior.
 
-### One-Click Voice Input
-Hold `Fn` to start, release to stop. No switching input methods, no clicking buttons — works in any text field across browsers, code editors, terminals, and native apps.
+### AI Agent
+More than chat — it can do the work for you:
 
-### Chat (`Fn` ×2)
-More than just dictation. Double-press `Fn`, speak on the second press, then release to chat with an AI agent using your voice:
+- **Conversations** with history, attachments, screenshots, Mermaid diagrams and charts
+- **Web search** with cited sources, and a **built-in browser** in the side panel that can read pages and fill forms
+- **Files and commands** — read and write inside folders you grant, run terminal commands and scripts
+- **Computer use** — look at the screen, click and type to operate other apps
+- **Code** — run code, edit projects and preview the result
+- **Image generation** through the image provider you configure
+- **Memory and notes** — remembers your preferences and saves answers to the notebook
+- **Skills** (installable from GitHub) and **MCP** servers for external tools and data
+- **Permission modes** — *Strict* (approve every tool call), *Standard* (reads run automatically, changes ask first) or *Auto*
 
-- **Voice Q&A** — Ask questions and get instant answers
-- **Content Rewrite** — Select text, then speak an instruction like "make this shorter" or "translate to English"
-- **Complex Workflows** — Handle multi-step tasks through natural conversation
+### Launcher
+One input box for everything:
 
-### Local-First, Privacy-First
-Run entirely on your Mac with on-device models. No API keys needed, no data leaves your machine. We don't collect, store, or analyze any of your voice or text data.
+- Search files by name (with pinyin and path matching) and search inside PDFs, Markdown and text files (Apple silicon)
+- Open, switch and quit apps; jump to open browser tabs and bookmarks (Safari, Chrome, Arc, Edge, Dia)
+- Run commands in a floating terminal, or hand them to Terminal / iTerm
+- Instant results while you type: calculator, base conversion, translation, dates
+- System controls and info: sleep, dark mode, Bluetooth, live system monitor, hardware details
+- Built-in tools behind keywords: translation (multiple engines side by side), word book, calendar with holidays and lunar dates, world clock, notebook, emoji search
+- Press `⌘ ↩` on anything to start an AI conversation
 
-### Custom Personas
-Create named instruction sets for different scenarios — work emails, study notes, casual chat, code comments — and switch between them from the menu bar.
+Window styles range from a Spotlight-like launcher to a slim search bar, inline quick answers, and a full workspace with history, web browsing and file previews.
 
-### Multiple Speech Backends
+### Voice Input
+Hold the hotkey, speak naturally, release — the text is typed at the cursor in any app.
+
+- **Edit by voice** — select text and say "make this shorter" or "translate to English" to replace it
+- **Personas** — named instruction sets for different scenarios (work email, casual chat, code comments), each can have its own shortcut
+- **Streaming preview** of partial results while you speak
+- **History & replay** — review sessions, replay audio, retry with different settings, export to Markdown
+- **Capsule styles** — bottom capsule, orb, top-corner card, or MacBook notch island
+
+### Screenshots & Recording
+- Region, window, full-screen and **scrolling** (long) screenshots
+- Screen recording with system audio, microphone and camera picture-in-picture; pause and trim; export MP4 or **GIF**
+- Annotate with arrows, shapes, step numbers and mosaic; auto-mask phone numbers; beautify backgrounds
+- Pin to screen, screenshot to text (OCR), screenshot translation, ask AI about a screenshot
+
+### Clipboard
+- History of text, links, code, images and more, with full-text search and per-app filtering
+- Retention from one day to forever; pin important items
+- Snippets for frequently used text; `⌘1–9` to paste quickly
+
+### Ring
+Hold the ring shortcut and a radial menu opens at the pointer. Flick toward an action and release to run it; move back to the center to cancel. Up to 8 slots — defaults are voice input, chat, translate selection, screenshot, screenshot to text and clipboard history.
+
+### Make It Yours
+- **Workflows** — your own scripts behind launcher keywords, in Python, Node, TypeScript, shell, AppleScript or any program; output can use the Alfred Script Filter JSON format
+- **Let AI write one** — describe the tool you want; the agent writes, tests and saves it
+- **Workflow gallery** — ready-made tools such as timestamp conversion, JSON formatting and QR codes
+- **Custom AI commands** — turn a prompt into a keyword (e.g. `rw` to polish, `sum` to summarize)
+- **Keyword hotkeys** — bind a global shortcut to any keyword
+
+### Models: Local or Cloud, Your Choice
+
+**Speech recognition**
+
 | Provider | Type | Best For |
 |----------|------|----------|
-| Typeflux Cloud | Cloud | Zero-config, balanced accuracy |
-| Local Model | Local | Privacy, offline use |
+| Local Model | Local | Privacy, offline use (default) |
+| Typeflux Cloud | Cloud streaming | Zero-config, 60+ languages |
+| Free Models | Cloud | No API key, open-source endpoints |
+| Soniox | Cloud streaming | Multi-language realtime |
 | Alibaba Cloud ASR | Cloud streaming | Low latency, Chinese |
 | Doubao Realtime ASR | Cloud streaming | Chinese optimization |
 | Google Speech-to-Text | Cloud | Multi-language, enterprise |
 | OpenAI (Whisper API) | Cloud | High accuracy |
-| Multimodal LLM | Cloud | Vision + audio tasks |
+| Multimodal LLM | Cloud | Audio-capable LLMs |
 | Groq | Cloud | Fast inference, low cost |
-| Free Models | Cloud | No API key, open-source endpoints |
 
-### Custom Model Protocols
-In **Settings → Models → Add Endpoint**, choose **Chat Completions**, **Anthropic Messages**, or **Responses**, then enter the endpoint, API key, and model ID. The protocol is saved with the provider and used for model discovery, connection tests, rewrite, and Chat, including streamed replies and tools. Existing custom providers keep Chat Completions until you change their protocol.
-
-You can enter a base URL such as `https://api.example.com/v1` or a full inference URL. Typeflux preserves gateway path prefixes when selecting `/models`, `/messages`, `/responses`, or `/chat/completions`. Model discovery depends on the gateway exposing a compatible `/models` endpoint; otherwise add model IDs manually.
-
-![Custom provider protocol selector](docs/screenshots/add-model-protocol.png)
-
-### Local Models
 When you choose **Local Model**, Typeflux downloads and runs the model entirely on your Mac:
 
 | Model | Size | Params | Best For |
@@ -102,19 +134,31 @@ When you choose **Local Model**, Typeflux downloads and runs the model entirely 
 | WhisperKit Large | ~3 GB | 1.55B | Highest accuracy offline transcription |
 | Qwen3-ASR | ~1.3 GB | 0.6B | Strong context understanding, long-form recognition |
 
-### Streaming Preview
-See partial transcription results while still speaking, so you get immediate feedback before you release.
+**Language models** — use Typeflux Cloud, or bring your own: OpenAI-compatible Chat Completions, Anthropic Messages, OpenAI Responses, or Ollama.
 
-### History & Replay
-Every session is saved locally. Review past sessions, replay audio, retry transcription with different settings, or export records to Markdown.
+In **Settings → Models → Add Endpoint**, choose **Chat Completions**, **Anthropic Messages**, or **Responses**, then enter the endpoint, API key, and model ID. The protocol is saved with the provider and used for model discovery, connection tests, rewrite, and Chat, including streamed replies and tools. Existing custom providers keep Chat Completions until you change their protocol.
+
+You can enter a base URL such as `https://api.example.com/v1` or a full inference URL. Typeflux preserves gateway path prefixes when selecting `/models`, `/messages`, `/responses`, or `/chat/completions`. Model discovery depends on the gateway exposing a compatible `/models` endpoint; otherwise add model IDs manually.
+
+![Custom provider protocol selector](docs/screenshots/add-model-protocol.png)
+
+### Privacy
+- Local speech models run offline — your voice never has to leave your Mac
+- Private conversations are stored only on this Mac (remote models still receive the content you send them)
+- By default the agent asks before changing files or running commands, and is limited to folders you grant
+- Fully open source under AGPL-3.0
+
+### iPhone (coming soon)
+An iOS Chat client lives in `Apps/iOS`: continue conversations, use voice input, and use Typeflux Cloud or your own models. See [iOS Chat Client](./docs/IOS_CHAT.md).
 
 ## Requirements
 
-- macOS 13 or later
-- Microphone permission
-- Accessibility permission (for text injection)
+- macOS 13 or later (Apple silicon or Intel)
+- Microphone and Accessibility permissions for voice typing and text insertion
+- Screen Recording permission for screenshots, recording and computer use
 
-For cloud providers: API keys and endpoint URLs.  
+For cloud providers: API keys and endpoint URLs, or a Typeflux Cloud account.
+
 For local inference: model files are downloaded automatically on first use.
 
 ## Build from Source
@@ -190,7 +234,7 @@ The iOS app requires iOS 17+. See the [iOS run, installation, and deployment gui
 - [Usage Guide](./docs/USAGE.md)
 - [Make Commands](./docs/MAKE_COMMANDS.md)
 - [Release Guide](./docs/RELEASE.md)
-- [Changelog](./CHANGELOG.md)
+- [Release Notes](https://typeflux.app/releases)
 
 ## Community
 
@@ -206,7 +250,7 @@ Join the community to share feedback, ask questions, and follow development upda
 
 Typeflux is a completely open-source project. We believe great tools should belong to everyone.
 
-Contributions welcome — STT provider integrations, overlay UX, settings views, text injection edge cases, or history/export features are great starting points.
+Contributions welcome — agent tools, launcher plugins and workflows, speech providers, screenshot and recording tools, text insertion edge cases, and localization are all great starting points.
 
 1. Read the module layout in [CLAUDE.md](./CLAUDE.md)
 2. Run the app locally with `make dev`
