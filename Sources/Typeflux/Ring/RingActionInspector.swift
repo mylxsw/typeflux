@@ -283,19 +283,33 @@ struct RingSymbolGrid: View {
     let onPick: (String) -> Void
 
     var body: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 9), spacing: 2) {
-            ForEach(symbols, id: \.self) { symbol in
-                Button { onPick(symbol) } label: {
-                    Image(systemName: symbol).font(.system(size: 13, weight: .medium))
-                        .frame(maxWidth: .infinity).frame(height: 28)
-                        .foregroundStyle(symbol == selected ? Color.white : TFColors.textPrimary)
-                        .background(RoundedRectangle(cornerRadius: TFMetrics.itemCornerRadius, style: .continuous)
-                            .fill(symbol == selected ? TFColors.accent : Color.clear))
-                        .contentShape(Rectangle())
+        ScrollViewReader { proxy in
+            ScrollView(.vertical) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 9), spacing: 2) {
+                    ForEach(symbols, id: \.self) { symbol in
+                        Button { onPick(symbol) } label: {
+                            Image(systemName: symbol).font(.system(size: 13, weight: .medium))
+                                .frame(maxWidth: .infinity).frame(height: 28)
+                                .foregroundStyle(symbol == selected ? Color.white : TFColors.textPrimary)
+                                .background(RoundedRectangle(
+                                    cornerRadius: TFMetrics.itemCornerRadius,
+                                    style: .continuous
+                                )
+                                .fill(symbol == selected ? TFColors.accent : Color.clear))
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .id(symbol)
+                        .help(symbol)
+                        .accessibilityLabel(symbol)
+                        .accessibilityAddTraits(symbol == selected ? .isSelected : [])
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(symbol)
-                .accessibilityAddTraits(symbol == selected ? .isSelected : [])
+            }
+            .frame(height: 178)
+            .onAppear { proxy.scrollTo(selected, anchor: .center) }
+            .onChange(of: selected) { symbol in
+                proxy.scrollTo(symbol, anchor: .center)
             }
         }
     }

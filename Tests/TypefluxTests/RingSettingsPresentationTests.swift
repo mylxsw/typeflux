@@ -100,6 +100,15 @@ final class RingSettingsPresentationTests: XCTestCase {
         }
     }
 
+    func testSymbolChoicesAreUniqueAndCoverCommonShortcutActions() {
+        let symbols = RingSettingsPresentation.symbolChoices
+        XCTAssertEqual(Set(symbols).count, symbols.count)
+        for symbol in ["arrow.clockwise", "chevron.left", "plus.square", "xmark.square",
+                       "doc.on.doc", "scissors", "play", "display", "folder.badge.plus"] {
+            XCTAssertTrue(symbols.contains(symbol), symbol)
+        }
+    }
+
     func testPickerKeysAreDistinct() {
         let binding = HotkeyBinding(keyCode: 21, modifierFlags: 0)
         let kinds: [RingActionKind] = RingFeature.allCases.map { .feature($0) }

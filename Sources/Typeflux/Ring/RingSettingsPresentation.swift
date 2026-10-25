@@ -12,7 +12,36 @@ enum RingSettingsPresentation {
         "doc.on.clipboard", "note.text", "character.book.closed", "person.crop.rectangle.stack", "wand.and.stars",
         "command", "app", "keyboard", "link", "folder", "circle.lefthalf.filled", "speaker.slash", "rectangle.3.group",
         "lock", "face.smiling", "bolt", "moon", "square.stack.3d.up", "star", "heart", "globe", "timer", "envelope",
-        "terminal", "magnifyingglass", "bookmark"
+        "terminal", "magnifyingglass", "bookmark",
+        // Navigation and browser actions.
+        "chevron.left", "chevron.right", "arrow.left", "arrow.right", "arrow.up", "arrow.down",
+        "arrow.clockwise", "arrow.counterclockwise", "house", "safari", "network", "plus.square",
+        "xmark.square", "square.on.square", "arrow.up.right.square", "sidebar.left", "sidebar.right",
+        // Editing, text and documents.
+        "scissors", "doc.on.doc", "doc", "doc.text", "doc.badge.plus", "pencil", "square.and.pencil",
+        "pencil.tip", "eraser", "textformat", "bold", "italic", "underline", "strikethrough",
+        "list.bullet", "list.number", "checklist", "text.alignleft", "text.aligncenter", "text.alignright",
+        "quote.bubble", "curlybraces", "chevron.left.forwardslash.chevron.right", "number", "at",
+        // Files and organization.
+        "folder.badge.plus", "folder.badge.gearshape", "tray", "tray.and.arrow.down", "tray.and.arrow.up",
+        "archivebox", "trash", "externaldrive", "internaldrive", "icloud", "icloud.and.arrow.down",
+        "icloud.and.arrow.up", "arrow.down.doc", "arrow.up.doc", "paperclip", "tag", "pin",
+        "calendar", "clock", "alarm", "stopwatch", "book", "books.vertical",
+        // Windows, display and system controls.
+        "macwindow", "rectangle.split.2x1", "rectangle.split.1x2", "rectangle.grid.2x2",
+        "arrow.up.left.and.arrow.down.right", "arrow.down.right.and.arrow.up.left", "desktopcomputer",
+        "display", "laptopcomputer", "sun.max", "sun.min", "lightbulb", "power", "gearshape",
+        "slider.horizontal.3", "wifi", "antenna.radiowaves.left.and.right", "lock.open", "shield",
+        "eye", "eye.slash", "bell", "bell.slash", "battery.100", "cpu", "memorychip",
+        // Audio, video and images.
+        "play", "pause", "stop", "backward.end", "forward.end", "gobackward.10", "goforward.10",
+        "repeat", "shuffle", "speaker.wave.2", "speaker.plus", "speaker.minus", "mic.slash",
+        "headphones", "music.note", "music.note.list", "video", "camera", "photo", "photo.on.rectangle",
+        "record.circle", "crop", "paintbrush", "paintpalette", "eyedropper",
+        // Communication and useful markers.
+        "bubble.left", "paperplane", "phone", "person", "person.2", "hand.thumbsup", "flag",
+        "checkmark.circle", "xmark.circle", "exclamationmark.triangle", "questionmark.circle",
+        "info.circle", "location", "map", "cart", "gift", "wrench.and.screwdriver"
     ]
 
     /// What exactly a slice runs, without its type: the second line of a slice in Settings.
