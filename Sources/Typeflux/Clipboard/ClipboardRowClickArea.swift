@@ -1,11 +1,12 @@
 import AppKit
 import SwiftUI
 
-/// Handles left clicks on mouse-down, avoiding SwiftUI's wait for a competing double tap, and
+/// Selects on mouse-down and performs clicks on release, leaving time to start a drag, and
 /// drags the entry into other apps once the pointer moves past `ClipboardEntryDrag.threshold`.
 /// Context clicks pass through to the row's SwiftUI context menu; scrolling keeps its responder chain.
 struct ClipboardRowClickArea: NSViewRepresentable {
     var onClick: (Int) -> Void
+    var onPress: () -> Void = {}
     /// Built when a drag starts; empty means the entry cannot be dragged.
     var dragItems: () -> [NSPasteboardWriting] = { [] }
     /// Whether another app accepted the drop.
@@ -18,6 +19,7 @@ struct ClipboardRowClickArea: NSViewRepresentable {
     }
 
     func updateNSView(_ view: Control, context: Context) {
+        view.onPress = onPress
         view.onClick = onClick
         view.dragItems = dragItems
         view.onDragEnded = onDragEnded
@@ -28,8 +30,10 @@ struct ClipboardRowClickArea: NSViewRepresentable {
         var onClick: (Int) -> Void = { _ in }
         var dragItems: () -> [NSPasteboardWriting] = { [] }
         var onDragEnded: (Bool) -> Void = { _ in }
+        var onPress: () -> Void = {}
         var enabled = true
         private var mouseDownLocation: NSPoint?
+        private var pendingClickCount: Int?
         private(set) var isDragging = false
         /// Starts the AppKit drag session; tests capture the items instead.
         var startDrag: (Control, [NSDraggingItem], NSEvent) -> Void = { control, items, event in
@@ -54,7 +58,8 @@ struct ClipboardRowClickArea: NSViewRepresentable {
         override func mouseDown(with event: NSEvent) {
             guard enabled, !event.modifierFlags.contains(.control) else { return }
             mouseDownLocation = event.locationInWindow
-            onClick(event.clickCount)
+            pendingClickCount = event.clickCount
+            onPress()
         }
 
         override func mouseDragged(with event: NSEvent) {
@@ -63,6 +68,7 @@ struct ClipboardRowClickArea: NSViewRepresentable {
             let writers = dragItems()
             guard !writers.isEmpty else { return }
             isDragging = true
+            pendingClickCount = nil
             let image = snapshot()
             let items = writers.enumerated().map { offset, writer in
                 let item = NSDraggingItem(pasteboardWriter: writer)
@@ -74,8 +80,14 @@ struct ClipboardRowClickArea: NSViewRepresentable {
             startDrag(self, items, event)
         }
 
-        override func mouseUp(with _: NSEvent) {
+        override func mouseUp(with event: NSEvent) {
+            let clickCount = pendingClickCount
+            pendingClickCount = nil
             mouseDownLocation = nil
+            guard enabled, !isDragging, let clickCount,
+                  !event.modifierFlags.contains(.control),
+                  bounds.contains(convert(event.locationInWindow, from: nil)) else { return }
+            onClick(clickCount)
         }
 
         func draggingSession(
@@ -95,6 +107,7 @@ struct ClipboardRowClickArea: NSViewRepresentable {
 
         func finishDrag(operation: NSDragOperation) {
             isDragging = false
+            pendingClickCount = nil
             mouseDownLocation = nil
             onDragEnded(operation != [])
         }

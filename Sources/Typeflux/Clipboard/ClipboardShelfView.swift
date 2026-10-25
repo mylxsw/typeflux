@@ -146,6 +146,7 @@ struct ClipboardShelfView: View {
             isMissing: model.isMarkedMissing(row.entry),
             number: showingNumberHints ? model.shortcutNumber(at: index) : nil,
             onClick: { model.click(index: index, clickCount: $0) },
+            onPress: { model.select(index: index) },
             onPerform: { model.perform($0, at: index) },
             onDragEnded: { model.dragEnded(accepted: $0) },
             onHover: { hovering in

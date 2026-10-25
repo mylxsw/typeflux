@@ -1,7 +1,7 @@
 import AppKit
 
 /// What a clipboard row or shelf card carries when dragged into another app: the copied files,
-/// the stored image as PNG data, or the text (links also as a URL).
+/// the stored image as PNG data and an exported file, or the text (links also as a URL).
 enum ClipboardEntryDrag {
     /// Moving this far after mouse-down starts a drag rather than a click.
     static let threshold: CGFloat = 4
@@ -21,7 +21,7 @@ enum ClipboardEntryDrag {
         if let imagePath = entry.imagePath {
             let item = NSPasteboardItem()
             let provider = ClipboardImageDragProvider(path: imagePath)
-            guard item.setDataProvider(provider, forTypes: [.png]) else { return [] }
+            guard item.setDataProvider(provider, forTypes: [.png, .fileURL]) else { return [] }
             return [item]
         }
         guard let text = entry.text, !text.isEmpty, text.utf8.count <= ClipboardCaptureRules.maximumTextBytes else {
@@ -41,6 +41,7 @@ enum ClipboardEntryDrag {
 /// never handed out, so the target cannot write into Typeflux's storage.
 final class ClipboardImageDragProvider: NSObject, NSPasteboardItemDataProvider {
     let path: String
+    private var exportedURL: URL?
 
     init(path: String) {
         self.path = path
@@ -54,8 +55,34 @@ final class ClipboardImageDragProvider: NSObject, NSPasteboardItemDataProvider {
         return data
     }
 
+    /// A private copy supports file upload targets without exposing the history original.
+    /// Keep it for an hour after creation so asynchronous receivers can finish reading it.
+    func exportedFileURL() -> URL? {
+        if let exportedURL { return exportedURL }
+        guard let data = pngData() else { return nil }
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("typeflux-clipboard-drag-" + UUID().uuidString, isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false,
+                                                    attributes: [.posixPermissions: 0o700])
+            let url = directory.appendingPathComponent("Clipboard.png")
+            try data.write(to: url, options: .atomic)
+            exportedURL = url
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 3600) {
+                try? FileManager.default.removeItem(at: directory)
+            }
+            return url
+        } catch {
+            try? FileManager.default.removeItem(at: directory)
+            return nil
+        }
+    }
+
     func pasteboard(_: NSPasteboard?, item: NSPasteboardItem, provideDataForType type: NSPasteboard.PasteboardType) {
-        guard type == .png, let data = pngData() else { return }
-        item.setData(data, forType: .png)
+        if type == .png, let data = pngData() {
+            item.setData(data, forType: .png)
+        } else if type == .fileURL, let url = exportedFileURL() {
+            item.setString(url.absoluteString, forType: .fileURL)
+        }
     }
 }

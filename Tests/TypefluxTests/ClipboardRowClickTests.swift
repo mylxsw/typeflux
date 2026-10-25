@@ -37,10 +37,38 @@ struct ClipboardRowClickTests {
             model.onAction = { action, _ in if action == .paste { pastes += 1 } }
             try send(.leftMouseDown, clicks: 1, row: controls[1], window: window, controls: controls)
             #expect(model.selectedIndex == 1)
-            #expect(pastes == 1)
+            #expect(pastes == 0)
             try send(.leftMouseUp, clicks: 1, row: controls[1], window: window, controls: controls)
             try send(.leftMouseDown, clicks: 2, row: controls[1], window: window, controls: controls)
+            try send(.leftMouseUp, clicks: 2, row: controls[1], window: window, controls: controls)
             #expect(pastes == 1)
+        }
+    }
+
+    @Test func draggingWithSingleClickPasteEnabledNeverPastes() throws {
+        try withPanel { model, window, controls in
+            model.singleClickPastes = true
+            var pastes = 0
+            var drags = 0
+            model.onAction = { action, _ in if action == .paste { pastes += 1 } }
+            let row = controls[1]
+            row.startDrag = { _, items, _ in
+                drags += 1
+                #expect(items.count == 1)
+            }
+            try send(.leftMouseDown, clicks: 1, row: row, window: window, controls: controls)
+            let drag = try #require(NSEvent.mouseEvent(
+                with: .leftMouseDragged,
+                location: row.convert(NSPoint(x: 40, y: row.bounds.midY), to: nil),
+                modifierFlags: [], timestamp: 0, windowNumber: window.windowNumber,
+                context: nil, eventNumber: 0, clickCount: 1, pressure: 1
+            ))
+            row.mouseDragged(with: drag)
+            #expect(drags == 1)
+            #expect(pastes == 0)
+            row.finishDrag(operation: [])
+            try send(.leftMouseUp, clicks: 1, row: row, window: window, controls: controls)
+            #expect(pastes == 0)
         }
     }
 

@@ -16,6 +16,7 @@ struct ClipboardPanelRow: View, Equatable {
     /// The `⌘` number badge while the hints are showing.
     var number: Int?
     var onClick: (Int) -> Void = { _ in }
+    var onPress: () -> Void = {}
     var onPerform: (ClipboardEntryAction) -> Void = { _ in }
     /// Whether another app accepted the entry dragged out of the panel.
     var onDragEnded: (Bool) -> Void = { _ in }
@@ -60,6 +61,7 @@ struct ClipboardPanelRow: View, Equatable {
         .contentShape(Rectangle())
         .overlay(ClipboardRowClickArea(
             onClick: onClick,
+            onPress: onPress,
             dragItems: { [entry, isMissing] in ClipboardEntryDrag.items(for: entry, isMissing: isMissing) },
             onDragEnded: onDragEnded
         ))

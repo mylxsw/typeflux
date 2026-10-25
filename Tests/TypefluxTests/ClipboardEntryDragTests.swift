@@ -73,7 +73,17 @@ final class ClipboardEntryDragTests: XCTestCase {
         XCTAssertEqual(items.count, 1)
         let board = pasteboard(with: items)
         XCTAssertEqual(board.data(forType: .png), data)
-        XCTAssertNil(board.propertyList(forType: .fileURL), "The stored file's path is not handed out")
+        let exported = try XCTUnwrap(board.string(forType: .fileURL).flatMap(URL.init(string:)))
+        defer { try? FileManager.default.removeItem(at: exported.deletingLastPathComponent()) }
+        XCTAssertNotEqual(exported.path, png.path, "The stored file's path is not handed out")
+        XCTAssertEqual(try Data(contentsOf: exported), data)
+        try Data("changed by receiver".utf8).write(to: exported)
+        XCTAssertEqual(try Data(contentsOf: png), data, "Receiver cannot modify the original")
+        let provider = ClipboardImageDragProvider(path: png.path)
+        let copy = try XCTUnwrap(provider.exportedFileURL())
+        defer { try? FileManager.default.removeItem(at: copy.deletingLastPathComponent()) }
+        XCTAssertEqual(provider.exportedFileURL(), copy, "Repeated requests reuse one export")
+        XCTAssertNil(ClipboardImageDragProvider(path: directory.path).exportedFileURL())
 
         let link = directory.appendingPathComponent("link.png")
         try FileManager.default.createSymbolicLink(at: link, withDestinationURL: png)
@@ -124,7 +134,7 @@ final class ClipboardEntryDragTests: XCTestCase {
         control.mouseDragged(with: try event(.leftMouseDragged, 90, 90))
         XCTAssertTrue(started.isEmpty, "No drag without a mouse-down")
         control.mouseDown(with: try event(.leftMouseDown, 50, 50))
-        XCTAssertEqual(clicks, [1])
+        XCTAssertTrue(clicks.isEmpty, "Press must not paste before a potential drag")
         control.mouseDragged(with: try event(.leftMouseDragged, 52, 51))
         XCTAssertTrue(started.isEmpty, "Small movements stay a click")
         control.mouseDragged(with: try event(.leftMouseDragged, 60, 58))
@@ -139,6 +149,8 @@ final class ClipboardEntryDragTests: XCTestCase {
         XCTAssertEqual(started.count, 1, "One drag per press")
 
         control.finishDrag(operation: [])
+        control.mouseUp(with: try event(.leftMouseUp, 60, 58))
+        XCTAssertTrue(clicks.isEmpty, "A canceled drag must not turn into a paste")
         control.mouseDown(with: try event(.leftMouseDown, 50, 50))
         control.mouseUp(with: try event(.leftMouseUp, 50, 50))
         control.mouseDragged(with: try event(.leftMouseDragged, 90, 90))
@@ -152,7 +164,7 @@ final class ClipboardEntryDragTests: XCTestCase {
 
         control.enabled = false
         control.mouseDown(with: try event(.leftMouseDown, 50, 50))
-        XCTAssertEqual(clicks, [1, 1, 1], "A disabled row ignores the press")
+        XCTAssertEqual(clicks, [1], "Only a completed click fires; dragging and disabled presses do not")
     }
 
     func testAcceptedDropClosesThePanel() {

@@ -108,7 +108,7 @@ final class ClipboardPanelModel: ObservableObject {
         }
     }
 
-    /// Native mouse-down selects immediately; the second click pastes without delaying the first.
+    /// Called on mouse release; selection on press remains independent of paste actions.
     func click(index: Int, clickCount: Int = 1) {
         guard clickCount == 1 || (clickCount == 2 && !singleClickPastes) else { return }
         if singleClickPastes || clickCount == 2 {
