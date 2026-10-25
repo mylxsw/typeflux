@@ -1,4 +1,4 @@
-import CoreGraphics
+import Foundation
 
 /// Hold-to-aim, release-to-run. A quick tap leaves the ring open for clicks and keys;
 /// pressing again while it is open closes it.
@@ -15,26 +15,26 @@ struct RingHotkeyGesture: Equatable {
         case keepOpen
     }
 
-    /// How far the pointer must move after the press before a release runs a slice.
-    static let activationDistance: CGFloat = 20
+    /// Shorter presses latch the ring open; holds resolve the pointer on release.
+    static let holdDuration: TimeInterval = 0.3
 
     private(set) var isHeld = false
     private var openedByPress = false
-    private var pressLocation: CGPoint?
+    private var pressTime: TimeInterval?
 
-    mutating func pressBegan(isVisible: Bool, at location: CGPoint) -> Press {
+    mutating func pressBegan(isVisible: Bool, at time: TimeInterval) -> Press {
         guard !isHeld else { return .ignore }
         isHeld = true
         openedByPress = !isVisible
-        pressLocation = location
+        pressTime = time
         return isVisible ? .dismiss : .show
     }
 
-    mutating func pressEnded(isVisible: Bool, at location: CGPoint) -> Release {
+    mutating func pressEnded(isVisible: Bool, at time: TimeInterval) -> Release {
         guard isHeld else { return .keepOpen }
         defer { reset() }
-        guard openedByPress, isVisible, let origin = pressLocation,
-              hypot(location.x - origin.x, location.y - origin.y) >= Self.activationDistance
+        guard openedByPress, isVisible, let began = pressTime,
+              time - began >= Self.holdDuration
         else { return .keepOpen }
         return .activate
     }
@@ -42,6 +42,6 @@ struct RingHotkeyGesture: Equatable {
     mutating func reset() {
         isHeld = false
         openedByPress = false
-        pressLocation = nil
+        pressTime = nil
     }
 }

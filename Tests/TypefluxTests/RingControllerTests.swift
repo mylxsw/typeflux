@@ -10,6 +10,7 @@ final class RingControllerTests: XCTestCase {
     private var menu: FakeRingMenu!
     private var environment: FakeRingEnvironment!
     private var pointer = CGPoint(x: 100, y: 100)
+    private var time: TimeInterval = 0
     private var features: [RingFeature] = []
 
     override func setUp() {
@@ -22,6 +23,7 @@ final class RingControllerTests: XCTestCase {
         environment = FakeRingEnvironment()
         pointer = CGPoint(x: 100, y: 100)
         features = []
+        time = 0
     }
 
     override func tearDown() {
@@ -38,29 +40,30 @@ final class RingControllerTests: XCTestCase {
         executor.handlers.feature = { [weak self] in self?.features.append($0) }
         return RingController(settingsStore: store, menu: menu, executor: executor,
                               pointerLocation: { [weak self] in self?.pointer ?? .zero },
-                              frontmostApplication: { nil })
+                              frontmostApplication: { nil },
+                              now: { [weak self] in self?.time ?? 0 })
     }
 
     // MARK: - Gesture
 
-    func testHoldMoveReleaseActivates() {
+    func testHoldReleaseActivatesAtDurationBoundaryAndIgnoresRepeats() {
         var gesture = RingHotkeyGesture()
-        XCTAssertEqual(gesture.pressBegan(isVisible: false, at: .zero), .show)
+        XCTAssertEqual(gesture.pressBegan(isVisible: false, at: 0), .show)
         XCTAssertTrue(gesture.isHeld)
-        XCTAssertEqual(gesture.pressBegan(isVisible: true, at: .zero), .ignore, "key repeat is ignored")
-        XCTAssertEqual(gesture.pressEnded(isVisible: true, at: CGPoint(x: 0, y: 25)), .activate)
+        XCTAssertEqual(gesture.pressBegan(isVisible: true, at: 0.2), .ignore)
+        XCTAssertEqual(gesture.pressEnded(isVisible: true, at: RingHotkeyGesture.holdDuration), .activate)
         XCTAssertFalse(gesture.isHeld)
+        XCTAssertEqual(gesture.pressEnded(isVisible: true, at: 1), .keepOpen)
     }
 
     func testTapKeepsTheRingOpenAndAnotherPressCloses() {
         var gesture = RingHotkeyGesture()
-        _ = gesture.pressBegan(isVisible: false, at: .zero)
-        XCTAssertEqual(gesture.pressEnded(isVisible: true, at: CGPoint(x: 5, y: 5)), .keepOpen)
-        XCTAssertEqual(gesture.pressBegan(isVisible: true, at: .zero), .dismiss)
-        XCTAssertEqual(gesture.pressEnded(isVisible: false, at: CGPoint(x: 50, y: 50)), .keepOpen)
-        XCTAssertEqual(gesture.pressEnded(isVisible: true, at: .zero), .keepOpen, "a release without a press")
-        _ = gesture.pressBegan(isVisible: false, at: .zero)
-        XCTAssertEqual(gesture.pressEnded(isVisible: false, at: CGPoint(x: 50, y: 0)), .keepOpen, "already closed")
+        _ = gesture.pressBegan(isVisible: false, at: 0)
+        XCTAssertEqual(gesture.pressEnded(isVisible: true, at: 0.299), .keepOpen)
+        XCTAssertEqual(gesture.pressBegan(isVisible: true, at: 1), .dismiss)
+        XCTAssertEqual(gesture.pressEnded(isVisible: false, at: 2), .keepOpen)
+        _ = gesture.pressBegan(isVisible: false, at: 3)
+        XCTAssertEqual(gesture.pressEnded(isVisible: false, at: 4), .keepOpen, "already closed")
     }
 
     // MARK: - Controller
@@ -89,6 +92,7 @@ final class RingControllerTests: XCTestCase {
         XCTAssertEqual(menu.shownAt, [CGPoint(x: 100, y: 100)])
         pointer = CGPoint(x: 100, y: 160)
         menu.pointed = store.ringConfiguration.actions[3].id.uuidString
+        time = 0.5
         controller.pressEnded()
         try await waitUntil { self.features == [.screenshot] }
         XCTAssertEqual(menu.dismissals, 0)
@@ -121,10 +125,39 @@ final class RingControllerTests: XCTestCase {
     func testReleasingInTheMiddleCloses() {
         let controller = makeController()
         controller.pressBegan()
-        pointer = CGPoint(x: 140, y: 100)
+        time = 0.5
         menu.pointed = nil
         controller.pressEnded()
         XCTAssertEqual(menu.dismissals, 1)
+    }
+
+    func testQuickTapWithPointerMovementWaitsForClick() async throws {
+        let controller = makeController()
+        defer { withExtendedLifetime(controller) {} }
+        controller.pressBegan()
+        pointer = CGPoint(x: 100, y: 400)
+        let id = store.ringConfiguration.actions[3].id.uuidString
+        menu.pointed = id
+        time = 0.1
+        controller.pressEnded()
+        XCTAssertTrue(menu.isVisible)
+        XCTAssertEqual(menu.activations, 0)
+        XCTAssertTrue(features.isEmpty)
+        menu.onSelect(id)
+        try await waitUntil { self.features == [.screenshot] }
+    }
+
+    func testHoldReturningToCenterDismissesWithoutActionOrFocus() {
+        let controller = makeController()
+        controller.pressBegan()
+        pointer = CGPoint(x: 300, y: 100)
+        pointer = CGPoint(x: 100, y: 100)
+        time = 1
+        controller.pressEnded()
+        XCTAssertFalse(menu.isVisible)
+        XCTAssertEqual(menu.dismissals, 1)
+        XCTAssertEqual(menu.keyboardFocusRequests, 0)
+        XCTAssertTrue(features.isEmpty)
     }
 
     func testTapLeavesTheRingOpenAndPressingAgainCloses() {

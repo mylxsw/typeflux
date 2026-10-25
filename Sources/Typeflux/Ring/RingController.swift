@@ -31,6 +31,7 @@ final class RingController {
     private let settingsStore: SettingsStore
     private let menu: any RingMenuPresenting
     private let executor: RingActionExecutor
+    private let now: () -> TimeInterval
     private let pointerLocation: () -> CGPoint
     private let frontmostApplication: () -> NSRunningApplication?
     /// Voice input owns the keyboard while recording; the ring stays closed.
@@ -43,7 +44,9 @@ final class RingController {
 
     init(settingsStore: SettingsStore, menu: any RingMenuPresenting, executor: RingActionExecutor,
          pointerLocation: @escaping () -> CGPoint = { NSEvent.mouseLocation },
-         frontmostApplication: @escaping () -> NSRunningApplication? = { NSWorkspace.shared.frontmostApplication }) {
+         frontmostApplication: @escaping () -> NSRunningApplication? = { NSWorkspace.shared.frontmostApplication },
+         now: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) {
+        self.now = now
         self.settingsStore = settingsStore
         self.menu = menu
         self.executor = executor
@@ -80,7 +83,7 @@ final class RingController {
     func pressBegan() {
         let location = pointerLocation()
         guard canOpen, !isRecordingActive() else { ShortcutLatency.record(.blocked); return }
-        switch gesture.pressBegan(isVisible: menu.isVisible, at: location) {
+        switch gesture.pressBegan(isVisible: menu.isVisible, at: now()) {
         case .show:
             let front = frontmostApplication()
             previousApplication = front?.processIdentifier == ProcessInfo.processInfo.processIdentifier ? nil : front
@@ -99,7 +102,7 @@ final class RingController {
 
     func pressEnded() {
         guard gesture.isHeld else { return }
-        guard gesture.pressEnded(isVisible: menu.isVisible, at: pointerLocation()) == .activate else {
+        guard gesture.pressEnded(isVisible: menu.isVisible, at: now()) == .activate else {
             if menu.isVisible { menu.focusKeyboard() }
             return
         }
