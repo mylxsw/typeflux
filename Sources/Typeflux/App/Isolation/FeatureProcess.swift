@@ -125,6 +125,7 @@ enum FeatureProcess {
                 }
                 let snapshot: FeatureAuth = try await peer.call("bootstrap", FeatureRPC.Empty())
                 await preparation?.value
+                try Task.checkCancellation()
                 snapshot.apply()
             }
         } else {
@@ -215,7 +216,14 @@ enum FeatureProcess {
             return Data()
         }
         ShortcutLatency.record(.readinessStarted)
-        try await ready?.value
+        // Cleanup must remain reachable when bootstrap failed or is still waiting
+        // on module startup. A failed readiness task otherwise poisons every quit.
+        if command.action == "shutdown" {
+            services?.cancel()
+            ready?.cancel()
+        } else {
+            try await ready?.value
+        }
         ShortcutLatency.record(.readinessFinished)
         guard command.destination.processOwner == role, let handle else { throw FeatureRPC.Failure.unavailable }
         ShortcutLatency.record(.handlerStarted)
@@ -514,7 +522,10 @@ actor FeatureSupervisor {
                     await child.peer.stop();
                     child.process.cancel(); await child.process.value
                         return nil
-                    } catch { return role }
+                    } catch {
+                        NSLog("[Shutdown] %@ did not confirm cleanup: %@", role.rawValue, String(describing: error))
+                        return role
+                    }
                 }
             }
             for await role in group {
@@ -531,10 +542,13 @@ actor FeatureSupervisor {
             do {
                 _ = try await child.peer.request("ui", payload: JSONEncoder().encode(
                     FeatureCommand(destination: .background, action: "shutdown")
-                ), timeout: .seconds(10))
+                ), timeout: .seconds(60))
                 await child.peer.stop(); child.process.cancel();
                     await child.process.value
-                } catch { stopped = false; return false
+            } catch {
+                NSLog("[Shutdown] background did not confirm cleanup: %@", String(describing: error))
+                stopped = false
+                return false
             }
         }
         children.removeAll()

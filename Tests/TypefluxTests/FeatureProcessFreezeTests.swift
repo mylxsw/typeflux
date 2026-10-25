@@ -7,6 +7,31 @@ import Testing
 @MainActor
 struct FeatureProcessFreezeTests {
     @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_FEATURE_FREEZE_TEST"] == "1"))
+    func failedBootstrapStillAllowsBackgroundToShutDown() async throws {
+        let fixture = try makeFixture()
+        // The child's bootstrap RPC expires after ten seconds. Keep host
+        // preparation pending beyond that deadline to reproduce a poisoned ready task.
+        var resumePreparation: CheckedContinuation<Void, Never>?
+        let preparation = Task<Void, Never> {
+            await withCheckedContinuation { resumePreparation = $0 }
+        }
+        defer { resumePreparation?.resume(); preparation.cancel() }
+        let supervisor = FeatureSupervisor(api: AskTestAPI(), cache: try AskConversationCache.inMemory(),
+            auth: FeatureAuth.capture(), preparation: preparation,
+            executableURL: fixture.executable, environment: fixture.environment)
+        do {
+            await #expect(throws: FeatureRPC.Failure.timedOut) {
+                _ = try await supervisor.route(.init(destination: .background, action: "ping"), timeout: .seconds(20))
+            }
+            #expect(await supervisor.shutdown())
+            try FileManager.default.removeItem(at: fixture.root)
+        } catch {
+            _ = await supervisor.shutdown()
+            throw error
+        }
+    }
+
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_FEATURE_FREEZE_TEST"] == "1"))
     func realFeatureWindowsRemainUsableWhenAnotherMainThreadIsFrozen() async throws {
         let fixture = try makeFixture()
         let api = AskTestAPI(), cache = try AskConversationCache.inMemory()
