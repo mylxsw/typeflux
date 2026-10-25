@@ -77,8 +77,9 @@ struct AskActivityBlock: View {
         }
     }
 
+    // Tool attempts can fail while the agent retries or changes approach. Keep their
+    // errors in the expanded steps; conversation-level notices report blocked runs.
     private var traceLine: some View {
-        let failures = AskActivity.failures(group, results: results)
         let running = status == .running
         return Button(action: toggle) {
             HStack(spacing: 6) {
@@ -100,15 +101,6 @@ struct AskActivityBlock: View {
                     Text("· " + note).foregroundStyle(StudioTheme.textTertiary.opacity(0.8)).lineLimit(1)
                         .layoutPriority(1)
                 }
-                if failures > 0, !running {
-                    HStack(spacing: 4) {
-                        Circle().fill(StudioTheme.danger).frame(width: 6, height: 6)
-                        Text(L("ask.activity.failures", failures))
-                    }
-                    .foregroundStyle(StudioTheme.danger)
-                    .lineLimit(1)
-                    .layoutPriority(1)
-                }
                 Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
                     .rotationEffect(.degrees(expanded ? 90 : 0))
             }
@@ -124,7 +116,7 @@ struct AskActivityBlock: View {
         .onHover { hovering = $0 }
         .padding(.leading, -8)
         .animation(.easeOut(duration: 0.12), value: hovering)
-        .accessibilityLabel(failures > 0 ? title + ", " + L("ask.activity.failures", failures) : title)
+        .accessibilityLabel(title)
         .accessibilityValue(L(expanded ? "ask.activity.expanded" : "ask.activity.collapsed"))
     }
 

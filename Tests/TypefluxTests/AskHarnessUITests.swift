@@ -259,6 +259,30 @@ struct AskHarnessUITests {
 
     // MARK: - Views
 
+    @Test func toolFailuresDoNotChangeCollapsedSummaryButRemainInDetails() {
+        let fetch = call("f", "web_fetch", ["url": "https://example.com"])
+        let retry = call("retry", "web_fetch", ["url": "https://example.com"])
+        let group = AskActivityGroup(id: "a", messages: [step("a", [fetch, retry])])
+        let successful = [result("f"), result("retry")]
+        let recovered = [result("f", error: true), result("retry")]
+        func summarySize(_ results: [AskMessage], status: AskActivity.Status) -> NSSize {
+            let host = NSHostingView(rootView: AskActivityBlock(group: group, results: results,
+                                                                plan: nil, status: status).fixedSize())
+            host.layoutSubtreeIfNeeded()
+            return host.fittingSize
+        }
+        // A failed attempt must not add a badge, even if the block's raw status is failed.
+        #expect(summarySize(recovered, status: .done) == summarySize(successful, status: .done))
+        #expect(summarySize(recovered, status: .failed) == summarySize(successful, status: .done))
+        #expect(summarySize(recovered, status: .running) == summarySize(successful, status: .running))
+        #expect(AskPresentation.toolState(result: recovered[0]) == .failed)
+        #expect(AskToolStepRow.showsStatus(.failed))
+        #expect(AskActivity.failures(group, results: recovered) == 1)
+        let expanded = AskActivityBlock(group: group, results: recovered, plan: nil,
+                                        status: .done, startsExpanded: true)
+        #expect(fits(expanded) > fits(AskActivityBlock(group: group, results: recovered, plan: nil, status: .done)))
+    }
+
     @Test func activityBlocksRenderInEveryState() {
         let calls = [call("p", "update_plan", ["items": [["step": "A", "status": "in_progress"]]]), call("c", "run_code"), call("s", "web_search")]
         var reasoning = step("a", calls, text: "Looking it up")
