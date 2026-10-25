@@ -257,6 +257,15 @@ struct RingSettingsView: View {
 
     private var appearanceSection: some View {
         TFFormSection(title: L("ring.appearance.title")) {
+            TFFormRow(title: L("ring.hoverSound.title"), icon: "speaker.wave.2") {
+                Toggle("", isOn: Binding(get: { configuration.hoverSoundEnabled },
+                                          set: model.setHoverSoundEnabled))
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .accessibilityLabel(L("ring.hoverSound.title"))
+                    .accessibilityIdentifier("ring.hoverSound")
+            }
+            TFDivider.formWithIcon
             TFFormRow(title: L("ring.style.title"), detail: L("ring.style.detail"), icon: "paintpalette",
                       controlWidth: .wide) {
                 TFSegmentedControl(options: RingStyle.allCases.map { TFOption($0, $0.title) },

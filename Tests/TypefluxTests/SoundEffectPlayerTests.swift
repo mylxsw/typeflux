@@ -4,6 +4,30 @@ import AVFoundation
 
 final class SoundEffectPlayerTests: XCTestCase {
     @MainActor
+    func testRingHoverUsesItsOwnPersistedSettingWithoutGlobalSoundOverride() throws {
+        let settingsStore = try makeSettingsStore()
+        let playback = MockSoundEffectPlayback()
+        let player = SoundEffectPlayer(settingsStore: settingsStore, playerFactory: { _ in playback })
+        XCTAssertFalse(settingsStore.soundEffectsEnabled)
+        XCTAssertTrue(player.play(.ringHover))
+        var configuration = settingsStore.ringConfiguration
+        configuration.hoverSoundEnabled = false
+        settingsStore.ringConfiguration = configuration
+        XCTAssertFalse(settingsStore.ringConfiguration.hoverSoundEnabled)
+        XCTAssertFalse(player.play(.ringHover))
+        configuration.hoverSoundEnabled = true
+        settingsStore.ringConfiguration = configuration
+        XCTAssertTrue(player.play(.ringHover))
+        XCTAssertFalse(player.play(.tip))
+        XCTAssertEqual(playback.playCallCount, 2)
+    }
+
+    func testExistingRingConfigurationEnablesHoverSound() throws {
+        let configuration = try JSONDecoder().decode(RingConfiguration.self, from: Data("{}".utf8))
+        XCTAssertTrue(configuration.hoverSoundEnabled)
+    }
+
+    @MainActor
     func testRingHoverResourceIsPlayableAndReplaysWithoutCreatingAnotherPlayer() throws {
         let settingsStore = try makeSettingsStore()
         let playback = MockSoundEffectPlayback()
@@ -129,7 +153,7 @@ final class SoundEffectPlayerTests: XCTestCase {
         })
 
         XCTAssertEqual(creationCount, 0)
-        for effect in SoundEffectPlayer.Effect.allCases {
+        for effect in SoundEffectPlayer.Effect.allCases where effect != .ringHover {
             XCTAssertFalse(player.play(effect))
         }
         XCTAssertEqual(creationCount, 0)

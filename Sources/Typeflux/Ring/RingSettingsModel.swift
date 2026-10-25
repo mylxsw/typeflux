@@ -38,6 +38,10 @@ final class RingSettingsModel: ObservableObject {
         configuration.actions
     }
 
+    func setHoverSoundEnabled(_ enabled: Bool) {
+        update { $0.hoverSoundEnabled = enabled }
+    }
+
     func setStyle(_ style: RingStyle) {
         update { $0.style = style }
     }

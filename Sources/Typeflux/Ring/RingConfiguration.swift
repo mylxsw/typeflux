@@ -29,6 +29,7 @@ struct RingConfiguration: Codable, Equatable, Sendable {
     )
 
     var actions: [RingAction]
+    var hoverSoundEnabled = true
     var style: RingStyle = .frosted
     var centerTitle = RingConfiguration.defaultCenterTitle
 
@@ -73,12 +74,13 @@ struct RingConfiguration: Codable, Equatable, Sendable {
         return changed
     }
 
-    private enum CodingKeys: String, CodingKey { case actions, style, centerTitle }
+    private enum CodingKeys: String, CodingKey { case actions, style, centerTitle, hoverSoundEnabled }
 
     /// Missing fields keep their defaults; an action written by a newer version is skipped
     /// instead of discarding the whole ring.
     init(from decoder: any Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
+        hoverSoundEnabled = try values.decodeIfPresent(Bool.self, forKey: .hoverSoundEnabled) ?? true
         style = (try? values.decodeIfPresent(RingStyle.self, forKey: .style)) ?? .frosted
         centerTitle = try values.decodeIfPresent(String.self, forKey: .centerTitle) ?? Self.defaultCenterTitle
         if values.contains(.actions) {

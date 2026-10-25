@@ -7365,3 +7365,5 @@
 "help.shortcuts.context.editing" = "Bold, italic, link, headings, checklist and strikethrough are Markdown note editor shortcuts. Other editing keys act on the focused text field.";
 
 "screenshot.text.interrupted" = "Text recognition was interrupted. Try again.";
+
+"ring.hoverSound.title" = "Hover sound";

@@ -7365,3 +7365,5 @@
 "help.shortcuts.context.editing" = "粗体、斜体、链接、标题、任务列表和删除线用于 Markdown 笔记编辑器；其他编辑按键作用于当前输入框。";
 
 "screenshot.text.interrupted" = "识字已中断，请重试";
+
+"ring.hoverSound.title" = "悬停音效";

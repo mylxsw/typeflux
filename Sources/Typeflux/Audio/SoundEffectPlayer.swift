@@ -50,7 +50,10 @@ final class SoundEffectPlayer {
     @discardableResult
     @MainActor
     func play(_ effect: Effect) -> Bool {
-        guard isEnabledOverride?() ?? settingsStore.soundEffectsEnabled else {
+        let enabled = isEnabledOverride?() ?? (effect == .ringHover
+            ? settingsStore.ringConfiguration.hoverSoundEnabled
+            : settingsStore.soundEffectsEnabled)
+        guard enabled else {
             stopPlayers()
             return false
         }

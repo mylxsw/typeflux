@@ -7365,3 +7365,5 @@
 "help.shortcuts.context.editing" = "太字、斜体、リンク、見出し、チェックリスト、取り消し線はMarkdownノート用です。他の編集キーはフォーカス中の欄に適用されます。";
 
 "screenshot.text.interrupted" = "文字認識が中断されました。再試行してください。";
+
+"ring.hoverSound.title" = "ホバー音";

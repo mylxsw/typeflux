@@ -7367,3 +7367,5 @@
 "help.shortcuts.context.editing" = "粗體、斜體、連結、標題、工作清單和刪除線用於 Markdown 筆記編輯器；其他編輯按鍵作用於目前輸入框。";
 
 "screenshot.text.interrupted" = "辨識已中斷，請重試";
+
+"ring.hoverSound.title" = "懸停音效";
