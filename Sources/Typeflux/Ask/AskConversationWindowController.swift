@@ -367,15 +367,17 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         model.launcherWindowMode = settings.askLauncherWindowMode
         ShortcutLatency.record(.statePreparationFinished)
         model.quickSearch.setVisible(true)
+        // Authorize already cached pixels before the first frame. Decoding and index
+        // refresh remain deferred so opening never waits for uncached icons.
+        ShortcutLatency.measure(.mediaActivationStarted, .mediaActivationFinished) {
+            model.setLauncherImagesVisible(true, prepareIcons: false)
+        }
         // Present cached home content first. Index/icon and workflow refreshes
         // run after an initial frame opportunity and are cancelled on dismissal.
         launcherRefreshTask?.cancel()
         launcherRefreshTask = Task { [weak self] in
             do { try await Task.sleep(for: .milliseconds(16)) } catch { return }
             guard let self, launcher?.isVisible == true else { return }
-            ShortcutLatency.measure(.mediaActivationStarted, .mediaActivationFinished) {
-                model.setLauncherImagesVisible(true)
-            }
             ShortcutLatency.measure(.appsRefreshStarted, .appsRefreshFinished) { model.refreshQuickApps() }
             ShortcutLatency.record(.workflowsStarted)
             defer { ShortcutLatency.record(.workflowsFinished) }

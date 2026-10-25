@@ -77,8 +77,9 @@ extension AppCoordinator {
                     await featureModuleStartup?.value
                     guard !FeatureIsolationProbe.enabled else { controller.prewarmLauncher(); return }
                     try? await di.moduleRegistry.start(.mediaPreviews)
-                    await SemanticFileSearchService.shared.startForApplication(using: di.moduleRegistry, startModules: false)
+                    // Prepare the first application viewport before file-search startup.
                     controller.prewarmLauncher()
+                    await SemanticFileSearchService.shared.startForApplication(using: di.moduleRegistry, startModules: false)
                 }
             }
         }

@@ -75,7 +75,8 @@ enum AskLauncherHome {
     }
 
     static let maximumChips = 6
-    static let iconPrefetchCount = 12
+    /// Six grid rows cover the initial viewport plus the next scroll row.
+    static let iconPrefetchCount = AskApplicationGrid.columns * 6
 
     static func build(_ context: Context) -> [Section] {
         let apps = context.applications.filter { $0.kind == .application }.map {

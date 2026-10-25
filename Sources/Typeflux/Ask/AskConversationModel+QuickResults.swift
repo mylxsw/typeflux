@@ -77,10 +77,10 @@ extension AskConversationModel {
         launcherIconCache.preloadApplications(applications.map {
             .init(kind: .file, value: $0.url.path)
         })
-        launcherIconCache.prefetch(applications.filter { $0.bundleID != Bundle.main.bundleIdentifier }
-            .prefix(AskLauncherHome.iconPrefetchCount).map {
+        // Match the displayed order exactly, including this application when indexed.
+        launcherIconCache.prefetch(applications.prefix(AskLauncherHome.iconPrefetchCount).map {
             .init(kind: .file, value: $0.url.path)
-        })
+        }, limit: AskLauncherHome.iconPrefetchCount)
         if launcherIconWarmupEnabled {
             launcherIconCache.warmApplications(applications.map {
                 .init(kind: .file, value: $0.url.path)

@@ -287,6 +287,58 @@ private actor RecoveringNativeIcon {
         XCTAssertTrue(icons.allSatisfy { cache.cached($0) != nil })
     }
 
+    func testCachedGridIconDrawsBeforeFirstAsyncLoad() throws {
+        let pixels = raster(edge: 112)
+        var lookups = 0
+        let cache = AskLauncherIconCache(immediateLookup: { _, _ in
+            lookups += 1
+            return NSImage(cgImage: pixels, size: .init(width: 56, height: 56))
+        })
+        let icon = MediaNativeIcon(kind: .file, value: "/Applications/FirstFrame.app")
+        XCTAssertNotNil(cache.immediate(icon))
+        let scope = AskImagePresentationScope()
+        let access = AskImagePresentationAccess(scope: scope, epoch: scope.epoch, authorize: { true })
+        let renderer = ImageRenderer(content: AskNativeIconView(icon: icon, immediateLookup: false)
+            .frame(width: 56, height: 56)
+            .environment(\.askLauncherIconCache, cache)
+            .environment(\.askContextImageAccess, access))
+        renderer.scale = 2
+        let image = try XCTUnwrap(renderer.cgImage)
+        let bitmap = NSBitmapImageRep(cgImage: image)
+        let color = try XCTUnwrap(bitmap.colorAt(x: 56, y: 56)?.usingColorSpace(.deviceRGB))
+        XCTAssertGreaterThan(color.blueComponent, 0.7, "The first synchronous render contains cached pixels")
+        XCTAssertEqual(lookups, 1, "Rendering does not repeat a system lookup")
+    }
+
+    func testHomePrefetchCoversGridViewportBeforeAnyImageViewExists() async throws {
+        let calls = NativeIconCalls(), pixels = raster(edge: 112)
+        let cache = AskLauncherIconCache(immediateLookup: { _, _ in nil }, decode: { _ in
+            await calls.called()
+            return .init(images: [pixels], numbers: [], pages: 0)
+        })
+        let icons = (0..<60).map { MediaNativeIcon(kind: .file, value: "/Applications/Grid\($0).app") }
+        let handles = cache.prefetch(icons, limit: AskLauncherHome.iconPrefetchCount)
+        for handle in handles { await handle.value }
+        XCTAssertEqual(AskLauncherHome.iconPrefetchCount, 36)
+        XCTAssertTrue(icons.prefix(36).allSatisfy { cache.cached($0) != nil })
+        XCTAssertNil(cache.cached(icons[36]))
+        let initialCalls = await calls.count
+        XCTAssertEqual(initialCalls, 36)
+        cache.cancelPrefetch()
+        let repeated = cache.prefetch(icons, limit: AskLauncherHome.iconPrefetchCount)
+        for handle in repeated { await handle.value }
+        let repeatedCalls = await calls.count
+        XCTAssertEqual(repeatedCalls, initialCalls, "Reopening reuses pixels without another decode")
+        cache.clear()
+        let search = cache.prefetch(icons)
+        for handle in search { await handle.value }
+        XCTAssertNotNil(cache.cached(icons[11]))
+        XCTAssertNil(cache.cached(icons[12]), "Search keeps its smaller prefetch budget")
+        cache.clear()
+        let none = cache.prefetch(icons, limit: -1)
+        XCTAssertTrue(none.isEmpty)
+    }
+
     func testLauncherWarmsLowerApplicationRowsAndReusesThemAfterDismissal() async throws {
         let calls = NativeIconCalls(), pixels = raster()
         var immediateLookups = 0

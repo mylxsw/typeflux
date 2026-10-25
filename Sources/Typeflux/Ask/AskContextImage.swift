@@ -62,7 +62,7 @@ extension AskConversationModel {
                 (launcher || (self.selectedId == selection && !(selection.map(self.isDeletedConversation) ?? false)))
         })
     }
-    func setLauncherImagesVisible(_ visible: Bool) {
+    func setLauncherImagesVisible(_ visible: Bool, prepareIcons: Bool = true) {
         if !visible { workflowImageCopyTask?.cancel(); clipboardAction.cancelPreparation() }
         if !visible {
             launcherIconWarmupEnabled = false
@@ -71,7 +71,7 @@ extension AskConversationModel {
             launcherIconCache.clearFiles()
         } else if !launcherIconWarmupEnabled {
             launcherIconWarmupEnabled = true
-            prepareLauncherAppIcons()
+            if prepareIcons { prepareLauncherAppIcons() }
         }
         launcherImageScope.setVisible(visible); objectWillChange.send()
     }

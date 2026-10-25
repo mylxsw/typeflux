@@ -123,10 +123,14 @@ struct AskLauncherToggleTests {
             ShortcutLatency.$current.withValue(trace) { controller.showLauncher() }
         }
         #expect(diagnostics.stages == [.statePreparationStarted, .statePreparationFinished,
+                                       .mediaActivationStarted, .mediaActivationFinished,
                                        .contextRequestStarted,
                                        .contextRequestFinished,
                                        .windowCached, .windowAcquisitionStarted, .windowAcquisitionFinished,
-                                       .layoutStarted, .layoutFinished, .windowShowStarted, .windowShowFinished,
+                                       .layoutStarted, .layoutFinished, .windowShowStarted,
+                                       .windowOrderStarted, .windowOrderFinished,
+                                       .windowDisplayStarted, .windowDisplayFinished,
+                                       .windowKeyStarted, .windowKeyFinished, .windowShowFinished,
                                        .windowOrdered, .focusStarted, .focusFinished, .monitorsStarted,
                                        .monitorsFinished])
         #expect(diagnostics.events.allSatisfy { $0.trace == trace })
@@ -163,12 +167,15 @@ struct AskLauncherToggleTests {
             await ShortcutLatency.$current.withValue(trace) {
                 controller.showLauncher()
                 #expect(!cancelled.stages.contains(.appsRefreshStarted))
+                #expect(fixture.model.contextImageAccess(launcher: true).allows(),
+                        "Cached icons must be authorized synchronously, before a deferred refresh")
                 controller.dismissLauncher()
                 try? await Task.sleep(for: .milliseconds(40))
             }
         }
         #expect(!cancelled.stages.contains(.appsRefreshStarted))
-        #expect(!cancelled.stages.contains(.mediaActivationStarted))
+        #expect(cancelled.stages.contains(.mediaActivationStarted))
+        #expect(!fixture.model.contextImageAccess(launcher: true).allows())
         let active = ShortcutLatencyEventCollector()
         await ShortcutLatency.$eventSink.withValue(active.sink) {
             await ShortcutLatency.$current.withValue(trace) {
@@ -184,6 +191,8 @@ struct AskLauncherToggleTests {
         #expect(active.stages.contains(.mediaActivationFinished))
         let ordered = try #require(active.stages.firstIndex(of: .windowOrdered))
         let refresh = try #require(active.stages.firstIndex(of: .appsRefreshStarted))
+        let media = try #require(active.stages.firstIndex(of: .mediaActivationFinished))
+        #expect(media < ordered)
         #expect(ordered < refresh)
     }
 

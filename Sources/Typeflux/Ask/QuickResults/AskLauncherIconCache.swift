@@ -246,8 +246,8 @@ final class AskLauncherIconCache {
 
     /// Replace stale-query prefetches. Returned handles let owners collect accepted work.
     /// Visible rows sharing a request keep it alive.
-    @discardableResult func prefetch(_ icons: [MediaNativeIcon]) -> [Task<Void, Never>] {
-        let ordered = Array(icons.filter(Self.eligible).prefix(12)).map { Key($0) }
+    @discardableResult func prefetch(_ icons: [MediaNativeIcon], limit: Int = 12) -> [Task<Void, Never>] {
+        let ordered = Array(icons.filter(Self.eligible).prefix(min(capacity, max(0, limit)))).map { Key($0) }
         return updatePrefetch(ordered, privateFiles: false)
     }
 
