@@ -5503,3 +5503,19 @@ extension WorkflowControllerProcessingTests {
         harness.controller.dismissHistoryPicker()
     }
 }
+
+
+extension WorkflowControllerProcessingTests {
+    @MainActor
+    func testCloudLoginCooldownDoesNotPreserveNoticeOrInterruptProcessing() async {
+        let controller = makeWorkflowController(configureSettings: {
+            $0.lastTypefluxCloudLoginReminderAt = Date()
+        })
+        controller.appState.setStatus(.processing)
+
+        await controller.presentTypefluxCloudLoginRequired()
+
+        XCTAssertFalse(controller.shouldPreserveLLMConfigurationNotice)
+        XCTAssertEqual(controller.appState.status, .processing)
+    }
+}

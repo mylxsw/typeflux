@@ -3,10 +3,10 @@ import Foundation
 struct LLMConfigurationReminderPolicy {
     enum Presentation: Equatable {
         case actionDialog
-        case passiveNotice
+        case suppressed
     }
 
-    static let typefluxCloudLoginReminderInterval: TimeInterval = 3 * 60 * 60
+    static let typefluxCloudLoginReminderInterval: TimeInterval = 6 * 60 * 60
 
     let settingsStore: SettingsStore
     var now: () -> Date = Date.init
@@ -27,6 +27,6 @@ struct LLMConfigurationReminderPolicy {
             return .actionDialog
         }
 
-        return .passiveNotice
+        return .suppressed
     }
 }

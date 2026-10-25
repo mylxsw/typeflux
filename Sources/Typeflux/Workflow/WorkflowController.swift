@@ -1481,16 +1481,12 @@ final class WorkflowController {
 
     func presentLLMNotConfigured(_ status: LLMConfigurationStatus) async {
         guard case let .notConfigured(reason) = status else { return }
-        let presentation = LLMConfigurationReminderPolicy(settingsStore: settingsStore)
-            .presentation(for: status)
         await MainActor.run {
-            self.shouldPreserveLLMConfigurationNotice = true
+            let presentation = LLMConfigurationReminderPolicy(settingsStore: settingsStore)
+                .presentation(for: status)
+            guard presentation == .actionDialog else { return }
 
-            guard presentation == .actionDialog else {
-                self.appState.setStatus(.idle)
-                self.overlayController.showNotice(message: L("workflow.llmNotConfigured.notice.localFallback"))
-                return
-            }
+            self.shouldPreserveLLMConfigurationNotice = true
 
             self.soundEffectPlayer.play(.error)
 

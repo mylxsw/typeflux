@@ -23,20 +23,20 @@ final class LLMConfigurationReminderPolicyTests: XCTestCase {
         XCTAssertEqual(store.lastTypefluxCloudLoginReminderAt, now)
     }
 
-    func testTypefluxCloudLoginReminderUsesPassiveNoticeWithinThreeHours() {
+    func testTypefluxCloudLoginReminderIsSuppressedWithinSixHours() {
         let store = makeSettingsStore()
         let lastShownAt = Date(timeIntervalSince1970: 1000)
         store.lastTypefluxCloudLoginReminderAt = lastShownAt
         let policy = LLMConfigurationReminderPolicy(
             settingsStore: store,
             now: {
-                lastShownAt.addingTimeInterval(LLMConfigurationReminderPolicy.typefluxCloudLoginReminderInterval - 1)
+                lastShownAt.addingTimeInterval(6 * 60 * 60 - 1)
             }
         )
 
         let presentation = policy.presentation(for: .notConfigured(reason: .cloudNotLoggedIn))
 
-        XCTAssertEqual(presentation, .passiveNotice)
+        XCTAssertEqual(presentation, .suppressed)
         XCTAssertEqual(store.lastTypefluxCloudLoginReminderAt, lastShownAt)
     }
 
@@ -48,20 +48,20 @@ final class LLMConfigurationReminderPolicyTests: XCTestCase {
         let policy = LLMConfigurationReminderPolicy(
             settingsStore: store,
             now: {
-                lastShownAt.addingTimeInterval(LLMConfigurationReminderPolicy.typefluxCloudLoginReminderInterval - 1)
+                lastShownAt.addingTimeInterval(6 * 60 * 60 - 1)
             }
         )
 
         let presentation = policy.presentation(for: .notConfigured(reason: .cloudNotLoggedIn))
 
-        XCTAssertEqual(presentation, .passiveNotice)
+        XCTAssertEqual(presentation, .suppressed)
         XCTAssertEqual(store.lastTypefluxCloudLoginReminderAt, lastShownAt)
     }
 
-    func testTypefluxCloudLoginReminderShowsActionDialogAfterThreeHours() {
+    func testTypefluxCloudLoginReminderShowsActionDialogAfterSixHours() {
         let store = makeSettingsStore()
         let lastShownAt = Date(timeIntervalSince1970: 1000)
-        let now = lastShownAt.addingTimeInterval(LLMConfigurationReminderPolicy.typefluxCloudLoginReminderInterval)
+        let now = lastShownAt.addingTimeInterval(6 * 60 * 60)
         store.lastTypefluxCloudLoginReminderAt = lastShownAt
         let policy = LLMConfigurationReminderPolicy(settingsStore: store, now: { now })
 
@@ -81,4 +81,36 @@ final class LLMConfigurationReminderPolicyTests: XCTestCase {
         XCTAssertEqual(presentation, .actionDialog)
         XCTAssertNil(store.lastTypefluxCloudLoginReminderAt)
     }
+    func testRepeatedAttemptsDoNotExtendCooldown() {
+        let store = makeSettingsStore()
+        let firstShownAt = Date(timeIntervalSince1970: 1000)
+        var currentTime = firstShownAt
+        let policy = LLMConfigurationReminderPolicy(settingsStore: store, now: { currentTime })
+        XCTAssertEqual(policy.presentation(for: .notConfigured(reason: .cloudNotLoggedIn)), .actionDialog)
+
+        for hour in 1...5 {
+            currentTime = firstShownAt.addingTimeInterval(Double(hour) * 60 * 60)
+            XCTAssertEqual(policy.presentation(for: .notConfigured(reason: .cloudNotLoggedIn)), .suppressed)
+            XCTAssertEqual(store.lastTypefluxCloudLoginReminderAt, firstShownAt)
+        }
+        currentTime = firstShownAt.addingTimeInterval(6 * 60 * 60)
+        XCTAssertEqual(policy.presentation(for: .notConfigured(reason: .cloudNotLoggedIn)), .actionDialog)
+    }
+
+    func testCooldownSurvivesSettingsReload() {
+        let suiteName = "LLMConfigurationReminderPolicyTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let firstShownAt = Date(timeIntervalSince1970: 1000)
+        let initialPolicy = LLMConfigurationReminderPolicy(
+            settingsStore: SettingsStore(defaults: defaults), now: { firstShownAt }
+        )
+        XCTAssertEqual(initialPolicy.presentation(for: .notConfigured(reason: .cloudNotLoggedIn)), .actionDialog)
+        let reloadedPolicy = LLMConfigurationReminderPolicy(
+            settingsStore: SettingsStore(defaults: UserDefaults(suiteName: suiteName)!),
+            now: { firstShownAt.addingTimeInterval(60) }
+        )
+        XCTAssertEqual(reloadedPolicy.presentation(for: .notConfigured(reason: .cloudNotLoggedIn)), .suppressed)
+    }
+
 }
