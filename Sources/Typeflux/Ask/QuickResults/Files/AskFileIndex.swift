@@ -125,7 +125,7 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
         self.home = home
         self.makeWatcher = makeWatcher
         self.readerOwnership = ownership
-        let makeReader = makeReader ?? { AskFileReader(ownership: ownership) }
+        let makeReader = makeReader ?? { AskFileReader(ownership: ownership, idleTimeout: AskFileReader.backgroundIdleTimeout) }
         self.makeReader = makeReader
         self.searchCandidates = searchCandidates
         reader = makeReader()

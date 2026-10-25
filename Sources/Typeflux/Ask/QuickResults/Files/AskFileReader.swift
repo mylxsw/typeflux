@@ -25,6 +25,13 @@ enum AskFileReadError: Error { case timeout, cancelled, unavailable, nonLocalMou
 
 /// Serial, reusable child with deadline-bound pipe I/O. A hung syscall is confined to the child.
 final class AskFileReader: AskFileReading {
+    static let backgroundIdleTimeout: TimeInterval = 60
+    // The timer may only touch pipes after the complete synchronous request/callback returns.
+    private let operationLock = NSRecursiveLock()
+    private let idleTimeout: TimeInterval?
+    private var idleRetirement: DispatchWorkItem?
+    private var idleGeneration = UUID()
+    private var hasDirectoryContinuation = false
     private let executable: URL?
     private let arguments: [String]
     private let timeout: TimeInterval
@@ -42,7 +49,8 @@ final class AskFileReader: AskFileReading {
     init(executable: URL? = nil, arguments: [String] = ["file-index-worker"],
          timeout: TimeInterval = 5, startupTimeout: TimeInterval? = nil, qualityOfService: QualityOfService? = nil,
          ownership: AskFileReaderOwnership = AskFileReaderOwnership(), reaper: OwnedProcessReaper = .shared,
-         inventory: AskDirectoryInventory? = .shared) {
+         inventory: AskDirectoryInventory? = .shared, idleTimeout: TimeInterval? = nil) {
+        self.idleTimeout = idleTimeout
         self.executable = executable
         self.arguments = arguments
         self.timeout = timeout
@@ -56,7 +64,7 @@ final class AskFileReader: AskFileReading {
 
     /// Read on the reader's serial owner, like stream() and stop().
     var isRunning: Bool {
-        process?.isRunning == true
+        operationLock.withLock { process?.isRunning == true }
     }
 
     static var executableURL: URL {
@@ -95,6 +103,21 @@ final class AskFileReader: AskFileReading {
 
     func stream(_ request: AskFileReadRequest, isCancelled: () -> Bool = { false },
                 receive: (AskFileReadResponse) -> Bool) throws {
+        operationLock.lock()
+        defer { operationLock.unlock() }
+        guard !streaming else { throw AskFileReadError.unavailable }
+        cancelIdleRetirement()
+        defer { scheduleIdleRetirement() }
+        try streamRequest(request, isCancelled: isCancelled) { response in
+            if request.operation == .directory {
+                self.hasDirectoryContinuation = response.directoryCursor != nil
+            }
+            return receive(response)
+        }
+    }
+
+    private func streamRequest(_ request: AskFileReadRequest, isCancelled: () -> Bool,
+                               receive: (AskFileReadResponse) -> Bool) throws {
         guard request.operation == .directory, let scope = request.scope, let inventory else {
             return try transfer(request, isCancelled: isCancelled, receive: receive)
         }
@@ -304,7 +327,30 @@ final class AskFileReader: AskFileReading {
         }
     }
 
+    private func cancelIdleRetirement() {
+        idleGeneration = UUID()
+        idleRetirement?.cancel()
+        idleRetirement = nil
+    }
+
+    private func scheduleIdleRetirement() {
+        guard let idleTimeout, idleTimeout > 0, process != nil, !streaming, !hasDirectoryContinuation else { return }
+        let generation = idleGeneration
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, self.operationLock.try() else { return }
+            defer { self.operationLock.unlock() }
+            guard self.idleGeneration == generation, !self.streaming, !self.hasDirectoryContinuation else { return }
+            self.stop()
+        }
+        idleRetirement = work
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + idleTimeout, execute: work)
+    }
+
     func stop() {
+        operationLock.lock()
+        defer { operationLock.unlock() }
+        cancelIdleRetirement()
+        hasDirectoryContinuation = false
         // Collection is asynchronous; the lineage stays occupied through host completion.
         process?.stop()
         process = nil

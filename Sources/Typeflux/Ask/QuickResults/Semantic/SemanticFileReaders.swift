@@ -10,7 +10,8 @@ final class SemanticFileReaders: @unchecked Sendable {
     let priority: SemanticFileReaderLane
 
     init(makeReader: (@Sendable () -> any AskFileReading)? = nil, requiresLifecycle: Bool = false) {
-        validation = SemanticFileReaderLane(makeReader: makeReader, requiresLifecycle: requiresLifecycle)
+        // Search validation has an 80 ms warm budget: keep this lightweight lane warm.
+        validation = SemanticFileReaderLane(makeReader: makeReader, requiresLifecycle: requiresLifecycle, idleTimeout: nil)
         indexing = SemanticFileReaderLane(makeReader: makeReader, requiresLifecycle: requiresLifecycle)
         priority = SemanticFileReaderLane(makeReader: makeReader, requiresLifecycle: requiresLifecycle)
     }
@@ -47,11 +48,11 @@ final class SemanticFileReaderLane: @unchecked Sendable {
     private var gate: ModuleWorkerGate?
 
     init(makeReader: (@Sendable () -> any AskFileReading)? = nil, requiresLifecycle: Bool = false,
-         ownership: AskFileReaderOwnership? = nil) {
+         ownership: AskFileReaderOwnership? = nil, idleTimeout: TimeInterval? = AskFileReader.backgroundIdleTimeout) {
         // The native reader keeps this lineage across every scope and restart.
         let ownership = ownership ?? AskFileReaderOwnership(requiresLifecycle: requiresLifecycle)
         self.ownership = ownership; self.requiresLifecycle = requiresLifecycle
-        self.makeReader = makeReader ?? { AskFileReader(ownership: ownership) }
+        self.makeReader = makeReader ?? { AskFileReader(ownership: ownership, idleTimeout: idleTimeout) }
     }
 
     func bind(_ gate: ModuleWorkerGate) -> Bool {
