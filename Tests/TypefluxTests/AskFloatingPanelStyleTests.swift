@@ -4,7 +4,7 @@ import Testing
 @testable import Typeflux
 
 /// Native rendering checks; the window server's refraction is not part of bitmap captures.
-@Suite("Floating panel readability", .serialized, .exclusiveUIState)
+@Suite(.serialized, .exclusiveUIState)
 @MainActor
 struct AskFloatingPanelStyleTests {
     @Test func `light panels shield text from dark and saturated backdrops`() async throws {
@@ -102,6 +102,27 @@ struct AskFloatingPanelStyleTests {
                 )
                 try save(bitmap, to: root.appendingPathComponent("wordbook-\(label)-\(name).png"))
             }
+            let notes = AskPluginItem(id: AskNotesPlugin.openNotesItemID, title: L("ask.notes.openWindow"),
+                                      subtitle: L("ask.notes.openWindow.detail"), icon: .symbol("macwindow"),
+                                      actions: [AskPromptPlugin.openNotesAction.with(shortcut: .enter)])
+            let noteRows = [notes, AskPluginItem(id: "meeting", title: "项目会议记录", subtitle: "整理讨论结论与下一步安排"),
+                            AskPluginItem(id: "ideas", title: "产品想法", subtitle: "启动器入口与搜索体验")]
+            let noteOutput = AskPluginOutput(body: "", original: "", meta: [], source: L("ask.plugin.source.device"),
+                                             actions: [], items: noteRows, selectedItem: 1)
+            let noteDisplay = AskPluginDisplay(
+                title: L("ask.notes.title"),
+                symbol: "note.text",
+                phase: .done(.init(mode: .live, title: L("ask.notes.title")), noteOutput)
+            )
+            let noteView = AskPluginResultsView(display: noteDisplay, question: "", onMain: {}, onAction: { _ in },
+                                                onAskAI: {}, onHighlight: { _ in })
+                .background(AskGlassBackground(material: .opaque, corner: 16, opaqueFill: AskTheme.launcherSurface))
+            let noteBitmap = try await render(
+                noteView,
+                size: NSSize(width: 650, height: AskPluginResultsView.height(for: noteDisplay)),
+                appearance: appearance
+            )
+            try save(noteBitmap, to: root.appendingPathComponent("notes-\(name).png"))
             let clipboard = ClipboardPanelModel()
             clipboard.reset(entries: [ClipboardTestSupport.entry(.text, text: "会议记录", sourceAppName: "Notes"),
                                       ClipboardTestSupport.entry(.link, text: "https://example.com")])

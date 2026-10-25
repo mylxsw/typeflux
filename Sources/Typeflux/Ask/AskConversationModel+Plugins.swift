@@ -62,10 +62,17 @@ enum AskPluginRegistry {
 
     /// What a saved list records as covered: every plugin, and every later group of keywords.
     static let aliasKeywords = "launcher.keywordAliases.v1"
-    static let coveredGroups = pluginIDs + [wordBookKeywords, screenshotAskKeywords, aliasKeywords]
+    static let notebookWindowKeywords = "notes.openWindow"
+    static let coveredGroups = pluginIDs + [
+        wordBookKeywords,
+        screenshotAskKeywords,
+        aliasKeywords,
+        notebookWindowKeywords
+    ]
 
     /// The group a default keyword belongs to for `keywords(saved:known:)`.
     static func group(of keyword: AskKeyword) -> String {
+        if AskNotesPlugin.opensWindow(keyword) { return notebookWindowKeywords }
         if AskSystemCommand(pluginID: keyword.pluginID) != nil { return aliasKeywords }
         if keyword.pluginID == AskScreenshotPlugin.id, ScreenshotFollowUp(options: keyword.options) == .askAI {
             return screenshotAskKeywords
@@ -92,6 +99,12 @@ enum AskPluginRegistry {
         guard let saved else { return defaults }
         let covered = Set(known ?? [AskTranslatePlugin.id])
         var result = AskKeywordAliases.consolidate(saved)
+        if !covered.contains(notebookWindowKeywords) {
+            for index in result.indices where result[index].pluginID == AskNotesPlugin.id
+                && !AskNotesPlugin.opensWindow(result[index]) {
+                result[index].aliases.removeAll { $0.caseInsensitiveCompare("notebook") == .orderedSame }
+            }
+        }
         var taken = Set(result.flatMap(\.allKeywords).map { $0.lowercased() })
         for entry in defaults where !covered.contains(group(of: entry)) {
             if AskSystemCommand(pluginID: entry.pluginID) != nil,

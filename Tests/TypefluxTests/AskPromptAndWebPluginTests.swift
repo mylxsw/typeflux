@@ -251,8 +251,10 @@ struct AskPluginRegistryTests {
         }
         #expect(jtai.map(\.keyword) == ["jtai"])
         #expect(AskPluginRegistry.keywords(saved: [fyja], known: AskPluginRegistry.pluginIDs) == AskKeywordAliases
-            .addingEnglishNames([fyja] + AskKeywordAliases.consolidate(dict) + jtai) + AskPluginRegistry
-            .defaultKeywords.filter { AskSystemCommand(pluginID: $0.pluginID) != nil })
+            .addingEnglishNames([fyja] + AskKeywordAliases.consolidate(dict)
+                + AskPluginRegistry.defaultKeywords.filter(AskNotesPlugin.opensWindow) + jtai) + AskPluginRegistry
+            .defaultKeywords
+            .filter { AskSystemCommand(pluginID: $0.pluginID) != nil })
         // Saved with every group but files: only `f` joins.
         let beforeFiles = AskPluginRegistry.coveredGroups.filter { $0 != AskFileSearchPlugin.id }
         #expect(AskPluginRegistry.keywords(saved: [fyja], known: beforeFiles) == [fyja] + AskPluginRegistry

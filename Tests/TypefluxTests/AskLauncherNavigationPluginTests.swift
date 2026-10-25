@@ -10,6 +10,39 @@ struct AskLauncherNavigationPluginTests {
         .init(text: text, origin: origin, keyword: keyword, options: [:], interfaceLanguage: .english)
     }
 
+    @Test func `library keywords open directly and migrate without taking custom keywords`() async throws {
+        let f = try AskTestFixture()
+        let notebook = try #require(AskNotesPlugin.keywords.first(where: AskNotesPlugin.opensWindow))
+        let dict = try #require(AskTranslatePlugin.keywords.first { AskTranslatePlugin.opensWordBook($0.options) })
+        var notes = 0, words = 0
+        f.model.openNotes = { _ in notes += 1 }
+        f.model.openWordBook = { _ in words += 1 }
+        for keyword in [notebook, dict] {
+            #expect(f.model.launcherOpensOnSelection(keyword))
+            #expect(f.model.enterSelectedLauncherKeyword(keyword, run: false) == .close)
+            #expect(f.model.enterSelectedLauncherKeyword(keyword, run: true) == .close)
+        }
+        #expect(notes == 2 && words == 2)
+        #expect(!f.model.launcherOpensOnSelection(AskNotesPlugin.keywords[0]))
+        let plugin = AskNotesPlugin()
+        var input = request(notebook, text: "ignored")
+        input.options = notebook.options
+        #expect(await plugin.plan(input).action(for: .enter)?.kind == .openNotes(id: nil))
+        #expect(plugin.chipDetail(for: notebook, language: .english) == L("ask.notes.openWindow"))
+        let old = AskKeyword(keyword: "nb", pluginID: AskNotesPlugin.id, aliases: ["笔记", "notebook"])
+        let known = AskPluginRegistry.coveredGroups.filter { $0 != AskPluginRegistry.notebookWindowKeywords }
+        let migrated = AskPluginRegistry.keywords(saved: [old], known: known)
+        #expect(migrated.count == 2)
+        #expect(migrated[0].allKeywords == ["nb", "笔记"])
+        #expect(migrated[1].contains("notebook") && migrated[1].contains("笔记本"))
+        #expect(AskNotesPlugin.opensWindow(migrated[1]))
+        #expect(AskPluginRegistry.keywords(saved: migrated, known: AskPluginRegistry.coveredGroups) == migrated)
+        let custom = AskKeyword(keyword: "notebook", pluginID: AskPromptPlugin.id)
+        let preserved = AskPluginRegistry.keywords(saved: [custom], known: known)
+        #expect(preserved.first == custom)
+        #expect(preserved.count(where: { $0.contains("notebook") }) == 1)
+    }
+
     @Test func `setting is an explicit application settings action`() async throws {
         let plugin = AskSettingsPlugin()
         let input = request(plugin.defaultKeywords[0])

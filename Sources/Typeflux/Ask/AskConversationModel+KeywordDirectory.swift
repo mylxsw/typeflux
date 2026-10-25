@@ -33,7 +33,8 @@ extension AskConversationModel {
         var entries = launcherKeywordDirectory(language: language).filter(\.canEnter).map {
             AskLauncherSearchEntry(keyword: $0.keyword, title: $0.title, detail: $0.detail, symbol: $0.symbol,
                                    command: AskSystemCommand(pluginID: $0.keyword.pluginID),
-                                   alternateNames: [$0.keyword.options[AskWorkflowPlugin.titleOption]].compactMap { $0 })
+                                   alternateNames: [$0.keyword.options[AskWorkflowPlugin.titleOption]]
+                                       .compactMap(\.self))
         }
         for command in AskSystemCommand.allCases where !entries.contains(where: { $0.command == command }) {
             entries.append(.init(keyword: .init(keyword: "", pluginID: command.id), title: command.title,
@@ -49,6 +50,9 @@ extension AskConversationModel {
         case AskOpenChatPlugin.id: kind = .openChat
         case AskSettingsPlugin.id: kind = .openSettings
         case AskHelpPlugin.id: kind = .openHelp(query: query)
+        case AskNotesPlugin.id where AskNotesPlugin.opensWindow(keyword): kind = .openNotes(id: nil)
+        case AskTranslatePlugin.id
+            where AskTranslatePlugin.opensWordBook(keyword.options): kind = .openWordBook(key: nil)
         default:
             if AskScreenshotPlugin.startsCapture(keyword) {
                 kind = AskScreenshotPlugin.captureKind(for: keyword)
@@ -168,7 +172,9 @@ extension AskConversationModel {
                 of: keyword, interface: language,
                 secondLanguage: settings.askTranslationSecondLanguage ?? AskTranslationLanguages.defaultSecond(for: language)
             )
-            let detail = keyword.pluginID == AskCalendarPlugin.id
+            let detail = keyword.pluginID == AskNotesPlugin.id
+                ? L(AskNotesPlugin.opensWindow(keyword) ? "ask.notes.openWindow.detail" : "ask.notes.placeholder")
+                : keyword.pluginID == AskCalendarPlugin.id
                 ? AskCalendarPlugin.summary(language: language)
                 : keyword.pluginID == AskWorldClockPlugin.id
                 ? AskWorldClockPlugin.summary(options: keyword.options, language: language)
@@ -182,7 +188,7 @@ extension AskConversationModel {
                 keyword.enabled = workflow.status != .disabled
                 let reachable = available.contains { $0.id == keyword.id && $0.pluginID == keyword.pluginID }
                 let detail = [plugin.chipDetail(for: keyword, language: language), workflow.manifest?.description]
-                    .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
+                    .compactMap(\.self).filter { !$0.isEmpty }.joined(separator: " · ")
                 entries.append(AskPrefixPlugin.Entry(
                     keyword: keyword, title: plugin.title, detail: detail, symbol: plugin.symbol,
                     unavailableReason: keyword.enabled && !reachable ? L("ask.plugin.prefix.unavailable") : nil

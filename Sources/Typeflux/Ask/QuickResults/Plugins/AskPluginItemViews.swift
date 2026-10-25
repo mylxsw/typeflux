@@ -20,6 +20,10 @@ struct AskPluginItemRow: View {
         item.valid && selected && emphasized
     }
 
+    private var opensLibrary: Bool {
+        item.id == AskNotesPlugin.openNotesItemID || item.id == AskTranslatePlugin.openAllItem
+    }
+
     var body: some View {
         Button(action: onPick) {
             HStack(spacing: 11) {
@@ -43,6 +47,10 @@ struct AskPluginItemRow: View {
                 // The title keeps its room; a long action ("Open in Visual Studio Code") is cut short instead.
                 .layoutPriority(1)
                 Spacer(minLength: 8)
+                if opensLibrary, !selected {
+                    Image(systemName: "arrow.up.forward.app").font(.system(size: 13))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                }
                 if selected, let action = item.actions.first(where: { $0.shortcut == .enter }) {
                     Text("↩ " + action.title).font(.system(size: 11.5)).lineLimit(1).truncationMode(.tail)
                         .foregroundStyle(filled ? AskTheme.accentText : StudioTheme.textSecondary)
@@ -53,6 +61,12 @@ struct AskPluginItemRow: View {
             .background(item.valid && selected && (filled || colorScheme == .light)
                 ? AskTheme.launcherSelection : item.valid && selected ? AskTheme.hoverFill : Color.clear,
                 in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(alignment: .bottom) {
+                if opensLibrary {
+                    Rectangle().fill(StudioTheme.textTertiary.opacity(0.15)).frame(height: 0.5)
+                        .padding(.horizontal, 8)
+                }
+            }
             .contentShape(Rectangle())
             .overlay {
                 if item.valid, selected, filled || colorScheme == .light {
@@ -75,7 +89,7 @@ struct AskPluginItemIcon: View {
     var icon: AskPluginItem.Icon?
     var symbol: String
     var filled: Bool
-    var revision: Date? = nil
+    var revision: Date?
     @Environment(\.askIconGeneration) private var generation
 
     var body: some View {
@@ -110,5 +124,7 @@ struct AskPluginItemIcon: View {
     }
 
     /// Synchronous projections never invoke native icon lookup or image decoding.
-    static func image(_ icon: AskPluginItem.Icon) -> NSImage? { nil }
+    static func image(_: AskPluginItem.Icon) -> NSImage? {
+        nil
+    }
 }

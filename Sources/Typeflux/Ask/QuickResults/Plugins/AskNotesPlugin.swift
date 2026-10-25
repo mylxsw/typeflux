@@ -5,29 +5,75 @@ import Foundation
 /// typing "note" must still open the Notes app.
 struct AskNotesPlugin: AskLauncherPlugin {
     static let id = "notes"
-    static let keywords = [AskKeyword(keyword: "nb", pluginID: id), AskKeyword(keyword: "笔记", pluginID: id)]
+    static let windowOption = "openWindow"
+    static func opensWindow(_ keyword: AskKeyword) -> Bool {
+        keyword.pluginID == id && keyword.options[windowOption] == "true"
+    }
+
+    static let keywords = [AskKeyword(keyword: "nb", pluginID: id), AskKeyword(keyword: "笔记", pluginID: id),
+                           AskKeyword(
+                               keyword: "notebook",
+                               pluginID: id,
+                               options: [windowOption: "true"],
+                               aliases: ["笔记本"]
+                           )]
+
+    func inputChipTitle(for keyword: AskKeyword) -> String {
+        Self.opensWindow(keyword) ? L("ask.notes.openWindow") : title
+    }
+
     static let limit = 8
     static let openNotesItemID = "notes.open"
     static let newNoteItemID = "notes.new"
 
     var store: (any AskNoteStoring)?
 
-    var id: String { Self.id }
-    var title: String { L("ask.notes.title") }
-    var symbol: String { "note.text" }
-    var defaultKeywords: [AskKeyword] { Self.keywords }
-    var runsWithoutInput: Bool { true }
-    var usesSelectionInput: Bool { false }
-    var entersOnReturn: Bool { true }
-    func placeholder(selectionLines: Int?) -> String { L("ask.notes.placeholder") }
-    func chipDetail(for keyword: AskKeyword, language: AppLanguage) -> String? { nil }
-
-    func plan(_ request: AskPluginRequest) async -> AskPluginPlan {
-        AskPluginPlan(mode: .live, title: title, debounce: .milliseconds(100))
+    var id: String {
+        Self.id
     }
 
-    func run(_ request: AskPluginRequest, plan: AskPluginPlan,
-             progress: @escaping AskPluginProgress) async throws -> AskPluginOutput {
+    var title: String {
+        L("ask.notes.title")
+    }
+
+    var symbol: String {
+        "note.text"
+    }
+
+    var defaultKeywords: [AskKeyword] {
+        Self.keywords
+    }
+
+    var runsWithoutInput: Bool {
+        true
+    }
+
+    var usesSelectionInput: Bool {
+        false
+    }
+
+    var entersOnReturn: Bool {
+        true
+    }
+
+    func placeholder(selectionLines _: Int?) -> String {
+        L("ask.notes.placeholder")
+    }
+
+    func chipDetail(for keyword: AskKeyword, language _: AppLanguage) -> String? {
+        Self.opensWindow(keyword) ? L("ask.notes.openWindow") : nil
+    }
+
+    func plan(_ request: AskPluginRequest) async -> AskPluginPlan {
+        if Self.opensWindow(request.keyword) {
+            return AskPluginPlan(mode: .onSubmit, title: L("ask.notes.openWindow"),
+                                 actions: [AskPromptPlugin.openNotesAction.with(shortcut: .enter)])
+        }
+        return AskPluginPlan(mode: .live, title: title, debounce: .milliseconds(100))
+    }
+
+    func run(_ request: AskPluginRequest, plan _: AskPluginPlan,
+             progress _: @escaping AskPluginProgress) async throws -> AskPluginOutput {
         let query = request.origin == .argument ? request.text.trimmingCharacters(in: .whitespacesAndNewlines) : ""
         let notes: [AskNote]
         do {
@@ -59,15 +105,19 @@ struct AskNotesPlugin: AskLauncherPlugin {
                                        actions: [AskPluginAction(kind: .createNote(query), title: L("ask.notes.new"),
                                                                  symbol: "square.and.pencil", shortcut: .enter)]))
         }
-        items.append(AskPluginItem(id: Self.openNotesItemID, title: L("ask.notes.openWindow"),
-                                   icon: .symbol("sidebar.left"),
-                                   actions: [AskPromptPlugin.openNotesAction.with(shortcut: .enter)]))
+        items.insert(AskPluginItem(id: Self.openNotesItemID, title: L("ask.notes.openWindow"),
+                                   subtitle: L("ask.notes.openWindow.detail"), icon: .symbol("macwindow"),
+                                   actions: [AskPromptPlugin.openNotesAction.with(shortcut: .enter)]), at: 0)
         return AskPluginOutput(body: items.map(\.title).joined(separator: "\n"), original: query, meta: [],
                                source: L("ask.plugin.source.device"), actions: [AskPromptPlugin.openNotesAction],
-                               items: items)
+                               items: items,
+                               selectedItem: query
+                                   .isEmpty ? 0 : (items.indices.dropFirst().first { items[$0].valid } ?? 0))
     }
 
-    func nextOptions(after plan: AskPluginPlan, request: AskPluginRequest, step: Int) -> [String: String]? { nil }
+    func nextOptions(after _: AskPluginPlan, request _: AskPluginRequest, step _: Int) -> [String: String]? {
+        nil
+    }
 }
 
 extension AskPluginAction {

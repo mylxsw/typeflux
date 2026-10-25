@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask translate plugin: recent words", .exclusiveUIState)
+@Suite(.exclusiveUIState)
 struct AskTranslateRecentWordsTests {
     private func plugin(_ store: SQLiteAskWordBookStore?) -> AskTranslatePlugin {
         AskTranslatePlugin(onDevice: AskTestTranslationEngine(), ai: nil, wordBook: store, aiName: { "gpt-test" },
@@ -25,34 +25,44 @@ struct AskTranslateRecentWordsTests {
         }
     }
 
-    @Test func runsAloneOnlyWithAWordBook() {
+    @Test func `runs alone only with A word book`() {
         #expect(plugin(makeTestWordBook()).runsWithoutInput)
         #expect(!plugin(nil).runsWithoutInput)
     }
 
-    @Test func listsTheLatestWordsThenTheWayIntoTheWordBook() async throws {
+    @Test func `lists the latest words then the way into the word book`() async throws {
         let store = makeTestWordBook()
         try filled(store)
         let translate = plugin(store)
         let plan = await translate.plan(empty())
         #expect(plan.mode == .live && plan.title == L("ask.wordBook.list.recent"))
         let output = try await translate.run(empty(), plan: plan)
-        #expect(output.items.map(\.title) == ["w9", "w8", "w7", "w6", "w5", "w4", "w3", "w2", L("ask.wordBook.list.openAll")])
+        #expect(output.items.map(\.title) == [
+            L("ask.wordBook.list.openAll"),
+            "w9",
+            "w8",
+            "w7",
+            "w6",
+            "w5",
+            "w4",
+            "w3",
+            "w2"
+        ])
         #expect(output.note == nil && output.wordBook == nil && output.actions.isEmpty == false)
-        let first = output.items[0]
+        let first = output.items[1]
         #expect(first.subtitle == "义9" && first.icon == .symbol("character.book.closed"))
         #expect(first.actions.first { $0.shortcut == .enter }?.kind == .runWith("w9"))
         #expect(first.actions.first { $0.shortcut == .optionEnter }?.kind == .writeBack("义9"))
         #expect(first.actions.first { $0.shortcut == .commandB }?.kind == .openWordBook(key: first.id))
-        #expect(output.items[1].icon == .symbol("star.fill"))
-        #expect(output.items[1].actions.first { $0.shortcut == .commandS }?.title == L("ask.wordBook.unstar"))
-        #expect(!output.items[6].actions.contains { $0.shortcut == .optionEnter }, "no meaning to insert")
-        let openAll = try #require(output.items.last)
+        #expect(output.items[2].icon == .symbol("star.fill"))
+        #expect(output.items[2].actions.first { $0.shortcut == .commandS }?.title == L("ask.wordBook.unstar"))
+        #expect(!output.items[7].actions.contains { $0.shortcut == .optionEnter }, "no meaning to insert")
+        let openAll = try #require(output.items.first)
         #expect(openAll.actions.first?.kind == .openWordBook(key: nil))
         #expect(openAll.actions.first?.title == L("ask.plugin.action.open"))
     }
 
-    @Test func tabSwitchesToTheStarredWords() async throws {
+    @Test func `tab switches to the starred words`() async throws {
         let store = makeTestWordBook()
         try filled(store)
         let translate = plugin(store)
@@ -62,21 +72,22 @@ struct AskTranslateRecentWordsTests {
         let starred = await translate.plan(empty(next))
         #expect(starred.title == L("ask.wordBook.list.starred"))
         let output = try await translate.run(empty(next), plan: starred)
-        #expect(output.items.map(\.title).dropLast() == ["w8", "w4", "w0"])
-        #expect(translate.nextOptions(after: starred, request: empty(next), step: 1) == [AskTranslatePlugin.listOption: "recent"])
+        #expect(output.items.map(\.title).dropFirst() == ["w8", "w4", "w0"])
+        #expect(translate
+            .nextOptions(after: starred, request: empty(next), step: 1) == [AskTranslatePlugin.listOption: "recent"])
     }
 
-    @Test func anEmptyBookSaysHowToFillIt() async throws {
+    @Test func `an empty book says how to fill it`() async throws {
         let translate = plugin(makeTestWordBook())
-        let output = try await translate.run(empty(), plan: await translate.plan(empty()))
+        let output = try await translate.run(empty(), plan: translate.plan(empty()))
         #expect(output.items.map(\.id) == [AskTranslatePlugin.openAllItem])
         #expect(output.note == L("ask.wordBook.list.empty"))
         let starred = empty([AskTranslatePlugin.listOption: "starred"])
-        #expect(try await translate.run(starred, plan: await translate.plan(starred)).note
+        #expect(try await translate.run(starred, plan: translate.plan(starred)).note
             == L("ask.wordBook.list.emptyStarred"))
     }
 
-    @Test func aRowShowsItsStarWithoutRunningAgain() throws {
+    @Test func `a row shows its star without running again`() {
         let lookup = AskWordBookLookup(headword: "w", source: "en", target: "zh-Hans", translation: "义")
         let entry = AskWordBookEntry(id: UUID(), lookup: lookup, lookupCount: 1, firstLookedUpAt: Date(),
                                      lastLookedUpAt: Date(), starredAt: nil)
@@ -89,7 +100,7 @@ struct AskTranslateRecentWordsTests {
 }
 
 extension AskQuickResultsInteractionTests {
-    @Test func theKeywordAloneListsRecentWordsAndCommandBOpensTheWordBook() async throws {
+    @Test func `the keyword alone lists recent words and command B opens the word book`() async throws {
         try await withPasteboard { _ in
             let translation = WordBookTranslation()
             let lookup = AskWordBookLookup(headword: "resilient", source: "en", target: "zh-Hans", translation: "有弹性的")
@@ -105,13 +116,17 @@ extension AskQuickResultsInteractionTests {
                 launcher.editor.insertText(String(char), replacementRange: NSRange(location: NSNotFound, length: 0))
                 try await Task.sleep(for: .milliseconds(30))
             }
-            for _ in 0 ..< 400 where model.plugins.output?.items.isEmpty != false { try await Task.sleep(for: .milliseconds(5)) }
-            #expect(model.plugins.output?.items.first?.title == "resilient")
+            for _ in 0 ..< 400
+                where model.plugins.output?.items.isEmpty != false {
+                try await Task.sleep(for: .milliseconds(5))
+            }
+            #expect(model.plugins.output?.items[1].title == "resilient")
+            _ = model.plugins.selectItem(1)
 
             try await launcher.press(Self.sKey, .command)
             await model.wordBookTask?.value
             #expect(try translation.store.entry(forKey: lookup.key)?.isStarred == true)
-            #expect(model.plugins.output?.items.first?.icon == .symbol("star.fill"), "the row shows the star in place")
+            #expect(model.plugins.output?.items[1].icon == .symbol("star.fill"), "the row shows the star in place")
 
             try await launcher.press(Self.bKey, .command)
             #expect(opened == [lookup.key])

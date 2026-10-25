@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask dict keyword", .exclusiveUIState)
+@Suite(.exclusiveUIState)
 struct AskWordBookDictTests {
     private let dict = AskTranslatePlugin.keywords.first { $0.keyword == "dict" }!
 
@@ -19,73 +19,34 @@ struct AskWordBookDictTests {
                          interfaceLanguage: .simplifiedChinese)
     }
 
-    @Test func dictAndCiDianOpenTheWordBook() {
+    @Test func `dict and ci dian open the word book`() {
         let keywords = AskTranslatePlugin.keywords.filter { AskTranslatePlugin.opensWordBook($0.options) }
         #expect(keywords.map(\.keyword) == ["dict", "词典"])
         #expect(!AskTranslatePlugin.opensWordBook(AskTranslatePlugin.keywords[0].options))
         #expect(plugin(nil).chipDetail(for: dict, language: .english) == L("ask.wordBook.title"))
     }
 
-    @Test func aloneItOffersTheWordBookFirstThenRecentWords() async throws {
-        let store = makeTestWordBook()
-        let saved = AskWordBookLookup(headword: "serendipity", source: "en", target: "zh-Hans", card: wordBookCard)
-        try store.record(saved, at: Date(), counts: true)
-        let translate = plugin(store)
-        let plan = await translate.plan(request(""))
-        #expect(plan.mode == .live && plan.title == L("ask.wordBook.title"))
-        let output = try await translate.run(request(""), plan: plan)
-        #expect(output.items.map(\.id) == [AskTranslatePlugin.openAllItem, saved.key])
-        #expect(output.items[0].actions.first?.kind == .openWordBook(key: nil))
-        #expect(output.items[1].actions.first { $0.shortcut == .enter }?.kind == .openWordBook(key: saved.key))
-        #expect(output.items.allSatisfy { $0.actions.first { $0.shortcut == .enter }?.title == L("ask.plugin.action.open") })
-        #expect(output.items[1].actions.contains { $0.shortcut == .commandS })
-    }
-
-    @Test func aWordPreviewsOnThisMacAndReturnLooksItUp() async throws {
-        let store = makeTestWordBook()
-        let translate = plugin(store)
-        let word = request(" gregarious ")
-        let plan = await translate.plan(word)
-        #expect(plan.mode == .live && plan.title == L("ask.wordBook.dict.title"))
-        #expect(plan.values["engine"] == "device")
-        #expect(plan.action(for: .enter)?.kind == .lookUpInWordBook("gregarious"))
-        let output = try await translate.run(word, plan: plan)
-        #expect(output.body == "[zh-Hans]  gregarious ")
-        #expect(output.source == L("ask.plugin.source.device") && !output.sourceIsAI)
-        #expect(output.action(for: .enter)?.kind == .lookUpInWordBook("gregarious"))
-        #expect(output.action(for: .commandC)?.kind == .copy("[zh-Hans]  gregarious "))
-        #expect(output.wordBook == nil, "the window keeps the word, not the preview")
-        #expect(output.note == L("ask.wordBook.dict.hint"))
-    }
-
-    @Test func aKeptCardPreviewsFromTheBook() async throws {
-        let store = makeTestWordBook()
-        try store.record(AskWordBookLookup(headword: "serendipity", source: "en", target: "zh-Hans", card: wordBookCard),
-                     at: Date(), counts: true)
-        let translate = plugin(store, local: false)
-        let word = request("serendipity")
-        let plan = await translate.plan(word)
-        #expect(plan.mode == .live && plan.values["engine"] == "book")
-        let output = try await translate.run(word, plan: plan)
-        #expect(output.body == "n. 机缘巧合；意外的好运  adj. 偶然的")
-        #expect(output.source == L("ask.plugin.source.wordBook"))
-    }
-
-    @Test func withoutAPreviewOrForTheSelectionReturnStillLooksItUp() async throws {
-        let translate = plugin(makeTestWordBook(), local: false)
-        let typed = await translate.plan(request("gregarious"))
-        #expect(typed.mode == .onSubmit && typed.values["engine"] == "none")
-        #expect(typed.action(for: .enter)?.kind == .lookUpInWordBook("gregarious"))
-        let selected = await plugin(makeTestWordBook()).plan(request("ubiquitous", origin: .selection))
-        #expect(selected.mode == .onSubmit)
-        #expect(selected.action(for: .enter)?.kind == .lookUpInWordBook("ubiquitous"))
+    @Test func `opens without querying regardless of input`() async throws {
+        let translate = plugin(nil, local: false)
+        for text in ["", "hello"] {
+            for origin in [AskPluginRequest.Origin.argument, .selection] {
+                let input = request(text, origin: origin)
+                let plan = await translate.plan(input)
+                #expect(plan.mode == .onSubmit)
+                #expect(plan.action(for: .enter)?.kind == .openWordBook(key: nil))
+                #expect(plan.values.isEmpty)
+                await #expect(throws: CancellationError.self) {
+                    try await translate.run(input, plan: plan)
+                }
+            }
+        }
     }
 }
 
-@Suite("Ask dict keyword in settings", .exclusiveUIState)
+@Suite(.exclusiveUIState)
 struct AskWordBookDictSettingsTests {
-    @Test func theEditorSwitchesBetweenTranslatingAndTheWordBook() {
-        let dict = AskTranslatePlugin.keywords.first { $0.keyword == "dict" }!
+    @Test func `the editor switches between translating and the word book`() throws {
+        let dict = try #require(AskTranslatePlugin.keywords.first { $0.keyword == "dict" })
         var draft = AskKeywordDraft(editing: dict)
         #expect(draft.opensWordBook && draft.displayName == L("ask.wordBook.title"))
         #expect(draft.result().options == [AskTranslatePlugin.actionOption: AskTranslatePlugin.wordBookAction])
@@ -105,8 +66,8 @@ struct AskWordBookDictSettingsTests {
         #expect(AskTranslatePlugin.opensWordBook(saved.options))
     }
 
-    @Test func theListNamesAndDescribesIt() {
-        let dict = AskTranslatePlugin.keywords.first { $0.keyword == "dict" }!
+    @Test func `the list names and describes it`() throws {
+        let dict = try #require(AskTranslatePlugin.keywords.first { $0.keyword == "dict" })
         #expect(AskKeywordListPresentation.name(of: dict) == L("ask.wordBook.title"))
         #expect(AskKeywordListPresentation.summary(of: dict, interface: .english, secondLanguage: "zh-Hans")
             == L("ask.settings.keywords.summary.wordBook"))
@@ -115,13 +76,13 @@ struct AskWordBookDictSettingsTests {
 }
 
 extension AskQuickResultsInteractionTests {
-    @Test func dictWithAWordOpensTheWordBookOnReturn() async throws {
+    @Test func `dict with A word opens the word book on return`() async throws {
         try await withPasteboard { _ in
             let translation = WordBookTranslation()
-            var looked: [String] = []
+            var opened: [String?] = []
             let launcher = try await Launcher(text: "") { model in
                 translation.install(in: model)
-                model.lookUpInWordBook = { looked.append($0) }
+                model.openWordBook = { opened.append($0) }
             }
             defer { launcher.close() }
             let model = launcher.fixture.model
@@ -131,7 +92,7 @@ extension AskQuickResultsInteractionTests {
             }
             for _ in 0 ..< 400 where !model.plugins.isPlanCurrent { try await Task.sleep(for: .milliseconds(5)) }
             try await launcher.press(Self.returnKey)
-            #expect(looked == ["gregarious"])
+            #expect(opened.count == 1 && opened[0] == nil)
             #expect(launcher.dismissed == 1)
             #expect(try translation.store.count(.all) == 0, "the launcher keeps nothing; the window does")
         }

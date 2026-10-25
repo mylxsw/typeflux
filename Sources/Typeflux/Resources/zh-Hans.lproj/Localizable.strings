@@ -2765,11 +2765,11 @@
 "ask.wordBook.dict.title" = "在单词本中查词";
 "ask.wordBook.dict.lookUp" = "在单词本中查";
 "ask.wordBook.dict.hint" = "回车打开单词本，在里面生成单词卡";
-"ask.settings.keywords.summary.wordBook" = "打开单词本，在里面查词";
+"ask.settings.keywords.summary.wordBook" = "直接打开单词本窗口";
 "ask.settings.keywords.sheet.action" = "动作";
 "ask.settings.keywords.sheet.action.translate" = "翻译";
 "ask.settings.keywords.sheet.action.wordBook" = "打开单词本";
-"ask.settings.keywords.sheet.action.wordBookHint" = "输入「关键词 词」会打开单词本并查这个词；只输入关键词则打开单词本。";
+"ask.settings.keywords.sheet.action.wordBookHint" = "直接打开单词本窗口；查词请在窗口内输入。";
 "ask.wordBook.shelf.all" = "全部";
 "ask.wordBook.shelf.starred" = "收藏";
 "ask.wordBook.shelf.today" = "今天";
@@ -7438,3 +7438,5 @@
 
 "auth.web.successTitle" = "登录成功";
 "auth.web.successMessage" = "现在可以开始使用 Typeflux 了。";
+
+"ask.notes.openWindow.detail" = "浏览和管理全部笔记 · notebook";

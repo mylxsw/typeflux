@@ -2755,11 +2755,11 @@
 "ask.wordBook.dict.title" = "단어장에서 찾기";
 "ask.wordBook.dict.lookUp" = "단어장에서 찾기";
 "ask.wordBook.dict.hint" = "Return으로 단어장을 열고 단어 카드를 만듭니다";
-"ask.settings.keywords.summary.wordBook" = "단어장을 열고 단어를 찾습니다";
+"ask.settings.keywords.summary.wordBook" = "단어장 창 열기";
 "ask.settings.keywords.sheet.action" = "동작";
 "ask.settings.keywords.sheet.action.translate" = "번역";
 "ask.settings.keywords.sheet.action.wordBook" = "단어장 열기";
-"ask.settings.keywords.sheet.action.wordBookHint" = "“키워드 단어”는 단어장을 열고 단어를 찾습니다. 키워드만 입력하면 단어장을 엽니다.";
+"ask.settings.keywords.sheet.action.wordBookHint" = "단어장 창을 바로 엽니다. 창 안에서 단어를 검색하세요.";
 "ask.wordBook.shelf.all" = "전체";
 "ask.wordBook.shelf.starred" = "즐겨찾기";
 "ask.wordBook.shelf.today" = "오늘";
@@ -7437,3 +7437,5 @@
 
 "auth.web.successTitle" = "로그인 완료";
 "auth.web.successMessage" = "이제 Typeflux를 사용할 수 있습니다.";
+
+"ask.notes.openWindow.detail" = "모든 노트 보기 및 관리 · notebook";

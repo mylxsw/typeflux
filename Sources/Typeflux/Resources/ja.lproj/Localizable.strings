@@ -2755,11 +2755,11 @@
 "ask.wordBook.dict.title" = "単語帳で調べる";
 "ask.wordBook.dict.lookUp" = "単語帳で調べる";
 "ask.wordBook.dict.hint" = "Return で単語帳を開き、そこで単語カードを作成";
-"ask.settings.keywords.summary.wordBook" = "単語帳を開いて調べる";
+"ask.settings.keywords.summary.wordBook" = "単語帳ウィンドウを開く";
 "ask.settings.keywords.sheet.action" = "動作";
 "ask.settings.keywords.sheet.action.translate" = "翻訳";
 "ask.settings.keywords.sheet.action.wordBook" = "単語帳を開く";
-"ask.settings.keywords.sheet.action.wordBookHint" = "「キーワード 単語」で単語帳を開いて調べます。キーワードだけなら単語帳を開きます。";
+"ask.settings.keywords.sheet.action.wordBookHint" = "単語帳ウィンドウを直接開きます。単語はウィンドウ内で検索できます。";
 "ask.wordBook.shelf.all" = "すべて";
 "ask.wordBook.shelf.starred" = "お気に入り";
 "ask.wordBook.shelf.today" = "今日";
@@ -7437,3 +7437,5 @@
 
 "auth.web.successTitle" = "ログインしました";
 "auth.web.successMessage" = "Typeflux を使い始められます。";
+
+"ask.notes.openWindow.detail" = "すべてのノートを表示・管理 · notebook";

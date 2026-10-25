@@ -23,7 +23,7 @@ func makeTestNote(_ title: String = "Explain · Comparative advantage", body: St
 @Suite(.exclusiveUIState)
 @MainActor
 struct AskNotesStoreTests {
-    @Test func `a draft becomes A note titled after its command and input`() async throws {
+    @Test func `a draft becomes A note titled after its command and input`() {
         let date = Date(timeIntervalSince1970: 50)
         let draft = AskNoteDraft(
             command: "Explain",
@@ -44,7 +44,7 @@ struct AskNotesStoreTests {
         #expect(AskNote.title(command: "Only", input: "") == "Only")
     }
 
-    @Test func `plain text drops markdown for excerpts`() async throws {
+    @Test func `plain text drops markdown for excerpts`() {
         let markdown = """
         # Title
         > quoted **bold** and `code`
@@ -65,7 +65,7 @@ struct AskNotesStoreTests {
         #expect(AskNote.normalizedTag(String(repeating: "a", count: 60))?.count == 40)
     }
 
-    @Test func `saves lists and finds notes`() async throws {
+    @Test func `saves lists and finds notes`() throws {
         let store = makeTestNotes()
         let old = makeTestNote("Old", body: "比较优势与机会成本", tags: ["读书"], at: 100)
         let pinned = makeTestNote(
@@ -126,7 +126,7 @@ struct AskNotesStoreTests {
         #expect(changes == 4)
     }
 
-    @Test func `a broken database reports unavailable`() async throws {
+    @Test func `a broken database reports unavailable`() throws {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("notes-dir-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: file, withIntermediateDirectories: true)
         // A directory where the database should be cannot be opened.
@@ -144,7 +144,7 @@ struct AskNotesStoreTests {
 @Suite(.exclusiveUIState)
 @MainActor
 struct AskNoteExportTests {
-    @Test func `exports markdown with front matter`() async throws {
+    @Test func `exports markdown with front matter`() {
         var note = makeTestNote("Say \"hi\": now", body: "\n# Body\n", tags: ["a", "b c"])
         note.sourceApp = nil
         let text = AskNoteExporter.markdown(note)
@@ -163,7 +163,7 @@ struct AskNoteExportTests {
         #expect(AskNoteExporter.fileName(makeTestNote(String(repeating: "x", count: 100))).count == 83)
     }
 
-    @Test func `copies markdown as HTMLRTF and text`() async throws {
+    @Test func `copies markdown as HTMLRTF and text`() throws {
         let pasteboard = NSPasteboard(name: NSPasteboard.Name("ask.notes.rich.\(UUID().uuidString)"))
         defer { pasteboard.releaseGlobally() }
         AskRichCopy.copy("# Title\n\n**bold** item", to: pasteboard)
@@ -185,7 +185,7 @@ struct AskNotesPluginTests {
     @Test func `describes itself`() async {
         let plugin = AskNotesPlugin()
         #expect(plugin.id == "notes" && plugin.title == L("ask.notes.title") && plugin.symbol == "note.text")
-        #expect(plugin.defaultKeywords.map(\.keyword) == ["nb", "笔记"])
+        #expect(plugin.defaultKeywords.map(\.keyword) == ["nb", "笔记", "notebook"])
         #expect(plugin.runsWithoutInput && !plugin.usesSelectionInput && plugin.entersOnReturn)
         #expect(plugin.placeholder(selectionLines: 2) == L("ask.notes.placeholder"))
         #expect(plugin.chipDetail(for: AskNotesPlugin.keywords[0], language: .english) == nil)
@@ -202,20 +202,22 @@ struct AskNotesPluginTests {
         try store.save(first)
         try store.save(makeTestNote("Second", body: "beta", at: 20))
         let plugin = AskNotesPlugin(store: store)
-        let all = try await plugin.run(request(), plan: plugin.plan(request()))
-        #expect(all.items.map(\.title) == ["First", "Second", L("ask.notes.openWindow")])
-        #expect(all.items[0].icon == .symbol("pin.fill") && all.items[1].icon == .symbol("note.text"))
+        var all = try await plugin.run(request(), plan: plugin.plan(request()))
+        #expect(all.items.map(\.title) == [L("ask.notes.openWindow"), "First", "Second"])
+        #expect(all.items[1].icon == .symbol("pin.fill") && all.items[2].icon == .symbol("note.text"))
+        #expect(all.action(for: .enter)?.kind == .openNotes(id: nil))
+        all.selectedItem = 1
         #expect(all.action(for: .enter)?.kind == .openNote(first.id))
         #expect(all.action(for: .commandC)?.kind == .copy("alpha"))
         #expect(all.action(for: .commandB)?.kind == .openNotes(id: nil))
         let found = try await plugin.run(request(" beta "), plan: plugin.plan(request("beta")))
-        #expect(found.items.map(\.title) == ["Second", L("ask.notes.newTitled", "beta"), L("ask.notes.openWindow")]
+        #expect(found.items.map(\.title) == [L("ask.notes.openWindow"), "Second", L("ask.notes.newTitled", "beta")]
             && found.original == "beta")
         var last = found
-        last.selectedItem = 2
+        last.selectedItem = 0
         #expect(last.action(for: .enter)?.kind == .openNotes(id: nil))
         let none = try await plugin.run(request("zzz"), plan: plugin.plan(request("zzz")))
-        #expect(none.items.first?.title == L("ask.notes.noMatch") && none.items.first?.valid == false)
+        #expect(none.items[1].title == L("ask.notes.noMatch") && !none.items[1].valid)
         await #expect(throws: AskPluginFailure.self) {
             try await AskNotesPlugin().run(request(), plan: plugin.plan(request()))
         }

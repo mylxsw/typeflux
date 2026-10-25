@@ -2765,11 +2765,11 @@
 "ask.wordBook.dict.title" = "Look up in the word book";
 "ask.wordBook.dict.lookUp" = "Look up in word book";
 "ask.wordBook.dict.hint" = "Return opens the word book and writes a word card there";
-"ask.settings.keywords.summary.wordBook" = "Opens the word book and looks the word up there";
+"ask.settings.keywords.summary.wordBook" = "Open the word book window";
 "ask.settings.keywords.sheet.action" = "Action";
 "ask.settings.keywords.sheet.action.translate" = "Translate";
 "ask.settings.keywords.sheet.action.wordBook" = "Open word book";
-"ask.settings.keywords.sheet.action.wordBookHint" = "“keyword word” opens the word book and looks the word up; the keyword alone opens the word book.";
+"ask.settings.keywords.sheet.action.wordBookHint" = "Open the word book window directly. Look up words inside the window.";
 "ask.wordBook.shelf.all" = "All";
 "ask.wordBook.shelf.starred" = "Starred";
 "ask.wordBook.shelf.today" = "Today";
@@ -7438,3 +7438,5 @@
 
 "auth.web.successTitle" = "Signed in successfully";
 "auth.web.successMessage" = "You’re ready to use Typeflux.";
+
+"ask.notes.openWindow.detail" = "Browse and manage all notes · notebook";

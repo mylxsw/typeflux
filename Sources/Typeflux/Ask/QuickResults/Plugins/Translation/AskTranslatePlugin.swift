@@ -61,7 +61,7 @@ struct AskTranslatePlugin: AskLauncherPlugin {
         if Self.opensWordBook(keyword.options) { return L("ask.wordBook.title") }
         let details = [keyword.options[Self.targetOption].map { AskTranslationLanguages.name($0, in: language) },
                        keyword.options[Self.engineOption].flatMap(AskTranslationProvider.init(rawValue:))?.title]
-            .compactMap { $0 }
+            .compactMap(\.self)
         return details.isEmpty ? nil : details.joined(separator: " · ")
     }
 
@@ -106,7 +106,7 @@ struct AskTranslatePlugin: AskLauncherPlugin {
 
     func run(_ request: AskPluginRequest, plan: AskPluginPlan,
              progress: @escaping AskPluginProgress) async throws -> AskPluginOutput {
-        if Self.opensWordBook(request.options) { return try await wordBookPreview(request, plan: plan) }
+        if Self.opensWordBook(request.options) { throw CancellationError() }
         if request.text.isEmpty {
             var output = try await recentWords(plan: plan)
             if wordBook != nil { output.actions.append(Self.openWordBookAction(key: nil)) }
@@ -126,13 +126,13 @@ struct AskTranslatePlugin: AskLauncherPlugin {
             && request.options["regenerateService"] == nil && request.options[Self.generationOption] == nil
             && (request.options[Self.engineOption] == nil || request.options[Self.engineOption] == "ai")
             ? entry?.lookup.card : nil
-        let coordinator: AskTranslationFanout
-        if let fanout { coordinator = fanout } else { coordinator = await MainActor.run { AskTranslationFanout() } }
+        let coordinator: AskTranslationFanout = if let fanout { fanout }
+        else { await MainActor.run { AskTranslationFanout() } }
         let resolve: AskTranslationFanout.Engine = engines ?? { service in
             switch service.kind {
-            case .device: return onDevice
-            case .ai: return ai
-            case let .provider(provider): return self.service?(provider)
+            case .device: onDevice
+            case .ai: ai
+            case let .provider(provider): self.service?(provider)
             }
         }
         let names: AskTranslationFanout.Name = serviceName ?? { service in
@@ -169,7 +169,7 @@ struct AskTranslatePlugin: AskLauncherPlugin {
 
     /// What a service's failure card says; keys and quota are not fixed by trying again.
     static func failure(_ error: Error, provider: AskTranslationProvider) -> AskPluginFailure {
-        let fixedByRetry: Bool = switch error as? AskTranslationServiceError {
+        let fixedByRetry = switch error as? AskTranslationServiceError {
         case .notConfigured?, .authentication?, .unsupportedLanguage?, .quota?, .tooLong?: false
         default: true
         }
@@ -187,8 +187,9 @@ struct AskTranslatePlugin: AskLauncherPlugin {
     /// A card the word book holds for this word and direction.
     private func keptCard(_ text: String, source: String?, target: String) async -> AskWordCard? {
         guard let wordBook, AskWordCard.isLookup(text) else { return nil }
-        return (try? await wordBook.entry(forKey: AskWordBookEntry.key(
-            headword: Self.headword(text), source: source, target: target)))?.lookup.card
+        return await (try? wordBook.entry(forKey: AskWordBookEntry.key(
+            headword: Self.headword(text), source: source, target: target
+        )))?.lookup.card
     }
 
     func nextOptions(after plan: AskPluginPlan, request: AskPluginRequest, step: Int) -> [String: String]? {
@@ -236,7 +237,7 @@ extension AskPluginOutput {
 extension AskTranslatePlugin {
     /// `fy` alone: the words looked up lately (or the starred ones), and a way into the word book.
     /// Return looks a word up again, which shows its card from the word book without asking the AI.
-    /// `dict` alone puts the way into the word book first and opens it on a chosen word.
+    /// The library shortcut stays above recent words.
     func recentWords(plan: AskPluginPlan, opensWordBook: Bool = false) async throws -> AskPluginOutput {
         let starred = plan.values[Self.listOption] == "starred"
         let entries: [AskWordBookEntry]
@@ -251,7 +252,7 @@ extension AskTranslatePlugin {
                                       symbol: "character.book.closed", shortcut: .enter)]
         )
         let rows = entries.map { Self.item($0, opensWordBook: opensWordBook) }
-        let items = opensWordBook ? [openAll] + rows : rows + [openAll]
+        let items = [openAll] + rows
         let empty = L(starred ? "ask.wordBook.list.emptyStarred" : "ask.wordBook.list.empty")
         return AskPluginOutput(body: items.map(\.title).joined(separator: "\n"), original: "", meta: [],
                                source: L("ask.plugin.source.wordBook"), note: entries.isEmpty ? empty : nil,
@@ -284,54 +285,10 @@ extension AskTranslatePlugin {
 // MARK: - dict
 
 extension AskTranslatePlugin {
-    /// `dict`: alone, the word book and the recent words; with a word, a preview made
-    /// on this Mac and Return looking the word up in the word book. Nothing leaves the
-    /// Mac from the launcher: the word book window asks the AI.
-    func wordBookPlan(_ request: AskPluginRequest) async -> AskPluginPlan {
-        if request.text.isEmpty {
-            let starred = request.options[Self.listOption] == "starred"
-            return AskPluginPlan(mode: .live, title: L("ask.wordBook.title"),
-                                 values: [Self.listOption: starred ? "starred" : "recent"])
-        }
-        let (source, target) = direction(request)
-        let kept = await keptCard(request.text, source: source, target: target)
-        let local = kept == nil ? await onDevice.canTranslate(from: source, to: target) : false
-        let mode: AskPluginPlan.Mode = (local || kept != nil) && request.origin == .argument ? .live : .onSubmit
-        var values = ["target": target, "engine": kept != nil ? "book" : local ? "device" : "none"]
-        if let source { values["source"] = source }
-        let language = request.interfaceLanguage
-        var meta: [AskPluginMeta] = []
-        if let source { meta.append(AskPluginMeta(text: AskTranslationLanguages.name(source, in: language))) }
-        meta.append(AskPluginMeta(text: AskTranslationLanguages.name(target, in: language), emphasized: true))
-        return AskPluginPlan(mode: mode, title: L("ask.wordBook.dict.title"), meta: meta, values: values,
-                             actions: [Self.lookUpAction(Self.headword(request.text))])
-    }
-
-    static func lookUpAction(_ text: String) -> AskPluginAction {
-        AskPluginAction(kind: .lookUpInWordBook(text), title: L("ask.wordBook.dict.lookUp"),
-                        symbol: "character.book.closed", shortcut: .enter)
-    }
-
-    /// What `dict` shows while typing: the kept card's meanings, or this Mac's translation.
-    func wordBookPreview(_ request: AskPluginRequest, plan: AskPluginPlan) async throws -> AskPluginOutput {
-        if request.text.isEmpty { return try await recentWords(plan: plan, opensWordBook: true) }
-        let source = plan.values["source"]
-        let target = plan.values["target"] ?? AskTranslationLanguages.code(for: request.interfaceLanguage)
-        let preview: String
-        let label: String
-        if plan.values["engine"] == "book", let card = await keptCard(request.text, source: source, target: target) {
-            preview = AskWordBookLookup(headword: request.text, source: source, target: target, card: card).summary
-            label = L("ask.plugin.source.wordBook")
-        } else {
-            preview = try await onDevice.translate(request.text, from: source, to: target)
-            label = L("ask.plugin.source.device")
-        }
-        return AskPluginOutput(body: preview, original: request.text, meta: plan.meta, source: label,
-                               note: L("ask.wordBook.dict.hint"),
-                               actions: [
-                                   Self.lookUpAction(Self.headword(request.text)),
-                                   AskPluginAction(kind: .copy(preview), title: L("ask.plugin.action.copy"),
-                                                   symbol: "doc.on.doc", shortcut: .commandC)
-                               ])
+    /// `dict` always opens the library; translation and recent words remain under `fy`.
+    func wordBookPlan(_: AskPluginRequest) async -> AskPluginPlan {
+        AskPluginPlan(mode: .onSubmit, title: L("ask.wordBook.title"), actions: [
+            Self.openWordBookAction(key: nil).with(shortcut: .enter)
+        ])
     }
 }
