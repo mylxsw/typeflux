@@ -54,6 +54,44 @@ final class OpieMenuTests: XCTestCase {
     }
 
     @MainActor
+    func testEntireCenterCircleSwitchesWithoutSelectingOrClosing() {
+        let items = (0..<4).map { OpieMenuItem(id: "item-\($0)", title: "Item \($0)", icon: .systemSymbol("star")) }
+        let view = RadialMenuView(frame: NSRect(x: 0, y: 0, width: 620, height: 620), items: items, centerTitle: "Ring")
+        var clicks = 0
+        view.onCenterClick = { clicks += 1 }
+        view.onClose = { XCTFail("Center clicks must keep the menu open") }
+        view.onSelect = { _ in XCTFail("Center clicks must not select an action") }
+        XCTAssertTrue(view.acceptsFirstMouse(for: nil))
+        for radius in [CGFloat(0), 30, 47, 50, 53.9] {
+            for step in 0..<16 {
+                let angle = CGFloat(step) * .pi / 8
+                let point = NSPoint(x: 310 + radius * cos(angle), y: 310 + radius * sin(angle))
+                XCTAssertTrue(view.isInCenter(point))
+                view.beginPointerPress(at: point)
+                view.releasePointerPress(at: point)
+            }
+        }
+        XCTAssertEqual(clicks, 80)
+        XCTAssertFalse(view.isInCenter(NSPoint(x: 364, y: 310)), "The slice boundary belongs to actions")
+        XCTAssertFalse(view.isInCenter(NSPoint(x: 360, y: 360)), "The hit area must stay circular")
+        view.stopMotion()
+    }
+
+    @MainActor
+    func testLiquidCenterBlankAreaHasClickReceivingAlpha() throws {
+        _ = NSApplication.shared
+        let view = RadialMenuView(frame: NSRect(x: 0, y: 0, width: 620, height: 620), items: [], centerTitle: "")
+        view.style = .liquidGlass
+        view.setMotionPreview(phase: "open", progress: 1)
+        let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+        // Sample blank space away from the title, page dots and center rim.
+        let x = Int(CGFloat(bitmap.pixelsWide) * 345 / 620)
+        let y = bitmap.pixelsHigh / 2
+        XCTAssertGreaterThan(try XCTUnwrap(bitmap.colorAt(x: x, y: y)).alphaComponent, 0)
+    }
+
+    @MainActor
     func testShowingAPageReplacesItemsAndCentreAndRendersEveryPhase() throws {
         _ = NSApplication.shared
         let first = (0..<3).map { OpieMenuItem(id: "a-\($0)", title: "A \($0)", icon: .systemSymbol("star")) }

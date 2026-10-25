@@ -101,6 +101,7 @@ final class RadialMenuView: NSView {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     override var isFlipped: Bool { false }
     override var acceptsFirstResponder: Bool { true }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
     override func setFrameSize(_ newSize: NSSize) {
         if newSize != frame.size { cachedRing = nil; cachedCenter = nil }
         super.setFrameSize(newSize)
@@ -285,7 +286,7 @@ final class RadialMenuView: NSView {
     }
 
     func isInCenter(_ point: NSPoint) -> Bool {
-        distance(point, center) <= centerRadius
+        distance(point, center) < innerRadius
     }
 
     private func item(at point: NSPoint, reach: CGFloat = 0) -> Int? {
@@ -790,6 +791,12 @@ final class RadialMenuView: NSView {
     private func drawCenterFace() {
         let inner = NSBezierPath(ovalIn: NSRect(x: center.x - centerRadius, y: center.y - centerRadius, width: centerRadius * 2, height: centerRadius * 2))
         if style == .liquidGlass {
+            // Give the entire center a nonzero alpha so the transparent panel receives
+            // clicks between the icon and text, including the gap before the slices.
+            let hitArea = NSBezierPath(ovalIn: NSRect(x: center.x - innerRadius, y: center.y - innerRadius,
+                                                       width: innerRadius * 2, height: innerRadius * 2))
+            NSColor.black.withAlphaComponent(0.01).setFill()
+            hitArea.fill()
             // The center disk is native glass behind this transparent text layer.
             // Keep just a fine directional rim so the background stays visible.
             if let context = NSGraphicsContext.current?.cgContext,
