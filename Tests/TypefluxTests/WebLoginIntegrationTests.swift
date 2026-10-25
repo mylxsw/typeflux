@@ -93,6 +93,16 @@ private final class NotificationCounter: @unchecked Sendable {
 @Suite("Web login presentation", .exclusiveUIState)
 @MainActor
 struct WebLoginPresentationTests {
+    @Test func successAlertExplainsCompletedLogin() {
+        _ = NSApplication.shared
+        let alert = LoginWindowController.makeLoginSuccessAlert()
+        #expect(alert.messageText == L("auth.web.successTitle"))
+        #expect(alert.informativeText == L("auth.web.successMessage"))
+        #expect(!alert.messageText.hasPrefix("auth.web."))
+        #expect(alert.alertStyle == .informational)
+        #expect(alert.icon != nil)
+    }
+
     @Test func browserAdapterOpensDefaultBrowserWithoutNativePresentation() {
         let url = URL(string: "http://localhost:5174/login?transaction=test")!
         var opened: [URL] = []
@@ -115,6 +125,7 @@ struct WebLoginPresentationTests {
         let store = WebLoginMemoryStore()
         var opened: [URL] = []
         var accepted = 0
+        var successes = 0
         let coordinator = WebLoginCoordinator(configuration: configuration, api: api, store: store,
             browserFactory: { url, scheme, callback in
                 WebLoginBrowser(url: url, scheme: scheme, completion: callback, open: { opened.append($0); return true })
@@ -122,7 +133,7 @@ struct WebLoginPresentationTests {
         var nativeWindows = 0
         var failures: [WebLoginFailure] = []
         let entry = WebLoginEntryController(coordinator: coordinator, showNative: { nativeWindows += 1 },
-                                           reportFailure: { failures.append($0) })
+                                           reportFailure: { failures.append($0) }, reportSuccess: { successes += 1 })
         entry.show()
         entry.show()
         try await Task.sleep(for: .milliseconds(30))
@@ -132,6 +143,11 @@ struct WebLoginPresentationTests {
         await AppLoginURLRouter.handle([api.callback], login: coordinator, isLoggedIn: { accepted > 0 },
                                       showLogin: { entry.showCurrentFailure() }, handleBilling: {})
         #expect(accepted == 1 && store.pending == nil && nativeWindows == 0 && failures.isEmpty)
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(successes == 1)
+        await coordinator.receive(api.callback)
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(successes == 1)
         coordinator.cancel()
     }
 
@@ -143,9 +159,10 @@ struct WebLoginPresentationTests {
             browserFactory: { _, _, _ in Issue.record("Failed creation must not open a browser"); return PresentationBrowser() },
             authGeneration: { 0 }, accept: { _, _ in })
         var nativeWindows = 0
+        var successes = 0
         var failures: [WebLoginFailure] = []
         let entry = WebLoginEntryController(coordinator: coordinator, showNative: { nativeWindows += 1 },
-                                           reportFailure: { failures.append($0) })
+                                           reportFailure: { failures.append($0) }, reportSuccess: { successes += 1 })
         entry.show()
         try await Task.sleep(for: .milliseconds(30))
         entry.showCurrentFailure()
@@ -159,6 +176,7 @@ struct WebLoginPresentationTests {
         let fallback = WebLoginEntryController(coordinator: disabled, showNative: { nativeWindows += 1 }, reportFailure: { _ in })
         fallback.show()
         #expect(nativeWindows == 1 && disabled.phase == .idle)
+        #expect(successes == 0)
     }
 
     @Test func waitingAndRecoveryViewsTrackCoordinator() async throws {

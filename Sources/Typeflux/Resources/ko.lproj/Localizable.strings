@@ -7367,3 +7367,6 @@
 "screenshot.text.interrupted" = "문자 인식이 중단되었습니다. 다시 시도해 주세요.";
 
 "ring.hoverSound.title" = "호버 효과음";
+
+"auth.web.successTitle" = "로그인 완료";
+"auth.web.successMessage" = "이제 Typeflux를 사용할 수 있습니다.";

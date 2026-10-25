@@ -7367,3 +7367,6 @@
 "screenshot.text.interrupted" = "文字認識が中断されました。再試行してください。";
 
 "ring.hoverSound.title" = "ホバー音";
+
+"auth.web.successTitle" = "ログインしました";
+"auth.web.successMessage" = "Typeflux を使い始められます。";

@@ -7369,3 +7369,6 @@
 "ring.hoverSound.title" = "悬停音效";
 
 "ring.actions.gridHint" = "拖动调整顺序 · 点击编辑";
+
+"auth.web.successTitle" = "登录成功";
+"auth.web.successMessage" = "现在可以开始使用 Typeflux 了。";

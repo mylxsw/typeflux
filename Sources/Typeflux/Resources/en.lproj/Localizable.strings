@@ -7369,3 +7369,6 @@
 "ring.hoverSound.title" = "Hover sound";
 
 "ring.actions.gridHint" = "Drag to reorder · Click to edit";
+
+"auth.web.successTitle" = "Signed in successfully";
+"auth.web.successMessage" = "You’re ready to use Typeflux.";

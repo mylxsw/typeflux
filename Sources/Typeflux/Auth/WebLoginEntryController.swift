@@ -6,21 +6,26 @@ import Foundation
 final class WebLoginEntryController {
     private let coordinator: WebLoginCoordinator
     private let showNative: () -> Void
+    private let reportSuccess: () -> Void
     private let reportFailure: (WebLoginFailure) -> Void
     private var observation: AnyCancellable?
     private var reportedFailure = false
 
     init(coordinator: WebLoginCoordinator, showNative: @escaping () -> Void,
-         reportFailure: @escaping (WebLoginFailure) -> Void) {
+         reportFailure: @escaping (WebLoginFailure) -> Void, reportSuccess: @escaping () -> Void = {}) {
         self.coordinator = coordinator
         self.showNative = showNative
         self.reportFailure = reportFailure
-        observation = coordinator.$phase.sink { [weak self, weak coordinator] phase in
+        self.reportSuccess = reportSuccess
+        observation = coordinator.$phase.removeDuplicates().sink { [weak self, weak coordinator] phase in
             // Published values arrive before the property is updated.
             Task { @MainActor [weak self] in
                 guard let self, coordinator?.phase == phase else { return }
                 if case .failed = phase { showCurrentFailure() }
-                else { reportedFailure = false }
+                else {
+                    reportedFailure = false
+                    if phase == .succeeded { reportSuccess() }
+                }
             }
         }
     }

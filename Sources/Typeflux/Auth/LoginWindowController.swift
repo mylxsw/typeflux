@@ -35,8 +35,23 @@ final class LoginWindowController: NSObject {
             alert.informativeText = L(failure.localizationKey)
             alert.alertStyle = .warning
             alert.runModal()
+        },
+        reportSuccess: {
+            NSApp.activate(ignoringOtherApps: true)
+            let alert = Self.makeLoginSuccessAlert()
+            alert.runModal()
         }
     )
+
+    static func makeLoginSuccessAlert() -> NSAlert {
+        let alert = NSAlert()
+        alert.messageText = L("auth.web.successTitle")
+        alert.informativeText = L("auth.web.successMessage")
+        alert.alertStyle = .informational
+        alert.icon = NSImage(systemSymbolName: "checkmark.circle.fill", accessibilityDescription: nil)?
+            .withSymbolConfiguration(.init(paletteColors: [.systemGreen]))
+        return alert
+    }
 
     func show() {
         guard FeatureProcess.owns(.host) else {
