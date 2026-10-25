@@ -51,6 +51,11 @@ struct RingPreviewGeometry: Equatable {
         return Int((clockwise / sector).rounded()) % count
     }
 
+    /// Whether `location` is on the centre disc, which switches between app and global actions.
+    func isInCenter(_ location: CGPoint) -> Bool {
+        hypot(location.x - center.x, location.y - center.y) <= centerRadius
+    }
+
     /// Where ⊕ sits for inserting at `index`: on the rim, between slice `index - 1` and `index`.
     func insertionPoint(for index: Int) -> CGPoint {
         point(at: outerRadius, angle: angle(of: index - 1) + .pi / CGFloat(max(count, 1)))

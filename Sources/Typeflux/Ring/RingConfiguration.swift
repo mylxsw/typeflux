@@ -28,7 +28,10 @@ struct RingConfiguration: Codable, Equatable, Sendable {
         modifierFlags: UInt(NSEvent.ModifierFlags.control.union(.option).rawValue)
     )
 
+    /// The global actions: every app without a profile of its own.
     var actions: [RingAction]
+    /// Per-app actions, in the order they were added. At most one per bundle identifier.
+    var appProfiles: [RingAppProfile] = []
     var hoverSoundEnabled = true
     var style: RingStyle = .frosted
     var centerTitle = RingConfiguration.defaultCenterTitle
@@ -56,25 +59,38 @@ struct RingConfiguration: Codable, Equatable, Sendable {
 
     /// A configured shortcut can open the ring only when there is something to choose.
     var isUsable: Bool {
-        !actions.isEmpty
+        !actions.isEmpty || appProfiles.contains(where: \.isActive)
+    }
+
+    /// The profile the ring opens with while this app is in front: switched on and not empty.
+    func profile(forBundleIdentifier bundleIdentifier: String?) -> RingAppProfile? {
+        guard let bundleIdentifier else { return nil }
+        return appProfiles.first { $0.bundleIdentifier == bundleIdentifier && $0.isActive }
     }
 
     /// Saved slice titles predate feature renames. Only replace former built-in names;
     /// preserve custom names, action ids, targets, symbols and order.
     mutating func migrateLegacyChatTitles() -> Bool {
-        let legacyNames: Set<String> = [
+        let legacyNames: Set = [
             "随便问", "隨便問", "Ask", "Ask Anything", "なんでも質問", "무엇이든 질문"
         ]
-        var changed = false
-        for index in actions.indices {
-            guard actions[index].kind == .feature(.ask), legacyNames.contains(actions[index].title) else { continue }
-            actions[index].title = RingFeature.ask.title
+        func migrate(_ list: inout [RingAction]) -> Bool {
+            var changed = false
+            for index in list.indices {
+                guard list[index].kind == .feature(.ask), legacyNames.contains(list[index].title) else { continue }
+                list[index].title = RingFeature.ask.title
+                changed = true
+            }
+            return changed
+        }
+        var changed = migrate(&actions)
+        for index in appProfiles.indices where migrate(&appProfiles[index].actions) {
             changed = true
         }
         return changed
     }
 
-    private enum CodingKeys: String, CodingKey { case actions, style, centerTitle, hoverSoundEnabled }
+    private enum CodingKeys: String, CodingKey { case actions, appProfiles, style, centerTitle, hoverSoundEnabled }
 
     /// Missing fields keep their defaults; an action written by a newer version is skipped
     /// instead of discarding the whole ring.
@@ -84,18 +100,14 @@ struct RingConfiguration: Codable, Equatable, Sendable {
         style = (try? values.decodeIfPresent(RingStyle.self, forKey: .style)) ?? .frosted
         centerTitle = try values.decodeIfPresent(String.self, forKey: .centerTitle) ?? Self.defaultCenterTitle
         if values.contains(.actions) {
-            let decoded = try values.decode([LossyAction].self, forKey: .actions)
+            let decoded = try values.decode([RingLossyAction].self, forKey: .actions)
             actions = Array(decoded.compactMap(\.action).prefix(Self.maxActions))
         } else {
             actions = Self.defaultActions()
         }
-    }
-
-    private struct LossyAction: Decodable {
-        let action: RingAction?
-
-        init(from decoder: any Decoder) throws {
-            action = try? RingAction(from: decoder)
-        }
+        // Files from before per-app actions have no profiles.
+        let profiles = (try? values.decodeIfPresent([RingLossyProfile].self, forKey: .appProfiles)) ?? nil
+        var seen = Set<String>()
+        appProfiles = (profiles ?? []).compactMap(\.profile).filter { seen.insert($0.bundleIdentifier).inserted }
     }
 }

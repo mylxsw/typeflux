@@ -17,6 +17,8 @@ struct RingSettingsView: View {
     @State private var appsState = LoadState.idle
     @State private var shortcutNames: [String] = []
     @State private var shortcutsState = LoadState.idle
+    /// An app's actions are shown, and the global ring is previewed over them (centre click).
+    @State private var isPreviewingGlobal = false
 
     private enum LoadState { case idle, loading, loaded }
 
@@ -31,8 +33,9 @@ struct RingSettingsView: View {
         model.configuration
     }
 
+    /// The actions of the selected scope (global or one app).
     private var actions: [RingAction] {
-        configuration.actions
+        model.actions
     }
 
     var body: some View {
@@ -103,13 +106,38 @@ struct RingSettingsView: View {
 
     private var actionsSection: some View {
         TFFormSection(title: L("ring.actions.title")) {
-            TFButton(title: L("ring.actions.reset"), systemImage: "arrow.counterclockwise", kind: .plain,
-                     size: .small) { studio.resetActions() }
-                .disabled(actions == RingConfiguration.defaultActions())
-                .accessibilityIdentifier("ring.actions.reset")
-        } content: {
+            RingScopeBar(profiles: configuration.appProfiles, globalCount: configuration.actions.count,
+                         scope: model.scope, apps: apps, isLoadingApps: appsState == .loading,
+                         onSelect: selectScope, onAdd: addProfile, onOpenPicker: loadApps)
+            TFDivider(inset: 0)
+            RingScopeInfoBar(
+                profile: model.profile,
+                hasOtherProfiles: configuration.appProfiles.contains(where: \.isActive),
+                canReset: configuration.actions != RingConfiguration.defaultActions(),
+                canCopyGlobal: !configuration.actions.isEmpty,
+                onReset: { studio.resetActions() },
+                onEnable: { enabled in
+                    if let profile = model.profile {
+                        model.setProfileEnabled(profile.id, enabled)
+                    }
+                },
+                onCopyGlobal: {
+                    guard let profile = model.profile else { return }
+                    model.copyGlobalActions(into: profile.id)
+                    studio.show(.overview)
+                },
+                onDelete: {
+                    guard let profile = model.profile else { return }
+                    model.removeProfile(profile.id)
+                    isPreviewingGlobal = false
+                    studio.show(.overview)
+                }
+            )
+            TFDivider(inset: 0)
             HStack(spacing: 0) {
                 canvas.frame(width: RingStudioCanvas.size + 20)
+                    // A switched-off app keeps its actions; the ring shows that they are not used.
+                    .opacity(model.profile?.isEnabled == false && !isPreviewingGlobal ? 0.55 : 1)
                     // Over the canvas hint, so it never covers the inspector's buttons.
                     .overlay(alignment: .bottom) { undoBar }
                     .animation(.easeOut(duration: 0.18), value: model.lastChange)
@@ -128,26 +156,6 @@ struct RingSettingsView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .accessibilityIdentifier("ring.undo")
         }
-    }
-
-    private var canvas: some View {
-        RingStudioCanvas(
-            slots: studio.slots,
-            selectedIndex: studio.selectedIndex,
-            mode: studio.canvasMode,
-            style: configuration.style,
-            centerTitle: configuration.centerTitle,
-            actionCount: actions.count,
-            insertionIndexes: studio.insertionIndexes,
-            issues: Set(issues.keys),
-            drag: $studio.drag,
-            isTrying: $studio.isTrying,
-            onInsert: { studio.show(.library(.insert(index: $0))) },
-            onSelect: { studio.show(.edit($0)) },
-            onMove: { studio.move($0, to: $1) },
-            onBackground: { studio.clickBackground() },
-            onKey: { studio.handle($0) }
-        )
     }
 
     @ViewBuilder private var inspectorPanel: some View {
@@ -195,36 +203,6 @@ struct RingSettingsView: View {
         }
     }
 
-    // MARK: - Library data
-
-    private var library: RingActionLibrary {
-        RingActionLibrary(keywords: shortcuts.options, apps: apps, shortcuts: shortcutNames)
-    }
-
-    private func loadApps() {
-        guard appsState == .idle else { return }
-        appsState = .loading
-        Task {
-            let found = await PersonaAppDiscovery.discoverPersonaAppCandidates(scope: .all)
-            var seen = Set<String>()
-            apps = found.compactMap { app in
-                guard let bundle = app.bundleIdentifier, seen.insert(bundle).inserted else { return nil }
-                return RingLibraryApp(name: app.displayName, bundleIdentifier: bundle)
-            }
-            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
-            appsState = .loaded
-        }
-    }
-
-    private func loadShortcuts() {
-        guard shortcutsState == .idle else { return }
-        shortcutsState = .loading
-        Task {
-            shortcutNames = await RingShortcutsDiscovery.load()
-            shortcutsState = .loaded
-        }
-    }
-
     // MARK: - Text
 
     private func keywordName(_ keyword: String, _ pluginID: String) -> String? {
@@ -259,7 +237,7 @@ struct RingSettingsView: View {
         TFFormSection(title: L("ring.appearance.title")) {
             TFFormRow(title: L("ring.hoverSound.title"), icon: "speaker.wave.2") {
                 Toggle("", isOn: Binding(get: { configuration.hoverSoundEnabled },
-                                          set: model.setHoverSoundEnabled))
+                                         set: model.setHoverSoundEnabled))
                     .labelsHidden()
                     .toggleStyle(.switch)
                     .accessibilityLabel(L("ring.hoverSound.title"))
@@ -286,6 +264,115 @@ struct RingSettingsView: View {
                     }
                     .accessibilityIdentifier("ring.centerTitle")
             }
+        }
+    }
+}
+
+/// Choosing what Settings → Ring edits: the global actions or one app's.
+extension RingSettingsView {
+    private var canvas: some View {
+        let profile = model.profile
+        let previewing = isPreviewingGlobal && profile != nil
+        let switchable = profile != nil && !configuration.actions.isEmpty
+        let center = previewing || profile == nil
+            ? RingStudioCenter(title: configuration.centerTitle, pageCount: switchable ? 2 : 1, pageIndex: 1)
+            : RingStudioCenter(title: profile?.appName ?? "", appBundleIdentifier: profile?.bundleIdentifier,
+                               pageCount: switchable ? 2 : 1, pageIndex: 0)
+        let globalSlots = configuration.actions.map { RingStudioSlot(action: $0, role: .action) }
+        return RingStudioCanvas(
+            slots: previewing ? globalSlots : studio.slots,
+            selectedIndex: previewing ? nil : studio.selectedIndex,
+            mode: previewing ? .overview : studio.canvasMode,
+            style: configuration.style,
+            center: center,
+            actionCount: previewing ? configuration.actions.count : actions.count,
+            insertionIndexes: previewing ? [] : studio.insertionIndexes,
+            issues: Set(issues.keys),
+            drag: $studio.drag,
+            isTrying: $studio.isTrying,
+            onInsert: { studio.show(.library(.insert(index: $0))) },
+            onSelect: { id in
+                if previewing {
+                    // A slice of the preview: edit it in the global actions.
+                    selectScope(.global)
+                }
+                studio.show(.edit(id))
+            },
+            onMove: { studio.move($0, to: $1) },
+            onBackground: { previewing ? () : studio.clickBackground() },
+            onKey: { key in
+                if key == .switchPage {
+                    togglePreview()
+                } else if !previewing {
+                    studio.handle(key)
+                }
+            },
+            onCenter: switchable ? togglePreview : nil,
+            isPreviewingGlobal: previewing,
+            onEditGlobal: { selectScope(.global) }
+        )
+    }
+
+    private func selectScope(_ scope: RingSettingsScope) {
+        isPreviewingGlobal = false
+        studio.isTrying = false
+        model.select(scope)
+        openLibraryIfEmpty()
+    }
+
+    private func addProfile(bundleIdentifier: String, name: String) {
+        isPreviewingGlobal = false
+        studio.isTrying = false
+        model.addProfile(bundleIdentifier: bundleIdentifier, appName: name)
+        openLibraryIfEmpty()
+    }
+
+    /// A new or emptied app starts in the library, with its own shortcuts on top.
+    private func openLibraryIfEmpty() {
+        if model.profile != nil, actions.isEmpty {
+            studio.show(.library(.insert(index: 0)))
+        } else {
+            studio.show(.overview)
+        }
+    }
+
+    private func togglePreview() {
+        guard model.profile != nil, !configuration.actions.isEmpty else { return }
+        studio.isTrying = false
+        studio.show(.overview)
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { isPreviewingGlobal.toggle() }
+    }
+
+    // MARK: - Library data
+
+    private var library: RingActionLibrary {
+        let profile = model.profile
+        return RingActionLibrary(keywords: shortcuts.options, apps: apps, shortcuts: shortcutNames,
+                                 appShortcuts: RingAppShortcutCatalog.items(for: profile?.bundleIdentifier,
+                                                                            appName: profile?.appName ?? ""))
+    }
+
+    private func loadApps() {
+        guard appsState == .idle else { return }
+        appsState = .loading
+        Task {
+            let found = await PersonaAppDiscovery.discoverPersonaAppCandidates(scope: .all)
+            var seen = Set<String>()
+            apps = found.compactMap { app in
+                guard let bundle = app.bundleIdentifier, seen.insert(bundle).inserted else { return nil }
+                return RingLibraryApp(name: app.displayName, bundleIdentifier: bundle)
+            }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+            appsState = .loaded
+        }
+    }
+
+    private func loadShortcuts() {
+        guard shortcutsState == .idle else { return }
+        shortcutsState = .loading
+        Task {
+            shortcutNames = await RingShortcutsDiscovery.load()
+            shortcutsState = .loaded
         }
     }
 }

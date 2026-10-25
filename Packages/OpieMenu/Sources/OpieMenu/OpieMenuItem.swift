@@ -31,3 +31,21 @@ public struct OpieMenuItem: Identifiable {
         self.icon = icon
     }
 }
+
+/// What the middle of the ring shows besides the title. A ring with more than one page draws
+/// page dots; an icon is drawn above the title (for example the app a page belongs to).
+public struct OpieMenuCenter {
+    public var icon: NSImage?
+    public var pageCount: Int
+    public var pageIndex: Int
+
+    public static var plain: OpieMenuCenter { OpieMenuCenter() }
+
+    public init(icon: NSImage? = nil, pageCount: Int = 1, pageIndex: Int = 0) {
+        self.icon = icon
+        self.pageCount = max(1, pageCount)
+        self.pageIndex = min(max(0, pageIndex), max(1, pageCount) - 1)
+    }
+
+    var showsPages: Bool { pageCount > 1 }
+}

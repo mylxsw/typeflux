@@ -243,7 +243,7 @@ final class RingControllerTests: XCTestCase {
     }
 
     private func waitUntil(_ condition: @escaping () -> Bool) async throws {
-        for _ in 0..<100 where !condition() {
+        for _ in 0 ..< 100 where !condition() {
             try await Task.sleep(for: .milliseconds(10))
         }
         XCTAssertTrue(condition())
@@ -263,16 +263,24 @@ final class FakeRingMenu: RingMenuPresenting {
     /// The slice under the pointer; nil is the middle.
     var pointed: String?
 
-    func configure(items: [RingMenuItem], style: RingStyle, centerTitle: String) {
+    var onCenterClick: (() -> Void)?
+    var center = RingMenuCenter.plain
+    var configurations = 0
+
+    func configure(items: [RingMenuItem], style: RingStyle, centerTitle: String, center: RingMenuCenter) {
         self.items = items
         self.style = style
         self.centerTitle = centerTitle
+        self.center = center
+        configurations += 1
     }
 
     var takesKeyboardFocus = true
     var keyboardFocusRequests = 0
 
-    func focusKeyboard() { keyboardFocusRequests += 1 }
+    func focusKeyboard() {
+        keyboardFocusRequests += 1
+    }
 
     func show(at point: CGPoint, takesKeyboardFocus: Bool) {
         self.takesKeyboardFocus = takesKeyboardFocus
