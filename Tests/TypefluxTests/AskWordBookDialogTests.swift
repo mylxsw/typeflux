@@ -513,6 +513,48 @@ struct AskWordBookViewModelTests {
 @Suite("Ask word book window", .serialized, .exclusiveUIState)
 @MainActor
 struct AskWordBookWindowTests {
+    @Test func commandWClosesWithTextFocusAndAllowsReopening() throws {
+        _ = NSApplication.shared
+        let controller = AskWordBookWindowController()
+        let frameName = "wordbook-close-frame-\(UUID().uuidString)"
+        let suite = "wordbook-close-\(UUID().uuidString)"
+        controller.frameAutosaveName = frameName
+        defer {
+            controller.window?.close()
+            NSWindow.removeFrame(usingName: frameName)
+            UserDefaults().removePersistentDomain(forName: suite)
+        }
+        let settings = SettingsStore(defaults: try #require(UserDefaults(suiteName: suite)))
+        controller.configure(store: makeTestWordBook(), dictionary: nil, settings: settings, modelName: { "AI" })
+        controller.show()
+        let window = try #require(controller.window)
+        let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
+        window.contentView?.addSubview(field)
+        #expect(window.makeFirstResponder(field))
+        #expect(window.firstResponder is NSTextView)
+        func event(_ modifiers: NSEvent.ModifierFlags, type: NSEvent.EventType = .keyDown) throws -> NSEvent {
+            try #require(NSEvent.keyEvent(with: type, location: .zero, modifierFlags: modifiers,
+                                         timestamp: 0, windowNumber: window.windowNumber, context: nil,
+                                         characters: "w", charactersIgnoringModifiers: "w", isARepeat: false, keyCode: 13))
+        }
+        for modifiers: NSEvent.ModifierFlags in [[], [.command, .shift], [.command, .option], [.control]] {
+            _ = window.performKeyEquivalent(with: try event(modifiers))
+            #expect(window.isVisible)
+            #expect(controller.window === window)
+        }
+        _ = window.performKeyEquivalent(with: try event(.command, type: .keyUp))
+        #expect(window.isVisible)
+        #expect(window.performKeyEquivalent(with: try event(.command)))
+        #expect(!window.isVisible)
+        #expect(controller.window == nil && controller.model == nil)
+        #expect(controller.presentationTask == nil)
+        controller.show()
+        let reopened = try #require(controller.window)
+        #expect(reopened !== window && reopened.isVisible)
+        #expect(reopened.performKeyEquivalent(with: try event(.command)))
+        #expect(controller.window == nil)
+    }
+
     @Test func opensOnceShowsTheWordAskedForAndLooksWordsUp() async throws {
         let store = makeTestWordBook()
         let lookup = AskWordBookLookup(headword: "beta", source: "en", target: "zh-Hans", translation: "b")

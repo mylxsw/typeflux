@@ -81,7 +81,7 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
             NSApp.activate(ignoringOtherApps: true)
             return
         }
-        let window = NSWindow(contentRect: NSRect(origin: .zero, size: Self.defaultSize),
+        let window = AskWordBookWindow(contentRect: NSRect(origin: .zero, size: Self.defaultSize),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                               backing: .buffered, defer: false)
         // Set up like the main window: a transparent title bar over the view's own backdrop.
@@ -121,5 +121,18 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
         if let window { DockVisibilityController.shared.windowDidHide(window) }
         window = nil
         model = nil
+    }
+}
+
+/// Handles closing even when the feature process has no Close menu item.
+final class AskWordBookWindow: NSWindow {
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        if event.type == .keyDown,
+           event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
+           event.charactersIgnoringModifiers?.lowercased() == "w" {
+            performClose(nil)
+            return true
+        }
+        return super.performKeyEquivalent(with: event)
     }
 }
