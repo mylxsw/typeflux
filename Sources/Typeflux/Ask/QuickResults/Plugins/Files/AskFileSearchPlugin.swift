@@ -20,6 +20,8 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
     var settings: @Sendable () -> AskLauncherSearchSettings
     var semantic: @MainActor @Sendable () -> (any SemanticFileSearching)? = { nil }
 
+    var contentTimeout: Duration = .seconds(8)
+
     var id: String { Self.id }
     var title: String { L("ask.plugin.files.title") }
     var symbol: String { "doc.text.magnifyingglass" }
@@ -79,7 +81,7 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
         if service != nil { await publication.updateNames(hits) }
         let contentHits = await content
         try Task.checkCancellation()
-        let combined = SemanticFilePolicy.merge(hits, contentHits, limit: settings.limit)
+        let combined = SemanticFilePolicy.merge(hits, contentHits.hits, limit: settings.limit)
         var items = combined.map(Self.item)
         if items.isEmpty {
             items.append(Self.notice(L(query.isEmpty ? "ask.plugin.files.none.recent" : "ask.plugin.files.none"),
@@ -95,8 +97,10 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
                                               shortcut: .enter)]
             items.append(unlock)
         }
-        var note: String?
-        if case let .building(found, _) = status.phase { note = L("ask.quick.file.indexing", found.formatted()) }
+        var note: String? = contentHits.timedOut ? L("ask.plugin.files.content.timeout") : nil
+        if case let .building(found, _) = status.phase {
+            note = [note, L("ask.quick.file.indexing", found.formatted())].compactMap { $0 }.joined(separator: " · ")
+        }
         if let summary = AskFileLabels.skipped(status) {
             note = [note, summary].compactMap { $0 }.joined(separator: " · ")
         }
@@ -104,29 +108,51 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
     }
 
     private func searchContent(_ service: (any SemanticFileSearching)?, text: String, type: AskFileType, limit: Int,
-                               publication: ContentPublication) async -> [AskFileHit] {
-        guard let service else { return [] }
-        let hits = await service.search(text, type: type, limit: limit) { hits in publication.updateContent(hits) }
-        guard !Task.isCancelled else { return [] }
-        await publication.updateContent(hits)
-        return hits
+                               publication: ContentPublication) async -> (hits: [AskFileHit], timedOut: Bool) {
+        guard let service else { return ([], false) }
+        // An unresponsive provider must not keep the launcher waiting for its cancellation.
+        let (stream, continuation) = AsyncStream<[AskFileHit]?>.makeStream()
+        let search = Task {
+            let hits = await service.search(text, type: type, limit: limit) { hits in publication.updateContent(hits) }
+            guard !Task.isCancelled else { return }
+            continuation.yield(hits)
+            continuation.finish()
+        }
+        let timeout = Task {
+            do { try await Task.sleep(for: contentTimeout) } catch { return }
+            continuation.yield(nil)
+            continuation.finish()
+        }
+        defer { search.cancel(); timeout.cancel(); continuation.finish() }
+        for await result in stream {
+            return await publication.finish(result)
+        }
+        return await publication.finish(nil)
     }
 
     /// Both providers publish independently while all staging stays on the main actor.
     @MainActor private final class ContentPublication {
         private var names: [AskFileHit] = [], content: [AskFileHit] = []
+        private var namesFinished = false, finished = false
         private let progress: AskPluginProgress
         private let render: @MainActor ([AskFileHit]) -> AskPluginOutput
         private let limit: Int
         init(progress: @escaping AskPluginProgress, render: @escaping @MainActor ([AskFileHit]) -> AskPluginOutput, limit: Int) {
             self.progress = progress; self.render = render; self.limit = limit
         }
-        func updateNames(_ hits: [AskFileHit]) { names = hits; publish() }
-        func updateContent(_ hits: [AskFileHit]) { content = hits; publish() }
+        func updateNames(_ hits: [AskFileHit]) { names = hits; namesFinished = true; publish() }
+        func updateContent(_ hits: [AskFileHit]) {
+            guard !finished else { return }
+            content = hits; publish()
+        }
+        func finish(_ hits: [AskFileHit]?) -> (hits: [AskFileHit], timedOut: Bool) {
+            finished = true
+            return (hits ?? content, hits == nil)
+        }
         private func publish() {
             guard !Task.isCancelled else { return }
             let hits = SemanticFilePolicy.merge(names, content, limit: limit)
-            guard !hits.isEmpty else { return }
+            guard !hits.isEmpty || namesFinished else { return }
             progress(render(hits))
         }
     }
@@ -137,7 +163,10 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
     }
 
     private func partialOutput(_ hits: [AskFileHit]) -> AskPluginOutput {
-        var initial = output(hits.map(Self.item), note: nil)
+        let items = hits.isEmpty
+            ? [Self.notice(L("ask.plugin.files.content.searching"), symbol: "magnifyingglass")]
+            : hits.map(Self.item)
+        var initial = output(items, note: nil)
         initial.selectedItem = initial.selectableIndices.first ?? -1
         return initial
     }

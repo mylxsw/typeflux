@@ -7439,3 +7439,7 @@
 "auth.web.successMessage" = "Typeflux を使い始められます。";
 
 "ask.notes.openWindow.detail" = "すべてのノートを表示・管理 · notebook";
+
+"ask.plugin.files.content.searching" = "ファイル名に一致する結果がありません。内容を検索中…";
+
+"ask.plugin.files.content.timeout" = "ファイル内容の検索がタイムアウトしました。再試行してください。";

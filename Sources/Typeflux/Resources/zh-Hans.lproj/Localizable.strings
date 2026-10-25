@@ -7440,3 +7440,7 @@
 "auth.web.successMessage" = "现在可以开始使用 Typeflux 了。";
 
 "ask.notes.openWindow.detail" = "浏览和管理全部笔记 · notebook";
+
+"ask.plugin.files.content.searching" = "没有匹配的文件名，正在搜索文件内容…";
+
+"ask.plugin.files.content.timeout" = "文件内容搜索超时，请重试。";

@@ -7439,3 +7439,7 @@
 "auth.web.successMessage" = "이제 Typeflux를 사용할 수 있습니다.";
 
 "ask.notes.openWindow.detail" = "모든 노트 보기 및 관리 · notebook";
+
+"ask.plugin.files.content.searching" = "일치하는 파일 이름이 없습니다. 파일 내용 검색 중…";
+
+"ask.plugin.files.content.timeout" = "파일 내용 검색 시간이 초과되었습니다. 다시 시도하세요.";

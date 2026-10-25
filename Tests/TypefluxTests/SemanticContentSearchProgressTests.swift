@@ -71,6 +71,37 @@ struct SemanticContentSearchProgressTests {
         #expect(session.output?.selected?.fileHit?.evidence?.page == 4)
     }
 
+    @Test func emptyNamesShowContentSearchThenNoResults() async throws {
+        let files = AskTestFileIndex([])
+        let content = SemanticGatedSearch(hits: [], delay: .milliseconds(150))
+        let plugin = AskFileSearchPlugin(index: { files }, settings: { .init() }, semantic: { content })
+        let session = AskPluginSession(plugins: [plugin]) { AskFileSearchPlugin.keywords }
+        defer { _ = session.deactivate() }
+        session.enter(AskFileSearchPlugin.keywords[0])
+        session.update(text: "missing", selection: nil, language: .english)
+        try await AskQuickSearchSessionTests.wait { session.partial != nil }
+        #expect(session.partial?.items.first?.title == L("ask.plugin.files.content.searching"))
+        #expect(session.partial?.selected == nil)
+        try await AskQuickSearchSessionTests.wait { session.output != nil }
+        #expect(session.output?.items.first?.title == L("ask.plugin.files.none"))
+        #expect(!session.isRunning)
+    }
+
+    @Test func slowContentStopsWaitingAndKeepsFilenameResults() async throws {
+        let files = AskTestFileIndex([("/work/report.md", .file, 0)])
+        let content = SemanticGatedSearch(hits: [], delay: .seconds(30))
+        let plugin = AskFileSearchPlugin(index: { files }, settings: { .init() }, semantic: { content },
+                                         contentTimeout: .milliseconds(100))
+        let session = AskPluginSession(plugins: [plugin]) { AskFileSearchPlugin.keywords }
+        defer { _ = session.deactivate() }
+        session.enter(AskFileSearchPlugin.keywords[0])
+        session.update(text: "report", selection: nil, language: .english)
+        try await AskQuickSearchSessionTests.wait { session.output != nil }
+        #expect(!session.isRunning)
+        #expect(session.output?.items.first?.fileHit?.name == "report.md")
+        #expect(session.output?.note == L("ask.plugin.files.content.timeout"))
+    }
+
     @Test func mediaProgressAndFailureCopyKeepDocumentAvailabilityClear() {
         let download = SemanticFileSearchStatus.of(.init(phase: .indexing, enabled: true, filesEnabled: true,
             modelReady: true, mediaDownload: 0.5))

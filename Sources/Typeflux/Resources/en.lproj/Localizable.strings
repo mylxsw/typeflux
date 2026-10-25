@@ -7440,3 +7440,7 @@
 "auth.web.successMessage" = "You’re ready to use Typeflux.";
 
 "ask.notes.openWindow.detail" = "Browse and manage all notes · notebook";
+
+"ask.plugin.files.content.searching" = "No filename matches. Searching file contents…";
+
+"ask.plugin.files.content.timeout" = "Content search timed out. Try again.";
