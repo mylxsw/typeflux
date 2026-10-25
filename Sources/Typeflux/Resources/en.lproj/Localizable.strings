@@ -569,7 +569,7 @@
 "workflow.llmNotConfigured.action.settings" = "Open Settings";
 "workflow.llmNotConfigured.action.loginCloud" = "Login to Typeflux Cloud";
 "workflow.llmNotConfigured.action.configureCustomModel" = "Configure Custom Model";
-"workflow.llmNotConfigured.notice.localFallback" = "Typeflux Cloud is not signed in. Typeflux used local speech recognition to keep this input flowing. Sign in to enable cloud rewriting.";
+"workflow.llmNotConfigured.notice.localFallback" = "Not signed in. Using local speech recognition.";
 "workflow.llmNotConfigured.askSkipped" = "Typeflux Cloud is not signed in. The voice transcript was saved, but cloud Q&A could not run.";
 
 "persona.none.title" = "No Persona";

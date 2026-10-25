@@ -569,7 +569,7 @@
 "workflow.llmNotConfigured.action.settings" = "打开设置";
 "workflow.llmNotConfigured.action.loginCloud" = "登陆 Typeflux Cloud";
 "workflow.llmNotConfigured.action.configureCustomModel" = "配置自定义模型";
-"workflow.llmNotConfigured.notice.localFallback" = "Typeflux Cloud 尚未登录，已使用本地语音识别保留本次输入。登录后可继续使用云端改写。";
+"workflow.llmNotConfigured.notice.localFallback" = "未登录云端，已使用本地语音识别。";
 "workflow.llmNotConfigured.askSkipped" = "Typeflux Cloud 尚未登录，本次已保留语音转写，但无法完成云端问答。";
 
 "persona.none.title" = "无人设";
