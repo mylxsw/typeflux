@@ -44,6 +44,30 @@ struct EmojiResultsView: View {
                 ))
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button {
+                action(.emoji(.favorite(result.id)))
+            } label: {
+                Label(
+                    L(result.favorite ? "emoji.unfavorite" : "emoji.favorite"),
+                    systemImage: result.favorite ? "star.fill" : "star"
+                )
+            }
+            if !result.entry.variants.isEmpty {
+                Menu(L("emoji.variant")) {
+                    Button(result.entry.sequence) {
+                        action(.emoji(.variant(id: result.id, sequence: result.entry.sequence)))
+                    }
+                    .accessibilityLabel(result.entry.name(presentation.language))
+                    ForEach(result.entry.variants, id: \.sequence) { variant in
+                        Button(variant.sequence) {
+                            action(.emoji(.variant(id: result.id, sequence: variant.sequence)))
+                        }
+                        .accessibilityLabel(result.entry.name(presentation.language, sequence: variant.sequence))
+                    }
+                }
+            }
+        }
         .focused($focusedID, equals: result.id)
         .onMoveCommand { direction in
             let delta: Int
@@ -121,42 +145,6 @@ struct EmojiResultsView: View {
                             proxy.scrollTo(id, anchor: .center)
                         }
                     }
-                }
-                if let selected {
-                    Divider()
-                    HStack(spacing: 10) {
-                        Text(selected.sequence).font(.system(size: 32))
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(selected.name).font(.system(size: 13, weight: .semibold)).lineLimit(1)
-                            Text(selected.reason).font(.system(size: 10)).foregroundStyle(StudioTheme.textSecondary)
-                        }
-                        Spacer()
-                        if !selected.entry.variants.isEmpty {
-                            Menu {
-                                Button(selected.entry.sequence) { action(.emoji(.variant(
-                                    id: selected.id,
-                                    sequence: selected.entry.sequence
-                                ))) }
-                                .accessibilityLabel(selected.entry.name(presentation.language))
-                                ForEach(selected.entry.variants, id: \.sequence) { variant in
-                                    Button(variant.sequence) { action(.emoji(.variant(
-                                        id: selected.id,
-                                        sequence: variant.sequence
-                                    ))) }
-                                    .accessibilityLabel(selected.entry.name(
-                                        presentation.language,
-                                        sequence: variant.sequence
-                                    ))
-                                }
-                            } label: { Text(L("emoji.variant")) }.fixedSize()
-                        }
-                        Button {
-                            action(.emoji(.favorite(selected.id)))
-                        } label: { Image(systemName: selected.favorite ? "star.fill" : "star") }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(L(selected.favorite ? "emoji.unfavorite" : "emoji.favorite"))
-                            .accessibilityIdentifier("emoji.favorite")
-                    }.frame(height: 44)
                 }
             }
         }
