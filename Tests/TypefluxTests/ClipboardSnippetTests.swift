@@ -222,18 +222,27 @@ final class ClipboardSnippetTests: XCTestCase {
         let item = try save()
         model.reset(entries: [ClipboardFeed.entry(for: item)])
         model.category = .snippet
-        for state in ["list", "editor", "error"] {
+        for state in ["list", "editor", "error", "light", "compact"] {
             if state != "list" {
                 model.perform(.editSnippet)
             }
             if state == "error" {
                 model.snippetError = L("clipboard.snippet.error.duplicateAlias")
             }
-            let host = NSHostingView(rootView: ClipboardPanelView(model: model, focusRequest: 0)
+            if state == "compact" {
+                model.snippetDraft?.alias = ""
+                model.snippetDraft?.text = String(repeating: "Long snippet content.\n", count: 30)
+            }
+            let isLight = state == "light"
+            let content = state == "compact"
+                ? AnyView(ClipboardSnippetEditor(model: model))
+                : AnyView(ClipboardPanelView(model: model, focusRequest: 0))
+            let host = NSHostingView(rootView: content
                 .environment(\.askGlassMaterialOverride, .opaque)
-                .environment(\.colorScheme, .dark))
-            host.appearance = NSAppearance(named: .darkAqua)
-            host.frame = NSRect(x: 0, y: 0, width: 512, height: 560)
+                .environment(\.colorScheme, isLight ? .light : .dark))
+            host.appearance = NSAppearance(named: isLight ? .aqua : .darkAqua)
+            host.frame = NSRect(x: 0, y: 0, width: state == "compact" ? 400 : 512,
+                                height: state == "compact" ? 440 : 560)
             host.layoutSubtreeIfNeeded()
             let rep = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
             host.cacheDisplay(in: host.bounds, to: rep)
