@@ -265,6 +265,26 @@ struct AskEmojiPluginTests {
         }
     }
 
+    @Test func `emoji grid fills the expanded results viewport`() async throws {
+        let plugin = AskEmojiPlugin(service: EmojiSearchTests.service())
+        let plan = await plugin.plan(request(""))
+        let output = try await plugin.run(request(""), plan: plan)
+        let presentation = try #require(output.emoji)
+        let chrome = 1 + AskPluginResultsView.listPadding * 2
+            + AskPluginResultsView.sectionHeight + AskPluginResultsView.rowSpacing
+        #expect(AskPluginResultsView.emojiHeight(viewportHeight: nil) == EmojiResultsView.height)
+        for viewport: CGFloat in [400, 600, 800] {
+            let height = AskPluginResultsView.emojiHeight(viewportHeight: viewport)
+            #expect(height + chrome == viewport)
+            let hosting = NSHostingView(rootView: EmojiResultsView(
+                output: output, presentation: presentation, contentHeight: height,
+                onSelect: { _ in true }, onMain: {}, onAction: { _ in }
+            ).frame(width: 700))
+            hosting.layoutSubtreeIfNeeded()
+            #expect(abs(hosting.fittingSize.height - height) < 1)
+        }
+    }
+
     // Exercise each native rendering state with identical window setup.
     // swiftlint:disable:next function_body_length
     @Test func `render empty and results`() async throws {

@@ -185,6 +185,11 @@ struct AskPluginResultsView: View {
         return max(itemsHeight(output.items), (viewportHeight ?? 0) - chrome)
     }
 
+    static func emojiHeight(viewportHeight: CGFloat?) -> CGFloat {
+        let chrome = 1 + listPadding * 2 + sectionHeight + rowSpacing
+        return max(EmojiResultsView.height, (viewportHeight ?? 0) - chrome)
+    }
+
     /// Heights already measured: the launcher asks for the same text's height several times per update.
     private static let markdownHeights: NSCache<NSString, NSNumber> = {
         let cache = NSCache<NSString, NSNumber>()
@@ -332,7 +337,7 @@ struct AskPluginResultsView: View {
             Spacer(minLength: 0)
         }
         .frame(height: max(minimumHeight, Self.height(for: display),
-                           shownCard?.output.flatMap { $0.wordCard == nil && !$0.items.isEmpty ? viewportHeight : nil } ?? 0),
+                           shownCard?.output.flatMap { $0.emoji != nil || ($0.wordCard == nil && !$0.items.isEmpty) ? viewportHeight : nil } ?? 0),
                alignment: .top)
     }
 
@@ -529,7 +534,8 @@ struct AskPluginResultsView: View {
                     }
                 }
         } else if let output, let emoji = output.emoji {
-            EmojiResultsView(output: output, presentation: emoji, onSelect: onSelectItem,
+            EmojiResultsView(output: output, presentation: emoji,
+                             contentHeight: Self.emojiHeight(viewportHeight: viewportHeight), onSelect: onSelectItem,
                              onMain: onMain, onAction: onAction)
                 .disabled(running)
                 .opacity(running ? 0.5 : 1)

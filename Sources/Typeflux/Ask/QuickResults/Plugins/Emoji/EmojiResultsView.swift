@@ -5,6 +5,7 @@ struct EmojiResultsView: View {
     static let height: CGFloat = 318
     var output: AskPluginOutput
     var presentation: EmojiPresentation
+    var contentHeight: CGFloat = Self.height
     var onSelect: (String) -> Bool
     var onMain: () -> Void
     var onAction: (AskPluginAction) -> Void
@@ -149,7 +150,7 @@ struct EmojiResultsView: View {
             }
         }
         .padding(.horizontal, 8)
-        .frame(height: Self.height)
+        .frame(height: contentHeight)
         .background(EmojiGridKeyboard(focused: focusedID != nil) { key in
             switch key {
             case let .move(delta):

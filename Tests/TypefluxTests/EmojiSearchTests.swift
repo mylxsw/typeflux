@@ -72,6 +72,18 @@ struct EmojiSearchTests {
         #expect(try await service.search("smile", usage: usage).first?.entry.sequence == "😊")
     }
 
+    @Test func `browsing returns the complete supported catalog beyond legacy limits`() async throws {
+        let catalog = try EmojiCatalog.load()
+        #expect(catalog.entries.count > 200)
+        let excluded = catalog.entries[0].sequence
+        let service = EmojiSearchService(load: { catalog }, supported: { $0 != excluded })
+        let results = try await service.search("  ")
+        #expect(results.map(\.entry.id) == catalog.entries.dropFirst().map(\.id))
+        #expect(try await service.search("", limit: 250).count == 250)
+        let usage = EmojiUsage(favorites: Set(catalog.entries.map(\.id)))
+        #expect(try await service.search("", scope: .favorites, usage: usage).count == results.count)
+    }
+
     @Test func `edit distance boundaries`() {
         for (left, right, expected) in [
             ("smile", "smiel", 1),

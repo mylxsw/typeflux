@@ -83,11 +83,12 @@ actor EmojiSearchService {
     }
 
     func search(_ text: String, scope: EmojiScope = .all, usage: EmojiUsage = EmojiUsage(),
-                limit: Int = 80) throws -> [EmojiMatch] {
+                limit: Int? = nil) throws -> [EmojiMatch] {
+        let query = Self.normalize(text)
+        let limit = limit ?? (query.isEmpty ? Int.max : 80)
         guard text.count <= 160, limit > 0 else { return [] }
         let entries = try prepare()
         try Task.checkCancellation()
-        let query = Self.normalize(text)
         var matches: [Int: (Int, String)] = [:]
         if query.isEmpty {
             for index in entries.indices {
@@ -151,7 +152,7 @@ actor EmojiSearchService {
             guard canRender(match.entry.sequence) else { continue }
             match.entry.variants = match.entry.variants.filter { canRender($0.sequence) }
             results.append(match)
-            if results.count >= min(limit, 200) {
+            if results.count >= limit {
                 break
             }
         }
