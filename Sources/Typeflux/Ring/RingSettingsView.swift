@@ -38,8 +38,8 @@ struct RingSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
             triggerSection
-            actionsSection
             appearanceSection
+            actionsSection
         }
         .onAppear { centerTitle = configuration.centerTitle }
         .onDisappear {
