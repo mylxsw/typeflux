@@ -935,6 +935,16 @@ final class RadialMenuView: NSView {
 
     private func distance(_ a: NSPoint, _ b: NSPoint) -> CGFloat { hypot(a.x - b.x, a.y - b.y) }
 
+    /// Stops hidden-window work and discards callbacks before the surface is reused.
+    func stopMotion() {
+        ticker?.invalidate()
+        ticker = nil
+        motion = nil
+        closeCompletion = nil
+        closingOrigin = nil
+        isClosing = false
+    }
+
     func animateIn() {
         closeCompletion = nil
         isClosing = false

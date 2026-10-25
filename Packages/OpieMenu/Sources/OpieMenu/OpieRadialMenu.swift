@@ -140,11 +140,16 @@ public final class OpieRadialMenu {
         if isVisible { dismiss() } else { show(at: screenPoint) }
     }
 
+    /// Cancellation hides immediately; only committing an action plays the closing motion.
     public func dismiss(completion: (() -> Void)? = nil) {
+        dismiss(animated: false, completion: completion)
+    }
+
+    private func dismiss(animated: Bool, completion: (() -> Void)? = nil) {
         guard let panel, panel.isVisible else { completion?(); return }
         guard !isDismissing else { return }
         isDismissing = true
-        view?.animateOut { [weak self, weak panel] in
+        let finish: () -> Void = { [weak self, weak panel] in
             panel?.orderOut(nil)
             guard let self else { completion?(); return }
             if self.panel === panel {
@@ -153,6 +158,12 @@ public final class OpieRadialMenu {
             self.removeEventMonitors()
             self.onDismiss?()
             completion?()
+        }
+        if animated, let view {
+            view.animateOut(completion: finish)
+        } else {
+            view?.stopMotion()
+            finish()
         }
     }
 
@@ -222,7 +233,7 @@ public final class OpieRadialMenu {
     }
 
     private func select(_ item: OpieMenuItem) {
-        dismiss { [weak self] in self?.onSelect(item) }
+        dismiss(animated: true) { [weak self] in self?.onSelect(item) }
     }
 
     private func handleHotKeyPressed() {
