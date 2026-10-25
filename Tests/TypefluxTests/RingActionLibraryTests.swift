@@ -258,6 +258,25 @@ final class RingStudioLayoutTests: XCTestCase {
                        "one slice leaves its gap at the bottom")
     }
 
+    func testPointerHighlightsNeverRequestScrolling() {
+        for index in 0 ..< 20 {
+            let highlight = RingLibraryHighlight.pointer(index)
+            XCTAssertEqual(highlight.index, index)
+            XCTAssertNil(highlight.scrollTarget, "Hovering must not move content under the pointer")
+        }
+    }
+
+    func testKeyboardNavigationScrollsEvenAfterHoveringTheSameRow() {
+        let pointer = RingLibraryHighlight.pointer(3)
+        let keyboard = RingLibraryHighlight.keyboard(3)
+        XCTAssertNotEqual(pointer, keyboard, "Changing input source must be observable")
+        XCTAssertEqual(keyboard.index, 3)
+        XCTAssertEqual(keyboard.scrollTarget, 3)
+        XCTAssertNil(RingLibraryHighlight.pointer(4).scrollTarget,
+                     "Hover events caused by scrolling must not trigger another scroll")
+        XCTAssertEqual(RingLibraryHighlight.keyboard(0).scrollTarget, 0, "Wrapping still scrolls")
+    }
+
     func testLibraryKeyboardHelpers() {
         XCTAssertNil(RingLibraryPanel.nextHighlight(after: nil, count: 0))
         XCTAssertEqual(RingLibraryPanel.nextHighlight(after: nil, count: 3), 0)

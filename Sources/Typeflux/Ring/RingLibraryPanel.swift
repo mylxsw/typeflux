@@ -15,8 +15,12 @@ struct RingLibraryPanel: View {
 
     @State private var category: RingActionType?
     @State private var query: String
-    @State private var highlighted: Int?
+    @State private var highlight: RingLibraryHighlight?
     @State private var urlText: String
+
+    private var highlighted: Int? {
+        highlight?.index
+    }
 
     /// `category`, `query` and `url` open the panel part-way through, as when it is restored.
     init(target: RingLibraryTarget, actions: [RingAction], library: RingActionLibrary, isLoadingApps: Bool,
@@ -60,20 +64,20 @@ struct RingLibraryPanel: View {
                     VStack(alignment: .leading, spacing: 0) { content }
                         .padding(.horizontal, 12).padding(.bottom, 12)
                 }
-                .onChange(of: highlighted) { value in
-                    if let value {
+                .onChange(of: highlight) { value in
+                    if let value = value?.scrollTarget {
                         withAnimation { proxy.scrollTo(value, anchor: .center) }
                     }
                 }
             }
         }
         .onChange(of: query) { _ in
-            highlighted = nil
+            highlight = nil
             preview = nil
         }
         .onChange(of: category) { _ in
             query = ""
-            highlighted = nil
+            highlight = nil
             preview = nil
         }
     }
@@ -204,18 +208,18 @@ struct RingLibraryPanel: View {
 
     private func hover(_ index: Int?, item: RingLibraryItem) {
         if let index {
-            highlighted = index
+            highlight = .pointer(index)
             preview = item
         } else if preview?.id == item.id {
             preview = nil
-            highlighted = nil
+            highlight = nil
         }
     }
 
     private func moveHighlight() {
         let items = visibleItems
         guard let next = Self.nextHighlight(after: highlighted, count: items.count) else { return }
-        highlighted = next
+        highlight = .keyboard(next)
         preview = items[next]
     }
 
@@ -239,5 +243,22 @@ extension RingLibraryPanel {
             return items[highlighted]
         }
         return TFSearchMatcher.normalized(query).isEmpty ? nil : items.first
+    }
+}
+
+/// Pointer previews must never reposition the list beneath the pointer.
+enum RingLibraryHighlight: Equatable {
+    case pointer(Int)
+    case keyboard(Int)
+
+    var index: Int {
+        switch self {
+        case let .pointer(index), let .keyboard(index): index
+        }
+    }
+
+    var scrollTarget: Int? {
+        guard case let .keyboard(index) = self else { return nil }
+        return index
     }
 }
