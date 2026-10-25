@@ -3,7 +3,7 @@ import Foundation
 /// App-owned glass density. The midpoint preserves the tuned base surfaces;
 /// moving right adds a tint above the native optics without replacing their blur.
 struct LiquidGlassIntensity: Equatable {
-    static let defaultValue = 0.7
+    static let defaultValue = 0.9
     let value: Double
 
     init(_ value: Double = Self.defaultValue) {

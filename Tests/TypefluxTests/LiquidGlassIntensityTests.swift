@@ -10,7 +10,8 @@ struct LiquidGlassIntensityTests {
     @Test func `stored intensity is bounded and survives style changes`() throws {
         let defaults = try #require(UserDefaults(suiteName: "glass-intensity-" + UUID().uuidString))
         let settings = SettingsStore(defaults: defaults)
-        #expect(settings.liquidGlassIntensity == LiquidGlassIntensity.defaultValue)
+        #expect(settings.liquidGlassIntensity == 0.9)
+        #expect(LiquidGlassIntensity().value == 0.9)
         settings.liquidGlassIntensity = 0.8
         settings.interfaceStyle = .classic
         #expect(SettingsStore(defaults: defaults).liquidGlassIntensity == 0.8)
