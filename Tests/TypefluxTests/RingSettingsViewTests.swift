@@ -193,6 +193,22 @@ struct RingSettingsViewTests {
     }
 
     @Test
+    func `action grid renders sparse and full layouts with long names`() async throws {
+        var actions = Array((sample + [RingAction.feature(.notes), .feature(.chat)]).prefix(8))
+        actions[0].title = "翻译当前选中的文字并保留原始格式"
+        for count in [0, 1, 3, 7, 8] {
+            for light in [true, false] {
+                try await render(
+                    RingInspectorOverview(actions: Array(actions.prefix(count)), issues: [:],
+                                          detail: { $0.title }),
+                    size: NSSize(width: 320, height: 520),
+                    name: "ring-grid-\(count)-\(light ? "light" : "dark")", light: light
+                )
+            }
+        }
+    }
+
+    @Test
     func `the OpieMenu adapter shows, aims and closes the real ring`() {
         _ = NSApplication.shared
         let menu = OpieRingMenu()

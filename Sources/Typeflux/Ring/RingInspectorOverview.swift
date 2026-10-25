@@ -50,78 +50,107 @@ struct RingInspectorOverview: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(spacing: 2) {
-                    ForEach(Array(actions.enumerated()), id: \.element.id) { index, action in
-                        RingOverviewRow(index: index, action: action, detail: detail(action),
-                                        issue: issues[action.id]) { onSelect(action.id) }
-                            .draggable(action.id.uuidString)
-                            .dropDestination(for: String.self) { items, _ in
-                                guard let id = items.first.flatMap(UUID.init(uuidString:)) else { return false }
-                                onMove(id, index)
-                                return true
+        GeometryReader { geometry in
+            // Reserve room for grid padding, three gaps, and the instruction footer.
+            let tileHeight = max(96, (geometry.size.height - 90) / 4)
+            VStack(spacing: 0) {
+                ScrollView {
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 10),
+                                        GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                        ForEach(Array(actions.enumerated()), id: \.element.id) { index, action in
+                            RingOverviewRow(index: index, action: action, detail: detail(action),
+                                            issue: issues[action.id], height: tileHeight) { onSelect(action.id) }
+                                .draggable(action.id.uuidString)
+                                .dropDestination(for: String.self) { items, _ in
+                                    guard let id = items.first.flatMap(UUID.init(uuidString:)),
+                                          actions.contains(where: { $0.id == id }) else { return false }
+                                    onMove(id, index)
+                                    return true
+                                }
+                        }
+                        if !isFull {
+                            Button(action: onAdd) {
+                                VStack(spacing: 10) {
+                                    Image(systemName: "plus").font(.system(size: 22, weight: .medium))
+                                    Text(L("ring.actions.add")).font(.system(size: 12.5, weight: .medium))
+                                }
+                                .foregroundStyle(TFColors.accent)
+                                .frame(maxWidth: .infinity).frame(height: tileHeight)
+                                .contentShape(RoundedRectangle(cornerRadius: 10))
                             }
+                            .buttonStyle(RingOverviewTileStyle())
+                            .accessibilityIdentifier("ring.actions.add")
+                        }
                     }
-                    footer.padding(.top, 4)
+                    .padding(12)
                 }
-                .padding(.horizontal, 8).padding(.vertical, 10)
+                Text(L("ring.actions.gridHint"))
+                    .font(.system(size: 11)).foregroundStyle(TFColors.textSecondary)
+                    .padding(.bottom, 12).padding(.top, 4)
             }
-        }
-    }
-
-    /// A full ring has no add row; the canvas shows 8 / 8.
-    @ViewBuilder private var footer: some View {
-        if !isFull {
-            Button(action: onAdd) {
-                HStack(spacing: 10) {
-                    Image(systemName: "plus").font(.system(size: 11, weight: .bold))
-                        .frame(width: 26, height: 26)
-                        .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .strokeBorder(style: StrokeStyle(lineWidth: 1.2, dash: [3, 2.5])))
-                        .padding(.leading, 28)
-                    Text(L("ring.actions.add")).font(.system(size: 12.5, weight: .medium))
-                    Spacer(minLength: 8)
-                }
-                .foregroundStyle(TFColors.accent)
-                .padding(.horizontal, 8).frame(height: 40)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(RingRowButtonStyle())
-            .accessibilityIdentifier("ring.actions.add")
         }
     }
 }
 
-/// A slice in the overview list.
+/// A draggable action tile, ordered left to right and then top to bottom.
 struct RingOverviewRow: View {
     let index: Int
     let action: RingAction
-    /// What the slice runs; read by VoiceOver, the row itself shows only the name.
     let detail: String
     let issue: String?
+    var height: CGFloat = 110
     let onSelect: () -> Void
 
     var body: some View {
         Button(action: onSelect) {
-            HStack(spacing: 10) {
-                Text("\(index + 1)").font(.system(size: 11)).monospacedDigit().foregroundStyle(TFColors.textTertiary)
-                    .frame(width: 18)
-                RingIconTile(action: action, size: 26)
+            VStack(spacing: 8) {
+                RingIconTile(action: action, size: 36)
                 Text(action.title).font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(TFColors.textPrimary).lineLimit(1)
-                Spacer(minLength: 6)
-                if let issue {
-                    Circle().fill(TFColors.warning).frame(width: 7, height: 7).help(issue).accessibilityHidden(true)
-                }
+                    .foregroundStyle(TFColors.textPrimary)
+                    .lineLimit(2).multilineTextAlignment(.center)
+                    .frame(height: 34, alignment: .top)
             }
-            .padding(.horizontal, 8).frame(height: 36)
-            .contentShape(Rectangle())
+            .padding(.horizontal, 12).padding(.top, 18)
+            .frame(maxWidth: .infinity).frame(height: height)
+            .overlay(alignment: .topLeading) {
+                Text("\(index + 1)").font(.system(size: 10)).monospacedDigit()
+                    .foregroundStyle(TFColors.textSecondary).padding(10)
+            }
+            .overlay(alignment: .topTrailing) {
+                Image(systemName: issue == nil ? "line.3.horizontal" : "exclamationmark.circle.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(issue == nil ? TFColors.textTertiary : TFColors.warning)
+                    .padding(10).accessibilityHidden(true)
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 10))
         }
-        .buttonStyle(RingRowButtonStyle())
+        .buttonStyle(RingOverviewTileStyle())
+        .help(issue ?? detail)
         .accessibilityLabel(action.title)
         .accessibilityHint(issue ?? detail)
         .accessibilityIdentifier("ring.overview.row.\(index + 1)")
+    }
+}
+
+/// A restrained tile surface with a blue hover and press affordance.
+struct RingOverviewTileStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        TileBody(configuration: configuration)
+    }
+
+    private struct TileBody: View {
+        let configuration: Configuration
+        @State private var hovering = false
+
+        var body: some View {
+            configuration.label
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(configuration.isPressed ? TFColors.selection
+                        : hovering ? TFColors.accent.opacity(0.1) : TFColors.control.opacity(0.35)))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(hovering ? TFColors.accent : TFColors.border, lineWidth: 1))
+                .onHover { hovering = $0 }
+        }
     }
 }
 

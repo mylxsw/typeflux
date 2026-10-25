@@ -7369,3 +7369,5 @@
 "screenshot.text.interrupted" = "辨識已中斷，請重試";
 
 "ring.hoverSound.title" = "懸停音效";
+
+"ring.actions.gridHint" = "拖動調整順序 · 點擊編輯";

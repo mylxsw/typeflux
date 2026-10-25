@@ -7367,3 +7367,5 @@
 "screenshot.text.interrupted" = "识字已中断，请重试";
 
 "ring.hoverSound.title" = "悬停音效";
+
+"ring.actions.gridHint" = "拖动调整顺序 · 点击编辑";

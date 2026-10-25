@@ -7367,3 +7367,5 @@
 "screenshot.text.interrupted" = "Text recognition was interrupted. Try again.";
 
 "ring.hoverSound.title" = "Hover sound";
+
+"ring.actions.gridHint" = "Drag to reorder · Click to edit";
