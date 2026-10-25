@@ -363,7 +363,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             return
         }
         ShortcutLatency.record(.statePreparationStarted)
-        let restoredInput = model.resetLauncherForPresentation(at: launcherNow())
+        let restoredInput = model.resetLauncherForPresentation(at: launcherNow(), preservingScreenshot: prepared != nil)
         model.launcherWindowMode = settings.askLauncherWindowMode
         ShortcutLatency.record(.statePreparationFinished)
         model.quickSearch.setVisible(true)

@@ -20,6 +20,12 @@ extension AskConversationModel: ScreenshotFollowUpHandling {
             onTranslateScreenshot(image)
             return
         }
+        // Initialize the account before accepting the image: opening a cold launcher
+        // resets account state, which would otherwise discard this new screenshot.
+        if let current = session(), owner != current.owner {
+            resetSession()
+            owner = current.owner
+        }
         switch followUp {
         case .recognizeText, .translate:
             let screenshot = makeLauncherScreenshot(image)

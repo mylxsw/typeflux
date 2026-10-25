@@ -77,7 +77,7 @@ extension AskConversationModel {
 
     /// Reopen recent input while refreshing context; prepared actions run afterwards.
     @discardableResult
-    func resetLauncherForPresentation(at now: Date = Date()) -> Bool {
+    func resetLauncherForPresentation(at now: Date = Date(), preservingScreenshot: Bool = false) -> Bool {
         if let current = session(), owner != current.owner { resetSession(); owner = current.owner }
         if let quickAsk, quickAsk.owner == owner, quickAsk.restoreOnPresentation, !quickAsk.handedOff, quickAsk.conversationId != nil,
            launcherKeywords.contains(where: { $0 == quickAsk.keyword && $0.enabled }) {
@@ -94,7 +94,8 @@ extension AskConversationModel {
         launcherDismissedAt = nil
         captureGeneration = UUID()
         clearCapturedContentFeedback(launcher: true)
-        releaseLauncherScreenshot()
+        // A prepared screenshot action already owns the incoming image and recognition task.
+        if !preservingScreenshot { releaseLauncherScreenshot() }
         launcherClipboardPreview = nil
         answerWorkflowApproval(false)
         plugins.deactivate()

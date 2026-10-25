@@ -42,6 +42,35 @@ struct AskLauncherToggleTests {
         }
     }
 
+    @Test func screenshotTextSurvivesOpeningAClosedLauncher() async throws {
+        struct Recognizer: ImageTextRecognizing {
+            func recognizeText(in source: ImageTextSource) async throws -> RecognizedText {
+                RecognizedText(lines: [.init(text: "Screenshot result", confidence: 1, boundingBox: .zero)])
+            }
+        }
+        _ = NSApplication.shared
+        let fixture = try AskTestFixture()
+        let suite = "screenshot-launcher-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        let controller = AskConversationWindowController(settings: SettingsStore(defaults: defaults),
+                                                         model: fixture.model)
+        defer {
+            controller.dismissLauncher()
+            fixture.model.resetSession()
+            defaults.removePersistentDomain(forName: suite)
+        }
+        fixture.model.screenshotTextRecognizer = Recognizer()
+        let image = ScreenshotFollowUpImage(image: ScreenCaptureTestSupport.image(width: 400, height: 200),
+                                            scale: 2, isLongImage: false)
+
+        fixture.model.handle(.recognizeText, image: image)
+
+        try await fixture.wait { fixture.model.plugins.output?.body == "Screenshot result" }
+        #expect(controller.launcherWindow?.isVisible == true)
+        #expect(fixture.model.launcherScreenshot != nil)
+        #expect(fixture.model.plugins.keyword?.pluginID == AskScreenshotTextPlugin.id)
+    }
+
     @Test func `shortcut opened launcher takes keyboard focus from the clipboard`() throws {
         _ = NSApplication.shared
         let fixture = try AskTestFixture(authenticated: false)

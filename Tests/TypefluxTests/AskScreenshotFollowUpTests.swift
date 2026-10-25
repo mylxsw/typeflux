@@ -238,7 +238,10 @@ struct AskScreenshotFollowUpTests {
         defer { fixture.model.resetSession() }
         let model = fixture.model
         var shown: [@MainActor () -> Void] = []
-        model.onShowLauncher = { shown.append($0) }
+        model.onShowLauncher = { prepared in
+            model.resetLauncherForPresentation(preservingScreenshot: true)
+            shown.append(prepared)
+        }
         model.launcherDraft.text = "an unfinished question"
 
         model.handle(.recognizeText, image: image())
@@ -259,12 +262,28 @@ struct AskScreenshotFollowUpTests {
         #expect(model.plugins.keyword == nil)
     }
 
+    @Test func ordinaryLauncherOpeningReleasesThePreviousScreenshot() throws {
+        let (fixture, _) = try fixture(["old text"])
+        defer { fixture.model.resetSession() }
+        let model = fixture.model
+        model.launcherScreenshot = model.makeLauncherScreenshot(image())
+        let recognition = try #require(model.launcherScreenshot).source.recognition
+
+        model.resetLauncherForPresentation()
+
+        #expect(model.launcherScreenshot == nil)
+        #expect(recognition.isCancelled)
+    }
+
     @Test func aStaleLauncherOpeningDoesNothing() throws {
         let (fixture, _) = try fixture(["one"])
         defer { fixture.model.resetSession() }
         let model = fixture.model
         var shown: [@MainActor () -> Void] = []
-        model.onShowLauncher = { shown.append($0) }
+        model.onShowLauncher = { prepared in
+            model.resetLauncherForPresentation(preservingScreenshot: true)
+            shown.append(prepared)
+        }
         model.handle(.recognizeText, image: image())
         model.handle(.recognizeText, image: image())
         shown[0]()
