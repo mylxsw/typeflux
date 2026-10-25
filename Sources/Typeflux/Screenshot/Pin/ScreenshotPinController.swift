@@ -322,7 +322,8 @@ final class ScreenshotPinView: NSView {
             bar?.isHidden = true
             return
         }
-        let content = AnyView(ScreenshotPinBar(state: state) { [weak self] in self?.perform($0) })
+        let content = AnyView(ScreenshotPinBar(state: state) { [weak self] in self?.perform($0) }
+            .screenshotAppearance())
         let host: NSHostingView<AnyView>
         if let bar {
             host = bar
@@ -374,8 +375,7 @@ struct ScreenshotPinBar: View {
             button("xmark", help: L("screenshot.pin.close")) { perform(.close) }
         }
         .padding(3)
-        .background(RoundedRectangle(cornerRadius: 9).fill(AskTheme.glassFill.opacity(0.96)))
-        .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(AskTheme.border, lineWidth: 1))
+        .screenshotSurface(corner: 9, elevation: nil)
         .fixedSize()
     }
 

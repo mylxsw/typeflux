@@ -62,7 +62,7 @@ final class ScreenshotToastController: ScreenshotToastPresenting {
         let host = ScreenshotToastHostingView(rootView: ScreenshotToastView(content: content) { [weak self] in
             if let url = content.revealURL { self?.reveal(url) }
             self?.hide()
-        })
+        }.screenshotAppearance())
         panel.contentView = host
         let size = host.fittingSize
         let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
@@ -101,6 +101,7 @@ final class ScreenshotToastController: ScreenshotToastPresenting {
 }
 
 struct ScreenshotToastView: View {
+    @Environment(\.interfaceStyle) private var style
     let content: ScreenshotToastController.Content
     let onReveal: () -> Void
 
@@ -111,7 +112,7 @@ struct ScreenshotToastView: View {
                 .foregroundStyle(content.isError ? Color.orange : Color(nsColor: ScreenshotOverlayChromeView.accent))
             Text(content.message)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white)
+                .foregroundStyle(style == .classic ? Color.white : StudioTheme.textPrimary)
                 .lineLimit(2)
                 .frame(maxWidth: 420, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
@@ -123,8 +124,7 @@ struct ScreenshotToastView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.black.opacity(0.82)))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Color.white.opacity(0.12)))
+        .screenshotSurface(corner: 12, elevation: nil, placement: .floating, classicFill: .black)
         .fixedSize()
     }
 }

@@ -71,12 +71,7 @@ struct ScreenshotSensitiveInfoPanel: View {
         }
         .padding(12)
         .frame(width: Self.width)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(AskTheme.glassFill.opacity(0.96))
-                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(AskTheme.border, lineWidth: 1))
-                .shadow(color: .black.opacity(0.35), radius: 14, y: 8)
-        )
+        .screenshotSurface(corner: 12)
     }
 
     private func rowView(_ row: State.Row) -> some View {
@@ -209,7 +204,7 @@ final class ScreenshotSensitiveInfoController {
         shown = (state, crop)
         let content = AnyView(ScreenshotSensitiveInfoPanel(state: state) { [weak self] action in
             self?.perform(action, crop: crop)
-        })
+        }.screenshotAppearance())
         let host: NSHostingView<AnyView>
         if let existing = self.host {
             host = existing

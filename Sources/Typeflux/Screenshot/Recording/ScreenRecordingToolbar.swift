@@ -22,7 +22,7 @@ struct ScreenRecordingToolbar: View {
                     }
                     Button(L("recording.refresh")) { model.reloadChoices() }
                 }.font(.system(size: 12)).padding(10)
-                    .background(AskTheme.popoverSurface, in: RoundedRectangle(cornerRadius: 10))
+                    .recordingSurface(corner: 10)
             }
             HStack(spacing: 2) {
                 segment {
@@ -135,10 +135,10 @@ struct ScreenRecordingToolbar: View {
                 .foregroundStyle(StudioTheme.textPrimary).recordingSurface(corner: 12)
             HStack(spacing: 10) {
                 Text(model.selectedSource == nil ? model.selectionHint : model.outputSummary)
-                    .padding(.horizontal, 9).padding(.vertical, 3).background(.black.opacity(0.65), in: Capsule())
+                    .padding(.horizontal, 9).padding(.vertical, 3).recordingSurface(corner: 12)
                 Text(L("recording.selectionKeys"))
-                    .padding(.horizontal, 9).padding(.vertical, 3).background(.black.opacity(0.65), in: Capsule())
-            }.font(.system(size: 11.5)).foregroundStyle(.white)
+                    .padding(.horizontal, 9).padding(.vertical, 3).recordingSurface(corner: 12)
+            }.font(.system(size: 11.5)).foregroundStyle(StudioTheme.textPrimary)
         }.fixedSize().padding(12)
             .onAppear {
                 showsMicrophonePermission = model.permissionFailure == .microphonePermission
@@ -208,12 +208,6 @@ struct ScreenRecordingToolbar: View {
 
 extension View {
     func recordingSurface(corner: CGFloat) -> some View {
-        askInWindowGlass(
-            corner: corner,
-            opaqueFill: AskTheme.glassFill.opacity(0.96),
-            elevation: .popover,
-            placement: .floating
-        )
-        .overlay(RoundedRectangle(cornerRadius: corner).strokeBorder(AskTheme.border))
+        screenshotSurface(corner: corner, placement: .floating)
     }
 }

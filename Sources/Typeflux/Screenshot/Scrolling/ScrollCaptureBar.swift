@@ -71,11 +71,7 @@ struct ScrollCaptureBar: View {
             .disabled(state.pixelSize.width == 0)
         }
         .padding(4)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(AskTheme.glassFill.opacity(0.96))
-                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(AskTheme.border, lineWidth: 1))
-        )
+        .screenshotSurface(corner: 12, elevation: nil, placement: .floating)
         .fixedSize()
     }
 
@@ -132,7 +128,7 @@ final class ScrollCaptureBarView: NSView {
     func show(_ state: ScrollCaptureViewState) -> CGSize {
         self.state = state
         guard let actions else { return .zero }
-        host.rootView = AnyView(ScrollCaptureBar(state: state, actions: actions))
+        host.rootView = AnyView(ScrollCaptureBar(state: state, actions: actions).screenshotAppearance())
         return host.fittingSize
     }
 

@@ -890,9 +890,6 @@ struct ScreenshotEditorToolbar: View {
     }
 
     private func glass(cornerRadius: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: cornerRadius)
-            .fill(AskTheme.glassFill.opacity(0.96))
-            .overlay(RoundedRectangle(cornerRadius: cornerRadius).strokeBorder(AskTheme.border, lineWidth: 1))
-            .shadow(color: .black.opacity(0.35), radius: 14, y: 8)
+        Color.clear.screenshotSurface(corner: cornerRadius)
     }
 }

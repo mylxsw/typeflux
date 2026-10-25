@@ -194,7 +194,7 @@ final class ScreenshotLongImageEditorView: NSView {
 
     private func toolbarView(_ state: ScreenshotEditorToolbarModel.State) -> AnyView {
         AnyView(ScreenshotEditorToolbar(state: state) { [weak self] in self?.canvas.perform($0) }
-            .padding(ScreenshotOverlayView.toolbarShadowInset))
+            .padding(ScreenshotOverlayView.toolbarShadowInset).screenshotAppearance())
     }
 
     func releaseImage() {

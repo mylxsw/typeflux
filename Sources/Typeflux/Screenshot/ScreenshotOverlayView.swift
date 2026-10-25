@@ -798,7 +798,7 @@ final class ScreenshotOverlayView: NSView {
 
     private func toolbarView() -> AnyView {
         AnyView(ScreenshotEditorToolbar(state: toolbarModel.state) { [weak self] in self?.toolbarModel.perform($0) }
-            .padding(Self.toolbarShadowInset))
+            .padding(Self.toolbarShadowInset).screenshotAppearance())
     }
 
     private func updateCursor(at point: CGPoint) {

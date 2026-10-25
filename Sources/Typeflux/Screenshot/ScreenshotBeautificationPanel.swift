@@ -66,8 +66,8 @@ final class ScreenshotBeautificationPanel: NSObject, NSWindowDelegate {
         panel.title = L("screenshot.beautify.title")
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
-        panel.appearance = NSAppearance(named: .darkAqua)
-        panel.backgroundColor = NSColor(white: 0.075, alpha: 1)
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
         panel.level = parent.level
         panel.isReleasedWhenClosed = false
         panel.worksWhenModal = true
@@ -76,7 +76,7 @@ final class ScreenshotBeautificationPanel: NSObject, NSWindowDelegate {
             cancel: { [weak self] in self?.dismiss() }, apply: { [weak self] in
                 apply(model.settings.normalized)
                 self?.dismiss()
-            }))
+            }).screenshotAppearance())
         self.panel = panel
         parent.beginSheet(panel)
     }
@@ -96,6 +96,9 @@ final class ScreenshotBeautificationPanel: NSObject, NSWindowDelegate {
 }
 
 struct ScreenshotBeautificationView: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+    private var textColor: Color { interfaceStyle == .classic ? .white : StudioTheme.textPrimary }
+
     static let size = CGSize(width: 960, height: 720)
     static func size(for availableSize: CGSize) -> CGSize {
         CGSize(width: min(size.width, max(760, availableSize.width - 48)),
@@ -132,28 +135,31 @@ struct ScreenshotBeautificationView: View {
                 Rectangle().fill(.white.opacity(0.08)).frame(height: 1)
                 actions.padding(.horizontal, 20).padding(.vertical, 12)
             }
-            .background(Color(white: 0.13), in: RoundedRectangle(cornerRadius: 16))
+            .screenshotSurface(corner: 16, elevation: nil, classicFill: Color(white: 0.13))
             .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.09)))
             .shadow(color: .black.opacity(0.2), radius: 16, y: 6)
             .padding(.horizontal, 24)
             .padding(.bottom, 16)
         }
         .frame(width: panelSize.width, height: panelSize.height)
-        .background(Color(white: 0.075))
-        .foregroundStyle(.white.opacity(0.9))
-        .environment(\.colorScheme, .dark)
+        .background {
+            if interfaceStyle.usesGlass { AskWindowBackdrop() }
+            else { Color(white: 0.075) }
+        }
+        .foregroundStyle(textColor.opacity(0.9))
+        .preferredColorScheme(interfaceStyle == .classic ? .dark : nil)
     }
 
     private var header: some View {
         HStack(spacing: 10) {
             Image(systemName: "slider.horizontal.3")
                 .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(textColor.opacity(0.6))
             Text(L("screenshot.beautify.title")).font(.system(size: 14, weight: .semibold))
             Spacer()
             Toggle(L("screenshot.beautify.enabled"), isOn: $model.settings.isEnabled)
                 .toggleStyle(.switch).controlSize(.mini)
-                .font(.system(size: 11)).foregroundStyle(.white.opacity(0.6))
+                .font(.system(size: 11)).foregroundStyle(textColor.opacity(0.6))
                 .accessibilityLabel(L("screenshot.beautify.enabled"))
         }
         .padding(.horizontal, 24)
@@ -186,10 +192,10 @@ struct ScreenshotBeautificationView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(L("screenshot.beautify.background")).foregroundStyle(.white.opacity(0.6))
+                    Text(L("screenshot.beautify.background")).foregroundStyle(textColor.opacity(0.6))
                         .font(.system(size: 11, weight: .medium))
                     Text(L("screenshot.beautify.background.\(model.settings.background.rawValue)"))
-                        .foregroundStyle(.white.opacity(0.9)).font(.system(size: 10))
+                        .foregroundStyle(textColor.opacity(0.9)).font(.system(size: 10))
                 }
                 .lineLimit(1)
                 Spacer(minLength: 8)
@@ -247,7 +253,7 @@ struct ScreenshotBeautificationView: View {
             } label: {
                 Label(L("screenshot.beautify.reset"), systemImage: "arrow.counterclockwise")
             }
-            .buttonStyle(.plain).foregroundStyle(.white.opacity(0.6))
+            .buttonStyle(.plain).foregroundStyle(textColor.opacity(0.6))
             .padding(.vertical, 6).contentShape(Rectangle())
             Spacer()
             Button(L("screenshot.beautify.cancel"), action: cancel)
@@ -283,11 +289,11 @@ struct ScreenshotBeautificationView: View {
                         range: ClosedRange<CGFloat>, suffix: String) -> some View {
         let current = model.settings[keyPath: value]
         return HStack(spacing: 10) {
-            Image(systemName: symbol).frame(width: 14).foregroundStyle(.white.opacity(0.4))
+            Image(systemName: symbol).frame(width: 14).foregroundStyle(textColor.opacity(0.4))
                 .accessibilityHidden(true)
             Text(L("screenshot.beautify.\(key)"))
                 .frame(width: 64, alignment: .leading).lineLimit(1)
-                .foregroundStyle(.white.opacity(0.75))
+                .foregroundStyle(textColor.opacity(0.75))
             Slider(value: Binding(get: { model.settings[keyPath: value] }, set: {
                 // One published update avoids rendering a discarded intermediate disabled state.
                 var settings = model.settings
@@ -299,7 +305,7 @@ struct ScreenshotBeautificationView: View {
             .accessibilityLabel(L("screenshot.beautify.\(key)"))
             Text("\(Int((current * (suffix == "%" ? 100 : 1)).rounded())) \(suffix)")
                 .font(.system(size: 10, weight: .medium, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.6))
+                .foregroundStyle(textColor.opacity(0.6))
                 .frame(width: 48, height: 24)
                 .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 5))
                 .accessibilityHidden(true)

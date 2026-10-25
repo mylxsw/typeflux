@@ -57,6 +57,7 @@ struct ScreenRecordingOptionsPopover: View {
             Text("\(Int(model.outputSize.width)) × \(Int(model.outputSize.height)) px · " + L("recording.noUpscale"))
                 .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
         }.font(.system(size: 12)).padding(14).frame(width: 350).tint(AskTheme.accent)
+            .recordingSurface(corner: 12)
     }
 
     private func row(_ title: String, @ViewBuilder content: () -> some View) -> some View {
