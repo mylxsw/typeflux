@@ -16,6 +16,7 @@ import Testing
 
     @Test func `parsing is deferred and late results cannot replace newer content`() {
         let editor = AskTranscriptText.Editor()
+        editor.renderCache = AskTranscriptRenderCache()
         let work = Deferred(); editor.preparation = work
         editor.requestContent("**Old**", markdown: true, dark: false)
         #expect(editor.string.isEmpty)
@@ -30,6 +31,7 @@ import Testing
 
     @Test func `plain text invalidates an outstanding markdown result`() {
         let editor = AskTranscriptText.Editor()
+        editor.renderCache = AskTranscriptRenderCache()
         let work = Deferred(); editor.preparation = work
         editor.requestContent("**Old**", markdown: true, dark: false)
         editor.requestContent("**Literal**", markdown: false, dark: false)
@@ -39,6 +41,7 @@ import Testing
 
     @Test func `dismantling cancels delivery without breaking a subsequent presentation`() {
         let editor = AskTranscriptText.Editor()
+        editor.renderCache = AskTranscriptRenderCache()
         let work = Deferred(); editor.preparation = work
         editor.requestContent("**Old**", markdown: true, dark: false)
         AskTranscriptText.dismantleNSView(editor, coordinator: ())
@@ -73,6 +76,7 @@ import Testing
 
     @Test func `failed preparation shows plain text and can be requested again`() {
         let editor = AskTranscriptText.Editor()
+        editor.renderCache = AskTranscriptRenderCache()
         editor.setContent("Existing", markdown: false, dark: false)
         let work = Deferred(); editor.preparation = work
         editor.requestContent("**New**", markdown: true, dark: false)
@@ -85,6 +89,7 @@ import Testing
 
     @Test func `real background preparation preserves markdown and selected prefix`() async throws {
         let editor = AskTranscriptText.Editor()
+        editor.renderCache = AskTranscriptRenderCache()
         editor.setContent("**Hello** 🦆", markdown: true, dark: false)
         editor.setSelectedRange(NSRange(location: 0, length: 5))
         editor.requestContent("**Hello** 🦆\n\nUpdated", markdown: true, dark: false)
@@ -110,6 +115,7 @@ extension AskTranscriptPreparationTests {
         #expect(links.map(\.absoluteString) == ["typeflux-file:outputs/report.html", "https://example.com"])
 
         let editor = AskTranscriptText.Editor()
+        editor.renderCache = AskTranscriptRenderCache()
         var opened: [(URL, Bool)] = []
         editor.onOpenLink = { opened.append(($0, $1)) }
         editor.clicked(onLink: links[1], at: 0)
@@ -120,5 +126,70 @@ extension AskTranscriptPreparationTests {
         // Outside a conversation a workspace link does nothing rather than reaching Launch Services.
         editor.onOpenLink = nil
         editor.clicked(onLink: links[0], at: 0)
+    }
+}
+
+@Suite("Transcript navigation reuse", .exclusiveUIState)
+@MainActor struct AskTranscriptNavigationReuseTests {
+    private final class CountingWork: LatestBackgroundWorking {
+        var submissions = 0
+        func submit(_ work: @escaping () -> Void, completion: @escaping (Result<Void, Error>) -> Void) {
+            submissions += 1
+            work()
+            completion(.success(()))
+        }
+        func cancel() {}
+    }
+
+    @Test func revisitingMessageReusesRichTextAcrossEditors() throws {
+        let cache = AskTranscriptRenderCache()
+        let first = AskTranscriptText.Editor()
+        first.renderCache = cache
+        let firstWork = CountingWork(); first.preparation = firstWork
+        first.requestContent("**Saved answer**", markdown: true, dark: false)
+        #expect(firstWork.submissions == 1)
+        AskTranscriptText.dismantleNSView(first, coordinator: ())
+        let second = AskTranscriptText.Editor()
+        second.renderCache = cache
+        let secondWork = CountingWork(); second.preparation = secondWork
+        second.requestContent("**Saved answer**", markdown: true, dark: false)
+        #expect(secondWork.submissions == 0)
+        #expect(second.string == "Saved answer")
+        let font = try #require(second.textStorage?.attribute(.font, at: 0, effectiveRange: nil) as? NSFont)
+        #expect(font.fontDescriptor.symbolicTraits.contains(.bold))
+        second.requestContent("**Changed answer**", markdown: true, dark: false)
+        #expect(secondWork.submissions == 1)
+        #expect(second.string == "Changed answer")
+    }
+
+    @Test func cacheSeparatesThemeAndLiteralTextAndCopiesMutableInput() {
+        let cache = AskTranscriptRenderCache()
+        let value = NSMutableAttributedString(string: "Original")
+        cache.insert(value, text: "**Original**", markdown: true, dark: false)
+        value.mutableString.setString("Modified")
+        #expect(cache.value(text: "**Original**", markdown: true, dark: false)?.string == "Original")
+        #expect(cache.value(text: "**Original**", markdown: true, dark: true) == nil)
+        #expect(cache.value(text: "**Original**", markdown: false, dark: false) == nil)
+        #expect(cache.value(text: "Other", markdown: true, dark: false) == nil)
+        cache.insert(value, text: "Oversized", markdown: false, dark: false)
+        let oversized = NSAttributedString(string: String(repeating: "x", count: 600_000))
+        cache.insert(oversized, text: "Too large", markdown: false, dark: false)
+        #expect(cache.value(text: "Too large", markdown: false, dark: false) == nil)
+    }
+
+    @Test func measurementReusesWidthAndInvalidatesAfterContentChange() throws {
+        let editor = AskTranscriptText.Editor()
+        editor.renderCache = AskTranscriptRenderCache()
+        editor.isVerticallyResizable = true
+        editor.isHorizontallyResizable = false
+        editor.textContainer?.widthTracksTextView = false
+        editor.setContent(String(repeating: "word ", count: 120), markdown: false, dark: false)
+        let wide = try #require(editor.measuredSize(width: 500))
+        #expect(editor.measuredSize(width: 500) == wide)
+        let narrow = try #require(editor.measuredSize(width: 100))
+        #expect(narrow.height > wide.height)
+        editor.setContent("Short", markdown: false, dark: false)
+        let short = try #require(editor.measuredSize(width: 100))
+        #expect(short.height < narrow.height)
     }
 }

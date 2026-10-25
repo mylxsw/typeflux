@@ -44,17 +44,27 @@ struct AskTranscriptText: NSViewRepresentable {
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, nsView: Editor, context _: Context) -> CGSize? {
-        guard let width = proposal.width, width > 0, let container = nsView.textContainer,
-              let layout = nsView.layoutManager else { return nil }
-        container.containerSize = NSSize(width: width, height: .greatestFiniteMagnitude)
-        layout.ensureLayout(for: container)
-        return CGSize(width: width, height: ceil(layout.usedRect(for: container).height))
+        guard let width = proposal.width, width > 0 else { return nil }
+        return nsView.measuredSize(width: width)
     }
 
     final class Editor: NSTextView {
         var preparation: any LatestBackgroundWorking = LatestBackgroundWork(
             label: "typeflux.transcript-parse", queue: AskTranscriptText.parsingQueue
         )
+        var renderCache = AskTranscriptRenderCache.shared
+        private var measured: CGSize?
+
+        func measuredSize(width: CGFloat) -> CGSize? {
+            if let measured, measured.width == width { return measured }
+            guard let container = textContainer, let layout = layoutManager else { return nil }
+            container.containerSize = NSSize(width: width, height: .greatestFiniteMagnitude)
+            layout.ensureLayout(for: container)
+            let size = CGSize(width: width, height: ceil(layout.usedRect(for: container).height))
+            measured = size
+            return size
+        }
+
         private var requested: (text: String, markdown: Bool, dark: Bool)?
         private var contentGeneration = UUID()
         private var source: String?
@@ -175,6 +185,11 @@ struct AskTranscriptText: NSViewRepresentable {
             guard source != text || self.dark != dark || usesMarkdown != markdown else {
                 preparation.cancel(); return
             }
+            if let rendered = renderCache.value(text: text, markdown: markdown, dark: dark) {
+                preparation.cancel()
+                applyContent(text, markdown: markdown, dark: dark, document: nil, rendered: rendered)
+                return
+            }
             guard markdown else {
                 preparation.cancel()
                 applyContent(text, markdown: false, dark: dark, document: nil)
@@ -199,7 +214,8 @@ struct AskTranscriptText: NSViewRepresentable {
             applyContent(text, markdown: markdown, dark: dark, document: nil)
         }
 
-        private func applyContent(_ text: String, markdown: Bool, dark: Bool, document: Markdown.Document?) {
+        private func applyContent(_ text: String, markdown: Bool, dark: Bool, document: Markdown.Document?,
+                                  rendered: NSAttributedString? = nil) {
             guard source != text || self.dark != dark || usesMarkdown != markdown else { return }
             if dragging {
                 pending = (text, markdown, dark); return
@@ -207,7 +223,9 @@ struct AskTranscriptText: NSViewRepresentable {
             let oldSelection = selectedRange()
             let oldString = string as NSString
             source = text; self.dark = dark; usesMarkdown = markdown
-            let rendered = AskMarkdownText.render(text, markdown: markdown, document: document)
+            let rendered = rendered ?? AskMarkdownText.render(text, markdown: markdown, document: document)
+            renderCache.insert(rendered, text: text, markdown: markdown, dark: dark)
+            measured = nil
             textStorage?.setAttributedString(rendered)
             // Preserve a selection only if the selected prefix is still identical.
             if NSMaxRange(oldSelection) <= oldString.length, NSMaxRange(oldSelection) <= rendered.length,
