@@ -88,6 +88,58 @@ final class RingDismissalTests: XCTestCase {
     }
 
     @MainActor
+    func testClosingFadesEntireSurfaceInStepWithRotationForEveryStyle() throws {
+        for style in [OpieMenuStyle.classic, .frosted, .liquidGlass] where style.isAvailable {
+            let menu = makeMenu()
+            menu.setStyle(style)
+            menu.prepare()
+            let surface = try XCTUnwrap(menu.preparedWindow?.contentView as? RadialMenuSurface)
+            let view = surface.radialMenu
+            var lastOpacity: CGFloat = 1
+            var lastRotation: CGFloat = 0
+            for progress: CGFloat in [0.05, 0.2, 0.4, 0.6, 0.8, 0.95, 1] {
+                view.setMotionPreview(phase: "close", progress: progress)
+                let motion = view.motionSnapshot
+                XCTAssertLessThan(motion.opacity, lastOpacity)
+                XCTAssertLessThan(motion.rotation, lastRotation)
+                XCTAssertEqual(motion.opacity, 1 - motion.rotation / -1.60, accuracy: 0.001)
+                XCTAssertEqual(surface.alphaValue, motion.opacity, accuracy: 0.001)
+                XCTAssertEqual(motion.symbolOpacity, motion.opacity, accuracy: 0.001)
+                // Material stays at its original opacity inside the fading parent;
+                // applying the fade twice would make content vanish before the glass.
+                XCTAssertEqual(view.glassShape.opacity, 1)
+                XCTAssertTrue(surface.subviews.allSatisfy { $0.alphaValue == 1 })
+                lastOpacity = motion.opacity
+                lastRotation = motion.rotation
+            }
+            XCTAssertEqual(surface.alphaValue, 0)
+            view.prepareForOpening()
+            view.animateIn()
+            surface.updateGlassShape()
+            XCTAssertEqual(surface.alphaValue, 1, "Reopening must clear the completed group fade")
+            view.stopMotion()
+        }
+    }
+
+    @MainActor
+    func testClosingDuringOpeningPreservesContentOpacityInsideGroup() throws {
+        let menu = makeMenu()
+        menu.prepare()
+        let surface = try XCTUnwrap(menu.preparedWindow?.contentView as? RadialMenuSurface)
+        let view = surface.radialMenu
+        view.setMotionPreview(phase: "open", progress: 0.25)
+        let opening = view.motionSnapshot
+        view.animateOut {}
+        defer { view.stopMotion() }
+        view.setMotionPreview(phase: "close", progress: 0)
+        XCTAssertEqual(view.motionSnapshot.opacity, opening.opacity)
+        XCTAssertEqual(view.motionSnapshot.symbolOpacity, opening.symbolOpacity)
+        view.setMotionPreview(phase: "close", progress: 0.5)
+        XCTAssertEqual(view.motionSnapshot.opacity, opening.opacity * surface.alphaValue, accuracy: 0.001)
+        XCTAssertEqual(view.motionSnapshot.symbolOpacity, opening.symbolOpacity * surface.alphaValue, accuracy: 0.001)
+    }
+
+    @MainActor
     func testStoppingMotionDiscardsPendingCloseCallback() async throws {
         let menu = makeMenu()
         menu.prepare()

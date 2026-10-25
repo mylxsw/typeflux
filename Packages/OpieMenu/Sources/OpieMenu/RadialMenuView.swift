@@ -57,6 +57,8 @@ final class RadialMenuView: NSView {
     private var visualScale: CGFloat = 1
     private var visualRotation: CGFloat = 0
     private var visualOpacity: CGFloat = 1
+    // Fade the complete surface so native glass and painted content disappear together.
+    private(set) var surfaceOpacity: CGFloat = 1
     private var symbolScale: CGFloat = 1
     private var symbolRotation: CGFloat = 0
     private var symbolOpacity: CGFloat = 1
@@ -122,6 +124,7 @@ final class RadialMenuView: NSView {
     }
 
     func prepareForOpening() {
+        surfaceOpacity = 1
         hovered = nil
         keyboardSelection = nil
         mousePressActive = false
@@ -959,7 +962,6 @@ final class RadialMenuView: NSView {
     func animateOut(completion: @escaping () -> Void) {
         guard !isClosing else { return }
         if pointerPoint != nil { releaseJelly() }
-        let recoilPrelude: CFTimeInterval = recoilActive ? 0.12 : 0
         isClosing = true
         closeCompletion = completion
         closingOrigin = (visualScale, visualRotation, visualOpacity,
@@ -967,7 +969,7 @@ final class RadialMenuView: NSView {
                          iconOffset, labelOffset, labelOpacity,
                          holeExpansion, centerOpacity)
         motion = .closing
-        motionStart = CACurrentMediaTime() + recoilPrelude
+        motionStart = CACurrentMediaTime()
         startTicker()
     }
 
@@ -1014,8 +1016,8 @@ final class RadialMenuView: NSView {
     var motionSnapshot: (scale: CGFloat, rotation: CGFloat, opacity: CGFloat,
                          iconOffset: CGFloat, symbolOpacity: CGFloat,
                          holeExpansion: CGFloat, centerOpacity: CGFloat) {
-        (visualScale, visualRotation, visualOpacity,
-         iconOffset, symbolOpacity, holeExpansion, centerOpacity)
+        (visualScale, visualRotation, visualOpacity * surfaceOpacity,
+         iconOffset, symbolOpacity * surfaceOpacity, holeExpansion, centerOpacity)
     }
 
     private func untransformed(_ point: NSPoint) -> NSPoint {
@@ -1128,6 +1130,7 @@ final class RadialMenuView: NSView {
     }
 
     private func applyOpening(_ t: CGFloat) {
+        surfaceOpacity = 1
         let ringEase = 1 - pow(1 - t, 2)
         let iconTime = min(1, t / 0.80)
         let labelTime = max(0, min(1, (t - 0.10) / 0.85))
@@ -1147,13 +1150,13 @@ final class RadialMenuView: NSView {
     private func applyClosing(_ t: CGFloat) {
         let from: Presentation = closingOrigin ?? (1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1)
         let turn = 1 - pow(1 - t, 2)
-        let fade = smoothstep(max(0, min(1, (t - 0.08) / 0.78)))
+        surfaceOpacity = 1 - turn
         visualScale = from.ringScale + (1.16 - from.ringScale) * turn
         visualRotation = from.ringRotation + (-1.60 - from.ringRotation) * turn
-        visualOpacity = from.opacity * (1 - fade)
+        visualOpacity = from.opacity
         symbolScale = from.symbolScale + (1.16 - from.symbolScale) * turn
         symbolRotation = from.symbolRotation + (-1.60 - from.symbolRotation) * turn
-        symbolOpacity = from.symbolOpacity * (1 - fade)
+        symbolOpacity = from.symbolOpacity
         iconOffset = from.iconOffset * (1 - turn)
         labelOffset = from.labelOffset * (1 - turn)
         labelOpacity = from.labelOpacity
@@ -1253,6 +1256,7 @@ final class RadialMenuSurface: NSView {
         }
         super.init(frame: frame)
         wantsLayer = true
+        layer?.allowsGroupOpacity = true
         frostedGlass.wantsLayer = true
         frostedGlass.autoresizingMask = [.width, .height]
         frostedGlass.layer?.mask = shapeMask
@@ -1273,6 +1277,7 @@ final class RadialMenuSurface: NSView {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     func updateGlassShape() {
+        alphaValue = radialMenu.surfaceOpacity
         frostedGlass.isHidden = radialMenu.style != .frosted
         liquidGlass?.isHidden = radialMenu.style != .liquidGlass
         guard radialMenu.style != .classic else { return }
