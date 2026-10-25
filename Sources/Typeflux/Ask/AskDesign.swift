@@ -1768,6 +1768,7 @@ struct AskTitleBarButton: View {
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
+        .modifier(AskWorkspaceShortcutBadge(shortcut: shortcut))
         .help(Self.help(label: label, shortcut: shortcut))
         .accessibilityLabel(label)
     }

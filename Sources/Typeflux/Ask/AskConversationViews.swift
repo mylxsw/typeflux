@@ -7,6 +7,7 @@ struct AskConversationView: View {
     @ObservedObject var model: AskConversationModel
     private var onCloseWindow: () -> Void
     @State private var showsUsage = false
+    @State private var showingShortcutHints = false
     /// The side panel (files, file tabs and web pages); it stays open across conversations.
     @State private var showsSidePanel = false
     /// Held without observing: `AskSidePanelView` observes it, so typing in the Files search
@@ -89,6 +90,8 @@ struct AskConversationView: View {
                 }
             }
         }
+        .environment(\.askLauncherNumberHints, showingShortcutHints)
+        .background(AskLauncherCommandMonitor { showingShortcutHints = $0 })
         // Measure the viewport, rather than the intrinsic width of its children.
         .ignoresSafeArea(.container, edges: .top)
         .onChange(of: model.selectedId) { id in
@@ -574,7 +577,7 @@ struct AskConversationView: View {
         HStack(spacing: 0) {
             sidebarToggle
             if !layout.compactContent {
-                titleBarButton("magnifyingglass", label: L("ask.search")) { openSearch() }
+                titleBarButton("magnifyingglass", label: L("ask.search"), shortcut: "⌘K") { openSearch() }
                     .keyboardShortcut("k", modifiers: .command)
             }
             composeButton

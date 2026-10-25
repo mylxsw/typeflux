@@ -130,3 +130,28 @@ struct AskLauncherCommandMonitor: NSViewRepresentable {
 
     static func dismantleNSView(_ view: MonitorView, coordinator _: ()) { view.stop() }
 }
+
+/// Full shortcut labels for workspace controls, sharing the launcher's hold state.
+struct AskWorkspaceShortcutBadge: ViewModifier {
+    @Environment(\.askLauncherNumberHints) private var visible
+    @Environment(\.isEnabled) private var enabled
+    let shortcut: String?
+
+    func body(content: Content) -> some View {
+        content.overlay(alignment: .bottomTrailing) {
+            if visible, enabled, let shortcut {
+                Text(verbatim: shortcut)
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.black.opacity(0.85))
+                    .padding(.horizontal, 4)
+                    .frame(height: 17)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+                    .shadow(color: .black.opacity(0.18), radius: 1, y: 1)
+                    .fixedSize()
+                    .offset(y: 10)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        }
+    }
+}

@@ -64,7 +64,9 @@ struct SidebarAccountFooter<SignedOutIdentity: View>: View {
                             .contentShape(Circle())
                     }
                     .buttonStyle(AskPressableStyle())
-                    .help(L("sidebar.settingsAccessibility"))
+                    .keyboardShortcut(",", modifiers: .command)
+                    .modifier(AskWorkspaceShortcutBadge(shortcut: "⌘,"))
+                    .help(L("sidebar.settingsAccessibility") + " ⌘,")
                     .accessibilityLabel(L("sidebar.settingsAccessibility"))
                     .accessibilityIdentifier("sidebar.accountSettings")
                 }
