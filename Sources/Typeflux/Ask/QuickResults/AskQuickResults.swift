@@ -165,25 +165,6 @@ struct AskQuickResults: Equatable {
         }
     }
 
-    /// Move within the displayed application grid; leave other result kinds to the list.
-    mutating func moveApplication(_ delta: Int, horizontal: Bool = false) -> Bool {
-        guard case .app = highlightedRow else { return false }
-        let all = rows
-        var start = highlighted
-        var end = highlighted
-        while start > 0, case .app = all[start - 1] { start -= 1 }
-        while end + 1 < all.count, case .app = all[end + 1] { end += 1 }
-        let local = highlighted - start
-        let target = local + delta * (horizontal ? 1 : AskApplicationGrid.columns)
-        if !horizontal, (target < 0 || local / AskApplicationGrid.columns == (end - start) / AskApplicationGrid.columns && delta > 0) {
-            highlighted = delta < 0 ? start : end
-            move(delta)
-        } else {
-            highlight(start + AskApplicationGrid.move(local, delta: delta, count: end - start + 1, horizontal: horizontal))
-        }
-        return true
-    }
-
     /// Highlights a row under the pointer, unless it cannot run.
     mutating func highlight(_ index: Int) {
         guard rows.indices.contains(index), isEnabled(rows[index]) else { return }

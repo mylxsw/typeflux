@@ -65,6 +65,11 @@ final class AskLauncherIconCache {
         self.worker = worker; self.diskCache = diskCache
     }
 
+    /// Retina pixels for the 56-point application grid; documents remain compact.
+    nonisolated static func pixelEdge(for icon: MediaNativeIcon) -> Int {
+        eligible(icon) ? 112 : 56
+    }
+
     nonisolated static func eligible(_ icon: MediaNativeIcon) -> Bool {
         icon.kind == .application ||
             (icon.kind == .file && ["app", "appex", "prefpane"].contains(
@@ -112,7 +117,7 @@ final class AskLauncherIconCache {
         guard let image = immediateLookup(icon, folder), !Task.isCancelled, generation == currentGeneration,
               !key.isPrivate || fileGeneration == currentFileGeneration else { return nil }
         if let completed = cached(icon, revision: revision) { return completed }
-        guard let result = Self.rasterized(image), !Task.isCancelled, generation == currentGeneration,
+        guard let result = Self.rasterized(image, edge: Self.pixelEdge(for: icon)), !Task.isCancelled, generation == currentGeneration,
               !key.isPrivate || fileGeneration == currentFileGeneration else { return nil }
         if let completed = cached(icon, revision: revision) { return completed }
         remember(result, for: key)
@@ -134,10 +139,10 @@ final class AskLauncherIconCache {
         }
     }
 
-    private static func rasterized(_ image: NSImage) -> AskFilePreviewPDF.Result? {
-        var bounds = CGRect(x: 0, y: 0, width: 56, height: 56)
+    private static func rasterized(_ image: NSImage, edge: Int) -> AskFilePreviewPDF.Result? {
+        var bounds = CGRect(x: 0, y: 0, width: edge, height: edge)
         guard let source = image.cgImage(forProposedRect: &bounds, context: nil, hints: nil),
-              let context = CGContext(data: nil, width: 56, height: 56, bitsPerComponent: 8, bytesPerRow: 224,
+              let context = CGContext(data: nil, width: edge, height: edge, bitsPerComponent: 8, bytesPerRow: edge * 4,
                   space: CGColorSpaceCreateDeviceRGB(),
                   bitmapInfo: CGBitmapInfo.byteOrder32Big.rawValue | CGImageAlphaInfo.premultipliedLast.rawValue)
         else { return nil }
@@ -180,7 +185,7 @@ final class AskLauncherIconCache {
                 try Task.checkCancellation()
                 if let original, !worker.permits(original) { throw MediaFailure.unavailable }
                 if let decode { return try await decode(icon) }
-                return try await AskFinderIcon.decode(icon, worker: worker, authorization: original)
+                return try await AskFinderIcon.decode(icon, edge: Self.pixelEdge(for: icon), worker: worker, authorization: original)
             }
             pending[key] = Pending(task: task, authorization: original, clients: [client])
         }
@@ -193,7 +198,7 @@ final class AskLauncherIconCache {
                       !key.isPrivate || fileGeneration == currentFileGeneration else { throw CancellationError() }
                 if let original, !worker.permits(original) { throw MediaFailure.unavailable }
                 guard result.images.count == 1, let image = result.images.first,
-                      image.width > 0, image.height > 0, image.width <= 56, image.height <= 56 else {
+                      image.width > 0, image.height > 0, image.width <= Self.pixelEdge(for: icon), image.height <= Self.pixelEdge(for: icon) else {
                     throw MediaFailure.invalidProtocol
                 }
                 if let completed = cached(icon, revision: revision) {

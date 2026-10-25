@@ -721,7 +721,7 @@ struct AskComposer: View {
         }
         switch key {
         case .up, .down:
-            if !results.moveApplication(key == .up ? -1 : 1) { results.move(key == .up ? -1 : 1) }
+            results.move(key == .up ? -1 : 1)
             quickResults = results
         case let .number(number):
             guard quickActions == nil, results.listRows.indices.contains(number - 1) else { return false }
@@ -740,12 +740,8 @@ struct AskComposer: View {
             }
             guard let value = results.value(of: .calculation), !results.stale else { return false }
             draft.wrappedValue.text = value
-        case .left, .right:
-            if results.chosen, results.moveApplication(key == .left ? -1 : 1, horizontal: true) {
-                quickResults = results
-                return true
-            }
-            return key == .right ? openQuickActions(results) : false
+        case .right:
+            return openQuickActions(results)
         case .commandDown:
             guard results.moreFiles || !results.files.isEmpty else { return false }
             showAllFiles()
@@ -769,7 +765,7 @@ struct AskComposer: View {
             guard case let .browser(index) = results.highlightedRow, results.browserEntries.indices.contains(index) else { return false }
             AskQuickResults.copy(results.browserEntries[index].url)
         case .escape, .shiftTab, .commandD, .commandE, .commandZ, .commandS, .commandB, .commandO,
-             .commandDelete, .optionCommandDelete, .commandLeft, .commandRight, .commandT, .commandN, .optionCommandN,
+             .commandDelete, .optionCommandDelete, .left, .commandLeft, .commandRight, .commandT, .commandN, .optionCommandN,
              .optionUp, .optionDown, .optionLeft, .optionRight:
             return false
         }
@@ -1117,11 +1113,6 @@ struct AskComposer: View {
     }
 
     private func moveLauncherHorizontal(_ delta: Int) -> Bool {
-        if showsQuickResults, !active, !quickResultsArePending, quickActions == nil,
-           var results = quickResults, results.chosen, results.moveApplication(delta, horizontal: true) {
-            quickResults = results
-            return true
-        }
         if pluginDisplay?.calendar == true {
             return calendarKey(delta < 0 ? .left : .right)
         }

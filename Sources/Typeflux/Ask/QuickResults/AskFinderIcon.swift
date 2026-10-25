@@ -77,7 +77,7 @@ typealias AskNativeIconDecoding = @Sendable (MediaNativeIcon) async throws -> As
             guard current() else { throw MediaFailure.unavailable }
             let result: AskFilePreviewPDF.Result
             if let decode { result = try await decode(icon) }
-            else { result = try await AskFinderIcon.decode(icon, worker: worker, authorization: original) }
+            else { result = try await AskFinderIcon.decode(icon, edge: AskLauncherIconCache.pixelEdge(for: icon), worker: worker, authorization: original) }
             guard current() else { throw MediaFailure.unavailable }
             return result
         }, isCurrent: current)
@@ -150,7 +150,7 @@ private struct AskNativeIconProjection<Content: View>: View {
                 : cache?.cached($0, revision: revision))?.images.first
         }.map { NSImage(cgImage: $0, size: .zero) } : nil
         AskContextImage(source: icon.map { $0.kind.rawValue + ":" + $0.value },
-            model: AskContextImageModel(maximumEdge: 56, nativeIcon: .init(icon: icon, revision: revision,
+            model: AskContextImageModel(maximumEdge: icon.map { AskLauncherIconCache.pixelEdge(for: $0) } ?? 56, nativeIcon: .init(icon: icon, revision: revision,
                 cache: cache, decode: decode.map { decoder in { @Sendable icon in try await decoder(icon) } },
                 useCache: useCache)), content: { image in content(image ?? cached) })
     }

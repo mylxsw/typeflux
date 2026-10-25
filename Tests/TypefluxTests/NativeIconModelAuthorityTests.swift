@@ -49,7 +49,7 @@ private actor IndependentNativeModelDecoder {
                 if !firstOnly || number == 1 { gate?.wait() }
                 let request = try JSONDecoder().decode(MediaRequest.self, from: p.stdin!)
                 try request.validate()
-                #expect(request.operation == .nativeIcon && request.preview?.width == 56 && request.preview?.height == 56)
+                #expect(request.operation == .nativeIcon && request.preview?.width == AskLauncherIconCache.pixelEdge(for: request.icon!) && request.preview?.height == AskLauncherIconCache.pixelEdge(for: request.icon!))
                 #expect(request.preview?.imageType == nil && request.icon != nil)
                 let fd = openat(p.directoryDescriptor, "raster-0", O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0o600)
                 guard fd >= 0 else { throw MediaFailure.unavailable }

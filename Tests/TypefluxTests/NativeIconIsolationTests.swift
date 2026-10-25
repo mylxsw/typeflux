@@ -40,11 +40,11 @@ private actor RecoveringNativeIcon {
         request.icon = icon; request.preview = .init(width: edge, height: edge)
         return request
     }
-    private func raster() -> CGImage {
-        let context = CGContext(data: nil, width: 56, height: 56, bitsPerComponent: 8, bytesPerRow: 224,
+    private func raster(edge: Int = 56) -> CGImage {
+        let context = CGContext(data: nil, width: edge, height: edge, bitsPerComponent: 8, bytesPerRow: edge * 4,
             space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
         context.setFillColor(CGColor(red: 0.1, green: 0.2, blue: 0.9, alpha: 1))
-        context.fill(.init(x: 0, y: 0, width: 56, height: 56)); return context.makeImage()!
+        context.fill(.init(x: 0, y: 0, width: edge, height: edge)); return context.makeImage()!
     }
     private func worker() throws -> MediaWorker {
         let folder = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent(".build/native-icon-validation")
@@ -213,7 +213,7 @@ private actor RecoveringNativeIcon {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("launcher-icons-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: directory) }
         let disk = AskLauncherIconDiskCache(directory: directory)
-        let pixels = raster(), calls = NativeIconCalls()
+        let pixels = raster(edge: 112), calls = NativeIconCalls()
         var immediateLookups = 0
         func makeCache() -> AskLauncherIconCache {
             AskLauncherIconCache(immediateLookup: { _, _ in
@@ -243,7 +243,7 @@ private actor RecoveringNativeIcon {
         let files = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
         XCTAssertEqual(files.count, 1)
         let size = try FileManager.default.attributesOfItem(atPath: files[0].path)[.size] as? Int
-        XCTAssertEqual(size, 56 * 56 * 4)
+        XCTAssertEqual(size, 112 * 112 * 4)
         let second = makeCache()
         second.reconcileApplications([app("v1")])
         _ = try await second.load(icon)
@@ -492,12 +492,37 @@ private actor RecoveringNativeIcon {
         XCTAssertGreaterThan(blue, 0.7, "the visible row must redraw when its cached icon arrives")
     }
 
+    func testApplicationGridUsesRetinaPixelsAndRejectsLegacyDiskCache() async throws {
+        let icon = MediaNativeIcon(kind: .file, value: "/Applications/Retina.app")
+        XCTAssertEqual(AskLauncherIconCache.pixelEdge(for: icon), 112)
+        XCTAssertEqual(AskLauncherIconCache.pixelEdge(for: .init(kind: .file, value: "/tmp/note.txt")), 56)
+        let pixels = raster(edge: 112)
+        let cache = AskLauncherIconCache(immediateLookup: { _, _ in
+            NSImage(cgImage: pixels, size: .init(width: 56, height: 56))
+        })
+        let immediate = try XCTUnwrap(cache.immediate(icon))
+        XCTAssertEqual(immediate.images.first?.width, 112)
+        let folder = try AskAttachmentFixture.directory()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let disk = AskLauncherIconDiskCache(directory: folder)
+        await disk.store(immediate, path: icon.value, fingerprint: "v1")
+        let loaded = await disk.load(path: icon.value, fingerprint: "v1")
+        XCTAssertEqual(loaded?.images.first?.width, 112)
+        let file = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil).first)
+        try Data(repeating: 0, count: 56 * 56 * 4).write(to: file)
+        let legacy = await disk.load(path: icon.value, fingerprint: "v1")
+        XCTAssertNil(legacy)
+        await disk.store(immediate, path: icon.value, fingerprint: "v1")
+        let regenerated = await disk.load(path: icon.value, fingerprint: "v1")
+        XCTAssertEqual(regenerated?.images.first?.width, 112)
+    }
+
     func testApplicationDiskIconsPreloadWithoutStartingDecoders() async throws {
         let folder = try AskAttachmentFixture.directory()
         defer { try? FileManager.default.removeItem(at: folder) }
         let disk = AskLauncherIconDiskCache(directory: folder)
         let icon = MediaNativeIcon(kind: .file, value: "/Applications/Persisted.app")
-        let result = AskFilePreviewPDF.Result(images: [raster()], numbers: [], pages: 0)
+        let result = AskFilePreviewPDF.Result(images: [raster(edge: 112)], numbers: [], pages: 0)
         await disk.store(result, path: icon.value, fingerprint: "version-1")
         let calls = NativeIconCalls()
         let cache = AskLauncherIconCache(immediateLookup: { _, _ in nil }, decode: { _ in
@@ -515,7 +540,7 @@ private actor RecoveringNativeIcon {
 
     func testHomeLoadsMoreIconsThanTheStandardImageScopeLimit() async throws {
         _ = NSApplication.shared
-        let pixels = raster(), scope = AskImagePresentationScope()
+        let pixels = raster(edge: 112), scope = AskImagePresentationScope()
         let cache = AskLauncherIconCache(decode: { _ in .init(images: [pixels], numbers: [], pages: 0) })
         let access = AskImagePresentationAccess(scope: scope, epoch: scope.epoch, authorize: { true })
         let rows = (0..<24).map { index in

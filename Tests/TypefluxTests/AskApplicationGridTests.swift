@@ -23,7 +23,7 @@ struct AskApplicationGridTests {
         }
     }
 
-    @Test func homeAndSearchUseSameGridOrder() {
+    @Test func onlyUnfilteredHomeUsesGridNavigation() {
         let apps = matches
         let home = AskLauncherHome.build(.init(applications: apps.map(\.entry)))
         let items = AskLauncherHome.items(home)
@@ -31,25 +31,13 @@ struct AskApplicationGridTests {
         #expect(AskLauncherHome.move(7, by: -1, in: items, horizontal: true) == 6)
         #expect(AskLauncherSuggestions.height(for: home) == 13 + 34 + AskApplicationGrid.height(count: 14))
         var results = AskQuickResults(apps: apps, lead: true)
-        let blocks = AskQuickResultsView.displayBlocks(for: results)
-        #expect(blocks.count == 1)
-        #expect(blocks[0].map(\.index) == Array(0..<14))
-        #expect(AskQuickResultsView.contentHeight(for: results) == 13 + 22 + AskApplicationGrid.height(count: 14))
-        let moved1 = results.moveApplication(1)
-        #expect(moved1)
-        #expect(results.highlighted == 6)
-        let movedHorizontal = results.moveApplication(1, horizontal: true)
-        #expect(movedHorizontal)
-        #expect(results.highlighted == 7)
-        let moved2 = results.moveApplication(1)
-        #expect(moved2)
-        #expect(results.highlighted == 13)
-        let moved3 = results.moveApplication(1)
-        #expect(moved3)
+        let itemsInSearch = AskQuickResultsView.listItems(for: results)
+        #expect(itemsInSearch.map(\.index) == Array(0..<14))
+        #expect(AskQuickResultsView.rowHeight(.app(0), in: results) == AskQuickResultsView.appHeight)
+        results.move(1)
+        #expect(results.highlighted == 1)
+        results.move(-1)
         #expect(results.highlighted == 0)
-        results.highlight(14)
-        let movedAI = results.moveApplication(1)
-        #expect(!movedAI)
     }
 
     @Test func tileAndGridRender() throws {

@@ -6,7 +6,7 @@ import Foundation
 actor AskLauncherIconDiskCache {
     static let shared = AskLauncherIconDiskCache(directory: TypefluxDataDirectories.cache.appendingPathComponent("LauncherIcons", isDirectory: true))
 
-    private static let edge = 56
+    private static let edge = 112
     private static let stride = edge * 4
     private static let bytes = edge * stride
     private let directory: URL

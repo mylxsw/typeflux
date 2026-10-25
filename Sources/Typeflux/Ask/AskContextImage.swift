@@ -99,7 +99,7 @@ extension AskConversationModel {
     private let browserIcon: AskBrowserIconPreparation?
     private let maximumEdge: Int
     private var registrationKind: AskImagePresentationScope.RegistrationKind {
-        nativeIcon != nil && maximumEdge <= 56 ? .smallIcon : .standard
+        nativeIcon != nil && maximumEdge <= 112 ? .smallIcon : .standard
     }
     init(budget: AskToolPixelBudget = .shared, maximumEdge: Int = 1600, worker: MediaWorker = .previews,
          readInput: @escaping AskContextImageDecoder.InputReader = { try AskContextImageDecoder.input($0) },

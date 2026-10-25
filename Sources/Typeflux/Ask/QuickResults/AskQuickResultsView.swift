@@ -81,22 +81,17 @@ struct AskQuickResultsView: View {
                         // At most a few dozen rows: build them all once, so scrolling
                         // never creates rows or loads icons mid-gesture.
                         VStack(spacing: Self.rowSpacing) {
-                            ForEach(Self.displayBlocks(for: results), id: \.first!.id) { block in
-                                if let first = block.first {
-                                    if let section = first.section {
-                                        if case .app = first.row { sectionTitle(.apps) }
-                                        else { sectionTitle(section) }
+                            ForEach(items, id: \.id) { item in
+                                // One identified block includes its heading. A changing
+                                // heading must not leave the scroll anchor on a removed sibling.
+                                VStack(spacing: Self.rowSpacing) {
+                                    if let section = item.section {
+                                        sectionTitle(section)
                                     }
-                                    if case .app = first.row {
-                                        LazyVGrid(columns: AskApplicationGrid.tracks, spacing: AskApplicationGrid.spacing) {
-                                            ForEach(block, id: \.id) { item in
-                                                resultRow(item.row, index: item.index).id(item.id)
-                                            }
-                                        }
-                                    } else {
-                                        resultRow(first.row, index: first.index).id(first.id)
-                                    }
+                                    resultRow(item.row, index: item.index)
                                 }
+                                .id(item.id)
+                                .transition(.opacity)
                             }
                             if let notice = results.notice { noticeRow(notice) }
                         }
@@ -269,50 +264,43 @@ struct AskQuickResultsView: View {
     }
 
     /// The application's icon and name, where it lives, and "Open" when highlighted.
-    @ViewBuilder private func appRow(_ match: AskAppMatch, row: AskQuickResults.Row, highlighted: Bool) -> some View {
+    private func appRow(_ match: AskAppMatch, row: AskQuickResults.Row, highlighted: Bool) -> some View {
         let app = match.entry
-        if app.kind == .application {
-            AskApplicationTile(app: app, title: Self.marked(app.name, match.highlights), selected: highlighted) {
-                onRun(row, true)
-            }
-            .accessibilityIdentifier("ask.quick.app")
-        } else {
-            Button { onRun(row, true) } label: {
-                HStack(spacing: 12) {
-                    AskFileIconView(url: app.url, thumbnail: false)
-                        .id(app.iconFingerprint)
-                        .frame(width: 28, height: 28)
-                        .accessibilityHidden(true)
-                    Self.marked(app.name, match.highlights).font(.system(size: 13.5))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                        .lineLimit(1)
-                    Text(app.kind == .settingsPane ? L("ask.quick.pane.location") : Self.location(of: app.url))
-                        .font(.system(size: 11.5))
+        return Button { onRun(row, true) } label: {
+            HStack(spacing: 12) {
+                AskFileIconView(url: app.url, thumbnail: false)
+                    .id(app.iconFingerprint)
+                    .frame(width: 28, height: 28)
+                    .accessibilityHidden(true)
+                Self.marked(app.name, match.highlights).font(.system(size: 13.5))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                    .lineLimit(1)
+                Text(app.kind == .settingsPane ? L("ask.quick.pane.location") : Self.location(of: app.url))
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .lineLimit(1).truncationMode(.middle)
+                Spacer(minLength: 8)
+                if highlighted {
+                    Text(L("ask.quick.app.open") + " ↩").font(.system(size: 11.5))
                         .foregroundStyle(StudioTheme.textTertiary)
-                        .lineLimit(1).truncationMode(.middle)
-                    Spacer(minLength: 8)
-                    if highlighted {
-                        Text(L("ask.quick.app.open") + " ↩").font(.system(size: 11.5))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                    }
                 }
-                .padding(.horizontal, 10)
-                .frame(height: Self.appHeight)
-                .background { highlightShape(highlighted, cornerRadius: 14) }
-                .overlay {
-                    if highlighted, results.best == row, row == results.rows.first {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(AskTheme.accent.opacity(0.55), lineWidth: 1)
-                    }
-                }
-                .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(app.name)
-            .accessibilityHint(L("ask.quick.app.open"))
-            .accessibilityAddTraits(highlighted ? .isSelected : [])
-            .accessibilityIdentifier(app.kind == .settingsPane ? "ask.quick.pane" : "ask.quick.app")
+            .padding(.horizontal, 10)
+            .frame(height: Self.appHeight)
+            .background { highlightShape(highlighted, cornerRadius: 14) }
+            .overlay {
+                if highlighted, results.best == row, row == results.rows.first {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(AskTheme.accent.opacity(0.55), lineWidth: 1)
+                }
+            }
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel(app.name)
+        .accessibilityHint(L("ask.quick.app.open"))
+        .accessibilityAddTraits(highlighted ? .isSelected : [])
+        .accessibilityIdentifier(app.kind == .settingsPane ? "ask.quick.pane" : "ask.quick.app")
     }
 
     /// A file or folder: its icon or thumbnail, name with the matched letters marked,

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Shared geometry keeps home, search and arrow-key navigation in agreement.
+/// Shared geometry keeps the unfiltered home and arrow-key navigation in agreement.
 enum AskApplicationGrid {
     static let columns = 6
     static let tileHeight: CGFloat = 106
@@ -30,7 +30,7 @@ struct AskApplicationTile: View {
                 AskNativeIconView(icon: .init(kind: .file, value: app.url.path), symbol: "app",
                                   immediateLookup: false)
                     .id(app.iconFingerprint)
-                    .frame(width: 60, height: 60)
+                    .frame(width: 56, height: 56)
                     .accessibilityHidden(true)
                 title.font(.system(size: 12, weight: .medium))
                     .foregroundStyle(StudioTheme.textPrimary)
