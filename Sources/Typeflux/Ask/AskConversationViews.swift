@@ -38,8 +38,7 @@ struct AskConversationView: View {
     @State private var emptyHeadingHeight: CGFloat = 0
     /// The content column's height, which the bottom-anchored composer is measured against.
     @State private var contentColumnHeight: CGFloat = 0
-    @State private var transcriptViewportSize: CGSize = .zero
-    @State private var transcriptCoveredBottom: CGFloat = 0
+    @State private var followsTranscriptBottom = true
     /// Files are dragged over the transcript; they attach to the draft when dropped.
     @State private var transcriptDropTargeted = false
     /// Set by the toggle inside its animation. Driving the layout from the
@@ -1414,6 +1413,10 @@ struct AskConversationView: View {
                     .padding(.bottom, 8)
                     .frame(maxWidth: AskMetrics.columnWidth)
                     .frame(maxWidth: .infinity)
+                    .background(AskTranscriptScrollObserver { atBottom in
+                        guard restoredTranscript == model.selectedId else { return }
+                        followsTranscriptBottom = atBottom
+                    })
                 }
                 .coordinateSpace(name: "ask-transcript")
                 // Hidden until it sits at its reading position, then faded in:
@@ -1434,24 +1437,19 @@ struct AskConversationView: View {
                             .padding(.top, AskMetrics.titleBarRowHeight + 24)
                     }
                 }
-                .onPreferenceChange(AskTranscriptFrames.self) { frames in
-                    guard let id = model.selectedId, restoredTranscript == id else { return }
-                    // A resize can move the end marker before ScrollView adjusts
-                    // its offset. Preserve the existing reading intent for that
-                    // layout pass instead of interpreting it as a manual scroll.
-                    if transcriptViewportSize != viewport.size || transcriptCoveredBottom != bottomChromeHeight {
-                        transcriptViewportSize = viewport.size
-                        transcriptCoveredBottom = bottomChromeHeight
-                        followBottom(proxy, afterLayoutChange: true)
-                        return
+                .overlay(alignment: .bottom) {
+                    if !followsTranscriptBottom, restoredTranscript == model.selectedId {
+                        AskTranscriptBottomButton {
+                            followsTranscriptBottom = true
+                            proxy.scrollTo("bottom", anchor: .bottom)
+                        }
+                        .padding(.bottom, bottomChromeHeight + 12)
                     }
-                    if let bottom = frames["bottom"], AskPresentation.isFollowingBottom(
-                        markerTop: bottom.minY, viewport: viewport.size.height, coveredBottom: bottomChromeHeight) {
-                        model.transcriptPositions[id] = "bottom"
-                    } else if let first = frames.filter({ $0.key != "bottom" && $0.value.maxY > 0 })
-                        .min(by: { $0.value.minY < $1.value.minY }) {
-                        model.transcriptPositions[id] = first.key
-                    }
+                }
+                .onPreferenceChange(AskTranscriptFrames.self) { _ in
+                    // Follow after layout too: text wrapping and tool cards can grow
+                    // after the model update that caused them.
+                    followBottom(proxy)
                 }
                 .onChange(of: model.referenceLocation) { id in
                     // A step folded into an activity block scrolls to its block.
@@ -1460,10 +1458,15 @@ struct AskConversationView: View {
                             if case let .activity(group) = item.kind { return group.messageIds.contains(id) }
                             return false
                         }?.id ?? id
+                        followsTranscriptBottom = false
                         proxy.scrollTo(target, anchor: .center); model.referenceLocation = nil
                     }
                 }
-                .onChange(of: model.selectedId) { _ in restoredTranscript = nil }
+                .onChange(of: model.selectedId) { _ in
+                    restoredTranscript = nil
+                    followsTranscriptBottom = true
+                    restoreTranscript(proxy)
+                }
                 .onChange(of: model.selected?.id) { _ in restoreTranscript(proxy) }
                 .onAppear { restoreTranscript(proxy) }
                 .onChange(of: viewport.size) { _ in followBottom(proxy, afterLayoutChange: true) }
@@ -1583,20 +1586,21 @@ struct AskConversationView: View {
         if let editor = NSApp.keyWindow?.firstResponder as? AskTranscriptText.Editor,
            editor.selectedRange().length > 0 { return }
         guard let id = model.selectedId, restoredTranscript == id,
-              model.transcriptPositions[id] == "bottom" else { return }
+              followsTranscriptBottom else { return }
         proxy.scrollTo("bottom", anchor: .bottom)
     }
 
     private func restoreTranscript(_ proxy: ScrollViewProxy) {
         guard let id = model.selected?.id, restoredTranscript != id else { return }
-        let anchor = model.transcriptPositions[id] ?? "bottom"
-        model.transcriptPositions[id] = anchor
+        followsTranscriptBottom = true
+        model.transcriptPositions[id] = "bottom"
         DispatchQueue.main.async {
             guard model.selectedId == id else { return }
-            proxy.scrollTo(anchor, anchor: anchor == "bottom" ? .bottom : .top)
+            proxy.scrollTo("bottom", anchor: .bottom)
             // One more pass lets the lazy rows settle at the new offset before revealing.
             DispatchQueue.main.async {
                 guard model.selectedId == id else { return }
+                proxy.scrollTo("bottom", anchor: .bottom)
                 withAnimation(AskMotion.revealAnimation(reduceMotion: reduceMotion)) { restoredTranscript = id }
             }
         }

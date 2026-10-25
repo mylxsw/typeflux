@@ -213,8 +213,7 @@ struct AskConversationVisualTests {
         fixture.model.resetSession()
     }
 
-    @Test func readingPositionSurvivesHistorySwitch() async throws {
-        guard ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] != nil else { return }
+    @Test func openingConversationAlwaysShowsLatestMessages() async throws {
         let f = try AskTestFixture()
         for id in ["long-a", "long-b"] {
             await f.api.seed(.init(id: id, title: id, revision: 1, updatedAt: Date(), messages: (0..<50).map {
@@ -233,15 +232,13 @@ struct AskConversationVisualTests {
         }
         let scroll = try #require(scrollViews(hosting).first { $0.frame.width > 300 && $0.frame.height > 200 })
         scroll.contentView.scroll(to: NSPoint(x: 0, y: 400)); scroll.reflectScrolledClipView(scroll.contentView)
-        try await f.wait { f.model.transcriptPositions["long-a"] != nil && f.model.transcriptPositions["long-a"] != "bottom" }
-        let anchor = f.model.transcriptPositions["long-a"]
         await f.model.select("long-b")
         try await Task.sleep(for: .milliseconds(150))
         await f.model.select("long-a")
         try await Task.sleep(for: .milliseconds(300))
-        #expect(f.model.transcriptPositions["long-a"] == anchor)
-        #expect(scroll.contentView.bounds.origin.y > 100)
-        #expect(scroll.contentView.bounds.origin.y < (scroll.documentView?.frame.height ?? 0) - scroll.contentView.bounds.height - 100)
+        #expect(f.model.transcriptPositions["long-a"] == "bottom")
+        let distance = (scroll.documentView?.frame.height ?? 0) - scroll.documentVisibleRect.maxY
+        #expect(distance < 20)
         f.model.resetSession()
     }
 
