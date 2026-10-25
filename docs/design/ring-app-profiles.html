@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 圆环应用级设置 交互设计稿（GUL-471）</title>
+<style>
+/* Base tokens and controls are copied from docs/design/ring-studio.html. */
+/* Tokens mirror StudioTheme / TFColors / TFMetrics, same as docs/design/ring.html. */
+:root{--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",sans-serif;--mono:"SF Mono",ui-monospace,Menlo,monospace;--warm:#FFC457}
+.light{--page:#FBFBFC;--side:#F3F4F6;--sideSel:#FFFFFF;--sideSelStroke:rgba(15,23,42,.08);--sideSelText:#1D4ED8;
+  --card:#FFFFFF;--cardStroke:rgba(15,23,42,.09);--control:#F4F4F5;--raised:#FFFFFF;--border:rgba(15,23,42,.10);
+  --accent:#2563EB;--accentHover:#1D4ED8;--accentSoft:rgba(37,99,235,.10);--focus:rgba(37,99,235,.30);
+  --t1:#1D1D1F;--t2:#515154;--t3:#6E6E73;--danger:#DC2626;--success:#16A34A;--overlay:rgba(29,29,31,.06);--press:rgba(29,29,31,.11);
+  --pop:#FFFFFF;--popStroke:rgba(15,23,42,.12);--scrim:rgba(0,0,0,.10);--well:#F6F6F8}
+.dark{--page:#1E1E20;--side:#2C2C34;--sideSel:rgba(255,255,255,.11);--sideSelStroke:transparent;--sideSelText:#EEEEEE;
+  --card:#2A2A2C;--cardStroke:rgba(255,255,255,.115);--control:#323234;--raised:#4F4F51;--border:rgba(255,255,255,.115);
+  --accent:#178CFF;--accentHover:#178CFF;--accentSoft:rgba(23,140,255,.16);--focus:rgba(23,140,255,.30);
+  --t1:#EEEEEE;--t2:#B8B8B8;--t3:#8F8F8F;--danger:#DB5252;--success:#29C76E;--overlay:rgba(238,238,238,.06);--press:rgba(238,238,238,.11);
+  --pop:#2C2C2E;--popStroke:rgba(255,255,255,.14);--scrim:rgba(0,0,0,.25);--well:#242426}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--font);background:#0E0E10;color:#EDEDED;-webkit-font-smoothing:antialiased;overflow:hidden;font-size:13px}
+button{font-family:inherit;color:inherit}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none;display:block}
+
+/* ---------- prototype chrome ---------- */
+.proto-bar{height:48px;display:flex;align-items:center;gap:14px;padding:0 18px;border-bottom:1px solid rgba(255,255,255,.06);background:#121214}
+.proto-bar .brand{font-weight:600;font-size:13px;color:#fff}
+.proto-bar .brand small{color:#8E8E93;font-weight:400;margin-left:6px}
+.ptabs,.pill{display:flex;gap:2px;background:#1C1C1F;padding:3px;border-radius:999px}
+.ptabs button,.pill button{border:0;background:transparent;color:#A1A1A6;font-size:12.5px;padding:5px 13px;border-radius:999px;cursor:pointer}
+.ptabs button.on,.pill button.on{background:#3A3A3D;color:#fff}
+.proto-bar .sp{flex:1}
+.proto-bar .scn{font-size:12px;color:#8E8E93}
+.stage{position:absolute;top:48px;left:0;right:0;bottom:0;display:none}
+.stage.on{display:flex}
+#stage-settings{align-items:center;justify-content:center;background:radial-gradient(1200px 700px at 30% 20%,#2a3550 0,#15171c 55%,#0e0e10 100%)}
+
+/* ---------- window + sidebar ---------- */
+.window{width:min(1180px,calc(100vw - 40px));height:min(820px,calc(100vh - 88px));border-radius:12px;overflow:hidden;display:flex;position:relative;
+  background:var(--page);color:var(--t1);box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 .5px rgba(255,255,255,.12)}
+.sidebar{width:220px;flex:none;padding:10px;display:flex}
+.sidepanel{flex:1;background:var(--side);border-radius:14px;display:flex;flex-direction:column;padding:14px 10px}
+.lights{display:flex;gap:8px;padding:2px 6px 20px}
+.lights i{width:12px;height:12px;border-radius:50%;display:block}
+.logo{display:flex;align-items:center;gap:10px;padding:0 8px 22px;font-weight:700;font-size:17px}
+.logo .mk{width:26px;height:26px;border-radius:50%;background:var(--t1);color:var(--page);display:grid;place-items:center}
+.logo .mk svg{width:17px;height:17px;stroke-width:2.4}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;font-size:13px;color:var(--t1);cursor:default;border:.5px solid transparent}
+.nav a svg{width:16px;height:16px;color:var(--t2)}
+.nav a.on{background:var(--sideSel);border-color:var(--sideSelStroke);color:var(--sideSelText);font-weight:600}
+.nav a.on svg{color:var(--sideSelText)}
+.content{flex:1;overflow:auto;position:relative}
+.page{max-width:900px;margin:0 auto;padding:28px 28px 48px;display:flex;flex-direction:column;gap:24px}
+
+.pane-h{display:flex;align-items:center;gap:14px}
+.pane-h .tile40{width:40px;height:40px;border-radius:10px;background:rgba(37,99,235,.15);color:var(--accent);display:grid;place-items:center}
+.dark .pane-h .tile40{background:rgba(23,140,255,.15)}
+.pane-h .tile40 svg{width:21px;height:21px;stroke-width:2}
+.pane-h h1{font-size:17px;font-weight:600;margin:0}
+.pane-h .sp{flex:1}
+
+.sec{display:flex;flex-direction:column;gap:6px}
+.sec-h{display:flex;align-items:center;gap:7px;min-height:24px;padding:0 4px}
+.sec-h b{font-size:12px;font-weight:600;color:var(--t2)}
+.sec-h .cnt{font-size:11px;color:var(--t3);font-variant-numeric:tabular-nums}
+.sec-h .sp{flex:1}
+.card{background:var(--card);border:.5px solid var(--cardStroke);border-radius:12px}
+.divider{height:.5px;background:var(--border);margin-left:54px}
+.frow{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:52px;position:relative}
+.tile28{width:28px;height:28px;border-radius:7px;background:var(--control);color:var(--t2);display:grid;place-items:center;flex:none}
+.tile28 svg{width:15px;height:15px;stroke-width:2}
+.frow .lbl{flex:1;min-width:180px;display:flex;flex-direction:column;gap:3px}
+.frow .ttl{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+.frow .val{font-size:12px;color:var(--t2)}
+.frow .ctl{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.w220{width:220px}
+
+/* buttons */
+.btn{--h:30px;height:var(--h);min-width:64px;padding:0 14px;border-radius:999px;border:.5px solid var(--border);background:var(--control);color:var(--t1);
+  font-size:13px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;position:relative;white-space:nowrap;transition:transform .25s cubic-bezier(.3,1.5,.5,1)}
+.btn::after{content:"";position:absolute;inset:0;border-radius:inherit;background:transparent;pointer-events:none}
+.btn:hover::after{background:var(--overlay)}
+.btn:active{transform:scale(.97)}
+.btn svg.i{width:12px;height:12px;stroke-width:2.4}
+.btn.primary{background:var(--accent);border-color:transparent;color:#fff;font-weight:600}
+.btn.plain{background:transparent;border-color:transparent}
+.btn.destructive{color:var(--danger)}
+.btn.sm{--h:24px;min-width:0;padding:0 10px;font-size:12px;gap:5px}
+.btn.sm svg.i{width:11px;height:11px}
+.btn.icon{width:var(--h);min-width:0;padding:0}
+.btn.icon svg.i{width:14px;height:14px;stroke-width:2.2}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.btn:focus-visible,.field:focus,.seg:focus-visible,.keyfield:focus-visible,.canvas:focus-visible{outline:1px solid var(--accent);box-shadow:0 0 0 3.5px var(--focus)}
+.switch{width:26px;height:15px;border-radius:999px;background:rgba(120,120,128,.32);position:relative;cursor:pointer;flex:none;transition:.18s;border:0;padding:0}
+.switch::after{content:"";position:absolute;width:13px;height:13px;border-radius:50%;background:#fff;top:1px;left:1px;transition:.18s;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.switch.on{background:var(--accent)}
+.switch.on::after{left:12px}
+.keyfield{height:30px;border-radius:999px;border:.5px solid var(--border);background:var(--control);display:inline-flex;align-items:center;gap:4px;padding:0 4px;cursor:pointer;outline:none}
+.keyfield:hover{box-shadow:inset 0 0 0 999px var(--overlay)}
+.keyfield.rec{outline:1px solid var(--accent);box-shadow:0 0 0 3.5px var(--focus)}
+.kc{min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--raised);border:.5px solid var(--border);box-shadow:0 1px 0 rgba(0,0,0,.08);font-size:12px;font-weight:500;display:inline-grid;place-items:center;color:var(--t1)}
+.keyfield .rec-t{font-size:12.5px;color:var(--accent);padding:0 10px;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.5}}
+.seg{display:flex;height:30px;padding:2px;border-radius:999px;background:var(--control);border:.5px solid var(--border);outline:none}
+.seg button{flex:1;border:0;background:transparent;border-radius:999px;font-size:12.5px;font-weight:500;color:var(--t2);cursor:pointer;padding:0 8px;white-space:nowrap}
+.seg button.on{background:var(--raised);color:var(--t1);font-weight:600;box-shadow:0 1px 1px rgba(0,0,0,.12)}
+.field{height:30px;border-radius:8px;border:.5px solid var(--border);background:var(--control);color:var(--t1);font-size:13px;padding:0 10px;outline:none;font-family:inherit;width:100%}
+.field.mono{font-family:var(--mono);font-size:12px}
+.field.err{border-color:var(--danger)}
+.fmsg{font-size:11.5px;margin-top:5px;color:var(--t3)}
+.fmsg.err{color:var(--danger)}
+
+
+/* ================= scope bar (new in GUL-471) ================= */
+.studio-card{overflow:visible;position:relative}
+.scopes{display:flex;align-items:center;gap:6px;padding:10px 12px;border-bottom:.5px solid var(--border);overflow-x:auto;scrollbar-width:none;position:relative}
+.scopes::-webkit-scrollbar{display:none}
+.scope{height:32px;padding:0 12px 0 5px;border-radius:999px;border:.5px solid var(--border);background:var(--well);display:inline-flex;align-items:center;gap:7px;
+  font-size:12.5px;font-weight:500;cursor:pointer;white-space:nowrap;flex:none;position:relative;transition:transform .2s cubic-bezier(.3,1.5,.5,1)}
+.scope:hover{border-color:var(--popStroke);box-shadow:inset 0 0 0 99px var(--overlay)}
+.scope:active{transform:scale(.97)}
+.scope.on{background:var(--accentSoft);border-color:var(--accent);color:var(--accent);font-weight:600;box-shadow:none}
+.scope .n{font-size:11px;color:var(--t3);font-weight:500;font-variant-numeric:tabular-nums}
+.scope.on .n{color:var(--accent);opacity:.8}
+.scope.off .ai,.scope.off .nm{opacity:.45}
+.scope .gl{width:22px;height:22px;border-radius:50%;background:var(--control);color:var(--t2);display:grid;place-items:center}
+.scope.on .gl{background:var(--accent);color:#fff}
+.scope .gl svg{width:13px;height:13px;stroke-width:2}
+.scope .ai{display:block;width:22px;height:22px}
+.scope .dot{position:absolute;left:21px;top:3px;width:8px;height:8px;border-radius:50%;background:#E8A317;border:1.5px solid var(--card)}
+.scope.add{color:var(--accent);border-style:dashed;border-color:color-mix(in srgb,var(--accent) 55%,transparent);background:transparent;padding:0 12px 0 9px}
+.scope.add svg{width:12px;height:12px;stroke-width:2.6}
+.scope-sep{width:.5px;height:18px;background:var(--border);flex:none;margin:0 2px}
+.scope.drop{outline:2px solid var(--accent)}
+
+.pbar{display:flex;align-items:center;gap:10px;padding:8px 12px 8px 14px;min-height:50px;border-bottom:.5px solid var(--border)}
+.pbar .ai{width:28px;height:28px;flex:none}
+.pbar .gl{width:28px;height:28px;border-radius:8px;background:var(--accentSoft);color:var(--accent);display:grid;place-items:center;flex:none}
+.pbar .gl svg{width:16px;height:16px}
+.pbar .tt{flex:1;min-width:0}
+.pbar .tt b{display:block;font-size:13px;font-weight:600}
+.pbar .tt small{display:block;font-size:11px;color:var(--t3);font-family:var(--mono);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbar .tt small.plain{font-family:var(--font)}
+.pbar .warnline{display:flex;align-items:center;gap:6px;color:#B7791F;font-size:12px}
+.dark .pbar .warnline{color:var(--warm)}
+.pbar .warnline svg{width:13px;height:13px}
+.pbar .lab{font-size:12px;color:var(--t2)}
+
+.menu{position:absolute;z-index:60;min-width:220px;background:var(--pop);border:.5px solid var(--popStroke);border-radius:10px;padding:5px;box-shadow:0 12px 36px rgba(0,0,0,.22)}
+.menu button{width:100%;display:flex;align-items:center;gap:9px;border:0;background:transparent;padding:7px 9px;border-radius:6px;font-size:13px;cursor:pointer;text-align:left}
+.menu button:hover{background:var(--accent);color:#fff}
+.menu button svg{width:14px;height:14px}
+.menu button.danger{color:var(--danger)}
+.menu button.danger:hover{background:var(--danger);color:#fff}
+.menu button[disabled]{opacity:.4;pointer-events:none}
+.menu hr{border:0;height:.5px;background:var(--border);margin:4px 6px}
+
+/* add-app popover */
+.apppick{position:absolute;z-index:70;width:320px;background:var(--pop);border:.5px solid var(--popStroke);border-radius:12px;box-shadow:0 18px 48px rgba(0,0,0,.25);padding:10px;display:flex;flex-direction:column;max-height:420px}
+.apppick .isearch{margin-bottom:4px}
+.apppick .lst{overflow:auto;flex:1}
+.arow{display:flex;align-items:center;gap:10px;height:40px;padding:0 8px;border-radius:8px;cursor:pointer}
+.arow .ai{width:26px;height:26px;flex:none}
+.arow .t{flex:1;min-width:0}
+.arow .t b{display:block;font-size:13px;font-weight:500}
+.arow .t small{display:block;font-size:10.5px;color:var(--t3);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.arow .st{font-size:11px;color:var(--t3);display:flex;align-items:center;gap:3px}
+.arow .st svg{width:12px;height:12px;stroke-width:2.4}
+.arow:hover,.arow.kb{background:var(--accentSoft)}
+.arow.done{cursor:default}
+.arow.done:hover{background:transparent}
+.arow.done .ai,.arow.done .t{opacity:.5}
+.arow .run{width:6px;height:6px;border-radius:50%;background:var(--success);flex:none}
+
+/* studio grid (same metrics as Ring Studio) */
+.studio{display:grid;grid-template-columns:440px 1fr;height:520px;overflow:hidden;border-radius:0 0 12px 12px}
+.canvas{position:relative;outline:none;overflow:hidden;border-radius:0 0 0 12px;
+  background:linear-gradient(180deg,rgba(0,0,0,0) 40%,rgba(0,0,0,.28)),radial-gradient(520px 380px at 75% 10%,#5b7bd6 0,transparent 62%),radial-gradient(460px 420px at 0% 100%,#2f8f6b 0,transparent 60%),linear-gradient(135deg,#1d2f5c,#103a33)}
+.host{position:absolute;width:440px;height:440px;touch-action:none}
+.canvas .host{left:0;top:30px}
+.host svg.ringsvg{position:absolute;inset:0;width:440px;height:440px;overflow:visible}
+.host .blur{position:absolute;left:92px;top:92px;width:256px;height:256px;border-radius:50%;pointer-events:none;
+  -webkit-mask:radial-gradient(circle,transparent 53px,#000 54px);mask:radial-gradient(circle,transparent 53px,#000 54px)}
+.host.dim svg.ringsvg,.host.dim .ctr{opacity:.45}
+.host .slot{position:absolute;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;border:1.2px dashed rgba(255,255,255,.55);background:rgba(20,20,24,.35);
+  color:#fff;display:grid;place-items:center;cursor:pointer;padding:0;opacity:.62;transition:opacity .15s,transform .2s cubic-bezier(.3,1.6,.5,1),background .15s;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.host .slot svg{width:12px;height:12px;stroke-width:2.6}
+.canvas:hover .slot{opacity:1}
+.host .slot:hover{transform:scale(1.25);background:var(--accent);border-style:solid;border-color:#fff}
+.host .first{position:absolute;left:220px;top:205px;transform:translate(-50%,-50%);width:96px;height:96px;border-radius:50%;border:0;background:var(--accent);color:#fff;cursor:pointer;
+  display:grid;place-items:center;box-shadow:0 10px 30px rgba(23,140,255,.45),0 0 0 8px rgba(255,255,255,.08);transition:transform .2s cubic-bezier(.3,1.6,.5,1)}
+.host .first:hover{transform:translate(-50%,-50%) scale(1.06)}
+.host .first svg{width:30px;height:30px;stroke-width:2.4}
+.host .first-t{position:absolute;left:0;right:0;top:272px;text-align:center;color:#fff;font-size:13px;font-weight:600}
+.host .first-t .btn{margin-top:12px;background:rgba(20,20,24,.5);border-color:rgba(255,255,255,.2);color:#fff;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.host .first-t .btn .ai{width:16px;height:16px}
+
+/* ring centre: drawn as HTML over the svg so it can flip and take clicks */
+.ctr{position:absolute;left:172px;top:172px;width:96px;height:96px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  color:#fff;text-align:center;cursor:default;user-select:none;z-index:2;transition:box-shadow .15s,background .15s}
+.ctr b{font-size:12px;font-weight:700;max-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.ctr small{font-size:8px;letter-spacing:.8px;color:rgba(255,255,255,.53)}
+.ctr .ai{width:22px;height:22px;display:block;margin-bottom:1px}
+.ctr .pg{display:flex;gap:4px;margin-top:4px}
+.ctr .pg i{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.3);display:block;transition:.2s}
+.ctr .pg i.on{background:#fff;width:12px;border-radius:3px}
+.ctr.can{cursor:pointer}
+.ctr.can:hover,.ctr.hot{background:rgba(255,255,255,.08);box-shadow:0 0 0 2px rgba(90,176,255,.9)}
+.ctr.can:active{transform:scale(.96)}
+.ctr .tip{position:absolute;top:104px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11px;color:#fff;background:rgba(20,20,24,.86);border:.5px solid rgba(255,255,255,.14);
+  padding:3px 9px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .15s;letter-spacing:0;display:flex;align-items:center;gap:6px}
+.ctr .tip .kc{height:16px;min-width:16px;font-size:10px;padding:0 5px;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.2);color:#fff}
+.ctr.can:hover .tip,.ctr.hot .tip{opacity:1}
+.ctr.flip{animation:flip .26s ease}
+@keyframes flip{0%{transform:rotateY(0)}50%{transform:rotateY(90deg)}100%{transform:rotateY(0)}}
+svg.ringsvg.swap{animation:swap .28s cubic-bezier(.2,.9,.3,1.15)}
+@keyframes swap{from{opacity:0;transform:rotate(-24deg) scale(.88)}to{opacity:1;transform:none}}
+
+.ctop{position:absolute;left:12px;right:12px;top:10px;display:flex;align-items:center;gap:8px;z-index:3}
+.ctop .sp{flex:1}
+.cchip{height:24px;padding:0 10px;border-radius:999px;background:rgba(20,20,24,.48);border:.5px solid rgba(255,255,255,.16);color:rgba(255,255,255,.9);font-size:11.5px;
+  display:inline-flex;align-items:center;gap:5px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);cursor:pointer;white-space:nowrap}
+.cchip svg.i{width:12px;height:12px;stroke-width:2.2}
+.cchip .ai{width:14px;height:14px}
+.cchip.static{cursor:default}
+.cchip.warn{color:var(--warm)}
+.cchip.blue{background:rgba(23,140,255,.35);border-color:rgba(120,190,255,.6)}
+
+/* inspector */
+.insp{background:var(--card);border-left:.5px solid var(--border);display:flex;flex-direction:column;min-width:0;position:relative;border-radius:0 0 12px 0}
+.ih{display:flex;align-items:center;gap:8px;padding:12px 10px 10px 16px;min-height:48px}
+.ih .tt{flex:1;min-width:0;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ib{flex:1;overflow:auto;padding:0 12px 12px}
+.back{border:0;background:transparent;display:inline-flex;align-items:center;gap:2px;color:var(--accent);font-size:12.5px;cursor:pointer;padding:3px 4px 3px 0;border-radius:6px}
+.back svg{width:13px;height:13px;stroke-width:2.4}
+.isearch{position:relative;margin:0 0 10px}
+.isearch input{height:32px;border-radius:999px;padding-left:32px;font-size:13px}
+.isearch svg{position:absolute;left:11px;top:9px;width:14px;height:14px;color:var(--t3)}
+.grp{font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--t3);padding:10px 4px 5px;display:flex;align-items:center;gap:6px}
+.grp .ai{width:14px;height:14px}
+.cats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cat{border:.5px solid var(--border);background:var(--well);border-radius:10px;padding:10px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:8px;min-height:72px;transition:transform .2s cubic-bezier(.3,1.5,.5,1)}
+.cat:hover{background:var(--overlay);border-color:var(--popStroke)}
+.cat:active{transform:scale(.98)}
+.cat .ct{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:#fff}
+.cat .ct svg{width:15px;height:15px;stroke-width:2}
+.cat b{font-size:12.5px;font-weight:600}
+.item{display:flex;align-items:center;gap:10px;min-height:42px;padding:5px 8px;border-radius:9px;cursor:pointer;position:relative}
+.item .ic{width:28px;height:28px;border-radius:8px;background:var(--control);color:var(--t2);display:grid;place-items:center;flex:none}
+.item .ic svg.i{width:15px;height:15px}
+.item .ic .ai{width:24px;height:24px}
+.item .t{flex:1;min-width:0}
+.item .t b{display:block;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .t small{display:block;font-size:11.5px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.item .keys{display:flex;gap:2px;flex:none}
+.item .keys .kc{height:20px;min-width:20px;font-size:11px;padding:0 5px}
+.item .chk{color:var(--success);flex:none}
+.item .chk svg{width:14px;height:14px;stroke-width:2.4}
+.item:hover,.item.kb{background:var(--accentSoft)}
+.item mark{background:transparent;color:var(--accent);font-weight:600}
+.none{padding:26px 12px;text-align:center;color:var(--t2);font-size:12.5px;line-height:1.6}
+.recbox{border:1.2px dashed var(--border);border-radius:10px;height:64px;display:flex;align-items:center;justify-content:center;gap:4px;cursor:pointer;color:var(--t2);font-size:12.5px;outline:none;margin:4px 0 6px}
+.recbox:hover{border-color:var(--accent);color:var(--accent)}
+.recbox.rec{border-style:solid;border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 3.5px var(--focus)}
+.recbox .kc{height:26px;min-width:26px;font-size:13px}
+
+/* overview grid (two columns, matches RingInspectorOverview) */
+.ogrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.otile{border:.5px solid var(--border);background:var(--well);border-radius:10px;height:96px;padding:10px;display:flex;flex-direction:column;gap:6px;cursor:pointer;position:relative;text-align:left}
+.otile:hover{border-color:var(--popStroke);box-shadow:inset 0 0 0 99px var(--overlay)}
+.otile.hl{border-color:var(--accent);background:var(--accentSoft)}
+.otile .top{display:flex;align-items:center;justify-content:space-between}
+.otile .num{font-size:11px;color:var(--t3);font-variant-numeric:tabular-nums}
+.otile .ic{width:30px;height:30px;border-radius:8px;background:var(--control);color:var(--t1);display:grid;place-items:center}
+.otile .ic svg.i{width:16px;height:16px}
+.otile .ic .ai{width:26px;height:26px}
+.otile b{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.otile small{font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;gap:2px;margin-top:-3px}
+.otile small .kc{height:17px;min-width:17px;font-size:10px;padding:0 4px}
+.otile.drag{opacity:.35}
+.otile.over{outline:2px solid var(--accent);outline-offset:1px}
+.oadd{border:1.2px dashed color-mix(in srgb,var(--accent) 50%,transparent);border-radius:10px;height:96px;background:transparent;color:var(--accent);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:12.5px;font-weight:500}
+.oadd svg{width:20px;height:20px;stroke-width:2}
+.oadd:hover{background:var(--accentSoft)}
+
+/* edit */
+.ehead{display:flex;align-items:center;gap:12px;padding:4px 4px 14px}
+.ehead .big{width:46px;height:46px;border-radius:12px;background:linear-gradient(160deg,#2a2a30,#17171a);color:#fff;display:grid;place-items:center;flex:none;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.14)}
+.ehead .big svg.i{width:22px;height:22px}
+.ehead .big .ai{width:40px;height:40px}
+.ehead .t{flex:1;min-width:0}
+.ehead .t input{font-size:15px;font-weight:600;border:0;background:transparent;padding:2px 6px;margin-left:-6px;border-radius:6px;width:100%;color:var(--t1);outline:none;font-family:inherit}
+.ehead .t input:hover{background:var(--overlay)}
+.ehead .t input:focus{background:var(--control);box-shadow:0 0 0 3px var(--focus)}
+.ehead .t small{display:flex;gap:3px;align-items:center;font-size:11.5px;color:var(--t2);margin-top:1px}
+.ehead .t small .kc{height:18px;min-width:18px;font-size:10.5px;padding:0 5px}
+.eblock{border:.5px solid var(--border);border-radius:10px;background:var(--well);margin-bottom:10px}
+.eblock .er{display:flex;align-items:center;gap:10px;padding:8px 10px;min-height:42px}
+.eblock .er+.er{border-top:.5px solid var(--border)}
+.eblock .lab{font-size:12px;color:var(--t2);width:44px;flex:none}
+.eblock .v{flex:1;min-width:0;font-size:12.5px;display:flex;align-items:center;gap:3px}
+.eblock .v .kc{height:20px;font-size:11px}
+.icons{display:grid;grid-template-columns:repeat(9,1fr);gap:2px;padding:6px}
+.icons button{aspect-ratio:1;border-radius:7px;border:0;background:transparent;display:grid;place-items:center;cursor:pointer;color:var(--t1)}
+.icons button svg{width:15px;height:15px}
+.icons button:hover{background:var(--overlay)}
+.icons button.on{background:var(--accent);color:#fff}
+.erow{display:flex;gap:8px;align-items:center}
+.erow .sp{flex:1}
+
+/* toast */
+.toast{position:absolute;left:50%;bottom:22px;transform:translateX(-50%) translateY(16px);opacity:0;transition:.22s;background:rgba(28,28,30,.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);color:#fff;border:.5px solid rgba(255,255,255,.14);
+  border-radius:999px;padding:6px 6px 6px 16px;font-size:12.5px;display:flex;gap:12px;align-items:center;pointer-events:none;z-index:80;white-space:nowrap}
+.toast.on{opacity:1;transform:translateX(-50%);pointer-events:auto}
+.toast .btn{background:#3A3A3D;color:#fff;border-color:transparent}
+.toast.nobtn{padding-right:16px}
+.toast.nobtn .btn{display:none}
+
+/* ================= ② runtime ================= */
+#stage-runtime{background:#0E0E10}
+.desk{flex:1;position:relative;overflow:hidden;cursor:default;
+  background:radial-gradient(900px 600px at 70% 0%,#6a5acd 0,transparent 60%),radial-gradient(800px 700px at 0% 100%,#e0785a 0,transparent 55%),linear-gradient(160deg,#2b2f6b,#4b2a56 55%,#7a3b45)}
+.mbar{position:absolute;left:0;right:0;top:0;height:26px;background:rgba(20,20,30,.35);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);display:flex;align-items:center;gap:18px;padding:0 14px;color:#fff;font-size:13px;z-index:1}
+.mbar b{font-weight:700}
+.mbar span{opacity:.9}
+.mbar .sp{flex:1}
+.mbar .tf{display:flex;align-items:center;gap:5px;opacity:.95}
+.mbar .tf svg{width:15px;height:15px}
+.appwin{position:absolute;left:8%;top:62px;right:8%;bottom:110px;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45),0 0 0 .5px rgba(255,255,255,.18);background:#fff;display:flex;flex-direction:column;transition:opacity .2s}
+.appwin .tb{height:38px;flex:none;display:flex;align-items:center;gap:8px;padding:0 12px;background:#F3F3F5;border-bottom:1px solid #E2E2E6;color:#333;font-size:12.5px}
+.appwin .tb .lights{display:flex;gap:7px;padding:0;margin-right:8px}
+.appwin .tb .lights i{width:12px;height:12px;border-radius:50%;display:block}
+.appwin .tb .ttl{flex:1;text-align:center;font-weight:600;color:#555}
+.appwin .bd{flex:1;position:relative;overflow:hidden}
+.appwin.dark{background:#1E1E1E}
+.appwin.dark .tb{background:#2A2A2C;border-color:#111;color:#ccc}
+.appwin.dark .tb .ttl{color:#bbb}
+.dock{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:10px;padding:8px 10px;border-radius:20px;background:rgba(255,255,255,.18);border:.5px solid rgba(255,255,255,.3);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);z-index:1}
+.dock button{border:0;background:transparent;padding:0;cursor:pointer;position:relative;transition:transform .2s cubic-bezier(.3,1.6,.5,1)}
+.dock button:hover{transform:translateY(-6px) scale(1.08)}
+.dock button .ai{width:48px;height:48px;display:block}
+.dock button::after{content:"";position:absolute;left:50%;bottom:-6px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:rgba(255,255,255,.85);opacity:0}
+.dock button.front::after{opacity:1}
+.dock button .lbl{position:absolute;bottom:62px;left:50%;transform:translateX(-50%);background:rgba(30,30,32,.85);color:#fff;font-size:11.5px;padding:3px 9px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none}
+.dock button:hover .lbl{opacity:1}
+.desk .host{z-index:5}
+.desk .host svg.ringsvg{pointer-events:none}
+.desk .hint{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);color:#fff;text-align:center;pointer-events:none;z-index:2;background:rgba(20,20,26,.78);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:16px 22px;border-radius:14px;border:.5px solid rgba(255,255,255,.16);box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.desk .hint:empty{display:none}
+.desk .hint .k{display:inline-flex;gap:4px;margin:0 3px}
+.desk .hint .kc{height:26px;min-width:26px;font-size:13px;background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.35);color:#fff}
+.desk .hint b{font-size:15px;display:block;margin-bottom:8px}
+.desk .hint span{font-size:12.5px;opacity:.85}
+.rt-side{width:330px;flex:none;background:#151517;border-left:1px solid #26262A;display:flex;flex-direction:column;color:#D8D8DC;font-size:12.5px}
+.rt-side h3{margin:0;font-size:12px;color:#8E8E93;font-weight:600;padding:16px 16px 8px;letter-spacing:.02em}
+.rt-card{margin:0 12px 10px;background:#1E1E21;border:1px solid #2A2A2E;border-radius:12px;padding:12px}
+.rt-card .row{display:flex;align-items:center;gap:10px}
+.rt-card .row .ai{width:34px;height:34px}
+.rt-card b{color:#fff;font-size:13.5px}
+.rt-card small{display:block;color:#8E8E93;font-size:11.5px;margin-top:2px}
+.rt-card .res{margin-top:10px;padding-top:10px;border-top:1px solid #2A2A2E;display:flex;flex-direction:column;gap:6px}
+.rt-card .res div{display:flex;align-items:center;gap:8px}
+.rt-card .res .tag{font-size:11px;padding:2px 8px;border-radius:999px;background:#2A2A2E;color:#C7C7CC}
+.rt-card .res .tag.blue{background:rgba(23,140,255,.2);color:#7CC0FF}
+.rt-card .res .tag.gray{background:#2A2A2E;color:#8E8E93}
+.rt-card .btn{background:#2C2C30;border-color:#3A3A3E;color:#fff}
+.rt-card .btn.primary{background:#178CFF}
+.rt-keys{display:grid;grid-template-columns:1fr auto;gap:7px 10px;align-items:center}
+.rt-keys .kc{background:#2C2C30;border-color:#3A3A3E;color:#fff;height:20px;font-size:11px}
+.rt-keys .ks{display:flex;gap:3px;justify-content:flex-end;align-items:center;white-space:nowrap;color:#8E8E93}
+.rt-log{flex:1;overflow:auto;margin:0 12px 12px;background:#1A1A1D;border:1px solid #26262A;border-radius:12px;padding:6px 0;font-size:12px}
+.rt-log div{padding:5px 12px;display:flex;gap:8px;line-height:1.45}
+.rt-log div time{color:#5E5E63;font-family:var(--mono);font-size:11px;flex:none;padding-top:1px}
+.rt-log div.new{animation:flash .8s}
+@keyframes flash{from{background:rgba(23,140,255,.18)}to{background:transparent}}
+.rt-log .empty{color:#5E5E63;justify-content:center;padding:18px}
+.desk .toast{bottom:96px}
+
+/* spec */
+#stage-spec{overflow:auto;background:#151517;justify-content:center}
+.plan{max-width:960px;padding:30px 28px 80px;color:#D8D8DC;font-size:13.5px;line-height:1.75}
+.plan h2{color:#fff;font-size:19px;margin:28px 0 10px}
+.plan h2:first-child{margin-top:0}
+.plan h3{color:#fff;font-size:15px;margin:18px 0 6px}
+.plan table{border-collapse:collapse;width:100%;font-size:12.5px;margin:8px 0}
+.plan td,.plan th{border:1px solid #2E2E31;padding:7px 10px;text-align:left;vertical-align:top}
+.plan th{background:#1F1F22;color:#fff;font-weight:600}
+.plan code,.plan pre{font-family:var(--mono);font-size:12px;background:#232326;padding:1px 5px;border-radius:4px}
+.plan pre{padding:12px 14px;line-height:1.55;overflow:auto}
+.plan .lead{font-size:14.5px;color:#fff;background:#1E2230;border:1px solid #2B3550;border-radius:12px;padding:14px 18px}
+.fatal{position:fixed;left:16px;bottom:16px;z-index:999;background:#DC2626;color:#fff;padding:10px 14px;border-radius:10px;font-size:12.5px;display:none;max-width:560px}
+
+</style>
+</head>
+<body>
+<div class="proto-bar">
+  <div class="brand">Typeflux · 圆环应用级设置<small>交互稿 · GUL-471</small></div>
+  <div class="ptabs" id="ptabs">
+    <button data-stage="settings" class="on">① 设置页</button>
+    <button data-stage="runtime">② 运行时圆环</button>
+    <button data-stage="spec">③ 设计说明</button>
+  </div>
+  <div class="sp"></div>
+  <span class="scn">场景</span>
+  <div class="pill" id="scnT"><button data-s="default" class="on">已有 3 个应用</button><button data-s="none">尚未设置应用</button><button data-s="fresh">刚添加应用</button><button data-s="missing">应用已卸载</button></div>
+  <div class="pill" id="themeT"><button data-t="light" class="on">浅色</button><button data-t="dark">深色</button></div>
+</div>
+
+<!-- ============ ① Settings ============ -->
+<div class="stage on" id="stage-settings">
+  <div class="window light" id="win">
+    <aside class="sidebar"><div class="sidepanel">
+      <div class="lights"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i></div>
+      <div class="logo"><span class="mk" data-icon="infinity"></span>Typeflux</div>
+      <nav class="nav">
+        <a><span data-icon="waveform"></span>语音输入</a>
+        <a><span data-icon="cpu"></span>模型</a>
+        <a><span data-icon="puzzle"></span>Agent</a>
+        <a><span data-icon="command"></span>启动器</a>
+        <a class="on"><span data-icon="ring"></span>圆环</a>
+        <a><span data-icon="gear"></span>设置</a>
+      </nav>
+    </div></aside>
+    <main class="content" id="content">
+      <div class="page">
+        <header class="pane-h">
+          <span class="tile40" data-icon="ring"></span><h1>圆环</h1>
+        </header>
+
+        <section class="sec">
+          <div class="card">
+            <div class="frow">
+              <span class="tile28" data-icon="keyboard"></span>
+              <div class="lbl"><div class="ttl">触发键</div><div class="val">按住：在鼠标处打开，移向一个操作后松开。轻按：保持打开，点击或按数字键选择。</div></div>
+              <div class="ctl"><div class="keyfield"><span class="kc">⌃</span><span class="kc">⌥</span><span class="kc">Space</span></div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec">
+          <div class="sec-h"><b>外观</b></div>
+          <div class="card">
+            <div class="frow">
+              <span class="tile28" data-icon="mute"></span>
+              <div class="lbl"><div class="ttl">悬停音效</div></div>
+              <div class="ctl"><button class="switch on" aria-label="悬停音效" onclick="this.classList.toggle('on')"></button></div>
+            </div>
+            <div class="divider"></div>
+            <div class="frow">
+              <span class="tile28" data-icon="palette"></span>
+              <div class="lbl"><div class="ttl">样式</div><div class="val">液态玻璃需要 macOS 26，更早的系统自动使用磨砂。</div></div>
+              <div class="ctl"><div class="seg w220" id="styleSeg"><button data-v="classic">经典</button><button data-v="frosted" class="on">磨砂</button><button data-v="liquid">液态玻璃</button></div></div>
+            </div>
+            <div class="divider"></div>
+            <div class="frow">
+              <span class="tile28" data-icon="text"></span>
+              <div class="lbl"><div class="ttl">中心文字</div><div class="val">全局圆环的中心文字。应用圆环的中心显示应用图标和名称。</div></div>
+              <div class="ctl"><input class="field w220" id="centerTitle" maxlength="10" value="Typeflux"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="sec">
+          <div class="sec-h"><b>操作</b></div>
+          <div class="card studio-card" id="studioCard">
+            <div class="scopes" id="scopes"></div>
+            <div class="pbar" id="pbar"></div>
+            <div class="studio">
+              <div class="canvas" id="canvas" tabindex="0" aria-label="圆环编辑区">
+                <div class="ctop" id="ctop"></div>
+                <div class="host" id="host"></div>
+              </div>
+              <div class="insp" id="insp"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+    <div class="toast" id="toast"><span id="toastT"></span><button class="btn sm" id="toastUndo">撤销</button></div>
+  </div>
+</div>
+
+<!-- ============ ② Runtime ============ -->
+<div class="stage" id="stage-runtime">
+  <div class="desk" id="desk">
+    <div class="mbar"><b id="mbApp">Safari</b><span>文件</span><span>编辑</span><span>显示</span><span>窗口</span><span>帮助</span><span class="sp"></span><span class="tf" data-icon="infinity"></span><span>10月25日 周日 12:30</span></div>
+    <div class="appwin" id="appwin"></div>
+    <div class="hint" id="deskHint"></div>
+    <div class="host" id="rtHost" style="display:none"></div>
+    <div class="dock" id="dock"></div>
+    <div class="toast nobtn" id="rtToast"><span id="rtToastT"></span><button class="btn sm">.</button></div>
+  </div>
+  <aside class="rt-side">
+    <h3>前台应用</h3>
+    <div class="rt-card" id="rtFront"></div>
+    <h3>操作</h3>
+    <div class="rt-card">
+      <div class="rt-keys">
+        <span>按住触发键（模拟 ⌃⌥Space）</span><span class="ks"><span class="kc">Space</span></span>
+        <span>轻按：保持打开</span><span class="ks"><span class="kc">Space</span> 快速松开</span>
+        <span>切换应用 / 全局</span><span class="ks">点中心 · <span class="kc">Tab</span></span>
+        <span>选择</span><span class="ks"><span class="kc">1</span>–<span class="kc">8</span> · <span class="kc">←</span><span class="kc">→</span><span class="kc">↩</span></span>
+        <span>关闭</span><span class="ks"><span class="kc">Esc</span></span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px"><button class="btn sm primary" id="rtOpen">轻按打开</button><button class="btn sm" id="rtEdit">编辑这个应用的圆环</button></div>
+    </div>
+    <h3>事件</h3>
+    <div class="rt-log" id="rtLog"><div class="empty">把鼠标移到桌面上，按住 Space</div></div>
+  </aside>
+</div>
+
+<!-- ============ ③ Spec ============ -->
+<div class="stage" id="stage-spec"><div class="plan" id="plan"></div></div>
+<div class="fatal" id="fatal"></div>
+
+<template id="specSrc">
+<p class="lead">状态：设计稿，待评审（GUL-471）。可交互设计稿：<code>docs/design/ring-app-profiles.html</code>。<br>顶栏切换：① 设置页、② 运行时圆环（在模拟桌面上按住 Space 打开圆环，点中心切换）、③ 设计说明；场景可选「已有 3 个应用 / 尚未设置应用 / 刚添加应用 / 应用已卸载」，以及浅色 / 深色。<br>基础交互见 <code>ring.md</code>，设置页编辑方式（Ring Studio）见 <code>ring-studio.md</code>。本方案在两者之上增加「按前台应用切换操作」，不改变已有的编辑方式和手势。</p>
+<h2>0. 一页结论</h2>
+<ul><li style="margin-left:0px">圆环仍然只有<b>一个触发键、一套外观</b>。操作分为两层：<b>全局操作</b>，以及<b>为某个应用单独设置的操作</b>。</li><li style="margin-left:0px">打开圆环时，如果当前前台应用有专属设置（已启用且至少 1 个操作），先显示<b>应用圆环</b>。中心显示该应用的图标和名称，下方的两个圆点表示有两页。</li><li style="margin-left:0px"><b>单击中心的圆，在应用操作和全局操作之间切换</b>；再点一次切回。键盘用 <code>Tab</code> 切换。没有专属设置的应用，中心保持现在的样子（文字 + 操作数），单击仍是关闭圆环。</li><li style="margin-left:0px">设置页的「操作」卡片顶部增加一排<b>范围标签</b>：<code>全局</code> | <code>Safari</code> <code>Xcode</code> … | <code>＋ 添加应用</code>。选中哪个，下面的 Ring Studio 就编辑哪一组。编辑方式和现在完全一致（⊕ 插入、操作库、即时生效、撤销）。</li><li style="margin-left:0px">应用圆环的操作库会把<b>这个应用的常用快捷键</b>放在最前面（如 Safari 的「新建标签页 ⌘T」、Xcode 的「构建 ⌘B」）。这是应用级圆环最常见的用法。</li></ul>
+<h2>1. 运行时：打开与切换</h2>
+<h3>1.1 选哪一组</h3>
+<p>打开圆环那一刻读取前台应用（就是 <code>RingController.previousApplication</code>，也是「发送快捷键」的目标应用），按 bundle identifier 匹配：</p>
+<table><tr><th>前台应用</th><th>先显示</th><th>中心</th><th>单击中心</th></tr><tr><td>有设置、已启用、≥1 个操作</td><td>应用圆环</td><td>应用图标 + 名称 + 页码点 ●○</td><td>切到全局圆环</td></tr><tr><td>同上，已切到全局</td><td>全局圆环</td><td>中心文字 + 「N 个操作」+ 页码点 ○●</td><td>切回应用圆环</td></tr><tr><td>没有设置 / 已停用 / 0 个操作</td><td>全局圆环</td><td>中心文字 + 「N 个操作」（现状）</td><td>关闭圆环（现状）</td></tr><tr><td>Typeflux 自己在前台</td><td>全局圆环</td><td>现状</td><td>现状</td></tr></table>
+<ul><li style="margin-left:0px">每次打开都<b>从应用圆环开始</b>，不记住上次切到哪一页。理由：应用圆环是用户为这个场景专门准备的；记住全局页会让下一次打开变得不可预测。</li><li style="margin-left:0px">全局圆环为空、应用圆环不为空时，中心不提供切换（没有可切换的目标），只显示应用圆环。</li><li style="margin-left:0px">两组都为空时，触发键不注册（沿用 <code>isUsable</code> 规则，改为「全局或任一已启用应用有操作」）。</li></ul>
+<h3>1.2 切换手势</h3>
+<table><tr><th>输入</th><th>行为</th></tr><tr><td>鼠标单击中心圆（半径 48pt 内）</td><td>切换。圆环保持打开，指针位置不变</td></tr><tr><td><code>Tab</code></td><td>切换（键盘打开或轻按打开时）</td></tr><tr><td>悬停中心</td><td>中心描一圈蓝色高亮，下方气泡「切换到全局操作 Tab」/「切换到 Safari 操作 Tab」</td></tr><tr><td>按住触发键 → 移回中心 → 松开</td><td><b>取消</b>（现状不变）。松开触发键和单击鼠标是两件事，不会误切换</td></tr><tr><td>按住触发键时单击中心</td><td>也切换。之后松开触发键，按指针方向执行或取消，和现在一致</td></tr></table>
+<p>切换动画（约 0.28s）：扇区组从 -24° 转入、0.88 倍放大到 1、淡入；中心内容做一次水平翻转。扇区数量不同（如 6 ↔ 7）时重新均分。悬停音效在切换后的第一次悬停照常播放。</p>
+<p>数字键 <code>1–8</code>、方向键、<code>↩</code> 始终作用于<b>当前显示</b>的那一组。</p>
+<h3>1.3 执行</h3>
+<ul><li style="margin-left:0px">两组操作的 id 都是 UUID，<code>select(id)</code> 在当前显示的那组里查找；「复制全局操作」生成新 id，不会与全局重复。</li><li style="margin-left:0px">「发送快捷键」发给打开圆环时的前台应用（现状），在应用圆环里这正是该应用。</li></ul>
+<h2>2. 设置页</h2>
+<h3>2.1 布局</h3>
+<p>「操作」卡片自上而下：</p>
+<ol><li style="margin-left:0px"><b>范围标签栏</b>（高 52pt，横向滚动）：</li><li style="margin-left:24px"><code>🌐 全局 6</code> — 始终第一个。</li><li style="margin-left:24px">分隔线后是各个应用：应用图标 + 名称 + 操作数。已停用的图标和名字变淡，数字处显示「已停用」。找不到的应用在图标右上角带黄点。</li><li style="margin-left:24px">末尾 <code>＋ 添加应用</code>（没有任何应用设置时文案为「为应用单独设置」）。</li><li style="margin-left:0px"><b>范围信息栏</b>（高 50pt）：</li><li style="margin-left:24px">全局：地球图标、「全局圆环」、副标题「其他所有应用」（无应用设置时为「所有应用」）、右侧「恢复默认」（从原来的分区标题处移到这里，只属于全局）。</li><li style="margin-left:24px">应用：应用图标、名称、bundle id（等宽小字）、「启用」开关、<code>⋯</code> 菜单：「用全局操作替换」「在 Safari 中试一试」「删除 Safari 的设置」。</li><li style="margin-left:0px"><b>Ring Studio</b>（440pt 画布 + 检查器，高 520pt）：与 GUL-470 完全一致，只是编辑对象换成当前范围。</li></ol>
+<p>外观（样式、中心文字、悬停音效）和触发键保持全局，不按应用区分。「中心文字」的说明改为「全局圆环的中心文字。应用圆环的中心显示应用图标和名称。」</p>
+<h3>2.2 画布上的变化</h3>
+<ul><li style="margin-left:0px">应用范围下，画布圆环的中心和运行时一样：应用图标 + 名称 + 页码点。</li><li style="margin-left:0px"><b>单击画布中心 = 预览全局圆环</b>（与运行时同一个动作、同一个动画）。预览时左上角显示「全局圆环 · 预览」，右上角「编辑全局」；⊕ 隐藏；点预览中的某个扇区，直接跳到全局范围并选中它。再点中心返回。<code>Tab</code>（焦点在画布上时）同样切换。</li><li style="margin-left:0px">「试一试」在应用范围下变为「在 Safari 中试一试」。</li><li style="margin-left:0px">停用的应用：圆环降到 45% 不透明度，左上角加「已停用」胶囊，仍可编辑。</li></ul>
+<h3>2.3 添加应用</h3>
+<p>点「＋ 添加应用」弹出选择器（320pt 宽）：</p>
+<ul><li style="margin-left:0px">顶部搜索（名称或 bundle id），<code>↑ / ↓ / ↩ / Esc</code> 可用。</li><li style="margin-left:0px">「正在运行」分组在前（绿点），其次「其他应用」。数据源与操作库中的应用相同（<code>PersonaAppDiscovery</code>）。</li><li style="margin-left:0px">已设置的应用显示「✓ 已设置」并不可选。</li><li style="margin-left:0px">底部「选择其他应用…」打开 <code>NSOpenPanel</code>（<code>/Applications</code>，只允许 <code>.app</code>）。</li></ul>
+<p>选定后：</p>
+<ol><li style="margin-left:0px">新增一个空的应用设置（已启用），切换到它。</li><li style="margin-left:0px">画布显示虚线空圆环 + 蓝色大 ⊕「添加第一个操作」，下方次要按钮「复制全局的 6 个操作」。</li><li style="margin-left:0px">检查器直接打开操作库，最上面是「Safari 常用」快捷键。</li></ol>
+<p>空的应用设置在运行时视为不存在（显示全局圆环），所以加了应用但还没配置时不会打断现有使用。</p>
+<h3>2.4 操作库的变化</h3>
+<ul><li style="margin-left:0px">应用范围、未搜索时：推荐区换成「&lt;应用名&gt; 常用」，列出该应用尚未加入的常用快捷键（最多 5 个，带按键胶囊），下面仍是全部类型卡片。</li><li style="margin-left:0px">「发送快捷键」类型里：先是「&lt;应用名&gt; 常用」，再是「常用组合键」；录制区不变。</li><li style="margin-left:0px">搜索同时覆盖该应用的常用快捷键。</li><li style="margin-left:0px">常用快捷键表是内置的静态表（<code>RingAppShortcutCatalog</code>，首批覆盖 Safari、Chrome、Xcode、VS Code、Figma、Slack、Finder、Notion 等常见应用），没有条目的应用只显示「常用组合键」。</li></ul>
+<h3>2.5 删除、停用与撤销</h3>
+<ul><li style="margin-left:0px">删除应用设置不弹确认，进入撤销栈，撤销条显示「已删除 Safari 的设置 · 撤销」。删除后回到「全局」。</li><li style="margin-left:0px">「用全局操作替换」会覆盖当前应用的操作，同样可撤销。</li><li style="margin-left:0px">停用开关不进入撤销栈（开关本身可逆），toast 提示「已停用，Safari 中显示全局圆环」。</li><li style="margin-left:0px">撤销栈在各范围之间共用（最多 20 步），撤销会切回发生改动的那个范围。</li></ul>
+<h2>3. 边界情况</h2>
+<table><tr><th>情况</th><th>处理</th></tr><tr><td>应用已卸载</td><td>标签带黄点；信息栏显示「找不到这个应用」；可以编辑或删除。运行时永远匹配不到，不影响任何东西</td></tr><tr><td>应用设置为 0 个操作</td><td>运行时视为未设置；设置页显示空状态（见 2.3）</td></tr><tr><td>全局为 0 个、应用有操作</td><td>运行时只显示应用圆环，中心不能切换（没有页码点）</td></tr><tr><td>同一应用多个窗口 / 多个进程</td><td>按 bundle id 匹配，不区分窗口</td></tr><tr><td>网页、文档等更细粒度</td><td>不在本期范围</td></tr><tr><td>应用数量</td><td>不设上限；标签栏横向滚动，选中项自动滚入可视区</td></tr><tr><td>录音中</td><td>圆环不响应触发键（现状）</td></tr><tr><td>应用圆环里放「打开应用」指向自身</td><td>允许，执行时等同激活</td></tr><tr><td>全局操作被删除</td><td>不影响应用设置（应用设置是独立副本，不引用全局）</td></tr></table>
+<h2>4. 数据与实现映射</h2>
+<p>存储仍是 <code>ring.configuration.json</code>，向后兼容：</p>
+<pre>struct RingAppProfile: Codable, Equatable, Identifiable, Sendable {
+    var id: UUID
+    var bundleIdentifier: String
+    /// Shown when the app is not installed any more.
+    var appName: String
+    var isEnabled = true
+    var actions: [RingAction]           // same 8-action limit, lossy decoding like the global list
+}
+
+struct RingConfiguration {
+    var actions: [RingAction]           // global, unchanged
+    var appProfiles: [RingAppProfile] = []   // decodeIfPresent ?? []
+    /// The profile the ring opens with for this app, if any: enabled and not empty.
+    func profile(forBundleIdentifier id: String?) -&gt; RingAppProfile?
+}</pre>
+<table><tr><th>模块</th><th>改动</th></tr><tr><td><code>RingConfiguration</code></td><td>新增 <code>appProfiles</code>、<code>profile(forBundleIdentifier:)</code>；<code>isUsable</code> 改为全局或任一可用应用设置有操作；旧文件缺字段时为空数组</td></tr><tr><td><code>RingController</code></td><td><code>pressBegan</code> 在取得 <code>previousApplication</code> 后解析应用设置，把「主组 + 备选组 + 中心样式」交给菜单；<code>select(id)</code> 在当前组里查找</td></tr><tr><td><code>RingMenuPresenting</code> / <code>OpieRingMenu</code></td><td><code>configure(primary:alternate:center:)</code>；新增 <code>onCenterClick</code></td></tr><tr><td><code>Packages/OpieMenu</code></td><td><code>RadialMenuView</code>：中心点击（半径 48pt）在有备选组时切换而不是 <code>onClose</code>；中心可绘制图标 + 标题 + 页码点；切换动画；<code>Tab</code> 键</td></tr><tr><td><code>RingSettingsModel</code></td><td>当前范围 <code>scope</code>（全局 / 某个 profile id）；现有 <code>insert / edit / replace / move / delete</code> 作用于当前范围；新增 <code>addProfile</code>、<code>removeProfile</code>、<code>setProfileEnabled</code>、<code>copyGlobal(into:)</code>；撤销快照包含全部范围</td></tr><tr><td><code>RingSettingsView</code></td><td>范围标签栏、范围信息栏、添加应用选择器；<code>RingStudioCanvas</code> 支持中心点击预览</td></tr><tr><td><code>RingActionLibrary</code></td><td>接收当前应用的 bundle id，提供「&lt;应用名&gt; 常用」分组（<code>RingAppShortcutCatalog</code>）</td></tr><tr><td>本地化</td><td>新增 <code>ring.scope.*</code>、<code>ring.profile.*</code>、<code>ring.center.switchTo*</code> 等文案（en / zh-Hans / zh-Hant / ja / ko）</td></tr></table>
+<p>测试重点：<code>profile(forBundleIdentifier:)</code> 的各分支；旧配置文件解码；<code>RingController</code> 打开时的选组、中心点击切换、执行时 id 查找；设置模型的范围切换与跨范围撤销；<code>RadialMenuView</code> 中心点击在有 / 无备选组时的行为。</p>
+<h2>5. 待确认</h2>
+<ol><li style="margin-left:0px"><b>切换后是否记住</b>：本稿每次从应用圆环开始。若希望「记住上次的页」，可做成全局开关，默认关闭。</li><li style="margin-left:0px"><b>中心切换是否也用于没有应用设置的场景</b>（例如固定的「第二页」）：本稿不做，避免改变现有「点中心关闭」的习惯。</li><li style="margin-left:0px"><b>外观是否按应用区分</b>（例如每个应用不同的中心文字）：本稿不做，中心固定显示应用图标和名称。</li></ol>
+
+</template>
+<script>
+window.addEventListener('error', e => { const f=document.getElementById('fatal'); f.style.display='block'; f.textContent='原型脚本错误：'+e.message; });
+/* icons shared with docs/design/ring.html and ring-studio.html */
+const I = {
+  help:'<circle cx="12" cy="12" r="9.5"/><path d="M9.3 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.7 2.5-2.7 4.3M12 17.6h.01"/>',
+  updown:'<path d="M7 9.5l5-5 5 5M7 14.5l5 5 5-5"/>',
+  chevD:'<path d="M6 9l6 6 6-6"/>',
+  infinity:'<path d="M12 12c-2-2.7-3.6-4-5.5-4a4 4 0 0 0 0 8c1.9 0 3.5-1.3 5.5-4zm0 0c2 2.7 3.6 4 5.5 4a4 4 0 0 0 0-8c-1.9 0-3.5 1.3-5.5 4z"/>',
+  waveform:'<path d="M3 10v4M7 6v12M11 3v18M15 7v10M19 10v4"/>',
+  cpu:'<rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx=".5"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',
+  puzzle:'<path d="M14 4a2 2 0 1 0-4 0v1H6a1 1 0 0 0-1 1v4h1a2 2 0 1 1 0 4H5v4a1 1 0 0 0 1 1h4v-1a2 2 0 1 1 4 0v1h4a1 1 0 0 0 1-1v-4h1a2 2 0 1 0 0-4h-1V6a1 1 0 0 0-1-1h-4z"/>',
+  command:'<path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"/>',
+  ring:'<circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="3.6"/><path d="M12 2.5v5.9M12 15.6v5.9M2.5 12h5.9M15.6 12h5.9"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  keyboard:'<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
+  target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  play:'<path d="M7 4.5v15l12-7.5z"/>',
+  reset:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  grip:'<path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="3"/>',
+  dots:'<path d="M5 12h.01M12 12h.01M19 12h.01" stroke-width="3"/>',
+  palette:'<circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 2a10 10 0 0 0 0 20c1 0 1.6-.8 1.6-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7H16a6 6 0 0 0 6-6c0-4.4-4.5-8.4-10-8.4z"/>',
+  text:'<path d="M4 7V5h16v2M9 19h6M12 5v14"/>',
+  chevL:'<path d="M15 18l-6-6 6-6"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  pencil:'<path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>',
+  trash:'<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/>',
+  up:'<path d="M12 19V5M5 12l7-7 7 7"/>', down:'<path d="M12 5v14M19 12l-7 7-7-7"/>',
+  copy:'<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+  warn:'<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+  /* action icons */
+  mic:'<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1M12 18v4M8 22h8"/>',
+  sparkles:'<path d="M11 3l1.9 5.1L18 10l-5.1 1.9L11 17l-1.9-5.1L4 10l5.1-1.9z"/><path d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8z"/>',
+  chat:'<path d="M21 12a8.5 8.5 0 0 1-12.3 7.6L3 21l1.4-5.4A8.5 8.5 0 1 1 21 12z"/>',
+  viewfinder:'<path d="M3 8V6a3 3 0 0 1 3-3h2M16 3h2a3 3 0 0 1 3 3v2M21 16v2a3 3 0 0 1-3 3h-2M8 21H6a3 3 0 0 1-3-3v-2"/><circle cx="12" cy="12" r="3.2"/>',
+  textscan:'<path d="M3 8V6a3 3 0 0 1 3-3h2M16 3h2a3 3 0 0 1 3 3v2M21 16v2a3 3 0 0 1-3 3h-2M8 21H6a3 3 0 0 1-3-3v-2"/><path d="M8 9h8M8 12h8M8 15h5"/>',
+  translate:'<path d="M3 5h9M7.5 3v2M10 5c-.9 3.6-3 6.5-6 8.5M5.6 9c1.3 1.9 3.3 3.4 5.9 4.3"/><path d="M13 21l4-9 4 9M14.4 18h5.2"/>',
+  shotTr:'<path d="M3 8V6a3 3 0 0 1 3-3h2M16 3h2a3 3 0 0 1 3 3v2M8 21H6a3 3 0 0 1-3-3v-2"/><path d="M13 21l3.5-8 3.5 8M14.2 18.5h4.6M7 8h6M10 7v1M11.5 8c-.5 2-1.8 3.6-3.5 4.6"/>',
+  clipboard:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+  note:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
+  book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
+  persona:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M17 4l3 3-3 3M20 7h-4.5"/>',
+  wand:'<path d="M15 4V2M15 10V8M11 6H9M21 6h-2M18 3l-1 1M18 9l-1-1M14 10L3 21"/>',
+  workflow:'<rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/><path d="M9 6h4a3 3 0 0 1 3 3v6"/>',
+  app:'<rect x="3" y="3" width="7" height="7" rx="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.8"/>',
+  link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+  folder:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  contrast:'<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>',
+  mute:'<path d="M11 5L6 9H2v6h4l5 4z"/><path d="M22 9l-6 6M16 9l6 6"/>',
+  mission:'<rect x="2" y="4" width="9" height="7" rx="1.5"/><rect x="13" y="4" width="9" height="7" rx="1.5"/><rect x="2" y="13" width="20" height="7" rx="1.5"/>',
+  lock:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  smile:'<circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>',
+  bolt:'<path d="M13 2L3 14h9l-1 8 10-12h-9z"/>',
+  moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  layers:'<path d="M12 2l10 5-10 5L2 7z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>',
+  terminal:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 9l4 3-4 3M12 15h6"/>',
+  star:'<path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/>',
+  heart:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21.2l8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/>',
+  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  timer:'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/>',
+  mail:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/>',
+};
+Object.assign(I, {
+  x:'<path d="M6 6l12 12M18 6L6 18"/>',
+  chevR:'<path d="M9 18l6-6-6-6"/>',
+  undo:'<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+  ccw:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+  cw:'<path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/>',
+  hand:'<path d="M18 11V6a2 2 0 0 0-4 0M14 10V4a2 2 0 0 0-4 0v2M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.4l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15"/>',
+  eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  cursor:'<path d="M4 4l7 17 2.5-7.5L21 11z"/>',
+  star2:'<path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/>',
+});
+
+const icon = (n, cls='i') => `<svg class="${cls}" viewBox="0 0 24 24">${I[n]||I.star}</svg>`;
+function hydrateIcons(root=document){ root.querySelectorAll('[data-icon]').forEach(e=>{ if(!e.dataset.done){ e.innerHTML=icon(e.dataset.icon); e.dataset.done=1; e.style.display='inline-grid'; } }); }
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+Object.assign(I, {
+  hammer:'<path d="M14 6l4 4M5 19l9-9M12 4l6 6 2-2-6-6z"/>',
+  tab:'<rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9h18M9 5v4"/>',
+  sidebar:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>',
+  stop:'<rect x="6" y="6" width="12" height="12" rx="2"/>',
+  search2:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+  frame:'<path d="M7 3v18M17 3v18M3 7h18M3 17h18"/>',
+  export:'<path d="M12 3v12M7 8l5-5 5 5M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/>',
+  code:'<path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/>',
+  swap:'<path d="M7 7h12l-3-3M17 17H5l3 3"/>',
+  comment:'<path d="M8 4l-4 16M20 4l-4 16"/>',
+});
+
+/* ================= apps ================= */
+const APPS = {
+  safari:{name:'Safari', bundle:'com.apple.Safari', running:true},
+  xcode:{name:'Xcode', bundle:'com.apple.dt.Xcode', running:true},
+  figma:{name:'Figma', bundle:'com.figma.Desktop', running:false},
+  vscode:{name:'Visual Studio Code', bundle:'com.microsoft.VSCode', running:true},
+  slack:{name:'Slack', bundle:'com.tinyspeck.slackmacgap', running:true},
+  wechat:{name:'微信', bundle:'com.tencent.xinWeChat', running:true},
+  finder:{name:'访达', bundle:'com.apple.finder', running:true},
+  notion:{name:'Notion', bundle:'notion.id', running:false},
+  terminal:{name:'终端', bundle:'com.apple.Terminal', running:false},
+  mail:{name:'邮件', bundle:'com.apple.mail', running:false},
+  sketch:{name:'Sketch', bundle:'com.bohemiancoding.sketch3', running:false, missing:true},
+};
+let _gid=0;
+function appIcon(k){
+  const gid='g'+(++_gid);
+  const g = {
+    safari:`<defs><linearGradient id="g-sa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3FC1FF"/><stop offset="1" stop-color="#0B61E0"/></linearGradient></defs>
+      <rect x="4" y="4" width="56" height="56" rx="13" fill="#fff"/><circle cx="32" cy="32" r="22" fill="url(#g-sa)"/>
+      <g stroke="#fff" stroke-opacity=".7" stroke-width="1.2">${[...Array(12)].map((_,i)=>{const a=i*Math.PI/6;return `<line x1="${32+19*Math.cos(a)}" y1="${32+19*Math.sin(a)}" x2="${32+21*Math.cos(a)}" y2="${32+21*Math.sin(a)}"/>`;}).join('')}</g>
+      <g transform="rotate(45 32 32)"><path d="M32 14l4 18h-8z" fill="#FF3B30"/><path d="M28 32h8l-4 18z" fill="#fff"/></g>`,
+    xcode:`<defs><linearGradient id="g-xc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4AAEFF"/><stop offset="1" stop-color="#155CD6"/></linearGradient></defs>
+      <rect x="4" y="4" width="56" height="56" rx="13" fill="url(#g-xc)"/><path d="M16 46L38 20" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+      <g transform="rotate(-40 40 20)"><rect x="29" y="14" width="24" height="10" rx="3" fill="#E6EEFF"/></g><path d="M20 22h10M20 28h6" stroke="#9CC6FF" stroke-width="2.4" stroke-linecap="round"/>`,
+    figma:`<rect x="4" y="4" width="56" height="56" rx="13" fill="#1E1E1E"/>
+      <path d="M26 14h6v12h-6a6 6 0 0 1 0-12z" fill="#F24E1E"/><path d="M32 14h6a6 6 0 0 1 0 12h-6z" fill="#FF7262"/>
+      <path d="M26 26h6v12h-6a6 6 0 0 1 0-12z" fill="#A259FF"/><circle cx="38" cy="32" r="6" fill="#1ABCFE"/><path d="M26 38h6v6a6 6 0 1 1-6-6z" fill="#0ACF83"/>`,
+    vscode:`<defs><linearGradient id="g-vs" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#32A8F5"/><stop offset="1" stop-color="#0F6FC6"/></linearGradient></defs>
+      <rect x="4" y="4" width="56" height="56" rx="13" fill="#fff"/><path d="M41 12l9 4.5v31L41 52 22 35l-7 6-4-2.2V25.2L15 23l7 6zM41 23L30 32l11 9z" fill="url(#g-vs)"/>`,
+    slack:`<rect x="4" y="4" width="56" height="56" rx="13" fill="#fff"/>
+      <rect x="18" y="27" width="22" height="6" rx="3" fill="#36C5F0"/><rect x="27" y="14" width="6" height="22" rx="3" fill="#2EB67D"/>
+      <rect x="24" y="31" width="22" height="6" rx="3" fill="#ECB22E"/><rect x="31" y="28" width="6" height="22" rx="3" fill="#E01E5A"/>`,
+    wechat:`<rect x="4" y="4" width="56" height="56" rx="13" fill="#2DC100"/><ellipse cx="27" cy="27" rx="13" ry="11" fill="#fff"/><ellipse cx="38" cy="37" rx="11" ry="9.5" fill="#fff" stroke="#2DC100" stroke-width="2"/>
+      <circle cx="22.5" cy="25" r="1.8" fill="#2DC100"/><circle cx="31.5" cy="25" r="1.8" fill="#2DC100"/><circle cx="34.5" cy="35.5" r="1.5" fill="#2DC100"/><circle cx="41.5" cy="35.5" r="1.5" fill="#2DC100"/>`,
+    finder:`<rect x="4" y="4" width="56" height="56" rx="13" fill="#E9F3FF"/><path d="M4 17a13 13 0 0 1 13-13h17c-4 9-6 18-5 28h4c-1 9 0 18 2 28H17A13 13 0 0 1 4 47z" fill="#1E8BF2"/>
+      <path d="M22 22v6M42 22v6" stroke="#0E2240" stroke-width="2.6" stroke-linecap="round"/><path d="M19 40c8 5 18 5 26 0" stroke="#0E2240" stroke-width="2.4" fill="none" stroke-linecap="round"/>`,
+    notion:`<rect x="4" y="4" width="56" height="56" rx="13" fill="#fff" stroke="#E5E5E5"/><text x="32" y="43" text-anchor="middle" font-size="30" font-weight="700" font-family="Georgia,serif" fill="#111">N</text>`,
+    terminal:`<rect x="4" y="4" width="56" height="56" rx="13" fill="#2B2B2D"/><path d="M17 24l8 7-8 7" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M29 40h14" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>`,
+    mail:`<defs><linearGradient id="g-ma" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5AD0FF"/><stop offset="1" stop-color="#1A79F0"/></linearGradient></defs>
+      <rect x="4" y="4" width="56" height="56" rx="13" fill="url(#g-ma)"/><rect x="14" y="20" width="36" height="25" rx="3" fill="#fff"/><path d="M15 22l17 13 17-13" stroke="#1A79F0" stroke-width="2.2" fill="none"/>`,
+    sketch:`<rect x="4" y="4" width="56" height="56" rx="13" fill="#FFF7E0"/><path d="M20 18h24l8 10-20 22-20-22z" fill="#FDB300"/><path d="M12 28h40L32 50z" fill="#EA6C00"/><path d="M20 18l12 32 12-32" fill="#FDD231" opacity=".8"/>`,
+  }[k] || `<rect x="4" y="4" width="56" height="56" rx="13" fill="#888"/>`;
+  // ids must be unique: a reference into a hidden stage does not render
+  return `<svg class="ai" viewBox="0 0 64 64">${g.replace(/g-(sa|xc|vs|ma)/g, gid+'-$1')}</svg>`;
+}
+/* app icons inside the ring svg: nested svg at x,y with size */
+function appIconAt(k, x, y, size, opacity=1){ return appIcon(k).replace('<svg class="ai" viewBox="0 0 64 64">', `<svg x="${x-size/2}" y="${y-size/2}" width="${size}" height="${size}" viewBox="0 0 64 64" opacity="${opacity}">`); }
+
+/* ================= catalog ================= */
+const TYPES = [
+  {k:'feature', name:'Typeflux 功能', icon:'infinity', color:'#5B5BD6'},
+  {k:'keys', name:'发送快捷键', icon:'keyboard', color:'#0E9F6E'},
+  {k:'app', name:'打开应用', icon:'app', color:'#2563EB'},
+  {k:'system', name:'系统操作', icon:'gear', color:'#64748B'},
+  {k:'keyword', name:'启动器关键词', icon:'command', color:'#7C3AED'},
+  {k:'url', name:'网址', icon:'link', color:'#DB2777'},
+];
+const FEATURES = [
+  ['dictation','语音输入','mic'],['ask','对话','sparkles'],['translate','翻译选中文字','translate'],['screenshot','截图','viewfinder'],
+  ['screenshotText','截图识字','textscan'],['clipboard','剪贴板历史','clipboard'],['chat','对话窗口','chat'],['screenshotTranslation','截图翻译','shotTr'],
+  ['notes','笔记','note'],['wordBook','单词本','book'],['persona','切换人设','persona'],
+].map(([ref,title,icon])=>({type:'feature', ref, title, icon}));
+const SYSTEM = [['darkMode','深色模式','contrast'],['mute','静音','mute'],['missionControl','调度中心','mission'],['lockScreen','锁定屏幕','lock'],['emoji','表情与符号','smile'],['keepAwake','防止休眠','bolt']]
+  .map(([ref,title,icon])=>({type:'system', ref, title, icon}));
+const KEYWORDS = [['polish','润色','wand'],['summary','总结','note'],['reply','写回复','mail'],['explain','解释代码','code']].map(([ref,title,icon])=>({type:'keyword', ref, title, icon, detail:ref}));
+const K = (title, keys, icon) => ({type:'keys', ref:keys.join(''), keys, title, icon:icon||'keyboard'});
+/* shortcuts Typeflux knows for an app: offered first when editing that app's ring */
+const APP_KEYS = {
+  safari:[K('新建标签页',['⌘','T'],'plus'),K('重新打开标签页',['⇧','⌘','T'],'undo'),K('阅读器',['⇧','⌘','R'],'book'),K('关闭标签页',['⌘','W'],'x'),
+          K('显示边栏',['⇧','⌘','L'],'sidebar'),K('网页检查器',['⌥','⌘','I'],'code'),K('上一个标签页',['⇧','⌘','['],'chevL'),K('下一个标签页',['⇧','⌘',']'],'chevR')],
+  xcode:[K('构建',['⌘','B'],'hammer'),K('运行',['⌘','R'],'play'),K('停止',['⌘','.'],'stop'),K('测试',['⌘','U'],'check'),
+         K('快速打开',['⇧','⌘','O'],'search2'),K('跳到定义',['⌃','⌘','J'],'target'),K('注释',['⌘','/'],'comment'),K('重新缩进',['⌃','I'],'text')],
+  figma:[K('显示 / 隐藏界面',['⌘','\\'],'eye'),K('自动布局',['⇧','A'],'frame'),K('导出',['⇧','⌘','E'],'export'),K('创建组件',['⌥','⌘','K'],'layers'),K('编组',['⌘','G'],'app'),K('缩放到选区',['⇧','2'],'target')],
+  vscode:[K('命令面板',['⇧','⌘','P'],'command'),K('快速打开',['⌘','P'],'search2'),K('切换终端',['⌃','`'],'terminal'),K('格式化',['⇧','⌥','F'],'text'),K('注释',['⌘','/'],'comment'),K('全局搜索',['⇧','⌘','F'],'search2')],
+  slack:[K('快速切换',['⌘','K'],'search2'),K('全部未读',['⇧','⌘','A'],'mail'),K('线程',['⇧','⌘','T'],'chat'),K('设置状态',['⇧','⌘','Y'],'smile')],
+};
+const COMMON_KEYS = [K('新建',['⌘','N'],'plus'),K('查找',['⌘','F'],'search2'),K('关闭窗口',['⌘','W'],'x'),K('撤销',['⌘','Z'],'undo'),K('设置',['⌘',','],'gear')];
+const LIB_APPS = ['safari','xcode','figma','vscode','slack','wechat','finder','notion','terminal','mail'].map(k=>({type:'app', ref:k, title:APPS[k].name}));
+const URLS = [{type:'url', ref:'https://github.com', title:'GitHub', icon:'globe', detail:'github.com'},{type:'url', ref:'https://mail.google.com', title:'Gmail', icon:'mail', detail:'mail.google.com'}];
+
+let _uid=1; const uid=()=> 'a'+(_uid++);
+const mk = (it, extra={}) => Object.assign({id:uid(), type:it.type, ref:it.ref, title:it.title, icon:it.icon||'app', keys:it.keys}, extra);
+const F = ref => FEATURES.find(f=>f.ref===ref);
+const AK = (app, title) => APP_KEYS[app].find(k=>k.title===title);
+
+/* ================= state ================= */
+let S, UI, undoStack=[];
+function defaultGlobal(){ return ['dictation','ask','translate','screenshot','screenshotText','clipboard'].map(r=>mk(F(r))); }
+function seed(scn){
+  _uid=1;
+  S = { style:'frosted', centerTitle:'Typeflux', global:defaultGlobal(), profiles:[] };
+  const P = (app, actions, enabled=true) => ({id:'p-'+app, app, enabled, actions});
+  if(scn==='default' || scn==='fresh' || scn==='missing'){
+    S.profiles.push(P('safari',[mk(AK('safari','新建标签页')),mk(AK('safari','重新打开标签页')),mk(AK('safari','阅读器')),mk(F('translate')),mk(F('screenshot')),mk(AK('safari','网页检查器'))]));
+    S.profiles.push(P('xcode',[mk(AK('xcode','构建')),mk(AK('xcode','运行')),mk(AK('xcode','测试')),mk(AK('xcode','快速打开')),mk(F('ask')),mk(F('screenshotText')),mk(AK('xcode','停止'))]));
+    S.profiles.push(P('figma',[mk(AK('figma','显示 / 隐藏界面')),mk(AK('figma','自动布局')),mk(AK('figma','导出')),mk(F('screenshot'))], false));
+  }
+  if(scn==='fresh') S.profiles.push(P('vscode',[]));
+  if(scn==='missing') S.profiles.push(P('sketch',[mk(F('screenshot')),mk(K('导出',['⇧','⌘','E'],'export')),mk(F('ask'))]));
+  const scope = scn==='fresh' ? 'p-vscode' : scn==='missing' ? 'p-sketch' : scn==='default' ? 'p-safari' : 'global';
+  UI = { scope, mode:'overview', sel:null, insertAt:null, preview:null, peek:false, q:'', cat:null, kb:-1, menu:false, pick:false, pickQ:'', rec:false, recKeys:null, dragTile:null };
+  undoStack=[];
+  if(scn==='fresh'){ UI.mode='library'; UI.insertAt=0; }
+}
+const profile = () => S.profiles.find(p=>p.id===UI.scope) || null;
+const list = () => profile() ? profile().actions : S.global;
+function setList(a){ const p=profile(); if(p) p.actions=a; else S.global=a; }
+function scopeName(){ const p=profile(); return p ? APPS[p.app].name : '全局'; }
+function snapshot(label){ undoStack.push({label, data:JSON.stringify({global:S.global, profiles:S.profiles}), scope:UI.scope}); if(undoStack.length>20) undoStack.shift(); }
+function undo(){
+  const u=undoStack.pop(); if(!u) return;
+  const d=JSON.parse(u.data); S.global=d.global; S.profiles=d.profiles; UI.scope=u.scope;
+  if(!S.profiles.some(p=>p.id===UI.scope)) UI.scope = UI.scope.startsWith('p-') ? 'global' : UI.scope;
+  Object.assign(UI,{mode:'overview', sel:null, insertAt:null, replaceId:null, preview:null, peek:false});
+  toast('已撤销：'+u.label); renderAll();
+}
+
+/* ================= ring geometry & renderer ================= */
+const C=220, R_OUT=128, R_IN=54;
+const pt=(r,a)=>[C+r*Math.cos(a), C-r*Math.sin(a)];
+const itemAngle=(i,n)=>Math.PI/2 - i*2*Math.PI/n;
+function angleIndex(a,n){ const cw=((Math.PI/2 - a)%(2*Math.PI)+2*Math.PI)%(2*Math.PI); return Math.round(cw/(2*Math.PI/n))%n; }
+const DIRN=['上方','右上方','右侧','右下方','下方','左下方','左侧','左上方'];
+function dirName(i,n){ if(n<=1) return '整圈'; return DIRN[Math.round(i*360/n/45)%8]; }
+function sectorPath(i,n,inset=0){
+  if(n===1){ return `M${C+R_OUT-inset} ${C}A${R_OUT-inset} ${R_OUT-inset} 0 1 0 ${C-R_OUT+inset} ${C}A${R_OUT-inset} ${R_OUT-inset} 0 1 0 ${C+R_OUT-inset} ${C}Z M${C+R_IN+inset} ${C}A${R_IN+inset} ${R_IN+inset} 0 1 1 ${C-R_IN-inset} ${C}A${R_IN+inset} ${R_IN+inset} 0 1 1 ${C+R_IN+inset} ${C}Z`; }
+  const h=Math.PI/n - inset/R_OUT, h2=Math.PI/n - inset/R_IN, a=itemAngle(i,n);
+  const [x0,y0]=pt(R_OUT-inset,a+h), [x1,y1]=pt(R_OUT-inset,a-h), [x2,y2]=pt(R_IN+inset,a-h2), [x3,y3]=pt(R_IN+inset,a+h2);
+  return `M${x0} ${y0}A${R_OUT-inset} ${R_OUT-inset} 0 0 1 ${x1} ${y1}L${x2} ${y2}A${R_IN+inset} ${R_IN+inset} 0 0 0 ${x3} ${y3}Z`;
+}
+const glyphW = ch => /[⺀-￿]/.test(ch) ? 10.6 : 6.1;
+const textW = s => [...s].reduce((w,ch)=>w+glyphW(ch),0);
+function fitLine(s,max){ if(textW(s)<=max) return s; let out=''; for(const ch of s){ if(textW(out+ch+'…')>max) break; out+=ch; } return out+'…'; }
+function wrapLabel(s){
+  const MAX=66; s=(s||'').trim(); if(textW(s)<=MAX) return [s];
+  const sp=s.lastIndexOf(' ', Math.ceil(s.length/2)+3);
+  if(sp>0) return [fitLine(s.slice(0,sp),MAX), fitLine(s.slice(sp+1),MAX)];
+  const cut=Math.ceil(s.length/2); return [s.slice(0,cut), fitLine(s.slice(cut),MAX)];
+}
+function glyph(a, x, y, size, col){
+  if(a.type==='app') return appIconAt(a.ref, x, y, size+4);
+  return `<g transform="translate(${x-size/2} ${y-size/2}) scale(${size/24})" color="${col}"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${I[a.icon]||I.star}</g></g>`;
+}
+/* opts: {sel, hot (runtime hover), numbers, swap} */
+function ringSVG(items, opts={}){
+  const n=items.length, style=S.style, sel=opts.sel==null?-1:opts.sel, hot=opts.hot==null?-1:opts.hot, cid=opts.cid||'';
+  const ringFill = {classic:`url(#gC${cid})`, frosted:'rgba(26,26,30,.55)', liquid:'rgba(255,255,255,.08)'}[style];
+  let s=`<svg class="ringsvg${opts.swap?' swap':''}" viewBox="0 0 440 440"><defs>
+    <linearGradient id="gC${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#151516"/><stop offset="1" stop-color="#1D1D1F"/></linearGradient>
+    <radialGradient id="hl${cid}" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="rgb(238,146,87)" stop-opacity=".62"/><stop offset=".55" stop-color="rgb(184,110,87)" stop-opacity=".28"/><stop offset="1" stop-color="rgb(184,110,87)" stop-opacity="0"/></radialGradient>
+    <linearGradient id="rim${cid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="${style==='liquid'?.65:.24}"/><stop offset=".5" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#fff" stop-opacity="${style==='liquid'?.35:.12}"/></linearGradient>
+    <clipPath id="clip${cid}"><path d="M${C+R_OUT} ${C}A${R_OUT} ${R_OUT} 0 1 0 ${C-R_OUT} ${C}A${R_OUT} ${R_OUT} 0 1 0 ${C+R_OUT} ${C}Z M${C+R_IN} ${C}A${R_IN} ${R_IN} 0 1 1 ${C-R_IN} ${C}A${R_IN} ${R_IN} 0 1 1 ${C+R_IN} ${C}Z" clip-rule="evenodd"/></clipPath>
+    <filter id="sh${cid}" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity=".45"/></filter>
+  </defs>`;
+  if(n===0) return s+`<circle cx="${C}" cy="${C}" r="${R_OUT}" fill="rgba(20,20,24,.25)" stroke="rgba(255,255,255,.35)" stroke-dasharray="5 7"/><circle cx="${C}" cy="${C}" r="${R_IN}" fill="none" stroke="rgba(255,255,255,.2)" stroke-dasharray="4 6"/></svg>`;
+  s+=`<path d="M${C+R_OUT} ${C}A${R_OUT} ${R_OUT} 0 1 0 ${C-R_OUT} ${C}A${R_OUT} ${R_OUT} 0 1 0 ${C+R_OUT} ${C}Z M${C+R_IN} ${C}A${R_IN} ${R_IN} 0 1 1 ${C-R_IN} ${C}A${R_IN} ${R_IN} 0 1 1 ${C+R_IN} ${C}Z" fill-rule="evenodd" fill="${ringFill}" filter="url(#sh${cid})"/>`;
+  s+=`<g clip-path="url(#clip${cid})">`;
+  items.forEach((a,i)=>{
+    if(a.ph && !a.previewing) s+=`<path d="${sectorPath(i,n,3)}" fill="rgba(23,140,255,.20)" stroke="#5AB0FF" stroke-width="1.4" stroke-dasharray="5 4"/>`;
+    else if(a.ph) s+=`<path d="${sectorPath(i,n,3)}" fill="rgba(23,140,255,.30)" stroke="#5AB0FF" stroke-width="1.4"/>`;
+  });
+  if(hot>=0){ const [hx,hy]=pt((R_IN+R_OUT)/2+6, itemAngle(hot,n)); s+=`<path d="${sectorPath(hot,n)}" fill="rgba(255,190,120,.07)"/><circle cx="${hx}" cy="${hy}" r="110" fill="url(#hl${cid})"/>`; }
+  if(sel>=0 && items[sel] && !items[sel].ph) s+=`<path d="${sectorPath(sel,n,3)}" fill="rgba(255,255,255,.13)" stroke="#5AB0FF" stroke-width="1.6"/>`;
+  if(n>1) for(let i=0;i<n;i++){ const a=itemAngle(i,n)+Math.PI/n; const [x1,y1]=pt(R_IN,a), [x2,y2]=pt(R_OUT,a);
+    s+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="rgba(255,255,255,${style==='classic'?.07:.12})"/>`; }
+  s+=`</g><circle cx="${C}" cy="${C}" r="${R_OUT}" fill="none" stroke="url(#rim${cid})" stroke-width="${style==='liquid'?1.4:1}"/>`;
+  s+=`<circle cx="${C}" cy="${C}" r="${R_IN}" fill="none" stroke="rgba(255,255,255,${style==='liquid'?.35:.12})"/>`;
+  const centerFill={classic:'#1B1B1D',frosted:'rgba(30,30,34,.72)',liquid:'rgba(255,255,255,.1)'}[style];
+  s+=`<circle cx="${C}" cy="${C}" r="48" fill="${centerFill}" stroke="rgba(255,255,255,.1)"/>`;
+  items.forEach((a,i)=>{
+    const ang=itemAngle(i,n), on=i===sel||i===hot;
+    const [ix,iy]=pt((R_IN+R_OUT)/2+4, ang);
+    const col = a.missing?'rgba(255,255,255,.35)' : i===hot ? '#FFC457' : a.ph&&!a.previewing ? '#9CD0FF' : 'rgba(255,255,255,.92)';
+    s+=glyph(a, ix, iy, on?28:25, col);
+    if(opts.numbers && !a.ph){ const [nx,ny]=pt(R_IN+10, ang); s+=`<text x="${nx}" y="${ny+3}" text-anchor="middle" font-size="8.5" font-weight="600" fill="rgba(255,255,255,.42)" font-family="-apple-system">${i+1}</text>`; }
+    const lines=wrapLabel(a.title); const [lx,ly]=pt(R_OUT+36, ang);
+    const w=Math.max(...lines.map(textW))+14, h=lines.length*13+8;
+    const pill = a.ph ? 'rgba(23,90,170,.92)' : i===hot ? 'rgba(58,44,24,.95)' : on ? 'rgba(20,60,110,.92)' : 'rgba(24,24,26,.78)';
+    const tc = a.ph ? '#D6ECFF' : i===hot ? '#FFC457' : on ? '#fff' : 'rgba(255,255,255,.75)';
+    s+=`<g transform="translate(${lx} ${ly})"><rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="6" fill="${pill}" stroke="rgba(255,255,255,.08)"/>`;
+    lines.forEach((l,k)=>{ s+=`<text x="0" y="${-h/2+15+k*13}" text-anchor="middle" fill="${tc}" font-size="10.5" font-weight="${on||a.ph?600:500}" font-family="-apple-system,PingFang SC">${esc(l)}</text>`; });
+    s+=`</g>`;
+  });
+  return s+`</svg>`;
+}
+/* centre content. page: 'app' | 'global'; app: key or null (null = no app ring, plain centre) */
+function centerHTML(page, app, count, opts={}){
+  const can = !!app && !opts.noToggle;
+  const dots = can ? `<span class="pg"><i class="${page==='app'?'on':''}"></i><i class="${page==='global'?'on':''}"></i></span>` : '';
+  const body = page==='app'
+    ? `${appIcon(app)}<b>${esc(APPS[app].name)}</b>`
+    : `<b>${esc(S.centerTitle||'Typeflux')}</b><small>${count} 个操作</small>`;
+  const tip = can ? `<span class="tip">${page==='app'?'切换到全局操作':'切换到 '+esc(APPS[app].name)+' 操作'}${opts.keys?' <span class="kc">Tab</span>':''}</span>` : '';
+  return `<div class="ctr${can?' can':''}${opts.flip?' flip':''}${opts.hot?' hot':''}" id="${opts.id||''}" role="${can?'button':'img'}" aria-label="${can?(page==='app'?'切换到全局操作':'切换到应用操作'):''}">${body}${dots}${tip}</div>`;
+}
+
+/* ================= rendering ================= */
+const $ = id => document.getElementById(id);
+function renderAll(){ renderScopes(); renderPbar(); renderCanvas(); renderInspector(); renderMeta(); }
+function renderMeta(){ document.querySelectorAll('#styleSeg button').forEach(b=>b.classList.toggle('on', b.dataset.v===S.style)); }
+
+function renderScopes(){
+  let h=`<button class="scope${UI.scope==='global'?' on':''}" data-scope="global"><span class="gl">${icon('globe')}</span><span class="nm">全局</span><span class="n">${S.global.length}</span></button>`;
+  if(S.profiles.length) h+=`<span class="scope-sep"></span>`;
+  S.profiles.forEach(p=>{
+    const a=APPS[p.app];
+    h+=`<button class="scope${UI.scope===p.id?' on':''}${p.enabled?'':' off'}" data-scope="${p.id}" title="${esc(a.name)}${p.enabled?'':'（已停用）'}">${appIcon(p.app)}<span class="nm">${esc(a.name)}</span><span class="n">${p.enabled?p.actions.length:'已停用'}</span>${a.missing?'<span class="dot"></span>':''}</button>`;
+  });
+  h+=`<button class="scope add" id="addApp">${icon('plus')}${S.profiles.length?'添加应用':'为应用单独设置'}</button>`;
+  $('scopes').innerHTML=h;
+  $('scopes').querySelectorAll('[data-scope]').forEach(b=>b.onclick=()=>switchScope(b.dataset.scope));
+  const on=$('scopes').querySelector('.scope.on'); if(on) on.scrollIntoView({block:'nearest', inline:'nearest'});
+  $('addApp').onclick=e=>{ e.stopPropagation(); UI.pick=!UI.pick; UI.pickQ=''; UI.kb=-1; renderPicker(); };
+  renderPicker();
+}
+function switchScope(id){
+  if(UI.scope===id && !UI.peek) return;
+  Object.assign(UI,{scope:id, mode:'overview', sel:null, insertAt:null, replaceId:null, preview:null, peek:false, menu:false, q:'', cat:null, rec:false});
+  const p=profile(); if(p && p.actions.length===0){ UI.mode='library'; UI.insertAt=0; }
+  renderAll();
+}
+function renderPbar(){
+  const p=profile(), el=$('pbar');
+  if(!p){
+    el.innerHTML=`<span class="gl">${icon('globe')}</span><div class="tt"><b>全局圆环</b><small class="plain">${S.profiles.filter(x=>x.enabled).length?'其他所有应用':'所有应用'}</small></div>
+      <button class="btn sm plain" id="resetBtn" ${JSON.stringify(S.global.map(a=>a.ref))===JSON.stringify(defaultGlobal().map(a=>a.ref))?'disabled':''}>${icon('reset')}恢复默认</button>`;
+    $('resetBtn').onclick=()=>{ snapshot('恢复默认'); S.global=defaultGlobal(); UI.mode='overview'; UI.sel=null; toast('已恢复默认操作', true); renderAll(); };
+    return;
+  }
+  const a=APPS[p.app];
+  el.innerHTML=`${appIcon(p.app)}<div class="tt"><b>${esc(a.name)}</b>${a.missing?`<span class="warnline">${icon('warn')}找不到这个应用</span>`:`<small>${esc(a.bundle)}</small>`}</div>
+    <span class="lab">启用</span><button class="switch${p.enabled?' on':''}" id="pEnable" aria-label="在 ${esc(a.name)} 中使用专属圆环"></button>
+    <button class="btn sm icon plain" id="pMore" aria-label="更多">${icon('dots')}</button>
+    ${UI.menu?`<div class="menu" id="pMenu" style="right:12px;top:44px">
+      <button id="mCopy" ${S.global.length===0?'disabled':''}>${icon('copy')}用全局操作替换</button>
+      ${a.missing?'':`<button id="mTry">${icon('play')}在 ${esc(a.name)} 中试一试</button>`}<hr>
+      <button class="danger" id="mDel">${icon('trash')}删除 ${esc(a.name)} 的设置</button></div>`:''}`;
+  el.style.position='relative';
+  $('pEnable').onclick=()=>{ p.enabled=!p.enabled; toast(p.enabled?`${a.name} 使用专属圆环`:`已停用，${a.name} 中显示全局圆环`); renderAll(); };
+  $('pMore').onclick=e=>{ e.stopPropagation(); UI.menu=!UI.menu; renderPbar(); };
+  if(UI.menu){
+    $('mCopy').onclick=()=>{ copyGlobal(p); };
+    if($('mTry')) $('mTry').onclick=()=>{ UI.menu=false; goRuntime(p.app); };
+    $('mDel').onclick=()=>{ snapshot(`删除 ${a.name} 的设置`); S.profiles=S.profiles.filter(x=>x!==p); UI.menu=false; switchScope('global'); toast(`已删除 ${a.name} 的设置`, true); };
+  }
+}
+function copyGlobal(p){
+  snapshot('用全局操作替换'); p.actions=S.global.map(x=>({...x, id:uid()})); UI.menu=false;
+  Object.assign(UI,{mode:'overview', sel:null, insertAt:null, preview:null});
+  toast(`已复制全局的 ${p.actions.length} 个操作`, true); renderAll();
+}
+
+/* add-app popover */
+function renderPicker(){
+  let el=$('apppick'); if(el) el.remove();
+  if(!UI.pick) return;
+  const btn=$('addApp'), card=$('studioCard'); const br=btn.getBoundingClientRect(), cr=card.getBoundingClientRect();
+  el=document.createElement('div'); el.className='apppick'; el.id='apppick';
+  el.style.left=Math.min(br.left-cr.left, cr.width-330)+'px'; el.style.top=(br.bottom-cr.top+6)+'px';
+  el.innerHTML=`<div class="isearch">${icon('search')}<input class="field" id="pickQ" placeholder="搜索应用" value="${esc(UI.pickQ)}"></div><div class="lst" id="pickL"></div>`;
+  card.appendChild(el); el.onclick=e=>e.stopPropagation();
+  const q=$('pickQ'); q.oninput=()=>{ UI.pickQ=q.value; UI.kb=-1; fillPicker(); };
+  q.onkeydown=e=>{ const rows=[...el.querySelectorAll('.arow:not(.done)')];
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); UI.kb=(UI.kb+(e.key==='ArrowDown'?1:-1)+rows.length)%rows.length; rows.forEach((r,i)=>r.classList.toggle('kb',i===UI.kb)); }
+    else if(e.key==='Enter' && rows[Math.max(0,UI.kb)]) rows[Math.max(0,UI.kb)].click();
+    else if(e.key==='Escape'){ UI.pick=false; renderPicker(); } };
+  fillPicker(); setTimeout(()=>q.focus(),0);
+}
+function fillPicker(){
+  const q=UI.pickQ.trim().toLowerCase();
+  const keys=Object.keys(APPS).filter(k=>!APPS[k].missing && (!q || APPS[k].name.toLowerCase().includes(q) || APPS[k].bundle.includes(q)));
+  const row=k=>{ const a=APPS[k], done=S.profiles.some(p=>p.app===k);
+    return `<div class="arow${done?' done':''}" data-app="${k}">${appIcon(k)}<div class="t"><b>${esc(a.name)}</b><small>${esc(a.bundle)}</small></div>${done?`<span class="st">${icon('check')}已设置</span>`:a.running?'<span class="run" title="正在运行"></span>':''}</div>`; };
+  const run=keys.filter(k=>APPS[k].running), rest=keys.filter(k=>!APPS[k].running);
+  let h=''; if(run.length) h+=`<div class="grp">正在运行</div>`+run.map(row).join('');
+  if(rest.length) h+=`<div class="grp">其他应用</div>`+rest.map(row).join('');
+  if(!h) h=`<div class="none">没有找到「${esc(UI.pickQ)}」</div>`;
+  h+=`<div class="grp" style="padding-top:8px"></div><div class="arow" id="pickOther"><span class="ai" style="display:grid;place-items:center;color:var(--t2)">${icon('folder')}</span><div class="t"><b>选择其他应用…</b></div></div>`;
+  $('pickL').innerHTML=h;
+  $('pickL').querySelectorAll('.arow[data-app]:not(.done)').forEach(r=>r.onclick=()=>addProfile(r.dataset.app));
+  $('pickOther').onclick=()=>toast('打开「应用程序」文件夹选择（NSOpenPanel）');
+}
+function addProfile(k){
+  snapshot(`添加 ${APPS[k].name}`);
+  S.profiles.push({id:'p-'+k, app:k, enabled:true, actions:[]});
+  UI.pick=false; switchScope('p-'+k);
+}
+
+/* ---------- canvas ---------- */
+function displayItems(){
+  let items=(UI.peek ? S.global : list()).map(a=>({...a, missing:a.type==='app'&&APPS[a.ref]&&APPS[a.ref].missing}));
+  if(!UI.peek && UI.mode==='library' && UI.insertAt!=null){
+    const p = UI.preview ? {...UI.preview, id:'__ph', ph:true, previewing:true} : {id:'__ph', ph:true, title:'新操作', icon:'plus'};
+    items.splice(UI.insertAt,0,p);
+  }
+  if(!UI.peek && UI.mode==='library' && UI.replaceId){ const i=items.findIndex(a=>a.id===UI.replaceId); if(i>=0 && UI.preview) items[i]={...items[i], ...UI.preview, ph:true, previewing:true}; }
+  return items;
+}
+function renderCanvas(){
+  const p=profile(), items=displayItems(), real=list().length;
+  const host=$('host'), blurOn=S.style!=='classic' && items.length>0;
+  const f = S.style==='liquid'?'blur(5px) saturate(1.9) brightness(1.05)':'blur(22px) saturate(1.4)';
+  const sel = UI.peek ? -1 : UI.mode==='library'&&UI.replaceId ? items.findIndex(a=>a.id===UI.replaceId) : UI.mode==='library'&&UI.insertAt!=null ? items.findIndex(a=>a.ph) : UI.sel ? items.findIndex(a=>a.id===UI.sel) : -1;
+  let h=`<div class="blur" style="${blurOn?`backdrop-filter:${f};-webkit-backdrop-filter:${f}`:''}"></div>`+ringSVG(items,{sel, numbers:true, swap:UI.swapAnim, cid:'s'});
+  if(items.length){
+    const page = p && !UI.peek ? 'app' : 'global';
+    h+=centerHTML(page, p ? p.app : null, page==='app'?real:S.global.length, {id:'sCtr', flip:UI.swapAnim, keys:true, noToggle:!S.global.length});
+  }
+  const showSlots = !UI.peek && real>0 && real<8 && !(UI.mode==='library' && UI.insertAt!=null);
+  if(showSlots) for(let g=0; g<real; g++){
+    const a = real===1 ? -Math.PI/2 : itemAngle(g,real)-Math.PI/real; const [x,y]=pt(R_OUT,a); const at=g+1;
+    h+=`<button class="slot" style="left:${x}px;top:${y}px" data-gap="${at}" title="在这里添加（第 ${at+1} 个 · ${dirName(at,real+1)}）">${icon('plus')}</button>`;
+  }
+  if(real===0 && !(UI.mode==='library') && !UI.peek){
+    h+=`<button class="first" id="firstBtn" aria-label="添加第一个操作">${icon('plus')}</button><div class="first-t">添加第一个操作${p&&S.global.length?`<br><button class="btn sm" id="copyG">${icon('copy')}复制全局的 ${S.global.length} 个操作</button>`:''}</div>`;
+  }
+  host.innerHTML=h; host.classList.toggle('dim', !!(p && !p.enabled && !UI.peek));
+  UI.swapAnim=false;
+  host.querySelectorAll('.slot').forEach(b=>b.onclick=e=>{ e.stopPropagation(); openLibrary(+b.dataset.gap); });
+  const fb=$('firstBtn'); if(fb) fb.onclick=e=>{ e.stopPropagation(); openLibrary(0); };
+  const cg=$('copyG'); if(cg) cg.onclick=e=>{ e.stopPropagation(); copyGlobal(p); };
+  const ctr=$('sCtr'); if(ctr && p && S.global.length) ctr.onclick=e=>{ e.stopPropagation(); UI.peek=!UI.peek; UI.swapAnim=true; if(UI.peek){ UI.mode='overview'; UI.sel=null; UI.insertAt=null; UI.preview=null; } renderAll(); };
+  // top chips
+  let t='';
+  if(UI.peek) t=`<span class="cchip static blue">${icon('globe')}全局圆环 · 预览</span><span class="sp"></span><button class="cchip" id="editG">${icon('pencil')}编辑全局</button>`;
+  else {
+    t=`<span class="cchip static" style="${real>=8?'color:var(--warm)':''}">${real>=8?icon('warn')+'已满 ':''}${real} / 8</span>`;
+    if(p && !p.enabled) t+=`<span class="cchip static warn">已停用</span>`;
+    t+=`<span class="sp"></span>`;
+    if(p && real>0 && !APPS[p.app].missing) t+=`<button class="cchip" id="tryBtn">${icon('play')}在 ${esc(APPS[p.app].name)} 中试一试</button>`;
+    else if(!p && real>0) t+=`<button class="cchip" id="tryBtn">${icon('play')}试一试</button>`;
+  }
+  $('ctop').innerHTML=t;
+  const eg=$('editG'); if(eg) eg.onclick=()=>switchScope('global');
+  const tb=$('tryBtn'); if(tb) tb.onclick=()=>goRuntime(p ? p.app : 'finder');
+}
+function hitCanvas(e){
+  const r=$('host').getBoundingClientRect(); const x=e.clientX-r.left, y=e.clientY-r.top, d=Math.hypot(x-C,y-C), n=list().length;
+  if(d<R_IN || d>R_OUT+60 || n===0) return -1;
+  return angleIndex(Math.atan2(C-y, x-C), n);
+}
+
+/* ---------- inspector ---------- */
+function renderInspector(){
+  if(UI.mode==='library') return renderLibrary();
+  if(UI.mode==='edit' && list().some(a=>a.id===UI.sel)) return renderEdit();
+  UI.mode='overview'; UI.sel=null; renderOverview();
+}
+function aIcon(a){ return a.type==='app' ? appIcon(a.ref) : icon(a.icon); }
+function keysHTML(keys){ return (keys||[]).map(k=>`<span class="kc">${esc(k)}</span>`).join(''); }
+function detailOf(a){
+  if(a.type==='keys') return keysHTML(a.keys);
+  if(a.type==='url') return esc(a.detail||a.ref);
+  if(a.type==='keyword') return esc(a.detail||a.ref);
+  return '';
+}
+function renderOverview(){
+  const items=list(), p=profile(), full=items.length>=8, insp=$('insp');
+  let h=`<div class="ih"><div class="tt">${p?esc(APPS[p.app].name)+' 的操作':'全局操作'}</div></div><div class="ib"><div class="ogrid">`;
+  items.forEach((a,i)=>{
+    h+=`<div class="otile" draggable="true" data-id="${a.id}" data-i="${i}"><div class="top"><span class="ic">${aIcon(a)}</span><span class="num">${i+1} · ${dirName(i,items.length)}</span></div><b>${esc(a.title)}</b><small>${detailOf(a)}</small></div>`;
+  });
+  if(!full) h+=`<button class="oadd" id="oAdd">${icon('plus')}添加操作</button>`;
+  h+=`</div></div>`;
+  insp.innerHTML=h;
+  insp.querySelectorAll('.otile').forEach(t=>{
+    t.onclick=()=>select(t.dataset.id);
+    t.ondragstart=e=>{ UI.dragTile=+t.dataset.i; t.classList.add('drag'); e.dataTransfer.effectAllowed='move'; };
+    t.ondragend=()=>{ UI.dragTile=null; renderInspector(); };
+    t.ondragover=e=>{ e.preventDefault(); insp.querySelectorAll('.otile').forEach(x=>x.classList.toggle('over', x===t)); };
+    t.ondrop=e=>{ e.preventDefault(); const to=+t.dataset.i; if(UI.dragTile!=null) moveTo(UI.dragTile,to); };
+  });
+  const oa=$('oAdd'); if(oa) oa.onclick=()=>openLibrary(items.length);
+}
+function openLibrary(at, replaceId=null){ Object.assign(UI,{mode:'library', insertAt:at, replaceId, sel:null, preview:null, q:'', cat:null, kb:-1, rec:false, peek:false}); renderAll(); setTimeout(()=>{ const q=$('libQ'); if(q) q.focus(); },0); }
+function cancelLibrary(){ const r=UI.replaceId; Object.assign(UI,{mode:r?'edit':'overview', sel:r, insertAt:null, replaceId:null, preview:null, rec:false}); renderAll(); }
+function hl(s,q){ if(!q) return esc(s); const i=s.toLowerCase().indexOf(q.toLowerCase()); if(i<0) return esc(s); return esc(s.slice(0,i))+'<mark>'+esc(s.slice(i,i+q.length))+'</mark>'+esc(s.slice(i+q.length)); }
+function inRing(it){ return list().some(a=>a.type===it.type && a.ref===it.ref); }
+function itemRow(it, q, k){
+  const ic = it.type==='app' ? appIcon(it.ref) : icon(it.icon);
+  const right = it.type==='keys' ? `<span class="keys">${keysHTML(it.keys)}</span>` : '';
+  const small = it.detail ? `<small>${esc(it.detail)}</small>` : '';
+  return `<div class="item" data-k="${k}"><span class="ic">${ic}</span><div class="t"><b>${hl(it.title,q)}</b>${small}</div>${right}${inRing(it)?`<span class="chk">${icon('check')}</span>`:''}</div>`;
+}
+function renderLibrary(){
+  const p=profile(), insp=$('insp'), q=UI.q.trim();
+  let entries=[], h=`<div class="ih">${UI.cat?`<button class="back" id="libBack">${icon('chevL')}添加操作</button><div class="tt"></div>`:`<div class="tt">${UI.replaceId?'更换「'+esc((list().find(a=>a.id===UI.replaceId)||{}).title||'')+'」':'添加操作'}</div>`}<button class="btn sm icon plain" id="libX" aria-label="取消">${icon('x')}</button></div><div class="ib">`;
+  h+=`<div class="isearch">${icon('search')}<input class="field" id="libQ" placeholder="搜索" value="${esc(UI.q)}"></div>`;
+  const appKeys = p && APP_KEYS[p.app] ? APP_KEYS[p.app] : [];
+  const groups=[];
+  if(q){
+    const all=[...appKeys, ...FEATURES, ...COMMON_KEYS, ...SYSTEM, ...KEYWORDS, ...LIB_APPS, ...URLS];
+    const m=all.filter(it=>it.title.toLowerCase().includes(q.toLowerCase()) || (it.keys||[]).join('').toLowerCase().includes(q.toLowerCase()));
+    if(/^https?:\/\/\S+\.\S+/.test(q)) groups.push({t:'输入的内容', items:[{type:'url', ref:q, title:'打开 '+hostOf(q), icon:'link', detail:q}]});
+    if(m.length) groups.push({t:'', items:m});
+  } else if(UI.cat){
+    const c=TYPES.find(t=>t.k===UI.cat);
+    if(UI.cat==='feature') groups.push({t:'', items:FEATURES});
+    if(UI.cat==='keys'){ if(appKeys.length) groups.push({t:APPS[p.app].name+' 常用', app:p.app, items:appKeys}); groups.push({t:'常用组合键', items:COMMON_KEYS}); }
+    if(UI.cat==='app') groups.push({t:'', items:LIB_APPS});
+    if(UI.cat==='system') groups.push({t:'', items:SYSTEM});
+    if(UI.cat==='keyword') groups.push({t:'', items:KEYWORDS});
+    if(UI.cat==='url') groups.push({t:'', items:URLS});
+    h+=`<div class="grp" style="padding-top:0"><span class="ct" style="width:18px;height:18px;border-radius:5px;background:${c.color};color:#fff;display:grid;place-items:center">${icon(c.icon)}</span>${c.name}</div>`;
+    if(UI.cat==='keys') h+=`<div class="recbox${UI.rec?' rec':''}" id="recBox" tabindex="0">${UI.rec?'按下要发送的组合键…':icon('keyboard')+'录制组合键'}</div>`;
+  } else {
+    if(appKeys.length) groups.push({t:APPS[p.app].name+' 常用', app:p.app, items:appKeys.filter(it=>!inRing(it)).slice(0,5)});
+    else groups.push({t:'', items:FEATURES.filter(it=>!inRing(it)).slice(0,4)});
+  }
+  let k=0;
+  groups.forEach(g=>{ if(!g.items.length) return; if(g.t) h+=`<div class="grp">${g.app?appIcon(g.app):''}${esc(g.t)}</div>`; g.items.forEach(it=>{ entries.push(it); h+=itemRow(it,q,k++); }); });
+  if(q && !entries.length) h+=`<div class="none">无结果</div>`;
+  if(!q && !UI.cat) h+=`<div class="grp">全部类型</div><div class="cats">${TYPES.map(t=>`<button class="cat" data-cat="${t.k}"><span class="ct" style="background:${t.color}">${icon(t.icon)}</span><b>${t.name}</b></button>`).join('')}</div>`;
+  h+=`</div>`;
+  insp.innerHTML=h; UI._entries=entries;
+  $('libX').onclick=cancelLibrary;
+  const lb=$('libBack'); if(lb) lb.onclick=()=>{ UI.cat=null; UI.rec=false; renderInspector(); };
+  const qi=$('libQ'); qi.oninput=()=>{ UI.q=qi.value; UI.kb=-1; renderInspector(); const n=$('libQ'); n.focus(); n.setSelectionRange(n.value.length,n.value.length); };
+  qi.onkeydown=libKeys;
+  insp.querySelectorAll('.cat').forEach(b=>b.onclick=()=>{ UI.cat=b.dataset.cat; UI.kb=-1; renderInspector(); });
+  insp.querySelectorAll('.item').forEach(r=>{ const it=entries[+r.dataset.k];
+    r.onmouseenter=()=>setPreview(it); r.onmouseleave=()=>setPreview(null); r.onclick=()=>commit(it); });
+  const rb=$('recBox'); if(rb){ rb.onclick=()=>{ UI.rec=!UI.rec; renderInspector(); if(UI.rec) $('recBox').focus(); };
+    rb.onkeydown=e=>{ if(!UI.rec) return; e.preventDefault(); e.stopPropagation(); if(e.key==='Escape'){ UI.rec=false; return renderInspector(); }
+      const mods=modsOf(e); if(['Meta','Shift','Alt','Control'].includes(e.key)) return; if(!mods.length) return;
+      UI.rec=false; const keys=[...mods, keyName(e)]; commit(K('按 '+keys.join(''), keys)); }; }
+}
+function hostOf(u){ try { return new URL(u).hostname.replace(/^www\./,''); } catch(_){ return u; } }
+function libKeys(e){
+  const n=UI._entries.length;
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); if(!n) return; UI.kb=(UI.kb+(e.key==='ArrowDown'?1:-1)+n)%n; markKb(); setPreview(UI._entries[UI.kb]); }
+  else if(e.key==='Enter' && n){ commit(UI._entries[Math.max(0,UI.kb)]); }
+  else if(e.key==='Escape'){ e.preventDefault(); if(UI.q){ UI.q=''; renderInspector(); $('libQ').focus(); } else if(UI.cat){ UI.cat=null; renderInspector(); } else cancelLibrary(); }
+}
+function markKb(){ $('insp').querySelectorAll('.item').forEach(el=>el.classList.toggle('kb', +el.dataset.k===UI.kb)); }
+function setPreview(it){ UI.preview = it ? {type:it.type, ref:it.ref, title:it.title, icon:it.icon||'app', keys:it.keys} : null; renderCanvas(); }
+function commit(it){
+  const items=list().slice();
+  if(UI.replaceId){ const i=items.findIndex(a=>a.id===UI.replaceId); const old=items[i]; snapshot(`更换「${old.title}」`);
+    items[i]={...mk(it), id:old.id}; setList(items);
+    Object.assign(UI,{mode:'edit', sel:old.id, replaceId:null, insertAt:null, preview:null, q:'', cat:null, rec:false});
+    toast(`已更换为「${it.title}」`, true); return renderAll(); }
+  if(items.length>=8) return;
+  const a=mk(it); const at=Math.min(UI.insertAt==null?items.length:UI.insertAt, items.length);
+  snapshot(`添加「${a.title}」`); items.splice(at,0,a); setList(items);
+  Object.assign(UI,{mode:'edit', sel:a.id, insertAt:null, preview:null, q:'', cat:null, rec:false});
+  toast(`已添加「${a.title}」`, true); renderAll();
+}
+const ICON_SET=['star','heart','bolt','sparkles','mic','chat','translate','viewfinder','textscan','clipboard','note','book','globe','mail','terminal','code','hammer','play','stop','plus','undo','x','search2','sidebar','layers','target','eye','export','frame','command','keyboard','gear','moon','timer','wand','link'];
+function renderEdit(){
+  const items=list(), i=items.findIndex(a=>a.id===UI.sel), a=items[i], n=items.length, insp=$('insp');
+  const typeName=TYPES.find(t=>t.k===a.type)?.name || '';
+  let h=`<div class="ih"><button class="back" id="eBack">${icon('chevL')}${profile()?esc(APPS[profile().app].name):'全局'}</button><div class="tt"></div><button class="btn sm primary" id="eDone">完成</button></div><div class="ib">
+    <div class="ehead"><span class="big">${aIcon(a)}</span><div class="t"><input id="eName" value="${esc(a.title)}" maxlength="24" aria-label="名称"><small>${esc(typeName)}${a.type==='keys'?' · '+keysHTML(a.keys):''}</small></div></div>
+    <div class="eblock"><div class="er"><span class="lab">动作</span><div class="v">${a.type==='keys'?'发送 '+keysHTML(a.keys)+(profile()?' 到 '+esc(APPS[profile().app].name):' 到前台应用'):esc(typeName+' · '+(a.type==='app'?APPS[a.ref].name:a.title))}</div><button class="btn sm" id="eReplace">更换…</button></div>
+    <div class="er"><span class="lab">位置</span><div class="v">第 ${i+1} 个 · ${dirName(i,n)}</div><button class="btn sm icon" id="eCcw" title="逆时针移动 ⌥←" ${n<2?'disabled':''}>${icon('ccw')}</button><button class="btn sm icon" id="eCw" title="顺时针移动 ⌥→" ${n<2?'disabled':''}>${icon('cw')}</button></div></div>`;
+  if(a.type!=='app') h+=`<div class="eblock"><div class="icons">${ICON_SET.map(s=>`<button data-ic="${s}" class="${a.icon===s?'on':''}" title="${s}">${icon(s)}</button>`).join('')}</div></div>`;
+  h+=`<div class="erow"><button class="btn sm" id="eDup" ${n>=8?'disabled':''}>${icon('copy')}复制</button>${profile()?'':''}<span class="sp"></span><button class="btn sm destructive plain" id="eDel">${icon('trash')}删除</button></div></div>`;
+  insp.innerHTML=h;
+  $('eBack').onclick=$('eDone').onclick=()=>{ UI.mode='overview'; UI.sel=null; renderAll(); };
+  const en=$('eName'); en.oninput=()=>{ a.title=en.value||a.title; renderCanvas(); renderScopes(); };
+  en.onkeydown=e=>{ if(e.key==='Enter'||e.key==='Escape') en.blur(); };
+  $('eReplace').onclick=()=>{ openLibrary(null, a.id); };
+  $('eCcw').onclick=()=>moveBy(a.id,-1); $('eCw').onclick=()=>moveBy(a.id,1);
+  insp.querySelectorAll('[data-ic]').forEach(b=>b.onclick=()=>{ a.icon=b.dataset.ic; renderAll(); });
+  $('eDup').onclick=()=>{ snapshot('复制'); const c={...a, id:uid()}; items.splice(i+1,0,c); UI.sel=c.id; toast(`已复制「${a.title}」`, true); renderAll(); };
+  $('eDel').onclick=()=>removeAction(a.id);
+}
+function select(id){ Object.assign(UI,{mode:'edit', sel:id, insertAt:null, preview:null, peek:false}); renderAll(); }
+function moveTo(from,to){ if(from===to) return renderInspector(); snapshot('调整顺序'); const items=list(); const [m]=items.splice(from,1); items.splice(to,0,m); toast(`已移到${dirName(to,items.length)}`, true); renderAll(); }
+function moveBy(id,d){ const items=list(), n=items.length; if(n<2) return; const i=items.findIndex(a=>a.id===id), j=(i+d+n)%n; snapshot('调整顺序'); const [m]=items.splice(i,1); items.splice(j,0,m); renderAll(); }
+function removeAction(id){ const items=list(); const a=items.find(x=>x.id===id); snapshot(`删除「${a.title}」`); setList(items.filter(x=>x.id!==id)); UI.mode='overview'; UI.sel=null; toast(`已删除「${a.title}」`, true); renderAll(); }
+
+/* canvas mouse & keys */
+$('host').addEventListener('click', e=>{
+  if(e.target.closest('.slot,.first,.ctr,.btn')) return;
+  if(UI.peek){ const i=hitCanvas({clientX:e.clientX, clientY:e.clientY}); if(i>=0){ const id=S.global[i].id; switchScope('global'); select(id); } return; }
+  const i=hitCanvas(e); if(i>=0 && UI.mode!=='library') select(list()[i].id); else if(UI.mode==='library') cancelLibrary(); else { UI.mode='overview'; UI.sel=null; renderAll(); }
+});
+$('canvas').addEventListener('keydown', e=>{
+  if(e.target!==$('canvas')) return;
+  const items=list(), n=items.length; let i=items.findIndex(a=>a.id===UI.sel);
+  if(e.key==='Tab' && profile()){ e.preventDefault(); UI.peek=!UI.peek; UI.swapAnim=true; renderAll(); return; }
+  if(!n) return;
+  if(['ArrowRight','ArrowDown','ArrowLeft','ArrowUp'].includes(e.key)){ e.preventDefault(); const d=(e.key==='ArrowRight'||e.key==='ArrowDown')?1:-1;
+    if(e.altKey && i>=0) return moveBy(UI.sel,d); i = i<0 ? 0 : (i+d+n)%n; select(items[i].id); $('canvas').focus(); }
+  else if(/^[1-8]$/.test(e.key) && +e.key<=n){ select(items[+e.key-1].id); $('canvas').focus(); }
+  else if((e.key==='Backspace'||e.key==='Delete') && i>=0){ e.preventDefault(); removeAction(UI.sel); $('canvas').focus(); }
+  else if(e.key==='Escape'){ if(UI.mode==='library') cancelLibrary(); else { UI.mode='overview'; UI.sel=null; UI.peek=false; renderAll(); } }
+});
+$('styleSeg').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; S.style=b.dataset.v; renderAll(); });
+$('centerTitle').addEventListener('input', e=>{ S.centerTitle=e.target.value; renderCanvas(); });
+document.addEventListener('click', ()=>{ let r=false; if(UI.menu){ UI.menu=false; r=true; } if(UI.pick){ UI.pick=false; renderPicker(); } if(r) renderPbar(); });
+
+function keyName(e){ return e.code==='Space'?'Space': e.code.startsWith('Key')?e.code.slice(3): e.code.startsWith('Digit')?e.code.slice(5): e.key.length===1?e.key.toUpperCase():e.key; }
+function modsOf(e){ const m=[]; if(e.ctrlKey)m.push('⌃'); if(e.altKey)m.push('⌥'); if(e.shiftKey)m.push('⇧'); if(e.metaKey)m.push('⌘'); return m; }
+let toastTimer;
+function toast(text, undoable){
+  const t=$('toast'); $('toastT').textContent=text; t.classList.toggle('nobtn', !undoable); t.classList.add('on');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('on'), undoable?5000:2200);
+}
+$('toastUndo').onclick=()=>{ $('toast').classList.remove('on'); undo(); };
+
+/* ================= ② runtime ================= */
+const RT = { front:'safari', open:false, page:'global', x:0, y:0, held:false, holdStart:0, hover:-1, hotCtr:false, mx:null, my:null, log:[], swap:false };
+const DOCK=['finder','safari','xcode','figma','vscode','slack'];
+function resolve(app){
+  const p=S.profiles.find(x=>x.app===app);
+  if(!p) return {p:null, why:'没有单独设置'};
+  if(!p.enabled) return {p:null, why:'已停用'};
+  if(!p.actions.length) return {p:null, why:'还没有操作'};
+  return {p, why:''};
+}
+function rtItems(){ const r=resolve(RT.front); return RT.page==='app' && r.p ? r.p.actions : S.global; }
+function renderRuntime(){
+  // dock
+  $('dock').innerHTML=DOCK.map(k=>`<button data-app="${k}" class="${k===RT.front?'front':''}">${appIcon(k)}<span class="lbl">${esc(APPS[k].name)}</span></button>`).join('');
+  $('dock').querySelectorAll('button').forEach(b=>b.onclick=e=>{ e.stopPropagation(); if(RT.open) closeRing(); RT.front=b.dataset.app; log(`前台应用 → ${APPS[RT.front].name}`); renderRuntime(); });
+  $('mbApp').textContent=APPS[RT.front].name;
+  renderAppWin();
+  // front card
+  const r=resolve(RT.front), a=APPS[RT.front];
+  $('rtFront').innerHTML=`<div class="row">${appIcon(RT.front)}<div><b>${esc(a.name)}</b><small>${esc(a.bundle)}</small></div></div>
+    <div class="res">${r.p
+      ? `<div><span class="tag blue">先显示 ${esc(a.name)} 圆环 · ${r.p.actions.length}</span></div><div><span class="tag">点中心 ⇄ 全局圆环 · ${S.global.length}</span></div>`
+      : `<div><span class="tag">全局圆环 · ${S.global.length}</span><span class="tag gray">${r.why}</span></div><div style="color:#8E8E93;font-size:11.5px">中心不可切换，点击中心关闭圆环（现有行为）</div>`}</div>`;
+  $('rtEdit').textContent = r.p || S.profiles.some(p=>p.app===RT.front) ? `编辑 ${a.name} 的圆环` : `为 ${a.name} 单独设置`;
+  $('deskHint').innerHTML = RT.open ? '' : `<b>把鼠标移到任意位置</b><span class="k"><span class="kc">按住 Space</span></span><span>打开圆环，移向一个操作后松开</span>`;
+  renderRing();
+}
+function renderAppWin(){
+  const k=RT.front, w=$('appwin'); const dark = k==='xcode'||k==='vscode'||k==='figma';
+  w.classList.toggle('dark', dark);
+  const lights='<span class="lights"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i></span>';
+  const body = {
+    safari:`<div style="height:100%;background:linear-gradient(#fff,#F7F8FA);padding:36px 48px;color:#222"><div style="font-size:26px;font-weight:700;margin-bottom:10px">Typeflux — 你的 Mac AI 层</div><div style="color:#666;line-height:1.8;max-width:560px">一个应用，几个全局快捷键：启动器、AI 对话、语音输入、圆环、截图与剪贴板历史。</div><div style="display:flex;gap:14px;margin-top:26px">${[1,2,3].map(()=>'<div style="flex:1;height:120px;border-radius:12px;background:#EEF2F8"></div>').join('')}</div></div>`,
+    xcode:`<div style="display:flex;height:100%"><div style="width:200px;background:#252527;border-right:1px solid #111;padding:12px;color:#9a9a9a;font-size:12px;line-height:2">▾ Typeflux<br>&nbsp;&nbsp;▸ Ring<br>&nbsp;&nbsp;&nbsp;&nbsp;RingController.swift<br>&nbsp;&nbsp;&nbsp;&nbsp;RingConfiguration.swift<br>&nbsp;&nbsp;▸ Settings</div><pre style="margin:0;padding:16px;color:#d4d4d4;font:12px/1.7 var(--mono)"><span style="color:#FC5FA3">struct</span> <span style="color:#5DD8FF">RingAppProfile</span>: Codable {\n    <span style="color:#FC5FA3">var</span> bundleIdentifier: <span style="color:#D0A8FF">String</span>\n    <span style="color:#FC5FA3">var</span> isEnabled = <span style="color:#FC5FA3">true</span>\n    <span style="color:#FC5FA3">var</span> actions: [<span style="color:#D0A8FF">RingAction</span>]\n}</pre></div>`,
+    figma:`<div style="height:100%;background:#2C2C2C;display:grid;place-items:center"><div style="width:360px;height:220px;background:#fff;border-radius:6px;box-shadow:0 0 0 2px #0D99FF"></div></div>`,
+    vscode:`<pre style="margin:0;padding:16px;height:100%;background:#1E1E1E;color:#d4d4d4;font:12px/1.7 var(--mono)"><span style="color:#569CD6">func</span> <span style="color:#DCDCAA">resolve</span>(front: <span style="color:#4EC9B0">String</span>?) -> <span style="color:#4EC9B0">RingAppProfile</span>? { … }</pre>`,
+    slack:`<div style="display:flex;height:100%"><div style="width:200px;background:#3F0E40;color:#d8c8d8;padding:14px;font-size:13px;line-height:2.1"># general<br># design<br># typeflux</div><div style="flex:1;padding:16px;color:#333">…</div></div>`,
+    finder:`<div style="display:flex;height:100%"><div style="width:170px;background:#F0F0F2;padding:12px;color:#555;font-size:12px;line-height:2.1">个人收藏<br>　桌面<br>　文稿<br>　下载</div><div style="flex:1;padding:20px;display:flex;gap:22px;flex-wrap:wrap;align-content:flex-start">${['设计稿','截图','发票.pdf','Typeflux'].map(n=>`<div style="width:70px;text-align:center;font-size:11.5px;color:#333"><div style="width:56px;height:46px;margin:0 auto 6px;border-radius:6px;background:#7CC4FF"></div>${n}</div>`).join('')}</div></div>`,
+  }[k] || '';
+  w.innerHTML=`<div class="tb">${lights}<span class="ttl">${esc(APPS[k].name)}</span></div><div class="bd">${body}</div>`;
+}
+function renderRing(){
+  const h=$('rtHost');
+  if(!RT.open){ h.style.display='none'; return; }
+  const r=resolve(RT.front), items=rtItems();
+  h.style.display='block'; h.style.left=(RT.x-C)+'px'; h.style.top=(RT.y-C)+'px';
+  const blurOn=S.style!=='classic', f = S.style==='liquid'?'blur(5px) saturate(1.9) brightness(1.05)':'blur(22px) saturate(1.4)';
+  h.innerHTML=`<div class="blur" style="${blurOn?`backdrop-filter:${f};-webkit-backdrop-filter:${f}`:''}"></div>`+ringSVG(items,{hot:RT.hover, swap:RT.swap, cid:'r'})
+    + centerHTML(r.p ? RT.page : 'global', r.p ? RT.front : null, items.length, {id:'rCtr', flip:RT.swap, hot:RT.hotCtr, keys:true, noToggle:!S.global.length});
+  RT.swap=false;
+}
+function openRing(x,y){
+  const d=$('desk').getBoundingClientRect();
+  RT.x=Math.max(C-40, Math.min(d.width-C+40, x)); RT.y=Math.max(C-60, Math.min(d.height-C+20, y));
+  const r=resolve(RT.front); RT.page = r.p ? 'app' : 'global'; RT.open=true; RT.hover=-1; RT.hotCtr=false;
+  log(r.p ? `打开圆环 · ${APPS[RT.front].name} 圆环（${r.p.actions.length}）` : `打开圆环 · 全局圆环（${APPS[RT.front].name}：${r.why}）`);
+  renderRuntime();
+}
+function closeRing(){ RT.open=false; RT.held=false; RT.hover=-1; renderRuntime(); }
+function toggleRing(){
+  const r=resolve(RT.front); if(!r.p || !S.global.length) return false;
+  RT.page = RT.page==='app' ? 'global' : 'app'; RT.swap=true; RT.hover=-1;
+  log(RT.page==='app' ? `切换到 ${APPS[RT.front].name} 圆环` : '切换到全局圆环'); renderRing(); return true;
+}
+function runItem(i){
+  const items=rtItems(), a=items[i]; if(!a) return;
+  const app=APPS[RT.front].name;
+  const what = a.type==='keys' ? `向 ${app} 发送 ${a.keys.join('')}` : a.type==='app' ? `打开 ${APPS[a.ref].name}` : a.type==='feature' ? 'Typeflux 功能' : a.type==='system' ? '系统操作' : a.type==='url' ? `打开 ${a.ref}` : '启动器关键词';
+  log(`执行「${a.title}」→ ${what}`); RT.open=false; RT.held=false; renderRuntime(); rtToast(`${a.title} · ${what}`);
+}
+function rtHit(px,py){
+  const dx=px-RT.x, dy=py-RT.y, d=Math.hypot(dx,dy);
+  if(d<=48) return 'center';
+  const n=rtItems().length; if(!n || d>R_OUT+90) return -1;
+  return angleIndex(Math.atan2(-dy, dx), n);
+}
+function deskPt(e){ const r=$('desk').getBoundingClientRect(); return [e.clientX-r.left, e.clientY-r.top]; }
+$('desk').addEventListener('mousemove', e=>{
+  const [x,y]=deskPt(e); RT.mx=x; RT.my=y; if(!RT.open) return;
+  const h=rtHit(x,y); const hov = h==='center' ? -1 : h; const hc = h==='center';
+  // holding: nothing is chosen until the pointer moves 20pt away from where the ring opened
+  const far = Math.hypot(x-RT.x, y-RT.y) >= 20;
+  const nh = RT.held && !far ? -1 : hov;
+  if(nh!==RT.hover || hc!==RT.hotCtr){ RT.hover=nh; RT.hotCtr=hc && !!resolve(RT.front).p; renderRing(); }
+});
+$('desk').addEventListener('mouseleave', ()=>{ RT.mx=RT.my=null; });
+$('desk').addEventListener('mousedown', e=>{
+  if(!RT.open || e.button!==0) return;
+  if(e.target.closest('.dock')) return;
+  const [x,y]=deskPt(e); const h=rtHit(x,y);
+  if(h==='center'){ if(!toggleRing()) { log('点击中心 · 关闭圆环'); closeRing(); } return; }
+  if(h>=0) return runItem(h);
+  log('点击圆环外 · 关闭'); closeRing();
+});
+document.addEventListener('keydown', e=>{
+  if(!$('stage-runtime').classList.contains('on')) return;
+  if(e.target.matches && e.target.matches('input,textarea')) return;
+  if(e.code==='Space'){ e.preventDefault(); if(e.repeat) return;
+    if(RT.open && !RT.held){ log('再按触发键 · 关闭'); return closeRing(); }
+    if(!RT.open){ const d=$('desk').getBoundingClientRect(); openRing(RT.mx??d.width/2, RT.my??d.height/2); RT.held=true; RT.holdStart=performance.now(); }
+    return; }
+  if(!RT.open) return;
+  const n=rtItems().length;
+  if(e.key==='Tab'){ e.preventDefault(); toggleRing(); }
+  else if(e.key==='Escape'){ log('Esc · 关闭'); closeRing(); }
+  else if(/^[1-8]$/.test(e.key) && +e.key<=n){ runItem(+e.key-1); }
+  else if(['ArrowRight','ArrowDown','ArrowLeft','ArrowUp'].includes(e.key)){ e.preventDefault(); const d=(e.key==='ArrowRight'||e.key==='ArrowDown')?1:-1; RT.hover = RT.hover<0 ? 0 : (RT.hover+d+n)%n; renderRing(); }
+  else if(e.key==='Enter' && RT.hover>=0){ runItem(RT.hover); }
+});
+document.addEventListener('keyup', e=>{
+  if(!$('stage-runtime').classList.contains('on') || e.code!=='Space' || !RT.held) return;
+  const dt=performance.now()-RT.holdStart; RT.held=false;
+  if(dt<250){ log('轻按 · 圆环保持打开'); return; }
+  if(RT.hover>=0) runItem(RT.hover); else { log('在中心松开 · 取消'); closeRing(); }
+});
+$('rtOpen').onclick=()=>{ const d=$('desk').getBoundingClientRect(); if(RT.open) closeRing(); openRing(d.width/2, d.height/2-30); log('轻按 · 圆环保持打开'); };
+$('rtEdit').onclick=()=>{ const ex=S.profiles.find(p=>p.app===RT.front); setStage('settings'); if(ex) switchScope(ex.id); else addProfile(RT.front); };
+function log(t){ const now=new Date(); const ts=now.toTimeString().slice(0,8); RT.log.unshift({t, ts}); RT.log=RT.log.slice(0,40);
+  $('rtLog').innerHTML=RT.log.map((l,i)=>`<div class="${i===0?'new':''}"><time>${l.ts}</time><span>${esc(l.t)}</span></div>`).join(''); }
+let rtTimer; function rtToast(t){ const el=$('rtToast'); $('rtToastT').textContent=t; el.classList.add('on'); clearTimeout(rtTimer); rtTimer=setTimeout(()=>el.classList.remove('on'),2200); }
+function goRuntime(app){ RT.front = DOCK.includes(app) ? app : 'finder'; if(!DOCK.includes(app)) toast(`演示桌面中没有 ${APPS[app].name}，改用访达`); setStage('runtime'); }
+
+/* ================= chrome ================= */
+function setStage(s){
+  document.querySelectorAll('#ptabs button').forEach(b=>b.classList.toggle('on', b.dataset.stage===s));
+  document.querySelectorAll('.stage').forEach(el=>el.classList.toggle('on', el.id==='stage-'+s));
+  if(s==='runtime'){ RT.open=false; renderRuntime(); }
+  if(s==='settings') renderAll();
+}
+$('ptabs').addEventListener('click', e=>{ const b=e.target.closest('button'); if(b) setStage(b.dataset.stage); });
+$('scnT').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; document.querySelectorAll('#scnT button').forEach(x=>x.classList.toggle('on',x===b)); seed(b.dataset.s); RT.open=false; $('toast').classList.remove('on'); renderAll(); if($('stage-runtime').classList.contains('on')) renderRuntime(); });
+$('themeT').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; document.querySelectorAll('#themeT button').forEach(x=>x.classList.toggle('on',x===b)); $('win').className='window '+b.dataset.t; });
+
+seed('default'); hydrateIcons(); renderAll();
+$('plan').innerHTML = document.getElementById('specSrc').innerHTML;
+
+</script>
+</body>
+</html>
