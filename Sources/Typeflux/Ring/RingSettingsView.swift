@@ -4,7 +4,20 @@ import SwiftUI
 /// Settings → Ring: the shortcut, the slices and the look of the ring. The slices are edited on
 /// the ring itself (`RingStudioCanvas`) with an inspector beside it; every change is saved at once.
 struct RingSettingsView: View {
+    enum Tab: String, CaseIterable {
+        case general, actions
+
+        var title: String {
+            switch self {
+            case .general: L("settings.general")
+            case .actions: L("ring.actions.title")
+            }
+        }
+    }
+
     static let studioHeight: CGFloat = 520
+
+    @State private var tab: Tab
 
     @StateObject private var model: RingSettingsModel
     @StateObject private var shortcuts: HotkeySettingsModel
@@ -22,7 +35,8 @@ struct RingSettingsView: View {
 
     private enum LoadState { case idle, loading, loaded }
 
-    init(settingsStore: SettingsStore) {
+    init(settingsStore: SettingsStore, tab: Tab = .general) {
+        _tab = State(initialValue: tab)
         let model = RingSettingsModel(settingsStore: settingsStore)
         _model = StateObject(wrappedValue: model)
         _studio = StateObject(wrappedValue: RingStudioController(model: model))
@@ -40,11 +54,23 @@ struct RingSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
-            triggerSection
-            appearanceSection
-            actionsSection
+            TFTabBar(options: Tab.allCases.map { TFOption($0, $0.title) }, selection: $tab,
+                     identifier: { "ring.tab." + $0.rawValue })
+                .accessibilityIdentifier("ring.tabs")
+            switch tab {
+            case .general:
+                triggerSection
+                appearanceSection
+            case .actions:
+                actionsSection
+            }
         }
         .onAppear { centerTitle = configuration.centerTitle }
+        .onChange(of: tab) { _ in
+            stopRecording()
+            hotkeyNotice = nil
+            studio.isTrying = false
+        }
         .onDisappear {
             recorder.stop()
             isRecording = false
@@ -56,7 +82,7 @@ struct RingSettingsView: View {
     private var triggerSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             TFFormSection {
-                TFFormRow(title: L("ring.hotkey.title"), detail: L("ring.hotkey.detail"), icon: "keyboard") {
+                TFFormRow(title: L("ring.hotkey.title"), icon: "keyboard") {
                     Button(action: toggleRecording) {
                         HotkeyKeysView(binding: shortcuts.row(for: .action(.ring))?.binding, isRecording: isRecording)
                             .frame(width: 170, alignment: .trailing)
@@ -105,7 +131,7 @@ struct RingSettingsView: View {
     // MARK: - Actions
 
     private var actionsSection: some View {
-        TFFormSection(title: L("ring.actions.title")) {
+        TFFormSection {
             RingScopeBar(profiles: configuration.appProfiles, globalCount: configuration.actions.count,
                          scope: model.scope, apps: apps, isLoadingApps: appsState == .loading,
                          onSelect: selectScope, onAdd: addProfile, onOpenPicker: loadApps)
@@ -251,7 +277,7 @@ struct RingSettingsView: View {
                                    fillsWidth: true, identifier: { "ring.style." + $0.rawValue })
             }
             TFDivider.formWithIcon
-            TFFormRow(title: L("ring.centerTitle.title"), detail: L("ring.centerTitle.detail"), icon: "textformat",
+            TFFormRow(title: L("ring.centerTitle.title"), icon: "textformat",
                       controlWidth: .standard) {
                 TextField(RingConfiguration.defaultCenterTitle, text: $centerTitle)
                     .textFieldStyle(TFTextFieldStyle())

@@ -6,8 +6,13 @@ import Testing
 @Suite(.serialized, .exclusiveUIState)
 @MainActor
 struct RingSettingsViewTests {
-    func render(_ view: some View, size: NSSize, name: String, light: Bool) async throws {
+    func render(_ view: some View, size: NSSize, name: String, light: Bool,
+                inspect: (@MainActor (NSView) async throws -> Void)? = nil) async throws {
         _ = NSApplication.shared
+        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+        let previousAccessibility = NSApp.accessibilityAttributeValue(attribute)
+        NSApp.accessibilitySetValue(true, forAttribute: attribute)
+        defer { NSApp.accessibilitySetValue(previousAccessibility, forAttribute: attribute) }
         let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: .borderless,
                                         backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -20,6 +25,7 @@ struct RingSettingsViewTests {
         defer { window.orderOut(nil); window.close() }
         try await Task.sleep(for: .milliseconds(180))
         hosting.layoutSubtreeIfNeeded()
+        try await inspect?(hosting)
         let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
         hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
         #expect(bitmap.pixelsWide > 0)
@@ -30,12 +36,12 @@ struct RingSettingsViewTests {
         }
     }
 
-    func page(_ store: SettingsStore) -> some View {
+    func page(_ store: SettingsStore, tab: RingSettingsView.Tab = .general) -> some View {
         VStack(alignment: .leading, spacing: 24) {
             HStack {
                 Text(L("ring.title")).font(.system(size: 22, weight: .semibold))
             }
-            RingSettingsView(settingsStore: store)
+            RingSettingsView(settingsStore: store, tab: tab)
         }
         .padding(28)
     }
@@ -48,9 +54,11 @@ struct RingSettingsViewTests {
         let store = SettingsStore(defaults: defaults)
         store.setHotkey(RingConfiguration.defaultHotkey, for: .ring)
         for light in [true, false] {
-            try await render(page(store),
-                             size: NSSize(width: 860, height: 760), name: "ring-settings-\(light ? "light" : "dark")",
-                             light: light)
+            for tab in RingSettingsView.Tab.allCases {
+                try await render(page(store, tab: tab),
+                                 size: NSSize(width: 860, height: 760),
+                                 name: "ring-settings-\(tab.rawValue)-\(light ? "light" : "dark")", light: light)
+            }
         }
         store.setHotkey(nil, for: .ring)
         try await render(page(store), size: NSSize(width: 860, height: 760),
@@ -59,8 +67,55 @@ struct RingSettingsViewTests {
         var configuration = store.ringConfiguration
         configuration.actions = []
         store.ringConfiguration = configuration
-        try await render(page(store),
+        try await render(page(store, tab: .actions),
                          size: NSSize(width: 860, height: 760), name: "ring-settings-empty", light: true)
+    }
+
+    @Test
+    func `tabs separate general controls from actions and preserve configuration`() async throws {
+        let suiteName = "RingSettingsTabs-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = SettingsStore(defaults: defaults)
+        let original = store.ringConfiguration
+        #expect(RingSettingsView.Tab.allCases == [.general, .actions])
+        #expect(RingSettingsView.Tab.general.title == L("settings.general"))
+        #expect(RingSettingsView.Tab.actions.title == L("ring.actions.title"))
+        try await render(page(store), size: NSSize(width: 860, height: 760),
+                         name: "ring-settings-tabs-return", light: false) { hosting in
+            @MainActor func element(_ identifier: String) -> NSObject? {
+                var seen = Set<ObjectIdentifier>()
+                func walk(_ node: NSObject) -> NSObject? {
+                    guard seen.insert(ObjectIdentifier(node)).inserted else { return nil }
+                    if node.responds(to: NSSelectorFromString("accessibilityIdentifier")),
+                       node.value(forKey: "accessibilityIdentifier") as? String == identifier { return node }
+                    guard node.responds(to: NSSelectorFromString("accessibilityChildren")) else { return nil }
+                    for child in node.value(forKey: "accessibilityChildren") as? [NSObject] ?? [] {
+                        if let found = walk(child) { return found }
+                    }
+                    return nil
+                }
+                return walk(hosting)
+            }
+            @MainActor func select(_ tab: String) async throws {
+                let button = try #require(element("ring.tab." + tab))
+                try SettingsBehaviorTestSupport.Element(object: button).press()
+                try await Task.sleep(for: .milliseconds(180))
+                hosting.layoutSubtreeIfNeeded()
+            }
+            #expect(element("ring.hotkey") != nil)
+            #expect(element("ring.centerTitle") != nil)
+            #expect(element("ring.scope.global") == nil)
+            try await select("actions")
+            #expect(element("ring.hotkey") == nil)
+            #expect(element("ring.centerTitle") == nil)
+            #expect(element("ring.scope.global") != nil)
+            try await select("general")
+            #expect(element("ring.hotkey") != nil)
+            #expect(element("ring.centerTitle") != nil)
+            #expect(element("ring.scope.global") == nil)
+        }
+        #expect(store.ringConfiguration == original)
     }
 
     private var sample: [RingAction] {
