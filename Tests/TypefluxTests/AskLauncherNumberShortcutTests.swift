@@ -148,35 +148,6 @@ struct AskLauncherNumberShortcutTests {
         }
     }
 
-    @Test func workspaceHintsRenderWithoutResizingControls() async throws {
-        for shortcut in ["⌘N", "⌃⌘S", "⌘O", "⌘M", "⌘U", "⌘⇧L", "⌥(R)", "⌘,"] {
-            var renders: [Data] = []
-            for visible in [false, true] {
-                let hosting = NSHostingView(rootView:
-                    Image(systemName: "plus")
-                        .frame(width: 32, height: 32)
-                        .modifier(AskWorkspaceShortcutBadge(shortcut: shortcut))
-                        .padding(20)
-                        .environment(\.askLauncherNumberHints, visible)
-                )
-                let size = NSSize(width: 72, height: 72)
-                let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size),
-                                                styleMask: [.borderless], backing: .buffered, defer: false)
-                window.isReleasedWhenClosed = false
-                window.contentView = hosting
-                window.orderFront(nil)
-                defer { window.close() }
-                try await Task.sleep(for: .milliseconds(80))
-                hosting.layoutSubtreeIfNeeded()
-                #expect(hosting.fittingSize == size)
-                let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
-                hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
-                renders.append(try #require(bitmap.representation(using: .png, properties: [:])))
-            }
-            #expect(renders[0] != renders[1], "Workspace hint must appear: \(shortcut)")
-        }
-    }
-
     @Test func numberBadgesRenderWithoutChangingTheListSize() async throws {
         let apps = ["Calendar", "Calculator", "Contacts"].map {
             AskAppMatch(entry: AskTestAppIndex.app($0), score: 0.9)

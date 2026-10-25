@@ -42,7 +42,6 @@ struct AskConversationKindSwitch: View {
                 .buttonStyle(.plain)
                 .modifier(AskLauncherShortcutBadge(key: compact && !chosen ? AskLauncherKindShortcuts.key(for: kind) : nil,
                                                    leadingInset: 13, topInset: -6))
-                .modifier(AskWorkspaceShortcutBadge(shortcut: !compact && !chosen ? "⌘M" : nil))
                 .help(L(kind.titleKey) + " · " + L(kind.titleKey + ".help")
                     + (!chosen ? " · ⌘M" : ""))
                 .accessibilityLabel(L(kind.titleKey))

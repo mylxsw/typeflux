@@ -94,7 +94,6 @@ struct AskHeaderIconButton: View {
         }
         .buttonStyle(AskPressableStyle())
         .onHover { hovering = $0 }
-        .modifier(AskWorkspaceShortcutBadge(shortcut: shortcut))
         .help(AskTitleBarButton.help(label: label, shortcut: shortcut))
         .accessibilityLabel(label)
     }

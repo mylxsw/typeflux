@@ -149,7 +149,6 @@ struct AskStorageBarControl: View {
         AskBarButton(symbol: storage.kind.symbol, title: L(storage.kind.titleKey),
                      tint: tint, chevron: true, help: L("ask.storage.card.title")) { presented.toggle() }
             .keyboardShortcut("l", modifiers: [.command, .shift])
-            .modifier(AskWorkspaceShortcutBadge(shortcut: "⌘⇧L"))
             .accessibilityIdentifier("ask.newConversation.storage")
             .askMenu(isPresented: $presented, glass: true) {
                 AskObservedContent(model: model) {

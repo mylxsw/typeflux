@@ -2707,7 +2707,6 @@ struct AskComposer: View {
                            shortcut: voiceShortcut)
                 .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
                 .accessibilityLabel(AskVoiceButton.title(phase: voice.phase, contextMatches: voice.context == contextID))
-                .modifier(AskWorkspaceShortcutBadge(shortcut: launcher ? nil : voiceShortcut.map(HotkeyFormat.display)))
                 .accessibilityIdentifier("ask.composer.voice")
             if editingQueued {
                 AskQueueEditActions(canSave: model.draft.canSend, compact: layout.condensedFooter,

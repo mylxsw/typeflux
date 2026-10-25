@@ -26,7 +26,6 @@ struct AskAttachButton: View {
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
-        .modifier(AskWorkspaceShortcutBadge(shortcut: launcher ? nil : "⌘U"))
         .disabled(disabled)
         .help(L("ask.attach.help"))
         .accessibilityLabel(L("ask.attach.title"))
