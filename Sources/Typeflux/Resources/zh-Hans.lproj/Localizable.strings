@@ -7363,3 +7363,5 @@
 "help.shortcuts.context.notes" = "列表导航、删除和复制在非文本编辑状态下生效。全选用于多选模式；下方格式快捷键用于 Markdown 编辑器。";
 "help.shortcuts.context.terminal" = "插入、重新执行、复制和 Esc 在命令结束后可用；关闭正在执行的命令会要求确认。";
 "help.shortcuts.context.editing" = "粗体、斜体、链接、标题、任务列表和删除线用于 Markdown 笔记编辑器；其他编辑按键作用于当前输入框。";
+
+"screenshot.text.interrupted" = "识字已中断，请重试";

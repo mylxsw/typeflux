@@ -49,10 +49,17 @@ extension AskConversationModel: ScreenshotFollowUpHandling {
         let picture = image.image
         let original = session()
         let recognition = Task { [weak self] in
-            let result = try await recognizer.recognizeText(in: .image(picture))
-            try Task.checkCancellation()
-            guard let self, self.session()?.owner == original?.owner, self.session()?.token == original?.token else { throw CancellationError() }
-            return result
+            do {
+                let result = try await recognizer.recognizeText(in: .image(picture))
+                try Task.checkCancellation()
+                guard let self, self.session()?.owner == original?.owner else { throw CancellationError() }
+                return result
+            } catch {
+                if !Task.isCancelled {
+                    ErrorLogStore.shared.log("Screenshot OCR ended without a result: \(String(describing: type(of: error)))")
+                }
+                throw error
+            }
         }
         let fits = (try? ImageTiling.slices(imageSize: image.pixelSize,
                                             longEdge: AskAttachmentLimits.imageLongEdge).get()) != nil
@@ -113,6 +120,7 @@ extension AskConversationModel: ScreenshotFollowUpHandling {
         case .askAI:
             attachScreenshotToLauncher(screenshot.image)
         case .recognizeText:
+            launcherScreenshot = makeLauncherScreenshot(screenshot.image)
             showScreenshotText()
         case .translate:
             if let onTranslateScreenshot {

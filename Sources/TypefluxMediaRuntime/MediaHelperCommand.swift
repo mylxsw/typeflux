@@ -15,9 +15,12 @@ public enum MediaHelperCommand {
     }
 
     public static func runAsync(input: FileHandle = .standardInput, output: FileHandle = .standardOutput,
-                                directory: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)) async {
+                                directory: URL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath),
+                                watchdog: @Sendable (UInt32) -> Void = { _ in }) async {
         do {
             let request = try read(input)
+            // Only validated OCR requests extend the disposable child's orphan deadline.
+            watchdog(request.operation == .recognizeText ? 95 : 35)
             let response: MediaResponse
             do {
                 if request.operation.isRecordingPoster { response = try await MediaRecordingPosterDecoder.decode(request, directory: directory) }

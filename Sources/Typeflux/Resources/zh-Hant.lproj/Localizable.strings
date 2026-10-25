@@ -7365,3 +7365,5 @@
 "help.shortcuts.context.notes" = "列表導覽、刪除和複製在非文字編輯狀態下生效。全選用於多選模式；下方格式快速鍵用於 Markdown 編輯器。";
 "help.shortcuts.context.terminal" = "插入、重新執行、複製和 Esc 在指令結束後可用；關閉正在執行的指令會要求確認。";
 "help.shortcuts.context.editing" = "粗體、斜體、連結、標題、工作清單和刪除線用於 Markdown 筆記編輯器；其他編輯按鍵作用於目前輸入框。";
+
+"screenshot.text.interrupted" = "辨識已中斷，請重試";

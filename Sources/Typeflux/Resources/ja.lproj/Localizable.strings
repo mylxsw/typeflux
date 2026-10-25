@@ -7363,3 +7363,5 @@
 "help.shortcuts.context.notes" = "一覧の移動、削除、コピーは文字編集中以外で使えます。すべて選択は複数選択モード、書式キーはMarkdownエディタ用です。";
 "help.shortcuts.context.terminal" = "挿入、再実行、コピー、Escは実行終了後に使えます。実行中のコマンドを閉じると確認が表示されます。";
 "help.shortcuts.context.editing" = "太字、斜体、リンク、見出し、チェックリスト、取り消し線はMarkdownノート用です。他の編集キーはフォーカス中の欄に適用されます。";
+
+"screenshot.text.interrupted" = "文字認識が中断されました。再試行してください。";

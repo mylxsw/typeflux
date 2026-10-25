@@ -116,6 +116,37 @@ final class MediaProtocolTests: XCTestCase {
         XCTAssertEqual(MediaDecoder.text(pages: 1, readPage: { _ in "small" })?.truncated, false)
     }
 
+    func testAsyncCommandExtendsWatchdogOnlyForValidatedOCR() async throws {
+        final class Watchdog: @unchecked Sendable {
+            let lock = NSLock()
+            private var values: [UInt32] = []
+            func record(_ seconds: UInt32) { lock.withLock { values.append(seconds) } }
+            var recorded: [UInt32] { lock.withLock { values } }
+        }
+        let directory = try AskAttachmentFixture.directory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let inputURL = directory.appendingPathComponent("request")
+        let outputURL = directory.appendingPathComponent("response")
+        for (data, expected) in [
+            (Data("invalid".utf8), [UInt32]()),
+            (try JSONEncoder().encode(MediaRequest(operation: .recognizeText)), [UInt32(95)]),
+            (try JSONEncoder().encode(MediaRequest(operation: .image)), [UInt32(35)])
+        ] {
+            try data.write(to: inputURL)
+            try Data().write(to: outputURL)
+            let input = try FileHandle(forReadingFrom: inputURL)
+            let output = try FileHandle(forWritingTo: outputURL)
+            defer { try? input.close(); try? output.close() }
+            let watchdog = Watchdog()
+            await MediaHelperCommand.runAsync(input: input, output: output, directory: directory,
+                                               watchdog: { watchdog.record($0) })
+            XCTAssertEqual(watchdog.recorded, expected)
+            let response = try Data(contentsOf: outputURL)
+            if expected.isEmpty { XCTAssertTrue(response.isEmpty) }
+            else { XCTAssertNotNil(try JSONDecoder().decode(MediaResponse.self, from: response).failure) }
+        }
+    }
+
     func testCommandFramesReadFailureAndSuccessfulResponse() throws {
         let directory = try AskAttachmentFixture.directory()
         defer { try? FileManager.default.removeItem(at: directory) }

@@ -65,7 +65,22 @@ struct AskScreenshotTextPlugin: AskLauncherPlugin {
         guard let source = await screenshot(), plan.values[Self.sourceValue] == source.id.uuidString else {
             throw CancellationError()
         }
-        let recognized = try await source.recognition.value
+        let recognized: RecognizedText
+        do {
+            recognized = try await source.recognition.value
+        } catch {
+            try Task.checkCancellation()
+            guard await screenshot()?.id == source.id else { throw CancellationError() }
+            // Cancellation of the shared OCR task is not cancellation of this UI run.
+            // Leaving it unhandled would leave the card loading forever.
+            let message = error is CancellationError ? L("screenshot.text.interrupted")
+                : AskPluginFailure.presenting(error).message
+            throw AskPluginFailure(message: message, retry: false, actions: [
+                AskPluginAction(kind: .screenshotFollowUp(.recognizeText), title: L("common.retry"),
+                                symbol: "arrow.clockwise", shortcut: .enter),
+                Self.recaptureAction(.commandR)
+            ])
+        }
         try Task.checkCancellation()
         guard await screenshot()?.id == source.id else { throw CancellationError() }
         if plan.values[Self.organizeOption] == source.id.uuidString {

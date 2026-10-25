@@ -22,8 +22,8 @@ enum TypefluxMediaHelper {
             return
         }
         // One disposable process, one request. No app DI, model or microphone.
-        // The parent normally enforces 30 seconds. Bound orphaned native work too.
+        // Bound malformed input immediately; validated OCR may need a longer cold start.
         alarm(35)
-        await MediaHelperCommand.runAsync()
+        await MediaHelperCommand.runAsync(watchdog: { _ = alarm($0) })
     }
 }

@@ -7363,3 +7363,5 @@
 "help.shortcuts.context.notes" = "List navigation, deletion and copying apply outside the text editor. Select All applies in multi-select mode; formatting keys below apply in the Markdown editor.";
 "help.shortcuts.context.terminal" = "Insert, rerun, copy and Esc are available after the command stops. Closing a running command asks for confirmation.";
 "help.shortcuts.context.editing" = "Bold, italic, link, headings, checklist and strikethrough are Markdown note editor shortcuts. Other editing keys act on the focused text field.";
+
+"screenshot.text.interrupted" = "Text recognition was interrupted. Try again.";

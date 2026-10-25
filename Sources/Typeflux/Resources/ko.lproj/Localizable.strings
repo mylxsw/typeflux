@@ -7363,3 +7363,5 @@
 "help.shortcuts.context.notes" = "목록 이동, 삭제 및 복사는 텍스트 편집 중이 아닐 때 작동합니다. 전체 선택은 다중 선택 모드, 서식 키는 Markdown 편집기에서 사용합니다.";
 "help.shortcuts.context.terminal" = "삽입, 재실행, 복사 및 Esc는 명령 종료 후 사용할 수 있습니다. 실행 중 닫기는 확인을 요청합니다.";
 "help.shortcuts.context.editing" = "굵게, 기울임, 링크, 제목, 체크리스트 및 취소선은 Markdown 노트 편집기용입니다. 다른 편집 키는 포커스된 입력란에 적용됩니다.";
+
+"screenshot.text.interrupted" = "문자 인식이 중단되었습니다. 다시 시도해 주세요.";

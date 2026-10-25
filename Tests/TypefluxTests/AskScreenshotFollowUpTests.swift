@@ -1,3 +1,4 @@
+import AppKit
 import CoreGraphics
 import Foundation
 import Testing
@@ -273,6 +274,53 @@ struct AskScreenshotFollowUpTests {
 
         #expect(model.launcherScreenshot == nil)
         #expect(recognition.isCancelled)
+    }
+
+    @Test(arguments: [false, true])
+    func interruptedRecognitionEndsLoadingAndRetryReadsTheSameImage(cancelled: Bool) async throws {
+        let (fixture, recognizer) = try fixture(["Recovered text"])
+        defer { fixture.model.resetSession() }
+        let model = fixture.model
+        let picture = image()
+        model.launcherScreenshot = AskLauncherScreenshot(image: picture, source: .init(
+            pixelSize: picture.pixelSize, fitsQuestion: true,
+            recognition: Task {
+                if cancelled { throw CancellationError() }
+                throw ImageTilingError.unreadable
+            }))
+        model.showScreenshotText()
+
+        try await fixture.wait { model.plugins.failure != nil }
+        #expect(!model.plugins.isRunning)
+        if cancelled { #expect(model.plugins.failure?.message == L("screenshot.text.interrupted")) }
+        let action = try #require(model.plugins.failure?.action(for: .enter))
+        #expect(action.kind == .screenshotFollowUp(.recognizeText))
+        _ = model.performPluginAction(action)
+        try await fixture.wait { model.plugins.output != nil }
+        #expect(model.plugins.output?.body == "Recovered text")
+        #expect(recognizer.calls == 1)
+        #expect(model.launcherScreenshot?.image.image === picture.image)
+    }
+
+    @Test func realRecognitionReturnsTextToTheLauncher() async throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        let data = ClipboardTestSupport.imageData(width: 1200, height: 240, text: "SCREENSHOT OCR 2026")
+        let cgImage = try #require(NSBitmapImageRep(data: data)?.cgImage)
+        fixture.model.screenshotTextRecognizer = TiledImageTextRecognizer(base: VisionImageTextRecognizer(
+            worker: MediaWorker(timeout: 90, run: { request, cancelled in
+                try ManagedProcess().runBlocking(request, isCancelled: cancelled)
+            })))
+        fixture.model.onShowLauncher = { prepared in
+            fixture.model.resetLauncherForPresentation(preservingScreenshot: true)
+            prepared()
+        }
+        fixture.model.handle(.recognizeText, image: .init(image: cgImage, scale: 1, isLongImage: false))
+        let screenshot = try #require(fixture.model.launcherScreenshot)
+        let recognized = try await screenshot.source.recognition.value
+        #expect(recognized.string?.contains("SCREENSHOT OCR 2026") == true)
+        try await fixture.wait { fixture.model.plugins.output != nil }
+        #expect(fixture.model.plugins.output?.body.contains("SCREENSHOT OCR 2026") == true)
     }
 
     @Test func aStaleLauncherOpeningDoesNothing() throws {
