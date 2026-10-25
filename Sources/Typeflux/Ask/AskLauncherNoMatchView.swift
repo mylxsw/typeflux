@@ -28,6 +28,7 @@ struct AskLauncherNoMatchView: View {
                 }
                 Text(L("ask.empty"))
                     .font(.system(size: 20, weight: .bold))
+                    .accessibilityIdentifier("ask.launcher.empty.title")
                     .foregroundStyle(StudioTheme.textPrimary)
             }
             .frame(maxWidth: .infinity)

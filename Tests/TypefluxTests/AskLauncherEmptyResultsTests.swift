@@ -33,6 +33,32 @@ struct AskLauncherEmptyResultsTests {
         return draft
     }
 
+    @Test func conversationCanvasSurvivesPendingAndUnsearchableInput() async throws {
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore() }
+        let launcher = try await AskQuickResultsInteractionTests.Launcher(text: "ssssdddddddd")
+        defer { launcher.close() }
+        let model = launcher.fixture.model
+        func hasCanvas() -> Bool {
+            launcher.window.contentView?.layoutSubtreeIfNeeded()
+            return SettingsBehaviorTestSupport.elements(in: launcher.window).contains {
+                $0.value("accessibilityIdentifier") as? String == "ask.launcher.empty.title"
+            }
+        }
+        for text in ["hello, world may be more", String(repeating: "long question ", count: 8),
+                     "你好，世界", "ssssdddddddd"] {
+            model.launcherDraft.text = text
+            try await Task.sleep(for: .milliseconds(100))
+            // Simulate the interval after native input changes but before search
+            // accepts that text. The canvas must not depend on query equality.
+            model.quickSearch.update(text: "previous query", chinese: false, calculator: false, sources: .init())
+            model.quickSearch.results = nil
+            try await Task.sleep(for: .milliseconds(50))
+            #expect(!model.quickSearch.isCurrent(text: text))
+            #expect(hasCanvas(), "The real launcher must show its canvas for: \(text)")
+        }
+    }
+
     // MARK: - Subject
 
     @Test func theSubjectFollowsWhatRidesWithTheQuestion() {

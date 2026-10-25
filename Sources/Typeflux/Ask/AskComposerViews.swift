@@ -1347,13 +1347,12 @@ struct AskComposer: View {
         return starters[index]
     }
 
-    /// The search finished without a single match: say so rather than leave the area empty.
+    /// Keep the conversation canvas visible whenever no result owns the area,
+    /// including while a new query is waiting for its first search batch.
     private var showsLauncherNoMatch: Bool {
-        let text = draft.wrappedValue.text
         return launcher && !active && !model.launcherHistoryMode && !launcherCollapsed && !paletteOpen
             && !plugins.isActive && pluginDisplay == nil && draft.wrappedValue.hasText
-            && launcherContextHome == nil && quickSearch.isVisible && quickSearch.isCurrent(text: text)
-            && quickSearch.showsEmptyState
+            && launcherContextHome == nil && !showsQuickResults
     }
 
     private var noMatchDestinations: [AskLauncherNoMatch.Destination] {
@@ -1882,7 +1881,9 @@ struct AskComposer: View {
                     .allowsHitTesting(!quickResultsArePending)
             } else if showsLauncherNoMatch {
                 AskLauncherNoMatchView(query: draft.wrappedValue.text.trimmingCharacters(in: .whitespacesAndNewlines),
-                                       searched: model.quickAppsEnabled || model.quickFilesEnabled,
+                                       searched: quickSearch.isCurrent(text: draft.wrappedValue.text)
+                                           && quickSearch.showsEmptyState
+                                           && (model.quickAppsEnabled || model.quickFilesEnabled),
                                        destinations: noMatchDestinations, highlighted: $canvasHighlight,
                                        palette: launcherOrbPalette, viewportHeight: launcherResultsViewportHeight,
                                        onAskAI: askAIFromNoMatch,
