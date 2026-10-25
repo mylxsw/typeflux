@@ -5,6 +5,7 @@ import SwiftUI
 @MainActor
 final class RadialMenuView: NSView {
     var onSelect: ((OpieMenuItem) -> Void)?
+    var onHover: ((OpieMenuItem) -> Void)?
     var onClose: (() -> Void)?
     var freezesPointerForPreview = false
     var onShapeChanged: (() -> Void)?
@@ -168,9 +169,11 @@ final class RadialMenuView: NSView {
         updateHover(at: point)
     }
 
-    private func updateHover(at point: NSPoint) {
+    func updateHover(at point: NSPoint) {
         pointerPoint = point
+        let previous = hovered
         hovered = item(at: point, reach: .infinity)
+        if let hovered, hovered != previous { onHover?(items[hovered]) }
         if hovered != nil { keyboardSelection = nil }
         startTicker()
     }

@@ -14,12 +14,13 @@ extension AVAudioPlayer: SoundEffectPlayback {}
 final class SoundEffectPlayer {
     enum Effect: String, CaseIterable {
         case tip
+        case ringHover
         case done
         case error
 
         var volume: Float {
             switch self {
-            case .tip:
+            case .tip, .ringHover:
                 0.2
             case .done:
                 0.22

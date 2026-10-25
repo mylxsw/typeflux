@@ -504,7 +504,7 @@ final class AppCoordinator {
             }
         )
         executor.onFailure = { [weak overlay = di.overlayController] message in overlay?.showNotice(message: message) }
-        let controller = RingController(settingsStore: di.settingsStore, menu: OpieRingMenu(), executor: executor)
+        let controller = RingController(settingsStore: di.settingsStore, menu: OpieRingMenu(soundEffectPlayer: di.soundEffectPlayer), executor: executor)
         controller.isRecordingActive = { [weak self] in self?.workflowController?.isRecording ?? false }
         ringController = controller
     }

@@ -4,6 +4,31 @@ import XCTest
 
 final class OpieMenuTests: XCTestCase {
     @MainActor
+    func testPointerHoverOnlyNotifiesWhenEnteringAnItem() {
+        let items = (0..<4).map {
+            OpieMenuItem(id: "item-\($0)", title: "Item \($0)", icon: .systemSymbol("star"))
+        }
+        let view = RadialMenuView(frame: NSRect(x: 0, y: 0, width: 620, height: 620),
+                                  items: items, centerTitle: "Ring")
+        var hovered: [String] = []
+        view.onHover = { hovered.append($0.id) }
+        view.updateHover(at: NSPoint(x: 310, y: 310))
+        XCTAssertTrue(hovered.isEmpty)
+        view.updateHover(at: NSPoint(x: 310, y: 420))
+        view.updateHover(at: NSPoint(x: 310, y: 430))
+        XCTAssertEqual(hovered.count, 1)
+        view.updateHover(at: NSPoint(x: 420, y: 310))
+        XCTAssertEqual(hovered.count, 2)
+        XCTAssertNotEqual(hovered[0], hovered[1])
+        view.updateHover(at: NSPoint(x: 310, y: 310))
+        XCTAssertEqual(hovered.count, 2)
+        view.updateHover(at: NSPoint(x: 420, y: 310))
+        XCTAssertEqual(hovered.count, 3)
+        view.setPointerPreview(NSPoint(x: 310, y: 420))
+        XCTAssertEqual(hovered.count, 3)
+    }
+
+    @MainActor
     func testNumberKeysMatchDisplayedPositions() {
         for (index, code) in [UInt16(18), 19, 20, 21, 23, 22, 26, 28].enumerated() {
             XCTAssertEqual(OpieRadialMenu.numberedItemIndex(keyCode: code), index)

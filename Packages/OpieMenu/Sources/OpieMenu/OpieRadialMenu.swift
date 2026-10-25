@@ -4,6 +4,8 @@ import Carbon
 /// Owns the floating radial menu. Keep one instance for the lifetime of the host app.
 @MainActor
 public final class OpieRadialMenu {
+    /// Called once when the pointer enters a different item.
+    public var onHover: ((OpieMenuItem) -> Void)?
     public var onSelect: (OpieMenuItem) -> Void
     public var onWillShow: (() -> Void)?
     public var onDismiss: (() -> Void)?
@@ -75,6 +77,7 @@ public final class OpieRadialMenu {
         panel.isReleasedWhenClosed = false
         panel.animationBehavior = .none
         view.onSelect = { [weak self] item in self?.select(item) }
+        view.onHover = { [weak self] item in self?.onHover?(item) }
         view.onClose = { [weak self] in self?.dismiss() }
         let surface = RadialMenuSurface(frame: NSRect(origin: .zero, size: size), menu: view)
         panel.contentView = surface

@@ -1,7 +1,28 @@
 @testable import Typeflux
 import XCTest
+import AVFoundation
 
 final class SoundEffectPlayerTests: XCTestCase {
+    @MainActor
+    func testRingHoverResourceIsPlayableAndReplaysWithoutCreatingAnotherPlayer() throws {
+        let settingsStore = try makeSettingsStore()
+        let playback = MockSoundEffectPlayback()
+        var requestedURLs: [URL] = []
+        let player = SoundEffectPlayer(settingsStore: settingsStore, isEnabledOverride: { true }, playerFactory: { url in
+            requestedURLs.append(url)
+            let audio = try AVAudioPlayer(contentsOf: url)
+            XCTAssertGreaterThan(audio.duration, 0)
+            XCTAssertLessThan(audio.duration, 0.2)
+            return playback
+        })
+        XCTAssertTrue(player.play(.ringHover))
+        playback.currentTime = 0.05
+        XCTAssertTrue(player.play(.ringHover))
+        XCTAssertEqual(requestedURLs.map(\.lastPathComponent), ["ringHover.mp3"])
+        XCTAssertEqual(playback.currentTime, 0)
+        XCTAssertEqual(playback.playCallCount, 2)
+    }
+
     // MARK: - Effect Raw Values
 
     func testEffectRawValues() {

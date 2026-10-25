@@ -147,6 +147,12 @@ final class OpieRingMenu: RingMenuPresenting {
 
     var hasKeyboardFocus: Bool { menu.hasKeyboardFocus }
 
+    init(soundEffectPlayer: SoundEffectPlayer? = nil) {
+        menu.onHover = { _ in
+            _ = soundEffectPlayer?.play(.ringHover)
+        }
+    }
+
     func configure(items: [RingMenuItem], style: RingStyle, centerTitle: String) {
         menu.updateItems(items.map(Self.menuItem))
         menu.setStyle(Self.style(style))
