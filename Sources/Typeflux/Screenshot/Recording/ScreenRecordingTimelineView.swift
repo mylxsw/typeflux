@@ -160,7 +160,7 @@ struct ScreenRecordingTimelineView: View {
                 Text(track.title).strikethrough(!track.included)
             }
             .font(.system(size: 11, weight: .medium)).padding(.horizontal, 6).frame(height: 18)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 5))
+            .styledGlassBackground(in: RoundedRectangle(cornerRadius: 5), cornerRadius: 5)
         }
         .buttonStyle(.plain).foregroundStyle(StudioTheme.textPrimary)
         .accessibilityLabel(L("recording.includeTrack", track.title))

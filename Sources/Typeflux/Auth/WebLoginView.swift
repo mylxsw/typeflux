@@ -43,7 +43,7 @@ struct WebLoginView: View {
         }
         .padding(32)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(AskWindowBackdrop())
         .onChange(of: coordinator.phase) { phase in
             if phase == .succeeded {
                 onDismiss()

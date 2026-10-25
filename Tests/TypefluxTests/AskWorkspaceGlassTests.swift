@@ -99,12 +99,6 @@ struct AskWorkspaceGlassTests {
         }
     }
 
-    @Test(arguments: [false, true]) func edgeColumnIsClearerGlassThanTheCanvas(dark: Bool) {
-        let column = AskEdgeColumnBackdrop.tintOpacity(dark: dark)
-        #expect(column > 0)
-        #expect(column < AskWindowBackdrop.tintOpacity(dark: dark, reduceTransparency: false))
-    }
-
     @Test func edgeColumnFollowsTheSharedOpaqueFallback() {
         #expect(AskEdgeColumnBackdrop.usesTransparency(materialOverride: nil, reduceTransparency: false,
                                                        increasedContrast: false))

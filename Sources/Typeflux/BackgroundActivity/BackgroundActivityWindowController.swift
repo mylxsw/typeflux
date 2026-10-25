@@ -4,6 +4,8 @@ import SwiftUI
 /// The background tasks window, opened from the menu's task section.
 @MainActor
 final class BackgroundActivityWindowController: NSObject {
+    private lazy var interfaceStyleObserver = InterfaceStyleObserver(settings: settingsStore)
+
     static let identifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.background-activity")
 
     private let center: BackgroundActivityCenter
@@ -39,7 +41,8 @@ final class BackgroundActivityWindowController: NSObject {
             window.identifier = Self.identifier
             window.titlebarAppearsTransparent = true
             window.titlebarSeparatorStyle = .none
-            window.backgroundColor = NSColor(ModelVisualStyle.canvas)
+            window.isOpaque = false
+            window.backgroundColor = .clear
             window.isReleasedWhenClosed = false
             window.delegate = self
             window.minSize = NSSize(width: 460, height: 360)
@@ -59,7 +62,8 @@ final class BackgroundActivityWindowController: NSObject {
     private func reload() {
         guard let window else { return }
         window.title = L("activity.window.title")
-        window.contentView = NSHostingView(rootView: BackgroundActivityWindowView(center: center))
+        window.contentView = NSHostingView(rootView: BackgroundActivityWindowView(center: center)
+            .interfaceStyle(following: interfaceStyleObserver))
     }
 }
 

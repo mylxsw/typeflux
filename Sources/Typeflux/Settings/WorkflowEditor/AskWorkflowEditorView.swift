@@ -59,7 +59,7 @@ struct AskWorkflowEditorView: View {
             }
         }
         .frame(minWidth: 960, minHeight: 560)
-        .background(StudioTheme.windowBackground)
+        .background(AskWindowBackdrop())
         .ignoresSafeArea(.container, edges: .top)
         .sheet(item: $creating) { mode in
             AskWorkflowNewSheet(model: model, mode: mode) { creating = nil }
@@ -323,7 +323,7 @@ extension AskWorkflowEditorView {
                 AskWorkflowTestPanel(model: model, tab: testTab) { panel = .assistant; model.fixWithAssistant() }
             }
         }
-        .background(StudioTheme.windowBackground)
+        .background(AskWindowBackdrop())
     }
 
     private var empty: some View {

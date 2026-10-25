@@ -328,117 +328,12 @@ struct StudioVisualEffectBlur: NSViewRepresentable {
 }
 
 private struct StudioLiquidGlassBackground<S: InsettableShape>: View {
-    @Environment(\.liquidGlassIntensity) private var intensity
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.interfaceStyle) private var style
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.colorSchemeContrast) private var contrast
     let shape: S
-    let cornerRadius: CGFloat?
-    let material: NSVisualEffectView.Material
-    let tintOpacity: Double
-    let scrimOpacity: Double
-    let strokeOpacity: Double
-    let interactive: Bool
-
-    private var usesMaterial: Bool { style.usesGlass && !reduceTransparency && contrast != .increased }
-    private var usesNativeGlass: Bool { usesMaterial && AskGlassMaterial.systemSupportsLiquidGlass }
-
-    init(
-        shape: S,
-        cornerRadius: CGFloat? = nil,
-        material: NSVisualEffectView.Material = .hudWindow,
-        tintOpacity: Double = StudioTheme.Opacity.glassSurfaceTint,
-        scrimOpacity: Double = StudioTheme.Opacity.glassSurfaceScrim,
-        strokeOpacity: Double = StudioTheme.Opacity.glassHighlight,
-        interactive: Bool = false
-    ) {
-        self.shape = shape
-        self.cornerRadius = cornerRadius
-        self.material = material
-        self.tintOpacity = tintOpacity
-        self.scrimOpacity = scrimOpacity
-        self.strokeOpacity = strokeOpacity
-        self.interactive = interactive
-    }
+    var cornerRadius: CGFloat? = nil
 
     var body: some View {
-        Group {
-            if !usesMaterial {
-                shape.fill(StudioTheme.controlSurface)
-            } else {
-                #if compiler(>=6.2)
-                    if #available(macOS 26.0, *) {
-                        shape
-                            .fill(Color.clear)
-                            .glassEffect(
-                                Glass.regular
-                                    .interactive(interactive)
-                                    .tint(StudioTheme.glassTint.opacity(intensity.nativeFrostOpacity(tintOpacity))),
-                                in: shape
-                            )
-                            .overlay(shape.fill(AskWindowBackdrop.base(dark: colorScheme == .dark)
-                                .opacity(intensity.extraTintOpacity)))
-
-                    } else {
-                        fallbackBackground
-                    }
-                #else
-                    fallbackBackground
-                #endif
-            }
-        }
-        .clipShape(shape)
-        .overlay(
-            shape
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [
-                            StudioTheme.glassStrokeHighlight.opacity(strokeOpacity),
-                            StudioTheme.glassStrokeHighlight.opacity(strokeOpacity * 0.28),
-                            StudioTheme.glassStrokeShadow.opacity(0.50)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: StudioTheme.BorderWidth.thin
-                )
-                .opacity(usesMaterial && !usesNativeGlass ? 1 : 0)
-        )
-        .overlay(
-            shape
-                .inset(by: StudioTheme.BorderWidth.thin + 0.5)
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [
-                            StudioTheme.glassInnerHighlight,
-                            Color.clear,
-                            StudioTheme.glassInnerHighlight.opacity(0.42)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
-                    lineWidth: 0.6
-                )
-                .blendMode(.screen)
-                .opacity(usesMaterial && !usesNativeGlass ? 1 : 0)
-        )
-    }
-
-    private var fallbackBackground: some View {
-        ZStack {
-            StudioVisualEffectBlur(
-                material: material,
-                blendingMode: .withinWindow,
-                cornerRadius: cornerRadius
-            )
-            .allowsHitTesting(false)
-
-            shape
-                .fill(StudioTheme.glassScrim.opacity(intensity.legacyFrostOpacity(scrimOpacity)))
-            shape
-                .fill(StudioTheme.glassTint.opacity(intensity.legacyFrostOpacity(tintOpacity)))
-        }
+        StyledGlassShapeBackground(shape: shape, cornerRadius: cornerRadius,
+                                   opaqueFill: StudioTheme.controlSurface)
     }
 }
 
@@ -502,10 +397,7 @@ struct StudioButtonChromeModifier: ViewModifier {
             ZStack {
                 StudioLiquidGlassBackground(
                     shape: buttonShape,
-                    cornerRadius: StudioTheme.CornerRadius.xLarge,
-                    tintOpacity: isPressed ? 0.72 : StudioTheme.Opacity.glassControlTint,
-                    scrimOpacity: isPressed ? 0.76 : StudioTheme.Opacity.glassControlScrim,
-                    interactive: true
+                    cornerRadius: StudioTheme.CornerRadius.xLarge
                 )
 
                 buttonShape
@@ -706,53 +598,16 @@ struct StudioShell<Content: View>: View {
     }
 }
 
+/// Compatibility adapter for login and about windows; all windows share one material policy.
 struct StudioGlassBackground: View {
-    @Environment(\.liquidGlassIntensity) private var intensity
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.interfaceStyle) private var style
-
-    let tintOpacity: Double
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        if !style.usesGlass || reduceTransparency || contrast == .increased {
-            StudioTheme.windowBackground
-                .background(AskWindowBackdrop.base(dark: colorScheme == .dark))
-        } else if colorScheme == .dark {
-            ZStack {
-                StudioVisualEffectBlur(material: .underWindowBackground, blendingMode: .behindWindow, cornerRadius: nil)
-
-                StudioTheme.windowBackground
-                    .opacity(intensity.nativeFrostOpacity(tintOpacity))
-                AskWindowBackdrop.base(dark: true).opacity(intensity.extraTintOpacity)
-            }
+        if style == .classic {
+            StudioTheme.windowBackground.background(AskWindowBackdrop.base(dark: colorScheme == .dark))
         } else {
-            ZStack {
-                StudioVisualEffectBlur(material: .underWindowBackground, blendingMode: .behindWindow, cornerRadius: nil)
-
-                StudioTheme.windowBackground
-                    .opacity(intensity.nativeFrostOpacity(tintOpacity))
-
-                LinearGradient(
-                    colors: [
-                        StudioTheme.windowHighlight.opacity(0.92),
-                        Color.clear
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-
-                LinearGradient(
-                    colors: [
-                        Color.white.opacity(0.08),
-                        Color.clear
-                    ],
-                    startPoint: .bottomLeading,
-                    endPoint: .topTrailing
-                )
-                AskWindowBackdrop.base(dark: false).opacity(intensity.extraTintOpacity)
-            }
+            AskWindowBackdrop()
         }
     }
 }

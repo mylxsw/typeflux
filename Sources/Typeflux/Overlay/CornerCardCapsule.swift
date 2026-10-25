@@ -51,10 +51,7 @@ struct CornerCardCapsule: View {
     }
 
     private var background: some View {
-        // Glass alone turns grey over bright wallpapers; a dark veil keeps the card legible.
-        LiquidGlassShapeBackground(shape: shape, cornerRadius: snapshot.showsBody ? 24 : nil,
-                                   tintOpacity: 0.06, strokeOpacity: 0, lineWidth: 0.5)
-            .overlay(shape.fill(Color(red: 0.05, green: 0.05, blue: 0.07).opacity(0.62)))
+        LiquidGlassShapeBackground(shape: shape, cornerRadius: snapshot.showsBody ? 24 : nil)
     }
 
     private var header: some View {

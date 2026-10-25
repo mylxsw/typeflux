@@ -41,149 +41,22 @@ private final class OverlayPanel: NSPanel {
     }
 }
 
-private final class RoundedVisualEffectView: NSVisualEffectView {
-    var preferredCornerRadius: CGFloat?
-
-    override func layout() {
-        super.layout()
-        layer?.cornerRadius = preferredCornerRadius ?? bounds.height / 2
-    }
-}
-
-private struct RoundedVisualEffectBlur: NSViewRepresentable {
-    let material: NSVisualEffectView.Material
-    let blendingMode: NSVisualEffectView.BlendingMode
-    let cornerRadius: CGFloat?
-
-    func makeNSView(context _: Context) -> RoundedVisualEffectView {
-        let view = RoundedVisualEffectView()
-        view.material = material
-        view.blendingMode = blendingMode
-        view.state = .active
-        view.isEmphasized = true
-        view.wantsLayer = true
-        view.layer?.masksToBounds = true
-        view.layer?.cornerCurve = .continuous
-        view.layer?.backgroundColor = NSColor.clear.cgColor
-        view.preferredCornerRadius = cornerRadius
-        return view
-    }
-
-    func updateNSView(_ nsView: RoundedVisualEffectView, context _: Context) {
-        nsView.material = material
-        nsView.blendingMode = blendingMode
-        nsView.state = .active
-        nsView.isEmphasized = true
-        nsView.preferredCornerRadius = cornerRadius
-        nsView.needsLayout = true
-    }
-}
-
 struct LiquidGlassShapeBackground<S: InsettableShape>: View {
-    @Environment(\.liquidGlassIntensity) private var intensity
     @Environment(\.interfaceStyle) private var interfaceStyle
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.colorSchemeContrast) private var contrast
     let shape: S
     let cornerRadius: CGFloat?
-    let tintOpacity: Double
-    let strokeOpacity: Double
-    let lineWidth: CGFloat
-    let interactive: Bool
 
     init(
         shape: S,
-        cornerRadius: CGFloat? = nil,
-        tintOpacity: Double = 0.08,
-        strokeOpacity: Double = 0.16,
-        lineWidth: CGFloat = 0.9,
-        interactive: Bool = false
+        cornerRadius: CGFloat? = nil
     ) {
         self.shape = shape
         self.cornerRadius = cornerRadius
-        self.tintOpacity = tintOpacity
-        self.strokeOpacity = strokeOpacity
-        self.lineWidth = lineWidth
-        self.interactive = interactive
     }
 
     var body: some View {
-        Group {
-            if interfaceStyle == .classic || reduceTransparency || contrast == .increased {
-                shape.fill(Color.black)
-            } else {
-                liquidGlassBackground
-            }
-        }
-        .overlay(
-            shape
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(strokeOpacity + 0.08),
-                            Color.white.opacity(strokeOpacity * 0.35),
-                            Color.white.opacity(strokeOpacity)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: lineWidth
-                )
-                .opacity(interfaceStyle == .liquidGlass ? 1 : 0)
-        )
-        .overlay(
-            shape
-                .inset(by: lineWidth + 0.6)
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.20),
-                            Color.clear,
-                            Color.white.opacity(0.07)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
-                    lineWidth: 0.6
-                )
-                .blendMode(.screen)
-                .opacity(interfaceStyle == .liquidGlass ? 1 : 0)
-        )
-    }
-
-    @ViewBuilder
-    private var liquidGlassBackground: some View {
-        #if compiler(>=6.2)
-            if #available(macOS 26.0, *) {
-                shape
-                    .fill(Color.clear)
-                    .glassEffect(
-                        Glass.regular
-                            .interactive(interactive)
-                            .tint(Color.white.opacity(intensity.nativeFrostOpacity(tintOpacity))),
-                        in: shape
-                    )
-                    .overlay(shape.fill(Color.black.opacity(intensity.extraTintOpacity)))
-            } else {
-                fallbackBackground
-            }
-        #else
-            fallbackBackground
-        #endif
-    }
-
-    private var fallbackBackground: some View {
-        ZStack {
-            RoundedVisualEffectBlur(
-                material: .popover,
-                blendingMode: .behindWindow,
-                cornerRadius: cornerRadius
-            )
-            .allowsHitTesting(false)
-
-            shape
-                .fill(Color.black.opacity(intensity.legacyFrostOpacity(tintOpacity)))
-        }
+        StyledGlassShapeBackground(shape: shape, cornerRadius: cornerRadius,
+                                   opaqueFill: interfaceStyle == .classic ? .black : AskTheme.launcherSurface, placement: .floating)
     }
 }
 
@@ -1149,10 +1022,8 @@ final class OverlayController {
             contentView.layer?.backgroundColor = chrome.background.cgColor
             contentView.layer?.cornerRadius = chrome.cornerRadius
             contentView.layer?.masksToBounds = true
-            contentView.layer?.borderWidth = model.interfaceStyle == .classic ? 0 : 1
-            contentView.layer?.borderColor = model.interfaceStyle == .classic
-                ? nil
-                : NSColor.white.withAlphaComponent(0.12).cgColor
+            contentView.layer?.borderWidth = 0
+            contentView.layer?.borderColor = nil
         } else {
             contentView.layer?.backgroundColor = NSColor.clear.cgColor
             contentView.layer?.cornerRadius = 0
@@ -1166,7 +1037,7 @@ final class OverlayController {
         if model.drawsVoiceCapsuleSkin { return nil }
         let background = model.interfaceStyle == .classic
             ? NSColor.black
-            : NSColor(calibratedRed: 0.13, green: 0.11, blue: 0.11, alpha: 0.96)
+            : NSColor.clear
 
         switch presentation {
         case .transcriptPreview, .notice:
@@ -2208,72 +2079,8 @@ private struct OverlayView: View {
 
     @ViewBuilder
     private var personaPickerGlassBackground: some View {
-        let shape = RoundedRectangle(cornerRadius: 24, style: .continuous)
-
-        if model.interfaceStyle == .classic {
-            shape.fill(Color.black)
-        } else {
-            ZStack {
-                shape
-                    .fill(Color.black.opacity(0.001))
-                    .shadow(color: Color.black.opacity(0.30), radius: 24, x: 0, y: 16)
-
-                shape
-                    .fill(.ultraThinMaterial)
-            }
-            .overlay(
-                shape
-                    .fill(Color.black.opacity(0.28))
-                    .allowsHitTesting(false)
-            )
-            .overlay(
-                shape
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(0.08),
-                                Color.clear,
-                                Color.black.opacity(0.10)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .allowsHitTesting(false)
-            )
-            .overlay(
-                shape
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(0.26),
-                                Color.white.opacity(0.06),
-                                Color.white.opacity(0.18)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1.0
-                    )
-            )
-            .overlay(
-                shape
-                    .inset(by: 1.6)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(0.20),
-                                Color.clear,
-                                Color.white.opacity(0.07)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
-                        lineWidth: 0.6
-                    )
-                    .blendMode(.screen)
-            )
-        }
+        LiquidGlassShapeBackground(shape: RoundedRectangle(cornerRadius: 24, style: .continuous),
+                                   cornerRadius: 24)
     }
 
     @ViewBuilder
@@ -2531,12 +2338,7 @@ private struct LockedRecordingCapsule: View {
         .background(
             LiquidGlassShapeBackground(
                 shape: Capsule(style: .continuous),
-                cornerRadius: nil,
-                tintOpacity: 0.05,
-                strokeOpacity: 0.16,
-                lineWidth: 1.0,
-                interactive: true
-            )
+                cornerRadius: nil)
         )
         .shadow(color: Color.black.opacity(0.24), radius: 16, x: 0, y: 12)
         .environment(\.colorScheme, .dark)
@@ -2580,11 +2382,7 @@ private struct RecordingHintBanner: View {
             .background(
                 LiquidGlassShapeBackground(
                     shape: RoundedRectangle(cornerRadius: layout.cornerRadius, style: .continuous),
-                    cornerRadius: layout.cornerRadius,
-                    tintOpacity: 0.05,
-                    strokeOpacity: 0.14,
-                    lineWidth: 0.8
-                )
+                    cornerRadius: layout.cornerRadius)
             )
             .fixedSize(horizontal: true, vertical: true)
     }
@@ -2669,12 +2467,7 @@ private struct OrbRecordingCapsule: View, Animatable {
         .background(
             LiquidGlassShapeBackground(
                 shape: shape,
-                cornerRadius: cornerRadius,
-                tintOpacity: 0.045 + 0.015 * expansion,
-                strokeOpacity: 0.15,
-                lineWidth: 0.9,
-                interactive: controlsRevealed
-            )
+                cornerRadius: cornerRadius)
         )
         .shadow(color: Color.black.opacity(0.24), radius: 18, x: 0, y: 12)
         .overlay(alignment: .bottom) {
@@ -2844,12 +2637,7 @@ private struct MorphingRecordingCapsule: View, Animatable {
         .background(
             LiquidGlassShapeBackground(
                 shape: shape,
-                cornerRadius: cornerRadius,
-                tintOpacity: 0.045 + 0.015 * expansion,
-                strokeOpacity: 0.15,
-                lineWidth: 0.9,
-                interactive: showControls
-            )
+                cornerRadius: cornerRadius)
         )
         .shadow(color: Color.black.opacity(0.24), radius: 18, x: 0, y: 12)
         .overlay(alignment: .bottom) {
@@ -2960,11 +2748,7 @@ struct ThinkingProgressCapsule: View {
         ZStack {
             LiquidGlassShapeBackground(
                 shape: capsuleShape,
-                cornerRadius: nil,
-                tintOpacity: 0.05,
-                strokeOpacity: 0.16,
-                lineWidth: 1.0
-            )
+                cornerRadius: nil)
 
             GeometryReader { geo in
                 let width = max(0, geo.size.width)
@@ -3015,11 +2799,7 @@ struct ProcessingTranscriptCapsule: View {
         .background(
             LiquidGlassShapeBackground(
                 shape: shape,
-                cornerRadius: 22,
-                tintOpacity: 0.06,
-                strokeOpacity: 0.15,
-                lineWidth: 0.9
-            )
+                cornerRadius: 22)
         )
         .shadow(color: Color.black.opacity(0.24), radius: 18, x: 0, y: 12)
         .environment(\.colorScheme, .dark)
@@ -3072,11 +2852,7 @@ private struct OverlayCapsule<Content: View>: View {
             .background(
                 LiquidGlassShapeBackground(
                     shape: Capsule(),
-                    cornerRadius: nil,
-                    tintOpacity: 0.05,
-                    strokeOpacity: 0.16,
-                    lineWidth: 1.0
-                )
+                    cornerRadius: nil)
             )
             .shadow(color: Color.black.opacity(0.24), radius: 16, x: 0, y: 12)
             .environment(\.colorScheme, .dark)

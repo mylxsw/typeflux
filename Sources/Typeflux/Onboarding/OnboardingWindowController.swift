@@ -49,7 +49,7 @@ final class OnboardingWindowController: NSObject {
             viewModel: viewModel,
             appearanceMode: settingsStore.appearanceMode
         )
-        let hosting = NSHostingView(rootView: view)
+        let hosting = NSHostingView(rootView: view.interfaceStyle(following: InterfaceStyleObserver(settings: settingsStore)))
 
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: Self.windowWidth, height: Self.windowHeight),
@@ -62,7 +62,8 @@ final class OnboardingWindowController: NSObject {
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = true
-        window.backgroundColor = NSColor(StudioTheme.windowBackground)
+        window.isOpaque = false
+        window.backgroundColor = .clear
         window.contentView = hosting
         window.isReleasedWhenClosed = false
         window.delegate = self

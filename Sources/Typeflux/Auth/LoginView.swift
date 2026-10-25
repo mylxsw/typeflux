@@ -739,7 +739,7 @@ struct LoginView: View {
     }
 
     private var loginWindowBackground: some View {
-        StudioGlassBackground(tintOpacity: StudioTheme.Opacity.glassBackgroundTint)
+        StudioGlassBackground()
             .ignoresSafeArea()
     }
 

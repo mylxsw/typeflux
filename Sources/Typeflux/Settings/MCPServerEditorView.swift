@@ -31,7 +31,7 @@ struct MCPServerEditorView: View {
         }
         .padding(24)
         .frame(width: 520, height: min(640, max(400, (NSScreen.main?.visibleFrame.height ?? 800) - 120)))
-        .background(ModelVisualStyle.canvas)
+        .background(AskWindowBackdrop())
         .onDisappear { viewModel.resetMCPDraftConnectionTest() }
         .onChange(of: connectionFields) { _ in viewModel.resetMCPDraftConnectionTest() }
     }

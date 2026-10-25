@@ -124,9 +124,7 @@ struct OverlayFailureCard: View {
         }
         .frame(width: Self.width, alignment: .leading)
         .background(
-            LiquidGlassShapeBackground(shape: shape, cornerRadius: Self.cornerRadius,
-                                       tintOpacity: 0.06, strokeOpacity: 0, lineWidth: 0.5)
-                .overlay(shape.fill(Color(red: 0.055, green: 0.055, blue: 0.075).opacity(0.62)))
+            LiquidGlassShapeBackground(shape: shape, cornerRadius: Self.cornerRadius)
         )
         .overlay(alignment: .bottomLeading) {
             if let countdown { OverlayFailureCountdownBar(countdown: countdown) }

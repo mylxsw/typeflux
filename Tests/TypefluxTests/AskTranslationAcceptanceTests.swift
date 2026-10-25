@@ -132,6 +132,10 @@ struct AskTranslationAcceptanceTests {
         defer { fixture.clean() }
         let ask = try AskTestFixture(authenticated: false)
         defer { ask.model.resetSession() }
+        // The cached launcher observes its original session; install the fixture before creating its view.
+        let session = AskPluginSession(plugins: [fixture.model.plugin]) { AskTranslatePlugin.keywords }
+        session.debounce = .zero
+        ask.model.plugins = session
         let launcher = AskConversationWindowController(settings: fixture.settings, model: ask.model)
         defer { launcher.dismissLauncher() }
         let panel = AskTranslationPanelController(model: fixture.model)
@@ -155,12 +159,10 @@ struct AskTranslationAcceptanceTests {
                 var prepared = false
                 launcher.showLauncher(then: { prepared = true })
                 try await ask.wait { prepared }
-                let session = AskPluginSession(plugins: [fixture.model.plugin]) { AskTranslatePlugin.keywords }
-                ask.model.plugins = session
-                session.debounce = .zero
                 ask.model.launcherDraft.text = fixture.model.text
                 session.enter(AskTranslatePlugin.keywords[0])
-                session.update(text: fixture.model.text, selection: nil, language: .english, runWhenPlanned: true)
+                session.update(text: fixture.model.text, selection: ask.model.launcherDraft.sentSelection,
+                               language: .english, runWhenPlanned: true)
                 try await ask.wait { session.output?.translation?.submitted == true }
                 let launcherWindow = try #require(launcher.launcherWindow)
                 launcherWindow.setFrame(CGRect(x: screen.midX - gap / 2 - width, y: window.frame.minY,

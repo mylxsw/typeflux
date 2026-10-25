@@ -6,29 +6,106 @@ import Testing
 @Suite("Shared Liquid Glass surfaces", .serialized, .exclusiveUIState)
 @MainActor
 struct LiquidGlassSurfaceTests {
-    @Test func `launcher diffusion stays scoped and accessibility removes every effect`() async throws {
+    @Test func everyWindowUsesTheSelectedMaterialInBothAppearances() async throws {
         #if compiler(>=6.2)
-            guard #available(macOS 26.0, *) else { return }
-            for dark in [false, true] {
-                for material in [AskGlassMaterial.liquidGlass, .visualEffect, .opaque] {
-                    let view = AskComposerChrome.launcher.glassBackground(material)
+        guard #available(macOS 26.0, *) else { return }
+        let clipboard = ClipboardPanelModel()
+        clipboard.reset(entries: [])
+        for dark in [false, true] {
+            for style in InterfaceStyle.allCases {
+                let surfaces: [(String, AnyView)] = [
+                    ("launcher", AnyView(AskComposerChrome.launcher.glassBackground(.liquidGlass))),
+                    ("translation", AnyView(AskTranslationAppearance.chrome(style: style, increasedContrast: false)
+                        .glassBackground(.liquidGlass))),
+                    ("clipboard", AnyView(ClipboardPanelView(model: clipboard, focusRequest: 0))),
+                    ("shelf", AnyView(ClipboardShelfView(model: clipboard, focusRequest: 0))),
+                    ("monitor", AnyView(SystemMonitorWindowBackground())),
+                    ("canvas", AnyView(AskWindowBackdrop())),
+                    ("sidebar", AnyView(Text("Sidebar").askSidePanel(edge: .leading))),
+                    ("login and about", AnyView(StudioGlassBackground())),
+                    ("overlay", AnyView(LiquidGlassShapeBackground(shape: Capsule()))),
+                    ("control", AnyView(StyledGlassShapeBackground(shape: Circle()))),
+                    ("settings preview", AnyView(LiquidGlassIntensityPreview())),
+                    ("menu", AnyView(AskGlassCardSurface(kind: .menu) { Text("Menu") })),
+                    ("composer", AnyView(Text("Compose").askInWindowGlass(corner: 16))),
+                    ("secondary button", AnyView(StudioButton(title: "Button", systemImage: nil,
+                                                               variant: .secondary, action: {})))
+                ]
+                for (name, surface) in surfaces {
+                    let view = surface.environment(\.interfaceStyle, style)
                         .environment(\.colorScheme, dark ? .dark : .light)
-                    let window = makeWindow(view, dark: dark, size: .init(width: 320, height: 160))
+                    let window = makeWindow(view, dark: dark, size: .init(width: 600, height: 560))
                     defer { window.orderOut(nil); window.close() }
-                    try await Task.sleep(for: .milliseconds(100))
-                    let layers = try descendants(#require(window.contentView))
-                    let blur = layers.compactMap { $0 as? NSVisualEffectView }
-                    let native = layers.compactMap { $0 as? NSGlassEffectView }
-                    if material == .opaque {
-                        #expect(blur.isEmpty && native.isEmpty)
-                    } else {
-                        #expect(blur.contains { $0.material == .hudWindow && $0.blendingMode == .behindWindow })
-                        #expect(native.count == (material == .liquidGlass ? 1 : 0))
+                    try await Task.sleep(for: .milliseconds(50))
+                    let views = descendants(try #require(window.contentView))
+                    let blur = views.compactMap { $0 as? NSVisualEffectView }
+                    let native = views.compactMap { $0 as? NSGlassEffectView }
+                    switch style {
+                    case .classic:
+                        #expect(blur.isEmpty && native.isEmpty, "\(name) retains glass in classic")
+                    case .frosted:
+                        #expect(blur.contains { $0.material == .hudWindow }, "\(name) lacks diffuse frost")
+                        #expect(!native.isEmpty, "\(name) lacks the subdued native optics")
+                    case .liquidGlass:
+                        #expect(blur.isEmpty, "\(name) mixes legacy blur with Liquid Glass")
+                        #expect(!native.isEmpty, "\(name) lacks native Liquid Glass")
                     }
                 }
             }
-            #expect(!AskComposerChrome.workspace.glassBackground(.liquidGlass).diffuseLauncher)
+        }
         #endif
+    }
+
+    @Test func stylesPersistAndClassicOverridesPinnedMaterials() throws {
+        let defaults = try #require(UserDefaults(suiteName: "styles-" + UUID().uuidString))
+        let settings = SettingsStore(defaults: defaults)
+        let observer = InterfaceStyleObserver(settings: settings)
+        #expect(InterfaceStyle.allCases == [.frosted, .liquidGlass, .classic])
+        for style in InterfaceStyle.allCases {
+            settings.interfaceStyle = style
+            #expect(observer.style == style)
+            #expect(SettingsStore(defaults: defaults).interfaceStyle == style)
+            #expect(try JSONDecoder().decode(InterfaceStyle.self, from: JSONEncoder().encode(style)) == style)
+            for material in [AskGlassMaterial.liquidGlass, .visualEffect, .opaque] {
+                #expect(AskGlassBackground.effectiveMaterial(material, reduceTransparency: false,
+                                                            increasedContrast: false, style: style)
+                    == (style == .classic ? .opaque : material))
+                #expect(AskGlassBackground.effectiveMaterial(material, reduceTransparency: true,
+                                                            increasedContrast: false, style: style) == .opaque)
+                #expect(AskGlassBackground.effectiveMaterial(material, reduceTransparency: false,
+                                                            increasedContrast: true, style: style) == .opaque)
+            }
+        }
+    }
+
+    @Test func nativeAndLegacySurfacesHonorOpaqueOverridesInEveryStyle() async throws {
+        for style in InterfaceStyle.allCases {
+            for material in [AskGlassMaterial.visualEffect, .opaque] {
+                let view = HStack {
+                    AskComposerChrome.launcher.glassBackground(material)
+                    AskWindowBackdrop()
+                    StyledGlassShapeBackground(shape: Capsule())
+                    Text("Menu").askInWindowGlass(corner: 12)
+                }
+                .environment(\.interfaceStyle, style)
+                .environment(\.askGlassMaterialOverride, material)
+                let window = makeWindow(view, dark: false, size: .init(width: 480, height: 90))
+                defer { window.orderOut(nil); window.close() }
+                try await Task.sleep(for: .milliseconds(50))
+                let blur = descendants(try #require(window.contentView)).compactMap { $0 as? NSVisualEffectView }
+                if style == .classic || material == .opaque {
+                    #expect(blur.isEmpty)
+                    #if compiler(>=6.2)
+                    if #available(macOS 26.0, *) {
+                        #expect(descendants(window.contentView!).allSatisfy { !($0 is NSGlassEffectView) })
+                    }
+                    #endif
+                } else {
+                    #expect(blur.count == 4)
+                    #expect(blur.allSatisfy { $0.material == (style == .frosted ? .hudWindow : .popover) })
+                }
+            }
+        }
     }
 
     @Test func composerShadowPreservesTheBackdropUnderGlass() async throws {
@@ -88,9 +165,9 @@ struct LiquidGlassSurfaceTests {
                 let edgeBackdrops = descendants(window.contentView!).compactMap { $0 as? NSVisualEffectView }
                     .filter { $0.material == .sidebar }
                 if mode == "glass" {
-                    #expect(glass.count == 3, "Title controls, composer and monitor must all use native glass")
+                    #expect(glass.count == 4, "Navigation, title controls, composer and monitor must all use native glass")
                     #expect(glass.allSatisfy { $0.style == .regular })
-                    #expect(edgeBackdrops.count == 1, "The flush navigation column frosts the desktop itself")
+                    #expect(edgeBackdrops.isEmpty, "Navigation must share native glass rather than retain a sidebar blur")
                     #expect(edgeBackdrops.allSatisfy { $0.blendingMode == .behindWindow })
                 } else {
                     #expect(glass.isEmpty, "\(mode), dark=\(dark): must avoid translucent layers")

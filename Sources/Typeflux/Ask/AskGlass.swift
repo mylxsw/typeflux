@@ -97,6 +97,7 @@ extension EnvironmentValues {
 /// The launcher's floating card. It replaces the opaque `launcherSurface`
 /// with glass so the panel reads as part of whatever window it floats over.
 struct AskGlassBackground: View {
+    @Environment(\.interfaceStyle) private var style
     @Environment(\.liquidGlassIntensity) private var intensity
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -109,11 +110,8 @@ struct AskGlassBackground: View {
     /// `.circular` for pills: a continuous corner near half the height draws a
     /// stray sliver at each end of the outline.
     var cornerStyle: RoundedCornerStyle = .continuous
-    /// Large launchers use a diffuse backdrop and quieter native optics.
-    /// Small popovers and conversation chrome retain the regular glass policy.
-    var diffuseLauncher = false
-
-    private var usesDiffuseBackdrop: Bool { diffuseLauncher }
+    /// Every surface follows the global style, regardless of its window or placement.
+    private var usesDiffuseBackdrop: Bool { style == .frosted }
     private var launcherTintOpacity: Double { 0.48 + intensity.value * 0.30 }
     private var launcherTint: Color { AskTheme.launcherGlassTint }
 
@@ -121,12 +119,12 @@ struct AskGlassBackground: View {
 
     private var effectiveMaterial: AskGlassMaterial {
         Self.effectiveMaterial(material, reduceTransparency: reduceTransparency,
-                               increasedContrast: contrast == .increased)
+                               increasedContrast: contrast == .increased, style: style)
     }
 
     static func effectiveMaterial(_ material: AskGlassMaterial, reduceTransparency: Bool,
-                                  increasedContrast: Bool) -> AskGlassMaterial {
-        reduceTransparency || increasedContrast ? .opaque : material
+                                  increasedContrast: Bool, style: InterfaceStyle = .liquidGlass) -> AskGlassMaterial {
+        !style.usesGlass || reduceTransparency || increasedContrast ? .opaque : material
     }
 
     var body: some View {
@@ -195,7 +193,7 @@ struct AskGlassBackground: View {
     /// System HUD blur spreads backdrop colors without the bright regular-glass
     /// backplate. No fixed gradients or private blur filters are involved.
     private var diffuseBackdrop: some View {
-        StudioVisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow, cornerRadius: corner)
+        StudioVisualEffectBlur(material: .hudWindow, blendingMode: placement.blending, cornerRadius: corner)
     }
 
     /// Bright on the light-facing corner, fading along the edge.
@@ -213,6 +211,37 @@ struct AskGlassBackground: View {
             ),
             lineWidth: 1
         )
+    }
+}
+
+/// Adapts the shared material to capsules, circles and rounded controls without
+/// maintaining a separate tint, accessibility or native-glass implementation.
+struct StyledGlassShapeBackground<S: InsettableShape>: View {
+    @Environment(\.interfaceStyle) private var style
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.askGlassMaterialOverride) private var materialOverride
+    let shape: S
+    var cornerRadius: CGFloat? = nil
+    var opaqueFill: Color = AskTheme.glassFill
+    var placement: AskGlassPlacement = .inWindow
+
+    var body: some View {
+        GeometryReader { geometry in
+            AskGlassBackground(
+                material: materialOverride ?? .resolve(reduceTransparency: reduceTransparency, style: style),
+                corner: cornerRadius ?? min(geometry.size.width, geometry.size.height) / 2,
+                opaqueFill: opaqueFill, placement: placement
+            )
+        }
+        .clipShape(shape)
+        .allowsHitTesting(false)
+    }
+}
+
+extension View {
+    func styledGlassBackground<S: InsettableShape>(in shape: S, cornerRadius: CGFloat? = nil,
+                                                  opaqueFill: Color = AskTheme.glassFill) -> some View {
+        background(StyledGlassShapeBackground(shape: shape, cornerRadius: cornerRadius, opaqueFill: opaqueFill))
     }
 }
 
@@ -336,7 +365,7 @@ struct AskInWindowGlass: ViewModifier {
             .overlay(shape.strokeBorder(AskTheme.border).allowsHitTesting(false))
             .overlay {
                 // Native glass owns its highlights; draw a rim only for legacy blur.
-                if material == .visualEffect {
+                if material == .visualEffect, style != .frosted {
                     shape.strokeBorder(AskRimLight.gradient(dark: colorScheme == .dark), lineWidth: 1)
                         .allowsHitTesting(false)
                 }

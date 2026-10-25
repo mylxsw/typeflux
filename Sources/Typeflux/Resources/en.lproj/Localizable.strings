@@ -21,6 +21,7 @@
 "appIcon.hairyPuppet" = "Furry puppet";
 "settings.appIcon.title" = "App icon";
 "settings.appIcon.note" = "Changes appear in the Dock immediately. The app file in Finder keeps the default icon.";
+"interfaceStyle.frosted" = "Frosted";
 "interfaceStyle.liquidGlass" = "Liquid Glass";
 "interfaceStyle.classic" = "Classic";
 

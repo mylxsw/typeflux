@@ -3,15 +3,18 @@ import SwiftUI
 
 /// The app-wide visual language chosen in Settings › Interface style. It decides
 /// how the recording capsule, launcher, chat, clipboard, notebooks, word book,
-/// settings windows and their menus are drawn: Liquid Glass, or the flat opaque surfaces macOS
-/// used before it. Stored under `ui.overlayStyle`, its name from when it only
-/// styled the capsule, so existing choices carry over.
+/// settings windows and their menus are drawn: Frosted, Liquid Glass, or Classic.
+/// Stored under `ui.overlayStyle`, its name from when it only styled the capsule,
+/// so existing choices carry over.
 enum InterfaceStyle: String, CaseIterable, Codable {
+    case frosted
     case liquidGlass
     case classic
 
     var displayName: String {
         switch self {
+        case .frosted:
+            L("interfaceStyle.frosted")
         case .liquidGlass:
             L("interfaceStyle.liquidGlass")
         case .classic:
@@ -20,7 +23,15 @@ enum InterfaceStyle: String, CaseIterable, Codable {
     }
 
     /// Whether surfaces may be translucent glass. Classic draws every surface opaque.
-    var usesGlass: Bool { self == .liquidGlass }
+    var usesGlass: Bool { self != .classic }
+
+    var ringStyle: RingStyle {
+        switch self {
+        case .frosted: .frosted
+        case .liquidGlass: .liquidGlass
+        case .classic: .classic
+        }
+    }
 }
 
 extension EnvironmentValues {

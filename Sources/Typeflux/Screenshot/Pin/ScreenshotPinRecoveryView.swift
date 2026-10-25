@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 
 /// Controls that stay clickable above a mouse-transparent pin, including very small pins.
 @MainActor
@@ -10,16 +11,14 @@ final class ScreenshotPinRecoveryView: NSView {
     let restoreButton = NSButton()
     let closeButton = NSButton()
 
-    init() {
+    init(settingsStore: SettingsStore = SettingsStore()) {
         super.init(frame: CGRect(origin: .zero, size: Self.size))
-        let background = NSVisualEffectView(frame: bounds)
-        background.material = .popover
-        background.blendingMode = .behindWindow
-        background.state = .active
+        let background = NSHostingView(rootView: StyledGlassShapeBackground(
+            shape: RoundedRectangle(cornerRadius: 9), cornerRadius: 9,
+            opaqueFill: AskTheme.popoverSurface, placement: .floating
+        ).interfaceStyle(following: InterfaceStyleObserver(settings: settingsStore)))
+        background.frame = bounds
         background.autoresizingMask = [.width, .height]
-        background.wantsLayer = true
-        background.layer?.cornerRadius = 9
-        background.layer?.masksToBounds = true
         addSubview(background)
 
         configure(restoreButton, symbol: "cursorarrow", label: L("menu.pins.restoreMouse"),

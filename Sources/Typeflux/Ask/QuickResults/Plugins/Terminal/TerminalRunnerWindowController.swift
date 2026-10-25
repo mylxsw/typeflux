@@ -78,6 +78,7 @@ final class TerminalRunnerWindowController: NSObject, NSWindowDelegate {
     let window: TerminalRunnerPanel
     var onClose: (() -> Void)?
 
+    private let interfaceStyleObserver = InterfaceStyleObserver(settings: SettingsStore())
     private let services: TerminalRunnerServices
     private let terminal: TerminalRunnerTerminalView
     private(set) var pinned: Bool
@@ -138,8 +139,10 @@ final class TerminalRunnerWindowController: NSObject, NSWindowDelegate {
             togglePin: { [weak self] in self?.setPinned(!(self?.pinned ?? false)) }
         )
         let root = TerminalRunnerView(model: model, terminal: terminal, actions: actions, pinned: pinnedBinding)
-        let hosting = NSHostingView(rootView: root)
+        let hosting = NSHostingView(rootView: root.interfaceStyle(following: interfaceStyleObserver))
         hosting.sizingOptions = []
+        window.isOpaque = false
+        window.backgroundColor = .clear
         window.contentView = hosting
     }
 

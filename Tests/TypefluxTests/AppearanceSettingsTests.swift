@@ -85,7 +85,7 @@ struct AppearanceSettingsTests {
                     #expect(settings.appearanceMode == appearance)
                     #expect(model.appearanceMode == appearance)
                 }
-                for style in [InterfaceStyle.classic, .liquidGlass] {
+                for style in InterfaceStyle.allCases {
                     try await readyButton(style.displayName, in: host).press()
                     try await UI.wait { hasSlider(host) == style.usesGlass }
                     #expect(settings.interfaceStyle == style)

@@ -39,7 +39,7 @@ struct RecentInputMemoryManagementView: View {
             }
         }
         .frame(width: 900, height: min(680, max(480, (NSScreen.main?.visibleFrame.height ?? 800) - 100)))
-        .background(ModelVisualStyle.canvas)
+        .background(AskWindowBackdrop())
         .confirmationDialog(deletionTitle, isPresented: Binding(
             get: { pendingDeletion != nil }, set: { if !$0 { pendingDeletion = nil } }
         ), titleVisibility: .visible) {

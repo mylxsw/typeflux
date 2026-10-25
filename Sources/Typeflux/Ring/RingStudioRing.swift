@@ -57,15 +57,8 @@ struct RingStudioRing: View {
         .animation(.spring(response: 0.3, dampingFraction: 0.82), value: slots.map(\.id))
     }
 
-    @ViewBuilder private var surface: some View {
-        switch style {
-        case .classic:
-            LinearGradient(colors: [Color(white: 0.08), Color(white: 0.115)], startPoint: .top, endPoint: .bottom)
-        case .frosted:
-            Rectangle().fill(.regularMaterial).overlay(Color(white: 0.1).opacity(0.55))
-        case .liquidGlass:
-            Rectangle().fill(.ultraThinMaterial).overlay(Color.white.opacity(0.05))
-        }
+    private var surface: some View {
+        StyledGlassShapeBackground(shape: Circle(), opaqueFill: Color(white: 0.1))
     }
 
     @ViewBuilder private func sectorFill(index: Int, highlighted: Bool) -> some View {

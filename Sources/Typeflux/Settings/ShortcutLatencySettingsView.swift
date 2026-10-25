@@ -125,7 +125,7 @@ struct ShortcutLatencyDashboard: View {
             .padding(20)
             footer
         }
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(AskWindowBackdrop())
         .accessibilityIdentifier("shortcutDiagnostics.dashboard")
         .task(id: selectionKey) {
             guard automaticRefresh else { return }

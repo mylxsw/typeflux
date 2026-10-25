@@ -71,7 +71,7 @@ final class RingControllerTests: XCTestCase {
     func testConfiguresTheMenuAndFollowsSettings() {
         let controller = makeController()
         XCTAssertEqual(menu.items.count, 6)
-        XCTAssertEqual(menu.style, .frosted)
+        XCTAssertEqual(menu.style, .liquidGlass)
         XCTAssertEqual(menu.centerTitle, "Typeflux")
         XCTAssertEqual(controller.configuration, store.ringConfiguration)
 
@@ -84,6 +84,20 @@ final class RingControllerTests: XCTestCase {
                                                  label: "Screenshot\nTranslation", symbol: "app",
                                                  bundleIdentifier: "com.apple.Notes")])
         XCTAssertEqual(menu.style, .liquidGlass)
+    }
+
+    func testRingFollowsGlobalStyleAcrossStoresAndIgnoresLegacyOverride() {
+        let controller = makeController()
+        let otherStore = SettingsStore(defaults: defaults)
+        for style in InterfaceStyle.allCases {
+            otherStore.interfaceStyle = style
+            XCTAssertEqual(menu.style, style.ringStyle)
+            var legacy = store.ringConfiguration
+            legacy.style = style == .classic ? .liquidGlass : .classic
+            store.ringConfiguration = legacy
+            XCTAssertEqual(menu.style, style.ringStyle)
+        }
+        withExtendedLifetime(controller) {}
     }
 
     func testHoldAndReleaseRunsThePointedSlice() async throws {

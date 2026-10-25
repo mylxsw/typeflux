@@ -95,7 +95,7 @@ struct AskFilePreviewView: View {
                 textLocationFallback(content)
                 if content.kind == .video {
                     Text(AskFilePreviewContent.time(content.duration) + " · " + L("ask.preview.noAutoplay"))
-                        .font(.system(size: 10)).padding(7).background(.ultraThinMaterial, in: Capsule()).padding(10)
+                        .font(.system(size: 10)).padding(7).styledGlassBackground(in: Capsule()).padding(10)
                 }
             }
         case .pdf:
@@ -129,7 +129,7 @@ struct AskFilePreviewView: View {
     @ViewBuilder private func textLocationFallback(_ content: AskFilePreviewContent) -> some View {
         if content.imageTextLocated == false {
             Text(L("ask.preview.textLocationUnavailable"))
-                .font(.system(size: 10)).padding(7).background(.ultraThinMaterial, in: Capsule()).padding(10)
+                .font(.system(size: 10)).padding(7).styledGlassBackground(in: Capsule()).padding(10)
         }
     }
 

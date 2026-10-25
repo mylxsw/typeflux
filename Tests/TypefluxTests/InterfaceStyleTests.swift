@@ -54,7 +54,8 @@ struct InterfaceStyleTests {
                                          supportsLiquidGlass: true) == .liquidGlass)
     }
 
-    @Test func onlyLiquidGlassUsesGlass() {
+    @Test func bothTranslucentStylesUseGlass() {
+        #expect(InterfaceStyle.frosted.usesGlass)
         #expect(InterfaceStyle.liquidGlass.usesGlass)
         #expect(!InterfaceStyle.classic.usesGlass)
     }
@@ -183,12 +184,14 @@ struct InterfaceStyleTests {
         hosting.frame = CGRect(x: 0, y: 0, width: 20, height: 20)
         hosting.layoutSubtreeIfNeeded()
         #expect(seen.last == .classic)
-        settings.interfaceStyle = .liquidGlass
-        for _ in 0 ..< 50 where seen.last != .liquidGlass {
-            hosting.layoutSubtreeIfNeeded()
-            try await Task.sleep(for: .milliseconds(10))
+        for style in InterfaceStyle.allCases {
+            settings.interfaceStyle = style
+            for _ in 0 ..< 50 where seen.last != style {
+                hosting.layoutSubtreeIfNeeded()
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            #expect(seen.last == style)
         }
-        #expect(seen.last == .liquidGlass)
     }
 
     @Test func floatingCardsTakeTheStyleOfTheirAnchor() throws {
@@ -234,7 +237,10 @@ struct InterfaceStyleTests {
     // MARK: - Settings copy
 
     private func strings(_ language: String) throws -> [String: String] {
-        let path = try #require(Bundle.module.path(forResource: language, ofType: "lproj"))
+        let candidates = [language, language.lowercased()]
+        let path = try #require(candidates.lazy.compactMap {
+            Bundle.module.path(forResource: $0, ofType: "lproj")
+        }.first)
         let url = URL(fileURLWithPath: path).appendingPathComponent("Localizable.strings")
         return try #require(NSDictionary(contentsOf: url) as? [String: String])
     }
@@ -247,6 +253,7 @@ struct InterfaceStyleTests {
             let table = try strings(language)
             #expect(table["settings.interfaceStyle.title"] == title, "\(language)")
             #expect(table["interfaceStyle.classic"] == classic, "\(language)")
+            #expect(table["interfaceStyle.frosted"]?.isEmpty == false, "\(language)")
             #expect(table["interfaceStyle.liquidGlass"] == "Liquid Glass", "\(language)")
             #expect(table["settings.interfaceStyle.subtitle"]?.isEmpty == false, "\(language)")
             #expect(!table.keys.contains { $0.contains("overlayStyle") }, "\(language) keeps a stale key")

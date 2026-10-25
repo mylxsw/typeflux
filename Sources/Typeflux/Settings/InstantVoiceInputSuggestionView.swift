@@ -36,12 +36,8 @@ struct InstantVoiceInputSuggestionView: View {
         }
         .padding(24)
         .frame(width: 440)
-        .background {
-            ZStack {
-                Rectangle().fill(.ultraThinMaterial)
-                StudioTheme.modalSurface
-            }
-        }
+        .styledGlassBackground(in: RoundedRectangle(cornerRadius: 16, style: .continuous),
+                               cornerRadius: 16, opaqueFill: StudioTheme.modalSurface)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }

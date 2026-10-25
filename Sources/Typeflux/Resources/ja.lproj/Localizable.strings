@@ -21,6 +21,7 @@
 "appIcon.hairyPuppet" = "ふわふわパペット";
 "settings.appIcon.title" = "アプリアイコン";
 "settings.appIcon.note" = "変更は Dock にすぐ反映されます。Finder のアプリファイルには標準アイコンが表示されます。";
+"interfaceStyle.frosted" = "すりガラス";
 "interfaceStyle.liquidGlass" = "Liquid Glass";
 "interfaceStyle.classic" = "クラシック";
 

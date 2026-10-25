@@ -1314,7 +1314,7 @@ struct StudioView: View {
         }
         .padding(24)
         .frame(width: 520)
-        .background(ModelVisualStyle.canvas)
+        .background(AskWindowBackdrop())
     }
 
     private var mcpServerDialog: some View {
@@ -1431,13 +1431,7 @@ struct StudioView: View {
         }
         .padding(32)
         .frame(width: 520)
-        .background(
-            ZStack {
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                StudioTheme.modalSurface
-            }
-        )
+        .styledGlassBackground(in: Rectangle(), cornerRadius: 0, opaqueFill: StudioTheme.modalSurface)
     }
 
     private func submitVocabularyTerm() {

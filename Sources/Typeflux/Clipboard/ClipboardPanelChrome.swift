@@ -162,7 +162,7 @@ struct ClipboardConfirmationBar: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .styledGlassBackground(in: RoundedRectangle(cornerRadius: 10, style: .continuous), cornerRadius: 10)
         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color.primary.opacity(0.12)))
         .shadow(color: .black.opacity(0.2), radius: 10, y: 4)
         .padding(.horizontal, 12)

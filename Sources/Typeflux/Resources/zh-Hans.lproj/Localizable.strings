@@ -21,6 +21,7 @@
 "appIcon.hairyPuppet" = "毛茸茸布偶";
 "settings.appIcon.title" = "应用图标";
 "settings.appIcon.note" = "切换后立即显示在程序坞；访达中的应用文件仍显示默认图标。";
+"interfaceStyle.frosted" = "磨砂";
 "interfaceStyle.liquidGlass" = "Liquid Glass";
 "interfaceStyle.classic" = "经典";
 

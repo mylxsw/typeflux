@@ -82,7 +82,7 @@ struct AddModelEndpointView: View {
         .buttonStyle(ModelActionStyle())
         .padding(24)
         .frame(width: 520)
-        .background(ModelVisualStyle.canvas)
+        .background(AskWindowBackdrop())
     }
 
     private var keyField: some View {

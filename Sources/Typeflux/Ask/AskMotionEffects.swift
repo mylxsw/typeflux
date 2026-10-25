@@ -195,6 +195,7 @@ struct AskWorkspaceCardDepth: ViewModifier {
     var enabled: Bool
     var corner: CGFloat
     var material: AskGlassMaterial? = nil
+    @Environment(\.interfaceStyle) private var style
     @Environment(\.colorScheme) private var colorScheme
 
     func body(content: Content) -> some View {
@@ -211,7 +212,7 @@ struct AskWorkspaceCardDepth: ViewModifier {
             content
                 .background(AskOuterShadow(shape: shape, elevation: .panel))
                 .overlay {
-                    if material == .visualEffect {
+                    if material == .visualEffect, style != .frosted {
                         shape.strokeBorder(AskRimLight.gradient(dark: colorScheme == .dark), lineWidth: 1)
                             .allowsHitTesting(false)
                     }

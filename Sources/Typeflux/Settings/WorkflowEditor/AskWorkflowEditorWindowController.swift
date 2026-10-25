@@ -5,6 +5,8 @@ import SwiftUI
 /// new-workflow menu all open it here; it switches to the workflow they name.
 @MainActor
 final class AskWorkflowEditorWindowController: NSObject, NSWindowDelegate {
+    private lazy var interfaceStyleObserver = InterfaceStyleObserver(settings: settings)
+
     static let shared = AskWorkflowEditorWindowController()
 
     /// The Ask workspace's API, session and models, so the assistant's conversations
@@ -97,7 +99,9 @@ final class AskWorkflowEditorWindowController: NSObject, NSWindowDelegate {
         // The header row is the title bar: the traffic lights sit over the sidebar.
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
-        window.contentView = NSHostingView(rootView: view)
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.contentView = NSHostingView(rootView: view.interfaceStyle(following: interfaceStyleObserver))
         window.minSize = NSSize(width: 960, height: 560)
         window.setFrameAutosaveName("AskWorkflowEditor")
         if window.frame.origin == .zero {

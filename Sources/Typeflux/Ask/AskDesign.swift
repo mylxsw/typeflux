@@ -507,8 +507,7 @@ struct AskComposerChrome: Equatable {
 
     /// The card's glass, falling back to `fill` when transparency is reduced.
     func glassBackground(_ material: AskGlassMaterial) -> AskGlassBackground {
-        AskGlassBackground(material: material, corner: corner, opaqueFill: fill, placement: placement,
-                           diffuseLauncher: placement == .floating)
+        AskGlassBackground(material: material, corner: corner, opaqueFill: fill, placement: placement)
     }
 }
 
@@ -1339,42 +1338,26 @@ enum AskPresentation {
     }
 }
 
-/// The conversation window's surface under the transcript; the sidebar beside
-/// it lays `AskEdgeColumnBackdrop` over it. It reuses the settings window's
-/// tokens and material stack, so both windows read as one app.
-/// The workspace's canvas: frosted glass over the desktop. The window blurs
-/// whatever is behind it and lays the app's own tint over that, so a colourful
-/// wallpaper reads only as a soft cast, never as the window's colour. The
-/// classic style is an opaque canvas instead.
+/// Every app window uses the selected material; classic retains its opaque canvas.
 struct AskWindowBackdrop: View {
-    @Environment(\.liquidGlassIntensity) private var intensity
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.interfaceStyle) private var style
+
+    @Environment(\.askGlassMaterialOverride) private var materialOverride
 
     /// The app's own tint over the blurred desktop.
     static func base(dark: Bool) -> Color {
         dark ? Color(red: 0.094, green: 0.094, blue: 0.110) : Color(red: 1, green: 1, blue: 1)
     }
 
-    /// How much of the tint covers the blur: enough to keep the window calm
-    /// and legible on any wallpaper, light enough that it still reads as frosted.
-    static func tintOpacity(dark: Bool, reduceTransparency: Bool) -> Double {
-        if reduceTransparency { return 1 }
-        // The system material already supplies a readable light backplate.
-        // A heavy white overlay erased its behind-window colour completely.
-        return dark ? 0.68 : 0.22
-    }
-
     var body: some View {
-        let dark = colorScheme == .dark
-        ZStack {
-            if style.usesGlass && !reduceTransparency && contrast != .increased {
-                StudioVisualEffectBlur(material: .underWindowBackground, blendingMode: .behindWindow, cornerRadius: nil)
-                Self.base(dark: dark).opacity(intensity.backdropOpacity(Self.tintOpacity(dark: dark, reduceTransparency: false)))
-            } else if style.usesGlass {
-                Self.base(dark: dark)
+        Group {
+            if style.usesGlass {
+                AskGlassBackground(material: materialOverride ?? .resolve(reduceTransparency: reduceTransparency,
+                                                                          style: style),
+                                   corner: 0, opaqueFill: Self.base(dark: colorScheme == .dark))
             } else {
                 AskClassic.canvas
             }
@@ -1384,20 +1367,12 @@ struct AskWindowBackdrop: View {
     }
 }
 
-/// The surface of a column flush against the window edge: the sidebar, the
-/// usage panel and the drawers. It frosts the desktop like the window, under a
-/// lighter tint, so the column reads as clearer glass beside the denser
-/// reading canvas, the two parted by tone rather than by a floating card.
-/// Without transparency it is a solid step off the canvas.
+/// Flush navigation columns share the window's selected material.
 struct AskEdgeColumnBackdrop: View {
-    @Environment(\.liquidGlassIntensity) private var intensity
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.askGlassMaterialOverride) private var materialOverride
-
-    /// Lighter than the canvas's tint, so more of the desktop shows through.
-    static func tintOpacity(dark: Bool) -> Double { dark ? 0.40 : 0.08 }
 
     /// The opaque column's step off the canvas: lifted in dark, recessed in light.
     static func opaqueShade(dark: Bool) -> Color {
@@ -1418,10 +1393,8 @@ struct AskEdgeColumnBackdrop: View {
         ZStack {
             if Self.usesTransparency(materialOverride: materialOverride, reduceTransparency: reduceTransparency,
                                      increasedContrast: contrast == .increased) {
-                // Behind-window blending samples the desktop itself, so the
-                // canvas's heavier tint underneath does not show through.
-                StudioVisualEffectBlur(material: .sidebar, blendingMode: .behindWindow, cornerRadius: nil)
-                AskWindowBackdrop.base(dark: dark).opacity(intensity.backdropOpacity(Self.tintOpacity(dark: dark)))
+                AskGlassBackground(material: materialOverride ?? .resolve(reduceTransparency: reduceTransparency),
+                                   corner: 0, opaqueFill: AskWindowBackdrop.base(dark: dark))
             } else {
                 AskWindowBackdrop.base(dark: dark)
                 Self.opaqueShade(dark: dark)

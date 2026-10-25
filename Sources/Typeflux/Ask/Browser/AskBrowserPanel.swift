@@ -219,7 +219,7 @@ extension AskBrowserPanel {
         }
         .controlSize(.small)
         .padding(.leading, 12).padding(.trailing, 6).padding(.vertical, 6)
-        .background(.regularMaterial, in: Capsule())
+        .styledGlassBackground(in: Capsule())
         .overlay(Capsule().strokeBorder(AskTheme.separator))
         .shadow(color: .black.opacity(0.2), radius: 12, y: 4)
     }

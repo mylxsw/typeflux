@@ -9,6 +9,10 @@ private final class TransparentAskAnswerHostingView<Content: View>: NSHostingVie
 }
 
 final class AskAnswerWindowController: NSObject {
+    private lazy var interfaceStyleObserver = MainActor.assumeIsolated {
+        InterfaceStyleObserver(settings: settingsStore)
+    }
+
     fileprivate enum Metrics {
         static let windowWidth: CGFloat = 790
         static let windowHeight: CGFloat = 620
@@ -86,9 +90,9 @@ final class AskAnswerWindowController: NSObject {
     private final class WindowSession {
         let model: Model
         let window: NSWindow
-        let hostingView: NSHostingView<AskAnswerWindowView>
+        let hostingView: NSHostingView<AnyView>
 
-        init(model: Model, window: NSWindow, hostingView: NSHostingView<AskAnswerWindowView>) {
+        init(model: Model, window: NSWindow, hostingView: NSHostingView<AnyView>) {
             self.model = model
             self.window = window
             self.hostingView = hostingView
@@ -116,7 +120,8 @@ final class AskAnswerWindowController: NSObject {
             guard let self else { return }
             for session in sessions.values {
                 session.model.appearanceMode = self.settingsStore.appearanceMode
-                session.hostingView.rootView = AskAnswerWindowView(model: session.model)
+                session.hostingView.rootView = AnyView(AskAnswerWindowView(model: session.model)
+                    .interfaceStyle(following: interfaceStyleObserver))
                 applyAppearance(to: session.window)
             }
         }
@@ -206,7 +211,7 @@ final class AskAnswerWindowController: NSObject {
     }
 
     private func makeWindowSession(model: Model) -> WindowSession {
-        let rootView = AskAnswerWindowView(model: model)
+        let rootView = AnyView(AskAnswerWindowView(model: model).interfaceStyle(following: interfaceStyleObserver))
         let hosting = TransparentAskAnswerHostingView(rootView: rootView)
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: Metrics.windowWidth, height: Metrics.windowHeight),
@@ -225,7 +230,7 @@ final class AskAnswerWindowController: NSObject {
         window.isOpaque = false
         window.delegate = self
         window.minSize = NSSize(width: Metrics.minWindowWidth, height: Metrics.minWindowHeight)
-        window.backgroundColor = NSColor(Palette.windowBackground)
+        window.backgroundColor = .clear
         window.contentView = hosting
         window.level = .normal
         window.collectionBehavior = [.moveToActiveSpace, .fullScreenPrimary]
@@ -254,7 +259,7 @@ final class AskAnswerWindowController: NSObject {
 
     private func applyAppearance(to window: NSWindow) {
         window.appearance = AppAppearance.nsAppearance(for: settingsStore.appearanceMode)
-        window.backgroundColor = NSColor(Palette.windowBackground)
+        window.backgroundColor = .clear
     }
 }
 
@@ -313,28 +318,7 @@ private struct AskAnswerWindowView: View {
     }
 
     private var background: some View {
-        ZStack {
-            Rectangle()
-                .fill(.regularMaterial)
-
-            LinearGradient(
-                colors: [
-                    AskAnswerWindowController.Palette.windowBackground,
-                    AskAnswerWindowController.Palette.windowBackgroundLower
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-
-            LinearGradient(
-                colors: [
-                    StudioTheme.windowHighlight.opacity(0.36),
-                    Color.clear
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
+        AskWindowBackdrop()
     }
 
     private var promptSection: some View {

@@ -40,7 +40,7 @@ struct ModelCatalogView: View {
                     }
                 }
             }
-        }.padding(24).frame(width: 580, height: 470).background(ModelVisualStyle.canvas)
+        }.padding(24).frame(width: 580, height: 470).background(AskWindowBackdrop())
             .buttonStyle(ModelActionStyle())
     }
 

@@ -92,6 +92,10 @@ final class RingController {
                     MainActor.assumeIsolated { self?.reload() }
                 })
         }
+        observers.append(NotificationCenter.default.addObserver(forName: .interfaceStyleDidChange, object: nil,
+                                                                queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.applyPage() }
+        })
     }
 
     deinit {
@@ -225,7 +229,7 @@ final class RingController {
             center = canSwitchPage ? RingMenuCenter(pageCount: 2, pageIndex: 1) : .plain
         }
         menu.onCenterClick = canSwitchPage ? { [weak self] in self?.switchPage() } : nil
-        let next = RingMenuPresentation(items: Self.items(for: displayedActions), style: configuration.style,
+        let next = RingMenuPresentation(items: Self.items(for: displayedActions), style: settingsStore.interfaceStyle.ringStyle,
                                         centerTitle: title, center: center)
         guard next != presented else { return }
         presented = next

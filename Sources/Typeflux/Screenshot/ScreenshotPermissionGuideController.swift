@@ -11,6 +11,7 @@ final class ScreenshotPermissionGuideController: ScreenshotPermissionGuidePresen
         @Published var stillMissing = false
     }
 
+    private let interfaceStyleObserver = InterfaceStyleObserver(settings: SettingsStore())
     private(set) var window: NSPanel?
     private(set) var model = Model()
     private var actions: ScreenshotPermissionGuideActions?
@@ -30,7 +31,7 @@ final class ScreenshotPermissionGuideController: ScreenshotPermissionGuidePresen
             recheck: { [weak self] in self?.recheck() },
             restart: { [weak self] in self?.actions?.restart() },
             later: { [weak self] in self?.actions?.later() }
-        ))
+        ).interfaceStyle(following: interfaceStyleObserver))
         window.setContentSize(window.contentView?.fittingSize ?? CGSize(width: 460, height: 320))
         let screen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
         if let area = screen?.visibleFrame {
@@ -71,6 +72,8 @@ final class ScreenshotPermissionGuideController: ScreenshotPermissionGuidePresen
         let panel = NSPanel(contentRect: CGRect(x: 0, y: 0, width: 460, height: 320),
                             styleMask: [.titled, .closable, .fullSizeContentView], backing: .buffered, defer: true)
         panel.titlebarAppearsTransparent = true
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
         panel.identifier = ScreenshotCaptureWindowPolicy.permissionIdentifier
         panel.titleVisibility = .hidden
         panel.isMovableByWindowBackground = true
@@ -130,6 +133,7 @@ struct ScreenshotPermissionGuideView: View {
         .padding(.top, 28)
         .padding(.bottom, 20)
         .frame(width: 520)
+        .background(AskWindowBackdrop())
     }
 
     private func step(_ number: Int, _ text: String) -> some View {

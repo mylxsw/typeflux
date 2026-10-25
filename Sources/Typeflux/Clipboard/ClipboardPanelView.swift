@@ -291,7 +291,7 @@ extension ClipboardPanelView {
                 .font(.system(size: 12))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 7)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .styledGlassBackground(in: RoundedRectangle(cornerRadius: 8, style: .continuous), cornerRadius: 8)
                 .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color.primary.opacity(0.1)))
                 .shadow(color: .black.opacity(0.2), radius: 10, y: 4)
                 .padding(.bottom, 52)

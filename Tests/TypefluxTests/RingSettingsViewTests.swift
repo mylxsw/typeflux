@@ -118,6 +118,39 @@ struct RingSettingsViewTests {
         #expect(store.ringConfiguration == original)
     }
 
+    @Test
+    func `ring settings follow global appearance without a separate style override`() async throws {
+        _ = NSApplication.shared
+        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+        let previousAccessibility = NSApp.accessibilityAttributeValue(attribute)
+        NSApp.accessibilitySetValue(true, forAttribute: attribute)
+        defer { NSApp.accessibilitySetValue(previousAccessibility, forAttribute: attribute) }
+        try await SettingsBehaviorTestSupport.withFixture { store in
+            let observer = InterfaceStyleObserver(settings: store)
+            let original = store.ringConfiguration
+            try await SettingsBehaviorTestSupport.withWindow(
+                RingSettingsView(settingsStore: store).interfaceStyle(following: observer), width: 860, height: 900
+            ) { _, hosting in
+                try await SettingsBehaviorTestSupport.wait {
+                    SettingsBehaviorTestSupport.elements(in: hosting).contains {
+                        $0.value("accessibilityIdentifier") as? String == "ring.hotkey"
+                    }
+                }
+                for style in InterfaceStyle.allCases {
+                    store.interfaceStyle = style
+                    hosting.layoutSubtreeIfNeeded()
+                    let elements = SettingsBehaviorTestSupport.elements(in: hosting)
+                    let ids = Set(elements.compactMap { $0.value("accessibilityIdentifier") as? String })
+                    #expect(ids.contains("ring.hotkey"))
+                    #expect(ids.contains("ring.centerTitle"))
+                    #expect(!ids.contains { $0.hasPrefix("ring.style.") })
+                    #expect(observer.style == style)
+                    #expect(store.ringConfiguration == original)
+                }
+            }
+        }
+    }
+
     private var sample: [RingAction] {
         RingConfiguration.defaultActions()
     }

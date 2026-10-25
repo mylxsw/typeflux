@@ -35,7 +35,7 @@ struct TerminalRunnerView: View {
             footer
         }
         .environment(\.tfControlSize, .small)
-        .background(Color(nsColor: TerminalRunnerPalette.chrome))
+        .background(AskWindowBackdrop())
         // The header is the title bar: it runs under the traffic-light buttons.
         .ignoresSafeArea(.container, edges: .top)
     }

@@ -8,6 +8,7 @@ struct OnboardingView: View {
     @ObservedObject var viewModel: OnboardingViewModel
     let appearanceMode: AppearanceMode
     @ObservedObject private var localization = AppLocalization.shared
+    @Environment(\.interfaceStyle) private var interfaceStyle
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var heroSlide = 0
@@ -61,12 +62,18 @@ struct OnboardingView: View {
     // MARK: - Chrome
 
     private var background: some View {
-        ZStack {
-            StudioTheme.windowBackground
-            RadialGradient(
-                colors: [StudioTheme.accent.opacity(isDarkMode ? 0.12 : 0.07), .clear],
-                center: .topTrailing, startRadius: 20, endRadius: 520
-            )
+        Group {
+            if interfaceStyle.usesGlass {
+                AskWindowBackdrop()
+            } else {
+                ZStack {
+                    StudioTheme.windowBackground
+                    RadialGradient(
+                        colors: [StudioTheme.accent.opacity(isDarkMode ? 0.12 : 0.07), .clear],
+                        center: .topTrailing, startRadius: 20, endRadius: 520
+                    )
+                }
+            }
         }
         .ignoresSafeArea()
     }

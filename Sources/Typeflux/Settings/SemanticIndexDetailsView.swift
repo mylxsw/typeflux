@@ -65,7 +65,7 @@ struct SemanticIndexDetailsView: View {
             .padding(20)
         }
         .frame(width: 780, height: min(680, max(500, (NSScreen.main?.visibleFrame.height ?? 800) - 100)))
-        .background(ModelVisualStyle.canvas)
+        .background(AskWindowBackdrop())
         .onAppear {
             if service.phase == .ready {
                 section = .completed

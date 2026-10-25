@@ -72,7 +72,7 @@ struct AskTranscriptBottomButton: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(TFColors.textPrimary)
                 .frame(width: 36, height: 36)
-                .background(.regularMaterial, in: Circle())
+                .styledGlassBackground(in: Circle())
                 .overlay(Circle().strokeBorder(TFColors.textPrimary.opacity(hovering ? 0.20 : 0.10), lineWidth: 0.5))
                 .shadow(color: .black.opacity(hovering ? 0.14 : 0.08), radius: 8, y: 3)
                 .contentShape(Circle())

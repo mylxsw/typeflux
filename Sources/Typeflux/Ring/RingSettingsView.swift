@@ -19,6 +19,7 @@ struct RingSettingsView: View {
 
     @State private var tab: Tab
 
+    @Environment(\.interfaceStyle) private var interfaceStyle
     @StateObject private var model: RingSettingsModel
     @StateObject private var shortcuts: HotkeySettingsModel
     @StateObject private var recorder = HotkeyRecorder()
@@ -270,13 +271,6 @@ struct RingSettingsView: View {
                     .accessibilityIdentifier("ring.hoverSound")
             }
             TFDivider.formWithIcon
-            TFFormRow(title: L("ring.style.title"), detail: L("ring.style.detail"), icon: "paintpalette",
-                      controlWidth: .wide) {
-                TFSegmentedControl(options: RingStyle.allCases.map { TFOption($0, $0.title) },
-                                   selection: Binding(get: { configuration.style }, set: model.setStyle),
-                                   fillsWidth: true, identifier: { "ring.style." + $0.rawValue })
-            }
-            TFDivider.formWithIcon
             TFFormRow(title: L("ring.centerTitle.title"), icon: "textformat",
                       controlWidth: .standard) {
                 TextField(RingConfiguration.defaultCenterTitle, text: $centerTitle)
@@ -309,7 +303,7 @@ extension RingSettingsView {
             slots: previewing ? globalSlots : studio.slots,
             selectedIndex: previewing ? nil : studio.selectedIndex,
             mode: previewing ? .overview : studio.canvasMode,
-            style: configuration.style,
+            style: interfaceStyle.ringStyle,
             center: center,
             actionCount: previewing ? configuration.actions.count : actions.count,
             insertionIndexes: previewing ? [] : studio.insertionIndexes,
