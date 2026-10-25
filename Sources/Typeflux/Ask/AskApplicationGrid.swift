@@ -31,6 +31,15 @@ struct AskApplicationTile: View {
                                   immediateLookup: false)
                     .id(app.iconFingerprint)
                     .frame(width: 56, height: 56)
+                    .overlay {
+                        if selected {
+                            // Native app artwork has transparent padding inside its 56-point canvas.
+                            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                                .strokeBorder(AskTheme.accent, lineWidth: 3)
+                                .frame(width: 50, height: 50)
+                                .allowsHitTesting(false)
+                        }
+                    }
                     .accessibilityHidden(true)
                 title.font(.system(size: 12, weight: .medium))
                     .foregroundStyle(StudioTheme.textPrimary)
@@ -39,8 +48,6 @@ struct AskApplicationTile: View {
             .padding(.horizontal, 5)
             .frame(maxWidth: .infinity)
             .frame(height: AskApplicationGrid.tileHeight)
-            .background(selected ? AskTheme.launcherSelection : .clear,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

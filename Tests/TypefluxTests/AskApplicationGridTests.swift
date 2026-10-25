@@ -54,4 +54,40 @@ struct AskApplicationGridTests {
         #expect(searchRenderer.nsImage != nil)
     }
 
+    @Test func selectionOnlyChangesIconOutline() throws {
+        func render(selected: Bool) throws -> NSBitmapImageRep {
+            let app = matches[0].entry
+            let renderer = ImageRenderer(content:
+                AskApplicationTile(app: app, title: Text(app.name), selected: selected, action: {})
+                    .frame(width: 110)
+                    .background(Color.black)
+                    .environment(\.colorScheme, .dark))
+            renderer.scale = 2
+            return NSBitmapImageRep(cgImage: try #require(renderer.cgImage))
+        }
+        let plain = try render(selected: false)
+        let selected = try render(selected: true)
+        #expect(selected.pixelsWide == plain.pixelsWide)
+        #expect(selected.pixelsHigh == plain.pixelsHigh)
+        var changedPixels = 0
+        var bluePixels = 0
+        for y in 0..<selected.pixelsHigh {
+            for x in 0..<selected.pixelsWide {
+                let before = try #require(plain.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB))
+                let after = try #require(selected.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB))
+                let difference = abs(before.redComponent - after.redComponent)
+                    + abs(before.greenComponent - after.greenComponent)
+                    + abs(before.blueComponent - after.blueComponent)
+                if difference > 0.05 {
+                    changedPixels += 1
+                    // The icon occupies the center of the tile, above its unchanged label.
+                    #expect(x >= 54 && x < 166 && y >= 20 && y < 145)
+                    if after.blueComponent > after.redComponent + 0.2 { bluePixels += 1 }
+                }
+            }
+        }
+        #expect(changedPixels > 500)
+        #expect(bluePixels > changedPixels * 9 / 10)
+    }
+
 }
