@@ -1,6 +1,7 @@
 import AppKit
 import Darwin
 import Foundation
+import OSLog
 
 enum FeatureRole: String, Codable, Sendable, CaseIterable {
     case host, chat, launcher, screenshot, clipboard, shortcuts, settings, voice, ring, notes, wordBook, monitor, help, translation, background
@@ -523,7 +524,7 @@ actor FeatureSupervisor {
                     child.process.cancel(); await child.process.value
                         return nil
                     } catch {
-                        NSLog("[Shutdown] %@ did not confirm cleanup: %@", role.rawValue, String(describing: error))
+                        Logger(subsystem: "ai.gulu.app.typeflux", category: "Shutdown").error("Cleanup refused by \(role.rawValue, privacy: .public): \(String(describing: error), privacy: .public)")
                         return role
                     }
                 }
@@ -546,7 +547,7 @@ actor FeatureSupervisor {
                 await child.peer.stop(); child.process.cancel();
                     await child.process.value
             } catch {
-                NSLog("[Shutdown] background did not confirm cleanup: %@", String(describing: error))
+                Logger(subsystem: "ai.gulu.app.typeflux", category: "Shutdown").error("Background cleanup refused: \(String(describing: error), privacy: .public)")
                 stopped = false
                 return false
             }

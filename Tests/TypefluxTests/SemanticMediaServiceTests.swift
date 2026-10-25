@@ -5,6 +5,34 @@ import Testing
 @Suite("Media service scheduling and recovery", .serialized, .exclusiveUIState)
 @MainActor
 struct SemanticMediaServiceTests {
+    @Test(arguments: [false, true])
+    func backgroundShutdownCancelsMediaWaitingForIdle(paused: Bool) async throws {
+        let (service, root, watcher, _, _) = try fixture(idle: false)
+        defer { try? FileManager.default.removeItem(at: root) }
+        #expect(service.setEnabled(true))
+        try await SemanticFileServiceTests.wait { service.indexProgress?.waitingForIdle == true }
+        try #require(service.indexProgress?.waitingForIdle == true)
+        service.pause(paused)
+        let names = AskFileIndex(configuration: { (false, .init()) },
+                                 snapshotURL: root.appendingPathComponent("names.bin"), defaults: service.settings.defaults)
+        let runtime = FeatureBackgroundRuntime(names: names, content: service)
+        do {
+            _ = try await runtime.handle(.init(destination: .background, action: "shutdown"))
+        } catch {
+            await service.shutdown()
+            throw error
+        }
+        #expect(service.phase == .off && !service.isEnabled)
+        #expect(watcher.started.isEmpty)
+        #expect(!service.readers.indexing.isOccupied && !service.readers.priority.isOccupied)
+        #expect(service.settings.semanticFileSearch.enabled)
+        #expect(FileManager.default.fileExists(atPath: service.modelURL.path))
+        #expect(FileManager.default.fileExists(atPath: root.appendingPathComponent("semantic-files.sqlite").path))
+        service.start(force: true)
+        #expect(service.phase == .off, "Late settings callbacks cannot restart a retired service")
+        _ = try await runtime.handle(.init(destination: .background, action: "shutdown"))
+    }
+
     private func fixture(idle: Bool, mediaFailure: Bool = false,
                          idleCheck: (@Sendable () -> Bool)? = nil,
                          mediaBefore: ((SemanticMediaInput) throws -> Void)? = nil) throws

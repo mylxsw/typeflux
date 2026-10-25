@@ -69,6 +69,24 @@ final class SemanticFixtureWatcher: AskFileWatching {
 @Suite("Semantic service lifecycle", .serialized, .exclusiveUIState)
 @MainActor
 struct SemanticFileServiceTests {
+    @Test func shutdownCancelsDownloadWithoutDisablingSearchOrDeletingData() async throws {
+        let (service, root, _, models) = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        #expect(service.setEnabled(true))
+        try await Self.wait { service.phase == .modelRequired }
+        models.delay = .seconds(30)
+        service.downloadModel()
+        try await Self.wait { models.fetchStarted.isCancelled }
+        await service.shutdown()
+        #expect(service.phase == .off)
+        #expect(service.settings.semanticFileSearch.enabled)
+        #expect(FileManager.default.fileExists(atPath: models.source.path))
+        service.start(force: true)
+        service.downloadModel()
+        #expect(service.phase == .off)
+        await service.shutdown()
+    }
+
     func fixture(supported: Bool = true) throws
         -> (SemanticFileSearchService, URL, SemanticFixtureReader, SemanticFixtureModels) {
         let root = try semanticFixture(), suite = "semantic-" + UUID().uuidString

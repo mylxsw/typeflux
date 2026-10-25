@@ -35,7 +35,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     private var remoteEnabled = false
     var isEnabled: Bool {
         if remote { return remoteEnabled && settings.semanticFileSearch.enabled && settings.askQuickFileSearchEnabled }
-        return supported && preferences.enabled && settings.semanticFileSearch.enabled && settings.askQuickFileSearchEnabled
+        return !stopped && supported && preferences.enabled && settings.semanticFileSearch.enabled && settings.askQuickFileSearchEnabled
             && store != nil && scope != nil && (modelReady || hasPublishedContent) && !removing && fingerprint ==
             settingsFingerprint
     }
@@ -117,6 +117,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     private var committedEventID: UInt64 = 0
     private var volumeSignature: String?
     private var removing = false
+    private var stopped = false
     var modelURL: URL {
         directory.appendingPathComponent("embeddinggemma-2-Q8_0.gguf")
     }
@@ -265,6 +266,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
 
     /// Called once by application startup, never by a health factory or recovery.
     func startForApplication(using registry: ModuleRegistry, startModules: Bool = true) async {
+        guard !stopped else { return }
         if remote { remoteSend("start", value: false); return }
         if startModules { _ = await registry.startAll() }
         guard !Task.isCancelled else { return }
@@ -283,7 +285,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         nextReason = .rebuild; start(force: true, renewReaderAuthorization: true, fullScan: true) }
 
     private func start(force: Bool, renewReaderAuthorization: Bool, fullScan: Bool = false) {
-        guard !removing else { return }
+        guard !removing, !stopped else { return }
         preferences = settings.semanticFileSearch
         let names = settings.askLauncherSearchSettings
         let key = "\(preferences.enabled)\u{3}\(names.fileIndexFingerprint)\u{3}\(settings.askQuickFileSearchEnabled)"
@@ -823,6 +825,30 @@ extension SemanticFileSearchService {
         if self.phase == .modelRequired {
             self.downloadModel()
         }
+    }
+
+    /// Retire producers before their readers and models. Stopping only the
+    /// readers cannot release a callback waiting for media idle time or a pause.
+    /// Preserve settings and persisted indexes for the next application launch.
+    func shutdown() async {
+        guard !remote else { return }
+        stopped = true
+        observers.removeAll()
+        token.cancel(); permissionRecoveryEpoch.cancel()
+        invalidateIndexProgress(); watcherDelivery.invalidate(); downloadProgress.invalidate()
+        pauseGate.invalidate(); documentSource = nil; pendingChanges = .init()
+        watcher.stop()
+        let pending = [work, download, rescan, warmup, countRefresh].compactMap { $0 }
+        pending.forEach { $0.cancel() }
+        readers.stop(); embeddingOwners.stop()
+        queryWorker?.stop(); queryWorker = nil
+        for task in pending { await task.value }
+        work = nil; download = nil; rescan = nil; warmup = nil; countRefresh = nil
+        let journal = eventJournal
+        eventJournal = nil
+        await Task.detached(priority: .utility) { journal?.close() }.value
+        queryState = .idle; phase = .off
+        currentProcessingPath = nil; resourceWaitReason = nil
     }
 
     /// Stop every writer before removing artifacts. The name index is never touched.

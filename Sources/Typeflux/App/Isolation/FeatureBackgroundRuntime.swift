@@ -285,10 +285,12 @@ final class FeatureBackgroundRuntime {
         case "shutdown":
             try await shutdown.run { [self] in
                 stopped = true
-                idleTask?.cancel(); try await media.shutdown(); healthObservations.forEach { $0.cancel() }
+                idleTask?.cancel(); media.stop(); healthObservations.forEach { $0.cancel() }
                 publication?.cancel(); subscriptions.removeAll()
                 registry?.preventNewWork()
-                names.suspendWorker(); content.readers.stop(); content.embeddingOwners.stop()
+                names.suspendWorker()
+                await content.shutdown()
+                try await media.shutdown()
                 await registry?.shutdown()
                 let deadline = ContinuousClock.now.advanced(by: .seconds(2))
                 while hasOwnedHelpers, ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(10)) }

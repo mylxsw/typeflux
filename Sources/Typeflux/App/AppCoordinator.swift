@@ -1,4 +1,5 @@
 import AppKit
+import OSLog
 
 @MainActor
 final class AppCoordinator {
@@ -365,6 +366,7 @@ final class AppCoordinator {
         let model = di.existingAskConversationWindowController?.model
         let draftsSaved = await model?.flushFeatureDrafts()
         if model?.voiceInput.isOccupied == true || draftsSaved == false {
+            Logger(subsystem: "ai.gulu.app.typeflux", category: "Shutdown").error("Host save check refused: voiceBusy=\(model?.voiceInput.isOccupied == true), draftsSaved=\(draftsSaved != false)")
             if FeatureProcess.owns(.host), FeatureProcess.enabled { try? FeatureShortcutHost.shared.handle(.init(destination: .shortcuts, action: "start")) }
             di.overlayController.showNotice(message: L("feature.quitNotReady"))
             return false
