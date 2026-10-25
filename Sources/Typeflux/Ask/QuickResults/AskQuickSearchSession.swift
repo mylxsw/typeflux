@@ -55,9 +55,14 @@ final class AskQuickSearchSession: ObservableObject {
     /// refreshes must not delay the local answer or leave the panel empty.
     var presentation: AskQuickResults? {
         if let pendingResults { return pendingResults }
-        if isSearching, !appsReady || fileResults == nil,
-           results?.rows == [.askAI], results?.notice == nil { return nil }
+        if results?.listRows.isEmpty == true, results?.notice == nil { return nil }
         return results
+    }
+
+    /// Local search can finish before optional browser/content refreshes. An
+    /// invisible AI fallback must not leave the launcher blank during that wait.
+    var showsEmptyState: Bool {
+        isVisible && presentation == nil && (!isSearching || (appsReady && fileResults != nil))
     }
 
     private struct FileBatch: Sendable {

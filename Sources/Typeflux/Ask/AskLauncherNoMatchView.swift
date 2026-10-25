@@ -9,6 +9,8 @@ struct AskLauncherNoMatchView: View {
     var searched: Bool
     var destinations: [AskLauncherNoMatch.Destination]
     @Binding var highlighted: Int?
+    var palette: AskOrbPalette = .brand
+    var viewportHeight: CGFloat = 420
     var onAskAI: () -> Void
     var onPick: (AskLauncherNoMatch.Destination) -> Void
 
@@ -18,6 +20,18 @@ struct AskLauncherNoMatchView: View {
         VStack(alignment: .leading, spacing: AskLauncherSuggestions.rowSpacing) {
             Rectangle().fill(AskTheme.launcherSeparator).frame(height: 1).padding(.horizontal, 6)
                 .padding(.bottom, 4)
+            Spacer(minLength: 0)
+            let layout = AskLauncherWelcome.layout(viewport: viewportHeight)
+            VStack(spacing: 16) {
+                if layout.orbSize > 0 {
+                    AskConversationOrb(size: layout.orbSize, palette: palette)
+                }
+                Text(L("ask.empty"))
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.bottom, 16)
             row(symbol: "sparkles", title: L("ask.launcher.noMatch.askAI", query), detail: nil,
                 selected: highlighted == nil, number: nil, action: onAskAI)
                 .onContinuousHover { phase in

@@ -39,6 +39,24 @@ final class AskControlledSearchIndex: AskAppSearching, AskFileSearching, @unchec
 @Suite("Staged launcher search", .serialized, .exclusiveUIState)
 @MainActor
 struct AskQuickSearchSessionTests {
+    @Test func emptyLocalResultsOfferTheCanvas() async throws {
+        let session = AskQuickSearchSession()
+        defer { session.cancel() }
+        session.update(text: "unmatched question", chinese: false, calculator: false,
+                       sources: .init(apps: AskControlledSearchIndex()))
+        try await Self.wait { !session.isSearching }
+        #expect(session.presentation == nil)
+        #expect(session.showsEmptyState)
+        session.results = AskQuickResults(apps: [], lead: false)
+        #expect(session.presentation == nil)
+        #expect(session.showsEmptyState)
+        session.results?.notice = .indexing(found: 0, progress: nil)
+        #expect(session.presentation != nil)
+        #expect(!session.showsEmptyState)
+        session.setVisible(false)
+        #expect(!session.showsEmptyState)
+    }
+
     @Test func applicationResultsPublishWhileFileSearchIsStillBlocked() async throws {
         let gate = DispatchSemaphore(value: 0)
         defer { gate.signal() }

@@ -1353,7 +1353,7 @@ struct AskComposer: View {
         return launcher && !active && !model.launcherHistoryMode && !launcherCollapsed && !paletteOpen
             && !plugins.isActive && pluginDisplay == nil && draft.wrappedValue.hasText
             && launcherContextHome == nil && quickSearch.isVisible && quickSearch.isCurrent(text: text)
-            && !quickSearch.isSearching && presentedQuickResults == nil
+            && quickSearch.showsEmptyState
     }
 
     private var noMatchDestinations: [AskLauncherNoMatch.Destination] {
@@ -1884,6 +1884,7 @@ struct AskComposer: View {
                 AskLauncherNoMatchView(query: draft.wrappedValue.text.trimmingCharacters(in: .whitespacesAndNewlines),
                                        searched: model.quickAppsEnabled || model.quickFilesEnabled,
                                        destinations: noMatchDestinations, highlighted: $canvasHighlight,
+                                       palette: launcherOrbPalette, viewportHeight: launcherResultsViewportHeight,
                                        onAskAI: askAIFromNoMatch,
                                        onPick: pickNoMatchDestination)
             }
