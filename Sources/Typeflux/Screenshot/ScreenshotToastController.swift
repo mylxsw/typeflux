@@ -59,7 +59,7 @@ final class ScreenshotToastController: ScreenshotToastPresenting {
         self.content = content
         let panel = panel ?? makePanel()
         self.panel = panel
-        let host = NSHostingView(rootView: ScreenshotToastView(content: content) { [weak self] in
+        let host = ScreenshotToastHostingView(rootView: ScreenshotToastView(content: content) { [weak self] in
             if let url = content.revealURL { self?.reveal(url) }
             self?.hide()
         })
@@ -127,4 +127,9 @@ struct ScreenshotToastView: View {
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Color.white.opacity(0.12)))
         .fixedSize()
     }
+}
+
+/// Toasts stay non-key, but their actions must respond to the first click.
+final class ScreenshotToastHostingView<Content: View>: NSHostingView<Content> {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }

@@ -60,7 +60,7 @@ final class ScreenRecordingToastController {
         // The rounded SwiftUI surface owns its shadow; a window shadow outlines the rectangular panel.
         panel.hasShadow = false; panel.hidesOnDeactivate = false; panel.isReleasedWhenClosed = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        let host = NSHostingView(rootView: view.interfaceStyle(following: interfaceStyle))
+        let host = ScreenshotToastHostingView(rootView: view.interfaceStyle(following: interfaceStyle))
         panel.contentView = host
         let size = CGSize(width: 440, height: 116)
         let area = NSScreen.main?.visibleFrame ?? CGRect(x: 0, y: 0, width: 1000, height: 800)
