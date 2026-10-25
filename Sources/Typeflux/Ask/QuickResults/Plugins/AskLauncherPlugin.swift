@@ -285,6 +285,8 @@ struct AskPluginOutput: Equatable, Sendable {
     /// Whether the looked-up word is starred; nil when it cannot be.
     var starred: Bool?
     var emoji: EmojiPresentation?
+    /// The app-only keyword presents its items as a grid.
+    var applicationGrid = false
     /// A short fact beside the source, such as how often the word was looked up.
     var detail: String?
 

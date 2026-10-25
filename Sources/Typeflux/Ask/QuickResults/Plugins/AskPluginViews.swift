@@ -221,6 +221,7 @@ struct AskPluginResultsView: View {
     static func cardHeight(output: AskPluginOutput?, failure: AskPluginFailure?, comparing: Bool) -> CGFloat {
         if let stack = output?.translation { return AskTranslationStackView.height(stack, comparing: comparing) }
         if output?.emoji != nil { return EmojiResultsView.height }
+        if let output, output.applicationGrid { return AskAppSearchGridView.height(count: output.items.count) }
         if let output, output.wordCard == nil, !output.items.isEmpty {
             return itemsHeight(output.items) + (output.note != nil ? 12 + noteHeight : 0)
         }
@@ -539,6 +540,9 @@ struct AskPluginResultsView: View {
                              onMain: onMain, onAction: onAction)
                 .disabled(running)
                 .opacity(running ? 0.5 : 1)
+        } else if let output, output.applicationGrid {
+            AskAppSearchGridView(output: output, viewportHeight: viewportHeight, pending: running,
+                                 onSelect: onSelectItem, onMain: onMain)
         } else if let output, output.wordCard == nil, !output.items.isEmpty {
             VStack(alignment: .leading, spacing: 0) {
                 itemList(output, pending: running && !(streaming && output.items.contains { $0.fileHit != nil }),

@@ -48,7 +48,7 @@ struct AskAppSearchPlugin: AskLauncherPlugin {
                                               symbol: "arrow.up.right", shortcut: .enter)])
             }
         return .init(body: items.map(\.title).joined(separator: "\n"), original: "", meta: [],
-                     source: title, actions: [], items: items)
+                     source: title, actions: [], items: items, applicationGrid: !apps.isEmpty)
     }
 
     func nextOptions(after _: AskPluginPlan, request _: AskPluginRequest, step _: Int) -> [String: String]? { nil }

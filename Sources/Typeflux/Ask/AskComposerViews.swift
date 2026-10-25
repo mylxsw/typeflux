@@ -1113,6 +1113,7 @@ struct AskComposer: View {
     }
 
     private func moveLauncherHorizontal(_ delta: Int) -> Bool {
+        if moveAppSearchSelection(delta, horizontal: true) { return true }
         if pluginDisplay?.calendar == true {
             return calendarKey(delta < 0 ? .left : .right)
         }
@@ -1211,6 +1212,7 @@ struct AskComposer: View {
 
     /// Arrows wrap through visible plugin items; the header owns the AI action.
     private func movePluginHighlight(_ delta: Int) {
+        if moveAppSearchSelection(delta) { return }
         if plugins.output?.emoji != nil {
             _ = moveEmojiSelection(delta * EmojiResultsView.columns)
             return
@@ -1220,6 +1222,16 @@ struct AskComposer: View {
         if let indices = plugins.output?.selectableIndices, let index = delta < 0 ? indices.last : indices.first {
             plugins.selectItem(index)
         }
+    }
+
+    private func moveAppSearchSelection(_ delta: Int, horizontal: Bool = false) -> Bool {
+        guard launcher, !active, plugins.keyword?.pluginID == AskAppSearchPlugin.id else { return false }
+        guard plugins.isPlanCurrent else { return true }
+        guard let output = plugins.output, output.applicationGrid, !output.items.isEmpty else { return false }
+        pluginHighlight = 0
+        plugins.selectItem(AskApplicationGrid.move(output.selectedItem, delta: delta,
+                                                  count: output.items.count, horizontal: horizontal))
+        return true
     }
 
     /// The search editor keeps focus while all four arrows choose emoji results.
