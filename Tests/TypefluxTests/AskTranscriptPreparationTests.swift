@@ -177,12 +177,9 @@ extension AskTranscriptPreparationTests {
         #expect(cache.value(text: "Too large", markdown: false, dark: false) == nil)
     }
 
-    @Test func measurementReusesWidthAndInvalidatesAfterContentChange() throws {
-        let editor = AskTranscriptText.Editor()
+    @Test func measurementTracksWidthAndContentUsingProductionConfiguration() throws {
+        let editor = AskTranscriptText.makeEditor()
         editor.renderCache = AskTranscriptRenderCache()
-        editor.isVerticallyResizable = true
-        editor.isHorizontallyResizable = false
-        editor.textContainer?.widthTracksTextView = false
         editor.setContent(String(repeating: "word ", count: 120), markdown: false, dark: false)
         let wide = try #require(editor.measuredSize(width: 500))
         #expect(editor.measuredSize(width: 500) == wide)
@@ -191,5 +188,82 @@ extension AskTranscriptPreparationTests {
         editor.setContent("Short", markdown: false, dark: false)
         let short = try #require(editor.measuredSize(width: 100))
         #expect(short.height < narrow.height)
+    }
+}
+
+@Suite("Transcript hosted navigation", .exclusiveUIState)
+@MainActor struct AskTranscriptHostedNavigationTests {
+    private final class Selection: ObservableObject {
+        @Published var index = 0
+        let marker = UUID().uuidString
+        func text(_ row: Int) -> String {
+            "**Conversation \(index), answer \(row)**\n\n"
+                + String(repeating: "This is a complete answer that must remain visible. ", count: index == 0 ? 8 : 16)
+                + "\n\nEnd \(marker)-\(index)-\(row)"
+        }
+    }
+
+    private struct Transcript: View {
+        @ObservedObject var selection: Selection
+        var body: some View {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 16) {
+                    ForEach(0..<2) { row in
+                        AskTranscriptText(text: selection.text(row))
+                            .id("\(selection.index)-\(row)")
+                    }
+                }
+                .padding(16)
+            }
+        }
+    }
+
+    private func editors(in view: NSView) -> [AskTranscriptText.Editor] {
+        if let editor = view as? AskTranscriptText.Editor { return [editor] }
+        return view.subviews.flatMap { editors(in: $0) }
+    }
+
+    @Test func coldCachedAndRapidSwitchesKeepCompleteAnswersAfterResize() async throws {
+        _ = NSApplication.shared
+        let selection = Selection()
+        let host = NSHostingView(rootView: Transcript(selection: selection))
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 720, height: 1000),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderFront(nil)
+        defer { window.contentView = nil; window.close() }
+
+        func waitForCompleteAnswers() async throws {
+            let deadline = ContinuousClock.now + .seconds(4)
+            var complete = false
+            repeat {
+                host.layoutSubtreeIfNeeded()
+                let views = editors(in: host)
+                complete = views.count == 2 && (0..<2).allSatisfy { row in
+                    guard let view = views.first(where: { $0.string.contains("End \(selection.marker)-\(selection.index)-\(row)") }),
+                          let container = view.textContainer, let layout = view.layoutManager else { return false }
+                    let height = layout.usedRect(for: container).height
+                    return height > 80 && view.frame.height + 1 >= height && view.frame.width > 200
+                }
+                if complete { break }
+                try await Task.sleep(for: .milliseconds(10))
+            } while ContinuousClock.now < deadline
+            #expect(complete, "Both complete answers must occupy their full laid-out height, including after async delivery")
+        }
+
+        // Cold parses and cache hits both use the actual NSViewRepresentable configuration.
+        for index in [0, 1, 0, 1] {
+            selection.index = index
+            try await waitForCompleteAnswers()
+        }
+        window.setContentSize(NSSize(width: 540, height: 1000))
+        try await waitForCompleteAnswers()
+        for index in [0, 1, 0, 1, 0] {
+            selection.index = index
+            host.layoutSubtreeIfNeeded()
+            await Task.yield()
+        }
+        try await waitForCompleteAnswers()
     }
 }

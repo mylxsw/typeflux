@@ -8,6 +8,7 @@ struct AskTranscriptText: NSViewRepresentable {
     // Parsing different visible messages must not create one CPU-bound thread per row.
     private static let parsingQueue = DispatchQueue(label: "typeflux.transcript-parse", qos: .userInitiated)
     var text: String
+    @State private var layoutRevision = 0
     var markdown = true
     var onAsk: ((String, String) -> Void)? = nil
     /// Saves the selected text to the notebook; nil leaves the action out.
@@ -16,7 +17,9 @@ struct AskTranscriptText: NSViewRepresentable {
     /// In a conversation window, links open in the side panel (or the browser, by setting).
     @Environment(\.askSidePanelActions) private var sidePanelActions
 
-    func makeNSView(context _: Context) -> Editor {
+    func makeNSView(context _: Context) -> Editor { Self.makeEditor() }
+
+    static func makeEditor() -> Editor {
         let editor = Editor()
         editor.textContainer?.replaceLayoutManager(AskRoundedBackgroundLayoutManager())
         editor.isEditable = false
@@ -25,7 +28,9 @@ struct AskTranscriptText: NSViewRepresentable {
         editor.drawsBackground = false
         editor.textContainerInset = .zero
         editor.textContainer?.lineFragmentPadding = 0
-        editor.textContainer?.widthTracksTextView = true
+        // SwiftUI proposes the wrapping width before it assigns the native frame.
+        // Tracking that old frame can invalidate or collapse the measured layout.
+        editor.textContainer?.widthTracksTextView = false
         editor.isVerticallyResizable = true
         editor.isHorizontallyResizable = false
         editor.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -33,6 +38,9 @@ struct AskTranscriptText: NSViewRepresentable {
     }
 
     func updateNSView(_ editor: Editor, context _: Context) {
+        // Read the revision so asynchronous text delivery triggers a SwiftUI sizing pass.
+        _ = layoutRevision
+        editor.onContentChange = { layoutRevision &+= 1 }
         editor.onAsk = onAsk
         editor.onSaveNote = onSaveNote
         editor.onOpenLink = sidePanelActions?.openLink
@@ -40,6 +48,7 @@ struct AskTranscriptText: NSViewRepresentable {
     }
 
     static func dismantleNSView(_ editor: Editor, coordinator: ()) {
+        editor.onContentChange = nil
         editor.cancelPreparation()
     }
 
@@ -53,16 +62,15 @@ struct AskTranscriptText: NSViewRepresentable {
             label: "typeflux.transcript-parse", queue: AskTranscriptText.parsingQueue
         )
         var renderCache = AskTranscriptRenderCache.shared
-        private var measured: CGSize?
+        var onContentChange: (() -> Void)?
 
         func measuredSize(width: CGFloat) -> CGSize? {
-            if let measured, measured.width == width { return measured }
             guard let container = textContainer, let layout = layoutManager else { return nil }
             container.containerSize = NSSize(width: width, height: .greatestFiniteMagnitude)
             layout.ensureLayout(for: container)
-            let size = CGSize(width: width, height: ceil(layout.usedRect(for: container).height))
-            measured = size
-            return size
+            // TextKit already caches valid layout. A separate width-only cache can
+            // retain an empty or partial height across native layout invalidations.
+            return CGSize(width: width, height: ceil(layout.usedRect(for: container).height))
         }
 
         private var requested: (text: String, markdown: Bool, dark: Bool)?
@@ -225,7 +233,6 @@ struct AskTranscriptText: NSViewRepresentable {
             source = text; self.dark = dark; usesMarkdown = markdown
             let rendered = rendered ?? AskMarkdownText.render(text, markdown: markdown, document: document)
             renderCache.insert(rendered, text: text, markdown: markdown, dark: dark)
-            measured = nil
             textStorage?.setAttributedString(rendered)
             // Preserve a selection only if the selected prefix is still identical.
             if NSMaxRange(oldSelection) <= oldString.length, NSMaxRange(oldSelection) <= rendered.length,
@@ -234,6 +241,9 @@ struct AskTranscriptText: NSViewRepresentable {
                 setSelectedRange(oldSelection)
             }
             invalidateIntrinsicContentSize()
+            // Intrinsic-size invalidation alone does not reliably remeasure a
+            // representable inside LazyVStack. Defer state changes out of updateNSView.
+            DispatchQueue.main.async { [weak self] in self?.onContentChange?() }
         }
     }
 }
