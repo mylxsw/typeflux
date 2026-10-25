@@ -213,6 +213,17 @@ struct TFComponentLogicTests {
         #expect(TFIconTile.initial(of: "—") == "")
     }
 
+    @Test func neutralIconTilesKeepSparklesMonochrome() {
+        for symbol in ["sparkles", "sparkle", "mic"] {
+            let tile = TFIconTile(systemImage: symbol, style: .neutral)
+            #expect(tile.glyph == TFColors.textSecondary)
+            #expect(tile.fill == TFColors.control)
+        }
+        #expect(TFIconTile(systemImage: "sparkles").glyph == StudioTheme.aiIcon)
+        #expect(TFIconTile(systemImage: "mic", style: .filled).glyph == .white)
+        #expect(TFIconTile(systemImage: "mic", tint: .red, style: .soft).glyph == .red)
+    }
+
     @Test func rowHeightsFollowContentAndDensity() {
         typealias Row = TFListRow<EmptyView, EmptyView>
         #expect(Row.height(hasSubtitle: true, density: .regular) == 52)

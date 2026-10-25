@@ -32,18 +32,20 @@ struct AskToolPermissionsSettingsView: View {
             TFSegmentedControl(options: AskPermissionMode.allCases.map { TFOption($0, $0.title) }, selection: $mode)
                 .accessibilityIdentifier("agent.permissions.mode")
             TFSearchField(placeholder: L("agent.permissions.search"), text: $query)
-            ForEach(groups, id: \.tool) { group in
-                TFCard {
-                    if group.entries.count == 1, let entry = group.entries.first, entry.action == "*" {
-                        permissionRow(entry, title: entry.toolTitle)
-                    } else {
-                        TFDisclosureRow(title: group.entries.first?.toolTitle ?? group.tool,
-                                        isExpanded: Binding(get: { !query.isEmpty || expanded.contains(group.tool) },
-                                                            set: { if $0 { expanded.insert(group.tool) } else { expanded.remove(group.tool) } }))
-                        if !query.isEmpty || expanded.contains(group.tool) {
-                            ForEach(group.entries) { entry in
-                                TFDivider.form
-                                permissionRow(entry, title: entry.title)
+            LazyVStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
+                ForEach(groups, id: \.tool) { group in
+                    TFCard {
+                        if group.entries.count == 1, let entry = group.entries.first, entry.action == "*" {
+                            permissionRow(entry, title: entry.toolTitle)
+                        } else {
+                            TFDisclosureRow(title: group.entries.first?.toolTitle ?? group.tool,
+                                            isExpanded: Binding(get: { !query.isEmpty || expanded.contains(group.tool) },
+                                                                set: { if $0 { expanded.insert(group.tool) } else { expanded.remove(group.tool) } }))
+                            if !query.isEmpty || expanded.contains(group.tool) {
+                                ForEach(group.entries) { entry in
+                                    TFDivider.form
+                                    permissionRow(entry, title: entry.title)
+                                }
                             }
                         }
                     }

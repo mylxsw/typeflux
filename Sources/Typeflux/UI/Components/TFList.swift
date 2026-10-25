@@ -37,7 +37,8 @@ struct TFIconTile: View {
             .accessibilityHidden(true)
     }
 
-    private var fill: Color {
+    var fill: Color {
+        if style == .neutral { return TFColors.control }
         if systemImage == "sparkles" || systemImage == "sparkle" { return TFColors.control }
         return switch style {
         case .filled: tint
@@ -46,7 +47,8 @@ struct TFIconTile: View {
         }
     }
 
-    private var glyph: Color {
+    var glyph: Color {
+        if style == .neutral { return TFColors.textSecondary }
         if systemImage == "sparkles" || systemImage == "sparkle" { return StudioTheme.aiIcon }
         return switch style {
         case .filled: .white

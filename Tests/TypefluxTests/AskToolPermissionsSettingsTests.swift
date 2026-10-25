@@ -6,6 +6,28 @@ import Testing
 @Suite("Tool permission settings", .serialized, .exclusiveUIState)
 @MainActor
 struct AskToolPermissionsSettingsTests {
+    @Test func revisitingPermissionsSkipsUnrelatedCapabilityIO() {
+        let suite = "permission-reload-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = SettingsStore(defaults: defaults)
+        var dependencyReads = 0
+        var statusUpdates = 0
+        let view = AskToolsSettingsView(
+            settings: settings,
+            owner: { dependencyReads += 1; return "fixture" },
+            pane: .permissions,
+            onStatusesChange: { _ in statusUpdates += 1 },
+            permissions: AgentAutomationPermissions(
+                accessibilityGranted: { dependencyReads += 1; return false },
+                screenRecordingGranted: { dependencyReads += 1; return false },
+                requestAccessibility: {}, requestScreenRecording: {}))
+        for _ in 0..<5 { view.reload() }
+        #expect(dependencyReads == 0)
+        #expect(statusUpdates == 0)
+        #expect(!settings.toolPermissionEntries.isEmpty)
+    }
+
     @Test func permissionLabelsAreLocalizedAndNavigationUsesTheSharedPane() {
         #expect(AgentSettingsPane.permissions.group == .capabilities)
         for language in [AppLanguage.simplifiedChinese, .english] {
@@ -35,7 +57,8 @@ struct AskToolPermissionsSettingsTests {
                 window.isReleasedWhenClosed = false
                 window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
                 let host = NSHostingView(rootView: ScrollView {
-                    AskToolPermissionsSettingsView(settings: settings).padding(24)
+                    AskToolsSettingsView(settings: settings, pane: .permissions,
+                                         permissions: .fixed(accessibility: false, screenRecording: false)).padding(24)
                 }.background(StudioTheme.shellSurface))
                 host.frame = window.contentView!.bounds
                 window.contentView = host

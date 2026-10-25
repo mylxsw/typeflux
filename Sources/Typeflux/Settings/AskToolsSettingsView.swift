@@ -137,6 +137,9 @@ struct AskToolsSettingsView: View {
     }
 
     func reload() {
+        // Tool permissions read their own registry and do not need capability credentials,
+        // disk-backed skills/notes, or synchronous macOS privacy checks on every visit.
+        guard pane != .permissions else { return }
         folders = settings.askFileAccessFolders
         codeEnabled = settings.askCodeExecutionEnabled
         let images = AskImageSettings(defaults: settings.defaults)
