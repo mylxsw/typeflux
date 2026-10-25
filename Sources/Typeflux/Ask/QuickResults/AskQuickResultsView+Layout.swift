@@ -34,6 +34,19 @@ extension AskQuickResultsView {
         }
     }
 
+    /// Consecutive applications share a grid, including the best application match.
+    static func displayBlocks(for results: AskQuickResults) -> [[ListItem]] {
+        var blocks: [[ListItem]] = []
+        for item in listItems(for: results) {
+            if case .app = item.row, let last = blocks.last?.last, case .app = last.row {
+                blocks[blocks.count - 1].append(item)
+            } else {
+                blocks.append([item])
+            }
+        }
+        return blocks
+    }
+
     /// The heading shown above the row at `index`: where a new kind of result begins.
     /// The best match, when there is one, has a heading of its own.
     static func sectionStart(at index: Int, in rows: [AskQuickResults.Row], results: AskQuickResults? = nil) -> Section? {
@@ -63,12 +76,17 @@ extension AskQuickResultsView {
     }
 
     static func contentHeight(for results: AskQuickResults) -> CGFloat {
-        let rows = results.listRows
-        let content = rows.reduce(CGFloat(0)) { $0 + rowHeight($1, in: results) }
-        let sections = CGFloat(rows.indices.filter { sectionStart(at: $0, in: rows, results: results) != nil }.count)
+        let blocks = displayBlocks(for: results)
+        let content = blocks.reduce(CGFloat(0)) { total, block in
+            guard let first = block.first else { return total }
+            let heading = first.section == nil ? 0 : sectionHeight + rowSpacing
+            if case .app = first.row {
+                return total + heading + AskApplicationGrid.height(count: block.count)
+            }
+            return total + heading + rowHeight(first.row, in: results)
+        }
         let notice = results.notice == nil ? 0 : noticeHeight + rowSpacing
-        return 1 + listPadding * 2 + content + CGFloat(max(0, rows.count - 1)) * rowSpacing
-            + sections * (sectionHeight + rowSpacing) + notice
+        return 1 + listPadding * 2 + content + CGFloat(max(0, blocks.count - 1)) * rowSpacing + notice
     }
 
     /// Return copies a calculation, opens an application or file, or sends to the AI.

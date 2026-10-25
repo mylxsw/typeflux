@@ -147,6 +147,9 @@ extension AskLauncherHome {
     static func move(_ index: Int, by delta: Int, in items: [Item], horizontal: Bool = false) -> Int {
         guard !items.isEmpty else { return 0 }
         let current = min(max(index, 0), items.count - 1)
+        if items.allSatisfy({ if case let .row(row) = $0, case .application = row.action { true } else { false } }) {
+            return AskApplicationGrid.move(index, delta: delta, count: items.count, horizontal: horizontal)
+        }
         let chips = items.indices.filter { if case .chip = items[$0] { true } else { false } }
         if horizontal {
             guard let position = chips.firstIndex(of: current) else { return current }

@@ -111,7 +111,7 @@ struct AskLauncherHomeTests {
         #expect(AskLauncherSuggestions.height(for: sections) > 480)
         #expect(AskLauncherSuggestions.visibleHeight(for: sections, maximum: 480) == 480)
         #expect(AskLauncherSuggestions.visibleHeight(for: sections, maximum: 0) == 0)
-        #expect(Home.move(8, by: 1, in: Home.items(sections)) == 9)
+        #expect(Home.move(8, by: 1, in: Home.items(sections)) == 14)
     }
 
     // MARK: - Navigation

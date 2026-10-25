@@ -73,7 +73,9 @@ struct AskLauncherSuggestions: View {
         guard !sections.isEmpty else { return 0 }
         let content = sections.reduce(CGFloat(0)) { total, section in
             switch section {
-            case let .context(_, _, rows), let .recent(rows), let .applications(rows):
+            case let .applications(rows):
+                return total + headerHeight + AskApplicationGrid.height(count: rows.count)
+            case let .context(_, _, rows), let .recent(rows):
                 let count = CGFloat(rows.count)
                 return total + headerHeight + count * rowHeight + max(0, count - 1) * rowSpacing
             case .keywords:
@@ -167,9 +169,9 @@ struct AskLauncherSuggestions: View {
             highlighted = AskLauncherHome.move(highlighted, by: delta, in: items)
             scrollTarget = items[highlighted].id
         case let .horizontal(delta):
-            // Left and right stay with the editor unless a chip is highlighted.
-            guard items.indices.contains(highlighted), case .chip = items[highlighted] else { return false }
+            guard items.indices.contains(highlighted) else { return false }
             highlighted = AskLauncherHome.move(highlighted, by: delta, in: items, horizontal: true)
+            scrollTarget = items[highlighted].id
         case let .number(number):
             let rows = AskLauncherHome.numberedRows(sections)
             guard rows.indices.contains(number - 1) else { return false }
@@ -192,7 +194,21 @@ struct AskLauncherSuggestions: View {
             rowList(rows, items: items, numbers: numbers, current: current)
         case let .applications(rows):
             header(L("ask.home.section.apps"), subtitle: nil)
-            rowList(rows, items: items, numbers: numbers, current: current)
+            LazyVGrid(columns: AskApplicationGrid.tracks, spacing: AskApplicationGrid.spacing) {
+                ForEach(rows) { row in
+                    if case let .application(app) = row.action {
+                        AskApplicationTile(app: app, title: Text(row.title), selected: row.id == current) {
+                            onPick(.row(row))
+                        }
+                        .id(row.id)
+                        .modifier(AskLauncherNumberBadge(number: numbers[row.id]))
+                        .onContinuousHover { phase in
+                            if case .active = phase, pointer.moved(to: NSEvent.mouseLocation),
+                               let index = items.firstIndex(of: .row(row)) { highlighted = index }
+                        }
+                    }
+                }
+            }
         case let .keywords(chips, _):
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
