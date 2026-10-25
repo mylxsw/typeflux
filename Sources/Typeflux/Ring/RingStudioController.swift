@@ -157,6 +157,9 @@ final class RingStudioController: ObservableObject {
             escape()
         case let .select(index):
             step(to: index)
+        case .switchPage:
+            // Owned by the settings view, which knows whether an app's actions are shown.
+            break
         }
     }
 

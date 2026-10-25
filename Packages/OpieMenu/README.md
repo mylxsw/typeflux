@@ -1,4 +1,4 @@
-> Vendored into Typeflux from https://github.com/mylxsw/opie-menu-macos at `c2db1d2` (MIT). Local changes: the macOS 13 deployment target Typeflux needs, and `compatibleCGPath` in place of the macOS 14 `NSBezierPath.cgPath`.
+> Vendored into Typeflux from https://github.com/mylxsw/opie-menu-macos at `c2db1d2` (MIT). Local changes: the macOS 13 deployment target Typeflux needs, and `compatibleCGPath` in place of the macOS 14 `NSBezierPath.cgPath`. Typeflux also added pages: `showPage(items:centerTitle:center:)` with an optional centre icon and page dots (`OpieMenuCenter`), `onCenterClick` (a click in the middle or Tab calls it instead of closing), and a short turn-in animation when the page changes.
 
 # OpieMenu
 

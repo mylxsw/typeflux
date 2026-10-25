@@ -12,6 +12,8 @@ enum RingStudioKey: Equatable {
     case insert
     case escape
     case select(Int)
+    /// Tab: the other page (app or global actions), like the centre disc.
+    case switchPage
 }
 
 /// Settings → Ring's editor: the ring as it will look, on a dark desktop. Click ⊕ to insert there,
@@ -32,7 +34,7 @@ struct RingStudioCanvas: View {
     let selectedIndex: Int?
     let mode: Mode
     let style: RingStyle
-    let centerTitle: String
+    let center: RingStudioCenter
     let actionCount: Int
     let insertionIndexes: [Int]
     /// Slices whose target is gone; drawn dimmed with a dot.
@@ -44,9 +46,15 @@ struct RingStudioCanvas: View {
     var onMove: (UUID, Int) -> Void = { _, _ in }
     var onBackground: () -> Void = {}
     var onKey: (RingStudioKey) -> Void = { _ in }
+    /// Set while an app's actions are shown: clicking the centre previews the global ring.
+    var onCenter: (() -> Void)?
+    /// The global ring is shown read-only over an app's actions.
+    var isPreviewingGlobal = false
+    var onEditGlobal: () -> Void = {}
 
     @State private var pressedIndex: Int?
     @State private var tryIndex: Int?
+    @State private var centerHovered = false
     @FocusState private var focused: Bool
 
     private var geometry: RingPreviewGeometry {
@@ -59,8 +67,8 @@ struct RingStudioCanvas: View {
             ZStack {
                 gestureLayer
                 RingStudioRing(slots: slots, highlighted: isTrying ? tryIndex : selectedIndex, isTrying: isTrying,
-                               style: style, centerTitle: centerTitle, actionCount: actionCount, issues: issues,
-                               size: Self.size)
+                               style: style, center: center, actionCount: actionCount, issues: issues,
+                               size: Self.size, centerHighlighted: centerHovered && onCenter != nil)
                     .allowsHitTesting(false)
                 insertionButtons
             }
@@ -87,7 +95,7 @@ struct RingStudioCanvas: View {
                 onKey(.escape)
             }
         }
-        .modifier(RingStudioKeyPresses(onKey: onKey))
+        .modifier(RingStudioKeyPresses(onKey: onKey, switchesPages: onCenter != nil))
         .onChange(of: isTrying) { _ in tryIndex = nil }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(L("ring.studio.accessibility"))
@@ -110,7 +118,23 @@ struct RingStudioCanvas: View {
 
     // MARK: - Chrome
 
-    private var topBar: some View {
+    @ViewBuilder private var topBar: some View {
+        if isPreviewingGlobal {
+            HStack(spacing: 8) {
+                chip(L("ring.studio.previewGlobal"), systemImage: "globe", tint: Self.selectionBlue)
+                Spacer(minLength: 8)
+                Button(action: onEditGlobal) {
+                    chip(L("ring.studio.editGlobal"), systemImage: "pencil", tint: nil)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("ring.studio.editGlobal")
+            }
+        } else {
+            editingBar
+        }
+    }
+
+    private var editingBar: some View {
         HStack(spacing: 8) {
             let full = actionCount >= RingConfiguration.maxActions
             chip("\(actionCount) / \(RingConfiguration.maxActions)", systemImage: nil, tint: full ? Self.warm : nil)
@@ -150,6 +174,14 @@ struct RingStudioCanvas: View {
                 .onChanged(dragChanged)
                 .onEnded(dragEnded))
             .onContinuousHover { phase in
+                if case let .active(location) = phase {
+                    let overCenter = geometry.isInCenter(location)
+                    if overCenter != centerHovered {
+                        centerHovered = overCenter
+                    }
+                } else if centerHovered {
+                    centerHovered = false
+                }
                 guard isTrying else { return }
                 if case let .active(location) = phase {
                     let index = geometry.index(at: location)
@@ -163,7 +195,7 @@ struct RingStudioCanvas: View {
     }
 
     private func dragChanged(_ value: DragGesture.Value) {
-        guard !isTrying else { return }
+        guard !isTrying, !isPreviewingGlobal else { return }
         if drag == nil, pressedIndex == nil {
             pressedIndex = geometry.index(at: value.startLocation) ?? -1
         }
@@ -181,10 +213,23 @@ struct RingStudioCanvas: View {
         }
     }
 
-    private func dragEnded(_: DragGesture.Value) {
+    private func dragEnded(_ value: DragGesture.Value) {
         defer { pressedIndex = nil }
         focused = true
         if isTrying {
+            return
+        }
+        if let onCenter, drag == nil, geometry.isInCenter(value.startLocation), geometry.isInCenter(value.location) {
+            onCenter()
+            return
+        }
+        if isPreviewingGlobal {
+            // A slice of the preview opens the global ring with that slice selected.
+            if let index = geometry.index(at: value.location), slots.indices.contains(index) {
+                onSelect(slots[index].id)
+            } else {
+                onBackground()
+            }
             return
         }
         if let current = drag {
@@ -202,7 +247,7 @@ struct RingStudioCanvas: View {
     // MARK: - ⊕
 
     @ViewBuilder private var insertionButtons: some View {
-        if !isTrying, drag == nil {
+        if !isTrying, !isPreviewingGlobal, drag == nil {
             let rim = RingPreviewGeometry(size: Self.size, count: actionCount)
             ForEach(insertionIndexes, id: \.self) { index in
                 RingInsertionButton(position: index + 1,
@@ -244,10 +289,16 @@ struct RingInsertionButton: View {
 /// Keys that need `onKeyPress` (macOS 14): ⌥ + arrows, digits, + and Return.
 struct RingStudioKeyPresses: ViewModifier {
     let onKey: (RingStudioKey) -> Void
+    /// Tab switches pages only where there are two; otherwise it moves focus as usual.
+    var switchesPages = false
 
     func body(content: Content) -> some View {
         if #available(macOS 14.0, *) {
             content.onKeyPress(phases: .down) { press in
+                if press.key == .tab, switchesPages, press.modifiers.isEmpty {
+                    onKey(.switchPage)
+                    return .handled
+                }
                 guard let key = Self.key(for: press.key.character, option: press.modifiers.contains(.option),
                                          isLeft: press.key == .leftArrow || press.key == .upArrow,
                                          isRight: press.key == .rightArrow || press.key == .downArrow,

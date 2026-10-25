@@ -1,4 +1,14 @@
+import AppKit
 import SwiftUI
+
+/// What the centre disc shows: the global title and count, or an app's icon and name. With two
+/// pages (an app and the global actions) page dots tell which one is shown.
+struct RingStudioCenter: Equatable {
+    var title: String
+    var appBundleIdentifier: String?
+    var pageCount = 1
+    var pageIndex = 0
+}
 
 /// The ring drawn in the studio: surface, slices, labels, numbers and the centre disc.
 /// Drawing only; the canvas around it handles the pointer and keys.
@@ -8,10 +18,12 @@ struct RingStudioRing: View {
     let highlighted: Int?
     let isTrying: Bool
     let style: RingStyle
-    let centerTitle: String
+    let center: RingStudioCenter
     let actionCount: Int
     let issues: Set<UUID>
     let size: CGFloat
+    /// The pointer is over a centre that can be clicked.
+    var centerHighlighted = false
 
     private var geometry: RingPreviewGeometry {
         RingPreviewGeometry(size: size, count: slots.count)
@@ -90,15 +102,40 @@ struct RingStudioRing: View {
             Circle().fill(Color(white: style == .classic ? 0.11 : 0.15).opacity(0.92))
                 .overlay(Circle().strokeBorder(.white.opacity(0.1), lineWidth: 1))
                 .frame(width: geometry.centerRadius * 2, height: geometry.centerRadius * 2)
-            VStack(spacing: 2) {
-                Text(centerTitle.isEmpty ? RingConfiguration.defaultCenterTitle : centerTitle)
-                    .font(.system(size: 12, weight: .bold)).foregroundStyle(.white).lineLimit(1)
-                Text(L("ring.preview.count", actionCount)).font(.system(size: 7.5, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.55)).tracking(0.6)
+            if centerHighlighted {
+                Circle().strokeBorder(RingStudioCanvas.selectionBlue.opacity(0.9), lineWidth: 2)
+                    .frame(width: geometry.centerRadius * 2 + 2, height: geometry.centerRadius * 2 + 2)
             }
-            .frame(width: geometry.centerRadius * 1.8)
+            VStack(spacing: 2) {
+                if let bundleIdentifier = center.appBundleIdentifier {
+                    Image(nsImage: RingAppIcon.image(bundleIdentifier: bundleIdentifier))
+                        .resizable().frame(width: 20, height: 20)
+                    Text(center.title).font(.system(size: 10.5, weight: .semibold)).foregroundStyle(.white)
+                        .lineLimit(1).truncationMode(.tail)
+                } else {
+                    Text(center.title.isEmpty ? RingConfiguration.defaultCenterTitle : center.title)
+                        .font(.system(size: 12, weight: .bold)).foregroundStyle(.white).lineLimit(1)
+                    Text(L("ring.preview.count", actionCount)).font(.system(size: 7.5, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.55)).tracking(0.6)
+                }
+                if center.pageCount > 1 {
+                    pageDots.padding(.top, 2)
+                }
+            }
+            .frame(width: geometry.centerRadius * 1.7)
         }
         .position(geometry.center)
+    }
+
+    /// The shown page is a short bar, the other a dot, as on the real ring.
+    private var pageDots: some View {
+        HStack(spacing: 4) {
+            ForEach(0 ..< center.pageCount, id: \.self) { page in
+                Capsule().fill(.white.opacity(page == center.pageIndex ? 0.95 : 0.35))
+                    .frame(width: page == center.pageIndex ? 10 : 4, height: 4)
+            }
+        }
+        .accessibilityHidden(true)
     }
 
     @ViewBuilder private func slice(index: Int, highlighted: Bool) -> some View {

@@ -71,6 +71,9 @@ struct RingActionLibrary {
     var apps: [RingLibraryApp] = []
     var shortcuts: [String] = []
     var folders: [String] = RingActionLibrary.defaultFolders
+    /// Shortcuts of the app whose actions are being edited (`RingAppShortcutCatalog`); listed
+    /// before the common keys and suggested first.
+    var appShortcuts: [RingLibraryItem] = []
 
     // MARK: - Browsing
 
@@ -93,7 +96,7 @@ struct RingActionLibrary {
                                 group: L("ring.library.group.apps"))
             }
         case .keys:
-            RingKeyPreset.common.map { preset in
+            appShortcuts + RingKeyPreset.common.map { preset in
                 RingLibraryItem(kind: .keys(preset.binding), title: preset.title,
                                 subtitle: HotkeyFormat.display(preset.binding), symbol: RingActionType.keys.symbol,
                                 group: L("ring.library.group.commonKeys"))
@@ -143,9 +146,14 @@ struct RingActionLibrary {
         return results
     }
 
-    /// Up to `limit` suggestions that are not on the ring yet.
+    /// Up to `limit` suggestions that are not on the ring yet: the app's own shortcuts while an
+    /// app's actions are edited, otherwise popular features.
     func recommendations(excluding actions: [RingAction], limit: Int = 4) -> [RingLibraryItem] {
         let present = Set(actions.map(\.kind.pickerKey))
+        let fromApp = appShortcuts.filter { !present.contains($0.kind.pickerKey) }
+        if !fromApp.isEmpty {
+            return Array(fromApp.prefix(limit))
+        }
         return Self.recommended.filter { !present.contains($0.pickerKey) }.prefix(limit).compactMap(Self.item(for:))
     }
 

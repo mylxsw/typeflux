@@ -6,7 +6,7 @@ import Testing
 @Suite(.serialized, .exclusiveUIState)
 @MainActor
 struct RingSettingsViewTests {
-    private func render(_ view: some View, size: NSSize, name: String, light: Bool) async throws {
+    func render(_ view: some View, size: NSSize, name: String, light: Bool) async throws {
         _ = NSApplication.shared
         let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: .borderless,
                                         backing: .buffered, defer: false)
@@ -30,7 +30,7 @@ struct RingSettingsViewTests {
         }
     }
 
-    private func page(_ store: SettingsStore) -> some View {
+    func page(_ store: SettingsStore) -> some View {
         VStack(alignment: .leading, spacing: 24) {
             HStack {
                 Text(L("ring.title")).font(.system(size: 22, weight: .semibold))
@@ -89,7 +89,8 @@ struct RingSettingsViewTests {
         }
         return RingStudioCanvas(slots: slots,
                                 selectedIndex: RingStudioLayout.selectedIndex(in: slots, state: state, drag: nil),
-                                mode: mode, style: .frosted, centerTitle: "Typeflux", actionCount: actions.count,
+                                mode: mode, style: .frosted, center: RingStudioCenter(title: "Typeflux"),
+                                actionCount: actions.count,
                                 insertionIndexes: insertion, issues: issues, drag: .constant(nil),
                                 isTrying: .constant(trying))
     }
@@ -214,14 +215,15 @@ struct RingSettingsViewTests {
         let menu = OpieRingMenu()
         var selected: [String] = []
         menu.onSelect = { selected.append($0) }
-        menu.configure(items: [], style: .classic, centerTitle: "")
+        menu.configure(items: [], style: .classic, centerTitle: "", center: .plain)
         menu.show(at: CGPoint(x: 400, y: 400), takesKeyboardFocus: true)
         #expect(!menu.isVisible, "an empty ring never opens")
         menu.configure(items: [
             RingMenuItem(id: "a", label: "Notes", symbol: "note.text"),
             RingMenuItem(id: "b", label: "Finder", symbol: "app", bundleIdentifier: "com.apple.finder"),
             RingMenuItem(id: "c", label: "Gone", symbol: "app", bundleIdentifier: "com.example.not-installed")
-        ], style: .liquidGlass, centerTitle: "Go")
+        ], style: .liquidGlass, centerTitle: "Go", center: RingMenuCenter(appBundleIdentifier: "com.apple.finder",
+                                                                          pageCount: 2, pageIndex: 0))
         menu.show(at: CGPoint(x: 400, y: 400), takesKeyboardFocus: false)
         #expect(menu.isVisible)
         #expect(!menu.hasKeyboardFocus)
@@ -251,5 +253,68 @@ struct RingSettingsViewTests {
         #expect(RingPreviewGeometry(size: 300, count: 0).index(at: CGPoint(x: 150, y: 80)) == nil)
         let point = geometry.point(at: 10, angle: geometry.angle(of: 0))
         #expect(abs(point.x - 150) < 0.001 && abs(point.y - 140) < 0.001)
+    }
+}
+
+/// Per-app scopes.
+extension RingSettingsViewTests {
+    @Test
+    func `per-app scopes render: tabs with More, info bars, app centre and global preview`() async throws {
+        let suiteName = "RingSettingsViewTests-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = SettingsStore(defaults: defaults)
+        store.setHotkey(RingConfiguration.defaultHotkey, for: .ring)
+        let bundles = ["com.apple.Safari", "com.apple.dt.Xcode", "com.apple.finder", "com.apple.mail",
+                       "com.apple.Notes", "com.apple.Terminal", "com.example.gone"]
+        var configuration = store.ringConfiguration
+        configuration.appProfiles = bundles.enumerated().map { index, bundle in
+            RingAppProfile(bundleIdentifier: bundle, appName: bundle.components(separatedBy: ".").last ?? bundle,
+                           isEnabled: index != 2,
+                           actions: RingAppShortcutCatalog.items(for: bundle, appName: "").map { $0.action() })
+        }
+        store.ringConfiguration = configuration
+        try await render(page(store), size: NSSize(width: 860, height: 900), name: "ring-settings-apps", light: true)
+
+        let profiles = store.ringConfiguration.appProfiles
+        for (width, light) in [(CGFloat(860), true), (CGFloat(560), false)] {
+            try await render(RingScopeBar(profiles: profiles, globalCount: 6, scope: .app(profiles[5].id), apps: [],
+                                          isLoadingApps: false),
+                             size: NSSize(width: width, height: RingScopeBar.height),
+                             name: "ring-scope-bar-\(Int(width))", light: light)
+        }
+        try await render(RingScopeBar(profiles: [], globalCount: 6, scope: .global, apps: [], isLoadingApps: true),
+                         size: NSSize(width: 560, height: RingScopeBar.height), name: "ring-scope-bar-empty",
+                         light: true)
+        for (index, profile) in [nil, profiles[0], profiles[2], profiles[6]].enumerated() {
+            try await render(RingScopeInfoBar(profile: profile, hasOtherProfiles: index == 0, canReset: true,
+                                              canCopyGlobal: true),
+                             size: NSSize(width: 560, height: 50), name: "ring-scope-info-\(index)",
+                             light: index.isMultiple(of: 2))
+        }
+        try await render(RingHiddenAppsList(profiles: profiles) { _ in }, size: NSSize(width: 280, height: 400),
+                         name: "ring-scope-more", light: true)
+        try await render(RingAddAppPicker(apps: [RingLibraryApp(name: "Safari", bundleIdentifier: "com.apple.Safari"),
+                                                 RingLibraryApp(name: "Notes", bundleIdentifier: "com.apple.Notes")],
+                                          isLoading: false, configured: ["com.apple.Safari"],
+                                          running: ["com.apple.Notes"], onPick: { _, _ in }, onChooseOther: {}),
+                         size: NSSize(width: 320, height: 400), name: "ring-scope-add", light: false)
+    }
+
+    @Test
+    func `studio canvas renders an app centre and the global preview`() async throws {
+        let actions = RingAppShortcutCatalog.items(for: "com.apple.Safari", appName: "Safari").map { $0.action() }
+        let slots = RingStudioLayout.slots(actions: actions, state: .overview, preview: nil)
+        let centers = [RingStudioCenter(title: "Safari", appBundleIdentifier: "com.apple.Safari", pageCount: 2),
+                       RingStudioCenter(title: "Typeflux", pageCount: 2, pageIndex: 1)]
+        for (index, center) in centers.enumerated() {
+            let previewing = index == 1
+            try await render(RingStudioCanvas(slots: slots, selectedIndex: nil, mode: .overview, style: .liquidGlass,
+                                              center: center, actionCount: actions.count, insertionIndexes: [],
+                                              issues: [], drag: .constant(nil), isTrying: .constant(false),
+                                              onCenter: {}, isPreviewingGlobal: previewing),
+                             size: NSSize(width: 400, height: 520),
+                             name: previewing ? "ring-canvas-global-preview" : "ring-canvas-app", light: true)
+        }
     }
 }

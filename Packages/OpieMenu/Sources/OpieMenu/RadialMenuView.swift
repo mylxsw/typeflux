@@ -7,10 +7,13 @@ final class RadialMenuView: NSView {
     var onSelect: ((OpieMenuItem) -> Void)?
     var onHover: ((OpieMenuItem) -> Void)?
     var onClose: (() -> Void)?
+    /// When set, a click in the middle calls this instead of closing the ring.
+    var onCenterClick: (() -> Void)? { didSet { needsDisplay = true } }
     var freezesPointerForPreview = false
     var onShapeChanged: (() -> Void)?
     var items: [OpieMenuItem]
     var centerTitle: String
+    var centerContent = OpieMenuCenter.plain
     var style: OpieMenuStyle = .classic {
         didSet {
             guard style != oldValue else { return }
@@ -52,7 +55,8 @@ final class RadialMenuView: NSView {
     private var wasContracting = false
     private var ticker: Timer?
     private var lastTick = CACurrentMediaTime()
-    private enum Motion { case opening, closing }
+    private enum Motion { case opening, closing, swapping }
+    private var centerHot = false
     private var motion: Motion?
     private var motionStart = CACurrentMediaTime()
     private var visualScale: CGFloat = 1
@@ -102,9 +106,10 @@ final class RadialMenuView: NSView {
         super.setFrameSize(newSize)
     }
 
-    func update(items: [OpieMenuItem], centerTitle: String) {
+    func update(items: [OpieMenuItem], centerTitle: String, center: OpieMenuCenter? = nil) {
         self.items = items
         self.centerTitle = centerTitle
+        if let center { centerContent = center }
         hovered = nil
         keyboardSelection = nil
         iconSprites = Array(repeating: nil, count: items.count)
@@ -126,6 +131,7 @@ final class RadialMenuView: NSView {
 
     func prepareForOpening() {
         surfaceOpacity = 1
+        centerHot = false
         hovered = nil
         keyboardSelection = nil
         mousePressActive = false
@@ -174,6 +180,8 @@ final class RadialMenuView: NSView {
         let previous = hovered
         hovered = item(at: point, reach: .infinity)
         if let hovered, hovered != previous { onHover?(items[hovered]) }
+        let hot = onCenterClick != nil && isInCenter(point)
+        if hot != centerHot { centerHot = hot; needsDisplay = true }
         if hovered != nil { keyboardSelection = nil }
         startTicker()
     }
@@ -214,6 +222,7 @@ final class RadialMenuView: NSView {
         guard mousePressActive, !isClosing else { return }
         mousePressActive = false
         updateHover(at: point)
+        if let onCenterClick, isInCenter(point) { onCenterClick(); return }
         if !activateItem(at: point) { onClose?() }
     }
 
@@ -273,6 +282,10 @@ final class RadialMenuView: NSView {
     func activateSelection() {
         guard !items.isEmpty else { return }
         onSelect?(items[keyboardSelection ?? hovered ?? 0])
+    }
+
+    func isInCenter(_ point: NSPoint) -> Bool {
+        distance(point, center) <= centerRadius
     }
 
     private func item(at point: NSPoint, reach: CGFloat = 0) -> Int? {
@@ -757,6 +770,12 @@ final class RadialMenuView: NSView {
                                       width: side, height: side),
                            from: .zero, operation: .sourceOver,
                            fraction: visualOpacity * centerOpacity)
+        guard centerHot, onCenterClick != nil else { return }
+        let ring = NSBezierPath(ovalIn: NSRect(x: center.x - centerRadius - 1, y: center.y - centerRadius - 1,
+                                               width: centerRadius * 2 + 2, height: centerRadius * 2 + 2))
+        ring.lineWidth = 2
+        NSColor(calibratedRed: 0.35, green: 0.69, blue: 1, alpha: 0.9 * visualOpacity * centerOpacity).setStroke()
+        ring.stroke()
     }
 
     private func makeCenterImage() -> NSImage? {
@@ -808,9 +827,50 @@ final class RadialMenuView: NSView {
             textShadow.shadowOffset = NSSize(width: 0, height: -1)
             textShadow.set()
         }
-        drawText(centerTitle, at: NSPoint(x: center.x, y: center.y + 5), size: 11, weight: .semibold, color: .white, centered: true)
-        drawText("\(items.count) ACTIONS", at: NSPoint(x: center.x, y: center.y - 9), size: 8, weight: .medium, color: NSColor.white.withAlphaComponent(0.53), centered: true, tracking: 0.9)
+        drawCenterContent()
         if style == .liquidGlass { NSGraphicsContext.restoreGraphicsState() }
+    }
+
+    private func drawCenterContent() {
+        let pages = centerContent.showsPages
+        if let icon = centerContent.icon {
+            // An app page: its icon, its name and the page dots.
+            let side: CGFloat = 24
+            icon.draw(in: NSRect(x: center.x - side / 2, y: center.y + (pages ? 6 : 1), width: side, height: side),
+                      from: .zero, operation: .sourceOver, fraction: 1)
+            drawText(fittedTitle(centerTitle, size: 10.5), at: NSPoint(x: center.x, y: center.y - (pages ? 5 : 9)),
+                     size: 10.5, weight: .semibold, color: .white, centered: true)
+        } else {
+            drawText(centerTitle, at: NSPoint(x: center.x, y: center.y + (pages ? 8 : 5)), size: 11, weight: .semibold, color: .white, centered: true)
+            drawText("\(items.count) ACTIONS", at: NSPoint(x: center.x, y: center.y - (pages ? 6 : 9)), size: 8, weight: .medium, color: NSColor.white.withAlphaComponent(0.53), centered: true, tracking: 0.9)
+        }
+        if pages { drawPageDots(at: NSPoint(x: center.x, y: center.y - 19)) }
+    }
+
+    /// The current page is a short bar, the others are dots.
+    private func drawPageDots(at point: NSPoint) {
+        let count = centerContent.pageCount
+        let dot: CGFloat = 4, bar: CGFloat = 10, gap: CGFloat = 4
+        let width = CGFloat(count - 1) * (dot + gap) + bar
+        var x = point.x - width / 2
+        for page in 0..<count {
+            let current = page == centerContent.pageIndex
+            let w = current ? bar : dot
+            NSColor.white.withAlphaComponent(current ? 0.95 : 0.35).setFill()
+            NSBezierPath(roundedRect: NSRect(x: x, y: point.y - dot / 2, width: w, height: dot),
+                         xRadius: dot / 2, yRadius: dot / 2).fill()
+            x += w + gap
+        }
+    }
+
+    private func fittedTitle(_ text: String, size: CGFloat) -> String {
+        let font = NSFont.systemFont(ofSize: size, weight: .semibold)
+        let limit = centerRadius * 2 - 18
+        func width(_ value: String) -> CGFloat { (value as NSString).size(withAttributes: [.font: font]).width }
+        guard width(text) > limit else { return text }
+        var result = text
+        while !result.isEmpty, width(result + "…") > limit { result.removeLast() }
+        return result + "…"
     }
 
     private func drawIconAndLabel(_ item: Int) {
@@ -976,11 +1036,23 @@ final class RadialMenuView: NSView {
         startTicker()
     }
 
+    /// Brings in a new set of items without reopening: the icons turn in while the ring stays put.
+    func animateSwap() {
+        guard !isClosing else { return }
+        motion = .swapping
+        motionStart = CACurrentMediaTime()
+        applySwapping(0)
+        if let pointerPoint { updateHover(at: pointerPoint) }
+        needsDisplay = true
+        startTicker()
+    }
+
     // Makes the motion observable in deterministic offscreen renders.
     func setMotionPreview(phase: String, progress: CGFloat) {
         let t = max(0, min(1, progress))
         if phase == "open" { applyOpening(t) }
         else if phase == "close" { applyClosing(t) }
+        else if phase == "swap" { applySwapping(t) }
         needsDisplay = true
         onShapeChanged?()
     }
@@ -1050,11 +1122,16 @@ final class RadialMenuView: NSView {
         if !advanceJelly(dt: dt) { hoverSettled = false }
         let shouldRedraw = !hoverSettled || motion != nil
         if let motion {
-            let duration = motion == .opening ? 0.32 : 0.50
+            let duration = switch motion {
+            case .opening: 0.32
+            case .closing: 0.50
+            case .swapping: 0.28
+            }
             let progress = CGFloat(max(0, min(1, (now - motionStart) / duration)))
             switch motion {
             case .opening: applyOpening(progress)
             case .closing: applyClosing(progress)
+            case .swapping: applySwapping(progress)
             }
             if progress >= 1 {
                 self.motion = nil
@@ -1166,6 +1243,22 @@ final class RadialMenuView: NSView {
         let holeProgress = 1 - pow(1 - min(1, t / 0.60), 2)
         holeExpansion = from.holeExpansion + (13 - from.holeExpansion) * holeProgress
         centerOpacity = from.centerOpacity * (1 - smoothstep(min(1, t / 0.25)))
+    }
+
+    private func applySwapping(_ t: CGFloat) {
+        let ease = 1 - pow(1 - t, 3)
+        surfaceOpacity = 1
+        visualScale = 1
+        visualRotation = 0
+        visualOpacity = 1
+        symbolScale = 0.88 + 0.12 * ease
+        symbolRotation = 0.42 * (1 - ease)
+        symbolOpacity = smoothstep(min(1, t / 0.7))
+        iconOffset = 0
+        labelOffset = 0
+        labelOpacity = smoothstep(min(1, t / 0.8))
+        holeExpansion = 0
+        centerOpacity = 1
     }
 
     private func smoothstep(_ t: CGFloat) -> CGFloat { t * t * (3 - 2 * t) }

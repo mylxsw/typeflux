@@ -29,6 +29,67 @@ final class OpieMenuTests: XCTestCase {
     }
 
     @MainActor
+    func testCenterClickSwitchesInsteadOfClosingWhenHandled() {
+        let items = (0..<4).map { OpieMenuItem(id: "item-\($0)", title: "Item \($0)", icon: .systemSymbol("star")) }
+        let view = RadialMenuView(frame: NSRect(x: 0, y: 0, width: 620, height: 620), items: items, centerTitle: "Ring")
+        var closes = 0, clicks = 0, selections: [String] = []
+        view.onClose = { closes += 1 }
+        view.onSelect = { selections.append($0.id) }
+        let middle = NSPoint(x: 310, y: 310)
+        XCTAssertTrue(view.isInCenter(middle))
+        XCTAssertFalse(view.isInCenter(NSPoint(x: 310, y: 420)))
+
+        view.beginPointerPress(at: middle)
+        view.releasePointerPress(at: middle)
+        XCTAssertEqual(closes, 1, "without a handler the middle closes the ring")
+
+        view.onCenterClick = { clicks += 1 }
+        view.beginPointerPress(at: middle)
+        view.releasePointerPress(at: middle)
+        XCTAssertEqual(clicks, 1)
+        XCTAssertEqual(closes, 1)
+        view.beginPointerPress(at: NSPoint(x: 310, y: 420))
+        view.releasePointerPress(at: NSPoint(x: 310, y: 420))
+        XCTAssertEqual(selections, ["item-0"], "slices still run")
+    }
+
+    @MainActor
+    func testShowingAPageReplacesItemsAndCentreAndRendersEveryPhase() throws {
+        _ = NSApplication.shared
+        let first = (0..<3).map { OpieMenuItem(id: "a-\($0)", title: "A \($0)", icon: .systemSymbol("star")) }
+        let second = (0..<5).map { OpieMenuItem(id: "b-\($0)", title: "B \($0)", icon: .systemSymbol("star")) }
+        let menu = OpieRadialMenu(items: first, onSelect: { _ in })
+        let icon = NSImage(size: NSSize(width: 16, height: 16))
+        menu.showPage(items: second, centerTitle: "A Very Long Application Name",
+                      center: OpieMenuCenter(icon: icon, pageCount: 2, pageIndex: 0))
+        XCTAssertEqual(menu.items.map(\.id), second.map(\.id))
+        XCTAssertEqual(menu.centerTitle, "A Very Long Application Name")
+        XCTAssertEqual(menu.center.pageCount, 2)
+        XCTAssertEqual(OpieMenuCenter(pageCount: 0, pageIndex: 5).pageIndex, 0, "clamped")
+
+        let view = RadialMenuView(frame: NSRect(x: 0, y: 0, width: 620, height: 620), items: second, centerTitle: "Go")
+        let appIcon = NSWorkspace.shared.icon(forFile: "/System/Applications/Calendar.app")
+        for (index, center) in [OpieMenuCenter(icon: appIcon, pageCount: 2, pageIndex: 0),
+                                OpieMenuCenter(pageCount: 2, pageIndex: 1), .plain].enumerated() {
+            view.update(items: second, centerTitle: index == 0 ? "Calendar" : "Go", center: center)
+            view.onCenterClick = {}
+            view.updateHover(at: NSPoint(x: 310, y: 310))
+            for progress in [0, 0.5, 1] as [CGFloat] {
+                view.setMotionPreview(phase: "swap", progress: progress)
+                let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+                view.cacheDisplay(in: view.bounds, to: bitmap)
+                if let directory = ProcessInfo.processInfo.environment["OPIE_SNAPSHOTS"] {
+                    let data = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+                    try data.write(to: URL(fileURLWithPath: directory)
+                        .appendingPathComponent("center-\(index)-\(Int(progress * 100)).png"))
+                }
+            }
+        }
+        view.animateSwap()
+        view.stopMotion()
+    }
+
+    @MainActor
     func testNumberKeysMatchDisplayedPositions() {
         for (index, code) in [UInt16(18), 19, 20, 21, 23, 22, 26, 28].enumerated() {
             XCTAssertEqual(OpieRadialMenu.numberedItemIndex(keyCode: code), index)

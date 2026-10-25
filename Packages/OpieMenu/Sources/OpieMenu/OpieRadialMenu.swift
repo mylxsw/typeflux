@@ -9,9 +9,17 @@ public final class OpieRadialMenu {
     public var onSelect: (OpieMenuItem) -> Void
     public var onWillShow: (() -> Void)?
     public var onDismiss: (() -> Void)?
+    /// When set, clicking the middle of the ring or pressing Tab calls this instead of closing.
+    public var onCenterClick: (() -> Void)? {
+        didSet {
+            reusableView?.onCenterClick = onCenterClick
+            if view !== reusableView { view?.onCenterClick = onCenterClick }
+        }
+    }
 
     public private(set) var items: [OpieMenuItem]
     public private(set) var centerTitle: String
+    public private(set) var center = OpieMenuCenter.plain
     public private(set) var style: OpieMenuStyle
     public private(set) var lastPresentationCenter: NSPoint?
     public var isVisible: Bool { panel?.isVisible == true }
@@ -56,6 +64,8 @@ public final class OpieRadialMenu {
         if reusableView == nil {
             reusableView = RadialMenuView(frame: NSRect(origin: .zero, size: size),
                                           items: items, centerTitle: centerTitle)
+            reusableView?.centerContent = center
+            reusableView?.onCenterClick = onCenterClick
         }
         reusableView?.style = style
         reusableView?.prepareGraphics()
@@ -99,6 +109,22 @@ public final class OpieRadialMenu {
         centerTitle = title
         reusableView?.update(items: items, centerTitle: title)
         if view !== reusableView { view?.update(items: items, centerTitle: title) }
+    }
+
+    /// Replaces the items, the title and the middle in one step. While the ring is open the new
+    /// items turn in place instead of reopening the ring.
+    public func showPage(items: [OpieMenuItem], centerTitle: String, center: OpieMenuCenter) {
+        self.items = items
+        self.centerTitle = centerTitle
+        self.center = center
+        reusableView?.update(items: items, centerTitle: centerTitle, center: center)
+        if view !== reusableView { view?.update(items: items, centerTitle: centerTitle, center: center) }
+        surface?.updateGlassShape()
+        if items.isEmpty && isVisible { dismiss(); return }
+        if isVisible, !isDismissing {
+            view?.prepareGraphics()
+            view?.animateSwap()
+        }
     }
 
     public func setStyle(_ style: OpieMenuStyle) {
@@ -275,6 +301,9 @@ public final class OpieRadialMenu {
             guard let self, self.isVisible, !self.isDismissing, self.panel?.isKeyWindow == true else { return event }
             switch event.keyCode {
             case 53: self.dismiss(); return nil
+            case 48:
+                guard let onCenterClick = self.onCenterClick else { return event }
+                onCenterClick(); return nil
             case 123, 126: self.moveSelection(-1); return nil
             case 124, 125: self.moveSelection(1); return nil
             case 36, 76: self.activateSelection(); return nil
