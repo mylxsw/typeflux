@@ -24,12 +24,17 @@ struct AskPluginItemRow: View {
         item.id == AskNotesPlugin.openNotesItemID || item.id == AskTranslatePlugin.openAllItem
     }
 
+    /// Content-match excerpts belong in the file preview, not the result list.
+    static func showsExcerpt(_ item: AskPluginItem) -> Bool {
+        item.excerpt != nil && item.fileHit?.evidence == nil
+    }
+
     var body: some View {
         Button(action: onPick) {
             HStack(spacing: 11) {
                 AskPluginItemIcon(icon: item.icon, symbol: symbol, filled: filled,
                                   revision: item.fileHit?.modified)
-                VStack(alignment: .leading, spacing: item.excerpt == nil ? 1 : 2) {
+                VStack(alignment: .leading, spacing: Self.showsExcerpt(item) ? 2 : 1) {
                     HStack(spacing: 6) {
                         Text(item.title).font(.system(size: 13.5, weight: .semibold)).lineLimit(1)
                             .foregroundStyle(item.valid ? StudioTheme.textPrimary : StudioTheme.textSecondary)
@@ -37,11 +42,11 @@ struct AskPluginItemRow: View {
                     }
                     if !item.subtitle.isEmpty {
                         Text(item.subtitle).font(.system(size: 11.5)).lineLimit(1)
-                            .foregroundStyle(item.excerpt == nil ? StudioTheme.textSecondary : StudioTheme.textTertiary)
+                            .foregroundStyle(AskTheme.launcherResultDetail)
                     }
-                    if let excerpt = item.excerpt {
+                    if Self.showsExcerpt(item), let excerpt = item.excerpt {
                         Text(excerpt).font(.system(size: 12)).lineLimit(1).truncationMode(.tail)
-                            .foregroundStyle(StudioTheme.textSecondary)
+                            .foregroundStyle(AskTheme.launcherResultDetail)
                     }
                 }
                 // The title keeps its room; a long action ("Open in Visual Studio Code") is cut short instead.
@@ -53,7 +58,7 @@ struct AskPluginItemRow: View {
                 }
                 if selected, let action = item.actions.first(where: { $0.shortcut == .enter }) {
                     Text("↩ " + action.title).font(.system(size: 11.5)).lineLimit(1).truncationMode(.tail)
-                        .foregroundStyle(filled ? AskTheme.accentText : StudioTheme.textSecondary)
+                        .foregroundStyle(filled ? AskTheme.accentText : AskTheme.launcherResultDetail)
                 }
             }
             .padding(.horizontal, 8)

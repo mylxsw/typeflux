@@ -168,13 +168,13 @@ struct AskPluginResultsView: View {
     }
 
     static func itemHeight(_ item: AskPluginItem) -> CGFloat {
-        item.excerpt == nil ? itemHeight : excerptItemHeight
+        AskPluginItemRow.showsExcerpt(item) ? excerptItemHeight : itemHeight
     }
 
     /// As `itemsHeight(_:)`, measuring the visible rows when some carry a passage.
     static func itemsHeight(_ items: [AskPluginItem]) -> CGFloat {
         let visible = items.prefix(maximumVisibleItems)
-        guard visible.contains(where: { $0.excerpt != nil }) else { return itemsHeight(items.count) }
+        guard visible.contains(where: { AskPluginItemRow.showsExcerpt($0) }) else { return itemsHeight(items.count) }
         return visible.reduce(0) { $0 + itemHeight($1) } + CGFloat(visible.count - 1) * itemSpacing
     }
 

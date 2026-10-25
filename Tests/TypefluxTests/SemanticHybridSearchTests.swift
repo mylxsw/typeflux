@@ -205,7 +205,7 @@ struct SemanticHybridSearchTests {
         #expect(await semantic.calls == 1)
     }
 
-    @Test func `content matches get a taller row with their passage`() throws {
+    @Test func `content matches keep compact rows and preserve preview evidence`() throws {
         #expect(AskFileSearchPlugin.passage("  Line one\n\n  line\ttwo ") == "Line one line two")
         #expect(AskFileSearchPlugin.passage("请在 15 个工作日内提交申请，\n并附上发票") == "请在 15 个工作日内提交申请，并附上发票")
         #expect(AskFileSearchPlugin.passage("见附件\nPDF") == "见附件 PDF")
@@ -213,13 +213,15 @@ struct SemanticHybridSearchTests {
         paged.evidence?.page = nil
         let item = AskFileSearchPlugin.item(paged)
         #expect(item.subtitle == "/work" && item.excerpt == hit.evidence?.text)
+        #expect(!AskPluginItemRow.showsExcerpt(item))
+        #expect(AskPluginItemRow.showsExcerpt(AskPluginItem(id: "description", title: "Other", excerpt: "Details")))
         let plain = AskPluginItem(id: "a", title: "a")
         #expect(AskPluginResultsView.itemsHeight([plain, plain]) == AskPluginResultsView.itemsHeight(2))
         #expect(AskPluginResultsView.itemsHeight([plain, item]) == AskPluginResultsView.itemHeight
-            + AskPluginResultsView.excerptItemHeight + AskPluginResultsView.itemSpacing)
+            + AskPluginResultsView.itemHeight + AskPluginResultsView.itemSpacing)
         let many = Array(repeating: item, count: AskPluginResultsView.maximumVisibleItems + 3)
         #expect(AskPluginResultsView.itemsHeight(many) == CGFloat(AskPluginResultsView.maximumVisibleItems)
-            * AskPluginResultsView.excerptItemHeight
+            * AskPluginResultsView.itemHeight
             + CGFloat(AskPluginResultsView.maximumVisibleItems - 1) * AskPluginResultsView.itemSpacing)
 
         var name = hit; name.evidence = nil; name.path = "/work/guide-name.pdf"

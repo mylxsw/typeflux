@@ -39,6 +39,17 @@ struct AskLauncherLightPaletteTests {
         return (max(a, b) + 0.05) / (min(a, b) + 0.05)
     }
 
+    @Test func resultDescriptionsAreQuieterThanTitlesAndPreviousMetadata() {
+        for dark in [false, true] {
+            let detail = resolve(AskTheme.launcherResultDetail, dark: dark)
+            let previous = resolve(StudioTheme.textTertiary, dark: dark)
+            let primary = resolve(StudioTheme.textPrimary, dark: dark)
+            #expect(dark ? luminance(detail) < luminance(previous) : luminance(detail) > luminance(previous))
+            #expect(dark ? luminance(detail) < luminance(primary) : luminance(detail) > luminance(primary))
+            #expect(detail.alpha == 1)
+        }
+    }
+
     @Test func legacyFloatingCardsAndMenusKeepTheirReadabilityFrost() {
         #expect(AskGlassPlacement.floating.frost(dark: false) == 0.92)
         // Dark mode keeps its original frost.

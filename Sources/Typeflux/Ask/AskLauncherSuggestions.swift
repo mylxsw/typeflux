@@ -294,14 +294,14 @@ struct AskLauncherSuggestions: View {
                     .layoutPriority(1)
                 if let detail = row.detail {
                     Text(detail).font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(AskTheme.launcherResultDetail)
                         .lineLimit(1)
                 }
                 Spacer(minLength: 8)
                 if let keyword = row.keyword { keywordLabel(keyword) }
                 if let date = row.date {
                     Text(Self.relative(date, now: now)).font(.system(size: 11.5))
-                        .foregroundStyle(AskTheme.launcherMetaText)
+                        .foregroundStyle(AskTheme.launcherResultDetail)
                         .lineLimit(1)
                 }
             }

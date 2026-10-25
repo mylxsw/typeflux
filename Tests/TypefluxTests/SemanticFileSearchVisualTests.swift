@@ -190,7 +190,7 @@ struct SemanticFileSearchVisualTests {
         }
         .padding(12)
         let size = try await Self.render(rows, width: 640, name: "launcher-content")
-        #expect(size.height >= AskPluginResultsView.excerptItemHeight + AskPluginResultsView.itemHeight)
+        #expect(size.height >= AskPluginResultsView.itemHeight * 2)
 
         // The mixed launcher list sizes each content match by its own height, highlighted or not.
         var name = hit
