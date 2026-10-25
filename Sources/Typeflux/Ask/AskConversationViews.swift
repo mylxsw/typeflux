@@ -1055,7 +1055,7 @@ struct AskConversationView: View {
         ZStack {
             Button("") { model.toggleConversationKind(launcher: false) }
                 .keyboardShortcut("m", modifiers: .command)
-            Button("") { setSidePanel(true) }
+            Button("") { setSidePanel(!showsSidePanelView) }
                 .keyboardShortcut("o", modifiers: .command)
                 .disabled(!sidePanelAvailable)
             Button("") {

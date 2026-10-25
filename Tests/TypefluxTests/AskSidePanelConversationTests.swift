@@ -75,7 +75,7 @@ struct AskSidePanelConversationTests {
         try await fixture.model.addSidePanelFiles([URL(fileURLWithPath: "/missing")], conversationId: "plain")
     }
 
-    @Test func commandOOpensAndCommandWClosesThePanelThenWindow() async throws {
+    @Test func commandOTogglesAndCommandWClosesThePanelThenWindow() async throws {
         let (fixture, store, base) = try await fixture()
         defer { try? FileManager.default.removeItem(at: base); fixture.model.resetSession() }
         let owner = try #require(fixture.model.credentials(for: "files-chat")).account
@@ -115,8 +115,18 @@ struct AskSidePanelConversationTests {
             return find("ask.sidePanel.filesTab", in: window) != nil
                 && shows("report.md", in: window)
         }
-        // Opening an already visible panel leaves it visible.
         #expect(window.performKeyEquivalent(with: key))
+        try await SettingsBehaviorTestSupport.wait {
+            hosting.layoutSubtreeIfNeeded()
+            return find("ask.sidePanel", in: window) == nil
+        }
+        #expect(window.isVisible)
+        #expect(window.performKeyEquivalent(with: key))
+        try await SettingsBehaviorTestSupport.wait {
+            hosting.layoutSubtreeIfNeeded()
+            return find("ask.sidePanel.filesTab", in: window) != nil
+                && shows("report.md", in: window)
+        }
         let closeKey = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: .command,
             timestamp: 0, windowNumber: window.windowNumber, context: nil,
             characters: "w", charactersIgnoringModifiers: "w", isARepeat: false, keyCode: 13))
