@@ -120,10 +120,11 @@ struct AskPluginResultsView: View {
     static let noteHeight: CGFloat = 16
     static let skeletonHeight: CGFloat = 44
     static let caret = " ▍"
-    static let itemHeight: CGFloat = 44
-    /// A row with a matched passage below its subtitle.
+    static let itemHeight: CGFloat = 48
+    static let contentItemHeight = AskQuickResultsView.contentFileHeight
+    /// Non-file rows may still display an additional description.
     static let excerptItemHeight: CGFloat = 62
-    static let itemSpacing: CGFloat = 2
+    static let itemSpacing: CGFloat = 4
     /// Longer lists scroll; the launcher does not grow past this many rows.
     static let maximumVisibleItems = 6
     /// Only completed lists offer numbered choices; stale lists shown while running do not.
@@ -168,13 +169,14 @@ struct AskPluginResultsView: View {
     }
 
     static func itemHeight(_ item: AskPluginItem) -> CGFloat {
-        AskPluginItemRow.showsExcerpt(item) ? excerptItemHeight : itemHeight
+        if item.fileHit?.evidence != nil { return contentItemHeight }
+        return AskPluginItemRow.showsExcerpt(item) ? excerptItemHeight : itemHeight
     }
 
     /// As `itemsHeight(_:)`, measuring the visible rows when some carry a passage.
     static func itemsHeight(_ items: [AskPluginItem]) -> CGFloat {
         let visible = items.prefix(maximumVisibleItems)
-        guard visible.contains(where: { AskPluginItemRow.showsExcerpt($0) }) else { return itemsHeight(items.count) }
+        guard !visible.isEmpty else { return itemsHeight(0) }
         return visible.reduce(0) { $0 + itemHeight($1) } + CGFloat(visible.count - 1) * itemSpacing
     }
 

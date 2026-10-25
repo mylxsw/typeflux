@@ -34,14 +34,14 @@ struct AskPluginItemRow: View {
             HStack(spacing: 11) {
                 AskPluginItemIcon(icon: item.icon, symbol: symbol, filled: filled,
                                   revision: item.fileHit?.modified)
-                VStack(alignment: .leading, spacing: Self.showsExcerpt(item) ? 2 : 1) {
+                VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(item.title).font(.system(size: 13.5, weight: .semibold)).lineLimit(1)
                             .foregroundStyle(item.valid ? StudioTheme.textPrimary : StudioTheme.textSecondary)
                         if let badge = item.badge { ModelUsageBadge(text: badge) }
                     }
                     if !item.subtitle.isEmpty {
-                        Text(item.subtitle).font(.system(size: 11.5)).lineLimit(1)
+                        Text(item.subtitle).font(.system(size: AskTheme.launcherResultDetailSize)).lineLimit(1)
                             .foregroundStyle(AskTheme.launcherResultDetail)
                     }
                     if Self.showsExcerpt(item), let excerpt = item.excerpt {
@@ -57,7 +57,7 @@ struct AskPluginItemRow: View {
                         .foregroundStyle(StudioTheme.textSecondary)
                 }
                 if selected, let action = item.actions.first(where: { $0.shortcut == .enter }) {
-                    Text("↩ " + action.title).font(.system(size: 11.5)).lineLimit(1).truncationMode(.tail)
+                    Text("↩ " + action.title).font(.system(size: AskTheme.launcherResultDetailSize)).lineLimit(1).truncationMode(.tail)
                         .foregroundStyle(filled ? AskTheme.accentText : AskTheme.launcherResultDetail)
                 }
             }

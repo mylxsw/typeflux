@@ -197,9 +197,10 @@ enum AskTheme {
         dark: NSColor(srgbRed: 0.65, green: 0.65, blue: 0.65, alpha: 1)
     )
     /// Paths, dates and descriptions recede behind result titles in either appearance.
+    static let launcherResultDetailSize: CGFloat = 10.5
     static let launcherResultDetail = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 0.50, green: 0.50, blue: 0.52, alpha: 1),
-        dark: NSColor(srgbRed: 0.46, green: 0.46, blue: 0.48, alpha: 1)
+        light: NSColor(srgbRed: 0.54, green: 0.54, blue: 0.56, alpha: 1),
+        dark: NSColor(srgbRed: 0.42, green: 0.42, blue: 0.44, alpha: 1)
     )
     static let launcherPlaceholderText = StudioTheme.dynamic(
         light: NSColor(srgbRed: 0.47, green: 0.47, blue: 0.47, alpha: 1),

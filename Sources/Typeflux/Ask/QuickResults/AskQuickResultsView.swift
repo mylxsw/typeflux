@@ -32,10 +32,10 @@ struct AskQuickResultsView: View {
     static let calculationHeight: CGFloat = 66
     static let formatHeight: CGFloat = 32
     static let askHeight: CGFloat = 42
-    static let appHeight: CGFloat = 42
-    static let fileHeight: CGFloat = 42
-    /// Content matches keep the same compact height as other files.
-    static let contentFileHeight: CGFloat = fileHeight
+    static let appHeight: CGFloat = 46
+    static let fileHeight: CGFloat = 46
+    /// Two-line content matches need breathing room above and below their metadata.
+    static let contentFileHeight: CGFloat = 54
     static let moreHeight: CGFloat = 30
     static let noticeHeight: CGFloat = 30
     static let rowSpacing: CGFloat = 2
@@ -180,7 +180,7 @@ struct AskQuickResultsView: View {
                 tile(entry.symbol, tint: entry.keyword.pluginID == AskCalendarPlugin.id ? .red : AskTheme.accent)
                 Text(entry.title).font(.system(size: 13.5)).foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
                 if !entry.keyword.keyword.isEmpty {
-                    Text(entry.keyword.keyword).font(.system(size: 11.5, design: .monospaced))
+                    Text(entry.keyword.keyword).font(.system(size: AskTheme.launcherResultDetailSize, design: .monospaced))
                         .foregroundStyle(AskTheme.launcherResultDetail)
                 }
                 Spacer(minLength: 8)
@@ -191,7 +191,7 @@ struct AskQuickResultsView: View {
                 } else {
                     Text(highlighted
                         ? L(entry.command == nil ? "ask.plugin.prefix.enter" : "ask.system.run") + " ↩" : entry.detail)
-                        .font(.system(size: 11.5)).foregroundStyle(AskTheme.launcherResultDetail).lineLimit(1)
+                        .font(.system(size: AskTheme.launcherResultDetailSize)).foregroundStyle(AskTheme.launcherResultDetail).lineLimit(1)
                 }
             }
             .padding(.horizontal, 10).frame(height: Self.appHeight)
@@ -276,12 +276,12 @@ struct AskQuickResultsView: View {
                     .foregroundStyle(StudioTheme.textPrimary)
                     .lineLimit(1)
                 Text(app.kind == .settingsPane ? L("ask.quick.pane.location") : Self.location(of: app.url))
-                    .font(.system(size: 11.5))
+                    .font(.system(size: AskTheme.launcherResultDetailSize))
                     .foregroundStyle(AskTheme.launcherResultDetail)
                     .lineLimit(1).truncationMode(.middle)
                 Spacer(minLength: 8)
                 if highlighted {
-                    Text(L("ask.quick.app.open") + " ↩").font(.system(size: 11.5))
+                    Text(L("ask.quick.app.open") + " ↩").font(.system(size: AskTheme.launcherResultDetailSize))
                         .foregroundStyle(AskTheme.launcherResultDetail)
                 }
             }
@@ -317,7 +317,7 @@ struct AskQuickResultsView: View {
                         .foregroundStyle(StudioTheme.textPrimary)
                         .lineLimit(1).truncationMode(.middle)
                         .layoutPriority(1)
-                    Text(AskLauncherSearchSettings.abbreviate(file.folder)).font(.system(size: 11.5))
+                    Text(AskLauncherSearchSettings.abbreviate(file.folder)).font(.system(size: AskTheme.launcherResultDetailSize))
                         .foregroundStyle(AskTheme.launcherResultDetail)
                         .lineLimit(1).truncationMode(.middle)
                     Spacer(minLength: 8)
@@ -354,7 +354,7 @@ struct AskQuickResultsView: View {
                 Text(L("ask.quick.file.showAll")).font(.system(size: 12.5))
                     .foregroundStyle(StudioTheme.textSecondary)
                 Spacer(minLength: 8)
-                Text("⌘↓").font(.system(size: 11.5)).foregroundStyle(AskTheme.launcherResultDetail)
+                Text("⌘↓").font(.system(size: AskTheme.launcherResultDetailSize)).foregroundStyle(AskTheme.launcherResultDetail)
             }
             .padding(.leading, 50)
             .padding(.trailing, 10)
@@ -391,7 +391,7 @@ struct AskQuickResultsView: View {
         let done = copied == index
         return Button { copy(index) } label: {
             HStack(spacing: 10) {
-                Text(format.kind.title).font(.system(size: 11.5))
+                Text(format.kind.title).font(.system(size: AskTheme.launcherResultDetailSize))
                     .foregroundStyle(AskTheme.launcherResultDetail)
                     .lineLimit(1).minimumScaleFactor(0.8)
                     .frame(width: results.calculation?.isNumericInput == true ? 110 : 72, alignment: .leading)
@@ -400,7 +400,7 @@ struct AskQuickResultsView: View {
                     .foregroundStyle(results.stale ? StudioTheme.textTertiary : StudioTheme.textPrimary)
                     .lineLimit(1).truncationMode(.tail)
                 Spacer(minLength: 8)
-                Image(systemName: done ? "checkmark" : "doc.on.doc").font(.system(size: 11.5))
+                Image(systemName: done ? "checkmark" : "doc.on.doc").font(.system(size: AskTheme.launcherResultDetailSize))
                     .foregroundStyle(done ? StudioTheme.success : StudioTheme.textTertiary)
                     .frame(width: 24)
             }

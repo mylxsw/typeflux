@@ -172,7 +172,7 @@ struct SemanticFileSearchVisualTests {
         try await Self.render(view, width: 760, name: "paused-scan")
     }
 
-    @Test func `content match rows render their passage`() async throws {
+    @Test func `content match rows render spaced metadata without passages`() async throws {
         let language = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer { AppLocalization.shared.setLanguage(language) }
