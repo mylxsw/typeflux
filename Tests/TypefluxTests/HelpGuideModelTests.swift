@@ -61,6 +61,19 @@ struct HelpGuideModelTests {
         let state: HelpModelTestState
     }
 
+    @Test func `opening a shortcut search result preserves its scroll destination`() throws {
+        let kit = try harness()
+        kit.model.prepare(query: "")
+        #expect(HelpSearch.search("cmd /", in: kit.model.catalog).shortcuts.contains { $0.id == "chat.commandsMenu" })
+        let shortcut = try #require(kit.model.catalog.shortcuts.first { $0.id == "clipboard.paste" })
+        kit.model.query = "clipboard"
+        kit.model.open(.shortcut(shortcut))
+        #expect(kit.model.page == .shortcuts && kit.model.query.isEmpty)
+        #expect(kit.model.selectedShortcutID == shortcut.id)
+        kit.model.open(.command(HelpCommand(name: "/help", title: "Help")))
+        #expect(kit.model.selectedShortcutID == "commands")
+    }
+
     func harness() throws -> Harness {
         let defaults = try #require(UserDefaults(suiteName: "help-model-" + UUID().uuidString))
         let settings = SettingsStore(defaults: defaults)

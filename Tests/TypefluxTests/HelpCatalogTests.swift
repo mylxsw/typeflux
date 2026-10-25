@@ -73,7 +73,7 @@ struct HelpCatalogTests {
         #expect(rows[1].detail == L("help.shortcuts.keyword.off"))
     }
 
-    @Test func `keyword shortcut rows explain a missing or switched off keyword and skip unset ones`() {
+    @Test func `keyword shortcut rows explain a missing or switched off keyword and include unset ones`() {
         var disabled = Self.polish
         disabled.enabled = false
         let missing = KeywordHotkey(binding: Self.controlOptionR, keyword: "gone", pluginID: AskPromptPlugin.id)
@@ -82,7 +82,8 @@ struct HelpCatalogTests {
         let catalog = HelpCatalog.build(Self.input(keywords: [Self.translate, disabled],
                                                    keywordHotkeys: [missing, paused, unset]))
         let rows = catalog.shortcuts(in: .keyword)
-        #expect(rows.map(\.title) == ["gone", "RW"])
+        #expect(rows.map(\.title) == ["gone", "RW", "FY"])
+        #expect(rows[2].keys == nil && rows[2].detail == L("help.shortcuts.unset"))
         #expect(rows[0].detail == L("help.shortcuts.keyword.missing", "gone"))
         #expect(rows[1].detail == L("help.keyword.disabled"))
         let shown = catalog.keywords.first { $0.keyword == disabled }
@@ -131,6 +132,41 @@ struct HelpCatalogTests {
         #expect(catalog.commands.allSatisfy { $0.name.hasPrefix("/") && !$0.title.isEmpty })
         #expect(Set(catalog.questions.map(\.id)).count == catalog.questions.count)
         #expect(catalog.questions.allSatisfy { !$0.question.hasPrefix("help.") && !$0.answer.hasPrefix("help.") })
+    }
+
+    @Test func `reference covers feature sections and current contextual keys in every language`() {
+        let previous = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(previous) }
+        for language in AppLanguage.allCases {
+            AppLocalization.shared.setLanguage(language)
+            let fixed = HelpCatalog.fixedShortcuts
+            #expect(Set(fixed.map(\.id)).count == fixed.count)
+            #expect(fixed.allSatisfy { !$0.title.isEmpty && !$0.title.hasPrefix("help.") && !$0.title.contains("%@") })
+            for section in HelpShortcutSection.allCases where ![.global, .keyword].contains(section) {
+                #expect(fixed.contains { $0.section == section })
+                #expect(!section.title.hasPrefix("help."))
+            }
+            #expect(fixed.first { $0.id == "chat.newLocal" }?.keys == ["⌘", "⇧", "N"])
+            #expect(fixed.first { $0.id == "notes.split" }?.keys == ["⌘", "⌥", "E"])
+            #expect(!fixed.contains { $0.id == "chat.settings" })
+            for tool in ScreenshotAnnotationTool.allCases {
+                #expect(fixed.first { $0.id == "screenshot.tool." + tool.rawValue }?.keys == [tool.shortcut])
+            }
+        }
+    }
+
+    @Test func `search finds unassigned features contexts and numbered key ranges`() {
+        let previous = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(previous) }
+        AppLocalization.shared.setLanguage(.english)
+        let catalog = HelpCatalog.build(Self.input(builtIns: [:]))
+        let unset = catalog.shortcuts.first { $0.target == .builtIn(.persona) }!
+        #expect(HelpSearch.search(unset.title, in: catalog).shortcuts.contains(unset))
+        #expect(HelpSearch.search("cmd 3", in: catalog).shortcuts.contains { $0.id == "launcher.number" })
+        #expect(!HelpSearch.search("cmd 9", in: catalog).shortcuts.contains { $0.id == "monitor.number" })
+        #expect(HelpSearch.search("shift tab", in: catalog).shortcuts.contains { $0.id == "worldClock.meeting" })
+        #expect(HelpSearch.search(HelpShortcutSection.clipboard.title, in: catalog).shortcuts
+            .filter { $0.section == .clipboard }.count == catalog.shortcuts(in: .clipboard).count)
     }
 
     @Test func `fixed key titles follow the interface language`() {

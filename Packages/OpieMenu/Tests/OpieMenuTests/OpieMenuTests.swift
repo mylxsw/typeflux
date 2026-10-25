@@ -4,6 +4,15 @@ import XCTest
 
 final class OpieMenuTests: XCTestCase {
     @MainActor
+    func testNumberKeysMatchDisplayedPositions() {
+        for (index, code) in [UInt16(18), 19, 20, 21, 23, 22, 26, 28].enumerated() {
+            XCTAssertEqual(OpieRadialMenu.numberedItemIndex(keyCode: code), index)
+        }
+        XCTAssertNil(OpieRadialMenu.numberedItemIndex(keyCode: 25))
+        XCTAssertNil(OpieRadialMenu.numberedItemIndex(keyCode: 53))
+    }
+
+    @MainActor
     func testPreparingAndReopeningReusesWindowSurfaceAndCurrentConfiguration() async throws {
         _ = NSApplication.shared
         let items = (0..<3).map { OpieMenuItem(id: "item-\($0)", title: "Item \($0)", icon: .systemSymbol("star")) }

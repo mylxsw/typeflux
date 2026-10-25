@@ -37,6 +37,7 @@ final class HelpGuideModel: ObservableObject {
 
     static let documentationURL = URL(string: "https://typeflux.app")!
 
+    @Published var selectedShortcutID: String?
     @Published var page: HelpPage = .start
     @Published var query = "" { didSet { if query != oldValue { searchFocus = 0 } } }
     /// Nil shows every group.
@@ -191,7 +192,12 @@ final class HelpGuideModel: ObservableObject {
     func open(_ item: SearchItem) {
         switch item {
         case let .keyword(keyword): showKeyword(keyword.id)
-        case .shortcut, .command: show(.shortcuts)
+        case let .shortcut(shortcut):
+            selectedShortcutID = shortcut.id
+            show(.shortcuts)
+        case .command:
+            selectedShortcutID = "commands"
+            show(.shortcuts)
         case let .question(question): showQuestion(question.id)
         }
     }

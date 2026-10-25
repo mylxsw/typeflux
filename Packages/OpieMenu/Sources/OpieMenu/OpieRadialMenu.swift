@@ -275,13 +275,18 @@ public final class OpieRadialMenu {
             case 123, 126: self.moveSelection(-1); return nil
             case 124, 125: self.moveSelection(1); return nil
             case 36, 76: self.activateSelection(); return nil
-            case 18...25:
-                let index = Int(event.keyCode - 18)
+            case 18, 19, 20, 21, 23, 22, 26, 28:
+                guard let index = Self.numberedItemIndex(keyCode: event.keyCode) else { return event }
                 if self.items.indices.contains(index) { self.select(index: index); self.activateSelection(); return nil }
                 return event
             default: return event
             }
         }
+    }
+
+    /// ANSI number-key codes are not consecutive (5/6 and 7/8 in particular).
+    static func numberedItemIndex(keyCode: UInt16) -> Int? {
+        [UInt16(18), 19, 20, 21, 23, 22, 26, 28].firstIndex(of: keyCode)
     }
 
     private func removeEventMonitors() {

@@ -98,6 +98,22 @@ enum HelpShortcutSection: String, CaseIterable, Identifiable, Sendable {
     case launcher
     case result
     case chat
+    case files
+    case translation
+    case clipboard
+    case screenshot
+    case pin
+    case recording
+    case notes
+    case wordBook
+    case calendar
+    case worldClock
+    case monitor
+    case systemInfo
+    case terminal
+    case ring
+    case help
+    case editing
 
     var id: String { rawValue }
     var title: String { L("help.shortcuts.\(rawValue)") }
@@ -260,23 +276,22 @@ extension HelpCatalog {
         return builtIns + actions
     }
 
-    /// Keyword shortcuts with keys, named after the keyword they run.
+    /// Every configured keyword shortcut, including bindings awaiting assignment.
     static func keywordShortcuts(_ input: HelpCatalogInput, keywords: [HelpKeyword]) -> [HelpShortcut] {
         let askKeywords = keywords.map(\.keyword)
         return input.keywordHotkeys.compactMap { hotkey in
-            guard let binding = hotkey.binding else { return nil }
             let resolved = hotkey.resolve(in: askKeywords)
             let title = resolved.flatMap { found in keywords.first { $0.keyword == found }?.title }
                 ?? hotkey.keyword
             let detail: String = switch KeywordHotkeyStatus(hotkey, keywords: askKeywords) {
             case .active: L("help.shortcuts.keyword.detail", hotkey.keyword)
             case .disabled: L("help.shortcuts.keyword.off")
-            case .unset: ""
+            case .unset: L("help.shortcuts.unset")
             case .keywordMissing: L("help.shortcuts.keyword.missing", hotkey.keyword)
             case .keywordDisabled: L("help.keyword.disabled")
             }
             return HelpShortcut(id: "keyword." + hotkey.id.uuidString, section: .keyword, title: title,
-                                detail: detail, keys: HelpKeys.keys(binding), target: .keyword(hotkey.id))
+                                detail: detail, keys: hotkey.binding.map(HelpKeys.keys), target: .keyword(hotkey.id))
         }
     }
 
@@ -321,14 +336,13 @@ extension HelpCatalog {
             FixedKey(.chat, "newline", ["⇧", "↩"]),
             FixedKey(.chat, "new", ["⌘", "N"]),
             FixedKey(.chat, "search", ["⌘", "K"]),
-            FixedKey(.chat, "attach", ["⌘", "U"]),
-            FixedKey(.chat, "settings", ["⌘", ","])
+            FixedKey(.chat, "attach", ["⌘", "U"])
         ]
         return rows.map { row in
             let base = "help.key.\(row.section.rawValue).\(row.name)"
             return HelpShortcut(id: "\(row.section.rawValue).\(row.name)", section: row.section, title: L(base),
                                 detail: row.detailed ? L(base + ".detail") : "", keys: row.keys)
-        }
+        } + additionalShortcuts
     }
 
     /// The `/` commands, by the names `AskCommand` gives them.

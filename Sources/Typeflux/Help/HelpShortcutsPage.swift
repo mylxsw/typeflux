@@ -6,25 +6,36 @@ struct HelpShortcutsPage: View {
     @ObservedObject var model: HelpGuideModel
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(alignment: .top, spacing: 20) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        section(.global, action: (L("help.shortcuts.edit"), { model.openSettings(.shortcuts) }))
-                        section(.keyword, action: (L("help.shortcuts.add"), { model.openSettings(.shortcuts) }),
-                                emptyText: L("help.shortcuts.keyword.empty"))
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(L("help.shortcuts.context.intro"))
+                        .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                        .padding(.vertical, 16)
+                    HStack(alignment: .top, spacing: 20) {
+                        VStack(alignment: .leading, spacing: 0) {
+                            section(.global, action: (L("help.shortcuts.edit"), { model.openSettings(.shortcuts) }))
+                            section(.keyword, action: (L("help.shortcuts.add"), { model.openSettings(.shortcuts) }),
+                                    emptyText: L("help.shortcuts.keyword.empty"))
+                        }
+                        VStack(alignment: .leading, spacing: 0) {
+                            section(.launcher)
+                            section(.result)
+                        }
                     }
-                    VStack(alignment: .leading, spacing: 0) {
-                        section(.launcher)
-                        section(.result)
+                    ForEach(HelpShortcutSection.allCases.filter { ![.global, .keyword, .launcher, .result].contains($0) }) {
+                        section($0)
                     }
+                    HelpGroupTitle(title: L("help.shortcuts.commands")).id("commands")
+                    commands
                 }
-                section(.chat)
-                HelpGroupTitle(title: L("help.shortcuts.commands"))
-                commands
+                .padding(.horizontal, 28)
+                .padding(.bottom, 24)
             }
-            .padding(.horizontal, 28)
-            .padding(.bottom, 24)
+            .onAppear { if let id = model.selectedShortcutID { proxy.scrollTo(id, anchor: .center) } }
+            .onChange(of: model.selectedShortcutID) { id in
+                if let id { proxy.scrollTo(id, anchor: .center) }
+            }
         }
     }
 
@@ -33,6 +44,11 @@ struct HelpShortcutsPage: View {
                          emptyText: String? = nil) -> some View {
         let rows = model.catalog.shortcuts(in: section)
         HelpGroupTitle(title: section.title, action: action.map { (title: $0.0, run: $0.1) })
+        if [.result, .recording, .notes, .terminal, .editing].contains(section) {
+            Text(L("help.shortcuts.context." + section.rawValue))
+                .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                .padding(.bottom, 10)
+        }
         if rows.isEmpty, let emptyText {
             HelpBlock {
                 HelpRow(symbol: nil, title: emptyText, showsDivider: false) { EmptyView() }
@@ -40,9 +56,11 @@ struct HelpShortcutsPage: View {
         } else {
             HelpBlock {
                 ForEach(Array(rows.enumerated()), id: \.element.id) { index, shortcut in
-                    HelpRow(symbol: nil, title: shortcut.title, detail: shortcut.detail, showsDivider: index > 0) {
+                    HelpRow(symbol: nil, title: shortcut.title, detail: shortcut.detail,
+                            selected: model.selectedShortcutID == shortcut.id, showsDivider: index > 0) {
                         HelpKeycaps(keys: shortcut.keys) { model.openSettings(.shortcuts) }
                     }
+                    .id(shortcut.id)
                 }
             }
         }

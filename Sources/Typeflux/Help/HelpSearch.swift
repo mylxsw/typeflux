@@ -23,11 +23,11 @@ enum HelpSearch {
             keywords: keys == nil
                 ? catalog.keywords.filter { matches($0.keyword.allKeywords + [$0.title, $0.detail]) } : [],
             shortcuts: catalog.shortcuts.filter { shortcut in
-                guard let assigned = shortcut.keys else { return false }
                 if let keys {
-                    return Set(keys).isSubset(of: Set(assigned.map { $0.lowercased() }))
+                    guard let assigned = shortcut.keys else { return false }
+                    return Set(keys).isSubset(of: searchableKeys(assigned))
                 }
-                return matches([shortcut.title, shortcut.detail, assigned.joined()])
+                return matches([shortcut.section.title, shortcut.title, shortcut.detail, shortcut.keys?.joined() ?? ""])
             },
             commands: keys == nil ? catalog.commands.filter { matches([$0.name, $0.title]) } : [],
             questions: keys == nil ? catalog.questions.filter { matches([$0.question, $0.answer]) } : []
@@ -59,6 +59,22 @@ enum HelpSearch {
         }
         guard plainKeys <= 1, tokens.contains(where: { modifiers.contains($0) }) else { return nil }
         return tokens
+    }
+
+    /// Expand displayed alternatives and number ranges for queries such as "cmd 3".
+    private static func searchableKeys(_ assigned: [String]) -> Set<String> {
+        var result = Set<String>()
+        for key in assigned {
+            let range = key.split(separator: "–")
+            if range.count == 2, let lower = Int(range[0]), let upper = Int(range[1]),
+               lower >= 0, upper <= 9, lower <= upper {
+                result.formUnion((lower...upper).map(String.init))
+            } else if key != "/" || assigned.last == "/" {
+                if let tokens = keyTokens(key) { result.formUnion(tokens) }
+                else { result.insert(key.lowercased()) }
+            }
+        }
+        return result
     }
 
     /// Spoken names of keys, longest first so "command" is not read as "cmd" and the rest.
