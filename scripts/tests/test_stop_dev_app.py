@@ -46,6 +46,8 @@ sys.exit(0 if matching else 1)
             swift.write_text('''#!/usr/bin/env python3
 import json, os, pathlib, sys
 root = pathlib.Path(os.environ["STOP_TEST_ROOT"])
+requests = root / "requests"
+requests.write_text(str(int(requests.read_text()) + 1) if requests.exists() else "1")
 (root / "quit.json").write_text(json.dumps(sys.argv[1:]))
 (root / "quit.swift").write_text(sys.stdin.read())
 sys.exit(int(os.environ["STOP_TEST_REFUSE"]))
@@ -62,6 +64,7 @@ sys.exit(int(os.environ["STOP_TEST_REFUSE"]))
             requested = json.loads(quit_file.read_text()) if quit_file.exists() else None
             source_file = folder / "quit.swift"
             source = source_file.read_text() if source_file.exists() else ""
+            result.quit_requests = int((folder / "requests").read_text()) if (folder / "requests").exists() else 0
             polls = int((folder / "count").read_text())
             return result, requested, source, polls, executable
 
@@ -93,6 +96,7 @@ sys.exit(int(os.environ["STOP_TEST_REFUSE"]))
         result, _, _, polls, _ = self.run_stop(snapshots)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(polls, 66)
+        self.assertGreater(result.quit_requests, 1)
 
     def test_timeout_reports_remaining_process_without_killing_it(self):
         result, requested, _, polls, executable = self.run_stop([[(10, "")]])
@@ -101,6 +105,13 @@ sys.exit(int(os.environ["STOP_TEST_REFUSE"]))
         self.assertIn("did not quit cleanly", result.stderr)
         self.assertIn("10 " + executable, result.stderr)
         self.assertEqual(polls, 242)  # Initial poll, 240 waits, diagnostic listing.
+
+    def test_retry_does_not_request_quit_from_orphan_children(self):
+        child = " --feature-process background --ipc-fd 100"
+        snapshots = [[(10, ""), (20, child)]] + [[(20, child)]] * 30 + [[]]
+        result, _, _, _, _ = self.run_stop(snapshots)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.quit_requests, 1)
 
     def test_refused_quit_stops_before_waiting(self):
         result, _, _, polls, _ = self.run_stop([[(10, "")]], refuse=True)

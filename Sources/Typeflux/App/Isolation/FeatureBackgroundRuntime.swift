@@ -127,6 +127,7 @@ final class FeatureBackgroundRuntime {
     private let content: SemanticFileSearchService
     private let healthDirectory: URL?
     private let publish: @MainActor (FeatureCommand) -> Void
+    private let shutdown = FeatureShutdownBarrier()
     private let media: FeatureMediaJobs
     init(names: AskFileIndex = .shared, content: SemanticFileSearchService = .shared, media: FeatureMediaJobs? = nil,
          healthDirectory: URL? = nil, publish: @escaping @MainActor (FeatureCommand) -> Void = { FeatureProcess.send($0) }) {
@@ -282,15 +283,17 @@ final class FeatureBackgroundRuntime {
         case "ping": break
         case "settings": names.start(); content.start()
         case "shutdown":
-            stopped = true
-            idleTask?.cancel(); try await media.shutdown(); healthObservations.forEach { $0.cancel() }
-            publication?.cancel(); subscriptions.removeAll()
-            registry?.preventNewWork()
-            names.suspendWorker(); content.readers.stop(); content.embeddingOwners.stop()
-            await registry?.shutdown()
-            let deadline = ContinuousClock.now.advanced(by: .seconds(2))
-            while hasOwnedHelpers, ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(10)) }
-            guard !hasOwnedHelpers else { throw FeatureRPC.Failure.busy }
+            try await shutdown.run { [self] in
+                stopped = true
+                idleTask?.cancel(); try await media.shutdown(); healthObservations.forEach { $0.cancel() }
+                publication?.cancel(); subscriptions.removeAll()
+                registry?.preventNewWork()
+                names.suspendWorker(); content.readers.stop(); content.embeddingOwners.stop()
+                await registry?.shutdown()
+                let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+                while hasOwnedHelpers, ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(10)) }
+                guard !hasOwnedHelpers else { throw FeatureRPC.Failure.busy }
+            }
         case "recoverModule":
             let request = try JSONDecoder().decode(FeatureModuleRecovery.self, from: command.payload)
             guard let entry = registry?.registrations.first(where: { $0.id == request.id })

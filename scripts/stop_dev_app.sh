@@ -12,6 +12,7 @@ if ! pgrep -f "$process_pattern" >/dev/null 2>&1; then
   exit 0
 fi
 
+request_quit() {
 host_pids=()
 while IFS= read -r pid; do
   [[ -n "$pid" ]] && host_pids+=("$pid")
@@ -42,12 +43,21 @@ for argument in CommandLine.arguments.dropFirst(2) {
 SWIFT
 fi
 
+}
+
+request_quit
+
 # Child shutdown alone can take 30 seconds, followed by the host's own storage
 # cleanup. Also wait for feature children before replacing their executable.
 echo "Waiting for Typeflux to finish saving and exit (up to 120 seconds)..."
 for ((attempt = 0; attempt < 240; attempt++)); do
   if ! pgrep -f "$process_pattern" >/dev/null 2>&1; then
     exit 0
+  fi
+  # AppKit may cancel a quit while a feature is finishing a recording or
+  # draining helpers. Reissue a normal quit; never bypass its save checks.
+  if (( attempt > 0 && attempt % 20 == 0 )); then
+    request_quit
   fi
   sleep 0.5
 done
