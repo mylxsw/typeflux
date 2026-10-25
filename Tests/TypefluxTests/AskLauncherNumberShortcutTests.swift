@@ -56,6 +56,44 @@ struct AskLauncherNumberShortcutTests {
         #expect(changes.last == false)
     }
 
+    @Test func consumedRingReleaseClearsHintsWithoutAnAppKitEvent() {
+        let monitor = AskLauncherCommandMonitor.MonitorView()
+        var physical: NSEvent.ModifierFlags = []
+        monitor.physicalModifiers = { physical }
+        defer { monitor.stop() }
+
+        // Opening Chat after Ring must not inherit cached Command flags.
+        monitor.refresh(isKeyWindow: true)
+        #expect(!monitor.showing)
+        physical = .command
+        monitor.refresh(isKeyWindow: true)
+        #expect(monitor.showing)
+        physical = []
+        monitor.refresh(isKeyWindow: true)
+        #expect(!monitor.showing)
+        physical = [.command, .shift]
+        monitor.refresh(isKeyWindow: true)
+        #expect(!monitor.showing)
+        physical = .command
+        monitor.refresh(isKeyWindow: false)
+        #expect(!monitor.showing)
+    }
+
+    @Test func visibleHintsRecheckPhysicalReleaseOnTimer() async throws {
+        let monitor = AskLauncherCommandMonitor.MonitorView()
+        var physicalReads = 0
+        monitor.physicalModifiers = {
+            physicalReads += 1
+            return []
+        }
+        defer { monitor.stop() }
+        monitor.update(modifiers: .command, isKeyWindow: true)
+        #expect(monitor.showing)
+        try await Task.sleep(for: .milliseconds(250))
+        #expect(physicalReads > 0)
+        #expect(!monitor.showing)
+    }
+
     @Test(arguments: [AskLauncherChatAction.openChat, .askAI, .execute("Open Notes")])
     func chatActionHintRendersInBothThemesAndCompactLayouts(mode: AskLauncherChatAction) async throws {
         let previousLanguage = AppLocalization.shared.language

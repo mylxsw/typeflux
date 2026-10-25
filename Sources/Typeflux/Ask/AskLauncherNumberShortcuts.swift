@@ -71,13 +71,32 @@ struct AskLauncherCommandMonitor: NSViewRepresentable {
         var onChange: (Bool) -> Void = { _ in }
         private var monitor: Any?
         private var observers: [NSObjectProtocol] = []
+        private var releaseTimer: Timer?
+        var physicalModifiers: () -> NSEvent.ModifierFlags = {
+            NSEvent.ModifierFlags(rawValue: UInt(CGEventSource.flagsState(.hidSystemState).rawValue))
+        }
         private(set) var showing = false
 
         func update(modifiers: NSEvent.ModifierFlags, isKeyWindow: Bool) {
             let next = isKeyWindow && modifiers.intersection([.command, .option, .control, .shift]) == .command
             guard next != showing else { return }
             showing = next
+            releaseTimer?.invalidate()
+            releaseTimer = nil
+            if next {
+                // Ring can consume the release event before AppKit sees it.
+                let timer = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in
+                    MainActor.assumeIsolated { self?.refresh() }
+                }
+                releaseTimer = timer
+                RunLoop.main.add(timer, forMode: .common)
+            }
             onChange(next)
+        }
+
+        /// Read hardware state because AppKit's cached flags can outlive a consumed Ring gesture.
+        func refresh(isKeyWindow: Bool? = nil) {
+            update(modifiers: physicalModifiers(), isKeyWindow: isKeyWindow ?? (window?.isKeyWindow == true))
         }
 
         override func viewDidMoveToWindow() {
@@ -86,13 +105,13 @@ struct AskLauncherCommandMonitor: NSViewRepresentable {
             guard let window else { return }
             monitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { [weak self] event in
                 guard let self, event.window === self.window else { return event }
-                self.update(modifiers: event.modifierFlags, isKeyWindow: self.window?.isKeyWindow == true)
+                self.refresh()
                 return event
             }
             observers = [
                 NotificationCenter.default.addObserver(forName: NSWindow.didBecomeKeyNotification, object: window,
                                                        queue: .main) { [weak self] _ in
-                    self?.update(modifiers: NSEvent.modifierFlags, isKeyWindow: true)
+                    self?.refresh(isKeyWindow: true)
                 },
                 NotificationCenter.default.addObserver(forName: NSWindow.didResignKeyNotification, object: window,
                                                        queue: .main) { [weak self] _ in
@@ -102,7 +121,7 @@ struct AskLauncherCommandMonitor: NSViewRepresentable {
             // Defer the initial publish until SwiftUI finishes attaching the view.
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
-                self.update(modifiers: NSEvent.modifierFlags, isKeyWindow: self.window?.isKeyWindow == true)
+                self.refresh()
             }
         }
 
@@ -115,6 +134,7 @@ struct AskLauncherCommandMonitor: NSViewRepresentable {
         }
 
         deinit {
+            releaseTimer?.invalidate()
             if let monitor { NSEvent.removeMonitor(monitor) }
             observers.forEach(NotificationCenter.default.removeObserver)
         }
