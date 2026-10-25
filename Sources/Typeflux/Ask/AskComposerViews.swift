@@ -1347,9 +1347,22 @@ struct AskComposer: View {
         return starters[index]
     }
 
-    /// Keep the conversation canvas visible whenever no result owns the area,
-    /// including while a new query is waiting for its first search batch.
-    private var showsLauncherNoMatch: Bool {
+    @State private var emptyCanvasSettled = false
+
+    private struct EmptyCanvasUpdate: Equatable {
+        var text: String
+        var eligible: Bool
+    }
+
+    private var emptyCanvasUpdate: EmptyCanvasUpdate {
+        .init(text: draft.wrappedValue.text, eligible: canShowLauncherNoMatch)
+    }
+
+    private var showsLauncherNoMatch: Bool { canShowLauncherNoMatch && emptyCanvasSettled }
+
+    /// A settled canvas stays visible while typing; a new one waits out brief
+    /// gaps between search batches instead of flashing on every keystroke.
+    private var canShowLauncherNoMatch: Bool {
         return launcher && !active && !model.launcherHistoryMode && !launcherCollapsed && !paletteOpen
             && !plugins.isActive && pluginDisplay == nil && draft.wrappedValue.hasText
             && launcherContextHome == nil && !showsQuickResults
@@ -1485,6 +1498,13 @@ struct AskComposer: View {
             }
             .onPreferenceChange(AskComposerHeight.self) { height in
                 if !launcher, abs(cardHeight - height) > 0.5 { cardHeight = height }
+            }
+            .task(id: emptyCanvasUpdate) {
+                guard canShowLauncherNoMatch else { emptyCanvasSettled = false; return }
+                guard !emptyCanvasSettled else { return }
+                do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
+                guard !Task.isCancelled, canShowLauncherNoMatch else { return }
+                emptyCanvasSettled = true
             }
             .onChange(of: editorHeight) { _ in reportHeight() }
             .onChange(of: launcherCollapsed) { _ in reportHeight() }

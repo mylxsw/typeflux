@@ -39,6 +39,7 @@ struct AskLauncherEmptyResultsTests {
         let launcher = try await AskQuickResultsInteractionTests.Launcher(text: "ssssdddddddd")
         defer { launcher.close() }
         let model = launcher.fixture.model
+        try await Task.sleep(for: .milliseconds(350))
         func hasCanvas() -> Bool {
             launcher.window.contentView?.layoutSubtreeIfNeeded()
             return SettingsBehaviorTestSupport.elements(in: launcher.window).contains {
@@ -57,6 +58,36 @@ struct AskLauncherEmptyResultsTests {
             #expect(!model.quickSearch.isCurrent(text: text))
             #expect(hasCanvas(), "The real launcher must show its canvas for: \(text)")
         }
+    }
+
+    @Test func briefResultGapsDoNotFlashTheConversationCanvas() async throws {
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore() }
+        let launcher = try await AskQuickResultsInteractionTests.Launcher(text: "unmatched")
+        defer { launcher.close() }
+        let model = launcher.fixture.model
+        func hasCanvas() -> Bool {
+            launcher.window.contentView?.layoutSubtreeIfNeeded()
+            return SettingsBehaviorTestSupport.elements(in: launcher.window).contains {
+                $0.value("accessibilityIdentifier") as? String == "ask.launcher.empty.title"
+            }
+        }
+        // A visible indexing notice owns the results area just like a match.
+        var visible = AskQuickResults(apps: [], lead: false)
+        visible.notice = .indexing(found: 1, progress: nil)
+        for _ in 0 ..< 4 {
+            model.quickSearch.results = visible
+            try await Task.sleep(for: .milliseconds(60))
+            #expect(!hasCanvas())
+            model.quickSearch.results = nil
+            try await Task.sleep(for: .milliseconds(60))
+            #expect(!hasCanvas(), "A short empty batch must not flash the orb")
+        }
+        try await Task.sleep(for: .milliseconds(350))
+        #expect(hasCanvas(), "A sustained empty result still shows the canvas")
+        model.launcherDraft.text = "another unmatched question"
+        try await Task.sleep(for: .milliseconds(60))
+        #expect(hasCanvas(), "Typing must not hide an already visible canvas")
     }
 
     // MARK: - Subject
