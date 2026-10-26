@@ -114,7 +114,6 @@ struct AskTranslationPanelView: View {
             }
             .frame(maxHeight: .infinity)
             .background(AskTranslationTitleDragArea())
-            sourceChip
             Menu {
                 if history.entries.isEmpty {
                     Text(L("ask.translation.panel.history.empty"))
@@ -142,32 +141,13 @@ struct AskTranslationPanelView: View {
                 .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
                 .frame(width: 28, height: 28)
                 .help(L("ask.translation.panel.more"))
+                .popover(isPresented: $showsShortcuts, arrowEdge: .top) { AskTranslationShortcutSheet() }
                 .accessibilityIdentifier("ask.translation.panel.more")
         }
         .foregroundStyle(StudioTheme.textTertiary)
         .tint(StudioTheme.textTertiary)
         .padding(.leading, 8).padding(.trailing, 8)
         .frame(height: Self.titleHeight)
-    }
-
-    private var sourceChip: some View {
-        HStack(spacing: 4) {
-            Image(systemName: Self.symbol(for: model.source)).font(.system(size: 10))
-            Text(model.source.title).font(.system(size: 11))
-        }
-        .foregroundStyle(StudioTheme.textTertiary)
-        .padding(.horizontal, 8).frame(height: 22)
-        .background(AskTheme.hoverFill, in: Capsule())
-        .padding(.trailing, 4)
-    }
-
-    static func symbol(for source: AskTranslationPanelSource) -> String {
-        switch source {
-        case .input: "keyboard"
-        case .selection: "character.cursor.ibeam"
-        case .screenshot: "camera.viewfinder"
-        case .launcher: "command"
-        }
     }
 
     // MARK: Original
@@ -196,8 +176,9 @@ struct AskTranslationPanelView: View {
                 .frame(height: editorHeight).padding(.horizontal, 9)
                 .accessibilityIdentifier("ask.translation.panel.original")
             HStack(spacing: 2) {
-                Text(model.text.isEmpty ? L("ask.translation.panel.hint.translate") + " ↩"
-                    : L("ask.translation.panel.characters", model.text.count))
+                if !model.text.isEmpty {
+                    Text(L("ask.translation.panel.characters", model.text.count))
+                }
                 if model.isDirty, !model.trimmedText.isEmpty, !model.running {
                     HStack(spacing: 4) {
                         Text("↩").font(.system(size: 10, weight: .semibold))
@@ -300,9 +281,6 @@ extension AskTranslationPanelView {
                     }
                 }
                 Spacer(minLength: 0)
-                icon("keyboard", title: L("ask.translation.panel.keyboard")) { showsShortcuts.toggle() }
-                    .popover(isPresented: $showsShortcuts, arrowEdge: .bottom) { AskTranslationShortcutSheet() }
-                    .accessibilityIdentifier("ask.translation.panel.shortcuts")
             }
             .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
             .padding(.leading, 14).padding(.trailing, 8)
@@ -325,7 +303,7 @@ struct AskTranslationKeyCap: View {
     }
 }
 
-/// Every panel shortcut, opened from the footer's keyboard button or the ⋯ menu.
+/// Every panel shortcut, opened from the ⋯ menu.
 struct AskTranslationShortcutSheet: View {
     static let rows: [(keys: String, title: String)] = [
         ("↩", "ask.translation.panel.hint.translate"),

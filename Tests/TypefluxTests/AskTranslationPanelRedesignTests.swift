@@ -90,10 +90,6 @@ struct AskTranslationPanelRedesignTests {
             #expect(!L("ask.translation.panel.copied", "AI").contains("%@"))
             #expect(!L("ask.translation.stack.detected", "English").contains("%@"))
         }
-        for source in [AskTranslationPanelSource.input, .selection, .screenshot, .launcher] {
-            #expect(NSImage(systemSymbolName: AskTranslationPanelView.symbol(for: source),
-                            accessibilityDescription: nil) != nil)
-        }
     }
 
     @Test func `copy and insert flash a footer confirmation that clears itself`() async throws {
@@ -193,7 +189,9 @@ struct AskTranslationPanelRedesignTests {
         controller.present()
         let window = try #require(controller.presentedWindow)
         try await SettingsBehaviorTestSupport.wait { element("ask.translation.panel.recent.0", in: window) != nil }
-        #expect(SettingsBehaviorTestSupport.contains(model.source.title, in: window))
+        #expect(!SettingsBehaviorTestSupport.contains(model.source.title, in: window))
+        #expect(element("ask.translation.panel.shortcuts", in: window) == nil)
+        #expect(!SettingsBehaviorTestSupport.contains(L("ask.translation.panel.hint.translate") + " ↩", in: window))
         try #require(element("ask.translation.panel.recent.0", in: window)).press()
         await model.waitForTranslation()
         #expect(model.text == "Recalled sentence.")
