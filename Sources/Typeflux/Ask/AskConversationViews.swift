@@ -1901,7 +1901,6 @@ struct AskReasoningView: View {
             .accessibilityLabel(label)
             if expanded {
                 AskReasoningText(text: text)
-                    .frame(height: 220)
                     .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
                     .padding(.leading, 12)
                     .overlay(alignment: .leading) { Rectangle().fill(AskTheme.border).frame(width: 2) }

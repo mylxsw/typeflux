@@ -21,6 +21,49 @@ import Testing
         }
     }
 
+    @Test func `height follows wrapping streaming replacement and font up to the cap`() throws {
+        let scroll = AskReasoningText.makeScrollView()
+        let editor = try #require(scroll.documentView as? AskReasoningText.Editor)
+        for monospaced in [false, true] {
+            editor.setContent("Short output", monospaced: monospaced)
+            let short = editor.viewportHeight(width: 600)
+            #expect(short > 8 && short < 40)
+            editor.setContent(String(repeating: "中文 output 👋 ", count: 12), monospaced: monospaced)
+            let wide = editor.viewportHeight(width: 600)
+            #expect(editor.viewportHeight(width: 160) > wide)
+            editor.setContent(String(repeating: "line of output\n", count: 8000), monospaced: monospaced)
+            #expect(editor.viewportHeight(width: 320) == 220)
+            editor.setContent("Short output", monospaced: monospaced)
+            #expect(editor.viewportHeight(width: 600) == short)
+            editor.setContent("Short output\n", monospaced: monospaced)
+            #expect(editor.viewportHeight(width: 600) > short)
+        }
+    }
+
+    private final class ScrollReceiver: NSResponder {
+        var received = false
+        override func scrollWheel(with _: NSEvent) { received = true }
+    }
+
+    @Test func `short output forwards wheel events to the conversation`() throws {
+        let scroll = AskReasoningText.makeScrollView()
+        let editor = try #require(scroll.documentView as? AskReasoningText.Editor)
+        editor.setContent("Short")
+        scroll.frame.size.height = editor.viewportHeight(width: 600)
+        let receiver = ScrollReceiver()
+        scroll.nextResponder = receiver
+        scroll.scrollWheel(with: NSEvent())
+        #expect(receiver.received)
+    }
+
+    @Test func `hosted short reasoning adopts natural height`() {
+        let host = NSHostingView(rootView: AskReasoningText(text: "One line").frame(width: 600))
+        #expect(host.fittingSize.height < 40)
+        #expect(host.fittingSize.height > 8)
+        host.rootView = AskReasoningText(text: String(repeating: "line\n", count: 1000)).frame(width: 600)
+        #expect(host.fittingSize.height == 220)
+    }
+
     @Test func `stream append preserves Unicode selection and storage prefix`() throws {
         let scroll = AskReasoningText.makeScrollView()
         let editor = try #require(scroll.documentView as? AskReasoningText.Editor)

@@ -27,13 +27,6 @@ import Testing
         #expect(AskActivityRowPresentation.title(call("run_command", "{\"command\":\"\(long)\"}")).count < 400)
     }
 
-    @Test func shortShellOutputShrinksAndLargeOutputStaysBounded() {
-        #expect(AskActivityRowPresentation.outputHeight("$ pwd\n\n/work") == 64)
-        #expect(AskActivityRowPresentation.outputHeight("") == 64)
-        #expect(AskActivityRowPresentation.outputHeight(String(repeating: "line\n", count: 10000)) == 220)
-        #expect(AskActivityRowPresentation.outputHeight(String(repeating: "x", count: 10000)) == 220)
-    }
-
     @Test func narrationSplitsToolGroupsWithoutLosingReasoningOrStableOutputOwnership() throws {
         let now = Date()
         let first = AskMessage(id: "a", role: "assistant", text: "I will inspect the files.",

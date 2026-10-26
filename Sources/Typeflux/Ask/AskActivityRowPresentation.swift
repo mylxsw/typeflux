@@ -24,13 +24,6 @@ enum AskActivityRowPresentation {
         return AskTheme.toolTitle(call)
     }
 
-    /// Estimate a small shell viewport from a bounded prefix; large output remains scrollable.
-    static func outputHeight(_ text: String) -> CGFloat {
-        let lines = text.prefix(2048).split(separator: "\n", omittingEmptySubsequences: false)
-        let wrapped = lines.reduce(0) { $0 + max(1, ($1.utf16.count + 47) / 48) }
-        return CGFloat(min(220, max(64, wrapped * 16 + 8)))
-    }
-
     static func groupTitle(_ group: AskActivityGroup) -> String {
         var seen = Set<String>()
         let titles = group.steps.compactMap { call -> String? in
@@ -63,7 +56,7 @@ struct AskActivityNarration: View {
             .onHover { hovering = $0 }
             .font(.system(size: 13.5))
             .foregroundStyle(StudioTheme.textPrimary)
-            if expanded { AskReasoningText(text: text).frame(height: 220) }
+            if expanded { AskReasoningText(text: text) }
         }
         .padding(.vertical, 6)
     }

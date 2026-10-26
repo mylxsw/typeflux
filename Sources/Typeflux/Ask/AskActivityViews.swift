@@ -264,7 +264,7 @@ private struct AskActivityTextDisclosure: View {
             .buttonStyle(.plain)
             .onHover { hovering = $0 }
             .accessibilityValue(L(expanded ? "ask.activity.expanded" : "ask.activity.collapsed"))
-            if expanded { AskReasoningText(text: text).frame(height: 220) }
+            if expanded { AskReasoningText(text: text) }
         }
     }
 }
@@ -389,8 +389,7 @@ struct AskToolStepRow: View {
             if expanded {
                 if let command = AskActivityRowPresentation.command(call) {
                     let transcript = "$ " + command + (result.map { "\n\n" + $0.resultText } ?? "")
-                    AskMonoBlock(title: "Shell", text: transcript, isError: state == .failed,
-                                 contentHeight: AskActivityRowPresentation.outputHeight(transcript))
+                    AskMonoBlock(title: "Shell", text: transcript, isError: state == .failed)
                         .padding(.top, 6).padding(.bottom, 8)
                     DisclosureGroup(L("ask.tool.arguments")) {
                         AskMonoBlock(title: "", text: call.function.arguments)

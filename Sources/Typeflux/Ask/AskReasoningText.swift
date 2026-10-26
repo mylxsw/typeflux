@@ -15,7 +15,7 @@ struct AskReasoningText: NSViewRepresentable {
     }
 
     static func makeScrollView() -> NSScrollView {
-        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 600, height: 220))
+        let scroll = Viewport(frame: NSRect(x: 0, y: 0, width: 600, height: 220))
         scroll.drawsBackground = false
         scroll.hasVerticalScroller = true
         scroll.autohidesScrollers = true
@@ -46,11 +46,44 @@ struct AskReasoningText: NSViewRepresentable {
         }
     }
 
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView scroll: NSScrollView,
+                      context _: Context) -> CGSize? {
+        guard let width = proposal.width, width > 0,
+              let editor = scroll.documentView as? Editor else { return nil }
+        return CGSize(width: width, height: editor.viewportHeight(width: width))
+    }
+
+    final class Viewport: NSScrollView {
+        override func scrollWheel(with event: NSEvent) {
+            guard let editor = documentView as? Editor,
+                  let manager = editor.layoutManager, let container = editor.textContainer,
+                  manager.usedRect(for: container).height + editor.textContainerInset.height * 2
+                    > contentSize.height + 1 else {
+                nextResponder?.scrollWheel(with: event)
+                return
+            }
+            super.scrollWheel(with: event)
+        }
+    }
+
     final class Editor: NSTextView {
         private var source = ""
 
         private var code = false
         private var error = false
+
+        /// Lay out only the visible prefix; very large streamed outputs stay bounded.
+        func viewportHeight(width: CGFloat) -> CGFloat {
+            guard let container = textContainer, let manager = layoutManager else { return 220 }
+            container.containerSize = NSSize(width: width, height: .greatestFiniteMagnitude)
+            let inset = textContainerInset.height * 2
+            manager.ensureLayout(forBoundingRect: NSRect(x: 0, y: 0, width: width, height: 220),
+                                 in: container)
+            let used = manager.usedRect(for: container).maxY
+            let trailing = manager.extraLineFragmentTextContainer == container
+                ? manager.extraLineFragmentRect.maxY : 0
+            return min(220, ceil(max(used, trailing, font?.ascender ?? 13) + inset))
+        }
 
         func setContent(_ text: String, monospaced: Bool = false, isError: Bool = false) {
             let restyle = code != monospaced || error != isError

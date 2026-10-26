@@ -631,7 +631,6 @@ struct AskMonoBlock: View {
     var title: String
     var text: String
     var isError = false
-    var contentHeight: CGFloat = 220
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -641,7 +640,6 @@ struct AskMonoBlock: View {
                     .foregroundStyle(StudioTheme.textTertiary)
             }
             AskReasoningText(text: text, monospaced: true, isError: isError)
-                .frame(height: contentHeight)
                 .padding(8)
                 .background(AskTheme.monoSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             Button(L("ask.copy")) {
