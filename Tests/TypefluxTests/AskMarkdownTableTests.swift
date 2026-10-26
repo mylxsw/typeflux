@@ -67,6 +67,36 @@ import Testing
         #expect(style.textBlocks.isEmpty)
     }
 
+    @Test func `table separates following paragraphs headings and lists in actual layout`() throws {
+        let table = "| Name | Value |\n| --- | --- |\n| A | B |"
+        for following in ["**Following** text", "## Following", "- Following\n- Another"] {
+            let value = AskMarkdownText.render(table + "\n\n" + following)
+            let range = (value.string as NSString).range(of: "Following")
+            let style = try #require(value.attribute(.paragraphStyle, at: range.location,
+                                                    effectiveRange: nil) as? NSParagraphStyle)
+            #expect(style.paragraphSpacingBefore == 16)
+            #expect(style.textBlocks.isEmpty)
+            let withoutGap = NSMutableAttributedString(attributedString: value)
+            let compact = AskMarkdownText.mutable(style)
+            compact.paragraphSpacingBefore = 0
+            withoutGap.addAttribute(.paragraphStyle, value: compact,
+                                   range: (value.string as NSString).paragraphRange(for: range))
+            for width: CGFloat in [320, 700] {
+                func position(_ content: NSAttributedString) throws -> CGFloat {
+                    let editor = AskTranscriptText.Editor(frame: NSRect(x: 0, y: 0, width: width, height: 900))
+                    editor.textStorage?.setAttributedString(content)
+                    let container = try #require(editor.textContainer)
+                    let layout = try #require(editor.layoutManager)
+                    container.containerSize = NSSize(width: width, height: .greatestFiniteMagnitude)
+                    layout.ensureLayout(for: container)
+                    let glyphs = layout.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
+                    return layout.boundingRect(forGlyphRange: glyphs, in: container).minY
+                }
+                #expect(try position(value) - position(withoutGap) >= 15.5)
+            }
+        }
+    }
+
     @Test func `inline formatting empty cells and trailing table remain intact`() throws {
         let value = AskMarkdownText
             .render("| Name | Value |\n| --- | --- |\n| **bold** | [link](https://example.com) |\n| | `a\\|b` |")

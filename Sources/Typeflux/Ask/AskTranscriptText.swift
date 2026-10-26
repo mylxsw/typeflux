@@ -418,8 +418,20 @@ enum AskMarkdownText {
                 if listDepth == 0 { closeList(in: result) }
                 return
             }
+            var previousWasTable = false
             for child in node.children {
+                let start = result.length
                 visit(child, attributes, listDepth: listDepth)
+                // Table margins alone do not reliably separate the next text paragraph in TextKit.
+                if previousWasTable, result.length > start,
+                   let current = result.attribute(.paragraphStyle, at: start, effectiveRange: nil) as? NSParagraphStyle,
+                   current.textBlocks.isEmpty {
+                    let style = mutable(current)
+                    style.paragraphSpacingBefore = max(style.paragraphSpacingBefore, 16)
+                    let range = (result.string as NSString).paragraphRange(for: NSRange(location: start, length: 0))
+                    result.addAttribute(.paragraphStyle, value: style, range: range)
+                }
+                previousWasTable = child is Markdown.Table
             }
             if node is Paragraph || node is Heading {
                 append("\n", attributes)
