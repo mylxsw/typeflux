@@ -898,3 +898,65 @@ An inactive plan uses a paused marker; a structured blocker or question remains 
 
 An explicit denied result suppresses the automatic closing review. A refused plan checkpoint
 stops without another attempt. Ordinary tool permission decisions remain client-owned.
+
+### Long conversation rendering
+
+Keep scrolling independent of transcript length. `AskConversationModel.transcriptRevision`
+advances when the selected snapshot or file changes change. Stream deltas reuse that
+prepared history and update only the trailing message/activity and its outcome references.
+Out-of-order receipts or file changes fall back to full preparation. The view's
+`AskActivityOutputCache` uses that revision to bypass filtering and deep comparisons during
+unrelated view updates. Callers of its revision API must advance the revision for every input
+change; the non-revision API remains available for callers without an authoritative revision.
+
+Recovery presentation and the presence of conversation images are cached at the model boundary
+and invalidated by their source data. A transcript row must never rebuild recovery presentation
+by scanning the execution journal. The phase and latest-row IDs are resolved once per view pass.
+Historical message and activity bodies opt into equality only with a stable model action identity;
+approval views always update, and hover/expansion state and environment changes remain local.
+
+The transcript reports one content size, not every row's position in the scrolling viewport.
+Scrolling alone therefore does not generate geometry dictionaries or request another scroll.
+Bottom adjustments caused by stream, layout and composer changes coalesce per main-loop turn,
+and queued adjustments are cancelled when the conversation changes or disappears. User scrolling
+and text selection still take precedence over automatic following.
+
+`AskTranscriptPerformanceTests` exercises cache invalidation, large journals, scheduled scroll
+cancellation and the actual conversation hosting view with thousands of tool receipts. The
+window stress records layout/draw p50, p95 and maximum durations; these are main-thread work
+measurements, not a claim of measured display FPS. Use application profiling alongside them.
+
+Reference: [Apple's SwiftUI performance guidance](https://developer.apple.com/documentation/Xcode/understanding-and-improving-swiftui-performance).
+
+Stream progress has a dedicated observable channel (`AskTranscriptStreamUpdates`). The
+conversation content observes it directly, while the composer and sidebar keep observing
+ordinary model state. Inline launcher answers retain their broader notification, and background
+activity subscribers merge both channels so tool-step indicators cannot miss stream changes.
+
+Performance regression scenarios (2026-10-26, local Apple Silicon):
+
+- The original slow-chat main-thread sample repeatedly entered `runPhase` → recovery
+  presentation from historical row construction. The host process itself was mostly idle.
+- The optimized native hosting-view stress, 180 bidirectional scroll/layout samples with
+  text streaming and 10,500 raw messages, measured p50 18.97 ms, p95 25.72 ms, max 39.69 ms.
+- A read-only replay of the reported conversation (869 messages), with tool arguments
+  streaming, measured p50 1.85 ms, p95 3.04 ms, max 16.48 ms in the optimized build.
+- Debug/coverage timing is intentionally separate: the 10,500-message case measured
+  p95 42.98 ms. The test's 50 ms guard accommodates instrumentation; it is not a 60 FPS gate.
+
+Run the focused `AskTranscriptPerformanceTests` suite through the normal test runner.
+`TYPEFLUX_SCROLL_STRESS_TURNS=250` selects the larger synthetic scenario;
+`TYPEFLUX_SCROLL_STRESS_TOOLS=1` streams partial tool arguments, and
+`TYPEFLUX_SCROLL_STRESS_IDLE=1` isolates scrolling without generation.
+`TYPEFLUX_SCROLL_STRESS_RECORD` optionally points to a local read-only `AskLocalRecord`
+fixture. Only messages are replayed into an isolated model; its original task is never run.
+Never commit a private conversation fixture. Tests also verify that reading older messages
+is not interrupted by stream updates and that returning to the end resumes following.
+
+The 10,500-message idle-scroll variant measured p95 21.18 ms (max 62.81 ms).
+These large-fixture results eliminate sustained severe stalls in the measured scenario but
+are not a guarantee of a 16.7 ms frame budget. The installed-app check remains incomplete:
+the old application's chat IPC channel returned `unavailable` on normal shutdown and the
+host correctly refused to quit without a save acknowledgment. The attempted installer
+therefore did not replace the running app. Do not treat these native test-window results
+as validation of the user's installed build.

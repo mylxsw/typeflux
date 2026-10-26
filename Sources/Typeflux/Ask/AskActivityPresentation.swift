@@ -19,26 +19,83 @@ final class AskActivityOutputCache {
     }
     private var entries: [String: Entry] = [:]
     private var conversationID: String?
+    private var inputRevision: UInt64?
+
+    /// The caller owns the revision and advances it whenever any transcript input changes.
+    /// Autoclosures keep filtering and full-array comparisons out of unchanged view passes.
+    func prepare(conversationID: String?, revision: UInt64, messages: @autoclosure () -> [AskMessage],
+                 results: @autoclosure () -> [AskMessage], changes: [String: [AskWorkspaceFileChange]]) -> [AskTranscriptItem] {
+        if self.conversationID == conversationID, inputRevision == revision { return prepared }
+        let value = prepare(conversationID: conversationID, messages: messages(), results: results(), changes: changes)
+        inputRevision = revision
+        return value
+    }
     private var messages: [AskMessage] = []
     private var results: [AskMessage] = []
     private var changes: [String: [AskWorkspaceFileChange]] = [:]
     private var prepared: [AskTranscriptItem] = []
+    private var committedMessageIDs: Set<String> = []
+    private var liveMessage: AskMessage?
+    private var livePrepared: [AskTranscriptItem] = []
+
+    /// Stream deltas have no receipts yet. Reuse historical rows and outcomes, updating
+    /// only the trailing message/activity instead of regrouping and decoding history.
+    func appendingProgress(_ message: AskMessage?) -> [AskTranscriptItem] {
+        guard let message, !committedMessageIDs.contains(message.id) else { return prepared }
+        if liveMessage == message { return livePrepared }
+        liveMessage = message
+        if message.role != "assistant" || changes[message.id] != nil
+            || (message.toolCalls ?? []).contains(where: { resultsByID[$0.id] != nil }) {
+            livePrepared = AskActivity.items(messages + [message], results: results, fileChanges: changes, cache: self)
+            return livePrepared
+        }
+        var rows = prepared
+        var outcome: AskTranscriptItem?
+        if let last = rows.last, case .outcome = last.kind { outcome = rows.removeLast() }
+        if !(message.toolCalls ?? []).isEmpty {
+            var activity = message
+            if !message.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                var note = message
+                note.toolCalls = nil; note.reasoning = nil; note.reasoningMilliseconds = nil
+                rows.append(.init(kind: .message(note), isProgress: true))
+                activity.text = ""
+            }
+            if let last = rows.last, case var .activity(group) = last.kind {
+                group.messages.append(activity)
+                rows[rows.count - 1] = .init(kind: .activity(group))
+            } else {
+                rows.append(.init(kind: .activity(.init(id: message.id, messages: [activity]))))
+            }
+        } else { rows.append(.init(kind: .message(message))) }
+        if var outcome, case var .outcome(task) = outcome.kind {
+            task.messageIDs.append(message.id)
+            if let runID = message.runId, !task.runIDs.contains(runID) { task.runIDs.append(runID); task.runIDs.sort() }
+            outcome.kind = .outcome(task)
+            rows.append(outcome)
+        }
+        livePrepared = rows
+        return rows
+    }
     private(set) var decodeCount = 0
     private(set) var preparationCount = 0
     private(set) var resultsByID: [String: AskMessage] = [:]
 
     func prepare(conversationID: String?, messages: [AskMessage], results: [AskMessage],
                  changes: [String: [AskWorkspaceFileChange]]) -> [AskTranscriptItem] {
+        inputRevision = nil
         if self.conversationID != conversationID {
             entries = [:]
             self.messages = []
             self.results = []
             self.changes = [:]
             prepared = []
+            committedMessageIDs = []; liveMessage = nil; livePrepared = []
             resultsByID = [:]
             self.conversationID = conversationID
         }
         guard self.messages != messages || self.results != results || self.changes != changes else { return prepared }
+        liveMessage = nil; livePrepared = []
+        committedMessageIDs = Set(messages.map(\.id))
         self.messages = messages
         self.results = results
         self.changes = changes

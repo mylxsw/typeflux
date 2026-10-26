@@ -4,7 +4,7 @@ import SwiftUI
 /// One run's tool steps as a single quiet line above the answer, like the
 /// reasoning line: what it did, unfolded on demand into its steps. Only a step
 /// waiting for a decision keeps a card, because it needs the user.
-struct AskActivityBlock: View {
+struct AskActivityBlock: View, Equatable {
     static let corner: CGFloat = 18
     static let lineHeight: CGFloat = 26
 
@@ -25,6 +25,18 @@ struct AskActivityBlock: View {
     var exportProjectPatch: ((AskWorkspaceRef) throws -> Data)?
     /// Overrides the default fold until the user toggles it.
     var startsExpanded: Bool?
+    /// Only stable model-owned actions opt into skipping unchanged historical bodies.
+    var actionIdentity: ObjectIdentifier?
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.actionIdentity != nil && lhs.actionIdentity == rhs.actionIdentity
+            && lhs.approval == nil && rhs.approval == nil
+            && lhs.group == rhs.group && lhs.results == rhs.results && lhs.plan == rhs.plan
+            && lhs.status == rhs.status && lhs.resolution == rhs.resolution
+            && lhs.streamingId == rhs.streamingId && lhs.approvalToolId == rhs.approvalToolId
+            && lhs.runStep == rhs.runStep && lhs.outputs == rhs.outputs
+            && lhs.fileChanges == rhs.fileChanges && lhs.startsExpanded == rhs.startsExpanded
+    }
     @Environment(\.askInspectTranscript) private var inspectTranscript
     @State private var userExpanded: Bool?
     @State private var hovering = false

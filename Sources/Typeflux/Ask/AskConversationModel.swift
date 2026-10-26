@@ -193,7 +193,14 @@ final class AskConversationModel: ObservableObject {
     let modelLibrary: AskModelLibrary
     private var inferenceUsage: [String: AskTokenUsage] = [:]
     var customInference: any AskModelCompleting
-    @Published private(set) var inferenceProgress: [String: AskStreamProgress] = [:]
+    let transcriptStream = AskTranscriptStreamUpdates()
+    private(set) var inferenceProgress: [String: AskStreamProgress] = [:] {
+        didSet {
+            transcriptStream.objectWillChange.send()
+            // The launcher owns an inline answer outside the conversation transcript.
+            if quickAsk != nil { objectWillChange.send() }
+        }
+    }
     private var progressInferenceIDs: [String: String] = [:]
 
     func liveProgress(_ value: AskConversation) -> AskStreamProgress? {
@@ -344,7 +351,7 @@ final class AskConversationModel: ObservableObject {
     /// reuses its digests instead of reading unchanged files again.
     var lastFileSnapshots: [String: AskWorkspaceSnapshot] = [:]
     /// The selected conversation's recorded file changes, keyed by answer message id.
-    @Published var fileChanges: [String: [AskWorkspaceFileChange]] = [:]
+    @Published var fileChanges: [String: [AskWorkspaceFileChange]] = [:] { didSet { transcriptRevision &+= 1 } }
     var fileChangesConversationId: String?
     @Published var launcherWindowMode: AskLauncherWindowMode = .complete
     @Published var launcherDraft = AskDraft(includeScreenshot: false) {
@@ -419,7 +426,15 @@ final class AskConversationModel: ObservableObject {
     }
     @Published var temporaryDraft: AskDraft?
     var temporaryDraftPermissionMode: AskPermissionMode = .standard
-    @Published private(set) var selected: AskConversation?
+    /// Invalidated by authoritative input changes, never by scrolling or hover updates.
+    private(set) var transcriptRevision: UInt64 = 0
+    var cachedRecoveryPresentation: AskRecoveryPresentation?
+    var cachedConversationImages: Bool?
+    private(set) var recoveryPresentationBuilds = 0
+    func recordRecoveryPresentationBuild() { recoveryPresentationBuilds += 1 }
+    @Published private(set) var selected: AskConversation? {
+        didSet { transcriptRevision &+= 1; cachedRecoveryPresentation = nil; cachedConversationImages = nil }
+    }
     @Published private(set) var selectedId: String? { didSet { if selectedId != oldValue { refreshAnswerNotes() } } }
     /// Answers of the shown conversation that are in the notebook, by message id.
     @Published var answerNoteIDs: [String: UUID] = [:]
@@ -444,7 +459,7 @@ final class AskConversationModel: ObservableObject {
     var capturedContentFeedbackTasks: [Bool: Task<Void, Never>] = [:]
     var capturedContentFeedbackDuration: Duration = .seconds(5)
     var capturedContentAccount: String? { session()?.owner }
-    @Published var recoveryEntries: [String: [AskExecutionEntry]] = [:]
+    @Published var recoveryEntries: [String: [AskExecutionEntry]] = [:] { didSet { cachedRecoveryPresentation = nil } }
     @Published var inspectingRecovery = false
     @Published var recoveryWorking = false
     var recoveryGeneration = UUID()
@@ -1694,8 +1709,8 @@ final class AskConversationModel: ObservableObject {
     /// turn that produced it, so an older answer could not be replaced without
     /// silently discarding the turns that follow it.
     var regenerableAnswerId: String? {
-        guard let value = selected, !isLoadingSelection, !isBusy, !recoveryBlocksResume(value) else { return nil }
-        guard pendingSends[value.id] == nil, value.run?.isActive != true else { return nil }
+        guard let value = selected, value.run?.isActive != true, !isLoadingSelection, !isBusy else { return nil }
+        guard pendingSends[value.id] == nil, !recoveryBlocksResume(value) else { return nil }
         guard value.messages.last?.role != "user" else { return nil }
         guard let answer = value.messages.last(where: { $0.role == "assistant" }), !answer.text.isEmpty else { return nil }
         return answer.id

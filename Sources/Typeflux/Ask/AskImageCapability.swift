@@ -39,7 +39,10 @@ struct AskImageRecoveryTarget: Equatable, Identifiable {
 
 extension AskConversationModel {
     var hasConversationImages: Bool {
-        selected?.messages.contains(where: { $0.image != nil }) == true
+        if let cachedConversationImages { return cachedConversationImages }
+        let value = selected?.messages.contains(where: { $0.image != nil }) == true
+        cachedConversationImages = value
+        return value
     }
 
     var recoveringImage: AskImageRecoveryTarget? {

@@ -8,6 +8,7 @@ struct AskConversationView: View {
     private var onCloseWindow: () -> Void
     @State private var showsUsage = false
     @State private var activityCache = AskActivityOutputCache()
+    @State private var scrollScheduler = AskTranscriptScrollScheduler()
     @State private var inspectionIdentity = UUID()
     /// The side panel (files, file tabs and web pages); it stays open across conversations.
     @State private var showsSidePanel = false
@@ -1356,24 +1357,43 @@ struct AskConversationView: View {
     // MARK: - Transcript
 
     private var transcript: some View {
+        AskTranscriptStreamContent(updates: model.transcriptStream) { transcriptContent }
+    }
+
+    private var transcriptContent: some View {
+        // Capture the plain model reference: row closures must not capture its observation wrapper.
+        let model = self.model
+        let rowActions = sidePanelActions
         // Resolved once per render: asking each row would rescan the transcript.
         let regenerable = model.regenerableAnswerId
-        let items = activityCache.prepare(conversationID: model.selectedId, messages: transcriptMessages,
+        let _ = activityCache.prepare(conversationID: model.selectedId, revision: model.transcriptRevision, messages: transcriptMessages,
                                           results: model.selected?.messages.filter { $0.role == "tool" } ?? [],
                                           changes: model.fileChanges)
+        let items = activityCache.appendingProgress(liveTranscriptMessage)
+        let phase = model.runPhase
+        let latestActivityID = items.last(where: { if case .activity = $0.kind { return true }; return false })?.id
+        let lastContentID = items.last(where: { if case .outcome = $0.kind { return false }; return true })?.id
         return GeometryReader { viewport in
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 24) {
                         ForEach(items) { item in
-                            transcriptRow(item, items: items, regenerable: regenerable)
-                                .background { locatedHighlight(item) }
+                            AskTranscriptRowBoundary(key: AskTranscriptRowRenderKey(
+                                model: ObjectIdentifier(model), revision: model.transcriptRevision, item: item, phase: phase,
+                                latestActivityID: latestActivityID, lastContentID: lastContentID, regenerable: regenerable,
+                                approval: model.selectedId.flatMap { model.pendingApprovals[$0] }, notesEnabled: model.notes != nil,
+                                savedToNotes: { if case let .message(message) = item.kind { return model.answerNoteIDs[message.id] != nil }; return false }(),
+                                highlightedID: model.highlightedMessageId
+                            )) {
+                                VStack(alignment: .leading, spacing: 0) {
+                                    transcriptRow(item, model: model, actions: rowActions, phase: phase, latestActivityID: latestActivityID,
+                                                  lastContentID: lastContentID, regenerable: regenerable)
+                                }
+                                .background { locatedHighlight(item, highlightedID: model.highlightedMessageId) }
                                 .askRiseIn(createdAt: Self.createdAt(item))
-                                .id(item.id)
-                                .background(GeometryReader { geometry in
-                                    Color.clear.preference(key: AskTranscriptFrames.self,
-                                                           value: [item.id: geometry.frame(in: .named("ask-transcript"))])
-                                })
+                            }
+                            .equatable()
+                            .id(item.id)
                         }
                         if model.showsResponseWaiting {
                             AskResponseWaitingView()
@@ -1405,10 +1425,6 @@ struct AskConversationView: View {
                         // The end marker spans the space under the composer, so
                         // scrolling to it leaves the last answer above the card.
                         Color.clear.frame(height: bottomChromeHeight + 1).id("bottom")
-                            .background(GeometryReader { geometry in
-                                Color.clear.preference(key: AskTranscriptFrames.self,
-                                                       value: ["bottom": geometry.frame(in: .named("ask-transcript"))])
-                            })
                     }
                     // One centred column: the question, the answer and the
                     // composer below share the same edges on any window width.
@@ -1417,12 +1433,14 @@ struct AskConversationView: View {
                     .padding(.bottom, 8)
                     .frame(maxWidth: AskMetrics.columnWidth)
                     .frame(maxWidth: .infinity)
+                    .background(GeometryReader { geometry in
+                        Color.clear.preference(key: AskTranscriptContentSize.self, value: geometry.size)
+                    })
                     .background(AskTranscriptScrollObserver { atBottom in
                         guard restoredTranscript == model.selectedId else { return }
-                        followsTranscriptBottom = atBottom
+                        if followsTranscriptBottom != atBottom { followsTranscriptBottom = atBottom }
                     })
                 }
-                .coordinateSpace(name: "ask-transcript")
                 // Hidden until it sits at its reading position, then faded in:
                 // drawing first and scrolling a frame later made every load
                 // flash the top of the conversation before jumping to the end.
@@ -1450,7 +1468,7 @@ struct AskConversationView: View {
                         .padding(.bottom, bottomChromeHeight + 12)
                     }
                 }
-                .onPreferenceChange(AskTranscriptFrames.self) { _ in
+                .onPreferenceChange(AskTranscriptContentSize.self) { _ in
                     // Follow after layout too: text wrapping and tool cards can grow
                     // after the model update that caused them.
                     followBottom(proxy)
@@ -1467,12 +1485,14 @@ struct AskConversationView: View {
                     }
                 }
                 .onChange(of: model.selectedId) { _ in
+                    scrollScheduler.cancel()
                     restoredTranscript = nil
                     followsTranscriptBottom = true
                     restoreTranscript(proxy)
                 }
                 .onChange(of: model.selected?.id) { _ in restoreTranscript(proxy) }
                 .onAppear { restoreTranscript(proxy) }
+                .onDisappear { scrollScheduler.cancel() }
                 .onChange(of: viewport.size) { _ in followBottom(proxy, afterLayoutChange: true) }
                 .onChange(of: bottomChromeHeight) { _ in followBottom(proxy, afterLayoutChange: true) }
                 .onChange(of: model.selected?.run?.preview) { _ in followBottom(proxy) }
@@ -1489,9 +1509,9 @@ struct AskConversationView: View {
 
     /// "Locate in conversation" from the side panel briefly marks the message it scrolled to.
     @ViewBuilder
-    private func locatedHighlight(_ item: AskTranscriptItem) -> some View {
+    private func locatedHighlight(_ item: AskTranscriptItem, highlightedID: String?) -> some View {
         let located: Bool = {
-            guard let id = model.highlightedMessageId else { return false }
+            guard let id = highlightedID else { return false }
             switch item.kind {
             case let .message(message): return message.id == id
             case let .activity(group): return group.messageIds.contains(id)
@@ -1506,9 +1526,10 @@ struct AskConversationView: View {
     }
 
     @ViewBuilder
-    private func transcriptRow(_ item: AskTranscriptItem, items: [AskTranscriptItem], regenerable: String?) -> some View {
+    private func transcriptRow(_ item: AskTranscriptItem, model: AskConversationModel, actions: AskSidePanelActions,
+                               phase: AskRunPhase?, latestActivityID: String?,
+                               lastContentID: String?, regenerable: String?) -> some View {
         let run = model.selected?.run
-        let phase = model.runPhase
         let streamingId = phase?.isWorking == true ? run?.assistantId : nil
         let approvalToolId = model.selectedId.flatMap { model.pendingApprovals[$0]?.id }
         switch item.kind {
@@ -1526,18 +1547,19 @@ struct AskConversationView: View {
                            fileChanges: [],
                            onSaveNote: model.notes == nil || message.role != "assistant" ? nil
                                : { excerpt in model.performNotebookAction { await model.toggleAnswerNote(message, excerpt: excerpt) } },
-                           savedToNotes: model.answerNoteIDs[message.id] != nil)
+                           savedToNotes: model.answerNoteIDs[message.id] != nil, actionIdentity: ObjectIdentifier(model))
+                .equatable()
         case .outcome(let outcome):
             AskTaskOutcomeView(outcome: outcome, outputs: item.outputs,
                                active: run.map { $0.isActive && outcome.runIDs.contains($0.id) } ?? false,
-                               actions: sidePanelActions)
+                               actions: actions)
                 .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
         case let .activity(group):
             let results = group.calls.compactMap { activityCache.resultsByID[$0.id] }
-            let isLatest = items.last(where: { if case .activity = $0.kind { return true }; return false })?.id == group.id
+            let isLatest = latestActivityID == group.id
             // The run's latest block stays live between steps, while no answer follows it yet,
             // and stops spinning with every other indicator once the run waits for a decision.
-            let carriesRun = run?.isActive == true && items.last(where: { if case .outcome = $0.kind { return false }; return true })?.id == group.id
+            let carriesRun = run?.isActive == true && lastContentID == group.id
             let halted: Bool = {
                 switch phase {
                 case .needsDecision?, .pausedCredits?, .waitingDevice?: break
@@ -1561,7 +1583,8 @@ struct AskConversationView: View {
                              approval: pending.flatMap { pending in
                                  group.calls.contains { $0.id == pending.call.id }
                                      ? AnyView(approvalCard(pending.call, id: pending.id, embedded: true)) : nil
-                             }, exportProjectPatch: model.exportProjectPatch)
+                             }, exportProjectPatch: model.exportProjectPatch, actionIdentity: ObjectIdentifier(model))
+                .equatable()
                 .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
         }
     }
@@ -1577,17 +1600,14 @@ struct AskConversationView: View {
     }
 
     private var transcriptMessages: [AskMessage] {
-        guard let value = model.selected else { return [] }
-        var messages = value.messages.filter { $0.role != "tool" }
-        if let progress = model.liveProgress(value), let run = value.run {
-            let id = run.assistantId ?? "live-" + run.id
-            if !messages.contains(where: { $0.id == id }) {
-                messages.append(.init(id: id, role: "assistant", text: progress.text,
-                                      toolCalls: progress.toolCalls, createdAt: run.updatedAt,
-                                      reasoning: progress.reasoning, reasoningMilliseconds: progress.reasoningMilliseconds, runId: run.id))
-            }
-        }
-        return messages
+        model.selected?.messages.filter { $0.role != "tool" } ?? []
+    }
+
+    private var liveTranscriptMessage: AskMessage? {
+        guard let value = model.selected, let progress = model.liveProgress(value), let run = value.run else { return nil }
+        return .init(id: run.assistantId ?? "live-" + run.id, role: "assistant", text: progress.text,
+                     toolCalls: progress.toolCalls, createdAt: run.updatedAt, reasoning: progress.reasoning,
+                     reasoningMilliseconds: progress.reasoningMilliseconds, runId: run.id)
     }
 
     private func followBottom(_ proxy: ScrollViewProxy, afterLayoutChange: Bool = false) {
@@ -1598,7 +1618,10 @@ struct AskConversationView: View {
            editor.selectedRange().length > 0 { return }
         guard let id = model.selectedId, restoredTranscript == id,
               followsTranscriptBottom else { return }
-        proxy.scrollTo("bottom", anchor: .bottom)
+        scrollScheduler.schedule {
+            guard model.selectedId == id, restoredTranscript == id, followsTranscriptBottom else { return }
+            proxy.scrollTo("bottom", anchor: .bottom)
+        }
     }
 
     private func restoreTranscript(_ proxy: ScrollViewProxy) {
@@ -1620,7 +1643,7 @@ struct AskConversationView: View {
 
 /// User turns are right-aligned bubbles, assistant turns are signed paragraphs.
 /// The role is carried by the layout, not by a grey "You" label.
-private struct AskMessageView: View {
+private struct AskMessageView: View, Equatable {
     let message: AskMessage
     /// A jumped message the running run has not read yet.
     var steeredPending = false
@@ -1641,6 +1664,17 @@ private struct AskMessageView: View {
     var onSaveNote: ((String?) -> Void)?
     /// The whole answer is in the notebook.
     var savedToNotes = false
+    var actionIdentity: ObjectIdentifier?
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.actionIdentity != nil && lhs.actionIdentity == rhs.actionIdentity
+            && lhs.message == rhs.message && lhs.steeredPending == rhs.steeredPending
+            && lhs.usage == rhs.usage && lhs.isStreaming == rhs.isStreaming && lhs.isProgress == rhs.isProgress
+            && lhs.canRegenerate == rhs.canRegenerate && lhs.outputs == rhs.outputs
+            && lhs.fileChanges == rhs.fileChanges && lhs.savedToNotes == rhs.savedToNotes
+            && (lhs.onSaveNote == nil) == (rhs.onSaveNote == nil)
+    }
+
     @State private var copied = false
     @State private var hovering = false
     @Environment(\.askSidePanelActions) private var sidePanel
@@ -1867,11 +1901,9 @@ struct AskReasoningView: View {
     }
 }
 
-private struct AskTranscriptFrames: PreferenceKey {
-    static let defaultValue: [String: CGRect] = [:]
-    static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
-        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
-    }
+private struct AskTranscriptContentSize: PreferenceKey {
+    static let defaultValue: CGSize = .zero
+    static func reduce(value: inout CGSize, nextValue: () -> CGSize) { value = nextValue() }
 }
 
 /// A file, image or folder sent with a question. Images and text open a preview;

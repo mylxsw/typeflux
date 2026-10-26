@@ -63,7 +63,7 @@ extension AskConversationModel: AgentActivityControlling {
     }
 
     var agentActivityChanges: AnyPublisher<Void, Never> {
-        objectWillChange.map { _ in }.eraseToAnyPublisher()
+        objectWillChange.merge(with: transcriptStream.objectWillChange).map { _ in }.eraseToAnyPublisher()
     }
 
     func stopAgentRun(_ id: String) {

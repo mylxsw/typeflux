@@ -13,8 +13,12 @@ extension AskConversationModel {
     }
 
     var recoveryPresentation: AskRecoveryPresentation {
-        .init(run: selected?.run, entries: selectedRecoveryEntries, deviceId: deviceId,
-              local: selected.map { isLocal($0.id) } ?? false)
+        if let cachedRecoveryPresentation { return cachedRecoveryPresentation }
+        let value = AskRecoveryPresentation(run: selected?.run, entries: selectedRecoveryEntries, deviceId: deviceId,
+                                            local: selected.map { isLocal($0.id) } ?? false)
+        cachedRecoveryPresentation = value
+        recordRecoveryPresentationBuild()
+        return value
     }
 
     /// The single state every run indicator reads; see `AskRunPhase`.

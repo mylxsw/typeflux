@@ -84,3 +84,26 @@ struct AskTranscriptBottomButton: View {
         .accessibilityIdentifier("ask.transcript.scrollToBottom")
     }
 }
+
+/// Coalesces stream, layout and chrome changes into one adjustment per main-loop turn.
+/// Cancellation also drops a closure captured for a previously selected conversation.
+@MainActor
+final class AskTranscriptScrollScheduler {
+    private var pending: (() -> Void)?
+    private var generation = 0
+
+    func schedule(_ action: @escaping () -> Void) {
+        let alreadyScheduled = pending != nil
+        pending = action
+        guard !alreadyScheduled else { return }
+        let ticket = generation
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.generation == ticket else { return }
+            let action = self.pending
+            self.pending = nil
+            action?()
+        }
+    }
+
+    func cancel() { generation &+= 1; pending = nil }
+}
