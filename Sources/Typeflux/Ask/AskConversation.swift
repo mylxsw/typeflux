@@ -126,6 +126,8 @@ struct AskRun: Codable, Equatable, Sendable {
     var reasoningEffort: String? = nil
     /// The model's latest update_plan list.
     var plan: [AskPlanItem]? = nil
+    var taskProgress: AskTaskProgress? = nil
+    var taskResolution: AskTaskResolution? = nil
     /// Extra steps granted after messages were sent into the running run.
     var extraSteps: Int? = nil
 

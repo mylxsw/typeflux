@@ -12,6 +12,7 @@ struct AskActivityBlock: View {
     let results: [AskMessage]
     let plan: [AskPlanItem]?
     let status: AskActivity.Status
+    var resolution: AskTaskResolution?
     var streamingId: String?
     var approvalToolId: String?
     /// The run's step count from `AskRunPhase`, for the block that carries the run.
@@ -45,6 +46,9 @@ struct AskActivityBlock: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             if status == .attention { card } else { trace }
+            if let resolution, !resolution.reason.isEmpty {
+                Text(resolution.reason).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary).textSelection(.enabled)
+            }
             if !outputs.isEmpty { AskRunOutputsView(outputs: outputs).padding(.top, 4) }
             if let sidePanel, !fileChanges.isEmpty {
                 AskFileChangesView(list: AskFileChangeList(changes: fileChanges), actions: sidePanel).padding(.top, 4)
@@ -121,7 +125,7 @@ struct AskActivityBlock: View {
         VStack(alignment: .leading, spacing: 0) {
             cardHeader
             if let plan, !plan.isEmpty {
-                AskPlanList(items: plan).padding(.horizontal, 14).padding(.bottom, 10)
+                AskPlanList(items: plan, active: status == .running).padding(.horizontal, 14).padding(.bottom, 10)
             }
             if let approval {
                 approval.padding(.horizontal, 8).padding(.bottom, 8)
@@ -190,7 +194,7 @@ struct AskActivityBlock: View {
                 Text(AskActivity.planSummary(plan))
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(StudioTheme.textSecondary)
-                AskPlanList(items: plan)
+                AskPlanList(items: plan, active: status == .running)
             }
             if rows.count > AskActivityPage.size {
                 HStack(spacing: 12) {

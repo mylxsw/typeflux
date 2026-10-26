@@ -865,3 +865,36 @@ is conservatively treated as a user-selected bound until the user changes execut
 No live conversation, pending submission, file, or execution receipt is rewritten during
 this migration. Deploy the API supporting `execution_mode` before the new client: older
 servers do not understand continuous mode and retain their legacy ceiling.
+
+
+### Device-owned task progress and closing
+
+The device-owned engine persists a task outcome separately from the transport run status.
+`update_plan` accepts optional `outcome` (`completed`, `needs_input`, `blocked`) and `reason`.
+A completed outcome requires every item to be completed. Missing input and blockers require
+a concrete reason. This data is not a permission grant. The server preserves these fields in
+device history replicas; its legacy server-owned execution policy is unchanged.
+
+An answer leaving an unfinished plan without an outcome receives one closing review, within
+the existing step/budget/cancellation limits. The model must request concrete operations for
+normal host approval, reconcile verified plan progress, or record the real blocker. If it
+still leaves the plan unsettled, the run ends with a blocked outcome, not fabricated success.
+
+After 16 tool results without a successful plan update, an unfinished planned task enters a
+plan checkpoint: only `update_plan` is offered. Other proposed operations are not dispatched.
+An invalid plan gets one correction opportunity, persisted by receipt ID across summaries
+and restarts. A second invalid plan or an answer bypassing the checkpoint stops honestly.
+Updating the plan restores the regular toolset without bypassing permission checks. This is
+not a total execution limit. Steering delivered during a checkpoint is processed before the
+old checkpoint proposal, without dispatching that stale proposal.
+
+Repeated identical successful read arguments and text results receive a warning on the third
+occurrence; two further repetitions stop the run. The bounded comparison window covers files
+read/list/search, web fetch/search and history reads. Images, oversized outputs, failed results,
+unknown tools, writes and opaque shell commands are barriers; the host does not guess their
+side effects. Different shell inspections are addressed by the plan checkpoint, not shell parsing.
+Raw receipts and files remain intact, and a new user message starts a fresh progress window.
+An inactive plan uses a paused marker; a structured blocker or question remains visible.
+
+An explicit denied result suppresses the automatic closing review. A refused plan checkpoint
+stops without another attempt. Ordinary tool permission decisions remain client-owned.

@@ -5,12 +5,15 @@ enum AskBuiltinPlan {
     static let definition = AskToolDefinition(
         name: "update_plan",
         description: "Record the plan for a multi-step task so the user can follow progress. "
-            + "Send the complete list every time; mark at most one step in_progress.",
+            + "Send the complete list every time; preserve completed work and mark at most one step in_progress. Before ending, mark verified steps completed or provide outcome needs_input/blocked with a concrete reason. Request actual tools for host approval, not verbal permission.",
         // The fixed schema is a JSON-compatible literal, matching the original definition.
         // swiftlint:disable:next force_try
         parameters: JSONValue(data: try! JSONSerialization.data(withJSONObject: [
             "type": "object", "required": ["items"], "additionalProperties": false,
-            "properties": ["items": ["type": "array", "minItems": 1, "maxItems": 20, "items": [
+            "properties": [
+                "outcome": ["type": "string", "enum": ["completed", "needs_input", "blocked"]],
+                "reason": ["type": "string", "maxLength": 1000],
+                "items": ["type": "array", "minItems": 1, "maxItems": 20, "items": [
                 "type": "object", "required": ["step", "status"], "additionalProperties": false,
                 "properties": [
                     "step": ["type": "string"],
@@ -40,6 +43,7 @@ enum AskBuiltinPlan {
             return AskPlanItem(step: step, status: status)
         }
         guard active <= 1 else { throw AskLocalError.message("Mark at most one step in_progress") }
+        _ = try AskTaskResolution.parse(arguments, items: items)
         return items
     }
 }

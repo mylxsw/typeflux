@@ -19,6 +19,8 @@ enum AskRunPhase: Equatable {
     /// The server paused the run until the account has credits again.
     case pausedCredits(step: Int)
     case waitingDevice(step: Int)
+    case taskNeedsInput
+    case taskBlocked
     case endedWithPendingPlan
     case completed(steps: Int)
     case failed
@@ -50,6 +52,8 @@ enum AskRunPhase: Equatable {
         if run.isActive { return .working(step: step) }
         switch run.status {
         case "completed":
+            if run.taskResolution?.outcome == "needs_input" { return .taskNeedsInput }
+            if run.taskResolution?.outcome == "blocked" { return .taskBlocked }
             if run.plan?.contains(where: { $0.status != "completed" }) == true { return .endedWithPendingPlan }
             return .completed(steps: run.steps)
         case "failed": return .failed
@@ -84,7 +88,7 @@ enum AskRunPhase: Equatable {
     var tone: AskRunTone {
         switch self {
         case .working: return .running
-        case .approval, .needsDecision, .pausedCredits, .waitingDevice, .endedWithPendingPlan: return .attention
+        case .approval, .needsDecision, .pausedCredits, .waitingDevice, .taskNeedsInput, .taskBlocked, .endedWithPendingPlan: return .attention
         case .completed: return .done
         case .failed, .cancelled: return .failed
         }
@@ -97,6 +101,8 @@ enum AskRunPhase: Equatable {
         case .needsDecision: return L("ask.run.needsDecision")
         case .pausedCredits: return L("ask.run.pausedCredits")
         case .waitingDevice: return L("ask.recovery.otherDevice")
+        case .taskNeedsInput: return L("ask.progress.needsInput")
+        case .taskBlocked: return L("ask.progress.blocked")
         case .endedWithPendingPlan: return L("ask.run.endedWithPendingPlan")
         case let .completed(steps): return L("ask.run.completed", steps)
         case .failed: return L("ask.run.failed")

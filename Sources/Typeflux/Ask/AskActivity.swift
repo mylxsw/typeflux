@@ -195,6 +195,15 @@ enum AskActivity {
         return try? AskLocalEngine.parsePlan(call.function.arguments)
     }
 
+    static func resolution(for group: AskActivityGroup, run: AskRun?, isLatest: Bool) -> AskTaskResolution? {
+        if isLatest, let resolution = run?.taskResolution,
+           group.messages.contains(where: { $0.runId == nil || $0.runId == run?.id }) { return resolution }
+        guard let call = group.calls.last(where: { $0.function.name == "update_plan" }),
+              group.messages.contains(where: { $0.role == "tool" && $0.toolCallId == call.id && $0.isError != true }),
+              let items = try? AskBuiltinPlan.parse(call.function.arguments) else { return nil }
+        return try? AskTaskResolution.parse(call.function.arguments, items: items)
+    }
+
     /// "Search 2 · Files 1 · Memory", in a fixed order. Calls that fit no category
     /// are named by their tool rather than lumped together as "Other".
     static func categorySummary(_ calls: [AskToolCall]) -> String {

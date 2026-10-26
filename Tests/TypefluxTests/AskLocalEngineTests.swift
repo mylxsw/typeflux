@@ -218,9 +218,10 @@ final class AskLocalEngineTests: XCTestCase {
         let replay = try await engine.result(conversationId: id, request: AskToolResultRequest(runId: c.run!.id, deviceId: device, toolCallId: "b1", content: "again", isError: false), token: "")
         XCTAssertEqual(replay.revision, c.revision)
 
+        c = try await answer(engine, c, calls: [call("update_plan", #"{"items":[{"step":"Read","status":"completed"}]}"#)])
         c = try await answer(engine, c, content: "Release 4.2 is out.")
         XCTAssertEqual(c.run?.status, "completed")
-        XCTAssertEqual(c.run?.steps, 2)
+        XCTAssertEqual(c.run?.steps, 3)
         XCTAssertEqual(c.messages.last?.text, "Release 4.2 is out.")
         // A late receipt for a finished run is rejected.
         let runId = c.run!.id

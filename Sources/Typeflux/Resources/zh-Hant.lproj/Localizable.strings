@@ -7484,3 +7484,10 @@
 "ask.steps.modeDetail" = "用於新一輪任務；繼續已暫停任務時保留原有限制。";
 "ask.steps.continuous" = "持續執行";
 "ask.steps.bounded" = "限制步數";
+
+"ask.progress.repeated" = "提醒調整方法後，仍重複檢查並得到相同結果。本輪已暫停，已有檔案和結果保留。請查看最後幾次檢查，補充不同的下一步後繼續。";
+"ask.progress.unreconciled" = "本輪結束時尚未核對完計畫，待辦已保留，未確認全部完成。";
+"ask.progress.needsInput" = "等待你補充資訊";
+"ask.progress.blocked" = "已暫停：任務受阻";
+"ask.progress.checkpointFailed" = "Agent 未能在進度檢查點核對計畫，本輪已暫停，未執行後續操作。已有工作保留，請查看待辦計畫後繼續。";
+"ask.progress.denied" = "操作已被拒絕。未完成的工作已保留，沒有自動再次請求授權。";

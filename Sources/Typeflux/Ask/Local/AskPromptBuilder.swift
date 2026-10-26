@@ -33,10 +33,13 @@ struct DefaultAskPromptBuilder: AskPromptBuilding {
 
     func conversation(_ input: AskConversationPromptInput) -> [String: Any] {
         let conversation = input.conversation
-        let tools = input.tools
+        let tools = conversation.run?.taskProgress?.planCheckpoint == true
+            ? input.tools.filter { $0.name == "update_plan" } : input.tools
+        var effectiveInput = input
+        effectiveInput.tools = tools
         var messages: [[String: Any]] = policy == .legacyV1
             ? [["role": "system", "content": AskLocalPrompt.system]]
-            : [["role": "system", "content": AskPromptSections.build(input).map(\.text).joined(separator: "\n\n")]]
+            : [["role": "system", "content": AskPromptSections.build(effectiveInput).map(\.text).joined(separator: "\n\n")]]
         if conversation.memoryOff != true, let memory = AskLocalPrompt.memory(conversation.memory) {
             messages.append([
                 "role": "system",
@@ -73,6 +76,9 @@ struct DefaultAskPromptBuilder: AskPromptBuilding {
         )
         if let recovery = conversation.run?.internalRecovery {
             messages.append(["role": "system", "content": recovery.prompt])
+        }
+        if let guidance = AskTaskProgress.guidance(conversation) {
+            messages.append(["role": "system", "content": guidance])
         }
         var payload: [String: Any] = ["model": conversation.run?.modelRef ?? "", "messages": messages]
         if let effort = conversation.run?.reasoningEffort, !effort.isEmpty {

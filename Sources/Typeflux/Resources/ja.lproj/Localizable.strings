@@ -7481,3 +7481,10 @@
 "ask.steps.modeDetail" = "新しい実行に適用します。一時停止した実行の再開時は元の制限を維持します。";
 "ask.steps.continuous" = "継続実行";
 "ask.steps.bounded" = "ステップ制限";
+
+"ask.progress.repeated" = "方法の変更を促した後も同じ確認結果が繰り返されました。実行を一時停止しました。ファイルと結果は保持されています。直近の確認を見直し、別の手順を入力して続行してください。";
+"ask.progress.unreconciled" = "未完了の計画を確認せずに実行が終了しました。未処理の項目は保持され、完了は確認されていません。";
+"ask.progress.needsInput" = "情報の入力待ち";
+"ask.progress.blocked" = "一時停止：タスクが中断";
+"ask.progress.checkpointFailed" = "進捗確認時に計画が更新されなかったため、以降の操作を実行せず一時停止しました。既存の作業は保持されています。未完了の計画を確認して続行してください。";
+"ask.progress.denied" = "操作は拒否されました。未完了の作業は保持され、承認の再要求は自動で行われていません。";

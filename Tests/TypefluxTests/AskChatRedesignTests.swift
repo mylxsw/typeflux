@@ -430,7 +430,9 @@ struct AskChatRedesignCopyTests {
     }
 
     @Test func renamedRecoveryButtonsInChinese() throws {
-        let path = try #require(Bundle.module.path(forResource: "zh-Hans", ofType: "lproj"))
+        let path = try #require(["zh-Hans", "zh-hans"].compactMap {
+            Bundle.module.path(forResource: $0, ofType: "lproj")
+        }.first)
         let bundle = try #require(Bundle(path: path))
         func text(_ key: String) -> String { bundle.localizedString(forKey: key, value: nil, table: nil) }
         #expect(text("ask.recovery.retransmit") == "刷新进度")

@@ -345,6 +345,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         _ = try resolveTurn(record)
         if record.conversation.messages.contains(where: { $0.role == "tool" && $0.toolCallId == request.toolCallId }) { return record.conversation }
         guard run.status == "waiting_tool", run.pending.first?.id == request.toolCallId else { throw conflict() }
+        if run.pending.first?.function.name != "update_plan" { record.conversation.run?.taskResolution = nil }
         if run.clientToolApproval == true, let call = run.pending.first, isBuiltin(call, record) {
             guard request.approveExecution != nil else { throw conflict() }
             if request.approveExecution == true && !request.isError {
@@ -654,6 +655,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     private func prepareRun(_ record: inout AskLocalRecord) throws {
         guard turnOwnershipAvailable, turnPolicy.acceptsDirectory(directory) else { throw AskLocalError.implementationUnavailable }
         _ = try turnPolicy.resolve(turnPolicy.selected, operations: Set(AskAgentOperation.allCases))
+        record.conversation.run?.taskProgress = .init(startIndex: record.conversation.messages.count)
         record.conversation.run?.agentBinding = turnPolicy.selected
         record.agentState = nil
         if turnPolicy.selected != .default { record.agentState = stateEnvelope(record, sequence: 0, payload: .null) }
@@ -805,9 +807,53 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     /// Queues the next on-device inference: a summary when the history is long, otherwise the answer.
     func step(_ record: inout AskLocalRecord, previous: AskAgentTurnOutcome? = nil) async throws -> AskConversation {
         _ = try resolveTurn(record)
+        if let run = record.conversation.run, run.taskProgress == nil {
+            let start = record.conversation.messages.firstIndex { $0.runId == run.id } ?? record.conversation.messages.count
+            record.conversation.run?.taskProgress = .init(startIndex: start)
+        }
+        if record.conversation.run?.status == "running", deliverSteering(&record) {
+            record.conversation.run?.taskProgress?.planCheckpoint = false
+            record.conversation.run?.taskProgress?.checkpointCorrectionUsed = false
+        }
+        if record.conversation.run?.taskProgress?.planCheckpoint == true, AskTaskProgress.lastResultDenied(record.conversation) {
+            return try stopForProgress(&record, reason: L("ask.progress.denied"))
+        }
+        if record.conversation.run?.taskProgress?.planCheckpoint == true,
+           let errorID = AskTaskProgress.lastPlanError(record.conversation),
+           errorID != record.conversation.run?.taskProgress?.lastCheckpointErrorId {
+            record.conversation.run?.taskProgress?.lastCheckpointErrorId = errorID
+            if record.conversation.run?.taskProgress?.checkpointCorrectionUsed == true {
+                return try stopForProgress(&record, reason: L("ask.progress.checkpointFailed"))
+            }
+            record.conversation.run?.taskProgress?.checkpointCorrectionUsed = true
+        }
+        if record.conversation.run?.recoveryCheck != true,
+           record.conversation.run?.internalRecovery?.phase != .inspecting,
+           record.conversation.run?.taskResolution == nil,
+           record.conversation.run?.plan?.contains(where: { $0.status != "completed" }) == true,
+           !AskTaskProgress.lastResultDenied(record.conversation),
+           AskTaskProgress.observationsSincePlan(record.conversation) >= 16,
+           allTools(record).contains(where: { $0.name == "update_plan" }) {
+            record.conversation.run?.taskProgress?.planCheckpoint = true
+        }
+        let repeatedObservation = record.conversation.run?.taskResolution == nil ? AskTaskProgress.repetition(record.conversation) : nil
+        if (repeatedObservation?.count ?? 0) < 3 {
+            record.conversation.run?.taskProgress?.repeatedKey = nil
+            record.conversation.run?.taskProgress?.repeatCountAtWarning = nil
+        }
+        if record.conversation.run?.recoveryCheck != true, record.conversation.run?.internalRecovery?.phase != .inspecting, let repetition = repeatedObservation, repetition.count >= 3 {
+            let progress = record.conversation.run?.taskProgress
+            if progress?.repeatedKey != nil, repetition.count >= 5,
+               repetition.count >= (progress?.repeatCountAtWarning ?? 3) + 2 {
+                return try stopForProgress(&record, reason: L("ask.progress.repeated"))
+            }
+            if progress?.repeatedKey != repetition.key {
+                record.conversation.run?.taskProgress?.repeatedKey = repetition.key
+                record.conversation.run?.taskProgress?.repeatCountAtWarning = repetition.count
+            }
+        }
         let skipSummary = try await backgroundSummary(&record)
         record.conversation.memory = record.conversation.memory?.usable(at: now())
-        if record.conversation.run?.status == "running" { deliverSteering(&record) }
         guard let run = record.conversation.run else { return record.conversation }
         guard !run.reachedStepLimit else { return try fail(&record, L("ask.local.stepLimit")) }
         if record.conversation.summary != nil, !record.builtinTools.contains(where: { $0.name == AskSemanticCompaction.historyTool.name }) {
@@ -913,6 +959,19 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
 
     private func applyDecisionCompletion(_ record: inout AskLocalRecord, content: String, calls: [AskToolCall]) async throws -> AskConversation {
         guard let run = record.conversation.run else { return record.conversation }
+        if run.taskProgress?.planCheckpoint == true, record.steering?.isEmpty == false {
+            record.conversation.run?.steps += 1
+            record.conversation.run?.status = "running"
+            _ = deliverSteering(&record)
+            record.conversation.run?.taskProgress?.planCheckpoint = false
+            record.conversation.run?.taskProgress?.checkpointCorrectionUsed = false
+            try save(&record)
+            return try await step(&record)
+        }
+        if run.taskProgress?.planCheckpoint == true, calls.isEmpty || calls.contains(where: { $0.function.name != "update_plan" }) {
+            record.conversation.run?.steps += 1
+            return try stopForProgress(&record, reason: L("ask.progress.checkpointFailed"))
+        }
         record.conversation.messages.append(AskMessage(id: run.assistantId ?? UUID().uuidString.lowercased(), role: "assistant", text: content,
                                                        toolCalls: calls.isEmpty ? nil : calls, createdAt: now(),
                                                        reasoning: run.reasoning, reasoningMilliseconds: run.reasoningMilliseconds, runId: run.id))
@@ -929,6 +988,20 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
             return try await step(&record)
         }
         if calls.isEmpty {
+            if run.recoveryCheck != true, run.internalRecovery?.phase != .inspecting, run.plan?.contains(where: { $0.status != "completed" }) == true,
+               run.taskResolution == nil {
+                let denied = AskTaskProgress.lastResultDenied(record.conversation)
+                if !denied, run.taskProgress?.closingReviewRequested != true, !record.conversation.run!.reachedStepLimit {
+                    if record.conversation.run?.taskProgress == nil {
+                        record.conversation.run?.taskProgress = .init(startIndex: record.conversation.messages.count)
+                    }
+                    record.conversation.run?.taskProgress?.closingReviewRequested = true
+                    record.conversation.run?.status = "running"
+                    try save(&record)
+                    return try await step(&record)
+                }
+                record.conversation.run?.taskResolution = .init(outcome: "blocked", reason: L(denied ? "ask.progress.denied" : "ask.progress.unreconciled"))
+            }
             if record.conversation.run?.internalRecovery?.phase == .inspecting {
                 record.conversation.run?.internalRecovery?.phase = .blocked
             }
@@ -1059,7 +1132,14 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
             }
             record = latest
             for (call, result) in zip(calls, outputs) {
-                if let plan = result.plan { record.conversation.run?.plan = plan }
+                if let plan = result.plan {
+                    record.conversation.run?.plan = plan
+                    record.conversation.run?.taskProgress?.planCheckpoint = false
+                    record.conversation.run?.taskProgress?.checkpointCorrectionUsed = false
+                    record.conversation.run?.taskResolution = try AskTaskResolution.parse(call.function.arguments, items: plan)
+                } else if call.function.name != "update_plan" {
+                    record.conversation.run?.taskResolution = nil
+                }
                 record.conversation.messages.append(AskMessage(id: UUID().uuidString, role: "tool", text: result.text,
                     toolCallId: call.id, isError: result.isError, createdAt: now(), runId: record.conversation.run?.id))
                 if !["update_plan", "read_conversation_history"].contains(call.function.name) { record.cloudCalls += 1 }
@@ -1299,6 +1379,19 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
                   (try? JSONSerialization.jsonObject(with: Data(call.function.arguments.utf8))) is [String: Any] else { throw AskLocalError.implementationUnavailable }
         }
         return try await applyDecisionCompletion(&record, content: content, calls: calls)
+    }
+
+    /// No operation is pending here. Preserve receipts and expose a resumable, honest stop.
+    private func stopForProgress(_ record: inout AskLocalRecord, reason: String) throws -> AskConversation {
+        record.conversation.run?.status = "completed"
+        record.conversation.run?.taskResolution = .init(outcome: "blocked", reason: reason)
+        record.conversation.run?.inference = nil
+        record.conversation.run?.preview = nil
+        record.conversation.run?.assistantId = nil
+        record.conversation.messages.append(.init(id: UUID().uuidString.lowercased(), role: "assistant", text: reason,
+            createdAt: now(), runId: record.conversation.run?.id))
+        try save(&record)
+        return record.conversation
     }
 
     // MARK: - Plan

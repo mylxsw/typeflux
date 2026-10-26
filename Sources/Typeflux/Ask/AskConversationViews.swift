@@ -1554,7 +1554,7 @@ struct AskConversationView: View {
             }
             AskActivityBlock(group: group, results: results,
                              plan: AskActivity.plan(for: group, run: run, isLatest: isLatest),
-                             status: status, streamingId: streamingId, approvalToolId: approvalToolId,
+                             status: status, resolution: AskActivity.resolution(for: group, run: run, isLatest: isLatest), streamingId: streamingId, approvalToolId: approvalToolId,
                              runStep: live || halted ? phase?.step : nil,
                              outputs: item.outputs,
                              fileChanges: [],

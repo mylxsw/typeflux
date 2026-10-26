@@ -19,6 +19,32 @@ import Testing
         items.first { if case .outcome = $0.kind { return true }; return false }
     }
 
+    @Test func blockedPlanRetainsItsReasonAndRendersWithoutAnActiveMarker() throws {
+        let call = AskToolCall(id: "plan", function: .init(name: "update_plan", arguments:
+            #"{"items":[{"step":"Verify endpoint","status":"in_progress"}],"outcome":"needs_input","reason":"Which staging endpoint?"}"#))
+        let messages = [AskMessage(id: "proposal", role: "assistant", text: "", toolCalls: [call], createdAt: now, runId: "run"),
+                        AskMessage(id: "receipt", role: "tool", text: "Plan updated.", toolCallId: call.id, createdAt: now)]
+        let group = AskActivityGroup(id: "plan", messages: messages)
+        let resolution = try #require(AskActivity.resolution(for: group, run: nil, isLatest: false))
+        #expect(resolution.reason == "Which staging endpoint?")
+        let items = try AskBuiltinPlan.parse(call.function.arguments)
+        let view = AskActivityBlock(group: group, results: messages, plan: items, status: .done,
+                                    resolution: resolution, startsExpanded: true)
+        let host = NSHostingView(rootView: view)
+        host.frame = NSRect(x: 0, y: 0, width: 700, height: 300)
+        host.layoutSubtreeIfNeeded()
+        #expect(host.fittingSize.height > 0)
+        #expect(AskPlanList.symbol("paused") == "pause.circle")
+        #expect(AskRunPhase.taskBlocked.tone == .attention)
+        #expect(AskRunPhase.taskNeedsInput.tone == .attention)
+        #expect(!AskRunPhase.taskBlocked.offersStop)
+        #expect(!AskRunPhase.taskBlocked.summary.isEmpty)
+        #expect(!AskRunPhase.taskNeedsInput.summary.isEmpty)
+        var denied = messages
+        denied[1].isError = true
+        #expect(AskActivity.resolution(for: AskActivityGroup(id: "denied", messages: denied), run: nil, isLatest: false) == nil)
+    }
+
     @Test func replacementPlanDoesNotClaimNoWorkWasPerformed() throws {
         let previous = AskMessage(id: "old-plan", role: "assistant", text: "", toolCalls: [
             .init(id: "old", function: .init(name: "update_plan", arguments:

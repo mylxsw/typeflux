@@ -462,7 +462,7 @@ private actor DeviceTestTransport: AskDeviceTransporting {
             let plan = AskToolCall(
                 id: "plan",
                 type: "function",
-                function: .init(name: "update_plan", arguments: #"{"items":[{"step":"Build","status":"in_progress"}]}"#)
+                function: .init(name: "update_plan", arguments: #"{"items":[{"step":"Build","status":"completed"}]}"#)
             )
             let waiting = try await api.inferenceResult(conversationId: initial.id,
                                                         request: .init(

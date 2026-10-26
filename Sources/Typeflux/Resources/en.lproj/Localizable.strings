@@ -7482,3 +7482,10 @@
 "ask.steps.modeDetail" = "Applies to new runs. Continuing a paused run keeps its original limits.";
 "ask.steps.continuous" = "Continuous";
 "ask.steps.bounded" = "Limit steps";
+
+"ask.progress.repeated" = "Repeated checks returned the same result after a reminder to change approach. This run has stopped; existing files and results are preserved. Review the last checks and provide a different next step to continue.";
+"ask.progress.unreconciled" = "The run ended without reconciling the unfinished plan. Pending work is preserved; completion has not been verified.";
+"ask.progress.needsInput" = "Waiting for your input";
+"ask.progress.blocked" = "Paused: task blocked";
+"ask.progress.checkpointFailed" = "The agent did not reconcile the plan at the progress checkpoint. This run has stopped without executing further operations. Existing work is preserved; review the unfinished plan before continuing.";
+"ask.progress.denied" = "The operation was declined. Unfinished work is preserved, and approval has not been requested again automatically.";
