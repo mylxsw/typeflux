@@ -7459,3 +7459,8 @@
 "ring.appKeys.searchVault" = "保管庫を検索";
 "ring.appKeys.readingView" = "閲覧ビューを切り替え";
 "ring.appKeys.findInNote" = "ノート内を検索";
+
+// File preview diagnostics
+"ask.sidePanel.file.previewIssue" = "プレビューに問題が発生しました";
+"ask.sidePanel.file.details" = "詳細";
+"ask.sidePanel.file.hideDetails" = "閉じる";

@@ -16,6 +16,7 @@ struct AskFileTabView: View {
     var actions = AskFileExternalActions()
     @State private var content: AskSidePanelFileContent?
     @State private var htmlError: String?
+    @State private var menuHovered = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -43,66 +44,59 @@ struct AskFileTabView: View {
     // MARK: - Toolbar
 
     private var toolbar: some View {
-        HStack(spacing: 8) {
-            Image(systemName: AskFileIcon.symbol(for: tab.kind)).font(.system(size: 12))
-                .foregroundStyle(StudioTheme.textTertiary)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(tab.name).font(.system(size: 12.5, weight: .semibold)).lineLimit(1)
-                Text(tab.target.relativePath).font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: AskFileIcon.symbol(for: tab.kind))
+                    .foregroundStyle(TFColors.textTertiary)
+                Text(tab.target.relativePath)
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(TFColors.textSecondary)
                     .lineLimit(1).truncationMode(.middle)
+                    .help(tab.target.relativePath)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            if tab.kind.hasSource {
-                Picker("", selection: $tab.showsSource) {
-                    Text(L("ask.sidePanel.file.preview")).tag(false)
-                    Text(L("ask.sidePanel.file.source")).tag(true)
+            HStack(spacing: 4) {
+                if tab.kind.hasSource {
+                    TFSegmentedControl(options: [
+                        TFOption(false, L("ask.sidePanel.file.preview")),
+                        TFOption(true, L("ask.sidePanel.file.source"))
+                    ], selection: $tab.showsSource, size: .regular)
+                    .accessibilityIdentifier("ask.sidePanel.file.mode")
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
+                Spacer(minLength: 8)
+                if let onLocate {
+                    toolbarButton("ask.sidePanel.locateMessage", symbol: "text.bubble", action: onLocate)
+                        .accessibilityIdentifier("ask.sidePanel.file.locate")
+                }
+                if let onReference {
+                    toolbarButton("ask.sidePanel.reference", symbol: "text.badge.plus", action: onReference)
+                        .accessibilityIdentifier("ask.sidePanel.file.reference")
+                }
+                toolbarButton("ask.sidePanel.file.reload", symbol: "arrow.clockwise") { tab.reload() }
+                Menu {
+                    AskFileOpenMenuItems(file: tab.target.url, actions: actions, onReference: onReference,
+                                         onError: onError)
+                } label: {
+                    TFButtonChrome(kind: .plain, destructive: false, size: .regular, iconOnly: true,
+                                   isPressed: false, hoverOverride: menuHovered) {
+                        Image(systemName: "ellipsis").font(.system(size: 13, weight: .medium))
+                    }
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
                 .fixedSize()
-                .controlSize(.small)
-                .accessibilityIdentifier("ask.sidePanel.file.mode")
+                .onHover { menuHovered = $0 }
+                .help(L("ask.sidePanel.open.menu"))
+                .accessibilityLabel(L("ask.sidePanel.open.menu"))
+                .accessibilityIdentifier("ask.sidePanel.file.more")
             }
-            if let onLocate {
-                Button(action: onLocate) {
-                    Image(systemName: "text.bubble").font(.system(size: 12))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .frame(width: 26, height: 26).contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .help(L("ask.sidePanel.locateMessage"))
-                .accessibilityLabel(L("ask.sidePanel.locateMessage"))
-                .accessibilityIdentifier("ask.sidePanel.file.locate")
-            }
-            if let onReference {
-                AskFileReferenceButton(action: onReference, size: 26)
-                    .accessibilityIdentifier("ask.sidePanel.file.reference")
-            }
-            Button { tab.reload() } label: {
-                Image(systemName: "arrow.clockwise").font(.system(size: 12))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .frame(width: 26, height: 26).contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help(L("ask.sidePanel.file.reload"))
-            .accessibilityLabel(L("ask.sidePanel.file.reload"))
-            Menu {
-                AskFileOpenMenuItems(file: tab.target.url, actions: actions, onReference: onReference,
-                                     onError: onError)
-            } label: {
-                Image(systemName: "ellipsis").font(.system(size: 13))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .frame(width: 26, height: 26)
-            }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .help(L("ask.sidePanel.open.menu"))
-            .accessibilityLabel(L("ask.sidePanel.open.menu"))
-            .accessibilityIdentifier("ask.sidePanel.file.more")
         }
         .padding(.horizontal, 12)
-        .frame(height: 44)
+        .padding(.vertical, 10)
+    }
+
+    private func toolbarButton(_ key: String, symbol: String, action: @escaping () -> Void) -> some View {
+        TFButton(title: L(key), systemImage: symbol, kind: .plain, size: .regular,
+                 iconOnly: true, action: action)
     }
 
     /// Reveal in Finder works while the tab shows.
@@ -151,9 +145,8 @@ struct AskFileTabView: View {
             } else {
                 VStack(spacing: 0) {
                     if let htmlError {
-                        Text(htmlError).font(.system(size: 11.5)).foregroundStyle(StudioTheme.danger)
-                            .lineLimit(3).frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 12).padding(.vertical, 6)
+                        AskFilePreviewNotice(message: htmlError)
+                            .padding(8)
                     }
                     AskFileHTMLView(bundle: bundle, validate: { [target = tab.target, roots] in
                         try AskSidePanelFileAccess.check(target, roots: roots())

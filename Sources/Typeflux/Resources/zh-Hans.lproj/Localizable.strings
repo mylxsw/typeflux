@@ -7460,3 +7460,8 @@
 "ring.appKeys.searchVault" = "搜索知识库";
 "ring.appKeys.readingView" = "切换阅读视图";
 "ring.appKeys.findInNote" = "笔记内查找";
+
+// File preview diagnostics
+"ask.sidePanel.file.previewIssue" = "预览遇到问题";
+"ask.sidePanel.file.details" = "详情";
+"ask.sidePanel.file.hideDetails" = "收起";

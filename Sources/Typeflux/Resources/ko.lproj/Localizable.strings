@@ -7459,3 +7459,8 @@
 "ring.appKeys.searchVault" = "보관함 검색";
 "ring.appKeys.readingView" = "읽기 보기 전환";
 "ring.appKeys.findInNote" = "노트에서 찾기";
+
+// File preview diagnostics
+"ask.sidePanel.file.previewIssue" = "미리보기에 문제가 발생했습니다";
+"ask.sidePanel.file.details" = "자세히";
+"ask.sidePanel.file.hideDetails" = "접기";

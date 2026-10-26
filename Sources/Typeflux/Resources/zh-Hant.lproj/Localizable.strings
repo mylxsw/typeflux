@@ -7462,3 +7462,8 @@
 "ring.appKeys.searchVault" = "搜尋知識庫";
 "ring.appKeys.readingView" = "切換閱讀檢視";
 "ring.appKeys.findInNote" = "筆記內尋找";
+
+// File preview diagnostics
+"ask.sidePanel.file.previewIssue" = "預覽遇到問題";
+"ask.sidePanel.file.details" = "詳情";
+"ask.sidePanel.file.hideDetails" = "收起";

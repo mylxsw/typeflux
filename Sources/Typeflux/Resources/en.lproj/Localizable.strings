@@ -7460,3 +7460,8 @@
 "ring.appKeys.searchVault" = "Search Vault";
 "ring.appKeys.readingView" = "Toggle Reading View";
 "ring.appKeys.findInNote" = "Find in Note";
+
+// File preview diagnostics
+"ask.sidePanel.file.previewIssue" = "Preview encountered a problem";
+"ask.sidePanel.file.details" = "Details";
+"ask.sidePanel.file.hideDetails" = "Hide details";

@@ -57,6 +57,27 @@ struct AskSidePanelRenderTests {
         return result
     }
 
+    @Test func previewDiagnosticsAreDeduplicated() {
+        #expect(AskFilePreviewNotice.details("  resource failed\nresource failed\n\nOther error ") ==
+                ["resource failed", "Other error"])
+        #expect(AskFilePreviewNotice.details(" \n") == [])
+    }
+
+    @Test(arguments: [false, true])
+    func previewNoticeRendersCollapsedAndExpanded(dark: Bool) async throws {
+        for expanded in [false, true] {
+            let labels = try await render(
+                VStack {
+                    AskFilePreviewNotice(message: "Resource failed\nResource failed\nScript error",
+                                         isExpanded: expanded)
+                    Spacer()
+                }.padding(8), name: "preview-notice-\(dark)-\(expanded)",
+                size: NSSize(width: 360, height: 180), dark: dark)
+            #expect(labels.contains { $0.contains(L("ask.sidePanel.file.previewIssue")) })
+            #expect(labels.contains { $0.contains("Script error") } == expanded)
+        }
+    }
+
     private func workspace() throws -> URL {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("side-panel-render-" + UUID().uuidString)
         let manager = FileManager.default
@@ -163,7 +184,8 @@ struct AskSidePanelRenderTests {
         tab.showsSource = source
         let name = "side-panel-file-" + (path as NSString).pathExtension + (source ? "-source" : "")
         let labels = try await render(AskSidePanelView(panel: panel, context: context(root), close: {}),
-                                      name: name, settle: .milliseconds(path.hasSuffix(".html") ? 900 : 400))
+                                      name: name, size: NSSize(width: 380, height: 640),
+                                      settle: .milliseconds(path.hasSuffix(".html") ? 900 : 400))
         #expect(labels.contains { $0.contains(tab.name) })
     }
 
