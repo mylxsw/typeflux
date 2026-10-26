@@ -34,7 +34,7 @@ struct AskHarnessUITests {
 
     // MARK: - Grouping
 
-    @Test func consecutiveToolStepsBecomeOneBlockWithOutputsUnderTheAnswer() {
+    @Test func consecutiveToolStepsBecomeOneBlockWithStableTaskOutputs() {
         let plan = call("p", "update_plan", ["items": [["step": "Search", "status": "completed"]]])
         let fetch = call("f", "web_fetch", ["url": "https://typeflux.app/changelog"])
         let again = call("f2", "web_fetch", ["url": "https://typeflux.app/changelog"])
@@ -47,14 +47,14 @@ struct AskHarnessUITests {
         ]
         let results = [result("p"), result("f"), result("f2"), result("c", image: image), result("s", image: image)]
         let items = AskActivity.items(messages, results: results)
-        #expect(items.map(\.id) == ["u", "a1", "answer"])
+        #expect(items.map(\.id) == ["u", "a1", "answer", "outcome-u"])
         guard case let .activity(group) = items[1].kind else { Issue.record("expected a block"); return }
         #expect(group.messageIds == ["a1", "a2", "a3"])
         #expect(group.steps.map(\.id) == ["f", "f2", "c", "s"])
         #expect(items[1].outputs.isEmpty)
         // Pages are deduplicated and screen captures are not results.
-        #expect(items[2].outputs.sources == [URL(string: "https://typeflux.app/changelog")!])
-        #expect(items[2].outputs.artifacts.map(\.id) == ["c"])
+        #expect(items[3].outputs.sources == [URL(string: "https://typeflux.app/changelog")!])
+        #expect(items[3].outputs.artifacts.map(\.id) == ["c"])
     }
 
     @Test func aBlockWithoutAnAnswerKeepsItsOutputsAndUserTurnsSplitBlocks() {
@@ -62,9 +62,9 @@ struct AskHarnessUITests {
         let failed = call("x", "run_code")
         let messages = [step("a1", [code, failed]), AskMessage(id: "u2", role: "user", text: "next", createdAt: now), step("a2", [call("k", "skill")])]
         let items = AskActivity.items(messages, results: [result("c", image: image), result("x", image: image, error: true)])
-        #expect(items.map(\.id) == ["a1", "u2", "a2"])
-        #expect(items[0].outputs.artifacts.map(\.id) == ["c"])
-        #expect(items[1].outputs.isEmpty)
+        #expect(items.map(\.id) == ["a1", "outcome-a1", "u2", "a2"])
+        #expect(items[1].outputs.artifacts.map(\.id) == ["c"])
+        #expect(items[2].outputs.isEmpty)
     }
 
     @Test func outputsIgnoreNonWebURLs() {

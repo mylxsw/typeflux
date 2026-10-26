@@ -24,8 +24,10 @@ struct AskActivityBlock: View {
     var exportProjectPatch: ((AskWorkspaceRef) throws -> Data)?
     /// Overrides the default fold until the user toggles it.
     var startsExpanded: Bool?
+    @Environment(\.askInspectTranscript) private var inspectTranscript
     @State private var userExpanded: Bool?
     @State private var hovering = false
+    @State private var detailPage = 0
     @Environment(\.interfaceStyle) private var style
     @Environment(\.askSidePanelActions) private var sidePanel
     /// The waiting card's corner: the glass card's, or the flat design's tighter one.
@@ -37,29 +39,19 @@ struct AskActivityBlock: View {
 
     private var title: String { AskActivity.title(group, status: status, plan: plan, results: results) }
 
-    /// The thinking before the first step, shown above the card like an
-    /// answer's reasoning rather than folded inside it.
-    private var leadReasoning: AskMessage? {
-        guard let lead = group.messages.first, let reasoning = lead.reasoning, !reasoning.isEmpty else { return nil }
-        return lead
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if let lead = leadReasoning {
-                AskReasoningView(text: lead.reasoning ?? "", milliseconds: lead.reasoningMilliseconds ?? 0,
-                                 active: streamingId == lead.id && (lead.toolCalls ?? []).isEmpty)
-            }
             if status == .attention { card } else { trace }
             if !outputs.isEmpty { AskRunOutputsView(outputs: outputs).padding(.top, 4) }
-            if let sidePanel, !fileChanges.isEmpty, status != .running {
+            if let sidePanel, !fileChanges.isEmpty {
                 AskFileChangesView(list: AskFileChangeList(changes: fileChanges), actions: sidePanel).padding(.top, 4)
             }
         }
     }
 
     private func toggle() {
-        withAnimation(.spring(response: 0.32, dampingFraction: 0.85)) { userExpanded = !expanded }
+        inspectTranscript()
+        userExpanded = !expanded
     }
 
     // MARK: Quiet line
@@ -72,7 +64,7 @@ struct AskActivityBlock: View {
                     .padding(.leading, 12)
                     .overlay(alignment: .leading) { Rectangle().fill(AskTheme.border).frame(width: 2) }
                     .padding(.bottom, 4)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .transition(.identity)
             }
         }
     }
@@ -134,7 +126,7 @@ struct AskActivityBlock: View {
             if expanded {
                 Rectangle().fill(AskTheme.separator).frame(height: 1)
                 content(includesPlan: false).padding(.horizontal, 14).padding(.vertical, 12)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .transition(.identity)
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: cardCorner, style: .continuous))
@@ -187,41 +179,67 @@ struct AskActivityBlock: View {
     }
 
     private func content(includesPlan: Bool = true) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if includesPlan, let plan, !plan.isEmpty {
-                AskPlanList(items: plan)
-                if !group.steps.isEmpty { Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.vertical, 2) }
-            }
-            ForEach(group.messages) { message in
-                if let reasoning = message.reasoning, !reasoning.isEmpty, message.id != leadReasoning?.id {
-                    AskStepNote(text: reasoning, symbol: "sparkle")
+        let rows = AskActivityDetail.rows(group.messages)
+        let range = AskActivityPage.range(count: rows.count, page: detailPage)
+        let index = AskActivity.resultIndex(results)
+        return VStack(alignment: .leading, spacing: 8) {
+            if includesPlan, let plan, !plan.isEmpty { AskPlanList(items: plan) }
+            if rows.count > AskActivityPage.size {
+                HStack(spacing: 12) {
+                    Button(L("ask.activity.previous")) { detailPage = max(0, range.lowerBound / AskActivityPage.size - 1) }
+                        .disabled(range.lowerBound == 0)
+                    Text(L("ask.activity.page", range.lowerBound + 1, range.upperBound, rows.count))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                    Button(L("ask.activity.next")) { detailPage = range.lowerBound / AskActivityPage.size + 1 }
+                        .disabled(range.upperBound == rows.count)
+                    Spacer(minLength: 0)
+                    Button(L("ask.activity.latest")) { detailPage = AskActivityPage.last(count: rows.count) }
                 }
-                if !message.text.isEmpty { AskStepNote(text: message.text, symbol: nil) }
-                ForEach((message.toolCalls ?? []).filter { !["update_plan", AskInternalRecovery.toolName].contains($0.function.name) }) { call in
-                    AskToolStepRow(call: call, result: results.first { $0.toolCallId == call.id },
-                                   preparing: streamingId == message.id, pending: approvalToolId == call.id,
-                                   exportProjectPatch: exportProjectPatch)
+                .font(.system(size: 11.5))
+                .buttonStyle(.plain)
+            }
+            ForEach(Array(rows[range])) { row in
+                switch row.kind {
+                case let .reasoning(text):
+                    AskActivityTextDisclosure(text: text, title: L("ask.activity.reasoning"), symbol: "sparkle")
+                case let .note(text):
+                    AskActivityTextDisclosure(text: text, title: L("ask.activity.note"), symbol: "text.alignleft")
+                case let .tool(call, messageID):
+                    AskToolStepRow(call: call, result: index[call.id],
+                                   preparing: streamingId == messageID && index[call.id] == nil,
+                                   pending: approvalToolId == call.id, exportProjectPatch: exportProjectPatch)
                 }
             }
         }
     }
+
 }
 
 /// The model's narration between tool calls, in the block's quieter voice.
-private struct AskStepNote: View {
+private struct AskActivityTextDisclosure: View {
     let text: String
-    let symbol: String?
+    let title: String
+    let symbol: String
+    @State private var expanded = false
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-            if let symbol { Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: 10)) }
-            Text(text)
+        VStack(alignment: .leading, spacing: 6) {
+            Button { expanded.toggle() } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: symbol).font(.system(size: 10))
+                    Text(title)
+                    Text(String(text.prefix(160)).replacingOccurrences(of: "\n", with: " "))
+                        .lineLimit(1).truncationMode(.tail)
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right").rotationEffect(.degrees(expanded ? 90 : 0))
+                }
                 .font(.system(size: 12.5))
-                .lineSpacing(2)
-                .textSelection(.enabled)
-                .fixedSize(horizontal: false, vertical: true)
+                .foregroundStyle(StudioTheme.textSecondary)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            if expanded { AskReasoningText(text: text).frame(height: 220) }
         }
-        .foregroundStyle(StudioTheme.textSecondary)
     }
 }
 
@@ -237,7 +255,8 @@ struct AskToolStepRow: View {
     var pending = false
     var exportProjectPatch: ((AskWorkspaceRef) throws -> Data)?
     @State private var expanded = false
-    @State private var pane = Pane.arguments
+    @State private var pane = Pane.result
+    @Environment(\.askInspectTranscript) private var inspectTranscript
     @Environment(\.askSidePanelActions) private var sidePanel
 
     static let iconSize: CGFloat = 14
@@ -277,7 +296,7 @@ struct AskToolStepRow: View {
     /// A one-line detail beside the name: the target path, else the result's first line.
     static func detail(_ call: AskToolCall, result: AskMessage?) -> String? {
         if let path = AskApprovalPresentation.detail(call) { return path }
-        let line = result?.resultText.split(whereSeparator: \.isNewline).first.map(String.init)?
+        let line = result.map { String($0.resultText.prefix(240).prefix(while: { !$0.isNewline })) }?
             .trimmingCharacters(in: .whitespaces)
         guard let line, !line.isEmpty else { return nil }
         return exitSummary(line) ?? line
@@ -293,7 +312,7 @@ struct AskToolStepRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 4) {
-                Button { withAnimation(.easeOut(duration: 0.18)) { expanded.toggle() } } label: {
+                Button { inspectTranscript(); expanded.toggle() } label: {
                     HStack(spacing: 8) {
                         Image(systemName: AskPresentation.toolSymbol(call))
                             .font(.system(size: 10.5))

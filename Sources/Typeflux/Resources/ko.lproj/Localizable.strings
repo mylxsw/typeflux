@@ -7464,3 +7464,13 @@
 "ask.sidePanel.file.previewIssue" = "미리보기에 문제가 발생했습니다";
 "ask.sidePanel.file.details" = "자세히";
 "ask.sidePanel.file.hideDetails" = "접기";
+
+// Bounded task activity details.
+"ask.activity.previous" = "이전";
+"ask.activity.next" = "다음";
+"ask.activity.latest" = "최신";
+"ask.activity.page" = "%d–%d / %d개 기록";
+"ask.activity.reasoning" = "생각 과정";
+"ask.activity.note" = "진행 메모";
+"ask.activity.results" = "작업 결과";
+"ask.activity.resultsWorking" = "작업 진행 중";

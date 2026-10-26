@@ -61,7 +61,8 @@ extension AskConversationModel {
             workspaces.listChanges(owner: route.account, conversationId: id)
         }.value
         guard fileChangesConversationId == id else { return }
-        fileChanges = loaded
+        // Tracking may finish while disk loading is in flight. Preserve the newer evidence.
+        fileChanges = loaded.merging(fileChanges) { saved, current in Self.merged(saved, current) }
     }
 
     /// The answer a round's changes belong to (its last assistant message after the last

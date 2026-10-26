@@ -639,15 +639,16 @@ struct AskMonoBlock: View {
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(StudioTheme.textTertiary)
             }
-            Text(text)
-                .font(.system(size: 11.5, design: .monospaced))
-                .foregroundStyle(isError ? StudioTheme.danger : StudioTheme.textSecondary)
-                .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
+            AskReasoningText(text: text, monospaced: true, isError: isError)
+                .frame(height: 220)
+                .padding(8)
                 .background(AskTheme.monoSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AskTheme.separator))
+            Button(L("ask.copy")) {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(text, forType: .string)
+            }
+            .buttonStyle(.plain)
+            .font(.system(size: 11.5))
         }
     }
 }

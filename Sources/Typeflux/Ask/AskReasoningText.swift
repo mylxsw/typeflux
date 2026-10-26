@@ -6,6 +6,8 @@ import SwiftUI
 /// inside the transcript's layout pass.
 struct AskReasoningText: NSViewRepresentable {
     let text: String
+    var monospaced = false
+    var isError = false
     @Environment(\.colorScheme) private var colorScheme
 
     func makeNSView(context _: Context) -> NSScrollView {
@@ -39,24 +41,32 @@ struct AskReasoningText: NSViewRepresentable {
 
     func updateNSView(_ scroll: NSScrollView, context _: Context) {
         scroll.appearance = NSAppearance(named: colorScheme == .dark ? .darkAqua : .aqua)
-        (scroll.documentView as? Editor)?.setContent(text)
+        if let editor = scroll.documentView as? Editor {
+            editor.setContent(text, monospaced: monospaced, isError: isError)
+        }
     }
 
     final class Editor: NSTextView {
         private var source = ""
 
-        func setContent(_ text: String) {
-            guard source != text, let storage = textStorage else { return }
+        private var code = false
+        private var error = false
+
+        func setContent(_ text: String, monospaced: Bool = false, isError: Bool = false) {
+            let restyle = code != monospaced || error != isError
+            guard source != text || restyle, let storage = textStorage else { return }
+            code = monospaced
+            error = isError
             let selection = selectedRange()
             // NSTextStorage string edits do not inherit NSTextView's textColor
             // when storage is empty. Style every inserted run explicitly.
             let attributes: [NSAttributedString.Key: Any] = [
-                .font: NSFont.systemFont(ofSize: 13),
-                .foregroundColor: NSColor.secondaryLabelColor
+                .font: monospaced ? NSFont.monospacedSystemFont(ofSize: 11.5, weight: .regular) : NSFont.systemFont(ofSize: 13),
+                .foregroundColor: isError ? NSColor.systemRed : NSColor.secondaryLabelColor
             ]
             // Providers normally append. Do not replace the existing storage or
             // invalidate its laid-out prefix for every token.
-            if text.hasPrefix(source) {
+            if !restyle, text.hasPrefix(source) {
                 let offset = source.utf16.count
                 storage.replaceCharacters(in: NSRange(location: storage.length, length: 0),
                                           with: NSAttributedString(string: (text as NSString).substring(from: offset),

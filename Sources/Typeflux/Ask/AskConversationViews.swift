@@ -7,6 +7,8 @@ struct AskConversationView: View {
     @ObservedObject var model: AskConversationModel
     private var onCloseWindow: () -> Void
     @State private var showsUsage = false
+    @State private var activityCache = AskActivityOutputCache()
+    @State private var inspectionIdentity = UUID()
     /// The side panel (files, file tabs and web pages); it stays open across conversations.
     @State private var showsSidePanel = false
     /// Held without observing: `AskSidePanelView` observes it, so typing in the Files search
@@ -152,6 +154,8 @@ struct AskConversationView: View {
         .environment(\.askArtifactAccess, model.artifactAccess)
         .environment(\.askTerminalAccess, model.terminalAccess)
         .environment(\.askSidePanelActions, sidePanelActions)
+        .environment(\.askInspectTranscript, AskTranscriptInspectionAction(identity: inspectionIdentity,
+                                                                         action: { followsTranscriptBottom = false }))
         .task(id: model.selectedId) { await model.loadFileChanges(model.selectedId) }
         .onChange(of: model.fileChanges) { _ in
             // A finished round recorded its files with its answer: regroup the Files tab.
@@ -1337,6 +1341,7 @@ struct AskConversationView: View {
         switch item.kind {
         case let .message(message): return message.createdAt
         case let .activity(group): return group.messages.first?.createdAt
+        case .outcome: return nil
         }
     }
 
@@ -1353,7 +1358,9 @@ struct AskConversationView: View {
     private var transcript: some View {
         // Resolved once per render: asking each row would rescan the transcript.
         let regenerable = model.regenerableAnswerId
-        let items = AskActivity.items(transcriptMessages, results: model.selected?.messages.filter { $0.role == "tool" } ?? [])
+        let items = activityCache.prepare(conversationID: model.selectedId, messages: transcriptMessages,
+                                          results: model.selected?.messages.filter { $0.role == "tool" } ?? [],
+                                          changes: model.fileChanges)
         return GeometryReader { viewport in
             ScrollViewReader { proxy in
                 ScrollView {
@@ -1488,6 +1495,7 @@ struct AskConversationView: View {
             switch item.kind {
             case let .message(message): return message.id == id
             case let .activity(group): return group.messageIds.contains(id)
+            case .outcome: return false
             }
         }()
         RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -1514,16 +1522,21 @@ struct AskConversationView: View {
                            canRegenerate: regenerable == message.id,
                            onRegenerate: { model.regenerate(message.id) },
                            outputs: item.outputs,
-                           fileChanges: message.role == "assistant" ? model.fileChanges[message.id] ?? [] : [],
+                           fileChanges: [],
                            onSaveNote: model.notes == nil || message.role != "assistant" ? nil
                                : { excerpt in model.performNotebookAction { await model.toggleAnswerNote(message, excerpt: excerpt) } },
                            savedToNotes: model.answerNoteIDs[message.id] != nil)
+        case .outcome(let outcome):
+            AskTaskOutcomeView(outcome: outcome, outputs: item.outputs,
+                               active: run.map { $0.isActive && outcome.runIDs.contains($0.id) } ?? false,
+                               actions: sidePanelActions)
+                .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
         case let .activity(group):
-            let results = model.selected?.messages.filter { $0.role == "tool" } ?? []
+            let results = group.calls.compactMap { activityCache.resultsByID[$0.id] }
             let isLatest = items.last(where: { if case .activity = $0.kind { return true }; return false })?.id == group.id
             // The run's latest block stays live between steps, while no answer follows it yet,
             // and stops spinning with every other indicator once the run waits for a decision.
-            let carriesRun = run?.isActive == true && items.last?.id == group.id
+            let carriesRun = run?.isActive == true && items.last(where: { if case .outcome = $0.kind { return false }; return true })?.id == group.id
             let halted: Bool = {
                 switch phase {
                 case .needsDecision?, .pausedCredits?, .waitingDevice?: break
@@ -1543,7 +1556,7 @@ struct AskConversationView: View {
                              status: status, streamingId: streamingId, approvalToolId: approvalToolId,
                              runStep: live || halted ? phase?.step : nil,
                              outputs: item.outputs,
-                             fileChanges: group.messageIds.flatMap { model.fileChanges[$0] ?? [] },
+                             fileChanges: [],
                              approval: pending.flatMap { pending in
                                  group.calls.contains { $0.id == pending.call.id }
                                      ? AnyView(approvalCard(pending.call, id: pending.id, embedded: true)) : nil
@@ -1570,7 +1583,7 @@ struct AskConversationView: View {
             if !messages.contains(where: { $0.id == id }) {
                 messages.append(.init(id: id, role: "assistant", text: progress.text,
                                       toolCalls: progress.toolCalls, createdAt: run.updatedAt,
-                                      reasoning: progress.reasoning, reasoningMilliseconds: progress.reasoningMilliseconds))
+                                      reasoning: progress.reasoning, reasoningMilliseconds: progress.reasoningMilliseconds, runId: run.id))
             }
         }
         return messages
@@ -1810,6 +1823,7 @@ struct AskReasoningView: View {
     let active: Bool
     @State private var expanded = false
     @State private var reasoningHover = false
+    @Environment(\.askInspectTranscript) private var inspectTranscript
 
     private var label: String {
         active ? L("ask.reasoning.active") : L("ask.reasoning.complete", max(1, milliseconds / 1000))
@@ -1817,7 +1831,7 @@ struct AskReasoningView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Button { expanded.toggle() } label: {
+            Button { inspectTranscript(); expanded.toggle() } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "sparkles").foregroundStyle(StudioTheme.aiIcon).font(.system(size: 11))
                     Text(label)
@@ -1847,7 +1861,6 @@ struct AskReasoningView: View {
                     .overlay(alignment: .leading) { Rectangle().fill(AskTheme.border).frame(width: 2) }
             }
         }
-        .onChange(of: active) { value in if !value { expanded = false } }
     }
 }
 

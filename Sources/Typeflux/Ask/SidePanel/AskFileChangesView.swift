@@ -40,25 +40,34 @@ struct AskFileChangesView: View {
     let list: AskFileChangeList
     let actions: AskSidePanelActions
     @State private var showsProcess = false
+    @Environment(\.askInspectTranscript) private var inspectTranscript
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-            ForEach(list.main) { change in
+            ForEach(Array(list.main.prefix(5))) { change in
                 Rectangle().fill(AskTheme.separator).frame(height: 1)
                 AskFileChangeRow(change: change, actions: actions)
             }
-            ForEach(list.artifacts) { artifact in
+            ForEach(Array(list.artifacts.prefix(5))) { artifact in
                 Rectangle().fill(AskTheme.separator).frame(height: 1)
                 AskArtifactChangeRow(artifact: artifact, actions: actions)
+            }
+            if list.main.count > 5 || list.artifacts.count > 5 {
+                Button(L("ask.fileChanges.showAll"), action: actions.showFiles)
+                    .buttonStyle(.plain).padding(12)
             }
             if !list.process.isEmpty {
                 Rectangle().fill(AskTheme.separator).frame(height: 1)
                 processToggle
                 if showsProcess {
-                    ForEach(list.process) { change in
+                    ForEach(Array(list.process.prefix(10))) { change in
                         Rectangle().fill(AskTheme.separator).frame(height: 1)
                         AskFileChangeRow(change: change, actions: actions)
+                    }
+                    if list.process.count > 10 {
+                        Button(L("ask.fileChanges.showAll"), action: actions.showFiles)
+                            .buttonStyle(.plain).padding(12)
                     }
                 }
             }
@@ -97,7 +106,8 @@ struct AskFileChangesView: View {
 
     private var processToggle: some View {
         Button {
-            withAnimation(.easeOut(duration: 0.15)) { showsProcess.toggle() }
+            inspectTranscript()
+            showsProcess.toggle()
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "chevron.right").font(.system(size: 8.5, weight: .bold))

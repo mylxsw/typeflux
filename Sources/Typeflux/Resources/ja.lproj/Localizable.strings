@@ -7464,3 +7464,13 @@
 "ask.sidePanel.file.previewIssue" = "プレビューに問題が発生しました";
 "ask.sidePanel.file.details" = "詳細";
 "ask.sidePanel.file.hideDetails" = "閉じる";
+
+// Bounded task activity details.
+"ask.activity.previous" = "前へ";
+"ask.activity.next" = "次へ";
+"ask.activity.latest" = "最新";
+"ask.activity.page" = "%d–%d / %d 件";
+"ask.activity.reasoning" = "思考過程";
+"ask.activity.note" = "進捗メモ";
+"ask.activity.results" = "タスクの成果";
+"ask.activity.resultsWorking" = "タスクは進行中です";

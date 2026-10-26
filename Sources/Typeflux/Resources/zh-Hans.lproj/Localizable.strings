@@ -7465,3 +7465,13 @@
 "ask.sidePanel.file.previewIssue" = "预览遇到问题";
 "ask.sidePanel.file.details" = "详情";
 "ask.sidePanel.file.hideDetails" = "收起";
+
+// Bounded task activity details.
+"ask.activity.previous" = "上一页";
+"ask.activity.next" = "下一页";
+"ask.activity.latest" = "最新记录";
+"ask.activity.page" = "第 %d–%d 条，共 %d 条";
+"ask.activity.reasoning" = "思考过程";
+"ask.activity.note" = "进度说明";
+"ask.activity.results" = "任务成果";
+"ask.activity.resultsWorking" = "任务仍在进行";

@@ -34,17 +34,18 @@ struct AskTranscriptItem: Identifiable, Equatable {
     enum Kind: Equatable {
         case message(AskMessage)
         case activity(AskActivityGroup)
+        case outcome(AskTaskOutcome)
     }
 
     var kind: Kind
-    /// Outputs of the activity before an answer render under that answer; a block with
-    /// no answer after it yet keeps its own.
+    /// Outputs belong to a stable task outcome, never to a transient assistant message.
     var outputs = AskRunOutputs()
 
     var id: String {
         switch kind {
         case let .message(message): message.id
         case let .activity(group): group.id
+        case let .outcome(outcome): outcome.id
         }
     }
 }
@@ -69,44 +70,74 @@ enum AskActivity {
 
     /// Splits a transcript (tool results excluded) into messages and activity blocks.
     /// `results` are the conversation's tool messages, used to collect outputs.
-    static func items(_ messages: [AskMessage], results: [AskMessage]) -> [AskTranscriptItem] {
+    static func items(_ messages: [AskMessage], results: [AskMessage],
+                      fileChanges: [String: [AskWorkspaceFileChange]] = [:],
+                      cache: AskActivityOutputCache? = nil) -> [AskTranscriptItem] {
+        let index = resultIndex(results)
         var items: [AskTranscriptItem] = []
+        var pending: [AskMessage] = []
+        var taskMessages: [AskMessage] = []
+        var taskID = messages.first.map { $0.runId ?? $0.id } ?? "empty"
+        func flushSteps() {
+            guard let first = pending.first else { return }
+            items.append(.init(kind: .activity(.init(id: first.id, messages: pending))))
+            pending = []
+        }
+        func flushOutcome() {
+            let group = AskActivityGroup(id: taskID, messages: taskMessages)
+            let outputs = cache?.outputs(group, results: index) ?? self.outputs(group, resultIndex: index)
+            let changes = taskMessages.flatMap { fileChanges[$0.id] ?? [] }
+            if !outputs.isEmpty || !changes.isEmpty {
+                items.append(.init(kind: .outcome(.init(id: "outcome-" + taskID,
+                                                       messageIDs: group.messageIds,
+                                                       runIDs: Array(Set(taskMessages.compactMap(\.runId))).sorted(),
+                                                       changes: AskConversationModel.merged([], changes))), outputs: outputs))
+            }
+            taskMessages = []
+        }
         for message in messages {
+            if message.role == "user", message.steered != true {
+                flushSteps()
+                flushOutcome()
+                taskID = message.id
+            }
             let isStep = message.role == "assistant" && !(message.toolCalls ?? []).isEmpty
-            if isStep, let last = items.last, case var .activity(group) = last.kind {
-                group.messages.append(message)
-                items[items.count - 1].kind = .activity(group)
-            } else if isStep {
-                items.append(.init(kind: .activity(AskActivityGroup(id: message.id, messages: [message]))))
+            if isStep {
+                pending.append(message)
             } else {
+                flushSteps()
                 items.append(.init(kind: .message(message)))
             }
+            if message.role == "assistant" { taskMessages.append(message) }
         }
-        for index in items.indices {
-            guard case let .activity(group) = items[index].kind else { continue }
-            let outputs = self.outputs(group, results: results)
-            if index + 1 < items.count, case let .message(next) = items[index + 1].kind, next.role == "assistant" {
-                items[index + 1].outputs = outputs
-            } else {
-                items[index].outputs = outputs
-            }
-        }
+        flushSteps()
+        flushOutcome()
+        cache?.retain(messages: messages)
         return items
+    }
+
+    static func resultIndex(_ results: [AskMessage]) -> [String: AskMessage] {
+        Dictionary(results.compactMap { result in result.toolCallId.map { ($0, result) } },
+                   uniquingKeysWith: { first, _ in first })
     }
 
     /// Images produced by tools (screen and page captures are context, not results)
     /// and the pages read with web_fetch, in order and without duplicates.
     static func outputs(_ group: AskActivityGroup, results: [AskMessage]) -> AskRunOutputs {
+        outputs(group, resultIndex: resultIndex(results))
+    }
+
+    static func outputs(_ group: AskActivityGroup, resultIndex: [String: AskMessage]) -> AskRunOutputs {
         var value = AskRunOutputs()
         for call in group.calls {
             let name = call.function.name
-            if name == "web_fetch",
+            if name == "web_fetch", let result = resultIndex[call.id], result.isError != true,
                let raw = (try? AskLocalTools.jsonArguments(call.function.arguments))?["url"] as? String,
                let url = URL(string: raw), ["http", "https"].contains(url.scheme?.lowercased() ?? ""),
                !value.sources.contains(url) {
                 value.sources.append(url)
             }
-            if let result = results.first(where: { $0.toolCallId == call.id }) {
+            if let result = resultIndex[call.id] {
                 if ["image_generate", "image_edit"].contains(name), result.isError != true,
                    let image = result.generatedImage, image.safeURL != nil,
                    !value.generatedImages.contains(where: { $0.assetId == image.assetId }) {
@@ -132,7 +163,7 @@ enum AskActivity {
                 }
             }
             guard !["computer", "browser", AskEmbeddedBrowserTool.name].contains(name),
-                  let result = results.first(where: { $0.toolCallId == call.id }),
+                  let result = resultIndex[call.id],
                   result.isError != true || result.harness?.outcome != nil else { continue }
             for (index, image) in result.retainedResultImages.enumerated() {
                 value.artifacts.append(.init(id: index == 0 ? call.id : call.id + "/" + String(index),
@@ -189,13 +220,14 @@ enum AskActivity {
     /// `halted` marks the latest block of a run that waits for the user to decide.
     static func status(_ group: AskActivityGroup, results: [AskMessage], streamingId: String?,
                        approvalToolId: String?, live: Bool = false, halted: Bool = false) -> Status {
+        let resultsByID = resultIndex(results)
         if let approvalToolId, group.calls.contains(where: { $0.id == approvalToolId }) { return .attention }
         if halted { return .paused }
         if live { return .running }
         if let streamingId, group.messageIds.contains(streamingId) { return .running }
-        if group.calls.contains(where: { call in !results.contains { $0.toolCallId == call.id } }) { return .running }
+        if group.calls.contains(where: { call in resultsByID[call.id] == nil }) { return .running }
         if group.steps.contains(where: { call in
-            let result = results.first { $0.toolCallId == call.id }
+            let result = resultsByID[call.id]
             return result?.isRecoverableToolRefusal != true && AskPresentation.toolState(result: result) == .failed
         }) { return .failed }
         return .done

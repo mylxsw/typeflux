@@ -7465,3 +7465,13 @@
 "ask.sidePanel.file.previewIssue" = "Preview encountered a problem";
 "ask.sidePanel.file.details" = "Details";
 "ask.sidePanel.file.hideDetails" = "Hide details";
+
+// Bounded task activity details.
+"ask.activity.previous" = "Previous";
+"ask.activity.next" = "Next";
+"ask.activity.latest" = "Latest";
+"ask.activity.page" = "%d–%d of %d records";
+"ask.activity.reasoning" = "Thinking";
+"ask.activity.note" = "Progress note";
+"ask.activity.results" = "Task results";
+"ask.activity.resultsWorking" = "Task still in progress";
