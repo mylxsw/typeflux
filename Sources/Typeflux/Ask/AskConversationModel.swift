@@ -430,10 +430,11 @@ final class AskConversationModel: ObservableObject {
     private(set) var transcriptRevision: UInt64 = 0
     var cachedRecoveryPresentation: AskRecoveryPresentation?
     var cachedConversationImages: Bool?
+    var cachedRunHasResponseText: Bool?
     private(set) var recoveryPresentationBuilds = 0
     func recordRecoveryPresentationBuild() { recoveryPresentationBuilds += 1 }
     @Published private(set) var selected: AskConversation? {
-        didSet { transcriptRevision &+= 1; cachedRecoveryPresentation = nil; cachedConversationImages = nil }
+        didSet { transcriptRevision &+= 1; cachedRecoveryPresentation = nil; cachedConversationImages = nil; cachedRunHasResponseText = nil }
     }
     @Published private(set) var selectedId: String? { didSet { if selectedId != oldValue { refreshAnswerNotes() } } }
     /// Answers of the shown conversation that are in the notebook, by message id.

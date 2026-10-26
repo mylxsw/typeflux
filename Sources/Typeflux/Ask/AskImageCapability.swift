@@ -78,7 +78,7 @@ extension AskConversationModel {
     /// can suggest a vision model or marking the model in settings.
     var imageRecoveryTarget: AskImageRecoveryTarget? {
         guard !hasPendingSubmission, let value = selected, let run = value.run,
-              value.messages.contains(where: { $0.image != nil }) else { return nil }
+              hasConversationImages else { return nil }
         if let target = recoveringImage, target.conversationID == value.id { return target }
         guard ["failed", "cancelled"].contains(run.status),
               modelLibrary.imageCapability(run.modelRef ?? value.modelRef ?? "cloud:default") != .supported

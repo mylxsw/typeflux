@@ -122,6 +122,41 @@ struct AskTranscriptPerformanceTests {
         #expect(fixture.model.recoveryPresentation == AskRecoveryPresentation(run: nil, entries: [], deviceId: "device", local: false))
     }
 
+    @Test func durableMessageFactsSurviveStreamingAndRefreshWithSnapshots() async throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        var value = AskConversation(id: "facts", title: "Facts", revision: 1, updatedAt: .distantPast,
+                                    messages: Self.messages(turns: 100, steps: 20))
+        value.run = .init(id: "facts-run", deviceId: "device", status: "running", steps: 1,
+                          updatedAt: .distantPast, tools: [], pending: [], assistantId: "new-answer")
+        await fixture.api.seed(value)
+        await fixture.model.select(value.id)
+        fixture.model.externallyDrivenConversations.insert(value.id)
+        for _ in 0..<100 {
+            #expect(fixture.model.imageRecoveryTarget == nil)
+            #expect(fixture.model.showsResponseWaiting)
+        }
+        #expect(fixture.model.cachedConversationImages == false)
+        #expect(fixture.model.cachedRunHasResponseText == false)
+        fixture.model.applyFeatureQuickProgress(.init(owner: fixture.model.owner, id: value.id, runID: "facts-run",
+            complete: false, progress: .init(text: "An answer is arriving")))
+        #expect(!fixture.model.showsResponseWaiting)
+        #expect(fixture.model.cachedRunHasResponseText == false)
+        value.revision += 1
+        value.messages.append(.init(id: "new-answer", role: "assistant", text: "Saved answer", createdAt: .distantPast))
+        value.messages[0].image = "data:image/jpeg;base64,YQ=="
+        try await fixture.model.accept(value, route: #require(fixture.model.credentials(for: value.id)))
+        #expect(fixture.model.hasConversationImages)
+        #expect(fixture.model.runHasResponseText)
+        value.revision += 1
+        value.run?.assistantId = "next-answer"
+        try await fixture.model.accept(value, route: #require(fixture.model.credentials(for: value.id)))
+        #expect(!fixture.model.runHasResponseText)
+        fixture.model.newConversation()
+        #expect(!fixture.model.hasConversationImages)
+        #expect(!fixture.model.runHasResponseText)
+    }
+
     @Test func scrollAdjustmentsCoalesceAndCancelStaleConversation() async throws {
         let scheduler = AskTranscriptScrollScheduler()
         var values: [Int] = []
@@ -151,6 +186,7 @@ struct AskTranscriptPerformanceTests {
         }
         let streaming = ProcessInfo.processInfo.environment["TYPEFLUX_SCROLL_STRESS_IDLE"] != "1"
         let toolStreaming = ProcessInfo.processInfo.environment["TYPEFLUX_SCROLL_STRESS_TOOLS"] == "1"
+        let continuous = ProcessInfo.processInfo.environment["TYPEFLUX_SCROLL_STRESS_CONTINUOUS"] == "1"
         var value = AskConversation(id: "scroll-stress", title: "Long conversation scroll stress", revision: 1,
                                     updatedAt: .distantPast, messages: messages)
         if streaming {
@@ -187,7 +223,9 @@ struct AskTranscriptPerformanceTests {
             let start = ContinuousClock.now
             let limit = max(0, document.frame.height - scroll.contentSize.height)
             let fraction = CGFloat(index < 90 ? index : 179 - index) / 89
-            scroll.contentView.scroll(to: .init(x: 0, y: limit * fraction))
+            // A fixed 48-point increment separates ordinary scrolling from whole-history jumps.
+            let offset = continuous ? min(limit, CGFloat(index < 90 ? index : 179 - index) * 48) : limit * fraction
+            scroll.contentView.scroll(to: .init(x: 0, y: offset))
             scroll.reflectScrolledClipView(scroll.contentView)
             if streaming {
                 let progress = toolStreaming
@@ -209,7 +247,7 @@ struct AskTranscriptPerformanceTests {
         }
         costs.sort()
         let p95 = costs[Int(Double(costs.count - 1) * 0.95)]
-        print("TRANSCRIPT_SCROLL streaming=\(streaming) tools=\(toolStreaming) messages=\(messages.count) samples=\(costs.count) p50_ms=\(costs[costs.count / 2]) p95_ms=\(p95) max_ms=\(costs.last!)")
+        print("TRANSCRIPT_SCROLL continuous=\(continuous) streaming=\(streaming) tools=\(toolStreaming) messages=\(messages.count) samples=\(costs.count) p50_ms=\(costs[costs.count / 2]) p95_ms=\(p95) max_ms=\(costs.last!)")
         #expect(fixture.model.recoveryPresentationBuilds <= builds + 1)
         // Debug + coverage has substantial overhead. Actual app sampling complements this guard.
         #expect(p95 < 50, "Sustained main-thread work must not stall scrolling: \(p95) ms")
@@ -242,6 +280,27 @@ struct AskTranscriptPerformanceTests {
         host.layoutSubtreeIfNeeded()
         try await Task.sleep(for: .milliseconds(100))
         #expect(document.bounds.maxY - scroll.documentVisibleRect.maxY <= 13)
+        // Exercise production ScrollViewReader anchors for off-screen historical answers.
+        // ForEach owns each message identity; redundant .id modifiers must not be needed.
+        if ProcessInfo.processInfo.environment["TYPEFLUX_SCROLL_STRESS_RECORD"] == nil {
+            func editors(_ view: NSView) -> [AskTranscriptText.Editor] {
+                (view as? AskTranscriptText.Editor).map { [$0] } ?? view.subviews.flatMap(editors)
+            }
+            for target in [0, count / 2] {
+                fixture.model.referenceLocation = "answer-\(target)"
+                var found = false
+                for _ in 0..<20 {
+                    try await Task.sleep(for: .milliseconds(50))
+                    host.layoutSubtreeIfNeeded()
+                    found = editors(host).contains { editor in
+                        editor.string.hasPrefix("Website \(target) verified")
+                            && editor.convert(editor.bounds, to: document).intersects(scroll.documentVisibleRect)
+                    }
+                    if found { break }
+                }
+                #expect(found, "Historical message anchor must remain visible: answer-\(target)")
+            }
+        }
         if let path = ProcessInfo.processInfo.environment["TYPEFLUX_SCROLL_STRESS_SNAPSHOT"],
            let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) {
             host.cacheDisplay(in: host.bounds, to: bitmap)

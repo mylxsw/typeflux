@@ -4,14 +4,20 @@ import SwiftUI
 enum AskResponseWaiting {
     static func isVisible(phase: AskRunPhase?, pendingSubmission: Bool, run: AskRun?,
                           messages: [AskMessage], progress: AskStreamProgress?, hasError: Bool) -> Bool {
+        isVisible(phase: phase, pendingSubmission: pendingSubmission, run: run,
+                  hasAnswerText: messages.last(where: { $0.id == run?.assistantId && $0.role == "assistant" })
+                    .map { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty } ?? false,
+                  progress: progress, hasError: hasError)
+    }
+
+    static func isVisible(phase: AskRunPhase?, pendingSubmission: Bool, run: AskRun?,
+                          hasAnswerText: @autoclosure () -> Bool, progress: AskStreamProgress?, hasError: Bool) -> Bool {
         guard phase?.isWorking == true, !hasError else { return false }
         // A follow-up still carries the previous run while submission is in flight.
         if pendingSubmission { return true }
         guard let run, run.isActive else { return false }
         if let progress, !progress.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return false }
-        if let answer = messages.last(where: { $0.id == run.assistantId && $0.role == "assistant" }),
-           !answer.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return false }
-        return true
+        return !hasAnswerText()
     }
 
     static let period = 1.4
@@ -62,10 +68,20 @@ struct AskResponseWaitingView: View {
 }
 
 extension AskConversationModel {
+    /// A durable message fact, invalidated with the selected snapshot, not each stream delta.
+    var runHasResponseText: Bool {
+        if let cachedRunHasResponseText { return cachedRunHasResponseText }
+        let value = selected
+        let answer = value?.messages.last(where: { $0.id == value?.run?.assistantId && $0.role == "assistant" })
+        let result = answer.map { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty } ?? false
+        cachedRunHasResponseText = result
+        return result
+    }
+
     var showsResponseWaiting: Bool {
         guard let value = selected else { return false }
         return AskResponseWaiting.isVisible(
             phase: runPhase, pendingSubmission: hasPendingSubmission, run: value.run,
-            messages: value.messages, progress: liveProgress(value), hasError: error != nil)
+            hasAnswerText: runHasResponseText, progress: liveProgress(value), hasError: error != nil)
     }
 }

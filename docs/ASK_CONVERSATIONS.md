@@ -963,3 +963,48 @@ The installed executable's Mach-O UUID matches the build. Direct installed-windo
 remains unverified: the UI automation connection repeatedly timed out at the app/menu-bar
 entry point. Host sampling showed the main thread waiting normally for events. Do not treat
 the native test-window results as measured display FPS or a completed installed-window check.
+
+
+### Snapshot facts versus stream deltas
+
+An additional long-history investigation found status predicates still traversed messages
+on stream-driven view updates: image recovery checked every message for an image, and the
+waiting indicator searched for the active assistant's persisted text during tool streaming.
+Image recovery now uses the existing `hasConversationImages` fact. The waiting indicator
+lazily reads a cached Boolean for the current assistant's saved text. Both facts are
+invalidated whenever the selected snapshot changes, including a new assistant ID; live
+text still takes precedence immediately. No time-based expiration or message truncation
+is involved. The intended cost is a history scan per relevant snapshot, not per stream delta.
+
+The stress fixture now distinguishes fixed 48-point scrolling
+(`TYPEFLUX_SCROLL_STRESS_CONTINUOUS=1`) from the original whole-history jump pattern.
+It also verifies production historical-message anchors at the beginning and middle of a
+synthetic conversation after scrolling. A simple isolated list experiment reduced row
+construction by removing redundant row IDs, but the complete chat benchmark did not improve;
+that production change was discarded.
+
+Controlled comparison with 10,500 raw messages, 180 samples and text streaming, using the
+same Debug + coverage configuration:
+
+| Scroll pattern | Before p95 | After p95 |
+| --- | ---: | ---: |
+| Fixed 48-point increments | 20.48 ms | 14.71 ms |
+| Whole-history jumps | 41.27 ms | 35.11 ms |
+
+The tool-argument streaming variant measured 14.48 ms p95 for fixed increments.
+These measure synchronous layout/draw work, not actual display FPS. One profiler-attached
+run was excluded from timing comparisons because attaching the profiler paused the process.
+The 35 focused regressions covered image recovery, waiting feedback, snapshot invalidation,
+historical anchors and bottom-follow behavior. Retained coverage profiles cover 13/18 changed
+executable lines (72.22%); the broader regression run also passed, but its profile was replaced
+by SwiftPM's subsequent stress run and is not included in that percentage.
+
+
+The optimized build measured 9.32 ms p95 (5.90 ms median, 40.78 ms maximum) for the
+10,500-message fixed-increment text-streaming scenario. The real 869-message tool-streaming
+replay measured 3.26 ms p95 versus the earlier 3.04 ms: no material improvement was established
+for that already-fast case. The benefit is concentrated in longer histories. The tested
+optimized executable was packaged with the existing development packaging/signing steps,
+reusing the built product; normal shutdown succeeded and the new app launched. Installed
+and tested product UUIDs matched. Direct UI automation still timed out, so installed-window
+scrolling remains unverified.
