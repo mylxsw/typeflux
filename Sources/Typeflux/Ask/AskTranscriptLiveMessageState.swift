@@ -33,7 +33,8 @@ final class AskTranscriptLiveMessageState {
             scope = nil; retained = nil
             // Terminal snapshots may still carry an explicit preview; never retain a stale one.
             return message.flatMap {
-                $0.id == next.assistantID && $0.runId == run.id && $0.hasTranscriptContent
+                $0.id == next.assistantID && $0.runId == run.id
+                    && !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                     && !isCommitted($0.id) ? $0 : nil
             }
         }

@@ -1199,7 +1199,7 @@ struct AskConversationView: View {
     /// The selected run failed or was stopped, and nothing is about to resume it.
     private var stoppedRun: Bool {
         guard !model.hasPendingSubmission, !model.isBusy, let run = model.selected?.run else { return false }
-        return run.status == "failed" || run.status == "cancelled"
+        return run.status == "failed" || run.status == "cancelled" || run.canContinueTask
     }
 
     @ViewBuilder private var statusArea: some View {
@@ -1255,7 +1255,7 @@ struct AskConversationView: View {
             }
         } else if stoppedRun, !model.hasRecoveryNotice, let value = model.selected,
                   !model.recoveryBlocksResume(value), let run = value.run {
-            AskBanner(text: run.failureLocalizationKey.map { L($0) } ?? run.error ?? L("ask.cancelled"), tone: .info,
+            AskBanner(text: run.failureLocalizationKey.map { L($0) } ?? run.error ?? (run.canContinueTask ? L("ask.progress.unreconciled") : L("ask.cancelled")), tone: .info,
                       systemImage: "arrow.clockwise",
                       actionTitle: L("ask.resume"), action: { model.resume() })
         } else if resumable, !model.hasRecoveryNotice, model.error == nil {
@@ -1585,7 +1585,7 @@ struct AskConversationView: View {
             }
             AskActivityBlock(group: group, results: results,
                              plan: AskActivity.plan(for: group, run: run, isLatest: isLatest),
-                             status: status, resolution: AskActivity.resolution(for: group, run: run, isLatest: isLatest), streamingId: streamingId, approvalToolId: approvalToolId,
+                             status: status, resolution: AskActivity.resolution(for: group, run: run, isLatest: isLatest, answers: Array((model.selected?.messages ?? []).suffix(12))), streamingId: streamingId, approvalToolId: approvalToolId,
                              runStep: live || halted ? phase?.step : nil,
                              outputs: item.outputs,
                              fileChanges: [],

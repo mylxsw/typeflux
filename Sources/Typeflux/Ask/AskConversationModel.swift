@@ -1601,7 +1601,7 @@ final class AskConversationModel: ObservableObject {
         guard !recoveryBlocksResume(value) else { inspectingRecovery = true; return }
         let id = value.id
         let retryModelRef = modelReference(launcher: false)
-        if pendingSends[id] == nil, let run = value.run, ["failed", "cancelled"].contains(run.status),
+        if pendingSends[id] == nil, let run = value.run, (["failed", "cancelled"].contains(run.status) || run.canContinueTask),
            value.messages.contains(where: { $0.hasImage }) {
             guard canResumeImage else {
                 error = screenshotCapability(launcher: false).hint ?? L("ask.models.unavailable")
@@ -1653,7 +1653,7 @@ final class AskConversationModel: ObservableObject {
                     )
                     try checkOperation(id, operationId: operationId, account: current.account)
                     response = try await api.send(conversationId: id, request: request, token: current.token)
-                } else if let run = value.run, ["failed", "cancelled"].contains(run.status) {
+                } else if let run = value.run, (["failed", "cancelled"].contains(run.status) || run.canContinueTask) {
                     try await validateModel(
                         retryModelRef, token: current.token,
                         hasImage: value.messages.contains(where: { $0.hasImage })

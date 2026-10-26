@@ -2023,7 +2023,7 @@
 "ask.activity.step" = "第 %d 步";
 "ask.activity.pausedAt" = "已停在第 %d 步";
 "ask.activity.attention" = "等待你的确认";
-"ask.activity.steps" = "%d 步";
+"ask.activity.steps" = "%d 次工具调用";
 "ask.activity.plan" = "当前计划：已完成 %d/%d 项";
 "ask.activity.planRemaining" = "当前计划：%d 项待完成";
 "ask.activity.failures" = "%d 次失败";
@@ -7498,3 +7498,5 @@
 "ask.home.notes" = "笔记";
 
 "ask.home.clipboard" = "剪贴板";
+
+"ask.tool.read_conversation_history" = "读取对话记录";

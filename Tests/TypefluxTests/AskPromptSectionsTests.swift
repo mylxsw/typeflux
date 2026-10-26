@@ -45,14 +45,23 @@ final class AskPromptSectionsTests: XCTestCase {
             var legacy = DefaultAskPromptBuilder(policy: .legacyV1).conversation(input)
             let oldMessages = try XCTUnwrap(legacy["messages"] as? [[String: Any]])
             let context = Array(oldMessages.dropFirst()).filter { !(($0["content"] as? String)?.hasPrefix("<environment>") == true) }
-            XCTAssertEqual(AskLocalPrompt.json(["messages":context]), AskLocalPrompt.json(["messages":Array(messages.dropFirst())]))
+            XCTAssertEqual(AskLocalPrompt.json(["messages":context]), AskLocalPrompt.json(["messages":Array(messages.dropFirst()).filter { !(($0["content"] as? String)?.hasPrefix("Original user requests (quoted historical context") == true) }]))
             XCTAssertEqual(messages.last?["content"] as? String, conversation.messages[0].text)
             legacy.removeValue(forKey: "messages")
             var fields = payload; fields.removeValue(forKey: "messages")
             XCTAssertEqual(AskLocalPrompt.json(legacy), AskLocalPrompt.json(fields))
             let summaryInput = AskSummaryPromptInput(conversation: conversation, through: 1, model: "helper", window: 4000, output: 256)
             let summary = builder.summary(summaryInput)
-            XCTAssertEqual(AskLocalPrompt.json(summary), AskLocalPrompt.json(DefaultAskPromptBuilder(policy: .legacyV1).summary(summaryInput)))
+            let legacySummary = DefaultAskPromptBuilder(policy: .legacyV1).summary(summaryInput)
+            for key in ["model", "max_tokens", "typeflux_summary_through"] {
+                XCTAssertEqual(String(describing: summary[key]), String(describing: legacySummary[key]))
+            }
+            let summaryMessages = try XCTUnwrap(summary["messages"] as? [[String: Any]])
+            let legacySummaryMessages = try XCTUnwrap(legacySummary["messages"] as? [[String: Any]])
+            XCTAssertEqual(summaryMessages.first?["content"] as? String, legacySummaryMessages.first?["content"] as? String)
+            let handoff = try XCTUnwrap(summaryMessages.last?["content"] as? String)
+            XCTAssertTrue(handoff.hasPrefix(legacySummaryMessages.last?["content"] as? String ?? ""))
+            XCTAssertTrue(handoff.contains("Original user requests (quoted historical context"))
             let snapshot: [String: Any] = ["conversation":payload, "summary":summary]
             let actual = try JSONSerialization.data(withJSONObject: snapshot, options: [.sortedKeys, .prettyPrinted])
             let path = fixtures.appendingPathComponent("modular-\(scenario.id).json")

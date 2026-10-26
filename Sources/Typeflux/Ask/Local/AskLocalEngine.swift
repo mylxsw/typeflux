@@ -536,7 +536,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         var record = try record(conversationId)
         guard let run = record.conversation.run, run.id == runId, run.deviceId == deviceId else { throw conflict() }
         _ = try resolveTurn(record)
-        if run.isActive || run.status == "completed" { return record.conversation }
+        if run.isActive || (run.status == "completed" && !run.canContinueTask) { return record.conversation }
         let model = try executionModel(modelRef ?? run.modelRef)
         record.conversation.modelRef = model
         record.conversation.run = AskRun(id: UUID().uuidString.lowercased(), deviceId: deviceId, status: "running", steps: 0, updatedAt: now(),
@@ -547,6 +547,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         record.conversation.run?.executionMode = executionMode
         record.conversation.run?.maxSteps = try Self.configuredMaxSteps(maxSteps ?? (run.executionMode == .continuous ? nil : run.maxSteps),
             mode: executionMode, recovery: run.recoveryCheck == true)
+        record.conversation.run?.plan = run.plan
         record.conversation.run?.clientToolApproval = true
         record.conversation.run?.recoveryCheck = run.recoveryCheck
         if var recovery = run.internalRecovery {
@@ -811,31 +812,10 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
             let start = record.conversation.messages.firstIndex { $0.runId == run.id } ?? record.conversation.messages.count
             record.conversation.run?.taskProgress = .init(startIndex: start)
         }
-        if record.conversation.run?.status == "running", deliverSteering(&record) {
-            record.conversation.run?.taskProgress?.planCheckpoint = false
-            record.conversation.run?.taskProgress?.checkpointCorrectionUsed = false
-        }
-        if record.conversation.run?.taskProgress?.planCheckpoint == true, AskTaskProgress.lastResultDenied(record.conversation) {
-            return try stopForProgress(&record, reason: L("ask.progress.denied"))
-        }
-        if record.conversation.run?.taskProgress?.planCheckpoint == true,
-           let errorID = AskTaskProgress.lastPlanError(record.conversation),
-           errorID != record.conversation.run?.taskProgress?.lastCheckpointErrorId {
-            record.conversation.run?.taskProgress?.lastCheckpointErrorId = errorID
-            if record.conversation.run?.taskProgress?.checkpointCorrectionUsed == true {
-                return try stopForProgress(&record, reason: L("ask.progress.checkpointFailed"))
-            }
-            record.conversation.run?.taskProgress?.checkpointCorrectionUsed = true
-        }
-        if record.conversation.run?.recoveryCheck != true,
-           record.conversation.run?.internalRecovery?.phase != .inspecting,
-           record.conversation.run?.taskResolution == nil,
-           record.conversation.run?.plan?.contains(where: { $0.status != "completed" }) == true,
-           !AskTaskProgress.lastResultDenied(record.conversation),
-           AskTaskProgress.observationsSincePlan(record.conversation) >= 16,
-           allTools(record).contains(where: { $0.name == "update_plan" }) {
-            record.conversation.run?.taskProgress?.planCheckpoint = true
-        }
+        // Old persisted checkpoints are advisory now; never hide the tools needed to finish.
+        record.conversation.run?.taskProgress?.planCheckpoint = false
+        record.conversation.run?.taskProgress?.checkpointCorrectionUsed = false
+        if record.conversation.run?.status == "running" { _ = deliverSteering(&record) }
         let repeatedObservation = record.conversation.run?.taskResolution == nil ? AskTaskProgress.repetition(record.conversation) : nil
         if (repeatedObservation?.count ?? 0) < 3 {
             record.conversation.run?.taskProgress?.repeatedKey = nil
@@ -843,10 +823,6 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         }
         if record.conversation.run?.recoveryCheck != true, record.conversation.run?.internalRecovery?.phase != .inspecting, let repetition = repeatedObservation, repetition.count >= 3 {
             let progress = record.conversation.run?.taskProgress
-            if progress?.repeatedKey != nil, repetition.count >= 5,
-               repetition.count >= (progress?.repeatCountAtWarning ?? 3) + 2 {
-                return try stopForProgress(&record, reason: L("ask.progress.repeated"))
-            }
             if progress?.repeatedKey != repetition.key {
                 record.conversation.run?.taskProgress?.repeatedKey = repetition.key
                 record.conversation.run?.taskProgress?.repeatCountAtWarning = repetition.count
@@ -959,24 +935,24 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
 
     private func applyDecisionCompletion(_ record: inout AskLocalRecord, content: String, calls: [AskToolCall]) async throws -> AskConversation {
         guard let run = record.conversation.run else { return record.conversation }
-        if run.taskProgress?.planCheckpoint == true, record.steering?.isEmpty == false {
+        // Steering received during inference supersedes an unexecuted proposal.
+        if !calls.isEmpty, record.steering?.isEmpty == false {
             record.conversation.run?.steps += 1
             record.conversation.run?.status = "running"
+            record.conversation.run?.preview = nil
+            record.conversation.run?.reasoning = nil
+            record.conversation.run?.reasoningMilliseconds = nil
+            record.conversation.run?.assistantId = nil
             _ = deliverSteering(&record)
-            record.conversation.run?.taskProgress?.planCheckpoint = false
-            record.conversation.run?.taskProgress?.checkpointCorrectionUsed = false
             try save(&record)
             return try await step(&record)
-        }
-        if run.taskProgress?.planCheckpoint == true, calls.isEmpty || calls.contains(where: { $0.function.name != "update_plan" }) {
-            record.conversation.run?.steps += 1
-            return try stopForProgress(&record, reason: L("ask.progress.checkpointFailed"))
         }
         record.conversation.messages.append(AskMessage(id: run.assistantId ?? UUID().uuidString.lowercased(), role: "assistant", text: content,
                                                        toolCalls: calls.isEmpty ? nil : calls, createdAt: now(),
                                                        reasoning: run.reasoning, reasoningMilliseconds: run.reasoningMilliseconds, runId: run.id))
         record.conversation.run?.preview = nil
         record.conversation.run?.reasoning = nil
+        record.conversation.run?.reasoningMilliseconds = nil
         record.conversation.run?.assistantId = nil
         record.conversation.run?.steps += 1
         record.conversation.run?.pending = calls
@@ -1000,7 +976,11 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
                     try save(&record)
                     return try await step(&record)
                 }
-                record.conversation.run?.taskResolution = .init(outcome: "blocked", reason: L(denied ? "ask.progress.denied" : "ask.progress.unreconciled"))
+                if denied {
+                    record.conversation.run?.taskResolution = .init(outcome: "blocked", reason: L("ask.progress.denied"))
+                }
+                // An unfinished checklist is not evidence of an external blocker.
+                // Keep it pending and let the user continue in this conversation.
             }
             if record.conversation.run?.internalRecovery?.phase == .inspecting {
                 record.conversation.run?.internalRecovery?.phase = .blocked
@@ -1379,19 +1359,6 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
                   (try? JSONSerialization.jsonObject(with: Data(call.function.arguments.utf8))) is [String: Any] else { throw AskLocalError.implementationUnavailable }
         }
         return try await applyDecisionCompletion(&record, content: content, calls: calls)
-    }
-
-    /// No operation is pending here. Preserve receipts and expose a resumable, honest stop.
-    private func stopForProgress(_ record: inout AskLocalRecord, reason: String) throws -> AskConversation {
-        record.conversation.run?.status = "completed"
-        record.conversation.run?.taskResolution = .init(outcome: "blocked", reason: reason)
-        record.conversation.run?.inference = nil
-        record.conversation.run?.preview = nil
-        record.conversation.run?.assistantId = nil
-        record.conversation.messages.append(.init(id: UUID().uuidString.lowercased(), role: "assistant", text: reason,
-            createdAt: now(), runId: record.conversation.run?.id))
-        try save(&record)
-        return record.conversation
     }
 
     // MARK: - Plan

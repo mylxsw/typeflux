@@ -2013,7 +2013,7 @@
 "ask.activity.step" = "%d단계";
 "ask.activity.pausedAt" = "%d단계에서 멈춤";
 "ask.activity.attention" = "승인 대기 중";
-"ask.activity.steps" = "%d단계";
+"ask.activity.steps" = "도구 호출 %d회";
 "ask.activity.plan" = "현재 계획: %d/%d 완료";
 "ask.activity.planRemaining" = "현재 계획: %d개 남음";
 "ask.activity.failures" = "%d회 실패";
@@ -7494,3 +7494,5 @@
 "ask.home.notes" = "노트";
 
 "ask.home.clipboard" = "클립보드";
+
+"ask.tool.read_conversation_history" = "대화 기록 읽기";

@@ -12,7 +12,7 @@ final class AskTaskProgressTests: XCTestCase {
     }
     override func tearDownWithError() throws { try? FileManager.default.removeItem(at: directory) }
 
-    private func engine() -> AskLocalEngine { AskLocalEngine(directory: directory, contextLimits: { _ in .init(window: 1000000, maxOutput: 4096, known: true) }) }
+    private func engine() -> AskLocalEngine { AskLocalEngine(directory: directory, now: { Date(timeIntervalSince1970: 1_800_000_000) }, contextLimits: { _ in .init(window: 1000000, maxOutput: 4096, known: true) }) }
     private func start(_ engine: AskLocalEngine, maxSteps: Int? = nil) async throws -> AskConversation {
         let tool = AskToolDefinition(name: "files", description: "Workspace files", parameters: JSONValue(data: Data(#"{"type":"object"}"#.utf8)))
         var request = AskSendRequest(id: UUID().uuidString, deviceId: "device", text: "Finish the website", tools: [tool], modelRef: "custom:fixture")
@@ -62,7 +62,8 @@ final class AskTaskProgressTests: XCTestCase {
         c = try await answer(reopened, c, text: "Still done")
         XCTAssertEqual(c.run?.status, "completed")
         XCTAssertNil(c.run?.inference)
-        XCTAssertEqual(c.run?.taskResolution?.outcome, "blocked")
+        XCTAssertNil(c.run?.taskResolution)
+        XCTAssertTrue(c.run?.canContinueTask == true)
         XCTAssertEqual(c.run?.plan?.first?.status, "in_progress")
         XCTAssertEqual(c.run?.steps, 3)
         let saved = try await engine().conversation(id: c.id, token: "")
@@ -82,7 +83,7 @@ final class AskTaskProgressTests: XCTestCase {
         XCTAssertEqual(AskRunPhase.resolve(run: c.run, busy: false, pendingApproval: false, recovery: nil), .taskNeedsInput)
     }
 
-    func testRepeatedUnchangedReadsWarnThenStopAndNewInputCanContinue() async throws {
+    func testRepeatedUnchangedReadsAreAdvisoryAndNewInputCanContinue() async throws {
         let e = engine()
         var c = try await start(e)
         for count in 1...5 {
@@ -96,10 +97,9 @@ final class AskTaskProgressTests: XCTestCase {
                 XCTAssertTrue(c.run?.inference?.payload.contains("unchanged results") == true)
             }
         }
-        XCTAssertEqual(c.run?.taskResolution?.outcome, "blocked")
-        XCTAssertEqual(c.run?.status, "completed")
-        XCTAssertNil(c.run?.inference)
-        XCTAssertEqual(AskRunPhase.resolve(run: c.run, busy: false, pendingApproval: false, recovery: nil), .taskBlocked)
+        XCTAssertNil(c.run?.taskResolution)
+        XCTAssertEqual(c.run?.status, "waiting_inference")
+        c = try await answer(e, c, text: "Inspection finished")
         let previousCount = c.messages.count
         c = try await start(e)
         XCTAssertNil(c.run?.taskResolution)
@@ -138,15 +138,15 @@ final class AskTaskProgressTests: XCTestCase {
         return c
     }
 
-    func testStalePlanCheckpointRestrictsToolsAndResumesAfterValidUpdate() async throws {
+    func testStalePlanDoesNotRestrictTools() async throws {
         let e = engine()
         var c = try await checkpoint(e)
-        XCTAssertEqual(c.run?.taskProgress?.planCheckpoint, true)
+        XCTAssertEqual(c.run?.taskProgress?.planCheckpoint, false)
         let payload = try XCTUnwrap(c.run?.inference?.payload.data(using: .utf8))
         let object = try XCTUnwrap(JSONSerialization.jsonObject(with: payload) as? [String: Any])
         let tools = try XCTUnwrap(object["tools"] as? [[String: Any]])
-        XCTAssertEqual(tools.count, 1)
-        XCTAssertEqual((tools.first?["function"] as? [String: Any])?["name"] as? String, "update_plan")
+        XCTAssertTrue(tools.contains { ($0["function"] as? [String: Any])?["name"] as? String == "files" })
+        XCTAssertTrue(tools.contains { ($0["function"] as? [String: Any])?["name"] as? String == "update_plan" })
         c = try await answer(e, c, calls: [call("update_plan", pending)])
         XCTAssertEqual(c.run?.taskProgress?.planCheckpoint, false)
         XCTAssertEqual(c.run?.plan?.first?.status, "in_progress")
@@ -154,26 +154,26 @@ final class AskTaskProgressTests: XCTestCase {
         XCTAssertEqual(c.run?.status, "waiting_tool")
     }
 
-    func testCheckpointRefusesOtherOperationsWithoutDispatch() async throws {
+    func testStalePlanAllowsActualOperationInsteadOfVerbalApproval() async throws {
         let e = engine()
         var c = try await checkpoint(e)
-        c = try await answer(e, c, calls: [call("files", #"{"action":"write","path":"app.js","content":"unexpected"}"#)])
-        XCTAssertEqual(c.run?.taskResolution?.outcome, "blocked")
-        XCTAssertTrue(c.run?.pending.isEmpty == true)
-        XCTAssertNil(c.run?.inference)
-        XCTAssertFalse(c.messages.contains { ($0.toolCalls ?? []).contains { $0.function.arguments.contains("unexpected") } })
+        c = try await answer(e, c, calls: [call("files", #"{"action":"write","path":"app.js","content":"expected"}"#)])
+        XCTAssertNil(c.run?.taskResolution)
+        XCTAssertEqual(c.run?.status, "waiting_tool")
+        XCTAssertEqual(c.run?.pending.first?.function.name, "files")
     }
 
-    func testInvalidCheckpointPlanStopsInsteadOfRetryingForever() async throws {
+    func testInvalidPlansReturnErrorsWithoutBlockingUsefulWork() async throws {
         let e = engine()
         var c = try await checkpoint(e)
-        c = try await answer(e, c, calls: [call("update_plan", #"{"items":[]}"#)])
-        XCTAssertEqual(c.run?.status, "waiting_inference")
-        XCTAssertEqual(c.run?.taskProgress?.checkpointCorrectionUsed, true)
-        c = try await answer(e, c, calls: [call("update_plan", #"{"items":[]}"#)])
-        XCTAssertEqual(c.run?.taskResolution?.outcome, "blocked")
-        XCTAssertNil(c.run?.inference)
+        for _ in 0..<3 {
+            c = try await answer(e, c, calls: [call("update_plan", #"{"items":[]}"#)])
+            XCTAssertEqual(c.run?.status, "waiting_inference")
+            XCTAssertNil(c.run?.taskResolution)
+        }
         XCTAssertTrue(c.messages.contains { $0.role == "tool" && $0.isError == true })
+        c = try await answer(e, c, calls: [call("files", #"{"action":"read","path":"app.js"}"#)])
+        XCTAssertEqual(c.run?.status, "waiting_tool")
     }
 
     func testClosingReviewHonorsExplicitStepLimit() async throws {
@@ -183,7 +183,8 @@ final class AskTaskProgressTests: XCTestCase {
         c = try await answer(e, c, text: "Unfinished")
         XCTAssertEqual(c.run?.steps, 10)
         XCTAssertNil(c.run?.inference)
-        XCTAssertEqual(c.run?.taskResolution?.outcome, "blocked")
+        XCTAssertNil(c.run?.taskResolution)
+        XCTAssertTrue(c.run?.canContinueTask == true)
     }
 
     func testSteeringDuringCheckpointDoesNotDispatchTheStaleProposal() async throws {
@@ -228,6 +229,105 @@ final class AskTaskProgressTests: XCTestCase {
         XCTAssertEqual(c.run?.taskResolution?.outcome, "blocked")
         XCTAssertEqual(c.run?.taskProgress?.closingReviewRequested, false)
         XCTAssertNil(c.run?.inference)
+    }
+
+    func testPersistedLegacyCheckpointCanExecuteAndRebuildUnrestrictedPrompt() async throws {
+        let e = engine()
+        var c = try await checkpoint(e)
+        let path = directory.appendingPathComponent(c.id + ".json")
+        var record = try AskCoding.decoder().decode(AskLocalRecord.self, from: Data(contentsOf: path))
+        record.conversation.run?.taskProgress?.planCheckpoint = true
+        record.conversation.run?.taskProgress?.checkpointCorrectionUsed = true
+        try AskCoding.encoder().encode(record).write(to: path)
+        let reopened = engine()
+        c = try await answer(reopened, c, calls: [call("files", #"{"action":"read","path":"app.js"}"#)])
+        XCTAssertEqual(c.run?.status, "waiting_tool")
+        c = try await receipt(reopened, c)
+        XCTAssertEqual(c.run?.taskProgress?.planCheckpoint, false)
+        XCTAssertTrue(c.run?.inference?.payload.contains("Workspace files") == true)
+        XCTAssertNil(c.run?.taskResolution)
+    }
+
+    func testContinueSettledPendingTaskRetainsPlanWithoutReplayingReceipts() async throws {
+        let e = engine()
+        var c = try await start(e)
+        c = try await answer(e, c, calls: [call("update_plan", pending)])
+        c = try await answer(e, c, text: "Partial implementation")
+        c = try await answer(e, c, text: "Verification remains")
+        let old = try XCTUnwrap(c.run)
+        let messages = c.messages
+        c = try await engine().retry(conversationId: c.id, runId: old.id, deviceId: "device", modelRef: nil, token: "")
+        XCTAssertNotEqual(c.run?.id, old.id)
+        XCTAssertEqual(c.messages, messages)
+        XCTAssertEqual(c.run?.plan, old.plan)
+        XCTAssertTrue(c.run?.pending.isEmpty == true)
+        XCTAssertNil(c.run?.taskResolution)
+        XCTAssertEqual(c.run?.status, "waiting_inference")
+        XCTAssertEqual(c.run?.taskProgress?.closingReviewRequested, false)
+        XCTAssertTrue(c.run?.inference?.payload.contains("Finish the website") == true)
+    }
+
+    func testShellCannotEraseRepeatedFileEvidenceButDoesNotTriggerWarningItself() async throws {
+        var c = AskConversation(id: "loop", title: "", revision: 1, updatedAt: Date(), messages: [])
+        c.run = .init(id: "run", deviceId: "device", status: "running", steps: 0, updatedAt: Date(), tools: [], pending: [])
+        c.run?.taskProgress = .init(startIndex: 0)
+        for index in 0..<4 {
+            let file = call("files", #"{"action":"read","path":"app.js"}"#)
+            c.messages.append(.init(id: "a-\(index)", role: "assistant", text: "", toolCalls: [file], createdAt: Date()))
+            c.messages.append(.init(id: "r-\(index)", role: "tool", text: "Same unchanged script contents", toolCallId: file.id, createdAt: Date()))
+            XCTAssertEqual(AskTaskProgress.repetition(c)?.count, index + 1)
+            let shell = call("run_command", "{}")
+            c.messages.append(.init(id: "s-\(index)", role: "assistant", text: "", toolCalls: [shell], createdAt: Date()))
+            c.messages.append(.init(id: "sr-\(index)", role: "tool", text: "Opaque command result", toolCallId: shell.id, createdAt: Date()))
+            XCTAssertNil(AskTaskProgress.repetition(c))
+        }
+    }
+
+    func testTerminalReasoningIsClearedAndMissingInputCannotBlindlyRetry() async throws {
+        let e = engine()
+        var c = try await start(e)
+        c = try await answer(e, c, calls: [call("update_plan", blocked)])
+        let run = try XCTUnwrap(c.run)
+        c = try await e.inferenceResult(conversationId: c.id, request: .init(runId: run.id, deviceId: "device",
+            inferenceId: try XCTUnwrap(run.inference?.id), content: "Which endpoint?", reasoning: "Checking", reasoningMilliseconds: 1200), token: "")
+        XCTAssertNil(c.run?.reasoning)
+        XCTAssertNil(c.run?.reasoningMilliseconds)
+        XCTAssertFalse(c.run?.canContinueTask == true)
+        let retried = try await e.retry(conversationId: c.id, runId: run.id, deviceId: "device", modelRef: nil, token: "")
+        XCTAssertEqual(retried, c)
+    }
+
+    /// Opt-in replay uses a copy only; device tools and external models are never executed.
+    func testHistoricalBlockedRecordCanContinueWithoutReplayingTools() async throws {
+        guard let path = ProcessInfo.processInfo.environment["TYPEFLUX_AGENT_REPLAY_RECORD"] else {
+            throw XCTSkip("Set TYPEFLUX_AGENT_REPLAY_RECORD for a read-only local history replay")
+        }
+        let data = try Data(contentsOf: URL(fileURLWithPath: path))
+        let original = try AskLocalRecord.decodeSnapshot(data)
+        let old = try XCTUnwrap(original.conversation.run)
+        XCTAssertTrue(old.canContinueTask)
+        XCTAssertTrue(old.tools.contains { $0.name == "files" })
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        try data.write(to: directory.appendingPathComponent(original.conversation.id + ".json"))
+        let e = engine()
+        var c = try await e.retry(conversationId: original.conversation.id, runId: old.id,
+            deviceId: old.deviceId, modelRef: "custom:fixture", token: "")
+        XCTAssertNotEqual(c.run?.id, old.id)
+        XCTAssertEqual(c.messages.map(\.id), original.conversation.messages.map(\.id))
+        XCTAssertEqual(c.run?.plan, old.plan)
+        XCTAssertEqual(c.run?.status, "waiting_inference")
+        XCTAssertNil(c.run?.taskResolution)
+        XCTAssertNil(c.run?.reasoning)
+        XCTAssertTrue(c.run?.pending.isEmpty == true)
+        XCTAssertTrue(c.run?.inference?.payload.contains("Original user requests") == true)
+        let run = try XCTUnwrap(c.run)
+        let read = call("files", #"{"action":"read","path":"work/chengchuan-site/assets/app.js"}"#)
+        c = try await e.inferenceResult(conversationId: c.id, request: .init(runId: run.id,
+            deviceId: old.deviceId, inferenceId: try XCTUnwrap(run.inference?.id), content: "", toolCalls: [read]), token: "")
+        XCTAssertEqual(c.run?.status, "waiting_tool")
+        XCTAssertEqual(c.run?.pending.map(\.id), [read.id])
+        XCTAssertEqual(c.messages.count, original.conversation.messages.count + 1)
+        _ = try await e.cancel(conversationId: c.id, runId: run.id, token: "")
     }
 
     func testOutcomeValidationPreservesHonestPendingWork() throws {

@@ -287,6 +287,7 @@ enum AskTheme {
         case "artifact": return L("ask.artifact.title")
         case "project_files": return L("ask.project.title") + " · " + (args["action"] as? String ?? "")
         case "update_plan": return L("ask.tool.update_plan")
+        case "read_conversation_history": return L("ask.tool.read_conversation_history")
         case AskEmbeddedBrowserTool.name:
             let action = args["action"] as? String ?? ""
             if action == "open_file" {
@@ -1292,6 +1293,7 @@ enum AskPresentation {
         case "memory": return "brain"
         case AskNotebookTool.name: return "note.text"
         case "update_plan": return "list.bullet.clipboard"
+        case "read_conversation_history": return "clock.arrow.circlepath"
         case "research": return "doc.text.magnifyingglass"
         case let name where name.hasPrefix("mcp_"): return "point.3.connected.trianglepath.dotted"
         default: return "wrench.and.screwdriver"

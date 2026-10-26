@@ -2013,7 +2013,7 @@
 "ask.activity.step" = "ステップ %d";
 "ask.activity.pausedAt" = "ステップ %d で停止中";
 "ask.activity.attention" = "承認待ち";
-"ask.activity.steps" = "%d ステップ";
+"ask.activity.steps" = "ツール呼び出し %d 回";
 "ask.activity.plan" = "現在の計画：%d/%d 完了";
 "ask.activity.planRemaining" = "現在の計画：残り %d 項目";
 "ask.activity.failures" = "%d 件失敗";
@@ -7494,3 +7494,5 @@
 "ask.home.notes" = "メモ";
 
 "ask.home.clipboard" = "クリップボード";
+
+"ask.tool.read_conversation_history" = "会話履歴を読む";

@@ -2020,7 +2020,7 @@
 "ask.activity.step" = "第 %d 步";
 "ask.activity.pausedAt" = "已停在第 %d 步";
 "ask.activity.attention" = "等待你的確認";
-"ask.activity.steps" = "%d 步";
+"ask.activity.steps" = "%d 次工具呼叫";
 "ask.activity.plan" = "目前計畫：已完成 %d/%d 項";
 "ask.activity.planRemaining" = "目前計畫：%d 項待完成";
 "ask.activity.failures" = "%d 次失敗";
@@ -7497,3 +7497,5 @@
 "ask.home.notes" = "筆記";
 
 "ask.home.clipboard" = "剪貼簿";
+
+"ask.tool.read_conversation_history" = "讀取對話記錄";

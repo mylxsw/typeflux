@@ -52,6 +52,90 @@ struct AskTranscriptStabilityTests {
         #expect(resolve(nil, conversation: nil) == nil)
     }
 
+    @Test func continuePendingTaskUsesRetryInsteadOfOnlyReloadingHistory() async throws {
+        let f = try AskTestFixture()
+        defer { f.model.resetSession() }
+        var c = AskConversation(id: "pending-task", title: "Website", revision: 1, updatedAt: .distantPast,
+            messages: [.init(id: "user", role: "user", text: "Build website", createdAt: .distantPast)])
+        c.run = .init(id: "run", deviceId: "device", status: "completed", steps: 174,
+            updatedAt: .distantPast, tools: [], pending: [])
+        c.run?.plan = [.init(step: "Verify interactions", status: "pending")]
+        await f.api.seed(c)
+        await f.model.select(c.id)
+        #expect(f.model.selected?.run?.canContinueTask == true)
+        _ = NSApplication.shared
+        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+        let host = NSHostingView(rootView: AskConversationView(model: f.model))
+        host.sizingOptions = []
+        let window = NSWindow(contentRect: NSRect(x: 80, y: 80, width: 1100, height: 750),
+            styleMask: [.titled, .resizable], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.makeKeyAndOrderFront(nil)
+        defer { window.contentView = nil; window.close() }
+        try await Task.sleep(for: .milliseconds(250))
+        host.layoutSubtreeIfNeeded()
+        window.displayIfNeeded()
+        var seen = Set<ObjectIdentifier>()
+        func value(_ object: NSObject, _ key: String) -> Any? {
+            object.responds(to: NSSelectorFromString(key)) ? object.value(forKey: key) : nil
+        }
+        func find(_ object: NSObject) -> NSRect? {
+            guard seen.insert(ObjectIdentifier(object)).inserted else { return nil }
+            let title = value(object, "accessibilityLabel") as? String ?? value(object, "accessibilityTitle") as? String
+            if title == L("ask.resume"), value(object, "accessibilityRole") as? String == "AXButton",
+               let frame = value(object, "accessibilityFrame") as? NSValue, frame.rectValue.height > 0 {
+                return frame.rectValue
+            }
+            for child in value(object, "accessibilityChildren") as? [NSObject] ?? [] {
+                if let frame = find(child) { return frame }
+            }
+            return nil
+        }
+        let frame = try #require(find(window) ?? find(host), "Pending tasks must expose a native Continue button")
+        if let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) {
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            try bitmap.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: "/tmp/typeflux-agent-continue.png"))
+        }
+        let local = window.convertFromScreen(frame)
+        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+            let event = try #require(NSEvent.mouseEvent(with: type, location: NSPoint(x: local.midX, y: local.midY),
+                modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+                context: nil, eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0))
+            NSApp.sendEvent(event)
+        }
+        try await f.wait { f.model.busyIds.isEmpty && (f.model.selected?.revision ?? 0) > c.revision }
+        #expect(await f.api.retryModels.count == 1)
+        #expect(f.tools.executions == 0)
+        #expect(f.model.error == nil)
+    }
+
+    @Test func terminalSnapshotDoesNotResurrectReasoningOnlyPlaceholder() {
+        let state = AskTranscriptLiveMessageState()
+        var run = AskRun(id: "run", deviceId: "device", status: "running", steps: 1,
+                         updatedAt: .distantPast, tools: [], pending: [], assistantId: "live")
+        let thought = AskMessage(id: "live", role: "assistant", text: "", createdAt: .distantPast,
+                                 reasoning: "Checking", reasoningMilliseconds: 1000, runId: "run")
+        #expect(state.resolve(conversationID: "chat", run: run, message: thought, isCommitted: { _ in false }) != nil)
+        run.status = "completed"
+        #expect(state.resolve(conversationID: "chat", run: run, message: thought, isCommitted: { _ in false }) == nil)
+        run.assistantId = nil
+        #expect(state.resolve(conversationID: "chat", run: run, message: nil, isCommitted: { _ in false }) == nil)
+    }
+
+    @Test func stopReasonIsNotRepeatedBesideAnIdenticalAnswer() {
+        let call = AskToolCall(id: "call", function: .init(name: "files", arguments: "{}"))
+        let message = AskMessage(id: "tool", role: "assistant", text: "", toolCalls: [call], createdAt: .distantPast, runId: "run")
+        let group = AskActivityGroup(id: "group", messages: [message])
+        var run = AskRun(id: "run", deviceId: "device", status: "completed", steps: 1,
+                         updatedAt: .distantPast, tools: [], pending: [])
+        run.taskResolution = .init(outcome: "blocked", reason: "Specific missing dependency")
+        let answer = AskMessage(id: "answer", role: "assistant", text: "Specific missing dependency", createdAt: .distantPast, runId: "run")
+        #expect(AskActivity.resolution(for: group, run: run, isLatest: true, answers: [answer]) == nil)
+        #expect(AskActivity.resolution(for: group, run: run, isLatest: true, answers: []) == run.taskResolution)
+    }
+
     @Test func emptyStepsPreserveGroupingAndOutcomeAttribution() {
         let call = AskToolCall(id: "call", function: .init(name: "files", arguments: "{}"))
         let first = AskMessage(id: "first", role: "assistant", text: "", toolCalls: [call], createdAt: .distantPast, runId: "run")

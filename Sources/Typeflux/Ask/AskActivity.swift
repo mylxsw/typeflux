@@ -204,9 +204,13 @@ enum AskActivity {
         return try? AskLocalEngine.parsePlan(call.function.arguments)
     }
 
-    static func resolution(for group: AskActivityGroup, run: AskRun?, isLatest: Bool) -> AskTaskResolution? {
+    static func resolution(for group: AskActivityGroup, run: AskRun?, isLatest: Bool, answers: [AskMessage] = []) -> AskTaskResolution? {
         if isLatest, let resolution = run?.taskResolution,
-           group.messages.contains(where: { $0.runId == nil || $0.runId == run?.id }) { return resolution }
+           group.messages.contains(where: { $0.runId == nil || $0.runId == run?.id }) {
+            if answers.contains(where: { $0.role == "assistant" && $0.runId == run?.id
+                && $0.text.trimmingCharacters(in: .whitespacesAndNewlines) == resolution.reason.trimmingCharacters(in: .whitespacesAndNewlines) }) { return nil }
+            return resolution
+        }
         guard let call = group.calls.last(where: { $0.function.name == "update_plan" }),
               group.messages.contains(where: { $0.role == "tool" && $0.toolCallId == call.id && $0.isError != true }),
               let items = try? AskBuiltinPlan.parse(call.function.arguments) else { return nil }

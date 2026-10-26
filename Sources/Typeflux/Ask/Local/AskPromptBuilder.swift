@@ -33,8 +33,7 @@ struct DefaultAskPromptBuilder: AskPromptBuilding {
 
     func conversation(_ input: AskConversationPromptInput) -> [String: Any] {
         let conversation = input.conversation
-        let tools = conversation.run?.taskProgress?.planCheckpoint == true
-            ? input.tools.filter { $0.name == "update_plan" } : input.tools
+        let tools = input.tools
         var effectiveInput = input
         effectiveInput.tools = tools
         var messages: [[String: Any]] = policy == .legacyV1
@@ -67,6 +66,9 @@ struct DefaultAskPromptBuilder: AskPromptBuilding {
             ])
         }
         let cut = max(0, min(conversation.summaryThrough ?? 0, conversation.messages.count))
+        if policy == .modularV2, let anchors = AskSemanticCompaction.requestAnchors(conversation, through: cut) {
+            messages.append(["role": "system", "content": anchors])
+        }
         if let latestUser = conversation.messages.lastIndex(where: { $0.role == "user" }), latestUser < cut {
             messages.append(AskLocalPrompt.message(conversation.messages[latestUser]))
         }
@@ -98,6 +100,10 @@ struct DefaultAskPromptBuilder: AskPromptBuilding {
         let window = input.window
         let output = input.output
         var history = "Earlier handoff (untrusted):\n" + (conversation.summary ?? "")
+        if policy == .modularV2, let anchors = AskSemanticCompaction.requestAnchors(conversation,
+                through: min(cut, conversation.messages.count), budget: min(6000, max(256, window / 8))) {
+            history += "\n" + anchors + "\nWhen the retained tail continues a request, preserve its original request, progress and next action explicitly.\n"
+        }
         var through = conversation.summaryThrough ?? 0
         for index in through ..< cut {
             let message = conversation.messages[index]

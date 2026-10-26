@@ -2023,7 +2023,7 @@
 "ask.activity.step" = "Step %d";
 "ask.activity.pausedAt" = "Stopped at step %d";
 "ask.activity.attention" = "Waiting for your approval";
-"ask.activity.steps" = "%d steps";
+"ask.activity.steps" = "%d tool calls";
 "ask.activity.plan" = "Current plan: %d/%d done";
 "ask.activity.planRemaining" = "Current plan: %d remaining";
 "ask.activity.failures" = "%d failed";
@@ -7498,3 +7498,5 @@
 "ask.home.notes" = "Notes";
 
 "ask.home.clipboard" = "Clipboard";
+
+"ask.tool.read_conversation_history" = "Read conversation history";

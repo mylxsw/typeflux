@@ -5,7 +5,7 @@ enum AskBuiltinPlan {
     static let definition = AskToolDefinition(
         name: "update_plan",
         description: "Record the plan for a multi-step task so the user can follow progress. "
-            + "Send the complete list every time; preserve completed work and mark at most one step in_progress. Before ending, mark verified steps completed or provide outcome needs_input/blocked with a concrete reason. Request actual tools for host approval, not verbal permission.",
+            + "Send the complete list every time; preserve completed work and mark at most one step in_progress. Mark only verified steps completed. Keep unfinished steps pending; an unfinished checklist alone is not a blocker. Use outcome needs_input/blocked only for a concrete missing user input or external obstacle. Request actual tools for host approval, not verbal permission.",
         // The fixed schema is a JSON-compatible literal, matching the original definition.
         // swiftlint:disable:next force_try
         parameters: JSONValue(data: try! JSONSerialization.data(withJSONObject: [

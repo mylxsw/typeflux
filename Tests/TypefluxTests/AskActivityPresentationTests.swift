@@ -19,6 +19,14 @@ import Testing
         items.first { if case .outcome = $0.kind { return true }; return false }
     }
 
+    @Test func historyToolUsesReadableTitleAndToolCountHasItsOwnUnit() {
+        let call = AskToolCall(id: "history", function: .init(name: "read_conversation_history", arguments: "{}"))
+        #expect(AskTheme.toolTitle(call) == L("ask.tool.read_conversation_history"))
+        #expect(AskActivity.categorySummary([call]) == L("ask.tool.read_conversation_history"))
+        #expect(AskPresentation.toolSymbol(call) == "clock.arrow.circlepath")
+        #expect(L("ask.activity.steps", 174) != L("ask.run.completed", 174))
+    }
+
     @Test func blockedPlanRetainsItsReasonAndRendersWithoutAnActiveMarker() throws {
         let call = AskToolCall(id: "plan", function: .init(name: "update_plan", arguments:
             #"{"items":[{"step":"Verify endpoint","status":"in_progress"}],"outcome":"needs_input","reason":"Which staging endpoint?"}"#))
@@ -214,7 +222,12 @@ import Testing
         var outputs = AskRunOutputs(); outputs.sources = [URL(string: "https://example.com")!]
         let active = height(AskTaskOutcomeView(outcome: outcome, outputs: outputs, active: true, actions: .init()))
         let done = height(AskTaskOutcomeView(outcome: outcome, outputs: outputs, active: false, actions: .init()))
-        #expect(active > 100)
+        let filesOnly = height(AskTaskOutcomeView(outcome: outcome, outputs: .init(), active: true, actions: .init()))
+        let sourcesOnly = height(AskTaskOutcomeView(outcome: .init(id: "sources", messageIDs: [], runIDs: [], changes: []),
+            outputs: outputs, active: true, actions: .init()))
+        // Both sections must contribute to the layout, independent of font metrics.
+        #expect(filesOnly > 0 && sourcesOnly > 0)
+        #expect(active > max(filesOnly, sourcesOnly))
         #expect(active == done)
         #expect(active < 600)
         #expect(height(AskMonoBlock(title: "Output", text: String(repeating: "line\n", count: 10000))) < 350)

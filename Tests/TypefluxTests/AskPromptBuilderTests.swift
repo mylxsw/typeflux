@@ -138,7 +138,7 @@ final class AskPromptBuilderTests: XCTestCase {
                     window: 4000,
                     output: 256
                 )),
-                "defaults": AskLocalPrompt.summaryPayload(conversation: conversation, through: 3)
+                "defaults": DefaultAskPromptBuilder(policy: .legacyV1).summary(.init(conversation: conversation, through: 3, model: nil, window: 32768, output: 1500))
             ]
             let raw = try JSONSerialization.data(withJSONObject: value, options: [.sortedKeys, .prettyPrinted])
             let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
@@ -162,7 +162,7 @@ final class AskPromptBuilderTests: XCTestCase {
             let context = Array(legacyMessages.dropFirst()).filter { !(($0["content"] as? String)?.hasPrefix("<environment>") == true) }
             let modularMessages = try XCTUnwrap(modularPayload["messages"] as? [[String: Any]])
             XCTAssertEqual(try canonical(context) as? NSArray,
-                           try canonical(Array(modularMessages.dropFirst())) as? NSArray)
+                           try canonical(Array(modularMessages.dropFirst()).filter { !(($0["content"] as? String)?.hasPrefix("Original user requests (quoted historical context") == true) }) as? NSArray)
 
         }
     }
@@ -414,7 +414,8 @@ extension AskPromptBuilderTests {
             conversation: conversation,
             through: 10,
             model: nil,
-            window: 2000,
+            // Include the pinned user request as well as one oversized tool receipt.
+            window: 3000,
             output: 256
         ))
         XCTAssertTrue(AskLocalPrompt.json(payload).contains("large evidence retained in read_conversation_history"))
