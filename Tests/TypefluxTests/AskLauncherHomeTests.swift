@@ -144,11 +144,16 @@ struct AskLauncherHomeTests {
         #expect(Home.move(6, by: -1, in: items) == 0)
         #expect(Home.move(0, by: 1, in: items, horizontal: true) == 1)
         #expect(Home.numberedRows(sections).prefix(6).map(\.id) == rows.map(\.id))
-        for selected in [false, true] {
-            for row in rows {
-                let renderer = ImageRenderer(content: AskLauncherFeatureTile(row: row, selected: selected, action: {})
-                    .frame(width: 110))
-                #expect(renderer.nsImage != nil)
+        #expect(rows[2].symbol == RingFeature.screenshot.symbol)
+        #expect(rows[3].tint == .red)
+        for scheme in [ColorScheme.light, .dark] {
+            for selected in [false, true] {
+                for row in rows {
+                    #expect(NSImage(systemSymbolName: row.symbol, accessibilityDescription: nil) != nil)
+                    let renderer = ImageRenderer(content: AskLauncherFeatureTile(row: row, selected: selected, action: {})
+                        .frame(width: 110).environment(\.colorScheme, scheme))
+                    #expect(renderer.nsImage != nil)
+                }
             }
         }
     }

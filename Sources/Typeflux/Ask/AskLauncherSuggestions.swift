@@ -282,6 +282,7 @@ struct AskLauncherSuggestions: View {
         switch tint {
         case .accent: return AskTheme.accent
         case .orange: return .orange
+        case .red: return .red
         case .purple: return .purple
         case .green: return .green
         case .neutral: return StudioTheme.textSecondary

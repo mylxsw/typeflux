@@ -15,7 +15,7 @@ enum AskLauncherHome {
     }
 
     enum Tint: Equatable {
-        case accent, orange, purple, green, neutral
+        case accent, orange, purple, green, neutral, red
     }
 
     struct Row: Equatable, Identifiable {
@@ -94,10 +94,10 @@ enum AskLauncherHome {
              AskKeyword(keyword: "chat", pluginID: AskOpenChatPlugin.id)),
             ("translate", L("ask.plugin.translate.title"), "character.bubble", .purple,
              AskKeyword(keyword: "fy", pluginID: AskTranslatePlugin.id)),
-            ("screenshot", L("screenshot.title"), "viewfinder", .accent,
+            ("screenshot", L("screenshot.title"), "camera.viewfinder", .neutral,
              AskKeyword(keyword: "jt", pluginID: AskScreenshotPlugin.id,
                         options: [ScreenshotMode.option: ScreenshotMode.region.rawValue])),
-            ("recording", L("recording.title"), "record.circle", .orange,
+            ("recording", L("recording.title"), "record.circle", .red,
              AskKeyword(keyword: "lp", pluginID: AskScreenshotPlugin.id,
                         options: [ScreenshotMode.option: ScreenshotMode.recording.rawValue])),
             ("notes", L("ask.home.notes"), "note.text", .orange,
