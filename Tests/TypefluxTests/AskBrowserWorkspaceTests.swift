@@ -218,7 +218,7 @@ final class AskBrowserWorkspaceTests: XCTestCase {
         } catch {}
         settings.askFileAccessFolders = [directory.path]
         _ = try await tools.executeApproved(call, conversationId: "c", binding: binding, authorize: {})
-        XCTAssertEqual(workspace.selectedTab?.url?.standardizedFileURL, file.standardizedFileURL)
+        XCTAssertEqual(workspace.selectedTab?.localFileURL, file.standardizedFileURL)
         settings.askFileAccessFolders = []
         do {
             _ = try await tools.approvalBinding(for: call, conversationId: "c")

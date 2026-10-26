@@ -338,7 +338,7 @@ private struct AskPDFView: NSViewRepresentable {
     func updateNSView(_: PDFView, context _: Context) {}
 }
 
-/// A local HTML file in the artifact preview sandbox: no network, no other files, and
+/// A local HTML file in the artifact preview sandbox: no network, bounded local web assets, and
 /// the page closes when the file stops being allowed.
 struct AskFileHTMLView: NSViewRepresentable {
     let bundle: AskArtifactBundle

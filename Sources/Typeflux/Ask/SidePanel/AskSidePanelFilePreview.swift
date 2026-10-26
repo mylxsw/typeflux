@@ -72,8 +72,8 @@ enum AskSidePanelFileLoader {
         do {
             switch kind {
             case .html:
-                let data = try AskSidePanelFileAccess.read(target, roots: roots, limit: AskArtifactStore.maximumFileBytes)
-                return .html(try AskFileHTMLPreview.bundle(data), source: text(data))
+                let bundle = try AskFileHTMLPreview.bundle(target, roots: roots)
+                return .html(bundle, source: text(bundle.files[bundle.manifest.entry]!))
             case .markdown:
                 let (body, truncated) = try clippedText(target, roots: roots)
                 return .markdown(body, truncated: truncated)
@@ -109,26 +109,6 @@ enum AskSidePanelFileLoader {
     /// Invalid UTF-8, including a character cut at the clip, shows as replacement characters.
     static func text(_ data: Data) -> String {
         String(data: data, encoding: .utf8) ?? String(decoding: data, as: UTF8.self)
-    }
-}
-
-/// A local HTML file as a one-file artifact bundle for `AskPreviewHost`: the page runs in its
-/// sandbox with networking blocked, and only the file itself is served, so it cannot read
-/// other files next to it.
-enum AskFileHTMLPreview {
-    static let entry = "index.html"
-
-    static func bundle(_ data: Data) throws -> AskArtifactBundle {
-        guard data.count <= AskArtifactStore.maximumFileBytes else { throw AskArtifactError.tooLarge }
-        let digest = AskToolPolicy.digest(data)
-        let ref = AskArtifactRef(id: UUID().uuidString.lowercased(), ownerId: "side-panel", conversationId: "",
-                                 runId: "file-preview", version: digest, mediaType: "text/html",
-                                 sizeBytes: Int64(data.count), sha256: digest, cleanup: "none")
-        let manifest = AskArtifactManifest(
-            ref: ref, workspace: nil, createdAt: Date(), entry: entry,
-            resources: [.init(path: entry, mediaType: "text/html", sizeBytes: data.count, sha256: digest)]
-        )
-        return AskArtifactBundle(manifest: manifest, files: [entry: data])
     }
 }
 

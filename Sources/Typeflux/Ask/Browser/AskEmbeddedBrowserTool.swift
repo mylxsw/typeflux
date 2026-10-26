@@ -53,7 +53,7 @@ final class AskEmbeddedBrowserTool {
                 "action": ["type": "string", "enum": actions],
                 "tab": ["type": "integer", "description": "Tab number from tabs; defaults to the tab you last used."],
                 "url": ["type": "string"],
-                "path": ["type": "string", "description": "Absolute path of a standalone local .html or .htm file for open_file."],
+                "path": ["type": "string", "description": "Absolute path of a local .html or .htm entry. Its containing directory is the preview root."],
                 "observation_id": ["type": "string"],
                 "ref": ["type": "string"],
                 "text": ["type": "string"],
@@ -69,7 +69,7 @@ final class AskEmbeddedBrowserTool {
         Use Typeflux's built-in browser, shown beside this conversation, to open and visually check web pages, \
         especially pages you just built. Prefer it over a shell open command or the user's Safari/Chrome unless \
         the user specifically asks for an external browser. One action per call. tabs lists tabs; new_tab opens one (optionally at url); \
-        open_file opens a standalone local HTML file using its absolute path, reusing that file's tab on later calls. \
+        open_file opens a local HTML website using its absolute path, reusing that file's tab on later calls. Local CSS, scripts, images and fonts under its directory use the same isolated loader as user file previews; external networking is blocked. Inspect resource diagnostics before declaring success. \
         Sibling files are not available; if host commands are disabled, the file must be in a folder granted to Chat. \
         open navigates a tab to an http(s) url; read returns the page URL, title and visible text; snapshot lists \
         interactive elements with refs and returns an observation_id; screenshot returns an image of the page. \
@@ -271,7 +271,7 @@ final class AskEmbeddedBrowserTool {
         guard let path = value as? String, path.hasPrefix("/"), path.utf8.count <= 4096 else {
             throw AskLocalError.message(L("ask.tool.invalid"))
         }
-        let url = URL(fileURLWithPath: path).resolvingSymlinksInPath().standardizedFileURL
+        let url = URL(fileURLWithPath: path).standardizedFileURL
         guard ["html", "htm"].contains(url.pathExtension.lowercased()),
               let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey]),
               values.isRegularFile == true, let size = values.fileSize, size <= 4 * 1024 * 1024 else {
@@ -289,21 +289,26 @@ final class AskEmbeddedBrowserTool {
         try Task.checkCancellation()
         guard try binding(args) == expected else { throw AskObservationError.needsObservation }
         let previous = workspace.tabs.first {
-            $0.owner == .agent(conversationId: conversationId) && $0.url?.standardizedFileURL == url
+            $0.owner == .agent(conversationId: conversationId) && $0.localFileURL == url
         }
         let tab = try previous ?? workspace.newTab(owner: .agent(conversationId: conversationId))
         observations[tab.id] = nil
         workspace.select(tab)
         workspace.requestPresentation()
         workspace.beginActivity(L("ask.web.action.open"), conversationId: conversationId, tab: tab)
-        tab.loadLocalHTML(url)
+        do { try await tab.loadLocalHTML(url) }
+        catch {
+            if previous == nil { workspace.close(tab) }
+            throw error
+        }
         try await tab.waitForLoad(timeout: loadTimeout)
         try authorize()
         try Task.checkCancellation()
-        guard !tab.isPrivate, tab.url?.standardizedFileURL == url, !tab.isLoading, tab.notice == nil else {
+        guard !tab.isPrivate, tab.localFileURL == url, !tab.isLoading else {
             if previous == nil { workspace.close(tab) }
             throw AskLocalError.message(tab.notice ?? "Local HTML preview did not finish loading.")
         }
+        _ = try await tab.previewHost?.collectDiagnostics()
         return .init(content: "Opened local HTML in tab \(tab.number).\n" + pageSummary(tab))
     }
 

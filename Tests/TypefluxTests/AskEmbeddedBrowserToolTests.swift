@@ -75,7 +75,7 @@ final class AskEmbeddedBrowserToolTests: XCTestCase {
         XCTAssertEqual(action["enum"] as? [String], AskEmbeddedBrowserTool.actions)
         XCTAssertEqual(AskEmbeddedBrowserTool.definition.name, "web_browser")
         XCTAssertTrue(AskEmbeddedBrowserTool.definition.description.contains("Prefer it over a shell open command"))
-        XCTAssertTrue(AskEmbeddedBrowserTool.definition.description.contains("open_file opens a standalone local HTML file"))
+        XCTAssertTrue(AskEmbeddedBrowserTool.definition.description.contains("open_file opens a local HTML website"))
     }
 
     func testOpenLocalStandaloneHTMLInBuiltInBrowser() async throws {
@@ -98,7 +98,7 @@ final class AskEmbeddedBrowserToolTests: XCTestCase {
         let opened = try await run(args)
         XCTAssertTrue(opened.content.contains("Opened local HTML in tab 1"))
         let tab = try XCTUnwrap(workspace.selectedTab)
-        XCTAssertEqual(tab.url?.standardizedFileURL, file.standardizedFileURL)
+        XCTAssertEqual(tab.localFileURL, file.standardizedFileURL)
         XCTAssertEqual(tab.title, "Snake")
         let observed = try await run(["action": "read"])
         XCTAssertTrue(observed.content.contains("Running"), "Inline game JavaScript should run")
@@ -109,7 +109,7 @@ final class AskEmbeddedBrowserToolTests: XCTestCase {
         try "<h1>Other file</h1>".write(to: sibling, atomically: true, encoding: .utf8)
         tab.webView.loadFileURL(sibling, allowingReadAccessTo: sibling)
         try await tab.waitForLoad(timeout: .seconds(1))
-        XCTAssertEqual(tab.url?.standardizedFileURL, file.standardizedFileURL,
+        XCTAssertEqual(tab.localFileURL, file.standardizedFileURL,
                        "A local preview must not grant navigation to sibling files")
         XCTAssertThrowsError(try AskEmbeddedBrowserTool.validatedLocalHTML(directory.appendingPathComponent("secret.txt").path))
         XCTAssertFalse(AskBrowserTab.allowsNavigation(to: sibling))

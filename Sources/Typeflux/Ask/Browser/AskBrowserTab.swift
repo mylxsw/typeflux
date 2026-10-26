@@ -15,7 +15,7 @@ final class AskBrowserTab: NSObject, ObservableObject, Identifiable, WKNavigatio
     let id = UUID()
     /// Short, stable number the AI uses to name the tab.
     let number: Int
-    let webView: WKWebView
+    @Published private(set) var webView: WKWebView
     let isPrivate: Bool
     var owner: Owner
     @Published private(set) var url: URL?
@@ -31,11 +31,14 @@ final class AskBrowserTab: NSObject, ObservableObject, Identifiable, WKNavigatio
     private(set) var generation = 0
     /// Opens `window.open` and `target=_blank` pages as new tabs.
     var openPopup: ((WKWebViewConfiguration) -> WKWebView?)?
-    /// A single approved local HTML document. Its read access does not extend to the parent folder.
-    private var allowedLocalURL: URL?
+    private(set) var localFileURL: URL?
+    private(set) var previewHost: AskPreviewHost?
+    private var loadTicket = UUID()
+    private let browserConfiguration: WKWebViewConfiguration
     private var observations: [NSKeyValueObservation] = []
 
     init(number: Int, configuration: WKWebViewConfiguration, isPrivate: Bool, owner: Owner) {
+        browserConfiguration = configuration
         self.number = number
         self.isPrivate = isPrivate
         self.owner = owner
@@ -45,6 +48,10 @@ final class AskBrowserTab: NSObject, ObservableObject, Identifiable, WKNavigatio
         webView.uiDelegate = self
         webView.allowsBackForwardNavigationGestures = true
         if #available(macOS 13.3, *) { webView.isInspectable = false }
+        observeWebView()
+    }
+
+    private func observeWebView() {
         observations = [
             webView.observe(\.url, options: [.initial, .new]) { [weak self] view, _ in
                 MainActor.assumeIsolated { self?.url = view.url }
@@ -74,18 +81,65 @@ final class AskBrowserTab: NSObject, ObservableObject, Identifiable, WKNavigatio
     }
 
     func load(_ url: URL) {
+        loadTicket = UUID()
         notice = nil
-        allowedLocalURL = nil
+        if previewHost != nil {
+            previewHost?.close()
+            previewHost = nil
+            localFileURL = nil
+            observations.removeAll()
+            webView = WKWebView(frame: webView.frame, configuration: browserConfiguration)
+            webView.navigationDelegate = self
+            webView.uiDelegate = self
+            observeWebView()
+        }
         webView.load(URLRequest(url: url))
     }
 
-    func loadLocalHTML(_ url: URL) {
+    func loadLocalHTML(_ url: URL) async throws {
+        let ticket = UUID()
+        loadTicket = ticket
+        let target = try AskSidePanelFileAccess.resolve(url.path, workspaceRoot: url.deletingLastPathComponent())
+        let roots = [target.root]
+        let bundle = try AskFileHTMLPreview.bundle(target, roots: roots)
+        let host = AskPreviewHost()
+        let view = try await host.open(.artifact(bundle.manifest.ref), enabled: true,
+                                       validateAccess: { _ in try AskSidePanelFileAccess.check(target, roots: roots) },
+                                       load: { _ in bundle })
+        guard loadTicket == ticket, !Task.isCancelled else {
+            host.close()
+            throw CancellationError()
+        }
+        observations.removeAll()
+        previewHost?.close()
+        webView.stopLoading()
+        webView.removeFromSuperview()
+        webView.navigationDelegate = nil
+        webView.uiDelegate = nil
         notice = nil
-        allowedLocalURL = url.standardizedFileURL
-        webView.loadFileURL(url, allowingReadAccessTo: url)
+        previewHost = host
+        localFileURL = url.standardizedFileURL
+        host.report = { [weak self] in self?.notice = $0 }
+        host.navigationCommitted = { [weak self] in self?.generation += 1 }
+        generation += 1
+        view.frame = webView.frame
+        webView = view
+        observeWebView()
+    }
+
+    func reload() {
+        guard let file = localFileURL else { webView.reload(); return }
+        Task { @MainActor [weak self] in
+            do { try await self?.loadLocalHTML(file) }
+            catch { self?.notice = error.localizedDescription }
+        }
     }
 
     func close() {
+        loadTicket = UUID()
+        previewHost?.close()
+        previewHost = nil
+        localFileURL = nil
         observations.removeAll()
         webView.stopLoading()
         webView.navigationDelegate = nil
@@ -116,9 +170,6 @@ final class AskBrowserTab: NSObject, ObservableObject, Identifiable, WKNavigatio
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
                  decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void) {
         let url = navigationAction.request.url
-        if url?.isFileURL == true, url?.standardizedFileURL == allowedLocalURL {
-            decisionHandler(.allow); return
-        }
         if Self.allowsNavigation(to: url) {
             // Top-level data: URLs are a phishing vector; frames may still use them.
             if url?.scheme?.lowercased() == "data", navigationAction.targetFrame?.isMainFrame != false {
@@ -143,7 +194,6 @@ final class AskBrowserTab: NSObject, ObservableObject, Identifiable, WKNavigatio
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
-        if webView.url?.isFileURL != true { allowedLocalURL = nil }
         generation += 1
     }
 

@@ -74,7 +74,7 @@ struct AskBrowserPanel: View {
             }
             iconButton(tab?.isLoading == true ? "xmark" : "arrow.clockwise", label: L("ask.web.reload"),
                        enabled: tab?.url != nil) {
-                if tab?.isLoading == true { tab?.webView.stopLoading() } else { tab?.webView.reload() }
+                if tab?.isLoading == true { tab?.webView.stopLoading() } else { tab?.reload() }
             }
             HStack(spacing: 6) {
                 Image(systemName: tab?.isPrivate == true ? "eyeglasses" : (tab?.url?.scheme == "https" ? "lock" : "globe"))
@@ -122,7 +122,7 @@ struct AskBrowserPanel: View {
                 Button(L("ask.web.sites.title")) { showsSites = true }
                 if let host = tab?.host {
                     Button(L("ask.web.clearSite", host), role: .destructive) {
-                        Task { await workspace.clearData(for: host); tab?.webView.reload() }
+                        Task { await workspace.clearData(for: host); tab?.reload() }
                     }
                 }
             } label: {
@@ -256,6 +256,7 @@ struct AskBrowserWebView: NSViewRepresentable {
     }
 
     private func attach(to container: NSView) {
+        container.subviews.forEach { $0.removeFromSuperview() }
         tab.webView.removeFromSuperview()
         tab.webView.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(tab.webView)

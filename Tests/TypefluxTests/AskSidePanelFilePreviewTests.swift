@@ -86,7 +86,7 @@ final class AskSidePanelFilePreviewTests: XCTestCase {
         XCTAssertEqual(source, "a\tb\n1\t2")
         guard case let .html(bundle, html) = try load("page.html", Data("<h1>Hi</h1>".utf8)) else { return XCTFail("HTML") }
         XCTAssertEqual(html, "<h1>Hi</h1>")
-        XCTAssertEqual(Set(bundle.files.keys), [AskFileHTMLPreview.entry])
+        XCTAssertEqual(Set(bundle.files.keys), ["page.html"])
 
         let png = try XCTUnwrap(Data(base64Encoded:
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="))

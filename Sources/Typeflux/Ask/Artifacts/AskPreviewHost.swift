@@ -12,6 +12,21 @@ struct AskPreviewPolicy {
     let token: String
     let paths: Set<String>
 
+    /// Preview MIME support must not change persisted artifact manifest validation.
+    static func mediaType(_ path: String) -> String {
+        switch (path as NSString).pathExtension.lowercased() {
+        case "mjs": "application/javascript"
+        case "svg": "image/svg+xml"
+        case "webp": "image/webp"
+        case "ico": "image/x-icon"
+        case "woff": "font/woff"
+        case "woff2": "font/woff2"
+        case "ttf": "font/ttf"
+        case "otf": "font/otf"
+        default: AskArtifactStore.mediaType(path)
+        }
+    }
+
     func url(_ path: String) -> URL {
         var components = URLComponents()
         components.scheme = Self.scheme
@@ -22,7 +37,7 @@ struct AskPreviewPolicy {
 
     func path(_ url: URL) throws -> String {
         guard url.scheme == Self.scheme, url.host == token, url.user == nil, url.password == nil,
-              url.port == nil, url.query == nil,
+              url.port == nil,
               let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
               let decoded = components.percentEncodedPath.removingPercentEncoding,
               decoded.hasPrefix("/") else { throw AskArtifactError.denied }
@@ -37,7 +52,7 @@ struct AskPreviewPolicy {
         return "sandbox allow-scripts; default-src 'none'; " +
             "script-src 'unsafe-inline' \(origin); style-src 'unsafe-inline' \(origin); img-src \(origin); " +
             "connect-src 'none'; frame-src 'none'; child-src 'none'; worker-src 'none'; " +
-            "object-src 'none'; base-uri 'none'; form-action 'none'; media-src 'none'; font-src 'none'"
+            "object-src 'none'; base-uri 'none'; form-action 'none'; media-src 'none'; font-src \(origin)"
     }
 
     var contentRules: String {
@@ -69,6 +84,7 @@ struct AskPreviewPolicy {
     private var timer: Timer?
     private var generation = UUID()
     var report: (String) -> Void = { _ in }
+    var navigationCommitted: () -> Void = {}
     private(set) var diagnostics: [String] = []
 
     func open(_ source: AskPreviewSource, enabled: Bool,
@@ -169,9 +185,9 @@ struct AskPreviewPolicy {
     function record(e) {
       if (typefluxPreviewErrors.length < 8) typefluxPreviewErrors.push(String(e).slice(0, 500));
     }
-    addEventListener('error', e => record(e.message || 'A page resource failed to load'), true);
+    addEventListener('error', e => record(e.message || ('Resource failed: ' + (e.target?.src || e.target?.href || 'unknown'))), true);
     addEventListener('unhandledrejection', e => record(e.reason || 'Unhandled page rejection'));
-    addEventListener('securitypolicyviolation', () => record('Preview blocked a prohibited resource or action'));
+    addEventListener('securitypolicyviolation', e => record('Preview blocked: ' + e.blockedURI + ' (' + e.violatedDirective + ')'));
     """
 
     private static let consoleCollector = """
@@ -180,7 +196,7 @@ struct AskPreviewPolicy {
     function recordPageError(message) {
       if (typefluxPreviewPageErrors.length < 8) typefluxPreviewPageErrors.push(String(message).slice(0,500));
     }
-    addEventListener('error', e => recordPageError(e.message || 'A page resource failed to load'), true);
+    addEventListener('error', e => recordPageError(e.message || ('Resource failed: ' + (e.target?.src || e.target?.href || 'unknown'))), true);
     addEventListener('unhandledrejection', e => recordPageError(e.reason || 'Unhandled page rejection'));
     for (const level of ['log', 'info', 'warn', 'error']) {
       const original = console[level].bind(console);
@@ -287,15 +303,18 @@ extension AskPreviewHost {
             guard let data = bundle?.files[path] else { throw AskArtifactError.unavailable }
             respond(urlSchemeTask, url: url, path: path, data: data, policy: policy)
         } catch {
-            record(error.localizedDescription)
+            record("\(urlSchemeTask.request.url?.path ?? "resource"): \(error.localizedDescription)")
             urlSchemeTask.didFailWithError(error)
         }
     }
 
     private func respond(_ urlSchemeTask: any WKURLSchemeTask, url: URL, path: String,
                          data: Data, policy: AskPreviewPolicy) {
+        let mediaType = AskPreviewPolicy.mediaType(path)
+        let text = mediaType.hasPrefix("text/") || ["application/javascript", "application/json", "image/svg+xml"].contains(mediaType)
         let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: [
-            "Content-Type": AskArtifactStore.mediaType(path) + "; charset=utf-8",
+            "Content-Type": mediaType + (text ? "; charset=utf-8" : ""),
+            "Access-Control-Allow-Origin": "*",
             "Content-Security-Policy": policy.contentSecurityPolicy,
             "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store", "Referrer-Policy": "no-referrer"
         ])!
@@ -317,6 +336,8 @@ extension AskPreviewHost {
         }
         decisionHandler(allowed ? .allow : .cancel)
     }
+
+    func webView(_: WKWebView, didCommit _: WKNavigation!) { navigationCommitted() }
 
     func webView(_: WKWebView, didFail _: WKNavigation!, withError error: Error) {
         record(error.localizedDescription)

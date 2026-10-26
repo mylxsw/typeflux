@@ -39,9 +39,10 @@ import XCTest
         throw AskArtifactError.unavailable
     }
 
-    func testPolicyRejectsCrossArtifactTraversalQueriesAndFileURLs() throws {
+    func testPolicyRejectsCrossArtifactTraversalAndFileURLs() throws {
         let policy = AskPreviewPolicy(token: "test", paths: ["index.html", "a b.txt"])
         XCTAssertEqual(try policy.path(policy.url("a b.txt")), "a b.txt")
+        XCTAssertEqual(try policy.path(XCTUnwrap(URL(string: "typeflux-artifact://test/index.html?v=2"))), "index.html")
         XCTAssertEqual(
             try policy.path(XCTUnwrap(URL(string: "typeflux-artifact://test/index.html#section"))),
             "index.html"
@@ -50,7 +51,7 @@ import XCTest
                       "typeflux-artifact://test/../outside", "typeflux-artifact://test/%2e%2e/outside",
                       "typeflux-artifact://test/%252e%252e/outside", "typeflux-artifact://test/missing",
                       "typeflux-artifact://user@test/index.html", "typeflux-artifact://test:80/index.html",
-                      "typeflux-artifact://test/index.html?q=1", "typeflux-artifact://test/a%5cb"] {
+                      "typeflux-artifact://test/a%5cb"] {
             XCTAssertThrowsError(try policy.path(XCTUnwrap(URL(string: value))), value)
         }
         XCTAssertTrue(policy.contentSecurityPolicy.contains("sandbox allow-scripts;"))
@@ -178,7 +179,7 @@ import XCTest
             reports.contains { $0.contains("broken generated page") || $0.contains("Script error") },
             reports.joined(separator: " | ")
         )
-        XCTAssertTrue(reports.contains { $0 == AskArtifactError.unavailable.localizedDescription })
+        XCTAssertTrue(reports.contains { $0.contains("missing.js") && $0.contains(AskArtifactError.unavailable.localizedDescription) })
         revoked = true
         host.check()
         XCTAssertNil(host.webView)
