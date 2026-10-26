@@ -41,6 +41,74 @@ final class AskLocalEngineTests: XCTestCase {
         XCTAssertEqual(c.messages.last?.isError, true)
     }
 
+    func testLongCompactedConversationAcceptsFollowUpAndDeduplicatesAfterRestart() async throws {
+        var c = try await engine().send(conversationId: "long-history", request: request(), token: "")
+        c.run?.status = "completed"
+        c.run?.inference = nil
+        for index in 0..<1200 {
+            c.messages.append(.init(id: "history-\(index)", role: index.isMultiple(of: 2) ? "user" : "assistant",
+                                    text: "Historical evidence \(index)", createdAt: Date()))
+        }
+        c.summary = "Keep the existing website and finish its JavaScript."
+        c.summaryThrough = c.messages.count - 12
+        let snapshot = AskLocalRecord(conversation: c)
+        try snapshot.encodeSnapshot().write(to: directory.appendingPathComponent(c.id + ".json"))
+        let reopened = engine()
+        var followUp = request("Continue the existing site")
+        followUp.executionMode = .continuous
+        let continued = try await reopened.send(conversationId: c.id, request: followUp, token: "")
+        XCTAssertEqual(continued.id, c.id)
+        XCTAssertEqual(continued.messages.count, c.messages.count + 1)
+        XCTAssertEqual(continued.run?.executionMode, .continuous)
+        XCTAssertNil(continued.run?.maxSteps)
+        let modelMessages = try XCTUnwrap(try payload(continued)["messages"] as? [[String: Any]])
+        XCTAssertLessThan(modelMessages.count, 25)
+        XCTAssertTrue(String(describing: modelMessages).contains("finish its JavaScript"))
+        let replay = try await reopened.send(conversationId: c.id, request: followUp, token: "")
+        XCTAssertEqual(replay.revision, continued.revision)
+        XCTAssertEqual(replay.messages.count, continued.messages.count)
+    }
+
+    func testContinuousExecutionCrossesLegacyLimitCompactsAndCanBeCancelled() async throws {
+        let engine = AskLocalEngine(directory: directory, contextLimits: { _ in .init(window: 12000, maxOutput: 1024, known: true) })
+        var req = request(); req.executionMode = .continuous
+        var c = try await engine.send(conversationId: "continuous", request: req, token: "")
+        var summaries = 0
+        for index in 0..<210 {
+            while c.run?.inference?.summaryThrough != nil {
+                c = try await answer(engine, c, content: "Preserve the user's goal. Earlier tool calls succeeded; continue from the newest result.")
+                summaries += 1
+            }
+            c = try await answer(engine, c, calls: [call("computer", #"{"action":"inspect"}"#, id: "read-\(index)")])
+            c = try await engine.result(conversationId: c.id, request: .init(runId: c.run!.id, deviceId: device,
+                toolCallId: "read-\(index)", content: String(repeating: "Observation \(index). ", count: 20), isError: false), token: "")
+        }
+        XCTAssertEqual(c.run?.steps, 210)
+        XCTAssertTrue(c.run?.isActive == true)
+        XCTAssertGreaterThan(summaries, 1)
+        c = try await engine.cancel(conversationId: c.id, runId: c.run!.id, token: "")
+        XCTAssertEqual(c.run?.status, "cancelled")
+        c = try await engine.retry(conversationId: c.id, runId: c.run!.id, deviceId: device, modelRef: nil, token: "")
+        XCTAssertEqual(c.run?.executionMode, .continuous)
+        XCTAssertNil(c.run?.maxSteps)
+        while c.run?.inference?.summaryThrough != nil { c = try await answer(engine, c, content: "Keep verified work.") }
+        c = try await answer(engine, c, content: "Finished")
+        let replyID = try XCTUnwrap(c.messages.last?.id)
+        c = try await engine.regenerate(conversationId: c.id,
+            request: .init(messageId: replyID, deviceId: device), token: "")
+        XCTAssertEqual(c.run?.executionMode, .continuous)
+        XCTAssertNil(c.run?.maxSteps)
+    }
+
+    func testContinuousModeCannotDisableRecoveryOrAcceptContradictoryLimits() throws {
+        XCTAssertNil(try AskLocalEngine.configuredMaxSteps(nil, mode: .continuous, recovery: false))
+        XCTAssertThrowsError(try AskLocalEngine.configuredMaxSteps(100, mode: .continuous, recovery: false))
+        XCTAssertThrowsError(try AskLocalEngine.configuredMaxSteps(nil, mode: .continuous, recovery: true))
+        XCTAssertEqual(try AskLocalEngine.configuredMaxSteps(nil, mode: nil, recovery: false), 200)
+        XCTAssertEqual(try AskLocalEngine.configuredMaxSteps(100, mode: .bounded, recovery: true), 20)
+        XCTAssertThrowsError(try AskLocalEngine.configuredMaxSteps(1001, mode: .bounded, recovery: false))
+    }
+
     private func engine(now: @escaping @Sendable () -> Date = Date.init, web: AskLocalWebTools = AskLocalWebTools(resolve: { _ in [] })) -> AskLocalEngine {
         AskLocalEngine(directory: directory, webTools: web, now: now)
     }

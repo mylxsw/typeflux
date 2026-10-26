@@ -33,7 +33,6 @@ struct AskLocalRecord: Codable, Equatable, Sendable {
 /// are stored as JSON files under Application Support.
 actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     static let maxSteps = 200
-    static let maxMessages = 500
     static let maxToolCalls = 8
     static let maxBuiltinCalls = 16
     static let maxSteering = 5
@@ -312,7 +311,6 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         _ = try resolveTurn(record)
         if record.conversation.messages.contains(where: { $0.id == request.id }) { return record.conversation }
         if record.conversation.run?.isActive == true { throw AskLocalError.message(L("ask.local.busy")) }
-        guard record.conversation.messages.count < Self.maxMessages else { throw AskLocalError.message(L("ask.local.full")) }
         let modelRef = try executionModel(request.modelRef)
         var c = record.conversation
         // A temporary conversation neither reads nor keeps memory.
@@ -330,7 +328,8 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         c.modelRef = modelRef
         c.run = AskRun(id: UUID().uuidString.lowercased(), deviceId: request.deviceId, status: "running", steps: 0, updatedAt: now(),
                        tools: AskSkillCatalog.applying(request.skillCatalog, to: request.tools), pending: [], modelRef: modelRef, reasoningEffort: request.reasoningEffort)
-        c.run?.maxSteps = try Self.configuredMaxSteps(request.maxSteps)
+        c.run?.maxSteps = try Self.configuredMaxSteps(request.maxSteps, mode: request.executionMode, recovery: request.recoveryCheck == true)
+        c.run?.executionMode = request.executionMode
         c.run?.clientToolApproval = request.clientToolApproval
         c.run?.recoveryCheck = request.recoveryCheck
         record.conversation = c
@@ -543,7 +542,10 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
                                          tools: run.tools, pending: [], modelRef: model,
                                          reasoningEffort: model == run.modelRef ? run.reasoningEffort : nil,
                                          budgetEnabled: run.budgetEnabled, budgetRootId: run.budgetRootId, budgetDeadline: run.budgetDeadline, budgetLimits: run.budgetLimits)
-        record.conversation.run?.maxSteps = try Self.configuredMaxSteps(maxSteps ?? run.maxSteps)
+        let executionMode: AskExecutionMode? = maxSteps == nil ? run.executionMode : .bounded
+        record.conversation.run?.executionMode = executionMode
+        record.conversation.run?.maxSteps = try Self.configuredMaxSteps(maxSteps ?? (run.executionMode == .continuous ? nil : run.maxSteps),
+            mode: executionMode, recovery: run.recoveryCheck == true)
         record.conversation.run?.clientToolApproval = true
         record.conversation.run?.recoveryCheck = run.recoveryCheck
         if var recovery = run.internalRecovery {
@@ -579,7 +581,10 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         c.modelRef = model
         c.run = AskRun(id: UUID().uuidString.lowercased(), deviceId: request.deviceId, status: "running", steps: 0, updatedAt: now(),
                        tools: AskSkillCatalog.applying(prompt.skillCatalog, to: request.tools ?? c.run?.tools ?? []), pending: [], modelRef: model, reasoningEffort: prompt.reasoningEffort)
-        c.run?.maxSteps = try Self.configuredMaxSteps(request.maxSteps ?? record.conversation.run?.maxSteps)
+        let executionMode: AskExecutionMode? = request.executionMode ?? (request.maxSteps == nil ? record.conversation.run?.executionMode : .bounded)
+        c.run?.executionMode = executionMode
+        c.run?.maxSteps = try Self.configuredMaxSteps(request.maxSteps ?? (executionMode == .continuous ? nil : record.conversation.run?.maxSteps),
+            mode: executionMode, recovery: record.conversation.run?.recoveryCheck == true)
         c.run?.clientToolApproval = request.clientToolApproval
         c.run?.recoveryCheck = record.conversation.run?.recoveryCheck
         record.conversation = c
@@ -589,6 +594,15 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     }
 
     // MARK: - Run
+
+    static func configuredMaxSteps(_ requested: Int?, mode: AskExecutionMode?, recovery: Bool) throws -> Int? {
+        if mode == .continuous {
+            guard requested == nil, !recovery else { throw AskLocalError.message(L("ask.steps.invalid")) }
+            return nil
+        }
+        let limit = try configuredMaxSteps(requested)
+        return recovery ? min(limit, 20) : limit
+    }
 
     static func configuredMaxSteps(_ requested: Int?) throws -> Int {
         guard let requested else { return maxSteps }
@@ -795,7 +809,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         record.conversation.memory = record.conversation.memory?.usable(at: now())
         if record.conversation.run?.status == "running" { deliverSteering(&record) }
         guard let run = record.conversation.run else { return record.conversation }
-        guard run.steps < (run.maxSteps ?? Self.maxSteps) + (run.extraSteps ?? 0) else { return try fail(&record, L("ask.local.stepLimit")) }
+        guard !run.reachedStepLimit else { return try fail(&record, L("ask.local.stepLimit")) }
         if record.conversation.summary != nil, !record.builtinTools.contains(where: { $0.name == AskSemanticCompaction.historyTool.name }) {
             record.builtinTools.append(AskSemanticCompaction.historyTool)
             let deviceNames = Set(record.conversation.run?.tools.map(\.name) ?? [])
@@ -1271,7 +1285,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
             try save(&record)
             return record.conversation
         case let .requestModel(prompt, purpose, _):
-            guard let run = record.conversation.run, run.steps < (run.maxSteps ?? Self.maxSteps) + (run.extraSteps ?? 0) else { return try fail(&record, L("ask.local.stepLimit")) }
+            guard let run = record.conversation.run, !run.reachedStepLimit else { return try fail(&record, L("ask.local.stepLimit")) }
             let prepared = promptBuilder.conversation(promptInput(record.conversation, record))
             return try queue(&record, payload: modelPayload(prompt, purpose: purpose, prepared: prepared), summaryThrough: nil)
         }

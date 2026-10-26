@@ -21,6 +21,21 @@ final class SettingsStoreAgentTests: XCTestCase {
         super.tearDown()
     }
 
+    func testExecutionModeDefaultsAndPreservesLegacyLimits() {
+        XCTAssertEqual(store.askAgentExecutionMode, .continuous)
+        XCTAssertNil(store.askAgentRequestedMaxSteps)
+        defaults.set(100, forKey: "ask.agentMaxSteps")
+        XCTAssertEqual(store.askAgentExecutionMode, .bounded)
+        XCTAssertEqual(store.askAgentRequestedMaxSteps, 100)
+        store.askAgentExecutionMode = .continuous
+        XCTAssertEqual(SettingsStore(defaults: defaults).askAgentExecutionMode, .continuous)
+        XCTAssertNil(store.askAgentRequestedMaxSteps)
+        store.askAgentExecutionMode = .bounded
+        XCTAssertEqual(store.askAgentRequestedMaxSteps, 100)
+        defaults.set("unknown", forKey: "ask.executionMode")
+        XCTAssertEqual(store.askAgentExecutionMode, .bounded)
+    }
+
     // MARK: - mcpServers
 
     func testAgentStepLimitDefaultsPersistsAndClamps() {

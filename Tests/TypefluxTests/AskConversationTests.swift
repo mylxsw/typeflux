@@ -536,6 +536,41 @@ struct AskConversationTests {
         #expect(f.tools.bound == [id])
     }
 
+    @Test func executionModeSettingsRenderWithoutChangingSavedPolicy() throws {
+        let defaults = try #require(UserDefaults(suiteName: "ask-mode-ui-" + UUID().uuidString))
+        let settings = SettingsStore(defaults: defaults)
+        for mode in [AskExecutionMode.continuous, .bounded] {
+            settings.askAgentExecutionMode = mode
+            settings.askAgentMaxSteps = 100
+            let host = NSHostingView(rootView: AskAgentStepSettingsView(settings: settings).frame(width: 640))
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 640, height: 180), styleMask: [.borderless], backing: .buffered, defer: false)
+            window.contentView = host
+            host.layoutSubtreeIfNeeded()
+            #expect(host.fittingSize.height > 0)
+            #expect(settings.askAgentExecutionMode == mode)
+            #expect(settings.askAgentMaxSteps == 100)
+            window.contentView = nil
+        }
+    }
+
+    @Test func continuousExecutionIsSentExplicitlyWithoutNumericLimit() async throws {
+        let defaults = try #require(UserDefaults(suiteName: "ask-continuous-" + UUID().uuidString))
+        let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
+        let fixture = try AskTestFixture(modelLibrary: library)
+        fixture.model.launcherDraft.text = "Continue until done"
+        fixture.model.submitLauncher()
+        try await fixture.wait { fixture.model.busyIds.isEmpty }
+        let request = try #require(await fixture.api.sends.first)
+        #expect(request.executionMode == .continuous)
+        #expect(request.maxSteps == nil)
+        let wire = try AskCoding.encoder().encode(request)
+        #expect(String(decoding: wire, as: UTF8.self).contains("continuous"))
+        let decoded = try AskCoding.decoder().decode(AskSendRequest.self, from: wire)
+        #expect(decoded.executionMode == .continuous)
+        #expect(decoded.maxSteps == nil)
+        #expect(decoded.id == request.id)
+    }
+
     @Test func configuredAgentStepLimitIsSentWithNewRun() async throws {
         let defaults = try #require(UserDefaults(suiteName: "ask-step-limit-" + UUID().uuidString))
         let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
@@ -638,6 +673,10 @@ struct AskConversationTests {
 
     @Test func loadingASkillNeedsNoApproval() async throws {
         let f = try AskTestFixture()
+        f.model.commandSources.skills = { AskBuiltinSkills.all }
+        f.tools.additionalDefinitions = [try #require(AskSkillCatalog.definition([
+            .init(name: "email-reply", description: "Draft an email reply")
+        ]))]
         await f.api.setTool(.init(id: "skill-1", type: "function", function: .init(name: "skill", arguments: #"{"name":"email-reply"}"#)))
         f.model.launcherDraft.text = "Reply to this email"; f.model.submitLauncher()
         try await f.wait { f.tools.executions == 1 && f.model.busyIds.isEmpty }

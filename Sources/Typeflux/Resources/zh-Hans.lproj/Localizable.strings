@@ -7477,3 +7477,8 @@
 "ask.activity.note" = "进度说明";
 "ask.activity.results" = "任务成果";
 "ask.activity.resultsWorking" = "任务仍在进行";
+
+"ask.steps.mode" = "执行方式";
+"ask.steps.modeDetail" = "用于新一轮任务；继续已暂停任务时保留原有限制。";
+"ask.steps.continuous" = "持续执行";
+"ask.steps.bounded" = "限制步数";

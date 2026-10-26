@@ -386,7 +386,7 @@ this Mac; signing in is optional. The design board is
   is stored as JSON under `~/.typeflux/data/AskLocal/`.
   It ports the system/memory/environment prompt, references, screen observations,
   summaries after 28 messages, truncation detection, the Agent step setting
-  (100 by default; choices 50, 100, 200, and 500), cancel,
+  (explicit continuous mode on fresh installs; existing saved limits remain bounded), cancel,
   retry, regenerate, expiry of interrupted runs and memory purge.
 - Engine-side tools: `update_plan` and `web_search` when the user configures
   Tavily, Brave or Cloudflare in Agent → Web Search. Local `web_fetch`
@@ -844,3 +844,24 @@ re-executes a completed tool or changes an approval. Quota, network and output
 limit errors keep their separate recovery semantics. An individual current
 request or required schema exceeding the model window is irreducible without
 changing the task and still fails safely; compaction is not unlimited memory.
+
+### Long conversations and execution policy
+
+Historical message count does not limit follow-up submissions. The engine retains raw
+messages and tool receipts while semantic compaction bounds the model-facing history.
+Large individual inputs, storage capacity, provider quotas, tool timeouts, and explicitly
+enabled resource budgets remain independently enforced.
+
+`execution_mode` is `continuous` or `bounded`. Omission preserves the legacy bounded
+behavior; `max_steps` retains its existing numeric bounds. Continuous requests must omit
+`max_steps` and cannot be recovery checks. The mode is pinned in the run, persisted, and
+inherited by retries unless an explicit numeric override selects bounded execution.
+Regeneration may explicitly select a new policy. The UI's mode setting affects new runs;
+continuing a stopped run preserves its original policy and any existing budget ledger.
+Recovery checks and the workflow editor retain bounded execution.
+
+Fresh preferences default to continuous mode. An existing `ask.agentMaxSteps` preference
+is conservatively treated as a user-selected bound until the user changes execution mode.
+No live conversation, pending submission, file, or execution receipt is rewritten during
+this migration. Deploy the API supporting `execution_mode` before the new client: older
+servers do not understand continuous mode and retain their legacy ceiling.

@@ -7476,3 +7476,8 @@
 "ask.activity.note" = "進捗メモ";
 "ask.activity.results" = "タスクの成果";
 "ask.activity.resultsWorking" = "タスクは進行中です";
+
+"ask.steps.mode" = "実行モード";
+"ask.steps.modeDetail" = "新しい実行に適用します。一時停止した実行の再開時は元の制限を維持します。";
+"ask.steps.continuous" = "継続実行";
+"ask.steps.bounded" = "ステップ制限";

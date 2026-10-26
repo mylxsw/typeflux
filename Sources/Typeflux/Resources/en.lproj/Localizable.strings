@@ -7477,3 +7477,8 @@
 "ask.activity.note" = "Progress note";
 "ask.activity.results" = "Task results";
 "ask.activity.resultsWorking" = "Task still in progress";
+
+"ask.steps.mode" = "Execution mode";
+"ask.steps.modeDetail" = "Applies to new runs. Continuing a paused run keeps its original limits.";
+"ask.steps.continuous" = "Continuous";
+"ask.steps.bounded" = "Limit steps";

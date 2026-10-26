@@ -13,6 +13,17 @@ extension SettingsStore {
         set { defaults.set(min(max(newValue, 10), 1000), forKey: "ask.agentMaxSteps") }
     }
 
+    /// Preserve a previously saved step limit. Fresh installs use continuous execution.
+    var askAgentExecutionMode: AskExecutionMode {
+        get {
+            if let raw = defaults.string(forKey: "ask.executionMode"), let mode = AskExecutionMode(rawValue: raw) { return mode }
+            return defaults.object(forKey: "ask.agentMaxSteps") == nil ? .continuous : .bounded
+        }
+        set { defaults.set(newValue.rawValue, forKey: "ask.executionMode") }
+    }
+
+    var askAgentRequestedMaxSteps: Int? { askAgentExecutionMode == .bounded ? askAgentMaxSteps : nil }
+
     var mcpServers: [MCPServerConfig] {
         get {
             guard let data = defaults.data(forKey: "agent.mcpServers"),

@@ -57,6 +57,11 @@ struct AskMessage: Codable, Identifiable, Equatable, Sendable {
     var hasImage: Bool { image != nil || attachments?.contains { $0.kind == .image } == true }
 }
 
+/// Explicit wire policy; absent values preserve legacy bounded execution.
+enum AskExecutionMode: String, Codable, Sendable {
+    case bounded, continuous
+}
+
 struct AskRun: Codable, Equatable, Sendable {
     var agentBinding: AskAgentBinding? = nil
     var contextRetries: Int? = nil
@@ -101,6 +106,12 @@ struct AskRun: Codable, Equatable, Sendable {
     var steps: Int
     /// Maximum model replies pinned when this run started; nil for older runs.
     var maxSteps: Int? = nil
+    var executionMode: AskExecutionMode? = nil
+    var reachedStepLimit: Bool {
+        if executionMode == .continuous, recoveryCheck != true { return false }
+        return steps >= (maxSteps ?? AskLocalEngine.maxSteps) + (extraSteps ?? 0)
+    }
+
     var updatedAt: Date
     var tools: [AskToolDefinition]
     var pending: [AskToolCall]
@@ -186,6 +197,7 @@ struct AskSendRequest: Codable, Equatable, Sendable {
     var deviceCreate: Bool? = nil
     var auxiliaryModelRef: String? = nil
     var maxSteps: Int? = nil
+    var executionMode: AskExecutionMode? = nil
     var titlePolicy: AskTitlePolicy? = nil
     var clientToolApproval: Bool? = nil
     var recoveryCheck: Bool? = nil
@@ -233,6 +245,7 @@ extension AskSendRequest {
 /// current model and the previous run's toolset.
 struct AskRegenerateRequest: Codable, Equatable, Sendable {
     var maxSteps: Int? = nil
+    var executionMode: AskExecutionMode? = nil
     var clientToolApproval: Bool? = nil
     var messageId: String
     var deviceId: String

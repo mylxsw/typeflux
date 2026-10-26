@@ -1443,8 +1443,9 @@ final class AskConversationModel: ObservableObject {
         if temporary { temporaryConversations.append(AskTemporaryConversation(id: id, cloud: !local)) }
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
         request.deviceCreate = newConversation ? true : nil
+        request.executionMode = recoveryCheck ? .bounded : modelLibrary.settings.askAgentExecutionMode
         request.maxSteps = recoveryCheck ? min(modelLibrary.settings.askAgentMaxSteps, 20)
-            : modelLibrary.settings.askAgentMaxSteps
+            : modelLibrary.settings.askAgentRequestedMaxSteps
         request.recoveryCheck = recoveryCheck ? true : nil
         if recoveryCheck || inline { request.imageResults = false }
         // A temporary conversation is never named: it has no place in history to be found by.
@@ -1623,7 +1624,8 @@ final class AskConversationModel: ObservableObject {
                                                  selection: message.selection, source: message.source, image: message.image,
                                                  tools: value.resolvedKind.offered(await tools.definitions(conversationId: id)), modelRef: value.modelRef, reasoningEffort: message.reasoningEffort, references: message.references,
                                                  attachments: message.attachments)
-                    request.maxSteps = modelLibrary.settings.askAgentMaxSteps
+                    request.executionMode = modelLibrary.settings.askAgentExecutionMode
+                    request.maxSteps = modelLibrary.settings.askAgentRequestedMaxSteps
                     request.skills = message.skills
                     request.skillCatalog = message.skillCatalog
                     request.mcpServers = message.mcpServers
@@ -1641,7 +1643,7 @@ final class AskConversationModel: ObservableObject {
                     )
                     try checkOperation(id, operationId: operationId, account: current.account)
                     response = try await api.retry(conversationId: id, runId: run.id, deviceId: deviceId, modelRef: retryModelRef,
-                                                   maxSteps: modelLibrary.settings.askAgentMaxSteps, token: current.token)
+                                                   maxSteps: nil, token: current.token)
                 } else {
                     try checkOperation(id, operationId: operationId, account: current.account)
                     response = try await api.conversation(id: id, token: current.token)
@@ -1728,7 +1730,9 @@ final class AskConversationModel: ObservableObject {
                     modelRef, token: current.token,
                     hasImage: value.messages.contains(where: { $0.hasImage })
                 )
-                let request = AskRegenerateRequest(maxSteps: modelLibrary.settings.askAgentMaxSteps,
+                let recoveryCheck = value.run?.recoveryCheck == true
+                let request = AskRegenerateRequest(maxSteps: recoveryCheck ? min(modelLibrary.settings.askAgentMaxSteps, 20) : modelLibrary.settings.askAgentRequestedMaxSteps,
+                                                   executionMode: recoveryCheck ? .bounded : modelLibrary.settings.askAgentExecutionMode,
                                                    clientToolApproval: true, messageId: messageId, deviceId: deviceId,
                                                    modelRef: modelRef, tools: definitions)
                 try checkOperation(id, operationId: operationId, account: current.account)
