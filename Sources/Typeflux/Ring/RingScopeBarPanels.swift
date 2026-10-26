@@ -113,7 +113,8 @@ struct RingAddAppPicker: View {
                 let done = configured.contains(app.bundleIdentifier)
                 Button { onPick(app.bundleIdentifier, app.name) } label: {
                     RingAppRow(bundleIdentifier: app.bundleIdentifier, name: app.name,
-                               subtitle: app.bundleIdentifier, isDimmed: done) {
+                               subtitle: RingAppShortcutCatalog.entries[app.bundleIdentifier] == nil
+                                   ? app.bundleIdentifier : L("ring.presets.available"), isDimmed: done) {
                         if done {
                             Label(L("ring.scope.configured"), systemImage: "checkmark")
                                 .font(.system(size: 11)).foregroundStyle(TFColors.textTertiary)
@@ -177,6 +178,7 @@ struct RingScopeInfoBar: View {
     var onReset: () -> Void = {}
     var onEnable: (Bool) -> Void = { _ in }
     var onCopyGlobal: () -> Void = {}
+    var onAddPresets: () -> Void = {}
     var onDelete: () -> Void = {}
 
     var body: some View {
@@ -202,6 +204,9 @@ struct RingScopeInfoBar: View {
                     .accessibilityLabel(L("ring.scope.enabledAccessibility", profile.appName))
                     .accessibilityIdentifier("ring.scope.enabled")
                 Menu {
+                    if RingAppShortcutCatalog.entries[profile.bundleIdentifier] != nil {
+                        Button(L("ring.presets.add"), action: onAddPresets).disabled(!profile.canAddAction)
+                    }
                     Button(L("ring.scope.copyGlobal"), action: onCopyGlobal).disabled(!canCopyGlobal)
                     Divider()
                     Button(L("ring.scope.delete", profile.appName), role: .destructive, action: onDelete)

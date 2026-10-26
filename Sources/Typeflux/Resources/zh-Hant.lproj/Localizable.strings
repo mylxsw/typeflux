@@ -6583,7 +6583,7 @@
 "ring.undo.addedApp" = "已新增「%@」";
 "ring.undo.removedApp" = "已刪除「%@」的設定";
 "ring.undo.copiedGlobal" = "已複製全域的 %d 個操作";
-"ring.library.group.appKeys" = "%@ 常用";
+"ring.library.group.appKeys" = "%@ 專屬操作";
 "ring.appKeys.newTab" = "新增標籤頁";
 "ring.appKeys.reopenTab" = "重新開啟標籤頁";
 "ring.appKeys.closeTab" = "關閉標籤頁";
@@ -7446,3 +7446,19 @@
 "ask.plugin.files.content.searching" = "沒有符合的檔案名稱，正在搜尋檔案內容…";
 
 "ask.plugin.files.content.timeout" = "檔案內容搜尋逾時，請重試。";
+
+// App ring presets
+"ring.presets.available" = "內建常用操作，選擇即可使用";
+"ring.presets.add" = "補充應用程式預設操作";
+"ring.presets.added" = "已補充應用程式預設操作";
+"ring.presets.hint" = "使用應用程式的預設快捷鍵。如果你修改過快捷鍵，請在圓環中同步調整。";
+"ring.appKeys.history" = "瀏覽歷史";
+"ring.appKeys.bookmarks" = "書籤管理";
+"ring.appKeys.readingList" = "閱讀列表";
+"ring.appKeys.rename" = "重新命名";
+"ring.appKeys.quickLook" = "快速查看";
+"ring.appKeys.copyPath" = "複製路徑";
+"ring.appKeys.newNote" = "新增筆記";
+"ring.appKeys.searchVault" = "搜尋知識庫";
+"ring.appKeys.readingView" = "切換閱讀檢視";
+"ring.appKeys.findInNote" = "筆記內尋找";

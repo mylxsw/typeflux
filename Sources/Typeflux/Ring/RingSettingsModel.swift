@@ -162,19 +162,33 @@ final class RingSettingsModel: ObservableObject {
 
     // MARK: - App profiles
 
-    /// Adds an empty, switched-on profile for an app and edits it. An app that already has one
+    /// Adds a switched-on profile, optionally seeded with presets. An app that already has one
     /// is selected instead. Returns the profile's id.
     @discardableResult
-    func addProfile(bundleIdentifier: String, appName: String) -> UUID {
+    func addProfile(bundleIdentifier: String, appName: String, usePreset: Bool = false) -> UUID {
         if let existing = configuration.appProfiles.first(where: { $0.bundleIdentifier == bundleIdentifier }) {
             scope = .app(existing.id)
             return existing.id
         }
-        let profile = RingAppProfile(bundleIdentifier: bundleIdentifier, appName: appName)
+        let profile = RingAppProfile(bundleIdentifier: bundleIdentifier, appName: appName,
+                                     actions: usePreset ? RingAppShortcutCatalog.defaultActions(
+                                         for: bundleIdentifier, appName: appName
+                                     ) : [])
         record(L("ring.undo.addedApp", appName))
         update { $0.appProfiles.append(profile) }
         scope = .app(profile.id)
         return profile.id
+    }
+
+    /// Fill available slots with this app's presets, preserving all custom actions and ordering.
+    func addAppPresets() {
+        guard let profile, canAddAction else { return }
+        let items = RingAppShortcutCatalog.items(for: profile.bundleIdentifier, appName: profile.appName)
+            .filter { !RingActionLibrary.contains($0, in: actions) }
+            .prefix(RingConfiguration.maxActions - actions.count)
+        guard !items.isEmpty else { return }
+        record(L("ring.presets.added"))
+        updateActions { $0.append(contentsOf: items.map { $0.action() }) }
     }
 
     /// Removes a profile; its app gets the global actions again. Back to the global scope.

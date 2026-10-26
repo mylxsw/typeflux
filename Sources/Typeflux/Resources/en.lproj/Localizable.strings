@@ -6581,7 +6581,7 @@
 "ring.undo.addedApp" = "Added “%@”";
 "ring.undo.removedApp" = "Deleted the settings for “%@”";
 "ring.undo.copiedGlobal" = "Copied %d global actions";
-"ring.library.group.appKeys" = "%@ Shortcuts";
+"ring.library.group.appKeys" = "%@ Actions";
 "ring.appKeys.newTab" = "New Tab";
 "ring.appKeys.reopenTab" = "Reopen Closed Tab";
 "ring.appKeys.closeTab" = "Close Tab";
@@ -7444,3 +7444,19 @@
 "ask.plugin.files.content.searching" = "No filename matches. Searching file contents…";
 
 "ask.plugin.files.content.timeout" = "Content search timed out. Try again.";
+
+// App ring presets
+"ring.presets.available" = "Includes ready-to-use actions";
+"ring.presets.add" = "Add App Presets";
+"ring.presets.added" = "Added app presets";
+"ring.presets.hint" = "Uses the app’s default keyboard shortcuts. If you changed them, edit the shortcut on the ring.";
+"ring.appKeys.history" = "History";
+"ring.appKeys.bookmarks" = "Bookmarks";
+"ring.appKeys.readingList" = "Reading List";
+"ring.appKeys.rename" = "Rename";
+"ring.appKeys.quickLook" = "Quick Look";
+"ring.appKeys.copyPath" = "Copy Path";
+"ring.appKeys.newNote" = "New Note";
+"ring.appKeys.searchVault" = "Search Vault";
+"ring.appKeys.readingView" = "Toggle Reading View";
+"ring.appKeys.findInNote" = "Find in Note";

@@ -6581,7 +6581,7 @@
 "ring.undo.addedApp" = "已添加「%@」";
 "ring.undo.removedApp" = "已删除「%@」的设置";
 "ring.undo.copiedGlobal" = "已复制全局的 %d 个操作";
-"ring.library.group.appKeys" = "%@ 常用";
+"ring.library.group.appKeys" = "%@ 专属操作";
 "ring.appKeys.newTab" = "新建标签页";
 "ring.appKeys.reopenTab" = "重新打开标签页";
 "ring.appKeys.closeTab" = "关闭标签页";
@@ -7444,3 +7444,19 @@
 "ask.plugin.files.content.searching" = "没有匹配的文件名，正在搜索文件内容…";
 
 "ask.plugin.files.content.timeout" = "文件内容搜索超时，请重试。";
+
+// App ring presets
+"ring.presets.available" = "内置常用操作，选择即可使用";
+"ring.presets.add" = "补充应用预设操作";
+"ring.presets.added" = "已补充应用预设操作";
+"ring.presets.hint" = "使用应用的默认快捷键。如果你修改过快捷键，请在圆环中同步调整。";
+"ring.appKeys.history" = "浏览历史";
+"ring.appKeys.bookmarks" = "书签管理";
+"ring.appKeys.readingList" = "阅读列表";
+"ring.appKeys.rename" = "重命名";
+"ring.appKeys.quickLook" = "快速查看";
+"ring.appKeys.copyPath" = "复制路径";
+"ring.appKeys.newNote" = "新建笔记";
+"ring.appKeys.searchVault" = "搜索知识库";
+"ring.appKeys.readingView" = "切换阅读视图";
+"ring.appKeys.findInNote" = "笔记内查找";

@@ -406,3 +406,19 @@ extension RingSettingsViewTests {
         }
     }
 }
+
+extension RingSettingsViewTests {
+    @Test
+    func `app action library renders its entry and scoped search`() async throws {
+        let items = RingAppShortcutCatalog.items(for: "md.obsidian", appName: "Obsidian")
+        let library = RingActionLibrary(appShortcuts: items)
+        for (name, dedicated, query) in [("home", false, ""), ("actions", true, ""),
+                                         ("search", true, items[0].title), ("empty", true, "zzzz")] {
+            try await render(RingLibraryPanel(target: .insert(index: 1), actions: [items[0].action()],
+                                              library: library, isLoadingApps: false, preview: .constant(nil),
+                                              query: query, showingAppActions: dedicated),
+                             size: NSSize(width: 380, height: 520), name: "ring-app-library-" + name,
+                             light: !dedicated)
+        }
+    }
+}

@@ -43,16 +43,23 @@ enum RingAppShortcutCatalog {
             entry("showSidebar", 37, [.command, .shift], "sidebar.left"),
             entry("devTools", 34, [.command, .option], "chevron.left.forwardslash.chevron.right"),
             browserTabs[3],
-            browserTabs[4]
+            browserTabs[4],
+            entry("history", 16, .command, "clock"),
+            entry("readingList", 19, [.control, .command], "eyeglasses")
         ],
         "com.google.Chrome": [browserTabs[0], browserTabs[1], browserTabs[2],
                               entry("devTools", 34, [.command, .option], "chevron.left.forwardslash.chevron.right"),
-                              browserTabs[3], browserTabs[4]],
+                              browserTabs[3], browserTabs[4],
+                              entry("history", 16, .command, "clock"),
+                              entry("bookmarks", 11, [.command, .option], "bookmark")],
         "com.apple.finder": [entry("newWindow", 45, .command, "macwindow.badge.plus"),
                              entry("newFolder", 45, [.command, .shift], "folder.badge.plus"),
                              entry("goToFolder", 5, [.command, .shift], "arrow.right.square"),
                              entry("showHidden", 47, [.command, .shift], "eye"),
-                             entry("getInfo", 34, .command, "info.circle")],
+                             entry("getInfo", 34, .command, "info.circle"),
+                             entry("rename", 36, [], "pencil"),
+                             entry("quickLook", 49, [], "eye"),
+                             entry("copyPath", 8, [.command, .option], "link")],
         "com.apple.dt.Xcode": [entry("build", 11, .command, "hammer"), entry("run", 15, .command, "play"),
                                entry("stop", 47, .command, "stop"), entry("test", 32, .command, "checkmark.diamond"),
                                entry("openQuickly", 31, [.command, .shift], "magnifyingglass"),
@@ -77,9 +84,28 @@ enum RingAppShortcutCatalog {
             entry("newPage", 45, .command, "doc.badge.plus"),
             entry("toggleSidebar", 42, .command, "sidebar.left")
         ],
+        "md.obsidian": [entry("newNote", 45, .command, "square.and.pencil"),
+                        entry("quickSwitcher", 31, .command, "doc.text.magnifyingglass"),
+                        entry("commandPalette", 35, .command, "command"),
+                        entry("searchVault", 3, [.command, .shift], "magnifyingglass"),
+                        entry("readingView", 14, .command, "doc.plaintext"),
+                        entry("findInNote", 3, .command, "text.magnifyingglass")],
+        "com.todesktop.230313mzl4w4u92": [
+            entry("commandPalette", 35, [.command, .shift], "command"),
+            entry("quickOpen", 35, .command, "doc.text.magnifyingglass"),
+            entry("toggleTerminal", 50, .control, "terminal"),
+            entry("formatDocument", 3, [.option, .shift], "text.alignleft"),
+            entry("toggleComment", 44, .command, "text.quote"),
+            entry("findInFiles", 3, [.command, .shift], "magnifyingglass")
+        ],
         "com.apple.Terminal": [browserTabs[0], entry("clearScreen", 40, .command, "clear"),
                                entry("splitPane", 2, .command, "rectangle.split.2x1")]
     ]
+
+    /// A fresh, bounded starter set. Existing profiles are never silently reseeded.
+    static func defaultActions(for bundleIdentifier: String, appName: String) -> [RingAction] {
+        items(for: bundleIdentifier, appName: appName).prefix(RingConfiguration.maxActions).map { $0.action() }
+    }
 
     /// Library items for `bundleIdentifier`, listed under "<app> shortcuts". Empty for unknown apps.
     static func items(for bundleIdentifier: String?, appName: String) -> [RingLibraryItem] {

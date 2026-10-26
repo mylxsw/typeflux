@@ -13,6 +13,7 @@ struct RingLibraryPanel: View {
     var onClose: (() -> Void)?
     var onOpenType: (RingActionType) -> Void = { _ in }
 
+    @State private var showingAppActions = false
     @State private var category: RingActionType?
     @State private var query: String
     @State private var highlight: RingLibraryHighlight?
@@ -25,12 +26,14 @@ struct RingLibraryPanel: View {
     /// `category`, `query` and `url` open the panel part-way through, as when it is restored.
     init(target: RingLibraryTarget, actions: [RingAction], library: RingActionLibrary, isLoadingApps: Bool,
          preview: Binding<RingLibraryItem?>, category: RingActionType? = nil, query: String = "", url: String = "",
+         showingAppActions: Bool = false,
          onPick: @escaping (RingLibraryItem) -> Void = { _ in }, onClose: (() -> Void)? = nil,
          onOpenType: @escaping (RingActionType) -> Void = { _ in }) {
         self.target = target
         self.actions = actions
         self.library = library
         self.isLoadingApps = isLoadingApps
+        _showingAppActions = State(initialValue: showingAppActions)
         _preview = preview
         _category = State(initialValue: category)
         _query = State(initialValue: query)
@@ -41,6 +44,9 @@ struct RingLibraryPanel: View {
     }
 
     private var visibleItems: [RingLibraryItem] {
+        if showingAppActions {
+            return library.appItems(matching: query)
+        }
         if let category {
             return category == .url ? [] : library.items(of: category, matching: query)
         }
@@ -89,43 +95,83 @@ struct RingLibraryPanel: View {
         case .insert: L("ring.actions.add")
         case let .replace(id): L("ring.library.replace", actions.first { $0.id == id }?.title ?? "")
         }
-        return RingInspectorHeader(backTitle: category == nil ? nil : L("ring.library.allTypes"),
-                                   onBack: category == nil ? nil : { category = nil },
-                                   title: category?.title ?? title,
+        let isHome = category == nil && !showingAppActions
+        return RingInspectorHeader(backTitle: isHome ? nil : L("ring.library.allTypes"),
+                                   onBack: isHome ? nil : {
+                                       category = nil
+                                       showingAppActions = false
+                                       query = ""
+                                       highlight = nil
+                                       preview = nil
+                                   },
+                                   title: showingAppActions ? (library.appShortcuts.first?.group ?? title) : category?
+                                       .title ?? title,
                                    onClose: actions.isEmpty ? nil : onClose)
     }
 
     // MARK: - Content
 
     @ViewBuilder private var content: some View {
-        switch category {
-        case nil:
-            if TFSearchMatcher.normalized(query).isEmpty {
-                home
-            } else if visibleItems.isEmpty {
+        if showingAppActions {
+            Text(L("ring.presets.hint")).font(.system(size: 11.5))
+                .foregroundStyle(TFColors.textSecondary).padding(.vertical, 8)
+            if visibleItems.isEmpty {
                 emptyResult(L("ring.library.noResults"))
             } else {
-                itemList(visibleItems, grouped: true)
+                itemList(visibleItems, grouped: false)
             }
-        case .keys?:
-            keysForm
-        case .url?:
-            urlForm
-        case let type?:
-            if type == .app, isLoadingApps, library.apps.isEmpty {
-                emptyResult(L("ring.editor.loadingApps"))
-            } else if visibleItems.isEmpty {
-                emptyResult(L("ring.library.noResults"))
-            } else {
-                itemList(visibleItems, grouped: true)
-            }
-            if type == .folder {
-                chooseFolderRow.padding(.top, 4)
+        } else {
+            switch category {
+            case nil:
+                if TFSearchMatcher.normalized(query).isEmpty {
+                    home
+                } else if visibleItems.isEmpty {
+                    emptyResult(L("ring.library.noResults"))
+                } else {
+                    itemList(visibleItems, grouped: true)
+                }
+            case .keys?:
+                keysForm
+            case .url?:
+                urlForm
+            case let type?:
+                if type == .app, isLoadingApps, library.apps.isEmpty {
+                    emptyResult(L("ring.editor.loadingApps"))
+                } else if visibleItems.isEmpty {
+                    emptyResult(L("ring.library.noResults"))
+                } else {
+                    itemList(visibleItems, grouped: true)
+                }
+                if type == .folder {
+                    chooseFolderRow.padding(.top, 4)
+                }
             }
         }
     }
 
     @ViewBuilder private var home: some View {
+        if let group = library.appShortcuts.first?.group {
+            Button {
+                showingAppActions = true
+                query = ""
+                highlight = nil
+                preview = nil
+            } label: {
+                HStack {
+                    Label(group, systemImage: "square.stack.3d.up")
+                    Spacer()
+                    Text("\(library.appShortcuts.count)")
+                    Image(systemName: "chevron.right")
+                }
+                .font(.system(size: 12.5, weight: .medium))
+                .foregroundStyle(TFColors.accent).padding(12)
+                .frame(maxWidth: .infinity)
+                .background(RoundedRectangle(cornerRadius: 10).fill(TFColors.selection))
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("ring.library.appActions")
+            .padding(.vertical, 8)
+        }
         let recommended = visibleItems
         if !recommended.isEmpty {
             RingLibraryChips(items: recommended, highlighted: highlighted, onHover: hover, onPick: onPick)

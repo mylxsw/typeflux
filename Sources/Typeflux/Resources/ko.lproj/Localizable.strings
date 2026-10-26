@@ -6582,7 +6582,7 @@
 "ring.undo.addedApp" = "“%@” 추가됨";
 "ring.undo.removedApp" = "“%@” 설정 삭제됨";
 "ring.undo.copiedGlobal" = "전체 동작 %d개 복사됨";
-"ring.library.group.appKeys" = "%@ 단축키";
+"ring.library.group.appKeys" = "%@ 동작";
 "ring.appKeys.newTab" = "새 탭";
 "ring.appKeys.reopenTab" = "닫은 탭 다시 열기";
 "ring.appKeys.closeTab" = "탭 닫기";
@@ -7443,3 +7443,19 @@
 "ask.plugin.files.content.searching" = "일치하는 파일 이름이 없습니다. 파일 내용 검색 중…";
 
 "ask.plugin.files.content.timeout" = "파일 내용 검색 시간이 초과되었습니다. 다시 시도하세요.";
+
+// App ring presets
+"ring.presets.available" = "바로 사용할 수 있는 동작 포함";
+"ring.presets.add" = "앱 기본 동작 추가";
+"ring.presets.added" = "앱 기본 동작을 추가했습니다";
+"ring.presets.hint" = "앱의 기본 단축키를 사용합니다. 단축키를 변경했다면 링에서도 수정하세요.";
+"ring.appKeys.history" = "방문 기록";
+"ring.appKeys.bookmarks" = "북마크";
+"ring.appKeys.readingList" = "읽기 목록";
+"ring.appKeys.rename" = "이름 변경";
+"ring.appKeys.quickLook" = "훑어보기";
+"ring.appKeys.copyPath" = "경로 복사";
+"ring.appKeys.newNote" = "새 노트";
+"ring.appKeys.searchVault" = "보관함 검색";
+"ring.appKeys.readingView" = "읽기 보기 전환";
+"ring.appKeys.findInNote" = "노트에서 찾기";

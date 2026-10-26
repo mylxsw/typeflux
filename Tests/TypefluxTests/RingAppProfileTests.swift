@@ -300,3 +300,71 @@ extension RingAppProfileTests {
             === RingAppIcon.image(bundleIdentifier: "com.example.not-installed"), "cached")
     }
 }
+
+extension RingAppProfileTests {
+    func testPresetCreationIsBoundedPersistedAndDoesNotOverwriteExistingProfile() throws {
+        let model = RingSettingsModel(settingsStore: store)
+        let global = model.actions
+        let id = model.addProfile(bundleIdentifier: "com.apple.Safari", appName: "Safari", usePreset: true)
+        XCTAssertEqual(model.actions.count, RingConfiguration.maxActions)
+        XCTAssertEqual(model.actions.map(\.kind.pickerKey), RingAppShortcutCatalog.defaultActions(
+            for: "com.apple.Safari", appName: "Safari"
+        ).map(\.kind.pickerKey))
+        XCTAssertEqual(store.ringConfiguration.appProfiles.first?.actions, model.actions)
+        let first = try XCTUnwrap(model.actions.first)
+        model.edit(first.id) { $0.title = "Custom" }
+        XCTAssertEqual(model.addProfile(bundleIdentifier: "com.apple.Safari", appName: "Safari", usePreset: true), id)
+        XCTAssertEqual(model.actions.first?.title, "Custom")
+        XCTAssertEqual(store.ringConfiguration.actions, global)
+        model.undo()
+        XCTAssertTrue(model.configuration.appProfiles.isEmpty)
+        model.addProfile(bundleIdentifier: "unknown", appName: "Unknown", usePreset: true)
+        XCTAssertTrue(model.actions.isEmpty)
+    }
+
+    func testFillPresetsPreservesCustomActionsSkipsDuplicatesAndCanUndo() {
+        let model = RingSettingsModel(settingsStore: store)
+        model.addProfile(bundleIdentifier: "md.obsidian", appName: "Obsidian")
+        let preset = RingAppShortcutCatalog.defaultActions(for: "md.obsidian", appName: "Obsidian")[0]
+        model.insert(preset, at: 0)
+        model.insert(.feature(.notes), at: 1)
+        let original = model.actions
+        model.addAppPresets()
+        XCTAssertEqual(Array(model.actions.prefix(2)), original)
+        XCTAssertEqual(model.actions.count, 7)
+        XCTAssertEqual(Set(model.actions.map(\.kind.pickerKey)).count, 7)
+        let filled = model.actions
+        model.addAppPresets()
+        XCTAssertEqual(model.actions, filled)
+        model.undo()
+        XCTAssertEqual(model.actions, original)
+        model.select(.global)
+        let global = model.actions
+        model.addAppPresets()
+        XCTAssertEqual(model.actions, global)
+    }
+
+    func testBrowserHistoryUsesCommandYInsteadOfHidingTheApp() throws {
+        for bundle in ["com.apple.Safari", "com.google.Chrome"] {
+            let history = try XCTUnwrap(RingAppShortcutCatalog.entries[bundle]?.first { $0.name == "history" })
+            XCTAssertEqual(history.keyCode, 16)
+            XCTAssertEqual(history.modifiers, .command)
+        }
+    }
+
+    func testAllAppPresetsHaveUniqueActionsAndDedicatedSearchIsScoped() {
+        for bundle in RingAppShortcutCatalog.entries.keys {
+            let items = RingAppShortcutCatalog.items(for: bundle, appName: bundle)
+            XCTAssertEqual(Set(items.map(\.id)).count, items.count, bundle)
+            let defaults = RingAppShortcutCatalog.defaultActions(for: bundle, appName: bundle)
+            XCTAssertFalse(defaults.isEmpty)
+            XCTAssertLessThanOrEqual(defaults.count, RingConfiguration.maxActions)
+            XCTAssertEqual(Set(defaults.map(\.id)).count, defaults.count)
+            let library = RingActionLibrary(appShortcuts: items)
+            XCTAssertEqual(library.appItems(matching: ""), items)
+            XCTAssertTrue(library.appItems(matching: "no-such-action-123").isEmpty)
+            XCTAssertTrue(library.appItems(matching: items[0].title).contains(items[0]))
+        }
+        XCTAssertTrue(RingActionLibrary().appItems(matching: "").isEmpty)
+    }
+}

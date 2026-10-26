@@ -75,6 +75,11 @@ struct RingActionLibrary {
     /// before the common keys and suggested first.
     var appShortcuts: [RingLibraryItem] = []
 
+    /// Only the selected application's own actions, independent of the shared library.
+    func appItems(matching query: String) -> [RingLibraryItem] {
+        appShortcuts.filter { TFSearchMatcher.matches(query, $0.title, $0.subtitle) }
+    }
+
     // MARK: - Browsing
 
     func items(of type: RingActionType) -> [RingLibraryItem] {

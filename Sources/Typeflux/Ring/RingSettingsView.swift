@@ -153,6 +153,10 @@ struct RingSettingsView: View {
                     model.copyGlobalActions(into: profile.id)
                     studio.show(.overview)
                 },
+                onAddPresets: {
+                    model.addAppPresets()
+                    studio.show(.overview)
+                },
                 onDelete: {
                     guard let profile = model.profile else { return }
                     model.removeProfile(profile.id)
@@ -206,6 +210,7 @@ struct RingSettingsView: View {
                                  }
                              })
                              .id(target)
+                             .id(model.scope)
                              .task {
                                  loadShortcuts()
                                  loadApps()
@@ -343,7 +348,7 @@ extension RingSettingsView {
     private func addProfile(bundleIdentifier: String, name: String) {
         isPreviewingGlobal = false
         studio.isTrying = false
-        model.addProfile(bundleIdentifier: bundleIdentifier, appName: name)
+        model.addProfile(bundleIdentifier: bundleIdentifier, appName: name, usePreset: true)
         openLibraryIfEmpty()
     }
 

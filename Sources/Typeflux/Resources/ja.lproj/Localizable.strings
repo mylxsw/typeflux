@@ -6582,7 +6582,7 @@
 "ring.undo.addedApp" = "「%@」を追加しました";
 "ring.undo.removedApp" = "「%@」の設定を削除しました";
 "ring.undo.copiedGlobal" = "グローバルの操作を %d 個コピーしました";
-"ring.library.group.appKeys" = "%@ のショートカット";
+"ring.library.group.appKeys" = "%@ の操作";
 "ring.appKeys.newTab" = "新規タブ";
 "ring.appKeys.reopenTab" = "閉じたタブを再度開く";
 "ring.appKeys.closeTab" = "タブを閉じる";
@@ -7443,3 +7443,19 @@
 "ask.plugin.files.content.searching" = "ファイル名に一致する結果がありません。内容を検索中…";
 
 "ask.plugin.files.content.timeout" = "ファイル内容の検索がタイムアウトしました。再試行してください。";
+
+// App ring presets
+"ring.presets.available" = "すぐに使える操作を内蔵";
+"ring.presets.add" = "アプリのプリセット操作を追加";
+"ring.presets.added" = "アプリのプリセット操作を追加しました";
+"ring.presets.hint" = "アプリの既定のショートカットを使います。変更した場合は円形メニューでも編集してください。";
+"ring.appKeys.history" = "履歴";
+"ring.appKeys.bookmarks" = "ブックマーク";
+"ring.appKeys.readingList" = "リーディングリスト";
+"ring.appKeys.rename" = "名前を変更";
+"ring.appKeys.quickLook" = "クイックルック";
+"ring.appKeys.copyPath" = "パスをコピー";
+"ring.appKeys.newNote" = "新規ノート";
+"ring.appKeys.searchVault" = "保管庫を検索";
+"ring.appKeys.readingView" = "閲覧ビューを切り替え";
+"ring.appKeys.findInNote" = "ノート内を検索";
