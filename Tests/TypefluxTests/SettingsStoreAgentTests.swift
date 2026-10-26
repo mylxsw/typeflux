@@ -24,13 +24,18 @@ final class SettingsStoreAgentTests: XCTestCase {
     // MARK: - mcpServers
 
     func testAgentStepLimitDefaultsPersistsAndClamps() {
-        XCTAssertEqual(store.askAgentMaxSteps, 100)
+        XCTAssertEqual(store.askAgentMaxSteps, 200)
         store.askAgentMaxSteps = 200
         XCTAssertEqual(SettingsStore(defaults: defaults).askAgentMaxSteps, 200)
+        store.askAgentMaxSteps = 1001
+        XCTAssertEqual(store.askAgentMaxSteps, 1000)
+        XCTAssertTrue(SettingsStore.askAgentMaxStepOptions.contains(1000))
         store.askAgentMaxSteps = 700
-        XCTAssertEqual(store.askAgentMaxSteps, 500)
-        defaults.set(-1, forKey: "ask.agentMaxSteps")
+        XCTAssertEqual(SettingsStore(defaults: defaults).askAgentMaxSteps, 700)
+        store.askAgentMaxSteps = 100
         XCTAssertEqual(store.askAgentMaxSteps, 100)
+        defaults.set(-1, forKey: "ask.agentMaxSteps")
+        XCTAssertEqual(store.askAgentMaxSteps, 200)
     }
 
     func testMCPServersDefaultsToEmptyArray() {

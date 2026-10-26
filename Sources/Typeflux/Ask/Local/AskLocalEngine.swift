@@ -32,7 +32,7 @@ struct AskLocalRecord: Codable, Equatable, Sendable {
 /// knows how to run, device tools use the usual approval flow, and conversations
 /// are stored as JSON files under Application Support.
 actor AskLocalEngine: AskAPI, AskRunRouteAccess {
-    static let maxSteps = 100
+    static let maxSteps = 200
     static let maxMessages = 500
     static let maxToolCalls = 8
     static let maxBuiltinCalls = 16
@@ -592,7 +592,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
 
     static func configuredMaxSteps(_ requested: Int?) throws -> Int {
         guard let requested else { return maxSteps }
-        guard (10 ... 500).contains(requested) else { throw AskLocalError.message(L("ask.steps.invalid")) }
+        guard (10 ... 1000).contains(requested) else { throw AskLocalError.message(L("ask.steps.invalid")) }
         return requested
     }
 

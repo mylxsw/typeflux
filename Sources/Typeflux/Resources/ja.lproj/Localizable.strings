@@ -2306,7 +2306,7 @@
 "ask.steps.section" = "Agent の実行";
 "ask.steps.limit" = "最大実行ステップ数";
 "ask.steps.detail" = "1 回の実行で許可するモデル応答の回数";
-"ask.steps.invalid" = "ステップ数は 10～500 の間で選択してください。";
+"ask.steps.invalid" = "ステップ数は 10～1000 の間で選択してください。";
 "ask.temporary.settings.confirm" = "一時的な会話を離れる前に確認";
 "ask.temporary.settings.confirm.subtitle" = "内容のある一時的な会話を、別の会話の作成や表示で終了する前に確認します";
 "ask.command.temporary" = "一時的な会話";

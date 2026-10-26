@@ -2313,7 +2313,7 @@
 "ask.steps.section" = "Agent 執行";
 "ask.steps.limit" = "最大執行步數";
 "ask.steps.detail" = "單次執行最多允許的模型回覆次數";
-"ask.steps.invalid" = "請選擇 10 到 500 之間的步數。";
+"ask.steps.invalid" = "請選擇 10 到 1000 之間的步數。";
 "ask.temporary.settings.confirm" = "離開臨時對話前確認";
 "ask.temporary.settings.confirm.subtitle" = "臨時對話裡有內容時，新增或開啟其他對話前先詢問";
 "ask.command.temporary" = "臨時對話";

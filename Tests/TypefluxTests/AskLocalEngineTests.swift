@@ -369,7 +369,7 @@ final class AskLocalEngineTests: XCTestCase {
         let engine = engine()
         var c = try await engine.send(conversationId: "loop", request: request(), token: "")
         var limitSeen = false
-        XCTAssertEqual(AskLocalEngine.maxSteps, 100)
+        XCTAssertEqual(AskLocalEngine.maxSteps, 200)
         for index in 0 ..< AskLocalEngine.maxSteps {
             while c.run?.inference?.summaryThrough != nil {
                 c = try await answer(engine, c, content: "The plan is in progress. Preserve confirmed tool outcomes and continue.")
@@ -398,15 +398,15 @@ final class AskLocalEngineTests: XCTestCase {
         XCTAssertEqual(c.run?.maxSteps, 200)
         c = try await answer(engine, c, content: "Partial", finish: "length")
         c = try await engine.retry(conversationId: c.id, runId: c.run!.id, deviceId: device,
-                                   modelRef: nil, maxSteps: 500, token: "")
-        XCTAssertEqual(c.run?.maxSteps, 500)
+                                   modelRef: nil, maxSteps: 1000, token: "")
+        XCTAssertEqual(c.run?.maxSteps, 1000)
         c = try await answer(engine, c, content: "Done")
         let reply = try XCTUnwrap(c.messages.last?.id)
         c = try await engine.regenerate(conversationId: c.id,
                                         request: AskRegenerateRequest(maxSteps: 50, messageId: reply, deviceId: device), token: "")
         XCTAssertEqual(c.run?.maxSteps, 50)
         var invalid = request()
-        invalid.maxSteps = 501
+        invalid.maxSteps = 1001
         await assertThrows(L("ask.steps.invalid")) {
             _ = try await engine.send(conversationId: "invalid-limit", request: invalid, token: "")
         }

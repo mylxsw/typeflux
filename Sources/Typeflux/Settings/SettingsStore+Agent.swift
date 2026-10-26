@@ -1,16 +1,16 @@
 import Foundation
 
 extension SettingsStore {
-    static let defaultAskAgentMaxSteps = 100
-    static let askAgentMaxStepOptions = [50, 100, 200, 500]
+    static let defaultAskAgentMaxSteps = 200
+    static let askAgentMaxStepOptions = [50, 100, 200, 500, 1000]
 
     /// Maximum model replies in each new Ask run. The server applies its own bound.
     var askAgentMaxSteps: Int {
         get {
             let value = defaults.integer(forKey: "ask.agentMaxSteps")
-            return (10 ... 500).contains(value) ? value : Self.defaultAskAgentMaxSteps
+            return (10 ... 1000).contains(value) ? value : Self.defaultAskAgentMaxSteps
         }
-        set { defaults.set(min(max(newValue, 10), 500), forKey: "ask.agentMaxSteps") }
+        set { defaults.set(min(max(newValue, 10), 1000), forKey: "ask.agentMaxSteps") }
     }
 
     var mcpServers: [MCPServerConfig] {

@@ -2316,7 +2316,7 @@
 "ask.steps.section" = "Agent runs";
 "ask.steps.limit" = "Maximum execution steps";
 "ask.steps.detail" = "Model replies allowed in one run";
-"ask.steps.invalid" = "Choose a step limit between 10 and 500.";
+"ask.steps.invalid" = "Choose a step limit between 10 and 1000.";
 "ask.temporary.settings.confirm" = "Confirm before leaving a temporary chat";
 "ask.temporary.settings.confirm.subtitle" = "Ask before a temporary chat with messages is ended by starting or opening another conversation";
 "ask.command.temporary" = "Temporary chat";

@@ -2306,7 +2306,7 @@
 "ask.steps.section" = "Agent 실행";
 "ask.steps.limit" = "최대 실행 단계";
 "ask.steps.detail" = "한 번의 실행에서 허용하는 모델 응답 횟수";
-"ask.steps.invalid" = "단계 수는 10에서 500 사이로 선택하세요.";
+"ask.steps.invalid" = "단계 수는 10에서 1000 사이로 선택하세요.";
 "ask.temporary.settings.confirm" = "임시 대화를 떠나기 전에 확인";
 "ask.temporary.settings.confirm.subtitle" = "내용이 있는 임시 대화를 다른 대화를 만들거나 열어 끝내기 전에 묻습니다";
 "ask.command.temporary" = "임시 대화";
