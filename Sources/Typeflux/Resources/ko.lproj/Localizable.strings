@@ -7488,3 +7488,5 @@
 "ask.progress.blocked" = "일시 중지: 작업 진행 불가";
 "ask.progress.checkpointFailed" = "진행 상황 확인 시 계획이 갱신되지 않아 추가 작업 없이 일시 중지했습니다. 기존 작업은 보존됩니다. 미완료 계획을 확인한 후 계속하세요.";
 "ask.progress.denied" = "작업이 거부되었습니다. 미완료 작업은 보존되며 승인을 자동으로 다시 요청하지 않았습니다.";
+
+"ask.home.notes" = "노트";

@@ -29,7 +29,7 @@ struct AskApplicationGridTests {
         let items = AskLauncherHome.items(home)
         #expect(AskLauncherHome.move(1, by: 1, in: items) == 7)
         #expect(AskLauncherHome.move(7, by: -1, in: items, horizontal: true) == 6)
-        #expect(AskLauncherSuggestions.height(for: home) == 13 + 34 + AskApplicationGrid.height(count: 14))
+        #expect(AskLauncherSuggestions.height(for: home) == 13 + 106 + 34 + AskApplicationGrid.height(count: 14))
         var results = AskQuickResults(apps: apps, lead: true)
         let itemsInSearch = AskQuickResultsView.listItems(for: results)
         #expect(itemsInSearch.map(\.index) == Array(0..<14))

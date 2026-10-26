@@ -7491,3 +7491,5 @@
 "ask.progress.blocked" = "已暫停：任務受阻";
 "ask.progress.checkpointFailed" = "Agent 未能在進度檢查點核對計畫，本輪已暫停，未執行後續操作。已有工作保留，請查看待辦計畫後繼續。";
 "ask.progress.denied" = "操作已被拒絕。未完成的工作已保留，沒有自動再次請求授權。";
+
+"ask.home.notes" = "筆記";

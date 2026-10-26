@@ -73,6 +73,8 @@ struct AskLauncherSuggestions: View {
         guard !sections.isEmpty else { return 0 }
         let content = sections.reduce(CGFloat(0)) { total, section in
             switch section {
+            case let .features(rows):
+                return total + AskApplicationGrid.height(count: rows.count)
             case let .applications(rows):
                 return total + headerHeight + AskApplicationGrid.height(count: rows.count)
             case let .context(_, _, rows), let .recent(rows):
@@ -192,6 +194,18 @@ struct AskLauncherSuggestions: View {
         case let .recent(rows):
             header(L("ask.home.section.recent"), subtitle: nil)
             rowList(rows, items: items, numbers: numbers, current: current)
+        case let .features(rows):
+            LazyVGrid(columns: AskApplicationGrid.tracks, spacing: AskApplicationGrid.spacing) {
+                ForEach(rows) { row in
+                    AskLauncherFeatureTile(row: row, selected: row.id == current) { onPick(.row(row)) }
+                        .id(row.id)
+                        .modifier(AskLauncherNumberBadge(number: numbers[row.id]))
+                        .onContinuousHover { phase in
+                            if case .active = phase, pointer.moved(to: NSEvent.mouseLocation),
+                               let index = items.firstIndex(of: .row(row)) { highlighted = index }
+                        }
+                }
+            }
         case let .applications(rows):
             header(L("ask.home.section.apps"), subtitle: nil)
             LazyVGrid(columns: AskApplicationGrid.tracks, spacing: AskApplicationGrid.spacing) {

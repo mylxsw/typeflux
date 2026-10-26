@@ -7492,3 +7492,5 @@
 
 "screenshot.toast.recordingBusy" = "Close recording setup or stop recording before taking a screenshot.";
 "screenshot.toast.captureTimedOut" = "The screen capture service took too long. This screenshot was cancelled. Please try again shortly.";
+
+"ask.home.notes" = "Notes";

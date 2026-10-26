@@ -45,6 +45,7 @@ enum AskLauncherHome {
         case context(title: String, subtitle: String?, rows: [Row])
         case recent(rows: [Row])
         case applications(rows: [Row])
+        case features(rows: [Row])
         /// `teaching` indicates a fallback list without any recorded keyword use.
         case keywords(chips: [Chip], teaching: Bool)
     }
@@ -83,7 +84,32 @@ enum AskLauncherHome {
             Row(id: "application." + $0.id, title: $0.name, symbol: "app", tint: .neutral,
                 action: .application($0))
         }
-        return apps.isEmpty ? [] : [.applications(rows: apps)]
+        return apps.isEmpty ? [] : [.features(rows: featureRows), .applications(rows: apps)]
+    }
+
+    /// Fixed destinations are independent of keyword usage and custom aliases.
+    static var featureRows: [Row] {
+        let definitions: [(String, String, String, Tint, AskKeyword)] = [
+            ("chat", "Chat", "bubble.left.and.bubble.right", .accent,
+             AskKeyword(keyword: "chat", pluginID: AskOpenChatPlugin.id)),
+            ("translate", L("ask.plugin.translate.title"), "character.bubble", .purple,
+             AskKeyword(keyword: "fy", pluginID: AskTranslatePlugin.id)),
+            ("screenshot", L("screenshot.title"), "viewfinder", .accent,
+             AskKeyword(keyword: "jt", pluginID: AskScreenshotPlugin.id,
+                        options: [ScreenshotMode.option: ScreenshotMode.region.rawValue])),
+            ("recording", L("recording.title"), "record.circle", .orange,
+             AskKeyword(keyword: "lp", pluginID: AskScreenshotPlugin.id,
+                        options: [ScreenshotMode.option: ScreenshotMode.recording.rawValue])),
+            ("notes", L("ask.home.notes"), "note.text", .orange,
+             AskKeyword(keyword: "notebook", pluginID: AskNotesPlugin.id,
+                        options: [AskNotesPlugin.windowOption: "true"])),
+            ("wordbook", L("ask.wordBook.title"), "character.book.closed", .green,
+             AskKeyword(keyword: "dict", pluginID: AskTranslatePlugin.id,
+                        options: [AskTranslatePlugin.actionOption: AskTranslatePlugin.wordBookAction]))
+        ]
+        return definitions.map { id, title, symbol, tint, keyword in
+            Row(id: "feature." + id, title: title, symbol: symbol, tint: tint, action: .keyword(keyword))
+        }
     }
 
     // MARK: - Keywords
@@ -132,7 +158,7 @@ extension AskLauncherHome {
     static func items(_ sections: [Section]) -> [Item] {
         sections.flatMap { section -> [Item] in
             switch section {
-            case let .context(_, _, rows), let .recent(rows), let .applications(rows): return rows.map(Item.row)
+            case let .context(_, _, rows), let .recent(rows), let .applications(rows), let .features(rows): return rows.map(Item.row)
             case let .keywords(chips, _): return chips.map(Item.chip)
             }
         }
@@ -148,7 +174,11 @@ extension AskLauncherHome {
     static func move(_ index: Int, by delta: Int, in items: [Item], horizontal: Bool = false) -> Int {
         guard !items.isEmpty else { return 0 }
         let current = min(max(index, 0), items.count - 1)
-        if items.allSatisfy({ if case let .row(row) = $0, case .application = row.action { true } else { false } }) {
+        if items.allSatisfy({ item in
+            guard case let .row(row) = item else { return false }
+            if case .application = row.action { return true }
+            return row.id.hasPrefix("feature.")
+        }) {
             return AskApplicationGrid.move(index, delta: delta, count: items.count, horizontal: horizontal)
         }
         let chips = items.indices.filter { if case .chip = items[$0] { true } else { false } }

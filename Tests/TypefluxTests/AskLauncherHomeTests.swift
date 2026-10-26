@@ -99,19 +99,58 @@ struct AskLauncherHomeTests {
         var input = context(conversations: [conversation("a", ago: 60), conversation("b", ago: 120), conversation("c", ago: 180)])
         input.applications = (0 ..< 20).map { AskTestAppIndex.app("App \($0)", id: "test.app.\($0)") }
         let sections = Home.build(input)
-        guard case let .applications(apps) = sections.first, sections.count == 1 else {
-            Issue.record("Only the application list should appear on the home screen")
+        guard case let .applications(apps) = sections.last, sections.count == 2 else {
+            Issue.record("Features should appear above the application list")
             return
         }
         #expect(apps.count == input.applications.count)
         #expect(apps.first?.action == .application(input.applications[0]))
         #expect(apps.last?.action == .application(input.applications[19]))
-        #expect(Home.items(sections).count == 20)
+        #expect(Home.items(sections).count == 26)
         #expect(Home.numberedRows(sections).count == 9)
         #expect(AskLauncherSuggestions.height(for: sections) > 480)
         #expect(AskLauncherSuggestions.visibleHeight(for: sections, maximum: 480) == 480)
         #expect(AskLauncherSuggestions.visibleHeight(for: sections, maximum: 0) == 0)
         #expect(Home.move(8, by: 1, in: Home.items(sections)) == 14)
+    }
+
+    @Test func fixedFeaturesPrecedeAppsAndRouteToBuiltInDestinations() throws {
+        let f = try AskTestFixture()
+        defer { f.model.resetSession() }
+        var input = context(keywords: [])
+        input.applications = [AskTestAppIndex.app("Notes")]
+        let sections = Home.build(input)
+        guard case let .features(rows) = sections.first else {
+            Issue.record("The built-in feature row must be first")
+            return
+        }
+        #expect(rows.map(\.id) == ["feature.chat", "feature.translate", "feature.screenshot",
+                                      "feature.recording", "feature.notes", "feature.wordbook"])
+        #expect(rows.first?.title == "Chat")
+        let keywords = try rows.map { row in
+            guard case let .keyword(keyword) = row.action else {
+                throw NSError(domain: "Expected keyword action", code: 1)
+            }
+            return keyword
+        }
+        #expect(f.model.launcherImmediateAction(keywords[0])?.kind == .openChat)
+        #expect(f.model.launcherImmediateAction(keywords[1]) == nil)
+        #expect(f.model.launcherImmediateAction(keywords[2])?.kind == .capture(mode: .region, followUp: .none))
+        #expect(f.model.launcherImmediateAction(keywords[3])?.kind == .capture(mode: .recording, followUp: .none))
+        #expect(f.model.launcherImmediateAction(keywords[4])?.kind == .openNotes(id: nil))
+        #expect(f.model.launcherImmediateAction(keywords[5])?.kind == .openWordBook(key: nil))
+        let items = Home.items(sections)
+        #expect(Home.move(0, by: 1, in: items) == 6)
+        #expect(Home.move(6, by: -1, in: items) == 0)
+        #expect(Home.move(0, by: 1, in: items, horizontal: true) == 1)
+        #expect(Home.numberedRows(sections).prefix(6).map(\.id) == rows.map(\.id))
+        for selected in [false, true] {
+            for row in rows {
+                let renderer = ImageRenderer(content: AskLauncherFeatureTile(row: row, selected: selected, action: {})
+                    .frame(width: 110))
+                #expect(renderer.nsImage != nil)
+            }
+        }
     }
 
     // MARK: - Navigation

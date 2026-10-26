@@ -74,6 +74,8 @@ struct AskLauncherImmediateActivationTests {
         for keyword in fixture.model.plugins.availableKeywords {
             let immediate = [AskOpenChatPlugin.id, AskSettingsPlugin.id, AskHelpPlugin.id].contains(keyword.pluginID)
                 || AskScreenshotPlugin.startsCapture(keyword) || AskSystemCommand(pluginID: keyword.pluginID) != nil
+                || AskNotesPlugin.opensWindow(keyword)
+                || (keyword.pluginID == AskTranslatePlugin.id && AskTranslatePlugin.opensWordBook(keyword.options))
             #expect((fixture.model.launcherImmediateAction(keyword) != nil) == immediate)
         }
     }

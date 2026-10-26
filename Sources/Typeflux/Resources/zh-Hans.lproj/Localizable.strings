@@ -7492,3 +7492,5 @@
 
 "screenshot.toast.recordingBusy" = "请先关闭录屏设置或停止录屏，再进行截图。";
 "screenshot.toast.captureTimedOut" = "系统截图服务响应超时，已取消本次截图，请稍后重试。";
+
+"ask.home.notes" = "笔记";
