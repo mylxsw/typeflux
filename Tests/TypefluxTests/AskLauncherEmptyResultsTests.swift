@@ -90,6 +90,45 @@ struct AskLauncherEmptyResultsTests {
         #expect(hasCanvas(), "Typing must not hide an already visible canvas")
     }
 
+    @Test func pendingSearchKeepsOrbAndDestinationPositions() async throws {
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore() }
+        let destination = AskLauncherNoMatch.Destination(
+            keyword: AskKeyword(keyword: "f", pluginID: AskFileSearchPlugin.id),
+            title: "Search in files", detail: "f query", symbol: "doc.text.magnifyingglass")
+        func content(_ query: String, searched: Bool) -> some View {
+            AskLauncherNoMatchView(query: query, searched: searched, destinations: [destination],
+                                  highlighted: .constant(nil), viewportHeight: 500,
+                                  onAskAI: {}, onPick: { _ in })
+                .frame(width: 700, height: 500)
+        }
+        let host = NSHostingView(rootView: content("initial question", searched: true))
+        let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 700, height: 500),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        defer { window.close() }
+        func positions() throws -> [NSRect] {
+            host.layoutSubtreeIfNeeded()
+            let title = try #require(SettingsBehaviorTestSupport.elements(in: window).first {
+                $0.value("accessibilityIdentifier") as? String == "ask.launcher.empty.title"
+            })
+            let button = try SettingsBehaviorTestSupport.button("Search in files", in: window)
+            #expect(title.frame.height > 0)
+            #expect(button.frame.height > 0)
+            return [title.frame, button.frame]
+        }
+        try await Task.sleep(for: .milliseconds(50))
+        let original = try positions()
+        // Append, delete, and settle: none may shift the visible canvas.
+        for (query, searched) in [("initial question more", false), ("initial", false),
+                                  ("initial", true), (String(repeating: "long ", count: 40), false)] {
+            host.rootView = content(query, searched: searched)
+            try await Task.sleep(for: .milliseconds(50))
+            #expect(try positions() == original)
+        }
+    }
+
     // MARK: - Subject
 
     @Test func theSubjectFollowsWhatRidesWithTheQuestion() {

@@ -38,15 +38,17 @@ struct AskLauncherNoMatchView: View {
                 .onContinuousHover { phase in
                     if case .active = phase, pointer.moved(to: NSEvent.mouseLocation) { highlighted = nil }
                 }
-            if searched {
-                Text(L("ask.launcher.noMatch.message", query))
-                    .font(.system(size: 12))
-                    .foregroundStyle(AskTheme.launcherMetaText)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .padding(.horizontal, AskLauncherSuggestions.contentInset)
-                    .padding(.vertical, 8)
-            }
+            // Search becomes pending on every edit. Keep its status line in the
+            // layout so the centered orb and destinations never move with it.
+            Text(L("ask.launcher.noMatch.message", query))
+                .font(.system(size: 12))
+                .foregroundStyle(AskTheme.launcherMetaText)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .padding(.horizontal, AskLauncherSuggestions.contentInset)
+                .padding(.vertical, 8)
+                .opacity(searched ? 1 : 0)
+                .accessibilityHidden(!searched)
             if !destinations.isEmpty {
                 Text(L("ask.launcher.noMatch.section")).font(.system(size: 11.5, weight: .medium))
                     .foregroundStyle(AskTheme.launcherMetaText)
