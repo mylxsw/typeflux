@@ -1008,3 +1008,62 @@ optimized executable was packaged with the existing development packaging/signin
 reusing the built product; normal shutdown succeeded and the new app launched. Installed
 and tested product UUIDs matched. Direct UI automation still timed out, so installed-window
 scrolling remains unverified.
+
+### Stable streamed-status handoffs
+
+The status-transition reproduction exposed three independent sources of layout churn:
+
+- A text message changed its row identity when it acquired tool calls and became a
+  progress note. SwiftUI recreated the text editor and its asynchronous Markdown render.
+- Empty assistant transport placeholders occupied stack spacing and split consecutive
+  tool activity into different groups, resetting group-local presentation state.
+- A nil progress packet removed the live message before its durable snapshot arrived.
+  Tool activity could also coexist with a separate response-waiting bubble.
+
+Rows now have a namespaced rendering identity independent of the progress-note flag;
+reference navigation still prefers the corresponding tool group. Empty assistant
+placeholders are omitted from layout without dropping their outcome attribution.
+A view-local holder retains at most one meaningful live message across empty/nil handoffs,
+scoped to the exact conversation, run and assistant ID. Committed-message lookup uses the
+existing cached set. A new step, conversation or terminal run clears retained content;
+an explicitly supplied terminal preview may still render. Same-run tool evidence suppresses
+the redundant waiting bubble, with the durable fact cached until the selected snapshot
+changes. New submissions still receive feedback, even if an earlier run had tools.
+
+The unmodified version failed all three reproduction tests: the native chat window
+contracted by 34 points during each nil-progress gap and recreated the original text editor.
+After the change, 41 focused tests across transcript stability, activity presentation,
+waiting feedback, scroll-following and long-history performance passed. The native window
+retained the same editor through text-to-tool conversion, three gap/restore cycles and
+snapshot commitment; document height remained 353 points (asserted within one point
+throughout). Changed executable-line coverage was 73/73 (100%), with the profile preserved
+before subsequent benchmark runs. This is line coverage, not a guarantee about all branches.
+
+The optimized build also passed the seven stability tests plus the long-history test.
+With 10,500 messages, text streaming, fixed 48-point increments and 180 samples,
+the first baseline measured 11.28 ms p95. New-build runs measured 12.90 and 13.95 ms
+while other compilation, Flutter tests and recording activity changed machine load;
+those are not a controlled speedup/regression comparison. A subsequent consecutive
+old/new pair in the same period measured:
+
+| Version | Median layout/draw | p95 layout/draw | Maximum |
+| --- | ---: | ---: | ---: |
+| Before status stabilization | 9.82 ms | 16.41 ms | 55.17 ms |
+| After status stabilization | 9.93 ms | 15.99 ms | 87.76 ms |
+
+Steady-state cost was similar; no additional speedup is claimed. Background load and
+occasional spikes remain, and these synchronous native-window samples do not measure
+presented FPS. Historical-reference navigation, manual scrolling during streaming and
+resuming bottom-following passed in both versions.
+
+The tested optimized product was installed through the normal graceful-stop,
+packaging and stable-signing workflow, without another compile or forced termination.
+Installed/build UUIDs match (`B0798571-7608-32A2-B370-7007223FDD27`), deep signature
+verification passed, and the app launched. Direct installed-window automation still
+timed out, so the transition reproduction is verified in production views hosted by
+native test windows, not by automated interaction with the user's installed chat.
+Command wall time for preparation, failed build/fixture retries, reproduction,
+coverage, optimized validation, performance comparisons and installation was about
+1,991 seconds (33 minutes). The isolated checkout avoided further interference from
+concurrent source edits; unrelated screenshot changes were retained in the installed
+source snapshot and excluded from this chat-fix commit.

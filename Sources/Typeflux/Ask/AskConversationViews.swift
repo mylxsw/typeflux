@@ -8,6 +8,7 @@ struct AskConversationView: View {
     private var onCloseWindow: () -> Void
     @State private var showsUsage = false
     @State private var activityCache = AskActivityOutputCache()
+    @State private var liveMessageState = AskTranscriptLiveMessageState()
     @State private var scrollScheduler = AskTranscriptScrollScheduler()
     @State private var inspectionIdentity = UUID()
     /// The side panel (files, file tabs and web pages); it stays open across conversations.
@@ -1369,7 +1370,12 @@ struct AskConversationView: View {
         let _ = activityCache.prepare(conversationID: model.selectedId, revision: model.transcriptRevision, messages: transcriptMessages,
                                           results: model.selected?.messages.filter { $0.role == "tool" } ?? [],
                                           changes: model.fileChanges)
-        let items = activityCache.appendingProgress(liveTranscriptMessage)
+        let liveMessage = liveMessageState.resolve(conversationID: model.selectedId, run: model.selected?.run,
+            message: liveTranscriptMessage, isCommitted: activityCache.containsCommittedMessage)
+        let items = activityCache.appendingProgress(liveMessage)
+        let showsWaiting = model.showsResponseWaiting && (model.hasPendingSubmission || (liveMessage.map {
+            $0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && ($0.toolCalls ?? []).isEmpty
+        } ?? true))
         let phase = model.runPhase
         let latestActivityID = items.last(where: { if case .activity = $0.kind { return true }; return false })?.id
         let lastContentID = items.last(where: { if case .outcome = $0.kind { return false }; return true })?.id
@@ -1377,7 +1383,7 @@ struct AskConversationView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 24) {
-                        ForEach(items) { item in
+                        ForEach(items, id: \.viewID) { item in
                             AskTranscriptRowBoundary(key: AskTranscriptRowRenderKey(
                                 model: ObjectIdentifier(model), revision: model.transcriptRevision, item: item, phase: phase,
                                 latestActivityID: latestActivityID, lastContentID: lastContentID, regenerable: regenerable,
@@ -1393,9 +1399,9 @@ struct AskConversationView: View {
                                 .askRiseIn(createdAt: Self.createdAt(item))
                             }
                             .equatable()
-                            .id(item.id)
+                            .id(item.viewID)
                         }
-                        if model.showsResponseWaiting {
+                        if showsWaiting {
                             AskResponseWaitingView()
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .id("response-waiting")
@@ -1479,7 +1485,10 @@ struct AskConversationView: View {
                         let target = items.first { item in
                             if case let .activity(group) = item.kind { return group.messageIds.contains(id) }
                             return false
-                        }?.id ?? id
+                        }?.viewID ?? items.first { item in
+                            if case let .message(message) = item.kind { return message.id == id }
+                            return false
+                        }?.viewID ?? id
                         followsTranscriptBottom = false
                         proxy.scrollTo(target, anchor: .center); model.referenceLocation = nil
                     }
@@ -1498,7 +1507,7 @@ struct AskConversationView: View {
                 .onChange(of: model.selected?.run?.preview) { _ in followBottom(proxy) }
                 .onChange(of: model.inferenceProgress) { _ in followBottom(proxy) }
                 .onChange(of: model.selected?.messages.count) { _ in followBottom(proxy) }
-                .onChange(of: model.showsResponseWaiting) { _ in followBottom(proxy) }
+                .onChange(of: showsWaiting) { _ in followBottom(proxy) }
                 .onChange(of: model.selectedId.flatMap { model.pendingApprovals[$0]?.id }) { _ in followBottom(proxy) }
                 .onChange(of: model.steeredMessages.count) { _ in followBottom(proxy) }
                 .onChange(of: hasStatus) { _ in followBottom(proxy) }

@@ -42,6 +42,15 @@ struct AskTranscriptItem: Identifiable, Equatable {
     /// Outputs belong to a stable task outcome, never to a transient assistant message.
     var outputs = AskRunOutputs()
 
+    // Rendering identity must survive a text message becoming a tool preamble.
+    var viewID: String {
+        switch kind {
+        case let .message(message): "message/" + message.id
+        case let .activity(group): "activity/" + group.id
+        case let .outcome(outcome): "outcome/" + outcome.id
+        }
+    }
+
     var id: String {
         switch kind {
         case let .message(message): isProgress ? message.id + "/progress" : message.id
@@ -115,7 +124,7 @@ enum AskActivity {
                     activity.text = ""
                 }
                 pending.append(activity)
-            } else {
+            } else if message.hasTranscriptContent {
                 flushSteps()
                 items.append(.init(kind: .message(message)))
             }

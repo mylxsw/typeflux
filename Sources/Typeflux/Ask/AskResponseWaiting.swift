@@ -7,17 +7,28 @@ enum AskResponseWaiting {
         isVisible(phase: phase, pendingSubmission: pendingSubmission, run: run,
                   hasAnswerText: messages.last(where: { $0.id == run?.assistantId && $0.role == "assistant" })
                     .map { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty } ?? false,
-                  progress: progress, hasError: hasError)
+                  progress: progress, hasError: hasError,
+                  hasToolActivity: hasToolActivity(messages: messages, run: run))
     }
 
     static func isVisible(phase: AskRunPhase?, pendingSubmission: Bool, run: AskRun?,
-                          hasAnswerText: @autoclosure () -> Bool, progress: AskStreamProgress?, hasError: Bool) -> Bool {
+                          hasAnswerText: @autoclosure () -> Bool, progress: AskStreamProgress?, hasError: Bool,
+                          hasToolActivity: @autoclosure () -> Bool = false) -> Bool {
         guard phase?.isWorking == true, !hasError else { return false }
         // A follow-up still carries the previous run while submission is in flight.
         if pendingSubmission { return true }
         guard let run, run.isActive else { return false }
         if let progress, !progress.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return false }
+        if !(progress?.toolCalls ?? []).isEmpty || hasToolActivity() { return false }
         return !hasAnswerText()
+    }
+
+    static func hasToolActivity(messages: [AskMessage], run: AskRun?) -> Bool {
+        guard let run else { return false }
+        return messages.contains {
+            $0.role == "assistant" && ($0.runId == run.id || $0.id == run.assistantId)
+                && !($0.toolCalls ?? []).isEmpty
+        }
     }
 
     static let period = 1.4
@@ -78,10 +89,18 @@ extension AskConversationModel {
         return result
     }
 
+    var runHasToolActivity: Bool {
+        if let cachedRunHasToolActivity { return cachedRunHasToolActivity }
+        let result = AskResponseWaiting.hasToolActivity(messages: selected?.messages ?? [], run: selected?.run)
+        cachedRunHasToolActivity = result
+        return result
+    }
+
     var showsResponseWaiting: Bool {
         guard let value = selected else { return false }
         return AskResponseWaiting.isVisible(
             phase: runPhase, pendingSubmission: hasPendingSubmission, run: value.run,
-            hasAnswerText: runHasResponseText, progress: liveProgress(value), hasError: error != nil)
+            hasAnswerText: runHasResponseText, progress: liveProgress(value), hasError: error != nil,
+            hasToolActivity: runHasToolActivity)
     }
 }

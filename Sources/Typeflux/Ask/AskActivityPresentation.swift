@@ -35,6 +35,7 @@ final class AskActivityOutputCache {
     private var changes: [String: [AskWorkspaceFileChange]] = [:]
     private var prepared: [AskTranscriptItem] = []
     private var committedMessageIDs: Set<String> = []
+    func containsCommittedMessage(_ id: String) -> Bool { committedMessageIDs.contains(id) }
     private var liveMessage: AskMessage?
     private var livePrepared: [AskTranscriptItem] = []
 
@@ -66,7 +67,7 @@ final class AskActivityOutputCache {
             } else {
                 rows.append(.init(kind: .activity(.init(id: message.id, messages: [activity]))))
             }
-        } else { rows.append(.init(kind: .message(message))) }
+        } else if message.hasTranscriptContent { rows.append(.init(kind: .message(message))) }
         if var outcome, case var .outcome(task) = outcome.kind {
             task.messageIDs.append(message.id)
             if let runID = message.runId, !task.runIDs.contains(runID) { task.runIDs.append(runID); task.runIDs.sort() }
