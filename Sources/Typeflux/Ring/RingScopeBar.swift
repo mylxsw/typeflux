@@ -27,6 +27,7 @@ enum RingAppIcon {
 /// behind "More", and the selected app always keeps a visible place.
 enum RingScopeBarLayout {
     static let spacing: CGFloat = 6
+    static let appChipWidth: CGFloat = 32
 
     /// Indexes of the tabs shown, in order. `reserved` is the width of everything that is always
     /// there (the global tab, the divider and "Add App").
@@ -110,7 +111,7 @@ struct RingScopeBar: View {
     }
 
     private func visibleIndexes(width: CGFloat) -> [Int] {
-        let widths = profiles.map { RingScopeBarLayout.chipWidth(title: $0.appName, detail: Self.detail(of: $0)) }
+        let widths = Array(repeating: RingScopeBarLayout.appChipWidth, count: profiles.count)
         let reserved = RingScopeBarLayout.chipWidth(title: L("ring.scope.global"), detail: "\(globalCount)")
             + RingScopeBarLayout.spacing + 5 + RingScopeBarLayout.spacing + Self
             .addWidth(hasProfiles: !profiles.isEmpty)
@@ -150,13 +151,15 @@ struct RingScopeBar: View {
         return Button { onSelect(.app(profile.id)) } label: {
             RingScopeChipLabel(isSelected: selected, isDimmed: !profile.isEnabled,
                                hasIssue: !RingAppIcon.isInstalled(profile.bundleIdentifier),
-                               title: profile.appName, detail: Self.detail(of: profile)) {
+                               title: profile.appName, detail: Self.detail(of: profile), iconOnly: true) {
                 Image(nsImage: RingAppIcon.image(bundleIdentifier: profile.bundleIdentifier))
                     .resizable().interpolation(.high).frame(width: 22, height: 22)
             }
         }
         .buttonStyle(.plain)
         .help(profile.appName)
+        .accessibilityLabel(profile.appName)
+        .accessibilityValue(Self.detail(of: profile))
         .accessibilityIdentifier("ring.scope.app.\(profile.bundleIdentifier)")
     }
 
@@ -244,6 +247,7 @@ struct RingScopeChipLabel<Icon: View>: View {
     let hasIssue: Bool
     let title: String
     let detail: String
+    var iconOnly = false
     @ViewBuilder var icon: Icon
     @State private var hovering = false
 
@@ -255,13 +259,16 @@ struct RingScopeChipLabel<Icon: View>: View {
                         Circle().fill(TFColors.warning).frame(width: 7, height: 7).offset(x: 2, y: -1)
                     }
                 }
-            Text(title).font(.system(size: 12.5, weight: isSelected ? .semibold : .medium)).lineLimit(1)
-                .opacity(isDimmed ? 0.55 : 1)
-            Text(detail).font(.system(size: 11, weight: .medium)).monospacedDigit()
-                .foregroundStyle(isSelected ? TFColors.accent.opacity(0.8) : TFColors.textTertiary)
+            if !iconOnly {
+                Text(title).font(.system(size: 12.5, weight: isSelected ? .semibold : .medium)).lineLimit(1)
+                    .opacity(isDimmed ? 0.55 : 1)
+                Text(detail).font(.system(size: 11, weight: .medium)).monospacedDigit()
+                    .foregroundStyle(isSelected ? TFColors.accent.opacity(0.8) : TFColors.textTertiary)
+            }
         }
         .foregroundStyle(isSelected ? TFColors.accent : TFColors.textPrimary)
-        .padding(.leading, 5).padding(.trailing, 12).frame(height: 32)
+        .padding(.leading, 5).padding(.trailing, iconOnly ? 5 : 12)
+        .frame(width: iconOnly ? RingScopeBarLayout.appChipWidth : nil, height: 32)
         .background(Capsule().fill(isSelected ? TFColors.selection : TFColors.control))
         .overlay(Capsule().fill(hovering && !isSelected ? TFColors.hoverOverlay : .clear))
         .overlay(Capsule().strokeBorder(isSelected ? TFColors.accent : TFColors.border,
