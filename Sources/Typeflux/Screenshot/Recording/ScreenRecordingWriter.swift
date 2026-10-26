@@ -187,6 +187,24 @@ final class ScreenRecordingWriter: @unchecked Sendable {
         }
     }
 
+    /// A started stream is not proof that the encoder accepted a video frame.
+    func waitForFirstFrame(timeout: Duration = .seconds(5)) async throws {
+        let deadline = ContinuousClock.now.advanced(by: timeout)
+        while true {
+            try Task.checkCancellation()
+            let ready = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Bool, Error>) in
+                queue.async { [self] in
+                    if let failure { continuation.resume(throwing: failure) }
+                    else if terminal { continuation.resume(throwing: CancellationError()) }
+                    else { continuation.resume(returning: lastVideoTime >= 0) }
+                }
+            }
+            if ready { return }
+            guard ContinuousClock.now < deadline else { throw ScreenRecordingFailure.noFrames }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+    }
+
     func elapsed(at time: Double) async -> Double {
         await withCheckedContinuation { continuation in
             queue.async { [self] in continuation.resume(returning: timeline.position(at: time) ?? 0) }

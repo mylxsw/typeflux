@@ -200,15 +200,21 @@ final class ScreenRecordingCapture: NSObject, SCStreamOutput, SCStreamDelegate,
             guard let metadata = CMSampleBufferGetSampleAttachmentsArray(sample, createIfNecessary: false)
                 as? [[SCStreamFrameInfo: Any]], let raw = metadata.first?[.status] as? Int,
                 let status = SCFrameStatus(rawValue: raw) else { return }
-            if status == .stopped || status == .suspended {
-                onError(ScreenRecordingFailure.interrupted)
-                return
-            }
-            guard status == .complete else { return }
+            receiveScreenSample(sample, status: status)
+            return
         }
-        guard type == .screen || type == .audio else { return }
-        writer.offer(sample, track: type == .screen ? .screen : .systemAudio,
-                     hostTime: sample.presentationTimeStamp.seconds)
+        guard type == .audio else { return }
+        writer.offer(sample, track: .systemAudio, hostTime: sample.presentationTimeStamp.seconds)
+    }
+
+    func receiveScreenSample(_ sample: CMSampleBuffer, status: SCFrameStatus) {
+        if status == .stopped {
+            onError(ScreenRecordingFailure.interrupted)
+            return
+        }
+        // Suspended updates can resume; only complete frames contain writable video.
+        guard status == .complete else { return }
+        writer.offer(sample, track: .screen, hostTime: sample.presentationTimeStamp.seconds)
     }
 
     func stream(_: SCStream, didStopWithError error: Error) {
@@ -286,7 +292,10 @@ final class NativeScreenRecordingEngine: ScreenRecordingEngine {
         writer.onFailure = handler
         let source = ScreenRecordingCapture(writer: writer, options: options, onError: handler)
         self.source = source
-        do { try await source.start(plan: plan) } catch { await cancel(); throw error }
+        do {
+            try await source.start(plan: plan)
+            try await writer.waitForFirstFrame()
+        } catch { await cancel(); throw error }
     }
 
     func setPaused(_ paused: Bool) {

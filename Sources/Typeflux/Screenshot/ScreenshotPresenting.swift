@@ -60,6 +60,8 @@ enum ScreenshotToast: Equatable {
     case colorCopied(String)
     /// The shortcut was pressed while a screenshot was still being taken or saved.
     case busy
+    case recordingBusy
+    case captureTimedOut
     /// A scrolling capture stopped at the size limit.
     case scrollLimitReached
     /// The region did not scroll, so only its first frame was kept.

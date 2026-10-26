@@ -35,6 +35,8 @@ final class ScreenshotCoordinator {
     /// The capture or delivery in flight, so tests can wait for it.
     private(set) var pendingTask: Task<Void, Never>?
     private let captureQueue = ScreenshotTaskQueue<ScreenSnapshot>()
+    private var captureTimeoutTask: Task<Void, Never>?
+    var captureTimeout: Duration = .seconds(5)
     /// A pin's copy or save in flight, so tests can wait for it.
     private(set) var pinTask: Task<Void, Never>?
 
@@ -115,7 +117,7 @@ final class ScreenshotCoordinator {
         guard FeatureProcess.owns(.screenshot) else {
             FeatureProcess.send(FeatureScreenshotRequest(mode: mode, followUp: followUp).command); return
         }
-        guard !isRecordingActive() else { ShortcutLatency.record(.blocked); toast.show(.busy); return }
+        guard !isRecordingActive() else { ShortcutLatency.record(.blocked); toast.show(.recordingBusy); return }
         if mode == .recording || mode == .gif {
             guard state == .idle else { toast.show(.busy); return }
             onRecordingRequested?(mode == .gif ? .gif : .mp4, nil)
@@ -129,7 +131,10 @@ final class ScreenshotCoordinator {
             overlay.selectFullScreen()
             state = .editing
             return
-        case .capturing, .finishing, .scrolling, .editingLongImage:
+        case .capturing:
+            ShortcutLatency.record(.blocked)
+            return
+        case .finishing, .scrolling, .editingLongImage:
             ShortcutLatency.record(.blocked)
             toast.show(.busy)
             return
@@ -143,6 +148,13 @@ final class ScreenshotCoordinator {
         state = .capturing
         followUpOnCommit = followUp
         let session = session
+        captureTimeoutTask = Task { [weak self, captureTimeout] in
+            do { try await Task.sleep(for: captureTimeout) } catch { return }
+            guard let self, self.session == session, self.state == .capturing else { return }
+            ShortcutLatency.record(.failed)
+            self.teardown()
+            self.toast.show(.captureTimedOut)
+        }
         let capture = capture
         let captureQueue = captureQueue
         pendingTask = Task { [weak self] in
@@ -217,6 +229,8 @@ final class ScreenshotCoordinator {
                             followUp: ScreenshotFollowUp?, session: Int) {
         // Esc during the capture ends the session; its late result is dropped.
         guard session == self.session, state == .capturing else { ShortcutLatency.record(.superseded); return }
+        captureTimeoutTask?.cancel()
+        captureTimeoutTask = nil
         switch result {
         case let .success(snapshot):
             self.snapshot = snapshot
@@ -427,6 +441,8 @@ final class ScreenshotCoordinator {
     }
 
     private func teardown() {
+        captureTimeoutTask?.cancel()
+        captureTimeoutTask = nil
         pendingTask?.cancel()
         pendingTask = nil
         overlay.dismiss()

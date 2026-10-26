@@ -4,9 +4,12 @@ import AVFoundation
 import Combine
 import TypefluxMediaProtocol
 import ScreenCaptureKit
+import OSLog
 
 @MainActor
 final class ScreenRecordingCoordinator: ObservableObject {
+    private static let captureLog = Logger(subsystem: "ai.gulu.app.typeflux", category: "ScreenRecording")
+
     enum State: Equatable {
         case idle, setup, selecting, countdown, starting, recording, paused, stopping, preview, exporting, completed
     }
@@ -189,6 +192,7 @@ extension ScreenRecordingCoordinator {
                     throw startingFailure
                 }
                 guard generation == token else { return }
+                Self.captureLog.notice("First video frame accepted; recording started")
                 state = .recording
                 elapsed = 0
                 monitor()
@@ -197,6 +201,7 @@ extension ScreenRecordingCoordinator {
     }
 
     private func handleStartupFailure(_ error: Error, token: Int) async {
+        Self.captureLog.error("Startup failed: \(String(describing: error), privacy: .public)")
         await engine.cancel()
         guard generation == token else { return }
         if let sessionDirectory {
@@ -247,7 +252,7 @@ extension ScreenRecordingCoordinator {
                 elapsed = await engine.elapsed()
                 updateIndicator((state == .paused ? "Ⅱ " : "● ") + Self.timeLabel(elapsed))
                 if let limit = options.durationLimit, elapsed >= limit {
-                    stop(); return
+                    stop(reason: "durationLimit"); return
                 }
                 if elapsed == 0, Date().timeIntervalSince(started) > 10 {
                     stop(interruption: ScreenRecordingFailure.noFrames)
@@ -257,7 +262,8 @@ extension ScreenRecordingCoordinator {
         }
     }
 
-    func stop(interruption: Error? = nil) {
+    func stop(interruption: Error? = nil, reason: String = "user") {
+        Self.captureLog.notice("Stop requested state=\(String(describing: self.state), privacy: .public) reason=\(interruption.map { String(describing: $0) } ?? reason, privacy: .public) elapsed=\(self.elapsed)")
         guard state == .recording || state == .paused else { return }
         state = .stopping
         stopMonitoring()
@@ -485,6 +491,7 @@ extension ScreenRecordingCoordinator {
     }
 
     func cancel() {
+        Self.captureLog.notice("Cancel requested state=\(String(describing: self.state), privacy: .public)")
         guard state != .idle else { return }
         generation += 1
         retirePreview()
@@ -520,7 +527,7 @@ extension ScreenRecordingCoordinator {
     /// A normal quit finishes the container and leaves the source available for recovery.
     func prepareForTermination() async {
         switch state {
-        case .recording, .paused: stop()
+        case .recording, .paused: stop(reason: "applicationTermination")
         case .countdown, .starting, .selecting, .setup: cancel()
         case .exporting: cancelExport()
         default: break

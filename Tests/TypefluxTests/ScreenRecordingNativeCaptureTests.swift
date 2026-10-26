@@ -43,8 +43,8 @@ struct ScreenRecordingNativeCaptureTests {
         var options = ScreenRecordingOptions()
         options.showsCursor = false
         try await engine.start(target: .region(displayID: displayID, rect: rect), options: options, url: url)
-        try await Task.sleep(for: .milliseconds(350))
-        #expect(await engine.elapsed() > 0)
+        try await Task.sleep(for: .milliseconds(1250))
+        #expect(await engine.elapsed() >= 1, "The recording clock must advance after the first written frame")
         _ = try await engine.stop()
         let asset = AVURLAsset(url: url)
         let duration = try await asset.load(.duration).seconds

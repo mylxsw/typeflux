@@ -7489,3 +7489,6 @@
 "ask.progress.blocked" = "已暂停：任务受阻";
 "ask.progress.checkpointFailed" = "Agent 未能在进度检查点核对计划，本轮已暂停，未执行后续操作。已有工作保留，请查看待办计划后继续。";
 "ask.progress.denied" = "操作已被拒绝。未完成的工作已保留，没有自动再次请求授权。";
+
+"screenshot.toast.recordingBusy" = "请先关闭录屏设置或停止录屏，再进行截图。";
+"screenshot.toast.captureTimedOut" = "系统截图服务响应超时，已取消本次截图，请稍后重试。";

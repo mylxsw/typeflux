@@ -104,7 +104,7 @@ final class ScreenRecordingWindowController: NSObject, NSWindowDelegate {
                 await preview.stop()
                 lastDeviceFlags = []
                 render(.starting)
-                indicator("● 00:00")
+                indicator(L("recording.starting"))
             }
             observations.append(model.$state.sink { [weak self] state in
                 DispatchQueue.main.async {

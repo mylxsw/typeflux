@@ -40,6 +40,11 @@ final class ScreenshotToastController: ScreenshotToastPresenting {
             Content(message: L("screenshot.toast.colorCopied", hex), symbol: "eyedropper")
         case .busy:
             Content(message: L("screenshot.toast.busy"), symbol: "hourglass")
+        case .recordingBusy:
+            Content(message: L("screenshot.toast.recordingBusy"), symbol: "record.circle", duration: 4)
+        case .captureTimedOut:
+            Content(message: L("screenshot.toast.captureTimedOut"), symbol: "exclamationmark.triangle",
+                    isError: true, duration: 5)
         case .scrollLimitReached:
             Content(message: L("screenshot.toast.scrollLimit"), symbol: "ruler", duration: 3)
         case .scrollUnavailable:

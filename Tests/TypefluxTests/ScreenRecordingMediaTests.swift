@@ -1,4 +1,5 @@
 import AVFoundation
+import ScreenCaptureKit
 import ImageIO
 import Testing
 @testable import Typeflux
@@ -111,6 +112,45 @@ struct ScreenRecordingMediaTests {
             try await Task.sleep(for: .milliseconds(15))
         }
         _ = try await writer.finish(at: 101.2)
+    }
+
+    @Test func suspendedStreamCanResumeAndWriteVideo() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let writer = try ScreenRecordingWriter(url: directory.appendingPathComponent("resumed.mov"),
+            size: CGSize(width: 160, height: 120), options: ScreenRecordingOptions())
+        let capture = ScreenRecordingCapture(writer: writer, options: ScreenRecordingOptions(),
+            onError: { _ in Issue.record("Temporary frame status must not stop capture") })
+        let sample = try Self.videoSample(at: 100)
+        for status in [SCFrameStatus.started, .idle, .blank, .suspended] {
+            capture.receiveScreenSample(sample, status: status)
+        }
+        await #expect(throws: ScreenRecordingFailure.noFrames) {
+            try await writer.waitForFirstFrame(timeout: .milliseconds(30))
+        }
+        capture.receiveScreenSample(sample, status: .complete)
+        try await writer.waitForFirstFrame()
+        let url = try await writer.finish(at: 101)
+        #expect(try await AVURLAsset(url: url).loadTracks(withMediaType: .video).count == 1)
+    }
+
+    @Test func firstFrameReadinessRequiresEncodedVideoAndHonorsCancellation() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let writer = try ScreenRecordingWriter(url: directory.appendingPathComponent("ready.mov"),
+            size: CGSize(width: 160, height: 120), options: ScreenRecordingOptions())
+        await #expect(throws: ScreenRecordingFailure.noFrames) {
+            try await writer.waitForFirstFrame(timeout: .milliseconds(30))
+        }
+        let waiting = Task { try await writer.waitForFirstFrame() }
+        waiting.cancel()
+        await #expect(throws: CancellationError.self) { try await waiting.value }
+        try writer.offer(Self.videoSample(at: 100), track: .screen, hostTime: 100)
+        try await writer.waitForFirstFrame()
+        _ = try await writer.finish(at: 101)
+        await #expect(throws: CancellationError.self) { try await writer.waitForFirstFrame() }
     }
 
     @Test func completedRecordingsReleaseTheirEncoderBeforeTheNextSession() async throws {

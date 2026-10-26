@@ -14,6 +14,11 @@ struct ScreenRecordingCapsule: View {
                     .padding(6).recordingSurface(corner: 8)
             }
             HStack(spacing: 2) {
+                if model.state == .starting || model.state == .stopping {
+                    ProgressView().controlSize(.small)
+                    Text(L(model.state == .starting ? "recording.starting" : "recording.stopping"))
+                        .font(.system(size: 12))
+                }
                 Circle().fill(model.state == .paused ? StudioTheme.warning : ScreenRecordingAppearance.record).frame(
                     width: 10,
                     height: 10
@@ -53,7 +58,8 @@ struct ScreenRecordingCapsule: View {
                         .padding(.horizontal, 10).frame(height: 30).foregroundStyle(.white)
                         .background(ScreenRecordingAppearance.record, in: RoundedRectangle(cornerRadius: 9))
                 }.padding(.leading, 4)
-            }.padding(4).buttonStyle(.plain).recordingSurface(corner: 14)
+            }.disabled(model.state == .starting || model.state == .stopping)
+                .padding(4).buttonStyle(.plain).recordingSurface(corner: 14)
                 .overlay(alignment: .bottom) {
                     if model.options.format == .gif {
                         GeometryReader { geometry in

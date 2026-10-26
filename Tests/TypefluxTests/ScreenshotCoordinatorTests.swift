@@ -252,7 +252,7 @@ final class ScreenshotCoordinatorTests: XCTestCase {
         sut.start(mode: .region)
         sut.start(mode: .recording)
         XCTAssertEqual(formats.count, 2)
-        XCTAssertEqual(toasts.shown.last, .busy)
+        XCTAssertEqual(toasts.shown.last, .recordingBusy)
     }
 
     func testUnsavedRecordingAllowsScreenshotAndAnotherRecordingFromScreenshotEntry() async {
@@ -328,7 +328,7 @@ final class ScreenshotCoordinatorTests: XCTestCase {
         XCTAssertEqual(overlay.fullScreenSelections, 2)
     }
 
-    func testStartingAgainWhileCapturingIsIgnoredWithANotice() async throws {
+    func testStartingAgainWhileCapturingDoesNotRepeatBusyToasts() async throws {
         let capturer = GatedCapturer(snapshot: Self.snapshot())
         let sut = makeCoordinator(capturer: capturer)
         sut.start()
@@ -337,12 +337,57 @@ final class ScreenshotCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(sut.state, .capturing)
         sut.start()
-        XCTAssertEqual(toasts.shown, [.busy])
+        XCTAssertTrue(toasts.shown.isEmpty)
 
         capturer.continuation?.resume()
         await task.value
         XCTAssertEqual(sut.state, .selecting)
         XCTAssertEqual(overlay.presented.count, 1)
+    }
+
+    func testCaptureFailureMessagesDescribeTheActualBlocker() {
+        XCTAssertEqual(ScreenshotToastController.content(for: .recordingBusy).message,
+                       L("screenshot.toast.recordingBusy"))
+        let timeout = ScreenshotToastController.content(for: .captureTimedOut)
+        XCTAssertEqual(timeout.message, L("screenshot.toast.captureTimedOut"))
+        XCTAssertTrue(timeout.isError)
+    }
+
+    func testCaptureTimeoutReleasesUIAndDiscardsLateImageBeforeRetry() async throws {
+        let capturer = GatedCapturer(snapshot: Self.snapshot())
+        let sut = makeCoordinator(capturer: capturer)
+        sut.captureTimeout = .milliseconds(50)
+        sut.start()
+        let first = try XCTUnwrap(sut.pendingTask)
+        try await SettingsBehaviorTestSupport.wait { capturer.continuation != nil }
+        let callback = try XCTUnwrap(capturer.continuation)
+        await first.value
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertEqual(toasts.shown, [.captureTimedOut])
+        XCTAssertTrue(overlay.presented.isEmpty)
+        capturer.continuation = nil
+        sut.captureTimeout = .seconds(5)
+        sut.start()
+        let retry = try XCTUnwrap(sut.pendingTask)
+        XCTAssertEqual(capturer.calls, 1)
+        callback.resume()
+        try await SettingsBehaviorTestSupport.wait { capturer.calls == 2 && capturer.continuation != nil }
+        XCTAssertTrue(overlay.presented.isEmpty)
+        capturer.continuation?.resume()
+        await retry.value
+        XCTAssertEqual(sut.state, .selecting)
+        XCTAssertEqual(overlay.presented.count, 1)
+        sut.cancel()
+    }
+
+    func testSuccessfulCaptureCancelsItsTimeout() async throws {
+        let sut = makeCoordinator()
+        sut.captureTimeout = .milliseconds(50)
+        await started(sut)
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(sut.state, .selecting)
+        XCTAssertTrue(toasts.shown.isEmpty)
+        sut.cancel()
     }
 
     func testCancellingDuringCaptureDropsTheLateResult() async throws {

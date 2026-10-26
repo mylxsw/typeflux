@@ -7489,3 +7489,6 @@
 "ask.progress.blocked" = "Paused: task blocked";
 "ask.progress.checkpointFailed" = "The agent did not reconcile the plan at the progress checkpoint. This run has stopped without executing further operations. Existing work is preserved; review the unfinished plan before continuing.";
 "ask.progress.denied" = "The operation was declined. Unfinished work is preserved, and approval has not been requested again automatically.";
+
+"screenshot.toast.recordingBusy" = "Close recording setup or stop recording before taking a screenshot.";
+"screenshot.toast.captureTimedOut" = "The screen capture service took too long. This screenshot was cancelled. Please try again shortly.";
