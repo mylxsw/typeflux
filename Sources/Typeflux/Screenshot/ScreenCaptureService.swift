@@ -45,23 +45,32 @@ protocol ScreenCapturing {
 struct ScreenCaptureService: ScreenCapturing {
     private let permission: any ScreenCapturePermissionProviding
     private let loadContent: () async throws -> ScreenCaptureContent
+    private var loadDirectContent: (() async throws -> ScreenCaptureContent)?
     private let ownProcessID: pid_t
     private let captureControlWindowIDs: @MainActor () -> [CGWindowID]
 
     init(permission: any ScreenCapturePermissionProviding = ScreenCapturePermission.live,
          ownProcessID: pid_t = ProcessInfo.processInfo.processIdentifier,
          captureControlWindowIDs: @escaping @MainActor () -> [CGWindowID] = ScreenshotCaptureWindowPolicy.excludedWindowIDs,
-         loadContent: @escaping () async throws -> ScreenCaptureContent = ScreenCaptureContent.system) {
+         loadDirectContent: (() async throws -> ScreenCaptureContent)? = nil,
+         loadContent: (() async throws -> ScreenCaptureContent)? = nil) {
         self.permission = permission
         self.ownProcessID = ownProcessID
         self.captureControlWindowIDs = captureControlWindowIDs
-        self.loadContent = loadContent
+        self.loadContent = loadContent ?? ScreenCaptureContent.system
+        self.loadDirectContent = loadDirectContent
+        if loadContent == nil, loadDirectContent == nil, #available(macOS 26.0, *) {
+            self.loadDirectContent = ScreenCaptureContent.direct
+        }
     }
 
     func snapshot(_ request: ScreenCaptureRequest) async throws -> ScreenSnapshot {
         try Task.checkCancellation()
         guard permission.isGranted else { throw ScreenCaptureError.permissionDenied }
-        let content = try await measuredContent()
+        let controls = request.windowExclusion == .screenshotControls ? await captureControlWindowIDs() : []
+        try Task.checkCancellation()
+        let useDirect = request.windowExclusion == .screenshotControls && controls.isEmpty && loadDirectContent != nil
+        let content = try await measuredContent(direct: useDirect)
         try Task.checkCancellation()
         let displays = Self.displays(content.displays, matching: request.displays)
         guard !displays.isEmpty else { throw ScreenCaptureError.unavailable }
@@ -70,7 +79,7 @@ struct ScreenCaptureService: ScreenCapturing {
         case .ownApplication:
             excludedWindows = content.windows.filter { $0.processID == ownProcessID }.map(\.id)
         case .screenshotControls:
-            let controls = Set(await captureControlWindowIDs())
+            let controls = Set(controls)
             try Task.checkCancellation()
             excludedWindows = content.windows.filter { $0.processID == ownProcessID && controls.contains($0.id) }.map(\.id)
         }
@@ -102,15 +111,19 @@ struct ScreenCaptureService: ScreenCapturing {
             displays: zip(displays, images).map { display, image in
                 ScreenSnapshot.Display(id: display.id, frame: display.frame, scale: display.scale, image: image)
             },
-            windows: request.includesWindows ? content.windows.filter { !excludedWindows.contains($0.id) } : []
+            windows: request.includesWindows ? (content.latestWindows?() ?? content.windows).filter { !excludedWindows.contains($0.id) } : []
         )
         ShortcutLatency.record(.captureAssembled)
         return snapshot
     }
 
-    private func measuredContent() async throws -> ScreenCaptureContent {
+    private func measuredContent(direct: Bool) async throws -> ScreenCaptureContent {
         ShortcutLatency.record(.contentLoadStarted)
         defer { ShortcutLatency.record(.contentLoadFinished) }
+        if direct, let loadDirectContent {
+            ShortcutLatency.record(.directCaptureSelected)
+            return try await loadDirectContent()
+        }
         return try await loadContent()
     }
 

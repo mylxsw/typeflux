@@ -256,6 +256,54 @@ extension ScreenshotCaptureWindowPolicyTests {
         #expect(launcher.isVisible)
     }
 
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_REAL_SCREEN_CAPTURE_TESTS"] == "1"))
+    func directCapturePreservesPixelsAcrossDisplaysAndMeasuresBothPaths() async throws {
+        guard #available(macOS 26.0, *) else { return }
+        try #require(CGPreflightScreenCaptureAccess())
+        let screen = try #require(NSScreen.screens.first)
+        let frame = CGRect(x: screen.visibleFrame.midX - 60, y: screen.visibleFrame.midY - 60, width: 120, height: 120)
+        let page = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
+        page.isReleasedWhenClosed = false; page.isOpaque = true
+        page.backgroundColor = .green; page.level = .floating
+        page.orderFrontRegardless()
+        defer { page.close() }
+        try await Task.sleep(for: .milliseconds(100))
+        let refresh = Task { @MainActor in
+            var tick = 0
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .milliseconds(16)) } catch { return }
+                guard !Task.isCancelled else { return }
+                tick += 1
+                page.setFrame(frame.insetBy(dx: tick.isMultiple(of: 2) ? 0 : -1, dy: 0), display: true)
+            }
+        }
+        defer { refresh.cancel() }
+        let expected = try ScreenCaptureContent.activeDisplays()
+        let primary = try #require((screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value)
+        for direct in [false, true] {
+            let service = direct ? ScreenCaptureService() : ScreenCaptureService(loadContent: ScreenCaptureContent.system)
+            for attempt in 0..<3 {
+                let began = ContinuousClock.now
+                let snapshot = try await service.snapshot(.init(windowExclusion: .screenshotControls))
+                print("CAPTURE_BENCH path=\(direct ? "direct" : "filtered") attempt=\(attempt) displays=\(snapshot.displays.count) elapsed=\(began.duration(to: .now))")
+                #expect(Set(snapshot.displays.map(\.id)) == Set(expected.map(\.id)))
+                for display in snapshot.displays {
+                    let spec = try #require(expected.first { $0.id == display.id })
+                    #expect(display.frame == spec.frame)
+                    #expect(display.pixelSize == ScreenCaptureGeometry.pixelSize(pointSize: spec.frame.size,
+                                                                                 scale: spec.scale, resolution: .native))
+                }
+                let display = try #require(snapshot.display(id: primary))
+                let crop = ScreenCaptureGeometry.flipped(CGRect(x: frame.midX - 5, y: frame.midY - 5, width: 10, height: 10),
+                                                        primaryDisplayHeight: screen.frame.height)
+                let image = try ScreenshotImageExporter.crop(display, to: crop)
+                let pixels = try #require(ScreenshotMosaicEffects.Pixels(image, space: CGColorSpaceCreateDeviceRGB()))
+                let offset = (pixels.height / 2 * pixels.width + pixels.width / 2) * 4
+                #expect(pixels.bytes[offset] < 50 && pixels.bytes[offset + 1] > 200 && pixels.bytes[offset + 2] < 50)
+            }
+        }
+    }
+
     @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_REAL_SCREEN_CAPTURE_TESTS"] == "1"),
           arguments: ["page", "launcher", "recording-preview", "recording-toast", "screenshot-toast", "permission", "tooltip", "pin"])
     func realCaptureKeepsAppPagePixelsBehindCaptureControls(_ kind: String) async throws {

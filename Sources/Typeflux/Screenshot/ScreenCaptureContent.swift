@@ -12,6 +12,8 @@ struct ScreenCaptureContent {
 
     var displays: [Display]
     var windows: [ScreenSnapshot.Window]
+    /// Optional window metadata prepared independently of pixel capture.
+    var latestWindows: (() -> [ScreenSnapshot.Window])? = nil
     /// Captures one display at a pixel size, leaving out the listed windows.
     var capture: (Display, [CGWindowID], ScreenPixelSize) async throws -> CGImage
 

@@ -52,6 +52,68 @@ struct ScreenCaptureServiceTests {
         }
     }
 
+    @Test func explicitScreenshotBypassesShareableEnumeration() async throws {
+        let direct = Source()
+        let service = ScreenCaptureService(permission: FakeScreenCapturePermission(granted: true),
+            captureControlWindowIDs: { [] }, loadDirectContent: { direct.content() },
+            loadContent: { Issue.record("Explicit screenshots must not enumerate shareable content"); throw Failure() })
+        let snapshot = try await service.snapshot(.init(windowExclusion: .screenshotControls))
+        #expect(snapshot.displays.count == 2 && direct.loads == 1)
+    }
+
+    @Test func filteredRequestsNeverUseUnfilteredPixels() async throws {
+        for exclusion in [ScreenCaptureRequest.WindowExclusion.ownApplication, .screenshotControls] {
+            let filtered = Source()
+            let service = ScreenCaptureService(permission: FakeScreenCapturePermission(granted: true), ownProcessID: 7,
+                captureControlWindowIDs: { [10] },
+                loadDirectContent: { Issue.record("Exclusion requires the filtered capture path"); throw Failure() },
+                loadContent: { filtered.content() })
+            let snapshot = try await service.snapshot(.init(windowExclusion: exclusion))
+            #expect(filtered.loads == 1)
+            #expect(!snapshot.windows.contains { $0.id == 10 })
+            #expect(filtered.captures.allSatisfy { $0.excluded == [10] })
+        }
+    }
+
+    @Test func directCaptureFailureDoesNotFallBackToSlowEnumeration() async {
+        let source = Source()
+        let service = ScreenCaptureService(permission: FakeScreenCapturePermission(granted: true),
+            captureControlWindowIDs: { [] }, loadDirectContent: { throw Failure() }, loadContent: { source.content() })
+        await #expect(throws: Failure.self) { try await service.snapshot(.init(windowExclusion: .screenshotControls)) }
+        #expect(source.loads == 0)
+    }
+
+    @Test func slowWindowMetadataDoesNotDelayPixelsOrAccumulateQueries() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        let entered = DispatchSemaphore(value: 0)
+        let expected = ScreenCaptureTestSupport.window(10, processID: 7)
+        let catalog = ScreenshotWindowCatalog(load: {
+            entered.signal()
+            gate.wait()
+            return [expected]
+        })
+        let request = catalog.begin()
+        defer { gate.signal() }
+        #expect(entered.wait(timeout: .now() + 1) == .success)
+        #expect(catalog.begin() === request)
+        let source = Source()
+        let service = ScreenCaptureService(permission: FakeScreenCapturePermission(granted: true),
+            captureControlWindowIDs: { [] }, loadDirectContent: {
+                var content = source.content()
+                content.latestWindows = { request.snapshot }
+                return content
+            })
+        let snapshot = try await service.snapshot(.init(windowExclusion: .screenshotControls))
+        #expect(snapshot.displays.count == 2 && snapshot.windows.isEmpty)
+        gate.signal()
+        for _ in 0..<100 where request.snapshot.isEmpty { try await Task.sleep(for: .milliseconds(10)) }
+        #expect(request.snapshot == [expected])
+        let refreshed = try await service.snapshot(.init(windowExclusion: .screenshotControls))
+        #expect(refreshed.windows == [expected])
+        let withoutWindows = try await service.snapshot(.init(includesWindows: false, windowExclusion: .screenshotControls))
+        #expect(withoutWindows.windows.isEmpty)
+    }
+
     @Test func deniedAccessThrowsWithoutReadingTheScreen() async {
         let source = Source()
         await #expect(throws: ScreenCaptureError.permissionDenied) {
