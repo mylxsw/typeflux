@@ -7492,3 +7492,5 @@
 "ask.progress.denied" = "操作は拒否されました。未完了の作業は保持され、承認の再要求は自動で行われていません。";
 
 "ask.home.notes" = "メモ";
+
+"ask.home.clipboard" = "クリップボード";

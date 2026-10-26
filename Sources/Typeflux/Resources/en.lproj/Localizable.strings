@@ -7496,3 +7496,5 @@
 "screenshot.toast.captureTimedOut" = "The screen capture service took too long. This screenshot was cancelled. Please try again shortly.";
 
 "ask.home.notes" = "Notes";
+
+"ask.home.clipboard" = "Clipboard";

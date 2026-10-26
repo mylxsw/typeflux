@@ -8,13 +8,13 @@ struct AskApplicationGridTests {
     @Test func geometryAndNavigation() {
         #expect(AskApplicationGrid.height(count: 0) == 0)
         #expect(AskApplicationGrid.height(count: 6) == 106)
-        #expect(AskApplicationGrid.height(count: 7) == 220)
-        #expect(AskApplicationGrid.move(2, delta: 1, count: 14) == 8)
-        #expect(AskApplicationGrid.move(8, delta: -1, count: 14) == 2)
+        #expect(AskApplicationGrid.height(count: 8) == 220)
+        #expect(AskApplicationGrid.move(2, delta: 1, count: 14) == 9)
+        #expect(AskApplicationGrid.move(9, delta: -1, count: 14) == 2)
         #expect(AskApplicationGrid.move(8, delta: 1, count: 10) == 9)
         #expect(AskApplicationGrid.move(0, delta: -1, count: 10, horizontal: true) == 0)
         #expect(AskApplicationGrid.move(5, delta: 1, count: 10, horizontal: true) == 6)
-        #expect(AskApplicationGrid.tracks.count == 6)
+        #expect(AskApplicationGrid.tracks.count == 7)
     }
     private var matches: [AskAppMatch] {
         (0..<14).map { index in
@@ -27,7 +27,7 @@ struct AskApplicationGridTests {
         let apps = matches
         let home = AskLauncherHome.build(.init(applications: apps.map(\.entry)))
         let items = AskLauncherHome.items(home)
-        #expect(AskLauncherHome.move(1, by: 1, in: items) == 7)
+        #expect(AskLauncherHome.move(1, by: 1, in: items) == 8)
         #expect(AskLauncherHome.move(7, by: -1, in: items, horizontal: true) == 6)
         #expect(AskLauncherSuggestions.height(for: home) == 13 + 106 + 34 + AskApplicationGrid.height(count: 14))
         var results = AskQuickResults(apps: apps, lead: true)

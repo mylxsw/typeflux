@@ -106,12 +106,12 @@ struct AskLauncherHomeTests {
         #expect(apps.count == input.applications.count)
         #expect(apps.first?.action == .application(input.applications[0]))
         #expect(apps.last?.action == .application(input.applications[19]))
-        #expect(Home.items(sections).count == 26)
+        #expect(Home.items(sections).count == 27)
         #expect(Home.numberedRows(sections).count == 9)
         #expect(AskLauncherSuggestions.height(for: sections) > 480)
         #expect(AskLauncherSuggestions.visibleHeight(for: sections, maximum: 480) == 480)
         #expect(AskLauncherSuggestions.visibleHeight(for: sections, maximum: 0) == 0)
-        #expect(Home.move(8, by: 1, in: Home.items(sections)) == 14)
+        #expect(Home.move(8, by: 1, in: Home.items(sections)) == 15)
     }
 
     @Test func fixedFeaturesPrecedeAppsAndRouteToBuiltInDestinations() throws {
@@ -125,7 +125,7 @@ struct AskLauncherHomeTests {
             return
         }
         #expect(rows.map(\.id) == ["feature.chat", "feature.translate", "feature.screenshot",
-                                      "feature.recording", "feature.notes", "feature.wordbook"])
+                                      "feature.recording", "feature.notes", "feature.wordbook", "feature.clipboard"])
         #expect(rows.first?.title == "Chat")
         let keywords = try rows.map { row in
             guard case let .keyword(keyword) = row.action else {
@@ -139,11 +139,14 @@ struct AskLauncherHomeTests {
         #expect(f.model.launcherImmediateAction(keywords[3])?.kind == .capture(mode: .recording, followUp: .none))
         #expect(f.model.launcherImmediateAction(keywords[4])?.kind == .openNotes(id: nil))
         #expect(f.model.launcherImmediateAction(keywords[5])?.kind == .openWordBook(key: nil))
+        #expect(keywords[6].pluginID == AskClipboardPlugin.id)
+        #expect(f.model.enterLauncherKeyword(keywords[6], run: true) == .stay)
+        #expect(f.model.plugins.keyword == keywords[6])
         let items = Home.items(sections)
-        #expect(Home.move(0, by: 1, in: items) == 6)
-        #expect(Home.move(6, by: -1, in: items) == 0)
+        #expect(Home.move(0, by: 1, in: items) == 7)
+        #expect(Home.move(7, by: -1, in: items) == 0)
         #expect(Home.move(0, by: 1, in: items, horizontal: true) == 1)
-        #expect(Home.numberedRows(sections).prefix(6).map(\.id) == rows.map(\.id))
+        #expect(Home.numberedRows(sections).prefix(7).map(\.id) == rows.map(\.id))
         #expect(rows[2].symbol == RingFeature.screenshot.symbol)
         #expect(rows[3].tint == .red)
         for scheme in [ColorScheme.light, .dark] {

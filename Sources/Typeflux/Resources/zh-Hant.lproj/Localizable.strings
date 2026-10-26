@@ -7495,3 +7495,5 @@
 "ask.progress.denied" = "操作已被拒絕。未完成的工作已保留，沒有自動再次請求授權。";
 
 "ask.home.notes" = "筆記";
+
+"ask.home.clipboard" = "剪貼簿";

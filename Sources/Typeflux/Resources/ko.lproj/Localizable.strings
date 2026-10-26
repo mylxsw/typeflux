@@ -7492,3 +7492,5 @@
 "ask.progress.denied" = "작업이 거부되었습니다. 미완료 작업은 보존되며 승인을 자동으로 다시 요청하지 않았습니다.";
 
 "ask.home.notes" = "노트";
+
+"ask.home.clipboard" = "클립보드";

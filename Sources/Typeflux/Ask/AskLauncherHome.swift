@@ -105,7 +105,9 @@ enum AskLauncherHome {
                         options: [AskNotesPlugin.windowOption: "true"])),
             ("wordbook", L("ask.wordBook.title"), "character.book.closed", .green,
              AskKeyword(keyword: "dict", pluginID: AskTranslatePlugin.id,
-                        options: [AskTranslatePlugin.actionOption: AskTranslatePlugin.wordBookAction]))
+                        options: [AskTranslatePlugin.actionOption: AskTranslatePlugin.wordBookAction])),
+            ("clipboard", L("ask.home.clipboard"), "doc.on.clipboard", .purple,
+             AskKeyword(keyword: "clip", pluginID: AskClipboardPlugin.id))
         ]
         return definitions.map { id, title, symbol, tint, keyword in
             Row(id: "feature." + id, title: title, symbol: symbol, tint: tint, action: .keyword(keyword))

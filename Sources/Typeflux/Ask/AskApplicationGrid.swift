@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Shared geometry keeps the unfiltered home and arrow-key navigation in agreement.
 enum AskApplicationGrid {
-    static let columns = 6
+    static let columns = 7
     static let tileHeight: CGFloat = 106
     static let spacing: CGFloat = 8
     static var tracks: [GridItem] {
