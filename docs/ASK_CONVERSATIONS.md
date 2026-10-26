@@ -955,8 +955,11 @@ is not interrupted by stream updates and that returning to the end resumes follo
 
 The 10,500-message idle-scroll variant measured p95 21.18 ms (max 62.81 ms).
 These large-fixture results eliminate sustained severe stalls in the measured scenario but
-are not a guarantee of a 16.7 ms frame budget. The installed-app check remains incomplete:
-the old application's chat IPC channel returned `unavailable` on normal shutdown and the
-host correctly refused to quit without a save acknowledgment. The attempted installer
-therefore did not replace the running app. Do not treat these native test-window results
-as validation of the user's installed build.
+are not a guarantee of a 16.7 ms frame budget. The old application's chat IPC channel returned `unavailable` on normal shutdown and the
+host correctly refused to quit without a save acknowledgment. After explicit user approval,
+local chat files, workspace files and consistent SQLite snapshots were backed up and verified;
+the old process tree was stopped and the optimized dev app installed and launched successfully.
+The installed executable's Mach-O UUID matches the build. Direct installed-window scrolling
+remains unverified: the UI automation connection repeatedly timed out at the app/menu-bar
+entry point. Host sampling showed the main thread waiting normally for events. Do not treat
+the native test-window results as measured display FPS or a completed installed-window check.
