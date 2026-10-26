@@ -131,7 +131,7 @@ import Testing
             let start = ContinuousClock.now
             let items = cache.prepare(conversationID: "chat", messages: messages, results: results, changes: [:])
             let cold = start.duration(to: .now)
-            #expect(items.count == 3)
+            #expect(items.count == count * 2 + 2)
             #expect(cache.decodeCount == count)
             let warmStart = ContinuousClock.now
             for _ in 0..<20 {

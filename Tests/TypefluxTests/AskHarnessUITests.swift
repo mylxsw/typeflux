@@ -47,14 +47,14 @@ struct AskHarnessUITests {
         ]
         let results = [result("p"), result("f"), result("f2"), result("c", image: image), result("s", image: image)]
         let items = AskActivity.items(messages, results: results)
-        #expect(items.map(\.id) == ["u", "a1", "answer", "outcome-u"])
-        guard case let .activity(group) = items[1].kind else { Issue.record("expected a block"); return }
+        #expect(items.map(\.id) == ["u", "a1/progress", "a1", "answer", "outcome-u"])
+        guard case let .activity(group) = items[2].kind else { Issue.record("expected a block"); return }
         #expect(group.messageIds == ["a1", "a2", "a3"])
         #expect(group.steps.map(\.id) == ["f", "f2", "c", "s"])
         #expect(items[1].outputs.isEmpty)
         // Pages are deduplicated and screen captures are not results.
-        #expect(items[3].outputs.sources == [URL(string: "https://typeflux.app/changelog")!])
-        #expect(items[3].outputs.artifacts.map(\.id) == ["c"])
+        #expect(items[4].outputs.sources == [URL(string: "https://typeflux.app/changelog")!])
+        #expect(items[4].outputs.artifacts.map(\.id) == ["c"])
     }
 
     @Test func aBlockWithoutAnAnswerKeepsItsOutputsAndUserTurnsSplitBlocks() {

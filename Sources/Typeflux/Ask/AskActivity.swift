@@ -38,12 +38,13 @@ struct AskTranscriptItem: Identifiable, Equatable {
     }
 
     var kind: Kind
+    var isProgress = false
     /// Outputs belong to a stable task outcome, never to a transient assistant message.
     var outputs = AskRunOutputs()
 
     var id: String {
         switch kind {
-        case let .message(message): message.id
+        case let .message(message): isProgress ? message.id + "/progress" : message.id
         case let .activity(group): group.id
         case let .outcome(outcome): outcome.id
         }
@@ -103,7 +104,17 @@ enum AskActivity {
             }
             let isStep = message.role == "assistant" && !(message.toolCalls ?? []).isEmpty
             if isStep {
-                pending.append(message)
+                var activity = message
+                if !message.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    flushSteps()
+                    var note = message
+                    note.toolCalls = nil
+                    note.reasoning = nil
+                    note.reasoningMilliseconds = nil
+                    items.append(.init(kind: .message(note), isProgress: true))
+                    activity.text = ""
+                }
+                pending.append(activity)
             } else {
                 flushSteps()
                 items.append(.init(kind: .message(message)))

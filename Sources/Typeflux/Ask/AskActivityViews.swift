@@ -37,7 +37,10 @@ struct AskActivityBlock: View {
     /// and a waiting card already shows the plan and the decision.
     private var expanded: Bool { userExpanded ?? startsExpanded ?? false }
 
-    private var title: String { AskActivity.title(group, status: status, plan: plan, results: results) }
+    private var title: String {
+        if status == .done || status == .failed { return AskActivityRowPresentation.groupTitle(group) }
+        return AskActivity.title(group, status: status, plan: plan, results: results)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -61,8 +64,7 @@ struct AskActivityBlock: View {
             traceLine
             if expanded {
                 content()
-                    .padding(.leading, 12)
-                    .overlay(alignment: .leading) { Rectangle().fill(AskTheme.border).frame(width: 2) }
+                    .padding(.top, 6)
                     .padding(.bottom, 4)
                     .transition(.identity)
             }
@@ -95,6 +97,7 @@ struct AskActivityBlock: View {
                 }
                 Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
                     .rotationEffect(.degrees(expanded ? 90 : 0))
+                    .opacity(hovering ? 1 : 0)
             }
             .font(.system(size: 12.5))
             .foregroundStyle(hovering || expanded || running ? StudioTheme.textSecondary : StudioTheme.textTertiary)
@@ -203,7 +206,7 @@ struct AskActivityBlock: View {
                 case let .reasoning(text):
                     AskActivityTextDisclosure(text: text, title: L("ask.activity.reasoning"), symbol: "sparkle")
                 case let .note(text):
-                    AskActivityTextDisclosure(text: text, title: L("ask.activity.note"), symbol: "text.alignleft")
+                    AskActivityNarration(text: text)
                 case let .tool(call, messageID):
                     AskToolStepRow(call: call, result: index[call.id],
                                    preparing: streamingId == messageID && index[call.id] == nil,
@@ -221,6 +224,7 @@ private struct AskActivityTextDisclosure: View {
     let title: String
     let symbol: String
     @State private var expanded = false
+    @State private var hovering = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -228,16 +232,17 @@ private struct AskActivityTextDisclosure: View {
                 HStack(spacing: 6) {
                     Image(systemName: symbol).font(.system(size: 10))
                     Text(title)
-                    Text(String(text.prefix(160)).replacingOccurrences(of: "\n", with: " "))
-                        .lineLimit(1).truncationMode(.tail)
-                    Spacer(minLength: 0)
                     Image(systemName: "chevron.right").rotationEffect(.degrees(expanded ? 90 : 0))
+                        .opacity(hovering ? 1 : 0)
+                    Spacer(minLength: 0)
                 }
                 .font(.system(size: 12.5))
                 .foregroundStyle(StudioTheme.textSecondary)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .onHover { hovering = $0 }
+            .accessibilityValue(L(expanded ? "ask.activity.expanded" : "ask.activity.collapsed"))
             if expanded { AskReasoningText(text: text).frame(height: 220) }
         }
     }
@@ -254,7 +259,10 @@ struct AskToolStepRow: View {
     var preparing = false
     var pending = false
     var exportProjectPatch: ((AskWorkspaceRef) throws -> Data)?
-    @State private var expanded = false
+    var startsExpanded = false
+    @State private var userExpanded: Bool?
+    private var expanded: Bool { userExpanded ?? startsExpanded }
+    @State private var hovering = false
     @State private var pane = Pane.result
     @Environment(\.askInspectTranscript) private var inspectTranscript
     @Environment(\.askSidePanelActions) private var sidePanel
@@ -312,21 +320,16 @@ struct AskToolStepRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 4) {
-                Button { inspectTranscript(); expanded.toggle() } label: {
+                Button { inspectTranscript(); userExpanded = !expanded } label: {
                     HStack(spacing: 8) {
                         Image(systemName: AskPresentation.toolSymbol(call))
                             .font(.system(size: 10.5))
                             .foregroundStyle(StudioTheme.textTertiary)
                             .frame(width: Self.iconSize, height: Self.iconSize)
-                        Text(AskTheme.toolTitle(call))
-                            .foregroundStyle(StudioTheme.textSecondary)
+                        Text(AskActivityRowPresentation.title(call))
+                            .foregroundStyle(StudioTheme.textTertiary)
                             .lineLimit(1)
-                            .truncationMode(.middle)
-                            .layoutPriority(1)
-                        if let detail = Self.detail(call, result: result) {
-                            Text(detail).foregroundStyle(StudioTheme.textTertiary)
-                                .lineLimit(1).truncationMode(.middle)
-                        }
+                            .truncationMode(.tail)
                         Spacer(minLength: 6)
                         if Self.showsStatus(state) {
                             Text(statusText).font(.system(size: 11, weight: .medium)).foregroundStyle(state.tint)
@@ -337,6 +340,7 @@ struct AskToolStepRow: View {
                             .font(.system(size: 8, weight: .semibold))
                             .foregroundStyle(StudioTheme.textTertiary)
                             .rotationEffect(.degrees(expanded ? 90 : 0))
+                            .opacity(hovering ? 1 : 0)
                     }
                     .font(.system(size: 12.5))
                     .frame(minHeight: 22)
@@ -345,7 +349,7 @@ struct AskToolStepRow: View {
                 .buttonStyle(.plain)
                 .help(Self.tag(call))
                 .accessibilityLabel(AskTheme.toolTitle(call))
-                .accessibilityValue(statusText)
+                .accessibilityValue(statusText + ", " + L(expanded ? "ask.activity.expanded" : "ask.activity.collapsed"))
                 // Beside the step, not inside its button: a file it names opens in the side panel.
                 if let sidePanel, let path = Self.openablePath(call), result?.isError != true {
                     Button { sidePanel.openFile(path) } label: {
@@ -357,38 +361,56 @@ struct AskToolStepRow: View {
                     .help(L("ask.sidePanel.open.inPanel") + " · " + path)
                     .accessibilityLabel(L("ask.sidePanel.open.inPanel"))
                     .accessibilityIdentifier("ask.tool.openFile")
+                    .opacity(hovering ? 1 : 0)
                 }
             }
+            .onHover { hovering = $0 }
             if expanded {
-                VStack(alignment: .leading, spacing: 8) {
-                    if result != nil {
-                        AskSegmentedControl(options: [(Pane.arguments, L("ask.tool.arguments")),
-                                                      (Pane.result, L("ask.tool.result"))],
-                                            selection: $pane)
-                            .frame(width: 112)
-                    }
-                    if pane == .arguments || result == nil {
+                if let command = AskActivityRowPresentation.command(call) {
+                    let transcript = "$ " + command + (result.map { "\n\n" + $0.resultText } ?? "")
+                    AskMonoBlock(title: "Shell", text: transcript, isError: state == .failed,
+                                 contentHeight: AskActivityRowPresentation.outputHeight(transcript))
+                        .padding(.top, 6).padding(.bottom, 8)
+                    DisclosureGroup(L("ask.tool.arguments")) {
                         AskMonoBlock(title: "", text: call.function.arguments)
-                    } else if let result {
-                        if call.function.name == "project_terminal",
-                           let receipt = AskProjectTerminalReceipt.decode(result.resultText) {
-                            AskProjectTerminalCard(receipt: receipt)
-                        } else if call.function.name == "project_files", result.isError != true,
-                           let review = AskProjectReview.decode(result.resultText) {
-                            AskProjectReviewView(review: review, exportPatch: exportProjectPatch)
-                        } else if !result.resultText.isEmpty {
-                            AskMonoBlock(title: "", text: result.resultText,
-                                         isError: AskPresentation.toolState(result: result) == .failed)
-                        }
+                    }
+                    .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                    if let result {
                         ForEach(Array(result.retainedResultImages.enumerated()), id: \.offset) { _, url in
                             AskToolImageView(url: url)
                         }
                     }
+                } else {
+                    VStack(alignment: .leading, spacing: 8) {
+                        if result != nil {
+                            AskSegmentedControl(options: [(Pane.arguments, L("ask.tool.arguments")),
+                                                          (Pane.result, L("ask.tool.result"))],
+                                                selection: $pane)
+                                .frame(width: 112)
+                        }
+                        if pane == .arguments || result == nil {
+                            AskMonoBlock(title: "", text: call.function.arguments)
+                        } else if let result {
+                            if call.function.name == "project_terminal",
+                               let receipt = AskProjectTerminalReceipt.decode(result.resultText) {
+                                AskProjectTerminalCard(receipt: receipt)
+                            } else if call.function.name == "project_files", result.isError != true,
+                               let review = AskProjectReview.decode(result.resultText) {
+                                AskProjectReviewView(review: review, exportPatch: exportProjectPatch)
+                            } else if !result.resultText.isEmpty {
+                                AskMonoBlock(title: "", text: result.resultText,
+                                             isError: AskPresentation.toolState(result: result) == .failed)
+                            }
+                            ForEach(Array(result.retainedResultImages.enumerated()), id: \.offset) { _, url in
+                                AskToolImageView(url: url)
+                            }
+                        }
+                    }
+                    .padding(.top, 4)
+                    .padding(.leading, Self.iconSize + 8)
+                    .padding(.bottom, 4)
+                    .transition(.identity)
                 }
-                .padding(.top, 4)
-                .padding(.leading, Self.iconSize + 8)
-                .padding(.bottom, 4)
-                .transition(.opacity)
             }
         }
     }

@@ -1519,6 +1519,7 @@ struct AskConversationView: View {
                            usage: message.runId.flatMap { model.selected?.usage?.runs[$0] },
                            onUsage: { usageRunId = message.runId; setUsage(true) },
                            isStreaming: message.id == streamingId,
+                           isProgress: item.isProgress,
                            canRegenerate: regenerable == message.id,
                            onRegenerate: { model.regenerate(message.id) },
                            outputs: item.outputs,
@@ -1629,6 +1630,7 @@ private struct AskMessageView: View {
     var usage: AskUsageTotals? = nil
     var onUsage: () -> Void = {}
     var isStreaming = false
+    var isProgress = false
     var canRegenerate = false
     var onRegenerate: () -> Void = {}
     /// Images and pages from the tool steps before this answer.
@@ -1736,7 +1738,7 @@ private struct AskMessageView: View {
                     .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
             }
             if message.isError == true { interruptedTag }
-            if !message.text.isEmpty, !isStreaming { turnActions }
+            if !message.text.isEmpty, !isStreaming, !isProgress { turnActions }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .onHover { hovering = $0 }
@@ -1840,6 +1842,7 @@ struct AskReasoningView: View {
                     if !active {
                         Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
                             .rotationEffect(.degrees(expanded ? 90 : 0))
+                            .opacity(reasoningHover ? 1 : 0)
                     }
                 }
                 .foregroundStyle(StudioTheme.textSecondary)
