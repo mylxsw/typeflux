@@ -78,6 +78,16 @@ enum AskGlassPlacement: Equatable {
         case .menu: return dark ? 0.90 : 0.92
         }
     }
+    /// Window chrome already sits over the window's tinted glass. Applying the
+    /// floating panel density again hides that backdrop behind a solid-looking fill.
+    func surfaceIntensity(_ intensity: LiquidGlassIntensity) -> LiquidGlassIntensity {
+        self == .inWindow ? LiquidGlassIntensity(intensity.value * 0.5) : intensity
+    }
+
+    func diffuseTintOpacity(_ intensity: LiquidGlassIntensity) -> Double {
+        self == .inWindow ? 0.12 + intensity.value * 0.18 : 0.48 + intensity.value * 0.30
+    }
+
     /// Adaptive popover material avoids the HUD's grey cast in light mode.
     var fallbackMaterial: NSVisualEffectView.Material {
         switch self {
@@ -112,7 +122,8 @@ struct AskGlassBackground: View {
     var cornerStyle: RoundedCornerStyle = .continuous
     /// Every surface follows the global style, regardless of its window or placement.
     private var usesDiffuseBackdrop: Bool { style == .frosted }
-    private var launcherTintOpacity: Double { 0.48 + intensity.value * 0.30 }
+    private var surfaceIntensity: LiquidGlassIntensity { placement.surfaceIntensity(intensity) }
+    private var launcherTintOpacity: Double { placement.diffuseTintOpacity(intensity) }
     private var launcherTint: Color { AskTheme.launcherGlassTint }
 
     private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: corner, style: cornerStyle) }
@@ -138,7 +149,7 @@ struct AskGlassBackground: View {
                 } else {
                     frosting
                     liquidGlass
-                    shape.fill(opaqueFill.opacity(intensity.extraTintOpacity))
+                    shape.fill(opaqueFill.opacity(surfaceIntensity.extraTintOpacity))
                 }
             case .visualEffect:
                 if usesDiffuseBackdrop {
@@ -182,7 +193,7 @@ struct AskGlassBackground: View {
     @ViewBuilder private var frosting: some View {
         let base = placement.frost(dark: colorScheme == .dark, material: effectiveMaterial)
         shape.fill(opaqueFill.opacity(effectiveMaterial == .liquidGlass
-            ? intensity.nativeFrostOpacity(base) : intensity.legacyFrostOpacity(base)))
+            ? surfaceIntensity.nativeFrostOpacity(base) : surfaceIntensity.legacyFrostOpacity(base)))
     }
 
     private var fallback: some View {

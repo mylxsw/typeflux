@@ -5,6 +5,22 @@ import Testing
 
 @Suite("Ask workspace glass")
 struct AskWorkspaceGlassTests {
+    @Test(arguments: [0.0, 0.5, 0.9, 1.0])
+    func windowChromeDoesNotStackTheFloatingPanelsDenseTint(value: Double) {
+        let intensity = LiquidGlassIntensity(value)
+        let chrome = AskGlassPlacement.inWindow.surfaceIntensity(intensity)
+        #expect(chrome.extraTintOpacity == 0)
+        #expect(chrome.nativeFrostOpacity(0.18) <= 0.18)
+        #expect(chrome.legacyFrostOpacity(0.45) <= 0.45)
+        let diffuse = AskGlassPlacement.inWindow.diffuseTintOpacity(intensity)
+        #expect(diffuse >= 0.12 && diffuse <= 0.30)
+        for placement in [AskGlassPlacement.floating, .menu] {
+            #expect(placement.surfaceIntensity(intensity) == intensity)
+            #expect(placement.diffuseTintOpacity(intensity) == 0.48 + value * 0.30)
+            #expect(diffuse < placement.diffuseTintOpacity(intensity))
+        }
+    }
+
     @Test(arguments: [false, true]) func nativeGlassKeepsItsOpticsAndMenuHierarchy(dark: Bool) {
         for placement in [AskGlassPlacement.floating, .inWindow, .menu] {
             let native = placement.frost(dark: dark, material: .liquidGlass)
