@@ -2024,13 +2024,15 @@
 "ask.activity.pausedAt" = "已停在第 %d 步";
 "ask.activity.attention" = "等待你的确认";
 "ask.activity.steps" = "%d 步";
-"ask.activity.plan" = "完成了 %d/%d 项计划";
+"ask.activity.plan" = "当前计划：已完成 %d/%d 项";
+"ask.activity.planRemaining" = "当前计划：%d 项待完成";
 "ask.activity.failures" = "%d 次失败";
 "ask.activity.expanded" = "已展开";
 "ask.activity.collapsed" = "已收起";
 "ask.run.attention" = "等待确认";
 "ask.run.running" = "运行中 · 第 %d 步";
-"ask.run.completed" = "已完成 · %d 步";
+"ask.run.completed" = "本轮已结束 · %d 步";
+"ask.run.endedWithPendingPlan" = "本轮已结束，仍有待办";
 "ask.run.failed" = "失败";
 "ask.run.cancelled" = "已停止";
 "ask.run.needsDecision" = "需要你确认";

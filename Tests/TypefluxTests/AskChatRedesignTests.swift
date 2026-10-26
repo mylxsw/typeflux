@@ -74,6 +74,23 @@ struct AskRunPhaseTests {
             == .working(step: 1))
     }
 
+    @Test func endedRunWithPendingPlanDoesNotClaimTaskCompletion() {
+        var value = run("completed", steps: 100)
+        value.plan = [.init(step: "Inspect", status: "in_progress"), .init(step: "Write JS", status: "pending")]
+        let phase = AskRunPhase.resolve(run: value, busy: false, pendingApproval: false, recovery: nil)
+        #expect(phase == .endedWithPendingPlan)
+        #expect(phase?.tone == .attention)
+        #expect(phase?.summary == L("ask.run.endedWithPendingPlan"))
+        #expect(phase?.isWorking == false && phase?.offersStop == false && phase?.step == nil)
+        value.plan = [.init(step: "Write JS", status: "completed")]
+        #expect(AskRunPhase.resolve(run: value, busy: false, pendingApproval: false, recovery: nil) == .completed(steps: 100))
+        value.plan = []
+        #expect(AskRunPhase.resolve(run: value, busy: false, pendingApproval: false, recovery: nil) == .completed(steps: 100))
+        value.status = "running"
+        value.plan = [.init(step: "Write JS", status: "pending")]
+        #expect(AskRunPhase.resolve(run: value, busy: true, pendingApproval: false, recovery: nil) == .working(step: 100))
+    }
+
     @Test func settledRunsMapToTheirStatus() {
         let completed = AskRunPhase.resolve(run: run("completed", steps: 4), busy: false, pendingApproval: false,
                                             recovery: nil)

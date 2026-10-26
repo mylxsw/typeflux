@@ -2014,13 +2014,15 @@
 "ask.activity.pausedAt" = "ステップ %d で停止中";
 "ask.activity.attention" = "承認待ち";
 "ask.activity.steps" = "%d ステップ";
-"ask.activity.plan" = "計画 %d/%d 完了";
+"ask.activity.plan" = "現在の計画：%d/%d 完了";
+"ask.activity.planRemaining" = "現在の計画：残り %d 項目";
 "ask.activity.failures" = "%d 件失敗";
 "ask.activity.expanded" = "展開中";
 "ask.activity.collapsed" = "折りたたみ中";
 "ask.run.attention" = "承認待ち";
 "ask.run.running" = "実行中 · ステップ %d";
-"ask.run.completed" = "完了 · %d ステップ";
+"ask.run.completed" = "このターンは終了 · %d ステップ";
+"ask.run.endedWithPendingPlan" = "このターンは終了・未完了の項目あり";
 "ask.run.failed" = "失敗";
 "ask.run.cancelled" = "停止済み";
 "ask.run.needsDecision" = "確認が必要です";

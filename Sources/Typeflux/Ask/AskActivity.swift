@@ -255,7 +255,7 @@ enum AskActivity {
         case .failed, .done:
             var parts: [String] = []
             if let plan, !plan.isEmpty {
-                parts.append(L("ask.activity.plan", plan.filter { $0.status == "completed" }.count, plan.count))
+                parts.append(planSummary(plan))
             }
             if steps.count == 1, parts.isEmpty {
                 parts.append(AskTheme.toolTitle(steps[0]))
@@ -267,11 +267,18 @@ enum AskActivity {
         }
     }
 
+    /// A plan is a replaceable checklist, not a cumulative measure of work performed.
+    static func planSummary(_ plan: [AskPlanItem]) -> String {
+        let completed = plan.filter { $0.status == "completed" }.count
+        if completed == 0 { return L("ask.activity.planRemaining", plan.count) }
+        return L("ask.activity.plan", completed, plan.count)
+    }
+
     /// A waiting card's title: how far the plan has got, since the plan itself is
     /// listed under the title; without a plan, that something waits.
     static func attentionTitle(plan: [AskPlanItem]?) -> String {
         guard let plan, !plan.isEmpty else { return L("ask.activity.attention") }
-        return L("ask.activity.plan", plan.filter { $0.status == "completed" }.count, plan.count)
+        return planSummary(plan)
     }
 
     /// The quieter tail of the line: "Step 3" while working, "3 steps" once

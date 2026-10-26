@@ -186,7 +186,12 @@ struct AskActivityBlock: View {
         let range = AskActivityPage.range(count: rows.count, page: detailPage)
         let index = AskActivity.resultIndex(results)
         return VStack(alignment: .leading, spacing: 8) {
-            if includesPlan, let plan, !plan.isEmpty { AskPlanList(items: plan) }
+            if includesPlan, let plan, !plan.isEmpty {
+                Text(AskActivity.planSummary(plan))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                AskPlanList(items: plan)
+            }
             if rows.count > AskActivityPage.size {
                 HStack(spacing: 12) {
                     Button(L("ask.activity.previous")) { detailPage = max(0, range.lowerBound / AskActivityPage.size - 1) }

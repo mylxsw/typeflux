@@ -2024,13 +2024,15 @@
 "ask.activity.pausedAt" = "Stopped at step %d";
 "ask.activity.attention" = "Waiting for your approval";
 "ask.activity.steps" = "%d steps";
-"ask.activity.plan" = "Plan %d/%d done";
+"ask.activity.plan" = "Current plan: %d/%d done";
+"ask.activity.planRemaining" = "Current plan: %d remaining";
 "ask.activity.failures" = "%d failed";
 "ask.activity.expanded" = "Expanded";
 "ask.activity.collapsed" = "Collapsed";
 "ask.run.attention" = "Waiting for approval";
 "ask.run.running" = "Running · step %d";
-"ask.run.completed" = "Done · %d steps";
+"ask.run.completed" = "Turn ended · %d steps";
+"ask.run.endedWithPendingPlan" = "Turn ended · Work remains";
 "ask.run.failed" = "Failed";
 "ask.run.cancelled" = "Stopped";
 "ask.run.needsDecision" = "Needs your decision";

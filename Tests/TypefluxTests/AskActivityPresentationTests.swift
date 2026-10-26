@@ -19,6 +19,27 @@ import Testing
         items.first { if case .outcome = $0.kind { return true }; return false }
     }
 
+    @Test func replacementPlanDoesNotClaimNoWorkWasPerformed() throws {
+        let previous = AskMessage(id: "old-plan", role: "assistant", text: "", toolCalls: [
+            .init(id: "old", function: .init(name: "update_plan", arguments:
+                #"{"items":[{"step":"Write HTML","status":"completed"}]}"#))
+        ], createdAt: now, runId: "run")
+        let replacement = AskMessage(id: "new-plan", role: "assistant", text: "", toolCalls: [
+            .init(id: "new", function: .init(name: "update_plan", arguments:
+                #"{"items":[{"step":"Inspect","status":"in_progress"},{"step":"Write JS","status":"pending"},{"step":"Verify","status":"pending"}]}"#))
+        ], createdAt: now, runId: "run")
+        let group = AskActivityGroup(id: "old-plan", messages: [previous, replacement, step("read")])
+        let plan = try #require(AskActivity.plan(for: group, run: nil, isLatest: false))
+        #expect(plan.count == 3)
+        #expect(AskActivity.title(group, status: .done, plan: plan, results: [])
+            .hasPrefix(L("ask.activity.planRemaining", 3)))
+        #expect(AskActivity.attentionTitle(plan: plan) == L("ask.activity.planRemaining", 3))
+        let progressed = [AskPlanItem(step: "Inspect", status: "completed"),
+                          AskPlanItem(step: "Write", status: "pending")]
+        #expect(AskActivity.planSummary(progressed) == L("ask.activity.plan", 1, 2))
+        #expect(AskActivity.planSummary([progressed[0]]) == L("ask.activity.plan", 1, 1))
+    }
+
     @Test func taskResultsSurviveStreamingToolCallsSteeringCompletionAndReload() throws {
         let cache = AskActivityOutputCache()
         var messages = [user("question"), step("one")]

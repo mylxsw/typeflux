@@ -2021,13 +2021,15 @@
 "ask.activity.pausedAt" = "已停在第 %d 步";
 "ask.activity.attention" = "等待你的確認";
 "ask.activity.steps" = "%d 步";
-"ask.activity.plan" = "完成了 %d/%d 項計畫";
+"ask.activity.plan" = "目前計畫：已完成 %d/%d 項";
+"ask.activity.planRemaining" = "目前計畫：%d 項待完成";
 "ask.activity.failures" = "%d 次失敗";
 "ask.activity.expanded" = "已展開";
 "ask.activity.collapsed" = "已收合";
 "ask.run.attention" = "等待確認";
 "ask.run.running" = "執行中 · 第 %d 步";
-"ask.run.completed" = "已完成 · %d 步";
+"ask.run.completed" = "本輪已結束 · %d 步";
+"ask.run.endedWithPendingPlan" = "本輪已結束，仍有待辦";
 "ask.run.failed" = "失敗";
 "ask.run.cancelled" = "已停止";
 "ask.run.needsDecision" = "需要你確認";
