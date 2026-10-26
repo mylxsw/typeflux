@@ -7085,7 +7085,9 @@
 "ask.sidePanel.copyFile" = "파일 복사";
 "ask.sidePanel.copyPath" = "경로 복사";
 "ask.sidePanel.saveAs" = "다른 이름으로 저장…";
-"ask.fileChanges.title" = "이번 턴의 파일 변경:";
+"ask.fileChanges.title" = "파일 변경";
+"ask.fileChanges.expanded" = "펼쳐짐";
+"ask.fileChanges.collapsed" = "접힘";
 "ask.fileChanges.added" = "추가 %d";
 "ask.fileChanges.modified" = "수정 %d";
 "ask.fileChanges.tag.added" = "새 파일";

@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 /// What one answer's "files changed this round" block lists: the files the round added or
-/// modified, and the artifacts it kept. Intermediate `work/` files fold under one line.
+/// modified, and the artifacts it kept. Workspace groups share one disclosure.
 struct AskFileChangeList: Equatable {
     struct Artifact: Equatable, Identifiable {
         let ref: AskArtifactRef
@@ -34,47 +34,44 @@ struct AskFileChangeList: Equatable {
     }
 }
 
-/// The block at the end of an answer: "Files changed this round: added N · modified M". A row
-/// opens its file in the side panel; hovering offers the external-open actions.
+/// A compact disclosure at the end of an answer. All workspace files share one list;
+/// directory names alone do not establish whether a file is a deliverable.
 struct AskFileChangesView: View {
     let list: AskFileChangeList
     let actions: AskSidePanelActions
-    @State private var showsProcess = false
+    @State var isExpanded = false
+    @State private var hovering = false
     @Environment(\.askInspectTranscript) private var inspectTranscript
+
+    private var files: [AskWorkspaceFileChange] { list.main + list.process }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-            ForEach(Array(list.main.prefix(5))) { change in
-                Rectangle().fill(AskTheme.separator).frame(height: 1)
-                AskFileChangeRow(change: change, actions: actions)
-            }
-            ForEach(Array(list.artifacts.prefix(5))) { artifact in
-                Rectangle().fill(AskTheme.separator).frame(height: 1)
-                AskArtifactChangeRow(artifact: artifact, actions: actions)
-            }
-            if list.main.count > 5 || list.artifacts.count > 5 {
-                Button(L("ask.fileChanges.showAll"), action: actions.showFiles)
-                    .buttonStyle(.plain).padding(12)
-            }
-            if !list.process.isEmpty {
-                Rectangle().fill(AskTheme.separator).frame(height: 1)
-                processToggle
-                if showsProcess {
-                    ForEach(Array(list.process.prefix(10))) { change in
-                        Rectangle().fill(AskTheme.separator).frame(height: 1)
-                        AskFileChangeRow(change: change, actions: actions)
-                    }
-                    if list.process.count > 10 {
-                        Button(L("ask.fileChanges.showAll"), action: actions.showFiles)
-                            .buttonStyle(.plain).padding(12)
-                    }
+            if isExpanded {
+                ForEach(Array(files.prefix(5))) { change in
+                    AskFileChangeRow(change: change, actions: actions)
                 }
+                ForEach(Array(list.artifacts.prefix(max(0, 5 - files.count)))) { artifact in
+                    AskArtifactChangeRow(artifact: artifact, actions: actions)
+                }
+                Button(action: actions.showFiles) {
+                    HStack(spacing: 6) {
+                        Text(L("ask.fileChanges.showAll"))
+                        Image(systemName: "arrow.right").font(.system(size: 10))
+                    }
+                    .font(.system(size: 12))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .padding(.horizontal, 12)
+                    .frame(height: 36)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("ask.fileChanges.showAll")
             }
         }
-        .background(AskTheme.monoSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AskTheme.separator))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(StudioTheme.rowSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.fileChanges")
     }
@@ -86,44 +83,35 @@ struct AskFileChangesView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "doc.on.doc").font(.system(size: 11))
-            Text(L("ask.fileChanges.title")).foregroundStyle(StudioTheme.textSecondary)
-            Text(Self.countText(added: list.added, modified: list.modified))
-                .fontWeight(.semibold).foregroundStyle(StudioTheme.textPrimary)
-            Spacer(minLength: 6)
-            Button(L("ask.fileChanges.showAll"), action: actions.showFiles)
-                .buttonStyle(.plain)
-                .foregroundStyle(AskTheme.accentText)
-                .accessibilityIdentifier("ask.fileChanges.showAll")
-        }
-        .font(.system(size: 12.5))
-        .foregroundStyle(StudioTheme.textTertiary)
-        .lineLimit(1)
-        .padding(.horizontal, 12)
-        .frame(height: 34)
-    }
-
-    private var processToggle: some View {
         Button {
             inspectTranscript()
-            showsProcess.toggle()
+            isExpanded.toggle()
         } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "chevron.right").font(.system(size: 8.5, weight: .bold))
-                    .rotationEffect(.degrees(showsProcess ? 90 : 0))
-                Text(L("ask.fileChanges.process", list.process.count))
-                Spacer(minLength: 0)
+            HStack(spacing: 8) {
+                Image(systemName: "doc.on.doc").font(.system(size: 12))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                Text(L("ask.fileChanges.title"))
+                    .fontWeight(.medium).foregroundStyle(StudioTheme.textPrimary)
+                    .layoutPriority(1)
+                Text(Self.countText(added: list.added, modified: list.modified))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                Spacer(minLength: 4)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .medium))
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    .foregroundStyle(StudioTheme.textSecondary)
             }
-            .font(.system(size: 12))
-            .foregroundStyle(StudioTheme.textTertiary)
+            .font(.system(size: 12.5))
+            .lineLimit(1)
             .padding(.horizontal, 12)
-            .frame(height: 30)
+            .frame(height: 40)
             .contentShape(Rectangle())
+            .background(hovering ? StudioTheme.textPrimary.opacity(0.05) : .clear)
         }
         .buttonStyle(.plain)
-        .accessibilityAddTraits(showsProcess ? .isSelected : [])
-        .accessibilityIdentifier("ask.fileChanges.process")
+        .onHover { hovering = $0 }
+        .accessibilityValue(isExpanded ? L("ask.fileChanges.expanded") : L("ask.fileChanges.collapsed"))
+        .accessibilityIdentifier("ask.fileChanges.toggle")
     }
 }
 
@@ -134,10 +122,10 @@ private struct AskFileChangeTag: View {
     var body: some View {
         Text(L(added ? "ask.fileChanges.tag.added" : "ask.fileChanges.tag.modified"))
             .font(.system(size: 10.5, weight: .semibold))
-            .foregroundStyle(added ? StudioTheme.success : StudioTheme.warning)
+            .foregroundStyle(added ? StudioTheme.success : AskTheme.accentText)
             .padding(.horizontal, 6)
             .frame(height: 17)
-            .background((added ? StudioTheme.success : StudioTheme.warning).opacity(0.13),
+            .background((added ? StudioTheme.success : AskTheme.accentText).opacity(0.13),
                         in: RoundedRectangle(cornerRadius: 4, style: .continuous))
     }
 }
@@ -190,7 +178,7 @@ private struct AskFileChangeRow: View {
             }
         }
         .padding(.horizontal, 12).padding(.vertical, 7)
-        .background(hovering ? AskTheme.hoverFill : .clear)
+        .background(hovering ? StudioTheme.textPrimary.opacity(0.05) : .clear)
         .contentShape(Rectangle())
         .onTapGesture { actions.openFile(change.path) }
         .onHover { hovering = $0 }
@@ -227,7 +215,7 @@ private struct AskArtifactChangeRow: View {
             AskFileChangeTag(added: true)
         }
         .padding(.horizontal, 12).padding(.vertical, 7)
-        .background(hovering ? AskTheme.hoverFill : .clear)
+        .background(hovering ? StudioTheme.textPrimary.opacity(0.05) : .clear)
         .contentShape(Rectangle())
         .onTapGesture(perform: open)
         .onHover { hovering = $0 }

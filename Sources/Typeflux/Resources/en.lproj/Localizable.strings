@@ -7084,7 +7084,9 @@
 "ask.sidePanel.copyFile" = "Copy File";
 "ask.sidePanel.copyPath" = "Copy Path";
 "ask.sidePanel.saveAs" = "Save As…";
-"ask.fileChanges.title" = "Files changed this round:";
+"ask.fileChanges.title" = "File changes";
+"ask.fileChanges.expanded" = "Expanded";
+"ask.fileChanges.collapsed" = "Collapsed";
 "ask.fileChanges.added" = "%d added";
 "ask.fileChanges.modified" = "%d modified";
 "ask.fileChanges.tag.added" = "New";

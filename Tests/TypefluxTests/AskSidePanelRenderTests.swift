@@ -222,7 +222,7 @@ struct AskSidePanelRenderTests {
         #expect(AskArtifactTab.defaultName(zip) == L("ask.sidePanel.artifact") + " abcdef12")
     }
 
-    @Test func theChangesBlockListsFilesAndFoldsWorkFiles() async throws {
+    @Test func theChangesBlockCollapsesAndShowsWorkFilesWithOutputs() async throws {
         let ref = AskArtifactRef(id: "artifact-1", ownerId: "o", conversationId: "c1", runId: "r", version: "v",
                                  mediaType: "text/html", sizeBytes: 2048, sha256: "s", cleanup: "device_30_days")
         let list = AskFileChangeList(changes: [
@@ -234,16 +234,18 @@ struct AskSidePanelRenderTests {
         defer { try? FileManager.default.removeItem(at: root) }
         let actions = AskSidePanelActions(fileURL: { root.appendingPathComponent($0) })
         for dark in [false, true] {
-            let labels = try await render(AskFileChangesView(list: list, actions: actions).padding().frame(width: 560),
-                                          name: "file-changes" + (dark ? "-dark" : ""),
-                                          size: NSSize(width: 600, height: 320), dark: dark)
-            #expect(labels.contains { $0.contains(L("ask.fileChanges.title")) })
-            #expect(labels.contains { $0.contains(AskFileChangesView.countText(added: 3, modified: 2)) })
-            #expect(labels.contains { $0.contains("report.html") })
-            #expect(labels.contains { $0.contains(L("ask.fileChanges.edited", 2)) })
-            #expect(labels.contains { $0.contains("dashboard.html") })
-            #expect(labels.contains { $0.contains(L("ask.fileChanges.process", 2)) })
-            #expect(!labels.contains { $0.contains("clean.py") }, "Work files stay folded")
+            for expanded in [false, true] {
+                let labels = try await render(
+                    AskFileChangesView(list: list, actions: actions, isExpanded: expanded).padding().frame(width: 560),
+                    name: "file-changes-\(dark)-\(expanded)",
+                    size: NSSize(width: 600, height: 400), dark: dark)
+                #expect(labels.contains { $0.contains(L("ask.fileChanges.title")) })
+                #expect(labels.contains { $0.contains(AskFileChangesView.countText(added: 3, modified: 2)) })
+                for name in ["report.html", "dashboard.html", "clean.py", "notes.txt"] {
+                    #expect(labels.contains { $0.contains(name) } == expanded)
+                }
+                #expect(labels.contains { $0.contains(L("ask.fileChanges.showAll")) } == expanded)
+            }
         }
     }
 
@@ -349,7 +351,7 @@ extension AskSidePanelRenderTests {
 
         let list = AskFileChangeList(changes: [.init(path: "outputs/summary.md", kind: .modified)], artifacts: [])
         let actions = AskSidePanelActions(fileURL: { root.appendingPathComponent($0) }, referenceFile: { _ in })
-        try await render(AskFileChangesView(list: list, actions: actions).padding().frame(width: 560),
+        try await render(AskFileChangesView(list: list, actions: actions, isExpanded: true).padding().frame(width: 560),
                          name: "file-changes-reference", size: NSSize(width: 600, height: 200))
 
         let drop = try await render(ZStack { AskTheme.surface; AskSidePanelDropHighlight() }, name: "side-panel-drop")

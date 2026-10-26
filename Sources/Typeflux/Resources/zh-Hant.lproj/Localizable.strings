@@ -7086,7 +7086,9 @@
 "ask.sidePanel.copyFile" = "拷貝檔案";
 "ask.sidePanel.copyPath" = "拷貝路徑";
 "ask.sidePanel.saveAs" = "另存新檔…";
-"ask.fileChanges.title" = "本輪檔案變更：";
+"ask.fileChanges.title" = "檔案變更";
+"ask.fileChanges.expanded" = "已展開";
+"ask.fileChanges.collapsed" = "已收合";
 "ask.fileChanges.added" = "新增 %d";
 "ask.fileChanges.modified" = "修改 %d";
 "ask.fileChanges.tag.added" = "新增";

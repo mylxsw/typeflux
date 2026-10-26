@@ -287,9 +287,26 @@ extension AskSidePanelConversationTests {
         // The recorded change is read back and listed at the end of the answer.
         try await SettingsBehaviorTestSupport.wait {
             hosting.layoutSubtreeIfNeeded()
-            return find("ask.fileChanges", in: window) != nil && shows("chart.html", in: window)
+            return find("ask.fileChanges.toggle", in: window) != nil
         }
         #expect(find("ask.sidePanel", in: window) == nil)
+        #expect(!shows("chart.html", in: window))
+        let toggle = try #require(find("ask.fileChanges.toggle", in: window))
+        _ = toggle.perform(NSSelectorFromString("accessibilityPerformPress"))
+        try await SettingsBehaviorTestSupport.wait {
+            hosting.layoutSubtreeIfNeeded()
+            return shows("chart.html", in: window)
+        }
+        _ = toggle.perform(NSSelectorFromString("accessibilityPerformPress"))
+        try await SettingsBehaviorTestSupport.wait {
+            hosting.layoutSubtreeIfNeeded()
+            return !shows("chart.html", in: window)
+        }
+        _ = toggle.perform(NSSelectorFromString("accessibilityPerformPress"))
+        try await SettingsBehaviorTestSupport.wait {
+            hosting.layoutSubtreeIfNeeded()
+            return find("ask.fileChanges.showAll", in: window) != nil
+        }
         let showAll = try #require(find("ask.fileChanges.showAll", in: window))
         _ = showAll.perform(NSSelectorFromString("accessibilityPerformPress"))
         try await SettingsBehaviorTestSupport.wait {
