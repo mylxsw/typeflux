@@ -257,6 +257,22 @@ extension ScreenshotCaptureWindowPolicyTests {
     }
 
     @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_REAL_SCREEN_CAPTURE_TESTS"] == "1"))
+    func progressiveNativeCaptureReportsFirstScreenLatency() async throws {
+        try #require(CGPreflightScreenCaptureAccess())
+        let displays = try ScreenCaptureContent.activeDisplays()
+        let preferred = try #require(displays.last?.id)
+        let start = ContinuousClock.now
+        var received: [CGDirectDisplayID] = []
+        let result = try await ScreenCaptureService().progressiveSnapshot(preferredDisplayID: preferred) { part in
+            received.append(contentsOf: part.displays.map(\.id))
+            print("PROGRESSIVE_CAPTURE displays=\(received.count) elapsed=\(start.duration(to: .now))")
+        }
+        #expect(received.first == preferred)
+        #expect(Set(received) == Set(displays.map(\.id)))
+        #expect(result.displays.map(\.id) == received)
+    }
+
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_REAL_SCREEN_CAPTURE_TESTS"] == "1"))
     func directCapturePreservesPixelsAcrossDisplaysAndMeasuresBothPaths() async throws {
         guard #available(macOS 26.0, *) else { return }
         try #require(CGPreflightScreenCaptureAccess())

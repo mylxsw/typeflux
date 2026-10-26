@@ -1,4 +1,5 @@
 import AppKit
+import QuartzCore
 
 /// Draws the framing interface over a frozen display: outline, handles, size label,
 /// guides and loupe. It only draws; the overlay view under it takes the input.
@@ -31,34 +32,115 @@ final class ScreenshotOverlayChromeView: NSView {
     static let handleSize: CGFloat = 8
     static let pillHeight: CGFloat = 22
 
-    var model = Model() {
-        didSet {
-            guard model != oldValue else { return }
-            for rect in Self.invalidationRects(from: oldValue, to: model, in: bounds) {
-                setNeedsDisplay(rect)
-            }
+    private enum Part { case selection, hovered, label, guides, loupe }
+    private final class PartView: NSView {
+        weak var owner: ScreenshotOverlayChromeView?
+        let part: Part
+        init(owner: ScreenshotOverlayChromeView, part: Part) {
+            self.owner = owner; self.part = part
+            super.init(frame: .zero)
+            wantsLayer = true
+        }
+        required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+        override var isFlipped: Bool { true }
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+        override func draw(_ dirtyRect: NSRect) {
+            guard let owner, let context = NSGraphicsContext.current?.cgContext else { return }
+            context.saveGState()
+            context.translateBy(x: -frame.minX, y: -frame.minY)
+            owner.draw(part, in: context)
+            context.restoreGState()
         }
     }
 
-    override var isFlipped: Bool { true }
+    private var selectionParts: [PartView] = []
+    private var hoveredParts: [PartView] = []
+    private var guideParts: [PartView] = []
+    private var labelParts: [PartView] = []
+    private var loupeParts: [PartView] = []
 
-    /// Input goes to the overlay view underneath.
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        wantsLayer = true
+        guideParts = makeParts(.guides, count: 2)
+        hoveredParts = makeParts(.hovered, count: 4)
+        selectionParts = makeParts(.selection, count: 4)
+        labelParts = makeParts(.label, count: 1)
+        loupeParts = makeParts(.loupe, count: 1)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    private func makeParts(_ part: Part, count: Int) -> [PartView] {
+        (0..<count).map { _ in
+            let view = PartView(owner: self, part: part)
+            view.isHidden = true
+            addSubview(view)
+            return view
+        }
+    }
+
+    var model = Model() {
+        didSet {
+            guard model != oldValue else { return }
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            if model.selection != oldValue.selection || model.handles != oldValue.handles {
+                update(selectionParts, frames: model.selection.map { Self.edgeFrames($0, margin: 12) } ?? [])
+            }
+            if model.hovered != oldValue.hovered {
+                update(hoveredParts, frames: model.hovered.map { Self.edgeFrames($0, margin: 4) } ?? [])
+            }
+            if model.sizeLabel != oldValue.sizeLabel || model.selection != oldValue.selection || model.hovered != oldValue.hovered {
+                update(labelParts, frames: Self.sizeLabelFrame(for: model, in: bounds).map { [$0.insetBy(dx: -2, dy: -2)] } ?? [])
+            }
+            if model.pointer != oldValue.pointer {
+                update(guideParts, frames: model.pointer.map { point in [
+                    CGRect(x: bounds.minX, y: point.y - 2, width: bounds.width, height: 5),
+                    CGRect(x: point.x - 2, y: bounds.minY, width: 5, height: bounds.height)
+                ] } ?? [])
+            }
+            if model.loupe != oldValue.loupe { update(loupeParts, frames: model.loupe.map { [$0.frame.insetBy(dx: -2, dy: -2)] } ?? []) }
+            CATransaction.commit()
+        }
+    }
+
+    /// Separate backing stores keep a moving crosshair from dirtying a full-display bitmap.
+    private func update(_ parts: [PartView], frames: [CGRect]) {
+        for (index, view) in parts.enumerated() {
+            let rect = index < frames.count ? frames[index].intersection(bounds) : .zero
+            view.isHidden = rect.isNull || rect.isEmpty
+            if !view.isHidden { view.frame = rect; view.needsDisplay = true }
+        }
+    }
+
+    static func edgeFrames(_ rect: CGRect, margin: CGFloat) -> [CGRect] {
+        let outer = rect.insetBy(dx: -margin, dy: -margin)
+        guard rect.height > margin * 2 else { return [outer] }
+        return [CGRect(x: outer.minX, y: outer.minY, width: outer.width, height: margin * 2),
+                CGRect(x: outer.minX, y: rect.maxY - margin, width: outer.width, height: margin * 2),
+                CGRect(x: outer.minX, y: rect.minY + margin, width: margin * 2, height: rect.height - margin * 2),
+                CGRect(x: rect.maxX - margin, y: rect.minY + margin, width: margin * 2, height: rect.height - margin * 2)]
+    }
+
+    override var isFlipped: Bool { true }
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 
-    override func draw(_ dirtyRect: NSRect) {
-        guard let context = NSGraphicsContext.current?.cgContext else { return }
-        if let pointer = model.pointer { drawGuides(through: pointer, in: context) }
-        if let hovered = model.hovered {
-            drawFrame(hovered.insetBy(dx: 1.5, dy: 1.5), width: 3, in: context)
+    private func draw(_ part: Part, in context: CGContext) {
+        switch part {
+        case .guides:
+            if let pointer = model.pointer { drawGuides(through: pointer, in: context) }
+        case .hovered:
+            if let hovered = model.hovered { drawFrame(hovered.insetBy(dx: 1.5, dy: 1.5), width: 3, in: context) }
+        case .selection:
+            if let selection = model.selection {
+                drawFrame(selection.insetBy(dx: -0.75, dy: -0.75), width: 1.5, in: context)
+                if model.handles { drawHandles(around: selection, in: context) }
+            }
+        case .label:
+            if let label = model.sizeLabel, let frame = Self.sizeLabelFrame(for: model, in: bounds) { drawPill(label, in: frame) }
+        case .loupe:
+            if let loupe = model.loupe { drawLoupe(loupe, in: context) }
         }
-        if let selection = model.selection {
-            drawFrame(selection.insetBy(dx: -0.75, dy: -0.75), width: 1.5, in: context)
-            if model.handles { drawHandles(around: selection, in: context) }
-        }
-        if let label = model.sizeLabel, let frame = Self.sizeLabelFrame(for: model, in: bounds) {
-            drawPill(label, in: frame)
-        }
-        if let loupe = model.loupe { drawLoupe(loupe, in: context) }
     }
 
     private func drawFrame(_ rect: CGRect, width: CGFloat, in context: CGContext) {

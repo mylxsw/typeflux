@@ -70,7 +70,12 @@ final class ScreenshotOverlayView: NSView {
     private var hasUpdatedDimLayers = false
     private var pendingVisualRefresh: Timer?
     private var lastVisualRefresh: CFTimeInterval = 0
-    private static let visualRefreshInterval: CFTimeInterval = 1.0 / 60.0
+    static func refreshInterval(maximumFramesPerSecond: Int) -> CFTimeInterval {
+        1.0 / Double(max(60, maximumFramesPerSecond))
+    }
+    private var visualRefreshInterval: CFTimeInterval {
+        Self.refreshInterval(maximumFramesPerSecond: window?.screen?.maximumFramesPerSecond ?? 60)
+    }
     let backgroundTransition = ScreenshotBackgroundRemovalTransition()
     private var previewRegion: CGRect?
     private var previewResult: CGImage?
@@ -631,12 +636,12 @@ final class ScreenshotOverlayView: NSView {
     /// latest geometry and draw it once per frame; mouse-up still flushes immediately.
     private func scheduleVisualRefresh() {
         let elapsed = CACurrentMediaTime() - lastVisualRefresh
-        if elapsed >= Self.visualRefreshInterval {
+        if elapsed >= visualRefreshInterval {
             refresh()
             return
         }
         guard pendingVisualRefresh == nil else { return }
-        let delay = Self.visualRefreshInterval - elapsed
+        let delay = visualRefreshInterval - elapsed
         let timer = Timer(timeInterval: delay, repeats: false) { [weak self] _ in
             MainActor.assumeIsolated {
                 self?.pendingVisualRefresh = nil
@@ -679,6 +684,14 @@ final class ScreenshotOverlayView: NSView {
         pendingVisualRefresh = nil
         lastVisualRefresh = CACurrentMediaTime()
         let framing = selection.isDragging && !editor.isDragging
+        if toolbar == nil, backgroundRemoval.region == nil, editor.document.isEmpty, !editor.isDragging, editor.tool == nil,
+           textField == nil, backgroundRemoval.image == nil, !backgroundRemoval.isProcessing,
+           selection.rect == nil || framing {
+            updateDimLayers()
+            updateChrome()
+            toolbar?.isHidden = true
+            return
+        }
         // A moving frame has no committed region. Retire any old preview once,
         // then leave image processing and toolbar layout until the drag ends.
         let region = framing && selection.rect != backgroundRemoval.region ? nil : selection.rect
@@ -707,14 +720,7 @@ final class ScreenshotOverlayView: NSView {
             prepareMosaicGeometry()
         }
         updateDimLayers()
-        chrome.model = ScreenshotOverlayChromeView.Model(
-            selection: selection.rect,
-            hovered: selection.rect == nil ? selection.hovered : nil,
-            handles: selection.rect != nil && !selection.isDragging,
-            sizeLabel: selection.sizeLabel,
-            pointer: showsLoupe ? selection.pointer : nil,
-            loupe: showsLoupe ? loupe() : nil
-        )
+        updateChrome()
         let selected = editor.editingTextID == nil ? editor.selected : nil
         if !framing || !editor.document.isEmpty {
             canvas.model = ScreenshotAnnotationCanvasView.Model(crop: selection.rect,
@@ -733,6 +739,17 @@ final class ScreenshotOverlayView: NSView {
             toolStyles.styles = editor.toolStyles
             syncedStyles = editor.toolStyles
         }
+    }
+
+    private func updateChrome() {
+        chrome.model = ScreenshotOverlayChromeView.Model(
+            selection: selection.rect,
+            hovered: selection.rect == nil ? selection.hovered : nil,
+            handles: selection.rect != nil && !selection.isDragging,
+            sizeLabel: selection.sizeLabel,
+            pointer: showsLoupe ? selection.pointer : nil,
+            loupe: showsLoupe ? loupe() : nil
+        )
     }
 
     private func refreshToolbar() {

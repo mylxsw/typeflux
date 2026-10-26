@@ -38,6 +38,18 @@ protocol ScreenCapturing {
     /// Captures the requested displays at once. Never asks for Screen Recording access:
     /// throws `permissionDenied` instead, so a prompt only follows an explicit user action.
     func snapshot(_ request: ScreenCaptureRequest) async throws -> ScreenSnapshot
+    func progressiveSnapshot(preferredDisplayID: CGDirectDisplayID?,
+                             receive: @escaping @MainActor (ScreenSnapshot) -> Void) async throws -> ScreenSnapshot
+}
+
+extension ScreenCapturing {
+    func progressiveSnapshot(preferredDisplayID: CGDirectDisplayID?,
+                             receive: @escaping @MainActor (ScreenSnapshot) -> Void) async throws -> ScreenSnapshot {
+        let result = try await snapshot(.init(windowExclusion: .screenshotControls))
+        try Task.checkCancellation()
+        await receive(result)
+        return result
+    }
 }
 
 /// Freezes displays and lists windows through `ScreenCaptureContent`, applying the same
@@ -65,6 +77,17 @@ struct ScreenCaptureService: ScreenCapturing {
     }
 
     func snapshot(_ request: ScreenCaptureRequest) async throws -> ScreenSnapshot {
+        try await snapshot(request, preferredDisplayID: nil, receive: nil)
+    }
+
+    func progressiveSnapshot(preferredDisplayID: CGDirectDisplayID?,
+                             receive: @escaping @MainActor (ScreenSnapshot) -> Void) async throws -> ScreenSnapshot {
+        try await snapshot(.init(windowExclusion: .screenshotControls),
+                           preferredDisplayID: preferredDisplayID, receive: receive)
+    }
+
+    private func snapshot(_ request: ScreenCaptureRequest, preferredDisplayID: CGDirectDisplayID?,
+                          receive: (@MainActor (ScreenSnapshot) -> Void)?) async throws -> ScreenSnapshot {
         try Task.checkCancellation()
         guard permission.isGranted else { throw ScreenCaptureError.permissionDenied }
         let controls = request.windowExclusion == .screenshotControls ? await captureControlWindowIDs() : []
@@ -72,7 +95,10 @@ struct ScreenCaptureService: ScreenCapturing {
         let useDirect = request.windowExclusion == .screenshotControls && controls.isEmpty && loadDirectContent != nil
         let content = try await measuredContent(direct: useDirect)
         try Task.checkCancellation()
-        let displays = Self.displays(content.displays, matching: request.displays)
+        var displays = Self.displays(content.displays, matching: request.displays)
+        if receive != nil, let index = displays.firstIndex(where: { $0.id == preferredDisplayID }) {
+            displays.insert(displays.remove(at: index), at: 0)
+        }
         guard !displays.isEmpty else { throw ScreenCaptureError.unavailable }
         let excludedWindows: [CGWindowID]
         switch request.windowExclusion {
@@ -82,6 +108,29 @@ struct ScreenCaptureService: ScreenCapturing {
             let controls = Set(controls)
             try Task.checkCancellation()
             excludedWindows = content.windows.filter { $0.processID == ownProcessID && controls.contains($0.id) }.map(\.id)
+        }
+        if let receive {
+            var captured: [ScreenSnapshot.Display] = []
+            // Publish the working display before starting any other pixel transfer.
+            // Remaining displays are sequential, so they cannot saturate all capture workers.
+            for (index, display) in displays.enumerated() {
+                try Task.checkCancellation()
+                let size = ScreenCaptureGeometry.pixelSize(pointSize: display.frame.size, scale: display.scale,
+                                                           resolution: request.resolution)
+                do {
+                    let raw = try await Self.capture(content, display: display, excluded: excludedWindows,
+                                                     size: size, index: index + 1, count: displays.count)
+                    try Task.checkCancellation()
+                    guard let image = ScreenCaptureGeometry.resized(raw, to: size) else { throw ScreenCaptureError.unavailable }
+                    let value = ScreenSnapshot.Display(id: display.id, frame: display.frame, scale: display.scale, image: image)
+                    captured.append(value)
+                    await receive(ScreenSnapshot(displays: [value], windows: (content.latestWindows?() ?? content.windows).filter { !excludedWindows.contains($0.id) }))
+                } catch {
+                    // A failed secondary monitor must not discard an editable primary screen.
+                    if captured.isEmpty || Task.isCancelled { throw error }
+                }
+            }
+            return ScreenSnapshot(displays: captured, windows: (content.latestWindows?() ?? content.windows).filter { !excludedWindows.contains($0.id) })
         }
         let images = try await withThrowingTaskGroup(of: (Int, CGImage).self) { group in
             for (index, display) in displays.enumerated() {

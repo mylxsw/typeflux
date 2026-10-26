@@ -1,4 +1,4 @@
-import CoreGraphics
+import AppKit
 import Foundation
 
 /// Runs one screenshot at a time, from the shortcut, the launcher or the menu bar.
@@ -37,6 +37,11 @@ final class ScreenshotCoordinator {
     private let captureQueue = ScreenshotTaskQueue<ScreenSnapshot>()
     private var captureTimeoutTask: Task<Void, Never>?
     var captureTimeout: Duration = .seconds(5)
+    var preferredDisplayID: () -> CGDirectDisplayID? = {
+        let pointer = NSEvent.mouseLocation
+        let screen = NSScreen.screens.first { $0.frame.contains(pointer) }
+        return (screen?.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
+    }
     /// A pin's copy or save in flight, so tests can wait for it.
     private(set) var pinTask: Task<Void, Never>?
 
@@ -156,19 +161,30 @@ final class ScreenshotCoordinator {
             self.toast.show(.captureTimedOut)
         }
         let capture = capture
+        let preferredDisplay = preferredDisplayID()
         let captureQueue = captureQueue
         pendingTask = Task { [weak self] in
             ShortcutLatency.record(.captureStarted)
             let result: Result<ScreenSnapshot, Error>
             do {
                 result = try await .success(captureQueue.capture {
-                    try await capture.snapshot(ScreenCaptureRequest(windowExclusion: .screenshotControls))
+                    try await capture.progressiveSnapshot(preferredDisplayID: preferredDisplay) { [weak self] part in
+                        guard let self, self.session == session else { return }
+                        if self.state == .capturing {
+                            self.didCapture(.success(part), mode: mode, followUp: followUp, session: session)
+                        } else if self.state == .selecting || self.state == .editing {
+                            self.snapshot?.displays.append(contentsOf: part.displays)
+                            self.overlay.append(part)
+                        }
+                    }
                 })
             } catch {
                 result = .failure(error)
             }
             ShortcutLatency.record(.captureFinished)
-            self?.didCapture(result, mode: mode, followUp: followUp, session: session)
+            if self?.state == .capturing {
+                self?.didCapture(result, mode: mode, followUp: followUp, session: session)
+            }
         }
     }
 

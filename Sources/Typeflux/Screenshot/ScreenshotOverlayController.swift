@@ -119,10 +119,32 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
         dismiss()
         ShortcutLatency.record(.oldOverlayRetired)
         self.onEvent = onEvent
+        let connected = NSScreen.screens.compactMap {
+            ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
+        }
+        retireDisconnectedPanels(keeping: Set(connected).union(snapshot.displays.map(\.id)))
+        append(snapshot)
+        if let view = viewUnderPointer() {
+            // Show the loupe at once, before the pointer moves.
+            let pointer = pointerLocation()
+            ShortcutLatency.record(.pointerUpdateStarted)
+            view.pointerMoved(to: CGPoint(x: pointer.x - view.display.frame.minX,
+                                          y: pointer.y - view.display.frame.minY))
+            ShortcutLatency.record(.pointerUpdateFinished)
+        }
+        ShortcutPanelPresentation.display(panels)
+        if let view = viewUnderPointer() {
+            ShortcutLatency.measure(.focusStarted, .focusFinished) { focus(view) }
+        }
+        ShortcutLatency.record(.overlayFinished, itemCount: snapshot.displays.count)
+        ShortcutLatency.windowOrdered(panels.first)
+    }
+
+    /// Adds late monitors without dismissing the active selection or changing keyboard focus.
+    func append(_ snapshot: ScreenSnapshot) {
         let primaryHeight = primaryDisplayHeight()
         let initialModifierFlags = modifierFlags()
-        retireDisconnectedPanels(keeping: Set(snapshot.displays.map(\.id)))
-        for (index, display) in snapshot.displays.enumerated() {
+        for (index, display) in snapshot.displays.enumerated() where !views.contains(where: { $0.display.id == display.id }) {
             ShortcutLatency.record(.displayViewStarted, itemIndex: index + 1, itemCount: snapshot.displays.count)
             let view = ScreenshotOverlayView(display: display, windows: snapshot.windows,
                                              initialModifierFlags: initialModifierFlags, textMeasurer: textMeasurer,
@@ -143,20 +165,6 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
             panels.append(panel)
             views.append(view)
         }
-        if let view = viewUnderPointer() {
-            // Show the loupe at once, before the pointer moves.
-            let pointer = pointerLocation()
-            ShortcutLatency.record(.pointerUpdateStarted)
-            view.pointerMoved(to: CGPoint(x: pointer.x - view.display.frame.minX,
-                                          y: pointer.y - view.display.frame.minY))
-            ShortcutLatency.record(.pointerUpdateFinished)
-        }
-        ShortcutPanelPresentation.display(panels)
-        if let view = viewUnderPointer() {
-            ShortcutLatency.measure(.focusStarted, .focusFinished) { focus(view) }
-        }
-        ShortcutLatency.record(.overlayFinished, itemCount: snapshot.displays.count)
-        ShortcutLatency.windowOrdered(panels.first)
     }
 
     func selectFullScreen() {

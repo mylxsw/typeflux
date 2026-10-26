@@ -33,6 +33,7 @@ protocol ScreenshotOverlayPresenting: AnyObject {
     /// Creates hidden native windows without capturing pixels or taking focus.
     func prewarm()
     func present(_ snapshot: ScreenSnapshot, onEvent: @escaping (ScreenshotOverlayEvent) -> Void)
+    func append(_ snapshot: ScreenSnapshot)
     /// Selects the whole display under the pointer.
     func selectFullScreen()
     /// Hands the chosen region to a scrolling capture (`.scroll`), unless something is marked on it.
@@ -47,6 +48,7 @@ protocol ScreenshotOverlayPresenting: AnyObject {
 
 extension ScreenshotOverlayPresenting {
     func prewarm() {}
+    func append(_ snapshot: ScreenSnapshot) {}
     func backgroundRemovedImage(displayID: CGDirectDisplayID, rect: CGRect) -> CGImage? { nil }
 }
 

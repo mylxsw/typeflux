@@ -114,6 +114,48 @@ struct ScreenCaptureServiceTests {
         #expect(withoutWindows.windows.isEmpty)
     }
 
+    private final class CaptureOrder: @unchecked Sendable {
+        private let lock = NSLock()
+        private var values: [String] = []
+        func add(_ value: String) { lock.withLock { values.append(value) } }
+        var events: [String] { lock.withLock { values } }
+    }
+
+    @Test func progressiveCapturePublishesWorkingScreenBeforeStartingOtherScreens() async throws {
+        let order = CaptureOrder(), source = Source()
+        var content = source.content()
+        content.capture = { display, _, size in
+            order.add("capture \(display.id)")
+            return ScreenCaptureTestSupport.image(width: size.width, height: size.height)
+        }
+        let frozen = content
+        let service = ScreenCaptureService(permission: FakeScreenCapturePermission(granted: true),
+            captureControlWindowIDs: { [] }, loadDirectContent: { frozen })
+        let result = try await service.progressiveSnapshot(preferredDisplayID: 2) { part in
+            order.add("publish \(part.displays[0].id)")
+        }
+        #expect(order.events == ["capture 2", "publish 2", "capture 1", "publish 1"])
+        #expect(result.displays.map(\.id) == [2, 1])
+    }
+
+    @Test func progressiveCaptureKeepsPrimaryWhenSecondaryFailsAndFiltersWindowMetadata() async throws {
+        let source = Source()
+        var content = source.content()
+        content.capture = { display, _, size in
+            if display.id == 2 { throw Failure() }
+            return ScreenCaptureTestSupport.image(width: size.width, height: size.height)
+        }
+        let frozen = content
+        let service = ScreenCaptureService(permission: FakeScreenCapturePermission(granted: true), ownProcessID: 7,
+            captureControlWindowIDs: { [10] }, loadContent: { frozen })
+        let result = try await service.progressiveSnapshot(preferredDisplayID: 999) { part in
+            #expect(part.displays.map(\.id) == [1])
+            #expect(part.windows.map(\.id) == [11])
+        }
+        #expect(result.displays.map(\.id) == [1])
+        #expect(result.windows.map(\.id) == [11])
+    }
+
     @Test func deniedAccessThrowsWithoutReadingTheScreen() async {
         let source = Source()
         await #expect(throws: ScreenCaptureError.permissionDenied) {

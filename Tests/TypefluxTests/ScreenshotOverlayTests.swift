@@ -307,6 +307,45 @@ final class ScreenshotOverlayTests: XCTestCase {
                                   .finish(.copy, CGRect(x: 20, y: 20, width: 100, height: 50)), .cancelled])
     }
 
+    func testMovingChromeUsesSmallBackingSurfacesAt4K() {
+        let bounds = CGRect(x: 0, y: 0, width: 3840, height: 2160)
+        let chrome = ScreenshotOverlayChromeView(frame: bounds)
+        var maximumArea: CGFloat = 0
+        let start = CFAbsoluteTimeGetCurrent()
+        for index in 0..<240 {
+            let point = CGPoint(x: 200 + index * 4, y: 200 + index * 2)
+            chrome.model = .init(selection: CGRect(x: 100, y: 100, width: point.x - 100, height: point.y - 100),
+                sizeLabel: "1000 × 500", pointer: point,
+                loupe: .init(frame: ScreenshotMagnifier.frame(for: point, in: bounds), image: nil,
+                             imageOffset: .zero, imageSize: .zero, coordinates: "200, 200", color: "#000000"))
+            let area = chrome.subviews.filter { !$0.isHidden }.reduce(CGFloat.zero) { $0 + $1.bounds.width * $1.bounds.height }
+            maximumArea = max(maximumArea, area)
+        }
+        XCTAssertLessThan(maximumArea, bounds.width * bounds.height * 0.05)
+        XCTAssertEqual(ScreenshotOverlayView.refreshInterval(maximumFramesPerSecond: 120), 1.0 / 120.0)
+        XCTAssertEqual(ScreenshotOverlayView.refreshInterval(maximumFramesPerSecond: 0), 1.0 / 60.0)
+        print("CHROME_BENCH updates=240 elapsed=\(CFAbsoluteTimeGetCurrent() - start) maxBackingArea=\(maximumArea) fullDisplayArea=\(bounds.width * bounds.height)")
+    }
+
+    func testLateDisplayPreservesSelectionViewAndKeyboardFocus() throws {
+        let controller = ScreenshotOverlayController(primaryDisplayHeight: { 100 }, pointerLocation: { CGPoint(x: 20, y: 20) })
+        let full = snapshot()
+        controller.present(.init(displays: [full.displays[0]], windows: full.windows)) { _ in }
+        defer { controller.dismiss() }
+        let first = try XCTUnwrap(controller.views.first)
+        first.mouseDown(at: CGPoint(x: 10, y: 10), clickCount: 1)
+        first.mouseDragged(to: CGPoint(x: 80, y: 60))
+        let region = first.selection.rect
+        let key = NSApp.keyWindow
+        controller.append(.init(displays: [full.displays[1]], windows: full.windows))
+        XCTAssertTrue(controller.views[0] === first)
+        XCTAssertEqual(first.selection.rect, region)
+        XCTAssertTrue(first.selection.isDragging)
+        XCTAssertTrue(NSApp.keyWindow === key)
+        controller.append(full)
+        XCTAssertEqual(controller.views.count, 2)
+    }
+
     func testChromeDrawsEveryPart() throws {
         let chrome = ScreenshotOverlayChromeView(frame: CGRect(x: 0, y: 0, width: 400, height: 300))
         XCTAssertNil(chrome.hitTest(CGPoint(x: 10, y: 10)))

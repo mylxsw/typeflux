@@ -6,6 +6,8 @@ import XCTest
 final class ScreenshotCoordinatorTests: XCTestCase {
     private final class Overlay: ScreenshotOverlayPresenting {
         private(set) var presented: [ScreenSnapshot] = []
+        private(set) var appended: [ScreenSnapshot] = []
+        func append(_ snapshot: ScreenSnapshot) { appended.append(snapshot) }
         private(set) var prewarms = 0
         func prewarm() { prewarms += 1 }
         private(set) var fullScreenSelections = 0
@@ -195,6 +197,48 @@ final class ScreenshotCoordinatorTests: XCTestCase {
     private func started(_ coordinator: ScreenshotCoordinator, mode: ScreenshotMode = .region) async {
         coordinator.start(mode: mode)
         await coordinator.pendingTask?.value
+    }
+
+    @MainActor
+    private final class ProgressiveCapturer: ScreenCapturing {
+        var receive: (@MainActor (ScreenSnapshot) -> Void)?
+        var continuation: CheckedContinuation<Void, Never>?
+        var preferred: CGDirectDisplayID?
+        func snapshot(_ request: ScreenCaptureRequest) async throws -> ScreenSnapshot { ScreenshotCoordinatorTests.snapshot() }
+        func progressiveSnapshot(preferredDisplayID: CGDirectDisplayID?,
+                                 receive: @escaping @MainActor (ScreenSnapshot) -> Void) async throws -> ScreenSnapshot {
+            preferred = preferredDisplayID
+            self.receive = receive
+            let full = ScreenshotCoordinatorTests.snapshot()
+            receive(.init(displays: [full.displays[0]], windows: []))
+            await withCheckedContinuation { continuation = $0 }
+            return full
+        }
+    }
+
+    func testProgressiveCaptureIsEditableBeforeOtherScreensAndIgnoresLateCancelledResults() async throws {
+        let capture = ProgressiveCapturer()
+        let sut = makeCoordinator(capturer: capture)
+        sut.preferredDisplayID = { 1 }
+        sut.start(mode: .region)
+        for _ in 0..<100 where capture.continuation == nil { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertNotNil(capture.continuation)
+        XCTAssertEqual(capture.preferred, 1)
+        XCTAssertEqual(sut.state, .selecting)
+        XCTAssertEqual(sut.snapshot?.displays.count, 1)
+        overlay.onEvent?(.committed)
+        let secondary = ScreenSnapshot(displays: [Self.snapshot().displays[1]], windows: [])
+        capture.receive?(secondary)
+        XCTAssertEqual(sut.state, .editing)
+        XCTAssertEqual(sut.snapshot?.displays.count, 2)
+        XCTAssertEqual(overlay.presented.count, 1)
+        XCTAssertEqual(overlay.appended.count, 1)
+        sut.cancel()
+        capture.receive?(secondary)
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertNil(sut.snapshot)
+        XCTAssertEqual(overlay.appended.count, 1)
+        capture.continuation?.resume()
     }
 
     func testPrewarmDoesNotCaptureOrChangeTheSessionAndSkipsActiveSelection() async {
