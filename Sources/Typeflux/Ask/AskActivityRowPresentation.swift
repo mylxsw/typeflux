@@ -25,6 +25,9 @@ enum AskActivityRowPresentation {
     }
 
     static func groupTitle(_ group: AskActivityGroup) -> String {
+        if !group.steps.isEmpty, group.steps.allSatisfy({ command($0) != nil }) {
+            return L("ask.activity.commands", group.steps.count)
+        }
         var seen = Set<String>()
         let titles = group.steps.compactMap { call -> String? in
             let category = AskActivity.Category.of(call.function.name)

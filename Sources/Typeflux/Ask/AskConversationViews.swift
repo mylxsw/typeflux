@@ -1367,12 +1367,19 @@ struct AskConversationView: View {
         let rowActions = sidePanelActions
         // Resolved once per render: asking each row would rescan the transcript.
         let regenerable = model.regenerableAnswerId
-        let _ = activityCache.prepare(conversationID: model.selectedId, revision: model.transcriptRevision, messages: transcriptMessages,
-                                          results: model.selected?.messages.filter { $0.role == "tool" } ?? [],
-                                          changes: model.fileChanges)
+        let _ = activityCache.prepare(
+            conversationID: model.selectedId,
+            revision: model.transcriptRevision,
+            messages: transcriptMessages,
+            results: model.selected?.messages.filter { $0.role == "tool" } ?? [],
+            changes: model.fileChanges
+        )
         let liveMessage = liveMessageState.resolve(conversationID: model.selectedId, run: model.selected?.run,
-            message: liveTranscriptMessage, isCommitted: activityCache.containsCommittedMessage)
+                                                   message: liveTranscriptMessage,
+                                                   isCommitted: activityCache.containsCommittedMessage)
         let items = activityCache.appendingProgress(liveMessage)
+        let activeRun = model.selected?.run.flatMap { $0.isActive ? $0 : nil }
+        let sections = AskTranscriptSection.make(items, activeRunID: activeRun?.id, activeMessageID: activeRun?.assistantId)
         let showsWaiting = model.showsResponseWaiting && (model.hasPendingSubmission || (liveMessage.map {
             $0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && ($0.toolCalls ?? []).isEmpty
         } ?? true))
@@ -1382,24 +1389,28 @@ struct AskConversationView: View {
         return GeometryReader { viewport in
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 24) {
-                        ForEach(items, id: \.viewID) { item in
-                            AskTranscriptRowBoundary(key: AskTranscriptRowRenderKey(
-                                model: ObjectIdentifier(model), revision: model.transcriptRevision, item: item, phase: phase,
-                                latestActivityID: latestActivityID, lastContentID: lastContentID, regenerable: regenerable,
-                                approval: model.selectedId.flatMap { model.pendingApprovals[$0] }, notesEnabled: model.notes != nil,
-                                savedToNotes: { if case let .message(message) = item.kind { return model.answerNoteIDs[message.id] != nil }; return false }(),
-                                highlightedID: model.highlightedMessageId
-                            )) {
-                                VStack(alignment: .leading, spacing: 0) {
-                                    transcriptRow(item, model: model, actions: rowActions, phase: phase, latestActivityID: latestActivityID,
-                                                  lastContentID: lastContentID, regenerable: regenerable)
+                    LazyVStack(alignment: .leading, spacing: 16) {
+                        ForEach(sections) { section in
+                            if section.isProcess {
+                                AskTurnProcessView(section: section,
+                                                   active: runIsActive(section, model: model),
+                                                   locatedMessageID: model.highlightedMessageId) { visibleItems in
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        ForEach(visibleItems, id: \.viewID) { item in
+                                            sectionRow(item, model: model, actions: rowActions, phase: phase,
+                                                       latestActivityID: latestActivityID, lastContentID: lastContentID,
+                                                       regenerable: regenerable)
+                                        }
+                                    }
                                 }
-                                .background { locatedHighlight(item, highlightedID: model.highlightedMessageId) }
-                                .askRiseIn(createdAt: Self.createdAt(item))
+                                .id(section.id)
+                            } else {
+                                ForEach(section.items, id: \.viewID) { item in
+                                    sectionRow(item, model: model, actions: rowActions, phase: phase,
+                                               latestActivityID: latestActivityID, lastContentID: lastContentID,
+                                               regenerable: regenerable)
+                                }
                             }
-                            .equatable()
-                            .id(item.viewID)
                         }
                         if showsWaiting {
                             AskResponseWaitingView()
@@ -1482,7 +1493,7 @@ struct AskConversationView: View {
                 .onChange(of: model.referenceLocation) { id in
                     // A step folded into an activity block scrolls to its block.
                     if let id {
-                        let target = items.first { item in
+                        let target = sections.first { $0.isProcess && $0.contains(id) }?.id ?? items.first { item in
                             if case let .activity(group) = item.kind { return group.messageIds.contains(id) }
                             return false
                         }?.viewID ?? items.first { item in
@@ -1514,6 +1525,35 @@ struct AskConversationView: View {
                 .onChange(of: model.error) { _ in followBottom(proxy) }
             }
         }
+    }
+
+    private func sectionRow(_ item: AskTranscriptItem, model: AskConversationModel, actions: AskSidePanelActions,
+                            phase: AskRunPhase?, latestActivityID: String?, lastContentID: String?,
+                            regenerable: String?) -> some View {
+        AskTranscriptRowBoundary(key: AskTranscriptRowRenderKey(
+            model: ObjectIdentifier(model), revision: model.transcriptRevision, item: item, phase: phase,
+            latestActivityID: latestActivityID, lastContentID: lastContentID, regenerable: regenerable,
+            approval: model.selectedId.flatMap { model.pendingApprovals[$0] }, notesEnabled: model.notes != nil,
+            savedToNotes: {
+                if case let .message(message) = item.kind { return model.answerNoteIDs[message.id] != nil }
+                return false
+            }(),
+            highlightedID: model.highlightedMessageId
+        )) {
+            VStack(alignment: .leading, spacing: 0) {
+                transcriptRow(item, model: model, actions: actions, phase: phase, latestActivityID: latestActivityID,
+                              lastContentID: lastContentID, regenerable: regenerable)
+            }
+            .background { locatedHighlight(item, highlightedID: model.highlightedMessageId) }
+            .askRiseIn(createdAt: Self.createdAt(item))
+        }
+        .equatable()
+        .id(item.viewID)
+    }
+
+    private func runIsActive(_ section: AskTranscriptSection, model: AskConversationModel) -> Bool {
+        guard let run = model.selected?.run, run.isActive else { return false }
+        return section.runIDs.contains(run.id) || section.items.contains { $0.id == run.assistantId }
     }
 
     /// "Locate in conversation" from the side panel briefly marks the message it scrolled to.

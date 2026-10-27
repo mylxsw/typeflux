@@ -7541,3 +7541,8 @@
 "ask.noteCapture.undone" = "지난 저장을 취소했습니다";
 "ask.noteCapture.undoConflict" = "저장 후 메모가 변경되었습니다. 열어서 확인하세요. 새로운 편집 내용은 덮어쓰지 않습니다.";
 "ask.noteCapture.working" = "처리 중…";
+
+// Turn process and compact file changes
+"ask.activity.process" = "처리 과정";
+"ask.fileChanges.count" = "파일 %d개 변경";
+"ask.activity.commands" = "명령 %d개 실행";

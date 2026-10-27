@@ -20,6 +20,10 @@ import Testing
     @Test func commandsShowTheirActualCommandAndFilesShowTheirPathOnce() {
         let command = call("run_command", #"{"command":"pwd; rg --files","timeout":30}"#)
         #expect(AskActivityRowPresentation.command(command) == "pwd; rg --files")
+        let batch = AskActivityGroup(id: "batch", messages: [
+            .init(id: "batch", role: "assistant", text: "", toolCalls: [command, command], createdAt: .distantPast)
+        ])
+        #expect(AskActivityRowPresentation.groupTitle(batch) == L("ask.activity.commands", 2))
         #expect(AskActivityRowPresentation.title(command).hasSuffix("pwd; rg --files"))
         let read = call("files", #"{"action":"read","path":"work/site/style.css"}"#)
         let title = AskActivityRowPresentation.title(read)

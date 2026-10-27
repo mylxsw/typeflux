@@ -7542,3 +7542,8 @@
 "ask.noteCapture.undone" = "已撤销上次保存";
 "ask.noteCapture.undoConflict" = "笔记在保存后又被修改，请打开检查。撤销不会覆盖新的修改。";
 "ask.noteCapture.working" = "正在处理…";
+
+// Turn process and compact file changes
+"ask.activity.process" = "处理过程";
+"ask.fileChanges.count" = "已变更 %d 个文件";
+"ask.activity.commands" = "执行了 %d 条命令";

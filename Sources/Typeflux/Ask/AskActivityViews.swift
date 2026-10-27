@@ -81,12 +81,12 @@ struct AskActivityBlock: View, Equatable {
     // MARK: Quiet line
 
     private var trace: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 2) {
             traceLine
             if expanded {
                 content()
-                    .padding(.top, 6)
-                    .padding(.bottom, 4)
+                    .padding(.top, 2)
+                    .padding(.bottom, 2)
                     .transition(.identity)
             }
         }
@@ -118,7 +118,7 @@ struct AskActivityBlock: View, Equatable {
                 }
                 Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
                     .rotationEffect(.degrees(expanded ? 90 : 0))
-                    .opacity(hovering ? 1 : 0)
+                    .opacity(hovering || expanded ? 1 : 0.6)
             }
             .font(.system(size: 12.5))
             .foregroundStyle(hovering || expanded || running ? StudioTheme.textSecondary : StudioTheme.textTertiary)
@@ -206,7 +206,7 @@ struct AskActivityBlock: View, Equatable {
         let rows = AskActivityDetail.rows(group.messages)
         let range = AskActivityPage.range(count: rows.count, page: detailPage)
         let index = AskActivity.resultIndex(results)
-        return VStack(alignment: .leading, spacing: 8) {
+        return VStack(alignment: .leading, spacing: 4) {
             if includesPlan, let plan, !plan.isEmpty {
                 Text(AskActivity.planSummary(plan))
                     .font(.system(size: 12, weight: .medium))
@@ -370,7 +370,7 @@ struct AskToolStepRow: View {
                 if let command = AskActivityRowPresentation.command(call) {
                     let transcript = "$ " + command + (result.map { "\n\n" + $0.resultText } ?? "")
                     AskMonoBlock(title: "Shell", text: transcript, isError: state == .failed)
-                        .padding(.top, 6).padding(.bottom, 8)
+                        .padding(.top, 4).padding(.bottom, 4)
                     DisclosureGroup(L("ask.tool.arguments")) {
                         AskMonoBlock(title: "", text: call.function.arguments)
                     }

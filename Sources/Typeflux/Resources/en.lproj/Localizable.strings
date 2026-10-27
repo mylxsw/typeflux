@@ -7542,3 +7542,8 @@
 "ask.noteCapture.undone" = "Last save undone";
 "ask.noteCapture.undoConflict" = "This note changed after saving. Open it to review; undo will not replace newer edits.";
 "ask.noteCapture.working" = "Working…";
+
+// Turn process and compact file changes
+"ask.activity.process" = "Process";
+"ask.fileChanges.count" = "%d files changed";
+"ask.activity.commands" = "Ran %d commands";

@@ -83,6 +83,7 @@ struct AskNoteChatTests {
         #expect(opened == note.id && f.model.referenceLocation == nil)
         f.model.locateReference(legacy.locationId)
         #expect(f.model.referenceLocation == legacy.messageId)
+        #expect(f.model.highlightedMessageId == legacy.messageId)
     }
 
     @Test func limitsAndCacheFailuresLeaveTheCurrentDraftIntact() async throws {

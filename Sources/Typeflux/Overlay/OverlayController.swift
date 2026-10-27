@@ -1043,7 +1043,8 @@ final class OverlayController {
         case .transcriptPreview, .notice:
             return WindowChromeStyle(background: background, cornerRadius: 14)
         case .resultDialog:
-            return WindowChromeStyle(background: background, cornerRadius: 14)
+            // The result card draws its own surface in SwiftUI in every interface style.
+            return nil
         default:
             return nil
         }
@@ -2111,7 +2112,7 @@ private struct OverlayView: View {
     }
 
     private var resultDialogCard: some View {
-        OverlayCard(width: 446, compact: true, hostedInWindowChrome: true, shadowed: false) {
+        OverlayCard(width: 446, compact: true, shadowed: false) {
             VStack(alignment: .leading, spacing: 10) {
                 cardHeader(
                     icon: "info.circle",
@@ -2930,18 +2931,15 @@ private struct OverlayCompactToast<Content: View>: View {
             )
     }
 
-    @ViewBuilder
     private var toastBackground: some View {
-        if hostedInWindowChrome {
-            Color.clear
-        } else {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(red: 0.13, green: 0.11, blue: 0.11).opacity(0.96))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
-                )
-        }
+        // Window chrome can be transparent in glass mode. Text-only overlays still
+        // need a stable surface, including notices and transcript previews.
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(Color(red: 0.13, green: 0.11, blue: 0.11).opacity(0.98))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+            )
     }
 }
 

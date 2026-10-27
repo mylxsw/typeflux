@@ -47,7 +47,7 @@ extension AskConversationModel {
         if location.hasPrefix("note:"), let id = UUID(uuidString: String(location.dropFirst(5))) {
             openNotes(id)
         } else {
-            referenceLocation = location
+            locateMessage(location)
         }
     }
 }

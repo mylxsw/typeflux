@@ -7541,3 +7541,8 @@
 "ask.noteCapture.undone" = "前回の保存を取り消しました";
 "ask.noteCapture.undoConflict" = "保存後にメモが変更されました。開いて確認してください。新しい編集は上書きしません。";
 "ask.noteCapture.working" = "処理中…";
+
+// Turn process and compact file changes
+"ask.activity.process" = "処理の詳細";
+"ask.fileChanges.count" = "%d 個のファイルを変更";
+"ask.activity.commands" = "%d 個のコマンドを実行";

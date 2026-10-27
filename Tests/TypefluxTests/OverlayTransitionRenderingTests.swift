@@ -24,7 +24,7 @@ struct OverlayTransitionRenderingTests {
         let shortHeight = try await settledFrame(of: window, changingFrom: recordingFrame).height
         #expect(window.frame.width == 344)
         #expect(shortHeight >= 55 && shortHeight < 90)
-        _ = try capture(window, name: "notice-short-\(style.rawValue)")
+        expectCardSurface(try capture(window, name: "notice-short-\(style.rawValue)"))
         let before1 = window.frame
         controller.showNotice(message: String(repeating: "A notice can contain several lines of text. ", count: 20))
         _ = try await settledFrame(of: window, changingFrom: before1)
@@ -80,11 +80,13 @@ struct OverlayTransitionRenderingTests {
         #expect(shortHeight > 100)
         #expect(shortHeight < 170)
         let short = try capture(window, name: "result-short-\(style.rawValue)")
+        expectCardSurface(short)
         let scale = CGFloat(short.pixelsWide) / window.frame.width
         var firstTextRow = short.pixelsHigh
         for y in 0 ..< short.pixelsHigh {
             for x in stride(from: 0, to: short.pixelsWide, by: 2) {
                 if let color = short.colorAt(x: x, y: y)?.usingColorSpace(.sRGB),
+                   color.alphaComponent > 0.8,
                    color.redComponent > 0.7, color.greenComponent > 0.7, color.blueComponent > 0.7 {
                     firstTextRow = min(firstTextRow, y)
                 }
@@ -98,7 +100,7 @@ struct OverlayTransitionRenderingTests {
         _ = try await settledFrame(of: window, changingFrom: before6)
         #expect(window.frame.height > shortHeight + 40)
         #expect(window.frame.height <= 240)
-        _ = try capture(window, name: "result-long-\(style.rawValue)")
+        expectCardSurface(try capture(window, name: "result-long-\(style.rawValue)"))
         let before7 = window.frame
         controller.showResultDialog(title: "Copy result", message: "A short result again.")
         _ = try await settledFrame(of: window, changingFrom: before7)
@@ -314,6 +316,40 @@ struct OverlayTransitionRenderingTests {
         #expect(disappearing.peakAlpha < collapsed.peakAlpha - 0.02)
         try await settle(motionScale)
         #expect(!window.isVisible)
+    }
+
+    @Test(arguments: InterfaceStyle.allCases) @MainActor
+    func resultDialogHasASurfaceWhenOpenedDirectlyAndReopened(style: InterfaceStyle) async throws {
+        let defaultsName = "OverlayDirectResultTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: defaultsName))
+        defer { defaults.removePersistentDomain(forName: defaultsName) }
+        defaults.set(style.rawValue, forKey: "ui.overlayStyle")
+        let controller = OverlayController(appState: AppStateStore(), settingsStore: SettingsStore(defaults: defaults))
+        defer { controller.dismissImmediately() }
+        let previousWindows = Set(NSApplication.shared.windows.map(\.windowNumber))
+        controller.showResultDialog(title: "Copy result", message: "Insertion failed. Copy this text.")
+        let window = try #require(NSApplication.shared.windows.first {
+            !previousWindows.contains($0.windowNumber) && $0.isVisible
+        })
+        try await settle(1)
+        expectCardSurface(try capture(window, name: "result-direct-\(style.rawValue)"))
+        controller.dismissImmediately()
+        controller.showResultDialog(title: "Copy result", message: String(repeating: "A long copied result.\n", count: 60))
+        try await settle(1)
+        expectCardSurface(try capture(window, name: "result-reopened-\(style.rawValue)"))
+        #expect(window.frame.height <= 240)
+    }
+
+    /// A text-only transparent window can pass text/layout checks. Sample its empty
+    /// margins too, so a missing background fails in both classic and glass styles.
+    @MainActor
+    private func expectCardSurface(_ bitmap: NSBitmapImageRep, sourceLocation: SourceLocation = #_sourceLocation) {
+        for fraction in [0.2, 0.5, 0.8] {
+            let y = Int(CGFloat(bitmap.pixelsHigh) * fraction)
+            let x = Int(CGFloat(bitmap.pixelsWide) * 0.02)
+            #expect((bitmap.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.9,
+                    "The card background must cover the text area", sourceLocation: sourceLocation)
+        }
     }
 
     /// Waits past a motion's morph and its follow-up window geometry cleanup. The cleanup is

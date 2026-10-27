@@ -244,7 +244,7 @@ struct AskSidePanelRenderTests {
                 for name in ["report.html", "dashboard.html", "clean.py", "notes.txt"] {
                     #expect(labels.contains { $0.contains(name) } == expanded)
                 }
-                #expect(labels.contains { $0.contains(L("ask.fileChanges.showAll")) } == expanded)
+                #expect(labels.contains { $0.contains(L("ask.fileChanges.showAll")) })
             }
         }
     }
