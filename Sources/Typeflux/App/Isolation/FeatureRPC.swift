@@ -1,8 +1,8 @@
 import Darwin
 import Foundation
 
-/// Private inherited channels only. No listener, port, credential file or retry.
-/// A stalled peer consumes one bounded request, never the caller's UI thread.
+/// Private inherited channels, with an authenticated local recovery channel for
+/// chat. A stalled peer consumes one bounded request, never the caller's UI thread.
 actor FeatureRPC {
     enum Failure: String, Error, Codable { case unavailable, busy, timedOut, invalidMessage, cancelled }
     struct Empty: Codable, Sendable {}
@@ -15,7 +15,7 @@ actor FeatureRPC {
     }
     typealias Handler = @Sendable (String, Data) async throws -> Data
     private static let cancelMethod = "_cancel"
-    private let wire: FeatureRPCWire
+    private var wire: FeatureRPCWire
     private var handler: Handler?
     private var reader: Task<Void, Never>?
     private var pending: [UUID: CheckedContinuation<Data, Error>] = [:]
@@ -28,18 +28,31 @@ actor FeatureRPC {
     private var incomingBytes: [UUID: Int] = [:]
     private let writer: DispatchQueue
     private let diagnostics: AskFailureDiagnostics
+    private let reconnect: (@Sendable () async throws -> Int32)?
+    private let onReconnected: (@Sendable () -> Void)?
+    private var recovering: Task<Void, Never>?
+    private var disconnected = false
+    private var reconnectWaiters = 0
 
-    init(descriptor: Int32, diagnostics: AskFailureDiagnostics = .shared) throws {
+    init(descriptor: Int32, diagnostics: AskFailureDiagnostics = .shared,
+         reconnect: (@Sendable () async throws -> Int32)? = nil,
+         onReconnected: (@Sendable () -> Void)? = nil) throws {
         self.diagnostics = diagnostics
+        self.reconnect = reconnect
+        self.onReconnected = onReconnected
         wire = try FeatureRPCWire(descriptor: descriptor, diagnostics: diagnostics)
         writer = DispatchQueue(label: "Typeflux.feature-rpc.writer", qos: .userInitiated)
     }
 
-    deinit { wire.stop(); reader?.cancel() }
+    deinit { wire.stop(); reader?.cancel(); recovering?.cancel() }
 
     func start(handler: @escaping Handler) {
         guard reader == nil, !closed else { return }
         self.handler = handler
+        startReader()
+    }
+
+    private func startReader() {
         let wire = wire, diagnostics = diagnostics
         let reads = DispatchQueue(label: "Typeflux.feature-rpc.reader", qos: .userInitiated)
         reader = Task.detached { [weak self] in
@@ -50,11 +63,11 @@ actor FeatureRPC {
                         reads.async { continuation.resume(with: Result { try wire.receive() }) }
                     }
                     guard let self else { break }
-                    await self.receive(message)
+                    await self.receive(message, from: wire)
                 }
             } catch {
                 if !Task.isCancelled { diagnostics.record(.rpcRead, error: error) }
-                await self?.stop()
+                await self?.transportFailed(wire)
             }
         }
     }
@@ -68,20 +81,37 @@ actor FeatureRPC {
 
     func request(_ method: String, payload: Data, timeout: Duration = .seconds(10)) async throws -> Data {
         try Task.checkCancellation()
+        guard !method.isEmpty, method != Self.cancelMethod, method.utf8.count <= 128, payload.count <= FeatureRPCWire.maximumPayload,
+              timeout > .zero, timeout <= .seconds(180) else { throw Failure.invalidMessage }
+        let deadline = ContinuousClock.now.advanced(by: timeout)
+        if disconnected {
+            guard pending.count + reconnectWaiters < 32 else {
+                diagnostics.record(.rpcQueue, error: Failure.busy, reason: .requestLimit, method: method)
+                throw Failure.busy
+            }
+            reconnectWaiters += 1
+            defer { reconnectWaiters -= 1 }
+            do {
+                while disconnected && !closed && ContinuousClock.now < deadline {
+                    try await Task.sleep(for: .milliseconds(50))
+                }
+            } catch is CancellationError { throw Failure.cancelled }
+        }
         guard !closed else { throw Failure.unavailable }
+        guard !disconnected else { throw Failure.timedOut }
+        let remaining = ContinuousClock.now.duration(to: deadline)
+        guard remaining > .zero else { throw Failure.timedOut }
         guard pending.count < 32 else {
             diagnostics.record(.rpcQueue, error: Failure.busy, reason: .requestLimit, method: method)
             throw Failure.busy
         }
-        guard !method.isEmpty, method != Self.cancelMethod, method.utf8.count <= 128, payload.count <= FeatureRPCWire.maximumPayload,
-              timeout > .zero, timeout <= .seconds(180) else { throw Failure.invalidMessage }
         let id = UUID()
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
                 pending[id] = continuation
                 tickets[id] = FeatureRPCTicket()
                 deadlines[id] = Task { [weak self] in
-                    do { try await Task.sleep(for: timeout) } catch { return }
+                    do { try await Task.sleep(for: remaining) } catch { return }
                     await self?.finish(id, result: .failure(Failure.timedOut), cancelRemote: true)
                 }
                 send(.init(version: 1, id: id, method: method, payload: payload, failure: nil))
@@ -92,6 +122,7 @@ actor FeatureRPC {
     func stop() {
         guard !closed else { return }
         closed = true
+        recovering?.cancel(); recovering = nil
         wire.stop()
         reader?.cancel(); reader = nil
         for task in deadlines.values { task.cancel() }
@@ -107,20 +138,65 @@ actor FeatureRPC {
         handler = nil
     }
 
+    #if DEBUG
+    func simulateDisconnect() { wire.stop() }
+    #endif
+
+    private func transportFailed(_ failedWire: FeatureRPCWire) {
+        guard !closed, wire === failedWire, !disconnected else { return }
+        guard let reconnect else { stop(); return }
+        disconnected = true
+        failedWire.stop()
+        reader?.cancel(); reader = nil
+        for task in deadlines.values { task.cancel() }
+        deadlines.removeAll()
+        for ticket in tickets.values { ticket.cancel() }
+        tickets.removeAll()
+        let continuations = pending.values
+        pending.removeAll()
+        for continuation in continuations { continuation.resume(throwing: Failure.unavailable) }
+        for task in incoming.values { task.cancel() }
+        // Cancellation can be ignored by a handler. Keep its admission slot and
+        // byte budget occupied until it really exits, even across reconnects.
+        recovering = Task { [weak self] in
+            var retryDelay: Duration = .milliseconds(100)
+            while !Task.isCancelled {
+                do {
+                    let descriptor = try await reconnect()
+                    guard let self else { close(descriptor); return }
+                    if await self.installReconnected(descriptor) { return }
+                } catch is CancellationError { return } catch {}
+                do { try await Task.sleep(for: retryDelay) } catch { return }
+                retryDelay = min(retryDelay * 2, .seconds(5))
+            }
+        }
+    }
+
+    private func installReconnected(_ descriptor: Int32) -> Bool {
+        guard !closed, disconnected else { close(descriptor); return true }
+        do {
+            wire = try FeatureRPCWire(descriptor: descriptor, diagnostics: diagnostics)
+            disconnected = false; recovering = nil
+            startReader()
+            onReconnected?()
+            return true
+        } catch { return false }
+    }
+
     private func finish(_ id: UUID, result: Result<Data, Error>, cancelRemote: Bool = false) {
         tickets.removeValue(forKey: id)?.cancel()
         deadlines.removeValue(forKey: id)?.cancel()
         guard let continuation = pending.removeValue(forKey: id) else { return }
         // Cancellation follows the original request on the same ordered wire, including
         // forwarded calls. Keep the incoming slot occupied until its work actually exits.
-        if cancelRemote, !closed {
+        if cancelRemote, !closed, !disconnected {
             send(.init(version: 1, id: id, method: Self.cancelMethod, payload: Data(), failure: nil))
         }
         continuation.resume(with: result)
     }
 
-    private func receive(_ message: Message) {
-        guard !closed else { return }
+    private func receive(_ message: Message, from source: FeatureRPCWire) {
+        guard !closed, !disconnected, wire === source else { return }
         guard message.version == 1 else {
             diagnostics.record(.rpcProtocol, error: Failure.invalidMessage, reason: .invalidVersion)
             stop(); return
@@ -160,31 +236,32 @@ actor FeatureRPC {
                 response = .init(version: 1, id: message.id, method: nil, payload: nil,
                                  failure: error as? Failure ?? .unavailable)
             }
-            await self?.reply(response)
+            await self?.reply(response, from: source, method: method)
         }
     }
 
-    private func reply(_ message: Message) {
+    private func reply(_ message: Message, from source: FeatureRPCWire, method: String) {
         incomingBytes.removeValue(forKey: message.id)
         incoming.removeValue(forKey: message.id)
-        if !closed { send(message) }
+        guard wire === source, !disconnected, !closed else { return }
+        if !closed { send(message, diagnosticMethod: method) }
     }
 
-    private func send(_ message: Message) {
+    private func send(_ message: Message, diagnosticMethod: String? = nil) {
         let count = message.payload?.count ?? 0
         guard queuedMessages < 64, queuedBytes + count <= 192 * 1024 * 1024 else {
             diagnostics.record(.rpcQueue, error: Failure.busy, reason: .queueLimit, method: message.method)
-            stop(); return
+            transportFailed(wire); return
         }
         queuedMessages += 1; queuedBytes += count
         let wire = wire, diagnostics = diagnostics, ticket = message.method == nil ? nil : tickets[message.id]
         writer.async { [weak self] in
             do {
-                if ticket?.isCancelled != true { try wire.send(message) }
+                if ticket?.isCancelled != true { try wire.send(message, diagnosticMethod: diagnosticMethod ?? message.method) }
                 Task { await self?.didWrite(count) }
             } catch {
-                diagnostics.record(.rpcWrite, error: error, method: message.method)
-                Task { await self?.didWrite(count); await self?.stop() }
+                diagnostics.record(.rpcWrite, error: error, method: diagnosticMethod ?? message.method)
+                Task { await self?.didWrite(count); await self?.transportFailed(wire) }
             }
         }
     }
@@ -218,14 +295,14 @@ private final class FeatureRPCWire: @unchecked Sendable {
     deinit { close(descriptor) }
     func stop() { lock.withLock { if !stopped { stopped = true; shutdown(descriptor, SHUT_RDWR) } } }
 
-    func send(_ message: FeatureRPC.Message) throws {
+    func send(_ message: FeatureRPC.Message, diagnosticMethod: String?) throws {
         guard (message.payload?.count ?? 0) <= Self.maximumPayload else { throw FeatureRPC.Failure.invalidMessage }
         let data = try JSONEncoder().encode(message)
         guard data.count <= Self.maximumFrame else { throw FeatureRPC.Failure.invalidMessage }
         var length = UInt32(data.count).bigEndian
         var frame = withUnsafeBytes(of: &length) { Data($0) }
         frame.append(data)
-        try transfer(&frame, writing: true, inactivityTimeout: .seconds(5))
+        try transfer(&frame, writing: true, inactivityTimeout: .seconds(5), diagnosticMethod: diagnosticMethod)
     }
 
     func receive() throws -> FeatureRPC.Message {
@@ -240,7 +317,7 @@ private final class FeatureRPCWire: @unchecked Sendable {
         return message
     }
 
-    private func transfer(_ data: inout Data, writing: Bool, inactivityTimeout: Duration?) throws {
+    private func transfer(_ data: inout Data, writing: Bool, inactivityTimeout: Duration?, diagnosticMethod: String? = nil) throws {
         try data.withUnsafeMutableBytes { buffer in
             var offset = 0
             var deadline = inactivityTimeout.map { ContinuousClock.now.advanced(by: $0) }
@@ -251,7 +328,7 @@ private final class FeatureRPCWire: @unchecked Sendable {
                 guard !lock.withLock({ stopped }) else { throw FeatureRPC.Failure.unavailable }
                 if let deadline, ContinuousClock.now >= deadline {
                     diagnostics.record(writing ? .rpcWrite : .rpcRead, error: FeatureRPC.Failure.timedOut,
-                        reason: .frameDeadline)
+                        reason: .frameDeadline, method: diagnosticMethod, frameBytes: buffer.count, transferredBytes: offset)
                     throw FeatureRPC.Failure.timedOut
                 }
                 let base = buffer.baseAddress!.advanced(by: offset)

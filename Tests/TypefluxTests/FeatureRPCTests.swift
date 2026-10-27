@@ -39,9 +39,12 @@ struct FeatureRPCTests {
     }
 
     @Test func incompletePayloadStillHasABoundedReadDeadline() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let diagnostics = AskFailureDiagnostics(directory: directory)
         var descriptors: [Int32] = [-1, -1]
         #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors) == 0)
-        let peer = try FeatureRPC(descriptor: descriptors[0])
+        let peer = try FeatureRPC(descriptor: descriptors[0], diagnostics: diagnostics)
         defer { close(descriptors[1]) }
         await peer.start { _, data in data }
         var size = UInt32(100).bigEndian
@@ -50,6 +53,10 @@ struct FeatureRPCTests {
         await #expect(throws: FeatureRPC.Failure.unavailable) {
             try await peer.request("closed", payload: Data(), timeout: .milliseconds(200))
         }
+        await diagnostics.flush()
+        #expect(try AskFailureDiagnostics.read(directory: directory).contains {
+            $0.reason == .frameDeadline && $0.operation == .rpcRead && $0.frameBytes == 100 && $0.transferredBytes == 0
+        })
         await peer.stop()
     }
 
@@ -79,6 +86,195 @@ struct FeatureRPCTests {
         var descriptors: [Int32] = [-1, -1]
         #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors) == 0)
         return (try FeatureRPC(descriptor: descriptors[0]), try FeatureRPC(descriptor: descriptors[1]))
+    }
+
+    @Test func disconnectedChannelReconnectsWithoutReplayingInterruptedWork() async throws {
+        let listener = try FeatureReconnectListener()
+        defer { listener.stop() }
+        listener.setExpectedPeerPID(getpid())
+        var descriptors: [Int32] = [-1, -1]
+        #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors) == 0)
+        let a = try FeatureRPC(descriptor: descriptors[0], reconnect: { try await listener.acceptConnection() })
+        let b = try FeatureRPC(descriptor: descriptors[1], reconnect: {
+            try await FeatureReconnectListener.connect(path: listener.path, secret: listener.secret, expectedPeerPID: getpid())
+        })
+        let entered = FeatureRequestCounter()
+        await a.start { _, data in data }
+        await b.start { method, data in
+            if method == "interrupted" {
+                await entered.increment()
+                try await Task.sleep(for: .seconds(10))
+            }
+            return data
+        }
+        let interrupted = Task { try await a.request("interrupted", payload: Data([1])) }
+        for _ in 0..<100 where await entered.count == 0 { try await Task.sleep(for: .milliseconds(10)) }
+        #expect(await entered.count == 1)
+        #expect(shutdown(descriptors[0], SHUT_RDWR) == 0)
+        await #expect(throws: FeatureRPC.Failure.unavailable) { try await interrupted.value }
+        var reply: Data?
+        for _ in 0..<50 {
+            if let value = try? await a.request("echo", payload: Data([42]), timeout: .seconds(1)) {
+                reply = value; break
+            }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        #expect(reply == Data([42]))
+        #expect(await entered.count == 1)
+        await a.stop(); await b.stop()
+    }
+
+    @Test func stalledFrameTimesOutAndTheSamePeerReconnects() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let diagnostics = AskFailureDiagnostics(directory: directory)
+        let listener = try FeatureReconnectListener()
+        defer { listener.stop() }
+        listener.setExpectedPeerPID(getpid())
+        var descriptors: [Int32] = [-1, -1]
+        #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors) == 0)
+        defer { close(descriptors[1]) }
+        let peer = try FeatureRPC(descriptor: descriptors[0], diagnostics: diagnostics,
+                                  reconnect: { try await listener.acceptConnection() })
+        await peer.start { _, data in data }
+        var length = UInt32(100).bigEndian
+        #expect(withUnsafeBytes(of: &length) { Darwin.write(descriptors[1], $0.baseAddress, $0.count) } == 4)
+        let partial = Data(repeating: 1, count: 10)
+        #expect(partial.withUnsafeBytes { Darwin.write(descriptors[1], $0.baseAddress, $0.count) } == partial.count)
+        try await Task.sleep(for: .milliseconds(5300))
+        await diagnostics.flush()
+        #expect(try AskFailureDiagnostics.read(directory: directory).contains {
+            $0.reason == .frameDeadline && $0.frameBytes == 100 && $0.transferredBytes == 10
+        })
+        let descriptor = try await FeatureReconnectListener.connect(path: listener.path, secret: listener.secret, expectedPeerPID: getpid())
+        let other = try FeatureRPC(descriptor: descriptor)
+        await other.start { _, data in data }
+        #expect(try await peer.request("echo", payload: Data([42]), timeout: .seconds(3)) == Data([42]))
+        await peer.stop(); await other.stop()
+    }
+
+    @Test func blockedWriterTimesOutAndTheSamePeerReconnects() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let diagnostics = AskFailureDiagnostics(directory: directory)
+        let listener = try FeatureReconnectListener()
+        defer { listener.stop() }
+        listener.setExpectedPeerPID(getpid())
+        var descriptors: [Int32] = [-1, -1]
+        #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors) == 0)
+        defer { close(descriptors[1]) }
+        let peer = try FeatureRPC(descriptor: descriptors[0], diagnostics: diagnostics,
+                                  reconnect: { try await listener.acceptConnection() })
+        await peer.start { _, data in data }
+        // The other endpoint deliberately stops reading mid-frame.
+        let blocked = Task { try await peer.request("blocked", payload: Data(repeating: 1, count: 2 * 1024 * 1024), timeout: .seconds(15)) }
+        await #expect(throws: FeatureRPC.Failure.unavailable) { try await blocked.value }
+        await diagnostics.flush()
+        #expect(try AskFailureDiagnostics.read(directory: directory).contains {
+            $0.reason == .frameDeadline && $0.operation == .rpcWrite && ($0.frameBytes ?? 0) > 2 * 1024 * 1024
+                && ($0.transferredBytes ?? 0) > 0 && ($0.transferredBytes ?? 0) < ($0.frameBytes ?? 0)
+        })
+        let descriptor = try await FeatureReconnectListener.connect(path: listener.path, secret: listener.secret, expectedPeerPID: getpid())
+        let other = try FeatureRPC(descriptor: descriptor)
+        await other.start { _, data in data }
+        #expect(try await peer.request("echo", payload: Data([42]), timeout: .seconds(3)) == Data([42]))
+        await peer.stop(); await other.stop()
+    }
+
+    @Test func reconnectRejectsAnotherProcessEvenWithTheCapability() async throws {
+        let listener = try FeatureReconnectListener()
+        defer { listener.stop() }
+        listener.setExpectedPeerPID(-1)
+        let accepted = Task { try await listener.acceptConnection() }
+        let rejected = try await FeatureReconnectListener.connect(path: listener.path, secret: listener.secret, expectedPeerPID: getpid())
+        defer { close(rejected) }
+        var byte: UInt8 = 0
+        var status: Int = -1
+        for _ in 0..<100 {
+            status = recv(rejected, &byte, 1, MSG_DONTWAIT)
+            if status == 0 { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(status == 0)
+        listener.setExpectedPeerPID(getpid())
+        let valid = try await FeatureReconnectListener.connect(path: listener.path, secret: listener.secret, expectedPeerPID: getpid())
+        defer { close(valid) }
+        let server = try await accepted.value
+        close(server)
+    }
+
+    @Test func waitingForReconnectHonorsCancellationTimeoutAndAdmissionLimit() async throws {
+        var descriptors: [Int32] = [-1, -1]
+        #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors) == 0)
+        let peer = try FeatureRPC(descriptor: descriptors[0], reconnect: {
+            try await Task.sleep(for: .seconds(30))
+            throw FeatureRPC.Failure.unavailable
+        })
+        let other = try FeatureRPC(descriptor: descriptors[1])
+        await peer.start { _, data in data }; await other.start { _, data in data }
+        await peer.simulateDisconnect()
+        _ = try? await peer.request("settle", payload: Data(), timeout: .milliseconds(250))
+        let start = ContinuousClock.now
+        await #expect(throws: FeatureRPC.Failure.timedOut) {
+            try await peer.request("deadline", payload: Data(), timeout: .milliseconds(150))
+        }
+        #expect(start.duration(to: .now) < .seconds(1))
+        let cancelled = Task { try await peer.request("cancel", payload: Data(), timeout: .seconds(5)) }
+        try await Task.sleep(for: .milliseconds(100))
+        cancelled.cancel()
+        await #expect(throws: FeatureRPC.Failure.cancelled) { try await cancelled.value }
+        let waiting = (0..<32).map { _ in Task { try await peer.request("wait", payload: Data(), timeout: .seconds(5)) } }
+        try await Task.sleep(for: .milliseconds(250))
+        await #expect(throws: FeatureRPC.Failure.busy) {
+            try await peer.request("overflow", payload: Data(), timeout: .seconds(1))
+        }
+        await peer.stop(); await other.stop()
+        for task in waiting { _ = try? await task.value }
+    }
+
+    @Test func reconnectKeepsUncooperativeWorkInsideTheAdmissionBudget() async throws {
+        let listener = try FeatureReconnectListener(), gate = FeatureRequestGate()
+        defer { listener.stop(); Task { await gate.release() } }
+        listener.setExpectedPeerPID(getpid())
+        var descriptors: [Int32] = [-1, -1]
+        #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors) == 0)
+        let a = try FeatureRPC(descriptor: descriptors[0], reconnect: { try await listener.acceptConnection() })
+        let b = try FeatureRPC(descriptor: descriptors[1], reconnect: {
+            try await FeatureReconnectListener.connect(path: listener.path, secret: listener.secret, expectedPeerPID: getpid())
+        })
+        await a.start { _, data in data }
+        await b.start { method, data in
+            if method == "held" { await gate.wait() }
+            return data
+        }
+        let calls = (0..<32).map { _ in Task { try await a.request("held", payload: Data([1]), timeout: .seconds(10)) } }
+        for _ in 0..<200 where await gate.count < 32 { try await Task.sleep(for: .milliseconds(10)) }
+        #expect(await gate.count == 32)
+        #expect(shutdown(descriptors[0], SHUT_RDWR) == 0)
+        for call in calls { _ = try? await call.value }
+        await #expect(throws: FeatureRPC.Failure.busy) {
+            try await a.request("probe", payload: Data(), timeout: .seconds(3))
+        }
+        await gate.release()
+        var reply: Data?
+        for _ in 0..<100 {
+            if let result = try? await a.request("echo", payload: Data([7]), timeout: .seconds(1)) {
+                reply = result; break
+            }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(reply == Data([7]))
+        await a.stop(); await b.stop()
+    }
+
+    @Test func cancellingReconnectClosesThePrivateListener() async throws {
+        let listener = try FeatureReconnectListener()
+        let path = listener.path
+        let waiting = Task { try await listener.acceptConnection() }
+        try await Task.sleep(for: .milliseconds(20))
+        waiting.cancel()
+        await #expect(throws: FeatureRPC.Failure.unavailable) { try await waiting.value }
+        #expect(!FileManager.default.fileExists(atPath: path))
     }
 
     @Test func idleConnectionsDoNotExhaustTheSharedExecutor() async throws {
@@ -229,4 +425,14 @@ struct FeatureRPCTests {
 private actor FeatureRequestCounter {
     private(set) var count = 0
     func increment() { count += 1 }
+}
+
+private actor FeatureRequestGate {
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+    var count: Int { waiters.count }
+    func wait() async { await withCheckedContinuation { waiters.append($0) } }
+    func release() {
+        let active = waiters; waiters.removeAll()
+        for waiter in active { waiter.resume() }
+    }
 }

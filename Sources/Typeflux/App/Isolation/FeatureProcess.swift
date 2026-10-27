@@ -63,7 +63,17 @@ enum FeatureProcess {
         guard arguments.count == 4, let selected = FeatureRole(rawValue: arguments[1]), selected != .host, selected.processOwner == selected,
               arguments[2] == "--ipc-fd", arguments[3] == "100" else { throw FeatureRPC.Failure.invalidMessage }
         configuration.install(selected)
-        peer = try FeatureRPC(descriptor: 100)
+        let environment = ProcessInfo.processInfo.environment
+        if selected == .chat, let path = environment["TYPEFLUX_CHAT_RECONNECT_PATH"],
+           let secret = environment["TYPEFLUX_CHAT_RECONNECT_SECRET"] {
+            peer = try FeatureRPC(descriptor: 100, reconnect: {
+                try await FeatureReconnectListener.connect(path: path, secret: secret)
+            }, onReconnected: {
+                Task { @MainActor in connectionRestored() }
+            })
+        } else {
+            peer = try FeatureRPC(descriptor: 100)
+        }
         try TypefluxDataDirectories.inheritFeatureLayout(environment: ProcessInfo.processInfo.environment)
         let parent = getppid()
         guard parent > 1 else { throw FeatureRPC.Failure.unavailable }
@@ -162,6 +172,25 @@ enum FeatureProcess {
     static func preventWarmup() {
         deferredWarmup?.cancel(); deferredWarmup = nil
         preferencesUpdate?.cancel(); preferencesUpdate = nil
+    }
+
+    private static func connectionRestored() {
+        guard let peer, role == .chat else { return }
+        ready?.cancel()
+        let restored = Task {
+            // A failed initial bootstrap must not poison the new channel.
+            let snapshot = try await FeatureAuth.bootstrapAfterReconnect(peer)
+            await services?.value
+            try Task.checkCancellation()
+            snapshot.apply()
+        }
+        ready = restored
+        Task {
+            do {
+                try await restored.value
+                _ = try await handle?(.init(destination: .chat, action: "connectionRestored"))
+            } catch { ErrorLogStore.shared.log("Chat channel recovery could not refresh its session") }
+        }
     }
 
     static func waitForServices() async { await services?.value }
@@ -418,7 +447,34 @@ actor FeatureSupervisor {
         routesInFlight[owner, default: 0] += 1
         defer { routesInFlight[owner, default: 1] -= 1 }
         let child = try await child(for: owner)
-        return try await child.peer.request("ui", payload: JSONEncoder().encode(command), timeout: timeout)
+        let channel = channelGenerations[owner], deadline = ContinuousClock.now.advanced(by: timeout)
+        let payload = try JSONEncoder().encode(command)
+        do {
+            return try await child.peer.request("ui", payload: payload, timeout: timeout)
+        } catch FeatureRPC.Failure.unavailable {
+            // Handoffs carry a stable ID that the same live chat process
+            // deduplicates. Never replay another action or send to a new child.
+            guard owner == .chat, command.action == "handoff", let channel else {
+                throw FeatureRPC.Failure.unavailable
+            }
+            while true {
+                try Task.checkCancellation()
+                guard channelGenerations[owner] == channel, liveChannels.contains(channel), !stopped else {
+                    throw FeatureRPC.Failure.unavailable
+                }
+                let remaining = ContinuousClock.now.duration(to: deadline)
+                guard remaining > .zero else { throw FeatureRPC.Failure.timedOut }
+                do {
+                    let result = try await child.peer.request("ui", payload: payload, timeout: remaining)
+                    guard channelGenerations[owner] == channel, liveChannels.contains(channel) else {
+                        throw FeatureRPC.Failure.cancelled
+                    }
+                    return result
+                } catch FeatureRPC.Failure.unavailable {
+                    try await Task.sleep(for: min(.milliseconds(100), remaining))
+                }
+            }
+        }
     }
 
     private func takeStatuses() -> [FeatureStatus] {
@@ -599,15 +655,36 @@ actor FeatureSupervisor {
         let channel = UUID()
         channelGenerations[role] = channel
         liveChannels.insert(channel)
-        let executable = executableURL.path, childEnvironment = environment
+        let executable = executableURL.path, baseEnvironment = environment
         let task = Task<Child, Error> { [weak self] in
+            let reconnect = role == .chat ? try FeatureReconnectListener() : nil
+            let childEnvironment: [String: String] = {
+                var values = baseEnvironment
+                if let reconnect {
+                    values["TYPEFLUX_CHAT_RECONNECT_PATH"] = reconnect.path
+                    values["TYPEFLUX_CHAT_RECONNECT_SECRET"] = reconnect.secret
+                }
+                return values
+            }()
             var pair: [Int32] = [-1, -1]
             guard socketpair(AF_UNIX, SOCK_STREAM, 0, &pair) == 0 else { throw FeatureRPC.Failure.unavailable }
             guard pair.allSatisfy({ fcntl($0, F_SETFD, FD_CLOEXEC) == 0 }) else {
                 pair.forEach { close($0) }; throw FeatureRPC.Failure.unavailable
             }
             let inherited = FeatureInheritedDescriptor(pair[1])
-            let peer = try FeatureRPC(descriptor: pair[0])
+            let reconnectFactory: (@Sendable () async throws -> Int32)?
+            let onReconnected: (@Sendable () -> Void)?
+            if let reconnect {
+                reconnectFactory = { try await reconnect.acceptConnection() }
+                onReconnected = {
+                    _ = Task<Void, Never> { @MainActor in
+                        _ = try? await FeatureProcess.receive(.init(destination: .host, action: "connectionRestored"))
+                    }
+                }
+            } else {
+                reconnectFactory = nil; onReconnected = nil
+            }
+            let peer = try FeatureRPC(descriptor: pair[0], reconnect: reconnectFactory, onReconnected: onReconnected)
             await peer.start { [weak self] method, payload in
                 if method == "bootstrap", let self { return try await self.bootstrap(for: role) }
                 if (method.hasPrefix("ask.") || method.hasPrefix("cache.")), [FeatureRole.chat, .launcher, .settings, .notes, .wordBook, .help, .translation].contains(role), let self {
@@ -630,13 +707,14 @@ actor FeatureSupervisor {
             let latency = ShortcutLatency.current
             let process = Task.detached {
                 let directory = open("/", O_RDONLY | O_DIRECTORY | O_CLOEXEC)
-                defer { if directory >= 0 { close(directory) }; inherited.closeOnce() }
+                defer { if directory >= 0 { close(directory) }; inherited.closeOnce(); reconnect?.stop() }
                 if directory >= 0 {
                     let result = try? await ManagedProcess().run(.init(executable: executable,
                         arguments: ["--feature-process", role.rawValue, "--ipc-fd", "100"],
                         environment: childEnvironment,
                         directoryDescriptor: directory, timeout: 86400,
                         outputLimit: 64 * 1024, onStarted: { inherited.closeOnce(); ShortcutLatency.record(.processStarted, trace: latency) },
+                        onSpawned: { pid in reconnect?.setExpectedPeerPID(pid) },
                         stderrLimit: 64 * 1024, immediateCleanupOnExit: true, ipcDescriptor: inherited.descriptor, ownedApplicationLifetime: true))
                     if childEnvironment["TYPEFLUX_FEATURE_FIXTURE"] == "1", let result {
                         print("FEATURE_EXIT role=\(role.rawValue) code=\(result.exitCode) stderr=\(result.stderr)")

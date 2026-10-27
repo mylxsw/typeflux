@@ -160,13 +160,30 @@ extension AppCoordinator {
     func handleFeatureCommand(_ command: FeatureCommand) async throws -> Data {
         #if DEBUG
         if FeatureIsolationProbe.enabled {
+            if command.action == "probeSetChatDraft" {
+                guard let model = di.askConversationWindowController?.model else { throw FeatureRPC.Failure.unavailable }
+                model.draft.text = String(decoding: command.payload, as: UTF8.self)
+                return Data()
+            }
+            if command.action == "probeDisconnectChat" {
+                guard FeatureProcess.role == .chat, let peer = FeatureProcess.peer else { throw FeatureRPC.Failure.unavailable }
+                di.existingAskConversationWindowController?.model.error = L("ask.cache.failed")
+                await peer.simulateDisconnect()
+                return Data()
+            }
+            if command.action == "probeFlushChatDraft" {
+                guard let model = di.askConversationWindowController?.model else { throw FeatureRPC.Failure.unavailable }
+                return try JSONEncoder().encode(await model.flushFeatureDrafts())
+            }
             if command.action == "probeChatState" {
                 guard let model = di.askConversationWindowController?.model else { throw FeatureRPC.Failure.unavailable }
                 return try JSONEncoder().encode(["text": model.draft.text, "canSend": String(model.canSend),
                     "selected": model.selectedId ?? "nil", "error": model.error ?? "nil",
                     "issue": model.submissionIssues[false]?.text ?? "nil", "owner": model.owner,
                     "busy": String(model.isBusy), "loading": String(model.isLoadingSelection),
-                    "generation": String(AuthState.shared.sessionGeneration)])
+                    "generation": String(AuthState.shared.sessionGeneration),
+                    "handoffs": String(model.acceptedFeatureHandoffs.count),
+                    "probeDrops": String(featureProbeDroppedHandoffCounts.values.reduce(0, +))])
             }
             if command.action == "probeStorage" {
                 let id = UUID(uuidString: String(decoding: command.payload, as: UTF8.self))!
@@ -245,6 +262,14 @@ extension AppCoordinator {
             return Data()
         }
         switch command.action {
+        case "connectionRestored":
+            guard [.chat, .host].contains(FeatureProcess.role),
+                  let model = di.existingAskConversationWindowController?.model else { return Data() }
+            if FeatureProcess.role == .chat, let conversation = model.selected, let route = model.credentials(for: conversation.id) {
+                await model.refreshRecovery(conversation, route: route)
+            }
+            model.persistDrafts()
+            return Data()
         case "voice.update": FeatureVoiceRecording.receive(try JSONDecoder().decode(FeatureVoiceUpdate.self, from: command.payload))
         case "indexSnapshot":
             let snapshot = try JSONDecoder().decode(FeatureIndexSnapshot.self, from: command.payload)
@@ -336,7 +361,15 @@ extension AppCoordinator {
         case "handoff":
             guard let controller = di.askConversationWindowController else { throw FeatureRPC.Failure.unavailable }
             let transfer = try JSONDecoder().decode(FeatureChatHandoff.self, from: command.payload)
-            return try JSONEncoder().encode(await controller.model.receiveFeatureHandoff(transfer))
+            let accepted = await controller.model.receiveFeatureHandoff(transfer)
+            #if DEBUG
+            if FeatureIsolationProbe.enabled, accepted, transfer.id.hasPrefix("probe-drop:"),
+               featureProbeDroppedHandoffCounts[transfer.id, default: 0] < 3, let peer = FeatureProcess.peer {
+                featureProbeDroppedHandoffCounts[transfer.id, default: 0] += 1
+                await peer.simulateDisconnect()
+            }
+            #endif
+            return try JSONEncoder().encode(accepted)
         case "toggleClipboard": workflowController?.handleHistoryPickerRequested()
         case "screenRecording": di.screenRecordingSessions.show()
         case "screenshot":

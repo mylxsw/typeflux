@@ -18,6 +18,8 @@ struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
         var stopOnOutputLimit = false
         var preserveWhitespace = false
         var onStarted: (@Sendable () -> Void)?
+        /// Reports the kernel-assigned PID before releasing inherited descriptors.
+        var onSpawned: (@Sendable (pid_t) -> Void)?
         var stdin: Data?
         var stderrLimit: Int?
         var killGrace: TimeInterval = 0.2
@@ -158,6 +160,7 @@ struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
         if cancellation.isCancelled { throw CancellationError() }
         let pid = try spawn(request, stdin: input?.reader, stdout: out.writer, stderr: err.writer)
         child = pid
+        request.onSpawned?(pid)
         request.onStarted?()
         input?.closeReader()
         out.closeWriter()

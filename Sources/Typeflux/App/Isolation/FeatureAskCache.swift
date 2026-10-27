@@ -28,6 +28,17 @@ struct FeatureAskCache: AskCaching {
     func toolResult(id: String, owner: String) async throws -> AskToolResultRequest? { try await invoke("cache.toolResult.16", Call16(id: id, owner: owner)) }
 
     private func invoke<Input: Encodable & Sendable, Output: Decodable & Sendable>(_ method: String, _ value: Input) async throws -> Output {
+        do { return try await invokeAuthorized(method, value) }
+        catch FeatureRPC.Failure.unavailable {
+            // Reads have no side effects. Wait for the repaired channel and
+            // retry once; writes and execution claims are never replayed here.
+            guard Self.readMethods.contains(method) else { throw FeatureRPC.Failure.unavailable }
+            try Task.checkCancellation()
+            return try await invokeAuthorized(method, value)
+        }
+    }
+
+    private func invokeAuthorized<Input: Encodable & Sendable, Output: Decodable & Sendable>(_ method: String, _ value: Input) async throws -> Output {
         do { return try await invokeOnce(method, value) }
         catch AuthError.unauthorized {
             // Only reads may be repeated. Keep the original owner binding even

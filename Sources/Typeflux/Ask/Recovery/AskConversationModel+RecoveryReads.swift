@@ -60,7 +60,7 @@ extension AskConversationModel {
     }
 
     private func retryRecoveryRead(_ value: AskConversation, route: AskRoute, token: UUID, generation: UUID) {
-        let delays = recoveryReadRetryDelays
+        let delays = recoveryReadRetryDelays, slowDelay = recoveryReadSlowRetryDelay
         recoveryReadRetries[value.id] = Task { [weak self] in
             defer {
                 if self?.recoveryReadTokens[value.id] == token { self?.recoveryReadRetries[value.id] = nil }
@@ -75,10 +75,24 @@ extension AskConversationModel {
                     return
                 }
             }
-            guard let self, selectedId == value.id,
-                  recoveryReadIsCurrent(value.id, route: route, token: token, generation: generation) else { return }
-            AskFailureDiagnostics.shared.record(.recoveryReadExhausted, error: AskRecoveryError.storage)
-            error = L("ask.cache.failed")
+            do {
+                guard let self, selectedId == value.id,
+                      recoveryReadIsCurrent(value.id, route: route, token: token, generation: generation) else { return }
+                AskFailureDiagnostics.shared.record(.recoveryReadExhausted, error: AskRecoveryError.storage)
+                error = L("ask.cache.failed")
+            }
+            // Storage can recover after the fast retry window. Keep checking
+            // read-only state at a low rate without ever replaying an action.
+            while true {
+                do { try await Task.sleep(for: slowDelay) } catch { return }
+                guard let self, selectedId == value.id,
+                      recoveryReadIsCurrent(value.id, route: route, token: token, generation: generation) else { return }
+                let latest = snapshots[value.id] ?? value
+                if await readRecovery(latest, route: route, token: token, generation: generation) {
+                    AskFailureDiagnostics.shared.record(.recoveryReadRecovered, error: AskRecoveryError.storage)
+                    return
+                }
+            }
         }
     }
 }

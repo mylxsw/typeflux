@@ -1,7 +1,7 @@
 import Foundation
 
-/// Access credentials travel only over the inherited channel. Refresh credentials
-/// and Keychain mutations belong exclusively to the application host.
+/// Access credentials travel only over private authenticated feature channels.
+/// Refresh credentials and Keychain mutations belong exclusively to the host.
 struct FeatureAuth: Codable, Sendable {
     let generation: Int
     let token: String?
@@ -13,6 +13,22 @@ struct FeatureAuth: Codable, Sendable {
         let state = AuthState.shared
         return .init(generation: state.sessionGeneration, token: state.accessToken,
             expiresAt: state.accessTokenExpiresAt, profile: state.userProfile, subscription: state.subscription)
+    }
+
+    /// A reconnected channel may still be draining cancelled work. Bootstrap is
+    /// read-only, so retry transient admission failures without poisoning the UI.
+    static func bootstrapAfterReconnect(_ peer: FeatureRPC, initialDelay: Duration = .milliseconds(100),
+                                        maximumDelay: Duration = .seconds(5)) async throws -> Self {
+        var delay = initialDelay
+        while true {
+            try Task.checkCancellation()
+            do { return try await peer.call("bootstrap", FeatureRPC.Empty()) }
+            catch FeatureRPC.Failure.busy {}
+            catch FeatureRPC.Failure.unavailable {}
+            catch FeatureRPC.Failure.timedOut {}
+            try await Task.sleep(for: delay)
+            delay = min(delay * 2, maximumDelay)
+        }
     }
 
     @MainActor func apply() {

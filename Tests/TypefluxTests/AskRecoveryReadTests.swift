@@ -87,18 +87,36 @@ struct AskRecoveryReadTests {
         await kit.stop()
     }
 
-    @Test func permanentFailureKeepsExecutionClosedAndHasABoundedRetryBudget() async throws {
+    @Test func permanentFailureKeepsExecutionClosedAndSlowsRetries() async throws {
         let kit = try await makeFixture()
         let fixture = kit.fixture, peer = kit.peer, value = kit.value
         defer { fixture.model.resetSession() }
         await peer.arm(failures: 100)
         await fixture.model.refreshRecovery(value, route: route)
-        try await fixture.wait { fixture.model.recoveryReadRetries.isEmpty }
+        for _ in 0..<200 where await peer.reads < 4 { try await Task.sleep(for: .milliseconds(2)) }
         #expect(await peer.reads == 4)
+        #expect(!fixture.model.recoveryReadRetries.isEmpty)
         #expect(fixture.model.error == L("ask.cache.failed"))
         #expect(fixture.model.selectedRecoveryEntries.contains { $0.readUnavailable })
         #expect(fixture.model.recoveryBlocksResume(value))
         #expect(await peer.otherMethods.isEmpty && fixture.tools.executions == 0)
+        await kit.stop()
+    }
+
+    @Test func storageRecoversAfterTheFastRetryBudgetWithoutReopening() async throws {
+        let kit = try await makeFixture()
+        let fixture = kit.fixture, peer = kit.peer, value = kit.value
+        defer { fixture.model.resetSession() }
+        fixture.model.draft.text = "Keep this draft"
+        fixture.model.recoveryReadSlowRetryDelay = .milliseconds(5)
+        await peer.arm(failures: 4)
+        await fixture.model.refreshRecovery(value, route: route)
+        try await fixture.wait { fixture.model.recoveryReadRetries.isEmpty }
+        #expect(await peer.reads == 5)
+        #expect(fixture.model.error == nil && fixture.model.selectedRecoveryEntries.isEmpty)
+        #expect(fixture.model.draft.text == "Keep this draft")
+        #expect(await peer.otherMethods.isEmpty && fixture.tools.executions == 0)
+        #expect(await fixture.api.sends.isEmpty)
         await kit.stop()
     }
 

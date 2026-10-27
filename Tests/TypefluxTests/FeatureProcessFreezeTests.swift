@@ -7,6 +7,84 @@ import Testing
 @MainActor
 struct FeatureProcessFreezeTests {
     @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_FEATURE_FREEZE_TEST"] == "1"))
+    func lostHandoffAcknowledgementRecoversWithoutDuplicateSubmission() async throws {
+        let fixture = try makeFixture(), api = AskTestAPI()
+        let cache = try AskConversationCache(url: fixture.root.appendingPathComponent("conversations.sqlite"))
+        let auth = FeatureAuth(generation: 0, token: "isolation-fixture-token", expiresAt: Int(Date().timeIntervalSince1970) + 3600,
+            profile: .init(id: "fixture-owner", email: "fixture@example.invalid", name: "Fixture", status: 1, provider: "password", createdAt: "", updatedAt: ""),
+            subscription: .init(planCode: nil, status: nil, currentPeriodStart: nil, currentPeriodEnd: nil,
+                                cancelAtPeriodEnd: false, entitled: false))
+        let supervisor = FeatureSupervisor(api: api, cache: cache, auth: auth,
+            executableURL: fixture.executable, environment: fixture.environment)
+        do {
+            _ = try await supervisor.route(.init(destination: .chat, action: "probeExercise"), timeout: .seconds(60))
+            let data = try await supervisor.route(.init(destination: .chat, action: "probeChatState"))
+            let state = try JSONDecoder().decode([String: String].self, from: data)
+            let generation = try #require(state["generation"].flatMap(Int.init))
+            let draft = AskDraft(text: "Send exactly once", includeScreenshot: false, modelRef: "cloud:default", storesLocally: false)
+            let handoff = FeatureChatHandoff(id: "probe-drop:" + UUID().uuidString, owner: "fixture-owner", generation: generation,
+                draft: draft, permission: AskPermissionMode.standard.rawValue,
+                reasoning: AskReasoningEffort.providerDefault.rawValue, submit: true)
+            let result = try await supervisor.route(.init(destination: .chat, action: "handoff", payload: JSONEncoder().encode(handoff)), timeout: .seconds(20))
+            #expect(try JSONDecoder().decode(Bool.self, from: result))
+            for _ in 0..<100 where await api.sends.isEmpty { try await Task.sleep(for: .milliseconds(50)) }
+            try await Task.sleep(for: .milliseconds(250))
+            #expect(await api.sends.count == 1)
+            let current = try await supervisor.route(.init(destination: .chat, action: "probeChatState"), timeout: .seconds(5))
+            let recovered = try JSONDecoder().decode([String: String].self, from: current)
+            #expect(recovered["handoffs"] == "1" && recovered["probeDrops"] == "3")
+            #expect(await supervisor.shutdown())
+            try FileManager.default.removeItem(at: fixture.root)
+        } catch {
+            _ = await supervisor.shutdown()
+            throw error
+        }
+    }
+
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_FEATURE_FREEZE_TEST"] == "1"))
+    func chatReconnectsWithoutLosingItsDraftOrRestarting() async throws {
+        let fixture = try makeFixture()
+        let cacheURL = fixture.root.appendingPathComponent("conversations.sqlite")
+        let cache = try AskConversationCache(url: cacheURL)
+        let auth = FeatureAuth(generation: 0, token: "isolation-fixture-token", expiresAt: Int(Date().timeIntervalSince1970) + 3600,
+            profile: .init(id: "fixture-owner", email: "fixture@example.invalid", name: "Fixture", status: 1, provider: "password", createdAt: "", updatedAt: ""),
+            subscription: .init(planCode: nil, status: nil, currentPeriodStart: nil, currentPeriodEnd: nil,
+                                cancelAtPeriodEnd: false, entitled: false))
+        let supervisor = FeatureSupervisor(api: AskTestAPI(), cache: cache, auth: auth,
+            executableURL: fixture.executable, environment: fixture.environment)
+        do {
+            let first = try await supervisor.route(.init(destination: .chat, action: "probeExercise"), timeout: .seconds(60))
+            let pid = try JSONDecoder().decode(Int32.self, from: first)
+            let text = "Unsent input survives channel recovery"
+            _ = try await supervisor.route(.init(destination: .chat, action: "probeSetChatDraft", payload: Data(text.utf8)))
+            for _ in 0..<2 {
+                _ = try? await supervisor.route(.init(destination: .chat, action: "probeDisconnectChat"), timeout: .seconds(3))
+                var state: [String: String]?
+                for _ in 0..<50 {
+                    if let data = try? await supervisor.route(.init(destination: .chat, action: "probeChatState"), timeout: .seconds(2)),
+                       let value = try? JSONDecoder().decode([String: String].self, from: data), value["error"] == "nil" {
+                        state = value; break
+                    }
+                    try await Task.sleep(for: .milliseconds(100))
+                }
+                #expect(state?["text"] == text)
+                let current = try await supervisor.route(.init(destination: .chat, action: "probeExercise"), timeout: .seconds(5))
+                #expect(try JSONDecoder().decode(Int32.self, from: current) == pid)
+            }
+            let saved = try await supervisor.route(.init(destination: .chat, action: "probeFlushChatDraft"), timeout: .seconds(5))
+            #expect(try JSONDecoder().decode(Bool.self, from: saved))
+            #expect(try await cache.savedChatDrafts(owner: "fixture-owner").contains { $0.draft.text == text })
+            let reopened = try AskConversationCache(url: cacheURL)
+            #expect(try await reopened.savedChatDrafts(owner: "fixture-owner").contains { $0.draft.text == text })
+            #expect(await supervisor.shutdown())
+            try FileManager.default.removeItem(at: fixture.root)
+        } catch {
+            _ = await supervisor.shutdown()
+            throw error
+        }
+    }
+
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_FEATURE_FREEZE_TEST"] == "1"))
     func failedBootstrapStillAllowsBackgroundToShutDown() async throws {
         let fixture = try makeFixture()
         // The child's bootstrap RPC expires after ten seconds. Keep host
@@ -82,7 +160,9 @@ struct FeatureProcessFreezeTests {
         try manager.createDirectory(at: executable.deletingLastPathComponent(), withIntermediateDirectories: true)
         try manager.createDirectory(at: resources, withIntermediateDirectories: true)
         let repository = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        let build = repository.appendingPathComponent(".build/debug").resolvingSymlinksInPath()
+        let build = ProcessInfo.processInfo.environment["TYPEFLUX_FEATURE_FIXTURE_BUILD"]
+            .map { URL(fileURLWithPath: $0, isDirectory: true) }
+            ?? repository.appendingPathComponent(".build/debug").resolvingSymlinksInPath()
         try manager.copyItem(at: build.appendingPathComponent("Typeflux"), to: executable)
         for item in try manager.contentsOfDirectory(at: build, includingPropertiesForKeys: nil) where item.pathExtension == "bundle" {
             try manager.copyItem(at: item, to: resources.appendingPathComponent(item.lastPathComponent))

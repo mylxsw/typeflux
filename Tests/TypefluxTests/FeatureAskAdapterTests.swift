@@ -6,6 +6,53 @@ import Testing
 @Suite(.serialized, .exclusiveUIState)
 @MainActor
 struct FeatureAskAdapterTests {
+    @Test func reconnectBootstrapWaitsForBusyHostToDrain() async throws {
+        var sockets: [Int32] = [-1, -1]
+        #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets) == 0)
+        let client = try FeatureRPC(descriptor: sockets[0]), server = try FeatureRPC(descriptor: sockets[1])
+        let snapshot = FeatureAuth(generation: 7, token: nil, expiresAt: nil, profile: nil,
+            subscription: .init(planCode: nil, status: nil, currentPeriodStart: nil, currentPeriodEnd: nil,
+                                cancelAtPeriodEnd: false, entitled: false))
+        let state = BootstrapRetryFixture(snapshot: snapshot)
+        await client.start { _, data in data }
+        await server.start { _, _ in try await state.reply() }
+        let result = try await FeatureAuth.bootstrapAfterReconnect(client, initialDelay: .milliseconds(5), maximumDelay: .milliseconds(10))
+        #expect(result.generation == 7)
+        #expect(await state.calls == 3)
+        await client.stop(); await server.stop()
+    }
+
+    @Test func reconnectRetriesReadsButDoesNotReplayDraftWrites() async throws {
+        let listener = try FeatureReconnectListener(), state = CacheDisconnectFixture()
+        defer { listener.stop() }
+        listener.setExpectedPeerPID(getpid())
+        var sockets: [Int32] = [-1, -1]
+        #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets) == 0)
+        let client = try FeatureRPC(descriptor: sockets[0], reconnect: {
+            try await FeatureReconnectListener.connect(path: listener.path, secret: listener.secret, expectedPeerPID: getpid())
+        })
+        let server = try FeatureRPC(descriptor: sockets[1], reconnect: { try await listener.acceptConnection() })
+        let storage = try AskConversationCache.inMemory()
+        try await storage.saveDraft(AskDraft(text: "Original"), key: "fixture", owner: "owner")
+        await client.start { _, data in data }
+        await server.start { method, payload in
+            let call = try JSONDecoder().decode(FeatureAskCall.self, from: payload)
+            let result = try await FeatureAskCache.handle(method, payload: call.payload, api: storage)
+            if await state.shouldDisconnect(method) { await server.simulateDisconnect() }
+            return result
+        }
+        let cache = FeatureAskCache(connection: client, generation: { 0 })
+        #expect(try await cache.draft(key: "fixture", owner: "owner")?.text == "Original")
+        #expect(await state.count("cache.draft.11") == 2)
+        await #expect(throws: FeatureRPC.Failure.unavailable) {
+            try await cache.saveDraft(AskDraft(text: "New"), key: "fixture", owner: "owner")
+        }
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(await state.count("cache.saveDraft.10") == 1)
+        #expect(try await cache.draft(key: "fixture", owner: "owner")?.text == "New")
+        await client.stop(); await server.stop()
+    }
+
     @Test func staleCacheReadRefreshesAuthOnceButNeverReplaysAWrite() async throws {
         var sockets: [Int32] = [-1, -1]
         #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &sockets) == 0)
@@ -157,6 +204,26 @@ struct FeatureAskAdapterTests {
         try await cache.delete(id: "chat", owner: "owner")
         #expect(try await cache.load(id: "chat", owner: "owner") == nil)
         await client.stop(); await server.stop()
+    }
+}
+
+private actor BootstrapRetryFixture {
+    let snapshot: FeatureAuth
+    private(set) var calls = 0
+    init(snapshot: FeatureAuth) { self.snapshot = snapshot }
+    func reply() throws -> Data {
+        calls += 1
+        if calls < 3 { throw FeatureRPC.Failure.busy }
+        return try JSONEncoder().encode(snapshot)
+    }
+}
+
+private actor CacheDisconnectFixture {
+    private var counts: [String: Int] = [:]
+    func count(_ method: String) -> Int { counts[method, default: 0] }
+    func shouldDisconnect(_ method: String) -> Bool {
+        counts[method, default: 0] += 1
+        return ["cache.draft.11", "cache.saveDraft.10"].contains(method) && counts[method] == 1
     }
 }
 

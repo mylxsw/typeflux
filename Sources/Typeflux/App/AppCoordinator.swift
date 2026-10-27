@@ -36,6 +36,9 @@ final class AppCoordinator {
     let featureScreenshotForwarder = FeatureScreenshotForwarder()
     private var moduleStartup: Task<Void, Never>?
     var featureModuleStartup: Task<Void, Never>?
+    #if DEBUG
+    var featureProbeDroppedHandoffCounts: [String: Int] = [:]
+    #endif
 
     // swiftlint:disable:next function_body_length
     func start() {

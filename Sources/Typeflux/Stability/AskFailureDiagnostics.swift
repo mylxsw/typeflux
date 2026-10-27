@@ -38,6 +38,8 @@ final class AskFailureDiagnostics: @unchecked Sendable {
         let method: String?
         let decodingPath: String?
         let sqliteReason: String?
+        let frameBytes: Int?
+        let transferredBytes: Int?
     }
 
     private let queue = DispatchQueue(label: "typeflux.ask-failures", qos: .utility)
@@ -54,7 +56,8 @@ final class AskFailureDiagnostics: @unchecked Sendable {
         TypefluxDataDirectories.cache.appendingPathComponent("ask-failures", isDirectory: true)
     }
 
-    func record(_ operation: Operation, error: any Error, reason: Reason? = nil, method: String? = nil) {
+    func record(_ operation: Operation, error: any Error, reason: Reason? = nil, method: String? = nil,
+                frameBytes: Int? = nil, transferredBytes: Int? = nil) {
         // Unit fixtures must not pollute the running application's diagnostics.
         guard directoryOverride != nil || FeatureProcess.enabled else { return }
         guard lock.withLock({ if pending >= 128 { return false }; pending += 1; return true }) else { return }
@@ -67,7 +70,8 @@ final class AskFailureDiagnostics: @unchecked Sendable {
             domain: value.domain, code: value.code, underlyingDomain: underlying?.domain,
             underlyingCode: underlying?.code, reason: reason, method: Self.safeMethod(method),
             decodingPath: Self.decodingPath(error),
-            sqliteReason: Self.sqliteReason(underlying?.domain == "SQLite" ? underlying : value))
+            sqliteReason: Self.sqliteReason(underlying?.domain == "SQLite" ? underlying : value),
+            frameBytes: frameBytes, transferredBytes: transferredBytes)
         queue.async { [self] in
             defer { lock.withLock { pending -= 1 } }
             do { try append(event) } catch {
