@@ -271,8 +271,7 @@ struct AskComposer: View {
         } else if model.workflowApproval != nil {
             action = .confirm(L("ask.workflow.approval.allow"))
         } else if model.isNoteCaptureMode {
-            action = .confirm(L(model.noteCapture.saving ? "ask.noteCapture.saving" : "ask.noteCapture.save"),
-                              enabled: model.noteCapture.hasContent && !model.noteCapture.saving)
+            action = .confirm(L(model.noteCapture.actionTitleKey), enabled: model.noteCapture.actionEnabled)
         } else if plugins.keyword?.pluginID == AskQuickAskPlugin.id {
             action = .confirm(L("ask.quickAsk.send"), enabled: model.canSubmitQuickAsk)
         } else if let display = pluginDisplay {
@@ -359,7 +358,7 @@ struct AskComposer: View {
     private func runLauncherPrimaryAction() {
         if model.isNoteCaptureMode {
             guard !launcherEditorIsComposing, !active else { return }
-            model.submitNoteCapture()
+            model.activateNoteCapture()
             return
         }
         if plugins.plugin?.id == AskTranslatePlugin.id, !launcherPluginInputIsCurrent,
@@ -864,7 +863,7 @@ struct AskComposer: View {
     /// Return on the plugin's row: run it (or do what its plan offers, like opening
     /// a search), or use its result.
     private func runPluginMain() {
-        if model.isNoteCaptureMode { model.submitNoteCapture(); return }
+        if model.isNoteCaptureMode { model.activateNoteCapture(); return }
         if plugins.keyword?.pluginID == AskQuickAskPlugin.id { model.submitQuickAsk(); return }
         if AskFileSearchPlugin.showsFileResults(for: plugins.keyword?.pluginID), plugins.isPlanCurrent,
            let action = plugins.currentOutput?.action(for: .enter) {
@@ -993,13 +992,7 @@ struct AskComposer: View {
             }
             return true
         }
-        if model.isNoteCaptureMode {
-            switch key {
-            case .enter: model.submitNoteCapture(); return true
-            case .commandEnter, .commandR, .commandS: return true
-            default: return false
-            }
-        }
+        if model.isNoteCaptureMode { return model.noteCaptureKey(key) }
         if plugins.keyword?.pluginID == AskQuickAskPlugin.id {
             switch key {
             case .enter, .commandEnter: model.submitQuickAsk(); return true
@@ -1272,7 +1265,7 @@ struct AskComposer: View {
     }
 
     private var pluginHeight: CGFloat {
-        if model.isNoteCaptureMode { return 220 }
+        if model.isNoteCaptureMode { return model.noteCapture.panelHeight }
         if plugins.keyword?.pluginID == AskQuickAskPlugin.id { return 300 }
         return pluginDisplay.map { AskLauncherHeightReserve.holding(pluginReserve, content: AskPluginResultsView.height(for: $0)) } ?? 0
     }
@@ -1544,6 +1537,9 @@ struct AskComposer: View {
             }
             .onChange(of: historyHeight) { _ in reportHeight() }
             .onChange(of: homeHeight) { _ in reportHeight() }
+            .onChange(of: model.noteCapture.panelHeight) { _ in
+                if launcher, model.isNoteCaptureMode { reportHeight() }
+            }
             .onChange(of: draft.wrappedValue.text) { _ in
                 canvasHighlight = nil
                 if launcher, model.launcherHistoryMode { model.launcherHistoryIndex = 0 }
@@ -1752,7 +1748,7 @@ struct AskComposer: View {
         !active && plugins.isActive && pluginDisplay != nil
             && pluginDisplay?.systemMonitor != true && pluginDisplay?.systemInfo != true
             && pluginDisplay?.calendar != true && pluginDisplay?.worldClock != true
-            && plugins.keyword?.pluginID != AskQuickAskPlugin.id
+            && plugins.keyword?.pluginID != AskQuickAskPlugin.id && !model.isNoteCaptureMode
     }
 
     private var showsChatBar: Bool {
@@ -1776,6 +1772,7 @@ struct AskComposer: View {
     /// a keyword view designed taller than the card makes it grow.
     private var launcherTargetHeight: CGFloat {
         if launcherCollapsed { return AskLauncherWindowMode.simpleHeight }
+        if model.isNoteCaptureMode { return launcherChromeHeight + model.noteCapture.panelHeight }
         let content = launcherResultsFillViewport ? 0 : launcherNaturalResultsHeight
         return max(AskLauncherWindowMode.expandedHeight, launcherChromeHeight + content)
     }
@@ -2094,7 +2091,7 @@ struct AskComposer: View {
 
     /// Esc steps back one layer (`AskLauncherEscape`); false closes the launcher.
     private func escapeKey() -> Bool {
-        guard !model.isNoteCaptureMode else { return false }
+        if model.isNoteCaptureMode { return model.noteCaptureKey(.escape) }
         return escapeFeatureKey()
     }
 

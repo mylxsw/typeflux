@@ -7519,3 +7519,26 @@
 "ask.noteCapture.hint" = "↵ Save · ⇧↵ New line · Esc Close";
 "ask.settings.keywords.kind.noteCapture.hint" = "Save typed text directly to the local notebook.";
 "ask.noteCapture.deleted" = "This note was deleted. Edit the draft to save it as a new note.";
+
+// Quick note destinations and safe append
+"ask.noteCapture.destination" = "Save to · Local notebook";
+"ask.noteCapture.choose" = "Choose a note";
+"ask.noteCapture.characters" = "%@ characters";
+"ask.noteCapture.newNote" = "New note";
+"ask.noteCapture.newDetail" = "Create a separate note";
+"ask.noteCapture.emptyDetail" = "Type a thought above. Return saves it; Shift-Return adds a line.";
+"ask.noteCapture.append" = "Append to note…";
+"ask.noteCapture.change" = "Change";
+"ask.noteCapture.appendDetail" = "Append at the end · Original text kept";
+"ask.noteCapture.preview" = "Append preview";
+"ask.noteCapture.appended" = "Appended · %@";
+"ask.noteCapture.search" = "Search note titles or text";
+"ask.noteCapture.noTargets" = "No notes found. Try another search or create a new note.";
+"ask.noteCapture.select" = "Select note";
+"ask.noteCapture.appendSave" = "Append text";
+"ask.noteCapture.reload" = "Reload and review";
+"ask.noteCapture.conflict" = "This note changed. Reload it and check whether the text was already appended before saving again.";
+"ask.noteCapture.undo" = "Undo last save";
+"ask.noteCapture.undone" = "Last save undone";
+"ask.noteCapture.undoConflict" = "This note changed after saving. Open it to review; undo will not replace newer edits.";
+"ask.noteCapture.working" = "Working…";

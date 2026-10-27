@@ -7518,3 +7518,26 @@
 "ask.noteCapture.hint" = "↵ 保存 · ⇧↵ 改行 · Esc 閉じる";
 "ask.settings.keywords.kind.noteCapture.hint" = "入力したテキストをこのMacのノートに直接保存します。";
 "ask.noteCapture.deleted" = "このメモは削除されています。下書きを編集して新しいメモとして保存してください。";
+
+// Quick note destinations and safe append
+"ask.noteCapture.destination" = "保存先 · このMacのノート";
+"ask.noteCapture.choose" = "追記先のメモを選択";
+"ask.noteCapture.characters" = "%@文字";
+"ask.noteCapture.newNote" = "新しいメモ";
+"ask.noteCapture.newDetail" = "別のメモとして保存";
+"ask.noteCapture.emptyDetail" = "上に入力してReturnで保存、Shift+Returnで改行します。";
+"ask.noteCapture.append" = "メモに追記…";
+"ask.noteCapture.change" = "変更";
+"ask.noteCapture.appendDetail" = "末尾に追記 · 元の内容を保持";
+"ask.noteCapture.preview" = "追記のプレビュー";
+"ask.noteCapture.appended" = "追記済み · %@";
+"ask.noteCapture.search" = "メモのタイトルや本文を検索";
+"ask.noteCapture.noTargets" = "メモが見つかりません。別の語句で検索するか新規作成してください。";
+"ask.noteCapture.select" = "メモを選択";
+"ask.noteCapture.appendSave" = "追記する";
+"ask.noteCapture.reload" = "再読み込みして確認";
+"ask.noteCapture.conflict" = "このメモは変更されています。再読み込みし、すでに追記されていないか確認してから保存してください。";
+"ask.noteCapture.undo" = "前回の保存を取り消す";
+"ask.noteCapture.undone" = "前回の保存を取り消しました";
+"ask.noteCapture.undoConflict" = "保存後にメモが変更されました。開いて確認してください。新しい編集は上書きしません。";
+"ask.noteCapture.working" = "処理中…";

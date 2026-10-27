@@ -7521,3 +7521,26 @@
 "ask.noteCapture.hint" = "↵ 儲存 · ⇧↵ 換行 · Esc 關閉";
 "ask.settings.keywords.kind.noteCapture.hint" = "將輸入內容直接儲存到本機筆記本。";
 "ask.noteCapture.deleted" = "這則筆記已被刪除。修改草稿後可另存為新筆記。";
+
+// Quick note destinations and safe append
+"ask.noteCapture.destination" = "儲存位置 · 本機筆記本";
+"ask.noteCapture.choose" = "選擇要追加的筆記";
+"ask.noteCapture.characters" = "%@ 個字元";
+"ask.noteCapture.newNote" = "新增筆記";
+"ask.noteCapture.newDetail" = "儲存為一則獨立筆記";
+"ask.noteCapture.emptyDetail" = "在上方記下想法，Enter 儲存，Shift+Enter 換行。";
+"ask.noteCapture.append" = "追加到筆記…";
+"ask.noteCapture.change" = "更換";
+"ask.noteCapture.appendDetail" = "追加至結尾 · 保留原有內容";
+"ask.noteCapture.preview" = "追加預覽";
+"ask.noteCapture.appended" = "已追加 · %@";
+"ask.noteCapture.search" = "搜尋筆記標題或內文";
+"ask.noteCapture.noTargets" = "找不到筆記，可換個關鍵詞或新增筆記。";
+"ask.noteCapture.select" = "選擇筆記";
+"ask.noteCapture.appendSave" = "追加內容";
+"ask.noteCapture.reload" = "重新載入並檢查";
+"ask.noteCapture.conflict" = "這則筆記已變更。請重新載入，檢查內容是否已追加，再確認儲存。";
+"ask.noteCapture.undo" = "復原上次儲存";
+"ask.noteCapture.undone" = "已復原上次儲存";
+"ask.noteCapture.undoConflict" = "筆記在儲存後又被修改，請開啟檢查。復原不會覆蓋新的修改。";
+"ask.noteCapture.working" = "正在處理…";

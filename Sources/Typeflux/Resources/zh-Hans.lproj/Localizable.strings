@@ -7519,3 +7519,26 @@
 "ask.noteCapture.hint" = "↵ 保存 · ⇧↵ 换行 · Esc 关闭";
 "ask.settings.keywords.kind.noteCapture.hint" = "将输入内容直接保存到本机笔记本。";
 "ask.noteCapture.deleted" = "这条笔记已被删除。修改草稿后可另存为新笔记。";
+
+// Quick note destinations and safe append
+"ask.noteCapture.destination" = "保存位置 · 本机笔记本";
+"ask.noteCapture.choose" = "选择要追加的笔记";
+"ask.noteCapture.characters" = "%@ 个字符";
+"ask.noteCapture.newNote" = "新建笔记";
+"ask.noteCapture.newDetail" = "保存为一条独立笔记";
+"ask.noteCapture.emptyDetail" = "在上方记下想法，回车保存，Shift+回车换行。";
+"ask.noteCapture.append" = "追加到笔记…";
+"ask.noteCapture.change" = "更换";
+"ask.noteCapture.appendDetail" = "追加到末尾 · 保留原有内容";
+"ask.noteCapture.preview" = "追加预览";
+"ask.noteCapture.appended" = "已追加 · %@";
+"ask.noteCapture.search" = "搜索笔记标题或正文";
+"ask.noteCapture.noTargets" = "没有找到笔记，可换个关键词或新建笔记。";
+"ask.noteCapture.select" = "选择笔记";
+"ask.noteCapture.appendSave" = "追加内容";
+"ask.noteCapture.reload" = "重新载入并检查";
+"ask.noteCapture.conflict" = "这条笔记已发生变化。请重新载入，检查内容是否已追加，再确认保存。";
+"ask.noteCapture.undo" = "撤销上次保存";
+"ask.noteCapture.undone" = "已撤销上次保存";
+"ask.noteCapture.undoConflict" = "笔记在保存后又被修改，请打开检查。撤销不会覆盖新的修改。";
+"ask.noteCapture.working" = "正在处理…";
