@@ -112,7 +112,7 @@ struct AskKeywordAliasTests {
 
     @Test func `sections cover related capabilities`() {
         #expect(AskKeywordSection.search.kinds == [.web, .apps, .files, .semanticFiles, .tabs, .bookmarks, .emoji])
-        #expect(AskKeywordSection.typeflux.kinds == [.chat, .quickAsk, .prefix, .setting, .history, .clip, .calendar,
+        #expect(AskKeywordSection.typeflux.kinds == [.chat, .quickAsk, .noteCapture, .prefix, .setting, .history, .clip, .calendar,
                                                      .worldClock])
         #expect(AskKeywordSection.allCases.flatMap(\.kinds).count == AskKeywordKind.editableKinds.count)
     }

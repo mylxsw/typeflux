@@ -84,6 +84,7 @@ extension AskConversationModel {
         if let outcome = activateLauncherKeyword(keyword, preservingText: true) { return outcome }
         if !run, enterLauncherWorkflow(keyword, run: true) { return .stay }
         plugins.enter(keyword)
+        if isNoteCaptureMode { launcherDraft.text = noteCaptureInput(launcherDraft.text) }
         plugins.update(text: launcherDraft.text, selection: launcherDraft.sentSelection,
                        language: AppLocalization.shared.language, runWhenPlanned: run)
         return .stay

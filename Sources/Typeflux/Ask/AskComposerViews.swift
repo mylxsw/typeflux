@@ -270,6 +270,9 @@ struct AskComposer: View {
                               reason: palette.highlightedCommand?.disabledReason)
         } else if model.workflowApproval != nil {
             action = .confirm(L("ask.workflow.approval.allow"))
+        } else if model.isNoteCaptureMode {
+            action = .confirm(L(model.noteCapture.saving ? "ask.noteCapture.saving" : "ask.noteCapture.save"),
+                              enabled: model.noteCapture.hasContent && !model.noteCapture.saving)
         } else if plugins.keyword?.pluginID == AskQuickAskPlugin.id {
             action = .confirm(L("ask.quickAsk.send"), enabled: model.canSubmitQuickAsk)
         } else if let display = pluginDisplay {
@@ -354,6 +357,11 @@ struct AskComposer: View {
     }
 
     private func runLauncherPrimaryAction() {
+        if model.isNoteCaptureMode {
+            guard !launcherEditorIsComposing, !active else { return }
+            model.submitNoteCapture()
+            return
+        }
         if plugins.plugin?.id == AskTranslatePlugin.id, !launcherPluginInputIsCurrent,
            !AskTranslatePlugin.opensWordBook(plugins.keyword?.options ?? [:]) {
             plugins.update(text: draft.wrappedValue.text, selection: draft.wrappedValue.sentSelection,
@@ -793,7 +801,8 @@ struct AskComposer: View {
                                     offersAskAI: asks && ![AskKillAppPlugin.id, AskSystemMonitorPlugin.id,
                                                           AskSystemInfoPlugin.id, AskEmojiPlugin.id,
                                                           AskCalendarPlugin.id, AskWorldClockPlugin.id, AskQuickAskPlugin.id,
-                                                          AskTerminalCommandPlugin.id].contains(plugin.id),
+                                                          AskTerminalCommandPlugin.id,
+                                                          AskNoteCapturePlugin.id].contains(plugin.id),
                                     savesNoteWhenDone: plugins.savesNoteWhenDone,
                                     systemMonitor: plugin.id == AskSystemMonitorPlugin.id,
                                     systemInfo: plugin.id == AskSystemInfoPlugin.id,
@@ -806,7 +815,8 @@ struct AskComposer: View {
         if quickSearch.presentation?.features.isEmpty != false,
            let hint = plugins.hint, let plugin = plugins.plugin(for: hint) {
             return AskPluginDisplay(hint: hint, title: plugin.title, symbol: plugin.symbol, phase: .waiting,
-                                    highlighted: pluginHighlight, offersAskAI: plugin.id != AskTerminalCommandPlugin.id)
+                                    highlighted: pluginHighlight, offersAskAI: ![
+                                        AskTerminalCommandPlugin.id, AskNoteCapturePlugin.id].contains(plugin.id))
         }
         return nil
     }
@@ -821,7 +831,7 @@ struct AskComposer: View {
             if plugins.keyword?.pluginID == AskQuickAskPlugin.id, model.quickAsk?.handedOff == true { model.quickAsk = nil }
             pluginHighlight = 0
             pluginReserve = 0
-            draft.wrappedValue.text = argument
+            draft.wrappedValue.text = model.noteCaptureInput(argument)
             return true
         }
         if plugins.isActive {
@@ -847,13 +857,14 @@ struct AskComposer: View {
         guard enteredWorkflow || plugins.acceptHint() else { return false }
         pluginHighlight = 0
         pluginReserve = 0
-        draft.wrappedValue.text = ""
+        draft.wrappedValue.text = model.noteCaptureInput("")
         return true
     }
 
     /// Return on the plugin's row: run it (or do what its plan offers, like opening
     /// a search), or use its result.
     private func runPluginMain() {
+        if model.isNoteCaptureMode { model.submitNoteCapture(); return }
         if plugins.keyword?.pluginID == AskQuickAskPlugin.id { model.submitQuickAsk(); return }
         if AskFileSearchPlugin.showsFileResults(for: plugins.keyword?.pluginID), plugins.isPlanCurrent,
            let action = plugins.currentOutput?.action(for: .enter) {
@@ -981,6 +992,13 @@ struct AskComposer: View {
             default: return false
             }
             return true
+        }
+        if model.isNoteCaptureMode {
+            switch key {
+            case .enter: model.submitNoteCapture(); return true
+            case .commandEnter, .commandR, .commandS: return true
+            default: return false
+            }
         }
         if plugins.keyword?.pluginID == AskQuickAskPlugin.id {
             switch key {
@@ -1254,6 +1272,7 @@ struct AskComposer: View {
     }
 
     private var pluginHeight: CGFloat {
+        if model.isNoteCaptureMode { return 220 }
         if plugins.keyword?.pluginID == AskQuickAskPlugin.id { return 300 }
         return pluginDisplay.map { AskLauncherHeightReserve.holding(pluginReserve, content: AskPluginResultsView.height(for: $0)) } ?? 0
     }
@@ -1801,6 +1820,14 @@ struct AskComposer: View {
                                              canvasHighlight = nil
                                              model.removeLauncherAttachments()
                                          })
+            } else if model.isNoteCaptureMode {
+                AskNoteCaptureView(model: model, viewport: model.launcherViewport, chrome: launcherChromeHeight,
+                                   available: availableHeight.map { $0 + AskMetrics.launcherGutter * 2 },
+                                   natural: launcherResultsViewportHeight,
+                                   onSubmit: runLauncherPrimaryAction,
+                                   onOpen: { id in
+                                       performPluginAction(.init(kind: .openNotes(id: id), title: "", symbol: ""))
+                                   })
             } else if plugins.keyword?.pluginID == AskQuickAskPlugin.id {
                 AskQuickAskView(model: model, viewport: model.launcherViewport, chrome: launcherChromeHeight,
                                 available: availableHeight.map { $0 + AskMetrics.launcherGutter * 2 },
@@ -2067,6 +2094,11 @@ struct AskComposer: View {
 
     /// Esc steps back one layer (`AskLauncherEscape`); false closes the launcher.
     private func escapeKey() -> Bool {
+        guard !model.isNoteCaptureMode else { return false }
+        return escapeFeatureKey()
+    }
+
+    private func escapeFeatureKey() -> Bool {
         if pluginDisplay?.worldClock == true {
             if worldClockKey(.escape) {
                 return true
@@ -2209,6 +2241,22 @@ struct AskComposer: View {
             pluginHighlight = 0
             pluginReserve = 0
             return true
+        }
+        if launcher, key == .enter, !plugins.isActive {
+            let match = AskKeywordMatcher.match(draft.wrappedValue.text, keywords: plugins.availableKeywords)
+            let hasArgument: Bool
+            switch match {
+            case let .active(keyword, argument) where keyword.pluginID == AskNoteCapturePlugin.id:
+                hasArgument = !argument.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            default: hasArgument = false
+            }
+            if model.enterLauncherKeywordFromText(pluginID: AskNoteCapturePlugin.id) {
+                pluginHighlight = 0
+                pluginReserve = 0
+                // Entering a bare prefix only restores its draft; it never submits it.
+                if hasArgument { model.submitNoteCapture() }
+                return true
+            }
         }
         if launcher, key == .enter, !plugins.isActive,
            model.enterLauncherKeywordFromText(pluginID: AskEmojiPlugin.id) {
@@ -2418,7 +2466,8 @@ struct AskComposer: View {
             onAcceptedInput: launcher ? { searchInputTrace = $0 } : nil
         )
         .frame(height: min(editorHeight, layout.editorMaximumHeight))
-        .disabled(model.isOpeningChat || (!launcher && model.isLoadingSelection))
+        .disabled(model.isOpeningChat || (!launcher && model.isLoadingSelection)
+                  || (launcher && model.isNoteCaptureMode && model.noteCapture.saving))
     }
 
     private var editorRow: some View {
@@ -2641,6 +2690,7 @@ struct AskComposer: View {
     }
 
     private var launcherSecondaryHint: String {
+        if !active, model.isNoteCaptureMode { return L("ask.noteCapture.hint") }
         if !active, model.launcherHistoryMode { return L("ask.inputHistory.hint") }
         if !active, plugins.keyword?.pluginID == AskQuickAskPlugin.id { return L("ask.quickAsk.hint") }
         if !active, let pluginDisplay { return AskPluginResultsView.hint(for: pluginDisplay) }

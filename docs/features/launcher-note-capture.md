@@ -1,0 +1,15 @@
+# Launcher quick notes
+
+Type `n text` or `记：内容` to record text directly in the notebook on this Mac. The prefix supports the launcher's existing space and colon separators. It can be renamed or disabled in Settings → Launcher → Keywords, and appears in the prefix directory and help. Existing `nb` search and `notebook` window commands retain their behavior.
+
+Return saves a new note; Shift-Return inserts a line break. Return during input-method composition confirms the marked text without saving. The panel previews the original text without executing a write. Empty or whitespace-only input cannot be saved. Markdown, leading indentation and trailing newlines are preserved; the first nonempty line supplies a short plain-text title. Capture uses manual source and user authorship, without a model or conversation association.
+
+After a successful save, the editor clears and the panel shows a receipt with an action to open the note. The capture prefix stays active for the next note. Escape closes the launcher, retaining the current draft and any pending save in memory. Reopening restores capture even after the launcher's usual one-minute input retention interval. Clear draft explicitly discards this state. Drafts do not survive app restart or account reset.
+
+Only explicit submission writes to the injected note store. The editor and save button are disabled during the write. Closing the launcher does not cancel an admitted write; completion updates only the same capture state, never an unrelated launcher query or a reset account. Storage failures retain the input and display a retry action. Retries reuse the submission UUID. If an earlier attempt already committed, retry reconciles with that note instead of overwriting any subsequent edit or resurrecting a deleted note. Editing after failure starts a new submission.
+
+Capture never reads the current selection or clipboard automatically, calls a model, or records its body in launcher input history, including abandoned input. The general launcher draft persistence path already stores no input text. Capture status and errors use fixed localized messages rather than store error details.
+
+This implements phase one of GUL-525. Appending to an existing note, target selection, tag parsing, attachments and cloud synchronization remain outside this phase.
+
+Validation covers the capture state, SQLite persistence, keyword migration and settings, private history, failure recovery, account/presentation changes, and native launcher keyboard behavior. `AskNoteCaptureInteractionTests` can write preview and receipt images in both appearances when `TYPEFLUX_CAPTURE_SNAPSHOTS` names an output directory.

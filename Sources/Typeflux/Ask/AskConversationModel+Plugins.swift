@@ -20,6 +20,7 @@ enum AskPluginRegistry {
         AskHistoryPlugin.id,
         AskClipboardPlugin.id,
         AskNotesPlugin.id,
+        AskNoteCapturePlugin.id,
         AskScreenshotPlugin.id,
         AskScreenshotTextPlugin.id,
         AskBrowserSearchPlugin.tabsID,
@@ -40,7 +41,7 @@ enum AskPluginRegistry {
                     .keywords + AskAppSearchPlugin.keywords + AskFileSearchPlugin.keywords + AskSemanticFileSearchPlugin.keywords
                     + AskOpenChatPlugin.keywords + AskQuickAskPlugin.keywords + AskPrefixPlugin
                     .keywords + AskSettingsPlugin.keywords + AskHelpPlugin.keywords + AskHistoryPlugin.keywords + AskClipboardPlugin
-                    .keywords + AskNotesPlugin.keywords + AskScreenshotPlugin.keywords
+                    .keywords + AskNotesPlugin.keywords + AskNoteCapturePlugin.keywords + AskScreenshotPlugin.keywords
                     + AskScreenshotTextPlugin.keywords
                     + AskBrowserSearchPlugin.keywords
                     + AskKillAppPlugin.keywords
@@ -239,6 +240,7 @@ extension AskConversationModel {
             AskHistoryPlugin(conversations: { [weak self] in await self?.launcherChatHistory() ?? .empty }),
             AskClipboardPlugin(entries: { [weak self] in self?.clipboardEntries() ?? [] }),
             AskNotesPlugin(store: notes),
+            AskNoteCapturePlugin(),
             AskScreenshotPlugin(),
             AskScreenshotTextPlugin(screenshot: { [weak self] in self?.launcherScreenshot?.source },
                                     generator: promptAI,
@@ -565,6 +567,7 @@ extension AskConversationModel {
 
     /// Closing folds the keyword into its text after input history has recorded it.
     func foldLauncherKeyword() {
+        let retainedCapture = retainNoteCaptureOnDismissal()
         if isTerminalCommandMode || isTerminalCommandInput(launcherDraft.text) {
             plugins.deactivate()
             launcherDraft.text = ""
@@ -572,6 +575,7 @@ extension AskConversationModel {
         releaseLauncherScreenshot()
         launcherClipboardPreview = nil
         answerWorkflowApproval(false)
+        if retainedCapture { return }
         guard plugins.isActive else { return }
         if let text = plugins.deactivate(argument: launcherDraft.text) { launcherDraft.text = text }
     }

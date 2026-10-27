@@ -7502,3 +7502,21 @@
 
 "ask.activity.parallel" = "正在並行執行 %d 個查詢";
 "ask.activity.queuedTool" = "排隊中";
+
+"screenshot.toast.recordingBusy" = "請先關閉錄影設定或停止錄影，再進行截圖。";
+"screenshot.toast.captureTimedOut" = "系統截圖服務回應逾時，已取消本次截圖，請稍後再試。";
+
+// Launcher quick note capture
+"ask.noteCapture.title" = "快速記錄";
+"ask.noteCapture.placeholder" = "輸入要記錄的內容…";
+"ask.noteCapture.untitled" = "快速記錄";
+"ask.noteCapture.saved" = "已儲存 · %@";
+"ask.noteCapture.continue" = "繼續輸入，記錄下一則。";
+"ask.noteCapture.local" = "儲存到本機筆記本";
+"ask.noteCapture.saving" = "正在儲存…";
+"ask.noteCapture.clear" = "清空草稿";
+"ask.noteCapture.save" = "儲存筆記";
+"ask.noteCapture.retry" = "重試儲存";
+"ask.noteCapture.hint" = "↵ 儲存 · ⇧↵ 換行 · Esc 關閉";
+"ask.settings.keywords.kind.noteCapture.hint" = "將輸入內容直接儲存到本機筆記本。";
+"ask.noteCapture.deleted" = "這則筆記已被刪除。修改草稿後可另存為新筆記。";

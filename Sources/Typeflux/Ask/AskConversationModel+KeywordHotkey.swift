@@ -28,9 +28,10 @@ extension AskConversationModel {
             }
             return
         }
-        launcherDraft.text = ""
         plugins.enter(keyword)
-        plugins.update(text: "", selection: launcherDraft.sentSelection, language: AppLocalization.shared.language,
+        launcherDraft.text = noteCaptureInput("")
+        plugins.update(text: launcherDraft.text, selection: launcherDraft.sentSelection,
+                       language: AppLocalization.shared.language,
                        runWhenPlanned: true)
     }
 }
