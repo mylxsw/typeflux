@@ -7500,3 +7500,21 @@
 
 "ask.activity.parallel" = "쿼리 %d개 병렬 실행 중";
 "ask.activity.queuedTool" = "대기 중";
+
+"screenshot.toast.recordingBusy" = "스크린샷을 찍기 전에 녹화 설정을 닫거나 녹화를 중지하세요.";
+"screenshot.toast.captureTimedOut" = "화면 캡처 서비스 응답 시간이 초과되어 스크린샷이 취소되었습니다. 잠시 후 다시 시도하세요.";
+
+// Launcher quick note capture
+"ask.noteCapture.title" = "빠른 메모";
+"ask.noteCapture.placeholder" = "기록할 내용을 입력하세요…";
+"ask.noteCapture.untitled" = "빠른 메모";
+"ask.noteCapture.saved" = "저장됨 · %@";
+"ask.noteCapture.continue" = "다음 메모를 계속 입력하세요.";
+"ask.noteCapture.local" = "이 Mac의 노트북에 저장";
+"ask.noteCapture.saving" = "저장 중…";
+"ask.noteCapture.clear" = "초안 지우기";
+"ask.noteCapture.save" = "메모 저장";
+"ask.noteCapture.retry" = "저장 재시도";
+"ask.noteCapture.hint" = "↵ 저장 · ⇧↵ 줄 바꿈 · Esc 닫기";
+"ask.settings.keywords.kind.noteCapture.hint" = "입력한 텍스트를 로컬 노트북에 바로 저장합니다.";
+"ask.noteCapture.deleted" = "이 메모는 삭제되었습니다. 초안을 수정하여 새 메모로 저장하세요.";

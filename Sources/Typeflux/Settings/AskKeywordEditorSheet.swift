@@ -94,6 +94,7 @@ struct AskKeywordEditorSheet: View {
         case .bookmarks: "bmk"
         case .chat: "chat"
         case .quickAsk: "qa"
+        case .noteCapture: "n"
         case .prefix: "prefix"
         case .setting: "setting"
         case .history: "history"
@@ -232,7 +233,7 @@ struct AskKeywordEditorSheet: View {
                 }.labelsHidden()
                 hint(L("ask.settings.keywords.kind.system.hint"))
             }
-        case .apps, .files, .semanticFiles, .tabs, .bookmarks, .chat, .quickAsk, .prefix, .setting, .history, .clip, .workflow:
+        case .apps, .files, .semanticFiles, .tabs, .bookmarks, .chat, .quickAsk, .noteCapture, .prefix, .setting, .history, .clip, .workflow:
             EmptyView()
         }
     }

@@ -44,9 +44,9 @@ extension AskConversationModel {
             }
             return
         }
-        launcherDraft.text = argument
         plugins.enter(found)
-        plugins.update(text: argument, selection: launcherDraft.sentSelection,
+        launcherDraft.text = noteCaptureInput(argument)
+        plugins.update(text: launcherDraft.text, selection: launcherDraft.sentSelection,
                        language: AppLocalization.shared.language)
     }
 

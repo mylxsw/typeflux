@@ -102,8 +102,9 @@ extension AskConversationModel {
             AskCalendarPlugin.id, AskWorldClockPlugin.id, AskSystemMonitorPlugin.id, AskSystemInfoPlugin.id
         ]
         plugins.enter(keyword, waitingForInput: !listsAtOnce.contains(keyword.pluginID))
-        launcherDraft.text = ""
-        plugins.update(text: "", selection: launcherDraft.sentSelection, language: AppLocalization.shared.language)
+        launcherDraft.text = noteCaptureInput("")
+        plugins.update(text: launcherDraft.text, selection: launcherDraft.sentSelection,
+                       language: AppLocalization.shared.language)
         return .stay
     }
 
@@ -137,8 +138,9 @@ extension AskConversationModel {
         }
         guard keyword.pluginID == pluginID else { return false }
         plugins.enter(keyword)
-        launcherDraft.text = argument
-        plugins.update(text: argument, selection: launcherDraft.sentSelection, language: AppLocalization.shared.language)
+        launcherDraft.text = noteCaptureInput(argument)
+        plugins.update(text: launcherDraft.text, selection: launcherDraft.sentSelection,
+                       language: AppLocalization.shared.language)
         return true
     }
 

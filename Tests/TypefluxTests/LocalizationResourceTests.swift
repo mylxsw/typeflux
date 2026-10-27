@@ -3,6 +3,21 @@ import Foundation
 import XCTest
 
 final class LocalizationResourceTests: XCTestCase {
+    func testQuickNoteCaptureCopyExistsInEveryLanguage() throws {
+        let keys = ["title", "placeholder", "untitled", "saved", "continue", "local", "saving", "clear", "save",
+                    "retry", "hint", "deleted"].map { "ask.noteCapture." + $0 }
+            + ["ask.settings.keywords.kind.noteCapture.hint"]
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            for key in keys {
+                let value = bundle.localizedString(forKey: key, value: nil, table: nil)
+                XCTAssertNotEqual(value, key, "Missing \(key) in \(language.rawValue)")
+                XCTAssertFalse(value.isEmpty)
+            }
+            XCTAssertTrue(bundle.localizedString(forKey: "ask.noteCapture.saved", value: nil, table: nil).contains("%@"))
+        }
+    }
+
     func testAppIconNamesExistInEveryLanguage() throws {
         for language in AppLanguage.allCases {
             let bundle = try localizationBundle(for: language)

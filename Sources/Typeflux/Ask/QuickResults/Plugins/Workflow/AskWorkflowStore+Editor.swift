@@ -141,6 +141,7 @@ extension AskWorkflowStore {
         case AskHistoryPlugin.id: return L("ask.plugin.history.title")
         case AskClipboardPlugin.id: return L("ask.plugin.clip.title")
         case AskNotesPlugin.id: return L("ask.notes.title")
+        case AskNoteCapturePlugin.id: return L("ask.noteCapture.title")
         case AskBrowserSearchPlugin.tabsID: return L("ask.browser.tabs")
         case AskBrowserSearchPlugin.bookmarksID: return L("ask.browser.bookmarks")
         default:

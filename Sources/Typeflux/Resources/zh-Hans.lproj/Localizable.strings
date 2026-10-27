@@ -7504,3 +7504,18 @@
 
 "ask.activity.parallel" = "正在并行执行 %d 个查询";
 "ask.activity.queuedTool" = "排队中";
+
+// Launcher quick note capture
+"ask.noteCapture.title" = "快速记录";
+"ask.noteCapture.placeholder" = "输入要记录的内容…";
+"ask.noteCapture.untitled" = "快速记录";
+"ask.noteCapture.saved" = "已保存 · %@";
+"ask.noteCapture.continue" = "继续输入，记录下一条。";
+"ask.noteCapture.local" = "保存到本机笔记本";
+"ask.noteCapture.saving" = "正在保存…";
+"ask.noteCapture.clear" = "清空草稿";
+"ask.noteCapture.save" = "保存笔记";
+"ask.noteCapture.retry" = "重试保存";
+"ask.noteCapture.hint" = "↵ 保存 · ⇧↵ 换行 · Esc 关闭";
+"ask.settings.keywords.kind.noteCapture.hint" = "将输入内容直接保存到本机笔记本。";
+"ask.noteCapture.deleted" = "这条笔记已被删除。修改草稿后可另存为新笔记。";

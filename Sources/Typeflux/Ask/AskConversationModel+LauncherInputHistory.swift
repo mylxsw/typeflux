@@ -111,6 +111,7 @@ extension AskConversationModel {
         launcherPresentationID = UUID()
         attachmentLoads[visionDraftKey(launcher: true)] = nil
         persistDrafts()
+        if restoreNoteCaptureForPresentation() { return true }
         return !retainedText.isEmpty
     }
 
@@ -130,7 +131,8 @@ extension AskConversationModel {
         let prefix = keyword ?? (text == nil ? plugins.keyword?.keyword : nil)
         guard !argument.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         let input = prefix.map { $0 + " " + argument } ?? argument
-        guard !isTerminalCommandMode, !isTerminalCommandInput(input) else { return }
+        guard !isTerminalCommandMode, !isTerminalCommandInput(input),
+              !isNoteCaptureMode, !isNoteCaptureInput(input) else { return }
         let identity = AskLauncherInputHistory.identity(input)
         let bareKeyword = launcherKeywords.contains { $0.allKeywords.contains { $0.lowercased() == identity } }
         guard !bareKeyword else { return }
