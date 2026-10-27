@@ -36,6 +36,7 @@ protocol AskToolExecuting {
     func validateArtifact(_ ref: AskArtifactRef, ownerId: String, conversationId: String) throws
     var artifactPreviewEnabled: Bool { get }
     func exportProjectPatch(_ ref: AskWorkspaceRef, ownerId: String, conversationId: String) throws -> Data
+    func allowsConcurrentRead(_ call: AskToolCall) async -> Bool
     func risk(of call: AskToolCall) -> AskToolRisk
     /// Tools usable from this conversation; tools that need an unavailable target are omitted.
     func definitions(conversationId: String?) async -> [AskToolDefinition]
@@ -59,6 +60,7 @@ protocol AskToolExecuting {
 }
 
 extension AskToolExecuting {
+    func allowsConcurrentRead(_: AskToolCall) async -> Bool { false }
     func bindExecution(ownerId: String, conversationId: String, runId: String, deviceId: String, persistent: Bool) {
         bindExecution(ownerId: ownerId, conversationId: conversationId, runId: runId)
     }
@@ -283,7 +285,7 @@ final class AskLocalTools: AskToolExecuting {
 
     func mcpServerName(of call: AskToolCall) -> String? { mcpServers[call.function.name] }
 
-    /// External annotations are hints, never evidence of a trusted read-only tool.
+    /// External annotations never grant permission.
     func risk(of call: AskToolCall) -> AskToolRisk {
         AskToolAuthorization.entry(for: call, discovered: settings?.discoveredToolPermissions ?? []).risk
     }

@@ -370,6 +370,15 @@ actor AskDeviceAPI: AskAPI {
         return route.isEmpty ? await commit(value, owner: owner) : value
     }
 
+    func readBatch(conversationId: String, runId: String, calls: [AskToolCall], token: String,
+                   execute: @escaping AskReadBatchExecutor) async throws -> AskConversation? {
+        let owner = try await account(token), (api, route) = try await execution(conversationId, owner: owner)
+        guard route.isEmpty else { return nil }
+        guard let value = try await api.readBatch(conversationId: conversationId, runId: runId, calls: calls,
+                                                  token: route, execute: execute) else { return nil }
+        return await commit(value, owner: owner)
+    }
+
     func result(conversationId id: String, request: AskToolResultRequest,
                 token: String) async throws -> AskConversation {
         let owner = try await account(token), (api, route) = try await execution(id, owner: owner)

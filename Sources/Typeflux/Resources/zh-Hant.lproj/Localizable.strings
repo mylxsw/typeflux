@@ -7499,3 +7499,6 @@
 "ask.home.clipboard" = "剪貼簿";
 
 "ask.tool.read_conversation_history" = "讀取對話記錄";
+
+"ask.activity.parallel" = "正在並行執行 %d 個查詢";
+"ask.activity.queuedTool" = "排隊中";

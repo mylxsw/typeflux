@@ -60,6 +60,26 @@ import Testing
         #expect(AskActivityRowPresentation.groupTitle(repeated) == AskActivity.Category.files.title + " · " + AskActivity.Category.code.title)
     }
 
+    @Test func renderParallelRunningCompletedAndQueuedCalls() async throws {
+        let previous = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previous) }
+        let calls = (0..<4).map { call("web_fetch", "{\"url\":\"https://example.com/\($0)\"}", id: "p\($0)") }
+        let group = AskActivityGroup(id: "parallel", messages: [
+            AskMessage(id: "assistant", role: "assistant", text: "", toolCalls: calls, createdAt: Date())
+        ])
+        let completed = AskMessage(id: "completed", role: "tool", text: "Page contents", toolCallId: "p2", createdAt: Date())
+        let directory = URL(fileURLWithPath: "/tmp/typeflux-parallel-read-snapshots")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+            let block = AskActivityBlock(group: group, results: [completed], plan: nil, status: .running,
+                                         runningToolIDs: ["p0", "p1"], queuedToolIDs: ["p3"], startsExpanded: true)
+            let scene = block.padding(24).frame(width: 640, height: 280, alignment: .topLeading).background(AskTheme.surface)
+            try await AskConversationVisualTests().render(scene, size: NSSize(width: 640, height: 280),
+                appearance: appearance, file: directory.appendingPathComponent(name + ".png"), minimumPNGBytes: 3000)
+        }
+    }
+
     @Test func renderCompactAndExpandedTracesInBothThemes() async throws {
         let previous = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)

@@ -3,6 +3,9 @@
 import Foundation
 
 protocol AskAgentRuntime: Sendable {
+    func readBatch(conversationId: String, runId: String, calls: [AskToolCall], token: String,
+                   execute: @escaping AskReadBatchExecutor) async throws -> AskConversation?
+
     /// Reconciles an interrupted execution inside its existing user task.
     func recover(conversationId: String, request: AskRecoveryRequest, token: String) async throws -> AskConversation
     func cancel(conversationId: String, runId: String, partial: AskInferenceResult?, token: String) async throws -> AskConversation
@@ -49,6 +52,9 @@ protocol AskModelAccess: Sendable {
 protocol AskAPI: AskAgentRuntime, AskConversationAccess, AskModelAccess {}
 
 extension AskAgentRuntime {
+    func readBatch(conversationId: String, runId: String, calls: [AskToolCall], token: String,
+                   execute: @escaping AskReadBatchExecutor) async throws -> AskConversation? { nil }
+
     func recover(conversationId: String, request: AskRecoveryRequest, token: String) async throws -> AskConversation {
         throw AskLocalError.message(L("ask.recovery.readOnlyUnavailable"))
     }

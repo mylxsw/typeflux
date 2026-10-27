@@ -160,7 +160,7 @@ struct MCPObjectSchema: Codable {
     func encode(to encoder: Encoder) throws { var c = encoder.singleValueContainer(); try c.encode(raw) }
 }
 
-/// Behavior hints from the server (MCP 2025-03-26). Untrusted: they only tune approval prompts.
+/// Behavior hints from the server (MCP 2025-03-26). Untrusted: they may restrict scheduling but never grant permission.
 struct MCPToolAnnotations: Codable, Equatable {
     var readOnlyHint: Bool?
     var destructiveHint: Bool?

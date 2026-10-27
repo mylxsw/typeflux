@@ -16,6 +16,7 @@ extension AskConversationModel {
               !run.needsRecoveryInspection, run.pending.first == call else { return nil }
         _ = try AskAgentBinding.resolve(run.agentBinding)
         let receipt = AskToolResultRequest(
+            approveExecution: value.run?.approvalTool(for: call) != nil ? false : nil,
             runId: identity.runId, deviceId: identity.deviceId, toolCallId: call.id,
             content: L("ask.tool.notExecuted", failure.message), isError: true,
             harness: .init(version: 1, outcome: failure.outcome)

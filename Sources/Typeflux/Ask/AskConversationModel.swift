@@ -576,6 +576,7 @@ final class AskConversationModel: ObservableObject {
     private var authObserver: AnyCancellable?
     private var modelObserver: AnyCancellable?
     private var memoryObserver: AnyCancellable?
+    @Published var readBatchProgress: [String: AskReadBatchProgress] = [:]
     private var pendingToolPermissionRevisions: [String: String] = [:]
     private var toolPermissionsObserver: AnyCancellable?
     private var notesObserver: AnyCancellable?
@@ -794,6 +795,7 @@ final class AskConversationModel: ObservableObject {
         sendQueue = AskSendQueue(); steeringIds = []
         screenshotConsent = [:]
         pendingToolPermissionRevisions = [:]
+        readBatchProgress = [:]
         cloudApprovals = [:]
         permissionModes = [:]; launcherPermissionMode = .standard; draftPermissionMode = .standard
         draftSave?.cancel(); draftSaveConversationID = nil; deletedConversationIDs = []; captureGeneration = UUID(); selectionGeneration = UUID()
@@ -2002,6 +2004,10 @@ final class AskConversationModel: ObservableObject {
                 inferenceUsage[inference.id] = nil
                 continue
             }
+            if let batch = try await driveReadBatch(value, current: current, operationId: operationId) {
+                value = batch
+                continue
+            }
             guard let call = run.pending.first else { return }
             let identity = AskExecutionIdentity(owner: current.account, conversation: value, run: run,
                                                 callId: call.id, kind: "tool")
@@ -2575,7 +2581,7 @@ final class AskConversationModel: ObservableObject {
         beginFileTracking(id, account: account)
     }
 
-    private func checkOperation(_ id: String, operationId: UUID, account: String) throws {
+    func checkOperation(_ id: String, operationId: UUID, account: String) throws {
         try Task.checkCancellation()
         guard owner == account, session()?.owner == account,
               operationIds[id] == operationId, operationOwners[operationId]?.account == account,

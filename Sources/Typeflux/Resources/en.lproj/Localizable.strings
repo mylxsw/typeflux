@@ -7500,3 +7500,6 @@
 "ask.home.clipboard" = "Clipboard";
 
 "ask.tool.read_conversation_history" = "Read conversation history";
+
+"ask.activity.parallel" = "Running %d queries in parallel";
+"ask.activity.queuedTool" = "Queued";

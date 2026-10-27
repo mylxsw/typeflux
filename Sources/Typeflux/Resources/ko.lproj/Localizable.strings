@@ -7496,3 +7496,6 @@
 "ask.home.clipboard" = "클립보드";
 
 "ask.tool.read_conversation_history" = "대화 기록 읽기";
+
+"ask.activity.parallel" = "쿼리 %d개 병렬 실행 중";
+"ask.activity.queuedTool" = "대기 중";

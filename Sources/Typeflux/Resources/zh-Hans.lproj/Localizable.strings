@@ -7500,3 +7500,6 @@
 "ask.home.clipboard" = "剪贴板";
 
 "ask.tool.read_conversation_history" = "读取对话记录";
+
+"ask.activity.parallel" = "正在并行执行 %d 个查询";
+"ask.activity.queuedTool" = "排队中";

@@ -74,6 +74,21 @@ extension AskLocalEngine {
         )
     }
 
+    /// Waiting device calls already own their head reservation. Validate that exact
+    /// admission instead of reserving/starting it a second time when forming a batch.
+    func reserveReadBatchTool(_ record: AskLocalRecord, call: AskToolCall, alreadyReserved: Bool) throws {
+        guard alreadyReserved else { try reserveBudgetTool(record, call: call); return }
+        _ = try budgetJournal(record) { journal in
+            guard let run = record.conversation.run,
+                  let reservation = journal.reservations[toolOperation(record, call.id)],
+                  reservation.state == "pending", reservation.runId == run.id,
+                  reservation.identity == budgetIdentity(record, runId: run.id, deviceId: run.deviceId),
+                  reservation.callId == call.id, reservation.kind == call.function.name,
+                  reservation.stepId == String(run.steps),
+                  reservation.reserved == AskBudgetResources(operations: 1) else { throw AskBudgetError.invalid }
+        }
+    }
+
     /// The caller owns an admitted wave that has not launched any child.
     /// Dispatch quotas already marked pending retain their existing semantics.
     func compensateUnlaunchedBudgetTool(_ record: AskLocalRecord, callId: String) throws {

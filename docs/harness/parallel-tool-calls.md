@@ -1,0 +1,23 @@
+# Parallel read calls
+
+The normal macOS chat driver admits a contiguous prefix of at most three independent reads from one model response. It never skips a permission or mutation barrier to find more work.
+
+Eligible calls are built-in `web_search` / `web_fetch`, `files` actions `read` / `list` / `search`, and live MCP tools that explicitly advertise `readOnlyHint: true` without `destructiveHint: true`. MCP hints are scheduling metadata, not authority: the user's local permission policy must independently allow the exact operation. Unknown tools, browser/desktop actions, commands and mutations remain serial. Calls requiring manual consent use the existing serial approval flow; no additional call inherits that approval.
+
+Every admitted call receives its own binding, single-use grant, budget reservation and execution journal claim. Dispatch rechecks permissions, the run/operation identity and binding; MCP also pins the live server connection and definition. A policy change blocks undispatched calls. Already completed effects retain their receipts, even after cancellation or revocation.
+
+The in-process runtime batch API is not an HTTP endpoint or a model tool. Older/remote runtimes return no batch support and retain the serial path. Both private and account-owned device runtimes implement it. The engine owns cancellation and waits for child cleanup, settles the original budget root, and accepts results only for the original pending prefix. A batch failure retains per-call receipts for reconciliation rather than replaying completed calls. Uncertain outcomes retain the existing recovery inspection flow.
+
+The UI shows the actual running calls and individual completions immediately. Queued siblings are labeled as queued. Transcript results are committed in assistant call order, and the next model request starts after the batch finishes. Dependencies must be expressed as successive model turns; the prompt explicitly separates independent reads from dependent or state-changing operations.
+
+Validation covers the normal conversation driver with real engine, authorization store and execution journal, real file readers and MCP registry, substituting only external model/network responses. Gate-based tests prove overlap without using timing thresholds. Focused suites also exercise budget admission, cancellation, refusal, receipt recovery, MCP hint refresh, prompt fixtures and activity rendering.
+
+## Validation record (2026-10-27)
+
+- Focused scope: `AskReadBatchTests`, `AskReadBatchIntegrationTests`, `AskBuiltinWaveTests`, `AskToolAuthorizationTests`, `AskToolPreparationTests`, `AskMCPToolsTests`, `AskPromptSectionsTests`, `AskPromptBuilderTests`, `AskActivityRowPresentationTests`, `AskActivityPresentationTests`, and `AskDeviceAPITests` (95 discovered test methods; parameterized cases exercise additional scenarios).
+- Initial coverage run: 356.35 seconds including rebuild/discovery/execution. All existing regressions and engine batch tests passed. The new application integration exposed a cloud refusal receipt bug, lost audit evidence after revocation, and reuse of the already-reserved device head budget. The initial file/MCP fixture also needed an explicit work conversation kind.
+- Focused retries only: one build was invalidated by an input edit (53.40 seconds, no test execution); the first targeted retry took 90.64 seconds and isolated the device budget failure. A diagnostic integration retry (59.07 seconds) identified the exact reservation replay. The final engine/integration coverage run passed in 78.77 seconds including preparation/discovery/execution. All failed cases were resolved. Activity rendering and tool-preparation regressions passed in the earlier targeted retry and were unchanged by the final budget fix.
+- Total coverage-command wall time across the initial run, build failure and targeted retries: 638.23 seconds.
+- Changed executable-line coverage: 277/320 (86.56%), measured against the current native test binary and the final passing engine/integration profile. This conservative figure excludes earlier passing UI/prompt/authorization coverage rather than mixing profiles from different builds.
+- Normal driver tests prove three overlapping web calls, three actual file-reader workers, and three calls through the MCP registry; verify original-order results, distinct consumed grants, early progress, denial, strict mode, cancellation and revocation. Engine tests cover budget shortage before launch, original-root settlement, serial barriers and saved-receipt reconciliation.
+- Light/dark parallel-progress screenshots were rendered and inspected. The client was not repackaged or launched against a live model/service.

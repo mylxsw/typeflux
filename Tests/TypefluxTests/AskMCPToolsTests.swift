@@ -24,6 +24,39 @@ final class AskMCPToolsTests: XCTestCase {
         )
     }
 
+    func testConcurrentHintsDoNotGrantPermissionAndRefreshRevokesEligibility() async throws {
+        let server = config("Reads")
+        let client = MockMCPClient()
+        var read = tool("lookup")
+        read.annotations = .init(readOnlyHint: true, destructiveHint: false)
+        await client.setMockTools([read, tool("unknown")])
+        let registry = registry([server.id: client])
+        try await registry.addServer(server)
+        let settings = SettingsStore(defaults: UserDefaults(suiteName: "concurrent-hints-" + UUID().uuidString)!)
+        let tools = AskLocalTools(registry: registry, settings: settings)
+        _ = await tools.definitions(conversationId: "conversation")
+        let call = AskToolCall(id: "read", function: .init(name: "mcp_lookup", arguments: "{}"))
+        let eligible = await tools.allowsConcurrentRead(call)
+        XCTAssertTrue(eligible)
+        XCTAssertEqual(settings.toolPermission(call, mode: .standard), .ask)
+        let unknown = await tools.allowsConcurrentRead(.init(id: "other", function: .init(name: "mcp_unknown", arguments: "{}")))
+        XCTAssertFalse(unknown)
+        read.annotations = .init(readOnlyHint: true, destructiveHint: true)
+        await client.setMockTools([read])
+        try await registry.refreshTools(for: server.id)
+        let changed = await tools.allowsConcurrentRead(call)
+        XCTAssertFalse(changed)
+        await registry.removeServer(id: server.id)
+        let removed = await tools.allowsConcurrentRead(call)
+        XCTAssertFalse(removed)
+        for action in ["read", "list", "search", "write", "edit", "delete"] {
+            let allowed = await tools.allowsConcurrentRead(.init(id: action, function: .init(name: "files", arguments: "{\"action\":\"\(action)\"}")))
+            XCTAssertEqual(allowed, ["read", "list", "search"].contains(action))
+        }
+        let malformed = await tools.allowsConcurrentRead(.init(id: "bad", function: .init(name: "files", arguments: "no JSON")))
+        XCTAssertFalse(malformed)
+    }
+
     func testConnectedToolsPublishPermissionsBeforeAnyConversationUsesThem() async throws {
         let server = config("Inventory")
         let client = MockMCPClient()

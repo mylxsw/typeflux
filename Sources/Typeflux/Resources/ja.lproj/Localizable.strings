@@ -7496,3 +7496,6 @@
 "ask.home.clipboard" = "クリップボード";
 
 "ask.tool.read_conversation_history" = "会話履歴を読む";
+
+"ask.activity.parallel" = "%d 件のクエリを並列実行中";
+"ask.activity.queuedTool" = "待機中";

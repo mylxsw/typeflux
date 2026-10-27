@@ -1564,7 +1564,9 @@ struct AskConversationView: View {
                                actions: actions)
                 .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)
         case let .activity(group):
-            let results = group.calls.compactMap { activityCache.resultsByID[$0.id] }
+            let batch = model.selectedId.flatMap { model.readBatchProgress[$0] }
+            let completed = AskActivity.resultIndex(batch?.completed ?? [])
+            let results = group.calls.compactMap { activityCache.resultsByID[$0.id] ?? completed[$0.id] }
             let isLatest = latestActivityID == group.id
             // The run's latest block stays live between steps, while no answer follows it yet,
             // and stops spinning with every other indicator once the run waits for a decision.
@@ -1586,6 +1588,8 @@ struct AskConversationView: View {
             AskActivityBlock(group: group, results: results,
                              plan: AskActivity.plan(for: group, run: run, isLatest: isLatest),
                              status: status, resolution: AskActivity.resolution(for: group, run: run, isLatest: isLatest, answers: Array((model.selected?.messages ?? []).suffix(12))), streamingId: streamingId, approvalToolId: approvalToolId,
+                             runningToolIDs: batch?.running ?? [],
+                             queuedToolIDs: batch.map { Set((run?.pending ?? []).map(\.id)).subtracting($0.running).subtracting(completed.keys) } ?? [],
                              runStep: live || halted ? phase?.step : nil,
                              outputs: item.outputs,
                              fileChanges: [],

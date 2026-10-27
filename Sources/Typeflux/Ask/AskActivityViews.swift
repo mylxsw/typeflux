@@ -15,6 +15,8 @@ struct AskActivityBlock: View, Equatable {
     var resolution: AskTaskResolution?
     var streamingId: String?
     var approvalToolId: String?
+    var runningToolIDs: Set<String> = []
+    var queuedToolIDs: Set<String> = []
     /// The run's step count from `AskRunPhase`, for the block that carries the run.
     var runStep: Int?
     var outputs = AskRunOutputs()
@@ -34,6 +36,7 @@ struct AskActivityBlock: View, Equatable {
             && lhs.group == rhs.group && lhs.results == rhs.results && lhs.plan == rhs.plan
             && lhs.status == rhs.status && lhs.resolution == rhs.resolution
             && lhs.streamingId == rhs.streamingId && lhs.approvalToolId == rhs.approvalToolId
+            && lhs.runningToolIDs == rhs.runningToolIDs && lhs.queuedToolIDs == rhs.queuedToolIDs
             && lhs.runStep == rhs.runStep && lhs.outputs == rhs.outputs
             && lhs.fileChanges == rhs.fileChanges && lhs.startsExpanded == rhs.startsExpanded
     }
@@ -52,6 +55,8 @@ struct AskActivityBlock: View, Equatable {
 
     private var title: String {
         if status == .done || status == .failed { return AskActivityRowPresentation.groupTitle(group) }
+        let count = group.calls.filter { runningToolIDs.contains($0.id) }.count
+        if count > 1 { return L("ask.activity.parallel", count) }
         return AskActivity.title(group, status: status, plan: plan, results: results)
     }
 
@@ -107,7 +112,7 @@ struct AskActivityBlock: View, Equatable {
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .modifier(AskShimmer(active: running))
-                if let note = AskActivity.stepNote(group, status: status, runStep: runStep) {
+                if runningToolIDs.isEmpty, let note = AskActivity.stepNote(group, status: status, runStep: runStep) {
                     Text("· " + note).foregroundStyle(StudioTheme.textTertiary.opacity(0.8)).lineLimit(1)
                         .layoutPriority(1)
                 }
@@ -232,7 +237,7 @@ struct AskActivityBlock: View, Equatable {
                 case let .tool(call, messageID):
                     AskToolStepRow(call: call, result: index[call.id],
                                    preparing: streamingId == messageID && index[call.id] == nil,
-                                   pending: approvalToolId == call.id, exportProjectPatch: exportProjectPatch)
+                                   pending: approvalToolId == call.id, running: runningToolIDs.contains(call.id), queued: queuedToolIDs.contains(call.id), exportProjectPatch: exportProjectPatch)
                 }
             }
         }
@@ -250,6 +255,8 @@ struct AskToolStepRow: View {
     let result: AskMessage?
     var preparing = false
     var pending = false
+    var running = false
+    var queued = false
     var exportProjectPatch: ((AskWorkspaceRef) throws -> Data)?
     var startsExpanded = false
     @State private var userExpanded: Bool?
@@ -272,13 +279,15 @@ struct AskToolStepRow: View {
     }
 
     private var state: AskActivityState {
-        if preparing { return .running }
+        if preparing || running { return .running }
         if pending { return .attention }
         return AskPresentation.toolState(result: result)
     }
 
     private var statusText: String {
         if preparing { return L("ask.tool.preparing") }
+        if running { return L("ask.tool.running") }
+        if queued { return L("ask.activity.queuedTool") }
         if pending { return L("ask.tool.pending") }
         return AskPresentation.toolStatusText(result: result, call: call)
     }

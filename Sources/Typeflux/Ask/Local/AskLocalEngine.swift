@@ -21,6 +21,7 @@ struct AskLocalRecord: Codable, Equatable, Sendable {
     var localUsage: AskLocalUsage?
     var cloudCalls = 0
     var approvedCloudCallId: String?
+    var readBatchCallIDs: [String]?
     /// Messages sent into the running run that the model has not read yet.
     var steering: [AskMessage]?
 }
@@ -52,17 +53,18 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
     let budgetStore: any AskBudgetJournaling
     private let prepareImages: @Sendable ([AskMessage]) async -> [AskMessage]
     private let typedContentEnabled: Bool
-    private let builtinTools: any AskBuiltinToolHosting
+    let builtinTools: any AskBuiltinToolHosting
     let budgetEnabled: Bool
     let budgetLimits: AskBudgetResources
     let contextLimits: @Sendable (String) -> AskContextLimits
     let now: @Sendable () -> Date
-    private var records: [String: AskLocalRecord] = [:]
+    var records: [String: AskLocalRecord] = [:]
     private struct BuiltinFlight {
         let id: UUID
         let runID: String
         let task: Task<[AskBuiltinToolOutput], Never>
     }
+    var readFlights: [String: AskReadBatchFlight] = [:]
     private var builtinFlights: [String: BuiltinFlight] = [:]
     private let summarize: (@Sendable (AskInference, String, String) async -> AskInferenceResult)?
     private struct Preparation {
@@ -184,6 +186,10 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         var retained = record
         for index in retained.conversation.messages.indices { retained.conversation.messages[index].harness?.outcome?.preparedImages = [:] }
         records[record.conversation.id] = retained
+        if let flight = readFlights[record.conversation.id],
+           retained.conversation.run?.id != flight.runID || retained.conversation.run?.status != "running" {
+            flight.task.cancel()
+        }
         if let flight = builtinFlights[record.conversation.id],
            retained.conversation.run?.id != flight.runID || retained.conversation.run?.status != "running" {
             flight.task.cancel()
@@ -260,10 +266,13 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         let id = AskConversationID.canonical(conversationId)
         guard Self.validID(id) else { return }
         summaries.removeValue(forKey: id)?.task.cancel()
+        let readFlight = readFlights[id]
+        readFlight?.task.cancel()
         let flight = builtinFlights[id]
         flight?.task.cancel()
         records[id] = nil
         if let flight { _ = await flight.task.value }
+        if let readFlight { _ = await readFlight.task.result }
         if temporaryIDs.remove(id) == nil { try? snapshotStore.removeSnapshot(id: id) }
     }
 
@@ -346,7 +355,8 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         if record.conversation.messages.contains(where: { $0.role == "tool" && $0.toolCallId == request.toolCallId }) { return record.conversation }
         guard run.status == "waiting_tool", run.pending.first?.id == request.toolCallId else { throw conflict() }
         if run.pending.first?.function.name != "update_plan" { record.conversation.run?.taskResolution = nil }
-        if run.clientToolApproval == true, let call = run.pending.first, isBuiltin(call, record) {
+        if run.clientToolApproval == true, let call = run.pending.first, isBuiltin(call, record),
+           record.readBatchCallIDs?.contains(call.id) != true {
             guard request.approveExecution != nil else { throw conflict() }
             if request.approveExecution == true && !request.isError {
                 record.approvedCloudCallId = call.id
@@ -358,6 +368,10 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
             return try await continueTools(&record)
         }
         try settleBudgetTool(record, callId: request.toolCallId)
+        if record.readBatchCallIDs?.contains(request.toolCallId) == true {
+            if let call = run.pending.first, isBuiltin(call, record) { record.cloudCalls += 1 }
+            record.readBatchCallIDs?.removeAll { $0 == request.toolCallId }
+        }
         record.conversation.messages.append(request.message(step: run.steps, now: now()))
         record.conversation.run?.pending.removeFirst()
         if ["unknown", "timeout", "cancelled"].contains(AskExecutionReceipt.tool(request).status) {
@@ -799,7 +813,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         return record.conversation.run?.internalRecovery?.tools(offered, step: record.conversation.run?.steps ?? 0) ?? offered
     }
 
-    private func isBuiltin(_ call: AskToolCall, _ record: AskLocalRecord) -> Bool {
+    func isBuiltin(_ call: AskToolCall, _ record: AskLocalRecord) -> Bool {
         if call.function.name == AskInternalRecovery.toolName, record.conversation.run?.internalRecovery != nil { return true }
         return record.builtinTools.contains { $0.name == call.function.name }
             && !(record.conversation.run?.tools ?? []).contains { $0.name == call.function.name }
@@ -1011,7 +1025,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         return wave
     }
 
-    private func continueTools(_ record: inout AskLocalRecord) async throws -> AskConversation {
+    func continueTools(_ record: inout AskLocalRecord) async throws -> AskConversation {
         _ = try resolveTurn(record)
         while let first = record.conversation.run?.pending.first {
             try Task.checkCancellation()
@@ -1146,7 +1160,7 @@ actor AskLocalEngine: AskAPI, AskRunRouteAccess {
         return try await step(&record)
     }
 
-    private func builtinAllowed(_ call: AskToolCall, count: Int) -> Bool {
+    func builtinAllowed(_ call: AskToolCall, count: Int) -> Bool {
         ["update_plan", "read_conversation_history"].contains(call.function.name) || count < Self.maxBuiltinCalls
     }
 

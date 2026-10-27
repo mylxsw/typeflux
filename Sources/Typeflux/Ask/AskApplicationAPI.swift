@@ -51,6 +51,11 @@ struct AskApplicationAPI: AskAPI {
     func send(conversationId: String, request: AskSendRequest, token: String) async throws -> AskConversation {
         try await runtime.send(conversationId: conversationId, request: request, token: token)
     }
+    func readBatch(conversationId: String, runId: String, calls: [AskToolCall], token: String,
+                   execute: @escaping AskReadBatchExecutor) async throws -> AskConversation? {
+        try await runtime.readBatch(conversationId: conversationId, runId: runId, calls: calls, token: token, execute: execute)
+    }
+
     func result(conversationId: String, request: AskToolResultRequest, token: String) async throws -> AskConversation {
         try await runtime.result(conversationId: conversationId, request: request, token: token)
     }
