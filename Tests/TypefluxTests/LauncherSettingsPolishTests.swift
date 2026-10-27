@@ -419,6 +419,32 @@ struct LauncherSettingsPolishTests {
         }
     }
 
+    @Test func `keyword rows use destination artwork in both themes`() async throws {
+        let previous = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previous) }
+        let keywords = Array(AskPluginRegistry.defaultKeywords.prefix(5)) + [
+            AskKeyword(keyword: "custom", pluginID: AskPromptPlugin.id,
+                       options: ["title": "Custom prompt", "prompt": "Rewrite {input}"])
+        ]
+        let rows = AskKeywordListPresentation.rows(keywords: keywords, interface: .simplifiedChinese,
+                                                   secondLanguage: "en")
+        for light in [false, true] {
+            try await render(ModelSurface {
+                VStack(spacing: 0) {
+                    ForEach(rows) { row in
+                        AskKeywordRowView(row: row, toggle: {}, open: {})
+                    }
+                }
+            }, size: .init(width: 620, height: 650),
+                name: "keyword-artwork-" + (light ? "light" : "dark"), light: light) { window in
+                for row in rows {
+                    #expect(find("ask.settings.keywords.edit." + row.keyword, in: window) != nil)
+                }
+            }
+        }
+    }
+
     private struct Element {
         let object: NSObject
         var frame: NSRect {

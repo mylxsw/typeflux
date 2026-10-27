@@ -27,13 +27,21 @@ extension AskKeywordKind {
     }
 }
 
-/// The kind's symbol on a soft tinted tile.
+/// Destination artwork when a keyword is known; otherwise the kind's soft symbol tile.
 struct AskKeywordKindTile: View {
     let kind: AskKeywordKind
     var size: CGFloat = 24
+    var keyword: AskKeyword?
+    @AppStorage(AskLauncherFeatureIcons.preferenceKey) private var iconStyle: AskLauncherFeatureIcons.Style = .sculpted
 
     var body: some View {
-        TFIconTile(systemImage: kind.symbol, tint: kind.tint, size: size, style: .soft)
+        if let keyword, let name = AskLauncherFeatureIcons.name(for: keyword),
+           let image = AskLauncherFeatureIcons.image(for: name, style: iconStyle) {
+            Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
+                .frame(width: size, height: size).accessibilityHidden(true)
+        } else {
+            TFIconTile(systemImage: kind.symbol, tint: kind.tint, size: size, style: .soft)
+        }
     }
 }
 
@@ -59,7 +67,8 @@ struct AskKeywordRowView: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            AskKeywordKindTile(kind: row.kind, size: TFMetrics.iconTileSize).padding(.top, 2)
+            AskKeywordKindTile(kind: row.kind, size: AskTheme.launcherResultIconSize, keyword: row.source)
+                .padding(.top, 2)
             Button(action: open) {
                 VStack(alignment: .leading, spacing: 5) {
                     TFHighlightedText(text: row.name, query: query)
