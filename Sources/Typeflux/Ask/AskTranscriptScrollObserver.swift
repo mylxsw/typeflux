@@ -46,7 +46,8 @@ struct AskTranscriptScrollObserver: NSViewRepresentable {
             observedScroll = nil
         }
 
-        @objc private func started() { onScroll(false) }
+        // Starting a gesture at the bottom does not mean the reader left it.
+        @objc private func started() { scrolled() }
 
         @objc private func scrolled() {
             guard let scroll = observedScroll, let document = scroll.documentView else { return }

@@ -39,6 +39,53 @@ struct AskTranscriptScrollTests {
         #expect(observer.hitTest(.zero) == nil)
     }
 
+    @Test(arguments: [false, true], [200.0, 1200.0])
+    func repeatedGesturesAtBottomNeverStopFollowing(flipped: Bool, height: Double) {
+        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 600, height: 400))
+        let frame = NSRect(x: 0, y: 0, width: 600, height: height)
+        let document = flipped ? Document(frame: frame) : NSView(frame: frame)
+        scroll.documentView = document
+        let observer = AskTranscriptScrollObserver.ObserverView()
+        document.addSubview(observer)
+        var changes: [Bool] = []
+        observer.onScroll = { changes.append($0) }
+        observer.attach()
+        defer { observer.detach() }
+        scroll.contentView.scroll(to: NSPoint(x: 0, y: flipped ? max(0, height - 400) : 0))
+
+        for _ in 0..<5 {
+            for name in [NSScrollView.willStartLiveScrollNotification,
+                         NSScrollView.didLiveScrollNotification,
+                         NSScrollView.didEndLiveScrollNotification] {
+                NotificationCenter.default.post(name: name, object: scroll)
+            }
+        }
+        #expect(changes.count == 15)
+        #expect(changes.allSatisfy { $0 })
+    }
+
+    @Test func scrollingUpFromBottomStopsFollowingOnlyAfterLeavingBottom() {
+        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 600, height: 400))
+        let document = Document(frame: NSRect(x: 0, y: 0, width: 600, height: 1200))
+        scroll.documentView = document
+        let observer = AskTranscriptScrollObserver.ObserverView()
+        document.addSubview(observer)
+        var changes: [Bool] = []
+        observer.onScroll = { changes.append($0) }
+        observer.attach()
+        defer { observer.detach() }
+        let center = NotificationCenter.default
+        scroll.contentView.scroll(to: NSPoint(x: 0, y: 800))
+        center.post(name: NSScrollView.willStartLiveScrollNotification, object: scroll)
+        #expect(changes == [true])
+        scroll.contentView.scroll(to: NSPoint(x: 0, y: 700))
+        center.post(name: NSScrollView.didLiveScrollNotification, object: scroll)
+        #expect(changes == [true, false])
+        scroll.contentView.scroll(to: NSPoint(x: 0, y: 800))
+        center.post(name: NSScrollView.didEndLiveScrollNotification, object: scroll)
+        #expect(changes == [true, false, true])
+    }
+
     @Test func bottomToleranceIncludesFooterButNotHistory() {
         for distance: CGFloat in [-30, 0, 8, 12] {
             #expect(AskTranscriptScrollObserver.ObserverView.isAtBottom(distance: distance))
