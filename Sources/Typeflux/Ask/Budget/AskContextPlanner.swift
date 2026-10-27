@@ -67,7 +67,7 @@ enum AskContextPlanner {
         }
         var messages = copy["messages"] as? [[String: Any]] ?? []
         for size in [4096, 1024, 256] {
-            let changed = trimToolOutputs(&messages, size: size)
+            let changed = trimToolOutputs(&messages, size: size, window: limits.window)
             plan.trimmed = plan.trimmed || changed
             copy["messages"] = messages
             plan.inputTokens = weight(copy, imageTokens: limits.imageTokens)
@@ -94,13 +94,21 @@ enum AskContextPlanner {
         return plan
     }
 
-    private static func trimToolOutputs(_ messages: inout [[String: Any]], size: Int) -> Bool {
+    /// Reserve a bounded share for the newest tool round. Large schemas or old
+    /// history must not reduce a fresh, small file read to its first/last lines.
+    /// If pinned instructions plus this evidence cannot fit, admission fails
+    /// explicitly instead of silently erasing the evidence on every reread.
+    static func trimToolOutputs(_ messages: inout [[String: Any]], size: Int, window: Int) -> Bool {
+        let latest = messages.lastIndex { $0["role"] as? String == "assistant" } ?? messages.count
+        let recent = messages.indices.filter { $0 > latest && messages[$0]["role"] as? String == "tool" }
+        let allowance = max(256, min(8192, window / 4) / max(1, recent.count))
         var changed = false
         for index in messages.indices where messages[index]["role"] as? String == "tool" {
+            let limit = index > latest ? max(size, allowance) : size
             guard let text = messages[index]["content"] as? String,
                   !text.hasPrefix("Tool failed"), !text.hasPrefix("Cancelled"),
-                  text.utf8.count > size else { continue }
-            messages[index]["content"] = excerpt(text, size: size)
+                  text.utf8.count > limit else { continue }
+            messages[index]["content"] = excerpt(text, size: limit)
             changed = true
         }
         return changed

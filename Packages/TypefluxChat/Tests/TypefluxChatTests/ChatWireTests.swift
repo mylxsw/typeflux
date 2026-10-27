@@ -3,6 +3,17 @@ import XCTest
 @testable import TypefluxChat
 
 final class ChatWireTests: XCTestCase {
+    func testOneDecoderHandlesMixedDatePrecisionAndTimeZonesAcrossALongTranscript() throws {
+        let stamps = ["2026-01-02T03:04:05Z", "2026-01-02T03:04:05.123456Z", "2026-01-02T11:04:05+08:00"]
+        let raw = "[" + (0..<300).map { "\"\(stamps[$0 % stamps.count])\"" }.joined(separator: ",") + "]"
+        let dates = try ChatCoding.decoder().decode([Date].self, from: Data(raw.utf8))
+        XCTAssertEqual(dates.count, 300)
+        for index in stride(from: 0, to: dates.count, by: 3) {
+            XCTAssertEqual(dates[index], dates[index + 2])
+            XCTAssertEqual(dates[index + 1].timeIntervalSince(dates[index]), 0.123456, accuracy: 0.001)
+        }
+    }
+
     func testCodecUsesSnakeCaseAndBothISODateFormats() throws {
         struct Sample: Codable { var deviceId: String; var updatedAt: Date }
         for stamp in ["2026-01-02T03:04:05Z", "2026-01-02T03:04:05.123456Z"] {

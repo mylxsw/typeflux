@@ -21,7 +21,12 @@ extension AskConversationModel {
     private func readRecovery(_ value: AskConversation, route: AskRoute, token: UUID, generation: UUID) async -> Bool {
         do {
             try Task.checkCancellation()
-            var entries = try await cache.executions(conversationId: value.id, owner: route.owner)
+            var entries: [AskExecutionEntry]
+            if let run = value.run {
+                entries = try await cache.recoveryExecutions(conversationId: value.id, runId: run.id, owner: route.owner)
+            } else {
+                entries = try await cache.executions(conversationId: value.id, owner: route.owner)
+            }
             if let run = value.run {
                 let keys = run.pending.map { run.id + "/" + $0.id }
                     + (run.inference.map { ["inference/" + run.id + "/" + $0.id] } ?? [])

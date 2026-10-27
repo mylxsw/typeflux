@@ -49,11 +49,7 @@ enum AskContextCompaction {
         var projected = best["messages"] as? [[String: Any]] ?? original
         for size in [4096, 1024, 256] {
             if weight(best) <= target { break }
-            for index in projected.indices {
-                guard projected[index]["role"] as? String == "tool", let text = projected[index]["content"] as? String,
-                      !text.hasPrefix("Tool failed"), !text.hasPrefix("Cancelled") else { continue }
-                projected[index]["content"] = AskContextPlanner.excerpt(text, size: size)
-            }
+            AskContextPlanner.trimToolOutputs(&projected, size: size, window: capacity)
             best["messages"] = projected
         }
         return best

@@ -44,6 +44,10 @@ actor RecoveringAskConversationCache: AskCaching {
         try await perform { try await $0.executions(conversationId: conversationId, owner: owner) }
     }
 
+    func recoveryExecutions(conversationId: String, runId: String, owner: String) async throws -> [AskExecutionEntry] {
+        try await perform { try await $0.recoveryExecutions(conversationId: conversationId, runId: runId, owner: owner) }
+    }
+
     func claimExecution(_ audit: AskExecutionAudit, owner: String) async throws -> Bool {
         try await perform { try await $0.claimExecution(audit, owner: owner) }
     }

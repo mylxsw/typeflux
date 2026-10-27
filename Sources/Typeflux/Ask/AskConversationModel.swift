@@ -474,7 +474,9 @@ final class AskConversationModel: ObservableObject {
     var recoveryGeneration = UUID()
     var recoveryReadTokens: [String: UUID] = [:]
     var recoveryReadRetries: [String: Task<Void, Never>] = [:]
-    var recoveryReadRetryDelays: [Duration] = [.milliseconds(250), .seconds(1), .seconds(3)]
+    // Read-only retries must outlast retirement of a timed-out storage operation.
+    // They remain bounded and never resume a tool or model call.
+    var recoveryReadRetryDelays: [Duration] = [.milliseconds(250), .seconds(1), .seconds(3), .seconds(8), .seconds(15), .seconds(30)]
     /// At most one automatic reconciliation per run in this process.
     var automaticRecoveryAttempts: Set<String> = []
     var automaticRecoveryEnabled = true

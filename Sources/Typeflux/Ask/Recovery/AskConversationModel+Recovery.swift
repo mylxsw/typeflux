@@ -26,7 +26,8 @@ extension AskConversationModel {
         guard let value = selected else { return nil }
         return AskRunPhase.resolve(run: value.run, busy: busyIds.contains(value.id),
                                    pendingApproval: pendingApprovals[value.id] != nil,
-                                   recovery: recoveryPresentation)
+                                   recovery: recoveryPresentation,
+                                   storageUnavailable: selectedRecoveryEntries.contains(where: \.readUnavailable))
     }
 
     var hasRecoveryNotice: Bool {

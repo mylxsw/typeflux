@@ -4,6 +4,43 @@ import Testing
 
 @Suite("Ask automatic context compaction")
 struct AskContextCompactionTests {
+    @Test func denseSchemasDoNotEraseTheMiddleOfAFreshRead() throws {
+        let evidence = "first line\n" + String(repeating: "page content ", count: 140)
+            + "\n[data-category] must be changed here\n" + String(repeating: "page content ", count: 140) + "\nlast line"
+        let original: [String: Any] = [
+            "tools": String(repeating: "schema ", count: 2900),
+            "messages": [["role": "system", "content": "Keep the user constraints"],
+                         ["role": "user", "content": "Fix the selectors"],
+                         ["role": "assistant", "content": String(repeating: "old evidence ", count: 1800)],
+                         ["role": "assistant", "tool_calls": [["id": "fresh", "function": ["name": "files", "arguments": "{}"]]]],
+                         ["role": "tool", "tool_call_id": "fresh", "content": evidence]]
+        ]
+        let compacted = AskContextCompaction.compact(original, window: 32768)
+        let messages = try #require(compacted["messages"] as? [[String: Any]])
+        #expect(messages.last?["content"] as? String == evidence)
+        #expect(AskContextCompaction.weight(compacted) < 32768)
+        let plan = try AskContextPlanner.plan(original, limits: .init())
+        #expect((plan.payload["messages"] as? [[String: Any]])?.last?["content"] as? String == evidence)
+        #expect(plan.inputTokens + plan.outputReserve + 256 <= plan.capacity)
+    }
+
+    @Test func parallelFreshReadsShareABoundedAllowanceAndOlderResultsStillShrink() throws {
+        let text = String(repeating: "x", count: 10000)
+        var messages: [[String: Any]] = [
+            ["role": "assistant"], ["role": "tool", "content": text],
+            ["role": "assistant", "tool_calls": [["id": "a"], ["id": "b"], ["id": "c"]]],
+            ["role": "tool", "tool_call_id": "a", "content": text],
+            ["role": "tool", "tool_call_id": "b", "content": text],
+            ["role": "tool", "tool_call_id": "c", "content": text],
+            ["role": "system", "content": "Current plan"]
+        ]
+        #expect(AskContextPlanner.trimToolOutputs(&messages, size: 256, window: 32768))
+        #expect((messages[1]["content"] as? String)?.utf8.count == 256)
+        let fresh = messages[3...5].compactMap { $0["content"] as? String }
+        #expect(fresh.count == 3 && fresh.allSatisfy { $0.utf8.count > 2500 })
+        #expect(fresh.reduce(0) { $0 + $1.utf8.count } <= 8192)
+    }
+
     private func payload() -> [String: Any] {
         var messages: [[String: Any]] = [["role": "system", "content": "Do not publish without confirmation."]]
         for _ in 0..<20 {

@@ -28,8 +28,9 @@ enum AskRunPhase: Equatable {
 
     /// `busy` means a local operation is driving the conversation right now.
     static func resolve(run: AskRun?, busy: Bool, pendingApproval: Bool,
-                        recovery: AskRecoveryPresentation?) -> AskRunPhase? {
+                        recovery: AskRecoveryPresentation?, storageUnavailable: Bool = false) -> AskRunPhase? {
         let step = max(run?.steps ?? 0, 1)
+        if storageUnavailable, !busy { return .needsDecision(step: step) }
         // The host owns inspection now; it is work in progress, not a request
         // for the user to troubleshoot an old receipt. Keep Stop available.
         if busy, run?.internalRecovery?.phase == .inspecting {

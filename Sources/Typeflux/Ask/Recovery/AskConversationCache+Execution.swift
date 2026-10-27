@@ -24,17 +24,54 @@ extension AskConversationCache {
     }
 
     func executions(conversationId: String, owner: String) throws -> [AskExecutionEntry] {
+        try journalEntries(conversationId: conversationId, runId: nil, owner: owner)
+    }
+
+    func recoveryExecutions(conversationId: String, runId: String, owner: String) async throws -> [AskExecutionEntry] {
+        try journalEntries(conversationId: conversationId, runId: runId, owner: owner)
+    }
+
+    private func journalEntries(conversationId: String, runId: String?, owner: String) throws -> [AskExecutionEntry] {
+        try Task.checkCancellation()
+        // One snapshot replaces per-entry receipt, audit and deletion queries.
+        // Key ranges select this run before decoding large historical receipts.
+        // Legacy claims without an audit remain visible and fail closed.
+        var sql = """
+        SELECT o.id,e.data,t.data,d.id FROM ask_tool_owners o
+        JOIN ask_tools t ON t.owner=o.owner AND t.id=o.id
+        LEFT JOIN ask_execution e ON e.owner=o.owner AND e.id=o.id
+        LEFT JOIN ask_deleted d ON d.owner=o.owner AND d.id=?
+        WHERE o.owner=? AND o.conversation_id IN (?,?)
+        """
+        var bindings = [AskConversationID.canonical(conversationId), owner,
+                        AskConversationID.canonical(conversationId), AskConversationID.legacy(conversationId)]
+        if let runId {
+            sql += " AND (e.id IS NULL OR (o.id>=? AND o.id<?) OR (o.id>=? AND o.id<?))"
+            bindings += [runId + "/", runId + "0", "inference/" + runId + "/", "inference/" + runId + "0"]
+        }
+        sql += " ORDER BY o.id"
         let statement = try prepare(
-            "SELECT id FROM ask_tool_owners WHERE owner=? AND conversation_id IN (?,?) ORDER BY id",
-            strings: [owner, AskConversationID.canonical(conversationId), AskConversationID.legacy(conversationId)]
+            sql, strings: bindings
         )
         defer { sqlite3_finalize(statement) }
+        let decoder = AskCoding.decoder()
         var entries: [AskExecutionEntry] = []
         var status = sqlite3_step(statement)
         while status == SQLITE_ROW {
-            if let pointer = sqlite3_column_text(statement, 0),
-               let entry = try execution(id: String(cString: pointer), owner: owner) {
-                entries.append(entry)
+            try Task.checkCancellation()
+            if let pointer = sqlite3_column_text(statement, 0) {
+                let id = String(cString: pointer)
+                let audit = try blob(statement, column: 1).map { try decoder.decode(AskExecutionAudit.self, from: $0) }
+                if runId == nil || audit == nil || audit?.identity.runId == runId {
+                    var receipt: AskExecutionReceipt?
+                    if let bytes = blob(statement, column: 2) {
+                        receipt = try audit?.identity.kind == "model"
+                            ? .inference(decoder.decode(AskInferenceResult.self, from: bytes))
+                            : .tool(decoder.decode(AskToolResultRequest.self, from: bytes))
+                    }
+                    entries.append(.init(id: id, audit: audit, receipt: receipt,
+                                         deleted: sqlite3_column_type(statement, 3) != SQLITE_NULL))
+                }
             }
             status = sqlite3_step(statement)
         }

@@ -4,6 +4,7 @@ import SQLite3
 protocol AskCaching: Sendable {
     func execution(id: String, owner: String) async throws -> AskExecutionEntry?
     func executions(conversationId: String, owner: String) async throws -> [AskExecutionEntry]
+    func recoveryExecutions(conversationId: String, runId: String, owner: String) async throws -> [AskExecutionEntry]
     func claimExecution(_ audit: AskExecutionAudit, owner: String) async throws -> Bool
     func saveRejectedToolReceipt(audit: AskExecutionAudit, receipt: AskToolResultRequest, owner: String) async throws
     func saveReceipt(_ receipt: AskExecutionReceipt, identity: AskExecutionIdentity, owner: String) async throws
@@ -19,6 +20,14 @@ protocol AskCaching: Sendable {
     func claimTool(id: String, owner: String) async throws -> Bool
     func saveToolResult(_ result: AskToolResultRequest, owner: String) async throws
     func toolResult(id: String, owner: String) async throws -> AskToolResultRequest?
+}
+
+extension AskCaching {
+    func recoveryExecutions(conversationId: String, runId: String, owner: String) async throws -> [AskExecutionEntry] {
+        try await executions(conversationId: conversationId, owner: owner).filter {
+            $0.audit == nil || $0.audit?.identity.runId == runId
+        }
+    }
 }
 
 /// Actor isolation serializes access to this connection, including the local
@@ -49,6 +58,7 @@ actor AskConversationCache: AskCaching {
         CREATE TABLE IF NOT EXISTS ask_cache(owner TEXT NOT NULL,id TEXT NOT NULL,data BLOB NOT NULL,PRIMARY KEY(owner,id));
         CREATE TABLE IF NOT EXISTS ask_drafts(owner TEXT NOT NULL,id TEXT NOT NULL,data BLOB NOT NULL,PRIMARY KEY(owner,id));
         CREATE TABLE IF NOT EXISTS ask_tool_owners(owner TEXT NOT NULL,id TEXT NOT NULL,conversation_id TEXT NOT NULL,PRIMARY KEY(owner,id));
+        CREATE INDEX IF NOT EXISTS ask_tool_conversation ON ask_tool_owners(owner,conversation_id,id);
         CREATE TABLE IF NOT EXISTS ask_tools(owner TEXT NOT NULL,id TEXT NOT NULL,data BLOB,PRIMARY KEY(owner,id));
         CREATE TRIGGER IF NOT EXISTS ask_keep_tool_journal BEFORE DELETE ON ask_tools
         BEGIN SELECT RAISE(IGNORE); END;
@@ -69,14 +79,18 @@ actor AskConversationCache: AskCaching {
     }
 
     func save(_ conversation: AskConversation, owner: String) throws {
+        try Task.checkCancellation()
         guard try read(table: "ask_deleted", id: conversation.id, owner: owner) == nil else {
             throw AskRecoveryError.binding
         }
         let merged = try load(id: conversation.id, owner: owner)?.reconciling(conversation) ?? conversation
+        try Task.checkCancellation()
         try write(table: "ask_cache", id: conversation.id, owner: owner, data: AskCoding.encoder().encode(merged))
     }
     func load(id: String, owner: String) throws -> AskConversation? {
-        try [AskConversationID.canonical(id), AskConversationID.legacy(id)]
+        try Task.checkCancellation()
+        let canonical = AskConversationID.canonical(id), legacy = AskConversationID.legacy(id)
+        return try (canonical == legacy ? [canonical] : [canonical, legacy])
             .compactMap { try read(table: "ask_cache", id: $0, owner: owner) }
             .map { try AskCoding.decoder().decode(AskConversation.self, from: $0) }
             .max { $0.revision < $1.revision }
@@ -85,9 +99,11 @@ actor AskConversationCache: AskCaching {
         let statement = try prepare("SELECT data FROM ask_cache WHERE owner=?", strings: [owner])
         defer { sqlite3_finalize(statement) }
         var snapshots: [String: AskConversation] = [:]
+        let decoder = AskCoding.decoder()
         var status = sqlite3_step(statement)
         while status == SQLITE_ROW {
-            if let data = blob(statement), let c = try? AskCoding.decoder().decode(AskConversation.self, from: data) {
+            try Task.checkCancellation()
+            if let data = blob(statement), let c = try? decoder.decode(AskConversation.self, from: data) {
                 if (snapshots[c.id]?.revision ?? -1) <= c.revision { snapshots[c.id] = c }
             }
             status = sqlite3_step(statement)
@@ -182,9 +198,9 @@ actor AskConversationCache: AskCaching {
         default: throw storageFailure(.sqliteRead, code: .fileReadUnknown)
         }
     }
-    func blob(_ statement: OpaquePointer) -> Data? {
-        guard let pointer = sqlite3_column_blob(statement, 0) else { return nil }
-        return Data(bytes: pointer, count: Int(sqlite3_column_bytes(statement, 0)))
+    func blob(_ statement: OpaquePointer, column: Int32 = 0) -> Data? {
+        guard let pointer = sqlite3_column_blob(statement, column) else { return nil }
+        return Data(bytes: pointer, count: Int(sqlite3_column_bytes(statement, column)))
     }
 
     func storageFailure(_ operation: AskFailureDiagnostics.Operation, code: CocoaError.Code) -> CocoaError {

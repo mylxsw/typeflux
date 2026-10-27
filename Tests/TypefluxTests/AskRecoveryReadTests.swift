@@ -54,6 +54,22 @@ struct AskRecoveryReadTests {
         await kit.stop()
     }
 
+    @Test func recoveryReadsOnlyTheCurrentRunAcrossTheProcessBoundary() async throws {
+        let kit = try await makeFixture()
+        defer { kit.fixture.model.resetSession() }
+        var value = AskRecoveryFixture.conversation()
+        let current = AskRecoveryFixture.audit(value)
+        #expect(try await kit.peer.base.claimExecution(current, owner: "owner"))
+        value.run?.id = "older"
+        #expect(try await kit.peer.base.claimExecution(AskRecoveryFixture.audit(value), owner: "owner"))
+        await kit.peer.arm(failures: 0)
+        await kit.fixture.model.refreshRecovery(AskRecoveryFixture.conversation(), route: route)
+        #expect(kit.fixture.model.selectedRecoveryEntries.map(\.id) == [current.identity.key])
+        #expect(await kit.peer.reads == 1)
+        #expect(await kit.peer.otherMethods.isEmpty)
+        await kit.stop()
+    }
+
     @Test func cancelledReadDoesNotMisreportStorageFailureAndRecoversWithoutReopening() async throws {
         let kit = try await makeFixture()
         let fixture = kit.fixture, peer = kit.peer, value = kit.value

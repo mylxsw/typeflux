@@ -42,7 +42,7 @@ struct AskRecoveryPresentation: Equatable {
         otherDevice = run.map { $0.deviceId != deviceId } ?? false
         active = run?.isActive == true
         savedReceipts = currentEntries.filter { !$0.deleted && $0.receipt != nil && !$0.acknowledged }.count
-        canContinue = !unknown && savedReceipts == 0 && !otherDevice
+        canContinue = !entries.contains(where: \.readUnavailable) && !unknown && savedReceipts == 0 && !otherDevice
             && ["waiting_tool", "waiting_inference"].contains(run?.status ?? "")
     }
 
