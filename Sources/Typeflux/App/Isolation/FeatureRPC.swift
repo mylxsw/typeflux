@@ -225,24 +225,28 @@ private final class FeatureRPCWire: @unchecked Sendable {
         var length = UInt32(data.count).bigEndian
         var frame = withUnsafeBytes(of: &length) { Data($0) }
         frame.append(data)
-        try transfer(&frame, writing: true, deadline: .now.advanced(by: .seconds(5)))
+        try transfer(&frame, writing: true, inactivityTimeout: .seconds(5))
     }
 
     func receive() throws -> FeatureRPC.Message {
         var header = Data(count: 4)
-        try transfer(&header, writing: false, deadline: nil)
+        try transfer(&header, writing: false, inactivityTimeout: nil)
         let length = header.reduce(UInt32(0)) { ($0 << 8) | UInt32($1) }
         guard length > 0, length <= Self.maximumFrame else { throw FeatureRPC.Failure.invalidMessage }
         var payload = Data(count: Int(length))
-        try transfer(&payload, writing: false, deadline: .now.advanced(by: .seconds(5)))
+        try transfer(&payload, writing: false, inactivityTimeout: .seconds(5))
         let message = try JSONDecoder().decode(FeatureRPC.Message.self, from: payload)
         guard (message.payload?.count ?? 0) <= Self.maximumPayload else { throw FeatureRPC.Failure.invalidMessage }
         return message
     }
 
-    private func transfer(_ data: inout Data, writing: Bool, deadline: ContinuousClock.Instant?) throws {
+    private func transfer(_ data: inout Data, writing: Bool, inactivityTimeout: Duration?) throws {
         try data.withUnsafeMutableBytes { buffer in
             var offset = 0
+            var deadline = inactivityTimeout.map { ContinuousClock.now.advanced(by: $0) }
+            // Keep a hard limit too: a peer must not hold a frame forever by
+            // sending just enough data to reset the inactivity timer.
+            let hardDeadline = inactivityTimeout.map { _ in ContinuousClock.now.advanced(by: .seconds(120)) }
             while offset < buffer.count {
                 guard !lock.withLock({ stopped }) else { throw FeatureRPC.Failure.unavailable }
                 if let deadline, ContinuousClock.now >= deadline {
@@ -253,7 +257,13 @@ private final class FeatureRPCWire: @unchecked Sendable {
                 let base = buffer.baseAddress!.advanced(by: offset)
                 let count = writing ? Darwin.write(descriptor, base, buffer.count - offset)
                     : Darwin.read(descriptor, base, buffer.count - offset)
-                if count > 0 { offset += count; continue }
+                if count > 0 {
+                    offset += count
+                    if let inactivityTimeout, let hardDeadline {
+                        deadline = min(.now.advanced(by: inactivityTimeout), hardDeadline)
+                    }
+                    continue
+                }
                 guard count < 0, errno == EAGAIN || errno == EINTR else {
                     let error: any Error = count == 0 ? FeatureRPC.Failure.unavailable
                         : NSError(domain: NSPOSIXErrorDomain, code: Int(errno))

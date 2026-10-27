@@ -53,6 +53,28 @@ struct FeatureRPCTests {
         await peer.stop()
     }
 
+    @Test func progressingFrameIsNotDisconnectedAfterFiveSeconds() async throws {
+        var descriptors: [Int32] = [-1, -1]
+        #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors) == 0)
+        #expect(fcntl(descriptors[1], F_SETNOSIGPIPE, 1) == 0)
+        let peer = try FeatureRPC(descriptor: descriptors[0]), counter = FeatureRequestCounter()
+        defer { close(descriptors[1]) }
+        await peer.start { _, data in await counter.increment(); return data }
+        let message = FeatureRPC.Message(version: 1, id: UUID(), method: "slow-frame", payload: Data([42]), failure: nil)
+        let payload = try JSONEncoder().encode(message)
+        var size = UInt32(payload.count).bigEndian
+        #expect(withUnsafeBytes(of: &size) { Darwin.write(descriptors[1], $0.baseAddress, $0.count) } == 4)
+        let chunks = [0, payload.count / 3, payload.count * 2 / 3, payload.count]
+        for index in 0..<3 {
+            try await Task.sleep(for: .milliseconds(2100))
+            let chunk = payload.subdata(in: chunks[index]..<chunks[index + 1])
+            #expect(chunk.withUnsafeBytes { Darwin.write(descriptors[1], $0.baseAddress, $0.count) } == chunk.count)
+        }
+        for _ in 0..<100 where await counter.count == 0 { try await Task.sleep(for: .milliseconds(10)) }
+        #expect(await counter.count == 1)
+        await peer.stop()
+    }
+
     private func pair() throws -> (FeatureRPC, FeatureRPC) {
         var descriptors: [Int32] = [-1, -1]
         #expect(socketpair(AF_UNIX, SOCK_STREAM, 0, &descriptors) == 0)
