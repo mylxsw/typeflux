@@ -181,7 +181,7 @@ struct AskQuickResultsView: View {
                 if let name = AskLauncherFeatureIcons.name(for: entry.keyword),
                    let image = AskLauncherFeatureIcons.image(for: name, style: featureIconStyle) {
                     Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
-                        .frame(width: 28, height: 28)
+                        .frame(width: AskLauncherFeatureIcons.listIconSize, height: AskLauncherFeatureIcons.listIconSize)
                         .accessibilityHidden(true)
                 } else {
                     tile(entry.symbol, tint: entry.keyword.pluginID == AskCalendarPlugin.id ? .red : AskTheme.accent)

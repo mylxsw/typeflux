@@ -180,6 +180,22 @@ struct AskLauncherFeatureSearchTests {
                 file: root.appendingPathComponent(query + "-hint.png")
             )
         }
+        let items = entries.prefix(9).map { entry in
+            AskPluginItem(id: entry.keyword.id, title: entry.keyword.keyword,
+                subtitle: entry.title + " · " + entry.detail,
+                icon: AskLauncherFeatureIcons.name(for: entry.keyword).map { .feature($0) })
+        }
+        let plan = AskPluginPlan(mode: .live, title: "Keywords")
+        let output = AskPluginOutput(body: "", original: "", meta: [], source: "", actions: [], items: items)
+        let root = URL(fileURLWithPath: ProcessInfo.processInfo.environment["TYPEFLUX_FEATURE_SNAPSHOTS"]
+            ?? NSTemporaryDirectory()).appendingPathComponent("dedicated-search-icons")
+        try await render(
+            AskPluginResultsView(display: .init(title: "Keywords", symbol: "list.bullet",
+                phase: .done(plan, output)), question: "", onMain: {}, onAction: { _ in },
+                onAskAI: {}, onHighlight: { _ in }),
+            size: .init(width: 680, height: 550), appearance: .darkAqua,
+            file: root.appendingPathComponent("directory.png")
+        )
     }
 
     @Test func `renders feature search and system settings`() async throws {

@@ -98,11 +98,16 @@ struct AskPluginItemIcon: View {
     @Environment(\.askIconGeneration) private var generation
     @AppStorage(AskLauncherFeatureIcons.preferenceKey) private var iconStyle: AskLauncherFeatureIcons.Style = .sculpted
 
+    private var iconSize: CGFloat {
+        if case .feature = icon { return AskLauncherFeatureIcons.listIconSize }
+        return 28
+    }
+
     var body: some View {
         Group {
             if case let .feature(name) = icon, let image = AskLauncherFeatureIcons.image(for: name, style: iconStyle) {
                 Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
-                    .frame(width: 28, height: 28)
+                    .frame(width: iconSize, height: iconSize)
             } else if case let .websiteIcon(url, fallback, application) = icon {
                 AskBrowserFaviconView(url: url, fallback: fallback, application: application, symbol: symbol, filled: filled).id(generation)
             } else if case let .application(bundleID) = icon {
@@ -122,7 +127,7 @@ struct AskPluginItemIcon: View {
                                 in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
         }
-        .frame(width: 28, height: 28)
+        .frame(width: iconSize, height: iconSize)
         .accessibilityHidden(true)
     }
 
