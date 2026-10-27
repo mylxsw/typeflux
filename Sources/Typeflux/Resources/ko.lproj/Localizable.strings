@@ -7546,3 +7546,9 @@
 "ask.activity.process" = "처리 과정";
 "ask.fileChanges.count" = "파일 %d개 변경";
 "ask.activity.commands" = "명령 %d개 실행";
+
+/* Notebook scope and provenance */
+"ask.notes.search.scope" = "%@에서 검색";
+"ask.notes.search.all" = "모든 노트 검색";
+"ask.notes.agent.access" = "AI 접근";
+"ask.notes.submittedInput" = "AI에 보낸 내용";

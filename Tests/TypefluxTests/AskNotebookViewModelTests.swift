@@ -112,6 +112,22 @@ struct AskNotebookViewModelTests {
         #expect(notes.scope == .all, "an empty source shelf falls back to all notes")
     }
 
+    @Test func expandingSearchScopeKeepsTheQuery() async throws {
+        let store = makeTestNotes()
+        try store.save(makeTestNote("Work match", body: "needle", tags: ["work"]))
+        try store.save(makeTestNote("Other match", body: "needle", tags: ["personal"]))
+        let notes = await model(store)
+        notes.scope = .tag("work")
+        await notes.waitForNavigation()
+        notes.searchText = "needle"
+        await notes.waitForNavigation()
+        #expect(notes.notes.map(\.title) == ["Work match"])
+        notes.scope = .all
+        await notes.waitForNavigation()
+        #expect(notes.searchText == "needle")
+        #expect(Set(notes.notes.map(\.title)) == ["Work match", "Other match"])
+    }
+
     @Test func picksSeveralNotesForOneAction() async throws {
         let store = makeTestNotes()
         let a = makeTestNote("A", body: "1", at: 30), b = makeTestNote("B", body: "2", at: 20), c = makeTestNote("C", body: "3", at: 10)

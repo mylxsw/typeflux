@@ -15,6 +15,19 @@ struct AskNotesList: View {
             if sidebarCollapsed { navigationBar }
             header
             searchField.padding(.horizontal, 12).padding(.bottom, 8)
+            if !model.searchText.isEmpty {
+                HStack {
+                    Text(L("ask.notes.search.scope", model.title(of: model.scope)))
+                        .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary).lineLimit(1)
+                    Spacer(minLength: 4)
+                    if model.scope != .all, !model.inTrash {
+                        Button(L("ask.notes.search.all")) { model.scope = .all }
+                            .buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(AskTheme.accent)
+                            .accessibilityIdentifier("ask.notes.search.all")
+                    }
+                }
+                .padding(.horizontal, 16).padding(.bottom, 8)
+            }
             if model.inTrash {
                 HStack(spacing: 6) {
                     Image(systemName: "clock").font(.system(size: 11))
@@ -128,7 +141,7 @@ struct AskNotesList: View {
     private var searchField: some View {
         HStack(spacing: 7) {
             Image(systemName: "magnifyingglass").font(.system(size: 12.5)).foregroundStyle(StudioTheme.textTertiary)
-            TextField(L("ask.notes.search"), text: $model.searchText)
+            TextField(L("ask.notes.search.scope", model.title(of: model.scope)), text: $model.searchText)
                 .textFieldStyle(.plain).font(.system(size: 13))
                 .focused(focus, equals: .search)
                 .onSubmit { focus.wrappedValue = nil }
@@ -200,7 +213,7 @@ struct AskNotesListRow: View {
                         Text(note.excerpt).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
                             .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                     }
-                    if (note.source == .command && !note.command.isEmpty) || !note.tags.isEmpty { chips }
+                    if !note.tags.isEmpty { chips }
                 }
             }
             .padding(.horizontal, 10).padding(.vertical, 9)
@@ -249,13 +262,6 @@ struct AskNotesListRow: View {
 
     private var chips: some View {
         HStack(spacing: 4) {
-            if note.source == .command, !note.command.isEmpty {
-                Text(note.command).font(.system(size: 10.5)).lineLimit(1)
-                    .foregroundStyle(Color(nsColor: .systemPurple))
-                    .padding(.horizontal, 6).frame(height: 17)
-                    .background(Color(nsColor: .systemPurple).opacity(0.14),
-                                in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-            }
             ForEach(note.tags.prefix(3), id: \.self) { tag in
                 HStack(spacing: 3) {
                     Circle().fill(AskNotesStyle.tagColor(tag)).frame(width: 5, height: 5)

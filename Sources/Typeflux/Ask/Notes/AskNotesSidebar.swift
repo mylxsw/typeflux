@@ -185,10 +185,11 @@ struct AskNotesSidebar: View {
                 }
             }
         } label: {
-            Image(systemName: "sparkles")
-                .font(.system(size: 12.5))
+            Label(L("ask.notes.agent.access"), systemImage: "sparkles")
+                .font(.system(size: 11))
                 .foregroundStyle(model.agentEnabled ? StudioTheme.aiIcon : StudioTheme.textTertiary)
-                .frame(width: 28, height: 28)
+                .lineLimit(1)
+                .frame(height: 28)
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)

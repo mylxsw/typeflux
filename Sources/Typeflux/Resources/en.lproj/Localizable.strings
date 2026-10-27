@@ -7547,3 +7547,9 @@
 "ask.activity.process" = "Process";
 "ask.fileChanges.count" = "%d files changed";
 "ask.activity.commands" = "Ran %d commands";
+
+/* Notebook scope and provenance */
+"ask.notes.search.scope" = "Search in %@";
+"ask.notes.search.all" = "Search All Notes";
+"ask.notes.agent.access" = "AI Access";
+"ask.notes.submittedInput" = "Content sent to AI";

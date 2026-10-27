@@ -248,6 +248,7 @@ struct AskNoteDetailView: View {
         .menuIndicator(.hidden)
         .tint(StudioTheme.textTertiary)
         .fixedSize()
+        .help(L("ask.notes.more"))
         .accessibilityLabel(L("ask.notes.more"))
     }
 
@@ -377,7 +378,7 @@ struct AskNoteDetailView: View {
                 HStack(spacing: 6) {
                     Image(systemName: showsOriginal ? "chevron.down" : "chevron.right")
                         .font(.system(size: 9, weight: .semibold))
-                    Text(L(note.source == .chat ? "ask.notes.question" : "ask.result.original")).font(.system(size: 12))
+                    Text(L(note.source == .chat ? "ask.notes.question" : note.source == .command ? "ask.notes.submittedInput" : "ask.result.original")).font(.system(size: 12))
                     Spacer(minLength: 4)
                 }
                 .foregroundStyle(StudioTheme.textSecondary)
@@ -594,22 +595,14 @@ struct AskNoteDetailView: View {
                     model.perform { await model.setMode(.read) }
                 }
             } else {
-                barButton(L("ask.plugin.action.copy"), symbol: "doc.on.doc", key: nil, compact: compact,
+                barButton(L("ask.notes.copyMarkdown"), symbol: "doc.on.doc", key: nil, compact: compact,
                           action: model.copySelected)
-                barButton(L("ask.notes.rich"), symbol: "doc.richtext", key: "⇧⌘C", compact: compact,
+                barButton(L("ask.plugin.action.copyRich"), symbol: "doc.richtext", key: "⇧⌘C", compact: compact,
                           action: model.copySelectedRich)
                 if model.askAI != nil {
                     barButton(L("ask.result.askAI"), symbol: "sparkles", key: nil, compact: compact,
                               action: model.askAIAboutSelected)
                 }
-                barButton(L("ask.notes.edit"), symbol: "pencil", key: "⌘E", compact: compact) { model.beginEditing() }
-                barDivider
-                AskIconGhostButton(label: L("ask.plugin.action.openInWindow") + " ⌘O",
-                                   systemImage: "macwindow.on.rectangle",
-                                   action: model.openSelectedInWindow)
-                AskIconGhostButton(label: L("ask.notes.delete") + " ⌘⌫", systemImage: "trash",
-                                   action: { model.perform { await model.deleteSelected() } })
-                    .accessibilityIdentifier("ask.notes.delete")
             }
         }
         .padding(.horizontal, 6)

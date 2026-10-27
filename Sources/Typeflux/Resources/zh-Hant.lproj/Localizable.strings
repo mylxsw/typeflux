@@ -7549,3 +7549,9 @@
 "ask.activity.process" = "處理過程";
 "ask.fileChanges.count" = "已變更 %d 個檔案";
 "ask.activity.commands" = "執行了 %d 條命令";
+
+/* Notebook scope and provenance */
+"ask.notes.search.scope" = "在「%@」中搜尋";
+"ask.notes.search.all" = "搜尋所有筆記";
+"ask.notes.agent.access" = "AI 存取";
+"ask.notes.submittedInput" = "提交給 AI 的內容";

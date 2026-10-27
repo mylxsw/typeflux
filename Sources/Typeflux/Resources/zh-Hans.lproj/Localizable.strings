@@ -7547,3 +7547,9 @@
 "ask.activity.process" = "处理过程";
 "ask.fileChanges.count" = "已变更 %d 个文件";
 "ask.activity.commands" = "执行了 %d 条命令";
+
+/* Notebook scope and provenance */
+"ask.notes.search.scope" = "在“%@”中搜索";
+"ask.notes.search.all" = "搜索全部笔记";
+"ask.notes.agent.access" = "AI 访问";
+"ask.notes.submittedInput" = "提交给 AI 的内容";

@@ -186,7 +186,7 @@ struct AskNotebookVisualTests {
         try click(accessibilityFrame(source), in: window)
         try await waitForUI { openedConversation == "conv" }
         #expect(openedConversation == "conv", "the compact source action remains clickable")
-        let copy = try #require(accessibilityElement(L("ask.plugin.action.copy"),
+        let copy = try #require(accessibilityElement(L("ask.notes.copyMarkdown"),
                                                      attribute: "accessibilityLabel", in: window))
         var copied: String?
         model.copy = { copied = $0 }
@@ -342,8 +342,7 @@ struct AskNotebookVisualTests {
         let left = window.frame.minX + layout.sidebarWidth + layout.listWidth
         // ViewThatFits does not always expose a container in AppKit's AX tree.
         // Measure each real control, which also detects one clipped action in an otherwise visible bar.
-        let labels = [L("ask.plugin.action.copy"), L("ask.notes.rich"), L("ask.result.askAI"), L("ask.notes.edit"),
-                      L("ask.plugin.action.openInWindow") + " ⌘O", L("ask.notes.delete") + " ⌘⌫"]
+        let labels = [L("ask.notes.copyMarkdown"), L("ask.plugin.action.copyRich"), L("ask.result.askAI")]
         for label in labels {
             let button = try #require(accessibilityElement(label, attribute: "accessibilityLabel", in: window),
                                       "\(label)")

@@ -7546,3 +7546,9 @@
 "ask.activity.process" = "処理の詳細";
 "ask.fileChanges.count" = "%d 個のファイルを変更";
 "ask.activity.commands" = "%d 個のコマンドを実行";
+
+/* Notebook scope and provenance */
+"ask.notes.search.scope" = "%@を検索";
+"ask.notes.search.all" = "すべてのノートを検索";
+"ask.notes.agent.access" = "AI アクセス";
+"ask.notes.submittedInput" = "AI に送信した内容";
