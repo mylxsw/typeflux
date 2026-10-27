@@ -6432,6 +6432,7 @@
 "ring.title" = "Ring";
 "ring.hotkey.title" = "Trigger Key";
 "ring.hotkey.detail" = "You can use a single modifier key, including left/right variants and Fn. \nHold the shortcut: the ring opens at the pointer. Move toward an action and let go to run it; let go in the middle to cancel.\nTap the shortcut: the ring stays open. Click an action, press 1–8, or use the arrow keys and Return. Esc or the shortcut again closes it.";
+"ring.other.title" = "Other";
 "ring.actions.title" = "Actions";
 "ring.actions.reset" = "Restore Defaults";
 "ring.actions.add" = "Add Action";

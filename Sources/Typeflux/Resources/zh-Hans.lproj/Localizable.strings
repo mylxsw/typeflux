@@ -6432,6 +6432,7 @@
 "ring.title" = "圆环";
 "ring.hotkey.title" = "触发键";
 "ring.hotkey.detail" = "支持单个修饰键，可区分左右键，也支持 Fn。\n按住快捷键：圆环出现在鼠标处，移向某个操作后松开即执行，移回中心再松开则取消。\n轻按快捷键：圆环保持打开，可点击、按数字键 1–8 或方向键 + ↩ 选择；Esc 或再按一次快捷键关闭。";
+"ring.other.title" = "其他";
 "ring.actions.title" = "操作";
 "ring.actions.reset" = "恢复默认";
 "ring.actions.add" = "添加操作";

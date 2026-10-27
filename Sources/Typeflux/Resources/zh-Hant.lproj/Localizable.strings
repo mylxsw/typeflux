@@ -6434,6 +6434,7 @@
 "ring.title" = "圓環";
 "ring.hotkey.title" = "觸發鍵";
 "ring.hotkey.detail" = "支援單個修飾鍵，可區分左右鍵，也支援 Fn。\n按住快速鍵：圓環出現在滑鼠處，移向某個操作後放開即執行，移回中心再放開則取消。\n輕按快速鍵：圓環保持打開，可點按、按數字鍵 1–8 或方向鍵 + ↩ 選擇；Esc 或再按一次快速鍵關閉。";
+"ring.other.title" = "其他";
 "ring.actions.title" = "操作";
 "ring.actions.reset" = "恢復預設";
 "ring.actions.add" = "新增操作";

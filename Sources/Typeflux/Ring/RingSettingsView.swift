@@ -5,11 +5,11 @@ import SwiftUI
 /// the ring itself (`RingStudioCanvas`) with an inspector beside it; every change is saved at once.
 struct RingSettingsView: View {
     enum Tab: String, CaseIterable {
-        case general, actions
+        case actions, general
 
         var title: String {
             switch self {
-            case .general: L("settings.general")
+            case .general: L("ring.other.title")
             case .actions: L("ring.actions.title")
             }
         }
@@ -36,7 +36,7 @@ struct RingSettingsView: View {
 
     private enum LoadState { case idle, loading, loaded }
 
-    init(settingsStore: SettingsStore, tab: Tab = .general) {
+    init(settingsStore: SettingsStore, tab: Tab = .actions) {
         _tab = State(initialValue: tab)
         let model = RingSettingsModel(settingsStore: settingsStore)
         _model = StateObject(wrappedValue: model)

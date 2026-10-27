@@ -36,7 +36,7 @@ struct RingSettingsViewTests {
         }
     }
 
-    func page(_ store: SettingsStore, tab: RingSettingsView.Tab = .general) -> some View {
+    func page(_ store: SettingsStore, tab: RingSettingsView.Tab = .actions) -> some View {
         VStack(alignment: .leading, spacing: 24) {
             HStack {
                 Text(L("ring.title")).font(.system(size: 22, weight: .semibold))
@@ -78,8 +78,8 @@ struct RingSettingsViewTests {
         defer { defaults.removePersistentDomain(forName: suiteName) }
         let store = SettingsStore(defaults: defaults)
         let original = store.ringConfiguration
-        #expect(RingSettingsView.Tab.allCases == [.general, .actions])
-        #expect(RingSettingsView.Tab.general.title == L("settings.general"))
+        #expect(RingSettingsView.Tab.allCases == [.actions, .general])
+        #expect(RingSettingsView.Tab.general.title == L("ring.other.title"))
         #expect(RingSettingsView.Tab.actions.title == L("ring.actions.title"))
         try await render(page(store), size: NSSize(width: 860, height: 760),
                          name: "ring-settings-tabs-return", light: false) { hosting in
@@ -103,6 +103,9 @@ struct RingSettingsViewTests {
                 try await Task.sleep(for: .milliseconds(180))
                 hosting.layoutSubtreeIfNeeded()
             }
+            #expect(element("ring.hotkey") == nil)
+            #expect(element("ring.scope.global") != nil)
+            try await select("general")
             #expect(element("ring.hotkey") != nil)
             #expect(element("ring.centerTitle") != nil)
             #expect(element("ring.scope.global") == nil)
@@ -129,7 +132,7 @@ struct RingSettingsViewTests {
             let observer = InterfaceStyleObserver(settings: store)
             let original = store.ringConfiguration
             try await SettingsBehaviorTestSupport.withWindow(
-                RingSettingsView(settingsStore: store).interfaceStyle(following: observer), width: 860, height: 900
+                RingSettingsView(settingsStore: store, tab: .general).interfaceStyle(following: observer), width: 860, height: 900
             ) { _, hosting in
                 try await SettingsBehaviorTestSupport.wait {
                     SettingsBehaviorTestSupport.elements(in: hosting).contains {
