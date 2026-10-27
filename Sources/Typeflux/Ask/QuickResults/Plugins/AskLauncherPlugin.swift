@@ -209,6 +209,8 @@ struct AskPluginAction: Equatable, Sendable {
 struct AskPluginItem: Equatable, Sendable, Identifiable {
     enum Icon: Equatable, Sendable {
         case symbol(String)
+        /// A bundled built-in feature icon, resolved by the visible view.
+        case feature(String)
         case image(URL)
         /// The Finder icon of a file or folder.
         case fileIcon(URL)

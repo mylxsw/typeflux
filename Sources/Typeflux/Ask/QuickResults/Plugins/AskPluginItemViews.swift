@@ -96,10 +96,14 @@ struct AskPluginItemIcon: View {
     var filled: Bool
     var revision: Date?
     @Environment(\.askIconGeneration) private var generation
+    @AppStorage(AskLauncherFeatureIcons.preferenceKey) private var iconStyle: AskLauncherFeatureIcons.Style = .sculpted
 
     var body: some View {
         Group {
-            if case let .websiteIcon(url, fallback, application) = icon {
+            if case let .feature(name) = icon, let image = AskLauncherFeatureIcons.image(for: name, style: iconStyle) {
+                Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: 28, height: 28)
+            } else if case let .websiteIcon(url, fallback, application) = icon {
                 AskBrowserFaviconView(url: url, fallback: fallback, application: application, symbol: symbol, filled: filled).id(generation)
             } else if case let .application(bundleID) = icon {
                 AskNativeIconView(icon: .init(kind: .application, value: bundleID), symbol: symbol).frame(width: 26, height: 26)

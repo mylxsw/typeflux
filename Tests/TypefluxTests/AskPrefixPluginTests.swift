@@ -11,6 +11,20 @@ struct AskPrefixPluginTests {
               title: title, detail: detail, symbol: "star")
     }
 
+    @Test func builtInDirectoryRowsUseDedicatedArtworkAndWorkflowsKeepTheirSymbol() async throws {
+        let rows = AskPluginRegistry.defaultKeywords.map {
+            AskPrefixPlugin.Entry(keyword: $0, title: $0.keyword, symbol: "star")
+        } + [entry("custom")]
+        let plugin = AskPrefixPlugin(entries: { _ in rows })
+        let request = AskPluginRequest(text: "", origin: .argument, keyword: plugin.defaultKeywords[0],
+                                       options: [:], interfaceLanguage: .english)
+        let output = try await plugin.run(request, plan: await plugin.plan(request))
+        for (row, item) in zip(rows.dropLast(), output.items.dropLast()) {
+            #expect(item.icon == .feature(try #require(AskLauncherFeatureIcons.name(for: row.keyword))))
+        }
+        #expect(output.items.last?.icon == .symbol("star"))
+    }
+
     @Test func `search ranks exact then starts then contains and keeps disabled last`() {
         let entries = [entry("afy"), entry("fyja"), entry("fy"), entry("alias", title: "翻译", detail: "Japanese"),
                        entry("FY", enabled: false), entry("workflow", title: "My workflow")]

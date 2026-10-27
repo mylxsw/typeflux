@@ -160,7 +160,7 @@ struct AskLauncherFeatureSearchTests {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
         let entries = fixture.model.launcherSearchEntries(language: .simplifiedChinese)
-        for query in ["chat", "fy", "dict", "jt", "lp", "notebook", "clip", "settings", "cal"] {
+        for query in ["chat", "fy", "dict", "jt", "lp", "notebook", "clip", "settings", "cal", "rw", "sum", "ex", "g", "tab", "cmd", "ocr", "gif", "jtai", "锁屏"] {
             let results = try #require(AskQuickResults.search(query, sources: .init(entries: entries)))
             #expect(!results.features.isEmpty)
             let root = URL(fileURLWithPath: ProcessInfo.processInfo.environment["TYPEFLUX_FEATURE_SNAPSHOTS"]
@@ -170,6 +170,14 @@ struct AskLauncherFeatureSearchTests {
                 AskQuickResultsView(results: results, question: query, onRun: { _, _ in }, onHighlight: { _ in }),
                 size: .init(width: 680, height: 180), appearance: .darkAqua,
                 file: root.appendingPathComponent(query + ".png")
+            )
+            let feature = try #require(results.features.first)
+            try await render(
+                AskPluginResultsView(display: .init(hint: feature.keyword, title: feature.title,
+                    symbol: feature.symbol, phase: .waiting), question: "", onMain: {}, onAction: { _ in },
+                    onAskAI: {}, onHighlight: { _ in }),
+                size: .init(width: 680, height: 160), appearance: .darkAqua,
+                file: root.appendingPathComponent(query + "-hint.png")
             )
         }
     }

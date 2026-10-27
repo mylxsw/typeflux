@@ -4,7 +4,8 @@ struct CalendarKeywordChip: View {
     @ObservedObject var model: CalendarLauncherModel
 
     var body: some View {
-        AskKeywordChip(title: L("calendar.title"), symbol: "calendar", detail: detail, tint: AskTheme.accent)
+        AskKeywordChip(title: L("calendar.title"), symbol: "calendar", detail: detail, tint: AskTheme.accent,
+                       keyword: .init(keyword: "cal", pluginID: AskCalendarPlugin.id))
     }
 
     private var detail: String? {

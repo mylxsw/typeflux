@@ -62,24 +62,28 @@ struct AskPrefixPlugin: AskLauncherPlugin {
              progress _: @escaping AskPluginProgress) async throws -> AskPluginOutput {
         let query = request.origin == .argument ? request.text : ""
         let matches = await Self.filter(entries(request.interfaceLanguage), query: query)
-        let items = matches.map { entry in
-            var subtitle = [entry.title, entry.detail].filter { !$0.isEmpty }.joined(separator: " · ")
-            if !entry.keyword.aliases.isEmpty {
-                subtitle = entry.keyword.aliases.joined(separator: " / ") + " · " + subtitle
+        let items = await MainActor.run {
+            matches.map { entry in
+                var subtitle = [entry.title, entry.detail].filter { !$0.isEmpty }.joined(separator: " · ")
+                if !entry.keyword.aliases.isEmpty {
+                    subtitle = entry.keyword.aliases.joined(separator: " / ") + " · " + subtitle
+                }
+                if let reason = entry.unavailableReason {
+                    subtitle += " · " + reason
+                } else if !entry.keyword.enabled {
+                    subtitle += " · " + L("ask.plugin.prefix.disabled")
+                }
+                return AskPluginItem(
+                    id: entry.keyword.pluginID + ":" + entry.keyword.id,
+                    title: entry.keyword.keyword, subtitle: subtitle,
+                    icon: AskLauncherFeatureIcons.name(for: entry.keyword).map { .feature($0) } ?? .symbol(entry.symbol),
+                    valid: entry.canEnter,
+                    actions: entry.canEnter ? [
+                        AskPluginAction(kind: .enterKeyword(entry.keyword.id), title: L("ask.plugin.prefix.enter"),
+                                        symbol: "arrow.right", shortcut: .enter)
+                    ] : []
+                )
             }
-            if let reason = entry.unavailableReason {
-                subtitle += " · " + reason
-            } else if !entry.keyword.enabled {
-                subtitle += " · " + L("ask.plugin.prefix.disabled")
-            }
-            return AskPluginItem(
-                id: entry.keyword.pluginID + ":" + entry.keyword.id,
-                title: entry.keyword.keyword, subtitle: subtitle, icon: .symbol(entry.symbol), valid: entry.canEnter,
-                actions: entry.canEnter ? [
-                    AskPluginAction(kind: .enterKeyword(entry.keyword.id), title: L("ask.plugin.prefix.enter"),
-                                    symbol: "arrow.right", shortcut: .enter)
-                ] : []
-            )
         }
         return AskPluginOutput(
             body: items.isEmpty ? L("ask.plugin.prefix.noMatch", query) : items.map(\.title).joined(separator: "\n"),

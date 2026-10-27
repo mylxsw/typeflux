@@ -1,0 +1,277 @@
+{
+  "family": "sculpted",
+  "reference": "../boards/A-sculpted.png",
+  "template": "Use case: stylized-concept. Create ONE original standalone macOS launcher app icon, matching the supplied A sculpted icon family as a STYLE REFERENCE ONLY. Precise rounded-square colored tile, softly sculpted ivory foreground object, controlled shallow satin dimensionality, top-left studio light and minimal internal contact shadows. Premium cohesive professional icon, clean readable at 28px. NO fog, smoke, grain, bloom, glass, white page background, labels, caption, extra objects, or external drop shadow. Square transparent PNG: keep the colored tile opaque; genuinely transparent area OUTSIDE its rounded contour. Center tile with 5% transparent margin on EACH side, 90% canvas width/height, consistent corner radius approximately 22% of tile edge. Bold simple optical geometry, generous internal breathing room. Color: {color}. Functional symbol: {subject}. Do not reproduce the reference sheet or its other icons; deliver only this single new icon.",
+  "icons": [
+    {
+      "name": "polish",
+      "color": "violet",
+      "subject": "ivory fountain pen nib over a small sheet, one delicate four-point gleam",
+      "label": "润色"
+    },
+    {
+      "name": "summarize",
+      "color": "indigo",
+      "subject": "ivory document with four lines converging into two concise lines, clear bold stacked geometry",
+      "label": "摘要"
+    },
+    {
+      "name": "explain",
+      "color": "amber",
+      "subject": "ivory open book and a small clean lightbulb rising above it",
+      "label": "解释"
+    },
+    {
+      "name": "web-google",
+      "color": "blue",
+      "subject": "ivory magnifying glass surrounding a bold clean multicolor letter G, Google search identity",
+      "label": "Google 搜索"
+    },
+    {
+      "name": "web-baidu",
+      "color": "cobalt",
+      "subject": "ivory magnifying glass next to a simple blue paw-shaped search emblem, Baidu search identity",
+      "label": "百度搜索"
+    },
+    {
+      "name": "web-github",
+      "color": "graphite",
+      "subject": "ivory stylized cat-head silhouette with small rounded ears above a simple code branch fork, GitHub repository search",
+      "label": "GitHub 搜索"
+    },
+    {
+      "name": "apps",
+      "color": "blue",
+      "subject": "four ivory rounded app squares arranged in an impeccable 2 by 2 grid",
+      "label": "应用搜索"
+    },
+    {
+      "name": "files",
+      "color": "ochre",
+      "subject": "ivory folder with a compact bold magnifying glass overlay",
+      "label": "文件搜索"
+    },
+    {
+      "name": "semantic-files",
+      "color": "teal",
+      "subject": "ivory document connected to three rounded nodes by clean branching lines, semantic meaning search",
+      "label": "语义文件搜索"
+    },
+    {
+      "name": "quick-ask",
+      "color": "violet",
+      "subject": "one ivory speech bubble holding a large four-point sparkle, quick AI question",
+      "label": "快速提问"
+    },
+    {
+      "name": "directory",
+      "color": "slate blue",
+      "subject": "ivory index card with three neatly spaced short rows each preceded by a square bullet",
+      "label": "关键词目录"
+    },
+    {
+      "name": "help",
+      "color": "cyan blue",
+      "subject": "one large confident ivory question mark inside a thin ivory ring",
+      "label": "帮助"
+    },
+    {
+      "name": "history",
+      "color": "indigo",
+      "subject": "ivory clock with a partial counterclockwise arrow framing it and a tiny speech bubble tail",
+      "label": "对话历史"
+    },
+    {
+      "name": "tabs",
+      "color": "teal",
+      "subject": "three overlapping ivory browser window cards with clearly visible tab tops",
+      "label": "浏览器标签"
+    },
+    {
+      "name": "bookmarks",
+      "color": "ochre",
+      "subject": "one ivory vertical bookmark ribbon in front of a thin ivory browser window",
+      "label": "浏览器书签"
+    },
+    {
+      "name": "kill-app",
+      "color": "muted coral",
+      "subject": "ivory application window with a bold centered X, close a running app, not a power symbol",
+      "label": "退出应用"
+    },
+    {
+      "name": "monitor",
+      "color": "emerald",
+      "subject": "ivory monitor screen enclosing a crisp rising and falling activity pulse line",
+      "label": "系统监控"
+    },
+    {
+      "name": "system-info",
+      "color": "slate",
+      "subject": "ivory desktop monitor with a clean lowercase i at its center",
+      "label": "系统信息"
+    },
+    {
+      "name": "calendar",
+      "color": "coral",
+      "subject": "ivory calendar page with two small binding tabs and clean number 27",
+      "label": "日历"
+    },
+    {
+      "name": "worldclock",
+      "color": "teal blue",
+      "subject": "ivory globe with two clean meridians and a small ivory analog clock at lower right",
+      "label": "世界时钟"
+    },
+    {
+      "name": "terminal",
+      "color": "graphite",
+      "subject": "ivory terminal window with a clear greater-than prompt and underscore, >_",
+      "label": "终端"
+    },
+    {
+      "name": "emoji",
+      "color": "warm golden yellow",
+      "subject": "simple joyful ivory circular face with two small dark eyes and a friendly curved smile",
+      "label": "表情"
+    },
+    {
+      "name": "screenshot-full",
+      "color": "teal",
+      "subject": "ivory monitor rectangle with four small outward pointing corner arrows, full display capture",
+      "label": "全屏截图"
+    },
+    {
+      "name": "screenshot-scroll",
+      "color": "teal",
+      "subject": "ivory tall paper-like screen with two text lines and a clean vertical down arrow",
+      "label": "滚动截图"
+    },
+    {
+      "name": "screenshot-ai",
+      "color": "teal violet",
+      "subject": "ivory crop frame surrounding a single prominent four-point sparkle",
+      "label": "截图问 AI"
+    },
+    {
+      "name": "ocr",
+      "color": "teal",
+      "subject": "four ivory crop corners framing a bold clean uppercase T and a short text baseline",
+      "label": "截图识别文字"
+    },
+    {
+      "name": "gif",
+      "color": "coral orange",
+      "subject": "two overlapping ivory frame cards, front card has clear bold letters GIF",
+      "label": "GIF 录制"
+    },
+    {
+      "name": "system-toggleBluetooth",
+      "color": "cobalt blue",
+      "subject": "single bold ivory Bluetooth angular rune centered, precise familiar connectivity glyph",
+      "label": "切换蓝牙"
+    },
+    {
+      "name": "system-toggleWiFi",
+      "color": "blue",
+      "subject": "ivory Wi-Fi three graduated signal arcs and one round dot, strong centered silhouette",
+      "label": "切换 Wi-Fi"
+    },
+    {
+      "name": "system-ejectAllDisks",
+      "color": "slate teal",
+      "subject": "ivory external drive base with a bold eject triangle and small horizontal bar above it",
+      "label": "推出磁盘"
+    },
+    {
+      "name": "system-toggleHiddenFiles",
+      "color": "slate violet",
+      "subject": "ivory folder with a large clean eye symbol on its face, hidden files visibility",
+      "label": "隐藏文件"
+    },
+    {
+      "name": "system-toggleDesktopFiles",
+      "color": "slate blue",
+      "subject": "ivory desktop display holding three tiny rounded file squares in its lower region",
+      "label": "桌面文件"
+    },
+    {
+      "name": "system-toggleDarkMode",
+      "color": "midnight indigo",
+      "subject": "one circle split precisely into ivory day half and dark night half with ivory crescent inset",
+      "label": "深色模式"
+    },
+    {
+      "name": "system-resetTrackpadZoom",
+      "color": "teal slate",
+      "subject": "ivory trackpad rectangle with two clear inward diagonal arrows, reset magnification",
+      "label": "重置缩放"
+    },
+    {
+      "name": "system-showTrash",
+      "color": "slate",
+      "subject": "ivory wastebasket with subtle vertical slots and two paper corners showing at top, opening trash",
+      "label": "打开废纸篓"
+    },
+    {
+      "name": "system-emptyTrash",
+      "color": "muted coral",
+      "subject": "ivory empty wastebasket and one small bold outward right arrow, clearly distinct from full trash",
+      "label": "清空废纸篓"
+    },
+    {
+      "name": "system-screenSaver",
+      "color": "indigo purple",
+      "subject": "ivory monitor frame containing an elegant flowing satin ribbon wave",
+      "label": "屏幕保护"
+    },
+    {
+      "name": "system-sleep",
+      "color": "midnight blue",
+      "subject": "ivory crescent moon with two small clean Z letters beside it",
+      "label": "睡眠"
+    },
+    {
+      "name": "system-displaySleep",
+      "color": "slate blue",
+      "subject": "ivory monitor frame with a small crescent moon centered within the screen",
+      "label": "关闭显示器"
+    },
+    {
+      "name": "system-shutdown",
+      "color": "muted red",
+      "subject": "one large familiar ivory power symbol, clear separated stem and circular arc",
+      "label": "关机"
+    },
+    {
+      "name": "system-restart",
+      "color": "teal green",
+      "subject": "single bold ivory clockwise circular arrow with a broad arrowhead",
+      "label": "重启"
+    },
+    {
+      "name": "system-toggleScrollDirection",
+      "color": "blue violet",
+      "subject": "two parallel bold ivory arrows pointing up and down, gently curved ends",
+      "label": "滚动方向"
+    },
+    {
+      "name": "system-resetSpotlight",
+      "color": "amber slate",
+      "subject": "ivory magnifying glass framed on one side by a small clockwise rebuilding arrow",
+      "label": "重建索引"
+    },
+    {
+      "name": "system-lockScreen",
+      "color": "indigo",
+      "subject": "ivory rounded padlock with an open circular keyhole, solid and composed",
+      "label": "锁屏"
+    },
+    {
+      "name": "system-cleanScreen",
+      "color": "teal green",
+      "subject": "ivory monitor screen with one small wiping cloth folded over its lower right corner and a clean gleam",
+      "label": "清洁屏幕"
+    }
+  ]
+}

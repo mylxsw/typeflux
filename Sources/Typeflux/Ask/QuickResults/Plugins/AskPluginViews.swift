@@ -61,14 +61,22 @@ struct AskKeywordChip: View {
     var symbol: String
     var detail: String?
     var tint: Color = AskTheme.accent
+    var keyword: AskKeyword?
+    @AppStorage(AskLauncherFeatureIcons.preferenceKey) private var iconStyle: AskLauncherFeatureIcons.Style = .sculpted
 
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: symbol).aiSymbolTint(symbol)
-                .font(.system(size: 10.5, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 20, height: 20)
-                .background(tint, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            if let keyword, let name = AskLauncherFeatureIcons.name(for: keyword),
+               let image = AskLauncherFeatureIcons.image(for: name, style: iconStyle) {
+                Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: 20, height: 20).accessibilityHidden(true)
+            } else {
+                Image(systemName: symbol).aiSymbolTint(symbol)
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 20, height: 20)
+                    .background(tint, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            }
             Text(title).font(.system(size: 13, weight: .semibold))
             if let detail {
                 Text("→ " + detail).font(.system(size: 12.5)).opacity(0.8)
@@ -482,7 +490,11 @@ struct AskPluginResultsView: View {
     private func hintRow(_ hint: AskKeyword) -> some View {
         Button(action: onMain) {
             HStack(spacing: 12) {
-                tile(display.symbol)
+                if let name = AskLauncherFeatureIcons.name(for: hint) {
+                    AskPluginItemIcon(icon: .feature(name), symbol: display.symbol, filled: highlighted)
+                } else {
+                    tile(display.symbol)
+                }
                 Text(display.title).font(.system(size: 13.5)).foregroundStyle(StudioTheme.textPrimary)
                 Text(hint.keyword).font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(StudioTheme.textTertiary)

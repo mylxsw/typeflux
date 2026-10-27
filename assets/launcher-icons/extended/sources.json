@@ -1,0 +1,227 @@
+[
+  {
+    "name": "polish",
+    "label": "润色",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-279339f9-1774-4f54-bc13-5c6547e9889c.png"
+  },
+  {
+    "name": "summarize",
+    "label": "摘要",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-2e4024df-87c6-4044-8e93-ce973eb435e2.png"
+  },
+  {
+    "name": "explain",
+    "label": "解释",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-dcc02d99-7862-4e09-92d1-893c2b46abca.png"
+  },
+  {
+    "name": "web-google",
+    "label": "Google 搜索",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-5412732c-2fdb-413c-ba53-3527886123a0.png"
+  },
+  {
+    "name": "files",
+    "label": "文件搜索",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-a98e82c9-5f23-4d6f-a8ec-ae3c61fd449d.png"
+  },
+  {
+    "name": "web-baidu",
+    "label": "百度搜索",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-bc93c835-4d99-4e54-8a96-e465ddddde5c.png"
+  },
+  {
+    "name": "semantic-files",
+    "label": "语义文件搜索",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-6ec568c8-172d-4242-b96b-548e28e4538f.png"
+  },
+  {
+    "name": "web-github",
+    "label": "GitHub 搜索",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-a4935910-2ee2-4d82-8f37-602621f99f16.png"
+  },
+  {
+    "name": "quick-ask",
+    "label": "快速提问",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-650ef321-197c-449c-a7d3-e3f8bc1a6c5c.png"
+  },
+  {
+    "name": "apps",
+    "label": "应用搜索",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-d183ff3a-384f-4966-a472-a98bddf7b226.png"
+  },
+  {
+    "name": "directory",
+    "label": "关键词目录",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-03df3816-5f86-441f-b783-e2cf6585512d.png"
+  },
+  {
+    "name": "help",
+    "label": "帮助",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-087d39c0-5b7c-4577-b654-fd848a13c5e3.png"
+  },
+  {
+    "name": "history",
+    "label": "对话历史",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-2e0a60b2-5878-46fb-82a6-0447154290f7.png"
+  },
+  {
+    "name": "kill-app",
+    "label": "退出应用",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-605d4863-8130-4b5c-af31-6d85e52aa8a3.png"
+  },
+  {
+    "name": "monitor",
+    "label": "系统监控",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-72117f5f-9e4a-4b21-a499-ef62764dde60.png"
+  },
+  {
+    "name": "tabs",
+    "label": "浏览器标签",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-1b2afc68-e49d-4e24-b088-f32701b322c7.png"
+  },
+  {
+    "name": "system-info",
+    "label": "系统信息",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-dd5ca265-e86d-4cb0-ac50-ec0bc3d2270c.png"
+  },
+  {
+    "name": "calendar",
+    "label": "日历",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-1ee1e2b2-ed05-4ab1-99dd-30f321e34622.png"
+  },
+  {
+    "name": "bookmarks",
+    "label": "浏览器书签",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-eea0311b-01fb-41a1-922a-2f30a2f1b7a4.png"
+  },
+  {
+    "name": "terminal",
+    "label": "终端",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-e8d2bff1-80cb-4174-b945-fdc9a19ee589.png"
+  },
+  {
+    "name": "worldclock",
+    "label": "世界时钟",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-60f21765-ea6d-4558-80b8-51c0b1d1701c.png"
+  },
+  {
+    "name": "emoji",
+    "label": "表情",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-319869df-6ee4-45e6-b96c-8ed1ea912b61.png"
+  },
+  {
+    "name": "screenshot-scroll",
+    "label": "滚动截图",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-0950b6bc-83b8-4373-9853-9cbbfa245b32.png"
+  },
+  {
+    "name": "screenshot-full",
+    "label": "全屏截图",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-c299a7e1-6d94-43bc-8396-8e17cbda2fa3.png"
+  },
+  {
+    "name": "screenshot-ai",
+    "label": "截图问 AI",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-11a27e47-8d10-4af5-bc68-1d75d8110d42.png"
+  },
+  {
+    "name": "ocr",
+    "label": "截图识别文字",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-95132b37-4423-4b7d-9880-546d7a987641.png"
+  },
+  {
+    "name": "gif",
+    "label": "GIF 录制",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-db25a5eb-809e-4b89-a129-7e773feea45a.png"
+  },
+  {
+    "name": "system-ejectAllDisks",
+    "label": "推出磁盘",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-6fab756d-aab2-458b-ba6c-1d566329a85d.png"
+  },
+  {
+    "name": "system-toggleBluetooth",
+    "label": "切换蓝牙",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-ac1f9f59-ddde-466f-ab5a-2b79b089e463.png"
+  },
+  {
+    "name": "system-toggleDesktopFiles",
+    "label": "桌面文件",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-178a2c41-6869-454f-8f3d-ccfff575a888.png"
+  },
+  {
+    "name": "system-toggleHiddenFiles",
+    "label": "隐藏文件",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-c8113f74-823e-4495-ae0f-60f811415f9f.png"
+  },
+  {
+    "name": "system-toggleWiFi",
+    "label": "切换 Wi-Fi",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-11d4de0c-9d3f-4877-8434-d02fbf4fa91e.png"
+  },
+  {
+    "name": "system-toggleDarkMode",
+    "label": "深色模式",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-a598749a-9568-4982-9e95-e56d40f32b74.png"
+  },
+  {
+    "name": "system-showTrash",
+    "label": "打开废纸篓",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-3845f846-b342-41e1-945d-c571cdf72fc3.png"
+  },
+  {
+    "name": "system-emptyTrash",
+    "label": "清空废纸篓",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-9a3588b9-25fa-47f0-b61c-c391a8a9fbcf.png"
+  },
+  {
+    "name": "system-resetTrackpadZoom",
+    "label": "重置缩放",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-8ac1a697-a38e-4b11-9474-fb7cd18028e4.png"
+  },
+  {
+    "name": "system-screenSaver",
+    "label": "屏幕保护",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-2edd505f-84d0-43bf-aa6f-c50bcf50d9c9.png"
+  },
+  {
+    "name": "system-sleep",
+    "label": "睡眠",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-8bb783ef-fd68-40f6-aa6e-2d2b6fb6463f.png"
+  },
+  {
+    "name": "system-displaySleep",
+    "label": "关闭显示器",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-5b56bc37-1afa-4b19-a1d9-eda781c05a60.png"
+  },
+  {
+    "name": "system-resetSpotlight",
+    "label": "重建索引",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-3abb405f-81f4-4a4b-8ed3-d63e04ac071d.png"
+  },
+  {
+    "name": "system-shutdown",
+    "label": "关机",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-eae4d696-a896-44f0-8f15-4025c6fde75a.png"
+  },
+  {
+    "name": "system-lockScreen",
+    "label": "锁屏",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-1ede60f8-cc3f-4606-9448-469155e57071.png"
+  },
+  {
+    "name": "system-restart",
+    "label": "重启",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-91a84d32-e5bf-4c13-84b7-459945feb3e0.png"
+  },
+  {
+    "name": "system-cleanScreen",
+    "label": "清洁屏幕",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-09eae429-7bd9-4299-9280-1c70026b03ae.png"
+  },
+  {
+    "name": "system-toggleScrollDirection",
+    "label": "滚动方向",
+    "source": "/Users/mylxsw/.codex/generated_images/01a178ce-0ffc-7200-8cc5-fb94aa160b71/exec-d13438f9-e2d0-4876-8838-faabed99bb2a.png"
+  }
+]

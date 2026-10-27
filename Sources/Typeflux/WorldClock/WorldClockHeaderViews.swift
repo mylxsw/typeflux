@@ -5,7 +5,8 @@ struct WorldClockKeywordChip: View {
     @ObservedObject var model: WorldClockLauncherModel
 
     var body: some View {
-        AskKeywordChip(title: L("worldclock.title"), symbol: "globe", detail: detail, tint: AskTheme.accent)
+        AskKeywordChip(title: L("worldclock.title"), symbol: "globe", detail: detail, tint: AskTheme.accent,
+                       keyword: .init(keyword: "tz", pluginID: AskWorldClockPlugin.id))
     }
 
     private var detail: String? {

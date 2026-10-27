@@ -2456,7 +2456,7 @@ struct AskComposer: View {
                         AskKeywordChip(title: plugin.inputChipTitle(for: keyword), symbol: plugin.symbol,
                                        detail: plugin.chipDetail(for: keyword,
                                                                  language: AppLocalization.shared.language),
-                                       tint: plugin.keywordColor)
+                                       tint: plugin.keywordColor, keyword: keyword)
                     }
                 }.padding(.vertical, 2)
             }
