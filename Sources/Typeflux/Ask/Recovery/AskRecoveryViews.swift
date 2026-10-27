@@ -115,170 +115,149 @@ struct AskRecoveryCard: View {
     }
 }
 
-/// "What next": where the run stopped, the choices with their consequences, and
-/// one primary button that follows the chosen option. A single popover surface;
-/// only a hairline separates the footer.
+/// Details explain the evidence and consequences. Actions stay in a pinned
+/// footer rather than asking the user to select the same buttons a second time.
 struct AskRecoveryInspector: View {
     @ObservedObject var model: AskConversationModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var choice: AskRecoveryAction?
 
-    private var presentation: AskRecoveryPresentation { model.recoveryPresentation }
-
-    private var options: [AskRecoveryAction] {
-        presentation.options(canRetransmit: model.canRetransmitReceipts,
-                             canContinue: presentation.canContinue && !model.canRetransmitReceipts)
+    private var presentation: AskRecoveryPresentation {
+        model.recoveryPresentation
     }
 
-    /// The user's pick while it is still offered, else the recommended option.
-    private var selected: AskRecoveryAction? {
-        choice.flatMap { options.contains($0) ? $0 : nil } ?? options.first
+    private var details: AskRecoveryDetails {
+        model.recoveryDetails
+    }
+
+    private var actions: AskRecoveryPresentation.Actions {
+        presentation.actions(canRetransmit: model.canRetransmitReceipts,
+                             canContinue: presentation.canContinue && !model.canRetransmitReceipts)
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(alignment: .top, spacing: 14) {
-                    AskRecoverySymbol(presentation: presentation, size: 38)
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(L(presentation.unknown && model.selected?.run?.status == "cancelled"
-                                ? "ask.recovery.stopped" : presentation.titleKey))
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textPrimary)
-                        Text(presentation.bodyText)
-                            .font(.system(size: 12.5))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .lineSpacing(3)
-                    }
-                    .fixedSize(horizontal: false, vertical: true)
-                }
-                if !options.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(options, id: \.self) { option in
-                            AskRecoveryOptionCard(action: option,
-                                                  recommended: option == options.first,
-                                                  selected: option == selected) { choice = option }
-                        }
-                    }
-                    .accessibilityElement(children: .contain)
+            HStack(alignment: .top, spacing: 12) {
+                AskRecoverySymbol(presentation: presentation, size: 36)
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(L(model.selected?.run?
+                            .status == "cancelled" ? "ask.recovery.stopped" : "ask.recovery.detail.title"))
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                        .accessibilityAddTraits(.isHeader)
+                    Text(L(
+                        details.step > 0 ? "ask.recovery.detail.step" : "ask.recovery.detail.notStarted",
+                        details.step
+                    ))
+                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
                 }
             }
-            .padding(.horizontal, 22)
-            .padding(.top, 20)
-            .padding(.bottom, 14)
+            .padding(.horizontal, 22).padding(.top, 20).padding(.bottom, 16)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    section("ask.recovery.detail.why") {
+                        paragraph(L(details.reasonKey))
+                        if let explanation = details.inspectionExplanation, !explanation.isEmpty {
+                            Text(L("ask.recovery.detail.inspectionNote"))
+                                .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                            paragraph(explanation)
+                        }
+                    }
+                    section("ask.recovery.detail.progress") {
+                        paragraph(L(
+                            details.savedResults > 0 ? "ask.recovery.detail.savedCount" : "ask.recovery.detail.noSaved",
+                            details.savedResults
+                        ))
+                        if let kind = details.pendingKind {
+                            paragraph(L("ask.recovery.detail.pending", L("ask.recovery.tool." + kind)))
+                        }
+                        if details.unconfirmedResults > 0 {
+                            paragraph(
+                                L("ask.recovery.detail.unconfirmedCount", details.unconfirmedResults),
+                                warning: true
+                            )
+                        }
+                        if details.totalPlanItems > 0 {
+                            paragraph(L(
+                                "ask.recovery.detail.planCount",
+                                details.completedPlanItems,
+                                details.totalPlanItems
+                            ))
+                        }
+                    }
+                    section("ask.recovery.detail.next") {
+                        if let next = details.nextPlanStep {
+                            Text(L("ask.recovery.detail.nextPlan"))
+                                .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                            paragraph(next)
+                        }
+                        if let primary = actions.primary {
+                            paragraph(L(primary.detailKey))
+                        } else {
+                            paragraph(L(details.reason == .storage ? "ask.recovery.detail.nextStorage" :
+                                    (presentation
+                                        .otherDevice ? "ask.recovery.binding" : "ask.recovery.detail.action.return")))
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 22).padding(.bottom, 20)
+            }
+            .frame(maxHeight: 320)
             Rectangle().fill(AskTheme.separator).frame(height: 1)
             footer
         }
-        .frame(minWidth: 320, idealWidth: 480, maxWidth: 480, alignment: .leading)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(minWidth: 280, idealWidth: 520, maxWidth: 520, alignment: .topLeading)
         .background(AskTheme.popoverSurface)
         .transaction {
-            if reduceMotion {
-                $0.animation = nil; $0.disablesAnimations = true
-            }
+            if reduceMotion { $0.animation = nil; $0.disablesAnimations = true }
         }
     }
 
-    /// Always trailing: Return, then the chosen option's own button, red for Stop.
+    private func section(_ key: String, @ViewBuilder content: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text(L(key)).font(.system(size: 12.5, weight: .semibold))
+                .foregroundStyle(StudioTheme.textPrimary).accessibilityAddTraits(.isHeader)
+            content()
+        }
+    }
+
+    private func paragraph(_ text: String, warning: Bool = false) -> some View {
+        Text(text).font(.system(size: 12.5))
+            .foregroundStyle(warning ? StudioTheme.warning : StudioTheme.textSecondary)
+            .lineSpacing(3).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
+    }
+
     private var footer: some View {
-        HStack(spacing: 8) {
-            Spacer(minLength: 0)
-            if model.recoveryWorking {
-                ProgressView().controlSize(.small).accessibilityLabel(L("ask.working"))
+        VStack(alignment: .leading, spacing: 12) {
+            if actions.stop { paragraph(L(AskRecoveryAction.stop.detailKey)) }
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) { Spacer(minLength: 0); footerButtons }
+                VStack(alignment: .trailing, spacing: 8) { footerButtons }.frame(
+                    maxWidth: .infinity,
+                    alignment: .trailing
+                )
             }
-            if selected != .selfCheck {
-                Button(L("ask.recovery.close"), action: model.dismissRecoveryInspector)
-                    .buttonStyle(AskCapsuleButtonStyle(kind: selected == nil ? .primary : .secondary))
-                    .keyboardShortcut(.cancelAction)
-            }
-            if let selected {
-                Button(L(selected.titleKey)) { model.performRecovery(selected) }
-                    .buttonStyle(AskCapsuleButtonStyle(kind: selected.isDestructive ? .destructive : .primary))
-            }
+            .fixedSize(horizontal: false, vertical: true)
         }
         .disabled(model.recoveryWorking)
-        .padding(.horizontal, 22)
-        .padding(.top, 14)
-        .padding(.bottom, 18)
-    }
-}
-
-private struct AskRecoveryTimelineRow: View {
-    let item: AskRecoveryTimeline.Item
-    let unknown: Bool
-
-    var body: some View {
-        HStack(spacing: 10) {
-            dot
-            Text(item.title)
-                .font(.system(size: 12.5, weight: item.state == .current ? .semibold : .regular))
-                .foregroundStyle(item.state == .upcoming ? StudioTheme.textTertiary
-                    : (item.state == .current ? StudioTheme.textPrimary : StudioTheme.textSecondary))
-                .lineLimit(2)
-            Spacer(minLength: 8)
-            if let detail = item.detail {
-                Text(detail).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
-            }
-        }
+        .padding(.horizontal, 22).padding(.vertical, 16)
     }
 
-    @ViewBuilder private var dot: some View {
-        switch item.state {
-        case .done:
-            Image(systemName: "checkmark").font(.system(size: 8, weight: .bold))
-                .foregroundStyle(StudioTheme.success)
-                .frame(width: 16, height: 16).background(AskTheme.successSoft, in: Circle())
-        case .current:
-            Image(systemName: unknown ? "questionmark" : "pause.fill").font(.system(size: 8, weight: .bold))
-                .foregroundStyle(StudioTheme.warning)
-                .frame(width: 16, height: 16).background(AskTheme.warningSoft, in: Circle())
-                .overlay(Circle().strokeBorder(StudioTheme.warning.opacity(0.32)))
-        case .upcoming:
-            Circle().strokeBorder(AskTheme.border, lineWidth: 1.5).frame(width: 16, height: 16)
+    @ViewBuilder private var footerButtons: some View {
+        if model.recoveryWorking {
+            ProgressView().controlSize(.small).accessibilityLabel(L("ask.working"))
         }
-    }
-}
-
-/// One radio choice: what happens, and what it costs.
-private struct AskRecoveryOptionCard: View {
-    let action: AskRecoveryAction
-    let recommended: Bool
-    let selected: Bool
-    let choose: () -> Void
-
-    private var tint: Color { action.isDestructive ? StudioTheme.danger : AskTheme.accent }
-
-    var body: some View {
-        Button(action: choose) {
-            HStack(alignment: .top, spacing: 12) {
-                Circle()
-                    .strokeBorder(selected ? tint : AskTheme.border, lineWidth: selected ? 5 : 1.5)
-                    .frame(width: 16, height: 16)
-                    .padding(.top, 1)
-                HStack(spacing: 8) {
-                    Text(L(action.optionTitleKey))
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                    if recommended {
-                        Text(L("ask.recovery.recommended"))
-                            .font(.system(size: 10.5, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 6).padding(.vertical, 1)
-                            .background(AskTheme.accent, in: RoundedRectangle(cornerRadius: 5))
-                    }
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(selected ? (action.isDestructive ? AskTheme.dangerSoft : AskTheme.accentSoft) : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(selected ? tint : AskTheme.border))
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        Button(L("ask.recovery.close"), action: model.dismissRecoveryInspector)
+            .buttonStyle(AskCapsuleButtonStyle(kind: actions.primary == nil ? .primary : .secondary))
+            .keyboardShortcut(.cancelAction).fixedSize()
+        if actions.stop {
+            Button(L(AskRecoveryAction.stop.titleKey)) { model.performRecovery(.stop) }
+                .buttonStyle(AskCapsuleButtonStyle(kind: .secondary)).fixedSize()
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? [.isSelected] : [])
+        if let primary = actions.primary {
+            Button(L(primary.titleKey)) { model.performRecovery(primary) }
+                .buttonStyle(AskCapsuleButtonStyle()).fixedSize()
+        }
     }
 }
 

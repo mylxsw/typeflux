@@ -2454,7 +2454,7 @@
 "ask.recovery.saved" = "The conversation needs an update";
 "ask.recovery.savedBody" = "The results are saved on this Mac. Click \"Refresh progress\" to bring the conversation up to date without repeating the work.";
 "ask.recovery.paused" = "This work is unfinished";
-"ask.recovery.activeBody" = "Click \"Continue\" and Typeflux will carry on with the remaining steps.";
+"ask.recovery.activeBody" = "The task is waiting at its next step. You can continue this task or stop this run.";
 "ask.recovery.finished" = "This work has ended";
 "ask.recovery.finishedBody" = "You can ask another question in the message box below.";
 "ask.recovery.inspect" = "What to do next";
@@ -2466,7 +2466,7 @@
 "ask.recovery.message" = "Your message";
 "ask.recovery.stopped" = "Further work has stopped";
 "ask.recovery.checkAndContinue" = "Check again";
-"ask.recovery.details" = "Learn more";
+"ask.recovery.details" = "View pause details";
 "ask.recovery.recommended" = "Recommended";
 "ask.recovery.option.check" = "Let Typeflux check";
 "ask.recovery.option.checkBody" = "Read the current state without repeating the action; explain any missing evidence.";
@@ -7547,6 +7547,37 @@
 "ask.activity.process" = "Process";
 "ask.fileChanges.count" = "%d files changed";
 "ask.activity.commands" = "Ran %d commands";
+
+// Task recovery details
+"ask.recovery.detail.title" = "Task pause details";
+"ask.recovery.detail.step" = "Paused at step %d";
+"ask.recovery.detail.notStarted" = "No execution step recorded";
+"ask.recovery.detail.why" = "Why it stopped";
+"ask.recovery.detail.progress" = "Saved progress";
+"ask.recovery.detail.next" = "What happens next";
+"ask.recovery.detail.inspectionNote" = "Note from the last automated check";
+"ask.recovery.detail.savedCount" = "Saved execution results in this run: %d.";
+"ask.recovery.detail.noSaved" = "No saved results could be verified in the recovery records. Earlier actions may still have taken effect.";
+"ask.recovery.detail.unconfirmedCount" = "Results still needing verification: %d.";
+"ask.recovery.detail.planCount" = "Plan record: %d of %d items marked complete.";
+"ask.recovery.detail.nextPlan" = "Next item in the plan";
+"ask.recovery.detail.nextStorage" = "Return to the chat and use Retry in the storage warning to read the local records again. Wait for that to recover before resending this task.";
+"ask.recovery.detail.pending" = "Waiting for: %@.";
+"ask.recovery.detail.reason.storage" = "Local task records could not be read. Continuing is paused to avoid repeating work that may already have happened.";
+"ask.recovery.detail.reason.device" = "This task is associated with another device. This device cannot confirm its latest progress.";
+"ask.recovery.detail.reason.timeout" = "The previous operation timed out without a confirmed result. A timeout does not prove that the action had no effect.";
+"ask.recovery.detail.reason.interrupted" = "The previous operation was interrupted and its final result is unconfirmed. Check the current state before continuing.";
+"ask.recovery.detail.reason.missing" = "An operation was recorded, but its completion record is missing. Checking the result first helps avoid doing the same work twice.";
+"ask.recovery.detail.reason.saved" = "Results are saved on this device, but the task has not confirmed receiving them. Restore those results before doing more work.";
+"ask.recovery.detail.reason.blocked" = "The automated check could not establish the previous result. Further verification is needed.";
+"ask.recovery.detail.reason.limit" = "This run reached its configured step limit, so automatic processing stopped.";
+"ask.recovery.detail.reason.stopped" = "This run has stopped and will not advance automatically.";
+"ask.recovery.detail.reason.unrecorded" = "The task is unfinished, but the records do not include a specific interruption reason. The cause cannot be determined from the saved state.";
+"ask.recovery.detail.action.continue" = "Continue this task using the existing conversation and saved records. Further work may change files, call models or tools, and incur costs.";
+"ask.recovery.detail.action.check" = "First read the current state to check whether the earlier action took effect, then continue the original task. If the outcome remains unclear, processing stops again. Checks and further work may use a model and incur costs.";
+"ask.recovery.detail.action.refresh" = "Restore the results already saved on this device without repeating the operations that produced them. Then review the updated task state.";
+"ask.recovery.detail.action.stop" = "Stop ends further processing in this run. It does not undo actions already performed.";
+"ask.recovery.detail.action.return" = "Check the actual result and describe the remaining work in the chat. Closing this window does not continue the task or confirm an unknown outcome.";
 
 /* Notebook scope and provenance */
 "ask.notes.search.scope" = "Search in %@";

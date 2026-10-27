@@ -2444,7 +2444,7 @@
 "ask.recovery.saved" = "会話の進行状況がまだ更新されていません";
 "ask.recovery.savedBody" = "処理結果はこの Mac に保存されています。「進行状況を更新」をクリックすると、同じ操作を繰り返さずに最新の進行状況を確認できます。";
 "ask.recovery.paused" = "今回の処理はまだ完了していません";
-"ask.recovery.activeBody" = "「処理を続ける」をクリックすると、Typeflux が残りの手順を進めます。";
+"ask.recovery.activeBody" = "タスクは次のステップを待っています。続行するか、今回の実行を停止できます。";
 "ask.recovery.finished" = "今回の処理は終了しました";
 "ask.recovery.finishedBody" = "下の入力欄から質問を続けられます。";
 "ask.recovery.inspect" = "次にすること";
@@ -2456,7 +2456,7 @@
 "ask.recovery.message" = "あなたのメッセージ";
 "ask.recovery.stopped" = "この先の処理を停止しました";
 "ask.recovery.checkAndContinue" = "再確認";
-"ask.recovery.details" = "詳細";
+"ask.recovery.details" = "一時停止の詳細";
 "ask.recovery.recommended" = "おすすめ";
 "ask.recovery.option.check" = "Typeflux に確認させる";
 "ask.recovery.option.checkBody" = "操作を繰り返さずに現在の状態を読み取り、不足する証拠を説明します。";
@@ -7546,6 +7546,37 @@
 "ask.activity.process" = "処理の詳細";
 "ask.fileChanges.count" = "%d 個のファイルを変更";
 "ask.activity.commands" = "%d 個のコマンドを実行";
+
+// Task recovery details
+"ask.recovery.detail.title" = "タスクの一時停止の詳細";
+"ask.recovery.detail.step" = "ステップ %d で停止";
+"ask.recovery.detail.notStarted" = "実行ステップの記録なし";
+"ask.recovery.detail.why" = "停止した理由";
+"ask.recovery.detail.progress" = "保存された進捗";
+"ask.recovery.detail.next" = "次に行うこと";
+"ask.recovery.detail.inspectionNote" = "前回の自動確認による説明";
+"ask.recovery.detail.savedCount" = "この実行で保存された結果：%d 件。";
+"ask.recovery.detail.noSaved" = "復元記録で確認できる保存結果はありません。以前の操作が実行されていないとは限りません。";
+"ask.recovery.detail.unconfirmedCount" = "確認が必要な結果：%d 件。";
+"ask.recovery.detail.planCount" = "計画の記録：%d/%d 件を完了と記録。";
+"ask.recovery.detail.nextPlan" = "計画の次の項目";
+"ask.recovery.detail.nextStorage" = "会話に戻り、ローカル記録のエラー表示にある「再試行」を使ってください。読み取りが復旧するまで同じタスクを再送しないでください。";
+"ask.recovery.detail.pending" = "待機中：%@。";
+"ask.recovery.detail.reason.storage" = "ローカルのタスク記録を読み取れません。実行済みかもしれない作業の重複を避けるため、続行を一時停止しています。";
+"ask.recovery.detail.reason.device" = "このタスクは別のデバイスに関連付けられています。このデバイスでは最新の進捗を確認できません。";
+"ask.recovery.detail.reason.timeout" = "前の処理はタイムアウトし、完了結果を確認できませんでした。操作が反映されていないとは限りません。";
+"ask.recovery.detail.reason.interrupted" = "前の処理が中断され、最終結果は未確認です。続行する前に現在の状態を確認する必要があります。";
+"ask.recovery.detail.reason.missing" = "操作の登録はありますが、完了記録がありません。先に結果を確認することで、同じ操作の重複を防ぎます。";
+"ask.recovery.detail.reason.saved" = "結果はこのデバイスに保存されていますが、タスク側で受信を確認できていません。作業を再実行する前に結果を復元します。";
+"ask.recovery.detail.reason.blocked" = "自動確認では前の操作結果を確定できませんでした。追加の確認が必要です。";
+"ask.recovery.detail.reason.limit" = "この実行で設定されたステップ上限に達したため、自動処理を停止しました。";
+"ask.recovery.detail.reason.stopped" = "この実行は停止しており、自動では進みません。";
+"ask.recovery.detail.reason.unrecorded" = "タスクが未完了であることは確認できますが、具体的な中断理由は記録されていません。保存状態だけでは原因を特定できません。";
+"ask.recovery.detail.action.continue" = "現在の会話と保存記録を使ってタスクを続行します。以降の作業ではファイルの変更やモデル・ツールの呼び出しが発生し、費用がかかる場合があります。";
+"ask.recovery.detail.action.check" = "まず現在の状態を読み取り、前の操作が反映されたか確認してから元のタスクを続行します。確認できなければ再び停止します。確認や以降の作業にモデルを使用し、費用がかかる場合があります。";
+"ask.recovery.detail.action.refresh" = "このデバイスに保存済みの結果をタスクに戻します。結果を作成した操作は繰り返しません。その後、更新された状態を確認します。";
+"ask.recovery.detail.action.stop" = "停止すると、この実行の処理は先に進みません。実行済みの操作は取り消されません。";
+"ask.recovery.detail.action.return" = "実際の結果を確認して、残りの作業を会話で伝えてください。この画面を閉じてもタスクは続行されず、不明な結果が成功として扱われることもありません。";
 
 /* Notebook scope and provenance */
 "ask.notes.search.scope" = "%@を検索";

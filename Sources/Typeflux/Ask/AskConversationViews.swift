@@ -82,7 +82,7 @@ struct AskConversationView: View {
                         .ignoresSafeArea()
                         .accessibilityHidden(true)
                     AskRecoveryInspector(model: model)
-                        .frame(maxWidth: 480)
+                        .frame(maxWidth: 520)
                         .background(AskTheme.popoverSurface,
                                     in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))

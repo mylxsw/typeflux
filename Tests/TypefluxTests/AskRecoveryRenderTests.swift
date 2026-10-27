@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask recovery rendering", .serialized, .exclusiveUIState)
+@Suite(.serialized, .exclusiveUIState)
 @MainActor
 struct AskRecoveryRenderTests {
     @Test func `uncertain results show helpful decisions without execution internals`() async throws {
@@ -22,12 +22,12 @@ struct AskRecoveryRenderTests {
 
         let text = try render(AskRecoveryInspector(model: fixture.model), name: "inspect-unknown",
                               size: .init(width: 650, height: 720))
-        #expect(readable(text).contains(readable(fixture.model.recoveryPresentation.bodyText)))
+        #expect(readable(text).contains(readable(localized("ask.recovery.detail.reason.missing"))))
         #expect(!text.contains(value.messages[0].text))
         expectOneReturnButton(text, active: true)
-        #expect(text.contains(localized("ask.recovery.option.stop")))
+        #expect(text.contains(localized("ask.recovery.end")))
         #expect(text.contains(localized("ask.recovery.checkAndContinue")))
-        #expect(!readable(text).contains(readable(localized("ask.recovery.option.checkBody"))))
+        #expect(readable(text).contains(readable(localized("ask.recovery.detail.action.check"))))
         #expect(text.contains("browser action"))
         #expect(!text.contains("private"))
         #expect(!text.contains("approval"))
@@ -47,7 +47,7 @@ struct AskRecoveryRenderTests {
                                size: .init(width: 650, height: 720))
         #expect(ended.contains(localized("ask.recovery.stopped")))
         expectOneReturnButton(ended, active: false)
-        #expect(readable(ended).contains(readable(fixture.model.recoveryPresentation.bodyText)))
+        #expect(readable(ended).contains(readable(localized("ask.recovery.detail.reason.missing"))))
         #expect(!ended.contains("Write a new request"))
         #expect(!ended.contains(localized("ask.recovery.end")))
         #expect(!ended.contains(localized("ask.recovery.option.stop")))
@@ -95,7 +95,7 @@ struct AskRecoveryRenderTests {
                 AskRecoveryCard(presentation: paused, canContinue: true).padding(24),
                 name: "paused-zh",
                 language: .simplifiedChinese,
-                size: .init(width: 650, height: 140)
+                size: .init(width: 650, height: 220)
             )
             let unknown = AskRecoveryPresentation(run: value.run,
                                                   entries: [.init(id: entry.id, audit: entry.audit, receipt: nil)],
@@ -223,7 +223,7 @@ struct AskRecoveryRenderTests {
                 #expect(readable(chinese).contains(readable(localized("ask.recovery.details",
                                                                       language: .simplifiedChinese))))
                 #expect(!readable(chinese).contains(readable(localized("ask.recovery.checkAndContinue",
-                                                                      language: .simplifiedChinese))))
+                                                                       language: .simplifiedChinese))))
             }
         }
     }
@@ -253,6 +253,48 @@ struct AskRecoveryRenderTests {
 }
 
 extension AskRecoveryRenderTests {
+    @Test func `paused details explain the missing cause progress and action consequences`() async throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        var value = AskRecoveryFixture.conversation()
+        value.run?.steps = 67
+        value.run?.pending = [.init(
+            id: "next",
+            function: .init(name: "run_command", arguments: #"{"command":"private command"}"#)
+        )]
+        value.run?.plan = [.init(step: "检查现有页面结构与脚本引用", status: "completed"),
+                           .init(step: "确认脚本文件已写入并通过语法检查", status: "completed"),
+                           .init(step: "修复脚本与页面选择器不一致的地方", status: "in_progress"),
+                           .init(step: "预览并验证导航、筛选和表单交互", status: "pending")]
+        let audit = AskRecoveryFixture.audit(value)
+        #expect(try await fixture.cache.claimExecution(audit, owner: "owner"))
+        try await fixture.cache.saveReceipt(AskRecoveryFixture.receipt(value), identity: audit.identity, owner: "owner")
+        try await fixture.cache.recordExecution(id: audit.identity.key, event: .acknowledged, owner: "owner")
+        await fixture.api.seed(value)
+        await fixture.model.select(value.id)
+        #expect(fixture.model.recoveryDetails.reason == .unrecorded)
+        for (name, dark, width) in [("paused-details", false, 560.0), ("paused-details-dark", true, 560.0),
+                                    ("paused-details-narrow", true, 360.0)] {
+            let text = try render(AskRecoveryInspector(model: fixture.model).frame(width: min(520, width))
+                .clipShape(RoundedRectangle(cornerRadius: 16)), name: name,
+                dark: dark, language: .simplifiedChinese, size: .init(width: width, height: 740))
+            for key in ["ask.recovery.detail.title", "ask.recovery.detail.why", "ask.recovery.detail.progress",
+                        "ask.recovery.detail.next", "ask.recovery.detail.reason.unrecorded",
+                        "ask.recovery.detail.action.stop"] {
+                #expect(
+                    readable(text).contains(readable(localized(key, language: .simplifiedChinese))),
+                    "Missing \(key): \(text)"
+                )
+            }
+            #expect(!text.contains("private command"))
+            #expect(!text.contains(localized("ask.recovery.recommended", language: .simplifiedChinese)))
+            expectOneReturnButton(text, active: true, language: .simplifiedChinese)
+        }
+        #expect(fixture.tools.executions == 0)
+        #expect(await fixture.api.results.isEmpty)
+        #expect(await fixture.api.inferenceResults.isEmpty)
+    }
+
     @Test func `narrow recovery cards keep guidance and actions readable`() throws {
         let value = AskRecoveryFixture.conversation()
         let audit = AskRecoveryFixture.audit(value)
@@ -320,11 +362,13 @@ extension AskRecoveryRenderTests {
                     language: language,
                     size: .init(width: 360, height: 820)
                 )
-                let keys = [active ? "ask.recovery.unknown" : "ask.recovery.stopped",
-                            "ask.recovery.close"] + (active ? ["ask.recovery.option.check"] : [])
+                let keys = [active ? "ask.recovery.detail.title" : "ask.recovery.stopped", "ask.recovery.detail.why",
+                            "ask.recovery.detail.progress",
+                            "ask.recovery.detail.next", "ask.recovery.close"] +
+                    (active ? ["ask.recovery.checkAndContinue"] : [])
                 #expect(!readable(text).contains(readable(value.messages[0].text)))
                 expectOneReturnButton(text, active: active, language: language)
-                let stop = readable(localized("ask.recovery.option.stop", language: language))
+                let stop = readable(localized("ask.recovery.end", language: language))
                 #expect(readable(text).contains(stop) == active)
                 #expect(!text.contains("Write a new request") && !text.contains("编写新请求"))
                 for key in keys {
@@ -368,8 +412,12 @@ extension AskRecoveryRenderTests {
                 size: .init(width: 560, height: 760)
             )
             let active = model.recoveryPresentation.active
-            let titleKey = active ? model.recoveryPresentation.titleKey : "ask.recovery.stopped"
-            let keys = [titleKey, "ask.recovery.option.check", "ask.recovery.close"]
+            let keys = [
+                active ? "ask.recovery.detail.title" : "ask.recovery.stopped",
+                "ask.recovery.detail.why",
+                "ask.recovery.close"
+            ]
+                + (active ? ["ask.recovery.checkAndContinue"] : [])
             expectOneReturnButton(text, active: active, language: .simplifiedChinese)
             #expect(!text.contains("编写新请求"))
             for key in keys {

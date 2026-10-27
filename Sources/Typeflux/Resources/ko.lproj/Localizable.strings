@@ -2444,7 +2444,7 @@
 "ask.recovery.saved" = "대화 진행 상황이 아직 업데이트되지 않았습니다";
 "ask.recovery.savedBody" = "작업 결과는 이 Mac에 저장되어 있습니다. \"진행 상황 새로고침\"을 누르면 작업을 반복하지 않고 최신 진행 상황을 확인할 수 있습니다.";
 "ask.recovery.paused" = "이번 작업이 아직 끝나지 않았습니다";
-"ask.recovery.activeBody" = "\"작업 계속\"을 누르면 Typeflux가 남은 단계를 이어서 진행합니다.";
+"ask.recovery.activeBody" = "작업이 다음 단계에서 대기 중입니다. 현재 작업을 계속하거나 이번 실행을 중지할 수 있습니다.";
 "ask.recovery.finished" = "이번 작업이 종료되었습니다";
 "ask.recovery.finishedBody" = "아래 입력창에서 질문을 이어갈 수 있습니다.";
 "ask.recovery.inspect" = "다음에 할 일";
@@ -2456,7 +2456,7 @@
 "ask.recovery.message" = "내 메시지";
 "ask.recovery.stopped" = "남은 작업이 중지되었습니다";
 "ask.recovery.checkAndContinue" = "다시 확인";
-"ask.recovery.details" = "자세히 보기";
+"ask.recovery.details" = "일시 중지 상세 보기";
 "ask.recovery.recommended" = "추천";
 "ask.recovery.option.check" = "Typeflux가 확인";
 "ask.recovery.option.checkBody" = "작업을 반복하지 않고 현재 상태를 읽어 부족한 증거를 설명합니다.";
@@ -7546,6 +7546,37 @@
 "ask.activity.process" = "처리 과정";
 "ask.fileChanges.count" = "파일 %d개 변경";
 "ask.activity.commands" = "명령 %d개 실행";
+
+// Task recovery details
+"ask.recovery.detail.title" = "작업 일시 중지 상세 정보";
+"ask.recovery.detail.step" = "%d단계에서 중지됨";
+"ask.recovery.detail.notStarted" = "기록된 실행 단계 없음";
+"ask.recovery.detail.why" = "중지된 이유";
+"ask.recovery.detail.progress" = "저장된 진행 상황";
+"ask.recovery.detail.next" = "다음에 수행할 작업";
+"ask.recovery.detail.inspectionNote" = "이전 자동 확인의 설명";
+"ask.recovery.detail.savedCount" = "이번 실행에서 저장된 결과: %d개.";
+"ask.recovery.detail.noSaved" = "복구 기록에서 확인할 수 있는 저장된 결과가 없습니다. 이전 작업이 실행되지 않았다는 뜻은 아닙니다.";
+"ask.recovery.detail.unconfirmedCount" = "확인이 필요한 결과: %d개.";
+"ask.recovery.detail.planCount" = "계획 기록: %d/%d개가 완료로 표시됨.";
+"ask.recovery.detail.nextPlan" = "계획의 다음 항목";
+"ask.recovery.detail.nextStorage" = "대화로 돌아가 로컬 기록 오류에 표시된 재시도를 사용하세요. 기록 읽기가 복구되기 전에는 같은 작업을 다시 보내지 마세요.";
+"ask.recovery.detail.pending" = "대기 중: %@.";
+"ask.recovery.detail.reason.storage" = "로컬 작업 기록을 읽을 수 없습니다. 이미 수행되었을 수 있는 작업의 중복 실행을 피하기 위해 계속 진행을 멈췄습니다.";
+"ask.recovery.detail.reason.device" = "이 작업은 다른 기기에 연결되어 있습니다. 현재 기기에서는 최신 진행 상황을 확인할 수 없습니다.";
+"ask.recovery.detail.reason.timeout" = "이전 처리 시간이 초과되어 완료 결과를 확인하지 못했습니다. 시간 초과가 작업이 반영되지 않았다는 뜻은 아닙니다.";
+"ask.recovery.detail.reason.interrupted" = "이전 처리가 중단되어 최종 결과가 확인되지 않았습니다. 계속하기 전에 현재 상태를 확인해야 합니다.";
+"ask.recovery.detail.reason.missing" = "작업 등록은 있지만 완료 기록이 없습니다. 결과를 먼저 확인하면 같은 작업이 두 번 수행되는 일을 피할 수 있습니다.";
+"ask.recovery.detail.reason.saved" = "결과는 이 기기에 저장되어 있지만 작업에서 수신이 확인되지 않았습니다. 완료된 작업을 반복하기 전에 저장된 결과를 복구합니다.";
+"ask.recovery.detail.reason.blocked" = "자동 확인으로 이전 작업 결과를 확정하지 못했습니다. 추가 확인이 필요합니다.";
+"ask.recovery.detail.reason.limit" = "이번 실행에 설정된 단계 한도에 도달하여 자동 처리를 중지했습니다.";
+"ask.recovery.detail.reason.stopped" = "이번 실행은 중지되었으며 자동으로 진행되지 않습니다.";
+"ask.recovery.detail.reason.unrecorded" = "작업이 아직 완료되지 않은 것은 확인되지만 구체적인 중단 이유는 기록되지 않았습니다. 저장된 상태만으로 원인을 확정할 수 없습니다.";
+"ask.recovery.detail.action.continue" = "현재 대화와 저장된 기록을 사용하여 작업을 계속합니다. 이후 파일을 변경하거나 모델과 도구를 호출할 수 있으며 비용이 발생할 수 있습니다.";
+"ask.recovery.detail.action.check" = "먼저 현재 상태를 읽어 이전 작업이 반영되었는지 확인한 뒤 원래 작업을 계속합니다. 결과가 불분명하면 다시 멈춥니다. 확인과 후속 처리에 모델이 사용되어 비용이 발생할 수 있습니다.";
+"ask.recovery.detail.action.refresh" = "이 기기에 저장된 결과를 작업에 전달합니다. 결과를 만든 작업을 다시 실행하지 않습니다. 이후 갱신된 작업 상태를 확인합니다.";
+"ask.recovery.detail.action.stop" = "중지하면 이번 실행의 후속 처리를 멈춥니다. 이미 수행된 작업은 취소되지 않습니다.";
+"ask.recovery.detail.action.return" = "실제 결과를 확인한 뒤 대화에서 남은 작업을 설명하세요. 이 창을 닫아도 작업은 계속되지 않으며 알 수 없는 결과를 성공으로 처리하지 않습니다.";
 
 /* Notebook scope and provenance */
 "ask.notes.search.scope" = "%@에서 검색";

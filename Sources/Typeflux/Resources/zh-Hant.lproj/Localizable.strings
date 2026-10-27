@@ -2451,7 +2451,7 @@
 "ask.recovery.saved" = "對話進度還沒更新";
 "ask.recovery.savedBody" = "處理結果已儲存在這台 Mac 上。點選「重新整理進度」查看最新進度，不會把操作再做一遍。";
 "ask.recovery.paused" = "這次處理還沒完成";
-"ask.recovery.activeBody" = "點選「繼續處理」，Typeflux 會接著完成剩下的步驟。";
+"ask.recovery.activeBody" = "任務停在等待下一步的位置。可以繼續目前任務，或停止本輪處理。";
 "ask.recovery.finished" = "這次處理已結束";
 "ask.recovery.finishedBody" = "可以在下方輸入框繼續提問。";
 "ask.recovery.inspect" = "接下來怎麼做";
@@ -2463,7 +2463,7 @@
 "ask.recovery.message" = "你的訊息";
 "ask.recovery.stopped" = "後續處理已停止";
 "ask.recovery.checkAndContinue" = "重新核對";
-"ask.recovery.details" = "了解詳情";
+"ask.recovery.details" = "查看暫停詳情";
 "ask.recovery.recommended" = "推薦";
 "ask.recovery.option.check" = "讓 Typeflux 核對";
 "ask.recovery.option.checkBody" = "只讀取現況，不重複操作；仍無法判斷時說明缺少什麼證據。";
@@ -7549,6 +7549,37 @@
 "ask.activity.process" = "處理過程";
 "ask.fileChanges.count" = "已變更 %d 個檔案";
 "ask.activity.commands" = "執行了 %d 條命令";
+
+// Task recovery details
+"ask.recovery.detail.title" = "任務暫停詳情";
+"ask.recovery.detail.step" = "停在第 %d 步";
+"ask.recovery.detail.notStarted" = "尚無執行步驟記錄";
+"ask.recovery.detail.why" = "為什麼停下";
+"ask.recovery.detail.progress" = "已儲存的進度";
+"ask.recovery.detail.next" = "接下來會做什麼";
+"ask.recovery.detail.inspectionNote" = "上次自動檢查的說明";
+"ask.recovery.detail.savedCount" = "本輪已儲存 %d 項執行結果。";
+"ask.recovery.detail.noSaved" = "復原記錄中暫無可核對的已儲存結果。這不代表先前的操作一定沒有執行。";
+"ask.recovery.detail.unconfirmedCount" = "仍有 %d 項結果需要核實。";
+"ask.recovery.detail.planCount" = "計畫記錄：%d/%d 項已標記完成。";
+"ask.recovery.detail.nextPlan" = "計畫中的下一項";
+"ask.recovery.detail.nextStorage" = "先返回對話，使用本機記錄錯誤提示中的「重試」。讀取恢復前，請勿重新傳送同一任務。";
+"ask.recovery.detail.pending" = "目前等待：%@。";
+"ask.recovery.detail.reason.storage" = "無法讀取本機任務記錄。為避免重複執行可能已經做過的操作，任務暫時無法繼續。";
+"ask.recovery.detail.reason.device" = "這項任務關聯的是另一台裝置，目前裝置無法確認其最新進度。";
+"ask.recovery.detail.reason.timeout" = "上一項處理等待逾時，未取得可確認的完成結果。逾時不代表操作一定沒有生效。";
+"ask.recovery.detail.reason.interrupted" = "上一項處理被中斷，尚未確認最終結果。需要先核對現況，再決定是否繼續。";
+"ask.recovery.detail.reason.missing" = "有一項已登記的操作缺少完成記錄，無法確認是否已生效。先檢查結果，可避免重做同一項操作。";
+"ask.recovery.detail.reason.saved" = "處理結果已儲存在這台裝置上，但任務尚未確認收到。先補回結果，可避免重做已完成的操作。";
+"ask.recovery.detail.reason.blocked" = "自動檢查仍無法確認先前的操作結果，任務正在等待進一步核對。";
+"ask.recovery.detail.reason.limit" = "已達到本輪任務設定的步數上限，自動處理因此停止。";
+"ask.recovery.detail.reason.stopped" = "本輪任務已經停止，不會再自動推進。";
+"ask.recovery.detail.reason.unrecorded" = "只能確認任務尚未完成；現有記錄沒有儲存具體中斷原因，暫時無法確定為什麼停下。";
+"ask.recovery.detail.action.continue" = "沿用目前對話和已儲存的記錄繼續此任務。後續仍可能修改檔案、呼叫模型或工具，並產生費用。";
+"ask.recovery.detail.action.check" = "先讀取現況，核對上一項操作是否已生效，再繼續原任務；無法確認時仍會停下。檢查和後續處理可能呼叫模型並產生費用。";
+"ask.recovery.detail.action.refresh" = "將本機已儲存的結果交回任務，不會重新執行產生這些結果的操作。然後根據更新後的狀態繼續處理。";
+"ask.recovery.detail.action.stop" = "停止後不再推進本輪任務，已完成的操作不會撤銷。";
+"ask.recovery.detail.action.return" = "核對實際結果後，在對話中說明還需要完成的內容。關閉此視窗不會繼續任務，也不會將未知結果視為成功。";
 
 /* Notebook scope and provenance */
 "ask.notes.search.scope" = "在「%@」中搜尋";

@@ -125,11 +125,14 @@ struct AskRecoveryGuidanceTests {
         }
         await fixture.api.seed(value)
         await fixture.model.select(value.id)
-        if source == "none" {
+        if source != "legacy" {
+            // Recovery now scopes reads to the current run; old-run evidence
+            // stays on disk instead of being attached to this task's inspector.
             #expect(fixture.model.selectedRecoveryEntries.isEmpty)
         } else {
             #expect(fixture.model.selectedRecoveryEntries.count == 1)
-            #expect(fixture.model.selectedRecoveryEntries[0].unknown)
+            let entry = try #require(fixture.model.selectedRecoveryEntries.first)
+            #expect(entry.unknown)
         }
         #expect(fixture.model.recoveryRequestText == nil)
     }
