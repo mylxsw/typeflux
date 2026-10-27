@@ -5,6 +5,27 @@ import Testing
 @Suite(.exclusiveUIState)
 @MainActor
 struct AskLauncherFeatureIconsTests {
+    @Test func keywordIconsFollowDestinationsAndPreserveUnrelatedFeatures() {
+        let mappings = [(AskOpenChatPlugin.id, "chat"), (AskTranslatePlugin.id, "translate"),
+                        (AskScreenshotPlugin.id, "screenshot"), (AskScreenshotTextPlugin.id, "screenshot"),
+                        (AskNotesPlugin.id, "notes"), (AskClipboardPlugin.id, "clipboard"),
+                        (AskSettingsPlugin.id, "settings")]
+        for (pluginID, expected) in mappings {
+            #expect(AskLauncherFeatureIcons.name(for: .init(keyword: "custom-alias", pluginID: pluginID)) == expected)
+        }
+        #expect(AskLauncherFeatureIcons.name(for: .init(keyword: "dict", pluginID: AskTranslatePlugin.id,
+            options: [AskTranslatePlugin.actionOption: AskTranslatePlugin.wordBookAction])) == "wordbook")
+        for mode in ScreenshotMode.allCases {
+            let keyword = AskKeyword(keyword: "capture", pluginID: AskScreenshotPlugin.id,
+                                     options: [ScreenshotMode.option: mode.rawValue])
+            #expect(AskLauncherFeatureIcons.name(for: keyword)
+                == (mode == .recording || mode == .gif ? "recording" : "screenshot"))
+        }
+        for id in [AskCalendarPlugin.id, AskWorkflowPlugin.idPrefix + "custom", "unknown"] {
+            #expect(AskLauncherFeatureIcons.name(for: .init(keyword: "fy", pluginID: id)) == nil)
+        }
+    }
+
     @Test func bothFamiliesContainEveryIconWithTransparentCorners() throws {
         for style in AskLauncherFeatureIcons.Style.allCases {
             for name in AskLauncherFeatureIcons.names {

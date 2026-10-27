@@ -156,6 +156,24 @@ struct AskLauncherFeatureSearchTests {
         #expect(!fixture.model.plugins.isRunning && fixture.model.launcherDraft.text.isEmpty)
     }
 
+    @Test func `dedicated icons render in keyword search results`() async throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        let entries = fixture.model.launcherSearchEntries(language: .simplifiedChinese)
+        for query in ["chat", "fy", "dict", "jt", "lp", "notebook", "clip", "settings", "cal"] {
+            let results = try #require(AskQuickResults.search(query, sources: .init(entries: entries)))
+            #expect(!results.features.isEmpty)
+            let root = URL(fileURLWithPath: ProcessInfo.processInfo.environment["TYPEFLUX_FEATURE_SNAPSHOTS"]
+                ?? NSTemporaryDirectory()).appendingPathComponent("dedicated-search-icons")
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            try await render(
+                AskQuickResultsView(results: results, question: query, onRun: { _, _ in }, onHighlight: { _ in }),
+                size: .init(width: 680, height: 180), appearance: .darkAqua,
+                file: root.appendingPathComponent(query + ".png")
+            )
+        }
+    }
+
     @Test func `renders feature search and system settings`() async throws {
         guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_FEATURE_SNAPSHOTS"] else { return }
         let root = URL(fileURLWithPath: directory)

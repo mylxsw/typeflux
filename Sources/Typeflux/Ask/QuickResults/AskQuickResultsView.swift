@@ -7,6 +7,7 @@ import SwiftUI
 /// heading, so the list reads as search results; the keyboard hint for the
 /// highlighted row sits in the bottom bar.
 struct AskQuickResultsView: View {
+    @AppStorage(AskLauncherFeatureIcons.preferenceKey) private var featureIconStyle = AskLauncherFeatureIcons.Style.sculpted
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var results: AskQuickResults
     /// The launcher's text, which "Ask AI" sends as it is.
@@ -177,7 +178,14 @@ struct AskQuickResultsView: View {
     private func featureRow(_ entry: AskLauncherSearchEntry, row: AskQuickResults.Row, highlighted: Bool) -> some View {
         Button { onRun(row, true) } label: {
             HStack(spacing: 12) {
-                tile(entry.symbol, tint: entry.keyword.pluginID == AskCalendarPlugin.id ? .red : AskTheme.accent)
+                if let name = AskLauncherFeatureIcons.name(for: entry.keyword),
+                   let image = AskLauncherFeatureIcons.image(for: name, style: featureIconStyle) {
+                    Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
+                        .frame(width: 28, height: 28)
+                        .accessibilityHidden(true)
+                } else {
+                    tile(entry.symbol, tint: entry.keyword.pluginID == AskCalendarPlugin.id ? .red : AskTheme.accent)
+                }
                 Text(entry.title).font(.system(size: 13.5)).foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
                 if !entry.keyword.keyword.isEmpty {
                     Text(entry.keyword.keyword).font(.system(size: AskTheme.launcherResultDetailSize, design: .monospaced))
