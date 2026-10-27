@@ -120,6 +120,7 @@ final class AskConversationModel: ObservableObject {
     /// Private manual capture survives launcher dismissal in this process only.
     @Published var noteCapture = AskNoteCaptureState()
     var noteCaptureTask: Task<Void, Never>?
+    var noteCaptureSearchTask: Task<Void, Never>?
     /// Saved AI prompt results; the window controller supplies them (`AskConversationModel+Notes`).
     var notebookTask: Task<Void, Never>?
     var notebookReadTask: Task<Bool, Never>?
@@ -754,6 +755,8 @@ final class AskConversationModel: ObservableObject {
         tools.resetFolderSession()
         expiredFolderNotices = []
         quickAsk = nil
+        noteCaptureSearchTask?.cancel()
+        noteCaptureSearchTask = nil
         noteCapture = AskNoteCaptureState()
         noteCaptureTask = nil
         if let workspaces {

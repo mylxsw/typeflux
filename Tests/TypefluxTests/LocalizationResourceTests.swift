@@ -5,7 +5,9 @@ import XCTest
 final class LocalizationResourceTests: XCTestCase {
     func testQuickNoteCaptureCopyExistsInEveryLanguage() throws {
         let keys = ["title", "placeholder", "untitled", "saved", "continue", "local", "saving", "clear", "save",
-                    "retry", "hint", "deleted"].map { "ask.noteCapture." + $0 }
+                    "retry", "hint", "deleted", "destination", "choose", "characters", "newNote", "newDetail", "emptyDetail",
+                    "append", "change", "appendDetail", "preview", "appended", "search", "noTargets", "select", "appendSave",
+                    "reload", "conflict", "undo", "undone", "undoConflict", "working"].map { "ask.noteCapture." + $0 }
             + ["ask.settings.keywords.kind.noteCapture.hint"]
         for language in AppLanguage.allCases {
             let bundle = try localizationBundle(for: language)

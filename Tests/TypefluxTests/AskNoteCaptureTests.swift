@@ -228,7 +228,7 @@ struct AskNoteCaptureTests {
         existing.deletedAt = deleted ? Date() : nil
         _ = try await store.save(existing)
         await f.model.submitNoteCapture()?.value
-        #expect(await store.note(id: existing.id) == existing)
+        #expect(try await store.note(id: existing.id) == existing)
         if deleted {
             #expect(f.model.noteCapture.failure == L("ask.noteCapture.deleted"))
             #expect(f.model.launcherDraft.text == "Submitted")
@@ -272,10 +272,16 @@ struct AskNoteCaptureTests {
 }
 
 /// A deterministic store that can pause admission or report an uncertain post-commit failure.
-private actor CaptureTestStore: AskNoteStoring {
+actor CaptureTestStore: AskNoteStoring {
     enum Failure { case none, returnFalse, afterCommit }
     private var notes: [UUID: AskNote] = [:]
+    private var history: [UUID: [AskNoteRevision]] = [:]
     private var failure = Failure.none
+    var failsReads = false
+    var failsSearch = false
+    var pauseSearch = false
+    var searchStarted = false
+    private var searchContinuation: CheckedContinuation<Void, Never>?
     private var paused = false
     private var continuation: CheckedContinuation<Void, Never>?
     func configure(failure: Failure = .none, paused: Bool = false) {
@@ -302,20 +308,64 @@ private actor CaptureTestStore: AskNoteStoring {
         return true
     }
 
-    func note(id: UUID) -> AskNote? {
-        notes[id]
+    func setReadFailure(_ value: Bool) {
+        failsReads = value
     }
 
-    func list(_: AskNoteQuery) -> [AskNote] {
-        Array(notes.values)
+    func setSearchFailure(_ value: Bool) {
+        failsSearch = value
+    }
+
+    func suspendSearch() {
+        pauseSearch = true
+    }
+
+    func releaseSearch() {
+        pauseSearch = false; searchContinuation?.resume(); searchContinuation = nil
+    }
+
+    func note(id: UUID) throws -> AskNote? {
+        if failsReads {
+            throw CocoaError(.fileReadUnknown)
+        }
+        return notes[id]
+    }
+
+    func list(_ query: AskNoteQuery) async throws -> [AskNote] {
+        if failsSearch {
+            throw CocoaError(.fileReadUnknown)
+        }
+        let matches = notes.values.filter { !$0.isDeleted && (query.text.isEmpty || $0.title.contains(query.text)) }
+        searchStarted = true
+        if pauseSearch {
+            await withCheckedContinuation { searchContinuation = $0 }
+        }
+        return Array(matches.prefix(query.limit))
     }
 
     func count(_: AskNoteQuery.Scope) -> Int {
         notes.count
     }
 
-    func save(_: AskNote, replacing _: AskNote, revisionAt _: Date?) -> Bool {
-        false
+    func save(_ note: AskNote, replacing previous: AskNote, revisionAt date: Date?) async throws -> Bool {
+        if paused {
+            await withCheckedContinuation { continuation = $0 }
+        }
+        guard note.id == previous.id, notes[note.id] == previous else { return false }
+        let result = failure
+        failure = .none
+        if result == .returnFalse {
+            return false
+        }
+        notes[note.id] = note
+        if let date {
+            history[note.id, default: []].append(AskNoteRevision(noteID: note.id, title: previous.title,
+                                                                 body: previous.body, createdAt: date))
+        }
+        if result == .afterCommit {
+            throw CocoaError(.fileWriteUnknown)
+        }
+        return true
     }
 
     func delete(ids _: [UUID]) {}
@@ -335,8 +385,8 @@ private actor CaptureTestStore: AskNoteStoring {
     func trash(ids _: [UUID], at _: Date) {}
     func purgeTrash(before _: Date) {}
     func saveRevision(_: AskNote, at _: Date) {}
-    func revisions(of _: UUID) -> [AskNoteRevision] {
-        []
+    func revisions(of id: UUID) -> [AskNoteRevision] {
+        history[id] ?? []
     }
 
     func deleteRevision(of _: UUID, at _: Date) {}

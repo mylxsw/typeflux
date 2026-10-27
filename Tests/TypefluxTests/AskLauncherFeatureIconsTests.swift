@@ -9,7 +9,7 @@ struct AskLauncherFeatureIconsTests {
     @Test func `keyword icons follow destinations and preserve unrelated features`() {
         let mappings = [(AskOpenChatPlugin.id, "chat"), (AskTranslatePlugin.id, "translate"),
                         (AskScreenshotPlugin.id, "screenshot"), (AskScreenshotTextPlugin.id, "ocr"),
-                        (AskNotesPlugin.id, "notes"), (AskClipboardPlugin.id, "clipboard"),
+                        (AskNotesPlugin.id, "notes"), (AskNoteCapturePlugin.id, "notes"), (AskClipboardPlugin.id, "clipboard"),
                         (AskSettingsPlugin.id, "settings")]
         for (pluginID, expected) in mappings {
             #expect(AskLauncherFeatureIcons.name(for: .init(keyword: "custom-alias", pluginID: pluginID)) == expected)

@@ -23,6 +23,8 @@ extension AskConversationModel {
 
     func clearNoteCapture() {
         guard isNoteCaptureMode, !noteCapture.saving else { return }
+        noteCaptureSearchTask?.cancel()
+        noteCaptureSearchTask = nil
         noteCapture = AskNoteCaptureState()
         launcherDraft.text = ""
     }
@@ -33,34 +35,33 @@ extension AskConversationModel {
         guard isNoteCaptureMode, !noteCapture.saving,
               launcherKeywords.contains(where: { $0.enabled && $0 == plugins.keyword }) else { return nil }
         noteCapture.update(launcherDraft.text)
-        guard noteCapture.hasContent else { return nil }
+        guard noteCapture.canSave else { return nil }
         guard let notes else { noteCapture.failure = L("ask.notes.storageUnavailable"); return nil }
         let retrying = noteCapture.submission != nil
         guard let note = noteCapture.begin(at: Date()) else { return nil }
+        let before = noteCapture.submissionBase
+        let input = noteCapture.body
         let generation = noteCapture.generation
         let account = owner
         let task = Task { [weak self] in
             let failure: String?
             var saved = note
+            var review = false
             do {
-                // An earlier attempt may have committed before reporting an error. Never replace
-                // that note on retry: the user could already have edited or deleted it elsewhere.
-                if retrying, let existing = try await notes.note(id: note.id) {
-                    saved = existing
-                    failure = existing.isDeleted ? L("ask.noteCapture.deleted") : nil
-                } else {
-                    failure = try await notes.save(note) ? nil : L("ask.notes.saveFailed")
-                }
+                saved = try await AskNoteCaptureWriter(store: notes).save(note, replacing: before, retrying: retrying)
+                failure = nil
             } catch {
-                // Store errors can contain paths or text. Only fixed messages cross the UI boundary.
-                failure = L("ask.notes.storageUnavailable")
+                let detail = Self.noteCaptureFailure(error, appending: before != nil)
+                failure = detail.message
+                review = detail.review
             }
             guard let self, owner == account, noteCapture.generation == generation else { return }
             noteCapture.complete(saved, failure: failure)
+            noteCapture.requiresReview = review
             noteCaptureTask = nil
             // Only this capture draft may be cleared, including when reopened during its save.
             guard isNoteCaptureMode,
-                  launcherDraft.text == note.body else { return }
+                  launcherDraft.text == input else { return }
             if failure == nil {
                 launcherDraft.text = ""
                 plugins.update(text: "", selection: nil, language: AppLocalization.shared.language)
@@ -70,9 +71,23 @@ extension AskConversationModel {
         return task
     }
 
+    /// Store diagnostics may contain private paths or text; only fixed copy crosses this boundary.
+    static func noteCaptureFailure(_ error: Error, appending: Bool) -> (message: String, review: Bool) {
+        switch error {
+        case AskNoteCaptureWriter.Failure.missing: (L("ask.noteCapture.deleted"), appending)
+        case AskNoteCaptureWriter.Failure.conflict: (L("ask.noteCapture.conflict"), true)
+        case AskNoteCaptureWriter.Failure.saveFailed: (L("ask.notes.saveFailed"), false)
+        default: (L("ask.notes.storageUnavailable"), false)
+        }
+    }
+
     /// Save private input before folding its keyword, then remove it from the general launcher draft.
     @discardableResult
     func retainNoteCaptureOnDismissal() -> Bool {
+        noteCaptureSearchTask?.cancel()
+        noteCapture.searchID = UUID()
+        noteCapture.choosingTarget = false
+        noteCapture.searching = false
         if isNoteCaptureMode, let keyword = plugins.keyword {
             noteCapture.update(launcherDraft.text)
             noteCapture.resumeKeyword = keyword
