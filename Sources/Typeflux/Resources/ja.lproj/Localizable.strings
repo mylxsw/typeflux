@@ -7500,3 +7500,21 @@
 
 "ask.activity.parallel" = "%d 件のクエリを並列実行中";
 "ask.activity.queuedTool" = "待機中";
+
+"screenshot.toast.recordingBusy" = "スクリーンショットを撮る前に、録画設定を閉じるか録画を停止してください。";
+"screenshot.toast.captureTimedOut" = "画面キャプチャサービスがタイムアウトしたため、このスクリーンショットをキャンセルしました。しばらくしてから再試行してください。";
+
+// Launcher quick note capture
+"ask.noteCapture.title" = "クイックメモ";
+"ask.noteCapture.placeholder" = "記録する内容を入力…";
+"ask.noteCapture.untitled" = "クイックメモ";
+"ask.noteCapture.saved" = "保存済み · %@";
+"ask.noteCapture.continue" = "続けて次のメモを入力できます。";
+"ask.noteCapture.local" = "このMacのノートに保存";
+"ask.noteCapture.saving" = "保存中…";
+"ask.noteCapture.clear" = "下書きを消去";
+"ask.noteCapture.save" = "メモを保存";
+"ask.noteCapture.retry" = "保存を再試行";
+"ask.noteCapture.hint" = "↵ 保存 · ⇧↵ 改行 · Esc 閉じる";
+"ask.settings.keywords.kind.noteCapture.hint" = "入力したテキストをこのMacのノートに直接保存します。";
+"ask.noteCapture.deleted" = "このメモは削除されています。下書きを編集して新しいメモとして保存してください。";

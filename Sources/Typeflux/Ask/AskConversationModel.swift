@@ -117,6 +117,9 @@ final class AskConversationModel: ObservableObject {
         AskWordBookWindowController.shared.show(lookingUp: text)
     }
     var workflowImageCopyTask: Task<Void, Never>?
+    /// Private manual capture survives launcher dismissal in this process only.
+    @Published var noteCapture = AskNoteCaptureState()
+    var noteCaptureTask: Task<Void, Never>?
     /// Saved AI prompt results; the window controller supplies them (`AskConversationModel+Notes`).
     var notebookTask: Task<Void, Never>?
     var notebookReadTask: Task<Bool, Never>?
@@ -356,6 +359,9 @@ final class AskConversationModel: ObservableObject {
     @Published var launcherWindowMode: AskLauncherWindowMode = .complete
     @Published var launcherDraft = AskDraft(includeScreenshot: false) {
         didSet {
+            if isNoteCaptureMode, !noteCapture.saving, noteCapture.body != launcherDraft.text {
+                noteCapture.update(launcherDraft.text)
+            }
             if launcherDraft.includeScreenshot, !screenshotCapability(launcher: true).canAttach {
                 launcherDraft.includeScreenshot = false
             }
@@ -748,6 +754,8 @@ final class AskConversationModel: ObservableObject {
         tools.resetFolderSession()
         expiredFolderNotices = []
         quickAsk = nil
+        noteCapture = AskNoteCaptureState()
+        noteCaptureTask = nil
         if let workspaces {
             let account = owner
             for temporary in temporaryConversations where !keepingTemporaryIDs.contains(temporary.id) {
@@ -1228,6 +1236,8 @@ final class AskConversationModel: ObservableObject {
     }
 
     func submitLauncher(recordInput: Bool = true) {
+        if isNoteCaptureMode { submitNoteCapture(); return }
+        guard !isNoteCaptureInput(launcherDraft.text) else { return }
         if plugins.keyword?.pluginID == AskQuickAskPlugin.id { submitQuickAsk(); return }
         guard !isTerminalCommandMode, !isTerminalCommandInput(launcherDraft.text) else { return }
         if consumeModeCommand(launcher: true) { return }

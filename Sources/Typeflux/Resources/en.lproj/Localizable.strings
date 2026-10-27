@@ -7504,3 +7504,18 @@
 
 "ask.activity.parallel" = "Running %d queries in parallel";
 "ask.activity.queuedTool" = "Queued";
+
+// Launcher quick note capture
+"ask.noteCapture.title" = "Quick Note";
+"ask.noteCapture.placeholder" = "Type a note to save…";
+"ask.noteCapture.untitled" = "Quick note";
+"ask.noteCapture.saved" = "Saved · %@";
+"ask.noteCapture.continue" = "Type another note to keep recording.";
+"ask.noteCapture.local" = "Saved in the notebook on this Mac";
+"ask.noteCapture.saving" = "Saving…";
+"ask.noteCapture.clear" = "Clear draft";
+"ask.noteCapture.save" = "Save note";
+"ask.noteCapture.retry" = "Retry save";
+"ask.noteCapture.hint" = "↵ Save · ⇧↵ New line · Esc Close";
+"ask.settings.keywords.kind.noteCapture.hint" = "Save typed text directly to the local notebook.";
+"ask.noteCapture.deleted" = "This note was deleted. Edit the draft to save it as a new note.";

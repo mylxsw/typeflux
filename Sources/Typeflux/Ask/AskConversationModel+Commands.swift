@@ -181,6 +181,7 @@ extension AskConversationModel {
             // What is left in the editor becomes the keyword's text.
             guard launcher, let keyword = launcherKeywords.first(where: { $0.id == id && $0.enabled }) else { return }
             plugins.enter(keyword)
+            if isNoteCaptureMode { launcherDraft.text = noteCaptureInput(launcherDraft.text) }
             plugins.update(text: launcherDraft.text, selection: launcherDraft.sentSelection,
                            language: AppLocalization.shared.language)
         case .help:
