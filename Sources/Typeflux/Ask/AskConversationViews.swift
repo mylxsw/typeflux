@@ -1870,23 +1870,29 @@ struct AskReasoningView: View {
     @State private var reasoningHover = false
     @Environment(\.askInspectTranscript) private var inspectTranscript
 
-    private var label: String {
-        active ? L("ask.reasoning.active") : L("ask.reasoning.complete", max(1, milliseconds / 1000))
+    init(text: String, milliseconds: Int, active: Bool, startsExpanded: Bool = false) {
+        self.text = text
+        self.milliseconds = milliseconds
+        self.active = active
+        _expanded = State(initialValue: startsExpanded)
     }
+
+    private var label: String { AskReasoningText.preview(text) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Button { inspectTranscript(); expanded.toggle() } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "sparkles").foregroundStyle(StudioTheme.aiIcon).font(.system(size: 11))
-                    Text(label)
+                    Text(verbatim: label)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .font(.system(size: 12.5, weight: .medium))
                         .modifier(AskShimmer(active: active))
-                    if !active {
-                        Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
-                            .rotationEffect(.degrees(expanded ? 90 : 0))
-                            .opacity(reasoningHover ? 1 : 0)
-                    }
+                    Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
+                        .rotationEffect(.degrees(expanded ? 90 : 0))
+                        .opacity(reasoningHover || expanded ? 1 : 0)
                 }
                 .foregroundStyle(StudioTheme.textSecondary)
                 .padding(.leading, 8)
@@ -1899,6 +1905,7 @@ struct AskReasoningView: View {
             .onHover { reasoningHover = $0 }
             .padding(.leading, -8)
             .accessibilityLabel(label)
+            .accessibilityValue(L(expanded ? "ask.activity.expanded" : "ask.activity.collapsed"))
             if expanded {
                 AskReasoningText(text: text)
                     .frame(maxWidth: AskMetrics.transcriptMaxWidth, alignment: .leading)

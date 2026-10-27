@@ -225,7 +225,8 @@ struct AskActivityBlock: View, Equatable {
             ForEach(Array(rows[range])) { row in
                 switch row.kind {
                 case let .reasoning(text):
-                    AskActivityTextDisclosure(text: text, title: L("ask.activity.reasoning"), symbol: "sparkle")
+                    AskReasoningView(text: text, milliseconds: 0,
+                                     active: row.id == streamingId.map { $0 + "/reasoning" })
                 case let .note(text):
                     AskActivityNarration(text: text)
                 case let .tool(call, messageID):
@@ -237,36 +238,6 @@ struct AskActivityBlock: View, Equatable {
         }
     }
 
-}
-
-/// The model's narration between tool calls, in the block's quieter voice.
-private struct AskActivityTextDisclosure: View {
-    let text: String
-    let title: String
-    let symbol: String
-    @State private var expanded = false
-    @State private var hovering = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Button { expanded.toggle() } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: symbol).font(.system(size: 10))
-                    Text(title)
-                    Image(systemName: "chevron.right").rotationEffect(.degrees(expanded ? 90 : 0))
-                        .opacity(hovering ? 1 : 0)
-                    Spacer(minLength: 0)
-                }
-                .font(.system(size: 12.5))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .onHover { hovering = $0 }
-            .accessibilityValue(L(expanded ? "ask.activity.expanded" : "ask.activity.collapsed"))
-            if expanded { AskReasoningText(text: text) }
-        }
-    }
 }
 
 /// One tool call as a step under the activity line: its glyph, the step's

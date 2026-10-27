@@ -9,6 +9,14 @@ import Testing
         .init(id: id, function: .init(name: name, arguments: arguments))
     }
 
+    @Test func reasoningPreviewUsesContentWithoutLabelsOrLineBreaks() {
+        #expect(AskReasoningText.preview("  先检查文件。\n\n再验证修改。\t继续。 ") == "先检查文件。 再验证修改。 继续。")
+        #expect(AskReasoningText.preview("") == "")
+        #expect(AskReasoningText.preview(" \n\t") == "")
+        #expect(AskReasoningText.preview(String(repeating: "长", count: 10000)).count == 600)
+        #expect(AskReasoningText.preview("**Inspect** the `file`.") == "**Inspect** the `file`.")
+    }
+
     @Test func commandsShowTheirActualCommandAndFilesShowTheirPathOnce() {
         let command = call("run_command", #"{"command":"pwd; rg --files","timeout":30}"#)
         #expect(AskActivityRowPresentation.command(command) == "pwd; rg --files")
@@ -71,6 +79,10 @@ import Testing
                 let scene = VStack(alignment: .leading, spacing: 24) {
                     Text("我会检查聊天内容的间距，把说明和工具调用分开显示。")
                         .font(.system(size: 14)).foregroundStyle(StudioTheme.textPrimary)
+                    AskReasoningView(text: "先检查页面结构与脚本引用，确认现有实现。\n然后修复选择器并验证导航、筛选和表单。", milliseconds: 3000,
+                                     active: false, startsExpanded: expanded)
+                    AskReasoningView(text: String(repeating: "正在检查文件引用和页面结构。", count: 30), milliseconds: 0,
+                                     active: true, startsExpanded: expanded)
                     AskActivityBlock(group: group, results: [result], plan: nil, status: .done)
                     if expanded {
                         VStack(alignment: .leading, spacing: 8) {

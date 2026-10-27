@@ -5,6 +5,11 @@ import SwiftUI
 /// native viewport instead of parsing Markdown and measuring the entire stream
 /// inside the transcript's layout pass.
 struct AskReasoningText: NSViewRepresentable {
+    /// Bound work per streaming update and flatten line breaks for a stable single-line preview.
+    static func preview(_ text: String) -> String {
+        String(text.prefix(600)).split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+    }
+
     let text: String
     var monospaced = false
     var isError = false
