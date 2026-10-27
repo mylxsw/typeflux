@@ -73,7 +73,7 @@ struct AskKeywordEditorSheet: View {
 
     private var header: some View {
         HStack(spacing: 12) {
-            AskKeywordKindTile(kind: draft.kind, size: 34)
+            AskKeywordKindTile(kind: draft.kind, size: AskTheme.launcherResultIconSize, keyword: draft.result())
             VStack(alignment: .leading, spacing: 2) {
                 Text(draft.isNew ? L("ask.settings.keywords.sheet.addTitle", draft.kind.title)
                     : L("ask.settings.keywords.sheet.editTitle"))
