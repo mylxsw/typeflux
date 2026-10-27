@@ -36,7 +36,7 @@ enum AskLauncherFeatureIcons {
             case .gif: return "gif"
             }
         case AskScreenshotTextPlugin.id: return "ocr"
-        case AskNotesPlugin.id: return "notes"
+        case AskNotesPlugin.id, AskNoteCapturePlugin.id: return "notes"
         case AskClipboardPlugin.id: return "clipboard"
         case AskSettingsPlugin.id: return "settings"
         case AskPromptPlugin.id:
