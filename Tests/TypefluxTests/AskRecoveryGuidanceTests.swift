@@ -2,9 +2,44 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Ask recovery guidance", .serialized, .exclusiveUIState)
+@Suite(.serialized, .exclusiveUIState)
 @MainActor
 struct AskRecoveryGuidanceTests {
+    @Test func `details cannot open without useful information and reading never executes work`() async throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        let value = AskRecoveryFixture.conversation()
+        await fixture.api.seed(value)
+        await fixture.model.select(value.id)
+        #expect(fixture.model.hasRecoveryNotice && !fixture.model.hasRecoveryDetails)
+        fixture.model.inspectRecoveryDetails()
+        #expect(!fixture.model.inspectingRecovery)
+        let actions = fixture.model.recoveryPresentation.actions(canRetransmit: false, canContinue: true,
+                                                                 hasUsefulDetails: fixture.model.hasRecoveryDetails)
+        #expect(actions.primary == .continueRun && actions.stop && !actions.details)
+
+        let audit = AskRecoveryFixture.audit(value)
+        #expect(try await fixture.cache.claimExecution(audit, owner: "owner"))
+        try await fixture.cache.saveReceipt(
+            AskRecoveryFixture.timedOutReceipt(value),
+            identity: audit.identity,
+            owner: "owner"
+        )
+        await fixture.model.refreshRecovery(
+            value,
+            route: .init(account: "owner", owner: "owner", token: "fixture-token")
+        )
+        #expect(fixture.model.hasRecoveryDetails)
+        fixture.model.inspectRecoveryDetails()
+        #expect(fixture.model.inspectingRecovery)
+        #expect(fixture.tools.executions == 0)
+        #expect(await fixture.api.sends.isEmpty)
+        #expect(await fixture.api.results.isEmpty)
+        fixture.model.recoveryEntries[value.id] = []
+        fixture.model.inspectRecoveryDetails()
+        #expect(!fixture.model.inspectingRecovery)
+    }
+
     @Test(arguments: [true, false], [true, false])
     func `returning to chat never changes the request or confirms an unknown outcome`(
         active: Bool, working: Bool
@@ -140,5 +175,12 @@ struct AskRecoveryGuidanceTests {
     private func message(_ id: String, role: String = "user", text: String,
                          runId: String?, steered: Bool = false) -> AskMessage {
         .init(id: id, role: role, text: text, createdAt: Date(), runId: runId, steered: steered)
+    }
+}
+
+extension AskRecoveryFixture {
+    static func timedOutReceipt(_ value: AskConversation) -> AskExecutionReceipt {
+        .tool(.init(runId: value.run!.id, deviceId: value.run!.deviceId, toolCallId: "call", content: "Private failure",
+                    isError: true, harness: .init(version: 1, outcome: .init(status: "timeout"))))
     }
 }

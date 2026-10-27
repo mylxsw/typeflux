@@ -14,6 +14,11 @@ struct AskRecoveryRenderTests {
         var audit = AskRecoveryFixture.audit(value)
         audit.toolName = "browser"
         _ = try await fixture.cache.claimExecution(audit, owner: "owner")
+        try await fixture.cache.saveReceipt(
+            AskRecoveryFixture.timedOutReceipt(value),
+            identity: audit.identity,
+            owner: "owner"
+        )
         await fixture.api.seed(value)
         await fixture.model.select(value.id)
         defer { fixture.model.resetSession() }
@@ -22,7 +27,7 @@ struct AskRecoveryRenderTests {
 
         let text = try render(AskRecoveryInspector(model: fixture.model), name: "inspect-unknown",
                               size: .init(width: 650, height: 720))
-        #expect(readable(text).contains(readable(localized("ask.recovery.detail.reason.missing"))))
+        #expect(readable(text).contains(readable(localized("ask.recovery.detail.reason.timeout"))))
         #expect(!text.contains(value.messages[0].text))
         expectOneReturnButton(text, active: true)
         #expect(text.contains(localized("ask.recovery.end")))
@@ -47,7 +52,7 @@ struct AskRecoveryRenderTests {
                                size: .init(width: 650, height: 720))
         #expect(ended.contains(localized("ask.recovery.stopped")))
         expectOneReturnButton(ended, active: false)
-        #expect(readable(ended).contains(readable(localized("ask.recovery.detail.reason.missing"))))
+        #expect(readable(ended).contains(readable(localized("ask.recovery.detail.reason.timeout"))))
         #expect(!ended.contains("Write a new request"))
         #expect(!ended.contains(localized("ask.recovery.end")))
         #expect(!ended.contains(localized("ask.recovery.option.stop")))
@@ -70,7 +75,7 @@ struct AskRecoveryRenderTests {
         #expect(synced.contains(localized("ask.recovery.saved")))
         #expect(synced.contains(localized("ask.recovery.retransmit")))
         #expect(synced.contains(localized("ask.recovery.end")))
-        #expect(synced.contains(localized("ask.recovery.details")))
+        #expect(!synced.contains(localized("ask.recovery.details")))
         #expect(!synced.contains(localized("ask.recovery.inspect")))
         #expect(!synced.contains(localized("ask.recovery.continue")))
 
@@ -193,7 +198,7 @@ struct AskRecoveryRenderTests {
             height: 740
         ))
         #expect(text.components(separatedBy: localized("ask.recovery.unknown")).count == 2)
-        #expect(text.components(separatedBy: localized("ask.recovery.details")).count == 2)
+        #expect(!text.contains(localized("ask.recovery.details")))
         #expect(text.components(separatedBy: localized("ask.recovery.checkAndContinue")).count == 1)
         #expect(!text.contains(localized("ask.retry")))
         #expect(!text.contains(localized("ask.resume")))
@@ -220,8 +225,8 @@ struct AskRecoveryRenderTests {
                 )
                 #expect(readable(chinese).contains(readable(localized("ask.recovery.unknown",
                                                                       language: .simplifiedChinese))))
-                #expect(readable(chinese).contains(readable(localized("ask.recovery.details",
-                                                                      language: .simplifiedChinese))))
+                #expect(!readable(chinese).contains(readable(localized("ask.recovery.details",
+                                                                       language: .simplifiedChinese))))
                 #expect(!readable(chinese).contains(readable(localized("ask.recovery.checkAndContinue",
                                                                        language: .simplifiedChinese))))
             }
@@ -253,7 +258,7 @@ struct AskRecoveryRenderTests {
 }
 
 extension AskRecoveryRenderTests {
-    @Test func `paused details explain the missing cause progress and action consequences`() async throws {
+    @Test func `ordinary pause has no details entry even when progress is available`() async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
         var value = AskRecoveryFixture.conversation()
@@ -273,23 +278,31 @@ extension AskRecoveryRenderTests {
         await fixture.api.seed(value)
         await fixture.model.select(value.id)
         #expect(fixture.model.recoveryDetails.reason == .unrecorded)
-        for (name, dark, width) in [("paused-details", false, 560.0), ("paused-details-dark", true, 560.0),
-                                    ("paused-details-narrow", true, 360.0)] {
-            let text = try render(AskRecoveryInspector(model: fixture.model).frame(width: min(520, width))
-                .clipShape(RoundedRectangle(cornerRadius: 16)), name: name,
-                dark: dark, language: .simplifiedChinese, size: .init(width: width, height: 740))
-            for key in ["ask.recovery.detail.title", "ask.recovery.detail.why", "ask.recovery.detail.progress",
-                        "ask.recovery.detail.next", "ask.recovery.detail.reason.unrecorded",
-                        "ask.recovery.detail.action.stop"] {
-                #expect(
-                    readable(text).contains(readable(localized(key, language: .simplifiedChinese))),
-                    "Missing \(key): \(text)"
-                )
-            }
-            #expect(!text.contains("private command"))
-            #expect(!text.contains(localized("ask.recovery.recommended", language: .simplifiedChinese)))
-            expectOneReturnButton(text, active: true, language: .simplifiedChinese)
+        #expect(!fixture.model.hasRecoveryDetails)
+        fixture.model.inspectRecoveryDetails()
+        #expect(!fixture.model.inspectingRecovery)
+        let card = AskRecoveryCard(presentation: fixture.model.recoveryPresentation, canContinue: true,
+                                   hasUsefulDetails: fixture.model.hasRecoveryDetails,
+                                   inspect: fixture.model.inspectRecoveryDetails)
+        let text = try render(card.padding(20), name: "paused-without-details", dark: true,
+                              language: .simplifiedChinese, size: .init(width: 520, height: 200))
+        #expect(!text.contains(localized("ask.recovery.details", language: .simplifiedChinese)))
+        for key in ["ask.recovery.continue", "ask.recovery.end"] {
+            #expect(readable(text).contains(readable(localized(key, language: .simplifiedChinese))))
         }
+        let empty = try render(VStack {
+            Text("Conversation")
+            AskRecoveryInspector(model: fixture.model)
+        }, name: "empty-details-hidden")
+        #expect(empty == "Conversation")
+        fixture.model.inspectingRecovery = true
+        let conversation = try await renderConversation(
+            fixture.model,
+            name: "no-empty-modal",
+            size: .init(width: 1100, height: 740)
+        )
+        #expect(!conversation.contains(localized("ask.recovery.detail.title")))
+        #expect(!conversation.contains(localized("ask.recovery.details")))
         #expect(fixture.tools.executions == 0)
         #expect(await fixture.api.results.isEmpty)
         #expect(await fixture.api.inferenceResults.isEmpty)
@@ -347,6 +360,11 @@ extension AskRecoveryRenderTests {
         value.messages[0].text = "Update my weekly plan."
         value.messages[0].runId = value.run?.id
         _ = try await fixture.cache.claimExecution(AskRecoveryFixture.audit(value), owner: "owner")
+        try await fixture.cache.saveReceipt(
+            AskRecoveryFixture.timedOutReceipt(value),
+            identity: AskRecoveryFixture.audit(value).identity,
+            owner: "owner"
+        )
         await fixture.api.seed(value)
         await fixture.model.select(value.id)
         defer { fixture.model.resetSession() }
@@ -383,7 +401,8 @@ extension AskRecoveryRenderTests {
         for dark in [false, true] {
             let card = AskRecoveryCard(
                 presentation: model.recoveryPresentation,
-                inspect: { model.inspectingRecovery = true }
+                hasUsefulDetails: model.hasRecoveryDetails,
+                inspect: model.inspectRecoveryDetails
             )
             let text = try render(card.padding(24), name: "unknown-\(dark ? "dark" : "light")", dark: dark)
             #expect(text.contains(localized("ask.recovery.unknown")))

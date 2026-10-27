@@ -34,6 +34,14 @@ extension AskConversationModel {
         selectedId.map { !busyIds.contains($0) } == true && recoveryPresentation.isVisible
     }
 
+    var hasRecoveryDetails: Bool {
+        hasRecoveryNotice && recoveryDetails.hasUsefulDetails
+    }
+
+    func inspectRecoveryDetails() {
+        inspectingRecovery = hasRecoveryDetails
+    }
+
     /// Quote only a message explicitly attached to this run, never a newer question.
     var recoveryRequestText: String? {
         guard let value = selected, let run = value.run,
@@ -58,7 +66,8 @@ extension AskConversationModel {
     /// Reconcile saved results, then inspect uncertain effects within the same task.
     /// No user message is manufactured and no uncertain effect is replayed.
     func recoverWithoutUser() async {
-        guard automaticRecoveryEnabled, let value = selected, !externallyDrivenConversations.contains(value.id), let run = value.run, !isLoadingSelection,
+        guard automaticRecoveryEnabled, let value = selected, !externallyDrivenConversations.contains(value.id),
+              let run = value.run, !isLoadingSelection,
               !busyIds.contains(value.id), !recoveryWorking,
               !selectedRecoveryEntries.contains(where: \.readUnavailable),
               !recoveryPresentation.otherDevice else { return }
@@ -72,12 +81,13 @@ extension AskConversationModel {
         }
         guard selectedId == value.id, selected?.run?.id == run.id else { return }
         if recoveryPresentation.unknown {
-            guard automaticRecoveryAttempts.filter({ $0.hasPrefix(key + "/inspect/") }).count < 2 else { return }
+            guard automaticRecoveryAttempts.count(where: { $0.hasPrefix(key + "/inspect/") }) < 2 else { return }
             let checkpoint = selected?.run?.inference?.id ?? String(selected?.revision ?? 0)
             guard automaticRecoveryAttempts.insert(key + "/inspect/" + checkpoint).inserted else { return }
             startInternalRecovery()
         } else if selected?.run?.internalRecovery?.phase == .inspecting, selected?.run?.isActive == true {
-            guard automaticRecoveryAttempts.insert(key + "/continue-inspection/" + String(selected?.revision ?? 0)).inserted else { return }
+            guard automaticRecoveryAttempts.insert(key + "/continue-inspection/" + String(selected?.revision ?? 0))
+                .inserted else { return }
             resume()
         }
     }
@@ -150,7 +160,7 @@ extension AskConversationModel {
         switch receipt {
         case let .tool(request):
             guard request.approveExecution == true ||
-                    (latest.run?.id == identity.runId && latest.run?.deviceId == deviceId) else { return nil }
+                (latest.run?.id == identity.runId && latest.run?.deviceId == deviceId) else { return nil }
             return try await sendToolResult(request, identity: identity, current: current, operationId: operation)
         case let .inference(request):
             // A known old inference may settle usage without restoring its content.

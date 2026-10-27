@@ -14,6 +14,7 @@ struct AskRecoveryDetailsTests {
         ))
         let details = AskRecoveryDetails(conversation: value, entries: [], deviceId: "device")
         #expect(details.reason == .unrecorded)
+        #expect(!details.hasUsefulDetails)
         #expect(details.savedResults == 0 && details.unconfirmedResults == 0)
         #expect(details.step == 67 && details.pendingKind == "browser")
     }
@@ -37,6 +38,7 @@ struct AskRecoveryDetailsTests {
         ]
         let details = AskRecoveryDetails(conversation: value, entries: entries, deviceId: "device")
         #expect(details.reason == .missingResult)
+        #expect(!details.hasUsefulDetails)
         #expect(details.savedResults == 1 && details.unconfirmedResults == 1)
         #expect(details.completedPlanItems == 1 && details.totalPlanItems == 3)
         #expect(details.nextPlanStep == "Fix selectors")
@@ -56,6 +58,7 @@ struct AskRecoveryDetailsTests {
         let entry = AskExecutionEntry(id: "run/call", audit: AskRecoveryFixture.audit(value), receipt: .tool(receipt))
         let details = AskRecoveryDetails(conversation: value, entries: [entry], deviceId: "device")
         #expect(details.reason == (status == "timeout" ? .timedOut : .interrupted))
+        #expect(details.hasUsefulDetails)
         #expect(details.savedResults == 1 && details.unconfirmedResults == 1)
         #expect(!details.reasonKey.contains("private"))
     }
@@ -104,8 +107,11 @@ struct AskRecoveryDetailsTests {
         value.run?.plan = [.init(step: String(repeating: "x", count: 1000), status: "pending")]
         let details = AskRecoveryDetails(conversation: value, entries: [], deviceId: "device")
         #expect(details.reason == .inspectionBlocked)
+        #expect(details.hasUsefulDetails)
         #expect(details.inspectionExplanation == "The remote state cannot be read.")
         #expect(details.nextPlanStep?.count == 400)
+        value.run?.internalRecovery?.explanation = " \n "
+        #expect(!AskRecoveryDetails(conversation: value, entries: [], deviceId: "device").hasUsefulDetails)
     }
 
     @Test func `detail copy is available in every language without execution internals`() throws {

@@ -8,8 +8,9 @@ extension AskRecoveryRenderTests {
     func readable(_ text: String) -> String {
         // OCR inserts spaces between wrapped lines and Chinese words. Ignore those
         // differences and curly/straight quotes while still requiring every word.
-        // Vision also reads 并 as 井 and sometimes drops 的 or final punctuation.
-        text.replacingOccurrences(of: "井", with: "并").replacingOccurrences(of: "。", with: "")
+        // Vision also confuses 并/井 and 已/巳, and sometimes drops 的 or punctuation.
+        text.replacingOccurrences(of: "井", with: "并").replacingOccurrences(of: "巳", with: "已")
+            .replacingOccurrences(of: "。", with: "")
             .replacingOccurrences(of: "的", with: "")
             .replacingOccurrences(of: "“", with: "\"")
             .replacingOccurrences(of: "”", with: "\"")

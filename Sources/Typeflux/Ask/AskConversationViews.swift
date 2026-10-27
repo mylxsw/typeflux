@@ -76,7 +76,7 @@ struct AskConversationView: View {
                 .onChange(of: geometry.size) { windowSize = $0 }
         }
         .overlay {
-            if model.inspectingRecovery && model.hasRecoveryNotice {
+            if model.inspectingRecovery && model.hasRecoveryDetails {
                 ZStack {
                     Color.black.opacity(0.48)
                         .ignoresSafeArea()
@@ -91,6 +91,9 @@ struct AskConversationView: View {
                         .accessibilityAddTraits(.isModal)
                 }
             }
+        }
+        .onChange(of: model.hasRecoveryDetails) { available in
+            if !available { model.inspectingRecovery = false }
         }
         // Measure the viewport, rather than the intrinsic width of its children.
         .ignoresSafeArea(.container, edges: .top)
@@ -395,7 +398,9 @@ struct AskConversationView: View {
     }
 
     private var hasDrawer: Bool { showsSidebarDrawer || layout.usageOverlay }
-    private var hasModal: Bool { hasDrawer || isSearching || model.inspectingRecovery }
+    private var hasModal: Bool {
+        hasDrawer || isSearching || (model.inspectingRecovery && model.hasRecoveryDetails)
+    }
 
     private var workspace: some View {
         ZStack(alignment: .topLeading) {
@@ -1212,7 +1217,8 @@ struct AskConversationView: View {
                 canRetransmit: model.canRetransmitReceipts,
                 canContinue: model.recoveryPresentation.canContinue && !model.canRetransmitReceipts,
                 working: model.recoveryWorking,
-                inspect: { model.inspectingRecovery = true },
+                hasUsefulDetails: model.hasRecoveryDetails,
+                inspect: model.inspectRecoveryDetails,
                 perform: { model.performRecovery($0) }
             )
         }

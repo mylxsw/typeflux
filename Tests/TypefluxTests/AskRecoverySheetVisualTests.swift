@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-@Suite("Ask recovery overlay surface", .exclusiveUIState)
+@Suite(.exclusiveUIState)
 @MainActor
 struct AskRecoverySheetVisualTests {
     @Test func `recovery uses one in-window panel without native sheet bands`() async throws {
@@ -15,6 +15,11 @@ struct AskRecoverySheetVisualTests {
         let value = AskRecoveryFixture.conversation()
         let audit = AskRecoveryFixture.audit(value)
         #expect(try await fixture.cache.claimExecution(audit, owner: "owner"))
+        try await fixture.cache.saveReceipt(
+            AskRecoveryFixture.timedOutReceipt(value),
+            identity: audit.identity,
+            owner: "owner"
+        )
         await fixture.api.seed(value)
         await fixture.model.select(value.id)
         fixture.model.inspectingRecovery = true

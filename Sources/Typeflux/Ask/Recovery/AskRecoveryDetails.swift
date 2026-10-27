@@ -19,6 +19,19 @@ struct AskRecoveryDetails: Equatable {
     let inspectionExplanation: String?
     let pendingKind: String?
 
+    /// Generic status, progress counts and action descriptions are already in
+    /// the conversation. They do not justify another button or modal.
+    var hasUsefulDetails: Bool {
+        switch reason {
+        case .timedOut, .interrupted, .modelFailure, .stepLimit, .storage:
+            true
+        case .inspectionBlocked:
+            inspectionExplanation?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+        case .unrecorded, .stopped, .missingResult, .savedResults, .otherDevice:
+            false
+        }
+    }
+
     init(conversation: AskConversation?, entries: [AskExecutionEntry], deviceId: String) {
         let run = conversation?.run
         let current = entries.filter {

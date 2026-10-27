@@ -1,18 +1,19 @@
 import SwiftUI
 
-/// The same card is used in the transcript and screenshot fixtures. One card says
-/// why the run stopped and offers one clear next step, Stop, and "Learn more".
+/// Keep the next action in the transcript. Offer details only when they add
+/// actionable evidence beyond the status and controls already shown here.
 struct AskRecoveryCard: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let presentation: AskRecoveryPresentation
     var canRetransmit = false
     var canContinue = false
     var working = false
+    var hasUsefulDetails = false
     var inspect: () -> Void = {}
     var perform: (AskRecoveryAction) -> Void = { _ in }
 
     private var actions: AskRecoveryPresentation.Actions {
-        presentation.actions(canRetransmit: canRetransmit, canContinue: canContinue)
+        presentation.actions(canRetransmit: canRetransmit, canContinue: canContinue, hasUsefulDetails: hasUsefulDetails)
     }
 
     var body: some View {
@@ -135,6 +136,10 @@ struct AskRecoveryInspector: View {
     }
 
     var body: some View {
+        if details.hasUsefulDetails { panel }
+    }
+
+    private var panel: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top, spacing: 12) {
                 AskRecoverySymbol(presentation: presentation, size: 36)

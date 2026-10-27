@@ -144,7 +144,7 @@ enum AskRecoveryAction: Equatable, CaseIterable {
 }
 
 extension AskRecoveryPresentation {
-    /// The card's buttons: one primary action, Stop, and "Learn more".
+    /// Additional details are opt-in; a visible notice alone does not justify a modal.
     struct Actions: Equatable {
         var primary: AskRecoveryAction?
         var stop: Bool
@@ -152,7 +152,7 @@ extension AskRecoveryPresentation {
     }
 
     /// `canRetransmit` and `canContinue` are what this Mac can actually do now.
-    func actions(canRetransmit: Bool, canContinue: Bool) -> Actions {
+    func actions(canRetransmit: Bool, canContinue: Bool, hasUsefulDetails: Bool = false) -> Actions {
         let primary: AskRecoveryAction? = if unknown {
             otherDevice || !canInspect ? nil : .checkAndContinue
         } else if savedReceipts > 0 {
@@ -163,7 +163,7 @@ extension AskRecoveryPresentation {
         } else {
             nil
         }
-        return Actions(primary: primary, stop: canEnd, details: isVisible)
+        return Actions(primary: primary, stop: canEnd, details: isVisible && hasUsefulDetails)
     }
 
     /// The inspector's choices, the recommended one first; Stop only while it applies.
