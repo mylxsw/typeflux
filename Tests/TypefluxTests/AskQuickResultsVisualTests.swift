@@ -8,6 +8,34 @@ import Testing
 @Suite("Ask quick results snapshots", .serialized, .exclusiveUIState)
 @MainActor
 struct AskQuickResultsVisualTests {
+    @Test func allResultIconsShareTheSameFootprint() async throws {
+        _ = NSApplication.shared
+        let file = URL(fileURLWithPath: "/tmp/typeflux-icon-layout-fixture.png")
+        let icons: [AskPluginItem.Icon?] = [
+            .feature("chat"), .application("com.apple.finder"), .fileIcon(file), .fileType("public.folder"),
+            .image(file), .websiteIcon(URL(string: "about:blank")!, fallback: nil), .symbol("equal"), nil
+        ]
+        let labels = ["Built-in feature", "Application", "File", "Folder", "Workflow image", "Website", "Symbol", "Fallback"]
+        for icon in icons {
+            let host = NSHostingView(rootView: AskPluginItemIcon(icon: icon, symbol: "star", filled: false))
+            #expect(host.fittingSize == NSSize(width: 36, height: 36))
+        }
+        let root = URL(fileURLWithPath: ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"]
+            ?? NSTemporaryDirectory())
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+            let view = VStack(spacing: 4) {
+                ForEach(icons.indices, id: \.self) { index in
+                    AskPluginItemRow(item: .init(id: String(index), title: labels[index],
+                        subtitle: "Consistent icon and text alignment", icon: icons[index]),
+                        symbol: "star", selected: index == 0, emphasized: true, height: 48, onPick: {})
+                }
+            }.padding(16).background(ModelVisualStyle.canvas)
+            try await render(view, size: .init(width: 600, height: 450), appearance: appearance,
+                             file: root.appendingPathComponent("uniform-icons-" + name + ".png"))
+        }
+    }
+
     @Test func renderBuiltInNumberConversionSetting() async throws {
         guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
         let root = URL(fileURLWithPath: directory)
@@ -27,7 +55,8 @@ struct AskQuickResultsVisualTests {
         }
     }
 
-    private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL) async throws {
+    private func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL,
+                                ready: (() -> Bool)? = nil) async throws {
         let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless],
                                         backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -37,6 +66,13 @@ struct AskQuickResultsVisualTests {
         window.contentView = hosting
         window.orderFront(nil)
         defer { window.orderOut(nil); window.close() }
+        if let ready {
+            for _ in 0..<200 {
+                if ready() { break }
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            #expect(ready(), "The real application icon must load before capturing the list")
+        }
         try await Task.sleep(for: .milliseconds(500))
         hosting.layoutSubtreeIfNeeded()
         let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
@@ -72,8 +108,7 @@ struct AskQuickResultsVisualTests {
         let safari = try #require(await Task.detached {
             AskAppIndex.scan([URL(fileURLWithPath: "/Applications/Safari.app")]).first
         }.value, "Safari must be installed for the opt-in application icon snapshot")
-        // Wait for the asynchronous Finder load instead of capturing its temporary placeholder.
-        _ = try #require(await AskResultImageCache.shared.image(.init(url: safari.url, thumbnail: false)))
+        // Native icons load through the visible launcher's scoped views, not the retired compatibility cache.
         let apps = AskTestAppIndex([system("Calculator", "计算器", "Calculator"), system("Calendar", "日历", "Calendar"),
                                     system("Notes", "备忘录", "Notes"), system("Reminders", "提醒事项", "Reminders"), safari])
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
@@ -88,10 +123,17 @@ struct AskQuickResultsVisualTests {
                     ])
                 }
                 fixture.model.launcherDraft = AskDraft(text: item.text, includeScreenshot: false)
+                fixture.model.owner = fixture.model.session()?.owner ?? ""
+                fixture.model.setLauncherImagesVisible(true, prepareIcons: false)
+                #expect(fixture.model.contextImageAccess(launcher: true).allows())
+                defer { fixture.model.setLauncherImagesVisible(false) }
                 try await render(AskLauncherView(model: fixture.model, onDismiss: {})
                                     .environment(\.askGlassMaterialOverride, .opaque),
                                  size: NSSize(width: AskMetrics.launcherWidth, height: item.height), appearance: appearance,
-                                 file: root.appendingPathComponent("quick-\(item.name)-\(name).png"))
+                                 file: root.appendingPathComponent("quick-\(item.name)-\(name).png"),
+                                 ready: item.name == "safari" ? {
+                                     fixture.model.launcherIconCache.cached(.init(kind: .file, value: safari.url.path)) != nil
+                                 } : nil)
             }
         }
     }

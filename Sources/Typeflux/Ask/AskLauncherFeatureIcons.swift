@@ -9,7 +9,6 @@ enum AskLauncherFeatureIcons {
     }
 
     static let preferenceKey = "launcherFeatureIconStyle"
-    static let listIconSize: CGFloat = 36
     static let names = [
         "chat", "translate", "screenshot", "recording", "notes", "wordbook", "clipboard", "settings",
         "polish", "summarize", "explain", "web-google", "web-baidu", "web-github", "apps", "files",

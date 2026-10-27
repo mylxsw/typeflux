@@ -65,7 +65,7 @@ struct AskBrowserFaviconView: View {
             if settingsChanged { AskPluginItemIcon(icon: nil, symbol: symbol, filled: filled) }
             else { preparedIcon }
         }
-        .frame(width: 28, height: 28)
+        .frame(width: AskTheme.launcherResultIconSize, height: AskTheme.launcherResultIconSize)
         .onReceive(NotificationCenter.default.publisher(for: .askLauncherSearchSettingsDidChange)) { _ in
             // Old rows must not start new origin requests after a privacy-settings change.
             settingsChanged = true; cache.cancel()
@@ -79,7 +79,7 @@ struct AskBrowserFaviconView: View {
                 fallback: target, decode: nativeDecode?.decode))) { image in
             if let image {
                 Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
-                    .frame(width: 26, height: 26)
+                    .frame(width: AskTheme.launcherResultIconSize, height: AskTheme.launcherResultIconSize)
                     .background(Color.white, in: RoundedRectangle(cornerRadius: 5))
             } else { AskPluginItemIcon(icon: nil, symbol: symbol, filled: filled) }
         }

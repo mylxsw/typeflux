@@ -420,10 +420,10 @@ struct AskPluginResultsView: View {
     private var highlighted: Bool { display.highlighted == 0 }
 
     private func tile(_ symbol: String) -> some View {
-        Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: 12, weight: .bold))
+        Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: 16, weight: .bold))
             .foregroundStyle(.white)
-            .frame(width: 28, height: 28)
-            .background(AskTheme.accent, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .frame(width: AskTheme.launcherResultIconSize, height: AskTheme.launcherResultIconSize)
+            .background(AskTheme.accent, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
     }
 
     private func metaChips(_ meta: [AskPluginMeta]) -> some View {

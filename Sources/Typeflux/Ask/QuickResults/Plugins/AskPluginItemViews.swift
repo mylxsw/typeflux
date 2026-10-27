@@ -31,7 +31,7 @@ struct AskPluginItemRow: View {
 
     var body: some View {
         Button(action: onPick) {
-            HStack(spacing: 11) {
+            HStack(spacing: 12) {
                 AskPluginItemIcon(icon: item.icon, symbol: symbol, filled: filled,
                                   revision: item.fileHit?.modified)
                 VStack(alignment: .leading, spacing: 3) {
@@ -61,7 +61,7 @@ struct AskPluginItemRow: View {
                         .foregroundStyle(filled ? AskTheme.accentText : AskTheme.launcherResultDetail)
                 }
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 10)
             .frame(height: height)
             .background(item.valid && selected && (filled || colorScheme == .light)
                 ? AskTheme.launcherSelection : item.valid && selected ? AskTheme.hoverFill : Color.clear,
@@ -69,7 +69,7 @@ struct AskPluginItemRow: View {
             .overlay(alignment: .bottom) {
                 if opensLibrary {
                     Rectangle().fill(StudioTheme.textTertiary.opacity(0.15)).frame(height: 0.5)
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, 10)
                 }
             }
             .contentShape(Rectangle())
@@ -98,36 +98,34 @@ struct AskPluginItemIcon: View {
     @Environment(\.askIconGeneration) private var generation
     @AppStorage(AskLauncherFeatureIcons.preferenceKey) private var iconStyle: AskLauncherFeatureIcons.Style = .sculpted
 
-    private var iconSize: CGFloat {
-        if case .feature = icon { return AskLauncherFeatureIcons.listIconSize }
-        return 28
-    }
-
     var body: some View {
         Group {
             if case let .feature(name) = icon, let image = AskLauncherFeatureIcons.image(for: name, style: iconStyle) {
                 Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
-                    .frame(width: iconSize, height: iconSize)
+                    .frame(width: AskTheme.launcherResultIconSize, height: AskTheme.launcherResultIconSize)
             } else if case let .websiteIcon(url, fallback, application) = icon {
                 AskBrowserFaviconView(url: url, fallback: fallback, application: application, symbol: symbol, filled: filled).id(generation)
             } else if case let .application(bundleID) = icon {
-                AskNativeIconView(icon: .init(kind: .application, value: bundleID), symbol: symbol).frame(width: 26, height: 26)
+                AskNativeIconView(icon: .init(kind: .application, value: bundleID), symbol: symbol)
+                    .frame(width: AskTheme.launcherResultIconSize, height: AskTheme.launcherResultIconSize)
             } else if case let .fileIcon(url) = icon {
-                AskFileIconView(url: url, thumbnail: false, modified: revision).frame(width: 26, height: 26)
+                AskFileIconView(url: url, thumbnail: false, modified: revision)
+                    .frame(width: AskTheme.launcherResultIconSize, height: AskTheme.launcherResultIconSize)
             } else if case let .image(url) = icon {
                 AskSmallFileIcon(url: url, symbol: symbol, filled: filled)
             } else if case let .fileType(type) = icon {
-                AskNativeIconView(icon: .init(kind: .type, value: type), symbol: symbol).frame(width: 26, height: 26)
+                AskNativeIconView(icon: .init(kind: .type, value: type), symbol: symbol)
+                    .frame(width: AskTheme.launcherResultIconSize, height: AskTheme.launcherResultIconSize)
             } else {
                 Image(systemName: Self.symbolName(icon) ?? symbol).aiSymbolTint(Self.symbolName(icon) ?? symbol)
-                    .font(.system(size: 12.5, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(filled ? AskTheme.accentText : StudioTheme.textSecondary)
-                    .frame(width: 28, height: 28)
+                    .frame(width: AskTheme.launcherResultIconSize, height: AskTheme.launcherResultIconSize)
                     .background(filled ? Color.clear : AskTheme.hoverFill,
-                                in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                in: RoundedRectangle(cornerRadius: 11, style: .continuous))
             }
         }
-        .frame(width: iconSize, height: iconSize)
+        .frame(width: AskTheme.launcherResultIconSize, height: AskTheme.launcherResultIconSize)
         .accessibilityHidden(true)
     }
 

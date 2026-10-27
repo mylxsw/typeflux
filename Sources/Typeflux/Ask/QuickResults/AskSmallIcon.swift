@@ -125,7 +125,7 @@ struct AskSmallFileIcon: View {
             else { AskPluginItemIcon(icon: .symbol(symbol), symbol: symbol, filled: filled) }
         }
         .id(Identity(url: url, epoch: access.epoch, generation: generation))
-        .frame(width: 26, height: 26)
+        .frame(width: AskTheme.launcherResultIconSize, height: AskTheme.launcherResultIconSize)
     }
     private struct Identity: Hashable { let url: URL; let epoch: UUID?; let generation: Int }
 }

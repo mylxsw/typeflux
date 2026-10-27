@@ -9,6 +9,8 @@ import SwiftUI
 /// (`AskGlassBackground`), and falls back to `launcherSurface` when the user
 /// turns on Reduce Transparency.
 enum AskTheme {
+    /// Shared leading icon footprint for every launcher result type.
+    static let launcherResultIconSize: CGFloat = 36
     static let accent = StudioTheme.accent
 
     // Neutral greys chosen to match the settings window (`StudioTheme.shellSurface`

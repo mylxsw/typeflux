@@ -181,7 +181,7 @@ struct AskQuickResultsView: View {
                 if let name = AskLauncherFeatureIcons.name(for: entry.keyword),
                    let image = AskLauncherFeatureIcons.image(for: name, style: featureIconStyle) {
                     Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
-                        .frame(width: AskLauncherFeatureIcons.listIconSize, height: AskLauncherFeatureIcons.listIconSize)
+                        .frame(width: AskTheme.launcherResultIconSize, height: AskTheme.launcherResultIconSize)
                         .accessibilityHidden(true)
                 } else {
                     tile(entry.symbol, tint: entry.keyword.pluginID == AskCalendarPlugin.id ? .red : AskTheme.accent)
@@ -278,7 +278,7 @@ struct AskQuickResultsView: View {
             HStack(spacing: 12) {
                 AskFileIconView(url: app.url, thumbnail: false)
                     .id(app.iconFingerprint)
-                    .frame(width: 28, height: 28)
+                    .frame(width: AskTheme.launcherResultIconSize, height: AskTheme.launcherResultIconSize)
                     .accessibilityHidden(true)
                 Self.marked(app.name, match.highlights).font(.system(size: 13.5))
                     .foregroundStyle(StudioTheme.textPrimary)
@@ -317,7 +317,7 @@ struct AskQuickResultsView: View {
         Button { onRun(row, true) } label: {
             HStack(spacing: 12) {
                 AskFileIconView(url: file.url, thumbnail: thumbnails && file.kind == .file, modified: file.modified)
-                    .frame(width: 28, height: 28)
+                    .frame(width: AskTheme.launcherResultIconSize, height: AskTheme.launcherResultIconSize)
                 if let evidence = file.evidence {
                     contentMatch(file, evidence: evidence, highlighted: highlighted)
                 } else {
@@ -364,7 +364,7 @@ struct AskQuickResultsView: View {
                 Spacer(minLength: 8)
                 Text("⌘↓").font(.system(size: AskTheme.launcherResultDetailSize)).foregroundStyle(AskTheme.launcherResultDetail)
             }
-            .padding(.leading, 50)
+            .padding(.leading, 10 + AskTheme.launcherResultIconSize + 12)
             .padding(.trailing, 10)
             .frame(height: Self.moreHeight)
             .background { highlightShape(highlighted, cornerRadius: 12) }
@@ -378,8 +378,8 @@ struct AskQuickResultsView: View {
     @ViewBuilder private func noticeRow(_ notice: AskQuickResults.Notice) -> some View {
         switch notice {
         case let .indexing(found, progress):
-            HStack(spacing: 10) {
-                ProgressView().controlSize(.small).scaleEffect(0.7).frame(width: 28)
+            HStack(spacing: 12) {
+                ProgressView().controlSize(.small).scaleEffect(0.7).frame(width: AskTheme.launcherResultIconSize)
                 Text(L("ask.quick.file.indexing", found.formatted())).font(.system(size: 12))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .lineLimit(1)
@@ -412,7 +412,7 @@ struct AskQuickResultsView: View {
                     .foregroundStyle(done ? StudioTheme.success : StudioTheme.textTertiary)
                     .frame(width: 24)
             }
-            .padding(.leading, 50)
+            .padding(.leading, 10 + AskTheme.launcherResultIconSize + 12)
             .padding(.trailing, 10)
             .frame(height: Self.formatHeight)
             .background { highlightShape(highlighted, cornerRadius: 12) }
@@ -435,10 +435,10 @@ struct AskQuickResultsView: View {
     }
 
     private func tile(_ symbol: String, tint: Color) -> some View {
-        Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: 12.5, weight: .semibold))
+        Image(systemName: symbol).aiSymbolTint(symbol).font(.system(size: 16, weight: .semibold))
             .foregroundStyle(tint)
-            .frame(width: 28, height: 28)
-            .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .frame(width: AskTheme.launcherResultIconSize, height: AskTheme.launcherResultIconSize)
+            .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
     }
 
     /// Clicking a spelling copies it and keeps the launcher open, with a brief check mark.
