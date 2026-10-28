@@ -618,21 +618,7 @@ extension AskWorkflowAssistantPanel {
                     }
                     .accessibilityIdentifier("ask.workflow.assistant.input")
                 HStack(spacing: 6) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(LinearGradient(
-                            colors: [.pink, .orange],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ))
-                        .frame(width: 12, height: 12)
-                    Text(assistant
-                        .modelName == L("ask.workflow.assistant.cloud") ? L("ask.workflow.assistant.defaultModel")
-                        : assistant.modelName).font(.system(size: 11, weight: .semibold))
-                    Text("·").foregroundStyle(StudioTheme.textTertiary)
-                    Text(assistant.keepsLocally ? L("ask.workflow.assistant.local") : L("ask.workflow.assistant.cloud"))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                    Image(systemName: "info.circle").foregroundStyle(StudioTheme.textTertiary)
-                        .help(L("ask.workflow.assistant.privacy"))
+                    AskWorkflowAssistantModelPicker(assistant: assistant)
                     Spacer()
                     if assistant.isBusy {
                         Button { model.stopAssistant() } label: {

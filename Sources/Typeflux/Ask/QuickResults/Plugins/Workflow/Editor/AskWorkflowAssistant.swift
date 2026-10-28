@@ -38,9 +38,11 @@ final class AskWorkflowAssistant: ObservableObject {
     /// Tool calls one message may make before the assistant is told to stop and summarize.
     static let toolCallLimit = 40
     static let conversationsKey = "ask.workflows.assistant"
+    static let modelSelectionsKey = "ask.workflows.assistant.models"
 
     @Published private(set) var items: [Item] = []
     @Published private(set) var isBusy = false
+    @Published private(set) var selectedModelReference: String?
     /// What the model is writing right now.
     @Published private(set) var preview = ""
     @Published var error: String?
@@ -86,16 +88,35 @@ final class AskWorkflowAssistant: ObservableObject {
 
     // MARK: - Sending
 
-    /// The model a new message runs on: the Ask default, or for a conversation kept on
-    /// this Mac the first of the user's own models. Nil when there is none to use.
+    /// The workflow's choice or Ask default, restricted to the user's own models
+    /// for a conversation kept on this Mac. Nil when there is none to use.
     func modelReference(local: Bool) -> String? {
         let library = dependencies.modelLibrary
-        let reference = library.defaultReference
+        let reference = selectedModelReference ?? library.defaultReference
         guard local, reference.hasPrefix("cloud:") else { return reference }
         return library.firstLocalReference(hasImage: false) ?? library.firstLocalReference(
             hasImage: false,
             confirmedVision: false
         )
+    }
+
+    var modelLibrary: AskModelLibrary { dependencies.modelLibrary }
+
+    var canUseCloudModels: Bool { !keepsLocally && !dependencies.session().token.isEmpty }
+
+    /// A workflow's choice applies to its next message without changing the Ask default.
+    func selectModel(_ reference: String) {
+        guard !isBusy, !reference.isEmpty,
+              canUseCloudModels || !reference.hasPrefix("cloud:") else { return }
+        selectedModelReference = reference
+        rememberModelSelection()
+    }
+
+    private func rememberModelSelection() {
+        guard let workflowKey, let selectedModelReference else { return }
+        var saved = dependencies.defaults.dictionary(forKey: Self.modelSelectionsKey) as? [String: String] ?? [:]
+        saved[workflowKey] = selectedModelReference
+        dependencies.defaults.set(saved, forKey: Self.modelSelectionsKey)
     }
 
     /// The model a message would go to, by name: "Typeflux Cloud", "gpt-4.1".
@@ -382,6 +403,9 @@ extension AskWorkflowAssistant {
     func bind(workflowID: String?) {
         stop()
         workflowKey = workflowID
+        selectedModelReference = workflowID.flatMap {
+            (dependencies.defaults.dictionary(forKey: Self.modelSelectionsKey) as? [String: String])?[$0]
+        }
         items = []
         seenMessages = []
         preview = ""
@@ -406,6 +430,7 @@ extension AskWorkflowAssistant {
     func rebind(to workflowID: String) {
         workflowKey = workflowID
         remember()
+        rememberModelSelection()
     }
 
     private func restore(_ value: AskConversation) {
@@ -439,6 +464,9 @@ extension AskWorkflowAssistant {
         var saved = saved(defaults)
         saved[workflowID] = nil
         defaults.set(saved, forKey: conversationsKey)
+        var selections = defaults.dictionary(forKey: modelSelectionsKey) as? [String: String] ?? [:]
+        selections[workflowID] = nil
+        defaults.set(selections, forKey: modelSelectionsKey)
     }
 
     func appendNotice(_ text: String) {
