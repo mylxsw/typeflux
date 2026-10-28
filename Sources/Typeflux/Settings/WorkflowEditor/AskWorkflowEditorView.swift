@@ -57,6 +57,7 @@ struct AskWorkflowEditorView: View {
                     }
                 }
             }
+            .background(AskReadingBackdrop())
         }
         .frame(minWidth: 960, minHeight: 560)
         .background(AskWindowBackdrop())
@@ -323,7 +324,6 @@ extension AskWorkflowEditorView {
                 AskWorkflowTestPanel(model: model, tab: testTab) { panel = .assistant; model.fixWithAssistant() }
             }
         }
-        .background(AskWindowBackdrop())
     }
 
     private var empty: some View {
