@@ -28,7 +28,7 @@ struct AskWorkflowOutputForm: View {
         VStack(alignment: .leading, spacing: 22) {
             AskWorkflowFormSection(title: L("ask.workflow.editor.output"),
                                    hint: L("ask.workflow.editor.output.hint")) {
-                AskWorkflowRadioList(choices: Self.displayChoices, selection: output.display, stacked: true) {
+                AskWorkflowRadioList(choices: Self.displayChoices, selection: output.display) {
                     model.setDisplay($0)
                 }
             }
@@ -94,15 +94,14 @@ struct AskWorkflowOutputForm: View {
         let count = model.actions(list).count
         return VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(L("ask.workflow.editor.output." + list.rawValue)).font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                AskWorkflowEditorLabel(title: L("ask.workflow.editor.output." + list.rawValue),
+                                       detail: Self.actionHint(list))
                 if count > 0 {
                     Text(L("ask.workflow.editor.actionsCount", count)).font(.system(size: 11.5))
                         .foregroundStyle(StudioTheme.textTertiary)
                 }
             }
             .padding(.horizontal, 4)
-            AskWorkflowActionHint(list: list).padding(.horizontal, 4).padding(.top, 3)
             AskWorkflowActionList(model: model, list: list, menu: $model.outputMenu).padding(.top, 10)
         }
     }
@@ -110,33 +109,18 @@ struct AskWorkflowOutputForm: View {
     private func toggleRow(_ title: String, detail: String, isOn: Bool, locked: Bool,
                            set: @escaping (Bool) -> Void) -> some View {
         HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 13, weight: .medium)).foregroundStyle(StudioTheme.textPrimary)
-                Text(detail).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            AskWorkflowEditorLabel(title: title, detail: detail, weight: .medium)
             Spacer(minLength: 8)
             Toggle("", isOn: Binding(get: { isOn }, set: set)).toggleStyle(.switch).controlSize(.small).labelsHidden()
                 .disabled(locked)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
     }
-}
 
-/// "Runs in order. Fields can use placeholders, such as {output}."
-private struct AskWorkflowActionHint: View {
-    var list: AskWorkflowEditorModel.ActionList
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Text(L("ask.workflow.editor.output." + list.rawValue + "Hint"))
-            if list == .onSuccess {
-                AskWorkflowTokenChip(text: "{output}")
-            } else {
-                AskWorkflowTokenChip(text: "{error}")
-            }
-        }
-        .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+    /// Keep the placeholder in the description when it moves into the popover.
+    static func actionHint(_ list: AskWorkflowEditorModel.ActionList) -> String {
+        L("ask.workflow.editor.output." + list.rawValue + "Hint")
+            + " " + (list == .onSuccess ? "{output}" : "{error}")
     }
 }
 

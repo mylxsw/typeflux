@@ -2,7 +2,27 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Form sections share a heading and a hint, like the settings pages.
+/// A label with the same hover description used by settings rows.
+struct AskWorkflowEditorLabel: View {
+    var title: String
+    var detail: String?
+    var weight: Font.Weight = .semibold
+    @State private var isHovering = false
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(title).font(.system(size: 13, weight: weight)).foregroundStyle(StudioTheme.textPrimary)
+                .accessibilityHint(detail ?? "")
+            if let detail, !detail.isEmpty {
+                SettingsDescriptionHint(detail: detail, visible: isHovering)
+            }
+        }
+        .contentShape(Rectangle())
+        .onHover { isHovering = $0 }
+    }
+}
+
+/// Form sections keep their descriptions beside the heading, without adding a text line.
 struct AskWorkflowFormSection<Content: View>: View {
     var title: String
     var hint: String?
@@ -10,13 +30,8 @@ struct AskWorkflowFormSection<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+            AskWorkflowEditorLabel(title: title, detail: hint)
                 .padding(.horizontal, 4)
-            if let hint {
-                Text(hint).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 4).padding(.top, 3)
-            }
             content().padding(.top, 10)
         }
     }

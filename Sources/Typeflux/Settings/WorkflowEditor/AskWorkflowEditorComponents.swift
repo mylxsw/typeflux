@@ -88,13 +88,10 @@ struct AskWorkflowChoice<Value: Hashable>: Identifiable {
     }
 }
 
-/// Mutually exclusive choices as rows in a card: a radio dot, the title and its
-/// meaning. Titles never wrap into the detail, unlike cards squeezed side by side.
+/// Mutually exclusive choices with descriptions beside their titles on hover.
 struct AskWorkflowRadioList<Value: Hashable>: View {
     var choices: [AskWorkflowChoice<Value>]
     var selection: Value
-    /// Details below the title instead of after it, for longer explanations.
-    var stacked = false
     var select: (Value) -> Void
 
     var body: some View {
@@ -112,40 +109,51 @@ struct AskWorkflowRadioList<Value: Hashable>: View {
     }
 
     private func row(_ choice: AskWorkflowChoice<Value>) -> some View {
-        let selected = choice.value == selection
-        return Button { select(choice.value) } label: {
-            HStack(alignment: stacked ? .top : .center, spacing: 11) {
-                Circle()
-                    .strokeBorder(selected ? AskTheme.accent : StudioTheme.textTertiary, lineWidth: selected ? 5 : 1.5)
-                    .frame(width: 16, height: 16)
-                    .padding(.top, stacked ? 1 : 0)
-                if stacked {
-                    VStack(alignment: .leading, spacing: 2) {
-                        title(choice)
-                        if let detail = choice.detail, !detail.isEmpty {
-                            Text(detail).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                } else {
-                    title(choice)
-                    if let detail = choice.detail, !detail.isEmpty {
-                        Text(detail).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
-                    }
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 14).padding(.vertical, stacked ? 10 : 0)
-            .frame(minHeight: 40)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
+        AskWorkflowRadioRow(choice: choice, selected: choice.value == selection) { select(choice.value) }
     }
+}
 
-    private func title(_ choice: AskWorkflowChoice<Value>) -> some View {
-        Text(choice.title).font(.system(size: 13, weight: .medium)).foregroundStyle(StudioTheme.textPrimary)
-            .lineLimit(1).fixedSize()
+/// Keep the help button beside the selection button, so opening help never selects a choice.
+private struct AskWorkflowRadioRow<Value: Hashable>: View {
+    var choice: AskWorkflowChoice<Value>
+    var selected: Bool
+    var select: () -> Void
+    @State private var isHovering = false
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Button(action: select) {
+                HStack(spacing: 11) {
+                    Circle()
+                        .strokeBorder(
+                            selected ? AskTheme.accent : StudioTheme.textTertiary,
+                            lineWidth: selected ? 5 : 1.5
+                        )
+                        .frame(width: 16, height: 16)
+                        .accessibilityHidden(true)
+                    Text(choice.title).font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                }
+                .frame(minHeight: 40)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(choice.detail ?? "")
+            .accessibilityAddTraits(selected ? .isSelected : [])
+            if let detail = choice.detail, !detail.isEmpty {
+                SettingsDescriptionHint(detail: detail, visible: isHovering)
+            }
+            Button(action: select) {
+                Color.clear.frame(maxWidth: .infinity).frame(height: 40)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHidden(true)
+            .focusable(false)
+        }
+        .padding(.horizontal, 14)
+        .frame(minHeight: 40)
+        .onHover { isHovering = $0 }
     }
 }
 

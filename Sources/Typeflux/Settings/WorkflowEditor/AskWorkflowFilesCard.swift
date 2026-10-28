@@ -6,46 +6,31 @@ struct AskWorkflowFilesCard: View {
     @ObservedObject var model: AskWorkflowEditorModel
 
     var body: some View {
-        AskWorkflowFormSection(title: L("ask.workflow.editor.files.title"), hint: nil) {
-            VStack(alignment: .leading, spacing: 10) {
-                hint
-                VStack(alignment: .leading, spacing: 0) {
-                    let rows = model.fileRows
-                    ForEach(Array(rows.enumerated()), id: \.element.path) { index, row in
-                        if index > 0 {
-                            Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
-                        }
-                        fileRow(row)
+        AskWorkflowFormSection(title: L("ask.workflow.editor.files.title"), hint: Self.hint) {
+            VStack(alignment: .leading, spacing: 0) {
+                let rows = model.fileRows
+                ForEach(Array(rows.enumerated()), id: \.element.path) { index, row in
+                    if index > 0 {
+                        Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
                     }
-                    if rows.isEmpty {
-                        Text(L("ask.workflow.editor.files.none")).font(.system(size: 12))
-                            .foregroundStyle(StudioTheme.textTertiary).padding(14)
-                    }
+                    fileRow(row)
                 }
-                .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                if rows.isEmpty {
+                    Text(L("ask.workflow.editor.files.none")).font(.system(size: 12))
+                        .foregroundStyle(StudioTheme.textTertiary).padding(14)
+                }
             }
+            .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 
     /// "Entries are marked [Entry]. Other files can be used from an entry: Python `import helper`…"
-    private var hint: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            TFFlowLayout(spacing: 4) {
-                Text(L("ask.workflow.editor.files.hintEntry"))
-                AskWorkflowEntryBadge(text: L("ask.workflow.editor.files.entry"))
-                Text(L("ask.workflow.editor.files.hintUse"))
-                AskWorkflowChip(text: "import helper")
-                Text("Node")
-                AskWorkflowChip(text: "require('./helper')")
-                Text("zsh")
-                AskWorkflowChip(text: "source ./lib.sh")
-            }
-            Text(L("ask.workflow.editor.files.hintDirectory"))
-        }
-        .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-        .padding(.horizontal, 4)
+    static var hint: String {
+        L("ask.workflow.editor.files.hintEntry") + " " + L("ask.workflow.editor.files.entry")
+            + L("ask.workflow.editor.files.hintUse") + " import helper · Node require('./helper') · zsh source ./lib.sh\n"
+            + L("ask.workflow.editor.files.hintDirectory")
     }
 
     private func fileRow(_ row: AskWorkflowFileReferences.Row) -> some View {
