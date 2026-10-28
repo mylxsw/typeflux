@@ -29,12 +29,14 @@ struct AskNotesView: View {
                 }
                 AskNotesList(model: model, focus: $focus, sidebarCollapsed: !layout.sidebarInline)
                     .frame(width: layout.listWidth, height: geometry.size.height)
+                    .background(AskReadingBackdrop())
                     .clipped()
                     .overlay(alignment: .trailing) {
                         Rectangle().fill(AskTheme.librarySeparator).frame(width: colorScheme == .light ? 1 : 0.5)
                     }
                 AskNoteDetailView(model: model, focus: $focus)
                     .frame(width: layout.detailWidth, height: geometry.size.height)
+                    .background(AskReadingBackdrop())
                     .clipped()
             }
             .frame(width: geometry.size.width, height: geometry.size.height)

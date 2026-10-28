@@ -551,6 +551,7 @@ struct StudioShell<Content: View>: View {
                     }
                 }
                 .frame(width: max(0, geometry.size.width - layout.sidebarWidth), height: geometry.size.height)
+                .background(AskReadingBackdrop())
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
             .environment(\.studioWindowWidth, geometry.size.width)

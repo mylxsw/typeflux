@@ -34,6 +34,7 @@ struct AskWordBookView: View {
                 }
                 list(sidebarCollapsed: !layout.sidebarInline)
                     .frame(width: layout.listWidth, height: proxy.size.height)
+                    .background(AskReadingBackdrop())
                     .clipped()
                     .overlay(alignment: .trailing) {
                         Rectangle().fill(AskTheme.librarySeparator).frame(width: colorScheme == .light ? 1 : 0.5)
@@ -49,6 +50,7 @@ struct AskWordBookView: View {
                     detailColumn
                 }
                 .frame(width: layout.detailWidth, height: proxy.size.height)
+                .background(AskReadingBackdrop())
                 .clipped()
             }
             .frame(width: proxy.size.width, height: proxy.size.height)

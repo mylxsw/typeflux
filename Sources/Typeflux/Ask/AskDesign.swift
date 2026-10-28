@@ -1348,6 +1348,22 @@ enum AskPresentation {
     }
 }
 
+/// A stable reading surface above the window glass, shared by content columns.
+struct AskReadingBackdrop: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.interfaceStyle) private var style
+
+    var body: some View {
+        Group {
+            if style.usesGlass {
+                AskWindowBackdrop.base(dark: colorScheme == .dark).opacity(0.96)
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
 /// Every app window uses the selected material; classic retains its opaque canvas.
 struct AskWindowBackdrop: View {
     @Environment(\.colorScheme) private var colorScheme
