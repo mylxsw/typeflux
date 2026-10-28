@@ -54,11 +54,6 @@ for ((attempt = 0; attempt < 240; attempt++)); do
   if ! pgrep -f "$process_pattern" >/dev/null 2>&1; then
     exit 0
   fi
-  # AppKit may cancel a quit while a feature is finishing a recording or
-  # draining helpers. Reissue a normal quit; never bypass its save checks.
-  if (( attempt > 0 && attempt % 20 == 0 )); then
-    request_quit
-  fi
   sleep 0.5
 done
 

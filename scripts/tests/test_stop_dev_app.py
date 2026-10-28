@@ -96,7 +96,7 @@ sys.exit(int(os.environ["STOP_TEST_REFUSE"]))
         result, _, _, polls, _ = self.run_stop(snapshots)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(polls, 66)
-        self.assertGreater(result.quit_requests, 1)
+        self.assertEqual(result.quit_requests, 1)
 
     def test_timeout_reports_remaining_process_without_killing_it(self):
         result, requested, _, polls, executable = self.run_stop([[(10, "")]])
@@ -105,6 +105,7 @@ sys.exit(int(os.environ["STOP_TEST_REFUSE"]))
         self.assertIn("did not quit cleanly", result.stderr)
         self.assertIn("10 " + executable, result.stderr)
         self.assertEqual(polls, 242)  # Initial poll, 240 waits, diagnostic listing.
+        self.assertEqual(result.quit_requests, 1)
 
     def test_retry_does_not_request_quit_from_orphan_children(self):
         child = " --feature-process background --ipc-fd 100"

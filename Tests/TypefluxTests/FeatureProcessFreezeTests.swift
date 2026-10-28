@@ -71,12 +71,10 @@ struct FeatureProcessFreezeTests {
                 let current = try await supervisor.route(.init(destination: .chat, action: "probeExercise"), timeout: .seconds(5))
                 #expect(try JSONDecoder().decode(Int32.self, from: current) == pid)
             }
-            let saved = try await supervisor.route(.init(destination: .chat, action: "probeFlushChatDraft"), timeout: .seconds(5))
-            #expect(try JSONDecoder().decode(Bool.self, from: saved))
-            #expect(try await cache.savedChatDrafts(owner: "fixture-owner").contains { $0.draft.text == text })
+            // Quit must itself persist the unsent draft after the channel recovers.
+            #expect(await supervisor.shutdown())
             let reopened = try AskConversationCache(url: cacheURL)
             #expect(try await reopened.savedChatDrafts(owner: "fixture-owner").contains { $0.draft.text == text })
-            #expect(await supervisor.shutdown())
             try FileManager.default.removeItem(at: fixture.root)
         } catch {
             _ = await supervisor.shutdown()
