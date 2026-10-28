@@ -10,6 +10,7 @@ extension AskBuiltinToolHostTests {
         let host = DefaultAskBuiltinToolHost(webTools: web)
         XCTAssertEqual(host.definitions(), [AskLocalEngine.planTool] + web.definitions())
         XCTAssertEqual(host.definitions().map(\.name), ["update_plan", "web_search"])
+        XCTAssertTrue(host.definitions()[0].description.hasPrefix(AskBuiltinPlan.usageInstruction))
         let conversation = AskConversation(id: "snapshot", title: "", revision: 0, updatedAt: Date(), messages: [])
         let valid = #"""
         {"items":[{"step":" Read ","status":"pending"},{"step":"Write","status":"in_progress"},{"step":"Done","status":"completed"}]}

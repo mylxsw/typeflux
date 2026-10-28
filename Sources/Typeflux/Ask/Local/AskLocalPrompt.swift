@@ -48,7 +48,7 @@ enum AskLocalPrompt {
             text += "Web tools (" + webTools.joined(separator: ", ") + ") follow the client permission mode. Use them for recent, changing or uncertain facts; " +
                 "do not use them for questions you can answer from the conversation. Cite the URLs you rely on. Independent web calls may be requested together.\n"
         }
-        if plan { text += "For tasks with three or more steps, keep a short plan with update_plan and update it as steps finish.\n" }
+        if plan { text += AskBuiltinPlan.usageInstruction + "\n" }
         text += "Desktop tools (computer, browser and device tools) run one at a time under the client permission mode; request one desktop action per call and check its result before the next.\n"
         if desktopTools.contains("web_browser") {
             text += "For opening and visually checking web pages, including pages you just built, prefer web_browser in the conversation window. " +

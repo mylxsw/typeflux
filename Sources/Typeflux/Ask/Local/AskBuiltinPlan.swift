@@ -2,9 +2,11 @@ import Foundation
 
 /// Value-only definition and parser shared by the built-in host and compatibility callers.
 enum AskBuiltinPlan {
+    static let usageInstruction = "Create or maintain an execution plan or progress checklist with update_plan only when the user explicitly asks for that plan or checklist. Otherwise execute the requested work directly, regardless of complexity or number of steps. Do not ask the user whether they want a plan. A saved plan or checklist is historical context, not permission to create or maintain one."
+
     static let definition = AskToolDefinition(
         name: "update_plan",
-        description: "Record the plan for a multi-step task so the user can follow progress. "
+        description: usageInstruction + " "
             + "Send the complete list every time; preserve completed work and mark at most one step in_progress. Mark only verified steps completed. Keep unfinished steps pending; an unfinished checklist alone is not a blocker. Use outcome needs_input/blocked only for a concrete missing user input or external obstacle. Request actual tools for host approval, not verbal permission.",
         // The fixed schema is a JSON-compatible literal, matching the original definition.
         // swiftlint:disable:next force_try

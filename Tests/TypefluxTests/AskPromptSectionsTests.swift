@@ -73,6 +73,38 @@ final class AskPromptSectionsTests: XCTestCase {
         }
     }
 
+    func testPlanningRequiresAnExplicitUserRequestAcrossPromptPolicies() throws {
+        let date = Date(timeIntervalSince1970: 1_800_000_000)
+        for request in ["Fix the typo.", "Build and verify a complete website.", "Create a plan before building the website."] {
+            var conversation = AskConversation(id: "planning", title: "", revision: 1, updatedAt: date,
+                messages: [.init(id: "request", role: "user", text: request, createdAt: date)])
+            conversation.run = .init(id: "run", deviceId: "device", status: "running", steps: 0, updatedAt: date,
+                                     tools: [], pending: [], modelRef: "custom:main")
+            conversation.run?.plan = [.init(step: "Old unfinished checklist", status: "pending")]
+            conversation.run?.taskProgress = .init(startIndex: 0, closingReviewRequested: true, repeatedKey: "same-read")
+            let input = AskConversationPromptInput(conversation: conversation, tools: [AskBuiltinPlan.definition],
+                localDate: "2026-10-29", timeZone: "Asia/Singapore", locale: "zh_CN", typedContentEnabled: false)
+            for policy in [AskPromptPolicy.modularV2, .legacyV1] {
+                let payload = DefaultAskPromptBuilder(policy: policy).conversation(input)
+                let messages = try XCTUnwrap(payload["messages"] as? [[String: Any]])
+                let system = messages.filter { $0["role"] as? String == "system" }
+                    .compactMap { $0["content"] as? String }.joined(separator: "\n")
+                XCTAssertTrue(system.contains("only when the user explicitly asks for that plan or checklist"))
+                XCTAssertTrue(system.contains("regardless of complexity or number of steps"))
+                XCTAssertTrue(system.contains("Do not ask the user whether they want a plan"))
+                XCTAssertTrue(system.contains("not permission to create or maintain one"))
+                XCTAssertTrue(system.contains("If the user did not explicitly request a plan, do not create or update one"))
+                XCTAssertTrue(system.contains("Use update_plan only for a plan explicitly requested by the user"))
+                XCTAssertFalse(system.contains("For multi-step tasks, keep a short plan"))
+                XCTAssertFalse(system.contains("For tasks with three or more steps"))
+                XCTAssertEqual(messages.first { $0["role"] as? String == "user" }?["content"] as? String, request)
+                let tools = try XCTUnwrap(payload["tools"] as? [[String: Any]])
+                let tool = try XCTUnwrap(tools.first?["function"] as? [String: Any])
+                XCTAssertTrue((tool["description"] as? String)?.hasPrefix(AskBuiltinPlan.usageInstruction) == true)
+            }
+        }
+    }
+
     func testPolicySwapPreservesPersistedPendingInference() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
