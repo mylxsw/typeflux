@@ -1688,6 +1688,14 @@ struct AskComposer: View {
         .background {
             if let glass {
                 chrome.glassBackground(glass)
+                    .overlay {
+                        if !launcher, colorScheme == .dark,
+                           AskGlassBackground.effectiveMaterial(glass, reduceTransparency: reduceTransparency,
+                               increasedContrast: contrast == .increased, style: interfaceStyle).drawsOwnEdge {
+                            // Subdue the glass backplate without dimming the editor or controls.
+                            AskWindowBackdrop.base(dark: true).opacity(0.5)
+                        }
+                    }
             } else {
                 chrome.fill
             }
