@@ -185,7 +185,7 @@ struct AskTurnProcessTests {
             for active in [false, true] {
                 let scene = VStack(alignment: .leading, spacing: 12) {
                     AskTurnProcessView(section: section, active: active) { _ in
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: 10) {
                             Text("我会检查当前文件，再验证修改。")
                             AskActivityBlock(group: .init(id: "batch", messages: [
                                 .init(id: "batch", role: "assistant", text: "", toolCalls: [

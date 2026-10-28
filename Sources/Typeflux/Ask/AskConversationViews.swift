@@ -1424,7 +1424,7 @@ struct AskConversationView: View {
                                 AskTurnProcessView(section: section,
                                                    active: runIsActive(section, model: model),
                                                    locatedMessageID: model.highlightedMessageId) { visibleItems in
-                                    VStack(alignment: .leading, spacing: 6) {
+                                    VStack(alignment: .leading, spacing: 10) {
                                         ForEach(visibleItems, id: \.viewID) { item in
                                             sectionRow(item, model: model, actions: rowActions, phase: phase,
                                                        latestActivityID: latestActivityID, lastContentID: lastContentID,
