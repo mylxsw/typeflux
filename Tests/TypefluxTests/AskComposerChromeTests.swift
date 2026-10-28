@@ -13,7 +13,7 @@ struct AskComposerChromeTests {
         // and the in-window card takes the design board's larger corner, wider
         // text inset and its own glass tint.
         #expect(launcher.editorFontSize == 17)
-        #expect(workspace.editorFontSize == 15)
+        #expect(workspace.editorFontSize == 14)
         #expect(workspace.editorTopInset == 14)
         #expect(workspace.footerLeadingInset == 10)
         #expect(workspace.corner == 28)

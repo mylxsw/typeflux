@@ -479,9 +479,9 @@ struct AskComposerChrome: Equatable {
         chrome.idleBorder = AskTheme.border
         chrome.placement = .inWindow
         chrome.fill = AskTheme.glassFill
-        // The design board's in-window card: 28pt corners, 15pt text 20pt in, a 48pt footer.
+        // The in-window card: 28pt corners, 14pt text 20pt in, a 48pt footer.
         chrome.corner = 28
-        chrome.editorFontSize = 15
+        chrome.editorFontSize = 14
         chrome.horizontalInset = 20
         chrome.editorTopInset = 14
         chrome.editorBottomInset = 4

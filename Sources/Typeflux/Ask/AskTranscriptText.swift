@@ -249,8 +249,8 @@ struct AskTranscriptText: NSViewRepresentable {
 }
 
 enum AskMarkdownText {
-    /// Body text on the design board: 14.5pt with a ~1.7 line height.
-    static let bodySize: CGFloat = 14.5
+    /// Regular-weight conversation text, shared by assistant and user messages.
+    static let bodySize: CGFloat = 13.5
     static let lineSpacing: CGFloat = 6
     static let paragraphSpacing: CGFloat = 10
     /// Where list text starts; the marker hangs in the space before it.

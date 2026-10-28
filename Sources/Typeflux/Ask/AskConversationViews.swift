@@ -1806,7 +1806,7 @@ private struct AskMessageView: View, Equatable {
                 }
                 if !message.text.isEmpty {
                     Text(message.text)
-                        .font(.system(size: 14))
+                        .font(.system(size: AskMarkdownText.bodySize, weight: .regular))
                         .lineSpacing(3)
                         .foregroundStyle(StudioTheme.textPrimary)
                         .textSelection(.enabled)
