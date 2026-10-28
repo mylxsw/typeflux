@@ -8,7 +8,14 @@ struct AskHostCommand: Sendable {
     static let maximumTimeout = 120
     static let defaultTimeout = 60
 
-    static var definition: AskToolDefinition {
+    static var definition: AskToolDefinition { definition(workingDirectory: nil) }
+
+    static func definition(workingDirectory: URL?) -> AskToolDefinition {
+        let location = workingDirectory.map {
+            "Current working directory (conversation workspace): " + $0.path
+                + "\nNew project directory: " + $0.appendingPathComponent("work").path + "/\n"
+                + "Use TYPEFLUX_WORKSPACE for the absolute workspace path. " + AskFileTools.workspaceInstruction
+        } ?? "No conversation workspace is bound; the command starts in the user's home folder."
         let schema: [String: Any] = [
             "type": "object", "required": ["command"], "additionalProperties": false,
             "properties": [
@@ -23,9 +30,7 @@ struct AskHostCommand: Sendable {
         Use a shell open command for a web page only when the user specifically requests an external browser. \
         The client shows the exact command for approval in Strict and Standard modes; YOLO mode runs it automatically. \
         Do not claim that a referenced script was inspected unless you read it. The command has no interactive terminal \
-        and a maximum runtime of 120 seconds. Its current directory is this conversation's workspace when available; \
-        create new projects under work/ by default unless the user requests another location. \
-        Otherwise it starts in the user's home folder. Check the exit status and output afterward.
+        and a maximum runtime of 120 seconds. \(location) Check the exit status and output afterward.
         """, parameters: JSONValue(data: data))
     }
 

@@ -95,6 +95,24 @@ final class AskFileToolsTests: XCTestCase {
         XCTAssertEqual(AskFileTools.risk(action: "edit"), .write)
     }
 
+    func testDefinitionSeparatesWorkspaceFromOtherAuthorizedFolders() throws {
+        let definition = try XCTUnwrap(AskFileTools.definition(roots: [root.path, outside.path], workspace: root))
+        XCTAssertTrue(definition.description.contains("Conversation workspace (default working directory): " + root.path))
+        XCTAssertTrue(definition.description.contains("Other authorized folders (not default output destinations):\n- " + outside.path))
+        XCTAssertTrue(definition.description.contains(root.path + "/work/"))
+        XCTAssertTrue(definition.description.contains(root.path + "/outputs/"))
+        let schema = try XCTUnwrap(JSONSerialization.jsonObject(with: definition.parameters.data) as? [String: Any])
+        let properties = try XCTUnwrap(schema["properties"] as? [String: Any])
+        let path = try XCTUnwrap(properties["path"] as? [String: Any])
+        XCTAssertEqual(path["description"] as? String, "Absolute path, or relative to the conversation workspace: " + root.path)
+        XCTAssertNil(AskFileTools.definition(roots: [outside.path, root.path], workspace: root))
+        let workspaceOnly = try XCTUnwrap(AskFileTools.definition(roots: [root.path], workspace: root))
+        XCTAssertFalse(workspaceOnly.description.contains("Other authorized folders"))
+        let legacy = try XCTUnwrap(AskFileTools.definition(roots: [outside.path]))
+        XCTAssertFalse(legacy.description.contains("Conversation workspace"))
+        XCTAssertTrue(legacy.description.contains("Relative paths start in the first authorized folder"))
+    }
+
     func testExtremePagingAndBinaryBeyondInitialChunk() throws {
         XCTAssertThrowsError(try tools.read("docs/notes.txt", offset: 1, limit: Int.max))
         XCTAssertThrowsError(try tools.read("docs/notes.txt", offset: Int.max, limit: Int.max))

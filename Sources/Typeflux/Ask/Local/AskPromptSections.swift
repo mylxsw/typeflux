@@ -20,7 +20,7 @@ enum AskPromptSections {
     static let browserOpen = "For an HTTP(S) preview, use web_browser open."
     static let browserFile = "For a standalone local HTML file, use web_browser open_file with its absolute path."
     static let browserVerify = "Verify web_browser results with its offered read or screenshot action."
-    static let files = "Prefer bounded files read/search over broad reads; stay within granted folders."
+    static let files = "Prefer bounded files read/search over broad reads; stay within granted folders. " + AskFileTools.workspaceInstruction
     static let continuation = "Follow files continuation for partial reads."
     static let version = "Use a fresh files expected_version for existing-file changes."
     static let command = "For offered command tools, clipped output is not process termination. Interpret the actual result and exit status; truncation alone does not establish an unknown outcome."

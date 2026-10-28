@@ -50,6 +50,7 @@ enum AskLocalPrompt {
         }
         if plan { text += AskBuiltinPlan.usageInstruction + "\n" }
         text += "Desktop tools (computer, browser and device tools) run one at a time under the client permission mode; request one desktop action per call and check its result before the next.\n"
+        if desktopTools.contains("files") { text += AskFileTools.workspaceInstruction + "\n" }
         if desktopTools.contains("web_browser") {
             text += "For opening and visually checking web pages, including pages you just built, prefer web_browser in the conversation window. " +
                 "Use its screenshot or read action to verify the result. Do not use a shell open command or the external browser tool " +

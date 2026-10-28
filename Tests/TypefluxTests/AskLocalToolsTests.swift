@@ -5,6 +5,69 @@ import Testing
 @Suite("Ask browser adapter", .exclusiveUIState)
 @MainActor
 struct AskLocalToolsTests {
+    @Test func workspaceDefinitionsAndRelativeWritesUseTheSameStableDirectory() async throws {
+        let base = FileManager.default.temporaryDirectory.resolvingSymlinksInPath().appendingPathComponent("tool-workspace-" + UUID().uuidString)
+        let suite = "tool-workspace-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite); try? FileManager.default.removeItem(at: base) }
+        let downloadFolder = base.appendingPathComponent("a-Downloads")
+        try FileManager.default.createDirectory(at: downloadFolder, withIntermediateDirectories: true)
+        let downloads = try AskSecureDirectory.openRoot(downloadFolder, create: false, privateRoot: false).url
+        let settings = SettingsStore(defaults: defaults)
+        settings.askFileAccessFolders = [downloads.path]
+        settings.askCodeExecutionEnabled = true
+        let store = AskConversationWorkspaceStore(rootURL: base.appendingPathComponent("z-workspaces"))
+        let tools = AskLocalTools(registry: MCPRegistry(settingsStore: MCPSettingsStore(defaults: defaults)),
+                                  settings: settings, workspaces: store, owner: { "owner" })
+        let definitions = await tools.definitions(conversationId: "website")
+        let root = store.url(owner: "owner", conversationId: "website")
+        #expect(FileManager.default.fileExists(atPath: root.path))
+        #expect(root.path > downloads.path)
+        #expect(tools.fileTools(conversationId: "website").roots.first == root.path)
+        let files = try #require(definitions.first { $0.name == "files" })
+        #expect(files.description.contains("Conversation workspace (default working directory): " + root.path))
+        let command = try #require(definitions.first { $0.name == "run_command" })
+        #expect(command.description.contains("Current working directory (conversation workspace): " + root.path))
+        #expect(!command.description.contains("starts in the user's home folder"))
+        #expect(await tools.definitions(conversationId: "website").first { $0.name == "files" } == files)
+        _ = try tools.fileTools(conversationId: "website").execute([
+            "action": "write", "path": "work/site/index.html", "content": "<link rel='stylesheet' href='styles.css'>Ready"
+        ])
+        let output = try await AskHostCommand().run(
+            command: "printf 'body{}' > work/site/styles.css; printf '%s' \"$TYPEFLUX_WORKSPACE\"", timeout: 5,
+            workingDirectory: root)
+        #expect(!output.isError)
+        #expect(output.content.contains(root.path))
+        #expect(!FileManager.default.fileExists(atPath: downloads.appendingPathComponent("work/site/index.html").path))
+        let reopened = AskConversationWorkspaceStore(rootURL: base.appendingPathComponent("z-workspaces"))
+        let listed = try await reopened.listFiles(owner: "owner", conversationId: "website")
+        #expect(Set(listed.map(\.relativePath)) == ["work/site/index.html", "work/site/styles.css"])
+        #expect(listed.allSatisfy { $0.size > 0 })
+    }
+
+    @Test func unavailableConfiguredWorkspaceDoesNotOfferHomeDirectoryFallback() async throws {
+        let base = FileManager.default.temporaryDirectory.appendingPathComponent("blocked-workspace-" + UUID().uuidString)
+        let suite = "blocked-workspace-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite); try? FileManager.default.removeItem(at: base) }
+        try Data("not a directory".utf8).write(to: base)
+        let settings = SettingsStore(defaults: defaults)
+        settings.askFileAccessFolders = [FileManager.default.temporaryDirectory.path]
+        settings.askCodeExecutionEnabled = true
+        let tools = AskLocalTools(registry: MCPRegistry(settingsStore: MCPSettingsStore(defaults: defaults)),
+            settings: settings, workspaces: AskConversationWorkspaceStore(rootURL: base),
+            commandJobs: try AskCommandJobStore(root: nil), owner: { "owner" })
+        let definitions = await tools.definitions(conversationId: "website")
+        let names = definitions.map(\.name)
+        #expect(!names.contains("files"))
+        #expect(!names.contains("run_command"))
+        let jobs = try #require(definitions.first { $0.name == "command_job" })
+        let schema = try #require(JSONSerialization.jsonObject(with: jobs.parameters.data) as? [String: Any])
+        let properties = try #require(schema["properties"] as? [String: Any])
+        let action = try #require(properties["action"] as? [String: Any])
+        #expect(action["enum"] as? [String] == ["status", "logs", "stop"])
+    }
+
     @Test func scriptsValidateDestinationsAndKeepUserContentQuoted() throws {
         let quoted = "\";do shell script \"bad\"\n"
         let command = try AskBrowserExecutor.command(["action": "fill", "selector": "textarea", "text": quoted])

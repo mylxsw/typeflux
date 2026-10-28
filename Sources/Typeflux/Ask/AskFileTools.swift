@@ -4,6 +4,8 @@ import Foundation
 
 /// Bounded file operations under the trusted host's current folder grants.
 struct AskFileTools: Sendable {
+    static let workspaceInstruction = "Create new projects and generated files in this conversation's workspace (work/ for project sources, outputs/ for final exports), unless the user explicitly requests another destination. Authorized folders are access grants, not default output locations: do not choose Downloads, Desktop or the home folder just because they are accessible. Keep changes to an existing user-selected project in its original folder. Use the exact workspace path supplied by the host; never invent one. When the user has not selected an external project, check the current workspace before reusing project paths from history."
+
     static let maximumReadCharacters = 60000 // Compatibility name; measured in UTF-8 bytes.
     static let maximumWriteBytes = 1_000_000
     static let maximumListEntries = 500
@@ -28,14 +30,30 @@ struct AskFileTools: Sendable {
         roots.map { URL(fileURLWithPath: AskProjectFileAccess.normalizedRoot($0)) }
     }
 
-    static func definition(roots: [String]) -> AskToolDefinition? {
+    static func definition(roots: [String], workspace: URL? = nil) -> AskToolDefinition? {
         guard !roots.isEmpty else { return nil }
         let folders = roots.map { "- " + ($0 as NSString).expandingTildeInPath }.joined(separator: "\n")
+        let location: String
+        let pathDescription: String
+        if let workspace {
+            let path = workspace.path
+            guard roots.first.map(AskProjectFileAccess.normalizedRoot) == AskProjectFileAccess.normalizedRoot(path)
+            else { return nil }
+            let otherFolders = roots.dropFirst().map { "- " + ($0 as NSString).expandingTildeInPath }.joined(separator: "\n")
+            location = "Conversation workspace (default working directory): " + path
+                + "\nNew project directory: " + path + "/work/"
+                + "\nFinal export directory: " + path + "/outputs/"
+                + (otherFolders.isEmpty ? "" : "\nOther authorized folders (not default output destinations):\n" + otherFolders)
+            pathDescription = "Absolute path, or relative to the conversation workspace: " + path
+        } else {
+            location = "Authorized folders:\n" + folders
+            pathDescription = "Absolute path, or relative to the first authorized folder: " + roots[0]
+        }
         let schema: [String: Any] = [
             "type": "object", "required": ["action", "path"], "additionalProperties": false,
             "properties": [
                 "action": ["type": "string", "enum": ["list", "read", "search", "write", "edit"]],
-                "path": ["type": "string", "description": "Absolute path, or relative to the first folder"],
+                "path": ["type": "string", "description": pathDescription],
                 "pattern": ["type": "string", "description": "search: text to find (case-insensitive)"],
                 "content": ["type": "string", "description": "write: full new file content"],
                 "old_text": ["type": "string", "description": "edit: exact text to replace (must occur once)"],
@@ -64,9 +82,9 @@ struct AskFileTools: Sendable {
             ]
         ]
         let description = """
-        Read and edit files in this conversation's workspace and the folders the user authorized for Ask:
-        \(folders)
-        Relative paths start in this conversation's workspace. Create new projects under work/ by default. \
+        Read and edit files at the host-provided locations below.
+        \(location)
+        \(workspace == nil ? "Relative paths start in the first authorized folder." : Self.workspaceInstruction) \
         list shows a folder; read returns numbered lines; search finds text in files under a folder; \
         write replaces a whole file; edit replaces one exact, unique snippet. Writes need user approval; \
         prefer edit for small changes. Read first and supply expected_version for existing files. \

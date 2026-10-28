@@ -105,6 +105,24 @@ final class AskPromptSectionsTests: XCTestCase {
         }
     }
 
+    func testWorkspaceDestinationRuleIsPresentInBothPromptPolicies() throws {
+        let date = Date(timeIntervalSince1970: 1_800_000_000)
+        var conversation = AskConversation(id: "workspace", title: "", revision: 1, updatedAt: date,
+            messages: [.init(id: "request", role: "user", text: "Build a website.", createdAt: date)])
+        conversation.run = .init(id: "run", deviceId: "device", status: "running", steps: 0, updatedAt: date,
+                                 tools: [], pending: [], modelRef: "custom:main")
+        let tool = try XCTUnwrap(AskFileTools.definition(roots: ["/workspace", "/Downloads"], workspace: URL(fileURLWithPath: "/workspace")))
+        let input = AskConversationPromptInput(conversation: conversation, tools: [tool], localDate: "2026-10-29",
+                                               timeZone: "Asia/Singapore", locale: "zh_CN", typedContentEnabled: false)
+        for policy in [AskPromptPolicy.modularV2, .legacyV1] {
+            let messages = try XCTUnwrap(DefaultAskPromptBuilder(policy: policy).conversation(input)["messages"] as? [[String: Any]])
+            let system = messages.filter { $0["role"] as? String == "system" }.compactMap { $0["content"] as? String }.joined(separator: "\n")
+            XCTAssertTrue(system.contains("unless the user explicitly requests another destination"))
+            XCTAssertTrue(system.contains("Authorized folders are access grants, not default output locations"))
+            XCTAssertTrue(system.contains("Keep changes to an existing user-selected project in its original folder"))
+        }
+    }
+
     func testPolicySwapPreservesPersistedPendingInference() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }

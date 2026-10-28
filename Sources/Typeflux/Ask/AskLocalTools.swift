@@ -243,20 +243,37 @@ final class AskLocalTools: AskToolExecuting {
         await registry.connectAutoConnectServers()
         var result = automationDefinitions
             .filter { $0.name != "browser" || browserBundle(conversationId: conversationId) != nil }
-        let metadataRoots = fileTools(conversationId: conversationId)
+        // Publish one stable workspace before exposing relative file or command paths.
+        var workspace: URL?
+        var workspaceUnavailable = false
+        if let conversationId, let workspaces {
+            let workspaceOwner = owner()
+            do {
+                let resolved = try await workspaces.ensure(owner: workspaceOwner, conversationId: conversationId)
+                if owner() == workspaceOwner { workspace = resolved } else { workspaceUnavailable = true }
+            } catch {
+                workspaceUnavailable = true
+                ErrorLogStore.shared.log("Ask tool workspace unavailable: \(error.localizedDescription)")
+            }
+        }
+        let metadataRoots = workspaceUnavailable ? [] : fileTools(conversationId: conversationId)
             .roots + (conversationId.map(folderMetadataRoots) ?? [])
-        if let files = AskFileTools.definition(roots: Array(Set(metadataRoots)).sorted()) {
+        var orderedRoots: [String] = []
+        for root in metadataRoots where !orderedRoots.contains(root) { orderedRoots.append(root) }
+        if let files = AskFileTools.definition(roots: orderedRoots, workspace: workspace) {
             result.append(files)
         }
-        if projectModeEnabled, !fileTools(conversationId: conversationId).roots.isEmpty,
+        if projectModeEnabled, !workspaceUnavailable, !fileTools(conversationId: conversationId).roots.isEmpty,
            let project = try? Self.projectDefinition(roots: fileTools(conversationId: conversationId).roots) {
             result.append(project)
             if artifactCreationEnabled { result.append(Self.artifactDefinition) }
             if projectRuntime != nil { result.append(Self.terminalDefinition) }
         }
         if settings?.askCodeExecutionEnabled == true, let code = sandbox.definition() { result.append(code) }
-        if settings?.askCodeExecutionEnabled == true { result.append(AskHostCommand.definition) }
-        if commandJobs != nil { result.append(AskCommandJobRequest.definition(allowStart: settings?.askCodeExecutionEnabled == true)) }
+        if settings?.askCodeExecutionEnabled == true, !workspaceUnavailable {
+            result.append(AskHostCommand.definition(workingDirectory: workspace))
+        }
+        if commandJobs != nil { result.append(AskCommandJobRequest.definition(allowStart: settings?.askCodeExecutionEnabled == true && !workspaceUnavailable)) }
         if let skill = skills.definition(enabledSkills) { result.append(skill) }
         if workflowAuthoringEnabled { result += Self.workflowChatDefinitions }
         result.append(AskMemoryNoteStore.definition)
