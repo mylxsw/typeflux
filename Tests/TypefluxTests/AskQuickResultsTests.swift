@@ -5,6 +5,36 @@ import Testing
 
 @Suite("Ask quick results", .exclusiveUIState)
 struct AskQuickResultsTests {
+    @Test func everySearchGroupSelectsItsFirstMatchWithoutABestMatch() throws {
+        let app = AskAppMatch(entry: AskTestAppIndex.app("NX2Apple"), score: 0.5)
+        let pane = AskAppMatch(entry: AskTestAppIndex.app("Network"), score: 0.5)
+        let file = AskFileHit(path: "/work/report.pdf", name: "report.pdf", kind: .file,
+                              modified: Date(), score: 0.5, match: 0.5)
+        let folder = AskFileHit(path: "/work/reports", name: "reports", kind: .folder,
+                                modified: Date(), score: 0.5, match: 0.5)
+        let browser = AskBrowserSearchEntry(id: "tab", kind: .tab, browser: .safari,
+                                           title: "Report", url: "https://example.com")
+        let cases: [AskQuickResults] = [
+            .init(apps: [app], lead: false),
+            .init(apps: [], panes: [pane], files: [], moreFiles: false, groups: [.panes], best: nil),
+            .init(apps: [], panes: [], files: [file], moreFiles: false, groups: [.files], best: nil),
+            .init(apps: [], panes: [], files: [folder], moreFiles: false, groups: [.folders], best: nil),
+            try #require(AskQuickResults.addingBrowsers([browser], to: nil))
+        ]
+        for results in cases {
+            #expect(results.best == nil)
+            #expect(results.highlightedRow == results.listRows.first)
+            #expect(!results.chosen)
+            let merged = try #require(AskQuickResults.addingBrowsers([browser], to: results))
+            #expect(merged.highlightedRow == merged.listRows.first)
+        }
+        let empty = AskQuickResults(apps: [], lead: false)
+        #expect(empty.listRows.isEmpty && empty.highlightedRow == .askAI)
+        let failed = try #require(resolve("1/0"))
+        let withBrowser = try #require(AskQuickResults.addingBrowsers([browser], to: failed))
+        #expect(withBrowser.highlightedRow == .browser(0), "Skip a calculation that cannot run")
+    }
+
     @Test func numbersConvertAndSearchWithoutHidingContent() throws {
         let apps = AskTestAppIndex([AskTestAppIndex.app("2024")])
         let files = AskTestFileIndex([("/Users/test/Documents/2024-report.pdf", .file, 0),

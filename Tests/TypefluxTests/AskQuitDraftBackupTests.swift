@@ -33,4 +33,16 @@ struct AskQuitDraftBackupTests {
         }
         #expect(!FileManager.default.fileExists(atPath: url.path))
     }
+
+    @Test func emergencyCheckpointPreservesAnIntentionalClear() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("cache.sqlite")
+        let cache = try AskConversationCache(url: url)
+        try await cache.saveDraft(.init(text: "Old checkpoint"), key: AskConversationModel.workspaceDraftKey, owner: "local")
+        try await AskQuitDraftBackup.save(.followUp, owner: "local", key: "saved-chat:quit-clear", url: url, workspace: .followUp)
+        let reopened = try AskConversationCache(url: url)
+        #expect(try await reopened.draft(key: AskConversationModel.workspaceDraftKey, owner: "local") == .followUp)
+        #expect(try await reopened.savedChatDrafts(owner: "local").isEmpty)
+    }
 }

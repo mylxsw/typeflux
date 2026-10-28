@@ -123,7 +123,7 @@ struct AskQuickResultsScrollTests {
         let before = try snapshot("before")
         var weak = results("After", count: 2)
         weak.best = nil
-        weak.highlighted = weak.rows.count - 1
+        weak.highlighted = 0
         state.results = weak
         try await Task.sleep(for: .milliseconds(32))
         let immediate = try snapshot("replacement-32ms")

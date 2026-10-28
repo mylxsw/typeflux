@@ -78,7 +78,7 @@ struct SemanticHybridSearchTests {
         session.update(text: text, chinese: false, calculator: false, sources: .init(files: files, semantic: semantic))
         try await SemanticFileServiceTests.wait { !session.isSearching }
         #expect(session.results?.files == [hit]); #expect(session.results?.best == nil)
-        #expect(session.results?.highlightedRow == .askAI)
+        #expect(session.results?.highlightedRow == .file(0))
         session.update(
             text: "reimbursement",
             chinese: false,
@@ -239,7 +239,7 @@ struct SemanticHybridSearchTests {
 
 extension SemanticHybridSearchTests {
     @Test(arguments: [false, true])
-    func validatedContentBypassesSlowNamesWithoutChangingReturn(requireApps: Bool) async throws {
+    func validatedContentSelectsTheFirstResultWhileNamesArePending(requireApps: Bool) async throws {
         let gate = DispatchSemaphore(value: 0)
         let files = AskControlledSearchIndex(), apps = AskControlledSearchIndex()
         files.fileSearch = { _ in
@@ -255,10 +255,10 @@ extension SemanticHybridSearchTests {
         try await SemanticFileServiceTests.wait { session.results?.files.contains(hit) == true }
         #expect(session.isSearching, "validated body results must not wait for the blocked filename worker")
         #expect(session.results?.best == nil)
-        #expect(session.results?.highlightedRow == .askAI)
+        #expect(session.results?.highlightedRow == .file(0))
         gate.signal()
         try await SemanticFileServiceTests.wait { !session.isSearching }
         #expect(session.results?.files == [AskQuickSearchSessionTests.file, hit])
-        #expect(session.results?.best == .file(0), "only the filename match may become the default Return candidate")
+        #expect(session.results?.best == .file(0), "only the filename match earns best-match status")
     }
 }

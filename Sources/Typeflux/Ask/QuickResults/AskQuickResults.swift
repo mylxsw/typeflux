@@ -2,7 +2,7 @@ import AppKit
 
 /// What the launcher shows under its controls when the text has a local
 /// answer: a calculation with other ways to write it, or applications, System
-/// Settings panes, files and folders to open. AI remains the fallback Return action.
+/// Settings panes, files and folders to open. The first result takes Return by default.
 /// See `docs/design/launcher-content-search.md` §2.
 struct AskQuickResults: Equatable {
     enum Row: Equatable {
@@ -43,7 +43,7 @@ struct AskQuickResults: Equatable {
     var moreFiles = false
     /// Applications precede files unless file-first mode was explicitly selected.
     var groups: [Group] = []
-    /// The clear winner, listed first and taking Return. Without one the header's AI action takes Return.
+    /// The clear winner, promoted to the first row independently of the default selection.
     var best: Row?
     var notice: Notice?
     var searchingContent = false
@@ -53,7 +53,7 @@ struct AskQuickResults: Equatable {
     /// The highlight was moved by the user rather than placed by default.
     var chosen = false
 
-    /// A match leads and takes Return (the name is kept from when only applications were listed).
+    /// A clear match leads the list (the name is kept from when only applications were listed).
     var appsLead: Bool { best != nil }
 
     init(calculation: AskCalculation, formats: [AskCalculatorFormat], pendingExpression: String? = nil) {
@@ -67,7 +67,6 @@ struct AskQuickResults: Equatable {
         self.apps = apps
         groups = apps.isEmpty ? [] : [.apps]
         best = lead && !apps.isEmpty ? .app(0) : nil
-        highlighted = best == nil ? rows.count - 1 : 0
     }
 
     init(apps: [AskAppMatch], panes: [AskAppMatch], files: [AskFileHit], moreFiles: Bool, groups: [Group],
@@ -79,7 +78,6 @@ struct AskQuickResults: Equatable {
         self.groups = groups
         self.best = best
         self.notice = notice
-        highlighted = best == nil ? rows.count - 1 : 0
     }
 
     var rows: [Row] {
@@ -191,7 +189,7 @@ struct AskQuickResults: Equatable {
     static let folderLimit = 3
     /// A file needs this much to lead (an exact name, its start, initials or pinyin)…
     static let strongFileScore = 0.88
-    /// …and to be this far ahead of the next result, so similar names do not take Return.
+    /// …and to be this far ahead of the next result to earn the best-match heading.
     static let fileMargin = 0.05
 
     /// The results for the launcher's new text. Arithmetic goes to the
@@ -299,7 +297,7 @@ struct AskQuickResults: Equatable {
         var result = AskQuickResults(apps: apps, panes: panes, files: listed, moreFiles: moreFiles, groups: groups.map(\.group),
                                      best: features.isEmpty ? best : .feature(0), notice: notice)
         result.features = features
-        result.highlighted = result.best == nil ? result.rows.count - 1 : 0
+        result.highlighted = 0
         return result
     }
 
@@ -308,7 +306,7 @@ struct AskQuickResults: Equatable {
         var result = base ?? AskQuickResults(apps: [], lead: false)
         let previous = result
         result.browserEntries = entries
-        result.highlighted = result.calculation?.isNumericInput == true || result.best != nil ? 0 : result.rows.count - 1
+        result.highlighted = result.rows.firstIndex { $0 != .askAI && result.isEnabled($0) } ?? result.rows.count - 1
         result.keepChoice(from: previous)
         return result
     }

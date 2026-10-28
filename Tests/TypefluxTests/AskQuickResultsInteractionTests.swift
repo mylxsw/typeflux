@@ -197,17 +197,20 @@ struct AskQuickResultsInteractionTests {
         }
     }
 
-    @Test func aQuestionStillGoesToTheAIWithAppsBelow() async throws {
+    @Test func returnOpensTheFirstApplicationWithoutABestMatch() async throws {
         try await withPasteboard { _ in
             let launcher = try await Launcher(text: "wechat?", apps: AskTestAppIndex(AskTestAppIndex.sample.entries))
             defer { launcher.close() }
+            #expect(launcher.fixture.model.quickSearch.results?.best == nil)
+            #expect(launcher.fixture.model.quickSearch.results?.highlightedRow == .app(0))
             try await launcher.press(Self.returnKey)
-            #expect(try await launcher.sentCount() == 1)
-            #expect(launcher.opened.isEmpty)
+            #expect(launcher.opened == [URL(fileURLWithPath: "/Applications/微信.app")])
+            #expect(launcher.dismissed == 1)
+            #expect(await launcher.fixture.api.sends.isEmpty)
         }
     }
 
-    @Test func arrowsReachAnApplicationBelowAskAI() async throws {
+    @Test func arrowsWrapWithinApplicationResults() async throws {
         try await withPasteboard { _ in
             let launcher = try await Launcher(text: "wechat?", apps: AskTestAppIndex(AskTestAppIndex.sample.entries))
             defer { launcher.close() }

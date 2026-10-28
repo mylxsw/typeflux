@@ -57,6 +57,25 @@ struct AskQuickSearchSessionTests {
         #expect(!session.showsEmptyState)
     }
 
+    @Test func weakApplicationStaysSelectedAsFileResultsArrive() async throws {
+        let gate = DispatchSemaphore(value: 0)
+        defer { gate.signal() }
+        let apps = AskControlledSearchIndex(), files = AskControlledSearchIndex()
+        apps.appSearch = { _ in [AskAppMatch(entry: AskTestAppIndex.app("NX2Apple"), score: 0.5)] }
+        files.fileSearch = { _ in _ = gate.wait(timeout: .now() + 5); return [Self.file] }
+        let session = AskQuickSearchSession()
+        defer { session.cancel() }
+        update(session, "nxapp", apps: apps, files: files)
+        try await Self.wait { session.results?.apps.isEmpty == false }
+        #expect(session.results?.best == nil)
+        #expect(session.results?.highlightedRow == .app(0))
+        gate.signal()
+        try await Self.wait { !session.isSearching }
+        #expect(session.results?.files == [Self.file])
+        #expect(session.results?.best == nil)
+        #expect(session.results?.highlightedRow == .app(0))
+    }
+
     @Test func applicationResultsPublishWhileFileSearchIsStillBlocked() async throws {
         let gate = DispatchSemaphore(value: 0)
         defer { gate.signal() }

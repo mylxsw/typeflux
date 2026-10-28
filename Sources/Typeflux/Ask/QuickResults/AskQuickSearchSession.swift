@@ -269,7 +269,7 @@ final class AskQuickSearchSession: ObservableObject {
         // Give debounced files a bounded chance to join the application batch.
         // Slow providers still publish independently after this short grace period.
         // Validated content can publish while the filename worker is still debouncing or blocked.
-        // Apps remain the safety barrier; content never becomes the default Return candidate.
+        // Wait for the application batch before selecting the first available result.
         if appsReady, fileResults != nil || !semanticResults.isEmpty {
             publication?.cancel()
             publication = nil

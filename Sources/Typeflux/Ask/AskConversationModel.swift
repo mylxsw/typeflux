@@ -344,6 +344,7 @@ final class AskConversationModel: ObservableObject {
     var acceptedFeatureHandoffs: Set<String> = []
     var externallyDrivenConversations: Set<String> = []
     var activeChatDraftID: String?
+    var workspaceDraftReady = false
     var pendingDraftHandoff: AskDraftHandoff?
     var chatDraftSubmissions: [String: AskDraftHandoffSubmission] = [:]
     @Published var referenceLocation: String?
@@ -818,6 +819,7 @@ final class AskConversationModel: ObservableObject {
         selected = nil; selectedId = nil; isLoadingSelection = false; selectionLoadFailed = false
         snapshots = [:]; drafts = [:]; transcriptPositions = [:]; savedChatDrafts = []
         activeChatDraftID = nil; pendingDraftHandoff = nil; chatDraftSubmissions = [:]
+        workspaceDraftReady = false
         historyGeneration = UUID(); historyOffset = 0; conversations = []; localConversationIds = []
         // In memory only, so a new session never sees it; the server expires its copy.
         temporaryConversations = []; temporaryDraft = nil; temporaryDraftPermissionMode = .standard; keepingTemporaryIDs = []
@@ -950,25 +952,23 @@ final class AskConversationModel: ObservableObject {
         persistDrafts()
         guard let draftSave else { return !draft.hasChatInput }
         guard await draftSave.value else { return await saveQuitRecoveryDraft() }
-        if selectedId == nil, draft.hasChatInput, draft.temporary != true, activeChatDraftID == nil {
-            do { _ = try await stageChatDraft(draft, account: owner) }
-            catch { return await saveQuitRecoveryDraft() }
-        }
         return true
     }
 
     private func saveQuitRecoveryDraft() async -> Bool {
         // Only the real isolated chat process may open the shared cache directly.
-        // This is a separate recovery copy, so it cannot overwrite a newer draft.
+        // Preserve the recovery copy and the latest workspace state before exiting.
         guard FeatureProcess.enabled, FeatureProcess.role == .chat else { return false }
         let value = sendQueue.editing.flatMap { $0.conversationId == selectedId ? $0.stash : nil } ?? draft
-        guard value.temporary != true, value.hasChatInput else { return true }
+        guard value.temporary != true else { return true }
+        guard value.hasChatInput || workspaceDraftReady else { return true }
         guard !owner.isEmpty else { return false }
         let handoff = reserveChatDraft(value, account: owner)
+        let workspace = workspaceDraftSnapshot
         return await Task.detached(priority: .userInitiated) {
             do {
                 try await AskQuitDraftBackup.save(value, owner: handoff.owner, key: handoff.id,
-                                                  url: AskConversationCache.defaultURL())
+                                                  url: AskConversationCache.defaultURL(), workspace: workspace)
                 return true
             } catch {
                 AskFailureDiagnostics.shared.record(.draftSave, error: error)
@@ -995,6 +995,10 @@ final class AskConversationModel: ObservableObject {
         // Privacy cleanup must not be cancelled by the next debounced edit.
         if followUp.temporary == true { detachChatDraft() }
         let recoveryKey = id == nil ? activeChatDraftID : nil
+        if FeatureProcess.owns(.chat), !isLoadingSelection,
+           selectedId != nil || activeChatDraftID != nil || draft.hasChatInput {
+            workspaceDraftReady = true
+        }
         if let id, !isLoadingSelection { drafts[id] = followUp }
         draftSaveConversationID = id
         draftSave = Task { [cache] in
@@ -1009,6 +1013,10 @@ final class AskConversationModel: ObservableObject {
                 try Task.checkCancellation()
                 if let id, self.owner == owner, !deletedConversationIDs.contains(id) {
                     try await cache.saveDraft(followUp, key: id, owner: followUpOwner)
+                }
+                try Task.checkCancellation()
+                if self.owner == owner, let workspace = self.workspaceDraftSnapshot {
+                    try await saveChatDraft(workspace, key: Self.workspaceDraftKey, account: owner)
                 }
                 if self.owner == owner, self.error == L("ask.cache.failed"),
                    !self.selectedRecoveryEntries.contains(where: \.readUnavailable) { self.error = nil }
@@ -1262,6 +1270,7 @@ final class AskConversationModel: ObservableObject {
             draft = restoredTemporary
             draftPermissionMode = restoredPermission
         }
+        workspaceDraftReady = true
         return true
     }
 

@@ -89,16 +89,33 @@ extension AskConversationModel {
     /// Opening an empty workspace restores input without sending it. Navigation,
     /// edits, private composers and account changes always take precedence.
     func restoreSavedChatDraftIfNeeded() async {
-        guard selectedId == nil, activeChatDraftID == nil, !draft.hasChatInput,
+        guard !workspaceDraftReady, selectedId == nil, activeChatDraftID == nil, !draft.hasChatInput,
               draft.temporary != true, canOpenChatFromLauncher else { return }
         let previous = draft, generation = selectionGeneration
         let account = owner, sessionOwner = session()?.owner
-        guard await loadSavedChatDrafts() else { return }
-        guard !Task.isCancelled, owner == account, session()?.owner == sessionOwner,
+        let workspace: AskDraft?
+        do { workspace = try await cache.draft(key: Self.workspaceDraftKey, owner: account) }
+        catch { return }
+        guard !Task.isCancelled, !workspaceDraftReady, owner == account, session()?.owner == sessionOwner,
               generation == selectionGeneration, draft == previous,
-              selectedId == nil, activeChatDraftID == nil,
-              let saved = savedChatDrafts.first(where: { $0.draft.temporary != true }) else { return }
-        await restoreChatDraft(saved)
+              selectedId == nil, activeChatDraftID == nil, canOpenChatFromLauncher else { return }
+        if let workspace {
+            workspaceDraftReady = true
+            // An empty checkpoint is intentional. Never fall through to an older backup.
+            draft = workspace.temporary == true ? newQuestionDraft() : workspace
+            persistDrafts()
+            return
+        }
+        guard await loadSavedChatDrafts() else { return }
+        guard !Task.isCancelled, !workspaceDraftReady, owner == account, session()?.owner == sessionOwner,
+              generation == selectionGeneration, draft == previous,
+              selectedId == nil, activeChatDraftID == nil else { return }
+        if let saved = savedChatDrafts.first(where: { $0.draft.temporary != true }) {
+            await restoreChatDraft(saved)
+        } else {
+            workspaceDraftReady = true
+            persistDrafts()
+        }
     }
 
     /// Restoring preserves the visible unsent draft before replacing it.

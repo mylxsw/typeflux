@@ -67,7 +67,7 @@ struct AskBrowserSearchTests {
         session.update(text: "zzperfprobe", chinese: false, calculator: false,
                        sources: .init(apps: apps, files: files, browsers: service))
         try await AskQuickSearchSessionTests.wait {
-            !apps.calls.isEmpty && !files.calls.isEmpty && session.presentation?.rows == [.askAI]
+            !apps.calls.isEmpty && !files.calls.isEmpty && session.showsEmptyState
         }
         #expect(session.isSearching, "The browser refresh must not hold back the completed local answer")
     }
@@ -384,6 +384,7 @@ struct AskBrowserSearchTests {
         session.update(text: "Project", chinese: false, calculator: false, sources: sources)
         try await Task.sleep(for: .milliseconds(350))
         #expect(session.results?.browserEntries.map(\.id) == ["tab"] && !session.isSearching)
+        #expect(session.results?.highlightedRow == .browser(0))
         session.update(text: "Other", chinese: false, calculator: false, sources: sources)
         #expect(session.results?.browserEntries.isEmpty != false)
         try await Task.sleep(for: .milliseconds(350))
@@ -411,6 +412,7 @@ struct AskBrowserSearchTests {
 
     @Test func `browser rows keep selection by identity and have stable layout`() throws {
         var first = try #require(AskQuickResults.addingBrowsers([entry(id: "a"), entry("Other", id: "b")], to: nil))
+        #expect(first.highlightedRow == .browser(0))
         first.highlight(1)
         var next = try #require(AskQuickResults.addingBrowsers([entry("Other", id: "b"), entry(id: "a")], to: nil))
         next.keepChoice(from: first)

@@ -398,14 +398,17 @@ actor GatedConversationCache: AskCaching {
     let beforeDraftSave: @Sendable (String) async -> Void
     let afterDraftSave: @Sendable (String, String) async throws -> Void
     let beforeSavedDraftsRead: @Sendable () async -> Void
+    let beforeDraftRead: @Sendable (String) async -> Void
     init(base: any AskCaching,
          beforeDraftSave: @escaping @Sendable (String) async -> Void = { _ in },
          afterDraftSave: @escaping @Sendable (String, String) async throws -> Void = { _, _ in },
          beforeSavedDraftsRead: @escaping @Sendable () async -> Void = {},
+         beforeDraftRead: @escaping @Sendable (String) async -> Void = { _ in },
          beforeSave: @escaping @Sendable (AskConversation) async -> Void) {
         self.base = base; self.beforeSave = beforeSave
         self.beforeDraftSave = beforeDraftSave; self.afterDraftSave = afterDraftSave
         self.beforeSavedDraftsRead = beforeSavedDraftsRead
+        self.beforeDraftRead = beforeDraftRead
     }
     func save(_ conversation: AskConversation, owner: String) async throws {
         await beforeSave(conversation)
@@ -425,7 +428,10 @@ actor GatedConversationCache: AskCaching {
         try await base.saveDraft(draft, key: key, owner: owner)
         try await afterDraftSave(key, owner)
     }
-    func draft(key: String, owner: String) async throws -> AskDraft? { try await base.draft(key: key, owner: owner) }
+    func draft(key: String, owner: String) async throws -> AskDraft? {
+        await beforeDraftRead(key)
+        return try await base.draft(key: key, owner: owner)
+    }
     func savedChatDrafts(owner: String) async throws -> [AskSavedChatDraft] {
         await beforeSavedDraftsRead()
         return try await base.savedChatDrafts(owner: owner)

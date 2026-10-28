@@ -21,12 +21,12 @@ struct AskQuickResultsFileTests {
                                                       settings: settings))
     }
 
-    @Test func aClearFileLeadsAndTakesReturn() throws {
+    @Test func ambiguousFilesSelectTheFirstResultWithoutABestMatch() throws {
         let results = try #require(resolve("readme"))
-        // Two READMEs: the newer one is ahead, but not by enough to take Return.
+        // Two READMEs: neither earns best-match status, but the first still takes Return.
         #expect(results.best == nil)
         #expect(results.rows.last == .askAI)
-        #expect(results.highlightedRow == .askAI)
+        #expect(results.highlightedRow == results.listRows.first)
         let contract = try #require(resolve("hetong"))
         #expect(contract.best == .file(contract.files.firstIndex { $0.name == "合同" }!), "the folder's whole pinyin")
         #expect(contract.highlightedRow == contract.best)
@@ -80,7 +80,7 @@ struct AskQuickResultsFileTests {
                                                               status: nil, settings: settings))
             #expect(before.groups == after.groups)
             #expect(after.groups.firstIndex(of: .files)! < after.groups.firstIndex(of: .folders)!)
-            #expect(after.rows.last == .askAI && after.highlightedRow == .askAI)
+            #expect(after.rows.last == .askAI && after.highlightedRow == after.listRows.first)
             folder.score = 0.5
         }
     }

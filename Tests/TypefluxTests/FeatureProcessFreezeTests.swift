@@ -74,7 +74,7 @@ struct FeatureProcessFreezeTests {
             // Quit must itself persist the unsent draft after the channel recovers.
             #expect(await supervisor.shutdown())
             let reopened = try AskConversationCache(url: cacheURL)
-            #expect(try await reopened.savedChatDrafts(owner: "fixture-owner").contains { $0.draft.text == text })
+            #expect(try await reopened.draft(key: AskConversationModel.workspaceDraftKey, owner: "fixture-owner")?.text == text)
             try FileManager.default.removeItem(at: fixture.root)
         } catch {
             _ = await supervisor.shutdown()

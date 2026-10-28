@@ -48,25 +48,36 @@ extension AskQuickResultsInteractionTests {
         }
     }
 
-    @Test func arrowsReachAFileBelowAskAI() async throws {
+    @Test func returnOpensTheFirstFileWithoutABestMatch() async throws {
+        try await withPasteboard { _ in
+            let host = FileHost()
+            let launcher = try await launcher("invoice", host: host)
+            defer { launcher.close() }
+            #expect(launcher.fixture.model.quickSearch.results?.best == nil)
+            #expect(launcher.fixture.model.quickSearch.results?.highlightedRow == .file(0))
+            try await launcher.press(Self.returnKey)
+            #expect(host.urls == [URL(fileURLWithPath: "/Users/test/Documents/发票/invoice-2026-09.pdf")])
+            #expect(launcher.dismissed == 1)
+            #expect(await launcher.fixture.api.sends.isEmpty)
+        }
+    }
+
+    @Test func fileShortcutsUseTheDefaultFirstResult() async throws {
         try await withPasteboard { pasteboard in
             let host = FileHost()
             let launcher = try await launcher("invoice", host: host)
             defer { launcher.close() }
-            try await launcher.press(Self.down)
             try await launcher.press(Self.keyR, .command)
             #expect(host.revealed == [URL(fileURLWithPath: "/Users/test/Documents/发票/invoice-2026-09.pdf")])
             #expect(launcher.dismissed == 1)
 
             let second = try await self.launcher("invoice", host: host)
             defer { second.close() }
-            try await second.press(Self.down)
             try await second.press(Self.keyC, [.command, .shift])
             #expect(pasteboard.string(forType: .string) == "/Users/test/Documents/发票/invoice-2026-09.pdf")
 
             let third = try await self.launcher("invoice", host: host)
             defer { third.close() }
-            try await third.press(Self.down)
             try await third.press(Self.keyC, [.command, .option])
             #expect(pasteboard.readObjects(forClasses: [NSURL.self])?.first as? URL
                 == URL(fileURLWithPath: "/Users/test/Documents/发票/invoice-2026-09.pdf"))
@@ -78,7 +89,6 @@ extension AskQuickResultsInteractionTests {
             let host = FileHost()
             let launcher = try await launcher("invoice", host: host)
             defer { launcher.close() }
-            try await launcher.press(Self.down)
             try await launcher.press(Self.right)
             // Open, Open With…, Show in Finder.
             try await launcher.press(Self.down)
@@ -95,7 +105,6 @@ extension AskQuickResultsInteractionTests {
             let host = FileHost()
             let launcher = try await launcher("invoice", host: host)
             defer { launcher.close() }
-            try await launcher.press(Self.down)
             try await launcher.press(Self.right)
             try await launcher.press(Self.up)
             try await launcher.press(Self.returnKey)
@@ -113,7 +122,6 @@ extension AskQuickResultsInteractionTests {
             let host = FileHost()
             let launcher = try await launcher("invoice", host: host)
             defer { launcher.close() }
-            try await launcher.press(Self.down)
             try await launcher.press(Self.right)
             try await launcher.press(Self.escape)
             #expect(launcher.dismissed == 0)

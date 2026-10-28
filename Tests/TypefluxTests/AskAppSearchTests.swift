@@ -294,11 +294,11 @@ struct AskQuickResultsAppTests {
         #expect(results.calculation == nil)
     }
 
-    @Test func aQuestionKeepsAskAISelectedInTheFooter() throws {
+    @Test func aMatchWithoutABestMatchStillTakesReturn() throws {
         let results = try #require(resolve("wechat?"))
         #expect(!results.appsLead)
         #expect(results.rows == [.app(0), .askAI])
-        #expect(results.highlightedRow == .askAI)
+        #expect(results.highlightedRow == .app(0))
     }
 
     @Test func arithmeticBeatsApplications() throws {
@@ -335,10 +335,11 @@ struct AskQuickResultsAppTests {
         let one = try #require(resolve("wx"))
         let two = try #require(resolve("wechat?"))
         #expect(AskQuickResultsView.height(for: one) == AskQuickResultsView.height(for: two))
-        let bare: CGFloat = 1 + 12 + 42 + AskQuickResultsView.sectionHeight + AskQuickResultsView.rowSpacing
+        let bare: CGFloat = 1 + AskQuickResultsView.listPadding * 2 + AskQuickResultsView.appHeight
+            + AskQuickResultsView.sectionHeight + AskQuickResultsView.rowSpacing
         #expect(AskQuickResultsView.height(for: one) == bare)
         #expect(AskQuickResultsView.hint(for: one) == L("ask.quick.hint.app"))
-        #expect(AskQuickResultsView.hint(for: two) == L("ask.launcher.hint"))
+        #expect(AskQuickResultsView.hint(for: two) == L("ask.quick.hint.app"))
         #expect(AskQuickResultsView.location(of: URL(fileURLWithPath: "/Applications/WeChat.app")) == "/Applications")
         #expect(AskQuickResultsView.location(of: URL(fileURLWithPath: "/System/Applications/Notes.app")) == L("ask.quick.app.system"))
         let home = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Applications/Tool.app")
