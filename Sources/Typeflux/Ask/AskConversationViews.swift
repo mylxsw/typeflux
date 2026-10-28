@@ -51,6 +51,7 @@ struct AskConversationView: View {
     @AppStorage("ask.sidebarCollapsed") private var storedSidebarCollapsed = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.interfaceStyle) private var style
+    @Environment(\.colorScheme) private var colorScheme
     @State private var windowSize = AskWorkspaceLayout.minimumWindowSize
     @State private var showsSidebarDrawer = false
     @FocusState private var drawerCloseFocused: Bool
@@ -921,6 +922,13 @@ struct AskConversationView: View {
         .onPreferenceChange(AskContentColumnHeight.self) { contentColumnHeight = $0 }
         .onChange(of: model.searchRequest) { _ in openSearch() }
         .frame(minWidth: 0, maxWidth: .infinity, maxHeight: .infinity)
+        .background {
+            if style.usesGlass {
+                // Keep the reading surface stable over busy windows while the
+                // header and composer retain their own glass materials.
+                AskWindowBackdrop.base(dark: colorScheme == .dark).opacity(0.96)
+            }
+        }
     }
 
     /// The title and the conversation's actions as two glass capsules over the
