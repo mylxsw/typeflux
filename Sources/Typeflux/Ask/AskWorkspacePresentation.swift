@@ -21,7 +21,6 @@ enum AskRunPhase: Equatable {
     case waitingDevice(step: Int)
     case taskNeedsInput
     case taskBlocked
-    case endedWithPendingPlan
     case completed(steps: Int)
     case failed
     case cancelled
@@ -55,7 +54,6 @@ enum AskRunPhase: Equatable {
         case "completed":
             if run.taskResolution?.outcome == "needs_input" { return .taskNeedsInput }
             if run.taskResolution?.outcome == "blocked" { return .taskBlocked }
-            if run.plan?.contains(where: { $0.status != "completed" }) == true { return .endedWithPendingPlan }
             return .completed(steps: run.steps)
         case "failed": return .failed
         case "cancelled": return .cancelled
@@ -89,7 +87,7 @@ enum AskRunPhase: Equatable {
     var tone: AskRunTone {
         switch self {
         case .working: return .running
-        case .approval, .needsDecision, .pausedCredits, .waitingDevice, .taskNeedsInput, .taskBlocked, .endedWithPendingPlan: return .attention
+        case .approval, .needsDecision, .pausedCredits, .waitingDevice, .taskNeedsInput, .taskBlocked: return .attention
         case .completed: return .done
         case .failed, .cancelled: return .failed
         }
@@ -104,7 +102,6 @@ enum AskRunPhase: Equatable {
         case .waitingDevice: return L("ask.recovery.otherDevice")
         case .taskNeedsInput: return L("ask.progress.needsInput")
         case .taskBlocked: return L("ask.progress.blocked")
-        case .endedWithPendingPlan: return L("ask.run.endedWithPendingPlan")
         case let .completed(steps): return L("ask.run.completed", steps)
         case .failed: return L("ask.run.failed")
         case .cancelled: return L("ask.run.cancelled")
@@ -144,5 +141,21 @@ extension AskPresentation {
             formatter.setLocalizedDateFormatFromTemplate("yMMMd")
         }
         return formatter.string(from: date)
+    }
+}
+
+extension AskRun {
+    /// A checklist is model bookkeeping, not evidence that the user must recover a run.
+    /// Derive notices from actual interruptions so reopening history cannot invent one.
+    var interruptionNotice: String? {
+        switch status {
+        case "failed", "cancelled":
+            return failureLocalizationKey.map { L($0) } ?? error ?? L("ask.cancelled")
+        case "completed" where taskResolution?.outcome == "blocked":
+            let reason = taskResolution?.reason.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return reason.isEmpty ? nil : reason
+        default:
+            return nil
+        }
     }
 }

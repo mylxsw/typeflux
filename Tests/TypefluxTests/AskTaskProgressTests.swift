@@ -68,6 +68,9 @@ final class AskTaskProgressTests: XCTestCase {
         XCTAssertEqual(c.run?.steps, 3)
         let saved = try await engine().conversation(id: c.id, token: "")
         XCTAssertEqual(saved.run?.taskResolution, c.run?.taskResolution)
+        XCTAssertNil(saved.run?.interruptionNotice)
+        XCTAssertEqual(saved.run?.plan, c.run?.plan)
+        XCTAssertEqual(AskRunPhase.resolve(run: saved.run, busy: false, pendingApproval: false, recovery: nil), .completed(steps: 3))
     }
 
     func testStructuredMissingInputEndsWithoutInventingToolApproval() async throws {

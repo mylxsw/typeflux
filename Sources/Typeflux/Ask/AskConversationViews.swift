@@ -1227,7 +1227,7 @@ struct AskConversationView: View {
     /// The selected run failed or was stopped, and nothing is about to resume it.
     private var stoppedRun: Bool {
         guard !model.hasPendingSubmission, !model.isBusy, let run = model.selected?.run else { return false }
-        return run.status == "failed" || run.status == "cancelled" || run.canContinueTask
+        return run.interruptionNotice != nil
     }
 
     @ViewBuilder private var statusArea: some View {
@@ -1283,8 +1283,8 @@ struct AskConversationView: View {
                                    onContinue: { model.resume() })
             }
         } else if stoppedRun, !model.hasRecoveryNotice, let value = model.selected,
-                  !model.recoveryBlocksResume(value), let run = value.run {
-            AskBanner(text: run.failureLocalizationKey.map { L($0) } ?? run.error ?? (run.canContinueTask ? L("ask.progress.unreconciled") : L("ask.cancelled")), tone: .info,
+                  !model.recoveryBlocksResume(value), let notice = value.run?.interruptionNotice {
+            AskBanner(text: notice, tone: .info,
                       systemImage: "arrow.clockwise",
                       actionTitle: L("ask.resume"), action: { model.resume() })
         } else if resumable, !model.hasRecoveryNotice, model.error == nil {

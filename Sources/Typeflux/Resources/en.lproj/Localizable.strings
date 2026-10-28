@@ -2033,7 +2033,6 @@
 "ask.run.attention" = "Waiting for approval";
 "ask.run.running" = "Running · step %d";
 "ask.run.completed" = "Turn ended · %d steps";
-"ask.run.endedWithPendingPlan" = "Turn ended · Work remains";
 "ask.run.failed" = "Failed";
 "ask.run.cancelled" = "Stopped";
 "ask.run.needsDecision" = "Needs your decision";
@@ -7488,7 +7487,6 @@
 "ask.steps.bounded" = "Limit steps";
 
 "ask.progress.repeated" = "Repeated checks returned the same result after a reminder to change approach. This run has stopped; existing files and results are preserved. Review the last checks and provide a different next step to continue.";
-"ask.progress.unreconciled" = "The run ended without reconciling the unfinished plan. Pending work is preserved; completion has not been verified.";
 "ask.progress.needsInput" = "Waiting for your input";
 "ask.progress.blocked" = "Paused: task blocked";
 "ask.progress.checkpointFailed" = "The agent did not reconcile the plan at the progress checkpoint. This run has stopped without executing further operations. Existing work is preserved; review the unfinished plan before continuing.";

@@ -113,6 +113,40 @@ struct AskRecoveryRenderTests {
         }
     }
 
+    @Test func `reopened answer with an unfinished checklist has no interruption banner`() async throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        var value = AskRecoveryFixture.conversation()
+        value.title = "1024 game"
+        value.messages = [
+            .init(id: "question", role: "user", text: "Build a 1024 game.", createdAt: Date()),
+            .init(id: "answer", role: "assistant", text: "The game files are ready. Browser verification is still pending.", createdAt: Date())
+        ]
+        value.run?.status = "completed"
+        value.run?.pending = []
+        value.run?.plan = [.init(step: "Build game", status: "completed"),
+                           .init(step: "Verify in browser", status: "in_progress")]
+        value.run?.taskResolution = nil
+        // Exercise the persisted representation, then reload the same conversation twice.
+        value = try AskCoding.decoder().decode(AskConversation.self, from: AskCoding.encoder().encode(value))
+        await fixture.api.seed(value)
+        await fixture.model.refreshHistory()
+        for reopen in 1...2 {
+            await fixture.model.select(value.id, reload: true)
+            let text = try await renderConversation(fixture.model, name: "reopened-pending-plan-\(reopen)",
+                                                    dark: true, size: .init(width: 1100, height: 740))
+            #expect(text.contains("The game files are ready"))
+            #expect(!text.contains(localized("ask.resume")))
+            #expect(!text.contains("unreconciled"))
+            #expect(!text.contains("pending items remain"))
+            #expect(fixture.model.selected?.run?.plan == value.run?.plan)
+            #expect(!fixture.model.hasRecoveryNotice)
+        }
+        #expect(fixture.tools.executions == 0)
+        #expect(await fixture.api.results.isEmpty)
+        #expect(await fixture.api.inferenceResults.isEmpty)
+    }
+
     @Test func `completed conversation contains the answer without a recovery notice`() async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }

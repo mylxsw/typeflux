@@ -2030,7 +2030,6 @@
 "ask.run.attention" = "等待確認";
 "ask.run.running" = "執行中 · 第 %d 步";
 "ask.run.completed" = "本輪已結束 · %d 步";
-"ask.run.endedWithPendingPlan" = "本輪已結束，仍有待辦";
 "ask.run.failed" = "失敗";
 "ask.run.cancelled" = "已停止";
 "ask.run.needsDecision" = "需要你確認";
@@ -7490,7 +7489,6 @@
 "ask.steps.bounded" = "限制步數";
 
 "ask.progress.repeated" = "提醒調整方法後，仍重複檢查並得到相同結果。本輪已暫停，已有檔案和結果保留。請查看最後幾次檢查，補充不同的下一步後繼續。";
-"ask.progress.unreconciled" = "本輪結束時尚未核對完計畫，待辦已保留，未確認全部完成。";
 "ask.progress.needsInput" = "等待你補充資訊";
 "ask.progress.blocked" = "已暫停：任務受阻";
 "ask.progress.checkpointFailed" = "Agent 未能在進度檢查點核對計畫，本輪已暫停，未執行後續操作。已有工作保留，請查看待辦計畫後繼續。";

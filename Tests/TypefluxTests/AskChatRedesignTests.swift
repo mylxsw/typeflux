@@ -74,13 +74,14 @@ struct AskRunPhaseTests {
             == .working(step: 1))
     }
 
-    @Test func endedRunWithPendingPlanDoesNotClaimTaskCompletion() {
+    @Test func endedRunWithStalePlanDoesNotAskForAttention() {
         var value = run("completed", steps: 100)
         value.plan = [.init(step: "Inspect", status: "in_progress"), .init(step: "Write JS", status: "pending")]
         let phase = AskRunPhase.resolve(run: value, busy: false, pendingApproval: false, recovery: nil)
-        #expect(phase == .endedWithPendingPlan)
-        #expect(phase?.tone == .attention)
-        #expect(phase?.summary == L("ask.run.endedWithPendingPlan"))
+        #expect(phase == .completed(steps: 100))
+        #expect(phase?.tone == .done)
+        #expect(phase?.summary == L("ask.run.completed", 100))
+        #expect(value.interruptionNotice == nil)
         #expect(phase?.isWorking == false && phase?.offersStop == false && phase?.step == nil)
         value.plan = [.init(step: "Write JS", status: "completed")]
         #expect(AskRunPhase.resolve(run: value, busy: false, pendingApproval: false, recovery: nil) == .completed(steps: 100))
@@ -89,6 +90,48 @@ struct AskRunPhaseTests {
         value.status = "running"
         value.plan = [.init(step: "Write JS", status: "pending")]
         #expect(AskRunPhase.resolve(run: value, busy: true, pendingApproval: false, recovery: nil) == .working(step: 100))
+    }
+
+    @Test func interruptionNoticesRequireARealCause() throws {
+        var value = run("completed")
+        value.plan = [.init(step: "Old checklist", status: "pending")]
+        value.error = "Stale error from an earlier attempt"
+        #expect(value.interruptionNotice == nil)
+        let restored = try AskCoding.decoder().decode(AskRun.self, from: AskCoding.encoder().encode(value))
+        #expect(restored.interruptionNotice == nil)
+        #expect(restored.plan == value.plan)
+        #expect(restored.canContinueTask)
+        value.taskResolution = .init(outcome: "blocked", reason: "  The preview server is unavailable.  ")
+        #expect(value.interruptionNotice == "The preview server is unavailable.")
+        #expect(AskRunPhase.resolve(run: value, busy: false, pendingApproval: false, recovery: nil) == .taskBlocked)
+        value.taskResolution?.reason = "  "
+        #expect(value.interruptionNotice == nil)
+        value.taskResolution = .init(outcome: "needs_input", reason: "Which server?")
+        #expect(value.interruptionNotice == nil)
+        value.status = "failed"
+        #expect(value.interruptionNotice == value.error)
+        value.error = nil
+        value.status = "cancelled"
+        #expect(value.interruptionNotice == L("ask.cancelled"))
+    }
+
+    @Test func historicalPendingChecklistDoesNotCreateANotice() throws {
+        guard let path = ProcessInfo.processInfo.environment["TYPEFLUX_PLAN_NOTICE_RECORD"] else { return }
+        let record = try AskLocalRecord.decodeSnapshot(Data(contentsOf: URL(fileURLWithPath: path)))
+        let original = try #require(record.conversation.run)
+        #expect(original.status == "completed")
+        #expect(original.plan?.contains { $0.status != "completed" } == true)
+        #expect(original.taskResolution == nil)
+        // Read-only round trips preserve the real history, including old recovery metadata.
+        var restored = record.conversation
+        for _ in 1...2 {
+            restored = try AskCoding.decoder().decode(AskConversation.self, from: AskCoding.encoder().encode(restored))
+            #expect(restored.run?.interruptionNotice == nil)
+            #expect(restored.run?.plan == original.plan)
+            #expect(restored.messages == record.conversation.messages)
+            #expect(AskRunPhase.resolve(run: restored.run, busy: false, pendingApproval: false, recovery: nil)
+                == .completed(steps: original.steps))
+        }
     }
 
     @Test func settledRunsMapToTheirStatus() {
