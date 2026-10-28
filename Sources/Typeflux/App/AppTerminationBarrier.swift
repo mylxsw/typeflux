@@ -13,8 +13,8 @@ final class AppTerminationBarrier {
         if task == nil {
             task = Task {
                 let confirmed = await cleanup()
-                if !confirmed { task = nil }
                 reply(confirmed)
+                if !confirmed { task = nil }
             }
         }
         return .terminateLater

@@ -7040,6 +7040,11 @@
 "shortcutDiagnostics.operations" = "管理対象の処理";
 "shortcutDiagnostics.processNote" = "アプリのプロセスを表示します。デコーダーとシステムサービスは別です。このウインドウを開いている間だけ CPU を計測します。";
 "feature.quitNotReady" = "データの保存を確認できなかったため、アプリを開いたままにしています。処理の完了後にもう一度終了してください。";
+"feature.quitBlocked.title" = "安全に終了できません";
+"feature.quitBlocked.message" = "すべての内容が保存されたことを確認できません。未送信のテキストをコピーし、録音や実行中の作業を終了してから再試行してください。強制終了すると、作業が中断され、未保存のデータが失われる可能性があります。";
+"feature.quitBlocked.keepOpen" = "開いたままにする";
+"feature.quitBlocked.retry" = "終了を再試行";
+"feature.quitBlocked.force" = "強制終了";
 /* Chat side panel: files and file tabs */
 "ask.sidePanel.toggle" = "サイドパネルを切り替え";
 "ask.sidePanel.close" = "サイドパネルを閉じる";

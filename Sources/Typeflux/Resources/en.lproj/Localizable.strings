@@ -7039,6 +7039,11 @@
 "shortcutDiagnostics.operations" = "Managed operations";
 "shortcutDiagnostics.processNote" = "Business processes only. Decoder helpers and system services are separate. CPU is sampled while this window is open.";
 "feature.quitNotReady" = "Typeflux could not safely finish saving. The app is still open; try quitting again after the current task finishes.";
+"feature.quitBlocked.title" = "Unable to finish quitting";
+"feature.quitBlocked.message" = "Typeflux could not confirm that all work was saved. Copy any unsent text and finish any recording or task, then retry. Force Quit may interrupt work and lose unsaved data.";
+"feature.quitBlocked.keepOpen" = "Keep Open";
+"feature.quitBlocked.retry" = "Retry";
+"feature.quitBlocked.force" = "Force Quit";
 /* Chat side panel: files and file tabs */
 "ask.sidePanel.toggle" = "Toggle side panel";
 "ask.sidePanel.close" = "Close side panel";

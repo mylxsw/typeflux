@@ -7041,6 +7041,11 @@
 "shortcutDiagnostics.operations" = "受管理工作";
 "shortcutDiagnostics.processNote" = "此處顯示業務程序；解碼輔助程序和系統服務另外計算。僅在此視窗開啟時取樣 CPU。";
 "feature.quitNotReady" = "無法確認資料已安全儲存，應用程式仍保持開啟。請等待目前工作結束後再次結束。";
+"feature.quitBlocked.title" = "無法安全結束";
+"feature.quitBlocked.message" = "Typeflux 無法確認所有內容都已儲存。請先複製尚未傳送的文字，並結束正在進行的錄音或工作，然後重試。強制結束可能中斷工作並遺失未儲存的資料。";
+"feature.quitBlocked.keepOpen" = "保持開啟";
+"feature.quitBlocked.retry" = "重新嘗試結束";
+"feature.quitBlocked.force" = "強制結束";
 /* Chat side panel: files and file tabs */
 "ask.sidePanel.toggle" = "切換側邊欄";
 "ask.sidePanel.close" = "關閉側邊欄";

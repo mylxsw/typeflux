@@ -27,6 +27,16 @@ struct AppTerminationBarrierTests {
 
 
 extension AppTerminationBarrierTests {
+    @Test func failedQuitOffersSafeRecoveryAndExplicitForceChoice() {
+        let alert = AppQuitFailurePrompt.makeAlert()
+        #expect(alert.alertStyle == .warning)
+        #expect(alert.messageText == L("feature.quitBlocked.title"))
+        #expect(alert.informativeText == L("feature.quitBlocked.message"))
+        #expect(alert.buttons.map(\.title) == [L("feature.quitBlocked.keepOpen"),
+                                               L("feature.quitBlocked.retry"),
+                                               L("feature.quitBlocked.force")])
+    }
+
     @Test func failedSaveCancelsQuitAndAllowsAnExplicitRetry() async throws {
         let barrier = AppTerminationBarrier()
         var replies: [Bool] = []
