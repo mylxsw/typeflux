@@ -577,7 +577,7 @@ final class AskConversationModel: ObservableObject {
         selectionObservation?.cancel()
         selectionObservation = nil
     }
-    private var draftSave: Task<Void, Never>?
+    private var draftSave: Task<Bool, Never>?
     private var draftSaveConversationID: String?
     private var deletedConversationIDs: Set<String> = []
     /// Temporary conversations being kept; ending them meanwhile would delete what the user saved.
@@ -948,18 +948,40 @@ final class AskConversationModel: ObservableObject {
     @discardableResult
     func flushFeatureDrafts() async -> Bool {
         persistDrafts()
-        await draftSave?.value
+        guard let draftSave else { return !draft.hasChatInput }
+        guard await draftSave.value else { return await saveQuitRecoveryDraft() }
         if selectedId == nil, draft.hasChatInput, draft.temporary != true, activeChatDraftID == nil {
             do { _ = try await stageChatDraft(draft, account: owner) }
-            catch { return false }
+            catch { return await saveQuitRecoveryDraft() }
         }
-        return error != L("ask.cache.failed")
+        return true
+    }
+
+    private func saveQuitRecoveryDraft() async -> Bool {
+        // Only the real isolated chat process may open the shared cache directly.
+        // This is a separate recovery copy, so it cannot overwrite a newer draft.
+        guard FeatureProcess.enabled, FeatureProcess.role == .chat else { return false }
+        let value = sendQueue.editing.flatMap { $0.conversationId == selectedId ? $0.stash : nil } ?? draft
+        guard value.temporary != true, value.hasChatInput else { return true }
+        guard !owner.isEmpty else { return false }
+        let handoff = reserveChatDraft(value, account: owner)
+        return await Task.detached(priority: .userInitiated) {
+            do {
+                try await AskQuitDraftBackup.save(value, owner: handoff.owner, key: handoff.id,
+                                                  url: AskConversationCache.defaultURL())
+                return true
+            } catch {
+                AskFailureDiagnostics.shared.record(.draftSave, error: error)
+                return false
+            }
+        }.value
     }
 
     func persistDrafts() {
         // A cold chat window dismisses the launcher before refreshHistory()
         // initializes the account. Never send an empty owner to the host cache.
         if owner.isEmpty {
+            draftSave = nil
             guard let current = session(), !current.owner.isEmpty else { return }
             owner = current.owner
         }
@@ -978,7 +1000,7 @@ final class AskConversationModel: ObservableObject {
         draftSave = Task { [cache] in
             do {
                 try await Task.sleep(for: .milliseconds(300))
-                guard self.owner == owner else { return }
+                guard self.owner == owner else { return false }
                 try await cache.saveDraft(launcher, key: "launcher", owner: owner)
                 try Task.checkCancellation()
                 if let recoveryKey {
@@ -990,12 +1012,14 @@ final class AskConversationModel: ObservableObject {
                 }
                 if self.owner == owner, self.error == L("ask.cache.failed"),
                    !self.selectedRecoveryEntries.contains(where: \.readUnavailable) { self.error = nil }
-            } catch is CancellationError {} catch {
-                guard !Task.isCancelled, self.owner == owner else { return }
+                return true
+            } catch is CancellationError { return false } catch {
+                guard !Task.isCancelled, self.owner == owner else { return false }
                 let failure = error as NSError
                 AskFailureDiagnostics.shared.record(.draftSave, error: error)
                 ErrorLogStore.shared.log("Ask draft save failed: \(failure.domain) (\(failure.code))")
                 self.error = L("ask.cache.failed")
+                return false
             }
         }
     }
@@ -2431,7 +2455,7 @@ final class AskConversationModel: ObservableObject {
             if draftSaveConversationID == id {
                 let pendingSave = draftSave
                 pendingSave?.cancel()
-                await pendingSave?.value
+                _ = await pendingSave?.value
             }
             try await cache.delete(id: id, owner: current.owner)
             guard owner == current.account else { return }

@@ -58,7 +58,10 @@ struct FeatureAskCache: AskCaching {
         let generation = await generation()
         let call = FeatureAskCall(generation: generation, payload: try JSONEncoder().encode(value))
         let reply: FeatureAskReply
-        do { reply = try await connection.call(method, call, timeout: .seconds(120)) }
+        // Draft writes and verification must leave time for the quit recovery
+        // copy if the host channel or storage stops responding.
+        let timeout: Duration = ["cache.saveDraft.10", "cache.draft.11"].contains(method) ? .seconds(15) : .seconds(120)
+        do { reply = try await connection.call(method, call, timeout: timeout) }
         catch FeatureRPC.Failure.cancelled { throw CancellationError() }
         catch {
             AskFailureDiagnostics.shared.record(.cacheCall, error: error, method: method)

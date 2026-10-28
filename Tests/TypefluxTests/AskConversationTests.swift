@@ -421,7 +421,7 @@ struct AskConversationTests {
         let fixture = try AskTestFixture(authenticated: false)
         defer { fixture.model.resetSession() }
         fixture.model.draft.text = "Keep this question"
-        await fixture.model.flushFeatureDrafts()
+        #expect(await fixture.model.flushFeatureDrafts() == false)
         #expect(fixture.model.owner.isEmpty)
         #expect(try await fixture.cache.draft(key: "launcher", owner: "") == nil)
         #expect(fixture.model.error == nil)
@@ -436,7 +436,7 @@ struct AskConversationTests {
             BEGIN SELECT RAISE(FAIL, 'Synthetic storage failure'); END
             """, strings: [])
         fixture.model.draft.text = "Keep this question"
-        await fixture.model.flushFeatureDrafts()
+        #expect(await fixture.model.flushFeatureDrafts() == false)
         #expect(fixture.model.error == L("ask.cache.failed"))
         #expect(fixture.model.draft.text == "Keep this question")
     }
@@ -474,8 +474,7 @@ struct AskConversationTests {
         fixture.model.recoveryEntries[value.id] = [.init(id: "unavailable")]
         fixture.model.error = L("ask.cache.failed")
         fixture.model.draft.text = "Keep this question"
-        fixture.model.persistDrafts()
-        try await Task.sleep(for: .milliseconds(450))
+        #expect(await fixture.model.flushFeatureDrafts())
         #expect(fixture.model.error == L("ask.cache.failed"))
     }
 

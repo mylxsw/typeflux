@@ -1,4 +1,5 @@
 import AppKit
+import Foundation
 import Testing
 @testable import Typeflux
 
@@ -23,28 +24,59 @@ struct AppTerminationBarrierTests {
         for _ in 0..<100 where replies == 0 { try await Task.sleep(for: .milliseconds(5)) }
         #expect(replies == 1)
     }
+
+    @Test func retriesFailedCleanupAndExitsWhenSavingSucceeds() async throws {
+        let barrier = AppTerminationBarrier()
+        let forced = TerminationForceCounter()
+        var attempts = 0, replies: [Bool] = []
+        _ = barrier.beginChecked(timeout: 0.2, hardTimeoutGrace: 0.05, retryDelay: .milliseconds(5),
+                                 forceExit: { forced.increment() }) {
+            attempts += 1
+            return attempts == 3
+        } reply: { replies.append($0) }
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(attempts == 3)
+        #expect(replies == [true])
+        #expect(forced.count == 0)
+    }
+
+    @Test func blockedCleanupHasBoundedExitAndCannotReplyTwice() async throws {
+        let barrier = AppTerminationBarrier()
+        let forced = TerminationForceCounter()
+        var release: CheckedContinuation<Void, Never>?
+        var replies: [Bool] = []
+        _ = barrier.beginChecked(timeout: 0.05, hardTimeoutGrace: 0.05,
+                                 forceExit: { forced.increment() }) {
+            await withCheckedContinuation { release = $0 }
+            return true
+        } reply: { replies.append($0) }
+        try await Task.sleep(for: .milliseconds(150))
+        #expect(replies == [true])
+        #expect(forced.count == 1)
+        release?.resume()
+        try await Task.sleep(for: .milliseconds(20))
+        #expect(replies == [true])
+    }
+
+    @Test func persistentFailureAutomaticallyExitsAtDeadline() async throws {
+        let barrier = AppTerminationBarrier()
+        let forced = TerminationForceCounter()
+        var attempts = 0, replies: [Bool] = []
+        _ = barrier.beginChecked(timeout: 0.05, hardTimeoutGrace: 0.05, retryDelay: .milliseconds(5),
+                                 forceExit: { forced.increment() }) {
+            attempts += 1
+            return false
+        } reply: { replies.append($0) }
+        try await Task.sleep(for: .milliseconds(150))
+        #expect(attempts > 1)
+        #expect(replies == [true])
+        #expect(forced.count == 1)
+    }
 }
 
-
-extension AppTerminationBarrierTests {
-    @Test func failedQuitOffersSafeRecoveryAndExplicitForceChoice() {
-        let alert = AppQuitFailurePrompt.makeAlert()
-        #expect(alert.alertStyle == .warning)
-        #expect(alert.messageText == L("feature.quitBlocked.title"))
-        #expect(alert.informativeText == L("feature.quitBlocked.message"))
-        #expect(alert.buttons.map(\.title) == [L("feature.quitBlocked.keepOpen"),
-                                               L("feature.quitBlocked.retry"),
-                                               L("feature.quitBlocked.force")])
-    }
-
-    @Test func failedSaveCancelsQuitAndAllowsAnExplicitRetry() async throws {
-        let barrier = AppTerminationBarrier()
-        var replies: [Bool] = []
-        #expect(barrier.beginChecked(cleanup: { false }, reply: { replies.append($0) }) == .terminateLater)
-        for _ in 0..<100 where replies.isEmpty { try await Task.sleep(for: .milliseconds(5)) }
-        #expect(replies == [false])
-        #expect(barrier.beginChecked(cleanup: { true }, reply: { replies.append($0) }) == .terminateLater)
-        for _ in 0..<100 where replies.count < 2 { try await Task.sleep(for: .milliseconds(5)) }
-        #expect(replies == [false, true])
-    }
+private final class TerminationForceCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = 0
+    var count: Int { lock.withLock { value } }
+    func increment() { lock.withLock { value += 1 } }
 }

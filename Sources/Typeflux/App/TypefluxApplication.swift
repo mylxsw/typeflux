@@ -112,21 +112,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 await appCoordinator.finishScreenRecordingForTermination()
             }
             return await appCoordinator.prepareForTermination()
-        } reply: { confirmed in
-            guard !confirmed else {
-                sender.reply(toApplicationShouldTerminate: true)
-                return
-            }
-            let alert = AppQuitFailurePrompt.makeAlert()
-            NSApp.activate(ignoringOtherApps: true)
-            let choice = alert.runModal()
-            sender.reply(toApplicationShouldTerminate: choice == .alertThirdButtonReturn)
-            if choice == .alertSecondButtonReturn {
-                Task { @MainActor in
-                    await Task.yield()
-                    sender.terminate(nil)
-                }
-            }
+        } reply: { _ in
+            sender.reply(toApplicationShouldTerminate: true)
         }
     }
 

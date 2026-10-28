@@ -7039,11 +7039,6 @@
 "shortcutDiagnostics.operations" = "受管理任务";
 "shortcutDiagnostics.processNote" = "这里显示业务进程；解码辅助进程和系统服务另外计算。仅在此窗口打开时采样 CPU。";
 "feature.quitNotReady" = "未能确认数据已安全保存，应用仍保持打开。请等待当前任务结束后再次退出。";
-"feature.quitBlocked.title" = "无法安全退出";
-"feature.quitBlocked.message" = "Typeflux 无法确认所有内容都已保存。请先复制尚未发送的文字，并结束正在进行的录音或任务，然后重试。强制退出可能中断任务并丢失未保存的数据。";
-"feature.quitBlocked.keepOpen" = "保持打开";
-"feature.quitBlocked.retry" = "重试退出";
-"feature.quitBlocked.force" = "强制退出";
 /* Chat side panel: files and file tabs */
 "ask.sidePanel.toggle" = "切换侧边栏";
 "ask.sidePanel.close" = "关闭侧边栏";
