@@ -40,15 +40,21 @@ struct LiquidGlassSurfaceTests {
                     let views = descendants(try #require(window.contentView))
                     let blur = views.compactMap { $0 as? NSVisualEffectView }
                     let native = views.compactMap { $0 as? NSGlassEffectView }
+                    let flush = ["canvas", "sidebar", "login and about"].contains(name)
                     switch style {
                     case .classic:
                         #expect(blur.isEmpty && native.isEmpty, "\(name) retains glass in classic")
                     case .frosted:
                         #expect(blur.contains { $0.material == .hudWindow }, "\(name) lacks diffuse frost")
-                        #expect(!native.isEmpty, "\(name) lacks the subdued native optics")
+                        #expect(native.isEmpty == flush, "\(name) has an incorrect optical edge")
                     case .liquidGlass:
-                        #expect(blur.isEmpty, "\(name) mixes legacy blur with Liquid Glass")
-                        #expect(!native.isEmpty, "\(name) lacks native Liquid Glass")
+                        if flush {
+                            #expect(native.isEmpty, "\(name) must leave its outer edge to the window")
+                            #expect(blur.contains { $0.material == .underWindowBackground })
+                        } else {
+                            #expect(blur.isEmpty, "\(name) mixes legacy blur with Liquid Glass")
+                            #expect(!native.isEmpty, "\(name) lacks native Liquid Glass")
+                        }
                     }
                 }
             }
@@ -102,7 +108,12 @@ struct LiquidGlassSurfaceTests {
                     #endif
                 } else {
                     #expect(blur.count == 4)
-                    #expect(blur.allSatisfy { $0.material == (style == .frosted ? .hudWindow : .popover) })
+                    if style == .frosted {
+                        #expect(blur.allSatisfy { $0.material == .hudWindow })
+                    } else {
+                        #expect(blur.filter { $0.material == .underWindowBackground }.count == 1)
+                        #expect(blur.filter { $0.material == .popover }.count == 3)
+                    }
                 }
             }
         }
@@ -163,11 +174,11 @@ struct LiquidGlassSurfaceTests {
                 try await Task.sleep(for: .milliseconds(100))
                 let glass = descendants(window.contentView!).compactMap { $0 as? NSGlassEffectView }
                 let edgeBackdrops = descendants(window.contentView!).compactMap { $0 as? NSVisualEffectView }
-                    .filter { $0.material == .sidebar }
+                    .filter { $0.material == .underWindowBackground }
                 if mode == "glass" {
-                    #expect(glass.count == 4, "Navigation, title controls, composer and monitor must all use native glass")
+                    #expect(glass.count == 3, "Title controls, composer and monitor retain native glass")
                     #expect(glass.allSatisfy { $0.style == .regular })
-                    #expect(edgeBackdrops.isEmpty, "Navigation must share native glass rather than retain a sidebar blur")
+                    #expect(edgeBackdrops.count == 1, "Flush navigation uses window material without a rectangular optical edge")
                     #expect(edgeBackdrops.allSatisfy { $0.blendingMode == .behindWindow })
                 } else {
                     #expect(glass.isEmpty, "\(mode), dark=\(dark): must avoid translucent layers")

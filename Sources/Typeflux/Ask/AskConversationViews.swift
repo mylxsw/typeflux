@@ -49,6 +49,9 @@ struct AskConversationView: View {
     /// sidebar popped in and out instead of sliding.
     @State private var sidebarChoice: Bool?
     @AppStorage("ask.sidebarCollapsed") private var storedSidebarCollapsed = false
+    @AppStorage(AskSidebarWidth.key) private var storedSidebarWidth = Double(AskMetrics.sidebarWidth)
+    @State private var sidebarDragWidth: CGFloat?
+    @State private var sidebarDragBase: CGFloat?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.interfaceStyle) private var style
     @State private var windowSize = AskWorkspaceLayout.minimumWindowSize
@@ -184,7 +187,8 @@ struct AskConversationView: View {
                            showsUsage: showsUsage || showsWorkflow || showsSidePanelView,
                            rightPanelWidth: showsSidePanelView ? sidePanelWidth : (showsWorkflow ? 390 : nil),
                            docksRightPanel: showsSidePanelView,
-                           focusesRightPanel: showsSidePanelView && sidePanelFocused)
+                           focusesRightPanel: showsSidePanelView && sidePanelFocused,
+                           preferredSidebarWidth: sidebarDragWidth ?? CGFloat(storedSidebarWidth))
     }
 
     private func accountDidChange() {
@@ -369,7 +373,7 @@ struct AskConversationView: View {
         let base = sidePanelDragBase ?? layout.usageWidth
         sidePanelDragBase = base
         sidePanelWidth = AskSidePanelWidth.clamped(base + delta, windowWidth: windowSize.width,
-                                                   sidebarWidth: layout.sidebarInline ? AskMetrics.sidebarWidth : 0)
+                                                   sidebarWidth: layout.sidebarInline ? layout.sidebarWidth : 0)
     }
 
     @ViewBuilder private var rightPanel: some View {
@@ -407,7 +411,7 @@ struct AskConversationView: View {
             ZStack(alignment: .topLeading) {
                 HStack(spacing: 0) {
                     if !sidebarHidden {
-                        sidebar.frame(width: AskMetrics.sidebarWidth)
+                        sidebar.frame(width: layout.sidebarWidth)
                             .transition(AskMotion.panel(edge: .leading, reduceMotion: reduceMotion))
                     }
                     content
@@ -427,6 +431,11 @@ struct AskConversationView: View {
                 // clearer glass over it, flush with the window edge.
                 .background(AskWindowBackdrop())
                 if layout.mainWidth > 0 { titleBarTools }
+                if !sidebarHidden {
+                    AskSidebarResizeHandle(width: layout.sidebarWidth, resize: resizeSidebar)
+                        .frame(width: 8)
+                        .offset(x: layout.sidebarWidth - 4)
+                }
                 sidePanelShortcuts
             }
             .disabled(hasModal)
@@ -438,6 +447,19 @@ struct AskConversationView: View {
     }
 
     // MARK: - Sidebar
+
+    private func resizeSidebar(_ delta: CGFloat?) {
+        guard let delta else {
+            if let width = sidebarDragWidth { storedSidebarWidth = Double(width) }
+            sidebarDragBase = nil
+            sidebarDragWidth = nil
+            return
+        }
+        let base = sidebarDragBase ?? layout.sidebarWidth
+        sidebarDragBase = base
+        sidebarDragWidth = AskSidebarWidth.clamped(base + delta,
+                                                  availableWidth: windowSize.width - (layout.usageInline ? layout.usageWidth : 0))
+    }
 
     /// The user's choice: this window's latest toggle, else the stored preference.
     private var sidebarCollapsed: Bool { sidebarChoice ?? storedSidebarCollapsed }
@@ -474,7 +496,7 @@ struct AskConversationView: View {
                     historyList
                     accountFooter
                 }
-                .frame(width: min(AskMetrics.sidebarWidth, layout.drawerWidth))
+                .frame(width: min(layout.sidebarWidth, layout.drawerWidth))
                 .askSidePanel(edge: .leading, floating: true)
                 .transition(AskMotion.panel(edge: .leading, reduceMotion: reduceMotion))
             } else {
@@ -536,7 +558,7 @@ struct AskConversationView: View {
         .padding(.leading, sidebarHidden ? AskMetrics.trafficLightInset : 0)
         // The glass pill's trailing edge lines up with the search field below it.
         .padding(.trailing, sidebarHidden ? 0 : AskMetrics.sidebarToolsTrailing(glass: style.usesGlass))
-        .frame(width: sidebarHidden ? nil : AskMetrics.sidebarWidth, alignment: .leading)
+        .frame(width: sidebarHidden ? nil : layout.sidebarWidth, alignment: .leading)
         .frame(height: AskMetrics.titleBarRowHeight)
         .background {
             if layout.compactContent {
@@ -561,7 +583,7 @@ struct AskConversationView: View {
         withAnimation(AskMotion.panelAnimation(reduceMotion: reduceMotion)) {
             if !layout.sidebarInline,
                windowSize.width - (layout.usageInline ? layout.usageWidth : 0)
-               < AskMetrics.sidebarWidth + AskWorkspaceLayout.comfortableContentWidth {
+               < layout.sidebarWidth + AskWorkspaceLayout.comfortableContentWidth {
                 // Opening the drawer never overwrites a preference for a wider window.
                 if layout.usageOverlay { showsUsage = false }
                 showsSidebarDrawer.toggle()

@@ -7,6 +7,101 @@ import WebKit
 @Suite("Ask sidebar and folder controls", .serialized, .exclusiveUIState)
 @MainActor
 struct AskSidebarControlsTests {
+    @Test(arguments: [InterfaceStyle.liquidGlass, .frosted], [false, true])
+    func `full window material has no rectangular glass edge`(style: InterfaceStyle, dark: Bool) async throws {
+        let window = host(HStack(spacing: 0) {
+            AskEdgeColumnBackdrop().frame(width: 264)
+            AskWindowBackdrop()
+        }.environment(\.interfaceStyle, style), dark: dark, size: CGSize(width: 900, height: 600))
+        defer { window.close() }
+        try await settle(window)
+        let content = try #require(window.contentView)
+        let views = descendants(content)
+        #expect(!views.contains { String(describing: type(of: $0)).contains("NSGlassEffectView") })
+        let materials = views.compactMap { $0 as? NSVisualEffectView }
+        #expect(materials.count >= 2)
+        #expect(materials.allSatisfy { $0.blendingMode == .behindWindow })
+        if style == .liquidGlass {
+            #expect(materials.allSatisfy { $0.material == .underWindowBackground })
+        }
+        try snapshot(window, name: "window-material-\(style.rawValue)-\(dark)")
+    }
+
+    @Test(arguments: [InterfaceStyle.liquidGlass, .classic])
+    func `dragging history divider updates layout and restores its width`(style: InterfaceStyle) async throws {
+        let suite = "sidebar-resize-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(false, forKey: "ask.sidebarCollapsed")
+        let fixture = try AskTestFixture(defaults: defaults)
+        defer { fixture.model.resetSession() }
+        func open(_ width: CGFloat = 1300) -> NSWindow {
+            host(AskConversationView(model: fixture.model).defaultAppStorage(defaults)
+                .environment(\.interfaceStyle, style), dark: true, size: CGSize(width: width, height: 720))
+        }
+        let window = open()
+        defer { window.close() }
+        try await settle(window)
+        let content = try #require(window.contentView)
+        let handle = try #require(descendants(content)
+            .compactMap { $0 as? AskSidebarResizeView }.first)
+        #expect(abs(handle.convert(handle.bounds, to: nil).midX - AskMetrics.sidebarWidth) < 1)
+        #expect(!handle.mouseDownCanMoveWindow)
+        #expect(content
+            .hitTest(content.convert(NSPoint(x: handle.bounds.midX, y: handle.bounds.midY), from: handle)) === handle)
+        func event(_ type: NSEvent.EventType, x: CGFloat) throws -> NSEvent {
+            try #require(NSEvent.mouseEvent(with: type, location: NSPoint(x: x, y: 300), modifierFlags: [],
+                                            timestamp: 0, windowNumber: window.windowNumber, context: nil,
+                                            eventNumber: 0, clickCount: 1, pressure: 1))
+        }
+        try handle.mouseDown(with: event(.leftMouseDown, x: 264))
+        try handle.mouseDragged(with: event(.leftMouseDragged, x: 360))
+        try await settle(window)
+        #expect(abs(handle.convert(handle.bounds, to: nil).midX - 360) < 1)
+        #expect(defaults.object(forKey: AskSidebarWidth.key) == nil, "Persist only when the drag ends")
+        try handle.mouseDragged(with: event(.leftMouseDragged, x: 400))
+        try await settle(window)
+        try handle.mouseUp(with: event(.leftMouseUp, x: 400))
+        try await settle(window)
+        #expect(defaults.double(forKey: AskSidebarWidth.key) == 400)
+        #expect(abs(handle.convert(handle.bounds, to: nil).midX - 400) < 1)
+        #expect(handle.accessibilityPerformDecrement())
+        try await settle(window)
+        #expect(defaults.double(forKey: AskSidebarWidth.key) == 384)
+        #expect(handle.accessibilityPerformIncrement())
+        try await settle(window)
+        #expect(defaults.double(forKey: AskSidebarWidth.key) == 400)
+        try snapshot(window, name: "resized-sidebar-\(style.rawValue)")
+        let reopened = open()
+        defer { reopened.close() }
+        try await settle(reopened)
+        let restoredContent = try #require(reopened.contentView)
+        let restored = try #require(descendants(restoredContent)
+            .compactMap { $0 as? AskSidebarResizeView }.first)
+        #expect(abs(restored.convert(restored.bounds, to: nil).midX - 400) < 1)
+        let narrow = open(800)
+        defer { narrow.close() }
+        try await settle(narrow)
+        let narrowContent = try #require(narrow.contentView)
+        #expect(!descendants(narrowContent).contains { $0 is AskSidebarResizeView })
+        #expect(defaults.double(forKey: AskSidebarWidth.key) == 400)
+        // At the exact layout limit, rounding up would hide the sidebar on release.
+        defaults.set(264.0, forKey: AskSidebarWidth.key)
+        let fractional = open(960.75)
+        defer { fractional.close() }
+        try await settle(fractional)
+        let fractionalContent = try #require(fractional.contentView)
+        let fractionalHandle = try #require(descendants(fractionalContent)
+            .compactMap { $0 as? AskSidebarResizeView }.first)
+        let maximum = fractionalContent.bounds.width - AskWorkspaceLayout.comfortableContentWidth
+        fractionalHandle.resize?(1000)
+        try await settle(fractional)
+        fractionalHandle.resize?(nil)
+        try await settle(fractional)
+        #expect(defaults.double(forKey: AskSidebarWidth.key) == Double(maximum))
+        #expect(descendants(fractionalContent).contains { $0 === fractionalHandle })
+    }
+
     @Test(arguments: [CGFloat(440), 1100], [InterfaceStyle.liquidGlass, .classic])
     func localConversationsOmitStorageMarks(width: CGFloat, style: InterfaceStyle) async throws {
         let suite = "sidebar-local-marks-" + UUID().uuidString

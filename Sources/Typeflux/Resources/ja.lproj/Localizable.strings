@@ -1611,6 +1611,7 @@
 
 "ask.search" = "会話を検索";
 "ask.sidebar.toggle" = "サイドバーを切り替え";
+"ask.sidebar.resize" = "サイドバーの幅を変更";
 "ask.sidebar.right.toggle" = "右サイドバーを切り替え";
 "ask.search.actions" = "アクション";
 "ask.search.conversations" = "会話";

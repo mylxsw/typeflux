@@ -4,6 +4,33 @@ import Testing
 
 @Suite("Ask responsive layout")
 struct AskWorkspaceLayoutTests {
+    @Test func `sidebar width stays within usable limits`() {
+        #expect(AskSidebarWidth.normalized(.nan) == AskMetrics.sidebarWidth)
+        #expect(AskSidebarWidth.normalized(.infinity) == AskMetrics.sidebarWidth)
+        #expect(AskSidebarWidth.normalized(10) == 240)
+        #expect(AskSidebarWidth.normalized(900) == 480)
+        #expect(AskSidebarWidth.clamped(480, availableWidth: 1000) == 400)
+        #expect(AskSidebarWidth.clamped(480, availableWidth: 500) == 240)
+    }
+
+    @Test(arguments: [CGFloat(240), 320, 480])
+    func `custom sidebar fits beside conversation and panels`(width: CGFloat) {
+        for rightPanel in [false, true] {
+            let layout = AskWorkspaceLayout(size: CGSize(width: 1600, height: 800),
+                                            sidebarCollapsed: false, showsUsage: rightPanel, rightPanelWidth: 400,
+                                            docksRightPanel: rightPanel, preferredSidebarWidth: width)
+            #expect(layout.sidebarInline)
+            #expect(layout.sidebarWidth == width)
+            #expect(layout.mainWidth + width + (rightPanel ? layout.usageWidth : 0) == 1600)
+            #expect(layout.mainWidth >= AskWorkspaceLayout.comfortableContentWidth)
+        }
+        let narrow = AskWorkspaceLayout(size: CGSize(width: width + 599, height: 800),
+                                        sidebarCollapsed: false, showsUsage: false, preferredSidebarWidth: width)
+        #expect(!narrow.sidebarInline)
+        #expect(narrow.sidebarWidth == width)
+        #expect(narrow.mainWidth == width + 599)
+    }
+
     @Test(arguments: [CGFloat(360), 440, 760, 799, 800, 980, 1026, 1165, 1440, 1800])
     func browserAlwaysDocksWithoutCoveringTheConversation(width: CGFloat) {
         for collapsed in [false, true] {

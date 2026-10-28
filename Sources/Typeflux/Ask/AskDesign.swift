@@ -1383,7 +1383,8 @@ struct AskWindowBackdrop: View {
             if style.usesGlass {
                 AskGlassBackground(material: materialOverride ?? .resolve(reduceTransparency: reduceTransparency,
                                                                           style: style),
-                                   corner: 0, opaqueFill: Self.base(dark: colorScheme == .dark))
+                                   corner: 0, opaqueFill: Self.base(dark: colorScheme == .dark),
+                                   placement: .windowBackground)
             } else {
                 AskClassic.canvas
             }
@@ -1420,7 +1421,8 @@ struct AskEdgeColumnBackdrop: View {
             if Self.usesTransparency(materialOverride: materialOverride, reduceTransparency: reduceTransparency,
                                      increasedContrast: contrast == .increased) {
                 AskGlassBackground(material: materialOverride ?? .resolve(reduceTransparency: reduceTransparency),
-                                   corner: 0, opaqueFill: AskWindowBackdrop.base(dark: dark))
+                                   corner: 0, opaqueFill: AskWindowBackdrop.base(dark: dark),
+                                   placement: .windowBackground)
             } else {
                 AskWindowBackdrop.base(dark: dark)
                 Self.opaqueShade(dark: dark)

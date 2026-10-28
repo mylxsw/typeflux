@@ -1618,6 +1618,7 @@
 
 "ask.search" = "搜尋對話";
 "ask.sidebar.toggle" = "切換側邊欄";
+"ask.sidebar.resize" = "調整側邊欄寬度";
 "ask.sidebar.right.toggle" = "切換右側邊欄";
 "ask.search.actions" = "操作";
 "ask.search.conversations" = "對話";

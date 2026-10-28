@@ -17,6 +17,9 @@ struct AskWorkspaceLayout: Equatable {
     var docksRightPanel = false
     /// The docked panel fills the window (focused viewing); the conversation steps aside.
     var focusesRightPanel = false
+    var preferredSidebarWidth: CGFloat = AskMetrics.sidebarWidth
+
+    var sidebarWidth: CGFloat { AskSidebarWidth.normalized(preferredSidebarWidth) }
 
     var usageInline: Bool {
         showsUsage && (docksRightPanel || size.width >= Self.comfortableContentWidth + usageWidth)
@@ -24,11 +27,11 @@ struct AskWorkspaceLayout: Equatable {
 
     var sidebarInline: Bool {
         !sidebarCollapsed && size.width - (usageInline ? usageWidth : 0)
-            >= AskMetrics.sidebarWidth + Self.comfortableContentWidth
+            >= sidebarWidth + Self.comfortableContentWidth
     }
 
     var mainWidth: CGFloat {
-        max(0, size.width - (sidebarInline ? AskMetrics.sidebarWidth : 0) - (usageInline ? usageWidth : 0))
+        max(0, size.width - (sidebarInline ? sidebarWidth : 0) - (usageInline ? usageWidth : 0))
     }
 
     var compactContent: Bool { mainWidth < Self.comfortableContentWidth }

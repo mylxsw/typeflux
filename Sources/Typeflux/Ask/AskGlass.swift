@@ -42,6 +42,9 @@ enum AskGlassMaterial: Equatable {
 /// Where a glass surface sits. In-window controls sample the content
 /// underneath them; panels of their own blur what is behind the window.
 enum AskGlassPlacement: Equatable {
+    /// Edge-to-edge window and column materials have no independent glass rim.
+    /// AppKit owns the window's rounded silhouette and its subtle outer edge.
+    case windowBackground
     /// A panel of its own over other apps (the launcher, menus, hover cards):
     /// it blurs the desktop and windows behind it.
     case floating
@@ -67,13 +70,13 @@ enum AskGlassPlacement: Equatable {
         // legacy blur still needs the stronger readability scrim.
         if material == .liquidGlass {
             switch self {
-            case .floating: return dark ? 0.14 : 0.06
+            case .floating, .windowBackground: return dark ? 0.14 : 0.06
             case .inWindow: return dark ? 0.18 : 0.08
             case .menu: return dark ? 0.32 : 0.28
             }
         }
         switch self {
-        case .floating: return dark ? 0.78 : 0.92
+        case .floating, .windowBackground: return dark ? 0.78 : 0.92
         case .inWindow: return 0.45
         case .menu: return dark ? 0.90 : 0.92
         }
@@ -91,6 +94,7 @@ enum AskGlassPlacement: Equatable {
     /// Adaptive popover material avoids the HUD's grey cast in light mode.
     var fallbackMaterial: NSVisualEffectView.Material {
         switch self {
+        case .windowBackground: return .underWindowBackground
         case .floating: return .popover
         case .inWindow: return .popover
         case .menu: return .menu
@@ -130,12 +134,22 @@ struct AskGlassBackground: View {
 
     private var effectiveMaterial: AskGlassMaterial {
         Self.effectiveMaterial(material, reduceTransparency: reduceTransparency,
-                               increasedContrast: contrast == .increased, style: style)
+                               increasedContrast: contrast == .increased, style: style, placement: placement)
     }
 
     static func effectiveMaterial(_ material: AskGlassMaterial, reduceTransparency: Bool,
-                                  increasedContrast: Bool, style: InterfaceStyle = .liquidGlass) -> AskGlassMaterial {
-        !style.usesGlass || reduceTransparency || increasedContrast ? .opaque : material
+                                  increasedContrast: Bool, style: InterfaceStyle = .liquidGlass,
+                                  placement: AskGlassPlacement = .floating) -> AskGlassMaterial {
+        if !style.usesGlass || reduceTransparency || increasedContrast { return .opaque }
+        // A square NSGlassEffectView draws a rectangular optical edge inside the
+        // native rounded window, leaving a bright hairline that breaks at the corner.
+        if placement == .windowBackground, material == .liquidGlass { return .visualEffect }
+        return material
+    }
+
+    var drawsRim: Bool {
+        placement != .windowBackground && !usesDiffuseBackdrop &&
+            (effectiveMaterial == .visualEffect || (effectiveMaterial == .liquidGlass && placement == .floating))
     }
 
     var body: some View {
@@ -167,11 +181,10 @@ struct AskGlassBackground: View {
         .overlay {
             // Small floating cards keep a specular edge; the large launcher
             // leaves its outline to the subdued native optics.
-            if !usesDiffuseBackdrop && (effectiveMaterial == .visualEffect ||
-                (effectiveMaterial == .liquidGlass && placement == .floating)) {
+            if drawsRim {
                 rim
             }
-            if effectiveMaterial == .opaque, contrast == .increased {
+            if effectiveMaterial == .opaque, contrast == .increased, placement != .windowBackground {
                 shape.strokeBorder(AskTheme.border, lineWidth: 1)
             }
         }

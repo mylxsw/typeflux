@@ -5,6 +5,28 @@ import Testing
 
 @Suite("Ask workspace glass")
 struct AskWorkspaceGlassTests {
+    @Test(arguments: [AskGlassMaterial.liquidGlass, .visualEffect, .opaque])
+    func `window background leaves its edge to app kit`(material: AskGlassMaterial) {
+        let background = AskGlassBackground(material: material, corner: 0, opaqueFill: .clear,
+                                            placement: .windowBackground)
+        #expect(!background.drawsRim)
+        #expect(AskGlassBackground.effectiveMaterial(material, reduceTransparency: false,
+                                                     increasedContrast: false, placement: .windowBackground) ==
+                (material == .opaque ? .opaque : .visualEffect))
+        #expect(AskGlassBackground.effectiveMaterial(material, reduceTransparency: true,
+                                                     increasedContrast: false, placement: .windowBackground) == .opaque)
+        #expect(AskGlassBackground.effectiveMaterial(material, reduceTransparency: false,
+                                                     increasedContrast: true, placement: .windowBackground) == .opaque)
+        #expect(AskGlassPlacement.windowBackground.blending == .behindWindow)
+        #expect(AskGlassPlacement.windowBackground.fallbackMaterial == .underWindowBackground)
+    }
+
+    @Test func `floating cards keep their glass rim`() {
+        for material in [AskGlassMaterial.liquidGlass, .visualEffect] {
+            #expect(AskGlassBackground(material: material, corner: 26, opaqueFill: .clear).drawsRim)
+        }
+    }
+
     @Test(arguments: [0.0, 0.5, 0.9, 1.0])
     func windowChromeDoesNotStackTheFloatingPanelsDenseTint(value: Double) {
         let intensity = LiquidGlassIntensity(value)
