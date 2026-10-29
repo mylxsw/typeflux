@@ -40,48 +40,51 @@ struct CloudUsageStats: Decodable, Equatable {
 /// `limit`, `used` and `remaining` keep their monthly meaning; servers with
 /// add-on credits also report the combined balance and the add-on pool.
 struct CloudCreditSummary: Decodable, Equatable {
-    let limit: Int
-    let used: Int
-    let remaining: Int
+    let limit: Double
+    let used: Double
+    let remaining: Double
     let unlimited: Bool
     /// Monthly plus add-on credits that can still be spent; nil from older servers.
-    let totalRemaining: Int?
+    let totalRemaining: Double?
     let addon: CloudAddonCredits?
+    let reserved: Double
 
-    init(limit: Int, used: Int, remaining: Int, unlimited: Bool,
-         totalRemaining: Int? = nil, addon: CloudAddonCredits? = nil) {
+    init(limit: Double, used: Double, remaining: Double, unlimited: Bool,
+         totalRemaining: Double? = nil, addon: CloudAddonCredits? = nil, reserved: Double = 0) {
         self.limit = limit
         self.used = used
         self.remaining = remaining
         self.unlimited = unlimited
         self.totalRemaining = totalRemaining
         self.addon = addon
+        self.reserved = reserved
     }
 
     enum CodingKeys: String, CodingKey {
-        case limit, used, remaining, unlimited, addon
+        case limit, used, remaining, unlimited, addon, reserved
         case totalRemaining = "total_remaining"
     }
 
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         try self.init(
-            limit: values.decode(Int.self, forKey: .limit),
-            used: values.decode(Int.self, forKey: .used),
-            remaining: values.decode(Int.self, forKey: .remaining),
+            limit: values.decode(Double.self, forKey: .limit),
+            used: values.decode(Double.self, forKey: .used),
+            remaining: values.decode(Double.self, forKey: .remaining),
             unlimited: values.decode(Bool.self, forKey: .unlimited),
-            totalRemaining: values.decodeIfPresent(Int.self, forKey: .totalRemaining),
+            totalRemaining: values.decodeIfPresent(Double.self, forKey: .totalRemaining),
             // A malformed add-on block must not hide the monthly balance.
-            addon: (try? values.decodeIfPresent(CloudAddonCredits.self, forKey: .addon)) ?? nil
+            addon: (try? values.decodeIfPresent(CloudAddonCredits.self, forKey: .addon)) ?? nil,
+            reserved: values.decodeIfPresent(Double.self, forKey: .reserved) ?? 0
         )
     }
 
-    var monthlyRemaining: Int { max(0, remaining) }
+    var monthlyRemaining: Double { max(0, remaining) }
 
-    var addonRemaining: Int { max(0, addon?.remaining ?? 0) }
+    var addonRemaining: Double { max(0, addon?.remaining ?? 0) }
 
     /// What the account can still spend. Servers without add-ons report only the month.
-    var spendableRemaining: Int {
+    var spendableRemaining: Double {
         max(0, totalRemaining ?? monthlyRemaining + addonRemaining)
     }
 
@@ -92,12 +95,12 @@ struct CloudCreditSummary: Decodable, Equatable {
 /// Purchased credits, spent only after the monthly allowance.
 struct CloudAddonCredits: Decodable, Equatable {
     /// Unsettled balance, before this period's overflow is subtracted.
-    let balance: Int
-    let usedThisPeriod: Int
-    let remaining: Int
+    let balance: Double
+    let usedThisPeriod: Double
+    let remaining: Double
     let nextExpiry: CloudAddonExpiry?
 
-    init(balance: Int, usedThisPeriod: Int, remaining: Int, nextExpiry: CloudAddonExpiry? = nil) {
+    init(balance: Double, usedThisPeriod: Double, remaining: Double, nextExpiry: CloudAddonExpiry? = nil) {
         self.balance = balance
         self.usedThisPeriod = usedThisPeriod
         self.remaining = remaining
@@ -113,9 +116,9 @@ struct CloudAddonCredits: Decodable, Equatable {
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         try self.init(
-            balance: values.decodeIfPresent(Int.self, forKey: .balance) ?? 0,
-            usedThisPeriod: values.decodeIfPresent(Int.self, forKey: .usedThisPeriod) ?? 0,
-            remaining: values.decodeIfPresent(Int.self, forKey: .remaining) ?? 0,
+            balance: values.decodeIfPresent(Double.self, forKey: .balance) ?? 0,
+            usedThisPeriod: values.decodeIfPresent(Double.self, forKey: .usedThisPeriod) ?? 0,
+            remaining: values.decodeIfPresent(Double.self, forKey: .remaining) ?? 0,
             nextExpiry: (try? values.decodeIfPresent(CloudAddonExpiry.self, forKey: .nextExpiry)) ?? nil
         )
     }
@@ -123,7 +126,7 @@ struct CloudAddonCredits: Decodable, Equatable {
 
 /// The add-on purchase that expires first and how many of its credits go with it.
 struct CloudAddonExpiry: Decodable, Equatable {
-    let credits: Int
+    let credits: Double
     let expiresAt: String
 
     enum CodingKeys: String, CodingKey {
@@ -161,11 +164,11 @@ struct CloudUsageBreakdown: Decodable, Equatable {
     struct Day: Decodable, Equatable {
         /// `YYYY-MM-DD` in the breakdown's time zone.
         let date: String
-        let voice: Int
-        let rewrite: Int
-        let ask: Int
+        let voice: Double
+        let rewrite: Double
+        let ask: Double
 
-        var total: Int {
+        var total: Double {
             voice + rewrite + ask
         }
     }
@@ -174,11 +177,11 @@ struct CloudUsageBreakdown: Decodable, Equatable {
     let periodEnd: String
     let timezone: String
     let days: [Day]
-    let voice: Int
-    let rewrite: Int
-    let ask: Int
+    let voice: Double
+    let rewrite: Double
+    let ask: Double
 
-    var total: Int {
+    var total: Double {
         voice + rewrite + ask
     }
 

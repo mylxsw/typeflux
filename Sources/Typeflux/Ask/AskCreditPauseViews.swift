@@ -79,7 +79,7 @@ struct AskCreditPauseCard: View {
         }
     }
 
-    private func column(_ title: String, _ value: Int?) -> some View {
+    private func column(_ title: String, _ value: Double?) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .font(.system(size: 11))

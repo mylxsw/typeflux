@@ -337,13 +337,13 @@ struct StudioSidebarAccountCard<Footer: View>: View {
             : actionTitle
     }
 
-    private func remainingText(remaining: Int, limit: Int, compact: Bool) -> String {
+    private func remainingText(remaining: Double, limit: Double, compact: Bool) -> String {
         let remainingAmount = compact
             ? AccountUsageDisplayFormatter.sidebarCreditAmount(remaining)
-            : AccountUsageDisplayFormatter.count(Int64(remaining))
+            : AccountUsageDisplayFormatter.creditAmount(remaining)
         let limitAmount = compact
             ? AccountUsageDisplayFormatter.sidebarCreditAmount(limit)
-            : AccountUsageDisplayFormatter.count(Int64(limit))
+            : AccountUsageDisplayFormatter.creditAmount(limit)
         return String(format: L("sidebar.accountCard.usagePair"), remainingAmount, limitAmount)
     }
 }

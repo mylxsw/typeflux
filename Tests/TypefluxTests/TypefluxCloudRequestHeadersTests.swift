@@ -2,6 +2,16 @@
 import XCTest
 
 final class TypefluxCloudRequestHeadersTests: XCTestCase {
+    @MainActor
+    func testPaidCloudCallsHaveOneRetryIdentityPerInvocation() throws {
+        let connection = ResolvedLLMConnection(provider: .typefluxCloud, baseURL: URL(string: "https://api.example.test/api/v1")!, model: "default", apiKey: "fixture", additionalHeaders: [:])
+        let first = connection.headers(for: .textRewrite)
+        let second = connection.headers(for: .textRewrite)
+        XCTAssertEqual(first["X-Typeflux-Credit-Version"], "2")
+        XCTAssertNotNil(UUID(uuidString: try XCTUnwrap(first["Idempotency-Key"])))
+        XCTAssertNotEqual(first["Idempotency-Key"], second["Idempotency-Key"])
+    }
+
     func testClientIdentityStoreGeneratesAndPersistsClientID() throws {
         let suiteName = "TypefluxCloudRequestHeadersTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
@@ -23,6 +33,7 @@ final class TypefluxCloudRequestHeadersTests: XCTestCase {
         TypefluxCloudRequestHeaders.applyClientInfo(to: &request, provider: .fixture)
 
         XCTAssertEqual(request.value(forHTTPHeaderField: "User-Agent"), "Typeflux/1.2.3")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "X-Typeflux-Credit-Version"), "2")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Accept-Language"), "zh-Hans-US, en-US;q=0.9")
         XCTAssertEqual(request.value(forHTTPHeaderField: TypefluxCloudRequestHeaders.clientIDField), "client-123")
         XCTAssertEqual(request.value(forHTTPHeaderField: TypefluxCloudRequestHeaders.clientLocaleField), "zh_Hans_US")

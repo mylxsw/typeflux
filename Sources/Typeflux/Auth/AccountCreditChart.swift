@@ -6,7 +6,7 @@ import Foundation
 enum AccountCreditChart {
     struct Bar: Equatable {
         let day: Date
-        let credits: Int
+        let credits: Double
         let isFuture: Bool
         let isToday: Bool
     }
@@ -19,7 +19,7 @@ enum AccountCreditChart {
 
     struct Share: Equatable {
         let feature: Feature
-        let credits: Int
+        let credits: Double
         /// Share of the period's credits, 0...1.
         let fraction: Double
     }
@@ -55,7 +55,7 @@ enum AccountCreditChart {
         }
 
         let formatter = dayFormatter(calendar)
-        var credits: [String: Int] = [:]
+        var credits: [String: Double] = [:]
         for entry in breakdown.days {
             credits[entry.date, default: 0] += entry.total
         }
@@ -77,7 +77,7 @@ enum AccountCreditChart {
     static func shares(_ breakdown: CloudUsageBreakdown) -> [Share] {
         let total = breakdown.total
         guard total > 0 else { return [] }
-        let values: [(Feature, Int)] = [(.voice, breakdown.voice), (.rewrite, breakdown.rewrite), (.ask, breakdown.ask)]
+        let values: [(Feature, Double)] = [(.voice, breakdown.voice), (.rewrite, breakdown.rewrite), (.ask, breakdown.ask)]
         return values.map { Share(feature: $0.0, credits: $0.1, fraction: Double($0.1) / Double(total)) }
     }
 

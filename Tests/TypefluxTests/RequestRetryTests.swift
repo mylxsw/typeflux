@@ -23,6 +23,52 @@ final class RequestRetryTests: XCTestCase {
         }
     }
 
+    func testUncertainPaidCloudFailureStopsNestedRetryLoops() async {
+        let recorder = Recorder()
+        let original = URLError(.networkConnectionLost)
+        do {
+            _ = try await RequestRetry.perform(operationName: "outer", sleep: { _ in }) {
+                try await RequestRetry.perform(operationName: "inner", sleep: { _ in }) {
+                    _ = await recorder.incrementAttempt()
+                    throw RequestRetry.protectingPaidCloudFailure(original)
+                } as String
+            }
+            XCTFail("Expected the paid invocation to stop")
+        } catch {
+            let wrapped = error as NSError
+            XCTAssertEqual(wrapped.localizedDescription, original.localizedDescription)
+            XCTAssertEqual(wrapped.domain, NSURLErrorDomain)
+            XCTAssertEqual(wrapped.code, URLError.networkConnectionLost.rawValue)
+            XCTAssertEqual(wrapped.userInfo[RequestRetry.paidCloudNoReplayKey] as? Bool, true)
+            XCTAssertNotNil(wrapped.userInfo[NSUnderlyingErrorKey])
+        }
+        let attempts = await recorder.attemptCount
+        XCTAssertEqual(attempts, 1)
+    }
+
+    func testConfirmedUnadmittedCloudRequestMayRetry() async throws {
+        let recorder = Recorder()
+        let body = Data(#"{"code":"BILLING_SYNC_PENDING","message":"synchronizing"}"#.utf8)
+        let pending = NSError(domain: "LLM", code: 503, userInfo: [RequestRetry.responseBodyKey: body])
+        let result = try await RequestRetry.perform(operationName: "cold credits", sleep: { _ in }) {
+            let attempt = await recorder.incrementAttempt()
+            if attempt == 1 { throw RequestRetry.protectingPaidCloudFailure(pending) }
+            return "ok"
+        }
+        XCTAssertEqual(result, "ok")
+        let attempts = await recorder.attemptCount
+        XCTAssertEqual(attempts, 2)
+    }
+
+    func testGeneric503DoesNotProvePaidWorkWasNeverAdmitted() {
+        let body = Data(#"{"code":"UPSTREAM_ERROR","message":"BILLING_SYNC_PENDING"}"#.utf8)
+        let failure = NSError(domain: "LLM", code: 503, userInfo: [RequestRetry.responseBodyKey: body])
+        let protected = RequestRetry.protectingPaidCloudFailure(failure) as NSError
+        XCTAssertEqual(protected.userInfo[RequestRetry.paidCloudNoReplayKey] as? Bool, true)
+        let malformed = NSError(domain: "LLM", code: 503, userInfo: [RequestRetry.responseBodyKey: Data("bad".utf8)])
+        XCTAssertEqual((RequestRetry.protectingPaidCloudFailure(malformed) as NSError).userInfo[RequestRetry.paidCloudNoReplayKey] as? Bool, true)
+    }
+
     func testRetriesUseConfiguredDelaySequence() async throws {
         let expectedDelays: [Duration] = [.zero, .milliseconds(500), .seconds(2)]
         let expectedError = NSError(domain: "RequestRetryTests", code: 42, userInfo: nil)

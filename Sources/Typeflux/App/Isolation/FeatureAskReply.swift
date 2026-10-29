@@ -13,8 +13,8 @@ struct FeatureAskError: Codable, Sendable {
     let kind: Kind
     let code: String?
     let message: String?
-    let monthly: Int?
-    let addon: Int?
+    let monthly: Double?
+    let addon: Double?
     let period: String?
     let purchasable: Bool?
 

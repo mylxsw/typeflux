@@ -25,18 +25,20 @@ final class AccountUsageDisplayFormatterTests: XCTestCase {
         XCTAssertEqual(AccountUsageDisplayFormatter.count(-12345), "-12.3K")
     }
 
-    func testSidebarCreditAmountAbbreviatesFromOneThousandWithLowercaseK() {
-        XCTAssertEqual(AccountUsageDisplayFormatter.sidebarCreditAmount(999), "999")
-        XCTAssertEqual(AccountUsageDisplayFormatter.sidebarCreditAmount(1000), "1k")
-        XCTAssertEqual(AccountUsageDisplayFormatter.sidebarCreditAmount(1280), "1.3k")
-        XCTAssertEqual(AccountUsageDisplayFormatter.sidebarCreditAmount(4500), "4.5k")
-        XCTAssertEqual(AccountUsageDisplayFormatter.sidebarCreditAmount(20000), "20k")
+    func testSidebarCreditAmountPreservesTwoDecimals() {
+        XCTAssertEqual(AccountUsageDisplayFormatter.sidebarCreditAmount(999), "999.00")
+        XCTAssertEqual(AccountUsageDisplayFormatter.sidebarCreditAmount(1000), "1,000.00")
+        XCTAssertEqual(AccountUsageDisplayFormatter.sidebarCreditAmount(1280), "1,280.00")
+        XCTAssertEqual(AccountUsageDisplayFormatter.sidebarCreditAmount(4500), "4,500.00")
+        XCTAssertEqual(AccountUsageDisplayFormatter.sidebarCreditAmount(20000), "20,000.00")
     }
 
-    func testCreditAmountUsesUpToTwoFractionDigits() {
-        XCTAssertEqual(AccountUsageDisplayFormatter.creditAmount(0), "0")
-        XCTAssertEqual(AccountUsageDisplayFormatter.creditAmount(1997), "1,997")
-        XCTAssertEqual(AccountUsageDisplayFormatter.creditAmount(1997.5), "1,997.5")
+    func testCreditAmountAlwaysUsesTwoFractionDigits() {
+        XCTAssertEqual(AccountUsageDisplayFormatter.creditAmount(0), "0.00")
+        XCTAssertEqual(AccountUsageDisplayFormatter.creditAmount(0.0001), "<0.01")
+        XCTAssertEqual(AccountUsageDisplayFormatter.creditAmount(1.2345), "1.23")
+        XCTAssertEqual(AccountUsageDisplayFormatter.creditAmount(1997), "1,997.00")
+        XCTAssertEqual(AccountUsageDisplayFormatter.creditAmount(1997.5), "1,997.50")
         XCTAssertEqual(AccountUsageDisplayFormatter.creditAmount(1997.456), "1,997.46")
     }
 

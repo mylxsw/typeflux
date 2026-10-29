@@ -141,9 +141,10 @@ final class TypefluxOfficialASRAttemptBoundaryTests: XCTestCase {
                 audioFile: makeSilentAudioFile(), scenario: .voiceInput, optimize: true, onUpdate: { _ in }
             )
             XCTFail("Expected the stream failure")
-        } catch let error as TypefluxOfficialASRError {
+        } catch {
             let expected = TypefluxOfficialASRError.serverError("PROVIDER_FAILED")
-            XCTAssertEqual(error.errorDescription, expected.errorDescription)
+            XCTAssertEqual(error.localizedDescription, expected.localizedDescription)
+            XCTAssertEqual((error as NSError).userInfo[RequestRetry.paidCloudNoReplayKey] as? Bool, true)
         }
 
         XCTAssertEqual(transport.attempts.map(\.baseURL), [serverA.absoluteString])
@@ -151,6 +152,24 @@ final class TypefluxOfficialASRAttemptBoundaryTests: XCTestCase {
         XCTAssertEqual(fetches, 1)
         let failures = await registry.failures
         XCTAssertEqual(failures, [serverA])
+    }
+
+    func testOuterRetryDoesNotReplayAdmittedAudio() async throws {
+        let routing = RecordingRoutingClient(servers: [serverA, serverB])
+        let transport = ScriptedTransport(failures: [serverA.absoluteString: .afterAudio])
+        let transcriber = makeTranscriber(routing: routing, transport: transport)
+        let audio = try makeSilentAudioFile()
+        do {
+            _ = try await RequestRetry.perform(operationName: "official recording", sleep: { _ in }) {
+                try await transcriber.transcribeStream(audioFile: audio, scenario: .voiceInput, optimize: true, onUpdate: { _ in })
+            }
+            XCTFail("Expected the admitted recording failure")
+        } catch {
+            XCTAssertEqual((error as NSError).userInfo[RequestRetry.paidCloudNoReplayKey] as? Bool, true)
+        }
+        XCTAssertEqual(transport.attempts.count, 1)
+        let fetches = await routing.accessTokens.count
+        XCTAssertEqual(fetches, 1)
     }
 
     func testBillingStopAfterAudioIsStillReportedAsBilling() async throws {

@@ -115,7 +115,7 @@ extension TypefluxOfficialTranscriber {
                 }
                 await serverRegistry.reportFailure(baseURL, error: failure)
                 if admitted {
-                    throw failure
+                    throw RequestRetry.protectingPaidCloudFailure(failure)
                 }
                 lastError = failure
             }

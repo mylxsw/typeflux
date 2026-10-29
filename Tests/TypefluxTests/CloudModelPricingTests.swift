@@ -2,6 +2,14 @@
 import XCTest
 
 final class CloudModelPricingTests: XCTestCase {
+    func testPerModelRetailPriceDecodesAndPreservesTwoDecimals() throws {
+        let raw = #"{"multiplier":"1.0000","base_rate_version":"retail-v2","unit":"credit","input_per_1k":"0.0500","output_per_1k":"0.2000","cached_per_1k":"0.0010"}"#
+        let price = try AskCoding.decoder().decode(CloudModelPricing.self, from: Data(raw.utf8))
+        XCTAssertEqual(price.inputPer1k, "0.0500")
+        XCTAssertEqual(price.outputPer1k, "0.2000")
+        XCTAssertEqual(price.label, "↓ 0.05 / ↑ 0.20 Credits / 1K")
+    }
+
     func testOldCatalogHasNoAssumedPrice() throws {
         let model = try AskCoding.decoder().decode(AskCloudModel.self, from: Data(#"{"id":"default","name":"Cloud"}"#.utf8))
         XCTAssertEqual(model.registered.vision, true)

@@ -17,7 +17,7 @@ struct AccountStatusPresentationTests {
                                     paid: paid, billingEnabled: billing)
     }
 
-    static func credits(used: Int, limit: Int = 1000, unlimited: Bool = false) -> CloudCreditSummary {
+    static func credits(used: Double, limit: Double = 1000, unlimited: Bool = false) -> CloudCreditSummary {
         CloudCreditSummary(limit: limit, used: used, remaining: limit - used, unlimited: unlimited)
     }
 
@@ -156,7 +156,7 @@ struct AccountUsageForecastTests {
     let start = ISO8601DateFormatter.typefluxBillingDate(from: "2026-10-01T00:00:00Z")!
     let end = ISO8601DateFormatter.typefluxBillingDate(from: "2026-11-01T00:00:00Z")!
 
-    func credits(_ used: Int, limit: Int = 1000) -> CloudCreditSummary {
+    func credits(_ used: Double, limit: Double = 1000) -> CloudCreditSummary {
         CloudCreditSummary(limit: limit, used: used, remaining: limit - used, unlimited: false)
     }
 

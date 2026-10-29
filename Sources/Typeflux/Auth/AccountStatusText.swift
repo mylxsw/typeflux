@@ -90,29 +90,9 @@ enum AccountStatusText {
 
     /// "1.42M / 2M" style pair for tight spaces, exact digits otherwise. Both
     /// sides use the limit's unit so they never mix ("9K / 60K", not "9,000 / 60K").
-    static func quotaPair(remaining: Int, limit: Int, compact: Bool) -> String {
-        guard compact else {
-            return L("auth.account.usageQuotaRemainingPair", AccountUsageDisplayFormatter.creditAmount(remaining),
-                     AccountUsageDisplayFormatter.creditAmount(limit))
-        }
-        let unit: CompactUnit? = if limit >= 1_000_000 {
-            CompactUnit(divisor: 1_000_000, suffix: "M", digits: 2)
-        } else if limit >= 10000 {
-            CompactUnit(divisor: 1000, suffix: "K", digits: 1)
-        } else {
-            nil
-        }
-        let format: (Int) -> String = { value in
-            guard let unit, value != 0 else { return AccountUsageDisplayFormatter.creditAmount(value) }
-            let formatter = NumberFormatter()
-            formatter.locale = Locale(identifier: "en_US_POSIX")
-            formatter.minimumFractionDigits = 0
-            formatter.maximumFractionDigits = unit.digits
-            formatter.roundingMode = .down
-            let scaled = Double(value) / unit.divisor
-            return (formatter.string(from: NSNumber(value: scaled)) ?? "\(scaled)") + unit.suffix
-        }
-        return L("auth.account.usageQuotaRemainingPair", format(remaining), format(limit))
+    static func quotaPair(remaining: Double, limit: Double, compact: Bool) -> String {
+        L("auth.account.usageQuotaRemainingPair", AccountUsageDisplayFormatter.creditAmount(remaining),
+          AccountUsageDisplayFormatter.creditAmount(limit))
     }
 
     private struct CompactUnit {

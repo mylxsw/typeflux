@@ -3,12 +3,12 @@ import Foundation
 /// `details` of a 402 `CREDITS_EXHAUSTED` response: what is left of the month
 /// and of the add-on pool, and whether the account can buy more.
 struct CloudCreditsExhaustedDetails: Decodable, Equatable, Sendable {
-    let monthlyRemaining: Int
-    let addonRemaining: Int
+    let monthlyRemaining: Double
+    let addonRemaining: Double
     let periodEnd: String?
     let purchasable: Bool
 
-    init(monthlyRemaining: Int = 0, addonRemaining: Int = 0, periodEnd: String? = nil, purchasable: Bool = false) {
+    init(monthlyRemaining: Double = 0, addonRemaining: Double = 0, periodEnd: String? = nil, purchasable: Bool = false) {
         self.monthlyRemaining = monthlyRemaining
         self.addonRemaining = addonRemaining
         self.periodEnd = periodEnd
@@ -25,8 +25,8 @@ struct CloudCreditsExhaustedDetails: Decodable, Equatable, Sendable {
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         try self.init(
-            monthlyRemaining: values.decodeIfPresent(Int.self, forKey: .monthlyRemaining) ?? 0,
-            addonRemaining: values.decodeIfPresent(Int.self, forKey: .addonRemaining) ?? 0,
+            monthlyRemaining: values.decodeIfPresent(Double.self, forKey: .monthlyRemaining) ?? 0,
+            addonRemaining: values.decodeIfPresent(Double.self, forKey: .addonRemaining) ?? 0,
             periodEnd: values.decodeIfPresent(String.self, forKey: .periodEnd),
             purchasable: values.decodeIfPresent(Bool.self, forKey: .purchasable) ?? false
         )

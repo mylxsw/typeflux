@@ -61,26 +61,12 @@ enum AccountUsageDisplayFormatter {
     }
 
     static func creditAmount(_ value: Double) -> String {
-        flexibleDecimal(value, maximumFractionDigits: 2)
+        value > 0 && value < 0.01 ? "<0.01" : fixedDecimal(value, maximumFractionDigits: 2)
     }
 
-    static func sidebarCreditAmount(_ value: Int) -> String {
-        let absoluteValue = abs(Double(value))
-        guard absoluteValue >= 1000 else {
-            return count(Int64(value))
-        }
+    static func sidebarCreditAmount(_ value: Int) -> String { creditAmount(value) }
 
-        let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.numberStyle = .decimal
-        formatter.usesGroupingSeparator = false
-        formatter.minimumFractionDigits = 0
-        formatter.maximumFractionDigits = 1
-        formatter.roundingMode = .halfUp
-
-        let compactValue = Double(value) / 1000
-        return (formatter.string(from: NSNumber(value: compactValue)) ?? "\(compactValue)") + "k"
-    }
+    static func sidebarCreditAmount(_ value: Double) -> String { creditAmount(value) }
 
     static func percentage(_ value: Double) -> String {
         fixedDecimal(value, maximumFractionDigits: 2) + "%"

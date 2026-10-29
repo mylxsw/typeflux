@@ -1,6 +1,31 @@
 import Foundation
 
 enum RequestRetry {
+    static let paidCloudNoReplayKey = "TypefluxPaidCloudNoReplay"
+    static let responseBodyKey = "TypefluxCloudResponseBody"
+
+    /// An uncertain paid invocation must stay terminal across nested retry loops.
+    static func protectingPaidCloudFailure(_ error: Error) -> Error {
+        if error is CancellationError
+            || TypefluxCloudBillingError.fromError(error) != nil
+            || TypefluxCloudLoginRequiredError.fromError(error) != nil
+            || TypefluxCloudASRDirectiveError.fromError(error) != nil {
+            return error
+        }
+        let original = error as NSError
+        if original.code == 503,
+           let data = original.userInfo[responseBodyKey] as? Data,
+           let envelope = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           envelope["code"] as? String == "BILLING_SYNC_PENDING" {
+            return error
+        }
+        var info = original.userInfo
+        info[NSLocalizedDescriptionKey] = error.localizedDescription
+        info[paidCloudNoReplayKey] = true
+        info[NSUnderlyingErrorKey] = error
+        return NSError(domain: original.domain, code: original.code, userInfo: info)
+    }
+
     static let retryDelays: [Duration] = [
         .zero,
         .milliseconds(500),
@@ -27,6 +52,9 @@ enum RequestRetry {
             } catch is CancellationError {
                 throw CancellationError()
             } catch {
+                if (error as NSError).userInfo[paidCloudNoReplayKey] as? Bool == true {
+                    throw error
+                }
                 if TypefluxCloudBillingError.fromError(error) != nil {
                     throw error
                 }

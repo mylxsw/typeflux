@@ -298,6 +298,7 @@ final class OpenAICompatibleLLMService: LLMService {
         } catch {
             if let cloudBaseURL {
                 await CloudEndpointRegistry.shared.reportFailure(cloudBaseURL, error: error)
+                throw RequestRetry.protectingPaidCloudFailure(error)
             }
             throw error
         }
@@ -988,7 +989,7 @@ enum RemoteLLMClient {
             throw NSError(
                 domain: "LLM",
                 code: http.statusCode,
-                userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(message)"]
+                userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(message)", RequestRetry.responseBodyKey: data]
             )
         }
         return data
@@ -1178,7 +1179,7 @@ enum SSEClient {
             throw NSError(
                 domain: "SSE",
                 code: http.statusCode,
-                userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(errorBody)"]
+                userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode): \(errorBody)", RequestRetry.responseBodyKey: errorBodyData]
             )
         }
 

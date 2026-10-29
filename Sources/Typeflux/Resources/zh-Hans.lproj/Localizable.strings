@@ -7583,3 +7583,5 @@
 "ask.notes.search.all" = "搜索全部笔记";
 "ask.notes.agent.access" = "AI 访问";
 "ask.notes.submittedInput" = "提交给 AI 的内容";
+
+"account.page.pendingCredits" = "待结算任务预留了 %@ Credits";

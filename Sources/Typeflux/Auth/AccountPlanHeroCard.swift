@@ -112,6 +112,12 @@ struct AccountPlanHeroCard: View {
                                           AccountStatusText.percent(credits.remainingFraction ?? 0)))
                 periodProgress(status)
                 addon(credits)
+                if let reserved = authState.usageCredits?.reserved, reserved > 0 {
+                    Text(L("account.page.pendingCredits", AccountUsageDisplayFormatter.creditAmount(reserved)))
+                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .padding(.top, 6)
+                }
                 forecast(status)
             }
         case .unlimited:

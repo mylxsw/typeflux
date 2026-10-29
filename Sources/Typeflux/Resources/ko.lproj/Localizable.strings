@@ -7582,3 +7582,5 @@
 "ask.notes.search.all" = "모든 노트 검색";
 "ask.notes.agent.access" = "AI 접근";
 "ask.notes.submittedInput" = "AI에 보낸 내용";
+
+"account.page.pendingCredits" = "정산 대기 작업에 %@ Credits가 예약되어 있습니다";

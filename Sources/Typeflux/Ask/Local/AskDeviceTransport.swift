@@ -44,6 +44,10 @@ protocol AskDeviceTransporting: Sendable {
     func webTool(name: String, arguments: String, token: String) async throws -> AskBuiltinToolOutput
 }
 
+enum AskCloudToolBillingIdentity {
+    @TaskLocal static var key: String?
+}
+
 struct AskDeviceTransport: AskDeviceTransporting {
     var executor = CloudRequestExecutor()
     static let path = "/api/v1/ask/device"
@@ -75,7 +79,8 @@ struct AskDeviceTransport: AskDeviceTransporting {
     func webTool(name: String, arguments: String, token: String) async throws -> AskBuiltinToolOutput {
         struct Result: Decodable { let text: String; let isError: Bool }
         let body = try JSONSerialization.data(withJSONObject: ["name": name, "arguments": arguments])
-        let result: Result = try await request("/tools", method: "POST", body: body, token: token)
+        let identity = AskCloudToolBillingIdentity.key ?? UUID().uuidString.lowercased()
+        let result: Result = try await request("/tools", method: "POST", body: body, token: token, idempotencyKey: identity)
         return .init(text: result.text, isError: result.isError)
     }
 
@@ -83,11 +88,14 @@ struct AskDeviceTransport: AskDeviceTransporting {
         _ suffix: String,
         method: String = "GET",
         body: Data? = nil,
-        token: String
+        token: String,
+        idempotencyKey: String? = nil
     ) async throws -> T {
         let path = Self.path + suffix
         let (data, response) = try await executor.execute(apiPath: path) { base in
-            ChatRequest.make(baseURL: base, path: path, method: method, body: body, token: token, timeout: 30)
+            var request = ChatRequest.make(baseURL: base, path: path, method: method, body: body, token: token, timeout: 30)
+            if let idempotencyKey { request.setValue(idempotencyKey, forHTTPHeaderField: "Idempotency-Key") }
+            return request
         }
         return try ChatRequest.decode(data: data, statusCode: response.statusCode)
     }
@@ -124,10 +132,11 @@ struct AskDeviceBuiltinHost: AskBuiltinToolHosting {
 
     func execute(_ input: AskBuiltinToolInput) async -> AskBuiltinToolOutput {
         guard ["web_search", "web_fetch"].contains(input.call.function.name) else { return await local.execute(input) }
-        do { return try await transport.webTool(
-            name: input.call.function.name,
-            arguments: input.call.function.arguments,
-            token: token()
-        ) } catch { return .init(text: error.localizedDescription, isError: true) }
+        let identity = [input.conversation.id, input.conversation.run?.id ?? "", String(input.conversation.run?.steps ?? 0), input.call.id].joined(separator: ":")
+        do {
+            return try await AskCloudToolBillingIdentity.$key.withValue(identity) {
+                try await transport.webTool(name: input.call.function.name, arguments: input.call.function.arguments, token: token())
+            }
+        } catch { return .init(text: error.localizedDescription, isError: true) }
     }
 }

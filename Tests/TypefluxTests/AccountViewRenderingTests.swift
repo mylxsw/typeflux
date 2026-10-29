@@ -26,7 +26,7 @@ struct AccountViewRenderingTests {
                                     paid: paid, billingEnabled: billing)
     }
 
-    static func credits(_ used: Int, _ limit: Int = 60000, unlimited: Bool = false) -> CloudCreditSummary {
+    static func credits(_ used: Double, _ limit: Double = 60000, unlimited: Bool = false) -> CloudCreditSummary {
         CloudCreditSummary(limit: limit, used: used, remaining: limit - used, unlimited: unlimited)
     }
 

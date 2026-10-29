@@ -72,6 +72,7 @@ struct AskUsageTotals: Codable, Equatable, Sendable {
     var missing: Int = 0
     var estimated: Int = 0
     var external: Int = 0
+    var unitScale: Int64? = nil
 
     func tokenText(_ value: Int64) -> String {
         if calls == 0 || (missing == calls && value == 0) { return "—" }
@@ -82,10 +83,10 @@ struct AskUsageTotals: Codable, Equatable, Sendable {
     var creditsText: String {
         if calls == 0 { return "—" }
         if external != calls && microcredits == 0 && (pending > 0 || missing > 0) { return "—" }
-        if microcredits > 0 && microcredits < 10_000 { return "<0.01" }
-        let amount = Decimal(microcredits) / 1_000_000
+        if microcredits > 0 && microcredits < 10_000 * max(1, unitScale ?? 1) { return "<0.01" }
+        let amount = Decimal(microcredits) / 1_000_000 / Decimal(max(1, unitScale ?? 1))
         let formatter = NumberFormatter()
-        formatter.locale = .current; formatter.numberStyle = .decimal; formatter.maximumFractionDigits = 2
+        formatter.locale = .current; formatter.numberStyle = .decimal; formatter.maximumFractionDigits = 2; formatter.minimumFractionDigits = 2
         return formatter.string(from: NSDecimalNumber(decimal: amount)) ?? "—"
     }
 
@@ -130,6 +131,7 @@ struct AskUsageInvocation: Codable, Equatable, Identifiable, Sendable {
     var microcredits: Int64?
     var status: String
     var version: Int64
+    var unitScale: Int64? = nil
 }
 
 struct AskUsagePage: Codable, Sendable {

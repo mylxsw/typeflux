@@ -134,13 +134,13 @@ struct AccountStatusTextTests {
         #expect(AccountStatusText.provider("sso") == "sso")
         #expect(AccountStatusText.percent(0.284) == "28%")
         #expect(AccountStatusText.percent(-1) == "0%")
-        #expect(AccountStatusText.quotaPair(remaining: 1_420_560, limit: 2_000_000, compact: true) == "1.42M / 2M")
-        #expect(AccountStatusText.quotaPair(remaining: 9000, limit: 60000, compact: true) == "9K / 60K")
-        #expect(AccountStatusText.quotaPair(remaining: 58500, limit: 60000, compact: true) == "58.5K / 60K")
+        #expect(AccountStatusText.quotaPair(remaining: 1_420_560, limit: 2_000_000, compact: true) == "1,420,560.00 / 2,000,000.00")
+        #expect(AccountStatusText.quotaPair(remaining: 9000, limit: 60000, compact: true) == "9,000.00 / 60,000.00")
+        #expect(AccountStatusText.quotaPair(remaining: 58500, limit: 60000, compact: true) == "58,500.00 / 60,000.00")
         // Rounded down, so a nearly empty quota never reads as full.
-        #expect(AccountStatusText.quotaPair(remaining: 59999, limit: 60000, compact: true) == "59.9K / 60K")
-        #expect(AccountStatusText.quotaPair(remaining: 900, limit: 2000, compact: true) == "900 / 2,000")
-        #expect(AccountStatusText.quotaPair(remaining: 0, limit: 60000, compact: true) == "0 / 60K")
+        #expect(AccountStatusText.quotaPair(remaining: 59999, limit: 60000, compact: true) == "59,999.00 / 60,000.00")
+        #expect(AccountStatusText.quotaPair(remaining: 900, limit: 2000, compact: true) == "900.00 / 2,000.00")
+        #expect(AccountStatusText.quotaPair(remaining: 0, limit: 60000, compact: true) == "0.00 / 60,000.00")
         #expect(AccountStatusText.quotaPair(remaining: 52782, limit: 60000, compact: false).contains("52,782"))
     }
 }

@@ -18,8 +18,8 @@ struct AskCreditPausePresentation: Equatable {
 
     let state: State
     /// Nil while the balance is not known yet.
-    let monthlyRemaining: Int?
-    let addonRemaining: Int?
+    let monthlyRemaining: Double?
+    let addonRemaining: Double?
     let primary: Action?
     let secondary: Action?
     /// The latest `resume` found the balance still empty.

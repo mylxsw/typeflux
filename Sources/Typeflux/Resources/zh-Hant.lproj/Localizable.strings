@@ -7585,3 +7585,5 @@
 "ask.notes.search.all" = "搜尋所有筆記";
 "ask.notes.agent.access" = "AI 存取";
 "ask.notes.submittedInput" = "提交給 AI 的內容";
+
+"account.page.pendingCredits" = "待結算任務預留了 %@ Credits";

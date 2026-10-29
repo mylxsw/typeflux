@@ -154,6 +154,7 @@ enum TypefluxCloudRequestHeaders {
         provider: TypefluxCloudClientInfoProvider = .live
     ) {
         let info = provider.info()
+        request.setValue("2", forHTTPHeaderField: "X-Typeflux-Credit-Version")
         request.setValue(info.userAgent, forHTTPHeaderField: "User-Agent")
         if !info.acceptLanguage.isEmpty {
             request.setValue(info.acceptLanguage, forHTTPHeaderField: "Accept-Language")
@@ -232,6 +233,10 @@ extension ResolvedLLMConnection {
             to: additionalHeaders,
             provider: provider
         )
+        if provider == .typefluxCloud {
+            scenarioHeaders["X-Typeflux-Credit-Version"] = "2"
+            scenarioHeaders["Idempotency-Key"] = UUID().uuidString.lowercased()
+        }
         if provider == .typefluxCloud, let feature {
             scenarioHeaders[TypefluxCloudRequestHeaders.featureField] = feature.rawValue
             scenarioHeaders["X-Typeflux-Model-Catalog"] = "1"

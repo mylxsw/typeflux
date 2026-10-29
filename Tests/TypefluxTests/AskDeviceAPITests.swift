@@ -36,6 +36,7 @@ private actor DeviceTestSession {
 }
 
 private actor DeviceTestTransport: AskDeviceTransporting {
+    var webBillingIdentities: [String?] = []
     var offline = true
     var hold = false
     var loseAcknowledgment = false
@@ -85,12 +86,27 @@ private actor DeviceTestTransport: AskDeviceTransporting {
     }
 
     func webTool(name _: String, arguments _: String, token _: String) async throws -> AskBuiltinToolOutput {
-        .init(text: "Public page", isError: false)
+        webBillingIdentities.append(AskCloudToolBillingIdentity.key)
+        return .init(text: "Public page", isError: false)
     }
 }
 
 @Suite(.serialized, .exclusiveUIState)
 @MainActor struct AskDeviceAPITests {
+    @Test func paidSearchKeepsTheSameIdentityWhenTheSameToolCallRecovers() async throws {
+        let transport = DeviceTestTransport()
+        let host = AskDeviceBuiltinHost(transport: transport, token: { "fixture" })
+        let conversation = AskConversation(id: UUID().uuidString.lowercased(), title: "Search", revision: 1, updatedAt: Date(), messages: [])
+        let call = AskToolCall(id: "call-1", type: "function", function: .init(name: "web_search", arguments: #"{"query":"billing"}"#))
+        let input = AskBuiltinToolInput(call: call, conversation: conversation, budgeted: false)
+        _ = await host.execute(input)
+        _ = await host.execute(input)
+        let identities = await transport.webBillingIdentities
+        #expect(identities.count == 2)
+        #expect(identities[0] != nil)
+        #expect(identities[0] == identities[1])
+    }
+
     private let device = UUID().uuidString.lowercased()
     private func request(model: String = "custom:test", temporary: Bool = false) -> AskSendRequest {
         var value = AskSendRequest(

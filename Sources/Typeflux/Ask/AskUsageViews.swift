@@ -139,7 +139,7 @@ struct AskUsagePanel: View {
                 HStack {
                     Text(L("ask.usage.balance"))
                     Spacer()
-                    Text(credits.unlimited ? "∞" : AccountUsageDisplayFormatter.count(Int64(credits.remaining)))
+                    Text(credits.unlimited ? "∞" : AccountUsageDisplayFormatter.creditAmount(credits.remaining))
                         .monospacedDigit()
                 }
                 .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
@@ -362,7 +362,7 @@ struct AskUsagePanel: View {
         }
         if local { return L(item.status == "pending" ? "ask.usage.pendingShort" : "ask.usage.unavailable") }
         if item.status == "confirmed", let amount = item.microcredits {
-            return AskUsageTotals(microcredits: amount, calls: 1).creditsText + " credits"
+            return AskUsageTotals(microcredits: amount, calls: 1, unitScale: item.unitScale).creditsText + " credits"
         }
         return L(item.status == "external" ? "ask.usage.externalShort"
                  : item.status == "pending" ? "ask.usage.pendingShort" : "ask.usage.unavailable")

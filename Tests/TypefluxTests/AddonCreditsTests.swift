@@ -3,6 +3,14 @@ import Foundation
 import XCTest
 
 final class AddonCreditsTests: XCTestCase {
+    func testFractionalCreditSummaryKeepsFourPlacesBeforeDisplay() throws {
+        let raw = #"{"limit":200.0000,"used":1.2345,"remaining":198.7655,"unlimited":false,"total_remaining":388.7655,"reserved":0.0001}"#
+        let value = try JSONDecoder().decode(CloudCreditSummary.self, from: Data(raw.utf8))
+        XCTAssertEqual(value.used, 1.2345)
+        XCTAssertEqual(value.reserved, 0.0001)
+        XCTAssertEqual(AccountUsageDisplayFormatter.creditAmount(value.remaining), "198.77")
+    }
+
     // MARK: Credit summary
 
     func testSummaryDecodesCombinedBalanceAndAddonPool() throws {
@@ -176,7 +184,7 @@ final class AddonCreditsTests: XCTestCase {
 
     func testAddonExpiringWithinThirtyDaysWarns() throws {
         let now = try XCTUnwrap(ISO8601DateFormatter.typefluxBillingDate(from: "2026-10-08T00:00:00Z"))
-        func addon(_ expiresAt: String, remaining: Int = 50) -> AccountUsageCreditPresentation.Addon? {
+        func addon(_ expiresAt: String, remaining: Double = 50) -> AccountUsageCreditPresentation.Addon? {
             AccountUsageCreditPresentation(credits: .init(
                 limit: 100, used: 0, remaining: 100, unlimited: false,
                 addon: .init(balance: remaining, usedThisPeriod: 0, remaining: remaining,
@@ -191,7 +199,7 @@ final class AddonCreditsTests: XCTestCase {
         XCTAssertEqual(addon("2026-10-20T00:00:00Z", remaining: 0)?.expiresSoon, false)
         let warning = try XCTUnwrap(addon("2026-10-20T00:00:00Z"))
         XCTAssertEqual(AccountStatusText.addonExpiry(warning, locale: Locale(identifier: "en_US")),
-                       L("account.addon.expiringSoon", "50",
+                       L("account.addon.expiringSoon", "50.00",
                          AccountStatusText.shortDate(try XCTUnwrap(warning.expiresAt), locale: Locale(identifier: "en_US"))))
     }
 

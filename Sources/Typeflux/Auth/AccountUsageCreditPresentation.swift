@@ -4,7 +4,7 @@ struct AccountUsageCreditPresentation: Equatable {
     enum Balance: Equatable {
         case unavailable
         case unlimited
-        case limited(remaining: Int, limit: Int)
+        case limited(remaining: Double, limit: Double)
     }
 
     let credits: CloudCreditSummary?
@@ -31,12 +31,12 @@ struct AccountUsageCreditPresentation: Equatable {
         return limit > 0 && remaining == 0 && addonRemaining == 0
     }
 
-    var addonRemaining: Int { credits?.addonRemaining ?? 0 }
+    var addonRemaining: Double { credits?.addonRemaining ?? 0 }
 
     /// Purchased credits and the purchase that expires first.
     struct Addon: Equatable {
-        let remaining: Int
-        let expiringCredits: Int?
+        let remaining: Double
+        let expiringCredits: Double?
         let expiresAt: Date?
         /// The next expiry is within `expiryWarningDays`.
         let expiresSoon: Bool

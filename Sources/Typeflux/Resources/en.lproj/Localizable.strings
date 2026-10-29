@@ -7583,3 +7583,5 @@
 "ask.notes.search.all" = "Search All Notes";
 "ask.notes.agent.access" = "AI Access";
 "ask.notes.submittedInput" = "Content sent to AI";
+
+"account.page.pendingCredits" = "%@ Credits reserved for tasks awaiting settlement";

@@ -148,6 +148,7 @@ final class OpenAICompatibleAgentService: LLMAgentService, @unchecked Sendable {
         } catch {
             if let cloudBaseURL {
                 await CloudEndpointRegistry.shared.reportFailure(cloudBaseURL, error: error)
+                throw RequestRetry.protectingPaidCloudFailure(error)
             }
             throw error
         }

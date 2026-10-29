@@ -7582,3 +7582,5 @@
 "ask.notes.search.all" = "すべてのノートを検索";
 "ask.notes.agent.access" = "AI アクセス";
 "ask.notes.submittedInput" = "AI に送信した内容";
+
+"account.page.pendingCredits" = "精算待ちのタスクに %@ Credits を確保しています";
