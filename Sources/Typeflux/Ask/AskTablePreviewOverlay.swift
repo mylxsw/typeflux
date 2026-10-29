@@ -1,6 +1,6 @@
 import AppKit
 
-/// Window-local lightbox; the transcript and its selection stay untouched underneath.
+/// A transparent native sheet keeps SwiftUI hit testing and shortcuts out of the background.
 @MainActor final class AskTablePreviewOverlay: NSView {
     private let content: NSAttributedString
     private let columns: Int
@@ -11,11 +11,15 @@ import AppKit
     private let controls = NSStackView()
     private let closeButton: NSButton
     private weak var previousResponder: NSResponder?
+    private weak var owner: NSWindow?
+    private var panel: Panel?
+    private var windowObservers: [NSObjectProtocol] = []
     private(set) var zoom: CGFloat = 1.2
     var onClose: (() -> Void)?
 
     override var isFlipped: Bool { true }
     override var acceptsFirstResponder: Bool { true }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     init(content: NSAttributedString, columns: Int, onOpenLink: ((URL, Bool) -> Void)?) {
         self.content = content
@@ -70,9 +74,48 @@ import AppKit
 
     required init?(coder: NSCoder) { nil }
 
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        if let window { previousResponder = window.firstResponder }
+    func present(in owner: NSWindow) {
+        guard panel == nil, owner.attachedSheet == nil, let parent = owner.contentView else { return }
+        self.owner = owner
+        previousResponder = owner.firstResponder
+        let panel = Panel(contentRect: parent.bounds, styleMask: [.borderless], backing: .buffered, defer: false)
+        panel.isReleasedWhenClosed = false
+        panel.backgroundColor = .clear
+        panel.isOpaque = false
+        panel.hasShadow = false
+        panel.hidesOnDeactivate = false
+        panel.isMovable = false
+        panel.level = owner.level
+        panel.appearance = owner.effectiveAppearance
+        panel.animationBehavior = .none
+        panel.onClose = { [weak self] in self?.close() }
+        panel.contentView = self
+        self.panel = panel
+        owner.beginSheet(panel)
+        synchronizeFrame()
+        layoutSubtreeIfNeeded()
+        // The key-view loop belongs to the sheet, so Tab cannot focus the composer or sidebar.
+        let buttons = controls.arrangedSubviews.compactMap { $0 as? NSButton }
+        closeButton.nextKeyView = buttons.first
+        buttons.first?.nextKeyView = buttons.last
+        buttons.last?.nextKeyView = textView
+        textView.nextKeyView = closeButton
+        panel.makeFirstResponder(textView)
+        for name in [NSWindow.didResizeNotification, NSWindow.didMoveNotification] {
+            windowObservers.append(NotificationCenter.default.addObserver(
+                forName: name, object: owner, queue: .main
+            ) { [weak self] _ in MainActor.assumeIsolated { self?.synchronizeFrame() } })
+        }
+        windowObservers.append(NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification, object: owner, queue: .main
+        ) { [weak self] _ in MainActor.assumeIsolated { self?.close() } })
+        // AppKit finishes positioning a sheet on the next turn of the run loop.
+        DispatchQueue.main.async { [weak self] in self?.synchronizeFrame() }
+    }
+
+    private func synchronizeFrame() {
+        guard let panel, let owner, panel.sheetParent === owner, let content = owner.contentView else { return }
+        panel.setFrame(owner.convertToScreen(content.convert(content.bounds, to: nil)), display: true)
     }
 
     override func draw(_ dirtyRect: NSRect) {
@@ -128,10 +171,23 @@ import AppKit
 
     override func cancelOperation(_ sender: Any?) { close() }
 
+    // Events at the backdrop or the table's scroll limits stop in this sheet.
+    override func scrollWheel(with event: NSEvent) {}
+    override func rightMouseDown(with event: NSEvent) {}
+
     @objc func close() {
-        let owner = window
-        removeFromSuperview()
+        for observer in windowObservers { NotificationCenter.default.removeObserver(observer) }
+        windowObservers.removeAll()
+        if let panel {
+            panel.sheetParent?.endSheet(panel)
+            panel.orderOut(nil)
+            panel.contentView = nil
+            panel.onClose = nil
+            self.panel = nil
+        }
         if let previousResponder { owner?.makeFirstResponder(previousResponder) }
+        previousResponder = nil
+        owner = nil
         onClose?()
         onClose = nil
     }
@@ -140,6 +196,8 @@ import AppKit
         var onOpenLink: ((URL, Bool) -> Void)?
         var onClose: (() -> Void)?
         override func cancelOperation(_ sender: Any?) { onClose?() }
+        override func insertTab(_ sender: Any?) { window?.selectNextKeyView(sender) }
+        override func insertBacktab(_ sender: Any?) { window?.selectPreviousKeyView(sender) }
         override func clicked(onLink link: Any, at charIndex: Int) {
             guard let url = (link as? URL) ?? (link as? String).flatMap(URL.init(string:)) else { return }
             if let onOpenLink {
@@ -148,5 +206,12 @@ import AppKit
                 super.clicked(onLink: link, at: charIndex)
             }
         }
+    }
+
+    private final class Panel: NSPanel {
+        var onClose: (() -> Void)?
+        override var canBecomeKey: Bool { true }
+        override func cancelOperation(_ sender: Any?) { onClose?() }
+        override func performClose(_ sender: Any?) { onClose?() }
     }
 }

@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 import Testing
 @testable import Typeflux
 
@@ -203,7 +204,8 @@ import Testing
         }
         expand.performClick(nil)
         let preview = try #require(editor.tableInteraction.preview)
-        #expect(preview.superview === parent)
+        #expect(preview.window?.sheetParent === window)
+        #expect(window.attachedSheet === preview.window)
         #expect(!preview.textView.string.contains("整体下来"))
         #expect(preview.textView.string.contains("ICP 经营许可证"))
         #expect(preview.scrollView.hasHorizontalScroller && preview.scrollView.hasVerticalScroller)
@@ -221,10 +223,11 @@ import Testing
         if let root = ProcessInfo.processInfo.environment["TYPEFLUX_TABLE_SNAPSHOTS"] {
             for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
                 parent.appearance = NSAppearance(named: appearance)
+                preview.appearance = NSAppearance(named: appearance)
                 preview.needsLayout = true
                 preview.layoutSubtreeIfNeeded()
-                let bitmap = try #require(parent.bitmapImageRepForCachingDisplay(in: parent.bounds))
-                parent.cacheDisplay(in: parent.bounds, to: bitmap)
+                let bitmap = try #require(preview.bitmapImageRepForCachingDisplay(in: preview.bounds))
+                preview.cacheDisplay(in: preview.bounds, to: bitmap)
                 try #require(bitmap.representation(using: .png, properties: [:])).write(
                     to: URL(fileURLWithPath: root).appendingPathComponent("expanded-table-\(name).png"))
             }
@@ -232,7 +235,7 @@ import Testing
         editor.setContent(sample + "\n\nStreaming continues", markdown: true, dark: false)
         #expect(editor.selectedRange() == selected)
         #expect(preview.textView.string.contains("ICP 经营许可证"))
-        window.makeFirstResponder(preview.textView)
+        preview.window?.makeFirstResponder(preview.textView)
         preview.textView.cancelOperation(nil)
         #expect(editor.tableInteraction.preview == nil)
         #expect(preview.superview == nil)
@@ -240,9 +243,10 @@ import Testing
         editor.tableInteraction.updateHover(at: NSPoint(x: rect.midX, y: rect.midY))
         editor.tableInteraction.expandTable()
         let reopened = try #require(editor.tableInteraction.preview)
+        let reopenedWindow = try #require(reopened.window)
         let click = try #require(NSEvent.mouseEvent(with: .leftMouseDown,
             location: reopened.convert(NSPoint(x: 5, y: 5), to: nil), modifierFlags: [],
-            timestamp: 0, windowNumber: window.windowNumber, context: nil, eventNumber: 0,
+            timestamp: 0, windowNumber: reopenedWindow.windowNumber, context: nil, eventNumber: 0,
             clickCount: 1, pressure: 1))
         reopened.mouseDown(with: click)
         #expect(editor.tableInteraction.preview == nil)
@@ -306,5 +310,121 @@ import Testing
                 }
             }
         }
+    }
+
+    @Test func `hosted window sheet blocks background clicks scrolling and keyboard focus`() async throws {
+        _ = NSApplication.shared
+        let probe = BackgroundProbe()
+        let longTable = "| Name | Value |\n| --- | --- |\n"
+            + (1...30).map { "| Row \($0) | Value \($0) |" }.joined(separator: "\n")
+        let host = NSHostingView(rootView: VStack(spacing: 0) {
+            ProbeView(probe: probe).frame(height: 60)
+            AskTranscriptText(text: longTable).frame(width: 700, height: 500)
+            Spacer(minLength: 0)
+        }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top))
+        host.sizingOptions = []
+        let owner = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 1000, height: 700),
+                             styleMask: [.titled, .resizable], backing: .buffered, defer: false)
+        owner.isReleasedWhenClosed = false
+        owner.contentView = host
+        owner.makeKeyAndOrderFront(nil)
+        func editor(in view: NSView) -> AskTranscriptText.Editor? {
+            (view as? AskTranscriptText.Editor) ?? view.subviews.lazy.compactMap { editor(in: $0) }.first
+        }
+        defer { editor(in: host)?.tableInteraction.dismiss(); owner.contentView = nil; owner.close() }
+        let deadline = ContinuousClock.now + .seconds(3)
+        while editor(in: host)?.string.contains("Row 30") != true, ContinuousClock.now < deadline {
+            host.layoutSubtreeIfNeeded()
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        let editor = try #require(editor(in: host))
+        let selection = (editor.string as NSString).range(of: "Row 1")
+        editor.setSelectedRange(selection)
+        owner.makeFirstResponder(editor)
+        let rect = try #require(editor.tableInteraction.tables.first).frame(in: editor)
+        editor.tableInteraction.updateHover(at: NSPoint(x: rect.midX, y: rect.minY + 10))
+        editor.tableInteraction.expandTable()
+        let preview = try #require(editor.tableInteraction.preview)
+        let sheet = try #require(preview.window)
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(owner.attachedSheet === sheet)
+        #expect(sheet.sheetParent === owner)
+        #expect(sheet !== owner)
+        #expect(sheet.canBecomeKey)
+        #expect(sheet.firstResponder === preview.textView)
+        #expect(!host.subviews.contains { $0 === preview })
+        for _ in 0..<10 {
+            sheet.selectNextKeyView(nil)
+            let focused = try #require(sheet.firstResponder as? NSView)
+            #expect(focused.window === sheet)
+        }
+        // Exercise the keyboard action's responder chain without depending on desktop activation.
+        sheet.makeFirstResponder(preview.textView)
+        #expect(sheet.firstResponder?.tryToPerform(#selector(NSText.selectAll(_:)), with: nil) == true)
+        #expect(preview.textView.selectedRange().length == (preview.textView.string as NSString).length)
+        #expect(editor.selectedRange() == selection)
+        #expect(probe.clicks == 0)
+        let cgWheel = try #require(CGEvent(scrollWheelEvent2Source: nil,
+            units: .line, wheelCount: 1, wheel1: -3, wheel2: 0, wheel3: 0))
+        let wheel = try #require(NSEvent(cgEvent: cgWheel))
+        preview.scrollWheel(with: wheel)
+        #expect(probe.scrolls == 0)
+        preview.scrollView.verticalScrollElasticity = .none
+        let start = preview.scrollView.contentView.bounds.minY
+        for _ in 0..<4 { preview.scrollView.scrollWheel(with: wheel) }
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(preview.scrollView.contentView.bounds.minY > start)
+        owner.setContentSize(NSSize(width: 900, height: 650))
+        try await Task.sleep(for: .milliseconds(30))
+        let contentFrame = owner.convertToScreen(host.convert(host.bounds, to: nil))
+        #expect(contentFrame.size == NSSize(width: 900, height: 650))
+        #expect(abs(sheet.frame.minX - contentFrame.minX) < 1)
+        #expect(abs(sheet.frame.minY - contentFrame.minY) < 1)
+        #expect(abs(sheet.frame.width - contentFrame.width) < 1)
+        #expect(abs(sheet.frame.height - contentFrame.height) < 1)
+        // A click at the background button lands in the sheet's backdrop and is consumed.
+        let buttonScreen = owner.convertPoint(toScreen: probe.convert(
+            NSPoint(x: probe.bounds.midX, y: probe.bounds.midY), to: nil))
+        let backdropPoint = preview.convert(sheet.convertPoint(fromScreen: buttonScreen), from: nil)
+        #expect(preview.bounds.contains(backdropPoint))
+        #expect(preview.hitTest(backdropPoint) === preview)
+        func click(_ window: NSWindow) throws {
+            for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+                NSApp.sendEvent(try #require(NSEvent.mouseEvent(with: type,
+                    location: window.convertPoint(fromScreen: buttonScreen), modifierFlags: [],
+                    timestamp: ProcessInfo.processInfo.systemUptime,
+                    windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1)))
+            }
+        }
+        try click(sheet)
+        #expect(editor.tableInteraction.preview == nil)
+        #expect(owner.attachedSheet == nil)
+        #expect(probe.clicks == 0)
+        #expect(editor.selectedRange() == selection)
+        #expect(owner.firstResponder === editor)
+        probe.performClick(nil)
+        #expect(probe.clicks == 1, "The same background control works again after dismissal")
+    }
+
+    private struct ProbeView: NSViewRepresentable {
+        let probe: BackgroundProbe
+        func makeNSView(context: Context) -> BackgroundProbe { probe }
+        func updateNSView(_ view: BackgroundProbe, context: Context) {}
+    }
+
+    private final class BackgroundProbe: NSButton {
+        var clicks = 0
+        var scrolls = 0
+        init() {
+            super.init(frame: .zero)
+            title = "Background action"
+            target = self
+            action = #selector(activate)
+            keyEquivalent = "b"
+            keyEquivalentModifierMask = .command
+        }
+        required init?(coder: NSCoder) { nil }
+        @objc private func activate() { clicks += 1 }
+        override func scrollWheel(with event: NSEvent) { scrolls += 1 }
     }
 }

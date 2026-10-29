@@ -123,20 +123,17 @@ import AppKit
     }
 
     @objc func expandTable() {
-        guard let editor, let parent = editor.window?.contentView,
+        guard let editor, let window = editor.window,
               let index = hoveredIndex, tables.indices.contains(index) else { return }
         preview?.close()
+        guard window.attachedSheet == nil else { return }
         editor.askPopover.close()
         let table = tables[index]
         let overlay = AskTablePreviewOverlay(content: content.attributedSubstring(from: table.range),
                                              columns: table.columnCount, onOpenLink: editor.onOpenLink)
         overlay.onClose = { [weak self] in self?.preview = nil }
-        overlay.frame = parent.bounds
-        overlay.autoresizingMask = [.width, .height]
-        parent.addSubview(overlay)
         preview = overlay
-        overlay.layoutSubtreeIfNeeded()
-        editor.window?.makeFirstResponder(overlay)
+        overlay.present(in: window)
     }
 
     func dismiss() {
