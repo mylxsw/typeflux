@@ -141,6 +141,117 @@ import Testing
         #expect(right.startingRow == 2 && right.startingColumn == 1)
     }
 
+    @Test func `table actions distinguish tables preserve cells and follow resized layout`() throws {
+        let editor = AskTranscriptText.makeEditor()
+        editor.setContent("Before\n\n| A | B |\n| --- | --- |\n| **bold** | |\n\nBetween\n\n| C |\n| --- |\n| D |",
+                          markdown: true, dark: false)
+        let interaction = editor.tableInteraction
+        #expect(interaction.tables.count == 2)
+        let first = try #require(interaction.tables.first)
+        #expect(AskTranscriptTableInteraction.tabSeparated(first, in: try #require(editor.textStorage)) == "A\tB\nbold\t")
+        for width: CGFloat in [320, 700] {
+            let size = try #require(editor.measuredSize(width: width))
+            editor.frame = NSRect(origin: .zero, size: size)
+            let rect = first.frame(in: editor)
+            // TextKit reserves a few points for the table's outer frame.
+            #expect(rect.width > width * 0.95 && rect.maxX <= width + 1)
+            #expect(rect.height > 50)
+            interaction.updateHover(at: NSPoint(x: rect.midX, y: rect.midY))
+            #expect(interaction.hoveredIndex == 0)
+            let second = interaction.tables[1].frame(in: editor)
+            interaction.updateHover(at: NSPoint(x: second.midX, y: second.midY))
+            #expect(interaction.hoveredIndex == 1)
+            interaction.updateHover(at: NSPoint(x: rect.midX, y: (rect.maxY + second.minY) / 2))
+            #expect(interaction.hoveredIndex == nil)
+        }
+        editor.setContent("Plain", markdown: false, dark: false)
+        #expect(interaction.tables.isEmpty)
+        #expect(interaction.hoveredIndex == nil)
+    }
+
+    @Test func `expanded table zoom scroll dismissal and streaming preserve transcript selection`() throws {
+        _ = NSApplication.shared
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1000, height: 700),
+                              styleMask: [.titled, .resizable], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        let editor = AskTranscriptText.makeEditor()
+        let parent = NSView(frame: NSRect(x: 0, y: 0, width: 1000, height: 700))
+        parent.addSubview(editor)
+        window.contentView = parent
+        defer { editor.tableInteraction.dismiss(); window.contentView = nil; window.close() }
+        editor.setContent(sample, markdown: true, dark: false)
+        editor.frame = NSRect(origin: NSPoint(x: 80, y: 80), size: try #require(editor.measuredSize(width: 700)))
+        let selected = (editor.string as NSString).range(of: "ICP 经营许可证")
+        editor.setSelectedRange(selected)
+        window.makeFirstResponder(editor)
+        let rect = try #require(editor.tableInteraction.tables.first).frame(in: editor)
+        let moved = try #require(NSEvent.mouseEvent(with: .mouseMoved,
+            location: editor.convert(NSPoint(x: rect.midX, y: rect.midY), to: nil), modifierFlags: [],
+            timestamp: 0, windowNumber: window.windowNumber, context: nil, eventNumber: 0,
+            clickCount: 0, pressure: 0))
+        editor.mouseMoved(with: moved)
+        // Exercise the actual toolbar target/action used by the hover button.
+        let toolbar = try #require(editor.subviews.compactMap { $0 as? NSStackView }.first)
+        let expand = try #require(toolbar.arrangedSubviews.last as? NSButton)
+        #expect(!toolbar.isHidden)
+        if let root = ProcessInfo.processInfo.environment["TYPEFLUX_TABLE_SNAPSHOTS"] {
+            parent.layoutSubtreeIfNeeded()
+            let bitmap = try #require(parent.bitmapImageRepForCachingDisplay(in: parent.bounds))
+            parent.cacheDisplay(in: parent.bounds, to: bitmap)
+            try #require(bitmap.representation(using: .png, properties: [:])).write(
+                to: URL(fileURLWithPath: root).appendingPathComponent("table-hover.png"))
+        }
+        expand.performClick(nil)
+        let preview = try #require(editor.tableInteraction.preview)
+        #expect(preview.superview === parent)
+        #expect(!preview.textView.string.contains("整体下来"))
+        #expect(preview.textView.string.contains("ICP 经营许可证"))
+        #expect(preview.scrollView.hasHorizontalScroller && preview.scrollView.hasVerticalScroller)
+        let sourceFont = try #require(preview.textView.textStorage?.attribute(.font, at: 0, effectiveRange: nil) as? NSFont)
+        preview.setZoom(2.5)
+        preview.layoutSubtreeIfNeeded()
+        #expect(preview.zoom == 2)
+        let largeFont = try #require(preview.textView.textStorage?.attribute(.font, at: 0, effectiveRange: nil) as? NSFont)
+        #expect(largeFont.pointSize > sourceFont.pointSize)
+        #expect(preview.textView.frame.width > preview.scrollView.contentSize.width)
+        preview.setZoom(0.1)
+        #expect(preview.zoom == 0.8)
+        preview.setZoom(1.2)
+        preview.layoutSubtreeIfNeeded()
+        if let root = ProcessInfo.processInfo.environment["TYPEFLUX_TABLE_SNAPSHOTS"] {
+            for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+                parent.appearance = NSAppearance(named: appearance)
+                preview.needsLayout = true
+                preview.layoutSubtreeIfNeeded()
+                let bitmap = try #require(parent.bitmapImageRepForCachingDisplay(in: parent.bounds))
+                parent.cacheDisplay(in: parent.bounds, to: bitmap)
+                try #require(bitmap.representation(using: .png, properties: [:])).write(
+                    to: URL(fileURLWithPath: root).appendingPathComponent("expanded-table-\(name).png"))
+            }
+        }
+        editor.setContent(sample + "\n\nStreaming continues", markdown: true, dark: false)
+        #expect(editor.selectedRange() == selected)
+        #expect(preview.textView.string.contains("ICP 经营许可证"))
+        window.makeFirstResponder(preview.textView)
+        preview.textView.cancelOperation(nil)
+        #expect(editor.tableInteraction.preview == nil)
+        #expect(preview.superview == nil)
+        #expect(window.firstResponder === editor)
+        editor.tableInteraction.updateHover(at: NSPoint(x: rect.midX, y: rect.midY))
+        editor.tableInteraction.expandTable()
+        let reopened = try #require(editor.tableInteraction.preview)
+        let click = try #require(NSEvent.mouseEvent(with: .leftMouseDown,
+            location: reopened.convert(NSPoint(x: 5, y: 5), to: nil), modifierFlags: [],
+            timestamp: 0, windowNumber: window.windowNumber, context: nil, eventNumber: 0,
+            clickCount: 1, pressure: 1))
+        reopened.mouseDown(with: click)
+        #expect(editor.tableInteraction.preview == nil)
+        editor.tableInteraction.expandTable()
+        #expect(editor.tableInteraction.preview != nil)
+        AskTranscriptText.dismantleNSView(editor, coordinator: ())
+        #expect(editor.tableInteraction.preview == nil)
+    }
+
     @Test func `layout wraps at narrow widths and selection survives streaming`() throws {
         _ = NSApplication.shared
         for width: CGFloat in [320, 700] {

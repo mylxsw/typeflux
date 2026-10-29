@@ -49,6 +49,7 @@ struct AskTranscriptText: NSViewRepresentable {
 
     static func dismantleNSView(_ editor: Editor, coordinator: ()) {
         editor.onContentChange = nil
+        editor.tableInteraction.dismiss()
         editor.cancelPreparation()
     }
 
@@ -58,6 +59,39 @@ struct AskTranscriptText: NSViewRepresentable {
     }
 
     final class Editor: NSTextView {
+        lazy var tableInteraction = AskTranscriptTableInteraction(editor: self)
+        private var tableTrackingArea: NSTrackingArea?
+
+        override func updateTrackingAreas() {
+            super.updateTrackingAreas()
+            if let tableTrackingArea { removeTrackingArea(tableTrackingArea) }
+            let area = NSTrackingArea(rect: .zero,
+                                      options: [.inVisibleRect, .mouseMoved, .mouseEnteredAndExited, .activeInKeyWindow],
+                                      owner: self)
+            addTrackingArea(area)
+            tableTrackingArea = area
+        }
+
+        override func mouseMoved(with event: NSEvent) {
+            super.mouseMoved(with: event)
+            tableInteraction.updateHover(at: convert(event.locationInWindow, from: nil))
+        }
+
+        override func mouseEntered(with event: NSEvent) {
+            super.mouseEntered(with: event)
+            tableInteraction.updateHover(at: convert(event.locationInWindow, from: nil))
+        }
+
+        override func mouseExited(with event: NSEvent) {
+            super.mouseExited(with: event)
+            tableInteraction.updateHover(at: nil)
+        }
+
+        override func layout() {
+            super.layout()
+            tableInteraction.updateToolbar()
+        }
+
         var preparation: any LatestBackgroundWorking = LatestBackgroundWork(
             label: "typeflux.transcript-parse", queue: AskTranscriptText.parsingQueue
         )
@@ -153,7 +187,7 @@ struct AskTranscriptText: NSViewRepresentable {
         }
 
         override func viewWillMove(toWindow newWindow: NSWindow?) {
-            if newWindow == nil { askPopover.close() }
+            if newWindow == nil { askPopover.close(); tableInteraction.dismiss() }
             super.viewWillMove(toWindow: newWindow)
         }
 
@@ -180,6 +214,7 @@ struct AskTranscriptText: NSViewRepresentable {
         }
 
         override func scrollWheel(with event: NSEvent) {
+            tableInteraction.updateHover(at: nil)
             nextResponder?.scrollWheel(with: event)
         }
 
@@ -234,6 +269,7 @@ struct AskTranscriptText: NSViewRepresentable {
             let rendered = rendered ?? AskMarkdownText.render(text, markdown: markdown, document: document)
             renderCache.insert(rendered, text: text, markdown: markdown, dark: dark)
             textStorage?.setAttributedString(rendered)
+            tableInteraction.setContent(rendered)
             // Preserve a selection only if the selected prefix is still identical.
             if NSMaxRange(oldSelection) <= oldString.length, NSMaxRange(oldSelection) <= rendered.length,
                oldString.substring(to: NSMaxRange(oldSelection)) == (rendered.string as NSString)
