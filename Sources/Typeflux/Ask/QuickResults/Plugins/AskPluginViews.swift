@@ -209,6 +209,10 @@ struct AskPluginResultsView: View {
 
     /// Markdown drawn as Ask draws answers, measured at the card's width.
     static func markdownHeight(_ text: String) -> CGFloat {
+        min(maximumMarkdownHeight, markdownContentHeight(text))
+    }
+
+    static func markdownContentHeight(_ text: String) -> CGFloat {
         if let known = markdownHeights.object(forKey: text as NSString) { return CGFloat(known.doubleValue) }
         let height = measureMarkdown(text)
         markdownHeights.setObject(NSNumber(value: Double(height)), forKey: text as NSString)
@@ -223,7 +227,7 @@ struct AskPluginResultsView: View {
         layout.addTextContainer(container)
         storage.addLayoutManager(layout)
         layout.ensureLayout(for: container)
-        return min(maximumMarkdownHeight, max(22, ceil(layout.usedRect(for: container).height)))
+        return max(22, ceil(layout.usedRect(for: container).height))
     }
 
     /// The result's height: a flat list, or a card with header, text (and the
@@ -245,10 +249,8 @@ struct AskPluginResultsView: View {
             if output.note != nil { height += 6 + noteHeight }
             height += 10 + actionsHeight
         } else if let output {
-            if comparing { height += originalHeight(output.original) + 9 }
-            height += output.markdown ? markdownHeight(output.body) : bodyHeight(output.body)
-            if output.note != nil { height += 6 + noteHeight }
-            height += 10 + actionsHeight
+            height = textCardChromeHeight(output, comparing: comparing)
+                + (output.markdown ? markdownHeight(output.body) : bodyHeight(output.body))
         } else if let failure {
             height += textHeight(failure.message, font: .systemFont(ofSize: 13.5))
                 + (failure.retry || !failure.actions.isEmpty ? 10 + actionsHeight : 0)
@@ -276,7 +278,7 @@ struct AskPluginResultsView: View {
         if display.systemInfo { return SystemInfoLauncherView.height }
         if display.calendar { return CalendarLauncherView.height }
         if display.worldClock { return WorldClockLauncherView.height }
-        return 1 + listPadding * 2 + sectionHeight + rowSpacing + mainHeight(display)
+        return 1 + listPadding * 2 + (showsSection(for: display) ? sectionHeight + rowSpacing : 0) + mainHeight(display)
     }
 
     /// What Return and the other keys do now, for the bottom bar.
@@ -338,7 +340,9 @@ struct AskPluginResultsView: View {
         VStack(spacing: 0) {
             Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
             VStack(spacing: Self.rowSpacing) {
-                section(Self.sectionTitle(for: display))
+                if Self.showsSection(for: display) {
+                    section(Self.sectionTitle(for: display))
+                }
                 main
                     .onContinuousHover { phase in
                         if case .active = phase, pointer.moved(to: NSEvent.mouseLocation) { onHighlight(0) }
@@ -347,9 +351,7 @@ struct AskPluginResultsView: View {
             .padding(Self.listPadding)
             Spacer(minLength: 0)
         }
-        .frame(height: max(minimumHeight, Self.height(for: display),
-                           shownCard?.output.flatMap { $0.emoji != nil || ($0.wordCard == nil && !$0.items.isEmpty) ? viewportHeight : nil } ?? 0),
-               alignment: .top)
+        .frame(height: viewportHeight ?? max(minimumHeight, Self.height(for: display)), alignment: .top)
     }
 
     private func section(_ title: String) -> some View {
@@ -533,6 +535,7 @@ struct AskPluginResultsView: View {
         if let output, let translation = output.translation {
             AskTranslationStackView(stack: translation, original: output.original, actions: output.actions,
                                     selected: output.selectedItem, starred: output.starred == true, comparing: display.comparing, running: running,
+                                    viewportHeight: Self.contentViewportHeight(for: display, viewportHeight: viewportHeight),
                                     defaults: translationSettings?.store.defaults,
                                     onAction: onAction, onSelect: onSelectItem)
                 .opacity(running && !streaming ? 0.5 : 1)
@@ -576,10 +579,13 @@ struct AskPluginResultsView: View {
 
     private func resultCard(plan: AskPluginPlan, output: AskPluginOutput?, failure: AskPluginFailure?, running: Bool,
                             streaming: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let reading = output.map(Self.isReadingOutput) ?? false
+        return VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 8) {
-                Text(plan.title).font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
+                if !reading || plan.title != display.title {
+                    Text(plan.title).font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
+                }
                 metaChips(output?.meta ?? plan.meta)
                 Spacer(minLength: 8)
                 if let output {
@@ -633,11 +639,13 @@ struct AskPluginResultsView: View {
             }
         }
         .padding(Self.cardPadding)
-        .background(highlighted ? AskTheme.hoverFill : Color.clear,
+        .background(!reading && highlighted ? AskTheme.hoverFill : Color.clear,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(highlighted ? AskTheme.accent.opacity(0.55) : AskTheme.separator, lineWidth: 1)
+            if !reading {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(highlighted ? AskTheme.accent.opacity(0.55) : AskTheme.separator, lineWidth: 1)
+            }
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.plugin.card")
@@ -655,18 +663,25 @@ struct AskPluginResultsView: View {
             imageCard(image, dimmed: running)
         } else if output.markdown {
             if display.comparing { original(output) }
-            ScrollViewReader { reader in
-                ScrollView(.vertical) {
-                    VStack(spacing: 0) {
-                        AskTranscriptText(text: streaming ? output.body + Self.caret : output.body)
-                            .opacity(running && !streaming ? 0.5 : 1)
-                        Color.clear.frame(height: 0).id(Self.bodyID)
+            GeometryReader { geometry in
+                ScrollViewReader { reader in
+                    ScrollView(.vertical) {
+                        VStack(spacing: 0) {
+                            AskTranscriptText(text: streaming ? output.body + Self.caret : output.body)
+                                // TextKit must wrap at the actual viewport width, rather than
+                                // retaining a narrow width from SwiftUI's sizing probes.
+                                .frame(width: geometry.size.width, alignment: .leading)
+                                .opacity(running && !streaming ? 0.5 : 1)
+                            Color.clear.frame(height: 0).id(Self.bodyID)
+                        }
+                        .frame(width: geometry.size.width, alignment: .leading)
                     }
+                    // Long streams keep their newest line in view.
+                    .onChange(of: output.body) { _ in if streaming { reader.scrollTo(Self.bodyID, anchor: .bottom) } }
                 }
-                // Long streams keep their newest line in view.
-                .onChange(of: output.body) { _ in if streaming { reader.scrollTo(Self.bodyID, anchor: .bottom) } }
             }
-            .frame(height: Self.markdownHeight(output.body))
+            .frame(height: readingBodyHeight(output))
+            .accessibilityIdentifier("ask.plugin.reading.body")
         } else {
             if display.comparing { original(output) }
             ScrollViewReader { reader in
@@ -677,12 +692,14 @@ struct AskPluginResultsView: View {
                         .foregroundStyle(running && !streaming ? StudioTheme.textTertiary : StudioTheme.textPrimary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
                         .id(Self.bodyID)
                 }
                 // Long streams keep their newest line in view.
                 .onChange(of: output.body) { _ in if streaming { reader.scrollTo(Self.bodyID, anchor: .bottom) } }
             }
-            .frame(height: Self.bodyHeight(output.body))
+            .frame(height: readingBodyHeight(output))
+            .accessibilityIdentifier("ask.plugin.reading.body")
         }
     }
 
@@ -754,6 +771,8 @@ struct AskPluginResultsView: View {
         }
         .frame(height: Self.actionsHeight)
         .padding(.top, 10)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("ask.plugin.actions")
         .disabled(!enabled)
         .opacity(enabled ? 1 : 0.5)
     }

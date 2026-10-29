@@ -162,6 +162,8 @@ struct AskScreenshotTextOrganizationTests {
         generator.pieces = [markdown]
         model.promptAI = generator
         model.notes = makeTestNotes()
+        // The fixture can initialize the lazy session before these test dependencies are injected.
+        model.plugins.replacePlugins(model.makeLauncherPlugins())
         model.launcherScreenshot = AskLauncherScreenshot(
             image: ScreenshotFollowUpImage(image: ScreenCaptureTestSupport.image(width: 400, height: 200),
                                            scale: 2, isLongImage: false), source: source(raw))
@@ -172,7 +174,9 @@ struct AskScreenshotTextOrganizationTests {
             if case .rerun = $0.kind { return true }; return false
         })
         #expect(model.performPluginAction(action) == .stay)
-        try await fixture.wait { model.plugins.output?.markdown == true }
+        try await fixture.wait { model.plugins.output?.markdown == true || model.plugins.failure != nil }
+        let organized = try #require(model.plugins.output, "Organization failed: \(model.plugins.failure?.message ?? "No result")")
+        #expect(organized.markdown)
         #expect(model.plugins.output?.body == markdown)
         let save = try #require(model.plugins.output?.action(for: .commandS))
         #expect(model.performPluginAction(save) == .stay)

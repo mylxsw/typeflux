@@ -70,7 +70,8 @@ struct AskLauncherFixedHeightTests {
 
         // Arrow navigation must reveal and open a file beyond the initial viewport.
         let target = try #require(results.rows.firstIndex(of: .file(12)))
-        for _ in 0 ... target { try await launcher.press(AskQuickResultsInteractionTests.down) }
+        #expect(results.highlighted == 0, "The launcher starts on its first result")
+        for _ in 0 ..< target { try await launcher.press(AskQuickResultsInteractionTests.down) }
         #expect(launcher.fixture.model.quickSearch.results?.highlightedRow == .file(12))
         #expect(scroll.contentView.bounds.minY > 0)
         try await launcher.press(AskQuickResultsInteractionTests.returnKey)

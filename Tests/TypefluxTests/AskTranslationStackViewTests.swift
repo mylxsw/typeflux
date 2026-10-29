@@ -171,6 +171,10 @@ struct AskTranslationStackViewTests {
     }
 
     private func render(_ view: some View, appearance: NSAppearance.Name, size: NSSize, name: String) async throws {
+        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+        let previousAccessibility = NSApp.accessibilityAttributeValue(attribute)
+        NSApp.accessibilitySetValue(true, forAttribute: attribute)
+        defer { NSApp.accessibilitySetValue(previousAccessibility ?? false, forAttribute: attribute) }
         let window = NSWindow(
             contentRect: NSRect(origin: .zero, size: size),
             styleMask: [.borderless],
