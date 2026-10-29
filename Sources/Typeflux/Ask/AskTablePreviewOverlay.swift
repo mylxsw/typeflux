@@ -13,6 +13,7 @@ import AppKit
     private weak var previousResponder: NSResponder?
     private weak var owner: NSWindow?
     private var panel: Panel?
+    private var sheetPositioning: AskTableSheetPositioning?
     private var windowObservers: [NSObjectProtocol] = []
     private(set) var zoom: CGFloat = 1.2
     var onClose: (() -> Void)?
@@ -75,10 +76,10 @@ import AppKit
     required init?(coder: NSCoder) { nil }
 
     func present(in owner: NSWindow) {
-        guard panel == nil, owner.attachedSheet == nil, let parent = owner.contentView else { return }
+        guard panel == nil, owner.attachedSheet == nil, owner.contentView != nil else { return }
         self.owner = owner
         previousResponder = owner.firstResponder
-        let panel = Panel(contentRect: parent.bounds, styleMask: [.borderless], backing: .buffered, defer: false)
+        let panel = Panel(contentRect: owner.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         panel.isReleasedWhenClosed = false
         panel.backgroundColor = .clear
         panel.isOpaque = false
@@ -91,6 +92,9 @@ import AppKit
         panel.onClose = { [weak self] in self?.close() }
         panel.contentView = self
         self.panel = panel
+        let positioning = AskTableSheetPositioning(sheet: panel, original: owner.delegate)
+        sheetPositioning = positioning
+        owner.delegate = positioning
         owner.beginSheet(panel)
         synchronizeFrame()
         layoutSubtreeIfNeeded()
@@ -109,13 +113,11 @@ import AppKit
         windowObservers.append(NotificationCenter.default.addObserver(
             forName: NSWindow.willCloseNotification, object: owner, queue: .main
         ) { [weak self] _ in MainActor.assumeIsolated { self?.close() } })
-        // AppKit finishes positioning a sheet on the next turn of the run loop.
-        DispatchQueue.main.async { [weak self] in self?.synchronizeFrame() }
     }
 
     private func synchronizeFrame() {
-        guard let panel, let owner, panel.sheetParent === owner, let content = owner.contentView else { return }
-        panel.setFrame(owner.convertToScreen(content.convert(content.bounds, to: nil)), display: true)
+        guard let panel, let owner, panel.sheetParent === owner else { return }
+        panel.setFrame(owner.frame, display: true)
     }
 
     override func draw(_ dirtyRect: NSRect) {
@@ -185,6 +187,10 @@ import AppKit
             panel.onClose = nil
             self.panel = nil
         }
+        if let sheetPositioning, owner?.delegate === sheetPositioning {
+            owner?.delegate = sheetPositioning.original
+        }
+        sheetPositioning = nil
         if let previousResponder { owner?.makeFirstResponder(previousResponder) }
         previousResponder = nil
         owner = nil

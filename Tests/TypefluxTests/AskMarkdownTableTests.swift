@@ -321,10 +321,20 @@ import Testing
             ProbeView(probe: probe).frame(height: 60)
             AskTranscriptText(text: longTable).frame(width: 700, height: 500)
             Spacer(minLength: 0)
-        }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top))
+        }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .ignoresSafeArea(.container, edges: .top))
         host.sizingOptions = []
         let owner = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 1000, height: 700),
-                             styleMask: [.titled, .resizable], backing: .buffered, defer: false)
+                             styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
+                             backing: .buffered, defer: false)
+        // Match the production chat window, including its unified title-bar toolbar.
+        owner.titlebarAppearsTransparent = true
+        owner.titleVisibility = .hidden
+        owner.toolbar = NSToolbar(identifier: "table-preview-coverage-test")
+        owner.toolbarStyle = .unified
+        owner.titlebarSeparatorStyle = .none
+        let delegate = WindowDelegateProbe()
+        owner.delegate = delegate
         owner.isReleasedWhenClosed = false
         owner.contentView = host
         owner.makeKeyAndOrderFront(nil)
@@ -346,13 +356,32 @@ import Testing
         editor.tableInteraction.expandTable()
         let preview = try #require(editor.tableInteraction.preview)
         let sheet = try #require(preview.window)
-        try await Task.sleep(for: .milliseconds(30))
+        try await Task.sleep(for: .milliseconds(350))
         #expect(owner.attachedSheet === sheet)
         #expect(sheet.sheetParent === owner)
         #expect(sheet !== owner)
         #expect(sheet.canBecomeKey)
         #expect(sheet.firstResponder === preview.textView)
         #expect(!host.subviews.contains { $0 === preview })
+        #expect(owner.frame.height - owner.contentLayoutRect.height > 20)
+        func expectCoverage() {
+            #expect(abs(sheet.frame.minX - owner.frame.minX) < 1)
+            #expect(abs(sheet.frame.minY - owner.frame.minY) < 1)
+            #expect(abs(sheet.frame.width - owner.frame.width) < 1)
+            #expect(abs(sheet.frame.height - owner.frame.height) < 1)
+            let topPoint = NSPoint(x: owner.frame.midX, y: owner.frame.maxY - 2)
+            #expect(sheet.frame.contains(topPoint), "The overlay must cover the toolbar's top edge")
+        }
+        expectCoverage()
+        #expect(owner.delegate !== delegate)
+        #expect(owner.delegate?.windowShouldClose?(owner) == false)
+        #expect(delegate.closeChecks == 1, "The original delegate's close guard remains active")
+        let otherSheet = NSWindow(contentRect: .zero, styleMask: [.borderless], backing: .buffered, defer: false)
+        otherSheet.isReleasedWhenClosed = false
+        defer { otherSheet.close() }
+        let proposed = NSRect(x: 10, y: 20, width: 300, height: 0)
+        #expect(owner.delegate?.window?(owner, willPositionSheet: otherSheet, using: proposed)
+            == proposed.offsetBy(dx: 5, dy: -7))
         for _ in 0..<10 {
             sheet.selectNextKeyView(nil)
             let focused = try #require(sheet.firstResponder as? NSView)
@@ -375,13 +404,19 @@ import Testing
         try await Task.sleep(for: .milliseconds(30))
         #expect(preview.scrollView.contentView.bounds.minY > start)
         owner.setContentSize(NSSize(width: 900, height: 650))
+        try await Task.sleep(for: .milliseconds(150))
+        #expect(owner.frame.width == 900)
+        expectCoverage()
+        owner.setFrameOrigin(NSPoint(x: owner.frame.minX + 30, y: owner.frame.minY + 20))
         try await Task.sleep(for: .milliseconds(30))
-        let contentFrame = owner.convertToScreen(host.convert(host.bounds, to: nil))
-        #expect(contentFrame.size == NSSize(width: 900, height: 650))
-        #expect(abs(sheet.frame.minX - contentFrame.minX) < 1)
-        #expect(abs(sheet.frame.minY - contentFrame.minY) < 1)
-        #expect(abs(sheet.frame.width - contentFrame.width) < 1)
-        #expect(abs(sheet.frame.height - contentFrame.height) < 1)
+        expectCoverage()
+        #expect(delegate.moves > 0, "Window notifications still reach the original delegate")
+        owner.toolbar?.isVisible = false
+        try await Task.sleep(for: .milliseconds(150))
+        expectCoverage()
+        owner.toolbar?.isVisible = true
+        try await Task.sleep(for: .milliseconds(150))
+        expectCoverage()
         // A click at the background button lands in the sheet's backdrop and is consumed.
         let buttonScreen = owner.convertPoint(toScreen: probe.convert(
             NSPoint(x: probe.bounds.midX, y: probe.bounds.midY), to: nil))
@@ -399,6 +434,7 @@ import Testing
         try click(sheet)
         #expect(editor.tableInteraction.preview == nil)
         #expect(owner.attachedSheet == nil)
+        #expect(owner.delegate === delegate)
         #expect(probe.clicks == 0)
         #expect(editor.selectedRange() == selection)
         #expect(owner.firstResponder === editor)
@@ -410,6 +446,16 @@ import Testing
         let probe: BackgroundProbe
         func makeNSView(context: Context) -> BackgroundProbe { probe }
         func updateNSView(_ view: BackgroundProbe, context: Context) {}
+    }
+
+    @MainActor private final class WindowDelegateProbe: NSObject, NSWindowDelegate {
+        var closeChecks = 0
+        var moves = 0
+        func windowShouldClose(_ sender: NSWindow) -> Bool { closeChecks += 1; return false }
+        func windowDidMove(_ notification: Notification) { moves += 1 }
+        func window(_ window: NSWindow, willPositionSheet sheet: NSWindow, using rect: NSRect) -> NSRect {
+            rect.offsetBy(dx: 5, dy: -7)
+        }
     }
 
     private final class BackgroundProbe: NSButton {
