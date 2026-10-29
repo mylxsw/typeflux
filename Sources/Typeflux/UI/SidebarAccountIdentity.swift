@@ -1,10 +1,9 @@
 import SwiftUI
 
-/// Reusable signed-out identity. Chat supplies an action (local mode); settings
-/// passes nil, so the row only shows status and sign-in stays with the Cloud card or pill.
+/// Reusable signed-out identity. Chat supplies a direct sign-in action without a
+/// subtitle; settings keeps a two-line status with its separate sign-in entry.
 struct AskSignedOutIdentity: View {
-    var active = false
-    var subtitle = L("ask.local.identity.storage")
+    var subtitle: String? = L("ask.local.identity.storage")
     var detail: String
     let action: (() -> Void)?
     @State private var hovering = false
@@ -17,7 +16,7 @@ struct AskSignedOutIdentity: View {
                 .onHover { hovering = $0 }
                 .help(detail)
                 .accessibilityLabel(L("ask.local.identity"))
-                .accessibilityValue(detail)
+                .accessibilityHint(detail)
                 .accessibilityIdentifier("sidebar.signedOutIdentity")
         } else {
             // Status only: both lines stay readable as static text.
@@ -37,16 +36,18 @@ struct AskSignedOutIdentity: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(L("ask.local.identity")).font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
-                Text(subtitle)
-                    .font(.system(size: 11))
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .lineLimit(1).minimumScaleFactor(0.85)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 11))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .lineLimit(1).minimumScaleFactor(0.85)
+                }
             }
         }
         .padding(.leading, 4).padding(.trailing, 8)
         .frame(height: 40)
         .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
-            .fill(hovering || active ? AskTheme.hoverFill : .clear))
+            .fill(hovering ? AskTheme.hoverFill : .clear))
         .contentShape(Rectangle())
     }
 }

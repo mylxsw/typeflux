@@ -300,57 +300,12 @@ struct AskLocalModeCard: View {
     }
 }
 
-/// Opens the storage card from any anchor and runs its actions.
-private struct AskLocalModeMenu: ViewModifier {
-    @Binding var isPresented: Bool
-    let status: AskLocalModeStatus
-    let model: AskConversationModel
-    var launcher = false
-
-    func body(content: Content) -> some View {
-        content.askMenu(isPresented: $isPresented, glass: true) {
-            AskLocalModeCard(status: status, onSignIn: {
-                isPresented = false
-                model.onSignIn()
-            }, onOpenModelSettings: {
-                isPresented = false
-                model.onOpenSettings?(.models)
-            }, onChoose: { kind in
-                isPresented = false
-                model.chooseStorage(kind, launcher: launcher)
-            }, onStartOther: {
-                isPresented = false
-                model.newConversation(storesLocally: !status.local)
-            }, onKeep: {
-                isPresented = false
-                model.keepTemporaryConversation()
-            }, onEnd: {
-                isPresented = false
-                model.endTemporaryConversation()
-            })
-        }
-    }
-}
-
-/// The sidebar footer while signed out: where Ask runs, instead of a lone sign-in link.
+/// The signed-out chat identity opens sign-in directly.
 struct AskLocalModeIdentity: View {
     @ObservedObject var model: AskConversationModel
-    @State private var presented = false
-
-    /// "Ollama · Stays on this Mac": the model's source and where chats are kept.
-    static func detail(source: String) -> String {
-        String(format: L("ask.local.identity.detail"), source)
-    }
 
     var body: some View {
-        let status = AskLocalModeStatus.make(model: model, signedIn: false, offersChoice: false)
-        AskSignedOutIdentity(active: presented, detail: Self.detail(source: status.source)) {
-            presented.toggle()
-        }
-        .modifier(AskLocalModeMenu(isPresented: $presented, status: status, model: model))
-        .accessibilityLabel(L("ask.local.identity"))
-        .accessibilityValue(Self.detail(source: status.source))
-        .accessibilityHint(L("ask.location.local.help"))
+        AskSignedOutIdentity(subtitle: nil, detail: L("account.card.signIn"), action: model.onSignIn)
     }
 }
 

@@ -8,6 +8,56 @@ import Testing
 struct SettingsSidebarChromeTests {
     private typealias UI = SettingsBehaviorTestSupport
 
+    @Test(arguments: InterfaceStyle.allCases, [false, true])
+    func chatIdentitySignsInDirectly(style: InterfaceStyle, compact: Bool) async throws {
+        try await UI.withFixture { settings in
+            settings.appLanguage = .simplifiedChinese
+            AppLocalization.shared.setLanguage(.simplifiedChinese)
+            let auth = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil },
+                                 loadStoredUserProfile: { nil }, clearStoredSession: {})
+            let fixture = try AskTestFixture(authenticated: false)
+            defer { fixture.model.resetSession() }
+            var logins = 0
+            var settingsOpened = 0
+            fixture.model.onSignIn = { logins += 1 }
+            let footer = SidebarAccountFooter(
+                auth: auth, compact: compact, defaults: settings.defaults,
+                onSignIn: { logins += 1 }, onOpenAccount: {},
+                onOpenSettings: { settingsOpened += 1 }, signedOutIdentitySignsIn: true
+            ) {
+                AskLocalModeIdentity(model: fixture.model)
+            }
+            .environment(\.interfaceStyle, style)
+            .background(AskTheme.sidebarSurface)
+            for width in [240.0, 480.0] {
+                for appearance in [NSAppearance.Name.darkAqua, .aqua] {
+                    try await UI.withWindow(footer, width: width, height: 56.5) { window, host in
+                        window.appearance = NSAppearance(named: appearance)
+                        try await UI.wait { identityIsButton(in: host) }
+                        #expect(!UI.contains("Typeflux Cloud", in: host))
+                        #expect(!UI.contains(L("ask.local.identity.storage"), in: host))
+                        #expect(!UI.contains(L("ask.local.identity.localMode"), in: host))
+                        #expect(signInButtons(in: host) == 0)
+                        let identity = try UI.button(L("ask.local.identity"), in: host)
+                        let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
+                        #expect(identity.frame.height >= 28)
+                        #expect(identity.frame.minX >= bounds.minX - 1 && identity.frame.maxX <= bounds.maxX + 1)
+                        let previousLogins = logins
+                        try identity.press()
+                        #expect(logins == previousLogins + 1)
+                        #expect(!UI.contains(L("ask.local.card.body"), in: host))
+                        #expect((window.childWindows ?? []).isEmpty)
+                        let previousSettings = settingsOpened
+                        try UI.button(L("sidebar.settingsAccessibility"), in: host).press()
+                        #expect(settingsOpened == previousSettings + 1)
+                        try UI.snapshot(host, name: "chat-sign-in-\(style.rawValue)-\(Int(width))-\(compact)-\(appearance.rawValue)")
+                    }
+                }
+            }
+            #expect(settings.defaults.double(forKey: AskCloudPromo.dismissedKey) == 0)
+        }
+    }
+
     @Test(arguments: InterfaceStyle.allCases)
     func `chat footer keeps login and settings reachable after dismissal`(style: InterfaceStyle) async throws {
         try await UI.withFixture { settings in

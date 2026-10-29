@@ -2,15 +2,15 @@ import SwiftUI
 
 /// Owns account state, identity, and Cloud promotion for both sidebars.
 /// Chat supplies a settings action; the settings window uses its navigation menu instead.
-/// Signed out, exactly one sign-in action shows: the Cloud card, or a pill once the card is
-/// closed or the sidebar is compact. Only the signed-out identity varies: chat offers local
-/// mode; settings shows status only.
+/// Chat signs in through its identity alone. Settings keeps a status identity and
+/// signs in through the Cloud card, or a pill when the card is closed or compact.
 struct SidebarAccountFooter<SignedOutIdentity: View>: View {
     @ObservedObject var auth: AuthState
     @ObservedObject private var localization = AppLocalization.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage private var dismissedAt: Double
     let compact: Bool
+    let signedOutIdentitySignsIn: Bool
     let onSignIn: () -> Void
     let onOpenAccount: () -> Void
     let onOpenSettings: (() -> Void)?
@@ -18,10 +18,11 @@ struct SidebarAccountFooter<SignedOutIdentity: View>: View {
 
     init(auth: AuthState, compact: Bool, defaults: UserDefaults = .standard,
          onSignIn: @escaping () -> Void, onOpenAccount: @escaping () -> Void,
-         onOpenSettings: (() -> Void)? = nil,
+         onOpenSettings: (() -> Void)? = nil, signedOutIdentitySignsIn: Bool = false,
          @ViewBuilder signedOutIdentity: () -> SignedOutIdentity) {
         self.auth = auth
         self.compact = compact
+        self.signedOutIdentitySignsIn = signedOutIdentitySignsIn
         self.onSignIn = onSignIn
         self.onOpenAccount = onOpenAccount
         self.onOpenSettings = onOpenSettings
@@ -30,7 +31,8 @@ struct SidebarAccountFooter<SignedOutIdentity: View>: View {
     }
 
     private var showsPromo: Bool {
-        !compact && !auth.isLoggedIn && AskCloudPromo.isVisible(dismissedAt: dismissedAt)
+        !signedOutIdentitySignsIn && !compact && !auth.isLoggedIn
+            && AskCloudPromo.isVisible(dismissedAt: dismissedAt)
     }
 
     var body: some View {
@@ -49,7 +51,7 @@ struct SidebarAccountFooter<SignedOutIdentity: View>: View {
             HStack(spacing: 9) {
                 identity.layoutPriority(1)
                 Spacer(minLength: 4)
-                if !auth.isLoggedIn, !showsPromo {
+                if !auth.isLoggedIn, !showsPromo, !signedOutIdentitySignsIn {
                     Button(L("ask.cloudPromo.signIn"), action: onSignIn)
                         .buttonStyle(AskCapsuleButtonStyle(kind: .primary))
                         .help(AskCloudPromo.summary)

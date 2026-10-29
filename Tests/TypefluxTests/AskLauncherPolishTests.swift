@@ -155,11 +155,6 @@ struct AskLauncherPolishTests {
         }
     }
 
-    @Test func theSignedOutFooterKeepsTheFullLineAsItsTooltip() {
-        #expect(AskLocalModeIdentity.detail(source: "Ollama") == String(format: L("ask.local.identity.detail"), "Ollama"))
-        #expect(!L("ask.local.identity.storage").isEmpty)
-    }
-
     @Test func aMissingScreenshotSaysWhy() {
         #expect(AskContextCapture.missingScreenshotWarning(allowed: false) == L("ask.capture.permission"))
         #expect(AskContextCapture.missingScreenshotWarning(allowed: true) == L("ask.capture.unavailable"))

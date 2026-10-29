@@ -691,7 +691,8 @@ struct AskConversationView: View {
                              defaults: model.modelLibrary.settings.defaults,
                              onSignIn: { LoginWindowController.shared.show() },
                              onOpenAccount: { model.onOpenSettings?(.account) },
-                             onOpenSettings: { model.onOpenSettings?(.settings) }) {
+                             onOpenSettings: { model.onOpenSettings?(.settings) },
+                             signedOutIdentitySignsIn: true) {
             AskLocalModeIdentity(model: model)
         }
     }

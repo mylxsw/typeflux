@@ -231,7 +231,7 @@ struct AskLocalModeUITests {
         for size in [NSSize(width: 1180, height: 760), NSSize(width: 960, height: 320)] {
             try await host.resize(to: size)
             try host.assertComposer(text: "Describe this image")
-            // The sidebar says where conversations are kept; the composer no longer repeats it.
+            // The sidebar keeps the signed-out sign-in entry visible at both heights.
             try host.assertVisible(label: L("ask.local.identity"))
             #expect(!f.model.isSignedIn)
             #expect(f.model.storesLocally(launcher: false))
