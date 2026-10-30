@@ -4,6 +4,19 @@ import Testing
 
 @Suite("Ask conversation workspaces")
 struct AskConversationWorkspaceTests {
+    @Test func commandDefinitionDescribesBoundAndUnboundWorkspaces() {
+        let directory = URL(fileURLWithPath: "/tmp/Typeflux conversation workspace")
+        let bound = AskHostCommand.definition(workingDirectory: directory).description
+        #expect(bound.contains("Current working directory (conversation workspace): /tmp/Typeflux conversation workspace\n"))
+        #expect(bound.contains("New project directory: /tmp/Typeflux conversation workspace/work/\n"))
+        #expect(bound.contains("Use TYPEFLUX_WORKSPACE for the absolute workspace path."))
+        #expect(bound.contains(AskFileTools.workspaceInstruction))
+
+        let unbound = AskHostCommand.definition.description
+        #expect(unbound.contains("No conversation workspace is bound; the command starts in the user's home folder."))
+        #expect(!unbound.contains("New project directory:"))
+    }
+
     @Test func capturesOriginalInputsAndKeepsChatsSeparate() async throws {
         let base = FileManager.default.temporaryDirectory.appendingPathComponent("ask-workspace-test-" + UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: base) }

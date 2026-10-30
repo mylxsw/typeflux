@@ -11,11 +11,17 @@ struct AskHostCommand: Sendable {
     static var definition: AskToolDefinition { definition(workingDirectory: nil) }
 
     static func definition(workingDirectory: URL?) -> AskToolDefinition {
-        let location = workingDirectory.map {
-            "Current working directory (conversation workspace): " + $0.path
-                + "\nNew project directory: " + $0.appendingPathComponent("work").path + "/\n"
-                + "Use TYPEFLUX_WORKSPACE for the absolute workspace path. " + AskFileTools.workspaceInstruction
-        } ?? "No conversation workspace is bound; the command starts in the user's home folder."
+        let location: String
+        if let workingDirectory {
+            let projectDirectory = workingDirectory.appendingPathComponent("work")
+            location = [
+                "Current working directory (conversation workspace): \(workingDirectory.path)",
+                "New project directory: \(projectDirectory.path)/",
+                "Use TYPEFLUX_WORKSPACE for the absolute workspace path. \(AskFileTools.workspaceInstruction)"
+            ].joined(separator: "\n")
+        } else {
+            location = "No conversation workspace is bound; the command starts in the user's home folder."
+        }
         let schema: [String: Any] = [
             "type": "object", "required": ["command"], "additionalProperties": false,
             "properties": [
