@@ -1,0 +1,5 @@
+/* Onboarding v3: OnboardingRoute */
+"eyebrow" = "AI Service";
+"title" = "选择 AI 服务";
+"subtitle" = "用于语音输入、AI 改写和 Agent，之后可在设置中更改。";
+"customTitle" = "自己的模型";

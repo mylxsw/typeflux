@@ -1,0 +1,4 @@
+/* Onboarding v3: OnboardingShortcuts */
+"eyebrow" = "Keyboard Shortcuts";
+"title" = "Shortcuts";
+"subtitle" = "Click a key to change it. Conflicts are highlighted automatically.";

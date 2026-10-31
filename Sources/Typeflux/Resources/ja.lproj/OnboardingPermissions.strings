@@ -1,0 +1,4 @@
+/* Onboarding v3: OnboardingPermissions */
+"eyebrow" = "Permissions";
+"title" = "アクセス権を許可";
+"subtitle" = "必須のアクセス権を許可すると続行できます。任意の権限は必要なときに許可できます。";

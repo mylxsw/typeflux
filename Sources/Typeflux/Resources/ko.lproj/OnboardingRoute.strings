@@ -1,0 +1,5 @@
+/* Onboarding v3: OnboardingRoute */
+"eyebrow" = "AI Service";
+"title" = "AI 서비스 선택";
+"subtitle" = "음성 입력, AI 재작성 및 Agent에 사용됩니다. 나중에 설정에서 변경할 수 있습니다.";
+"customTitle" = "내 모델";

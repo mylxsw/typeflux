@@ -1,0 +1,9 @@
+/* Onboarding v3: OnboardingShared */
+"back" = "返回";
+"start" = "开始";
+"finish" = "开始使用";
+"continue" = "继续";
+"later" = "稍后";
+"skip" = "跳过";
+"custom" = "改用自己的模型";
+"skipAll" = "暂不连接，先用启动器";

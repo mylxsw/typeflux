@@ -15,15 +15,6 @@ extension OnboardingViewModel {
         }
     }
 
-    var currentStage: String {
-        switch currentStep {
-        case .welcome, .services: "services"
-        case .cloud, .stt, .llm: "models"
-        case .permissions: "permissions"
-        default: "practice"
-        }
-    }
-
     var speechConfigured: Bool {
         FeatureSetupStatus.speechReason(
             settings: settingsStore,
@@ -96,13 +87,6 @@ extension OnboardingViewModel {
         speechConfigured && voicePermissionsGranted && voiceHotkeyReady
     }
 
-    func chooseRoute(_ route: ServiceRoute) {
-        requestedSetupAdvance = nil
-        serviceRoute = route
-        speechSkipped = false
-        aiSkipped = false
-    }
-
     func guideShortcuts(for feature: OnboardingFeature) -> [OnboardingShortcut] {
         shortcuts(for: feature).filter { shortcut in
             shortcut.id != "voice.rewrite" || (!aiSkipped && languageConfigured)
@@ -136,7 +120,7 @@ extension OnboardingViewModel {
     }
 
     func updateVoicePractice() {
-        guard currentStep == .voice, !voicePracticeText.isEmpty, let historyStore,
+        guard currentStep == .try, !voicePracticeText.isEmpty, let historyStore,
               let began = voicePracticeBeganAt else { return }
         voicePracticeSucceeded = historyStore.list(limit: 5, offset: 0, searchQuery: nil).contains { record in
             guard record.date >= began, record.transcriptionStatus == .succeeded,
@@ -171,6 +155,9 @@ extension OnboardingViewModel {
             settingsStore.sttProvider = .typefluxOfficial
             settingsStore.onboardingSpeechDeferred = false
             speechSkipped = false
+        } else if settingsStore.sttProvider == .localModel, speechConfigured {
+            settingsStore.onboardingSpeechDeferred = false
+            speechSkipped = false
         }
         settingsStore.applyDefaultPersonaIfLLMConfigured()
         refreshSetup()
@@ -181,37 +168,10 @@ extension OnboardingViewModel {
         if target == .speech, speechConfigured { return L("setup.skip.existingSpeech") }
         if target == .language, languageConfigured { return L("setup.skip.existingAI") }
         guard target == .permissions else { return target.message }
-        var impacts = requiredPermissions.filter { !$0.isGranted }.map {
+        let impacts = requiredPermissions.filter { !$0.isGranted }.map {
             L("setup.permission.\($0.id.rawValue).impact")
         }
-        if needsGlobeKeySetup { impacts.append(L("setup.permission.keyboardImpact")) }
         return (impacts + [L("setup.permission.later")]).joined(separator: "\n\n")
-    }
-
-    func confirmSkip(_ confirmedTarget: SkipTarget? = nil) {
-        guard let target = confirmedTarget ?? skipConfirmation else { return }
-        requestedSetupAdvance = nil
-        skipConfirmation = nil
-        reportCurrentStepCompleted(skipped: true)
-        switch target {
-        case .allModels:
-            serviceRoute = .launcherOnly
-            speechSkipped = true; aiSkipped = true
-            settingsStore.onboardingSpeechDeferred = true
-            settingsStore.onboardingAIDeferred = true
-            currentStep = .permissions
-        case .speech:
-            speechSkipped = true
-            settingsStore.onboardingSpeechDeferred = true
-            advanceToNextStepOrComplete()
-        case .language:
-            aiSkipped = true
-            settingsStore.onboardingAIDeferred = true
-            advanceToNextStepOrComplete()
-        case .permissions:
-            settingsStore.onboardingPermissionsDeferred = true
-            advanceToNextStepOrComplete()
-        }
     }
 
     func editModels(_ domain: StudioModelDomain) {

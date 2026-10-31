@@ -1,0 +1,4 @@
+/* Onboarding v3: OnboardingPermissions */
+"eyebrow" = "Permissions";
+"title" = "권한 허용";
+"subtitle" = "필수 권한을 허용한 후 계속할 수 있습니다. 선택 권한은 필요할 때 허용하세요.";

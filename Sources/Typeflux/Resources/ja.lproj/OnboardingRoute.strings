@@ -1,0 +1,5 @@
+/* Onboarding v3: OnboardingRoute */
+"eyebrow" = "AI Service";
+"title" = "AI サービスを選択";
+"subtitle" = "音声入力、AI 書き換え、Agent に使用します。設定で後から変更できます。";
+"customTitle" = "自分のモデル";

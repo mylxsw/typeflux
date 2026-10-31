@@ -1,0 +1,5 @@
+/* Onboarding v3: OnboardingRoute */
+"eyebrow" = "AI Service";
+"title" = "Choose an AI service";
+"subtitle" = "For voice input, AI rewriting and Agent. Change it later in Settings.";
+"customTitle" = "Your own models";

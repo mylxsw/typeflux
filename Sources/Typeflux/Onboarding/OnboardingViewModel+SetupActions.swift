@@ -2,9 +2,10 @@ import Foundation
 
 extension OnboardingViewModel {
     var isSetupActionRunning: Bool {
-        switch currentStep {
+        if isPageBusy { return true }
+        return switch currentStep {
         case .cloud: isCheckingCloud
-        case .stt: configurationModel?.sttConnectionTestState == .testing
+        case .speech: configurationModel?.sttConnectionTestState == .testing
         case .llm: languageTestState == .testing
         default: false
         }
@@ -18,7 +19,7 @@ extension OnboardingViewModel {
         case .cloud:
             if !authState.isLoggedIn { return L("setup.cloud.signInContinue") }
             if cloudError != nil { return L("setup.action.retry") }
-        case .stt:
+        case .speech:
             if !speechConfigured { return L("setup.speech.configure") }
             if !speechVerified { return L("setup.action.testAndContinue") }
         case .llm:
@@ -33,6 +34,7 @@ extension OnboardingViewModel {
     func performSetupAction() {
         guard !isSetupActionRunning else { return }
         if canAdvance { advance(); return }
+        if let action = pagePrimaryAction { action(); return }
         switch currentStep {
         case .cloud:
             requestedSetupAdvance = .cloud
@@ -41,10 +43,10 @@ extension OnboardingViewModel {
             } else {
                 presentLogin()
             }
-        case .stt:
+        case .speech:
             guard speechConfigured else { editModels(.stt); return }
             guard let configurationModel else { return }
-            requestedSetupAdvance = .stt
+            requestedSetupAdvance = .speech
             let wasDeferred = settingsStore.onboardingSpeechDeferred
             configurationModel.setSTTProvider(settingsStore.sttProvider)
             settingsStore.onboardingSpeechDeferred = wasDeferred
@@ -74,7 +76,7 @@ extension OnboardingViewModel {
     func requestSetupSkip() {
         requestedSetupAdvance = nil
         switch currentStep {
-        case .stt: skipConfirmation = .speech
+        case .speech: skipConfirmation = .speech
         case .llm: skipConfirmation = .language
         default: skipConfirmation = .allModels
         }
@@ -92,8 +94,8 @@ extension OnboardingViewModel {
             advance()
             return
         }
-        if currentStep == .stt || currentStep == .llm {
-            let state = currentStep == .stt ? configurationModel?.sttConnectionTestState : languageTestState
+        if currentStep == .speech || currentStep == .llm {
+            let state = currentStep == .speech ? configurationModel?.sttConnectionTestState : languageTestState
             switch state {
             case .failure, .notice, .idle: self.requestedSetupAdvance = nil
             default: break
