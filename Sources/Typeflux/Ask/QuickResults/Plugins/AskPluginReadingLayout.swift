@@ -18,6 +18,7 @@ extension AskPluginResultsView {
 
     /// The keyword chip already names the active tool. Lists retain their grouping label.
     static func showsSection(for display: AskPluginDisplay) -> Bool {
+        if display.permission != nil { return false }
         guard let output = presentedOutput(display) else { return true }
         return !isReadingOutput(output) && output.translation == nil
     }

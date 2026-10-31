@@ -279,15 +279,20 @@ struct AppleProductivitySearchTests {
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
         let service = FakeAppleBrowser()
         await service.setFailure(EventKitReminderBrowser.Failure.permissionRequired)
-        let launcher = try await AskQuickResultsInteractionTests.Launcher(text: "reminders ", prepare: { model in
+        let launcher = try await AskQuickResultsInteractionTests.Launcher(text: "reminders ", foregroundControls: true, prepare: { model in
             var plugins = model.makeLauncherPlugins().filter { $0.id != AskAppleProductivitySearchPlugin.remindersID }
             plugins.append(AskAppleProductivitySearchPlugin(kind: .reminders, service: service))
             model.plugins.replacePlugins(plugins)
         })
         defer { launcher.close() }
-        try await settle { launcher.fixture.model.plugins.failure != nil }
+        launcher.window.appearance = NSAppearance(named: .darkAqua)
+        try await settle {
+            launcher.fixture.model.plugins.failure != nil
+                && launcher.editor.placeholder == L("apple.search.permissionPlaceholder")
+        }
         #expect(await service.accessRequests == 0)
         #expect(launcher.fixture.model.plugins.failure?.permission != nil)
+        #expect(launcher.editor.placeholder == L("apple.search.permissionPlaceholder"))
         try snapshot(launcher, name: "permission")
         try await clickPermissionButton(launcher)
         try await settle { launcher.fixture.model.plugins.output?.selected?.id == "fixture-id" }
@@ -320,20 +325,23 @@ struct AppleProductivitySearchTests {
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
         defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
         var seen = Set<ObjectIdentifier>()
-        func find(_ node: Any) -> NSObject? {
+        func find(_ node: Any, id: String = "ask.plugin.permission.primary") -> NSObject? {
             guard let object = node as? NSObject, seen.insert(ObjectIdentifier(object)).inserted else { return nil }
             if object.responds(to: NSSelectorFromString("accessibilityIdentifier")),
-               object.value(forKey: "accessibilityIdentifier") as? String == "ask.plugin.permission.primary" { return object }
+               object.value(forKey: "accessibilityIdentifier") as? String == id { return object }
             guard object.responds(to: NSSelectorFromString("accessibilityChildren")) else { return nil }
             for child in object.value(forKey: "accessibilityChildren") as? [Any] ?? [] {
-                if let match = find(child) { return match }
+                if let match = find(child, id: id) { return match }
             }
             return nil
         }
         let button = try #require(find(launcher.window))
         #expect(button.value(forKey: "accessibilityLabel") as? String == L("apple.search.authorize"))
         let frame = try #require(button.value(forKey: "accessibilityFrame") as? NSValue).rectValue
-        #expect(frame.width > 120 && frame.height >= 28)
+        #expect(frame.width >= 150 && frame.height >= 32)
+        #expect(abs(frame.midX - launcher.window.frame.midX) < 2)
+        seen.removeAll()
+        #expect(find(launcher.window, id: "ask.launcher.featureBar") == nil)
         let point = launcher.window.convertPoint(fromScreen: .init(x: frame.midX, y: frame.midY))
         for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
             NSApp.sendEvent(try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],

@@ -5,43 +5,48 @@ import Testing
 
 @Suite("Ask plugin views", .exclusiveUIState)
 struct AskPluginViewTests {
-    @MainActor @Test(arguments: [false, true], [false, true])
-    func reminderPermissionCardHasRoomForItsContentAndVisibleAction(dark: Bool, denied: Bool) async throws {
+    @MainActor @Test(arguments: [false, true], AppLanguage.allCases)
+    func reminderPermissionCardHasRoomForItsContentAndVisibleAction(dark: Bool, language: AppLanguage) async throws {
         let oldLanguage = AppLocalization.shared.language
-        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        AppLocalization.shared.setLanguage(language)
         defer { AppLocalization.shared.setLanguage(oldLanguage) }
-        let permission = AskPluginPermission(title: L("apple.search.permissionTitle"),
-                                              detail: L("apple.search.permissionDetail"), icon: "apple-reminders")
-        let message = L(denied ? "apple.search.accessDenied" : "apple.search.accessRequired")
-        let action = AskPluginAction(kind: .rerun(["test": "true"]),
-                                    title: L(denied ? "apple.search.reminderPermissions" : "apple.search.authorize"),
-                                    symbol: "lock.open", shortcut: .enter)
-        let actions = [action] + (denied ? [AskPluginAction(kind: .rerun(["test": "true"]),
-            title: L("apple.search.recheckAccess"), symbol: "arrow.clockwise", shortcut: .commandR)] : [])
-        let failure = AskPluginFailure(message: message, retry: false, actions: actions, permission: permission)
-        let height = AskPluginResultsView.cardHeight(output: nil, failure: failure, comparing: false)
-        #expect(height > 190 && height < 320)
-        let width = AskMetrics.launcherWidth - AskMetrics.launcherGutter * 2 - AskPluginResultsView.listPadding * 2
-        let host = NSHostingView(rootView: AskPluginPermissionView(permission: permission, message: message,
-                                                                 actions: actions, onAction: { _ in })
-            .padding(16).frame(width: width + 32).background(AskTheme.composerSurface)
-            .environment(\.controlActiveState, .key))
-        let window = AskTestVoiceWindow(contentRect: .init(x: 0, y: 0, width: width + 32, height: height + 32),
-                                        styleMask: .borderless, backing: .buffered, defer: false)
-        window.isReleasedWhenClosed = false
-        window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
-        window.contentView = host; window.orderFront(nil)
-        defer { window.close() }
-        try await Task.sleep(for: .milliseconds(100))
-        host.layoutSubtreeIfNeeded()
-        #expect(host.fittingSize.height <= height + 33)
-        if let directory = ProcessInfo.processInfo.environment["TYPEFLUX_APPLE_BROWSE_SNAPSHOTS"] {
-            let image = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
-            host.cacheDisplay(in: host.bounds, to: image)
-            let root = URL(fileURLWithPath: directory)
-            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-            try #require(image.representation(using: .png, properties: [:]))
-                .write(to: root.appendingPathComponent("permission-\(denied ? "denied-" : "")\(dark ? "dark" : "light").png"))
+        for denied in [false, true] {
+            let permission = AskPluginPermission(title: L("apple.search.permissionTitle"), icon: "apple-reminders")
+            let message = L(denied ? "apple.search.accessDenied" : "apple.search.accessRequired")
+            let action = AskPluginAction(kind: .rerun(["test": "true"]),
+                                        title: L(denied ? "apple.search.reminderPermissions" : "apple.search.authorize"),
+                                        symbol: "lock.open", shortcut: .enter)
+            let actions = [action] + (denied ? [AskPluginAction(kind: .rerun(["test": "true"]),
+                title: L("apple.search.recheckAccess"), symbol: "arrow.clockwise", shortcut: .commandR)] : [])
+            let failure = AskPluginFailure(message: message, retry: false, actions: actions, permission: permission)
+            let height = AskPluginResultsView.cardHeight(output: nil, failure: failure, comparing: false)
+            #expect(height > 190 && height < 320)
+            let display = AskPluginDisplay(title: "Reminders", symbol: "checklist",
+                                           phase: .failed(.init(mode: .live, title: "Reminders"), failure))
+            #expect(!AskPluginResultsView.showsSection(for: display))
+            #expect(AskPluginResultsView.hint(for: display).isEmpty)
+            let width = AskMetrics.launcherWidth - AskMetrics.launcherGutter * 2 - AskPluginResultsView.listPadding * 2
+            let host = NSHostingView(rootView: AskPluginPermissionView(permission: permission, message: message,
+                                                                     actions: actions, onAction: { _ in })
+                .padding(16).frame(width: width + 32).background(AskTheme.composerSurface)
+                .environment(\.controlActiveState, .key))
+            let window = AskTestVoiceWindow(contentRect: .init(x: 0, y: 0, width: width + 32, height: height + 32),
+                                            styleMask: .borderless, backing: .buffered, defer: false)
+            window.isReleasedWhenClosed = false
+            window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+            window.contentView = host; window.orderFront(nil)
+            defer { window.close() }
+            try await Task.sleep(for: .milliseconds(100))
+            host.layoutSubtreeIfNeeded()
+            #expect(host.fittingSize.height <= height + 33)
+            if let directory = ProcessInfo.processInfo.environment["TYPEFLUX_APPLE_BROWSE_SNAPSHOTS"] {
+                let image = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+                host.cacheDisplay(in: host.bounds, to: image)
+                let root = URL(fileURLWithPath: directory)
+                try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+                try #require(image.representation(using: .png, properties: [:]))
+                    .write(to: root.appendingPathComponent("permission-\(language.rawValue)-\(denied ? "denied-" : "")\(dark ? "dark" : "light").png"))
+            }
         }
     }
 

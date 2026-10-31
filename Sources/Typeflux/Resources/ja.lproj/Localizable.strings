@@ -7629,16 +7629,16 @@
 "apple.search.changed" = "The list changed while reading. Refresh the results.";
 "apple.search.tooLong" = "Search queries can contain up to 500 characters.";
 "apple.search.failed" = "Could not read the app. Check its account and allow Typeflux in System Settings → Privacy & Security → Automation.";
-"apple.search.accessRequired" = "Typeflux に読み取りを許可すると、ここで検索とプレビューができます。「リマインダーへのアクセスを許可」を押し、macOS の確認画面で許可してください。";
-"apple.search.authorize" = "リマインダーへのアクセスを許可";
-"apple.search.accessDenied" = "リマインダーへのアクセスが無効です。「システム設定を開く」で Typeflux を許可してください。すでに許可した場合は「再確認」を押してください。";
+"apple.search.accessRequired" = "Typeflux にアクセスを許可すると、検索・表示できます。";
+"apple.search.authorize" = "アクセスを許可";
+"apple.search.accessDenied" = "システム設定でリマインダーへのアクセスを許可してください。";
 "apple.search.reminderPermissions" = "システム設定を開く";
 "apple.reminders.searchFailed" = "Could not read reminders. Try again or check reminder permissions in System Settings.";
 
-"apple.search.permissionEyebrow" = "macOS のアクセス権";
 
-"apple.search.permissionTitle" = "ランチャーでリマインダーを表示";
+"apple.search.permissionTitle" = "リマインダーを表示";
 
-"apple.search.permissionDetail" = "検索とプレビューはこの Mac で処理され、内容が自動的に AI に送信されることはありません。";
 
 "apple.search.recheckAccess" = "再確認";
+"apple.search.permissionInputTitle" = "リマインダー";
+"apple.search.permissionPlaceholder" = "リマインダーを検索";

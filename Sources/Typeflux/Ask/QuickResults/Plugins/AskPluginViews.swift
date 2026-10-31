@@ -33,6 +33,9 @@ struct AskPluginDisplay: Equatable {
     var translation = false
 
     var output: AskPluginOutput? { if case let .done(_, output) = phase { output } else { nil } }
+    var permission: AskPluginPermission? {
+        if case let .failed(_, failure) = phase { failure.permission } else { nil }
+    }
     var asksAI: Bool { offersAskAI && highlighted == 1 }
 
     /// Whether "Ask AI" has something to ask: typed text, a selection the plugin
@@ -286,6 +289,7 @@ struct AskPluginResultsView: View {
 
     /// What Return and the other keys do now, for the bottom bar.
     static func hint(for display: AskPluginDisplay) -> String {
+        if display.permission != nil { return "" }
         // The monitor names its keys in its own footer.
         if display.systemMonitor || display.systemInfo { return "" }
         if display.calendar || display.worldClock { return "" }
@@ -342,17 +346,22 @@ struct AskPluginResultsView: View {
     var body: some View {
         VStack(spacing: 0) {
             Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
-            VStack(spacing: Self.rowSpacing) {
-                if Self.showsSection(for: display) {
-                    section(Self.sectionTitle(for: display))
-                }
-                main
-                    .onContinuousHover { phase in
-                        if case .active = phase, pointer.moved(to: NSEvent.mouseLocation) { onHighlight(0) }
+            if display.permission != nil {
+                main.padding(.horizontal, Self.listPadding)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                VStack(spacing: Self.rowSpacing) {
+                    if Self.showsSection(for: display) {
+                        section(Self.sectionTitle(for: display))
                     }
+                    main
+                        .onContinuousHover { phase in
+                            if case .active = phase, pointer.moved(to: NSEvent.mouseLocation) { onHighlight(0) }
+                        }
+                }
+                .padding(Self.listPadding)
+                Spacer(minLength: 0)
             }
-            .padding(Self.listPadding)
-            Spacer(minLength: 0)
         }
         .frame(height: viewportHeight ?? max(minimumHeight, Self.height(for: display)), alignment: .top)
     }

@@ -1765,6 +1765,7 @@ struct AskComposer: View {
     /// their own footer; other plugins keep only their actions and key hints.
     private var showsFeatureBar: Bool {
         !active && plugins.isActive && pluginDisplay != nil
+            && pluginDisplay?.permission == nil
             && pluginDisplay?.systemMonitor != true && pluginDisplay?.systemInfo != true
             && pluginDisplay?.calendar != true && pluginDisplay?.worldClock != true
             && plugins.keyword?.pluginID != AskQuickAskPlugin.id && !model.isNoteCaptureMode
@@ -2422,6 +2423,7 @@ struct AskComposer: View {
     private var placeholder: String {
         if launcher, model.launcherHistoryMode { return L("ask.inputHistory.filter") }
         if launcher, let plugin = plugins.plugin {
+            if let placeholder = pluginDisplay?.permission?.inputPlaceholder { return placeholder }
             let lines = draft.wrappedValue.sentSelection.map { AskPresentation.lineCount($0) }
             return plugin.placeholder(selectionLines: lines)
         }
@@ -2523,7 +2525,7 @@ struct AskComposer: View {
                     } else if plugin.id == AskWorldClockPlugin.id {
                         WorldClockKeywordChip(model: model.worldClock)
                     } else {
-                        AskKeywordChip(title: plugin.inputChipTitle(for: keyword), symbol: plugin.symbol,
+                        AskKeywordChip(title: pluginDisplay?.permission?.inputTitle ?? plugin.inputChipTitle(for: keyword), symbol: plugin.symbol,
                                        detail: plugin.chipDetail(for: keyword,
                                                                  language: AppLocalization.shared.language),
                                        tint: plugin.keywordColor, keyword: keyword)

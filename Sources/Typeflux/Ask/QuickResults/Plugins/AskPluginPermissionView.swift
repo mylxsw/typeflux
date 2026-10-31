@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// An actionable setup state, separate from errors and their icon-only recovery controls.
+/// A focused permission state with the next action beside its purpose.
 struct AskPluginPermissionView: View {
     var permission: AskPluginPermission
     var message: String
@@ -14,65 +14,46 @@ struct AskPluginPermissionView: View {
     static func height(permission: AskPluginPermission, message: String) -> CGFloat {
         let width = AskMetrics.launcherWidth - AskMetrics.launcherGutter * 2
             - AskPluginResultsView.listPadding * 2 - 48
-        let title = AskPluginResultsView.textHeight(permission.title, font: .systemFont(ofSize: 18, weight: .semibold), width: width - 58)
-        return 48 + max(44, 17 + title) + 14
-            + AskPluginResultsView.textHeight(message, font: .systemFont(ofSize: 13.5), lineSpacing: 3, width: width)
-            + 20 + 36 + 14
-            + max(16, AskPluginResultsView.textHeight(permission.detail, font: .systemFont(ofSize: 11.5), lineSpacing: 2, width: width - 20))
+        return 80 + 16
+            + AskPluginResultsView.textHeight(permission.title, font: .systemFont(ofSize: 26, weight: .semibold), width: width)
+            + 10 + AskPluginResultsView.textHeight(message, font: .systemFont(ofSize: 15.5), lineSpacing: 3, width: width)
+            + 28 + 36 + 36
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 14) {
-                if let icon = AskLauncherFeatureIcons.image(for: permission.icon, style: .light) {
-                    Image(nsImage: icon).resizable().scaledToFit().frame(width: 44, height: 44)
-                        .accessibilityHidden(true)
-                }
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(L("apple.search.permissionEyebrow"))
-                        .font(.system(size: 11, weight: .medium)).foregroundStyle(StudioTheme.textSecondary)
-                    Text(permission.title).font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary).fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 0)
+        VStack(spacing: 0) {
+            if let icon = AskLauncherFeatureIcons.image(for: permission.icon, style: .light) {
+                Image(nsImage: icon).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: 80, height: 80).accessibilityHidden(true)
             }
-            Text(message).font(.system(size: 13.5)).lineSpacing(3)
-                .foregroundStyle(StudioTheme.textSecondary).fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 14)
+            Text(permission.title).font(.system(size: 26, weight: .semibold))
+                .foregroundStyle(StudioTheme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true).padding(.top, 16)
+            Text(message).font(.system(size: 15.5)).lineSpacing(3)
+                .foregroundStyle(StudioTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true).padding(.top, 10)
             HStack(spacing: 16) {
                 if let primary {
                     Button { onAction(primary) } label: {
-                        HStack(spacing: 16) {
-                            Text(primary.title).font(.system(size: 13, weight: .semibold))
-                            Image(systemName: "return").font(.system(size: 11, weight: .medium)).opacity(0.7)
-                                .accessibilityHidden(true)
-                        }
-                        .padding(.horizontal, 12)
+                        Text(primary.title).font(.system(size: 15, weight: .semibold))
+                            .frame(minWidth: 124, minHeight: 24)
                     }
                     .buttonStyle(.borderedProminent).tint(AskTheme.accent).controlSize(.large)
-                    .frame(height: 36).accessibilityLabel(primary.title)
+                    .accessibilityLabel(primary.title)
                     .accessibilityIdentifier("ask.plugin.permission.primary")
                 }
                 if let secondary {
                     Button(secondary.title) { onAction(secondary) }
-                        .buttonStyle(.plain).font(.system(size: 12.5))
+                        .buttonStyle(.plain).font(.system(size: 13))
                         .foregroundStyle(StudioTheme.textSecondary)
                         .accessibilityIdentifier("ask.plugin.permission.recheck")
                 }
-                Spacer(minLength: 0)
             }
-            .padding(.top, 20)
-            HStack(alignment: .top, spacing: 6) {
-                Image(systemName: "checkmark.shield").font(.system(size: 11)).frame(width: 14, height: 14).padding(.top, 2)
-                    .accessibilityHidden(true)
-                Text(permission.detail).font(.system(size: 11.5)).lineSpacing(2)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("ask.plugin.permission.detail")
-            }
-            .foregroundStyle(StudioTheme.textSecondary).padding(.top, 14)
+            .padding(.top, 28)
         }
-        .padding(24).frame(maxWidth: .infinity, alignment: .leading)
-        .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .multilineTextAlignment(.center)
+        .padding(.horizontal, 24).padding(.bottom, 36)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.plugin.permission.card")
     }

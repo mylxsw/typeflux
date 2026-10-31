@@ -7630,16 +7630,16 @@
 "apple.search.changed" = "读取时列表发生了变化，请刷新结果";
 "apple.search.tooLong" = "搜索词最多 500 个字符";
 "apple.search.failed" = "无法读取对应应用，请确认应用中已有账号，并在系统设置 → 隐私与安全性 → 自动化中允许 Typeflux";
-"apple.search.accessRequired" = "允许 Typeflux 读取提醒事项，即可在这里搜索和预览。点击“允许访问提醒事项”，再在 macOS 弹窗中确认。";
-"apple.search.authorize" = "允许访问提醒事项";
-"apple.search.accessDenied" = "提醒事项访问未开启。点击“打开系统设置”允许 Typeflux 访问；如果已经开启，点击“重新检查”。";
+"apple.search.accessRequired" = "允许 Typeflux 访问，即可搜索和查看。";
+"apple.search.authorize" = "允许访问";
+"apple.search.accessDenied" = "请在系统设置中允许 Typeflux 访问提醒事项。";
 "apple.search.reminderPermissions" = "打开系统设置";
 "apple.reminders.searchFailed" = "暂时无法读取提醒事项，请重试或检查系统设置中的提醒事项读取权限";
 
-"apple.search.permissionEyebrow" = "macOS 权限";
 
-"apple.search.permissionTitle" = "在启动器查看提醒事项";
+"apple.search.permissionTitle" = "查看提醒事项";
 
-"apple.search.permissionDetail" = "搜索和预览在本机完成，内容不会自动发送给 AI。";
 
 "apple.search.recheckAccess" = "重新检查";
+"apple.search.permissionInputTitle" = "提醒事项";
+"apple.search.permissionPlaceholder" = "搜索提醒事项";

@@ -7629,16 +7629,16 @@
 "apple.search.changed" = "The list changed while reading. Refresh the results.";
 "apple.search.tooLong" = "Search queries can contain up to 500 characters.";
 "apple.search.failed" = "Could not read the app. Check its account and allow Typeflux in System Settings → Privacy & Security → Automation.";
-"apple.search.accessRequired" = "Typeflux가 미리 알림을 읽도록 허용하면 여기서 검색하고 미리 볼 수 있습니다. “미리 알림 접근 허용”을 누른 뒤 macOS 확인 창에서 허용해 주세요.";
-"apple.search.authorize" = "미리 알림 접근 허용";
-"apple.search.accessDenied" = "미리 알림 접근이 꺼져 있습니다. “시스템 설정 열기”에서 Typeflux를 허용하세요. 이미 허용했다면 “다시 확인”을 누르세요.";
+"apple.search.accessRequired" = "Typeflux의 접근을 허용하면 검색하고 볼 수 있습니다.";
+"apple.search.authorize" = "접근 허용";
+"apple.search.accessDenied" = "시스템 설정에서 Typeflux의 미리 알림 접근을 허용하세요.";
 "apple.search.reminderPermissions" = "시스템 설정 열기";
 "apple.reminders.searchFailed" = "Could not read reminders. Try again or check reminder permissions in System Settings.";
 
-"apple.search.permissionEyebrow" = "macOS 접근 권한";
 
-"apple.search.permissionTitle" = "실행기에서 미리 알림 보기";
+"apple.search.permissionTitle" = "미리 알림 보기";
 
-"apple.search.permissionDetail" = "검색과 미리보기는 이 Mac에서 처리되며, 내용이 자동으로 AI에 전송되지 않습니다.";
 
 "apple.search.recheckAccess" = "다시 확인";
+"apple.search.permissionInputTitle" = "미리 알림";
+"apple.search.permissionPlaceholder" = "미리 알림 검색";

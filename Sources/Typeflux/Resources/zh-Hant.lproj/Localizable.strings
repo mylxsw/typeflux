@@ -7632,16 +7632,16 @@
 "apple.search.changed" = "讀取時清單發生變更，請重新整理結果";
 "apple.search.tooLong" = "搜尋詞最多 500 個字元";
 "apple.search.failed" = "無法讀取對應 App，請確認 App 中已有帳號，並在系統設定 → 隱私權與安全性 → 自動化中允許 Typeflux";
-"apple.search.accessRequired" = "允許 Typeflux 讀取提醒事項，即可在此搜尋與預覽。點擊「允許存取提醒事項」，再於 macOS 視窗中確認。";
-"apple.search.authorize" = "允許存取提醒事項";
-"apple.search.accessDenied" = "提醒事項存取權限尚未開啟。點擊「開啟系統設定」允許 Typeflux 存取；若已開啟，點擊「重新檢查」。";
+"apple.search.accessRequired" = "允許 Typeflux 存取，即可搜尋和查看。";
+"apple.search.authorize" = "允許存取";
+"apple.search.accessDenied" = "請在系統設定中允許 Typeflux 存取提醒事項。";
 "apple.search.reminderPermissions" = "開啟系統設定";
 "apple.reminders.searchFailed" = "暫時無法讀取提醒事項，請重試或檢查系統設定中的提醒事項讀取權限";
 
-"apple.search.permissionEyebrow" = "macOS 權限";
 
-"apple.search.permissionTitle" = "在啟動器檢視提醒事項";
+"apple.search.permissionTitle" = "查看提醒事項";
 
-"apple.search.permissionDetail" = "搜尋與預覽在本機完成，內容不會自動傳送給 AI。";
 
 "apple.search.recheckAccess" = "重新檢查";
+"apple.search.permissionInputTitle" = "提醒事項";
+"apple.search.permissionPlaceholder" = "搜尋提醒事項";

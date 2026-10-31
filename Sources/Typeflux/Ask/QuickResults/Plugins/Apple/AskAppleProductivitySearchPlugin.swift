@@ -172,6 +172,7 @@ struct AskAppleProductivitySearchPlugin: AskLauncherPlugin {
     }
 
     private var permissionPresentation: AskPluginPermission {
-        .init(title: L("apple.search.permissionTitle"), detail: L("apple.search.permissionDetail"), icon: "apple-reminders")
+        .init(title: L("apple.search.permissionTitle"), icon: "apple-reminders",
+              inputTitle: L("apple.search.permissionInputTitle"), inputPlaceholder: L("apple.search.permissionPlaceholder"))
     }
 }

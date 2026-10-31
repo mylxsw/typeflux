@@ -66,3 +66,36 @@ The model page no longer uses its own palette. `ModelVisualStyle` now maps to `S
 - Strict SwiftLint on the five changed visual component files; `git diff --check`.
 
 final result: passed
+
+
+## Reminder permission screen — selected centered design (2026-10-31)
+
+Source visual truth: `docs/evidence/apple-productivity-search/minimal-permission/reference.png` (the first displayed concept selected by the user).
+Implementation: `docs/evidence/apple-productivity-search/minimal-permission/implementation.png`.
+Full comparison: `docs/evidence/apple-productivity-search/minimal-permission/comparison.png`.
+Focused comparison: `docs/evidence/apple-productivity-search/minimal-permission/comparison-focus.png`.
+
+The native launcher is 750 × 600 points, captured at 1500 × 1200 pixels. The selected mock is 1402 × 1122 pixels. Both are normalized to 750 × 600 for comparison; embedded image profiles are converted to sRGB for comparison boards. The original native capture is retained without re-encoding. State: simplified Chinese, dark appearance, permission required, foreground controls. These are native window-backed fixture renders, not photographs of the installed menu-bar app.
+
+### Findings and comparison history
+
+- Initial P2: the native icon was smaller than the selected concept and the heading-to-icon rhythm drifted. Enlarged the native icon frame to 80 points and adjusted the vertical spacing and optical centering.
+- Initial P2: native button padding made the action 40 points tall while measurement reserved 36. Reduced label height so the native button is 36 points and the actual fitting size agrees with the measured layout.
+- Initial P2: the first native heading and body were narrower than the chosen concept. Normalized text-region comparison measured heading widths of 123 versus 145 points and body widths of 233 versus 256 points. Updated the native system typography to 26-point semibold, 15.5-point body and a 15-point semibold button, then re-captured and compared both full and focused views.
+- Final comparison: centered composition, icon, short copy, one primary action, and vertical rhythm now match the selected concept without actionable P0/P1/P2 differences.
+
+Required fidelity surfaces:
+
+- Fonts/typography: system SF/PingFang; heading, body and action proportions checked at equal density; Chinese copy matches verbatim. Five localizations render without clipping in both appearances, for required and denied access.
+- Spacing/layout: no inset permission card, redundant section heading, repeated footer action or privacy paragraph; centered in the expanded viewport. Icon, title, supporting line and native action gaps checked in both comparison crops.
+- Colors/tokens: existing native dark surface and product blue retained. The keyword chip retains the application's existing blue text and the canvas uses its existing flat material instead of the generated mock's texture; these are intentional product-token constraints.
+- Image/asset fidelity: the existing native Reminders icon is used at high interpolation quality. No synthetic illustration, emoji, rasterized UI or custom asset substitute is used.
+- Copy/content: `查看提醒事项`, `允许 Typeflux 访问，即可搜索和查看。`, `允许访问`. The input uses `提醒事项` / `搜索提醒事项` while authorization is needed; normal search scope hints return afterward.
+
+Interactions: the real native button is clicked through its accessibility frame in the actual launcher view; its center, target size, short placeholder and absent feature footer are asserted. Listing, scope change, preview, native-open routing, reopening and no AI submission remain covered by the same scenario. The foreground screenshot option preserves the original test host for unrelated cases.
+
+Six legacy launcher methods still fail with the same 13 issues when the shared composer, results renderer and reading layout are restored to their pre-change HEAD versions. This control isolates those broader failures from the permission presentation; it is not a claim that every source file was reset to a full clean baseline. They concern sign-in recovery, notes, numbered/prefix keyword entry and workflow actions/images, and remain outside this permission-layout change. Complete installed-launcher computer-control acceptance is still unavailable for its menu-bar window.
+
+Implementation checklist: selected visual mapped; native layout and localized copy implemented; input/footer simplified only during permission setup; twenty locale/appearance/access-state renders checked; physical button flow passed; source and rendered implementation compared together.
+
+final result: passed

@@ -20,6 +20,7 @@ struct AskQuickResultsInteractionTests {
 
         init(text: String, apps: AskTestAppIndex = AskTestAppIndex([]), selection: String? = nil, waitForSearch: Bool = true,
              onFilePreview: @escaping (AskFileHit?, [AskFileHit], Bool) -> Void = { _, _, _ in },
+             foregroundControls: Bool = false,
              prepare: (AskConversationModel) -> Void = { _ in }) async throws {
             // Launcher chrome initializes shared auth; keep it away from the user's Keychain.
             let previousStore = KeychainTokenStore.useInMemoryStoreForTesting
@@ -35,9 +36,14 @@ struct AskQuickResultsInteractionTests {
             window.isReleasedWhenClosed = false
             var dismiss: () -> Void = {}
             var report: (CGFloat) -> Void = { _ in }
-            let hosting = NSHostingView(rootView: AskLauncherView(model: fixture.model, onDismiss: { dismiss() },
-                                                                  onHeightChange: { report($0) },
-                                                                  onFilePreview: onFilePreview))
+            let root = AskLauncherView(model: fixture.model, onDismiss: { dismiss() },
+                                       onHeightChange: { report($0) }, onFilePreview: onFilePreview)
+            let hosting: NSView
+            if foregroundControls {
+                hosting = NSHostingView(rootView: root.environment(\.controlActiveState, .key))
+            } else {
+                hosting = NSHostingView(rootView: root)
+            }
             window.contentView = hosting
             window.orderFront(nil)
             var found: AskComposerTextView.Editor?

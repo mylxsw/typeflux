@@ -334,8 +334,9 @@ struct AskPluginOutput: Equatable, Sendable {
 /// Permission setup is a neutral guided state with a visible primary action.
 struct AskPluginPermission: Equatable, Sendable {
     var title: String
-    var detail: String
     var icon: String
+    var inputTitle: String? = nil
+    var inputPlaceholder: String? = nil
 }
 
 /// A failure to show in the card, with what can be done about it.
