@@ -28,6 +28,9 @@ struct OnboardingSpeechPage: View {
         .padding(.top, 6)
         .onAppear { model.refreshMicrophoneStatus() }
         .onDisappear { model.cancelTest() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in
+            model.cancelRecordingIfActive()
+        }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             model.refreshMicrophoneStatus()
         }
@@ -201,27 +204,45 @@ private extension OnboardingSpeechPage {
     }
 
     private var googleCloudFields: some View {
-        HStack(spacing: 10) {
-            if model.isGoogleAuthorized {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-                Text(OnboardingStrings.text("google.authorized", table: "OnboardingSpeech"))
-                    .font(.system(size: 12.5))
-            } else {
-                Button {
-                    model.authorizeGoogleCloud()
-                } label: {
-                    HStack(spacing: 6) {
-                        Text(OnboardingStrings.text("google.authorizeAction", table: "OnboardingSpeech"))
-                        Image(systemName: "arrow.up.right")
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                if model.isGoogleAuthorized {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                    Text(OnboardingStrings.text("google.authorized", table: "OnboardingSpeech"))
+                        .font(.system(size: 12.5))
+                } else {
+                    Button {
+                        model.authorizeGoogleCloud()
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text(OnboardingStrings.text("google.authorizeAction", table: "OnboardingSpeech"))
+                            Image(systemName: "arrow.up.right")
+                        }
+                        .font(.system(size: 12, weight: .semibold))
+                        .padding(.horizontal, 14)
+                        .frame(height: 32)
+                        .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
                     }
-                    .font(.system(size: 12, weight: .semibold))
-                    .padding(.horizontal, 14)
-                    .frame(height: 32)
-                    .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+                    .buttonStyle(.plain)
+                    .disabled(model.isAuthorizingGoogle)
                 }
-                .buttonStyle(.plain)
-                .disabled(model.isAuthorizingGoogle)
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 10) {
+                    Text(L("settings.models.googleCloud.projectID"))
+                        .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+                    if model.isGoogleAuthorized,
+                       model.googleProjectID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Text(GoogleCloudSpeechError.missingProjectID.localizedDescription)
+                            .font(.system(size: 11)).foregroundStyle(.red).lineLimit(1)
+                    }
+                }
+                TextField("my-project-id", text: $model.googleProjectID)
+                    .textFieldStyle(.plain)
+                    .padding(.horizontal, 10).frame(height: 34)
+                    .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(.primary.opacity(0.08), lineWidth: 1))
             }
         }
         .padding(.vertical, 6)
@@ -324,7 +345,9 @@ private extension OnboardingSpeechPage {
     }
 
     private var holdToTalkButton: some View {
-        Button(action: {}) {
+        Button {
+            // The drag gesture owns the press and release lifecycle.
+        } label: {
             HStack(spacing: 6) {
                 Image(systemName: "mic.fill")
                     .font(.system(size: 12))

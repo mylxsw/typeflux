@@ -20,7 +20,9 @@ PROFILES = {
         "suites": ["RequestRetryTests", "ConnectionTestSupportTests"],
     },
     "speech-llm": {
-        "files": ["OnboardingSpeechLLMTests.swift",
+        "files": ["OnboardingSpeechLLMTests.swift", "OnboardingSpeechBehaviorTests.swift",
+                  "OnboardingLLMBehaviorTests.swift", "OnboardingSpeechLLMCaptureTests.swift",
+                  "OnboardingProviderControlTests.swift",
                   "SettingsBehaviorTestSupport.swift", "ExclusiveUIStateTrait.swift"],
         "suites": ["OnboardingSpeechLLMTests"],
     },

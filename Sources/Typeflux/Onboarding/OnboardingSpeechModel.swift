@@ -35,6 +35,10 @@ final class OnboardingSpeechModel: ObservableObject {
         didSet { credentialsChanged() }
     }
 
+    @Published var googleProjectID = "" {
+        didSet { credentialsChanged() }
+    }
+
     @Published var isGoogleAuthorized = false
     @Published private(set) var isAuthorizingGoogle = false
     @Published var isMicrophoneDenied = false
@@ -120,9 +124,7 @@ final class OnboardingSpeechModel: ObservableObject {
         refreshDownloadProgress()
     }
 
-    var isLocalModelAvailable: Bool {
-        isModelAvailable(selectedLocalModel)
-    }
+    var isLocalModelAvailable: Bool { isModelAvailable(selectedLocalModel) }
 
     func isModelAvailable(_ model: LocalSTTModel) -> Bool {
         session?.localModelManager?.isModelAvailable(model) ?? false
@@ -154,6 +156,7 @@ final class OnboardingSpeechModel: ObservableObject {
         downloadProgress = 0.02
         LocalModelDownloadProgressCenter.shared.reportDownloading(model: target, progress: 0.02)
         downloadTask = Task { @MainActor [weak self] in
+            guard !Task.isCancelled else { return }
             do {
                 try await manager.prepareModel(configuration: config) { [weak self] update in
                     Task { @MainActor [weak self] in
@@ -165,11 +168,13 @@ final class OnboardingSpeechModel: ObservableObject {
                     }
                 }
                 guard !Task.isCancelled, let self, downloadGeneration == token else { return }
+                downloadGeneration = UUID()
                 LocalModelDownloadProgressCenter.shared.clear()
                 refreshDownloadProgress()
                 objectWillChange.send()
             } catch {
                 guard !Task.isCancelled, let self, downloadGeneration == token else { return }
+                downloadGeneration = UUID()
                 LocalModelDownloadProgressCenter.shared.reportFailed(model: target, message: error.localizedDescription)
                 refreshDownloadProgress()
             }
@@ -198,8 +203,11 @@ final class OnboardingSpeechModel: ObservableObject {
     func authorizeGoogleCloud() {
         guard !isAuthorizingGoogle else { return }
         isAuthorizingGoogle = true
+        testStatus = .idle
+        canContinue = false
         let authorize = authorizeGoogle
         authorizationTask = Task { @MainActor [weak self] in
+            guard !Task.isCancelled else { return }
             do {
                 try await authorize()
                 guard !Task.isCancelled else { return }
@@ -224,9 +232,16 @@ extension OnboardingSpeechModel {
         let requestAccess = requestMicrophoneAccess
         let makeRecorder = makeRecorder
         testTask = Task { @MainActor [weak self] in
+            guard !Task.isCancelled else { return }
             let granted = authorization == .notDetermined ? await requestAccess() : authorization == .authorized
             guard let self, generation == token, !Task.isCancelled else { return }
             isMicrophoneDenied = !granted
+            // The system consent dialog ends the original pointer gesture.
+            if authorization == .notDetermined {
+                isHolding = false
+                isBusy = false
+                return
+            }
             guard granted, isHolding else { isHolding = false; isBusy = false; return }
             commitCredentials()
             recordingSignature = configurationSignature
@@ -267,6 +282,7 @@ extension OnboardingSpeechModel {
             let transcriber = makeTranscriber(selectedProvider)
             testTask = Task { @MainActor [weak self] in
                 defer { try? FileManager.default.removeItem(at: audio.fileURL) }
+                guard !Task.isCancelled else { return }
                 let start = Date()
                 do {
                     let preview = try await ConnectionTestSupport.runWithTimeout {
@@ -296,14 +312,22 @@ extension OnboardingSpeechModel {
         }
     }
 
-    func cancelTest() {
+    func cancelRecordingIfActive() {
+        if isHolding || recorder != nil {
+            cancelTest()
+        }
+    }
+
+    func cancelTest(cancelAuthorization: Bool = true) {
         generation = UUID()
         isHolding = false
         testTask?.cancel()
         testTask = nil
-        authorizationTask?.cancel()
-        authorizationTask = nil
-        isAuthorizingGoogle = false
+        if cancelAuthorization {
+            authorizationTask?.cancel()
+            authorizationTask = nil
+            isAuthorizingGoogle = false
+        }
         if let recorder {
             Self.discardRecording(recorder)
         }
@@ -327,17 +351,19 @@ extension OnboardingSpeechModel {
         switch selectedProvider {
         case .localModel: return isLocalModelAvailable
         case .freeModel: return true
-        case .googleCloud: return isGoogleAuthorized
-        case .doubaoRealtime: return !doubaoAppID.trimmed.isEmpty && !doubaoAccessToken.trimmed.isEmpty
-        case .whisperAPI, .aliCloud, .groq, .soniox: return !apiKey.trimmed.isEmpty
-        case .multimodalLLM: return false
+        case .googleCloud: return isGoogleAuthorized && !trimmed(googleProjectID).isEmpty
+        case .doubaoRealtime: return !trimmed(doubaoAppID).isEmpty && !trimmed(doubaoAccessToken).isEmpty
+        case .whisperAPI, .aliCloud, .groq, .soniox: return !trimmed(apiKey).isEmpty
+        case .multimodalLLM:
+            guard let store = session?.settingsStore else { return false }
+            return !trimmed(store.multimodalLLMBaseURL).isEmpty && !trimmed(store.multimodalLLMModel).isEmpty
         default: return true
         }
     }
 
     private func credentialsChanged() {
         guard !isSyncing else { return }
-        cancelTest()
+        cancelTest(cancelAuthorization: false)
         commitCredentials()
     }
 
@@ -345,6 +371,7 @@ extension OnboardingSpeechModel {
         guard let store = session?.settingsStore else { return }
         isSyncing = true
         defer { isSyncing = false }
+        googleProjectID = store.googleCloudProjectID
         doubaoAppID = store.doubaoAppID
         doubaoAccessToken = store.doubaoAccessToken
         whisperBaseURL = store.whisperBaseURL.isEmpty ? "https://api.openai.com/v1" : store.whisperBaseURL
@@ -361,15 +388,16 @@ extension OnboardingSpeechModel {
         guard let store = session?.settingsStore else { return }
         // Do not clear deferral until an explicit test succeeds.
         switch selectedProvider {
-        case .aliCloud: store.aliCloudAPIKey = apiKey.trimmed
-        case .groq: store.groqSTTAPIKey = apiKey.trimmed
-        case .soniox: store.sonioxAPIKey = apiKey.trimmed
+        case .aliCloud: store.aliCloudAPIKey = trimmed(apiKey)
+        case .groq: store.groqSTTAPIKey = trimmed(apiKey)
+        case .soniox: store.sonioxAPIKey = trimmed(apiKey)
         case .whisperAPI:
-            store.whisperAPIKey = apiKey.trimmed
-            store.whisperBaseURL = whisperBaseURL.trimmed
+            store.whisperAPIKey = trimmed(apiKey)
+            store.whisperBaseURL = trimmed(whisperBaseURL)
+        case .googleCloud: store.googleCloudProjectID = trimmed(googleProjectID)
         case .doubaoRealtime:
-            store.doubaoAppID = doubaoAppID.trimmed
-            store.doubaoAccessToken = doubaoAccessToken.trimmed
+            store.doubaoAppID = trimmed(doubaoAppID)
+            store.doubaoAccessToken = trimmed(doubaoAccessToken)
         default: break
         }
         store.sttProvider = selectedProvider
@@ -386,6 +414,7 @@ extension OnboardingSpeechModel {
         case .soniox: [store.sonioxAPIKey, store.sonioxModel]
         case .doubaoRealtime: [store.doubaoAppID, store.doubaoAccessToken, store.doubaoResourceID]
         case .googleCloud: [store.googleCloudProjectID, store.googleCloudModel]
+        case .multimodalLLM: [store.multimodalLLMBaseURL, store.multimodalLLMModel, store.multimodalLLMAPIKey]
         default: []
         }
         return [store.sttProvider.rawValue] + fields
@@ -403,8 +432,6 @@ extension OnboardingSpeechModel {
     }
 }
 
-private extension String {
-    var trimmed: String {
-        trimmingCharacters(in: .whitespacesAndNewlines)
-    }
+private func trimmed(_ value: String) -> String {
+    value.trimmingCharacters(in: .whitespacesAndNewlines)
 }

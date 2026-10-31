@@ -218,34 +218,7 @@ extension OnboardingLLMModel {
                 }
                 let models = try await catalog.models(provider: provider, connection: config)
                 guard !Task.isCancelled, generation == token else { return }
-                let ids = models.filter { $0.exclusionReason == nil }.map(\.id)
-                // An empty Ollama catalog means no installed model; never invent installed models.
-                isOllamaRunning = true
-                guard !ids.isEmpty else {
-                    availableModels = []
-                    validationStatus = .invalid(message: L("models.noModels"))
-                    canContinue = false
-                    isBusy = false
-                    return
-                }
-                var unique = Array(Set(ids)).sorted()
-                let recommended: String? = if case let .remote(remote) = selectedProvider {
-                    remote.suggestedModels.first(where: unique.contains)
-                } else {
-                    nil
-                }
-                if let recommended {
-                    unique.removeAll { $0 == recommended }
-                    unique.insert(recommended, at: 0)
-                }
-                availableModels = unique
-                if !unique.contains(selectedModel) {
-                    selectedModel = unique[0]
-                }
-                isOllamaRunning = true
-                validationStatus = .valid
-                isBusy = false
-                commitCurrentSelection()
+                applyCatalog(models)
             } catch {
                 guard !Task.isCancelled, let self, generation == token else { return }
                 isOllamaRunning = selectedProvider != .ollama
@@ -254,6 +227,37 @@ extension OnboardingLLMModel {
                 isBusy = false
             }
         }
+    }
+
+    private func applyCatalog(_ models: [RegisteredModel]) {
+        let ids = models.filter { $0.exclusionReason == nil }.map(\.id)
+        // An empty Ollama catalog means no installed model; never invent installed models.
+        isOllamaRunning = true
+        guard !ids.isEmpty else {
+            availableModels = []
+            validationStatus = .invalid(message: L("models.noModels"))
+            canContinue = false
+            isBusy = false
+            return
+        }
+        var unique = Array(Set(ids)).sorted()
+        let recommended: String? = if case let .remote(remote) = selectedProvider {
+            remote.suggestedModels.first(where: unique.contains)
+        } else {
+            nil
+        }
+        if let recommended {
+            unique.removeAll { $0 == recommended }
+            unique.insert(recommended, at: 0)
+        }
+        availableModels = unique
+        if !unique.contains(selectedModel) {
+            selectedModel = unique[0]
+        }
+        isOllamaRunning = true
+        validationStatus = .valid
+        isBusy = false
+        commitCurrentSelection()
     }
 
     func checkOllama() {
@@ -294,6 +298,7 @@ extension OnboardingLLMModel {
         testStatus = .testing
         isBusy = true
         testTask = Task { @MainActor [weak self] in
+            guard !Task.isCancelled else { return }
             let start = Date()
             do {
                 let reply = try await ConnectionTestSupport.runWithTimeout {
@@ -356,11 +361,26 @@ extension OnboardingLLMModel {
                 .first(where: { $0.id == selectedModel }) else { canContinue = false; return }
             library.rewriteReference = model.reference
             library.defaultReference = model.reference
+            syncMultimodalSpeech(providerID: providerID, model: model)
             canContinue = true
         } catch {
             validationStatus = .invalid(message: error.localizedDescription)
             canContinue = false
         }
+    }
+
+    private func syncMultimodalSpeech(providerID: String, model: RegisteredModel) {
+        guard let session, session.settingsStore.sttProvider == .multimodalLLM,
+              let provider = session.modelLibrary.registry.providers.first(where: { $0.id == providerID })
+        else { return }
+        let configuration = session.modelLibrary.connection(provider, model: model)
+        var baseURL = configuration.baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        if provider.isOllama, !baseURL.hasSuffix("/v1") {
+            baseURL += "/v1"
+        }
+        session.settingsStore.multimodalLLMBaseURL = baseURL
+        session.settingsStore.multimodalLLMModel = configuration.model
+        session.settingsStore.multimodalLLMAPIKey = configuration.apiKey
     }
 
     func connectionConfiguration() -> (RegisteredProvider, SettingsStore.TextLLMConfiguration) {

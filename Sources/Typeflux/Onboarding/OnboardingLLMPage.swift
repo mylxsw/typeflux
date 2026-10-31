@@ -420,46 +420,37 @@ private extension OnboardingLLMPage {
 }
 
 private extension OnboardingLLMPage {
+    static let providerKeys: [OnboardingLLMProvider: String] = [
+        .remote(.freeModel): "free",
+        .remote(.openAI): "openai",
+        .remote(.anthropic): "anthropic",
+        .remote(.gemini): "gemini",
+        .remote(.deepSeek): "deepseek",
+        .remote(.qwen): "qwen",
+        .remote(.openRouter): "openrouter",
+        .remote(.kimi): "kimi",
+        .remote(.zhipu): "zhipu",
+        .remote(.minimax): "minimax",
+        .remote(.grok): "grok",
+        .remote(.groq): "groq",
+        .remote(.xiaomi): "xiaomi",
+        .remote(.custom): "custom",
+        .ollama: "ollama"
+    ]
+
     func title(for provider: OnboardingLLMProvider) -> String {
-        switch provider {
-        case .remote(.freeModel): OnboardingStrings.text("provider.free.title", table: "OnboardingLlm")
-        case .remote(.openAI): OnboardingStrings.text("provider.openai.title", table: "OnboardingLlm")
-        case .remote(.anthropic): OnboardingStrings.text("provider.anthropic.title", table: "OnboardingLlm")
-        case .remote(.gemini): OnboardingStrings.text("provider.gemini.title", table: "OnboardingLlm")
-        case .remote(.deepSeek): OnboardingStrings.text("provider.deepseek.title", table: "OnboardingLlm")
-        case .remote(.qwen): OnboardingStrings.text("provider.qwen.title", table: "OnboardingLlm")
-        case .remote(.openRouter): OnboardingStrings.text("provider.openrouter.title", table: "OnboardingLlm")
-        case .ollama: OnboardingStrings.text("provider.ollama.title", table: "OnboardingLlm")
-        case .remote(.kimi): OnboardingStrings.text("provider.kimi.title", table: "OnboardingLlm")
-        case .remote(.zhipu): OnboardingStrings.text("provider.zhipu.title", table: "OnboardingLlm")
-        case .remote(.minimax): OnboardingStrings.text("provider.minimax.title", table: "OnboardingLlm")
-        case .remote(.grok): OnboardingStrings.text("provider.grok.title", table: "OnboardingLlm")
-        case .remote(.groq): OnboardingStrings.text("provider.groq.title", table: "OnboardingLlm")
-        case .remote(.xiaomi): OnboardingStrings.text("provider.xiaomi.title", table: "OnboardingLlm")
-        case .remote(.custom): OnboardingStrings.text("provider.custom.title", table: "OnboardingLlm")
-        case let .remote(remote): remote.displayName
+        if let key = Self.providerKeys[provider] {
+            return OnboardingStrings.text("provider.\(key).title", table: "OnboardingLlm")
         }
+        if case let .remote(remote) = provider {
+            return remote.displayName
+        }
+        return ""
     }
 
-    private func detail(for provider: OnboardingLLMProvider) -> String {
-        switch provider {
-        case .remote(.freeModel): OnboardingStrings.text("provider.free.detail", table: "OnboardingLlm")
-        case .remote(.openAI): OnboardingStrings.text("provider.openai.detail", table: "OnboardingLlm")
-        case .remote(.anthropic): OnboardingStrings.text("provider.anthropic.detail", table: "OnboardingLlm")
-        case .remote(.gemini): OnboardingStrings.text("provider.gemini.detail", table: "OnboardingLlm")
-        case .remote(.deepSeek): OnboardingStrings.text("provider.deepseek.detail", table: "OnboardingLlm")
-        case .remote(.qwen): OnboardingStrings.text("provider.qwen.detail", table: "OnboardingLlm")
-        case .remote(.openRouter): OnboardingStrings.text("provider.openrouter.detail", table: "OnboardingLlm")
-        case .ollama: OnboardingStrings.text("provider.ollama.detail", table: "OnboardingLlm")
-        case .remote(.kimi): OnboardingStrings.text("provider.kimi.detail", table: "OnboardingLlm")
-        case .remote(.zhipu): OnboardingStrings.text("provider.zhipu.detail", table: "OnboardingLlm")
-        case .remote(.minimax): OnboardingStrings.text("provider.minimax.detail", table: "OnboardingLlm")
-        case .remote(.grok): OnboardingStrings.text("provider.grok.detail", table: "OnboardingLlm")
-        case .remote(.groq): OnboardingStrings.text("provider.groq.detail", table: "OnboardingLlm")
-        case .remote(.xiaomi): OnboardingStrings.text("provider.xiaomi.detail", table: "OnboardingLlm")
-        case .remote(.custom): OnboardingStrings.text("provider.custom.detail", table: "OnboardingLlm")
-        default: ""
-        }
+    func detail(for provider: OnboardingLLMProvider) -> String {
+        guard let key = Self.providerKeys[provider] else { return "" }
+        return OnboardingStrings.text("provider.\(key).detail", table: "OnboardingLlm")
     }
 
     private func badge(for provider: OnboardingLLMProvider) -> String? {

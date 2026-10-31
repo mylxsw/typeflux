@@ -92,8 +92,6 @@ struct ModelProviderIcon: View {
             "groq"
         case .googleCloud:
             "google"
-        case .soniox:
-            "soniox"
         case .xiaomi:
             "xiaomimimo"
         case .openCodeZen, .openCodeGo:
@@ -103,7 +101,7 @@ struct ModelProviderIcon: View {
         case .doubaoRealtime:
             "doubao-color"
         default:
-            nil
+            [StudioModelProviderID.soniox: "soniox"][provider]
         }
     }
 

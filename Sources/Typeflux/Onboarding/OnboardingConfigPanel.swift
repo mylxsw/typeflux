@@ -16,7 +16,7 @@ struct OnboardingConfigPanel<Fields: View, Actions: View, Result: View>: View {
                 .tracking(1.6).foregroundStyle(Color.accentColor)
             HStack(spacing: 12) {
                 if let provider {
-                    ModelProviderIcon(provider: provider, size: 24).environment(\.colorScheme, .light).frame(
+                    OnboardingProviderIcon(provider: provider).environment(\.colorScheme, .light).frame(
                         width: 38,
                         height: 38
                     )

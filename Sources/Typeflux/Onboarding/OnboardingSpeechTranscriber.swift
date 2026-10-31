@@ -7,6 +7,14 @@ enum OnboardingSpeechTranscriber {
                      manager: any LocalSTTModelManaging) -> any Transcriber {
         switch provider {
         case .localModel: LocalModelTranscriber(settingsStore: settings, modelManager: manager)
+        case .appleSpeech: AppleSpeechTranscriber()
+        case .multimodalLLM: MultimodalLLMTranscriber(settingsStore: settings)
+        default: remote(provider, settings: settings)
+        }
+    }
+
+    private static func remote(_ provider: STTProvider, settings: SettingsStore) -> any Transcriber {
+        switch provider {
         case .freeModel: FreeSTTTranscriber(settingsStore: settings)
         case .whisperAPI: WhisperAPITranscriber(settingsStore: settings)
         case .aliCloud: AliCloudRealtimeTranscriber(settingsStore: settings)
@@ -16,9 +24,8 @@ enum OnboardingSpeechTranscriber {
             WhisperAPITranscriber(settingsStore: settings, baseURLOverride: "https://api.groq.com/openai/v1",
                                   apiKeyOverride: { settings.groqSTTAPIKey }, modelOverride: { settings.groqSTTModel })
         case .soniox: SonioxTranscriber(settingsStore: settings)
-        case .appleSpeech: AppleSpeechTranscriber()
-        case .multimodalLLM: MultimodalLLMTranscriber(settingsStore: settings)
         case .typefluxOfficial: TypefluxOfficialTranscriber()
+        default: preconditionFailure("Expected a remote speech provider")
         }
     }
 }
