@@ -1,3 +1,42 @@
 /* Onboarding v3: OnboardingTry */
 "eyebrow" = "Ready";
 "title" = "試一試";
+
+"feature.voice" = "語音輸入";
+"feature.launcher" = "啟動器";
+"feature.ring" = "圓環";
+"feature.chat" = "Agent 對話";
+
+"status.notSet" = "未設定";
+"status.notConnected" = "未連接";
+
+"connect.needed" = "%@需要連接 AI";
+"connect.button" = "連接";
+
+"voice.instructionPrefix" = "按住";
+"voice.instructionSuffix" = "說一句話";
+"voice.placeholder" = "文字會出現在這裡";
+"voice.sampleText" = "週五前把新版首頁的設計稿發給我。";
+"voice.simulate" = "按住模擬";
+
+"launcher.instructionPrefix" = "按";
+"launcher.instructionSuffix" = "，輸入「fy hello」";
+"launcher.query" = "fy hello";
+"launcher.resultTitle" = "你好";
+"launcher.resultAction" = "↩ 複製";
+"launcher.resultSearch" = "搜尋「hello」";
+
+"ring.instructionPrefix" = "按住";
+"ring.instructionSuffix" = "，朝一個方向劃";
+"ring.sector.voice" = "語音";
+"ring.sector.chat" = "對話";
+"ring.sector.translate" = "翻譯";
+"ring.sector.screenshot" = "截圖";
+"ring.sector.ocr" = "識字";
+"ring.sector.clipboard" = "剪貼簿";
+
+"chat.instructionPrefix" = "在啟動器裡提問，按";
+"chat.query" = "這張表哪個月增長最快？";
+"chat.result" = "7 月，環比 +32%";
+
+"button.tried" = "試過了";

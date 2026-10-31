@@ -1,3 +1,42 @@
 /* Onboarding v3: OnboardingTry */
 "eyebrow" = "Ready";
 "title" = "Try it";
+
+"feature.voice" = "Voice Input";
+"feature.launcher" = "Launcher";
+"feature.ring" = "Ring";
+"feature.chat" = "Agent Chat";
+
+"status.notSet" = "Not set";
+"status.notConnected" = "Not connected";
+
+"connect.needed" = "%@ requires connecting AI";
+"connect.button" = "Connect";
+
+"voice.instructionPrefix" = "Hold";
+"voice.instructionSuffix" = "and say something";
+"voice.placeholder" = "Text will appear here";
+"voice.sampleText" = "Send me the new homepage design by Friday.";
+"voice.simulate" = "Hold to simulate";
+
+"launcher.instructionPrefix" = "Press";
+"launcher.instructionSuffix" = ", type \"fy hello\"";
+"launcher.query" = "fy hello";
+"launcher.resultTitle" = "Hello";
+"launcher.resultAction" = "↩ Copy";
+"launcher.resultSearch" = "Search \"hello\"";
+
+"ring.instructionPrefix" = "Hold";
+"ring.instructionSuffix" = ", swipe in a direction";
+"ring.sector.voice" = "Voice";
+"ring.sector.chat" = "Chat";
+"ring.sector.translate" = "Translate";
+"ring.sector.screenshot" = "Screenshot";
+"ring.sector.ocr" = "OCR";
+"ring.sector.clipboard" = "Clipboard";
+
+"chat.instructionPrefix" = "Ask in the launcher, press";
+"chat.query" = "Which month had the fastest growth?";
+"chat.result" = "July, +32% MoM";
+
+"button.tried" = "Tried it";
