@@ -48,8 +48,8 @@ final class OnboardingShortcutsModel: ObservableObject {
 
     func isGlobeConflict(_ target: HotkeyTarget) -> Bool {
         guard session?.isGlobeKeyReady == false, let binding = binding(target) else { return false }
-        return binding.physicalModifierKeys.contains(HotkeyBinding.functionKeyCode)
-            || binding.keyCode == HotkeyBinding.functionKeyCode
+        return binding.keyCode == HotkeyBinding.functionKeyCode
+            && binding.modifierFlags == NSEvent.ModifierFlags.function.rawValue
     }
 
     func conflict(_ target: HotkeyTarget) -> String? {
@@ -113,10 +113,14 @@ final class OnboardingShortcutsModel: ObservableObject {
         stopRecording()
         if let binding {
             let voice = target == .builtIn(.activation) || target == .builtIn(.auxiliary)
-            if recorded, !voice, binding.isModifierOnlyTrigger || binding.isModifierDoubleTapTrigger
-                || binding.modifierFlags == 0 && !HotkeyConflictChecker.functionKeyCodes.contains(binding.keyCode) {
-                errors[target] = Self.text("needsModifier")
-                return false
+            if recorded, !voice {
+                let hasModifier = binding.modifierFlags != 0
+                let isFunctionKey = HotkeyConflictChecker.functionKeyCodes.contains(binding.keyCode)
+                guard !binding.isModifierOnlyTrigger, !binding.isModifierDoubleTapTrigger,
+                      hasModifier || isFunctionKey else {
+                    errors[target] = Self.text("needsModifier")
+                    return false
+                }
             }
             if let problem = shortcuts.check(binding, for: target).problem {
                 errors[target] = describe(problem)
@@ -199,11 +203,19 @@ final class OnboardingShortcutsModel: ObservableObject {
         var actions: [TFMenuAction] = []
         if target == .builtIn(.activation) {
             actions = [
-                .toggle("fn", isOn: binding(target) == .defaultActivation) { [weak self] _ in self?.preset(nil) },
-                .toggle(Self.text("rightCommand"), isOn: binding(target) == .rightCommandActivation) { [weak self] _ in
+                .toggle("fn",
+                        isOn: binding(target)?.signature == HotkeyBinding.defaultActivation
+                            .signature) { [weak self] _ in self?.preset(nil) },
+                .toggle(
+                    Self.text("rightCommand"),
+                    isOn: binding(target)?.signature == HotkeyBinding.rightCommandActivation.signature
+                ) { [weak self] _ in
                     self?.preset(.rightCommand)
                 },
-                .toggle(Self.text("rightOption"), isOn: binding(target) == .rightOptionActivation) { [weak self] _ in
+                .toggle(
+                    Self.text("rightOption"),
+                    isOn: binding(target)?.signature == HotkeyBinding.rightOptionActivation.signature
+                ) { [weak self] _ in
                     self?.preset(.rightOption)
                 },
                 .separator

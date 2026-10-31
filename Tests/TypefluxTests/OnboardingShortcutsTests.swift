@@ -19,7 +19,11 @@ struct OnboardingShortcutsTests {
             #expect(model.conflict(.builtIn(.screenshot)) != nil)
             #expect(settings.screenshotHotkey != candidate)
             #expect(!model.apply(.rightCommandActivation, to: .builtIn(.persona), recorded: true))
-            #expect(!model.apply(.init(keyCode: 0, modifierFlags: 0), to: .action(.translate), recorded: true))
+            let unmodified = HotkeyBinding(keyCode: 0, modifierFlags: 0)
+            let accepted = model.apply(unmodified, to: .action(.translate), recorded: true)
+            #expect(!accepted)
+            #expect(settings.actionHotkeys[.translate] == candidate)
+            #expect(model.errors[.action(.translate)] == OnboardingShortcutsModel.text("needsModifier"))
             #expect(model.apply(nil, to: .action(.translate)))
             #expect(settings.actionHotkeys[.translate] == nil)
             model.restore(.action(.translate))
@@ -51,13 +55,13 @@ struct OnboardingShortcutsTests {
             model.preset(.rightCommand)
             #expect(settings.activationHotkey == .rightCommandActivation)
             #expect(settings.askHotkey == .rightCommandAsk)
-            #expect(settings.auxiliaryHotkey == .auxiliaryChord(baseKeyCode: 54))
+            #expect(settings.auxiliaryHotkey?.signature == HotkeyBinding.auxiliaryChord(baseKeyCode: 54).signature)
             model.preset(.rightOption)
             #expect(settings.activationHotkey == .rightOptionActivation)
-            #expect(settings.auxiliaryHotkey == .auxiliaryChord(baseKeyCode: 61))
+            #expect(settings.auxiliaryHotkey?.signature == HotkeyBinding.auxiliaryChord(baseKeyCode: 61).signature)
             model.preset(nil)
             #expect(settings.activationHotkey == .defaultActivation)
-            #expect(settings.auxiliaryHotkey == .defaultAuxiliary)
+            #expect(settings.auxiliaryHotkey?.signature == HotkeyBinding.defaultAuxiliary.signature)
             settings.setHotkey(.rightCommandActivation, for: .ring)
             model.refresh()
             model.preset(.rightCommand)
@@ -100,6 +104,11 @@ struct OnboardingShortcutsTests {
             settings.activationHotkey = .defaultActivation
             model.shortcuts.reload()
             #expect(model.isGlobeConflict(.builtIn(.activation)))
+            #expect(!model.isGlobeConflict(.builtIn(.auxiliary)))
+            settings.askHotkey = HotkeyBinding(keyCode: HotkeyBinding.functionKeyCode,
+                                               modifierFlags: NSEvent.ModifierFlags.function.rawValue, pressCount: 2)
+            model.shortcuts.reload()
+            #expect(model.isGlobeConflict(.builtIn(.ask)))
             #expect(model.conflictCount > 0)
             model.startRecording(.action(.translate))
             #expect(model.isBusy && model.recordingTarget == .action(.translate))
@@ -166,6 +175,26 @@ struct OnboardingShortcutsTests {
         }
     }
 
+    @Test func `preset checkmarks compare physical bindings rather than persisted identities`() async throws {
+        try await UI.withFixture { settings in
+            let session = OnboardingViewModel(settingsStore: settings, onComplete: {})
+            let model = OnboardingShortcutsModel(session: session, systemReader: { .none })
+            for (index, preset) in [HotkeyBinding.defaultActivation, .rightCommandActivation, .rightOptionActivation]
+                .enumerated() {
+                settings.activationHotkey = HotkeyBinding(keyCode: preset.keyCode, modifierFlags: preset.modifierFlags)
+                model.refresh()
+                let actions = model.menuActions(.builtIn(.activation))
+                for position in 0 ..< 3 {
+                    guard case let .toggle(_, isOn, _, _) = actions[position] else {
+                        Issue.record("Expected a voice preset toggle")
+                        continue
+                    }
+                    #expect(isOn == (position == index))
+                }
+            }
+        }
+    }
+
     @Test func `menus expose presets and recording reset clear for every card`() async throws {
         try await UI.withFixture { settings in
             let session = OnboardingViewModel(settingsStore: settings, onComplete: {})
@@ -200,7 +229,7 @@ struct OnboardingShortcutsTests {
                 try UI.button("×", in: host).press()
                 #expect(!model.guideVisible)
                 try UI.button(OnboardingShortcutsModel.text("alternative"), in: host).press()
-                #expect(settings.askHotkey == model.alternative)
+                #expect(settings.askHotkey?.signature == model.alternative.signature)
                 try UI.button(OnboardingShortcutsModel.text("translate"), in: host).press()
                 #expect(model.recordingTarget == .action(.translate))
                 _ = model.recorder.processRecordedEvent(eventType: .keyDown, keyCode: 15,
@@ -224,8 +253,12 @@ struct OnboardingShortcutsTests {
     }
 
     @Test func `native menu capture includes its popup`() async throws {
+        guard ProcessInfo.processInfo.environment["TYPEFLUX_NATIVE_MENU_CAPTURE"] == "1" else { return }
         guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_GUL303_SNAPSHOTS"] else { return }
         try await UI.withFixture { settings in
+            let previousPolicy = NSApp.activationPolicy()
+            NSApp.setActivationPolicy(.regular)
+            defer { NSApp.setActivationPolicy(previousPolicy) }
             let session = OnboardingViewModel(settingsStore: settings, onComplete: {})
             session.currentStep = .shortcuts
             for language in [AppLanguage.english, .simplifiedChinese] {
@@ -236,7 +269,13 @@ struct OnboardingShortcutsTests {
                         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
                         window.titleVisibility = .hidden
                         window.titlebarAppearsTransparent = true
-                        window.center()
+                        let screen = try #require(NSScreen.screens.first)
+                        window.setFrameOrigin(NSPoint(
+                            x: screen.visibleFrame.minX + max(0, (screen.visibleFrame.width - window.frame.width) / 2),
+                            y: screen.visibleFrame.minY + max(0, (screen.visibleFrame.height - window.frame.height) / 2)
+                        ))
+                        window.makeKeyAndOrderFront(nil)
+                        window.orderFrontRegardless()
                         NSApp.activate(ignoringOtherApps: true)
                         try await Task.sleep(for: .milliseconds(200))
                         func buttons(_ view: NSView) -> [NSPopUpButton] {
@@ -246,9 +285,12 @@ struct OnboardingShortcutsTests {
                             $0.accessibilityIdentifier() == "onboarding.shortcuts.activation"
                         })
                         let menu = try #require(button.menu)
-                        let screenHeight = try #require(NSScreen.screens.first).frame.maxY
+                        let screenHeight = screen.frame.maxY
                         let frame = window.frame
                         let region = "\(Int(frame.minX)),\(Int(screenHeight - frame.maxY)),\(Int(frame.width)),\(Int(frame.height))"
+                        print(
+                            "Native menu capture: screen=\(screen.frame), window=\(frame), region=\(region), permission=\(CGPreflightScreenCaptureAccess())"
+                        )
                         let path = URL(fileURLWithPath: directory).appendingPathComponent(
                             "shortcuts-menu-\(language.rawValue)-\(dark ? "dark" : "light").png"
                         )
@@ -286,7 +328,9 @@ struct OnboardingShortcutsTests {
             let reader = OnboardingShortcutsGlobeReader()
             let session = OnboardingViewModel(settingsStore: settings, globeKeyReader: reader, onComplete: {})
             session.currentStep = .shortcuts
-            let model = session.shortcutsModel
+            var system = SystemSymbolicHotkeys.none
+            let model = OnboardingShortcutsModel(session: session, systemReader: { system })
+            session.shortcutsModel = model
             for language in [AppLanguage.english, .simplifiedChinese] {
                 session.setLanguage(language)
                 for dark in [false, true] {
@@ -300,6 +344,12 @@ struct OnboardingShortcutsTests {
                         "guide-ready",
                         "ready"
                     ] {
+                        system = state == "system"
+                            ? .init(enabled: [.init(
+                                keyCode: 49,
+                                modifierFlags: NSEvent.ModifierFlags.command.rawValue
+                            )])
+                            : .none
                         reader.usage = state == "guide-ready" ? .doNothing : .showEmojiAndSymbols
                         model.restoreAll()
                         model.guideVisible = state.hasPrefix("guide")
