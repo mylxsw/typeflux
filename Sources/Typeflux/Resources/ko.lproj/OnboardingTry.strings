@@ -1,3 +1,42 @@
 /* Onboarding v3: OnboardingTry */
 "eyebrow" = "Ready";
-"title" = "사용해 보기";
+"title" = "체험하기";
+
+"feature.voice" = "음성 입력";
+"feature.launcher" = "실행기";
+"feature.ring" = "링";
+"feature.chat" = "Agent 대화";
+
+"status.notSet" = "미설정";
+"status.notConnected" = "미연결";
+
+"connect.needed" = "%@에는 AI 연결이 필요합니다";
+"connect.button" = "연결";
+
+"voice.instructionPrefix" = "";
+"voice.instructionSuffix" = " 키를 누른 채 말해보세요";
+"voice.placeholder" = "텍스트가 여기에 표시됩니다";
+"voice.sampleText" = "금요일까지 새 홈페이지 디자인 시안을 보내주세요.";
+"voice.simulate" = "길게 눌러 시뮬레이션";
+
+"launcher.instructionPrefix" = "";
+"launcher.instructionSuffix" = " 키를 누르고 「fy hello」 입력";
+"launcher.query" = "fy hello";
+"launcher.resultTitle" = "안녕하세요";
+"launcher.resultAction" = "↩ 복사";
+"launcher.resultSearch" = "「hello」 검색";
+
+"ring.instructionPrefix" = "";
+"ring.instructionSuffix" = " 키를 누른 채 한 방향으로 드래그";
+"ring.sector.voice" = "음성";
+"ring.sector.chat" = "대화";
+"ring.sector.translate" = "번역";
+"ring.sector.screenshot" = "캡처";
+"ring.sector.ocr" = "글자 인식";
+"ring.sector.clipboard" = "클립보드";
+
+"chat.instructionPrefix" = "실행기에서 질문하고 ";
+"chat.query" = "이 표에서 가장 성장이 빠른 달은 언제인가요?";
+"chat.result" = "7월, 전월 대비 +32%";
+
+"button.tried" = "해봤어요";

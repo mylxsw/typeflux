@@ -1,3 +1,42 @@
 /* Onboarding v3: OnboardingTry */
 "eyebrow" = "Ready";
 "title" = "試してみる";
+
+"feature.voice" = "音声入力";
+"feature.launcher" = "ランチャー";
+"feature.ring" = "リング";
+"feature.chat" = "Agent チャット";
+
+"status.notSet" = "未設定";
+"status.notConnected" = "未接続";
+
+"connect.needed" = "%@には AI の接続が必要です";
+"connect.button" = "接続";
+
+"voice.instructionPrefix" = "";
+"voice.instructionSuffix" = "を押しながら話してください";
+"voice.placeholder" = "ここにテキストが表示されます";
+"voice.sampleText" = "金曜日までに新しいホームページのデザイン案を送ってください。";
+"voice.simulate" = "押してシミュレート";
+
+"launcher.instructionPrefix" = "";
+"launcher.instructionSuffix" = "を押して「fy hello」と入力";
+"launcher.query" = "fy hello";
+"launcher.resultTitle" = "こんにちは";
+"launcher.resultAction" = "↩ コピー";
+"launcher.resultSearch" = "「hello」を検索";
+
+"ring.instructionPrefix" = "";
+"ring.instructionSuffix" = "を押したまま、いずれかの方向にスワイプ";
+"ring.sector.voice" = "音声";
+"ring.sector.chat" = "対話";
+"ring.sector.translate" = "翻訳";
+"ring.sector.screenshot" = "スクリーンショット";
+"ring.sector.ocr" = "文字認識";
+"ring.sector.clipboard" = "クリップボード";
+
+"chat.instructionPrefix" = "ランチャーで質問して、";
+"chat.query" = "この表で最も成長が早かった月は？";
+"chat.result" = "7月、前月比 +32%";
+
+"button.tried" = "試した";

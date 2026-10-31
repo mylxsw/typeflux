@@ -30,6 +30,7 @@ struct HotkeySettingsViewTests {
     @Test func `feature triggers follow their page grouping and clear the shared binding`() async throws {
         try await SettingsBehaviorTestSupport.withFixture { store in
             AppLocalization.shared.setLanguage(.simplifiedChinese)
+            store.askAgentExecutionMode = .bounded
             for feature in [FeatureTriggerSettingsView.Feature.launcher, .chat] {
                 store.askHotkey = binding
                 store.setHotkey(binding, for: AppHotkeyAction.openChat)
@@ -65,7 +66,8 @@ struct HotkeySettingsViewTests {
                             $0.value("accessibilityIdentifier") as? String == "agent.settings.confirmLeavingTemporary"
                         })
                         var previousFrame = trigger.frame
-                        for identifier in ["agent.settings.newConversationStorage", "agent.settings.maxSteps",
+                        for identifier in ["agent.settings.newConversationStorage", "agent.settings.executionMode",
+                                           "agent.settings.maxSteps",
                                            "agent.settings.automaticTitles"] {
                             let nextControl = controls.first {
                                 $0.value("accessibilityIdentifier") as? String == identifier
