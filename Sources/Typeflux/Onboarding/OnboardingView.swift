@@ -13,7 +13,7 @@ struct OnboardingView: View {
                 page.padding(.top, 52).padding(.bottom, 12)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 OnboardingFooterBar(back: back, tertiary: tertiary, primary: primary,
-                                    hint: shortcutsHint) {
+                                    hint: footerHint) {
                     if viewModel.currentStep == .welcome {
                         Menu {
                             ForEach(AppLanguage.allCases) { language in
@@ -65,6 +65,14 @@ struct OnboardingView: View {
         case .permissions: OnboardingPermissionsPage(viewModel: viewModel, model: viewModel.permissionsModel)
         case .shortcuts: OnboardingShortcutsPage(viewModel: viewModel, model: viewModel.shortcutsModel)
         case .try: OnboardingTryPage(viewModel: viewModel, model: viewModel.tryModel)
+        }
+    }
+
+    private var footerHint: String? {
+        switch viewModel.currentStep {
+        case .permissions: viewModel.permissionsModel.footerHint
+        case .shortcuts: shortcutsHint
+        default: nil
         }
     }
 
