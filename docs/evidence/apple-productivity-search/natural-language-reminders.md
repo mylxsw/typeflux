@@ -25,3 +25,11 @@ The focused checks do not claim full-suite coverage or a real installed-app writ
 ![Natural-language confirmation](natural-language-confirmation.png)
 
 Captured from the native launcher fixture, using the real plugin factory and keyboard route with a recording creation service. The model is deterministic in this UI fixture; real-model interpretation is checked separately above.
+
+## Installed development app
+
+The feature commit was fast-forwarded into `main` while preserving 30 parallel working files and every unrelated localization value. The normal `make run` launcher rebuilt and installed the Debug development app from that working tree; its Swift source hashes remained stable throughout the build. Total installation/verification command wall time: **100.04 s**, including the backup, build, signing and launch.
+
+Verification passed: a new binary with the same LC_UUID as the fresh Debug artifact, the reminder JSON schema in the installed executable, all five installed placeholders, deep/strict signature verification, unchanged designated signing requirement, entitlements, provisioning profile, transport policy and existing service configuration. The normal host process is running. The feature's Swift files also match commit `6d0c3329` exactly. Parallel work is retained in the installed app and excluded from the feature commit.
+
+The actual model smoke test and native keyboard fixture passed separately. A real reminder was deliberately not created in the installed user's data store; this evidence does not claim an installed-app write/readback acceptance run.
