@@ -58,3 +58,10 @@ The following foreground-state component screenshots contain fixture copy and us
 ![Permission guidance, dark](permission.png)
 ![Denied access, light](permission-denied-light.png)
 ![Denied access, dark](permission-denied.png)
+
+
+### Installed follow-up
+
+Source commit `43042e50` was installed and launched using the official `make run` path. The complete installer wrapper took **409.17 seconds**, including the **383.13-second** optimized build. Deep/strict signature verification passed. Existing service settings, designated signing requirement, runtime entitlements and embedded provisioning profile were preserved exactly. The installed executable UUID matches the release artifact and differs from the previous executable; its application host is running.
+
+A post-install read-only backend check, guarded against requesting a new grant, again passed initial/reopened listing, preview, completed scope and fresh-store reconnect using the retained permission. Verification command wall time was **0.96 seconds**, including a 0.22-second diagnostic output-parser failure corrected before the successful 0.74-second run. The temporary diagnostic bundles were removed afterward. Complete installed-launcher interaction remains outside computer-control acceptance because that interface could not bind its menu-bar window; native-backed UI regression and synthetic screenshots cover the new controls and layout.
