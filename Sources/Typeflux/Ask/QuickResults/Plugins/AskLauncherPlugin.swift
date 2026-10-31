@@ -331,6 +331,13 @@ struct AskPluginOutput: Equatable, Sendable {
     }
 }
 
+/// Permission setup is a neutral guided state with a visible primary action.
+struct AskPluginPermission: Equatable, Sendable {
+    var title: String
+    var detail: String
+    var icon: String
+}
+
 /// A failure to show in the card, with what can be done about it.
 struct AskPluginFailure: Error, Equatable, Sendable {
     var message: String
@@ -339,6 +346,7 @@ struct AskPluginFailure: Error, Equatable, Sendable {
     var actions: [AskPluginAction] = []
     /// What a workflow does after a failed run, such as a notification.
     var followUp: AskWorkflowFollowUp?
+    var permission: AskPluginPermission?
 
     func action(for shortcut: AskPluginAction.Shortcut) -> AskPluginAction? {
         actions.first { $0.shortcut == shortcut }

@@ -233,6 +233,9 @@ struct AskPluginResultsView: View {
     /// The result's height: a flat list, or a card with header, text (and the
     /// original when comparing), a note and actions.
     static func cardHeight(output: AskPluginOutput?, failure: AskPluginFailure?, comparing: Bool) -> CGFloat {
+        if let failure, let permission = failure.permission {
+            return AskPluginPermissionView.height(permission: permission, message: failure.message)
+        }
         if let stack = output?.translation { return AskTranslationStackView.height(stack, comparing: comparing) }
         if output?.emoji != nil { return EmojiResultsView.height }
         if let output, output.applicationGrid { return AskAppSearchGridView.height(count: output.items.count) }
@@ -572,6 +575,8 @@ struct AskPluginResultsView: View {
                         .padding(.horizontal, 10).padding(.top, 12)
                 }
             }
+        } else if let failure, let permission = failure.permission {
+            AskPluginPermissionView(permission: permission, message: failure.message, actions: failure.actions, onAction: onAction)
         } else {
             resultCard(plan: plan, output: output, failure: failure, running: running, streaming: streaming)
         }

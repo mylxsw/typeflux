@@ -21,7 +21,7 @@ struct AskAppleProductivitySearchPlugin: AskLauncherPlugin {
         self.kind = kind
         if let service { self.service = service }
         else if kind == .notes { self.service = AppleProductivityBrowser() }
-        else { self.service = EventKitReminderBrowser() }
+        else { self.service = EventKitReminderBrowser.shared }
         self.now = now
     }
     var id: String { kind == .notes ? Self.notesID : Self.remindersID }
@@ -87,13 +87,16 @@ struct AskAppleProductivitySearchPlugin: AskLauncherPlugin {
         } catch {
             if case EventKitReminderBrowser.Failure.permissionRequired = error {
                 throw AskPluginFailure(message: L("apple.search.accessRequired"), retry: false, actions: [
-                    .init(kind: .rerun([Self.accessOption: "true"]), title: L("apple.search.authorize"),
+                    .init(kind: .rerun([Self.accessOption: "true", Self.readOption: "", Self.openOption: ""]), title: L("apple.search.authorize"),
                           symbol: "lock.open", shortcut: .enter)
-                ])
+                ], permission: permissionPresentation)
             }
             if case EventKitReminderBrowser.Failure.permissionDenied = error {
                 throw AskPluginFailure(message: L("apple.search.accessDenied"), retry: false,
-                                       actions: [settingsAction.with(shortcut: .enter)])
+                                       actions: [settingsAction.with(shortcut: .enter),
+                                                 .init(kind: .rerun([Self.accessOption: "true", Self.readOption: "", Self.openOption: ""]),
+                                                       title: L("apple.search.recheckAccess"), symbol: "arrow.clockwise", shortcut: .commandR)],
+                                       permission: permissionPresentation)
             }
             let key: String
             switch error {
@@ -166,5 +169,9 @@ struct AskAppleProductivitySearchPlugin: AskLauncherPlugin {
             + (kind == .reminders ? "Reminders" : "Automation"))!),
               title: L(kind == .reminders ? "apple.search.reminderPermissions" : "apple.permissions"),
               symbol: "lock.shield", shortcut: .commandO)
+    }
+
+    private var permissionPresentation: AskPluginPermission {
+        .init(title: L("apple.search.permissionTitle"), detail: L("apple.search.permissionDetail"), icon: "apple-reminders")
     }
 }

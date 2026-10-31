@@ -180,6 +180,26 @@ struct AppleProductivitySearchTests {
         }
     }
 
+    @Test func `granted reminder sessions reconnect despite stale preflight and respect revocation`() throws {
+        var access = EventKitReminderBrowser.AccessState()
+        #expect(throws: EventKitReminderBrowser.Failure.self) { try access.prepare(status: .notDetermined, explicit: false) }
+        try access.prepare(status: .notDetermined, explicit: true)
+        try access.complete(granted: true)
+        // Closing a launcher must not turn the SDK's successful grant back into setup UI.
+        try access.prepare(status: .notDetermined, explicit: false)
+        try access.complete(granted: true)
+        try access.prepare(status: .fullAccess, explicit: false)
+        // A remembered grant only permits an SDK recheck; a revoked grant still fails.
+        try access.prepare(status: .denied, explicit: false)
+        #expect(throws: EventKitReminderBrowser.Failure.self) { try access.complete(granted: false) }
+        #expect(!access.confirmedByStore)
+        #expect(throws: EventKitReminderBrowser.Failure.self) { try access.prepare(status: .denied, explicit: false) }
+        #expect(throws: EventKitReminderBrowser.Failure.self) { try access.prepare(status: .restricted, explicit: false) }
+        let first = try #require(AskAppleProductivitySearchPlugin(kind: .reminders).service as? EventKitReminderBrowser)
+        let reopened = try #require(AskAppleProductivitySearchPlugin(kind: .reminders).service as? EventKitReminderBrowser)
+        #expect(first === reopened)
+    }
+
     @Test func `native reminders match the full body then return bounded snapshots and correct dates`() {
         let store = EKEventStore()
         let calendar = EKCalendar(for: .reminder, eventStore: store)
@@ -254,6 +274,9 @@ struct AppleProductivitySearchTests {
     }
 
     @MainActor @Test func `reminder launcher authorizes switches scope and opens the preview`() async throws {
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
         let service = FakeAppleBrowser()
         await service.setFailure(EventKitReminderBrowser.Failure.permissionRequired)
         let launcher = try await AskQuickResultsInteractionTests.Launcher(text: "reminders ", prepare: { model in
@@ -264,12 +287,14 @@ struct AppleProductivitySearchTests {
         defer { launcher.close() }
         try await settle { launcher.fixture.model.plugins.failure != nil }
         #expect(await service.accessRequests == 0)
+        #expect(launcher.fixture.model.plugins.failure?.permission != nil)
         try snapshot(launcher, name: "permission")
-        try await launcher.press(36)
+        try await clickPermissionButton(launcher)
         try await settle { launcher.fixture.model.plugins.output?.selected?.id == "fixture-id" }
         #expect(await service.accessRequests == 1)
         try await launcher.press(48)
         try await settle { launcher.fixture.model.plugins.output?.note == L("apple.search.all") }
+        #expect(launcher.fixture.model.plugins.request?.options[AskAppleProductivitySearchPlugin.accessOption] == nil)
         #expect(await service.queries.last?.1 == true)
         try await launcher.press(36)
         try await settle { launcher.fixture.model.plugins.output?.body.contains("Full fixture body") == true }
@@ -278,6 +303,44 @@ struct AppleProductivitySearchTests {
         try await settle { launcher.dismissed == 1 }
         #expect(await service.opened == ["fixture-id"])
         #expect(await launcher.fixture.api.sends.isEmpty)
+
+        // A separate presentation using the existing grant enters the list without another permission page.
+        let reopened = try await AskQuickResultsInteractionTests.Launcher(text: "reminders ", prepare: { model in
+            var plugins = model.makeLauncherPlugins().filter { $0.id != AskAppleProductivitySearchPlugin.remindersID }
+            plugins.append(AskAppleProductivitySearchPlugin(kind: .reminders, service: service))
+            model.plugins.replacePlugins(plugins)
+        })
+        defer { reopened.close() }
+        try await settle { reopened.fixture.model.plugins.output?.selected?.id == "fixture-id" }
+        #expect(reopened.fixture.model.plugins.failure == nil)
+        #expect(await service.accessRequests == 1)
+    }
+
+    @MainActor private func clickPermissionButton(_ launcher: AskQuickResultsInteractionTests.Launcher) async throws {
+        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+        var seen = Set<ObjectIdentifier>()
+        func find(_ node: Any) -> NSObject? {
+            guard let object = node as? NSObject, seen.insert(ObjectIdentifier(object)).inserted else { return nil }
+            if object.responds(to: NSSelectorFromString("accessibilityIdentifier")),
+               object.value(forKey: "accessibilityIdentifier") as? String == "ask.plugin.permission.primary" { return object }
+            guard object.responds(to: NSSelectorFromString("accessibilityChildren")) else { return nil }
+            for child in object.value(forKey: "accessibilityChildren") as? [Any] ?? [] {
+                if let match = find(child) { return match }
+            }
+            return nil
+        }
+        let button = try #require(find(launcher.window))
+        #expect(button.value(forKey: "accessibilityLabel") as? String == L("apple.search.authorize"))
+        let frame = try #require(button.value(forKey: "accessibilityFrame") as? NSValue).rectValue
+        #expect(frame.width > 120 && frame.height >= 28)
+        let point = launcher.window.convertPoint(fromScreen: .init(x: frame.midX, y: frame.midY))
+        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+            NSApp.sendEvent(try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
+                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: launcher.window.windowNumber,
+                context: nil, eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0)))
+        }
+        try await Task.sleep(for: .milliseconds(50))
     }
 
     @MainActor private func snapshot(_ launcher: AskQuickResultsInteractionTests.Launcher, name: String) throws {

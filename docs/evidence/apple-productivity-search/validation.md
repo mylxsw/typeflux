@@ -25,7 +25,7 @@ The first UI pass exposed Command-O being intercepted by the launcher's window s
 - Temporary reminder probes were reconciled and removed. An additional probe marker returned zero active and zero completed matches in the native Reminders search; the original view was restored.
 - The final optimized prebuild passed in 473.89 seconds of command wall time; an earlier optimized build took 426.30 seconds. The official installation script also completed its optimized build (405.91 seconds for the build phase) and launched Typeflux Dev. The complete installer wrapper wall time was not measured.
 - Installed-app deep/strict code-signature verification passed. The existing service configuration, embedded provisioning profile, and designated signing requirement were compared with the pre-update app and preserved exactly.
-- The computer-control interface could access Finder and Reminders but repeatedly returned `timeoutReached` for Typeflux by both application path and bundle identifier. Global-shortcut and explicit Finder-open attempts did not expose a Typeflux window to that interface. Installed-app search/preview/open and real EventKit reminder-store access therefore remain pending a manually opened launcher and any required system permission. Unit snapshots and the simulated authorization flow do not establish that acceptance.
+- The computer-control interface could access Finder and Reminders but repeatedly returned `timeoutReached` for Typeflux by both application path and bundle identifier. Global-shortcut and explicit Finder-open attempts did not expose a Typeflux window to that interface. At that initial installation, installed-app search/preview/open and real EventKit access remained pending. The follow-up below validates the actual EventKit backend with the existing grant; complete installed-launcher interaction remains unverified through computer control. Unit snapshots and a simulated authorization flow do not establish that acceptance.
 
 ## Synthetic UI evidence
 
@@ -34,3 +34,27 @@ These screenshots contain fixture data, not the user's notes or reminders.
 ![Notes search results](list.png)
 ![Notes preview](preview.png)
 ![Explicit reminder authorization entry](permission.png)
+
+
+## Reminder authorization follow-up — 2026-10-31
+
+The user reported a successful first grant followed by another setup card on reopening; clicking authorization then loaded the list without another system sheet. Native EventKit logs confirm a successful full-access completion and subsequent successful fetches. The old implementation reset its store after granting, recreated the reader with launcher plugins, and used a synchronous preflight as the only access decision before initializing the lazy store. The exact transient preflight value was not captured; a later fresh-process probe already reported full access.
+
+The reader now retains a shared connection and the SDK-confirmed grant, initializes the store before preflight, and silently reconnects through EventKit's actual completion before every read. Remembered confirmation permits an SDK recheck rather than bypassing authorization; a rejected completion clears it. Unknown first access still requires the explicit action. Authorization overrides are one-shot and do not follow Tab, preview, native opening, or edited queries.
+
+A neutral permission card replaces the icon-only recovery entry for reminders. It provides the native application icon, a benefit-oriented title, concrete instructions, a prominent labeled button and Return hint, and readable local-processing information. Denied access offers a labeled settings button and recheck action. All five supported localizations are updated. Its measured height includes the privacy icon, and both foreground appearances have been rendered for required and denied states.
+
+### Follow-up verification
+
+29 Swift test methods across `AppleProductivitySearchTests`, `AskPluginSessionTests`, and `AskPluginViewTests` passed across the focused pass and targeted retries. Search tests cover SDK-confirmed access, stale preflight, revocation, shared-reader lifetime, one-shot authorization, a real content-button click, closing/reopening, preview, scope changes and no AI submission. Session tests cover rerun/cancellation and shared request state. View tests cover the shared failure renderer and actual native layout, including four required/denied and light/dark rendering cases.
+
+Total follow-up test-command wall time, including preparation, build, discovery, execution and failed retries: **471.52 seconds** (182.29, 53.10, 67.49, 35.93, 54.34, 78.37). The first attempt exposed a side-effectful lazy accessibility traversal in the new test helper; it was replaced with a single-pass loop. Layout validation then exposed an unconstrained test-host width and a two-point privacy-icon height omission; both were fixed. A method selector initially omitted backticks present in discovered test identifiers and matched no tests; its corrected selector ran only the intended methods. Final visual review increased the privacy text contrast, added denied-state captures and restored the test accessibility flag. No full or unfiltered test run was used.
+
+The actual `EventKitReminderBrowser.swift` was compiled into a temporary diagnostic bundle using the installed application's existing signing requirement and bundle identity. A full-access guard prevented requesting a new grant. Initial search, repeat/reopened search, detail reading, completed-item scope and a fresh store all passed against actual reminders in **2.14 seconds** including diagnostic compilation, signing and execution. No reminder content, identifiers or counts were emitted, and no items were created or changed. This validates the real backend rather than a mocked EventKit result; it does not substitute for complete installed-launcher UI acceptance.
+
+The following foreground-state component screenshots contain fixture copy and use the real native view. The existing list and preview screenshots above also contain only fixture data.
+
+![Permission guidance, light](permission-light.png)
+![Permission guidance, dark](permission.png)
+![Denied access, light](permission-denied-light.png)
+![Denied access, dark](permission-denied.png)

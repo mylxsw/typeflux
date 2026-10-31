@@ -7630,8 +7630,16 @@
 "apple.search.changed" = "The list changed while reading. Refresh the results.";
 "apple.search.tooLong" = "Search queries can contain up to 500 characters.";
 "apple.search.failed" = "Could not read the app. Check its account and allow Typeflux in System Settings → Privacy & Security → Automation.";
-"apple.search.accessRequired" = "Allow Typeflux to read reminders. Choose Authorize to show the macOS permission prompt.";
-"apple.search.authorize" = "Authorize reminder access";
-"apple.search.accessDenied" = "Reminder access is disabled. Enable Typeflux in System Settings → Privacy & Security → Reminders.";
-"apple.search.reminderPermissions" = "Reminder permissions";
+"apple.search.accessRequired" = "Allow Typeflux to read your reminders to search and preview them here. Click “Allow reminder access”, then confirm in the macOS prompt.";
+"apple.search.authorize" = "Allow reminder access";
+"apple.search.accessDenied" = "Reminder access is turned off. Click “Open System Settings” to enable Typeflux, or “Check again” if you have already enabled it.";
+"apple.search.reminderPermissions" = "Open System Settings";
 "apple.reminders.searchFailed" = "Could not read reminders. Try again or check reminder permissions in System Settings.";
+
+"apple.search.permissionEyebrow" = "macOS permission";
+
+"apple.search.permissionTitle" = "See reminders in your launcher";
+
+"apple.search.permissionDetail" = "Search and preview stay on this Mac. Content is not automatically sent to AI.";
+
+"apple.search.recheckAccess" = "Check again";

@@ -177,6 +177,7 @@ final class AskPluginSession: ObservableObject {
         if plugin is AskAppleProductivitySearchPlugin, let previousRequest = request, previousRequest.text != trimmed {
             overrides.removeValue(forKey: AskAppleProductivitySearchPlugin.readOption)
             overrides.removeValue(forKey: AskAppleProductivitySearchPlugin.openOption)
+            overrides.removeValue(forKey: AskAppleProductivitySearchPlugin.accessOption)
         }
         guard !waitingForInput || !trimmed.isEmpty || runWhenPlanned else { return }
         waitingForInput = false
@@ -262,6 +263,9 @@ final class AskPluginSession: ObservableObject {
     /// Runs again with options added: another target language (⇥), another engine (⌘R).
     /// A request waiting for Return keeps waiting; one that ran runs again.
     func rerun(with options: [String: String], selection: String?, text: String, language: AppLanguage) {
+        if plugin is AskAppleProductivitySearchPlugin, options[AskAppleProductivitySearchPlugin.accessOption] == nil {
+            overrides.removeValue(forKey: AskAppleProductivitySearchPlugin.accessOption)
+        }
         var ranBefore: Bool
         switch phase {
         case .running, .done, .failed: ranBefore = true
