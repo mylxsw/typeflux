@@ -89,6 +89,9 @@ struct OnboardingTryPage: View {
             .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(featureTitle(feature))
+        .accessibilityValue(isConnected ? keys.joined(separator: " ") :
+            OnboardingStrings.text("status.notConnected", table: "OnboardingTry"))
     }
 
     // MARK: - Right Practice Card
@@ -189,7 +192,15 @@ struct OnboardingTryPage: View {
                     .opacity(model.isSimulating || !model.simulatedText.isEmpty ? 0 : 1)
 
                 if model.isSimulating {
-                    ProgressView().controlSize(.small)
+                    HStack(spacing: 2) {
+                        ForEach(0..<5) { index in
+                            Capsule()
+                                .fill(Color.accentColor)
+                                .frame(width: 2.5, height: [6.0, 10, 14, 10, 6][index])
+                        }
+                    }
+                    .frame(height: 14)
+                    .padding(.top, 4)
                 } else if !model.simulatedText.isEmpty {
                     Text(model.simulatedText)
                         .font(.system(size: 13))
@@ -244,7 +255,9 @@ struct OnboardingTryPage: View {
             .simultaneousGesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { _ in
-                        if !model.isSimulating { model.beginSimulation() }
+                        if !model.isSimulating {
+                            model.beginSimulation()
+                        }
                     }
                     .onEnded { _ in
                         model.endSimulation(

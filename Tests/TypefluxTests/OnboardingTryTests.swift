@@ -9,6 +9,32 @@ import Testing
 struct OnboardingTryTests {
     private typealias UI = SettingsBehaviorTestSupport
 
+    private func withNativeWindow(_ content: some View, appearance: AppearanceMode,
+                                  check: (NSWindow, NSView) async throws -> Void) async throws {
+        let window = NSWindow(contentRect: NSRect(x: -10000, y: -10000, width: 960, height: 664),
+                              styleMask: [.titled, .closable, .fullSizeContentView],
+                              backing: .buffered, defer: false)
+        let host = NSHostingView(rootView: content.frame(width: 960, height: 664).ignoresSafeArea())
+        host.sizingOptions = []
+        window.isReleasedWhenClosed = false
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.appearance = AppAppearance.nsAppearance(for: appearance)
+        window.contentView = host
+        window.makeKeyAndOrderFront(nil)
+        defer {
+            window.contentView = nil
+            window.orderOut(nil)
+            window.close()
+        }
+        let frame = try #require(window.contentView?.superview)
+        try await UI.wait { UI.contains(OnboardingStrings.text("title", table: "OnboardingTry"), in: frame) }
+        #expect(window.standardWindowButton(.closeButton)?.isHidden == false)
+        try await check(window, frame)
+    }
+
     @Test func `try model initializes with default state`() async throws {
         try await UI.withFixture { settings in
             let viewModel = OnboardingViewModel(settingsStore: settings,
@@ -274,7 +300,7 @@ struct OnboardingTryTests {
                     OnboardingStrings.text("button.tried", table: "OnboardingTry"),
                     in: host
                 )
-                triedButton1.press()
+                try triedButton1.press()
                 try await UI.wait { viewModel.tryModel.isTried(.launcher) }
 
                 // Switch to ring and try it
@@ -284,7 +310,7 @@ struct OnboardingTryTests {
                     OnboardingStrings.text("button.tried", table: "OnboardingTry"),
                     in: host
                 )
-                triedButton2.press()
+                try triedButton2.press()
                 try await UI.wait { viewModel.tryModel.isTried(.ring) }
 
                 // Switch to chat and try it
@@ -294,7 +320,7 @@ struct OnboardingTryTests {
                     OnboardingStrings.text("button.tried", table: "OnboardingTry"),
                     in: host
                 )
-                triedButton3.press()
+                try triedButton3.press()
                 try await UI.wait { viewModel.tryModel.isTried(.chat) }
 
                 // Click finish button in footer
@@ -323,15 +349,28 @@ struct OnboardingTryTests {
                     viewModel.setLanguage(language)
                     viewModel.currentStep = .try
 
-                    try await UI.withWindow(
+                    try await withNativeWindow(
                         OnboardingView(viewModel: viewModel, appearanceMode: appearance),
-                        width: 960,
-                        height: 664
+                        appearance: appearance
                     ) { window, host in
                         window.titleVisibility = .hidden
                         window.titlebarAppearsTransparent = true
 
-                        // 1. Voice state (initial with simulated text)
+                        // Capture empty, held and released simulation without counting it as dictation.
+                        try await Task.sleep(for: .milliseconds(100))
+                        try UI.snapshot(host, name: "try-0-voice-empty-\(mode)")
+                        viewModel.tryModel.beginSimulation()
+                        try await Task.sleep(for: .milliseconds(100))
+                        try UI.snapshot(host, name: "try-0-voice-holding-\(mode)")
+                        viewModel.tryModel.endSimulation(
+                            sampleText: OnboardingStrings.text("voice.sampleText", table: "OnboardingTry")
+                        )
+                        try await Task.sleep(for: .milliseconds(100))
+                        try UI.snapshot(host, name: "try-0-voice-demo-\(mode)")
+                        #expect(!viewModel.voicePracticeSucceeded)
+                        viewModel.tryModel.clearSimulation()
+
+                        // 1. A successful real dictation state.
                         viewModel.voicePracticeText = OnboardingStrings.text("voice.sampleText", table: "OnboardingTry")
                         viewModel.voicePracticeSucceeded = true
                         try await Task.sleep(for: .milliseconds(100))
@@ -358,6 +397,12 @@ struct OnboardingTryTests {
                         viewModel.tryModel.selectFeature(.voice)
                         try await Task.sleep(for: .milliseconds(100))
                         try UI.snapshot(host, name: "try-5-unconnected-\(mode)")
+                        viewModel.tryModel.selectFeature(.chat)
+                        try await Task.sleep(for: .milliseconds(100))
+                        try UI.snapshot(host, name: "try-6-chat-unconnected-\(mode)")
+                        try UI.button(OnboardingStrings.text("connect.button", table: "OnboardingTry"), in: host)
+                            .press()
+                        try await UI.wait { viewModel.currentStep == .route }
                     }
                 }
             }
