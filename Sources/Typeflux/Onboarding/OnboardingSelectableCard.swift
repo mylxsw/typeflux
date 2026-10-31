@@ -3,6 +3,7 @@ import SwiftUI
 struct OnboardingSelectableCard<Content: View>: View {
     let selected: Bool
     let action: () -> Void
+    var insets = EdgeInsets(top: 18, leading: 18, bottom: 18, trailing: 18)
     @ViewBuilder var content: () -> Content
     @Environment(\.colorScheme) private var colorScheme
 
@@ -17,7 +18,7 @@ struct OnboardingSelectableCard<Content: View>: View {
                     }
                 }.frame(width: 18, height: 18).accessibilityHidden(true)
             }
-            .padding(18)
+            .padding(insets)
             .background(
                 selected ?
                     (colorScheme == .dark ? Color(red: 0.227, green: 0.227, blue: 0.251).opacity(0.96) : Color

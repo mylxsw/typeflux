@@ -92,6 +92,8 @@ struct ModelProviderIcon: View {
             "groq"
         case .googleCloud:
             "google"
+        case .soniox:
+            "soniox"
         case .xiaomi:
             "xiaomimimo"
         case .openCodeZen, .openCodeGo:

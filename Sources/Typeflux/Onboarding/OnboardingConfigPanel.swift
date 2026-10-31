@@ -11,7 +11,7 @@ struct OnboardingConfigPanel<Fields: View, Actions: View, Result: View>: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 14) {
             Text(eyebrow.uppercased()).font(.system(size: 9.5, weight: .semibold))
                 .tracking(1.6).foregroundStyle(Color.accentColor)
             HStack(spacing: 12) {
@@ -22,19 +22,21 @@ struct OnboardingConfigPanel<Fields: View, Actions: View, Result: View>: View {
                     )
                     .background(.white, in: RoundedRectangle(cornerRadius: 12))
                 }
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(name).font(.system(size: 18, weight: .bold))
-                    if let detail {
-                        Text(detail).font(.system(size: 12)).foregroundStyle(.secondary)
-                    }
-                }
+                Text(name).font(.system(size: 18, weight: .bold))
+            }
+            if let detail {
+                Text(detail).font(.system(size: 12)).foregroundStyle(.secondary).padding(.top, -6)
             }
             ScrollView { fields().frame(maxWidth: .infinity, alignment: .leading) }
                 .scrollIndicators(.hidden)
             actions().frame(maxWidth: .infinity)
             result().font(.system(size: 12)).frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(22).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(.vertical, 22).padding(.horizontal, 24).frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity,
+            alignment: .topLeading
+        )
         .background(colorScheme == .dark ? Color.white.opacity(0.045) : .white,
                     in: RoundedRectangle(cornerRadius: 18))
         .overlay(RoundedRectangle(cornerRadius: 18).stroke(.primary.opacity(0.08), lineWidth: 1))

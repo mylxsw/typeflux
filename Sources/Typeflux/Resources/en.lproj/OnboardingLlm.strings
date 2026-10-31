@@ -1,4 +1,61 @@
 /* Onboarding v3: OnboardingLlm */
 "eyebrow" = "Language Model";
-"title" = "AI models";
-"subtitle" = "For AI rewriting, translation and Agent conversations.";
+"title" = "AI Model";
+"titleBadge" = "Optional";
+"subtitle" = "Used for AI rewrite, translation, and Agent chat.";
+"configEyebrow" = "Configuration";
+
+"provider.free.title" = "Free Model";
+"provider.free.detail" = "No setup needed";
+"provider.openai.title" = "OpenAI";
+"provider.openai.detail" = "GPT series";
+"provider.anthropic.title" = "Anthropic";
+"provider.anthropic.detail" = "Claude series";
+"provider.gemini.title" = "Gemini";
+"provider.gemini.detail" = "Native Google API";
+"provider.deepseek.title" = "DeepSeek";
+"provider.deepseek.detail" = "OpenAI compatible";
+"provider.qwen.title" = "Qwen";
+"provider.qwen.detail" = "AliCloud Bailian";
+"provider.openrouter.title" = "OpenRouter";
+"provider.openrouter.detail" = "One key for multiple models";
+"provider.ollama.title" = "Ollama";
+"provider.ollama.detail" = "Runs on this Mac";
+
+"provider.more" = "More Providers";
+"provider.kimi.title" = "Kimi";
+"provider.kimi.detail" = "Moonshot";
+"provider.zhipu.title" = "Zhipu";
+"provider.zhipu.detail" = "GLM series";
+"provider.minimax.title" = "MiniMax";
+"provider.minimax.detail" = "MiniMax";
+"provider.grok.title" = "Grok";
+"provider.grok.detail" = "xAI";
+"provider.groq.title" = "Groq";
+"provider.groq.detail" = "Fast inference";
+"provider.xiaomi.title" = "Xiaomi MiMo";
+"provider.xiaomi.detail" = "Xiaomi";
+"provider.custom.title" = "OpenAI Compatible";
+"provider.custom.detail" = "Custom endpoint";
+
+"badge.recommended" = "Recommended";
+"badge.free" = "Free";
+"badge.apiKey" = "API Key";
+"badge.local" = "Local";
+"badge.custom" = "Custom";
+
+"field.model" = "Model";
+"field.apiKey" = "API Key";
+"field.endpoint" = "Endpoint";
+
+"placeholder.autoValidate" = "Auto-validates on paste";
+"model.autoFetch" = "Auto-fetched after verification";
+"model.default" = "Default Model";
+"action.getKey" = "Get API Key";
+"action.testConnection" = "Test Connection";
+"status.testing" = "Testing…";
+"status.sampleReply" = "Hello! I'm ready to help you rewrite text.";
+"error.invalidKey" = "Invalid API Key";
+"error.ollamaNotFound" = "Ollama not detected";
+"action.download" = "Download";
+"action.retryDetect" = "Check Again";

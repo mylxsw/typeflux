@@ -1,4 +1,57 @@
 /* Onboarding v3: OnboardingSpeech */
 "eyebrow" = "Voice Recognition";
 "title" = "音声認識";
-"subtitle" = "サービスを選び、話しかけてテストします。";
+"subtitle" = "サービスを選択し、一言話してテストしてください。";
+"configEyebrow" = "Configuration";
+
+"provider.local.title" = "ローカルモデル";
+"provider.local.detail" = "このMacで動作、オフライン・無料";
+"provider.free.title" = "無料モデル";
+"provider.free.detail" = "設定不要、オンライン使用";
+"provider.soniox.title" = "Soniox";
+"provider.soniox.detail" = "リアルタイムストリーミング認識、多言語";
+"provider.ali.title" = "Alibaba Cloud ASR";
+"provider.ali.detail" = "百煉リアルタイム音声認識";
+"provider.doubao.title" = "Doubao リアルタイム ASR";
+"provider.doubao.detail" = "火山エンジンストリーミング認識";
+"provider.google.title" = "Google 音声認識";
+"provider.google.detail" = "Google Cloud Speech";
+"provider.whisper.title" = "OpenAI";
+"provider.whisper.detail" = "Whisper 互換エンドポイント";
+"provider.groq.title" = "Groq";
+"provider.groq.detail" = "Whisper Large v3";
+"provider.multimodal.title" = "マルチモーダル LLM";
+"provider.multimodal.detail" = "AIモデルで音声を認識";
+
+"badge.recommended" = "おすすめ";
+"badge.free" = "無料";
+"badge.apiKey" = "API Key";
+"badge.auth" = "認証";
+"badge.advanced" = "高度";
+
+"field.model" = "モデル";
+"field.apiKey" = "API Key";
+"field.accessToken" = "Access Token";
+"field.appId" = "App ID";
+"field.endpoint" = "エンドポイント";
+
+"local.downloaded" = "ダウンロード済み、オフライン利用可能";
+"local.download" = "モデルをダウンロード";
+"local.cancel" = "キャンセル";
+"local.downloadedTag" = "ダウンロード済み";
+"free.ready" = "デフォルト設定ですぐに使用可能";
+"google.authorized" = "Google アカウント認証済み";
+"google.authorizeAction" = "Google で認証";
+"multimodal.notice" = "次のステップで設定する AI モデルを使用して音声を認識します。";
+
+"placeholder.paste" = "%@ を貼り付け";
+"placeholder.pasteApiKey" = "API Key を貼り付け";
+"placeholder.pasteAccessToken" = "Access Token を貼り付け";
+"action.getKey" = "%@ を取得";
+"action.testHoldToTalk" = "長押ししてテスト";
+"status.listening" = "聞き取り中…離して完了";
+"status.recognizing" = "認識中…";
+"status.samplePreview" = "明日午後3時にミーティング";
+"error.invalidKey" = "API Key が無効です。確認して再試行してください";
+"error.micPermissionDenied" = "テストにはマイクの権限が必要です";
+"action.openSettings" = "設定を開く";
