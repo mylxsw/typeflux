@@ -49,7 +49,7 @@ struct OnboardingBehaviorTests {
             try await capture(host, name: "02-services-en")
             try UI.button(L("onboarding.v2.action.continue"), in: host).press()
             try await UI.wait { model.currentStep == .cloud }
-            try await UI.wait { UI.contains(L("setup.cloud.signInShort"), in: host) }
+            try await UI.wait { UI.contains(L("setup.cloud.signInContinue"), in: host) }
             #expect(!model.canAdvance)
             try await capture(host, name: "03-cloud-en")
         }
@@ -91,6 +91,11 @@ struct OnboardingBehaviorTests {
             #expect(UI.contains(L("setup.status.notSetUp"), in: host))
             #expect(!UI.contains(L("onboarding.v2.finish.title"), in: host))
             try await capture(host, name: "08-finish-skipped-en")
+            let heading = try #require(UI.elements(in: host).first {
+                $0.text == L("setup.finish.title") || $0.label == L("setup.finish.title")
+            })
+            #expect(heading.frame.height > 0)
+            #expect(host.window?.frame.contains(heading.frame) == true)
             let fixes = UI.elements(in: host)
                 .filter {
                     [NSAccessibility.Role.button.rawValue, NSAccessibility.Role.link.rawValue].contains($0.role)
@@ -148,10 +153,13 @@ struct OnboardingBehaviorTests {
                 model.currentStep = step
                 try await UI.wait { UI.contains(L(title), in: host) }
                 try await capture(host, name: name)
-                let button = try UI.button(
-                    L(step == .finish ? "onboarding.v2.action.finish" : "onboarding.v2.action.continue"),
-                    in: host
-                )
+                let title: String
+                switch step {
+                case .cloud, .stt, .llm: title = model.setupPrimaryTitle
+                case .finish: title = L("onboarding.v2.action.finish")
+                default: title = L("onboarding.v2.action.continue")
+                }
+                let button = try UI.button(title, in: host)
                 #expect(host.window?.frame.contains(button.frame) == true)
             }
         }, language: .simplifiedChinese, appearance: .dark)
@@ -255,6 +263,49 @@ struct OnboardingBehaviorTests {
                 }
             }
         }
+    }
+
+    @Test func `cloud handoff has one primary and keeps login and skip actionable`() async throws {
+        try await fixture { _, model, host in
+            var loginCount = 0
+            model.presentLogin = { loginCount += 1 }
+            model.currentStep = .cloud
+            try await UI.wait { UI.contains(L("setup.cloud.signInContinue"), in: host) }
+            #expect(!UI.contains(L("onboarding.v2.action.continue"), in: host))
+            try UI.button(L("setup.cloud.signInContinue"), in: host).press()
+            #expect(loginCount == 1)
+            try UI.button(L("setup.action.skip"), in: host).press()
+            #expect(model.requestedSetupAdvance == nil)
+            #expect(model.skipConfirmation == .allModels)
+        }
+    }
+
+    @Test func `configured speech shows verification and reuses connection editor`() async throws {
+        try await fixture({ settings, model, host in
+            settings.doubaoAppID = "fixture-app"
+            settings.doubaoAccessToken = "fixture-token"
+            model.configurationModel?.setSTTProvider(.doubaoRealtime)
+            model.serviceRoute = .custom
+            model.currentStep = .stt
+            try await UI.wait { UI.contains(L("setup.action.testAndContinue"), in: host) }
+            #expect(model.speechConfigured)
+            #expect(!model.speechVerified)
+            #expect(UI.contains(L("setup.connection.configured"), in: host))
+            #expect(UI.contains(L("setup.status.testNeeded"), in: host))
+            let primary = try UI.button(L("setup.action.testAndContinue"), in: host)
+            #expect((primary.value("isAccessibilityEnabled") as? Bool) == true)
+            try await capture(host, name: "12-speech-configured-zh")
+            model.configurationModel?.sttConnectionTestState = .failure(message: "Connection unavailable")
+            try await UI.wait { UI.contains("Connection unavailable", in: host) }
+            #expect(!model.canAdvance)
+            try await capture(host, name: "13-speech-failure-zh")
+            let edit = try #require(UI.elements(in: host).first {
+                [NSAccessibility.Role.button.rawValue, NSAccessibility.Role.link.rawValue].contains($0.role)
+                    && $0.label == L("setup.connection.edit")
+            })
+            try edit.press()
+            try await UI.wait { model.modelEditorDomain == .stt }
+        }, language: .simplifiedChinese, appearance: .dark)
     }
 
     @Test func `existing model editor renders inside onboarding sheet`() async throws {

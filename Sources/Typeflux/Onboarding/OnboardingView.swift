@@ -1,15 +1,16 @@
+// swiftlint:disable file_length
 import AppKit
 import Combine
 import SwiftUI
 
 /// First-run service setup, permissions and feature guides. Configuration editors are shared with Settings.
-struct OnboardingView: View {
+struct OnboardingView: View { // swiftlint:disable:this type_body_length
     @ObservedObject var viewModel: OnboardingViewModel
     let appearanceMode: AppearanceMode
     @ObservedObject private var auth = AuthState.shared
     @ObservedObject private var localization = AppLocalization.shared
     @Environment(\.interfaceStyle) private var interfaceStyle
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorScheme) var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var heroSlide = 0
 
@@ -17,28 +18,25 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            background
-            VStack(spacing: 0) {
-                topBar
-                Group {
-                    switch viewModel.currentStep {
-                    case .welcome: welcomeStep
-                    case .services: servicesStep
-                    case .cloud: cloudStep
-                    case .stt: speechSetupStep
-                    case .llm: languageSetupStep
-                    case .permissions: permissionsStep
-                    case .finish: finishStep
-                    case .voice, .launcher, .tools, .ring, .chat:
-                        if let feature = viewModel.currentStep.feature { featureStep(feature) }
+            if usesSetupRail {
+                setupPalette.background.ignoresSafeArea()
+                HStack(spacing: 0) {
+                    OnboardingSetupRail(stage: viewModel.currentStage, deferredStages: deferredSetupStages,
+                                        palette: setupPalette)
+                    VStack(spacing: 0) {
+                        stepContent
+                        setupFooter
                     }
+                    .padding(.horizontal, 40)
+                    .padding(.top, 88)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .transition(.asymmetric(
-                    insertion: .move(edge: viewModel.stepDirection > 0 ? .trailing : .leading).combined(with: .opacity),
-                    removal: .opacity
-                ))
-                footer
+            } else {
+                background
+                VStack(spacing: 0) {
+                    topBar
+                    stepContent
+                    footer
+                }
             }
         }
         .preferredColorScheme(preferredColorScheme)
@@ -81,6 +79,24 @@ struct OnboardingView: View {
                 heroSlide = (heroSlide + 1) % OnboardingWelcomeHero.Scene.welcome.count
             }
         }
+    }
+
+    @ViewBuilder private var stepContent: some View {
+        Group {
+            switch viewModel.currentStep {
+            case .welcome: welcomeStep
+            case .services: servicesStep
+            case .cloud: cloudStep
+            case .stt: speechSetupStep
+            case .llm: languageSetupStep
+            case .permissions: permissionsStep
+            case .finish: finishStep
+            case .voice, .launcher, .tools, .ring, .chat:
+                if let feature = viewModel.currentStep.feature { featureStep(feature) }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .transition(.opacity)
     }
 
     // MARK: - Chrome
@@ -355,7 +371,8 @@ struct OnboardingView: View {
                     .scrollContentBackground(.hidden)
                     .padding(8)
                 if viewModel.voicePracticeText.isEmpty {
-                    Text(L("onboarding.v2.voice.practice.placeholder", HotkeyFormat.display(viewModel.activationHotkey)))
+                    Text(L("onboarding.v2.voice.practice.placeholder",
+                           HotkeyFormat.display(viewModel.activationHotkey)))
                         .font(.studioBody(13))
                         .foregroundStyle(tertiaryText)
                         .padding(.horizontal, 13)
@@ -380,42 +397,48 @@ struct OnboardingView: View {
     // MARK: - Finish
 
     private var finishStep: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            stepTitle(L("setup.finish.title"), subtitle: L(viewModel.voiceReady && viewModel.languageConfigured
-                ? "setup.finish.readySubtitle" : "setup.finish.subtitle"))
-            VStack(spacing: 0) {
-                setupSummaryRow(title: OnboardingFeature.launcher.title,
-                    detail: L("setup.finish.launcher"), ready: true, action: nil)
-                Divider()
-                setupSummaryRow(title: OnboardingFeature.voice.title,
-                    detail: !viewModel.speechConfigured ? L("setup.finish.speechSkipped")
-                        : !viewModel.voicePermissionsGranted ? L("setup.finish.permissionsMissing")
-                        : !viewModel.voiceHotkeyReady ? L("setup.finish.keyboardMissing") : L("setup.status.configured"),
-                    ready: viewModel.voiceReady) {
-                        if viewModel.speechConfigured {
-                            viewModel.speechSkipped = false
-                            viewModel.currentStep = .permissions
-                        } else {
-                            viewModel.serviceRoute = .custom; viewModel.speechSkipped = false; viewModel.currentStep = .stt
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                stepTitle(L("setup.finish.title"), subtitle: L(viewModel.voiceReady && viewModel.languageConfigured
+                    ? "setup.finish.readySubtitle" : "setup.finish.subtitle"))
+                VStack(spacing: 0) {
+                    setupSummaryRow(title: OnboardingFeature.launcher.title,
+                        detail: L("setup.finish.launcher"), ready: true, action: nil)
+                    Divider()
+                    setupSummaryRow(title: OnboardingFeature.voice.title,
+                        detail: !viewModel.speechConfigured ? L("setup.finish.speechSkipped")
+                            : !viewModel.voicePermissionsGranted ? L("setup.finish.permissionsMissing")
+                            : !viewModel.voiceHotkeyReady ? L("setup.finish.keyboardMissing")
+                                : L("setup.status.configured"),
+                        ready: viewModel.voiceReady) {
+                            if viewModel.speechConfigured {
+                                viewModel.speechSkipped = false
+                                viewModel.currentStep = .permissions
+                            } else {
+                                viewModel.serviceRoute = .custom
+                                viewModel.speechSkipped = false
+                                viewModel.currentStep = .stt
+                            }
                         }
-                    }
-                Divider()
-                setupSummaryRow(title: L("setup.finish.ai"), detail: viewModel.languageStatusText,
-                    ready: viewModel.languageConfigured) {
-                        viewModel.serviceRoute = .custom; viewModel.aiSkipped = false; viewModel.currentStep = .llm
-                    }
+                    Divider()
+                    setupSummaryRow(title: L("setup.finish.ai"), detail: viewModel.languageStatusText,
+                        ready: viewModel.languageConfigured) {
+                            viewModel.serviceRoute = .custom; viewModel.aiSkipped = false; viewModel.currentStep = .llm
+                        }
+                }
+                .padding(.horizontal, 20)
+                .background(RoundedRectangle(cornerRadius: 16).fill(cardFill))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(borderColor, lineWidth: 1))
+                .padding(.top, 24)
+                HStack(spacing: 8) {
+                    OnboardingKeycaps(keys: viewModel.launcherHotkey.map(HotkeyFormat.components) ?? [])
+                    Text(L("onboarding.tip.launcher.open")).font(.studioBody(13)).foregroundStyle(secondaryText)
+                }.padding(.top, 24)
             }
-            .padding(.horizontal, 20)
-            .background(RoundedRectangle(cornerRadius: 16).fill(cardFill))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(borderColor, lineWidth: 1))
-            .padding(.top, 24)
-            HStack(spacing: 8) {
-                OnboardingKeycaps(keys: viewModel.launcherHotkey.map(HotkeyFormat.components) ?? [])
-                Text(L("onboarding.tip.launcher.open")).font(.studioBody(13)).foregroundStyle(secondaryText)
-            }.padding(.top, 24)
-        }
-        .padding(.horizontal, 56)
-        .padding(.top, 4)
+            .padding(.horizontal, usesSetupRail ? 0 : 56)
+            .padding(.top, 4)
+            .padding(.bottom, 24)
+        }.scrollIndicators(.hidden)
     }
 
     // MARK: - Permissions
@@ -448,7 +471,7 @@ struct OnboardingView: View {
                 .foregroundStyle(tertiaryText)
                 .padding(.top, 18)
             }
-            .padding(.horizontal, 56)
+            .padding(.horizontal, usesSetupRail ? 0 : 56)
             .padding(.top, 4)
 
         }.scrollIndicators(.hidden)
@@ -512,7 +535,8 @@ struct OnboardingView: View {
                 .font(.system(size: 19, weight: .medium))
                 .foregroundStyle(StudioTheme.warning)
                 .frame(width: 44, height: 44)
-                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(StudioTheme.warning.opacity(0.12)))
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(StudioTheme.warning.opacity(0.12)))
             VStack(alignment: .leading, spacing: 4) {
                 Text(L("onboarding.v2.globe.title"))
                     .font(.studioBody(14.5, weight: .semibold))

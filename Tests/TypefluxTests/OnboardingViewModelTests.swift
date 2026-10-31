@@ -17,6 +17,145 @@ struct OnboardingViewModelTests {
         }
     }
 
+    @Test func `cloud primary opens shared login while custom setup stays account free`() async throws {
+        try await fixture { _, model, _ in
+            var loginCount = 0
+            model.presentLogin = { loginCount += 1 }
+            model.currentStep = .cloud
+            #expect(model.setupPrimaryTitle == L("setup.cloud.signInContinue"))
+            model.performSetupAction()
+            #expect(loginCount == 1)
+            #expect(model.currentStep == .cloud)
+            #expect(model.requestedSetupAdvance == .cloud)
+            model.goBack()
+            #expect(model.requestedSetupAdvance == nil)
+            model.chooseRoute(.custom)
+            model.performSetupAction()
+            #expect(model.currentStep == .stt)
+            #expect(loginCount == 1)
+        }
+    }
+
+    @Test func `missing models open the existing domain editor from primary action`() async throws {
+        try await fixture { _, model, _ in
+            model.serviceRoute = .custom
+            for (step, domain, key) in [
+                (OnboardingViewModel.Step.stt, StudioModelDomain.stt, "setup.speech.configure"),
+                (.llm, .llm, "setup.language.configure")
+            ] {
+                model.currentStep = step
+                #expect(model.setupPrimaryTitle == L(key))
+                model.performSetupAction()
+                #expect(model.modelEditorDomain == domain)
+                #expect(model.currentStep == step)
+                model.modelEditorDomain = nil
+            }
+        }
+    }
+
+    @Test func `test and continue advances once after language verification succeeds`() async throws {
+        try await fixture { _, model, _ in
+            try model.modelLibrary.save(
+                .init(id: "test", name: "Local", baseURL: "http://localhost:1234/v1", model: "test"), key: ""
+            )
+            try model.selectLanguageModel(#require(model.modelLibrary.firstLocalReference(hasImage: false)))
+            model.languageConnectionProbe = { _, _ in "OK" }
+            model.chooseRoute(.custom)
+            model.currentStep = .llm
+            #expect(model.setupPrimaryTitle == L("setup.action.testAndContinue"))
+            model.performSetupAction()
+            #expect(model.isSetupActionRunning)
+            model.performSetupAction()
+            await model.languageTestTask?.value
+            #expect(model.currentStep == .permissions)
+            #expect(model.requestedSetupAdvance == nil)
+            model.refreshSetup()
+            #expect(model.currentStep == .permissions)
+        }
+    }
+
+    @Test func `failed verification stays actionable and never advances`() async throws {
+        try await fixture { _, model, _ in
+            try model.modelLibrary.save(
+                .init(id: "test", name: "Local", baseURL: "http://localhost:1234/v1", model: "test"), key: ""
+            )
+            try model.selectLanguageModel(#require(model.modelLibrary.firstLocalReference(hasImage: false)))
+            model.languageConnectionProbe = { _, _ in "" }
+            model.chooseRoute(.custom)
+            model.currentStep = .llm
+            model.performSetupAction()
+            await model.languageTestTask?.value
+            #expect(model.currentStep == .llm)
+            #expect(!model.canAdvance)
+            #expect(model.requestedSetupAdvance == nil)
+            #expect(!model.isSetupActionRunning)
+            if case .failure = model.languageTestState {} else { Issue.record("Keep the failure visible") }
+            #expect(model.setupPrimaryTitle == L("setup.action.testAndContinue"))
+        }
+    }
+
+    @Test func `skip cancels pending navigation and explains each affected capability`() async throws {
+        try await fixture { _, model, _ in
+            model.chooseRoute(.custom)
+            for (step, target) in [
+                (OnboardingViewModel.Step.cloud, OnboardingViewModel.SkipTarget.allModels),
+                (.stt, .speech), (.llm, .language)
+            ] {
+                model.currentStep = step
+                model.requestedSetupAdvance = step
+                model.requestSetupSkip()
+                #expect(model.requestedSetupAdvance == nil)
+                #expect(model.skipConfirmation == target)
+                #expect(!model.skipMessage(for: target).isEmpty)
+                model.skipConfirmation = nil
+            }
+        }
+    }
+
+    @Test func `late speech success does not navigate after skip or while editing`() async throws {
+        try await fixture { _, model, manager in
+            manager.available = true
+            model.chooseRoute(.custom)
+            model.currentStep = .stt
+            model.requestedSetupAdvance = .stt
+            model.modelEditorDomain = .stt
+            model.refreshSetup()
+            #expect(model.currentStep == .stt)
+            #expect(model.requestedSetupAdvance == nil)
+            model.modelEditorDomain = nil
+            model.requestedSetupAdvance = .stt
+            model.skipConfirmation = .speech
+            model.refreshSetup()
+            #expect(model.currentStep == .stt)
+            model.skipConfirmation = nil
+            model.requestedSetupAdvance = .stt
+            model.refreshSetup()
+            #expect(model.currentStep == .llm)
+        }
+    }
+
+    @Test func `changing speech service invalidates verification and preserves pending setup`() async throws {
+        try await fixture { settings, model, manager in
+            let editor = StudioViewModel(settingsStore: settings, historyStore: OnboardingTestHistoryStore(),
+                                         initialSection: .models, localModelManager: manager,
+                                         modelLibrary: model.modelLibrary)
+            model.configurationModel = editor
+            settings.onboardingSpeechDeferred = true
+            settings.whisperAPIKey = "fixture-key"
+            editor.sttConnectionTestState = .success(firstTokenMs: 1, totalMs: 1, preview: "OK")
+            model.requestedSetupAdvance = .stt
+            model.chooseRoute(.custom)
+            model.currentStep = .stt
+            model.selectSpeechProvider(.whisperAPI)
+            #expect(model.requestedSetupAdvance == nil)
+            #expect(editor.sttConnectionTestState == .idle)
+            #expect(editor.focusedModelProvider == .whisperAPI)
+            #expect(settings.sttProvider == .whisperAPI)
+            #expect(settings.onboardingSpeechDeferred)
+            #expect(!model.canAdvance)
+        }
+    }
+
     @Test func `model setup precedes permissions`() async throws {
         try await fixture { _, model, _ in
             model.chooseRoute(.custom)

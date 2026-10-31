@@ -2,51 +2,80 @@ import SwiftUI
 
 extension OnboardingView {
     var servicesStep: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: 0) {
             setupHeading(L("setup.services.title"), L("setup.services.subtitle"))
-            HStack(spacing: 16) {
+            VStack(spacing: 0) {
                 serviceOption(.cloud, icon: "cloud", title: "Typeflux Cloud",
                               detail: L("setup.services.cloud"), recommended: true)
-                serviceOption(.custom, icon: "slider.horizontal.3", title: L("setup.services.custom.title"),
+                Rectangle().fill(setupPalette.separator).frame(height: 1).padding(.leading, 108)
+                serviceOption(.custom, icon: "server.rack", title: L("setup.services.custom.title"),
                               detail: L("setup.services.custom"), recommended: false)
             }
-            Button { viewModel.skipConfirmation = .allModels } label: {
-                Text(L("setup.services.launcherOnly"))
-                    .font(.studioBody(13)).foregroundStyle(StudioTheme.textSecondary)
+            .background(setupPalette.surface)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(setupPalette.separator, lineWidth: 1))
+            .padding(.top, 30)
+            Button { viewModel.requestSetupSkip() } label: {
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(L("setup.services.launcherOnly"))
+                            .font(.studioBody(20, weight: .medium)).foregroundStyle(setupPalette.primary)
+                        Text(launcherOnlyImpact)
+                            .font(.studioBody(14.5)).foregroundStyle(setupPalette.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(setupPalette.secondary)
+                }
+                .padding(.vertical, 24).contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(L("setup.services.launcherOnly"))
+            .accessibilityHint(launcherOnlyImpact)
+            .overlay(alignment: .top) { Rectangle().fill(setupPalette.separator).frame(height: 1) }
+            .padding(.top, 26)
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 56).padding(.top, 18)
+    }
+
+    private var launcherOnlyImpact: String {
+        if viewModel.speechConfigured, viewModel.languageConfigured { return L("setup.services.existingImpact") }
+        if viewModel.speechConfigured { return L("setup.services.aiMissingImpact") }
+        if viewModel.languageConfigured { return L("setup.services.speechMissingImpact") }
+        return L("setup.services.launcherImpact")
     }
 
     private func serviceOption(_ route: OnboardingViewModel.ServiceRoute, icon: String,
                                title: String, detail: String, recommended: Bool) -> some View {
         let selected = viewModel.serviceRoute == route
         return Button { viewModel.chooseRoute(route) } label: {
-            VStack(alignment: .leading, spacing: 18) {
-                HStack {
-                    Image(systemName: icon).font(.system(size: 28, weight: .light))
-                        .foregroundStyle(StudioTheme.accent)
-                    Spacer()
-                    if recommended {
-                        Text(L("setup.services.recommended"))
-                            .font(.studioBody(11, weight: .medium)).foregroundStyle(StudioTheme.accent)
-                            .padding(.horizontal, 9).padding(.vertical, 4)
-                            .background(Capsule().fill(StudioTheme.accent.opacity(0.1)))
+            HStack(spacing: 24) {
+                Image(systemName: icon).font(.system(size: 30, weight: .light))
+                    .foregroundStyle(selected ? setupPalette.accent : setupPalette.secondary)
+                    .frame(width: 48).accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 10) {
+                        Text(title).font(.studioBody(21, weight: .semibold)).foregroundStyle(setupPalette.primary)
+                        if recommended {
+                            Text(L("setup.services.recommended"))
+                                .font(.studioBody(12.5, weight: .medium)).foregroundStyle(setupPalette.accent)
+                                .padding(.horizontal, 8).padding(.vertical, 4)
+                                .background(Capsule().fill(setupPalette.accent.opacity(0.12)))
+                        }
                     }
-                    Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(selected ? StudioTheme.accent : StudioTheme.textTertiary)
+                    Text(detail).font(.studioBody(16)).foregroundStyle(setupPalette.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                Text(title).font(.studioBody(19, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
-                Text(detail).font(.studioBody(13)).foregroundStyle(StudioTheme.textSecondary)
-                    .lineSpacing(5).fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 0)
+                Spacer(minLength: 8)
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22, weight: .regular))
+                    .foregroundStyle(selected ? setupPalette.accent : setupPalette.muted)
+                    .accessibilityHidden(true)
             }
-            .padding(24).frame(maxWidth: .infinity).frame(height: 208, alignment: .topLeading)
-            .background(RoundedRectangle(cornerRadius: 18).fill(StudioTheme.surface))
-            .overlay(RoundedRectangle(cornerRadius: 18)
-                .stroke(selected ? StudioTheme.accent : StudioTheme.border, lineWidth: selected ? 1.5 : 1))
-            .contentShape(RoundedRectangle(cornerRadius: 18))
+            .padding(.horizontal, 28).padding(.vertical, 26)
+            .frame(maxWidth: .infinity, minHeight: 116, alignment: .leading)
+            .background(selected ? setupPalette.accent.opacity(0.055) : Color.clear)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
@@ -55,124 +84,192 @@ extension OnboardingView {
     }
 
     var cloudStep: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: 0) {
             setupHeading(L("setup.cloud.title"), L("setup.cloud.subtitle"))
-            if !viewModel.authState.isLoggedIn {
-                VStack(alignment: .leading, spacing: 18) {
-                    Image(systemName: "person.crop.circle").font(.system(size: 32, weight: .light))
-                        .foregroundStyle(StudioTheme.accent)
-                    Text(L("setup.cloud.signInDetail")).font(.studioBody(14)).foregroundStyle(StudioTheme.textSecondary)
-                    StudioButton(title: L("setup.cloud.signInShort"), systemImage: nil, variant: .primary) {
-                        LoginWindowController.shared.show()
-                    }
+            Spacer(minLength: 12)
+            VStack(alignment: .leading, spacing: 24) {
+                if !viewModel.authState.isLoggedIn {
+                    HStack(spacing: 28) {
+                        Image(nsImage: HelpAppIcon.image).resizable().interpolation(.high).frame(
+                            width: 116,
+                            height: 116
+                        )
+                        Image(systemName: "ellipsis").font(.system(size: 26, weight: .medium))
+                            .foregroundStyle(setupPalette.accent)
+                        Image(systemName: "person.crop.circle").font(.system(size: 92, weight: .ultraLight))
+                            .symbolRenderingMode(.palette).foregroundStyle(setupPalette.accent, setupPalette.muted)
+                    }.accessibilityHidden(true)
                 }
-                .padding(28).frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 16).fill(StudioTheme.surface))
-            } else if viewModel.isCheckingCloud {
-                ProgressView(L("setup.cloud.checking")).frame(maxWidth: .infinity, minHeight: 180)
-            } else if let error = viewModel.cloudError {
-                Text(error).foregroundStyle(StudioTheme.warning)
-                Button(L("setup.action.retry")) { Task { await viewModel.checkCloud() } }
-            } else {
-                VStack(spacing: 0) {
-                    setupSummaryRow(title: L("setup.finish.ai"), detail: L("setup.cloud.aiReady"),
-                                    ready: viewModel.cloudCheckCompleted, action: nil)
-                    Divider()
-                    setupSummaryRow(title: OnboardingFeature.voice.title,
-                                    detail: viewModel.authState
-                                        .canUseCloudASR ? L("setup.cloud.speechReady") : L("setup.cloud.localNext"),
-                                    ready: viewModel.authState.canUseCloudASR, action: nil)
+                VStack(alignment: .leading, spacing: 16) {
+                    Label(L("setup.cloud.speechService"), systemImage: "waveform")
+                    Label(L("setup.finish.ai"), systemImage: "bubble.left.and.bubble.right")
                 }
-                .padding(.horizontal, 20)
-                .background(RoundedRectangle(cornerRadius: 16).fill(StudioTheme.surface))
+                .font(.studioBody(20, weight: .medium)).foregroundStyle(setupPalette.primary)
+                Text(L("setup.cloud.entitlementNote"))
+                    .font(.studioBody(16)).foregroundStyle(setupPalette.secondary)
+                cloudConnectionStatus
             }
-            Button(L("setup.cloud.useOwn")) {
-                viewModel.chooseRoute(.custom); viewModel.currentStep = .stt
-            }.buttonStyle(.link)
-        }.padding(.horizontal, 56).padding(.top, 18)
+            .frame(maxWidth: .infinity)
+            Spacer(minLength: 12)
+            Button {
+                viewModel.chooseRoute(.custom)
+                viewModel.currentStep = .stt
+            } label: {
+                HStack {
+                    Text(L("setup.cloud.useOwn")).font(.studioBody(16))
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.system(size: 12, weight: .medium))
+                }
+                .foregroundStyle(setupPalette.accent)
+                .padding(.vertical, 22).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L("setup.cloud.useOwn"))
+            .overlay(alignment: .top) { Rectangle().fill(setupPalette.separator).frame(height: 1) }
+        }
+    }
+
+    @ViewBuilder private var cloudConnectionStatus: some View {
+        if let error = viewModel.cloudError {
+            Text(error).font(.studioBody(12.5)).foregroundStyle(StudioTheme.warning)
+                .fixedSize(horizontal: false, vertical: true)
+        } else if viewModel.authState.isLoggedIn, viewModel.cloudCheckCompleted {
+            Label(L("setup.cloud.aiReady"), systemImage: "checkmark.circle.fill")
+                .font(.studioBody(12.5)).foregroundStyle(StudioTheme.success)
+            if !viewModel.authState.canUseCloudASR {
+                Text(L("setup.cloud.localNext")).font(.studioBody(12.5)).foregroundStyle(setupPalette.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
     }
 
     var speechSetupStep: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 24) {
                 setupHeading(L("setup.speech.title"), L("setup.speech.subtitle"))
                 if viewModel.serviceRoute == .cloud {
-                    Text(L("setup.cloud.localNext")).font(.studioBody(13)).foregroundStyle(StudioTheme.textSecondary)
+                    Text(L("setup.cloud.localNext")).font(.studioBody(13)).foregroundStyle(setupPalette.secondary)
+                } else {
+                    modelSubsteps(speech: true)
                 }
-                TFFormSection {
-                    TFFormRow(title: L("common.model"), icon: "waveform", controlWidth: .wide) {
-                        TFPopUpButton(title: L("common.model"),
-                                      options: ModelAvailability.configurationSpeechProviders
-                                          .filter { $0 != .typefluxOfficial || viewModel.authState.canUseCloudASR }
-                                          .map { TFOption($0, $0.displayName) },
-                                      selection: Binding(get: { viewModel.settingsStore.sttProvider }, set: {
-                                          viewModel.configurationModel?.setSTTProvider($0)
-                                          viewModel.configurationModel?.sttConnectionTestState = .idle
-                                          viewModel.settingsStore.sttProvider = $0
-                                          viewModel.speechSkipped = false; viewModel.refreshSetup()
-                                      }), width: 280)
-                    }
-                    TFDivider.formWithIcon
-                    TFFormRow(title: L("setup.status.title"), icon: "checkmark.circle") {
-                        Text(viewModel.speechStatusText).font(.studioBody(13))
-                            .foregroundStyle(viewModel.speechConfigured ? StudioTheme.textPrimary : StudioTheme
-                                .textSecondary)
-                    }
-                }
-                HStack(spacing: 12) {
-                    StudioButton(title: L("setup.speech.configure"), systemImage: nil, variant: .secondary) {
-                        viewModel.editModels(.stt)
-                    }
-                    if viewModel.speechConfigured, !viewModel.speechVerified {
-                        StudioButton(title: L("ask.models.test"), systemImage: nil, variant: .secondary) {
-                            viewModel.configurationModel?.testSTTConnection()
-                        }
-                    }
-                }
-                if let model = viewModel.configurationModel {
-                    OnboardingSpeechTestResult(model: model)
-                }
-                if viewModel.settingsStore.sttProvider == .localModel || !viewModel.speechVerified {
-                    Text(L(viewModel.settingsStore
-                            .sttProvider == .localModel ? "setup.speech.hint" : "setup.speech.remoteHint"))
-                        .font(.studioBody(12)).foregroundStyle(StudioTheme.textTertiary)
-                }
-            }.padding(.horizontal, 56).padding(.top, 18)
+                VStack(alignment: .leading, spacing: 20) {
+                    Text(L("setup.speech.serviceLabel")).font(.studioBody(16)).foregroundStyle(setupPalette.secondary)
+                    OnboardingSpeechServicePicker(
+                        providers: ModelAvailability.configurationSpeechProviders
+                            .filter { $0 != .typefluxOfficial || viewModel.authState.canUseCloudASR },
 
+                        selection: Binding(get: { viewModel.settingsStore.sttProvider },
+                                           set: viewModel.selectSpeechProvider), palette: setupPalette
+                    )
+                    Rectangle().fill(setupPalette.separator).frame(height: 1)
+                    speechConnectionSummary
+                }
+                .padding(26).frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 14).fill(setupPalette.surface))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(setupPalette.separator, lineWidth: 1))
+                if let model = viewModel.configurationModel { setupTestFailure(model.sttConnectionTestState) }
+                if viewModel.settingsStore.sttProvider == .localModel {
+                    Text(L("setup.speech.hint")).font(.studioBody(12.5)).foregroundStyle(setupPalette.secondary)
+                }
+                HStack(spacing: 24) {
+                    Image(systemName: "waveform").font(.system(size: 44, weight: .medium))
+                        .foregroundStyle(setupPalette.accent)
+                    Rectangle().fill(setupPalette.separator).frame(width: 1, height: 36)
+                    Text(L("setup.speech.preview")).font(.studioBody(20)).foregroundStyle(setupPalette.secondary)
+                }
+                .frame(maxWidth: .infinity).padding(.top, 10).accessibilityHidden(true)
+            }
+            .padding(.bottom, 24)
         }.scrollIndicators(.hidden)
+    }
+
+    private var speechConnectionSummary: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "doc.text").font(.system(size: 22)).foregroundStyle(setupPalette.secondary)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(L(viewModel.speechConfigured
+                        ? (viewModel.settingsStore.sttProvider == .localModel
+                            ? "setup.status.ready" : "setup.connection.configured")
+                        : "setup.status.notSetUp"))
+                    .font(.studioBody(17)).foregroundStyle(setupPalette.primary)
+                if viewModel.settingsStore.sttProvider == .localModel, !viewModel.speechConfigured,
+                   viewModel.speechStatusText != L("setup.status.notSetUp") {
+                    Text(viewModel.speechStatusText).font(.studioBody(12)).foregroundStyle(setupPalette.secondary)
+                }
+            }
+            if viewModel.speechConfigured, !viewModel.speechVerified {
+                HStack(spacing: 6) {
+                    Image(systemName: "circle.fill").font(.system(size: 6)).accessibilityHidden(true)
+                    Text(L("setup.status.testNeeded")).font(.studioBody(14))
+                }.foregroundStyle(StudioTheme.warning)
+            }
+            Spacer(minLength: 8)
+            Button(L(viewModel.settingsStore.sttProvider == .localModel
+                    ? "setup.speech.manage" : "setup.connection.edit")) {
+                viewModel.editModels(.stt)
+            }
+            .font(.studioBody(16)).buttonStyle(.link)
+        }
+    }
+
+    private func modelSubsteps(speech: Bool) -> some View {
+        HStack(spacing: 12) {
+            modelSubstep("1", title: L("setup.cloud.speechService"), active: speech)
+            Image(systemName: "arrow.right").font(.system(size: 13)).foregroundStyle(setupPalette.muted)
+                .accessibilityHidden(true)
+            modelSubstep("2", title: L("setup.language.shortTitle"), active: !speech)
+        }
+    }
+
+    private func modelSubstep(_ number: String, title: String, active: Bool) -> some View {
+        HStack(spacing: 8) {
+            Text(number).font(.studioBody(12, weight: .medium))
+                .foregroundStyle(active ? Color.white : setupPalette.secondary)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(active ? setupPalette.accent : setupPalette.surface))
+            Text(title).font(.studioBody(15, weight: active ? .medium : .regular))
+                .foregroundStyle(active ? setupPalette.primary : setupPalette.secondary)
+        }
     }
 
     var languageSetupStep: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 24) {
                 setupHeading(L("setup.language.title"), L("setup.language.subtitle"))
-                TFFormSection {
-                    TFFormRow(title: L("common.model"), icon: "sparkles", controlWidth: .wide) {
-                        AskModelMenu(library: viewModel.modelLibrary,
-                                     reference: Binding(
-                                         get: { viewModel.modelLibrary.rewriteReference },
-                                         set: viewModel.selectLanguageModel
-                                     ),
-                                     scenario: "rewrite", showsDefaultAction: false, fieldStyle: true,
-                                     cloudAvailable: viewModel.authState.isLoggedIn,
-                                     emptyTitle: L("setup.language.choose"), helpText: L("setup.language.hint"))
+                modelSubsteps(speech: false)
+                VStack(alignment: .leading, spacing: 20) {
+                    Text(L("common.model")).font(.studioBody(13)).foregroundStyle(setupPalette.secondary)
+                    AskModelMenu(library: viewModel.modelLibrary,
+                                 reference: Binding(get: { viewModel.modelLibrary.rewriteReference },
+                                                    set: viewModel.selectLanguageModel),
+                                 scenario: "rewrite", showsDefaultAction: false, fieldStyle: true,
+                                 cloudAvailable: viewModel.authState.isLoggedIn,
+                                 emptyTitle: L("setup.language.choose"), helpText: L("setup.language.hint"))
+                    Rectangle().fill(setupPalette.separator).frame(height: 1)
+                    HStack {
+                        Text(viewModel.languageStatusText).font(.studioBody(13)).foregroundStyle(setupPalette.secondary)
+                        Spacer()
+                        Button(L("setup.language.configure")) { viewModel.editModels(.llm) }
+                            .font(.studioBody(16)).buttonStyle(.link)
                     }
                 }
-                HStack(spacing: 12) {
-                    StudioButton(title: L("setup.language.configure"), systemImage: nil, variant: .secondary) {
-                        viewModel.editModels(.llm)
-                    }
-                    StudioButton(title: L("ask.models.test"), systemImage: nil, variant: .secondary,
-                                 isDisabled: !viewModel.languageConfigured || viewModel.languageTestState == .testing,
-                                 isLoading: viewModel.languageTestState == .testing) { viewModel.testLanguageModel() }
-                }
-                setupTestResult(viewModel.languageTestState)
-                if !viewModel.languageVerified {
-                    Text(L("setup.language.hint")).font(.studioBody(12)).foregroundStyle(StudioTheme.textTertiary)
-                }
-            }.padding(.horizontal, 56).padding(.top, 18)
-
+                .padding(26).frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 14).fill(setupPalette.surface))
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(setupPalette.separator, lineWidth: 1))
+                setupTestFailure(viewModel.languageTestState)
+            }
+            .padding(.bottom, 24)
         }.scrollIndicators(.hidden)
+    }
+
+    @ViewBuilder private func setupTestFailure(_ state: ConnectionTestState) -> some View {
+        switch state {
+        case let .failure(message), let .notice(message):
+            Text(message).font(.studioBody(13)).foregroundStyle(StudioTheme.warning)
+                .fixedSize(horizontal: false, vertical: true)
+        default: EmptyView()
+        }
     }
 
     var modelEditorSheet: some View {
@@ -198,8 +295,8 @@ extension OnboardingView {
             Image(systemName: ready ? "checkmark.circle.fill" : "circle.dashed")
                 .font(.system(size: 19)).foregroundStyle(ready ? StudioTheme.success : StudioTheme.textTertiary)
             VStack(alignment: .leading, spacing: 5) {
-                Text(title).font(.studioBody(14, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
-                Text(detail).font(.studioBody(12.5)).foregroundStyle(StudioTheme.textSecondary)
+                Text(title).font(.studioBody(14, weight: .semibold)).foregroundStyle(setupPalette.primary)
+                Text(detail).font(.studioBody(12.5)).foregroundStyle(setupPalette.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
@@ -211,8 +308,9 @@ extension OnboardingView {
 
     private func setupHeading(_ title: String, _ subtitle: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.studioDisplay(28, weight: .bold)).foregroundStyle(StudioTheme.textPrimary)
-            Text(subtitle).font(.studioBody(14)).foregroundStyle(StudioTheme.textSecondary)
+            Text(title).font(.studioDisplay(36, weight: .bold)).foregroundStyle(setupPalette.primary)
+                .accessibilityAddTraits(.isHeader)
+            Text(subtitle).font(.studioBody(18)).foregroundStyle(setupPalette.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -227,20 +325,5 @@ extension OnboardingView {
             Text(message).font(.studioBody(13)).foregroundStyle(StudioTheme.warning)
                 .fixedSize(horizontal: false, vertical: true)
         }
-    }
-}
-
-private struct OnboardingSpeechTestResult: View {
-    @ObservedObject var model: StudioViewModel
-    var body: some View {
-        Group {
-            switch model.sttConnectionTestState {
-            case .idle: EmptyView()
-            case .testing: ProgressView(L("setup.status.testing"))
-            case .success: Label(L("ask.models.testOK"), systemImage: "checkmark.circle.fill")
-                .foregroundStyle(StudioTheme.success)
-            case let .failure(message), let .notice(message): Text(message).foregroundStyle(StudioTheme.warning)
-            }
-        }.font(.studioBody(13))
     }
 }

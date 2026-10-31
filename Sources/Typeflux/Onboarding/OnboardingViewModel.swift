@@ -5,6 +5,7 @@ import SwiftUI
 
 /// Service setup precedes permissions and feature guides. Skips are explicit and resumable.
 @MainActor
+// swiftlint:disable:next type_body_length
 final class OnboardingViewModel: ObservableObject {
     enum Step: String, CaseIterable {
         case welcome
@@ -73,6 +74,8 @@ final class OnboardingViewModel: ObservableObject {
     @Published var cloudError: String?
     @Published var languageTestState: ConnectionTestState = .idle
     @Published var modelEditorDomain: StudioModelDomain?
+    var requestedSetupAdvance: Step?
+    var presentLogin: () -> Void = { LoginWindowController.shared.show() }
     var configurationModel: StudioViewModel? {
         didSet {
             configurationSubscription = configurationModel?.objectWillChange.sink { [weak self] _ in
@@ -84,7 +87,9 @@ final class OnboardingViewModel: ObservableObject {
     var languageTestTask: Task<Void, Never>?
     var verifiedLanguageSignature: String?
     var testingLanguageSignature: String?
-    var languageConnectionProbe: @Sendable (RegisteredProvider, SettingsStore.TextLLMConfiguration) async throws -> String = {
+    var languageConnectionProbe: @Sendable (
+        RegisteredProvider, SettingsStore.TextLLMConfiguration
+    ) async throws -> String = {
         try await OnboardingConnectionProbe.language(provider: $0, configuration: $1)
     }
     var setupObservers: [NSObjectProtocol] = []
@@ -92,7 +97,6 @@ final class OnboardingViewModel: ObservableObject {
     var voicePracticeBeganAt: Date?
     let modelLibrary: AskModelLibrary
     let authState: AuthState
-
 
     // Permissions
     @Published var permissions: [PrivacyGuard.PermissionSnapshot] = []
@@ -154,7 +158,9 @@ final class OnboardingViewModel: ObservableObject {
         )
         setupObservers.append(SettingsChangeObserver.observe { [weak self] in self?.refreshSetup() })
         for name in [Notification.Name.localModelDownloadProgressDidChange, .authDidLogin, .historyStoreDidChange] {
-            setupObservers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+            setupObservers.append(NotificationCenter.default.addObserver(
+                forName: name, object: nil, queue: .main
+            ) { [weak self] _ in
                 Task { @MainActor in self?.refreshSetup() }
             })
         }
@@ -228,6 +234,7 @@ final class OnboardingViewModel: ObservableObject {
 
     func goBack() {
         guard canGoBack, let previous = adjacentStep(offset: -1) else { return }
+        requestedSetupAdvance = nil
         stepDirection = -1
         withAnimation(.easeInOut(duration: 0.22)) {
             currentStep = previous

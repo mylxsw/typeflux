@@ -105,3 +105,71 @@ final result: passed
 ## Natural-language reminders — 2026-10-31
 
 The strict format banner is replaced by AI interpretation on Return. Vague time wording produces a compact task/time proposal with an explicit creation action. The time is marked as suggested, uses primary contrast, and the extra explanatory footer is removed. The native Chinese fixture checks the actual launcher factory and Return route; creation is recorded in memory. Existing rows keep their default appearance. Evidence and validation: `docs/evidence/apple-productivity-search/natural-language-reminders.md`.
+
+# Onboarding workbench — selected option 3
+
+Source visual truth: `docs/evidence/onboarding-workbench/selected-design.png` (872 × 1804 pixels, three stacked frames).
+
+Implementation: production SwiftUI views plus the installed `Typeflux Dev.app`, inspected through native computer use. The fixed window is 960 × 664 points. Live screenshots and hosted-view captures are 1920 × 1328 pixels at 2× density.
+
+## Capture and comparison
+
+Source frame crops: `(0, 0, 872, 596)`, `(0, 602, 872, 596)`, `(0, 1204, 872, 600)`. Each crop and implementation screenshot is normalized to 872 × 603 pixels. Comparison images place the selected design on the left and the implementation on the right. Source framing varies slightly between generated frames; normalization retains the application's 960:664 viewport.
+
+- Full views: `docs/evidence/onboarding-workbench/comparison-services.png`, `comparison-cloud.png`, `comparison-speech.png`.
+- Focused control and footer comparisons: `focused-connection.png`, `focused-footer.png` in the same directory.
+- Final native acceptance: `native-services-zh.png`, `native-speech-zh.png`; the final Cloud page was also opened and visually reviewed.
+- Controlled states: `services-zh.png`, `cloud-zh.png`, `speech-zh.png`, `speech-error-zh.png`, `services-en.png`, `finish-deferred-en.png`.
+
+macOS traffic lights, the purple screen-sharing indicator and pointer highlights are system-owned and excluded from fidelity judgments. App icons use the supplied Typeflux artwork; other symbols use SF Symbols and the native menu bridge. Provider names retain the application's actual catalog copy.
+
+## Findings and comparison history
+
+All P0/P1/P2 findings below are resolved.
+
+| Severity | Finding | Fix and verification |
+| --- | --- | --- |
+| P2 | The first pass undersized supporting text and compressed the rail's vertical rhythm. Same-size comparison and local OCR confirmed smaller subtitle/status bounds. | Increased display/body/control sizes, rail cadence and primary-action space. Compare `comparison-speech-before.png` with `comparison-speech.png`; reviewed final installed pages. |
+| P2 | The shared speech selector rendered a short capsule instead of the inset field. | Reused `TFNativeMenuControl` inside a scoped 42-point rectangular field. Opened its real provider menu and canceled with Escape; selection was preserved. |
+| P2 | Launcher-only copy implied configured features would become unavailable. | Copy now reflects existing speech/AI configuration. Native acceptance showed the existing-model message; empty fixtures show unavailable capabilities. |
+| P2 | Deferred steps could appear completed. | Skipped stages use a minus indicator and localized accessibility value. Confirmed in the native permission/finish flow and controlled recovery screenshot. |
+| P2 | Combined validation could clear a failed language result or navigate after leaving the task. | Preserved current failures; clear pending navigation on Back, Skip, editing and model changes. View-model regressions passed. |
+| P2 | The English finish summary's intrinsic layout could move its title above the viewport. | Made the finish body scroll independently of the pinned footer, added a heading-bounds assertion, recaptured `finish-deferred-en.png`; all four affected UI methods passed. |
+
+## Required fidelity surfaces
+
+- **Typography:** native SF/PingFang, 36-point setup headings, 18-point supporting text, 15-point rail/actions and readable field/status labels. Hierarchy, Chinese/English wrapping and title bounds were inspected. Editable native text differs slightly from the generated reference's raster stroke/antialiasing.
+- **Spacing/layout:** 208-point rail, 40-point content insets, stable footer and at least 28 points below its primary action. Selection groups, inset fields, substeps and content alignment follow the selected structure. Scrollable model/permission/finish bodies retain access to long content.
+- **Colors:** scoped opaque graphite surfaces, restrained blue selected states/actions, neutral secondary text and amber unverified status. Light appearance uses the same geometry. Existing/native control state colors are retained.
+- **Image quality/assets:** original Typeflux icon at native resolution; standard SF Symbols for cloud, account, speech, server and status. No placeholder art, screenshot-backed controls or recreated raster logos. The generated backdrop grain and exact generated icon strokes are intentionally represented by native materials/symbols.
+- **Copy/content:** Cloud remains optional and account entitlement is explicit. Custom service order is speech → language model. Existing model connections survive skips. Missing capabilities and recovery actions remain explicit. All 66 statically referenced setup strings resolve in English, Simplified/Traditional Chinese, Japanese and Korean.
+- **Interactions/accessibility:** one primary action per setup page; shared login/editor entry points, native provider menu, headings, selected rows, current/completed/skipped stage values, loading/failure states and keyboard default action. Primary control and finish heading bounds are checked. Full VoiceOver certification was not performed.
+
+## Functional verification
+
+67 unique relevant methods passed across the focused validation phases:
+
+- `OnboardingViewModelTests`: 33; routing, prerequisites, verification, stale results, deferrals and recovery.
+- `OnboardingBehaviorTests`: 13; native controls, rendering, editor/login entry points and fixed-window bounds.
+- `OnboardingFeatureTests`: 7; guide and permission dependencies.
+- `CloudLoginSyncCoordinatorTests`: 9; entitlement and existing-model handoff.
+- Five selected `WorkflowControllerProcessingTests`: deferred/missing speech setup, account-free model recovery and missing-language-model guards.
+
+The first preparation attempt failed on a local Swift macro-plugin lookup before any test executed (25.63 seconds). With the existing local compiler compatibility wrapper, the 67-method pass took 252.85 seconds; one new UI method needed the correct native accessibility getter/link-role lookup. The subsequent 13-method UI pass succeeded in 103.89 seconds. After the finish layout correction, the four affected UI methods succeeded in 90.64 seconds. Total test command wall time, including preparation and retries: 473.01 seconds. No full test suite was run.
+
+Changed executable-line coverage: **544 / 590 (92.2%)**. Coverage uses the last validating phase for each file, avoiding cross-version profile merges. See `docs/evidence/onboarding-workbench/coverage.json` and `validation.json`. This is changed-code coverage, not project-wide coverage.
+
+Live acceptance opened the existing login window and speech editor, passed actual connection probes for the configured Doubao and language services without Typeflux login, confirmed a skip without deleting existing models, traversed the guides and inspected the finish page. The final installed build's three core pages and native provider menu were reviewed after the typography changes. Scoped onboarding/language/appearance preferences were restored.
+
+Validation scope stops at connection probes and UI/routing behavior: no Typeflux account sign-in or microphone dictation session was completed during this pass.
+
+## Implementation checklist
+
+- [x] Selected workbench layout and shared native controls implemented.
+- [x] Optional Cloud/custom/launcher routes and capability-aware skip confirmation preserved.
+- [x] Finish, menu-bar, Settings and feature-specific configuration recovery retained.
+- [x] Long-content title/footer bounds fixed and verified.
+- [x] Focused tests, changed-line coverage, strict SwiftLint and whitespace checks passed.
+- [x] Final installed native pages inspected and comparison evidence archived.
+
+final result: passed

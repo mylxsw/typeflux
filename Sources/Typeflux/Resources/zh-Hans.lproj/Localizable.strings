@@ -7652,15 +7652,15 @@
 
 
 // Service setup and feature availability.
-"setup.services.title" = "选择模型服务";
-"setup.services.subtitle" = "语音输入和 Agent 需要模型服务，启动器可直接使用。";
-"setup.services.cloud" = "登录即可连接 Typeflux 提供的模型，无需填写 API Key。";
-"setup.services.custom.title" = "自行配置模型";
-"setup.services.custom" = "选择本地语音模型，或连接你自己的模型服务。";
+"setup.services.title" = "选择使用方式";
+"setup.services.subtitle" = "语音输入与 Agent 需要模型服务，启动器可直接使用。";
+"setup.services.cloud" = "登录后连接，无需填写 API Key。";
+"setup.services.custom.title" = "使用自己的模型";
+"setup.services.custom" = "连接本地模型或自己的模型服务。";
 "setup.services.recommended" = "推荐";
-"setup.services.launcherOnly" = "暂不配置，先使用启动器";
+"setup.services.launcherOnly" = "先用启动器，稍后设置";
 "setup.cloud.title" = "连接 Typeflux Cloud";
-"setup.cloud.subtitle" = "登录后，检查账号可用的模型服务。";
+"setup.cloud.subtitle" = "登录后连接语音与 AI 服务。";
 "setup.cloud.signInDetail" = "完成登录后，回到这里继续设置。";
 "setup.cloud.signIn" = "登录 Typeflux Cloud";
 "setup.cloud.checking" = "正在检查可用服务…";
@@ -7668,9 +7668,9 @@
 "setup.cloud.aiReady" = "使用账号的默认 AI 模型";
 "setup.cloud.speechReady" = "可使用云端语音识别";
 "setup.cloud.localNext" = "当前账号不包含云端语音识别，下一步可选择本地模型或自己的语音服务。";
-"setup.cloud.useOwn" = "改为自行配置模型";
+"setup.cloud.useOwn" = "改用自己的模型";
 "setup.speech.title" = "设置语音识别";
-"setup.speech.subtitle" = "选择如何把你说的话转成文字。";
+"setup.speech.subtitle" = "把你说的话转成文字。";
 "setup.speech.configure" = "配置语音模型";
 "setup.speech.hint" = "本地模型无需账号。模型准备好后，即可继续。";
 "setup.speech.cloudUnavailable" = "请登录并检查云端服务权限，或配置本地语音模型。";
@@ -7686,7 +7686,7 @@
 "setup.status.testing" = "正在测试连接…";
 "setup.skip.title" = "稍后再设置？";
 "setup.skip.allModels.message" = "你仍可使用启动器搜索、打开应用和计算。语音输入、Agent 和 AI 改写需要完成模型配置后才能使用，之后可在设置中补充。";
-"setup.skip.speech.message" = "暂不设置语音输入和语音提问。你仍可继续配置 AI，通过打字使用 Agent。";
+"setup.skip.speech.message" = "语音输入和语音提问将暂不可用。你仍可继续配置 AI，通过打字使用 Agent，之后在设置中补充语音模型。";
 "setup.skip.language.message" = "Agent、AI 对话和 AI 改写需要配置大语言模型。语音识别已配置时，普通听写仍可使用。";
 "setup.skip.permissions.message" = "未授权麦克风时无法录音；未授权辅助功能时无法向其他应用输入文字。之后可在设置中授权。";
 "setup.skip.confirm" = "稍后设置";
@@ -7702,13 +7702,13 @@
 "setup.finish.speechSkipped" = "需要语音输入时，再配置语音模型";
 "setup.finish.permissionsMissing" = "模型已配置，仍需授予权限";
 "setup.finish.ai" = "Agent 与 AI 改写";
-"setup.stage.services" = "服务方式";
-"setup.stage.models" = "模型配置";
+"setup.stage.services" = "使用方式";
+"setup.stage.models" = "模型服务";
 "setup.stage.permissions" = "权限设置";
 "setup.stage.practice" = "开始使用";
 "setup.cloud.signInShort" = "登录账号";
 "setup.speech.remoteHint" = "先测试连接，再继续。";
-"setup.status.testNeeded" = "待测试连接";
+"setup.status.testNeeded" = "待验证";
 "setup.language.choose" = "选择模型";
 "setup.permission.microphone.impact" = "未授权麦克风时，语音输入和语音提问无法录音。";
 "setup.permission.accessibility.impact" = "未授权辅助功能时，无法向其他应用输入文字，部分全局快捷键也无法使用。";
@@ -7724,3 +7724,25 @@
 "setup.permission.keyboardImpact" = "🌐 快捷键尚未设置好，暂时无法用它启动语音输入。你可以稍后设置或更换快捷键。";
 "setup.finish.keyboardMissing" = "模型已配置 · 还需设置 🌐 快捷键";
 "setup.permission.launcherAccessibility" = "使用全局快捷键，操作其他应用";
+
+"setup.services.launcherImpact" = "语音输入与 Agent 将暂不可用。";
+"setup.cloud.signInContinue" = "登录并继续";
+"setup.cloud.entitlementNote" = "可用服务以账号权益为准。";
+"setup.cloud.speechService" = "语音识别";
+"setup.action.testAndContinue" = "测试并继续";
+"setup.rail.title" = "初次设置";
+"setup.rail.later" = "之后也能在设置中调整";
+"setup.rail.current" = "当前步骤";
+"setup.rail.completed" = "已完成";
+"setup.stage.complete" = "完成";
+"setup.speech.serviceLabel" = "识别服务";
+"setup.speech.preview" = "把想法说出来";
+"setup.connection.configured" = "连接信息已填写";
+"setup.connection.edit" = "编辑连接信息";
+"setup.language.shortTitle" = "大语言模型";
+"setup.speech.manage" = "管理语音模型";
+"setup.status.ready" = "已就绪";
+"setup.rail.skipped" = "已跳过";
+"setup.services.existingImpact" = "已有模型配置会保留。";
+"setup.services.aiMissingImpact" = "Agent 与 AI 改写需稍后配置。";
+"setup.services.speechMissingImpact" = "语音输入需稍后配置。";

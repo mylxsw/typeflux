@@ -97,6 +97,7 @@ extension OnboardingViewModel {
     }
 
     func chooseRoute(_ route: ServiceRoute) {
+        requestedSetupAdvance = nil
         serviceRoute = route
         speechSkipped = false
         aiSkipped = false
@@ -113,12 +114,18 @@ extension OnboardingViewModel {
         setupRevision += 1
         if languageTestState == .testing, testingLanguageSignature != languageConfigurationSignature {
             languageTestTask?.cancel()
+            requestedSetupAdvance = nil
             languageTestState = .idle
             testingLanguageSignature = nil
         }
-        if languageTestState != .testing,
+        if case .success = languageTestState,
            verifiedLanguageSignature != languageConfigurationSignature { languageTestState = .idle }
+        if let testingLanguageSignature, testingLanguageSignature != languageConfigurationSignature {
+            languageTestState = .idle
+            requestedSetupAdvance = nil
+        }
         updateVoicePractice()
+        completeRequestedSetupAdvanceIfReady()
     }
 
     var languageConfigurationSignature: String {
@@ -183,6 +190,7 @@ extension OnboardingViewModel {
 
     func confirmSkip(_ confirmedTarget: SkipTarget? = nil) {
         guard let target = confirmedTarget ?? skipConfirmation else { return }
+        requestedSetupAdvance = nil
         skipConfirmation = nil
         reportCurrentStepCompleted(skipped: true)
         switch target {
@@ -207,17 +215,23 @@ extension OnboardingViewModel {
     }
 
     func editModels(_ domain: StudioModelDomain) {
+        requestedSetupAdvance = nil
         configurationModel?.selectModelPageTab(ModelPageTab(domain: domain))
-        if domain == .stt { configurationModel?.isShowingSpeechProviderDetail = true }
+        if domain == .stt, let configurationModel {
+            configurationModel.focusModelProvider(configurationModel.focusedModelProvider)
+            configurationModel.isShowingSpeechProviderDetail = true
+        }
         modelEditorDomain = domain
     }
 
     /// Assign both consumers, so configuring rewriting also enables new conversations.
     func selectLanguageModel(_ reference: String) {
+        requestedSetupAdvance = nil
         languageTestTask?.cancel()
         modelLibrary.rewriteReference = reference
         modelLibrary.defaultReference = reference
         verifiedLanguageSignature = nil
+        testingLanguageSignature = nil
         languageTestState = .idle
         refreshSetup()
     }
@@ -234,6 +248,7 @@ extension OnboardingViewModel {
         testingLanguageSignature = signature
         languageTestState = .testing
         languageTestTask = Task {
+            defer { refreshSetup() }
             do {
                 let reply = try await ConnectionTestSupport.runWithTimeout {
                     try await probe(provider, connection)

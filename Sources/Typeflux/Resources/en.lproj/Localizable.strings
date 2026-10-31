@@ -7652,15 +7652,15 @@
 
 
 // Service setup and feature availability.
-"setup.services.title" = "How would you like to connect?";
+"setup.services.title" = "Choose how to connect";
 "setup.services.subtitle" = "Voice input and Agent need a model service. You can use the launcher without one.";
-"setup.services.cloud" = "Sign in to use Typeflux models. No API key needed.";
+"setup.services.cloud" = "Sign in to connect. No API key needed.";
 "setup.services.custom.title" = "Use my own models";
-"setup.services.custom" = "Choose local speech recognition or connect your own model services.";
+"setup.services.custom" = "Connect local models or your own model services.";
 "setup.services.recommended" = "Recommended";
-"setup.services.launcherOnly" = "Set up later · Start with the launcher";
+"setup.services.launcherOnly" = "Start with the launcher";
 "setup.cloud.title" = "Connect to Typeflux Cloud";
-"setup.cloud.subtitle" = "We’ll check which services your account can use.";
+"setup.cloud.subtitle" = "Sign in to connect voice and AI services.";
 "setup.cloud.signInDetail" = "Sign in, then return here to continue.";
 "setup.cloud.signIn" = "Sign in to Typeflux Cloud";
 "setup.cloud.checking" = "Checking available services…";
@@ -7670,7 +7670,7 @@
 "setup.cloud.localNext" = "Cloud speech isn’t included in this account. Next, choose a local model or your own speech service.";
 "setup.cloud.useOwn" = "Use my own models instead";
 "setup.speech.title" = "Set up speech recognition";
-"setup.speech.subtitle" = "Choose how Typeflux turns your speech into text.";
+"setup.speech.subtitle" = "Turn what you say into text.";
 "setup.speech.configure" = "Configure speech model";
 "setup.speech.hint" = "Local models need no account. Download or check your model before continuing.";
 "setup.speech.cloudUnavailable" = "Sign in and check Cloud access, or configure a local speech model.";
@@ -7702,13 +7702,13 @@
 "setup.finish.speechSkipped" = "Set up a speech model when you need voice input";
 "setup.finish.permissionsMissing" = "Model configured · Permissions still needed";
 "setup.finish.ai" = "Agent & AI rewriting";
-"setup.stage.services" = "Service";
-"setup.stage.models" = "Models";
+"setup.stage.services" = "Connection";
+"setup.stage.models" = "Model services";
 "setup.stage.permissions" = "Permissions";
 "setup.stage.practice" = "Get started";
 "setup.cloud.signInShort" = "Sign in";
 "setup.speech.remoteHint" = "Test the connection before continuing.";
-"setup.status.testNeeded" = "Connection test needed";
+"setup.status.testNeeded" = "Not verified";
 "setup.language.choose" = "Choose a model";
 "setup.permission.microphone.impact" = "Without microphone access, voice input and voice questions cannot record.";
 "setup.permission.accessibility.impact" = "Without Accessibility access, typing into other apps and some global shortcuts will not work.";
@@ -7724,3 +7724,25 @@
 "setup.permission.keyboardImpact" = "The 🌐 shortcut is not ready yet. Voice input needs a working shortcut; you can set one up later.";
 "setup.finish.keyboardMissing" = "Model configured · Set up the 🌐 shortcut";
 "setup.permission.launcherAccessibility" = "For global shortcuts and actions across apps";
+
+"setup.services.launcherImpact" = "Voice input and Agent will be unavailable until set up.";
+"setup.cloud.signInContinue" = "Sign in and continue";
+"setup.cloud.entitlementNote" = "Available services depend on your account.";
+"setup.cloud.speechService" = "Speech recognition";
+"setup.action.testAndContinue" = "Test and continue";
+"setup.rail.title" = "GET STARTED";
+"setup.rail.later" = "Adjust later in Settings";
+"setup.rail.current" = "Current step";
+"setup.rail.completed" = "Completed";
+"setup.stage.complete" = "Finish";
+"setup.speech.serviceLabel" = "Speech service";
+"setup.speech.preview" = "Say what’s on your mind";
+"setup.connection.configured" = "Connection details added";
+"setup.connection.edit" = "Edit connection";
+"setup.language.shortTitle" = "Language model";
+"setup.speech.manage" = "Manage speech models";
+"setup.status.ready" = "Ready";
+"setup.rail.skipped" = "Skipped";
+"setup.services.existingImpact" = "Existing model connections will be kept.";
+"setup.services.aiMissingImpact" = "Set up Agent and AI rewriting later.";
+"setup.services.speechMissingImpact" = "Set up voice input later.";

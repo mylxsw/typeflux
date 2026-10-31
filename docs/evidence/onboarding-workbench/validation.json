@@ -1,0 +1,125 @@
+{
+  "date": "2026-10-31",
+  "unique_test_methods_passed": 67,
+  "suites": {
+    "OnboardingViewModelTests": 33,
+    "OnboardingBehaviorTests": 13,
+    "OnboardingFeatureTests": 7,
+    "CloudLoginSyncCoordinatorTests": 9,
+    "WorkflowControllerProcessingTests (selected)": 5
+  },
+  "phases": [
+    {
+      "command": [
+        "python3",
+        "scripts/test_groups.py",
+        "--coverage",
+        "--suite",
+        "OnboardingViewModelTests",
+        "--suite",
+        "OnboardingBehaviorTests",
+        "--suite",
+        "OnboardingFeatureTests",
+        "--suite",
+        "CloudLoginSyncCoordinatorTests",
+        "--filter",
+        "WorkflowControllerProcessingTests/test(DeferredMissingSpeechOffersSetupWithoutRecordingOrDownloading|MissingRemoteSpeechCredentialsOffersSetupBeforeRecording|MissingSpeechSetupOffersModelConfigurationWithoutRequiringLogin|GenerateRewriteThrowsConfigurationErrorWhenLLMIsNotConfigured|DecideAskSelectionThrowsConfigurationErrorWhenLLMIsNotConfigured)"
+      ],
+      "exit_code": 1,
+      "total_wall_seconds": 25.63,
+      "phase": "initial preparation: missing local macro plugin; no tests executed"
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/test_groups.py",
+        "--coverage",
+        "--suite",
+        "OnboardingViewModelTests",
+        "--suite",
+        "OnboardingBehaviorTests",
+        "--suite",
+        "OnboardingFeatureTests",
+        "--suite",
+        "CloudLoginSyncCoordinatorTests",
+        "--filter",
+        "WorkflowControllerProcessingTests/test(DeferredMissingSpeechOffersSetupWithoutRecordingOrDownloading|MissingRemoteSpeechCredentialsOffersSetupBeforeRecording|MissingSpeechSetupOffersModelConfigurationWithoutRequiringLogin|GenerateRewriteThrowsConfigurationErrorWhenLLMIsNotConfigured|DecideAskSelectionThrowsConfigurationErrorWhenLLMIsNotConfigured)"
+      ],
+      "exit_code": 1,
+      "total_wall_seconds": 252.85,
+      "phase": "67-method scope: one new UI test needed native accessibility getter/link-role corrections; logic tests passed"
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/test_groups.py",
+        "--coverage",
+        "--suite",
+        "OnboardingBehaviorTests"
+      ],
+      "exit_code": 0,
+      "total_wall_seconds": 103.89,
+      "phase": "13 UI methods: all passed after typography and native-control checks"
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/test_groups.py",
+        "--coverage",
+        "--filter",
+        "OnboardingBehaviorTests.*(launcher.*finish|configured.*finish|chinese.*pages|native.*footer)"
+      ],
+      "exit_code": 0,
+      "total_wall_seconds": 90.64,
+      "phase": "4 affected UI methods: all passed after finish viewport correction"
+    }
+  ],
+  "total_test_command_wall_seconds": 473.01,
+  "coverage": {
+    "changed_executable_lines": 590,
+    "changed_covered_lines": 544,
+    "changed_line_percent": 92.2,
+    "method": "Per-file coverage from the last validating phase for that file; no cross-version profile merge. View-model files were unchanged after the first phase; setup chrome/views after UI phase; root finish layout after finish phase.",
+    "files": {
+      "Sources/Typeflux/Onboarding/OnboardingViewModel+Setup.swift": {
+        "covered": 10,
+        "executable": 17,
+        "validation_phase": "first"
+      },
+      "Sources/Typeflux/Onboarding/OnboardingViewModel+SetupActions.swift": {
+        "covered": 84,
+        "executable": 93,
+        "validation_phase": "first"
+      },
+      "Sources/Typeflux/Onboarding/OnboardingViewModel.swift": {
+        "covered": 6,
+        "executable": 6,
+        "validation_phase": "first"
+      },
+      "Sources/Typeflux/Onboarding/OnboardingSetupChrome.swift": {
+        "covered": 168,
+        "executable": 176,
+        "validation_phase": "ui"
+      },
+      "Sources/Typeflux/Onboarding/OnboardingSetupViews.swift": {
+        "covered": 206,
+        "executable": 219,
+        "validation_phase": "ui"
+      },
+      "Sources/Typeflux/Onboarding/OnboardingView.swift": {
+        "covered": 70,
+        "executable": 79,
+        "validation_phase": "finish"
+      }
+    }
+  },
+  "native_acceptance": {
+    "login_window": "opened existing login window and canceled, no account sign-in",
+    "speech_connection_probe": "passed using configured Doubao service without Typeflux login",
+    "language_connection_probe": "passed using configured language service without Typeflux login",
+    "shared_editor": "opened existing speech editor from onboarding",
+    "skip_and_finish": "confirmed skip, kept existing models, completed feature guides and inspected finish",
+    "final_build_visual_review": "passed: installed final Dev build; reviewed service choice, Cloud handoff and speech setup; opened native provider menu; canceled skip confirmation; inspected final finish snapshots",
+    "scoped_preferences_restored": true
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "changed_executable_lines": 590,
+  "changed_covered_lines": 544,
+  "changed_line_percent": 92.2,
+  "method": "Per-file coverage from the last validating phase for that file; no cross-version profile merge. View-model files were unchanged after the first phase; setup chrome/views after UI phase; root finish layout after finish phase.",
+  "files": {
+    "Sources/Typeflux/Onboarding/OnboardingViewModel+Setup.swift": {
+      "covered": 10,
+      "executable": 17,
+      "validation_phase": "first"
+    },
+    "Sources/Typeflux/Onboarding/OnboardingViewModel+SetupActions.swift": {
+      "covered": 84,
+      "executable": 93,
+      "validation_phase": "first"
+    },
+    "Sources/Typeflux/Onboarding/OnboardingViewModel.swift": {
+      "covered": 6,
+      "executable": 6,
+      "validation_phase": "first"
+    },
+    "Sources/Typeflux/Onboarding/OnboardingSetupChrome.swift": {
+      "covered": 168,
+      "executable": 176,
+      "validation_phase": "ui"
+    },
+    "Sources/Typeflux/Onboarding/OnboardingSetupViews.swift": {
+      "covered": 206,
+      "executable": 219,
+      "validation_phase": "ui"
+    },
+    "Sources/Typeflux/Onboarding/OnboardingView.swift": {
+      "covered": 70,
+      "executable": 79,
+      "validation_phase": "finish"
+    }
+  }
+}
