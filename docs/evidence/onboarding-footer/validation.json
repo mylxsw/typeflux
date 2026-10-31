@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-31",
+  "scope": "Onboarding footer and native hosting layout",
+  "test_suite": "OnboardingBehaviorTests",
+  "test_methods_passed": 11,
+  "command_wall_seconds_including_build": 268.67,
+  "changed_line_coverage": {
+    "covered": 5,
+    "executable": 5,
+    "percent": 100.0,
+    "files": {
+      "Sources/Typeflux/Onboarding/OnboardingView.swift": {
+        "covered": 1,
+        "executable": 1
+      },
+      "Sources/Typeflux/Onboarding/OnboardingWindowController.swift": {
+        "covered": 4,
+        "executable": 4
+      }
+    }
+  },
+  "native_geometry_checks": {
+    "languages": [
+      "en",
+      "zh-Hans"
+    ],
+    "stages": [
+      "welcome",
+      "services",
+      "permissions",
+      "finish"
+    ],
+    "minimum_button_bottom_gap_points": 24,
+    "maximum_alignment_difference_points": 1
+  },
+  "native_visual_review": [
+    "welcome page and language selector",
+    "service selection page and Continue button",
+    "signed development application"
+  ],
+  "original_preferences_restored": true
+}

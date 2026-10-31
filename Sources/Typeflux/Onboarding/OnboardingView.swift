@@ -178,6 +178,7 @@ struct OnboardingView: View {
         }
         .padding(.horizontal, 28)
         .frame(height: 72)
+        .padding(.bottom, 10)
     }
 
     private var backButton: some View {

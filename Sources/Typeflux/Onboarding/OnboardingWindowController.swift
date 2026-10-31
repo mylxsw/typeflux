@@ -67,7 +67,10 @@ final class OnboardingWindowController: NSObject {
         )
         let hosting = NSHostingView(rootView: view
             .interfaceStyle(following: InterfaceStyleObserver(settings: settingsStore))
-            .frame(width: Self.windowWidth, height: Self.windowHeight))
+            .frame(width: Self.windowWidth, height: Self.windowHeight)
+            // This full-size content view already includes the title bar. Applying
+            // its safe-area inset again would push the fixed-size root below the window.
+            .ignoresSafeArea())
         // Animated page transitions must never enlarge this fixed-size wizard.
         hosting.sizingOptions = []
 

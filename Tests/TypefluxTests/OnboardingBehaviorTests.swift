@@ -221,6 +221,42 @@ struct OnboardingBehaviorTests {
         }
     }
 
+    @Test func `native footer keeps comfortable bottom spacing on every stage`() async throws {
+        for language in [AppLanguage.english, .simplifiedChinese] {
+            try await UI.withFixture { settings in
+                settings.appLanguage = language
+                settings.appearanceMode = language == .english ? .light : .dark
+                AppLocalization.shared.setLanguage(language)
+                let controller = OnboardingWindowController()
+                controller.show(settingsStore: settings, onComplete: {})
+                let window = try #require(controller.window)
+                let host = try #require(window.contentView)
+                let model = try #require(controller.viewModel)
+                defer { window.close() }
+                var firstBottom: CGFloat?
+                for (step, key) in [
+                    (OnboardingViewModel.Step.welcome, "onboarding.v2.action.start"),
+                    (.services, "onboarding.v2.action.continue"),
+                    (.permissions, "onboarding.v2.action.continue"),
+                    (.finish, "onboarding.v2.action.finish")
+                ] {
+                    model.currentStep = step
+                    try await UI.wait { UI.contains(L(key), in: host) }
+                    try await Task.sleep(for: .milliseconds(300))
+                    let button = try UI.button(L(key), in: host)
+                    let bottom = button.frame.minY - window.frame.minY
+                    #expect(button.frame.height > 0)
+                    #expect(bottom >= 24)
+                    if let firstBottom { #expect(abs(bottom - firstBottom) <= 1) }
+                    else { firstBottom = bottom }
+                    if step == .welcome {
+                        try UI.snapshot(host, name: "11-native-footer-\(language.rawValue)")
+                    }
+                }
+            }
+        }
+    }
+
     @Test func `existing model editor renders inside onboarding sheet`() async throws {
         try await UI.withFixture { settings in
             let library = AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
