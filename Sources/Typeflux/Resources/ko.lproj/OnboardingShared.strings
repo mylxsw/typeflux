@@ -1,0 +1,9 @@
+/* Onboarding v3: OnboardingShared */
+"back" = "뒤로";
+"start" = "시작";
+"finish" = "사용 시작";
+"continue" = "계속";
+"later" = "나중에";
+"skip" = "건너뛰기";
+"custom" = "내 모델 사용";
+"skipAll" = "연결하지 않고 런처 먼저 사용";

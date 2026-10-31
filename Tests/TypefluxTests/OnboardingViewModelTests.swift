@@ -31,7 +31,7 @@ struct OnboardingViewModelTests {
             #expect(model.requestedSetupAdvance == nil)
             model.chooseRoute(.custom)
             model.performSetupAction()
-            #expect(model.currentStep == .stt)
+            #expect(model.currentStep == .speech)
             #expect(loginCount == 1)
         }
     }
@@ -40,7 +40,7 @@ struct OnboardingViewModelTests {
         try await fixture { _, model, _ in
             model.serviceRoute = .custom
             for (step, domain, key) in [
-                (OnboardingViewModel.Step.stt, StudioModelDomain.stt, "setup.speech.configure"),
+                (OnboardingViewModel.Step.speech, StudioModelDomain.stt, "setup.speech.configure"),
                 (.llm, .llm, "setup.language.configure")
             ] {
                 model.currentStep = step
@@ -99,7 +99,7 @@ struct OnboardingViewModelTests {
             model.chooseRoute(.custom)
             for (step, target) in [
                 (OnboardingViewModel.Step.cloud, OnboardingViewModel.SkipTarget.allModels),
-                (.stt, .speech), (.llm, .language)
+                (.speech, .speech), (.llm, .language)
             ] {
                 model.currentStep = step
                 model.requestedSetupAdvance = step
@@ -116,19 +116,19 @@ struct OnboardingViewModelTests {
         try await fixture { _, model, manager in
             manager.available = true
             model.chooseRoute(.custom)
-            model.currentStep = .stt
-            model.requestedSetupAdvance = .stt
+            model.currentStep = .speech
+            model.requestedSetupAdvance = .speech
             model.modelEditorDomain = .stt
             model.refreshSetup()
-            #expect(model.currentStep == .stt)
+            #expect(model.currentStep == .speech)
             #expect(model.requestedSetupAdvance == nil)
             model.modelEditorDomain = nil
-            model.requestedSetupAdvance = .stt
+            model.requestedSetupAdvance = .speech
             model.skipConfirmation = .speech
             model.refreshSetup()
-            #expect(model.currentStep == .stt)
+            #expect(model.currentStep == .speech)
             model.skipConfirmation = nil
-            model.requestedSetupAdvance = .stt
+            model.requestedSetupAdvance = .speech
             model.refreshSetup()
             #expect(model.currentStep == .llm)
         }
@@ -143,9 +143,9 @@ struct OnboardingViewModelTests {
             settings.onboardingSpeechDeferred = true
             settings.whisperAPIKey = "fixture-key"
             editor.sttConnectionTestState = .success(firstTokenMs: 1, totalMs: 1, preview: "OK")
-            model.requestedSetupAdvance = .stt
+            model.requestedSetupAdvance = .speech
             model.chooseRoute(.custom)
-            model.currentStep = .stt
+            model.currentStep = .speech
             model.selectSpeechProvider(.whisperAPI)
             #expect(model.requestedSetupAdvance == nil)
             #expect(editor.sttConnectionTestState == .idle)
@@ -159,11 +159,11 @@ struct OnboardingViewModelTests {
     @Test func `model setup precedes permissions`() async throws {
         try await fixture { _, model, _ in
             model.chooseRoute(.custom)
-            #expect(Array(model.visibleSteps.prefix(5)) == [.welcome, .services, .stt, .llm, .permissions])
+            #expect(Array(model.visibleSteps.prefix(5)) == [.welcome, .route, .speech, .llm, .permissions])
             model.advance()
-            #expect(model.currentStep == .services)
+            #expect(model.currentStep == .route)
             model.advance()
-            #expect(model.currentStep == .stt)
+            #expect(model.currentStep == .speech)
         }
     }
 
@@ -179,14 +179,14 @@ struct OnboardingViewModelTests {
 
     @Test func `launcher only requires explicit skip and does not prepare models`() async throws {
         try await fixture { settings, model, manager in
-            model.currentStep = .services
+            model.currentStep = .route
             model.skipConfirmation = .allModels
             #expect(!settings.onboardingSpeechDeferred)
             model.confirmSkip()
             #expect(model.serviceRoute == .launcherOnly)
             #expect(model.currentStep == .permissions)
             #expect(settings.onboardingSpeechDeferred && settings.onboardingAIDeferred)
-            #expect(!model.visibleSteps.contains(.voice) && !model.visibleSteps.contains(.chat))
+            #expect(model.visibleSteps.suffix(3) == [.permissions, .shortcuts, .try])
             #expect(model.requiredPermissionIDs == [.accessibility])
             #expect(manager.prepareCount == 0)
         }
@@ -201,10 +201,10 @@ struct OnboardingViewModelTests {
 
     @Test func `local model must be available before continuing`() async throws {
         try await fixture { _, model, manager in
-            model.chooseRoute(.custom); model.currentStep = .stt
+            model.chooseRoute(.custom); model.currentStep = .speech
             #expect(!model.canAdvance)
             model.advance()
-            #expect(model.currentStep == .stt)
+            #expect(model.currentStep == .speech)
             manager.available = true
             #expect(model.canAdvance)
             model.advance()
@@ -214,11 +214,11 @@ struct OnboardingViewModelTests {
 
     @Test func `skipping speech still offers AI configuration`() async throws {
         try await fixture { settings, model, _ in
-            model.chooseRoute(.custom); model.currentStep = .stt
+            model.chooseRoute(.custom); model.currentStep = .speech
             model.skipConfirmation = .speech; model.confirmSkip()
             #expect(model.currentStep == .llm)
             #expect(settings.onboardingSpeechDeferred)
-            #expect(!model.visibleSteps.contains(.voice))
+            #expect(model.visibleSteps.contains(.try))
             #expect(model.requiredPermissionIDs == [.accessibility])
         }
     }
@@ -230,8 +230,8 @@ struct OnboardingViewModelTests {
             model.skipConfirmation = .language; model.confirmSkip()
             #expect(model.currentStep == .permissions)
             #expect(settings.onboardingAIDeferred)
-            #expect(model.visibleSteps.contains(.voice))
-            #expect(!model.visibleSteps.contains(.chat))
+            #expect(model.visibleSteps.contains(.try))
+            #expect(model.visibleSteps.contains(.shortcuts))
             #expect(model.guideShortcuts(for: .voice).map(\.id) == ["voice.talk"])
         }
     }
@@ -246,7 +246,7 @@ struct OnboardingViewModelTests {
             #expect(model.currentStep == .permissions)
             #expect(model.skipConfirmation == .permissions)
             model.confirmSkip()
-            #expect(model.currentStep == .voice)
+            #expect(model.currentStep == .shortcuts)
         }
     }
 
@@ -334,7 +334,7 @@ struct OnboardingViewModelTests {
     @Test func `practice needs A successful applied recording`() async throws {
         try await fixture { _, model, _ in
             let history = OnboardingTestHistoryStore()
-            model.historyStore = history; model.currentStep = .voice
+            model.historyStore = history; model.currentStep = .try
             model.voicePracticeBeganAt = .distantPast
             model.voicePracticeText = "Hello"
             history.records = [HistoryRecord(date: Date(), transcriptText: "Hello", recordingStatus: .succeeded,
@@ -351,7 +351,7 @@ struct OnboardingViewModelTests {
     @Test func `finish does not require skipped configuration`() async throws {
         try await fixture { settings, model, _ in
             model.skipConfirmation = .allModels; model.confirmSkip()
-            model.currentStep = .finish; model.advance()
+            model.currentStep = .try; model.advance()
             #expect(settings.isOnboardingCompleted)
             #expect(settings.onboardingAIDeferred)
         }
@@ -374,8 +374,8 @@ struct OnboardingViewModelTests {
             model.skipConfirmation = .allModels; model.confirmSkip()
             #expect(model.voiceReady)
             #expect(model.languageConfigured)
-            #expect(!model.visibleSteps.contains(.voice))
-            #expect(!model.visibleSteps.contains(.chat))
+            #expect(model.visibleSteps.contains(.try))
+            #expect(model.visibleSteps.contains(.shortcuts))
         }
     }
 
@@ -389,8 +389,8 @@ struct OnboardingViewModelTests {
             ) }
             model.currentStep = .permissions
             #expect(model.needsGlobeKeySetup)
-            #expect(!model.canAdvance)
-            #expect(model.skipMessage(for: .permissions).contains(L("setup.permission.keyboardImpact")))
+            #expect(model.canAdvance)
+            #expect(!model.skipMessage(for: .permissions).contains(L("setup.permission.keyboardImpact")))
             model.skipConfirmation = .permissions; model.confirmSkip()
             #expect(!model.voiceReady)
             model.useExternalKeyboardShortcutReplacement(.rightCommand)
@@ -402,7 +402,7 @@ struct OnboardingViewModelTests {
         try await fixture { settings, model, _ in
             settings.llmRemoteProvider = .typefluxCloud
             #expect(settings.isLLMConfigured)
-            model.aiSkipped = true; model.currentStep = .finish; model.advance()
+            model.aiSkipped = true; model.currentStep = .try; model.advance()
             #expect(!settings.personaRewriteEnabled)
             #expect(settings.onboardingAIDeferred)
         }
@@ -422,9 +422,9 @@ struct OnboardingViewModelTests {
     @Test func `back follows the selected service route`() async throws {
         try await fixture { _, model, _ in
             model.chooseRoute(.custom); model.advance(); model.advance()
-            #expect(model.currentStep == .stt)
+            #expect(model.currentStep == .speech)
             model.goBack()
-            #expect(model.currentStep == .services)
+            #expect(model.currentStep == .route)
             model.chooseRoute(.cloud); model.advance()
             #expect(model.currentStep == .cloud)
             model.goBack(); model.goBack()
@@ -436,10 +436,10 @@ struct OnboardingViewModelTests {
         try await SettingsBehaviorTestSupport.withFixture { settings in
             let recorder = AnalyticsEventRecorder()
             let model = OnboardingViewModel(settingsStore: settings, analyticsReporter: recorder, onComplete: {})
-            model.currentStep = .services
+            model.currentStep = .route
             model.skipConfirmation = .allModels; model.confirmSkip()
-            #expect(recorder.events.last?.properties == ["step": "services", "skipped": "true"])
-            model.currentStep = .finish; model.advance(); model.advance()
+            #expect(recorder.events.last?.properties == ["step": "route", "skipped": "true"])
+            model.currentStep = .try; model.advance(); model.advance()
             #expect(recorder.events.count(where: { $0.name == "onboarding_completed" }) == 1)
             #expect(settings.isOnboardingCompleted)
 
@@ -520,7 +520,7 @@ struct OnboardingViewModelTests {
             let editor = StudioViewModel(settingsStore: settings, historyStore: OnboardingTestHistoryStore(),
                                          initialSection: .models, localModelManager: manager, modelLibrary: library)
             model.configurationModel = editor
-            model.chooseRoute(.custom); model.currentStep = .stt
+            model.chooseRoute(.custom); model.currentStep = .speech
             #expect(!model.cloudCheckCompleted)
             #expect(!model.canAdvance)
             editor.sttConnectionTestState = .success(firstTokenMs: 1, totalMs: 1, preview: "OK")
@@ -528,12 +528,12 @@ struct OnboardingViewModelTests {
             model.advance()
             #expect(model.currentStep == .llm)
             auth.subscription = .none
-            model.currentStep = .stt
+            model.currentStep = .speech
             #expect(!model.canAdvance)
         }
     }
 
-    @Test func `cloud account without speech access still needs speech setup`() async throws {
+    @Test func `cloud account without speech access downloads locally without another step`() async throws {
         try await fixture { settings, _, manager in
             let auth = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil },
                                  loadStoredUserProfile: { nil }, saveStoredToken: { _, _ in },
@@ -548,7 +548,11 @@ struct OnboardingViewModelTests {
                                             localModelManager: manager, onComplete: {})
             model.currentStep = .cloud; model.cloudCheckCompleted = true
             model.advance()
-            #expect(model.currentStep == .stt)
+            #expect(model.currentStep == .cloud)
+            #expect(!model.visibleSteps.contains(.speech))
+            manager.available = true
+            model.advance()
+            #expect(model.currentStep == .permissions)
             #expect(!model.visibleSteps.contains(.llm))
             #expect(settings.sttProvider == .localModel)
         }

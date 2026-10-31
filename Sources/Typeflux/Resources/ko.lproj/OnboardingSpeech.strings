@@ -1,0 +1,4 @@
+/* Onboarding v3: OnboardingSpeech */
+"eyebrow" = "Voice Recognition";
+"title" = "음성 인식";
+"subtitle" = "서비스를 선택하고 한마디 말해 테스트하세요.";

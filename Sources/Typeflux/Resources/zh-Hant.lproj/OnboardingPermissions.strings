@@ -1,0 +1,4 @@
+/* Onboarding v3: OnboardingPermissions */
+"eyebrow" = "Permissions";
+"title" = "授予權限";
+"subtitle" = "必要權限完成後即可繼續，選用權限可以用到時再授權。";

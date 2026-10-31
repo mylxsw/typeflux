@@ -1,0 +1,4 @@
+/* Onboarding v3: OnboardingLlm */
+"eyebrow" = "Language Model";
+"title" = "AI モデル";
+"subtitle" = "AI 書き換え、翻訳、Agent との会話に使用します。";

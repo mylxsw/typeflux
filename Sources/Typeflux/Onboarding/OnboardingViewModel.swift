@@ -7,37 +7,7 @@ import SwiftUI
 @MainActor
 // swiftlint:disable:next type_body_length
 final class OnboardingViewModel: ObservableObject {
-    enum Step: String, CaseIterable {
-        case welcome
-        case services
-        case cloud
-        case stt
-        case llm
-        case permissions
-        case voice
-        case launcher
-        case tools
-        case ring
-        case chat
-        case finish
-
-        /// The feature a guide step teaches.
-        var feature: OnboardingFeature? {
-            switch self {
-            case .voice: .voice
-            case .launcher: .launcher
-            case .tools: .tools
-            case .ring: .ring
-            case .chat: .chat
-            case .welcome, .services, .cloud, .stt, .llm, .permissions, .finish: nil
-            }
-        }
-
-        /// Guide steps report the feature's name, e.g. "voice".
-        var analyticsName: String {
-            rawValue
-        }
-    }
+    typealias Step = OnboardingStep
 
     enum ExternalKeyboardShortcutReplacement: String, CaseIterable, Equatable {
         case rightCommand
@@ -57,6 +27,15 @@ final class OnboardingViewModel: ObservableObject {
             }
         }
     }
+
+    lazy var routeModel = OnboardingRouteModel(session: self)
+    lazy var cloudModel = OnboardingCloudModel(session: self)
+    lazy var speechModel = OnboardingSpeechModel(session: self)
+    lazy var llmModel = OnboardingLLMModel(session: self)
+    lazy var permissionsModel = OnboardingPermissionsModel(session: self)
+    lazy var shortcutsModel = OnboardingShortcutsModel(session: self)
+    lazy var tryModel = OnboardingTryModel(session: self)
+    var pageSubscriptions = Set<AnyCancellable>()
 
     @Published var currentStep: Step = .welcome
     @Published var stepDirection: Int = 1 // 1 = forward, -1 = backward
@@ -156,6 +135,7 @@ final class OnboardingViewModel: ObservableObject {
             activationHotkey: storedActivationHotkey,
             askHotkey: storedAskHotkey
         )
+        observePageModels()
         setupObservers.append(SettingsChangeObserver.observe { [weak self] in self?.refreshSetup() })
         for name in [Notification.Name.localModelDownloadProgressDidChange, .authDidLogin, .historyStoreDidChange] {
             setupObservers.append(NotificationCenter.default.addObserver(
@@ -169,82 +149,6 @@ final class OnboardingViewModel: ObservableObject {
     deinit {
         languageTestTask?.cancel()
         setupObservers.forEach(NotificationCenter.default.removeObserver)
-    }
-
-    // MARK: - Navigation
-
-    var visibleSteps: [Step] {
-        var steps: [Step] = [.welcome, .services]
-        switch serviceRoute {
-        case .cloud:
-            steps.append(.cloud)
-            if !authState.canUseCloudASR { steps.append(.stt) }
-        case .custom: steps += [.stt, .llm]
-        case .launcherOnly: break
-        }
-        steps.append(.permissions)
-        if !speechSkipped && speechConfigured { steps.append(.voice) }
-        steps += [.launcher, .tools, .ring]
-        if !aiSkipped && languageConfigured { steps.append(.chat) }
-        steps.append(.finish)
-        return steps
-    }
-
-    var canGoBack: Bool {
-        currentStep != .welcome
-    }
-
-    var isLastStep: Bool {
-        currentStep == visibleSteps.last
-    }
-
-    /// Whether the primary button can move on from the current step.
-    var canAdvance: Bool {
-        switch currentStep {
-        case .cloud: authState.isLoggedIn && cloudCheckCompleted && !isCheckingCloud && cloudError == nil
-        case .stt: speechConfigured && speechVerified
-        case .llm: languageConfigured && languageVerified
-        case .permissions: allRequiredPermissionsGranted && !needsGlobeKeySetup
-        default: true
-        }
-    }
-
-    /// The guide steps, for the "2 / 5" counter.
-    var featureSteps: [Step] {
-        visibleSteps.filter { $0.feature != nil }
-    }
-
-    func advance() {
-        guard canAdvance else { return }
-        reportCurrentStepCompleted(skipped: false)
-        if currentStep == .services, serviceRoute == .launcherOnly {
-            skipConfirmation = .allModels
-            return
-        }
-        if currentStep == .cloud { applyCloudSelection() }
-        if currentStep == .stt { speechSkipped = false; settingsStore.onboardingSpeechDeferred = false }
-        if currentStep == .llm {
-            modelLibrary.defaultReference = modelLibrary.rewriteReference
-            aiSkipped = false
-            settingsStore.onboardingAIDeferred = false
-        }
-        if currentStep == .permissions { settingsStore.onboardingPermissionsDeferred = false }
-        advanceToNextStepOrComplete()
-    }
-
-    func goBack() {
-        guard canGoBack, let previous = adjacentStep(offset: -1) else { return }
-        requestedSetupAdvance = nil
-        stepDirection = -1
-        withAnimation(.easeInOut(duration: 0.22)) {
-            currentStep = previous
-        }
-    }
-
-    /// Moves on to the guides with permissions still missing; they are asked for again when needed.
-    func skipPermissions() {
-        guard currentStep == .permissions else { return }
-        skipConfirmation = .permissions
     }
 
     /// Marks onboarding as complete without triggering the completion callback.
@@ -386,7 +290,7 @@ final class OnboardingViewModel: ObservableObject {
 
     // MARK: - Completion
 
-    private func complete() {
+    func complete() {
         guard !didReportTerminalEvent else { return }
         didReportTerminalEvent = true
         let duration = max(0, Int(now().timeIntervalSince(onboardingStartedAt)))
@@ -420,23 +324,6 @@ final class OnboardingViewModel: ObservableObject {
             eventName: "onboarding_abandoned",
             properties: ["last_step": currentStep.analyticsName]
         )
-    }
-
-    func advanceToNextStepOrComplete() {
-        guard !isLastStep, let next = adjacentStep(offset: 1) else {
-            complete()
-            return
-        }
-        stepDirection = 1
-        withAnimation(.easeInOut(duration: 0.22)) {
-            currentStep = next
-        }
-    }
-
-    private func adjacentStep(offset: Int) -> Step? {
-        let steps = visibleSteps
-        guard let index = steps.firstIndex(of: currentStep), steps.indices.contains(index + offset) else { return nil }
-        return steps[index + offset]
     }
 
     private static func detectExternalKeyboardShortcutReplacement(

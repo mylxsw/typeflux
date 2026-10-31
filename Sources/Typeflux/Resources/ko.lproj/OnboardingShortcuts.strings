@@ -1,0 +1,4 @@
+/* Onboarding v3: OnboardingShortcuts */
+"eyebrow" = "Keyboard Shortcuts";
+"title" = "단축키";
+"subtitle" = "키를 클릭하여 변경하세요. 충돌은 자동으로 표시됩니다.";

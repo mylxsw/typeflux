@@ -1,0 +1,320 @@
+{
+  "method": "Added/modified executable lines from git diff HEAD intersected with llvm-cov LCOV DA records, including relocated code. Hit counts are unioned from the focused initial pass and component retries. Production source was identical across these passes; exports were made against each pass's own binary. No cross-binary profdata merge is used.",
+  "covered": 759,
+  "executable": 788,
+  "percent": 96.32,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingBackdrop.swift",
+      "covered": 13,
+      "executable": 13,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingCloudModel.swift",
+      "covered": 3,
+      "executable": 3,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingCloudPage.swift",
+      "covered": 1,
+      "executable": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingConfigPanel.swift",
+      "covered": 29,
+      "executable": 29,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingEditorialHeader.swift",
+      "covered": 24,
+      "executable": 24,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingFooterBar.swift",
+      "covered": 47,
+      "executable": 47,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingKeycaps.swift",
+      "covered": 21,
+      "executable": 21,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingLLMModel.swift",
+      "covered": 3,
+      "executable": 3,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingLLMPage.swift",
+      "covered": 1,
+      "executable": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingLegacyGuidePage.swift",
+      "covered": 107,
+      "executable": 120,
+      "percent": 89.17,
+      "uncovered": [
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingPageScaffold.swift",
+      "covered": 15,
+      "executable": 15,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingPermissionsModel.swift",
+      "covered": 3,
+      "executable": 3,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingPermissionsPage.swift",
+      "covered": 1,
+      "executable": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingProviderCard.swift",
+      "covered": 22,
+      "executable": 22,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingRouteModel.swift",
+      "covered": 3,
+      "executable": 3,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingRoutePage.swift",
+      "covered": 22,
+      "executable": 22,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingSelectableCard.swift",
+      "covered": 36,
+      "executable": 36,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingShortcutsModel.swift",
+      "covered": 3,
+      "executable": 3,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingShortcutsPage.swift",
+      "covered": 1,
+      "executable": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingSpeechModel.swift",
+      "covered": 3,
+      "executable": 3,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingSpeechPage.swift",
+      "covered": 1,
+      "executable": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingStep.swift",
+      "covered": 29,
+      "executable": 29,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingStrings.swift",
+      "covered": 16,
+      "executable": 16,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingSystemSettingsGuide.swift",
+      "covered": 21,
+      "executable": 21,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingTryModel.swift",
+      "covered": 3,
+      "executable": 3,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingTryPage.swift",
+      "covered": 1,
+      "executable": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingView.swift",
+      "covered": 53,
+      "executable": 55,
+      "percent": 96.36,
+      "uncovered": [
+        19,
+        20
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingViewModel+Navigation.swift",
+      "covered": 122,
+      "executable": 124,
+      "percent": 98.39,
+      "uncovered": [
+        82,
+        83
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingViewModel+Pages.swift",
+      "covered": 52,
+      "executable": 52,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingViewModel+Setup.swift",
+      "covered": 5,
+      "executable": 5,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingViewModel+SetupActions.swift",
+      "covered": 9,
+      "executable": 10,
+      "percent": 90.0,
+      "uncovered": [
+        49
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingViewModel.swift",
+      "covered": 10,
+      "executable": 10,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingWelcomePage.swift",
+      "covered": 78,
+      "executable": 89,
+      "percent": 87.64,
+      "uncovered": [
+        9,
+        13,
+        14,
+        15,
+        16,
+        17,
+        61,
+        62,
+        63,
+        103,
+        104
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingWindowController.swift",
+      "covered": 1,
+      "executable": 1,
+      "percent": 100.0,
+      "uncovered": []
+    }
+  ],
+  "validation": {
+    "effective_passing_methods": 53,
+    "initial_scope_methods": 51,
+    "initial_scope_failure": "One component method, two assertions using the wrong AX enabled property; corrected and passed in component retry.",
+    "component_retry_failure": "New retained-guide check located an AX link as an AX button; corrected and passed.",
+    "final_component_methods": 4,
+    "commands": [
+      {
+        "command": "swift build",
+        "result": "passed",
+        "total_wall_seconds_approximate": 227,
+        "build_phase_seconds": 117.36
+      },
+      {
+        "command": "make coverage SUITE=\"OnboardingNavigationTests OnboardingViewModelTests OnboardingBehaviorTests OnboardingComponentTests OnboardingFeatureTests\"",
+        "result": "build interrupted: test source changed during compilation; no tests executed",
+        "wall_seconds": 316.6
+      },
+      {
+        "command": "make coverage SUITE=\"OnboardingNavigationTests OnboardingViewModelTests OnboardingBehaviorTests OnboardingComponentTests OnboardingFeatureTests\"",
+        "result": "50/51 methods passed; AX enabled assertion fixed subsequently",
+        "wall_seconds": 216.63
+      },
+      {
+        "command": "make coverage SUITE=\"OnboardingComponentTests\"",
+        "result": "3/4 methods passed; retained link assertion fixed subsequently",
+        "wall_seconds": 82.24
+      },
+      {
+        "command": "make coverage SUITE=\"OnboardingComponentTests\"",
+        "result": "4/4 methods passed",
+        "wall_seconds": 65.32
+      },
+      {
+        "command": "make coverage FILTER=\"OnboardingComponentTests.*optional\"",
+        "result": "1/1 passed after adding the actual backdrop to the disabled-state screenshot fixture",
+        "wall_seconds": 81.53
+      }
+    ]
+  }
+}

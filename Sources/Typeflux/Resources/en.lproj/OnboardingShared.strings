@@ -1,0 +1,9 @@
+/* Onboarding v3: OnboardingShared */
+"back" = "Back";
+"start" = "Start";
+"finish" = "Start using Typeflux";
+"continue" = "Continue";
+"later" = "Later";
+"skip" = "Skip";
+"custom" = "Use your own models";
+"skipAll" = "Connect later, use the launcher first";

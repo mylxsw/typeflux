@@ -53,13 +53,7 @@ final class OnboardingWindowController: NSObject {
                 notificationService: notificationService, modelLibrary: viewModel.modelLibrary
             )
         }
-        if resume {
-            viewModel.serviceRoute = .custom
-            viewModel.speechSkipped = settingsStore.onboardingSpeechDeferred
-            viewModel.aiSkipped = settingsStore.onboardingAIDeferred
-            viewModel.currentStep = settingsStore.onboardingSpeechDeferred ? .stt
-                : settingsStore.onboardingAIDeferred ? .llm : .permissions
-        }
+        if resume { viewModel.resumeDeferredSetup() }
 
         let view = OnboardingView(
             viewModel: viewModel,

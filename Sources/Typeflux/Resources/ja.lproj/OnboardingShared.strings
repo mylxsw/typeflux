@@ -1,0 +1,9 @@
+/* Onboarding v3: OnboardingShared */
+"back" = "戻る";
+"start" = "開始";
+"finish" = "使い始める";
+"continue" = "続ける";
+"later" = "後で";
+"skip" = "スキップ";
+"custom" = "自分のモデルを使う";
+"skipAll" = "接続せずランチャーを使う";
