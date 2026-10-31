@@ -6,9 +6,28 @@ struct AskAppleProductivityPlugin: AskLauncherPlugin {
     static let notesID = "appleNotes"
     static let remindersID = "appleReminders"
     static let keywords = [
-        AskKeyword(keyword: "an", pluginID: notesID, aliases: ["applenotes", "备忘录", "備忘錄"]),
+        AskKeyword(keyword: "note", pluginID: notesID, aliases: ["an", "applenotes", "备忘录", "備忘錄"]),
         AskKeyword(keyword: "remind", pluginID: remindersID, aliases: ["reminder", "提醒", "提醒事项", "提醒事項"])
     ]
+
+    /// Promote the previous default once, retaining aliases and user-owned keyword names.
+    static func migratingNoteKeyword(_ keywords: [AskKeyword], reserved: Set<String>) -> [AskKeyword] {
+        guard !reserved.contains("note"),
+              let index = keywords.firstIndex(where: { $0.pluginID == notesID && $0.keyword.lowercased() == "an" })
+                ?? keywords.firstIndex(where: { $0.pluginID == notesID }),
+              !keywords.enumerated().contains(where: { $0.offset != index && $0.element.contains("note") })
+        else { return keywords }
+        var result = keywords
+        if result[index].keyword.lowercased() == "an" {
+            let previous = result[index].keyword
+            result[index].keyword = "note"
+            result[index].aliases.removeAll { $0.caseInsensitiveCompare("note") == .orderedSame }
+            result[index].aliases.insert(previous, at: 0)
+        } else if !result[index].contains("note") {
+            result[index].aliases.append("note")
+        }
+        return result
+    }
 
     let kind: Kind
     var service: any AppleProductivityCreating = AppleProductivityService()

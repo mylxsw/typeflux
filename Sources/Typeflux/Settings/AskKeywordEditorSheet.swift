@@ -95,7 +95,7 @@ struct AskKeywordEditorSheet: View {
         case .chat: "chat"
         case .quickAsk: "qa"
         case .noteCapture: "n"
-        case .appleNotes: "an"
+        case .appleNotes: "note"
         case .appleReminders: "remind"
         case .prefix: "prefix"
         case .setting: "setting"

@@ -36,7 +36,7 @@ struct AskKeywordListPresentationTests {
         ]
         let rows = rows(input)
         #expect(rows.filter { $0.kind != .system }.map(\.keyword) == [
-            "fy", "dict", "rw", "sum", "ex", "custom", "g", "bd", "gh", "app", "f", "ss", "tab", "bmk", "chat", "qa", "n", "an", "remind", "prefix", "setting",
+            "fy", "dict", "rw", "sum", "ex", "custom", "g", "bd", "gh", "app", "f", "ss", "tab", "bmk", "chat", "qa", "n", "note", "remind", "prefix", "setting",
             "history", "clip", "em", "cal", "tz", "cmd", "kill"
         ])
         #expect(rows.allSatisfy { $0.kind != .workflow })

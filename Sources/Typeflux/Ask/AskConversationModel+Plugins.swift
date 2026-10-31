@@ -67,11 +67,13 @@ enum AskPluginRegistry {
     /// What a saved list records as covered: every plugin, and every later group of keywords.
     static let aliasKeywords = "launcher.keywordAliases.v1"
     static let notebookWindowKeywords = "notes.openWindow"
+    static let appleNoteKeyword = "appleNotes.noteKeyword.v1"
     static let coveredGroups = pluginIDs + [
         wordBookKeywords,
         screenshotAskKeywords,
         aliasKeywords,
-        notebookWindowKeywords
+        notebookWindowKeywords,
+        appleNoteKeyword
     ]
 
     /// The group a default keyword belongs to for `keywords(saved:known:)`.
@@ -108,6 +110,9 @@ enum AskPluginRegistry {
                 && !AskNotesPlugin.opensWindow(result[index]) {
                 result[index].aliases.removeAll { $0.caseInsensitiveCompare("notebook") == .orderedSame }
             }
+        }
+        if !covered.contains(appleNoteKeyword) {
+            result = AskAppleProductivityPlugin.migratingNoteKeyword(result, reserved: reserved)
         }
         var taken = Set(result.flatMap(\.allKeywords).map { $0.lowercased() })
         for entry in defaults where !covered.contains(group(of: entry)) {

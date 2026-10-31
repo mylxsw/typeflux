@@ -56,10 +56,10 @@ struct AppleProductivityTests {
         let updated = AskPluginRegistry.keywords(saved: saved, known: oldGroups, reserved: ["remind"])
         #expect(updated.first?.pluginID == "custom")
         #expect(updated.first?.allKeywords == ["an", "old"])
-        #expect(updated.first { $0.pluginID == newIDs[0] }?.keyword == "applenotes")
+        #expect(updated.first { $0.pluginID == newIDs[0] }?.keyword == "note")
         #expect(updated.first { $0.pluginID == newIDs[1] }?.keyword == "reminder")
         #expect(AskPluginRegistry.keywords(saved: updated, known: AskPluginRegistry.coveredGroups) == updated)
-        for word in ["备忘录", "備忘錄", "applenotes", "an", "提醒", "提醒事项", "reminder", "remind"] {
+        for word in ["备忘录", "備忘錄", "applenotes", "note", "an", "提醒", "提醒事项", "reminder", "remind"] {
             #expect(AskKeywordMatcher.match(word + " Task", keywords: AskPluginRegistry.defaultKeywords) != nil)
         }
         #expect(AskKeywordKind(pluginID: newIDs[0]) == .appleNotes)
@@ -68,6 +68,32 @@ struct AppleProductivityTests {
             let draft = AskKeywordDraft(adding: kind)
             #expect(draft.fieldProblem == nil && draft.result().pluginID == kind.pluginID)
         }
+    }
+
+    @Test func `note replaces the saved default once while preserving aliases shortcuts and conflicts`() throws {
+        let id = AskAppleProductivityPlugin.notesID
+        let oldGroups = AskPluginRegistry.coveredGroups.filter { $0 != AskPluginRegistry.appleNoteKeyword }
+        let old = AskKeyword(keyword: "an", pluginID: id, aliases: ["applenotes", "备忘录", "備忘錄"])
+        let migrated = AskPluginRegistry.keywords(saved: [old], known: oldGroups)
+        let note = try #require(migrated.first)
+        #expect(migrated.count == 1 && note.keyword == "note")
+        #expect(note.allKeywords == ["note", "an", "applenotes", "备忘录", "備忘錄"])
+        #expect(KeywordHotkey(binding: nil, keyword: "an", pluginID: id).resolve(in: migrated) == note)
+        #expect(AskPluginRegistry.keywords(saved: migrated, known: oldGroups) == migrated)
+        var disabled = old
+        disabled.enabled = false
+        #expect(AskPluginRegistry.keywords(saved: [disabled], known: oldGroups).first?.enabled == false)
+        let owner = AskKeyword(keyword: "note", pluginID: "custom")
+        #expect(AskPluginRegistry.keywords(saved: [old, owner], known: oldGroups) == [old, owner])
+        #expect(AskPluginRegistry.keywords(saved: [old], known: oldGroups, reserved: ["note"]) == [old])
+        let custom = AskKeyword(keyword: "memo", pluginID: id, aliases: ["备忘录"])
+        let customized = AskPluginRegistry.keywords(saved: [custom], known: oldGroups)
+        #expect(customized.first?.keyword == "memo" && customized.first?.contains("note") == true)
+        #expect(AskPluginRegistry.keywords(saved: [custom], known: AskPluginRegistry.coveredGroups) == [custom])
+        #expect(AskPluginRegistry.keywords(saved: [], known: oldGroups).isEmpty)
+        var withAlias = old
+        withAlias.aliases.append("note")
+        #expect(AskPluginRegistry.keywords(saved: [withAlias], known: oldGroups) == migrated)
     }
 
     @Test func `planning never writes and empty inputs open the app`() async throws {
