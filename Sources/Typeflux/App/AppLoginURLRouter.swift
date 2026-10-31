@@ -4,9 +4,11 @@ import Foundation
 enum AppLoginURLRouter {
     static func handle(_ urls: [URL], login: WebLoginCoordinator, isLoggedIn: () -> Bool,
                        showLogin: () -> Void, handleBilling: () async -> Void) async {
-        for url in urls where login.configuration.enabled && login.configuration.matchesCallback(url) {
-            await login.receive(url)
-            if !isLoggedIn() {
+        let inlineLogin = OnboardingCloudModel.activeLogin
+        let receiver = inlineLogin ?? login
+        for url in urls where receiver.configuration.enabled && receiver.configuration.matchesCallback(url) {
+            await receiver.receive(url)
+            if inlineLogin == nil, OnboardingCloudModel.activeSession == nil, !isLoggedIn() {
                 showLogin()
             }
         }

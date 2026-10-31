@@ -119,9 +119,9 @@ final class CloudLoginSyncCoordinator {
     /// Exposed for tests; in production triggered after login, or after checkout
     /// confirms a newly entitled or newly paid subscription.
     func offerCloudDefaultsIfNeeded() {
-        // The first-run Cloud step owns its selection and confirmation. Avoid a
-        // second modal that changes providers while the setup window is active.
-        guard settingsStore.isOnboardingCompleted else { return }
+        // Onboarding applies its chosen route explicitly, including resumed setup.
+        // Account notifications must not open a second modal during that session.
+        guard settingsStore.isOnboardingCompleted, OnboardingCloudModel.activeSession == nil else { return }
         guard hasPaidCloudSubscription() else {
             offerCloudLLMDefaultIfNeeded()
             return

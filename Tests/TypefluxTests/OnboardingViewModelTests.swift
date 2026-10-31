@@ -491,6 +491,7 @@ struct OnboardingViewModelTests {
                                             localModelManager: manager, onComplete: {})
             model.currentStep = .cloud
             #expect(!model.canAdvance)
+            model.cloudModel.canContinue = nil // Exercise the retained legacy readiness adapter.
             model.cloudCheckCompleted = true
             #expect(model.canAdvance)
             model.advance()
@@ -547,6 +548,7 @@ struct OnboardingViewModelTests {
                                             ),
                                             localModelManager: manager, onComplete: {})
             model.currentStep = .cloud; model.cloudCheckCompleted = true
+            model.cloudModel.canContinue = nil // Exercise legacy inline fallback readiness.
             model.advance()
             #expect(model.currentStep == .cloud)
             #expect(!model.visibleSteps.contains(.speech))

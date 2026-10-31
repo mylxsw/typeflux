@@ -3,3 +3,8 @@
 "title" = "Choose an AI service";
 "subtitle" = "For voice input, AI rewriting and Agent. Change it later in Settings.";
 "customTitle" = "Your own models";
+"cloudDetail" = "Sign in and go, no setup";
+"customDetail" = "Local models or your API Key";
+"recommended" = "Recommended";
+"speech" = "Voice recognition";
+"rewrite" = "AI rewriting";

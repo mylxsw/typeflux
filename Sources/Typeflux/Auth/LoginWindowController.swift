@@ -30,6 +30,7 @@ final class LoginWindowController: NSObject {
         coordinator: AuthState.shared.webLoginCoordinator,
         showNative: { [weak self] in self?.showNativeWindow() },
         reportFailure: { failure in
+            guard Self.shouldPresentWebLoginAlerts else { return }
             let alert = NSAlert()
             alert.messageText = L("auth.login.windowTitle")
             alert.informativeText = L(failure.localizationKey)
@@ -37,11 +38,16 @@ final class LoginWindowController: NSObject {
             alert.runModal()
         },
         reportSuccess: {
+            guard Self.shouldPresentWebLoginAlerts else { return }
             NSApp.activate(ignoringOtherApps: true)
             let alert = Self.makeLoginSuccessAlert()
             alert.runModal()
         }
     )
+
+    static var shouldPresentWebLoginAlerts: Bool {
+        OnboardingCloudModel.activeSession == nil
+    }
 
     static func makeLoginSuccessAlert() -> NSAlert {
         let alert = NSAlert()
@@ -56,6 +62,15 @@ final class LoginWindowController: NSObject {
     func show() {
         guard FeatureProcess.owns(.host) else {
             FeatureProcess.send(.init(destination: .host, action: "login")); return
+        }
+        if let session = OnboardingCloudModel.activeSession, session.currentStep == .cloud {
+            let model = session.cloudModel
+            if model.phase == .waiting {
+                model.reopen()
+            } else {
+                Task { await model.start() }
+            }
+            return
         }
         webEntry.show()
     }

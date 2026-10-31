@@ -2,3 +2,14 @@
 "eyebrow" = "Typeflux Cloud";
 "title" = "Typeflux Cloud にログイン";
 "subtitle" = "音声認識と AI モデルをログインしてすぐに使えます。";
+"account" = "Typeflux アカウント";
+"providers" = "メール、Google、GitHub または Apple";
+"login" = "ブラウザでログイン";
+"retry" = "再ログイン";
+"speech" = "音声認識";
+"ai" = "AI モデル";
+"available" = "利用可能";
+"local" = "ローカルモデル";
+"notIncluded" = "プラン対象外";
+"useLocal" = "ローカルモデルを使う";
+"switchAccount" = "アカウントを切り替え";

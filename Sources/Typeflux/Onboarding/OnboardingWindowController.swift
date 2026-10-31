@@ -105,6 +105,7 @@ final class OnboardingWindowController: NSObject {
         window?.close()
         window = nil
         viewModel?.languageTestTask?.cancel()
+        viewModel?.cloudModel.endSession()
         viewModel = nil
 
         handler?()
