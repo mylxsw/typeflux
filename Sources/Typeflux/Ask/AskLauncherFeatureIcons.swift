@@ -14,7 +14,7 @@ enum AskLauncherFeatureIcons {
         "polish", "summarize", "explain", "web-google", "web-baidu", "web-github", "apps", "files",
         "semantic-files", "quick-ask", "directory", "help", "history", "tabs", "bookmarks", "kill-app",
         "monitor", "system-info", "calendar", "worldclock", "terminal", "emoji", "screenshot-full",
-        "screenshot-scroll", "screenshot-ai", "ocr", "gif"
+        "screenshot-scroll", "screenshot-ai", "ocr", "gif", "apple-notes", "apple-reminders"
     ] + AskSystemCommand.allCases.map { "system-" + $0.rawValue }
     private static var cache: [String: NSImage] = [:]
 
@@ -36,6 +36,8 @@ enum AskLauncherFeatureIcons {
             }
         case AskScreenshotTextPlugin.id: return "ocr"
         case AskNotesPlugin.id, AskNoteCapturePlugin.id: return "notes"
+        case AskAppleProductivityPlugin.notesID: return "apple-notes"
+        case AskAppleProductivityPlugin.remindersID: return "apple-reminders"
         case AskClipboardPlugin.id: return "clipboard"
         case AskSettingsPlugin.id: return "settings"
         case AskPromptPlugin.id:
@@ -74,11 +76,32 @@ enum AskLauncherFeatureIcons {
         guard names.contains(name) else { return nil }
         let resource = "launcher-feature-" + style.rawValue + "-" + name
         if let cached = cache[resource] { return cached }
+        if let application = ["apple-notes": "Notes", "apple-reminders": "Reminders"][name],
+           let image = applicationIcon(application) {
+            cache[resource] = image
+            return image
+        }
         // Extended keyword artwork uses the selected sculpted family; the original light set remains switchable.
         guard let url = Bundle.module.url(forResource: resource, withExtension: "png")
             ?? Bundle.module.url(forResource: "launcher-feature-sculpted-" + name, withExtension: "png"),
             let image = NSImage(contentsOf: url) else { return nil }
         cache[resource] = image
+        return image
+    }
+
+    /// Resolve the destination's installed artwork without bundling copies of Apple's app icons.
+    private static func applicationIcon(_ application: String) -> NSImage? {
+        guard let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 512, pixelsHigh: 512,
+                                             bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true,
+                                             isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0),
+              let context = NSGraphicsContext(bitmapImageRep: bitmap) else { return nil }
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = context
+        NSWorkspace.shared.icon(forFile: "/System/Applications/\(application).app")
+            .draw(in: NSRect(x: 0, y: 0, width: 512, height: 512))
+        NSGraphicsContext.restoreGraphicsState()
+        let image = NSImage(size: NSSize(width: 512, height: 512))
+        image.addRepresentation(bitmap)
         return image
     }
 }

@@ -21,6 +21,8 @@ enum AskPluginRegistry {
         AskClipboardPlugin.id,
         AskNotesPlugin.id,
         AskNoteCapturePlugin.id,
+        AskAppleProductivityPlugin.notesID,
+        AskAppleProductivityPlugin.remindersID,
         AskScreenshotPlugin.id,
         AskScreenshotTextPlugin.id,
         AskBrowserSearchPlugin.tabsID,
@@ -42,6 +44,7 @@ enum AskPluginRegistry {
                     + AskOpenChatPlugin.keywords + AskQuickAskPlugin.keywords + AskPrefixPlugin
                     .keywords + AskSettingsPlugin.keywords + AskHelpPlugin.keywords + AskHistoryPlugin.keywords + AskClipboardPlugin
                     .keywords + AskNotesPlugin.keywords + AskNoteCapturePlugin.keywords + AskScreenshotPlugin.keywords
+                    + AskAppleProductivityPlugin.keywords
                     + AskScreenshotTextPlugin.keywords
                     + AskBrowserSearchPlugin.keywords
                     + AskKillAppPlugin.keywords
@@ -241,6 +244,8 @@ extension AskConversationModel {
             AskClipboardPlugin(entries: { [weak self] in self?.clipboardEntries() ?? [] }),
             AskNotesPlugin(store: notes),
             AskNoteCapturePlugin(),
+            AskAppleProductivityPlugin(kind: .notes),
+            AskAppleProductivityPlugin(kind: .reminders),
             AskScreenshotPlugin(),
             AskScreenshotTextPlugin(screenshot: { [weak self] in self?.launcherScreenshot?.source },
                                     generator: promptAI,

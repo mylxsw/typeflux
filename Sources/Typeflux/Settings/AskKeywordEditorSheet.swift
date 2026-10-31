@@ -95,6 +95,8 @@ struct AskKeywordEditorSheet: View {
         case .chat: "chat"
         case .quickAsk: "qa"
         case .noteCapture: "n"
+        case .appleNotes: "an"
+        case .appleReminders: "remind"
         case .prefix: "prefix"
         case .setting: "setting"
         case .history: "history"
@@ -214,6 +216,8 @@ struct AskKeywordEditorSheet: View {
                     }
                 }
             }
+        case .appleNotes, .appleReminders:
+            hint(draft.kind.hint)
         case .kill:
             hint(L("ask.settings.keywords.kind.kill.hint"))
         case .emoji:

@@ -7585,3 +7585,19 @@
 "ask.notes.submittedInput" = "Content sent to AI";
 
 "account.page.pendingCredits" = "%@ Credits reserved for tasks awaiting settlement";
+
+/* Apple Notes and Reminders launcher integration */
+"apple.notes.title" = "Apple Notes";
+"apple.reminders.title" = "Apple Reminders";
+"apple.notes.placeholder" = "Type a note; first line is the title. Return saves to Apple Notes.";
+"apple.reminders.placeholder" = "tomorrow 09:00 Submit report · 30m Drink water · or a task without an alarm";
+"apple.open" = "Open %@";
+"apple.create" = "Create in %@";
+"apple.noAlarm" = "No alarm";
+"apple.past" = "This time has passed. Enter a future date and time.";
+"apple.invalid" = "Use: tomorrow 09:00 Task, YYYY-MM-DD HH:mm Task, or 30m Task. Maximum 50,000 characters.";
+"apple.failed" = "Creation could not be confirmed. Check the app before trying again to avoid duplicates. If access was denied, allow Typeflux in System Settings → Privacy & Security → Automation.";
+"apple.saved" = "Created successfully";
+"apple.permissions" = "Automation permissions";
+"ask.settings.keywords.kind.appleNotes.hint" = "Create notes in Apple Notes. First line is the title; following lines are the body. An empty input opens Notes.";
+"ask.settings.keywords.kind.appleReminders.hint" = "Create in Apple Reminders: tomorrow 09:00 Task, 30m Task, or YYYY-MM-DD HH:mm Task. An empty input opens Reminders.";

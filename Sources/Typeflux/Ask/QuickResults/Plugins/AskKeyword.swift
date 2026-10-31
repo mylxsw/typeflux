@@ -70,7 +70,7 @@ enum AskKeywordMatcher {
             guard let first = rest.first else { return .hint(candidate.keyword) }
             guard separators.contains(first) else { continue }
             let argument = rest.dropFirst()
-            let preserved = [AskTerminalCommandPlugin.id, AskNoteCapturePlugin.id].contains(candidate.keyword.pluginID)
+            let preserved = [AskTerminalCommandPlugin.id, AskNoteCapturePlugin.id, AskAppleProductivityPlugin.notesID].contains(candidate.keyword.pluginID)
             let text = preserved ? argument : argument.drop(while: { $0 == " " || $0 == "\u{3000}" })
             return .active(candidate.keyword, argument: String(text))
         }

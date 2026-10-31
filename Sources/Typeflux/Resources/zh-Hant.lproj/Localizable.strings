@@ -7587,3 +7587,19 @@
 "ask.notes.submittedInput" = "提交給 AI 的內容";
 
 "account.page.pendingCredits" = "待結算任務預留了 %@ Credits";
+
+/* Apple Notes and Reminders launcher integration */
+"apple.notes.title" = "Apple 備忘錄";
+"apple.reminders.title" = "Apple 提醒事項";
+"apple.notes.placeholder" = "輸入筆記，第一行為標題；Return 儲存到系統備忘錄";
+"apple.reminders.placeholder" = "明天 09:00 交報告 · 30m 喝水 · 或只輸入待辦";
+"apple.open" = "打開%@";
+"apple.create" = "建立到%@";
+"apple.noAlarm" = "未設定提醒時間";
+"apple.past" = "這個時間已經過去，請設定未來的日期和時間";
+"apple.invalid" = "請使用：明天 09:00 待辦、YYYY-MM-DD HH:mm 待辦，或 30m 待辦。最多 5 萬字";
+"apple.failed" = "未能確認建立結果，請先打開對應 App 檢查，避免重複建立。如果曾拒絕授權，請在系統設定 → 隱私權與安全性 → 自動化中允許 Typeflux";
+"apple.saved" = "已建立";
+"apple.permissions" = "自動化權限";
+"ask.settings.keywords.kind.appleNotes.hint" = "在系統備忘錄中建立筆記；第一行為標題，其餘為內文。留空可打開備忘錄";
+"ask.settings.keywords.kind.appleReminders.hint" = "建立系統提醒事項：明天 09:00 待辦、30m 待辦，或 YYYY-MM-DD HH:mm 待辦。留空可打開提醒事項";
