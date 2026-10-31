@@ -98,4 +98,6 @@ Six legacy launcher methods still fail with the same 13 issues when the shared c
 
 Implementation checklist: selected visual mapped; native layout and localized copy implemented; input/footer simplified only during permission setup; twenty locale/appearance/access-state renders checked; physical button flow passed; source and rendered implementation compared together.
 
+Installed follow-up: `f7338f73` is on main and pushed. A parallel Debug development installation already contained the approved UI; its executable UUID, newer build timestamp, six matching UI source files and short localized resources were reconciled before reuse. Deep/strict signing and preserved configuration/provisioning checks pass, and the installed main host is running. A stable copy of the parallel work was tested in isolation with both permission methods and all twenty renders passing; that copy was removed afterward. Total design-task test-command wall time: 874.89 seconds. Complete live menu-bar automation remains outside this native-fixture visual acceptance.
+
 final result: passed
