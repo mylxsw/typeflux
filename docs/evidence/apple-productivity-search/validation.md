@@ -23,7 +23,9 @@ The first UI pass exposed Command-O being intercepted by the launcher's window s
 
 - Actual Apple Notes creation, body-only case-insensitive matching, bounded result data, and reading Chinese/emoji content passed in 2.57 seconds; the temporary note was removed.
 - Temporary reminder probes were reconciled and removed. An additional probe marker returned zero active and zero completed matches in the native Reminders search; the original view was restored.
-- Real installed-app preview/open verification and EventKit access to existing reminders are pending installation and any required system permission. Unit snapshots and the simulated authorization flow do not establish real reminder-store acceptance.
+- The final optimized prebuild passed in 473.89 seconds of command wall time; an earlier optimized build took 426.30 seconds. The official installation script also completed its optimized build (405.91 seconds for the build phase) and launched Typeflux Dev. The complete installer wrapper wall time was not measured.
+- Installed-app deep/strict code-signature verification passed. The existing service configuration, embedded provisioning profile, and designated signing requirement were compared with the pre-update app and preserved exactly.
+- The computer-control interface could access Finder and Reminders but repeatedly returned `timeoutReached` for Typeflux by both application path and bundle identifier. Global-shortcut and explicit Finder-open attempts did not expose a Typeflux window to that interface. Installed-app search/preview/open and real EventKit reminder-store access therefore remain pending a manually opened launcher and any required system permission. Unit snapshots and the simulated authorization flow do not establish that acceptance.
 
 ## Synthetic UI evidence
 
