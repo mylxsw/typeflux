@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-31",
+  "baselineCommit": "ff1c9fdc42877371243e613d31c2d40754bf88d4",
+  "command": "python3 scripts/test_groups.py --coverage --suite OnboardingBehaviorTests",
+  "compilerCompatibilityWrapper": "Existing local SwiftUI/Testing macro-plugin wrapper",
+  "suite": "OnboardingBehaviorTests",
+  "passedMethods": 13,
+  "failedMethods": 0,
+  "retries": 0,
+  "totalCommandWallSeconds": 247.762,
+  "wallTimeIncludes": "runner startup, build/preparation, discovery, and execution",
+  "buildAndDiscoverySeconds": 225.87,
+  "testRunnerPhaseSeconds": 21.81,
+  "swiftTestingExecutionSeconds": 16.401,
+  "changedExecutableLineCoverage": {
+    "covered": 75,
+    "total": 79,
+    "percent": 94.9
+  },
+  "coverageIsProjectWide": false,
+  "strictSwiftLint": "passed, three changed production files",
+  "whitespaceCheck": "passed",
+  "nativeBuild": "Debug minimal Dev variant built, bundled, signed and launched using make run",
+  "installedFlowInspected": [
+    "welcome",
+    "services",
+    "cloud",
+    "speech",
+    "language",
+    "permissions",
+    "feature guides",
+    "finish"
+  ],
+  "snapshotReview": [
+    "English/light service choice and Cloud",
+    "Chinese/dark language and failed speech connection",
+    "all permissions with keyboard fix",
+    "skipped finish and recovery"
+  ],
+  "regressionChecks": [
+    "Primary height matches welcome within 1 point across seven stages in English and Chinese",
+    "Primary bottom inset at least 24 points and matches welcome within 1 point",
+    "Service choice row height is at most three welcome primary-button heights"
+  ],
+  "scopedPreferencesRestored": true,
+  "notValidatedThisCorrection": [
+    "Live account OAuth",
+    "Microphone dictation",
+    "Live model-service availability"
+  ]
+}

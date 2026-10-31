@@ -173,3 +173,25 @@ Validation scope stops at connection probes and UI/routing behavior: no Typeflux
 - [x] Final installed native pages inspected and comparison evidence archived.
 
 final result: passed
+
+# Onboarding scale correction — welcome baseline
+
+The prior onboarding visual verdict is superseded by the user-provided whole-flow comparison. The workbench layout remains; text, controls and illustration sizes must agree with the welcome screen.
+
+Source truth: `docs/evidence/onboarding-scale/baseline-welcome.png`. Before captures: `services-before.png`, `cloud-before.png` in the same directory. Native window: 960 × 664 points; captures are compared at the same density and viewport.
+
+- [P1] Setup used 18-point supporting text against the welcome's 14 points, 21-point option titles, 116-point artwork and a separate 48-point button style. This overemphasized routine choices and broke the flow's visual hierarchy.
+- Correction: use existing typography tokens, 26-point configuration headings, 13–14-point content, 15-point option titles and the welcome's actual `StudioButton`. Reduce rows, rail and artwork proportionally.
+- Installed native inspection: welcome → service choice → Cloud → speech → language → permissions → existing feature guides → finish. No clipped text or inaccessible footer was observed. Login was not completed and no model credentials were changed. Scoped preferences were restored before isolated UI validation.
+- Same-size comparisons: `docs/evidence/onboarding-scale/welcome-services-comparison.png` and `welcome-cloud-comparison.png`. Each frame is 960 × 664 pixels, downsampled equally from the native 2× capture. The purple system sharing indicator/cursor overlay is outside the app design.
+- Typography: native SF/PingFang; 26-point semibold setup headings, 14-point support copy, 15-point selection titles, 13-point regular content. The introductory 34-point welcome headline remains visually dominant. Rail labels use 12.5 points.
+- Spacing/layout: 208-point rail and 40-point content insets retained; option rows reduced to 88 points, input to 34 points, internal gaps and padding reduced accordingly. Footer actions now use the same `StudioButton` as the welcome and guides.
+- Colors/assets: existing opaque graphite surfaces, blue action/selection states and SF Symbols retained. Cloud artwork reduced to 56/48-point product/account icons. Original Typeflux artwork remains sharp; no replacement or generated assets.
+- Copy/content: existing optional Cloud/custom/launcher routes, entitlement wording, skip consequences and recovery actions retained. This correction changes visual scale, without modifying model/login/routing behavior.
+- Regression results: all 13 `OnboardingBehaviorTests` methods passed, including seven-stage primary height/bottom-inset comparison in Chinese and English, bounded option-row height, login/editor actions, skip/recovery and permission/finish bounds. No test retries or full-suite run.
+- Snapshot results: inspected English/light service choice and Cloud, Chinese/dark language and failed speech connection, all permissions with keyboard fix, and skipped finish with recovery. No clipping, overlapping controls or oversized setup elements relative to the welcome were observed. Clean native fixture captures are archived as `ui-*.png` in the evidence directory.
+- Validation command wall time: **247.762 seconds**, including runner startup, preparation/build, discovery and execution. Build/discovery: 225.87 seconds; runner test phase: 21.81 seconds. Native build/inspection was performed separately before this focused validation pass.
+- Changed executable-line coverage: **75 / 79 (94.9%)**, not project-wide coverage. Strict SwiftLint on the three changed production files and `git diff --check` passed. See `coverage.json` and `validation.json` in the evidence directory.
+- Acceptance boundary: actual native visual/interaction inspection and focused UI regression. No new live OAuth, dictation or model-service availability validation in this visual correction.
+
+final result: passed

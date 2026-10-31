@@ -49,25 +49,25 @@ struct OnboardingSetupRail: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 10) {
-                Image(nsImage: HelpAppIcon.image).resizable().interpolation(.high).frame(width: 38, height: 38)
+                Image(nsImage: HelpAppIcon.image).resizable().interpolation(.high).frame(width: 30, height: 30)
                     .accessibilityHidden(true)
-                Text("Typeflux").font(.studioBody(20, weight: .semibold)).foregroundStyle(palette.primary)
+                Text("Typeflux").font(.studioBody(15, weight: .semibold)).foregroundStyle(palette.primary)
             }
-            .padding(.bottom, 58)
-            Text(L("setup.rail.title")).font(.studioBody(14)).foregroundStyle(palette.secondary)
+            .padding(.bottom, 38)
+            Text(L("setup.rail.title")).font(.studioBody(11.5)).foregroundStyle(palette.secondary)
                 .padding(.bottom, 18)
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(stages.indices, id: \.self) { index in
                     stageRow(index)
                     if index < stages.count - 1 {
-                        Rectangle().fill(palette.separator).frame(width: 1, height: 31).padding(.leading, 10)
+                        Rectangle().fill(palette.separator).frame(width: 1, height: 26).padding(.leading, 8)
                             .accessibilityHidden(true)
                     }
                 }
             }
             Spacer(minLength: 20)
             Rectangle().fill(palette.separator).frame(height: 1).padding(.bottom, 18)
-            Text(L("setup.rail.later")).font(.studioBody(14)).foregroundStyle(palette.secondary)
+            Text(L("setup.rail.later")).font(.studioBody(11.5)).foregroundStyle(palette.secondary)
         }
         .padding(.horizontal, 30)
         .padding(.top, 58)
@@ -86,35 +86,16 @@ struct OnboardingSetupRail: View {
         return HStack(spacing: 12) {
             Image(systemName: isCurrent ? "circle.fill" : isDeferred ? "minus.circle"
                 : isPast ? "checkmark.circle" : "circle")
-                .font(.system(size: 21, weight: .regular))
+                .font(.system(size: 16, weight: .regular))
                 .foregroundStyle(isCurrent ? palette.accent : palette.muted)
-                .frame(width: 22, height: 22).accessibilityHidden(true)
-            Text(title).font(.studioBody(15, weight: isCurrent ? .semibold : .regular))
+                .frame(width: 18, height: 18).accessibilityHidden(true)
+            Text(title).font(.studioBody(12.5, weight: isCurrent ? .semibold : .regular))
                 .foregroundStyle(isCurrent ? palette.primary : palette.secondary)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title)
         .accessibilityValue(isCurrent ? L("setup.rail.current") : isDeferred ? L("setup.rail.skipped")
             : isPast ? L("setup.rail.completed") : "")
-    }
-}
-
-struct OnboardingSetupButtonStyle: ButtonStyle {
-    let palette: OnboardingSetupPalette
-    var primary = false
-    var minimumWidth: CGFloat = 120
-    @Environment(\.isEnabled) private var isEnabled
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.studioBody(15, weight: primary ? .semibold : .regular))
-            .foregroundStyle(primary ? Color.white : palette.secondary)
-            .padding(.horizontal, primary ? 22 : 4)
-            .frame(minWidth: primary ? minimumWidth : nil, minHeight: 48)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(primary ? palette.accent : Color.clear))
-            .opacity(isEnabled ? (configuration.isPressed ? 0.72 : 1) : 0.45)
-            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 
@@ -128,14 +109,14 @@ struct OnboardingSpeechServicePicker: View {
     var body: some View {
         ZStack {
             HStack {
-                Text(selection.displayName).font(.studioBody(16))
+                Text(selection.displayName).font(.studioBody(StudioTheme.Typography.body))
                 Spacer()
                 Image(systemName: "chevron.up.chevron.down").font(.system(size: 10, weight: .medium))
                     .foregroundStyle(palette.secondary)
             }
             .foregroundStyle(palette.primary)
             .padding(.horizontal, 14)
-            .frame(maxWidth: .infinity, minHeight: 42)
+            .frame(maxWidth: .infinity, minHeight: 34)
             .background(RoundedRectangle(cornerRadius: 9).fill(palette.primary.opacity(hovering ? 0.12 : 0.08)))
             .overlay(RoundedRectangle(cornerRadius: 9).stroke(palette.separator, lineWidth: 1))
             .accessibilityHidden(true).allowsHitTesting(false)
@@ -151,7 +132,7 @@ struct OnboardingSpeechServicePicker: View {
                 selection = providers[index]
             }
         }
-        .frame(height: 42)
+        .frame(height: 34)
         .onHover { hovering = $0 }
     }
 }
@@ -177,13 +158,15 @@ extension OnboardingView {
 
     var setupFooter: some View {
         HStack(spacing: 20) {
-            Button(L("onboarding.v2.action.back")) { viewModel.goBack() }
-                .buttonStyle(OnboardingSetupButtonStyle(palette: setupPalette))
+            StudioButton(title: L("onboarding.v2.action.back"), systemImage: nil, variant: .ghost) {
+                viewModel.goBack()
+            }
             Spacer(minLength: 8)
             if viewModel.currentStep == .permissions {
                 if !viewModel.canAdvance {
-                    Button(L("setup.action.skip")) { viewModel.skipPermissions() }
-                        .buttonStyle(OnboardingSetupButtonStyle(palette: setupPalette))
+                    StudioButton(title: L("setup.action.skip"), systemImage: nil, variant: .ghost) {
+                        viewModel.skipPermissions()
+                    }
                 }
                 setupAdvanceButton(L("onboarding.v2.action.continue"), disabled: !viewModel.canAdvance) {
                     viewModel.advance()
@@ -192,8 +175,9 @@ extension OnboardingView {
                 setupAdvanceButton(L("onboarding.v2.action.finish")) { viewModel.advance() }
             } else {
                 if viewModel.currentStep != .services {
-                    Button(L("setup.action.skip")) { viewModel.requestSetupSkip() }
-                        .buttonStyle(OnboardingSetupButtonStyle(palette: setupPalette))
+                    StudioButton(title: L("setup.action.skip"), systemImage: nil, variant: .ghost) {
+                        viewModel.requestSetupSkip()
+                    }
                 }
                 setupAdvanceButton(viewModel.setupPrimaryTitle, disabled: viewModel.isSetupActionRunning,
                                    loading: viewModel.isSetupActionRunning) { viewModel.performSetupAction() }
@@ -206,16 +190,8 @@ extension OnboardingView {
 
     private func setupAdvanceButton(_ title: String, disabled: Bool = false, loading: Bool = false,
                                     action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                if loading { ProgressView().controlSize(.small).tint(.white) }
-                Text(title)
-            }
-        }
-        .buttonStyle(OnboardingSetupButtonStyle(palette: setupPalette, primary: true,
-                                                minimumWidth: [.cloud, .stt, .llm]
-                                                    .contains(viewModel.currentStep) ? 156 : 120))
-        .disabled(disabled)
-        .keyboardShortcut(.defaultAction)
+        StudioButton(title: title, systemImage: nil, variant: .primary,
+                     isDisabled: disabled, isLoading: loading, action: action)
+            .keyboardShortcut(.defaultAction)
     }
 }

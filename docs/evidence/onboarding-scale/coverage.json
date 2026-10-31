@@ -1,0 +1,33 @@
+{
+  "scope": "OnboardingBehaviorTests: 13 methods",
+  "baseline": "ff1c9fdc",
+  "metric": "Changed executable lines present in the validating binary lcov export; not project-wide coverage",
+  "covered": 75,
+  "executableChanged": 79,
+  "percent": 94.9,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingSetupChrome.swift",
+      "covered": 20,
+      "executableChanged": 24,
+      "uncoveredLines": [
+        162,
+        163,
+        168,
+        169
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingSetupViews.swift",
+      "covered": 53,
+      "executableChanged": 53,
+      "uncoveredLines": []
+    },
+    {
+      "file": "Sources/Typeflux/Onboarding/OnboardingView.swift",
+      "covered": 2,
+      "executableChanged": 2,
+      "uncoveredLines": []
+    }
+  ]
+}

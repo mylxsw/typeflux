@@ -580,7 +580,8 @@ struct OnboardingView: View { // swiftlint:disable:this type_body_length
     private func stepTitle(_ title: String, subtitle: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.studioDisplay(28, weight: .bold))
+                .font(.studioDisplay(usesSetupRail ? StudioTheme.Typography.heroTitle : 28,
+                                    weight: usesSetupRail ? .semibold : .bold))
                 .foregroundStyle(primaryText)
             Text(subtitle)
                 .font(.studioBody(14))

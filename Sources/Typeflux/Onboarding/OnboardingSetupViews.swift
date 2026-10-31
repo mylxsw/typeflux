@@ -7,33 +7,34 @@ extension OnboardingView {
             VStack(spacing: 0) {
                 serviceOption(.cloud, icon: "cloud", title: "Typeflux Cloud",
                               detail: L("setup.services.cloud"), recommended: true)
-                Rectangle().fill(setupPalette.separator).frame(height: 1).padding(.leading, 108)
+                Rectangle().fill(setupPalette.separator).frame(height: 1).padding(.leading, 66)
                 serviceOption(.custom, icon: "server.rack", title: L("setup.services.custom.title"),
                               detail: L("setup.services.custom"), recommended: false)
             }
             .background(setupPalette.surface)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 14).stroke(setupPalette.separator, lineWidth: 1))
-            .padding(.top, 30)
+            .padding(.top, 24)
             Button { viewModel.requestSetupSkip() } label: {
                 HStack(spacing: 16) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(L("setup.services.launcherOnly"))
-                            .font(.studioBody(20, weight: .medium)).foregroundStyle(setupPalette.primary)
+                            .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .medium))
+                            .foregroundStyle(setupPalette.primary)
                         Text(launcherOnlyImpact)
-                            .font(.studioBody(14.5)).foregroundStyle(setupPalette.secondary)
+                            .font(.studioBody(StudioTheme.Typography.bodySmall)).foregroundStyle(setupPalette.secondary)
                     }
                     Spacer()
                     Image(systemName: "chevron.right").font(.system(size: 12, weight: .medium))
                         .foregroundStyle(setupPalette.secondary)
                 }
-                .padding(.vertical, 24).contentShape(Rectangle())
+                .padding(.vertical, 18).contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(L("setup.services.launcherOnly"))
             .accessibilityHint(launcherOnlyImpact)
             .overlay(alignment: .top) { Rectangle().fill(setupPalette.separator).frame(height: 1) }
-            .padding(.top, 26)
+            .padding(.top, 20)
             Spacer(minLength: 0)
         }
     }
@@ -49,31 +50,32 @@ extension OnboardingView {
                                title: String, detail: String, recommended: Bool) -> some View {
         let selected = viewModel.serviceRoute == route
         return Button { viewModel.chooseRoute(route) } label: {
-            HStack(spacing: 24) {
-                Image(systemName: icon).font(.system(size: 30, weight: .light))
+            HStack(spacing: 16) {
+                Image(systemName: icon).font(.system(size: 18, weight: .regular))
                     .foregroundStyle(selected ? setupPalette.accent : setupPalette.secondary)
-                    .frame(width: 48).accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 10) {
+                    .frame(width: 30).accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 10) {
-                        Text(title).font(.studioBody(21, weight: .semibold)).foregroundStyle(setupPalette.primary)
+                        Text(title).font(.studioBody(StudioTheme.Typography.cardTitle, weight: .semibold))
+                            .foregroundStyle(setupPalette.primary)
                         if recommended {
                             Text(L("setup.services.recommended"))
-                                .font(.studioBody(12.5, weight: .medium)).foregroundStyle(setupPalette.accent)
+                                .font(.studioBody(11, weight: .medium)).foregroundStyle(setupPalette.accent)
                                 .padding(.horizontal, 8).padding(.vertical, 4)
                                 .background(Capsule().fill(setupPalette.accent.opacity(0.12)))
                         }
                     }
-                    Text(detail).font(.studioBody(16)).foregroundStyle(setupPalette.secondary)
+                    Text(detail).font(.studioBody(StudioTheme.Typography.body)).foregroundStyle(setupPalette.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 8)
                 Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 22, weight: .regular))
+                    .font(.system(size: 18, weight: .regular))
                     .foregroundStyle(selected ? setupPalette.accent : setupPalette.muted)
                     .accessibilityHidden(true)
             }
-            .padding(.horizontal, 28).padding(.vertical, 26)
-            .frame(maxWidth: .infinity, minHeight: 116, alignment: .leading)
+            .padding(.horizontal, 20).padding(.vertical, 18)
+            .frame(maxWidth: .infinity, minHeight: 88, alignment: .leading)
             .background(selected ? setupPalette.accent.opacity(0.055) : Color.clear)
             .contentShape(Rectangle())
         }
@@ -87,16 +89,16 @@ extension OnboardingView {
         VStack(alignment: .leading, spacing: 0) {
             setupHeading(L("setup.cloud.title"), L("setup.cloud.subtitle"))
             Spacer(minLength: 12)
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 18) {
                 if !viewModel.authState.isLoggedIn {
-                    HStack(spacing: 28) {
+                    HStack(spacing: 18) {
                         Image(nsImage: HelpAppIcon.image).resizable().interpolation(.high).frame(
-                            width: 116,
-                            height: 116
+                            width: 56,
+                            height: 56
                         )
-                        Image(systemName: "ellipsis").font(.system(size: 26, weight: .medium))
+                        Image(systemName: "ellipsis").font(.system(size: 18, weight: .medium))
                             .foregroundStyle(setupPalette.accent)
-                        Image(systemName: "person.crop.circle").font(.system(size: 92, weight: .ultraLight))
+                        Image(systemName: "person.crop.circle").font(.system(size: 48, weight: .light))
                             .symbolRenderingMode(.palette).foregroundStyle(setupPalette.accent, setupPalette.muted)
                     }.accessibilityHidden(true)
                 }
@@ -104,9 +106,10 @@ extension OnboardingView {
                     Label(L("setup.cloud.speechService"), systemImage: "waveform")
                     Label(L("setup.finish.ai"), systemImage: "bubble.left.and.bubble.right")
                 }
-                .font(.studioBody(20, weight: .medium)).foregroundStyle(setupPalette.primary)
+                .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .medium))
+                .foregroundStyle(setupPalette.primary)
                 Text(L("setup.cloud.entitlementNote"))
-                    .font(.studioBody(16)).foregroundStyle(setupPalette.secondary)
+                    .font(.studioBody(StudioTheme.Typography.bodySmall)).foregroundStyle(setupPalette.secondary)
                 cloudConnectionStatus
             }
             .frame(maxWidth: .infinity)
@@ -116,12 +119,12 @@ extension OnboardingView {
                 viewModel.currentStep = .stt
             } label: {
                 HStack {
-                    Text(L("setup.cloud.useOwn")).font(.studioBody(16))
+                    Text(L("setup.cloud.useOwn")).font(.studioBody(StudioTheme.Typography.body))
                     Spacer()
                     Image(systemName: "chevron.right").font(.system(size: 12, weight: .medium))
                 }
                 .foregroundStyle(setupPalette.accent)
-                .padding(.vertical, 22).contentShape(Rectangle())
+                .padding(.vertical, 18).contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(L("setup.cloud.useOwn"))
@@ -145,15 +148,16 @@ extension OnboardingView {
 
     var speechSetupStep: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 18) {
                 setupHeading(L("setup.speech.title"), L("setup.speech.subtitle"))
                 if viewModel.serviceRoute == .cloud {
                     Text(L("setup.cloud.localNext")).font(.studioBody(13)).foregroundStyle(setupPalette.secondary)
                 } else {
                     modelSubsteps(speech: true)
                 }
-                VStack(alignment: .leading, spacing: 20) {
-                    Text(L("setup.speech.serviceLabel")).font(.studioBody(16)).foregroundStyle(setupPalette.secondary)
+                VStack(alignment: .leading, spacing: 18) {
+                    Text(L("setup.speech.serviceLabel")).font(.studioBody(StudioTheme.Typography.body))
+                        .foregroundStyle(setupPalette.secondary)
                     OnboardingSpeechServicePicker(
                         providers: ModelAvailability.configurationSpeechProviders
                             .filter { $0 != .typefluxOfficial || viewModel.authState.canUseCloudASR },
@@ -164,18 +168,19 @@ extension OnboardingView {
                     Rectangle().fill(setupPalette.separator).frame(height: 1)
                     speechConnectionSummary
                 }
-                .padding(26).frame(maxWidth: .infinity, alignment: .leading)
+                .padding(20).frame(maxWidth: .infinity, alignment: .leading)
                 .background(RoundedRectangle(cornerRadius: 14).fill(setupPalette.surface))
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(setupPalette.separator, lineWidth: 1))
                 if let model = viewModel.configurationModel { setupTestFailure(model.sttConnectionTestState) }
                 if viewModel.settingsStore.sttProvider == .localModel {
                     Text(L("setup.speech.hint")).font(.studioBody(12.5)).foregroundStyle(setupPalette.secondary)
                 }
-                HStack(spacing: 24) {
-                    Image(systemName: "waveform").font(.system(size: 44, weight: .medium))
+                HStack(spacing: 16) {
+                    Image(systemName: "waveform").font(.system(size: 26, weight: .medium))
                         .foregroundStyle(setupPalette.accent)
-                    Rectangle().fill(setupPalette.separator).frame(width: 1, height: 36)
-                    Text(L("setup.speech.preview")).font(.studioBody(20)).foregroundStyle(setupPalette.secondary)
+                    Rectangle().fill(setupPalette.separator).frame(width: 1, height: 24)
+                    Text(L("setup.speech.preview")).font(.studioBody(StudioTheme.Typography.bodyLarge))
+                        .foregroundStyle(setupPalette.secondary)
                 }
                 .frame(maxWidth: .infinity).padding(.top, 10).accessibilityHidden(true)
             }
@@ -185,14 +190,14 @@ extension OnboardingView {
 
     private var speechConnectionSummary: some View {
         HStack(spacing: 12) {
-            Image(systemName: "doc.text").font(.system(size: 22)).foregroundStyle(setupPalette.secondary)
+            Image(systemName: "doc.text").font(.system(size: 17)).foregroundStyle(setupPalette.secondary)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 6) {
                 Text(L(viewModel.speechConfigured
                         ? (viewModel.settingsStore.sttProvider == .localModel
                             ? "setup.status.ready" : "setup.connection.configured")
                         : "setup.status.notSetUp"))
-                    .font(.studioBody(17)).foregroundStyle(setupPalette.primary)
+                    .font(.studioBody(StudioTheme.Typography.body)).foregroundStyle(setupPalette.primary)
                 if viewModel.settingsStore.sttProvider == .localModel, !viewModel.speechConfigured,
                    viewModel.speechStatusText != L("setup.status.notSetUp") {
                     Text(viewModel.speechStatusText).font(.studioBody(12)).foregroundStyle(setupPalette.secondary)
@@ -201,7 +206,7 @@ extension OnboardingView {
             if viewModel.speechConfigured, !viewModel.speechVerified {
                 HStack(spacing: 6) {
                     Image(systemName: "circle.fill").font(.system(size: 6)).accessibilityHidden(true)
-                    Text(L("setup.status.testNeeded")).font(.studioBody(14))
+                    Text(L("setup.status.testNeeded")).font(.studioBody(12))
                 }.foregroundStyle(StudioTheme.warning)
             }
             Spacer(minLength: 8)
@@ -209,7 +214,7 @@ extension OnboardingView {
                     ? "setup.speech.manage" : "setup.connection.edit")) {
                 viewModel.editModels(.stt)
             }
-            .font(.studioBody(16)).buttonStyle(.link)
+            .font(.studioBody(StudioTheme.Typography.body)).buttonStyle(.link)
         }
     }
 
@@ -226,19 +231,19 @@ extension OnboardingView {
         HStack(spacing: 8) {
             Text(number).font(.studioBody(12, weight: .medium))
                 .foregroundStyle(active ? Color.white : setupPalette.secondary)
-                .frame(width: 28, height: 28)
+                .frame(width: 22, height: 22)
                 .background(Circle().fill(active ? setupPalette.accent : setupPalette.surface))
-            Text(title).font(.studioBody(15, weight: active ? .medium : .regular))
+            Text(title).font(.studioBody(12.5, weight: active ? .medium : .regular))
                 .foregroundStyle(active ? setupPalette.primary : setupPalette.secondary)
         }
     }
 
     var languageSetupStep: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 18) {
                 setupHeading(L("setup.language.title"), L("setup.language.subtitle"))
                 modelSubsteps(speech: false)
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 18) {
                     Text(L("common.model")).font(.studioBody(13)).foregroundStyle(setupPalette.secondary)
                     AskModelMenu(library: viewModel.modelLibrary,
                                  reference: Binding(get: { viewModel.modelLibrary.rewriteReference },
@@ -251,10 +256,10 @@ extension OnboardingView {
                         Text(viewModel.languageStatusText).font(.studioBody(13)).foregroundStyle(setupPalette.secondary)
                         Spacer()
                         Button(L("setup.language.configure")) { viewModel.editModels(.llm) }
-                            .font(.studioBody(16)).buttonStyle(.link)
+                            .font(.studioBody(StudioTheme.Typography.body)).buttonStyle(.link)
                     }
                 }
-                .padding(26).frame(maxWidth: .infinity, alignment: .leading)
+                .padding(20).frame(maxWidth: .infinity, alignment: .leading)
                 .background(RoundedRectangle(cornerRadius: 14).fill(setupPalette.surface))
                 .overlay(RoundedRectangle(cornerRadius: 14).stroke(setupPalette.separator, lineWidth: 1))
                 setupTestFailure(viewModel.languageTestState)
@@ -307,10 +312,11 @@ extension OnboardingView {
     }
 
     private func setupHeading(_ title: String, _ subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.studioDisplay(36, weight: .bold)).foregroundStyle(setupPalette.primary)
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title).font(.studioDisplay(StudioTheme.Typography.heroTitle, weight: .semibold))
+                .foregroundStyle(setupPalette.primary)
                 .accessibilityAddTraits(.isHeader)
-            Text(subtitle).font(.studioBody(18)).foregroundStyle(setupPalette.secondary)
+            Text(subtitle).font(.studioBody(StudioTheme.Typography.bodyLarge)).foregroundStyle(setupPalette.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

@@ -39,6 +39,7 @@ struct OnboardingBehaviorTests {
     @Test func `welcome opens service choice before permissions`() async throws {
         try await fixture { _, model, host in
             try await capture(host, name: "01-welcome-en")
+            let welcomeButtonHeight = try UI.button(L("onboarding.v2.action.start"), in: host).frame.height
             try UI.button(L("onboarding.v2.action.start"), in: host).press()
             try await UI.wait { model.currentStep == .services }
             try await UI.wait { UI.contains(L("setup.services.title"), in: host) }
@@ -46,6 +47,7 @@ struct OnboardingBehaviorTests {
             let hint = cloud.value("accessibilityHelp") as? String ?? ""
             #expect(hint.contains(L("setup.services.recommended")))
             #expect(model.serviceRoute == .cloud)
+            #expect(cloud.frame.height <= welcomeButtonHeight * 3)
             try await capture(host, name: "02-services-en")
             try UI.button(L("onboarding.v2.action.continue"), in: host).press()
             try await UI.wait { model.currentStep == .cloud }
@@ -242,9 +244,13 @@ struct OnboardingBehaviorTests {
                 let model = try #require(controller.viewModel)
                 defer { window.close() }
                 var firstBottom: CGFloat?
+                var firstHeight: CGFloat?
                 for (step, key) in [
                     (OnboardingViewModel.Step.welcome, "onboarding.v2.action.start"),
                     (.services, "onboarding.v2.action.continue"),
+                    (.cloud, "setup.cloud.signInContinue"),
+                    (.stt, "setup.speech.configure"),
+                    (.llm, "setup.language.configure"),
                     (.permissions, "onboarding.v2.action.continue"),
                     (.finish, "onboarding.v2.action.finish")
                 ] {
@@ -257,6 +263,8 @@ struct OnboardingBehaviorTests {
                     #expect(bottom >= 24)
                     if let firstBottom { #expect(abs(bottom - firstBottom) <= 1) }
                     else { firstBottom = bottom }
+                    if let firstHeight { #expect(abs(button.frame.height - firstHeight) <= 1) }
+                    else { firstHeight = button.frame.height }
                     if step == .welcome {
                         try UI.snapshot(host, name: "11-native-footer-\(language.rawValue)")
                     }
