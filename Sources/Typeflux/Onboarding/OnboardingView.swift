@@ -97,7 +97,7 @@ struct OnboardingView: View {
     private var tertiary: OnboardingFooterAction? {
         switch viewModel.currentStep {
         case .route:
-            .init(title: OnboardingStrings.text("skipAll")) { viewModel.requestSetupSkip() }
+            nil // The route page places this link below its art cards.
         case .cloud:
             .init(title: OnboardingStrings.text("custom"), perform: viewModel.useCustomModels)
         case .speech:

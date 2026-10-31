@@ -62,10 +62,11 @@ closed and requires a fresh login in the intended app.
   success before entering the existing login/profile/notification path. Existing refresh rotation,
   logout, `sv`/`sid` and `CloudLoginSyncCoordinator` behavior remain in place.
 - **No pending-login cold-start recovery in v1.** State/verifier live only in memory. Quitting the
-  app discards them; an unsolicited/cold callback never exchanges a code and shows restart guidance.
+  app discards them; an unsolicited/cold callback never exchanges a code and requires a fresh
+  login. Outside onboarding, the normal login entry shows restart guidance.
   Completed sessions still persist/restore using the existing Keychain mechanism. Recreating a
   coordinator clears any injected stale pending state. Cancellation clears memory immediately.
-- Clicking login calls `WebLoginEntryController` and opens the validated website URL in the default
+- Outside onboarding, clicking login calls `WebLoginEntryController` and opens the validated website URL in the default
   browser through `NSWorkspace.open`. It does not show a native login window or a system authentication
   confirmation. Repeated clicks while creating/exchanging do not create duplicate requests; while
   waiting they reopen the same transaction. Callback URL handling never silently starts a new login.
@@ -77,6 +78,11 @@ closed and requires a fresh login in the intended app.
   bodies are never displayed. Ambiguous token exchange failures still require a fresh transaction.
 - With Web auth disabled, the original native login window remains available. Existing logged-in
   users are not signed out when the feature changes.
+- Onboarding owns a separate coordinator and registers its active transaction through a weak
+  routing reference. App callbacks stay inline; global login alerts and Cloud defaults prompts
+  are suppressed until onboarding closes, including resumed setup. Continue applies the selected
+  Cloud defaults explicitly. The rollout flag still applies: disabled Web auth fails inline
+  without opening a browser, while other login entries retain the native fallback.
 
 The default-browser adapter uses AppKit and preserves the macOS deployment target and the shipped
 macOS 13.4+ dependency/binary policy.

@@ -2,3 +2,14 @@
 "eyebrow" = "Typeflux Cloud";
 "title" = "Sign in to Typeflux Cloud";
 "subtitle" = "Voice recognition and AI models, ready when you sign in.";
+"account" = "Typeflux account";
+"providers" = "Email, Google, GitHub or Apple";
+"login" = "Sign in with browser";
+"retry" = "Sign in again";
+"speech" = "Voice recognition";
+"ai" = "AI models";
+"available" = "Available";
+"local" = "Local model";
+"notIncluded" = "Not included";
+"useLocal" = "Use a local model";
+"switchAccount" = "Switch account";

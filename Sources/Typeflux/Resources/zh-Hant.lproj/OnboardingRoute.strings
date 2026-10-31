@@ -3,3 +3,8 @@
 "title" = "選擇 AI 服務";
 "subtitle" = "用於語音輸入、AI 改寫和 Agent，之後可在設定中更改。";
 "customTitle" = "自己的模型";
+"cloudDetail" = "登入即用，無需設定";
+"customDetail" = "本機模型或你的 API Key";
+"recommended" = "推薦";
+"speech" = "語音辨識";
+"rewrite" = "AI 改寫";

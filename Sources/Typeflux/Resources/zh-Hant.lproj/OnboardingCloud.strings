@@ -2,3 +2,14 @@
 "eyebrow" = "Typeflux Cloud";
 "title" = "登入 Typeflux Cloud";
 "subtitle" = "語音辨識和 AI 模型，登入即可使用。";
+"account" = "Typeflux 帳號";
+"providers" = "電子郵件、Google、GitHub 或 Apple";
+"login" = "在瀏覽器中登入";
+"retry" = "重新登入";
+"speech" = "語音辨識";
+"ai" = "AI 模型";
+"available" = "可用";
+"local" = "本機模型";
+"notIncluded" = "方案未包含";
+"useLocal" = "改用本機模型";
+"switchAccount" = "切換帳號";
