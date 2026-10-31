@@ -7592,17 +7592,17 @@
 "apple.notes.title" = "Apple 備忘錄";
 "apple.reminders.title" = "Apple 提醒事項";
 "apple.notes.placeholder" = "輸入筆記，第一行為標題；Return 儲存到系統備忘錄";
-"apple.reminders.placeholder" = "明天 09:00 交報告 · 30m 喝水 · 或只輸入待辦";
+"apple.reminders.placeholder" = "明天下午提醒我吃飯";
 "apple.open" = "打開%@";
 "apple.create" = "建立到%@";
 "apple.noAlarm" = "未設定提醒時間";
 "apple.past" = "這個時間已經過去，請設定未來的日期和時間";
-"apple.invalid" = "請使用：明天 09:00 待辦、YYYY-MM-DD HH:mm 待辦，或 30m 待辦。最多 5 萬字";
+"apple.invalid" = "請確認提醒內容和時間";
 "apple.failed" = "未能確認建立結果，請先打開對應 App 檢查，避免重複建立。如果曾拒絕授權，請在系統設定 → 隱私權與安全性 → 自動化中允許 Typeflux";
 "apple.saved" = "已建立";
 "apple.permissions" = "自動化權限";
 "ask.settings.keywords.kind.appleNotes.hint" = "在系統備忘錄中建立筆記；第一行為標題，其餘為內文。留空可打開備忘錄";
-"ask.settings.keywords.kind.appleReminders.hint" = "建立系統提醒事項：明天 09:00 待辦、30m 待辦，或 YYYY-MM-DD HH:mm 待辦。留空可打開提醒事項";
+"ask.settings.keywords.kind.appleReminders.hint" = "以自然語言建立系統提醒事項，例如「明天下午提醒我吃飯」。留空開啟提醒事項。";
 
 /* Apple Notes and Reminders browsing */
 "apple.notes.searchTitle" = "搜尋系統備忘錄";
@@ -7645,3 +7645,9 @@
 "apple.search.recheckAccess" = "重新檢查";
 "apple.search.permissionInputTitle" = "提醒事項";
 "apple.search.permissionPlaceholder" = "搜尋提醒事項";
+"apple.tooLong" = "內容太長，請精簡後再試";
+"apple.reminders.understandFailed" = "無法辨識這則提醒，請重試";
+"apple.reminders.confirm" = "確認建立";
+"apple.reminders.suggestedTime" = "建議時間：%@";
+"apple.reminders.editInput" = "請補充上方描述";
+"apple.reminders.timeZoneChanged" = "時區已變更，請重新辨識";

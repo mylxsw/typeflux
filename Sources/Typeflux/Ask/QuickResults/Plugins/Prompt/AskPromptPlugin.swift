@@ -5,8 +5,12 @@ protocol AskTextGenerating: Sendable {
     func stream(systemPrompt: String, userPrompt: String) -> AsyncThrowingStream<String, Error>
 }
 
+protocol AskStructuredTextGenerating: AskTextGenerating {
+    func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String
+}
+
 /// The text-processing model from Settings → Models.
-final class AskLLMTextGenerator: AskTextGenerating, @unchecked Sendable {
+final class AskLLMTextGenerator: AskStructuredTextGenerating, @unchecked Sendable {
     private let service: LLMService
 
     init(service: LLMService) {
@@ -15,6 +19,11 @@ final class AskLLMTextGenerator: AskTextGenerating, @unchecked Sendable {
 
     func stream(systemPrompt: String, userPrompt: String) -> AsyncThrowingStream<String, Error> {
         service.streamComplete(systemPrompt: systemPrompt, userPrompt: userPrompt)
+    }
+
+    func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String {
+        try await service.completeJSON(systemPrompt: systemPrompt, userPrompt: userPrompt,
+                                       schema: schema, feature: .askSelection)
     }
 }
 

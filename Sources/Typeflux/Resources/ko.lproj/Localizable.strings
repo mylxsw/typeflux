@@ -7589,17 +7589,17 @@
 "apple.notes.title" = "Apple Notes";
 "apple.reminders.title" = "Apple Reminders";
 "apple.notes.placeholder" = "Type a note; first line is the title. Return saves to Apple Notes.";
-"apple.reminders.placeholder" = "tomorrow 09:00 Submit report · 30m Drink water · or a task without an alarm";
+"apple.reminders.placeholder" = "내일 오후에 식사하라고 알려줘";
 "apple.open" = "Open %@";
 "apple.create" = "Create in %@";
 "apple.noAlarm" = "No alarm";
 "apple.past" = "This time has passed. Enter a future date and time.";
-"apple.invalid" = "Use: tomorrow 09:00 Task, YYYY-MM-DD HH:mm Task, or 30m Task. Maximum 50,000 characters.";
+"apple.invalid" = "미리 알림의 내용과 시간을 확인하세요.";
 "apple.failed" = "Creation could not be confirmed. Check the app before trying again to avoid duplicates. If access was denied, allow Typeflux in System Settings → Privacy & Security → Automation.";
 "apple.saved" = "Created successfully";
 "apple.permissions" = "Automation permissions";
 "ask.settings.keywords.kind.appleNotes.hint" = "Create notes in Apple Notes. First line is the title; following lines are the body. An empty input opens Notes.";
-"ask.settings.keywords.kind.appleReminders.hint" = "Create in Apple Reminders: tomorrow 09:00 Task, 30m Task, or YYYY-MM-DD HH:mm Task. An empty input opens Reminders.";
+"ask.settings.keywords.kind.appleReminders.hint" = "“내일 오후에 식사하라고 알려줘”처럼 자연스럽게 입력하세요. 비워 두면 미리 알림을 엽니다.";
 
 /* Apple Notes and Reminders browsing */
 "apple.notes.searchTitle" = "Search Apple Notes";
@@ -7642,3 +7642,9 @@
 "apple.search.recheckAccess" = "다시 확인";
 "apple.search.permissionInputTitle" = "미리 알림";
 "apple.search.permissionPlaceholder" = "미리 알림 검색";
+"apple.tooLong" = "내용이 너무 깁니다. 줄여서 다시 시도하세요.";
+"apple.reminders.understandFailed" = "미리 알림을 이해하지 못했습니다. 다시 시도하세요.";
+"apple.reminders.confirm" = "생성 확인";
+"apple.reminders.suggestedTime" = "제안 시간: %@";
+"apple.reminders.editInput" = "위 설명을 보충하세요.";
+"apple.reminders.timeZoneChanged" = "시간대가 변경되었습니다. 다시 시도하세요.";

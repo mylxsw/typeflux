@@ -252,7 +252,7 @@ extension AskConversationModel {
             AskNotesPlugin(store: notes),
             AskNoteCapturePlugin(),
             AskAppleProductivityPlugin(kind: .notes),
-            AskAppleProductivityPlugin(kind: .reminders),
+            AskAppleProductivityPlugin(kind: .reminders, generator: promptAI),
             AskAppleProductivitySearchPlugin(kind: .notes),
             AskAppleProductivitySearchPlugin(kind: .reminders),
             AskScreenshotPlugin(),

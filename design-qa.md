@@ -101,3 +101,7 @@ Implementation checklist: selected visual mapped; native layout and localized co
 Installed follow-up: `f7338f73` is on main and pushed. A parallel Debug development installation already contained the approved UI; its executable UUID, newer build timestamp, six matching UI source files and short localized resources were reconciled before reuse. Deep/strict signing and preserved configuration/provisioning checks pass, and the installed main host is running. A stable copy of the parallel work was tested in isolation with both permission methods and all twenty renders passing; that copy was removed afterward. Total design-task test-command wall time: 874.89 seconds. Complete live menu-bar automation remains outside this native-fixture visual acceptance.
 
 final result: passed
+
+## Natural-language reminders — 2026-10-31
+
+The strict format banner is replaced by AI interpretation on Return. Vague time wording produces a compact task/time proposal with an explicit creation action. The time is marked as suggested, uses primary contrast, and the extra explanatory footer is removed. The native Chinese fixture checks the actual launcher factory and Return route; creation is recorded in memory. Existing rows keep their default appearance. Evidence and validation: `docs/evidence/apple-productivity-search/natural-language-reminders.md`.

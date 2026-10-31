@@ -119,14 +119,16 @@ struct AppleProductivityTests {
         let plan = await notes.plan(input)
         let output = try await notes.run(input, plan: plan, progress: { _ in })
         #expect(output.body == "Title" && output.actions.count == 1 && output.action(for: .commandR) == nil)
-        let reminders = AskAppleProductivityPlugin(kind: .reminders, service: service, now: { clock }, calendar: calendar)
+        let reminders = AskAppleProductivityPlugin(kind: .reminders, service: service,
+            generator: ReminderTestGenerator(response: #"{"status":"untimed","title":"Buy milk","due":null}"#),
+            now: { clock }, calendar: calendar)
         let reminderInput = request("30m Drink water")
         let reminderPlan = await reminders.plan(reminderInput)
         #expect(reminderPlan.meta.count == 1 && reminderPlan.meta[0].emphasized)
         _ = try await reminders.run(reminderInput, plan: reminderPlan, progress: { _ in })
         let untimedInput = request("Buy milk")
         let untimed = await reminders.plan(untimedInput)
-        #expect(untimed.values["due"] == nil && untimed.meta.count == 1)
+        #expect(untimed.values["due"] == nil && untimed.values["interpret"] == "true" && untimed.meta.isEmpty)
         _ = try await reminders.run(untimedInput, plan: untimed, progress: { _ in })
         let creations = await service.creations
         #expect(creations.count == 3)

@@ -7590,17 +7590,17 @@
 "apple.notes.title" = "Apple 备忘录";
 "apple.reminders.title" = "Apple 提醒事项";
 "apple.notes.placeholder" = "输入笔记，第一行为标题；回车保存到系统备忘录";
-"apple.reminders.placeholder" = "明天 09:00 交报告 · 30m 喝水 · 或只输入待办";
+"apple.reminders.placeholder" = "明天下午提醒我吃饭";
 "apple.open" = "打开%@";
 "apple.create" = "创建到%@";
 "apple.noAlarm" = "未设置提醒时间";
 "apple.past" = "这个时间已经过去，请设置未来的日期和时间";
-"apple.invalid" = "请使用：明天 09:00 待办、YYYY-MM-DD HH:mm 待办，或 30m 待办。最多 5 万字";
+"apple.invalid" = "请确认提醒内容和时间";
 "apple.failed" = "未能确认创建结果，请先打开对应应用检查，避免重复创建。如果拒绝过授权，请在系统设置 → 隐私与安全性 → 自动化中允许 Typeflux";
 "apple.saved" = "已创建";
 "apple.permissions" = "自动化权限";
 "ask.settings.keywords.kind.appleNotes.hint" = "在系统备忘录中创建笔记；第一行为标题，其余为正文。留空可打开备忘录";
-"ask.settings.keywords.kind.appleReminders.hint" = "创建系统提醒事项：明天 09:00 待办、30m 待办，或 YYYY-MM-DD HH:mm 待办。留空可打开提醒事项";
+"ask.settings.keywords.kind.appleReminders.hint" = "用自然语言创建系统提醒事项，例如“明天下午提醒我吃饭”。留空打开提醒事项。";
 
 /* Apple Notes and Reminders browsing */
 "apple.notes.searchTitle" = "搜索系统备忘录";
@@ -7643,3 +7643,9 @@
 "apple.search.recheckAccess" = "重新检查";
 "apple.search.permissionInputTitle" = "提醒事项";
 "apple.search.permissionPlaceholder" = "搜索提醒事项";
+"apple.tooLong" = "内容太长，请精简后再试";
+"apple.reminders.understandFailed" = "没能识别这条提醒，请重试";
+"apple.reminders.confirm" = "确认创建";
+"apple.reminders.suggestedTime" = "建议时间：%@";
+"apple.reminders.editInput" = "请补充上方描述";
+"apple.reminders.timeZoneChanged" = "时区已改变，请重新识别";

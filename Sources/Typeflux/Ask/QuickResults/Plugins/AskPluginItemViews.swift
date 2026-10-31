@@ -42,7 +42,7 @@ struct AskPluginItemRow: View {
                     }
                     if !item.subtitle.isEmpty {
                         Text(item.subtitle).font(.system(size: AskTheme.launcherResultDetailSize)).lineLimit(1)
-                            .foregroundStyle(AskTheme.launcherResultDetail)
+                            .foregroundStyle(item.subtitleEmphasized ? StudioTheme.textPrimary : AskTheme.launcherResultDetail)
                     }
                     if Self.showsExcerpt(item), let excerpt = item.excerpt {
                         Text(excerpt).font(.system(size: 12)).lineLimit(1).truncationMode(.tail)

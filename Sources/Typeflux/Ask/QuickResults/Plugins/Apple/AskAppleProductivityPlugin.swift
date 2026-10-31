@@ -1,6 +1,6 @@
 import Foundation
 
-/// Only explicit Return writes to Apple's apps. Planning and typing remain local and read-free.
+/// Planning remains local. Submitted natural reminders use AI; only explicit actions write to Apple's apps.
 struct AskAppleProductivityPlugin: AskLauncherPlugin {
     enum Kind: String, Sendable { case notes, reminders }
     static let notesID = "appleNotes"
@@ -31,8 +31,9 @@ struct AskAppleProductivityPlugin: AskLauncherPlugin {
 
     let kind: Kind
     var service: any AppleProductivityCreating = AppleProductivityService()
+    var generator: (any AskTextGenerating)?
     var now: @Sendable () -> Date = { Date() }
-    var calendar: Calendar = .current
+    var calendar: Calendar = .autoupdatingCurrent
     var id: String { kind == .notes ? Self.notesID : Self.remindersID }
     var title: String { L("apple.\(kind.rawValue).title") }
     var symbol: String { kind == .notes ? "note.text" : "checklist" }
@@ -50,47 +51,47 @@ struct AskAppleProductivityPlugin: AskLauncherPlugin {
     func nextOptions(after _: AskPluginPlan, request _: AskPluginRequest, step _: Int) -> [String: String]? { nil }
 
     func plan(_ request: AskPluginRequest) async -> AskPluginPlan {
-        let text = request.text.replacingOccurrences(of: "\r\n", with: "\n")
-            .replacingOccurrences(of: "\r", with: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        let text = Self.normalized(request.text)
         guard !text.isEmpty else {
             return .init(mode: .onSubmit, title: L("apple.open", title), actions: [openAction])
         }
+        if kind == .reminders { return reminderPlan(text, request: request) }
         var plan = AskPluginPlan(mode: .onSubmit, title: L("apple.create", title))
-        do {
-            guard text.count <= 50000 else { throw AppleReminderDraft.Failure.invalid }
-            let draft = kind == .reminders ? try AppleReminderDraft.parse(text, now: now(), calendar: calendar)
-                : AppleReminderDraft(title: text.components(separatedBy: .newlines)[0], due: nil)
-            plan.values["title"] = draft.title
-            plan.values["body"] = kind == .notes ? text.components(separatedBy: "\n").dropFirst().joined(separator: "\n") : ""
-            plan.title += " · " + String(draft.title.prefix(100))
-            if let due = draft.due {
-                plan.values["due"] = String(due.timeIntervalSince1970)
-                plan.meta.append(.init(text: formatted(due, language: request.interfaceLanguage), emphasized: true))
-            } else if kind == .reminders {
-                plan.meta.append(.init(text: L("apple.noAlarm")))
-            }
-        } catch {
-            plan.values["error"] = L(error as? AppleReminderDraft.Failure == .past ? "apple.past" : "apple.invalid")
-            plan.title = plan.values["error"]!
+        guard text.count <= 50000 else {
+            plan.values["error"] = L("apple.tooLong")
+            return plan
         }
+        let lines = text.components(separatedBy: "\n")
+        plan.values["title"] = lines[0]
+        plan.values["body"] = lines.dropFirst().joined(separator: "\n")
+        plan.title += " · " + String(lines[0].prefix(100))
         return plan
     }
 
     func run(_ request: AskPluginRequest, plan: AskPluginPlan,
              progress _: @escaping AskPluginProgress) async throws -> AskPluginOutput {
         if let error = plan.values["error"] { throw AskPluginFailure(message: error, retry: false) }
+        if kind == .reminders { return try await runReminder(request, plan: plan) }
         guard let itemTitle = plan.values["title"], !itemTitle.isEmpty else { throw CancellationError() }
         let due = plan.values["due"].flatMap(Double.init).map(Date.init(timeIntervalSince1970:))
+        return try await createOutput(request, draft: .init(title: itemTitle, due: due),
+                                      body: plan.values["body"] ?? "", meta: plan.meta)
+    }
+
+    func createOutput(_ request: AskPluginRequest, draft: AppleReminderDraft, body: String,
+                      meta: [AskPluginMeta]) async throws -> AskPluginOutput {
+        try Task.checkCancellation()
+        let itemTitle = draft.title, due = draft.due
         if let due, due <= now() { throw AskPluginFailure(message: L("apple.past"), retry: false) }
         do {
-            _ = try await service.create(kind: kind, title: itemTitle, body: plan.values["body"] ?? "", due: due)
+            _ = try await service.create(kind: kind, title: itemTitle, body: body, due: due)
         } catch is CancellationError {
             throw CancellationError()
         } catch {
             // A lost receipt can follow a successful write. Do not offer automatic retries.
             throw AskPluginFailure(message: L("apple.failed"), retry: false, actions: [openAction, settingsAction])
         }
-        return .init(body: itemTitle, original: request.text, meta: plan.meta,
+        return .init(body: itemTitle, original: request.text, meta: meta,
                      source: title, note: L("apple.saved"), actions: [openAction])
     }
 
@@ -103,7 +104,12 @@ struct AskAppleProductivityPlugin: AskLauncherPlugin {
               title: L("apple.permissions"), symbol: "lock.shield", shortcut: .commandO)
     }
 
-    private func formatted(_ date: Date, language: AppLanguage) -> String {
+    static func normalized(_ text: String) -> String {
+        text.replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\r", with: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    func formatted(_ date: Date, language: AppLanguage) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: language.localeIdentifier)
         formatter.calendar = calendar

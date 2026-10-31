@@ -225,6 +225,8 @@ struct AskPluginItem: Equatable, Sendable, Identifiable {
     var id: String
     var title: String
     var subtitle = ""
+    /// Critical values such as a reminder time need the same contrast as the title.
+    var subtitleEmphasized = false
     var icon: Icon?
     /// False: shown, never acted on.
     var valid = true
