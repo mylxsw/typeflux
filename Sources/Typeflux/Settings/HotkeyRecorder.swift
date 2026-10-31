@@ -22,6 +22,7 @@ final class HotkeyRecorder: ObservableObject {
     private var localMonitor: Any?
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
+    private var onCancel: (() -> Void)?
     private var onRecorded: ((HotkeyBinding) -> Void)?
     private var pendingModifierOnlyBinding: HotkeyBinding?
     private var pendingModifierOnlyWorkItem: DispatchWorkItem?
@@ -32,12 +33,14 @@ final class HotkeyRecorder: ObservableObject {
         let timestamp: TimeInterval
     }
 
-    func start(supportsAuxiliaryBindings: Bool = false, onRecorded: @escaping (HotkeyBinding) -> Void) {
+    func start(supportsAuxiliaryBindings: Bool = false, onCancel: (() -> Void)? = nil,
+               onRecorded: @escaping (HotkeyBinding) -> Void) {
         stop()
         self.supportsAuxiliaryBindings = supportsAuxiliaryBindings
         auxiliaryCapture = AuxiliaryHotkeyCapture()
         isRecording = true
         self.onRecorded = onRecorded
+        self.onCancel = onCancel
 
         if installEventTapIfPossible() {
             return
@@ -71,6 +74,7 @@ final class HotkeyRecorder: ObservableObject {
         eventTap = nil
         runLoopSource = nil
         onRecorded = nil
+        onCancel = nil
         pendingModifierOnlyWorkItem?.cancel()
         pendingModifierOnlyWorkItem = nil
         pendingModifierOnlyBinding = nil
@@ -125,12 +129,17 @@ final class HotkeyRecorder: ObservableObject {
         return shouldConsume ? nil : Unmanaged.passUnretained(event)
     }
 
-    private func processRecordedEvent(
+    func processRecordedEvent(
         eventType: NSEvent.EventType,
         keyCode: Int,
         modifierFlags: UInt,
         isRepeat: Bool
     ) -> Bool {
+        if eventType == .keyDown, keyCode == 53, let onCancel {
+            stop()
+            onCancel()
+            return true
+        }
         if supportsAuxiliaryBindings {
             guard let binding = auxiliaryCapture.handle(
                 type: eventType, keyCode: keyCode, flags: modifierFlags,
