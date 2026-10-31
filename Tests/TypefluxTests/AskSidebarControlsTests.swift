@@ -7,6 +7,73 @@ import WebKit
 @Suite("Ask sidebar and folder controls", .serialized, .exclusiveUIState)
 @MainActor
 struct AskSidebarControlsTests {
+    @Test(arguments: [InterfaceStyle.liquidGlass, .frosted, .classic], [false, true])
+    func headerEmptySpaceCatchesDragsAboveTheTranscript(style: InterfaceStyle, collapsed: Bool) async throws {
+        let suite = "header-drag-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(collapsed, forKey: "ask.sidebarCollapsed")
+        let fixture = try AskTestFixture(defaults: defaults)
+        defer { fixture.model.resetSession() }
+        let now = Date()
+        await fixture.api.seed(.init(id: "header-drag", title: "Header dragging", revision: 1, updatedAt: now, messages: [
+            .init(id: "answer", role: "assistant",
+                  text: String(repeating: "Selectable transcript text under the floating header.\n\n", count: 50),
+                  createdAt: now),
+        ]))
+        await fixture.model.refreshHistory()
+        for width in [CGFloat(1100), 440] {
+            let window = host(AskConversationView(model: fixture.model).defaultAppStorage(defaults)
+                .environment(\.interfaceStyle, style), dark: collapsed, size: CGSize(width: width, height: 720))
+            defer { window.close() }
+            for populated in [false, true] {
+                if populated { await fixture.model.select("header-drag") }
+                else { fixture.model.newConversation() }
+                try await settle(window)
+                let content = try #require(window.contentView)
+                let drag = try #require(descendants(content).compactMap { $0 as? AskConversationTitleBarDragView }.first)
+                let frame = drag.convert(drag.bounds, to: nil)
+                #expect(abs(frame.height - AskMetrics.titleBarRowHeight) < 0.5)
+                #expect(abs(frame.maxY - content.bounds.height) < 0.5)
+                #expect(drag.acceptsFirstMouse(for: nil))
+                func hit(_ point: NSPoint) -> NSView? {
+                    content.hitTest(content.superview?.convert(point, from: nil) ?? point)
+                }
+                // This gap used to select the visually hidden transcript. Check
+                // the whole title row, including the space below the native title bar.
+                let x = frame.minX + frame.width * 0.72
+                for distance in [CGFloat(3), 26, 49] {
+                    let grabsWindow = hit(NSPoint(x: x, y: frame.maxY - distance)) === drag
+                    #expect(grabsWindow,
+                            "\(style), collapsed: \(collapsed), populated: \(populated), width: \(width), y: \(distance)")
+                }
+                #expect(!(hit(NSPoint(x: x, y: frame.minY - 8)) is AskConversationTitleBarDragView),
+                        "The gradient tail must leave the transcript interactive")
+                let newButton = try AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.new", in: window)
+                #expect(!(hit(newButton) is AskConversationTitleBarDragView))
+                if populated {
+                    let usage = try AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.usage", in: window)
+                    #expect(!(hit(usage) is AskConversationTitleBarDragView), "Header tools stay above the drag region")
+                }
+                try snapshot(window, name: "header-drag-\(style.rawValue)-\(collapsed)-\(populated)-\(Int(width))")
+            }
+        }
+    }
+
+    @Test func headerDragUsesTheNativeWindowDragOperation() throws {
+        let window = HeaderDragTestWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 200),
+                                          styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        defer { window.close() }
+        let drag = AskConversationTitleBarDragView(frame: NSRect(x: 0, y: 148, width: 400, height: 52))
+        window.contentView?.addSubview(drag)
+        let event = try #require(NSEvent.mouseEvent(with: .leftMouseDown, location: NSPoint(x: 200, y: 174),
+                                                   modifierFlags: [], timestamp: 0, windowNumber: window.windowNumber,
+                                                   context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
+        drag.mouseDown(with: event)
+        #expect(window.dragEvent === event)
+    }
+
     @Test(arguments: [InterfaceStyle.liquidGlass, .frosted], [false, true])
     func `full window material has no rectangular glass edge`(style: InterfaceStyle, dark: Bool) async throws {
         let window = host(HStack(spacing: 0) {
@@ -463,6 +530,11 @@ struct AskSidebarControlsTests {
         try #require(bitmap.representation(using: .png, properties: [:]))
             .write(to: root.appendingPathComponent(name + ".png"))
     }
+}
+
+private final class HeaderDragTestWindow: NSWindow {
+    var dragEvent: NSEvent?
+    override func performDrag(with event: NSEvent) { dragEvent = event }
 }
 
 private final class SidebarHoverEvent: NSEvent {

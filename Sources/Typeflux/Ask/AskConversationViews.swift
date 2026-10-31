@@ -934,6 +934,7 @@ struct AskConversationView: View {
                 // sends it back down to the conversation's place.
                 .offset(y: -(newPagePlacement?.composerLift ?? 0))
                 .animation(AskMotion.revealAnimation(reduceMotion: reduceMotion), value: newPagePlacement == nil)
+            AskConversationTitleBar()
             header
         }
         .background(GeometryReader { geometry in
