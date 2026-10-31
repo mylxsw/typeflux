@@ -1,8 +1,8 @@
 import Foundation
 
 /// Finds saved notes from the launcher: `nb` alone lists the latest, `nb text` searches
-/// titles, text and inputs on this Mac. Return opens a note in a result window. Not `note`:
-/// typing "note" must still open the Notes app.
+/// titles, text and inputs on this Mac. Return opens a note in a result window.
+/// Apple's Notes uses separate `note` (create) and `notes` (search) keywords.
 struct AskNotesPlugin: AskLauncherPlugin {
     static let id = "notes"
     static let windowOption = "openWindow"

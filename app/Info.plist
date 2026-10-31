@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>NSRemindersFullAccessUsageDescription</key>
+    <string>Typeflux reads reminders locally when you search or preview them in the launcher.</string>
+    <key>NSRemindersUsageDescription</key>
+    <string>Typeflux reads reminders locally when you search or preview them in the launcher.</string>
     <key>NSCalendarsFullAccessUsageDescription</key>
     <string>Typeflux reads your calendar events locally to show your schedule and meeting links. Events are not uploaded.</string>
     <key>NSCalendarsUsageDescription</key>
@@ -49,7 +53,7 @@
     <key>NSMicrophoneUsageDescription</key>
     <string>Typeflux needs microphone access to record your speech.</string>
     <key>NSAppleEventsUsageDescription</key>
-    <string>Typeflux uses automation to create notes and reminders you submit in Apple Notes and Reminders, run commands you submit in Terminal or iTerm2, search and switch browser tabs, insert text, and perform browser actions you approve in Ask conversations.</string>
+    <string>Typeflux uses automation to search, read, open, and create notes and reminders in Apple Notes and Reminders when you request them, run commands you submit in Terminal or iTerm2, search and switch browser tabs, insert text, and perform browser actions you approve in Ask conversations.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
     <string>Typeflux uses speech recognition to transcribe audio when Apple Speech fallback is enabled.</string>
 

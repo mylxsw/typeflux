@@ -99,6 +99,7 @@ extension AskConversationModel {
         let listsAtOnce = [
             AskAppSearchPlugin.id, AskKillAppPlugin.id, AskPrefixPlugin.id, AskHistoryPlugin.id, AskClipboardPlugin.id, AskNotesPlugin.id,
             AskBrowserSearchPlugin.tabsID, AskBrowserSearchPlugin.bookmarksID, AskEmojiPlugin.id,
+            AskAppleProductivitySearchPlugin.notesID, AskAppleProductivitySearchPlugin.remindersID,
             AskCalendarPlugin.id, AskWorldClockPlugin.id, AskSystemMonitorPlugin.id, AskSystemInfoPlugin.id
         ]
         plugins.enter(keyword, waitingForInput: !listsAtOnce.contains(keyword.pluginID))

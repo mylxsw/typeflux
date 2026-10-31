@@ -174,6 +174,10 @@ final class AskPluginSession: ObservableObject {
                 overrides.removeValue(forKey: key)
             }
         }
+        if plugin is AskAppleProductivitySearchPlugin, let previousRequest = request, previousRequest.text != trimmed {
+            overrides.removeValue(forKey: AskAppleProductivitySearchPlugin.readOption)
+            overrides.removeValue(forKey: AskAppleProductivitySearchPlugin.openOption)
+        }
         guard !waitingForInput || !trimmed.isEmpty || runWhenPlanned else { return }
         waitingForInput = false
         let selected = plugin.usesSelectionInput && selection?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false

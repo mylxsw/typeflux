@@ -380,8 +380,10 @@ struct AskComposer: View {
         } else {
             selection = plugins.output?.selected?.id ?? "home:\(suggestionIndex):\(canvasHighlight ?? -1)"
         }
+        // Returning from a preview is a new action even when the same row is selected.
+        let revision = plugins.plugin is AskAppleProductivitySearchPlugin ? ":\(plugins.resultGeneration)" : ""
         let target = AskLauncherActivationGate.Target(mode: action.mode, text: draft.wrappedValue.text,
-                                                     selection: selection, confirming: quickActions?.confirming == true)
+                                                     selection: selection + revision, confirming: quickActions?.confirming == true)
         guard primaryActivationGate.accept(target, now: ProcessInfo.processInfo.systemUptime) else { return }
         if routeCommandKey(.enter) { return }
         if showsLauncherSuggestions, let item = highlightedHomeItem { pick(item); return }
@@ -1183,6 +1185,8 @@ struct AskComposer: View {
 
     var launcherCanOpenFeatureWindow: Bool {
         guard plugins.isActive, !active, !voice.isActive, model.workflowApproval == nil else { return false }
+        // Notes and Reminders use their own open-original action.
+        if plugins.plugin is AskAppleProductivitySearchPlugin { return false }
         if plugins.keyword?.pluginID == AskQuickAskPlugin.id { return model.quickAsk?.persisted == true }
         if pluginDisplay?.calendar == true || pluginDisplay?.systemMonitor == true { return true }
         // `sys` carries only its filter as output: there is no result to move into a window.
@@ -1210,6 +1214,13 @@ struct AskComposer: View {
 
     /// ⌘O follows the independent window control; unsupported features never fall through to Chat.
     private func openChatOrMonitorWindow() {
+        if plugins.plugin is AskAppleProductivitySearchPlugin {
+            guard !active, !voice.isActive, model.workflowApproval == nil,
+                  launcherPluginInputIsCurrent, !launcherEditorIsComposing,
+                  let action = plugins.output?.action(for: .commandO) ?? plugins.failure?.action(for: .commandO) else { return }
+            performPluginAction(action)
+            return
+        }
         if plugins.isActive { openLauncherFeatureWindow(); return }
         openChat()
     }
@@ -2104,6 +2115,11 @@ struct AskComposer: View {
     }
 
     private func escapeFeatureKey() -> Bool {
+        if plugins.plugin is AskAppleProductivitySearchPlugin,
+           AskAppleProductivitySearchPlugin.isPreview(plugins.request?.options ?? [:]) {
+            performPluginAction(AskAppleProductivitySearchPlugin.backAction())
+            return true
+        }
         if pluginDisplay?.worldClock == true {
             if worldClockKey(.escape) {
                 return true

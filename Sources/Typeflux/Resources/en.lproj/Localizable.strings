@@ -7601,3 +7601,37 @@
 "apple.permissions" = "Automation permissions";
 "ask.settings.keywords.kind.appleNotes.hint" = "Create notes in Apple Notes. First line is the title; following lines are the body. An empty input opens Notes.";
 "ask.settings.keywords.kind.appleReminders.hint" = "Create in Apple Reminders: tomorrow 09:00 Task, 30m Task, or YYYY-MM-DD HH:mm Task. An empty input opens Reminders.";
+
+/* Apple Notes and Reminders browsing */
+"apple.notes.searchTitle" = "Search Apple Notes";
+"apple.reminders.searchTitle" = "Search Apple Reminders";
+"apple.notes.searchPlaceholder" = "Search titles and text; Return previews, Esc returns";
+"apple.reminders.searchPlaceholder" = "Search reminders; Tab switches pending / all";
+"apple.notes.searchHint" = "Browse recent notes or search titles and text. Return previews in the launcher; Command-O opens the original.";
+"apple.reminders.searchHint" = "Search titles and notes. Tab switches pending / all; Return previews; Command-O opens the original.";
+"apple.search.scope" = "Scope";
+"apple.search.preview" = "Preview";
+"apple.search.openOriginal" = "Open in system app";
+"apple.search.back" = "Back to results";
+"apple.search.refresh" = "Refresh results";
+"apple.search.empty" = "No items in this scope";
+"apple.search.noMatch" = "No matches";
+"apple.search.pending" = "Pending";
+"apple.search.all" = "All reminders";
+"apple.search.completed" = "Completed";
+"apple.search.overdue" = "Overdue";
+"apple.search.due" = "Due: %@";
+"apple.search.alarm" = "Alarm: %@";
+"apple.search.lockedLabel" = "Locked";
+"apple.search.locked" = "This note is locked. Open it in Apple Notes to unlock and read it.";
+"apple.search.truncated" = "Showing the first 50,000 characters. Open the original to read the rest.";
+"apple.search.more" = "Showing %ld of %ld matches; narrow the search to see more.";
+"apple.search.missing" = "This item was removed or is unavailable. Go back and refresh the results.";
+"apple.search.changed" = "The list changed while reading. Refresh the results.";
+"apple.search.tooLong" = "Search queries can contain up to 500 characters.";
+"apple.search.failed" = "Could not read the app. Check its account and allow Typeflux in System Settings → Privacy & Security → Automation.";
+"apple.search.accessRequired" = "Allow Typeflux to read reminders. Choose Authorize to show the macOS permission prompt.";
+"apple.search.authorize" = "Authorize reminder access";
+"apple.search.accessDenied" = "Reminder access is disabled. Enable Typeflux in System Settings → Privacy & Security → Reminders.";
+"apple.search.reminderPermissions" = "Reminder permissions";
+"apple.reminders.searchFailed" = "Could not read reminders. Try again or check reminder permissions in System Settings.";

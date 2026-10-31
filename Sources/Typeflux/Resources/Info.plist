@@ -2,12 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>NSRemindersFullAccessUsageDescription</key>
+    <string>Typeflux reads reminders locally when you search or preview them in the launcher.</string>
+    <key>NSRemindersUsageDescription</key>
+    <string>Typeflux reads reminders locally when you search or preview them in the launcher.</string>
     <key>NSCalendarsFullAccessUsageDescription</key>
     <string>Typeflux reads your calendar events locally to show your schedule and meeting links. Events are not uploaded.</string>
     <key>NSCalendarsUsageDescription</key>
     <string>Typeflux reads your calendar events locally to show your schedule and meeting links. Events are not uploaded.</string>
     <key>NSAppleEventsUsageDescription</key>
-    <string>Typeflux uses automation to create notes and reminders you submit in Apple Notes and Reminders, run commands you submit in Terminal or iTerm2, search and switch browser tabs, insert text, and perform browser actions you approve in Ask conversations.</string>
+    <string>Typeflux uses automation to search, read, open, and create notes and reminders in Apple Notes and Reminders when you request them, run commands you submit in Terminal or iTerm2, search and switch browser tabs, insert text, and perform browser actions you approve in Ask conversations.</string>
     <key>NSScreenCaptureUsageDescription</key>
     <string>Typeflux captures your screen only when you ask it to attach a screenshot to a question.</string>
     <key>NSCameraUsageDescription</key>

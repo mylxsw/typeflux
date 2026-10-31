@@ -36,8 +36,8 @@ enum AskLauncherFeatureIcons {
             }
         case AskScreenshotTextPlugin.id: return "ocr"
         case AskNotesPlugin.id, AskNoteCapturePlugin.id: return "notes"
-        case AskAppleProductivityPlugin.notesID: return "apple-notes"
-        case AskAppleProductivityPlugin.remindersID: return "apple-reminders"
+        case AskAppleProductivityPlugin.notesID, AskAppleProductivitySearchPlugin.notesID: return "apple-notes"
+        case AskAppleProductivityPlugin.remindersID, AskAppleProductivitySearchPlugin.remindersID: return "apple-reminders"
         case AskClipboardPlugin.id: return "clipboard"
         case AskSettingsPlugin.id: return "settings"
         case AskPromptPlugin.id:

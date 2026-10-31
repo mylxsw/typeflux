@@ -2,7 +2,7 @@ import Foundation
 
 /// What a launcher keyword reaches: one of the built-in plugins or a workflow.
 enum AskKeywordKind: String, CaseIterable, Sendable {
-    case translate, prompt, web, apps, files, semanticFiles, tabs, bookmarks, chat, quickAsk, noteCapture, appleNotes, appleReminders, prefix,
+    case translate, prompt, web, apps, files, semanticFiles, tabs, bookmarks, chat, quickAsk, noteCapture, appleNotes, appleNotesSearch, appleReminders, appleRemindersSearch, prefix,
          setting, history,
          clip, emoji, calendar, worldClock, terminal, kill, system, workflow
 
@@ -23,7 +23,9 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case AskQuickAskPlugin.id: self = .quickAsk
         case AskNoteCapturePlugin.id: self = .noteCapture
         case AskAppleProductivityPlugin.notesID: self = .appleNotes
+        case AskAppleProductivitySearchPlugin.notesID: self = .appleNotesSearch
         case AskAppleProductivityPlugin.remindersID: self = .appleReminders
+        case AskAppleProductivitySearchPlugin.remindersID: self = .appleRemindersSearch
         case AskPrefixPlugin.id: self = .prefix
         case AskSettingsPlugin.id: self = .setting
         case AskHistoryPlugin.id: self = .history
@@ -57,7 +59,9 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .quickAsk: AskQuickAskPlugin.id
         case .noteCapture: AskNoteCapturePlugin.id
         case .appleNotes: AskAppleProductivityPlugin.notesID
+        case .appleNotesSearch: AskAppleProductivitySearchPlugin.notesID
         case .appleReminders: AskAppleProductivityPlugin.remindersID
+        case .appleRemindersSearch: AskAppleProductivitySearchPlugin.remindersID
         case .prefix: AskPrefixPlugin.id
         case .setting: AskSettingsPlugin.id
         case .history: AskHistoryPlugin.id
@@ -85,7 +89,9 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .quickAsk: L("ask.quickAsk.title")
         case .noteCapture: L("ask.noteCapture.title")
         case .appleNotes: L("apple.notes.title")
+        case .appleNotesSearch: L("apple.notes.searchTitle")
         case .appleReminders: L("apple.reminders.title")
+        case .appleRemindersSearch: L("apple.reminders.searchTitle")
         case .prefix: L("ask.plugin.prefix.title")
         case .setting: L("ask.plugin.setting.title")
         case .history: L("ask.plugin.history.title")
@@ -102,7 +108,11 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
 
     /// One line under the group heading and in the "Add keyword" menu.
     var hint: String {
-        L("ask.settings.keywords.kind.\(rawValue).hint")
+        switch self {
+        case .appleNotesSearch: L("apple.notes.searchHint")
+        case .appleRemindersSearch: L("apple.reminders.searchHint")
+        default: L("ask.settings.keywords.kind.\(rawValue).hint")
+        }
     }
 
     var symbol: String {
@@ -118,8 +128,8 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .chat: "macwindow"
         case .quickAsk: "bubble.left.and.text.bubble.right"
         case .noteCapture: "square.and.pencil"
-        case .appleNotes: "note.text"
-        case .appleReminders: "checklist"
+        case .appleNotes, .appleNotesSearch: "note.text"
+        case .appleReminders, .appleRemindersSearch: "checklist"
         case .prefix: "list.bullet.rectangle"
         case .setting: "gearshape"
         case .history: "clock.arrow.circlepath"
@@ -201,7 +211,9 @@ enum AskKeywordListPresentation {
         case .quickAsk: L("ask.quickAsk.title")
         case .noteCapture: L("ask.noteCapture.title")
         case .appleNotes: L("apple.notes.title")
+        case .appleNotesSearch: L("apple.notes.searchTitle")
         case .appleReminders: L("apple.reminders.title")
+        case .appleRemindersSearch: L("apple.reminders.searchTitle")
         case .chat:
             L("ask.openChat")
         case .prefix:
@@ -269,7 +281,9 @@ enum AskKeywordListPresentation {
         case .quickAsk: return L("ask.settings.keywords.kind.quickAsk.hint")
         case .noteCapture: return L("ask.settings.keywords.kind.noteCapture.hint")
         case .appleNotes: return L("ask.settings.keywords.kind.appleNotes.hint")
+        case .appleNotesSearch: return L("apple.notes.searchHint")
         case .appleReminders: return L("ask.settings.keywords.kind.appleReminders.hint")
+        case .appleRemindersSearch: return L("apple.reminders.searchHint")
         case .chat:
             return L("ask.settings.keywords.kind.chat.hint")
         case .prefix:
@@ -347,7 +361,7 @@ enum AskKeywordSection: String, CaseIterable {
         case .prompt: [.prompt]
         case .search: [.web, .apps, .files, .semanticFiles, .tabs, .bookmarks, .emoji]
         case .typeflux: [.chat, .quickAsk, .noteCapture, .prefix, .setting, .history, .clip, .calendar, .worldClock]
-        case .system: [.appleNotes, .appleReminders, .terminal, .kill, .system]
+        case .system: [.appleNotes, .appleNotesSearch, .appleReminders, .appleRemindersSearch, .terminal, .kill, .system]
         }
     }
 

@@ -7603,3 +7603,37 @@
 "apple.permissions" = "自動化權限";
 "ask.settings.keywords.kind.appleNotes.hint" = "在系統備忘錄中建立筆記；第一行為標題，其餘為內文。留空可打開備忘錄";
 "ask.settings.keywords.kind.appleReminders.hint" = "建立系統提醒事項：明天 09:00 待辦、30m 待辦，或 YYYY-MM-DD HH:mm 待辦。留空可打開提醒事項";
+
+/* Apple Notes and Reminders browsing */
+"apple.notes.searchTitle" = "搜尋系統備忘錄";
+"apple.reminders.searchTitle" = "搜尋系統提醒事項";
+"apple.notes.searchPlaceholder" = "搜尋標題與內文；Return 預覽，Esc 返回";
+"apple.reminders.searchPlaceholder" = "搜尋提醒事項；Tab 切換未完成／全部";
+"apple.notes.searchHint" = "瀏覽最近備忘錄，或搜尋標題與內文；Return 在啟動器內預覽，⌘O 打開原文";
+"apple.reminders.searchHint" = "搜尋標題與備註；Tab 切換未完成／全部，Return 預覽，⌘O 打開原項目";
+"apple.search.scope" = "範圍";
+"apple.search.preview" = "預覽";
+"apple.search.openOriginal" = "在系統 App 中打開";
+"apple.search.back" = "返回搜尋結果";
+"apple.search.refresh" = "重新整理結果";
+"apple.search.empty" = "暫無符合條件的內容";
+"apple.search.noMatch" = "找不到符合的內容";
+"apple.search.pending" = "未完成";
+"apple.search.all" = "全部提醒事項";
+"apple.search.completed" = "已完成";
+"apple.search.overdue" = "已逾期";
+"apple.search.due" = "到期：%@";
+"apple.search.alarm" = "提醒：%@";
+"apple.search.lockedLabel" = "已鎖定";
+"apple.search.locked" = "此備忘錄已加鎖，請在系統備忘錄中解鎖後查看";
+"apple.search.truncated" = "內文較長，僅顯示前 50,000 個字元；可在系統 App 中查看全文";
+"apple.search.more" = "顯示前 %ld 項（共 %ld 項），繼續輸入可縮小範圍";
+"apple.search.missing" = "此項目已刪除或暫時無法使用，請返回並重新整理結果";
+"apple.search.changed" = "讀取時清單發生變更，請重新整理結果";
+"apple.search.tooLong" = "搜尋詞最多 500 個字元";
+"apple.search.failed" = "無法讀取對應 App，請確認 App 中已有帳號，並在系統設定 → 隱私權與安全性 → 自動化中允許 Typeflux";
+"apple.search.accessRequired" = "需要允許 Typeflux 讀取提醒事項，點擊授權後會顯示系統確認視窗";
+"apple.search.authorize" = "授權讀取提醒事項";
+"apple.search.accessDenied" = "提醒事項讀取權限未開啟，請在系統設定 → 隱私權與安全性 → 提醒事項中允許 Typeflux";
+"apple.search.reminderPermissions" = "提醒事項讀取權限";
+"apple.reminders.searchFailed" = "暫時無法讀取提醒事項，請重試或檢查系統設定中的提醒事項讀取權限";

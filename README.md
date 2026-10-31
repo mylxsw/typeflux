@@ -69,6 +69,7 @@ One input box for everything:
 
 - Search files by name (with pinyin and path matching) and search inside PDFs, Markdown and text files (Apple silicon)
 - Open, switch and quit apps; jump to open browser tabs and bookmarks (Safari, Chrome, Arc, Edge, Dia)
+- Create Apple Notes and reminders with `note` / `remind`; search existing items with `notes` / `reminders`. Return previews, Esc returns to results, and ⌘O opens the original. Tab switches reminder scope.
 - Run commands in a floating terminal, or hand them to Terminal / iTerm
 - Instant results while you type: calculator, base conversion, translation, dates
 - System controls and info: sleep, dark mode, Bluetooth, live system monitor, hardware details

@@ -23,6 +23,8 @@ enum AskPluginRegistry {
         AskNoteCapturePlugin.id,
         AskAppleProductivityPlugin.notesID,
         AskAppleProductivityPlugin.remindersID,
+        AskAppleProductivitySearchPlugin.notesID,
+        AskAppleProductivitySearchPlugin.remindersID,
         AskScreenshotPlugin.id,
         AskScreenshotTextPlugin.id,
         AskBrowserSearchPlugin.tabsID,
@@ -44,7 +46,7 @@ enum AskPluginRegistry {
                     + AskOpenChatPlugin.keywords + AskQuickAskPlugin.keywords + AskPrefixPlugin
                     .keywords + AskSettingsPlugin.keywords + AskHelpPlugin.keywords + AskHistoryPlugin.keywords + AskClipboardPlugin
                     .keywords + AskNotesPlugin.keywords + AskNoteCapturePlugin.keywords + AskScreenshotPlugin.keywords
-                    + AskAppleProductivityPlugin.keywords
+                    + AskAppleProductivityPlugin.keywords + AskAppleProductivitySearchPlugin.keywords
                     + AskScreenshotTextPlugin.keywords
                     + AskBrowserSearchPlugin.keywords
                     + AskKillAppPlugin.keywords
@@ -251,6 +253,8 @@ extension AskConversationModel {
             AskNoteCapturePlugin(),
             AskAppleProductivityPlugin(kind: .notes),
             AskAppleProductivityPlugin(kind: .reminders),
+            AskAppleProductivitySearchPlugin(kind: .notes),
+            AskAppleProductivitySearchPlugin(kind: .reminders),
             AskScreenshotPlugin(),
             AskScreenshotTextPlugin(screenshot: { [weak self] in self?.launcherScreenshot?.source },
                                     generator: promptAI,

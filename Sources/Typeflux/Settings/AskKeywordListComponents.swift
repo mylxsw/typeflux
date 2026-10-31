@@ -14,8 +14,8 @@ extension AskKeywordKind {
         case .prefix: Color.indigo
         case .setting: Color.gray
         case .history: Color.blue
-        case .noteCapture, .appleNotes: Color.orange
-        case .appleReminders: Color.blue
+        case .noteCapture, .appleNotes, .appleNotesSearch: Color.orange
+        case .appleReminders, .appleRemindersSearch: Color.blue
         case .clip: Color.teal
         case .emoji: Color.orange
         case .calendar: Color.red

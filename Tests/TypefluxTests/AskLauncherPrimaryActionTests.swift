@@ -327,8 +327,10 @@ extension AskLauncherPrimaryActionTests {
             model.onShowConversation = { opens += 1 }
             let action = AskComposer(model: model, launcher: true).launcherPrimaryAction
             #expect(action.mode.symbol == (simple ? "bubble.left" : "return"))
+            #expect(action.title == (simple ? L("ask.openChat") : "Chat"))
             try await pressButton(in: launcher)
-            #expect(opens == (simple ? 1 : 0))
+            // The complete home starts on its Chat tile; the simple launcher opens Chat directly.
+            #expect(opens == 1)
             #expect(await launcher.fixture.api.sends.isEmpty)
         }
     }
