@@ -12,7 +12,8 @@ struct OnboardingView: View {
             VStack(spacing: 0) {
                 page.padding(.top, 52).padding(.bottom, 12)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                OnboardingFooterBar(back: back, tertiary: tertiary, primary: primary) {
+                OnboardingFooterBar(back: back, tertiary: tertiary, primary: primary,
+                                    hint: shortcutsHint) {
                     if viewModel.currentStep == .welcome {
                         Menu {
                             ForEach(AppLanguage.allCases) { language in
@@ -67,6 +68,11 @@ struct OnboardingView: View {
         }
     }
 
+    private var shortcutsHint: String? {
+        guard viewModel.currentStep == .shortcuts, viewModel.shortcutsModel.conflictCount > 0 else { return nil }
+        return OnboardingShortcutsModel.text("conflictCount", arguments: [viewModel.shortcutsModel.conflictCount])
+    }
+
     private var back: OnboardingFooterAction? {
         viewModel.canGoBack ? .init(title: OnboardingStrings.text("back"), perform: viewModel.goBack) : nil
     }
@@ -90,6 +96,8 @@ struct OnboardingView: View {
             .init(title: OnboardingStrings.text("later")) { viewModel.requestSetupSkip() }
         case .llm:
             .init(title: OnboardingStrings.text("skip")) { viewModel.requestSetupSkip() }
+        case .shortcuts:
+            .init(title: OnboardingShortcutsModel.text("useDefaults"), perform: viewModel.shortcutsModel.useDefaults)
         case .permissions:
             .init(title: OnboardingStrings.text("later"), perform: viewModel.skipPermissions)
         default: nil
