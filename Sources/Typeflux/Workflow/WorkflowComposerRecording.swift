@@ -90,6 +90,7 @@ final class WorkflowComposerRecording: AskVoiceRecording {
         guard isAppBundle() else {
             throw MessageError(message: L("workflow.devApp.requiredMessage"))
         }
+        if workflow.showMissingSpeechSetupIfNeeded(requiresAccessibility: false) { throw CancellationError() }
         if workflow.showSelectedLocalModelDownloadAlertIfNeeded() { throw CancellationError() }
         if !prepared { handleHotkey(.prepare(auxiliary: false, locked: true)) }
         workflow.cancelCurrentProcessing(resetUI: false, reason: L("workflow.cancel.newRecording"))

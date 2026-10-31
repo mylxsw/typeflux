@@ -1,0 +1,137 @@
+{
+  "date": "2026-10-31",
+  "unique_test_methods_passed": 346,
+  "validation_phases": [
+    {
+      "scope": "workflow_and_cloud_login",
+      "methods": 199,
+      "passed": 199,
+      "command_wall_seconds": 125.73
+    },
+    {
+      "scope": "baseline_regression",
+      "methods": 177,
+      "passed": 177,
+      "command_wall_seconds": 53.08
+    },
+    {
+      "scope": "mixed_cloud_route",
+      "methods": 26,
+      "passed": 26,
+      "command_wall_seconds": 124.2
+    },
+    {
+      "scope": "onboarding_ui",
+      "methods": 10,
+      "passed": 10,
+      "command_wall_seconds": 268.64
+    }
+  ],
+  "successful_command_wall_seconds": 571.65,
+  "coverage": {
+    "changed_executable_lines": 838,
+    "changed_lines_covered": 657,
+    "changed_line_percent": 78.4,
+    "project_line_percent_in_focused_scope": 10.83,
+    "changed_files": {
+      "Sources/Typeflux/App/AppCoordinator.swift": {
+        "covered": 0,
+        "executable": 15
+      },
+      "Sources/Typeflux/App/StatusBarController.swift": {
+        "covered": 0,
+        "executable": 3
+      },
+      "Sources/Typeflux/Ask/AskModelLibrary.swift": {
+        "covered": 18,
+        "executable": 18
+      },
+      "Sources/Typeflux/Ask/AskModelViews.swift": {
+        "covered": 6,
+        "executable": 6
+      },
+      "Sources/Typeflux/Auth/CloudLoginSyncCoordinator.swift": {
+        "covered": 12,
+        "executable": 12
+      },
+      "Sources/Typeflux/Auth/LoginView.swift": {
+        "covered": 0,
+        "executable": 6
+      },
+      "Sources/Typeflux/Onboarding/FeatureSetupStatus.swift": {
+        "covered": 13,
+        "executable": 14
+      },
+      "Sources/Typeflux/Onboarding/OnboardingConnectionProbe.swift": {
+        "covered": 0,
+        "executable": 17
+      },
+      "Sources/Typeflux/Onboarding/OnboardingSetupViews.swift": {
+        "covered": 173,
+        "executable": 229
+      },
+      "Sources/Typeflux/Onboarding/OnboardingView.swift": {
+        "covered": 115,
+        "executable": 130
+      },
+      "Sources/Typeflux/Onboarding/OnboardingViewModel+Setup.swift": {
+        "covered": 197,
+        "executable": 223
+      },
+      "Sources/Typeflux/Onboarding/OnboardingViewModel.swift": {
+        "covered": 71,
+        "executable": 74
+      },
+      "Sources/Typeflux/Onboarding/OnboardingWindowController.swift": {
+        "covered": 8,
+        "executable": 21
+      },
+      "Sources/Typeflux/Settings/SettingsView.swift": {
+        "covered": 8,
+        "executable": 10
+      },
+      "Sources/Typeflux/Settings/SettingsViewModel.swift": {
+        "covered": 0,
+        "executable": 2
+      },
+      "Sources/Typeflux/Workflow/WorkflowComposerRecording.swift": {
+        "covered": 1,
+        "executable": 1
+      },
+      "Sources/Typeflux/Workflow/WorkflowController+Setup.swift": {
+        "covered": 34,
+        "executable": 56
+      },
+      "Sources/Typeflux/Workflow/WorkflowController.swift": {
+        "covered": 1,
+        "executable": 1
+      }
+    }
+  },
+  "coverage_collection": "Actual execution profiles were retained between batches. Older speechVerified and permissionRow counters were excluded after those functions changed; their final focused runs supplied the current counters. Test-module records were excluded from older profiles. Final merge produced no warnings.",
+  "native_acceptance": {
+    "signed_debug_app_build": "passed",
+    "cloud_login_window_opened": "passed",
+    "custom_speech_editor_opened": "passed",
+    "custom_language_editor_and_add_provider_form_opened": "passed",
+    "skip_all_and_individual_skip_alerts": "passed",
+    "launcher_only_permissions_copy_and_feature_chips": "passed",
+    "finish_page_missing_capabilities_and_recovery_link": "passed",
+    "completion_without_model_setup_or_login": "passed",
+    "stable_window_size_across_pages": "passed",
+    "real_custom_speech_connection_test": "passed",
+    "real_custom_language_connection_test": "passed",
+    "manual_text_does_not_report_voice_practice_success": "passed",
+    "original_preferences_restored_and_verified": 21
+  },
+  "acceptance_limits": [
+    "No real account registration or login submission was performed. Login callbacks and entitlement routing were covered by focused tests.",
+    "The app-targeted automation key did not open the launcher after the onboarding window closed. Global shortcut activation and microphone-to-insertion acceptance are not claimed."
+  ],
+  "earlier_failures_resolved": [
+    "Local Xcode macro plugin and companion LLVM tool discovery required a temporary compiler launcher; application and dependency sources were not changed for this workaround.",
+    "A new keyboard test initially attempted to write a read-only property; it now uses the production shortcut replacement method.",
+    "Two UI assertions were corrected for accessibility labels and link roles; screenshots now wait for page transition drawing to finish.",
+    "Coverage recovery used actual execution profiles instead of discovery-only profiles, and retained earlier batches before SwiftPM cleaned them."
+  ]
+}

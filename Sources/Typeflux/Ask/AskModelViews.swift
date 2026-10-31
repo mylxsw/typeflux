@@ -23,6 +23,8 @@ struct AskModelMenu: View {
     /// Composer only: the reasoning level, shown after the model name and chosen on the
     /// chip's card. Settings choose a model alone.
     var effort: Binding<AskReasoningEffort>? = nil
+    var emptyTitle: String? = nil
+    var helpText: String? = nil
     @ObservedObject private var auth = AuthState.shared
     @State private var expanded = false
     @State private var hovering = false
@@ -41,6 +43,7 @@ struct AskModelMenu: View {
     }
 
     private var currentReason: String? {
+        if reference.isEmpty, emptyTitle != nil { return nil }
         guard let (provider, model) = library.registry.resolve(reference) else { return L("ask.models.unavailable") }
         return library.selectionReason(model, provider: provider, hasImage: hasImage, loggedIn: loggedIn, scenario: scenario)
     }
@@ -81,7 +84,7 @@ struct AskModelMenu: View {
         }
         .buttonStyle(.plain).disabled(disabled)
         .onHover { hovering = $0 }
-        .help(currentReason ?? L("ask.models.conversationOnly"))
+        .help(helpText ?? currentReason ?? L("ask.models.conversationOnly"))
         .askMenu(isPresented: $expanded, glass: compact) {
             if let effort, compact {
                 AskModelEffortCard(library: library, reference: $reference, effort: effort, hasImage: hasImage,
@@ -120,7 +123,8 @@ struct AskModelMenu: View {
             // A long model name must not squeeze the context chips out of the
             // footer, and a short one hugs its text instead of padding out to the cap.
             AskCappedWidth(maxWidth: condensed ? 84 : compact ? AskMetrics.modelMenuMaxWidth : .infinity) {
-                Text(library.name(for: reference, scenario: scenario)).lineLimit(1).truncationMode(.middle)
+                Text(reference.isEmpty ? (emptyTitle ?? library.name(for: reference, scenario: scenario))
+                     : library.name(for: reference, scenario: scenario)).lineLimit(1).truncationMode(.middle)
                     .foregroundStyle(currentReason == nil ? StudioTheme.textPrimary : StudioTheme.warning)
             }
             if let shownEffort, !condensed {

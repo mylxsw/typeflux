@@ -2779,6 +2779,48 @@ final class WorkflowControllerProcessingTests: XCTestCase {
     }
 
     @MainActor
+    func testDeferredMissingSpeechOffersSetupWithoutRecordingOrDownloading() async {
+        let audio = MockProcessingAudioRecorder()
+        let manager = MockWorkflowLocalModelManager()
+        let controller = makeWorkflowController(audioRecorder: audio, localModelManager: manager,
+            configureSettings: {
+                $0.sttProvider = .localModel
+                $0.onboardingSpeechDeferred = true
+            })
+        defer { controller.overlayController.dismissImmediately() }
+        XCTAssertTrue(controller.showMissingSpeechSetupIfNeeded())
+        await waitForMainActorWork()
+        XCTAssertEqual(audio.startCallCount, 0)
+        XCTAssertTrue(manager.preparedConfigurations.isEmpty)
+    }
+
+    @MainActor
+    func testMissingRemoteSpeechCredentialsOffersSetupBeforeRecording() async {
+        let audio = MockProcessingAudioRecorder()
+        let controller = makeWorkflowController(audioRecorder: audio, configureSettings: {
+            $0.sttProvider = .whisperAPI
+            $0.whisperAPIKey = ""
+        })
+        defer { controller.overlayController.dismissImmediately() }
+        XCTAssertTrue(controller.showMissingSpeechSetupIfNeeded())
+        await waitForMainActorWork()
+        XCTAssertEqual(audio.startCallCount, 0)
+    }
+
+    @MainActor
+    func testMissingSpeechSetupOffersModelConfigurationWithoutRequiringLogin() {
+        let controller = makeWorkflowController()
+        let wasLoggedIn = AuthState.shared.isLoggedIn
+        defer { AuthState.shared.isLoggedIn = wasLoggedIn }
+        AuthState.shared.isLoggedIn = false
+        XCTAssertEqual(controller.speechSetupActions().map(\.title), [
+            L("setup.speech.configure"), L("setup.cloud.signIn")
+        ])
+        AuthState.shared.isLoggedIn = true
+        XCTAssertEqual(controller.speechSetupActions().map(\.title), [L("setup.speech.configure")])
+    }
+
+    @MainActor
     func testPressShowsLocalModelDownloadAlertAndDoesNotRecord() async {
         LocalModelDownloadProgressCenter.shared.clear()
         defer { LocalModelDownloadProgressCenter.shared.clear() }
@@ -3103,7 +3145,16 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         let suiteName = "WorkflowControllerProcessingTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
-        return SettingsStore(defaults: defaults)
+        let settings = SettingsStore(defaults: defaults)
+        // Recording fixtures use injected transcribers, with valid service configuration.
+        settings.whisperAPIKey = "fixture-key"
+        settings.whisperBaseURL = "https://example.com/v1"
+        settings.whisperModel = "fixture-model"
+        settings.aliCloudAPIKey = "fixture-key"
+        settings.multimodalLLMBaseURL = "https://example.com/v1"
+        settings.multimodalLLMAPIKey = "fixture-key"
+        settings.multimodalLLMModel = "fixture-model"
+        return settings
     }
 
     private func configureReadyLLM(settingsStore: SettingsStore) {

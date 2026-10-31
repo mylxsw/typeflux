@@ -899,40 +899,22 @@ struct LoginView: View {
         case .enterEmail, .login:
             switch localization.language {
             case .simplifiedChinese:
-                "解锁云端语音识别与 AI 推理能力"
+                "连接账号可用的云端模型服务"
             case .traditionalChinese:
-                "解鎖雲端語音辨識與 AI 推理能力"
+                "連接帳號可用的雲端模型服務"
             case .japanese:
-                "クラウド音声認識と AI 推論機能を解放する"
+                "アカウントのクラウドモデルサービスに接続"
             case .korean:
-                "클라우드 음성 인식과 AI 추론 기능을 해방하세요"
+                "계정의 클라우드 모델 서비스에 연결하세요"
             case .english:
-                "Unlock cloud speech recognition and AI inference"
+                "Connect to the cloud model services available to your account"
             }
         case .register, .activate, .forgotPassword, .resetPassword:
             nil
         }
     }
 
-    private var plainHeaderSubtitleTag: String? {
-        switch step {
-        case .enterEmail, .login:
-            switch localization.language {
-            case .simplifiedChinese:
-                "限时免费"
-            case .traditionalChinese:
-                "限時免費"
-            case .japanese:
-                "期間限定無料"
-            case .korean:
-                "기간 한정 무료"
-            case .english:
-                "Free for now"
-            }
-        case .register, .activate, .forgotPassword, .resetPassword:
-            nil
-        }
-    }
+    private var plainHeaderSubtitleTag: String? { nil }
 
     private var resendActivationButtonTitle: String {
         if resendCooldownRemaining > 0 {

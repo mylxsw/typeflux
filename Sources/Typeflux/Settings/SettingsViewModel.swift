@@ -1287,6 +1287,7 @@ final class StudioViewModel: ObservableObject {
     func setSTTProvider(_ provider: STTProvider) {
         sttProvider = provider
         settingsStore.sttProvider = provider
+        settingsStore.onboardingSpeechDeferred = false
         switch provider {
         case .freeModel:
             focusedModelProvider = .freeSTT
@@ -1382,6 +1383,7 @@ final class StudioViewModel: ObservableObject {
         localSTTModel = value
         localSTTFocusedModel = value
         settingsStore.localSTTModel = value
+        if localModelManager.isModelAvailable(value) { settingsStore.onboardingSpeechDeferred = false }
 
         let recommendedIdentifier = value.defaultModelIdentifier
         localSTTModelIdentifier = recommendedIdentifier

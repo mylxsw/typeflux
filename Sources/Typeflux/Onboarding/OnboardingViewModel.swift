@@ -1,14 +1,17 @@
 import AppKit
+import Combine
 import Foundation
 import SwiftUI
 
-/// First-run setup, the same for everyone: welcome → permissions → one short guide per feature
-/// → every key on one page. Models are not configured here: speech recognition works offline
-/// out of the box and AI is connected the first time a feature needs it.
+/// Service setup precedes permissions and feature guides. Skips are explicit and resumable.
 @MainActor
 final class OnboardingViewModel: ObservableObject {
     enum Step: String, CaseIterable {
         case welcome
+        case services
+        case cloud
+        case stt
+        case llm
         case permissions
         case voice
         case launcher
@@ -25,7 +28,7 @@ final class OnboardingViewModel: ObservableObject {
             case .tools: .tools
             case .ring: .ring
             case .chat: .chat
-            case .welcome, .permissions, .finish: nil
+            case .welcome, .services, .cloud, .stt, .llm, .permissions, .finish: nil
             }
         }
 
@@ -58,7 +61,38 @@ final class OnboardingViewModel: ObservableObject {
     @Published var stepDirection: Int = 1 // 1 = forward, -1 = backward
     @Published var appLanguage: AppLanguage
     /// What the user dictated into the voice guide's practice box.
+    @Published var voicePracticeSucceeded = false
     @Published var voicePracticeText = ""
+    @Published var serviceRoute: ServiceRoute = .cloud
+    @Published var skipConfirmation: SkipTarget?
+    @Published var speechSkipped = false
+    @Published var aiSkipped = false
+    @Published var setupRevision = 0
+    @Published var isCheckingCloud = false
+    @Published var cloudCheckCompleted = false
+    @Published var cloudError: String?
+    @Published var languageTestState: ConnectionTestState = .idle
+    @Published var modelEditorDomain: StudioModelDomain?
+    var configurationModel: StudioViewModel? {
+        didSet {
+            configurationSubscription = configurationModel?.objectWillChange.sink { [weak self] _ in
+                Task { @MainActor in self?.refreshSetup() }
+            }
+        }
+    }
+    var configurationSubscription: AnyCancellable?
+    var languageTestTask: Task<Void, Never>?
+    var verifiedLanguageSignature: String?
+    var testingLanguageSignature: String?
+    var languageConnectionProbe: @Sendable (RegisteredProvider, SettingsStore.TextLLMConfiguration) async throws -> String = {
+        try await OnboardingConnectionProbe.language(provider: $0, configuration: $1)
+    }
+    var setupObservers: [NSObjectProtocol] = []
+    var historyStore: HistoryStore?
+    var voicePracticeBeganAt: Date?
+    let modelLibrary: AskModelLibrary
+    let authState: AuthState
+
 
     // Permissions
     @Published var permissions: [PrivacyGuard.PermissionSnapshot] = []
@@ -73,32 +107,33 @@ final class OnboardingViewModel: ObservableObject {
     @Published private(set) var externalKeyboardShortcutReplacement: ExternalKeyboardShortcutReplacement?
     @Published var showShortcutReplacementAppliedAlert = false
 
-    private let settingsStore: SettingsStore
+    let settingsStore: SettingsStore
     private let globeKeyReader: GlobeKeyPreferenceReading
-    private let localModelManager: (any LocalSTTModelManaging)?
-    private let notificationService: LocalNotificationSending
+    let localModelManager: (any LocalSTTModelManaging)?
     private let analyticsReporter: AnalyticsEventReporting
     private let permissionStatusAnalyticsMonitor: PermissionStatusAnalyticsMonitor?
     private let onboardingStartedAt: Date
     private let now: () -> Date
     private var didReportTerminalEvent = false
     let onComplete: () -> Void
-    private var localSTTPreparationTask: Task<Void, Never>?
 
     init(
         settingsStore: SettingsStore,
+        authState: AuthState? = nil,
+        modelLibrary: AskModelLibrary? = nil,
         globeKeyReader: GlobeKeyPreferenceReading = SystemGlobeKeyPreferenceReader(),
         localModelManager: (any LocalSTTModelManaging)? = nil,
-        notificationService: LocalNotificationSending = NoopLocalNotificationService(),
         analyticsReporter: AnalyticsEventReporting = NoopAnalyticsEventReporter.shared,
         permissionStatusAnalyticsMonitor: PermissionStatusAnalyticsMonitor? = nil,
         now: @escaping () -> Date = { Date() },
         onComplete: @escaping () -> Void
     ) {
         self.settingsStore = settingsStore
+        self.authState = authState ?? .shared
+        self.modelLibrary = modelLibrary ?? AskModelLibrary(defaults: settingsStore.defaults)
+
         self.globeKeyReader = globeKeyReader
         self.localModelManager = localModelManager
-        self.notificationService = notificationService
         self.analyticsReporter = analyticsReporter
         self.permissionStatusAnalyticsMonitor = permissionStatusAnalyticsMonitor
         self.now = now
@@ -117,16 +152,36 @@ final class OnboardingViewModel: ObservableObject {
             activationHotkey: storedActivationHotkey,
             askHotkey: storedAskHotkey
         )
+        setupObservers.append(SettingsChangeObserver.observe { [weak self] in self?.refreshSetup() })
+        for name in [Notification.Name.localModelDownloadProgressDidChange, .authDidLogin, .historyStoreDidChange] {
+            setupObservers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in self?.refreshSetup() }
+            })
+        }
     }
 
     deinit {
-        localSTTPreparationTask?.cancel()
+        languageTestTask?.cancel()
+        setupObservers.forEach(NotificationCenter.default.removeObserver)
     }
 
     // MARK: - Navigation
 
     var visibleSteps: [Step] {
-        Step.allCases
+        var steps: [Step] = [.welcome, .services]
+        switch serviceRoute {
+        case .cloud:
+            steps.append(.cloud)
+            if !authState.canUseCloudASR { steps.append(.stt) }
+        case .custom: steps += [.stt, .llm]
+        case .launcherOnly: break
+        }
+        steps.append(.permissions)
+        if !speechSkipped && speechConfigured { steps.append(.voice) }
+        steps += [.launcher, .tools, .ring]
+        if !aiSkipped && languageConfigured { steps.append(.chat) }
+        steps.append(.finish)
+        return steps
     }
 
     var canGoBack: Bool {
@@ -139,7 +194,13 @@ final class OnboardingViewModel: ObservableObject {
 
     /// Whether the primary button can move on from the current step.
     var canAdvance: Bool {
-        currentStep != .permissions || allRequiredPermissionsGranted
+        switch currentStep {
+        case .cloud: authState.isLoggedIn && cloudCheckCompleted && !isCheckingCloud && cloudError == nil
+        case .stt: speechConfigured && speechVerified
+        case .llm: languageConfigured && languageVerified
+        case .permissions: allRequiredPermissionsGranted && !needsGlobeKeySetup
+        default: true
+        }
     }
 
     /// The guide steps, for the "2 / 5" counter.
@@ -150,9 +211,18 @@ final class OnboardingViewModel: ObservableObject {
     func advance() {
         guard canAdvance else { return }
         reportCurrentStepCompleted(skipped: false)
-        if currentStep == .welcome {
-            prepareSpeechModelIfNeeded()
+        if currentStep == .services, serviceRoute == .launcherOnly {
+            skipConfirmation = .allModels
+            return
         }
+        if currentStep == .cloud { applyCloudSelection() }
+        if currentStep == .stt { speechSkipped = false; settingsStore.onboardingSpeechDeferred = false }
+        if currentStep == .llm {
+            modelLibrary.defaultReference = modelLibrary.rewriteReference
+            aiSkipped = false
+            settingsStore.onboardingAIDeferred = false
+        }
+        if currentStep == .permissions { settingsStore.onboardingPermissionsDeferred = false }
         advanceToNextStepOrComplete()
     }
 
@@ -167,15 +237,16 @@ final class OnboardingViewModel: ObservableObject {
     /// Moves on to the guides with permissions still missing; they are asked for again when needed.
     func skipPermissions() {
         guard currentStep == .permissions else { return }
-        reportCurrentStepCompleted(skipped: true)
-        advanceToNextStepOrComplete()
+        skipConfirmation = .permissions
     }
 
     /// Marks onboarding as complete without triggering the completion callback.
     /// Used when the window is closed externally (e.g., user clicks the close button).
     func skipWithoutAnimation() {
         reportAbandonedIfNeeded()
-        settingsStore.applyDefaultPersonaIfLLMConfigured()
+        settingsStore.onboardingSpeechDeferred = speechSkipped || !speechConfigured
+        settingsStore.onboardingAIDeferred = aiSkipped || !languageConfigured
+        if !aiSkipped && languageConfigured { settingsStore.applyDefaultPersonaIfLLMConfigured() }
         settingsStore.isOnboardingCompleted = true
     }
 
@@ -186,13 +257,14 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     var didPracticeVoice: Bool {
-        !voicePracticeText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        voicePracticeSucceeded
     }
 
     // MARK: - Permissions
 
     var requiredPermissionIDs: [PrivacyGuard.PermissionID] {
-        OnboardingFeature.requiredPermissionIDs(settingsStore: settingsStore)
+        guard !speechSkipped && speechConfigured else { return [.accessibility] }
+        return OnboardingFeature.requiredPermissionIDs(settingsStore: settingsStore)
     }
 
     var requiredPermissions: [PrivacyGuard.PermissionSnapshot] {
@@ -209,7 +281,7 @@ final class OnboardingViewModel: ObservableObject {
 
     /// Voice input cannot start while macOS keeps 🌐 for itself, unless another key replaces it.
     var needsGlobeKeySetup: Bool {
-        !isGlobeKeyReady && activationHotkey.signature == HotkeyBinding.defaultActivation.signature
+        !speechSkipped && speechConfigured && !voiceHotkeyReady
     }
 
     func refreshPermissions() {
@@ -319,13 +391,15 @@ final class OnboardingViewModel: ObservableObject {
                 "practiced_voice": "\(didPracticeVoice)"
             ]
         )
-        settingsStore.applyDefaultPersonaIfLLMConfigured()
+        if !aiSkipped && languageConfigured { settingsStore.applyDefaultPersonaIfLLMConfigured() }
+        settingsStore.onboardingSpeechDeferred = speechSkipped || !speechConfigured
+        settingsStore.onboardingAIDeferred = aiSkipped || !languageConfigured
         settingsStore.applyNewUserClipboardDefaults()
         settingsStore.isOnboardingCompleted = true
         onComplete()
     }
 
-    private func reportCurrentStepCompleted(skipped: Bool) {
+    func reportCurrentStepCompleted(skipped: Bool) {
         analyticsReporter.report(
             eventName: "onboarding_step_completed",
             properties: ["step": currentStep.analyticsName, "skipped": "\(skipped)"]
@@ -341,7 +415,7 @@ final class OnboardingViewModel: ObservableObject {
         )
     }
 
-    private func advanceToNextStepOrComplete() {
+    func advanceToNextStepOrComplete() {
         guard !isLastStep, let next = adjacentStep(offset: 1) else {
             complete()
             return
@@ -356,42 +430,6 @@ final class OnboardingViewModel: ObservableObject {
         let steps = visibleSteps
         guard let index = steps.firstIndex(of: currentStep), steps.indices.contains(index + offset) else { return nil }
         return steps[index + offset]
-    }
-
-    // MARK: - Speech model
-
-    /// Voice input uses the on-device model by default. Start fetching it in the background
-    /// while the user grants permissions, unless it is bundled or already downloaded.
-    private func prepareSpeechModelIfNeeded() {
-        guard settingsStore.sttProvider == .localModel,
-              let localModelManager,
-              localSTTPreparationTask == nil
-        else { return }
-        let model = settingsStore.localSTTModel
-        guard !localModelManager.isModelAvailable(model) else { return }
-        let configuration = LocalSTTConfiguration(settingsStore: settingsStore)
-        LocalModelDownloadProgressCenter.shared.reportDownloading(model: model, progress: 0.02)
-        localSTTPreparationTask = Task { [localModelManager, notificationService] in
-            do {
-                try await localModelManager.prepareModel(configuration: configuration) { update in
-                    LocalModelDownloadProgressCenter.shared.reportDownloading(model: model, progress: update.progress)
-                }
-                guard !Task.isCancelled else { return }
-                LocalModelDownloadProgressCenter.shared.clear()
-                await notificationService.sendLocalNotification(
-                    title: L("notification.localModelReady.title"),
-                    body: L("notification.localModelReady.body"),
-                    identifier: "ai.gulu.app.typeflux.local-model-ready"
-                )
-            } catch {
-                guard !Task.isCancelled else {
-                    LocalModelDownloadProgressCenter.shared.clear()
-                    return
-                }
-                NetworkDebugLogger.logError(context: "Onboarding local STT model download failed", error: error)
-                LocalModelDownloadProgressCenter.shared.reportFailed(model: model, message: error.localizedDescription)
-            }
-        }
     }
 
     private static func detectExternalKeyboardShortcutReplacement(

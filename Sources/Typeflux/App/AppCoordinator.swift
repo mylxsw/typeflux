@@ -274,7 +274,9 @@ final class AppCoordinator {
         // whether the local-first fallback route is available, so the record
         // must already exist.
         di.bundledModelAutoSetup.applyIfNeeded()
-        di.autoModelDownloadService.triggerIfNeeded()
+        if di.settingsStore.isOnboardingCompleted && !di.settingsStore.onboardingSpeechDeferred {
+            di.autoModelDownloadService.triggerIfNeeded()
+        }
         AutoUpdater.shared.startAutoCheck(settingsStore: di.settingsStore)
         UsageStatsStore.shared.backfillIfNeeded(from: di.historyStore) { [weak self] in
             guard let self else { return }
@@ -544,33 +546,41 @@ final class AppCoordinator {
         helpWindowController.show(query: query)
     }
 
-    private func presentOnboarding() {
+    private func presentOnboarding(resume: Bool = false) {
         let controller = OnboardingWindowController()
         onboardingWindowController = controller
         controller.show(
             settingsStore: di.settingsStore,
+            historyStore: di.historyStore,
+            resume: resume,
             localModelManager: di.localModelManager,
             notificationService: di.notificationService,
             analyticsReporter: di.analyticsReporter,
             permissionStatusAnalyticsMonitor: di.permissionStatusAnalyticsMonitor
         ) { [weak self] in
             self?.onboardingWindowController = nil
-            self?.presentPermissionGuidanceIfNeeded()
+            if let self, !di.settingsStore.onboardingSpeechDeferred {
+                di.autoModelDownloadService.triggerIfNeeded()
+            }
         }
     }
 
     func showOnboarding() {
         // Reset the flag so the onboarding starts fresh from step 1
+        let resume = di.settingsStore.onboardingSpeechDeferred || di.settingsStore.onboardingAIDeferred
+            || di.settingsStore.onboardingPermissionsDeferred
         di.settingsStore.isOnboardingCompleted = false
         if let existing = onboardingWindowController {
             existing.bringToFront()
             return
         }
-        presentOnboarding()
+        presentOnboarding(resume: resume)
     }
 
     private func presentPermissionGuidanceIfNeeded() {
-        let missingSnapshots = PrivacyGuard.missingRequiredSnapshots(settingsStore: di.settingsStore)
+        let missingSnapshots = PrivacyGuard.missingRequiredSnapshots(settingsStore: di.settingsStore).filter {
+            !di.settingsStore.onboardingSpeechDeferred || $0.id == .accessibility
+        }
         guard !missingSnapshots.isEmpty else {
             return
         }

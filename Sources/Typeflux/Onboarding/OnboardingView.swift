@@ -2,11 +2,11 @@ import AppKit
 import Combine
 import SwiftUI
 
-/// First-run setup window: welcome, permissions, one guide per feature, then every key on one page.
-/// Copy stays to one short line per screen; keys, chips and the drawn scenes carry the rest.
+/// First-run service setup, permissions and feature guides. Configuration editors are shared with Settings.
 struct OnboardingView: View {
     @ObservedObject var viewModel: OnboardingViewModel
     let appearanceMode: AppearanceMode
+    @ObservedObject private var auth = AuthState.shared
     @ObservedObject private var localization = AppLocalization.shared
     @Environment(\.interfaceStyle) private var interfaceStyle
     @Environment(\.colorScheme) private var colorScheme
@@ -23,6 +23,10 @@ struct OnboardingView: View {
                 Group {
                     switch viewModel.currentStep {
                     case .welcome: welcomeStep
+                    case .services: servicesStep
+                    case .cloud: cloudStep
+                    case .stt: speechSetupStep
+                    case .llm: languageSetupStep
                     case .permissions: permissionsStep
                     case .finish: finishStep
                     case .voice, .launcher, .tools, .ring, .chat:
@@ -47,6 +51,26 @@ struct OnboardingView: View {
         } message: {
             Text(shortcutReplacementAppliedMessage)
         }
+        .alert(L("setup.skip.title"), isPresented: Binding(
+            get: { viewModel.skipConfirmation != nil },
+            set: { if !$0 { viewModel.skipConfirmation = nil } }
+        ), presenting: viewModel.skipConfirmation) { target in
+            Button(L("setup.skip.confirm")) { viewModel.confirmSkip(target) }
+            Button(L("setup.skip.back"), role: .cancel) { viewModel.skipConfirmation = nil }
+        } message: { target in Text(viewModel.skipMessage(for: target)) }
+        .sheet(isPresented: Binding(get: { viewModel.modelEditorDomain != nil },
+            set: { if !$0 { viewModel.modelEditorDomain = nil; viewModel.refreshSetup() } })) {
+            modelEditorSheet
+        }
+        .task(id: auth.isLoggedIn) {
+            if viewModel.currentStep == .cloud { await viewModel.checkCloud() }
+        }
+        .onChange(of: viewModel.currentStep) { step in
+            if step == .voice { viewModel.voicePracticeBeganAt = Date(); viewModel.voicePracticeSucceeded = false }
+            viewModel.refreshSetup()
+            if step == .cloud { Task { await viewModel.checkCloud() } }
+        }
+        .onChange(of: viewModel.voicePracticeText) { _ in viewModel.updateVoicePractice() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             viewModel.refreshPermissions()
             viewModel.refreshGlobeKeyState()
@@ -79,18 +103,21 @@ struct OnboardingView: View {
     }
 
     private var topBar: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 18) {
             if viewModel.currentStep != .welcome {
-                ForEach(viewModel.visibleSteps.filter { $0 != .welcome }, id: \.self) { step in
-                    Capsule()
-                        .fill(step == viewModel.currentStep ? secondaryText : borderColor)
-                        .frame(width: step == viewModel.currentStep ? 20 : 6, height: 6)
+                ForEach(["services", "models", "permissions", "practice"], id: \.self) { stage in
+                    Text(L("setup.stage.\(stage)"))
+                        .font(.studioBody(12, weight: viewModel.currentStage == stage ? .semibold : .regular))
+                        .foregroundStyle(viewModel.currentStage == stage ? primaryText : tertiaryText)
+                        .padding(.vertical, 6)
+                        .overlay(alignment: .bottom) {
+                            if viewModel.currentStage == stage {
+                                Capsule().fill(StudioTheme.accent).frame(height: 2)
+                            }
+                        }
                 }
             }
-        }
-        .animation(.easeInOut(duration: 0.25), value: viewModel.currentStep)
-        .frame(maxWidth: .infinity)
-        .frame(height: 52)
+        }.frame(maxWidth: .infinity).frame(height: 52)
     }
 
     private var footer: some View {
@@ -99,12 +126,23 @@ struct OnboardingView: View {
             case .welcome:
                 languageMenu
                 Spacer()
-                Label(L("onboarding.v2.welcome.duration"), systemImage: "clock")
-                    .font(.studioBody(12))
-                    .foregroundStyle(tertiaryText)
                 StudioButton(title: L("onboarding.v2.action.start"), systemImage: nil, variant: .primary) {
                     viewModel.advance()
                 }
+            case .services, .cloud, .stt, .llm:
+                backButton
+                Spacer()
+                if viewModel.currentStep != .services {
+                    StudioButton(title: L("setup.action.skip"), systemImage: nil, variant: .ghost) {
+                        switch viewModel.currentStep {
+                        case .cloud: viewModel.skipConfirmation = .allModels
+                        case .stt: viewModel.skipConfirmation = .speech
+                        default: viewModel.skipConfirmation = .language
+                        }
+                    }
+                }
+                StudioButton(title: L("onboarding.v2.action.continue"), systemImage: nil,
+                    variant: .primary, isDisabled: !viewModel.canAdvance) { viewModel.advance() }
             case .permissions:
                 backButton
                 Spacer()
@@ -253,7 +291,7 @@ struct OnboardingView: View {
                 stepTitle(feature.title, subtitle: feature.caption)
                     .padding(.top, 20)
                 VStack(spacing: 0) {
-                    ForEach(Array(viewModel.shortcuts(for: feature).enumerated()), id: \.element.id) { index, shortcut in
+                    ForEach(Array(viewModel.guideShortcuts(for: feature).enumerated()), id: \.element.id) { index, shortcut in
                         if index > 0 { Divider().opacity(0.6) }
                         shortcutRow(shortcut)
                     }
@@ -262,9 +300,20 @@ struct OnboardingView: View {
                 .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(cardFill))
                 .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(borderColor, lineWidth: 1))
                 .padding(.top, 24)
+                if feature == .launcher,
+                   viewModel.permissions.first(where: { $0.id == .accessibility })?.isGranted != true {
+                    Text(L("setup.launcher.permissionsHint"))
+                        .font(.studioBody(12.5)).foregroundStyle(secondaryText).padding(.top, 14)
+                }
                 if feature == .voice {
-                    voicePractice
-                        .padding(.top, 14)
+                    if viewModel.allRequiredPermissionsGranted && !viewModel.needsGlobeKeySetup {
+                        voicePractice.padding(.top, 14)
+                    } else {
+                        Text(L("setup.voice.permissionsFirst"))
+                            .font(.studioBody(12.5)).foregroundStyle(secondaryText).padding(.top, 14)
+                        Button(L("setup.action.permissions")) { viewModel.currentStep = .permissions }
+                            .buttonStyle(.link).padding(.top, 6)
+                    }
                 }
             }
             .frame(width: 380, alignment: .leading)
@@ -331,81 +380,77 @@ struct OnboardingView: View {
 
     private var finishStep: some View {
         VStack(alignment: .leading, spacing: 0) {
-            stepTitle(L("onboarding.v2.finish.title"), subtitle: L("onboarding.v2.finish.subtitle"))
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-                ForEach(OnboardingFeature.allCases) { feature in
-                    finishCard(feature)
-                }
+            stepTitle(L("setup.finish.title"), subtitle: L(viewModel.voiceReady && viewModel.languageConfigured
+                ? "setup.finish.readySubtitle" : "setup.finish.subtitle"))
+            VStack(spacing: 0) {
+                setupSummaryRow(title: OnboardingFeature.launcher.title,
+                    detail: L("setup.finish.launcher"), ready: true, action: nil)
+                Divider()
+                setupSummaryRow(title: OnboardingFeature.voice.title,
+                    detail: !viewModel.speechConfigured ? L("setup.finish.speechSkipped")
+                        : !viewModel.voicePermissionsGranted ? L("setup.finish.permissionsMissing")
+                        : !viewModel.voiceHotkeyReady ? L("setup.finish.keyboardMissing") : L("setup.status.configured"),
+                    ready: viewModel.voiceReady) {
+                        if viewModel.speechConfigured {
+                            viewModel.speechSkipped = false
+                            viewModel.currentStep = .permissions
+                        } else {
+                            viewModel.serviceRoute = .custom; viewModel.speechSkipped = false; viewModel.currentStep = .stt
+                        }
+                    }
+                Divider()
+                setupSummaryRow(title: L("setup.finish.ai"), detail: viewModel.languageStatusText,
+                    ready: viewModel.languageConfigured) {
+                        viewModel.serviceRoute = .custom; viewModel.aiSkipped = false; viewModel.currentStep = .llm
+                    }
             }
-            .padding(.top, 22)
+            .padding(.horizontal, 20)
+            .background(RoundedRectangle(cornerRadius: 16).fill(cardFill))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(borderColor, lineWidth: 1))
+            .padding(.top, 24)
+            HStack(spacing: 8) {
+                OnboardingKeycaps(keys: viewModel.launcherHotkey.map(HotkeyFormat.components) ?? [])
+                Text(L("onboarding.tip.launcher.open")).font(.studioBody(13)).foregroundStyle(secondaryText)
+            }.padding(.top, 24)
         }
         .padding(.horizontal, 56)
         .padding(.top, 4)
-    }
-
-    private func finishCard(_ feature: OnboardingFeature) -> some View {
-        let shortcut = viewModel.shortcuts(for: feature).first
-        return HStack(spacing: 12) {
-            Image(systemName: feature.symbol)
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(primaryText)
-                .frame(width: 34, height: 34)
-                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(mutedFill))
-            VStack(alignment: .leading, spacing: 2) {
-                Text(feature.title)
-                    .font(.studioBody(13.5, weight: .semibold))
-                    .foregroundStyle(primaryText)
-                Text(shortcut?.title ?? "")
-                    .font(.studioBody(12))
-                    .foregroundStyle(secondaryText)
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 8)
-            if let keys = shortcut?.keys, !keys.isEmpty {
-                OnboardingKeycaps(keys: keys)
-            } else {
-                Text(L("onboarding.v2.shortcut.notSet"))
-                    .font(.studioBody(12))
-                    .foregroundStyle(tertiaryText)
-            }
-        }
-        .padding(.horizontal, 16)
-        .frame(height: 64)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(cardFill))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(borderColor, lineWidth: 1))
     }
 
     // MARK: - Permissions
 
     private var permissionsStep: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            stepTitle(
-                viewModel.allRequiredPermissionsGranted
-                    ? L("onboarding.v2.permissions.title.ready")
-                    : L("onboarding.v2.permissions.title.missing", viewModel.missingPermissionCount),
-                subtitle: L("onboarding.v2.permissions.subtitle")
-            )
-            VStack(spacing: 10) {
-                ForEach(viewModel.requiredPermissions) { snapshot in
-                    permissionRow(snapshot)
+        ScrollView {
+
+            VStack(alignment: .leading, spacing: 0) {
+                stepTitle(
+                    viewModel.allRequiredPermissionsGranted
+                        ? L("onboarding.v2.permissions.title.ready")
+                        : L("onboarding.v2.permissions.title.missing", viewModel.missingPermissionCount),
+                    subtitle: L("onboarding.v2.permissions.subtitle")
+                )
+                VStack(spacing: 10) {
+                    ForEach(viewModel.requiredPermissions) { snapshot in
+                        permissionRow(snapshot)
+                    }
+                    if viewModel.needsGlobeKeySetup {
+                        globeKeyRow
+                    }
                 }
-                if viewModel.needsGlobeKeySetup {
-                    globeKeyRow
+                .padding(.top, 20)
+                HStack(spacing: 8) {
+                    Image(systemName: "clock")
+                    Text(L("onboarding.v2.permissions.later"))
+                    chip(L("onboarding.v2.later.screen"), symbol: "rectangle.dashed")
                 }
+                .font(.studioBody(12))
+                .foregroundStyle(tertiaryText)
+                .padding(.top, 18)
             }
-            .padding(.top, 20)
-            HStack(spacing: 8) {
-                Image(systemName: "clock")
-                Text(L("onboarding.v2.permissions.later"))
-                chip(L("onboarding.v2.later.screen"), symbol: "rectangle.dashed")
-                chip(L("onboarding.v2.later.ai"), symbol: "sparkles")
-            }
-            .font(.studioBody(12))
-            .foregroundStyle(tertiaryText)
-            .padding(.top, 18)
-        }
-        .padding(.horizontal, 56)
-        .padding(.top, 4)
+            .padding(.horizontal, 56)
+            .padding(.top, 4)
+
+        }.scrollIndicators(.hidden)
     }
 
     private func permissionRow(_ snapshot: PrivacyGuard.PermissionSnapshot) -> some View {
@@ -420,11 +465,15 @@ struct OnboardingView: View {
                 Text(snapshot.title)
                     .font(.studioBody(14.5, weight: .semibold))
                     .foregroundStyle(primaryText)
-                Text(L("onboarding.v2.permission.\(snapshot.id.rawValue).detail"))
+                Text(snapshot.id == .accessibility && (viewModel.speechSkipped || !viewModel.speechConfigured)
+                    ? L("setup.permission.launcherAccessibility")
+                    : L("onboarding.v2.permission.\(snapshot.id.rawValue).detail"))
                     .font(.studioBody(12.5))
                     .foregroundStyle(secondaryText)
                 HStack(spacing: 5) {
-                    ForEach(OnboardingFeature.features(using: snapshot.id)) { feature in
+                    ForEach(OnboardingFeature.features(using: snapshot.id).filter {
+                        ($0 != .chat || !viewModel.aiSkipped) && ($0 != .voice || !viewModel.speechSkipped)
+                    }) { feature in
                         chip(feature.title, symbol: nil)
                     }
                 }

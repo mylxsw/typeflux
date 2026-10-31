@@ -1,402 +1,447 @@
+import AppKit
+import Testing
 @testable import Typeflux
-import XCTest
 
-final class OnboardingViewModelTests: XCTestCase {
-    private var suiteName: String!
-    private var defaults: UserDefaults!
-    private var store: SettingsStore!
-
-    override func setUp() {
-        super.setUp()
-        KeychainTokenStore.useInMemoryStoreForTesting = true
-        KeychainTokenStore.clearAll()
-        suiteName = "OnboardingViewModelTests-\(UUID().uuidString)"
-        defaults = UserDefaults(suiteName: suiteName)
-        store = SettingsStore(defaults: defaults)
-        store.useAppleSpeechFallback = false
-    }
-
-    override func tearDown() {
-        defaults.removePersistentDomain(forName: suiteName)
-        defaults = nil
-        suiteName = nil
-        store = nil
-        KeychainTokenStore.clearAll()
-        KeychainTokenStore.useInMemoryStoreForTesting = false
-        super.tearDown()
-    }
-
-    // MARK: - Steps
-
-    @MainActor
-    func testEveryoneWalksThroughEveryFeature() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        XCTAssertEqual(viewModel.visibleSteps, [.welcome, .permissions, .voice, .launcher, .tools, .ring, .chat, .finish])
-        XCTAssertEqual(viewModel.featureSteps.compactMap(\.feature), OnboardingFeature.allCases)
-        XCTAssertEqual(viewModel.currentStep, .welcome)
-        XCTAssertFalse(viewModel.canGoBack)
-        XCTAssertFalse(viewModel.isLastStep)
-        XCTAssertNil(OnboardingViewModel.Step.welcome.feature)
-        XCTAssertNil(OnboardingViewModel.Step.finish.feature)
-    }
-
-    @MainActor
-    func testAdvanceAndBackMoveBetweenSteps() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        viewModel.permissions = grantedPermissions()
-
-        viewModel.advance()
-        XCTAssertEqual(viewModel.currentStep, .permissions)
-        XCTAssertEqual(viewModel.stepDirection, 1)
-        viewModel.advance()
-        XCTAssertEqual(viewModel.currentStep, .voice)
-
-        viewModel.goBack()
-        XCTAssertEqual(viewModel.currentStep, .permissions)
-        XCTAssertEqual(viewModel.stepDirection, -1)
-        viewModel.goBack()
-        viewModel.goBack()
-        XCTAssertEqual(viewModel.currentStep, .welcome)
-    }
-
-    @MainActor
-    func testGuidesNeverBlockAndTheLastStepCompletes() {
-        var completions = 0
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: { completions += 1 })
-        viewModel.currentStep = .voice
-
-        for step in [OnboardingViewModel.Step.launcher, .tools, .ring, .chat, .finish] {
-            XCTAssertTrue(viewModel.canAdvance)
-            viewModel.advance()
-            XCTAssertEqual(viewModel.currentStep, step)
+@Suite(.serialized, .exclusiveUIState)
+@MainActor
+struct OnboardingViewModelTests {
+    private func fixture(_ check: (SettingsStore, OnboardingViewModel, OnboardingTestModelManager) async throws
+        -> Void) async throws {
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            let manager = OnboardingTestModelManager()
+            let library = AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
+            let model = OnboardingViewModel(settingsStore: settings, modelLibrary: library,
+                                            globeKeyReader: OnboardingReadyGlobeKey(), localModelManager: manager,
+                                            onComplete: {})
+            try await check(settings, model, manager)
         }
-        XCTAssertTrue(viewModel.isLastStep)
-        XCTAssertFalse(store.isOnboardingCompleted)
-
-        viewModel.advance()
-        XCTAssertTrue(store.isOnboardingCompleted)
-        XCTAssertEqual(completions, 1)
-        viewModel.advance()
-        XCTAssertEqual(completions, 1, "Completing twice must not call back twice")
     }
 
-    // MARK: - Guides
-
-    @MainActor
-    func testGuideShortcutsComeFromSettings() {
-        store.askHotkey = .rightOptionAsk
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        XCTAssertEqual(
-            viewModel.shortcuts(for: .launcher).first?.keys,
-            HotkeyFormat.components(.rightOptionAsk)
-        )
-    }
-
-    @MainActor
-    func testVoicePracticeCountsOnlyRealText() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        XCTAssertFalse(viewModel.didPracticeVoice)
-
-        viewModel.voicePracticeText = "  \n "
-        XCTAssertFalse(viewModel.didPracticeVoice)
-
-        viewModel.voicePracticeText = "Hello there"
-        XCTAssertTrue(viewModel.didPracticeVoice)
-    }
-
-    // MARK: - Permissions
-
-    @MainActor
-    func testEveryFeaturesPermissionsAreAskedForTogether() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-        XCTAssertEqual(viewModel.requiredPermissionIDs, [.microphone, .accessibility])
-
-        store.useAppleSpeechFallback = true
-        XCTAssertEqual(viewModel.requiredPermissionIDs, [.microphone, .speechRecognition, .accessibility])
-    }
-
-    @MainActor
-    func testMissingPermissionsBlockContinueButLaterMovesOnToTheGuides() {
-        var completions = 0
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: { completions += 1 })
-        viewModel.currentStep = .permissions
-        viewModel.permissions = [
-            .init(id: .microphone, state: .needsAttention, detail: "Missing"),
-            .init(id: .accessibility, state: .granted, detail: "Granted")
-        ]
-
-        XCTAssertEqual(viewModel.missingPermissionCount, 1)
-        XCTAssertEqual(viewModel.requiredPermissions.map(\.id), [.microphone, .accessibility])
-        XCTAssertFalse(viewModel.canAdvance)
-        viewModel.advance()
-        XCTAssertEqual(viewModel.currentStep, .permissions)
-
-        viewModel.skipPermissions()
-        XCTAssertEqual(viewModel.currentStep, .voice, "Later skips the permissions, not the guides")
-        XCTAssertFalse(store.isOnboardingCompleted)
-        XCTAssertEqual(completions, 0)
-    }
-
-    @MainActor
-    func testSkipPermissionsOnlyWorksOnPermissionsStep() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        viewModel.skipPermissions()
-
-        XCTAssertEqual(viewModel.currentStep, .welcome)
-    }
-
-    // MARK: - Globe key
-
-    @MainActor
-    func testGlobeKeySetupShowsOnlyWhileFnIsBlocked() {
-        let reader = StubGlobeKeyPreferenceReader(usage: .showEmojiAndSymbols)
-        let viewModel = OnboardingViewModel(settingsStore: store, globeKeyReader: reader, onComplete: {})
-        XCTAssertTrue(viewModel.needsGlobeKeySetup)
-
-        viewModel.useExternalKeyboardShortcutReplacement(.rightCommand)
-        XCTAssertFalse(viewModel.needsGlobeKeySetup, "A right-hand key replaces fn")
-
-        viewModel.restoreDefaultFNShortcuts()
-        XCTAssertTrue(viewModel.needsGlobeKeySetup)
-        reader.usage = .doNothing
-        viewModel.refreshGlobeKeyState()
-        XCTAssertFalse(viewModel.needsGlobeKeySetup)
-    }
-
-    @MainActor
-    func testKeyboardSystemSettingsURLPointsToKeyboardPane() {
-        let url = OnboardingViewModel.keyboardSystemSettingsURL
-        XCTAssertEqual(url.scheme, "x-apple.systempreferences")
-        XCTAssertTrue(url.absoluteString.contains("Keyboard"))
-    }
-
-    @MainActor
-    func testIsGlobeKeyReadyReflectsReaderState() {
-        let reader = StubGlobeKeyPreferenceReader(usage: .changeInputSource)
-        let viewModel = OnboardingViewModel(settingsStore: store, globeKeyReader: reader, onComplete: {})
-        XCTAssertFalse(viewModel.isGlobeKeyReady)
-
-        reader.usage = .doNothing
-        viewModel.refreshGlobeKeyState()
-        XCTAssertTrue(viewModel.isGlobeKeyReady)
-
-        reader.usage = nil
-        viewModel.refreshGlobeKeyState()
-        XCTAssertFalse(viewModel.isGlobeKeyReady, "Unknown usage is not ready")
-    }
-
-    @MainActor
-    func testExternalKeyboardReplacementPersistsAndRestores() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        viewModel.useExternalKeyboardShortcutReplacement(.rightOption)
-        XCTAssertEqual(viewModel.externalKeyboardShortcutReplacement, .rightOption)
-        XCTAssertEqual(store.activationHotkey?.signature, HotkeyBinding.rightOptionActivation.signature)
-        XCTAssertEqual(store.askHotkey?.signature, HotkeyBinding.rightOptionAsk.signature)
-        XCTAssertTrue(viewModel.showShortcutReplacementAppliedAlert)
-
-        viewModel.showShortcutReplacementAppliedAlert = false
-        viewModel.restoreDefaultFNShortcuts()
-        XCTAssertNil(viewModel.externalKeyboardShortcutReplacement)
-        XCTAssertEqual(store.activationHotkey?.signature, HotkeyBinding.defaultActivation.signature)
-        XCTAssertEqual(store.askHotkey?.signature, HotkeyBinding.defaultAsk.signature)
-        XCTAssertTrue(viewModel.showShortcutReplacementAppliedAlert)
-    }
-
-    @MainActor
-    func testInitialExternalKeyboardReplacementReflectsStoredShortcuts() {
-        store.activationHotkey = .rightCommandActivation
-        store.askHotkey = .rightCommandAsk
-
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        XCTAssertEqual(viewModel.externalKeyboardShortcutReplacement, .rightCommand)
-    }
-
-    @MainActor
-    func testWelcomeKeysComeFromSettings() {
-        store.askHotkey = .rightOptionAsk
-        store.setHotkey(RingConfiguration.defaultHotkey, for: .ring)
-
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        XCTAssertEqual(viewModel.launcherHotkey?.signature, HotkeyBinding.rightOptionAsk.signature)
-        XCTAssertEqual(viewModel.ringHotkey?.signature, RingConfiguration.defaultHotkey.signature)
-    }
-
-    // MARK: - Speech model
-
-    @MainActor
-    func testLeavingWelcomeStartsSpeechModelDownload() async {
-        let manager = StubLocalModelManager()
-        let prepared = expectation(description: "model prepared")
-        manager.onPrepare = { prepared.fulfill() }
-        store.sttProvider = .localModel
-        let viewModel = OnboardingViewModel(settingsStore: store, localModelManager: manager, onComplete: {})
-
-        viewModel.advance()
-        await fulfillment(of: [prepared], timeout: 2)
-
-        XCTAssertEqual(manager.preparedConfigurations.map(\.model), [store.localSTTModel])
-    }
-
-    @MainActor
-    func testLaterStepsDoNotStartTheDownload() {
-        let manager = StubLocalModelManager()
-        store.sttProvider = .localModel
-        let viewModel = OnboardingViewModel(settingsStore: store, localModelManager: manager, onComplete: {})
-        viewModel.currentStep = .voice
-
-        viewModel.advance()
-
-        XCTAssertTrue(manager.preparedConfigurations.isEmpty)
-    }
-
-    @MainActor
-    func testAvailableModelIsNotDownloadedAgain() {
-        let manager = StubLocalModelManager()
-        manager.available = true
-        store.sttProvider = .localModel
-        let viewModel = OnboardingViewModel(settingsStore: store, localModelManager: manager, onComplete: {})
-
-        viewModel.advance()
-
-        XCTAssertTrue(manager.preparedConfigurations.isEmpty)
-    }
-
-    // MARK: - Completion side effects
-
-    @MainActor
-    func testCompletingWithConfiguredLLMSelectsTypefluxPersona() {
-        store.llmProvider = .openAICompatible
-        store.llmRemoteProvider = .custom
-        store.setLLMBaseURL("https://example.com/v1", for: .custom)
-        store.setLLMModel("my-model", for: .custom)
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        finish(viewModel)
-
-        XCTAssertTrue(store.personaRewriteEnabled)
-        XCTAssertEqual(store.activePersonaID, SettingsStore.defaultPersonaID.uuidString)
-    }
-
-    @MainActor
-    func testCompletingWithoutLLMLeavesPersonaDisabled() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        finish(viewModel)
-
-        XCTAssertFalse(store.personaRewriteEnabled)
-        XCTAssertNil(store.activePersona)
-    }
-
-    @MainActor
-    func testSkipWithoutAnimationMarksCompleted() {
-        let viewModel = OnboardingViewModel(settingsStore: store, onComplete: {})
-
-        viewModel.skipWithoutAnimation()
-
-        XCTAssertTrue(store.isOnboardingCompleted)
-    }
-
-    // MARK: - Analytics
-
-    @MainActor
-    func testAnalyticsReportsEveryStepAndCompletion() {
-        let recorder = AnalyticsEventRecorder()
-        var now = Date(timeIntervalSince1970: 1000)
-        let viewModel = OnboardingViewModel(
-            settingsStore: store, analyticsReporter: recorder, now: { now }, onComplete: {}
-        )
-        viewModel.permissions = grantedPermissions()
-        viewModel.voicePracticeText = "Hi"
-
-        for _ in viewModel.visibleSteps.dropLast() {
-            viewModel.advance()
+    @Test func `model setup precedes permissions`() async throws {
+        try await fixture { _, model, _ in
+            model.chooseRoute(.custom)
+            #expect(Array(model.visibleSteps.prefix(5)) == [.welcome, .services, .stt, .llm, .permissions])
+            model.advance()
+            #expect(model.currentStep == .services)
+            model.advance()
+            #expect(model.currentStep == .stt)
         }
-        now = Date(timeIntervalSince1970: 1012)
-        viewModel.advance()
-
-        let steps = recorder.events.filter { $0.name == "onboarding_step_completed" }.compactMap { $0.properties["step"] }
-        XCTAssertEqual(steps, ["welcome", "permissions", "voice", "launcher", "tools", "ring", "chat", "finish"])
-        XCTAssertEqual(recorder.events.last?.name, "onboarding_completed")
-        XCTAssertEqual(recorder.events.last?.properties, [
-            "duration_seconds": "12", "missing_permissions": "0", "practiced_voice": "true"
-        ])
     }
 
-    @MainActor
-    func testAnalyticsReportsSkippedPermissionsAndAbandonmentOnce() {
-        let recorder = AnalyticsEventRecorder()
-        let viewModel = OnboardingViewModel(settingsStore: store, analyticsReporter: recorder, onComplete: {})
-        viewModel.currentStep = .permissions
-        viewModel.permissions = [.init(id: .microphone, state: .needsAttention, detail: "Missing")]
-
-        viewModel.skipPermissions()
-        viewModel.skipWithoutAnimation()
-        viewModel.skipWithoutAnimation()
-
-        XCTAssertEqual(recorder.events.map(\.name), ["onboarding_step_completed", "onboarding_abandoned"])
-        XCTAssertEqual(recorder.events[0].properties, ["step": "permissions", "skipped": "true"])
-        XCTAssertEqual(recorder.events[1].properties, ["last_step": "voice"])
+    @Test func `cloud is recommended but login is not bypassed`() async throws {
+        try await fixture { _, model, _ in
+            #expect(model.serviceRoute == .cloud)
+            model.currentStep = .cloud
+            #expect(!model.canAdvance)
+            model.advance()
+            #expect(model.currentStep == .cloud)
+        }
     }
 
-    // MARK: - Helpers
-
-    @MainActor
-    private func finish(_ viewModel: OnboardingViewModel) {
-        viewModel.currentStep = .finish
-        viewModel.advance()
-        XCTAssertTrue(store.isOnboardingCompleted)
+    @Test func `launcher only requires explicit skip and does not prepare models`() async throws {
+        try await fixture { settings, model, manager in
+            model.currentStep = .services
+            model.skipConfirmation = .allModels
+            #expect(!settings.onboardingSpeechDeferred)
+            model.confirmSkip()
+            #expect(model.serviceRoute == .launcherOnly)
+            #expect(model.currentStep == .permissions)
+            #expect(settings.onboardingSpeechDeferred && settings.onboardingAIDeferred)
+            #expect(!model.visibleSteps.contains(.voice) && !model.visibleSteps.contains(.chat))
+            #expect(model.requiredPermissionIDs == [.accessibility])
+            #expect(manager.prepareCount == 0)
+        }
     }
 
-    private func grantedPermissions() -> [PrivacyGuard.PermissionSnapshot] {
-        PrivacyGuard.PermissionID.allCases.map { .init(id: $0, state: .granted, detail: "Granted") }
+    @Test func `no download starts on welcome`() async throws {
+        try await fixture { _, model, manager in
+            model.advance()
+            #expect(manager.prepareCount == 0)
+        }
+    }
+
+    @Test func `local model must be available before continuing`() async throws {
+        try await fixture { _, model, manager in
+            model.chooseRoute(.custom); model.currentStep = .stt
+            #expect(!model.canAdvance)
+            model.advance()
+            #expect(model.currentStep == .stt)
+            manager.available = true
+            #expect(model.canAdvance)
+            model.advance()
+            #expect(model.currentStep == .llm)
+        }
+    }
+
+    @Test func `skipping speech still offers AI configuration`() async throws {
+        try await fixture { settings, model, _ in
+            model.chooseRoute(.custom); model.currentStep = .stt
+            model.skipConfirmation = .speech; model.confirmSkip()
+            #expect(model.currentStep == .llm)
+            #expect(settings.onboardingSpeechDeferred)
+            #expect(!model.visibleSteps.contains(.voice))
+            #expect(model.requiredPermissionIDs == [.accessibility])
+        }
+    }
+
+    @Test func `skipping AI keeps ordinary dictation`() async throws {
+        try await fixture { settings, model, manager in
+            manager.available = true
+            model.chooseRoute(.custom); model.currentStep = .llm
+            model.skipConfirmation = .language; model.confirmSkip()
+            #expect(model.currentStep == .permissions)
+            #expect(settings.onboardingAIDeferred)
+            #expect(model.visibleSteps.contains(.voice))
+            #expect(!model.visibleSteps.contains(.chat))
+            #expect(model.guideShortcuts(for: .voice).map(\.id) == ["voice.talk"])
+        }
+    }
+
+    @Test func `permission deferral requires confirmation`() async throws {
+        try await fixture { _, model, manager in
+            manager.available = true
+            model.chooseRoute(.custom); model.currentStep = .permissions
+            model.permissions = [.init(id: .microphone, state: .needsAttention, detail: "Missing")]
+            #expect(!model.canAdvance)
+            model.skipPermissions()
+            #expect(model.currentStep == .permissions)
+            #expect(model.skipConfirmation == .permissions)
+            model.confirmSkip()
+            #expect(model.currentStep == .voice)
+        }
+    }
+
+    @Test func `selected language model is assigned to both consumers`() async throws {
+        try await fixture { _, model, _ in
+            try model.modelLibrary.save(
+                .init(id: "test", name: "Local", baseURL: "http://localhost:1234/v1", model: "test"),
+                key: ""
+            )
+            let reference = try #require(model.modelLibrary.firstLocalReference(hasImage: false))
+            model.selectLanguageModel(reference)
+            #expect(model.modelLibrary.defaultReference == reference)
+            #expect(model.modelLibrary.rewriteReference == reference)
+            #expect(model.languageConfigured)
+            #expect(!model.languageVerified)
+            model.currentStep = .llm
+            #expect(!model.canAdvance)
+        }
+    }
+
+    @Test func `successful language probe enables continue and assigns agent default`() async throws {
+        try await fixture { settings, model, _ in
+            try model.modelLibrary.save(
+                .init(id: "test", name: "Local", baseURL: "http://localhost:1234/v1", model: "test"),
+                key: ""
+            )
+            let ref = try #require(model.modelLibrary.firstLocalReference(hasImage: false))
+            model.selectLanguageModel(ref)
+            model.modelLibrary.defaultReference = "cloud:default"
+            model.languageConnectionProbe = { _, _ in "OK" }
+            model.serviceRoute = .custom; model.currentStep = .llm
+            model.testLanguageModel()
+            await model.languageTestTask?.value
+            #expect(model.canAdvance)
+            model.advance()
+            #expect(model.currentStep == .permissions)
+            #expect(model.modelLibrary.defaultReference == ref)
+            #expect(!settings.onboardingAIDeferred)
+        }
+    }
+
+    @Test func `empty language probe is A failure and does not enable continue`() async throws {
+        try await fixture { _, model, _ in
+            try model.modelLibrary.save(
+                .init(id: "test", name: "Local", baseURL: "http://localhost:1234/v1", model: "test"),
+                key: ""
+            )
+            try model.selectLanguageModel(#require(model.modelLibrary.firstLocalReference(hasImage: false)))
+            model.languageConnectionProbe = { _, _ in "" }
+            model.serviceRoute = .custom; model.currentStep = .llm
+            model.testLanguageModel()
+            await model.languageTestTask?.value
+            #expect(!model.canAdvance)
+            if case .failure = model.languageTestState {} else { Issue.record("Empty output must be a failed probe") }
+        }
+    }
+
+    @Test func `changing endpoint invalidates successful language test`() async throws {
+        try await fixture { settings, model, _ in
+            try model.modelLibrary.save(
+                .init(id: "test", name: "Local", baseURL: "http://localhost:1234/v1", model: "test"),
+                key: ""
+            )
+            let reference = try #require(model.modelLibrary.firstLocalReference(hasImage: false))
+            model.selectLanguageModel(reference)
+            model.verifiedLanguageSignature = model.languageConfigurationSignature
+            model.languageTestState = .success(firstTokenMs: 1, totalMs: 1, preview: "OK")
+            #expect(model.languageVerified)
+            let provider = try #require(model.modelLibrary.registry.resolve(reference)?.0)
+            try model.modelLibrary.updateConnection(provider, baseURL: "http://localhost:4321/v1", key: "")
+            model.refreshSetup()
+            #expect(!model.languageVerified)
+            #expect(model.languageTestState == .idle)
+            #expect(settings.rewriteModelReference == reference)
+        }
+    }
+
+    @Test func `typing in practice is not A successful voice test`() async throws {
+        try await fixture { _, model, _ in
+            model.voicePracticeText = "Typed by hand"
+            #expect(!model.didPracticeVoice)
+        }
+    }
+
+    @Test func `practice needs A successful applied recording`() async throws {
+        try await fixture { _, model, _ in
+            let history = OnboardingTestHistoryStore()
+            model.historyStore = history; model.currentStep = .voice
+            model.voicePracticeBeganAt = .distantPast
+            model.voicePracticeText = "Hello"
+            history.records = [HistoryRecord(date: Date(), transcriptText: "Hello", recordingStatus: .succeeded,
+                                             transcriptionStatus: .succeeded, processingStatus: .succeeded,
+                                             applyStatus: .failed)]
+            model.updateVoicePractice()
+            #expect(!model.didPracticeVoice)
+            history.records[0].applyStatus = .succeeded
+            model.updateVoicePractice()
+            #expect(model.didPracticeVoice)
+        }
+    }
+
+    @Test func `finish does not require skipped configuration`() async throws {
+        try await fixture { settings, model, _ in
+            model.skipConfirmation = .allModels; model.confirmSkip()
+            model.currentStep = .finish; model.advance()
+            #expect(settings.isOnboardingCompleted)
+            #expect(settings.onboardingAIDeferred)
+        }
+    }
+
+    @Test func `skipping keeps existing working configurations available`() async throws {
+        try await fixture { _, model, manager in
+            manager.available = true
+            model.permissions = PrivacyGuard.PermissionID.allCases.map { .init(
+                id: $0,
+                state: .granted,
+                detail: "Granted"
+            ) }
+            try model.modelLibrary.save(
+                .init(id: "test", name: "Local", baseURL: "http://localhost:1234/v1", model: "test"),
+                key: ""
+            )
+            try model.selectLanguageModel(#require(model.modelLibrary.firstLocalReference(hasImage: false)))
+            #expect(model.skipMessage(for: .allModels) == L("setup.skip.existingModels"))
+            model.skipConfirmation = .allModels; model.confirmSkip()
+            #expect(model.voiceReady)
+            #expect(model.languageConfigured)
+            #expect(!model.visibleSteps.contains(.voice))
+            #expect(!model.visibleSteps.contains(.chat))
+        }
+    }
+
+    @Test func `skipping keyboard setup explains why voice shortcut is not ready`() async throws {
+        try await fixture { _, model, manager in
+            manager.available = true
+            model.isGlobeKeyReady = false
+            #expect(model.activationHotkey.signature == HotkeyBinding.defaultActivation.signature)
+            model.permissions = PrivacyGuard.PermissionID.allCases.map { .init(
+                id: $0, state: .granted, detail: "Granted"
+            ) }
+            model.currentStep = .permissions
+            #expect(model.needsGlobeKeySetup)
+            #expect(!model.canAdvance)
+            #expect(model.skipMessage(for: .permissions).contains(L("setup.permission.keyboardImpact")))
+            model.skipConfirmation = .permissions; model.confirmSkip()
+            #expect(!model.voiceReady)
+            model.useExternalKeyboardShortcutReplacement(.rightCommand)
+            #expect(model.voiceReady)
+        }
+    }
+
+    @Test func `skipping AI without login does not enable an automatic rewrite persona`() async throws {
+        try await fixture { settings, model, _ in
+            settings.llmRemoteProvider = .typefluxCloud
+            #expect(settings.isLLMConfigured)
+            model.aiSkipped = true; model.currentStep = .finish; model.advance()
+            #expect(!settings.personaRewriteEnabled)
+            #expect(settings.onboardingAIDeferred)
+        }
+    }
+
+    @Test func `configuring models later clears AI deferral`() async throws {
+        try await fixture { settings, model, _ in
+            settings.onboardingAIDeferred = true
+            try model.modelLibrary.save(
+                .init(id: "test", name: "Local", baseURL: "http://localhost:1234/v1", model: "test"), key: ""
+            )
+            try model.selectLanguageModel(#require(model.modelLibrary.firstLocalReference(hasImage: false)))
+            #expect(!settings.onboardingAIDeferred)
+        }
+    }
+
+    @Test func `back follows the selected service route`() async throws {
+        try await fixture { _, model, _ in
+            model.chooseRoute(.custom); model.advance(); model.advance()
+            #expect(model.currentStep == .stt)
+            model.goBack()
+            #expect(model.currentStep == .services)
+            model.chooseRoute(.cloud); model.advance()
+            #expect(model.currentStep == .cloud)
+            model.goBack(); model.goBack()
+            #expect(model.currentStep == .welcome)
+        }
+    }
+
+    @Test func `completion and abandonment analytics are reported once`() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            let recorder = AnalyticsEventRecorder()
+            let model = OnboardingViewModel(settingsStore: settings, analyticsReporter: recorder, onComplete: {})
+            model.currentStep = .services
+            model.skipConfirmation = .allModels; model.confirmSkip()
+            #expect(recorder.events.last?.properties == ["step": "services", "skipped": "true"])
+            model.currentStep = .finish; model.advance(); model.advance()
+            #expect(recorder.events.count(where: { $0.name == "onboarding_completed" }) == 1)
+            #expect(settings.isOnboardingCompleted)
+
+            let abandoned = AnalyticsEventRecorder()
+            let other = OnboardingViewModel(settingsStore: settings, analyticsReporter: abandoned, onComplete: {})
+            other.skipWithoutAnimation(); other.skipWithoutAnimation()
+            #expect(abandoned.events.map(\.name) == ["onboarding_abandoned"])
+        }
+    }
+
+    @Test func `speech preflight distinguishes missing keys and paid cloud access`() async throws {
+        try await fixture { settings, _, _ in
+            settings.sttProvider = .whisperAPI
+            #expect(FeatureSetupStatus.speechReason(
+                settings: settings,
+                loggedIn: false,
+                cloudAllowed: false,
+                localAvailable: false,
+                googleAuthorized: false
+            ) != nil)
+            settings.sttProvider = .typefluxOfficial
+            #expect(FeatureSetupStatus.speechReason(
+                settings: settings,
+                loggedIn: true,
+                cloudAllowed: false,
+                localAvailable: false,
+                googleAuthorized: false
+            ) != nil)
+            #expect(FeatureSetupStatus.speechReason(settings: settings, loggedIn: true,
+                                                    cloudAllowed: true, localAvailable: false,
+                                                    googleAuthorized: false) ==
+                    nil)
+        }
+    }
+
+    @Test func `cloud selection checks access and assigns both models`() async throws {
+        try await fixture { settings, _, manager in
+            let auth = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil },
+                                 loadStoredUserProfile: { nil }, saveStoredToken: { _, _ in },
+                                 saveStoredUserProfile: { _ in },
+                                 clearStoredSession: {}, fetchSubscription: { _ in .none })
+            auth.isLoggedIn = true
+            auth.subscription = BillingSubscriptionSnapshot(planCode: "pro", status: "active",
+                                                            currentPeriodStart: nil, currentPeriodEnd: nil,
+                                                            cancelAtPeriodEnd: false,
+                                                            entitled: true, paid: true, cloudASRAllowed: true)
+            let library = AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
+            let model = OnboardingViewModel(settingsStore: settings, authState: auth, modelLibrary: library,
+                                            localModelManager: manager, onComplete: {})
+            model.currentStep = .cloud
+            #expect(!model.canAdvance)
+            model.cloudCheckCompleted = true
+            #expect(model.canAdvance)
+            model.advance()
+            #expect(model.currentStep == .permissions)
+            #expect(settings.sttProvider == .typefluxOfficial)
+            #expect(library.defaultReference == "cloud:default")
+            #expect(library.rewriteReference == "cloud:default")
+            #expect(model.languageConfigured)
+        }
+    }
+
+    @Test func `custom route accepts tested cloud speech without visiting cloud setup`() async throws {
+        try await fixture { settings, _, manager in
+            let auth = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil },
+                                 loadStoredUserProfile: { nil }, saveStoredToken: { _, _ in },
+                                 saveStoredUserProfile: { _ in }, clearStoredSession: {},
+                                 fetchSubscription: { _ in .none })
+            auth.isLoggedIn = true
+            auth.subscription = BillingSubscriptionSnapshot(planCode: "pro", status: "active",
+                                                            currentPeriodStart: nil, currentPeriodEnd: nil,
+                                                            cancelAtPeriodEnd: false, entitled: true, paid: true,
+                                                            cloudASRAllowed: true)
+            settings.sttProvider = .typefluxOfficial
+            let library = AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
+            let model = OnboardingViewModel(settingsStore: settings, authState: auth, modelLibrary: library,
+                                            localModelManager: manager, onComplete: {})
+            let editor = StudioViewModel(settingsStore: settings, historyStore: OnboardingTestHistoryStore(),
+                                         initialSection: .models, localModelManager: manager, modelLibrary: library)
+            model.configurationModel = editor
+            model.chooseRoute(.custom); model.currentStep = .stt
+            #expect(!model.cloudCheckCompleted)
+            #expect(!model.canAdvance)
+            editor.sttConnectionTestState = .success(firstTokenMs: 1, totalMs: 1, preview: "OK")
+            #expect(model.canAdvance)
+            model.advance()
+            #expect(model.currentStep == .llm)
+            auth.subscription = .none
+            model.currentStep = .stt
+            #expect(!model.canAdvance)
+        }
+    }
+
+    @Test func `cloud account without speech access still needs speech setup`() async throws {
+        try await fixture { settings, _, manager in
+            let auth = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil },
+                                 loadStoredUserProfile: { nil }, saveStoredToken: { _, _ in },
+                                 saveStoredUserProfile: { _ in },
+                                 clearStoredSession: {}, fetchSubscription: { _ in .none })
+            auth.isLoggedIn = true; auth.subscription = .none
+            let model = OnboardingViewModel(settingsStore: settings, authState: auth,
+                                            modelLibrary: AskModelLibrary(
+                                                defaults: settings.defaults,
+                                                automaticallyLoadsCatalog: false
+                                            ),
+                                            localModelManager: manager, onComplete: {})
+            model.currentStep = .cloud; model.cloudCheckCompleted = true
+            model.advance()
+            #expect(model.currentStep == .stt)
+            #expect(!model.visibleSteps.contains(.llm))
+            #expect(settings.sttProvider == .localModel)
+        }
+    }
+
+    @Test func `shortcut replacement and language still persist`() async throws {
+        try await fixture { settings, model, _ in
+            model.useExternalKeyboardShortcutReplacement(.rightCommand)
+            #expect(settings.activationHotkey?.signature == HotkeyBinding.rightCommandActivation.signature)
+            model.restoreDefaultFNShortcuts()
+            #expect(settings.activationHotkey?.signature == HotkeyBinding.defaultActivation.signature)
+            model.setLanguage(.simplifiedChinese)
+            #expect(settings.appLanguage == .simplifiedChinese)
+        }
     }
 }
 
-private final class StubGlobeKeyPreferenceReader: GlobeKeyPreferenceReading {
-    var usage: GlobeKeyUsage?
-
-    init(usage: GlobeKeyUsage?) {
-        self.usage = usage
-    }
-
-    func currentUsage() -> GlobeKeyUsage? {
-        usage
-    }
-}
-
-private final class StubLocalModelManager: LocalSTTModelManaging, @unchecked Sendable {
-    var onPrepare: (() -> Void)?
+final class OnboardingTestModelManager: LocalSTTModelManaging, @unchecked Sendable {
     var available = false
-
-    private let lock = NSLock()
-    private var _preparedConfigurations: [LocalSTTConfiguration] = []
-
-    var preparedConfigurations: [LocalSTTConfiguration] {
-        lock.withLock { _preparedConfigurations }
+    var prepareCount = 0
+    func prepareModel(
+        settingsStore _: SettingsStore,
+        onUpdate _: (@Sendable (LocalSTTPreparationUpdate) -> Void)?
+    ) async throws {
+        prepareCount += 1
     }
 
     func prepareModel(
-        settingsStore: SettingsStore,
-        onUpdate: (@Sendable (LocalSTTPreparationUpdate) -> Void)?
+        configuration _: LocalSTTConfiguration,
+        onUpdate _: (@Sendable (LocalSTTPreparationUpdate) -> Void)?
     ) async throws {
-        try await prepareModel(configuration: LocalSTTConfiguration(settingsStore: settingsStore), onUpdate: onUpdate)
-    }
-
-    func prepareModel(
-        configuration: LocalSTTConfiguration,
-        onUpdate: (@Sendable (LocalSTTPreparationUpdate) -> Void)?
-    ) async throws {
-        lock.withLock { _preparedConfigurations.append(configuration) }
-        onUpdate?(LocalSTTPreparationUpdate(
-            message: "Preparing", progress: 0.5, storagePath: storagePath(for: configuration), source: "Test"
-        ))
-        onPrepare?()
+        prepareCount += 1
     }
 
     func preparedModelInfo(settingsStore _: SettingsStore) -> LocalSTTPreparedModelInfo? {
@@ -408,8 +453,46 @@ private final class StubLocalModelManager: LocalSTTModelManaging, @unchecked Sen
     }
 
     func deleteModelFiles(_: LocalSTTModel) throws {}
+    func storagePath(for _: LocalSTTConfiguration) -> String {
+        "/tmp/onboarding-fixture"
+    }
+}
 
-    func storagePath(for configuration: LocalSTTConfiguration) -> String {
-        "/tmp/\(configuration.model.rawValue)"
+struct OnboardingReadyGlobeKey: GlobeKeyPreferenceReading {
+    func currentUsage() -> GlobeKeyUsage? {
+        .doNothing
+    }
+}
+
+final class OnboardingTestHistoryStore: HistoryStore {
+    var records: [HistoryRecord] = []
+    func save(record: HistoryRecord) {
+        records.append(record)
+    }
+
+    func list() -> [HistoryRecord] {
+        records
+    }
+
+    func list(limit: Int, offset: Int,
+              searchQuery _: String?) -> [HistoryRecord] {
+        Array(records.dropFirst(offset).prefix(limit))
+    }
+
+    func record(id: UUID) -> HistoryRecord? {
+        records.first { $0.id == id }
+    }
+
+    func delete(id: UUID) {
+        records.removeAll { $0.id == id }
+    }
+
+    func purge(olderThanDays _: Int) {}
+    func clear() {
+        records = []
+    }
+
+    func exportMarkdown() throws -> URL {
+        URL(fileURLWithPath: "/tmp/onboarding-fixture.md")
     }
 }

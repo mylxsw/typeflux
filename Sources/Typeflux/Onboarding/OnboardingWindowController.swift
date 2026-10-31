@@ -6,8 +6,8 @@ final class OnboardingWindowController: NSObject {
     static let windowWidth: CGFloat = 960
     static let windowHeight: CGFloat = 664
 
-    private var window: NSWindow?
-    private var viewModel: OnboardingViewModel?
+    private(set) var window: NSWindow?
+    private(set) var viewModel: OnboardingViewModel?
     private var onCompleteHandler: (() -> Void)?
 
     func bringToFront() {
@@ -20,6 +20,8 @@ final class OnboardingWindowController: NSObject {
 
     func show(
         settingsStore: SettingsStore,
+        historyStore: HistoryStore? = nil,
+        resume: Bool = false,
         localModelManager: LocalModelManager? = nil,
         notificationService: LocalNotificationSending = NoopLocalNotificationService(),
         analyticsReporter: AnalyticsEventReporting = NoopAnalyticsEventReporter.shared,
@@ -38,18 +40,36 @@ final class OnboardingWindowController: NSObject {
         let viewModel = OnboardingViewModel(
             settingsStore: settingsStore,
             localModelManager: localModelManager,
-            notificationService: notificationService,
             analyticsReporter: analyticsReporter,
             permissionStatusAnalyticsMonitor: permissionStatusAnalyticsMonitor
         ) { [weak self] in
             self?.handleComplete()
+        }
+        if let historyStore {
+            viewModel.historyStore = historyStore
+            viewModel.configurationModel = StudioViewModel(
+                settingsStore: settingsStore, historyStore: historyStore, initialSection: .models,
+                localModelManager: localModelManager ?? LocalModelManager(),
+                notificationService: notificationService, modelLibrary: viewModel.modelLibrary
+            )
+        }
+        if resume {
+            viewModel.serviceRoute = .custom
+            viewModel.speechSkipped = settingsStore.onboardingSpeechDeferred
+            viewModel.aiSkipped = settingsStore.onboardingAIDeferred
+            viewModel.currentStep = settingsStore.onboardingSpeechDeferred ? .stt
+                : settingsStore.onboardingAIDeferred ? .llm : .permissions
         }
 
         let view = OnboardingView(
             viewModel: viewModel,
             appearanceMode: settingsStore.appearanceMode
         )
-        let hosting = NSHostingView(rootView: view.interfaceStyle(following: InterfaceStyleObserver(settings: settingsStore)))
+        let hosting = NSHostingView(rootView: view
+            .interfaceStyle(following: InterfaceStyleObserver(settings: settingsStore))
+            .frame(width: Self.windowWidth, height: Self.windowHeight))
+        // Animated page transitions must never enlarge this fixed-size wizard.
+        hosting.sizingOptions = []
 
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: Self.windowWidth, height: Self.windowHeight),
@@ -87,6 +107,7 @@ final class OnboardingWindowController: NSObject {
         window?.delegate = nil
         window?.close()
         window = nil
+        viewModel?.languageTestTask?.cancel()
         viewModel = nil
 
         handler?()

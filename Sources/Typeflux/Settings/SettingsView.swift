@@ -598,6 +598,18 @@ struct StudioView: View {
         .frame(height: viewportHeight, alignment: .top)
     }
 
+    /// The onboarding sheet uses the production editors without the settings sidebar.
+    var onboardingModelEditor: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: TFMetrics.toolbarSpacing) { pageHeaderActions }
+            ModelSettingsPage(viewModel: viewModel, library: viewModel.modelLibrary) {
+                focusedProviderConfigurationPanel
+            }
+        }
+        .interfaceStyle(following: interfaceStyleObserver)
+        .environment(\.locale, viewModel.locale)
+    }
+
     private func viewportContentHeight(from viewportSize: CGSize) -> CGFloat {
         max(
             viewportSize.height - StudioTheme.Layout.shellContentTopInset

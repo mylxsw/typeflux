@@ -309,7 +309,9 @@ final class StatusBarController: NSObject {
         menu.addItem(NSMenuItem.separator())
 
         menu.addItem(makeItem(title: L("menu.help"), action: #selector(openHelp)))
-        menu.addItem(makeItem(title: L("menu.setupGuide"), action: #selector(openOnboarding)))
+        menu.addItem(makeItem(title: L(settingsStore.onboardingSpeechDeferred || settingsStore.onboardingAIDeferred
+            || settingsStore.onboardingPermissionsDeferred
+            ? "setup.action.resume" : "menu.setupGuide"), action: #selector(openOnboarding)))
         menu.addItem(makeUpdateMenuItem())
         let feedbackItem = NSMenuItem(title: L("menu.feedback"), action: nil, keyEquivalent: "")
         feedbackItem.submenu = buildFeedbackMenu()

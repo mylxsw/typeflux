@@ -48,11 +48,17 @@ final class AskModelLibrary: ObservableObject {
     // Feature discovery is independent of the Ask catalog.
     @Published private(set) var rewriteCloud: [AskCloudModel]? = [.init(id: "default", name: "Typeflux Cloud", scenarios: ["rewrite"])]
     @Published var defaultReference: String {
-        didSet { defaults.set(defaultReference, forKey: "ask.model.default") }
+        didSet {
+            defaults.set(defaultReference, forKey: "ask.model.default")
+            clearSetupDeferralIfConfigured()
+        }
     }
 
     @Published var rewriteReference: String {
-        didSet { defaults.set(rewriteReference, forKey: "llm.profile.reference") }
+        didSet {
+            defaults.set(rewriteReference, forKey: "llm.profile.reference")
+            clearSetupDeferralIfConfigured()
+        }
     }
 
     @Published var catalogError: String?
@@ -62,6 +68,17 @@ final class AskModelLibrary: ObservableObject {
     let catalog: any ProviderModelCatalog
     @Published private(set) var loading = false
     let settings: SettingsStore
+
+    private func clearSetupDeferralIfConfigured() {
+        guard settings.onboardingAIDeferred,
+              let (askProvider, askModel) = registry.resolve(defaultReference),
+              let (rewriteProvider, rewriteModel) = registry.resolve(rewriteReference),
+              selectionReason(askModel, provider: askProvider, hasImage: false,
+                  loggedIn: AuthState.shared.isLoggedIn) == nil,
+              selectionReason(rewriteModel, provider: rewriteProvider, hasImage: false,
+                  loggedIn: AuthState.shared.isLoggedIn, scenario: "rewrite") == nil else { return }
+        settings.onboardingAIDeferred = false
+    }
 
     var providers: [RegisteredProvider] {
         registry.providers

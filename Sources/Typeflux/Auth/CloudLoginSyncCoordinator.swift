@@ -119,6 +119,9 @@ final class CloudLoginSyncCoordinator {
     /// Exposed for tests; in production triggered after login, or after checkout
     /// confirms a newly entitled or newly paid subscription.
     func offerCloudDefaultsIfNeeded() {
+        // The first-run Cloud step owns its selection and confirmation. Avoid a
+        // second modal that changes providers while the setup window is active.
+        guard settingsStore.isOnboardingCompleted else { return }
         guard hasPaidCloudSubscription() else {
             offerCloudLLMDefaultIfNeeded()
             return
@@ -144,10 +147,18 @@ final class CloudLoginSyncCoordinator {
     private func applyCloudDefaults() {
         settingsStore.sttProvider = .typefluxOfficial
         settingsStore.localOptimizationEnabled = false
+        settingsStore.onboardingSpeechDeferred = false
+        applyCloudLanguageModel()
+        NotificationCenter.default.post(name: .cloudAccountModelDefaultsDidApply, object: settingsStore)
+    }
+
+    private func applyCloudLanguageModel() {
         settingsStore.llmProvider = .openAICompatible
         settingsStore.llmRemoteProvider = .typefluxCloud
+        settingsStore.defaults.set("cloud:default", forKey: "ask.model.default")
+        settingsStore.defaults.set("cloud:default", forKey: "llm.profile.reference")
+        settingsStore.onboardingAIDeferred = false
         settingsStore.applyDefaultPersonaIfLLMConfigured()
-        NotificationCenter.default.post(name: .cloudAccountModelDefaultsDidApply, object: settingsStore)
     }
 
     private func offerCloudLLMDefaultIfNeeded() {
@@ -162,9 +173,7 @@ final class CloudLoginSyncCoordinator {
             return
         }
 
-        settingsStore.llmProvider = .openAICompatible
-        settingsStore.llmRemoteProvider = .typefluxCloud
-        settingsStore.applyDefaultPersonaIfLLMConfigured()
+        applyCloudLanguageModel()
         NotificationCenter.default.post(name: .cloudAccountModelDefaultsDidApply, object: settingsStore)
         promptPresenter.showCloudLLMDefaultApplied()
     }

@@ -7,6 +7,10 @@ final class CloudLoginSyncCoordinatorTests: XCTestCase {
         let settingsStore = makeSettingsStore()
         settingsStore.sttProvider = .whisperAPI
         settingsStore.localOptimizationEnabled = true
+        settingsStore.onboardingSpeechDeferred = true
+        settingsStore.onboardingAIDeferred = true
+        settingsStore.defaults.set("old-model", forKey: "ask.model.default")
+        settingsStore.defaults.set("old-model", forKey: "llm.profile.reference")
         settingsStore.llmProvider = .openAICompatible
         settingsStore.llmRemoteProvider = .openAI
 
@@ -27,6 +31,10 @@ final class CloudLoginSyncCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(settingsStore.sttProvider, .typefluxOfficial)
         XCTAssertFalse(settingsStore.localOptimizationEnabled)
+        XCTAssertFalse(settingsStore.onboardingSpeechDeferred)
+        XCTAssertFalse(settingsStore.onboardingAIDeferred)
+        XCTAssertEqual(settingsStore.defaults.string(forKey: "ask.model.default"), "cloud:default")
+        XCTAssertEqual(settingsStore.rewriteModelReference, "cloud:default")
         XCTAssertEqual(settingsStore.llmProvider, .openAICompatible)
         XCTAssertEqual(settingsStore.llmRemoteProvider, .typefluxCloud)
         XCTAssertEqual(prompt.confirmCallCount, 1)
@@ -37,6 +45,9 @@ final class CloudLoginSyncCoordinatorTests: XCTestCase {
     func testFreePlanOffersCloudLLMWithoutChangingSTTProvider() async throws {
         let settingsStore = makeSettingsStore()
         settingsStore.sttProvider = .whisperAPI
+        settingsStore.onboardingSpeechDeferred = true
+        settingsStore.onboardingAIDeferred = true
+        settingsStore.defaults.set("old-model", forKey: "llm.profile.reference")
         settingsStore.llmProvider = .openAICompatible
         settingsStore.llmRemoteProvider = .openAI
 
@@ -59,6 +70,9 @@ final class CloudLoginSyncCoordinatorTests: XCTestCase {
         XCTAssertEqual(prompt.cloudLLMConfirmCallCount, 1)
         XCTAssertEqual(prompt.cloudLLMSuccessCallCount, 1)
         XCTAssertEqual(settingsStore.sttProvider, .whisperAPI)
+        XCTAssertTrue(settingsStore.onboardingSpeechDeferred)
+        XCTAssertFalse(settingsStore.onboardingAIDeferred)
+        XCTAssertEqual(settingsStore.rewriteModelReference, "cloud:default")
         XCTAssertEqual(settingsStore.llmProvider, .openAICompatible)
         XCTAssertEqual(settingsStore.llmRemoteProvider, .typefluxCloud)
         withExtendedLifetime(coordinator) {}
@@ -216,9 +230,22 @@ final class CloudLoginSyncCoordinatorTests: XCTestCase {
 
     // MARK: - Helpers
 
+    func testOnboardingOwnsCloudSelectionWithoutAnotherModal() {
+        let settings = makeSettingsStore()
+        settings.isOnboardingCompleted = false
+        let prompt = RecordingCloudModelDefaultsPrompt(shouldConfirm: true)
+        let coordinator = CloudLoginSyncCoordinator(settingsStore: settings, promptPresenter: prompt,
+            hasPaidCloudSubscription: { true })
+        coordinator.offerCloudDefaultsIfNeeded()
+        XCTAssertEqual(prompt.confirmCallCount, 0)
+        XCTAssertEqual(settings.sttProvider, .localModel)
+    }
+
     private func makeSettingsStore() -> SettingsStore {
         let defaults = UserDefaults(suiteName: "CloudLoginSyncCoordinatorTests.\(UUID().uuidString)")!
-        return SettingsStore(defaults: defaults)
+        let settings = SettingsStore(defaults: defaults)
+        settings.isOnboardingCompleted = true
+        return settings
     }
 
     private func makeAuthState(subscription: BillingSubscriptionSnapshot) -> AuthState {

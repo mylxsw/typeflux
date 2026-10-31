@@ -722,6 +722,7 @@ final class WorkflowController {
             return
         }
 
+        if showMissingSpeechSetupIfNeeded() { return }
         if showSelectedLocalModelDownloadAlertIfNeeded() {
             if !startLocked {
                 suppressNextActivationTapAfterLocalModelDownloadAlert = true
