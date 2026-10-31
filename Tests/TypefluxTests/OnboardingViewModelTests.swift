@@ -389,6 +389,7 @@ struct OnboardingViewModelTests {
             ) }
             model.currentStep = .permissions
             #expect(model.needsGlobeKeySetup)
+            model.permissionsModel.canContinue = true
             #expect(model.canAdvance)
             #expect(!model.skipMessage(for: .permissions).contains(L("setup.permission.keyboardImpact")))
             model.skipConfirmation = .permissions; model.confirmSkip()

@@ -12,7 +12,9 @@ struct OnboardingView: View {
             VStack(spacing: 0) {
                 page.padding(.top, 52).padding(.bottom, 12)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                OnboardingFooterBar(back: back, tertiary: tertiary, primary: primary) {
+                OnboardingFooterBar(back: back, tertiary: tertiary, primary: primary,
+                                    hint: viewModel.currentStep == .permissions ? viewModel.permissionsModel
+                                        .footerHint : nil) {
                     if viewModel.currentStep == .welcome {
                         Menu {
                             ForEach(AppLanguage.allCases) { language in
