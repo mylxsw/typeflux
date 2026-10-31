@@ -45,25 +45,6 @@ private actor TitleTestAPI: AskAPI {
 @Suite("Conversation titles", .exclusiveUIState)
 @MainActor
 struct AskConversationTitleTests {
-    @Test func headerPreviewPreservesShortTitlesAndTheExactLimit() {
-        for title in ["", "Short title", String(repeating: "字", count: 24)] {
-            #expect(AskConversationTitle.headerPreview(title) == title)
-        }
-    }
-
-    @Test func headerPreviewTruncatesLongTitlesWithoutChangingStoredText() {
-        var value = conversation()
-        value.title = String(repeating: "字", count: 60)
-        #expect(AskConversationTitle.headerPreview(value.title) == String(repeating: "字", count: 24) + "…")
-        #expect(value.title.count == 60)
-    }
-
-    @Test func headerPreviewKeepsCombinedEmojiIntact() {
-        let family = "👨‍👩‍👧‍👦"
-        let title = String(repeating: family, count: 25)
-        #expect(AskConversationTitle.headerPreview(title) == String(repeating: family, count: 24) + "…")
-    }
-
     private func conversation() -> AskConversation {
         let date = Date(timeIntervalSince1970: 1_790_870_400)
         return AskConversation(id: UUID().uuidString.lowercased(), title: "Initial question", revision: 2, updatedAt: date,

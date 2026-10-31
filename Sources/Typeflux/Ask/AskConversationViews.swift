@@ -974,12 +974,7 @@ struct AskConversationView: View {
     }
 
     private var headerTitleLabel: some View {
-        Text(AskConversationTitle.headerPreview(fullHeaderTitle))
-            .lineLimit(1)
-            .truncationMode(.tail)
-            .help(fullHeaderTitle)
-            .accessibilityLabel(fullHeaderTitle)
-            .accessibilityIdentifier("ask.workspace.title")
+        AskConversationHeaderTitle(title: fullHeaderTitle)
     }
 
     /// Keep the essential actions in one row; the title yields before controls do.
