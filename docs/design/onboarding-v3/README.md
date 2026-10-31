@@ -38,6 +38,7 @@ The step pill reads `01 / 04` for route, cloud, speech and llm, `02 / 04` for pe
   - Speech providers follow `STTProvider.onboardingDisplayOrder`.
   - The local model is chosen from a menu following `LocalSTTModel.displayOrder` with sizes, and downloads inline.
   - The speech test is press-and-hold (`按住说话测试`). The first test triggers the system microphone prompt.
+  - Google speech-to-text: 使用 Google 授权 ↗, then a `Project ID` field (reusing the Settings key). Test needs both. (Decision on GUL-638.)
   - LLM shows 免费模型, OpenAI, Anthropic, Gemini, DeepSeek, 通义千问, OpenRouter and Ollama, plus a "更多服务商" menu for the remaining `LLMRemoteProvider` cases and the custom endpoint.
   - Pasting a key auto-validates and fetches the model list.
   - Replaces the 820 × 550 `StudioView` sheet.
