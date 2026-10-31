@@ -7,6 +7,37 @@ import WebKit
 @Suite("Ask sidebar and folder controls", .serialized, .exclusiveUIState)
 @MainActor
 struct AskSidebarControlsTests {
+    @Test(arguments: [InterfaceStyle.liquidGlass, .classic], [false, true])
+    func longHeaderTitlesStayCompactAndKeepTheFullAccessibleTitle(style: InterfaceStyle, collapsed: Bool) async throws {
+        let suite = "header-title-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(collapsed, forKey: "ask.sidebarCollapsed")
+        let fixture = try AskTestFixture(defaults: defaults)
+        defer { fixture.model.resetSession() }
+        let title = String(repeating: "很长的对话标题", count: 12)
+        await fixture.api.seed(.init(id: "long-header", title: title, revision: 1, updatedAt: Date(), messages: []))
+        await fixture.model.select("long-header")
+        for width in [CGFloat(1100), 440] {
+            let window = host(AskConversationView(model: fixture.model).defaultAppStorage(defaults)
+                .environment(\.interfaceStyle, style), dark: collapsed, size: CGSize(width: width, height: 720))
+            defer { window.close() }
+            try await settle(window)
+            let label = try #require(find("ask.workspace.title", in: window))
+            let frame = try #require(label.value(forKey: "accessibilityFrame") as? NSValue).rectValue
+            #expect(frame.width > 0 && frame.width <= 350, "Long titles stay compact even in wide windows")
+            // AppKit exposes a static text's accessible name through its value.
+            let accessibleTitle = label.value(forKey: "accessibilityValue") as? String
+                ?? label.value(forKey: "accessibilityLabel") as? String
+            #expect(accessibleTitle == title)
+            #expect(fixture.model.selected?.title == title, "Display truncation never changes the saved title")
+            let usage = try #require(find("ask.workspace.usage", in: window))
+            let usageFrame = try #require(usage.value(forKey: "accessibilityFrame") as? NSValue).rectValue
+            #expect(frame.maxX <= usageFrame.minX, "The title leaves its tools available")
+            try snapshot(window, name: "header-title-\(style.rawValue)-\(collapsed)-\(Int(width))")
+        }
+    }
+
     @Test(arguments: [InterfaceStyle.liquidGlass, .frosted, .classic], [false, true])
     func headerEmptySpaceCatchesDragsAboveTheTranscript(style: InterfaceStyle, collapsed: Bool) async throws {
         let suite = "header-drag-" + UUID().uuidString

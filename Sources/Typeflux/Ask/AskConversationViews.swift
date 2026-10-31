@@ -967,6 +967,21 @@ struct AskConversationView: View {
 
     private var titleFontSize: CGFloat { style.usesGlass ? 13.5 : 13 }
 
+    private var fullHeaderTitle: String {
+        headerTitle ?? model.selected?.title
+            ?? model.conversations.first(where: { $0.id == model.selectedId })?.title
+            ?? L("ask.new")
+    }
+
+    private var headerTitleLabel: some View {
+        Text(AskConversationTitle.headerPreview(fullHeaderTitle))
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .help(fullHeaderTitle)
+            .accessibilityLabel(fullHeaderTitle)
+            .accessibilityIdentifier("ask.workspace.title")
+    }
+
     /// Keep the essential actions in one row; the title yields before controls do.
     private var compactHeader: some View {
         HStack(spacing: 4) {
@@ -980,10 +995,9 @@ struct AskConversationView: View {
                 }
                 .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
             } else {
-                Text(headerTitle ?? model.selected?.title ?? L("ask.new"))
+                headerTitleLabel
                     .font(.system(size: 12.5, weight: .semibold))
                     .foregroundStyle(StudioTheme.textSecondary)
-                    .lineLimit(1)
                     .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
             }
             if model.selectedId != nil {
@@ -1004,12 +1018,9 @@ struct AskConversationView: View {
                     if let marked = model.markedStorage(launcher: false) {
                         AskStorageTitleGlyph(kind: marked).padding(.trailing, -4)
                     }
-                    Text(headerTitle ?? model.selected?.title
-                        ?? model.conversations.first(where: { $0.id == model.selectedId })?.title
-                        ?? L("ask.new"))
+                    headerTitleLabel
                         .font(.system(size: titleFontSize, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
-                        .lineLimit(1)
                     if model.isLoadingSelection, model.selected != nil { ProgressView().controlSize(.small) }
                     if layout.mainWidth >= 760, let phase = model.runPhase {
                         HStack(spacing: 5) {
