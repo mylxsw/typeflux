@@ -13,6 +13,10 @@ struct OnboardingViewModelTests {
             let model = OnboardingViewModel(settingsStore: settings, modelLibrary: library,
                                             globeKeyReader: OnboardingReadyGlobeKey(), localModelManager: manager,
                                             onComplete: {})
+            // This suite exercises retained legacy setup APIs. V3 page gating is covered by
+            // OnboardingSpeechLLMTests; nil explicitly selects the compatibility readiness path.
+            model.speechModel.canContinue = nil
+            model.llmModel.canContinue = nil
             try await check(settings, model, manager)
         }
     }
@@ -521,6 +525,7 @@ struct OnboardingViewModelTests {
                                             localModelManager: manager, onComplete: {})
             let editor = StudioViewModel(settingsStore: settings, historyStore: OnboardingTestHistoryStore(),
                                          initialSection: .models, localModelManager: manager, modelLibrary: library)
+            model.speechModel.canContinue = nil // Exercise the retained compatibility probe.
             model.configurationModel = editor
             model.chooseRoute(.custom); model.currentStep = .speech
             #expect(!model.cloudCheckCompleted)

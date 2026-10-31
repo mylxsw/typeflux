@@ -1,0 +1,76 @@
+{
+  "status": "runtime validation deferred to GUL-642 by user instruction",
+  "swift_parse": {
+    "command": [
+      "xcrun",
+      "swiftc",
+      "-frontend",
+      "-parse",
+      "Sources/Typeflux/Onboarding/OnboardingConfigPanel.swift",
+      "Sources/Typeflux/Onboarding/OnboardingEditorialHeader.swift",
+      "Sources/Typeflux/Onboarding/OnboardingLLMModel.swift",
+      "Sources/Typeflux/Onboarding/OnboardingLLMPage.swift",
+      "Sources/Typeflux/Onboarding/OnboardingProviderCard.swift",
+      "Sources/Typeflux/Onboarding/OnboardingSelectableCard.swift",
+      "Sources/Typeflux/Onboarding/OnboardingSpeechModel.swift",
+      "Sources/Typeflux/Onboarding/OnboardingSpeechPage.swift",
+      "Sources/Typeflux/Onboarding/OnboardingSpeechTranscriber.swift",
+      "Sources/Typeflux/Settings/ModelProviderIcon.swift",
+      "Tests/TypefluxTests/OnboardingLLMBehaviorTests.swift",
+      "Tests/TypefluxTests/OnboardingProviderControlTests.swift",
+      "Tests/TypefluxTests/OnboardingSpeechBehaviorTests.swift",
+      "Tests/TypefluxTests/OnboardingSpeechLLMCaptureTests.swift",
+      "Tests/TypefluxTests/OnboardingSpeechLLMTests.swift",
+      "Tests/TypefluxTests/OnboardingViewModelTests.swift"
+    ],
+    "seconds": 0.139,
+    "exit": 0,
+    "output": ""
+  },
+  "focused_lint": {
+    "command": [
+      "swiftlint",
+      "lint",
+      "--quiet",
+      "Sources/Typeflux/Onboarding/OnboardingSpeechModel.swift",
+      "Sources/Typeflux/Onboarding/OnboardingSpeechPage.swift",
+      "Sources/Typeflux/Onboarding/OnboardingSpeechTranscriber.swift",
+      "Sources/Typeflux/Onboarding/OnboardingLLMModel.swift",
+      "Sources/Typeflux/Onboarding/OnboardingLLMPage.swift",
+      "Sources/Typeflux/Onboarding/OnboardingProviderCard.swift",
+      "Sources/Typeflux/Onboarding/OnboardingConfigPanel.swift",
+      "Sources/Typeflux/Onboarding/OnboardingEditorialHeader.swift",
+      "Sources/Typeflux/Onboarding/OnboardingSelectableCard.swift",
+      "Tests/TypefluxTests/OnboardingSpeechLLMTests.swift",
+      "Tests/TypefluxTests/OnboardingSpeechBehaviorTests.swift",
+      "Tests/TypefluxTests/OnboardingLLMBehaviorTests.swift",
+      "Tests/TypefluxTests/OnboardingSpeechLLMCaptureTests.swift",
+      "Tests/TypefluxTests/OnboardingProviderControlTests.swift"
+    ],
+    "seconds": 0.744,
+    "exit": 0,
+    "output": ""
+  },
+  "swift_tests_executed": false,
+  "coverage": null,
+  "native_screenshots": [],
+  "script_tests": {
+    "command": "python3 -m unittest scripts.tests.test_test_runtime scripts.tests.test_test_groups",
+    "count": 44,
+    "exit": 0,
+    "seconds": 4.76
+  },
+  "locale_check": {
+    "speech_keys": 51,
+    "llm_keys": 55,
+    "locales": [
+      "en",
+      "zh-Hans",
+      "zh-Hant",
+      "ja",
+      "ko"
+    ],
+    "exit": 0,
+    "seconds": 0.182
+  }
+}

@@ -1,4 +1,57 @@
 /* Onboarding v3: OnboardingSpeech */
 "eyebrow" = "Voice Recognition";
 "title" = "음성 인식";
-"subtitle" = "서비스를 선택하고 한마디 말해 테스트하세요.";
+"subtitle" = "서비스를 선택하고 한 마디 말하여 테스트하세요.";
+"configEyebrow" = "Configuration";
+
+"provider.local.title" = "로컬 모델";
+"provider.local.detail" = "이 Mac에서 실행, 오프라인 및 무료";
+"provider.free.title" = "무료 모델";
+"provider.free.detail" = "설정 불필요, 온라인 사용";
+"provider.soniox.title" = "Soniox";
+"provider.soniox.detail" = "실시간 스트리밍 인식, 다국어";
+"provider.ali.title" = "알리바바 클라우드 ASR";
+"provider.ali.detail" = "Bailian 실시간 음성 인식";
+"provider.doubao.title" = "Doubao 실시간 ASR";
+"provider.doubao.detail" = "Volcengine 스트리밍 인식";
+"provider.google.title" = "Google 음성 텍스트 변환";
+"provider.google.detail" = "Google Cloud Speech";
+"provider.whisper.title" = "OpenAI";
+"provider.whisper.detail" = "Whisper 호환 엔드포인트";
+"provider.groq.title" = "Groq";
+"provider.groq.detail" = "Whisper Large v3";
+"provider.multimodal.title" = "멀티모달 LLM";
+"provider.multimodal.detail" = "AI 모델로 음성 인식";
+
+"badge.recommended" = "추천";
+"badge.free" = "무료";
+"badge.apiKey" = "API Key";
+"badge.auth" = "인증";
+"badge.advanced" = "고급";
+
+"field.model" = "모델";
+"field.apiKey" = "API Key";
+"field.accessToken" = "Access Token";
+"field.appId" = "App ID";
+"field.endpoint" = "엔드포인트";
+
+"local.downloaded" = "다운로드 완료, 오프라인 사용 가능";
+"local.download" = "모델 다운로드";
+"local.cancel" = "취소";
+"local.downloadedTag" = "다운로드됨";
+"free.ready" = "기본 설정으로 바로 사용 가능";
+"google.authorized" = "Google 계정 인증됨";
+"google.authorizeAction" = "Google로 인증";
+"multimodal.notice" = "다음 단계에서 구성할 AI 모델을 사용하여 음성을 인식합니다.";
+
+"placeholder.paste" = "%@ 붙여넣기";
+"placeholder.pasteApiKey" = "API Key 붙여넣기";
+"placeholder.pasteAccessToken" = "Access Token 붙여넣기";
+"action.getKey" = "%@ 받기";
+"action.testHoldToTalk" = "길게 눌러 말하기 테스트";
+"status.listening" = "듣는 중… 손을 떼면 완료";
+"status.recognizing" = "인식 중…";
+"status.samplePreview" = "내일 오후 3시에 회의";
+"error.invalidKey" = "API Key가 유효하지 않습니다. 확인 후 다시 시도하세요";
+"error.micPermissionDenied" = "테스트를 위해 마이크 권한이 필요합니다";
+"action.openSettings" = "설정 열기";

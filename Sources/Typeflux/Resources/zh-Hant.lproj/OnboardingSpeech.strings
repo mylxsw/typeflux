@@ -1,4 +1,57 @@
 /* Onboarding v3: OnboardingSpeech */
 "eyebrow" = "Voice Recognition";
-"title" = "語音辨識";
+"title" = "語音識別";
 "subtitle" = "選擇一個服務，說一句話測試。";
+"configEyebrow" = "Configuration";
+
+"provider.local.title" = "本機模型";
+"provider.local.detail" = "在這台 Mac 上運行，離線免費";
+"provider.free.title" = "免費模型";
+"provider.free.detail" = "無需配置，連網使用";
+"provider.soniox.title" = "Soniox";
+"provider.soniox.detail" = "即時串流識別，多語種";
+"provider.ali.title" = "阿里雲 ASR";
+"provider.ali.detail" = "百煉即時語音識別";
+"provider.doubao.title" = "豆包即時 ASR";
+"provider.doubao.detail" = "火山引擎串流識別";
+"provider.google.title" = "Google 語音轉文字";
+"provider.google.detail" = "Google Cloud Speech";
+"provider.whisper.title" = "OpenAI";
+"provider.whisper.detail" = "Whisper 相容介面";
+"provider.groq.title" = "Groq";
+"provider.groq.detail" = "Whisper Large v3";
+"provider.multimodal.title" = "多模態 LLM";
+"provider.multimodal.detail" = "用 AI 模型識別語音";
+
+"badge.recommended" = "推薦";
+"badge.free" = "免費";
+"badge.apiKey" = "API Key";
+"badge.auth" = "授權";
+"badge.advanced" = "高級";
+
+"field.model" = "模型";
+"field.apiKey" = "API Key";
+"field.accessToken" = "Access Token";
+"field.appId" = "App ID";
+"field.endpoint" = "介面位址";
+
+"local.downloaded" = "已下載，可離線使用";
+"local.download" = "下載模型";
+"local.cancel" = "取消";
+"local.downloadedTag" = "已下載";
+"free.ready" = "使用預設配置，可直接使用";
+"google.authorized" = "已授權 Google 帳號";
+"google.authorizeAction" = "使用 Google 授權";
+"multimodal.notice" = "使用下一步配置的 AI 模型識別語音。";
+
+"placeholder.paste" = "貼上 %@";
+"placeholder.pasteApiKey" = "貼上 API Key";
+"placeholder.pasteAccessToken" = "貼上 Access Token";
+"action.getKey" = "獲取 %@";
+"action.testHoldToTalk" = "按住說話測試";
+"status.listening" = "正在聽…放開結束";
+"status.recognizing" = "識別中…";
+"status.samplePreview" = "明天下午三點開會";
+"error.invalidKey" = "API Key 無效，請檢查後重試";
+"error.micPermissionDenied" = "需要麥克風權限才能測試";
+"action.openSettings" = "打開設定";

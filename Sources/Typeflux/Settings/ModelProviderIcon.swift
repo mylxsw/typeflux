@@ -101,7 +101,7 @@ struct ModelProviderIcon: View {
         case .doubaoRealtime:
             "doubao-color"
         default:
-            nil
+            [StudioModelProviderID.soniox: "soniox"][provider]
         }
     }
 

@@ -1,4 +1,61 @@
 /* Onboarding v3: OnboardingLlm */
 "eyebrow" = "Language Model";
 "title" = "AI 모델";
+"titleBadge" = "선택 사항";
 "subtitle" = "AI 재작성, 번역 및 Agent 대화에 사용됩니다.";
+"configEyebrow" = "Configuration";
+
+"provider.free.title" = "무료 모델";
+"provider.free.detail" = "설정 불필요";
+"provider.openai.title" = "OpenAI";
+"provider.openai.detail" = "GPT 시리즈";
+"provider.anthropic.title" = "Anthropic";
+"provider.anthropic.detail" = "Claude 시리즈";
+"provider.gemini.title" = "Gemini";
+"provider.gemini.detail" = "Google 기본 인터페이스";
+"provider.deepseek.title" = "DeepSeek";
+"provider.deepseek.detail" = "OpenAI 호환 인터페이스";
+"provider.qwen.title" = "통의천문 (Qwen)";
+"provider.qwen.detail" = "알리바바 클라우드 Bailian";
+"provider.openrouter.title" = "OpenRouter";
+"provider.openrouter.detail" = "하나의 Key로 다양한 모델 사용";
+"provider.ollama.title" = "Ollama";
+"provider.ollama.detail" = "이 Mac에서 실행";
+
+"provider.more" = "기타 서비스 제공자";
+"provider.kimi.title" = "Kimi";
+"provider.kimi.detail" = "Moonshot";
+"provider.zhipu.title" = "지푸 (Zhipu)";
+"provider.zhipu.detail" = "GLM 시리즈";
+"provider.minimax.title" = "MiniMax";
+"provider.minimax.detail" = "MiniMax";
+"provider.grok.title" = "Grok";
+"provider.grok.detail" = "xAI";
+"provider.groq.title" = "Groq";
+"provider.groq.detail" = "고속 추론";
+"provider.xiaomi.title" = "샤오미 MiMo";
+"provider.xiaomi.detail" = "샤오미";
+"provider.custom.title" = "OpenAI 호환 인터페이스";
+"provider.custom.detail" = "사용자 지정 주소";
+
+"badge.recommended" = "추천";
+"badge.free" = "무료";
+"badge.apiKey" = "API Key";
+"badge.local" = "로컬";
+"badge.custom" = "사용자 지정";
+
+"field.model" = "모델";
+"field.apiKey" = "API Key";
+"field.endpoint" = "엔드포인트";
+
+"placeholder.autoValidate" = "붙여넣기 후 자동 확인";
+"model.autoFetch" = "확인 후 자동 가져오기";
+"model.default" = "기본 모델";
+"action.getKey" = "API Key 받기";
+"action.testConnection" = "연결 테스트";
+"status.testing" = "테스트 중…";
+"status.sampleReply" = "안녕하세요! 텍스트 재작성을 도와드릴 준비가 되었습니다.";
+"error.invalidKey" = "API Key가 유효하지 않습니다";
+"error.ollamaNotFound" = "Ollama가 감지되지 않았습니다";
+"action.download" = "다운로드";
+"action.retryDetect" = "다시 확인";

@@ -1,4 +1,57 @@
 /* Onboarding v3: OnboardingSpeech */
 "eyebrow" = "Voice Recognition";
-"title" = "Voice recognition";
-"subtitle" = "Choose a service and say something to test it.";
+"title" = "Voice Recognition";
+"subtitle" = "Choose a service and say a sentence to test.";
+"configEyebrow" = "Configuration";
+
+"provider.local.title" = "Local Model";
+"provider.local.detail" = "Runs on this Mac, offline & free";
+"provider.free.title" = "Free Model";
+"provider.free.detail" = "No setup needed, online";
+"provider.soniox.title" = "Soniox";
+"provider.soniox.detail" = "Real-time streaming, multilingual";
+"provider.ali.title" = "AliCloud ASR";
+"provider.ali.detail" = "Bailian real-time recognition";
+"provider.doubao.title" = "Doubao Realtime ASR";
+"provider.doubao.detail" = "Volcengine streaming recognition";
+"provider.google.title" = "Google Speech-to-Text";
+"provider.google.detail" = "Google Cloud Speech";
+"provider.whisper.title" = "OpenAI";
+"provider.whisper.detail" = "Whisper compatible endpoint";
+"provider.groq.title" = "Groq";
+"provider.groq.detail" = "Whisper Large v3";
+"provider.multimodal.title" = "Multimodal LLM";
+"provider.multimodal.detail" = "Use AI model for speech";
+
+"badge.recommended" = "Recommended";
+"badge.free" = "Free";
+"badge.apiKey" = "API Key";
+"badge.auth" = "Auth";
+"badge.advanced" = "Advanced";
+
+"field.model" = "Model";
+"field.apiKey" = "API Key";
+"field.accessToken" = "Access Token";
+"field.appId" = "App ID";
+"field.endpoint" = "Endpoint";
+
+"local.downloaded" = "Downloaded, ready offline";
+"local.download" = "Download Model";
+"local.cancel" = "Cancel";
+"local.downloadedTag" = "Downloaded";
+"free.ready" = "Default configuration ready to use";
+"google.authorized" = "Google account authorized";
+"google.authorizeAction" = "Authorize with Google";
+"multimodal.notice" = "Uses the AI model configured in the next step.";
+
+"placeholder.paste" = "Paste %@";
+"placeholder.pasteApiKey" = "Paste API Key";
+"placeholder.pasteAccessToken" = "Paste Access Token";
+"action.getKey" = "Get %@";
+"action.testHoldToTalk" = "Hold to Talk Test";
+"status.listening" = "Listening… release to finish";
+"status.recognizing" = "Recognizing…";
+"status.samplePreview" = "Meeting tomorrow at 3 PM";
+"error.invalidKey" = "Invalid API Key, please check and retry";
+"error.micPermissionDenied" = "Microphone permission required for testing";
+"action.openSettings" = "Open Settings";

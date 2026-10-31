@@ -2,3 +2,56 @@
 "eyebrow" = "Voice Recognition";
 "title" = "语音识别";
 "subtitle" = "选择一个服务，说一句话测试。";
+"configEyebrow" = "Configuration";
+
+"provider.local.title" = "本地模型";
+"provider.local.detail" = "在这台 Mac 上运行，离线免费";
+"provider.free.title" = "免费模型";
+"provider.free.detail" = "无需配置，联网使用";
+"provider.soniox.title" = "Soniox";
+"provider.soniox.detail" = "实时流式识别，多语种";
+"provider.ali.title" = "阿里云 ASR";
+"provider.ali.detail" = "百炼实时语音识别";
+"provider.doubao.title" = "豆包实时 ASR";
+"provider.doubao.detail" = "火山引擎流式识别";
+"provider.google.title" = "Google 语音转文字";
+"provider.google.detail" = "Google Cloud Speech";
+"provider.whisper.title" = "OpenAI";
+"provider.whisper.detail" = "Whisper 兼容接口";
+"provider.groq.title" = "Groq";
+"provider.groq.detail" = "Whisper Large v3";
+"provider.multimodal.title" = "多模态 LLM";
+"provider.multimodal.detail" = "用 AI 模型识别语音";
+
+"badge.recommended" = "推荐";
+"badge.free" = "免费";
+"badge.apiKey" = "API Key";
+"badge.auth" = "授权";
+"badge.advanced" = "高级";
+
+"field.model" = "模型";
+"field.apiKey" = "API Key";
+"field.accessToken" = "Access Token";
+"field.appId" = "App ID";
+"field.endpoint" = "接口地址";
+
+"local.downloaded" = "已下载，可离线使用";
+"local.download" = "下载模型";
+"local.cancel" = "取消";
+"local.downloadedTag" = "已下载";
+"free.ready" = "使用默认配置，可直接使用";
+"google.authorized" = "已授权 Google 账号";
+"google.authorizeAction" = "使用 Google 授权";
+"multimodal.notice" = "使用下一步配置的 AI 模型识别语音。";
+
+"placeholder.paste" = "粘贴 %@";
+"placeholder.pasteApiKey" = "粘贴 API Key";
+"placeholder.pasteAccessToken" = "粘贴 Access Token";
+"action.getKey" = "获取 %@";
+"action.testHoldToTalk" = "按住说话测试";
+"status.listening" = "正在听…松开结束";
+"status.recognizing" = "识别中…";
+"status.samplePreview" = "明天下午三点开会";
+"error.invalidKey" = "API Key 无效，请检查后重试";
+"error.micPermissionDenied" = "需要麦克风权限才能测试";
+"action.openSettings" = "打开设置";

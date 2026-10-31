@@ -1,4 +1,61 @@
 /* Onboarding v3: OnboardingLlm */
 "eyebrow" = "Language Model";
 "title" = "AI 模型";
+"titleBadge" = "可选";
 "subtitle" = "用于 AI 改写、翻译和 Agent 对话。";
+"configEyebrow" = "Configuration";
+
+"provider.free.title" = "免费模型";
+"provider.free.detail" = "无需配置";
+"provider.openai.title" = "OpenAI";
+"provider.openai.detail" = "GPT 系列";
+"provider.anthropic.title" = "Anthropic";
+"provider.anthropic.detail" = "Claude 系列";
+"provider.gemini.title" = "Gemini";
+"provider.gemini.detail" = "Google 原生接口";
+"provider.deepseek.title" = "DeepSeek";
+"provider.deepseek.detail" = "OpenAI 兼容接口";
+"provider.qwen.title" = "通义千问";
+"provider.qwen.detail" = "阿里云百炼";
+"provider.openrouter.title" = "OpenRouter";
+"provider.openrouter.detail" = "一个 Key 用多家模型";
+"provider.ollama.title" = "Ollama";
+"provider.ollama.detail" = "在这台 Mac 上运行";
+
+"provider.more" = "更多服务商";
+"provider.kimi.title" = "Kimi";
+"provider.kimi.detail" = "Moonshot";
+"provider.zhipu.title" = "智谱";
+"provider.zhipu.detail" = "GLM 系列";
+"provider.minimax.title" = "MiniMax";
+"provider.minimax.detail" = "MiniMax";
+"provider.grok.title" = "Grok";
+"provider.grok.detail" = "xAI";
+"provider.groq.title" = "Groq";
+"provider.groq.detail" = "高速推理";
+"provider.xiaomi.title" = "小米 MiMo";
+"provider.xiaomi.detail" = "小米";
+"provider.custom.title" = "OpenAI 兼容接口";
+"provider.custom.detail" = "自定义地址";
+
+"badge.recommended" = "推荐";
+"badge.free" = "免费";
+"badge.apiKey" = "API Key";
+"badge.local" = "本地";
+"badge.custom" = "自定义";
+
+"field.model" = "模型";
+"field.apiKey" = "API Key";
+"field.endpoint" = "接口地址";
+
+"placeholder.autoValidate" = "粘贴后自动验证";
+"model.autoFetch" = "验证后自动获取";
+"model.default" = "默认模型";
+"action.getKey" = "获取 API Key";
+"action.testConnection" = "测试连接";
+"status.testing" = "测试中…";
+"status.sampleReply" = "你好！我已准备好帮你改写文字。";
+"error.invalidKey" = "API Key 无效";
+"error.ollamaNotFound" = "未检测到 Ollama";
+"action.download" = "下载";
+"action.retryDetect" = "重新检测";
