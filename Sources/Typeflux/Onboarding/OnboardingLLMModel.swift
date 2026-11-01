@@ -93,13 +93,17 @@ final class OnboardingLLMModel: ObservableObject {
         self.catalog = catalog
         let store = session.settingsStore
         if let (provider, _) = session.modelLibrary.registry.resolve(session.modelLibrary.rewriteReference),
-           !provider.isCloud {
+           !provider.isCloud,
+           provider.remote != .freeModel || !FreeLLMModelRegistry.suggestedModelNames.isEmpty {
             selectedProvider = provider.isOllama ? .ollama : .remote(provider.remote ?? .custom)
         } else if store.llmProvider == .ollama {
             selectedProvider = .ollama
         } else if store.defaults.object(forKey: "llm.remote.provider") != nil,
                   store.llmRemoteProvider != .typefluxCloud {
             selectedProvider = .remote(store.llmRemoteProvider)
+        }
+        if selectedProvider == .remote(.freeModel), FreeLLMModelRegistry.suggestedModelNames.isEmpty {
+            selectedProvider = .remote(.openAI)
         }
         $apiKey.dropFirst().sink { [weak self] _ in self?.scheduleValidation() }.store(in: &subscriptions)
         $customBaseURL.dropFirst().sink { [weak self] _ in self?.scheduleValidation() }.store(in: &subscriptions)
@@ -110,7 +114,8 @@ final class OnboardingLLMModel: ObservableObject {
         }.store(in: &subscriptions)
         syncFields(validate: false)
         if let (provider, model) = session.modelLibrary.registry.resolve(session.modelLibrary.rewriteReference),
-           !provider.isCloud {
+           !provider.isCloud,
+           provider.remote != .freeModel || !FreeLLMModelRegistry.suggestedModelNames.isEmpty {
             isSyncing = true
             let connection = session.modelLibrary.connection(provider, model: model)
             apiKey = connection.apiKey
@@ -128,8 +133,15 @@ final class OnboardingLLMModel: ObservableObject {
         testTask?.cancel()
     }
 
+    var availablePrimaryProviders: [OnboardingLLMProvider] {
+        OnboardingLLMProvider.primaryOrder.filter {
+            $0 != .remote(.freeModel) || !FreeLLMModelRegistry.suggestedModelNames.isEmpty
+        }
+    }
+
     func selectProvider(_ provider: OnboardingLLMProvider) {
-        guard provider != selectedProvider else { return }
+        guard provider != .remote(.freeModel) || !FreeLLMModelRegistry.suggestedModelNames.isEmpty,
+              provider != selectedProvider else { return }
         cancelPendingWork()
         selectedProvider = provider
         syncFields()

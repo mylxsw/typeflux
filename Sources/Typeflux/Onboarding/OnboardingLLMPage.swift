@@ -34,7 +34,7 @@ struct OnboardingLLMPage: View {
     private var providerList: some View {
         ScrollView {
             VStack(spacing: 8) {
-                ForEach(OnboardingLLMProvider.primaryOrder, id: \.self) { provider in
+                ForEach(model.availablePrimaryProviders, id: \.self) { provider in
                     OnboardingProviderCard(
                         provider: provider.studioProviderID,
                         title: title(for: provider),
@@ -79,13 +79,12 @@ struct OnboardingLLMPage: View {
             items: OnboardingLLMProvider.moreProviders.map {
                 .init(id: $0.id, title: title(for: $0), detail: detail(for: $0))
             },
-            selection: model.selectedProvider.id, identifier: "onboarding.llm.moreProviders", height: 44,
-            onSelect: { id in
-                if let provider = OnboardingLLMProvider.moreProviders.first(where: { $0.id == id }) {
-                    model.selectProvider(provider)
-                }
+            selection: model.selectedProvider.id, identifier: "onboarding.llm.moreProviders", height: 44
+        ) { id in
+            if let provider = OnboardingLLMProvider.moreProviders.first(where: { $0.id == id }) {
+                model.selectProvider(provider)
             }
-        ) {
+        } label: {
             HStack(spacing: 6) {
                 Text(OnboardingStrings.text("provider.more", table: "OnboardingLlm"))
                     .font(.system(size: 12.5, weight: .semibold))
@@ -285,7 +284,6 @@ private extension OnboardingLLMPage {
                         .padding(.vertical, 2)
                         .background(Color.accentColor.opacity(0.12), in: Capsule())
                 }
-
 
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 10))

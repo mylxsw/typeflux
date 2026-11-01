@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 import AppKit
 import AVFoundation
 import Combine
@@ -82,6 +83,9 @@ final class OnboardingSpeechModel: ObservableObject {
         makeRecorder = { SwitchableAudioRecorder(settingsStore: store, audioDeviceManager: AudioDeviceManager()) }
         makeTranscriber = { OnboardingSpeechTranscriber.make($0, settings: store, manager: manager) }
         selectedProvider = store.sttProvider == .typefluxOfficial ? .localModel : store.sttProvider
+        if selectedProvider == .freeModel, FreeSTTModelRegistry.suggestedModelNames.isEmpty {
+            selectedProvider = .localModel
+        }
         selectedLocalModel = store.localSTTModel
         syncCredentialsForSelectedProvider()
         refreshMicrophoneStatus()
@@ -107,7 +111,8 @@ final class OnboardingSpeechModel: ObservableObject {
     }
 
     func selectProvider(_ provider: STTProvider) {
-        guard provider != selectedProvider else { return }
+        guard provider != .freeModel || !FreeSTTModelRegistry.suggestedModelNames.isEmpty,
+              provider != selectedProvider else { return }
         cancelTest()
         selectedProvider = provider
         session?.selectSpeechProvider(provider)
@@ -124,7 +129,15 @@ final class OnboardingSpeechModel: ObservableObject {
         refreshDownloadProgress()
     }
 
-    var isLocalModelAvailable: Bool { isModelAvailable(selectedLocalModel) }
+    var availableProviders: [STTProvider] {
+        STTProvider.onboardingDisplayOrder.filter {
+            $0 != .freeModel || !FreeSTTModelRegistry.suggestedModelNames.isEmpty
+        }
+    }
+
+    var isLocalModelAvailable: Bool {
+        isModelAvailable(selectedLocalModel)
+    }
 
     func isModelAvailable(_ model: LocalSTTModel) -> Bool {
         session?.localModelManager?.isModelAvailable(model) ?? false
@@ -350,7 +363,7 @@ extension OnboardingSpeechModel {
         }
         switch selectedProvider {
         case .localModel: return isLocalModelAvailable
-        case .freeModel: return true
+        case .freeModel: return !FreeSTTModelRegistry.suggestedModelNames.isEmpty
         case .googleCloud: return isGoogleAuthorized && !trimmed(googleProjectID).isEmpty
         case .doubaoRealtime: return !trimmed(doubaoAppID).isEmpty && !trimmed(doubaoAccessToken).isEmpty
         case .whisperAPI, .aliCloud, .groq, .soniox: return !trimmed(apiKey).isEmpty

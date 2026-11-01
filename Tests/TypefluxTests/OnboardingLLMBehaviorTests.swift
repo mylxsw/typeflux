@@ -110,22 +110,45 @@ extension OnboardingSpeechLLMTests {
         }
     }
 
-    @Test func `empty free LLM catalog blocks continuation and never dispatches a probe`() async throws {
+    @Test func `empty free LLM catalog falls back to a visible provider without committing or probing`() async throws {
         try await fixture { _, session, _, _, _ in
             let model = session.llmModel
             let previousDefault = session.modelLibrary.defaultReference
             session.currentStep = .llm
+            #expect(!model.availablePrimaryProviders.contains(.remote(.freeModel)))
+            #expect(model.selectedProvider == .remote(.openAI))
+            model.selectProvider(.remote(.freeModel))
+            #expect(model.selectedProvider == .remote(.openAI))
             model.activate()
+            try await Controls.wait { !model.isBusy }
             #expect(model.availableModels.isEmpty)
             #expect(model.canContinue == false)
             #expect(!session.languageConfigured)
-            #expect(model.validationStatus == .invalid(message: L("models.noModels")))
+            #expect(model.validationStatus == .idle)
             var probes = 0
             model.connectionProbe = { _, _ in probes += 1; return "Unexpected" }
             model.testConnection()
             await Task.yield()
             #expect(probes == 0 && model.testStatus == .idle)
             #expect(session.modelLibrary.defaultReference == previousDefault)
+        }
+    }
+
+    @Test func `saved empty free providers fall back without overwriting stored settings`() async throws {
+        try await fixture { settings, session, _, catalog, _ in
+            settings.sttProvider = .freeModel
+            settings.llmRemoteProvider = .freeModel
+            let speech = OnboardingSpeechModel(session: session)
+            #expect(!speech.availableProviders.contains(.freeModel))
+            #expect(speech.selectedProvider == .localModel)
+            speech.selectProvider(.freeModel)
+            #expect(speech.selectedProvider == .localModel)
+            #expect(settings.sttProvider == .freeModel)
+            let llm = OnboardingLLMModel(session: session, catalog: catalog)
+            #expect(llm.selectedProvider == .remote(.openAI))
+            #expect(llm.availablePrimaryProviders.contains(llm.selectedProvider))
+            #expect(settings.llmRemoteProvider == .freeModel)
+            llm.cancelPendingWork()
         }
     }
 
@@ -147,7 +170,7 @@ extension OnboardingSpeechLLMTests {
             try await Controls.wait { model.validationStatus == .valid }
             #expect(library.rewriteReference == profile.reference)
             #expect(model.connectionConfiguration().0.id.hasPrefix("endpoint:"))
-            model.selectProvider(.remote(.freeModel))
+            model.selectProvider(.remote(.anthropic))
             model.selectProvider(.remote(.custom))
             try await Controls.wait { model.validationStatus == .valid }
             #expect(model.customBaseURL == profile.baseURL)
@@ -255,5 +278,4 @@ extension OnboardingSpeechLLMTests {
             #expect(settings.multimodalLLMAPIKey.isEmpty)
         }
     }
-
 }

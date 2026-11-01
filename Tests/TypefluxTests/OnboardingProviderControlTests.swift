@@ -9,10 +9,12 @@ extension OnboardingSpeechLLMTests {
             try await Controls.withWindow(OnboardingView(viewModel: session, appearanceMode: .light),
                                           width: 960, height: 664) { _, host in
                 let free = OnboardingStrings.text("provider.free.title", table: "OnboardingSpeech")
-                try await Controls.wait { Controls.contains(free, in: host) }
-                try Controls.button(free, in: host).press()
-                #expect(session.speechModel.selectedProvider == .freeModel)
-                #expect(settings.sttProvider == .freeModel)
+                let soniox = OnboardingStrings.text("provider.soniox.title", table: "OnboardingSpeech")
+                try await Controls.wait { Controls.contains(soniox, in: host) }
+                #expect(!Controls.contains(free, in: host))
+                try Controls.button(soniox, in: host).press()
+                #expect(session.speechModel.selectedProvider == .soniox)
+                #expect(settings.sttProvider == .soniox)
                 let local = OnboardingStrings.text("provider.local.title", table: "OnboardingSpeech")
                 try Controls.button(local, in: host).press()
                 manager.available = false
@@ -29,6 +31,8 @@ extension OnboardingSpeechLLMTests {
                 }
                 let openAI = OnboardingStrings.text("provider.openai.title", table: "OnboardingLlm")
                 try await Controls.wait { Controls.contains(openAI, in: host) }
+                #expect(!Controls.contains(OnboardingStrings.text("provider.free.title", table: "OnboardingLlm"),
+                                           in: host))
                 try Controls.button(openAI, in: host).press()
                 #expect(session.llmModel.selectedProvider == .remote(.openAI))
                 session.llmModel.apiKey = "fixture"
@@ -62,10 +66,11 @@ extension OnboardingSpeechLLMTests {
                 let button = try #require(nativeButtons(host).first {
                     $0.accessibilityIdentifier() == "onboarding.speech.model"
                 })
-                let next = try #require(LocalSTTModel.displayOrder.first { $0 != session.speechModel.selectedLocalModel })
+                let next = try #require(LocalSTTModel.displayOrder
+                    .first { $0 != session.speechModel.selectedLocalModel })
                 let item = try #require(button.itemArray.first { $0.representedObject as? String == next.rawValue })
                 button.select(item)
-                #expect(NSApp.sendAction(try #require(button.action), to: button.target, from: button))
+                #expect(try NSApp.sendAction(#require(button.action), to: button.target, from: button))
                 #expect(settings.localSTTModel == next && session.speechModel.selectedLocalModel == next)
                 #expect(button.bounds.width > 200, "The native hit target fills the editorial field")
             }
@@ -73,7 +78,7 @@ extension OnboardingSpeechLLMTests {
     }
 
     @Test func `native LLM menu updates the registry and disables an empty catalog`() async throws {
-        try await fixture { _, session, _, _, _ in
+        try await fixture { _, session, _, catalog, _ in
             session.currentStep = .llm
             let model = session.llmModel
             model.selectProvider(.remote(.openAI))
@@ -88,11 +93,13 @@ extension OnboardingSpeechLLMTests {
                     $0.accessibilityIdentifier() == "onboarding.llm.model"
                 })
                 let next = try #require(model.availableModels.first { $0 != model.selectedModel })
-                button.select(try #require(button.itemArray.first { $0.representedObject as? String == next }))
-                #expect(NSApp.sendAction(try #require(button.action), to: button.target, from: button))
+                try button.select(#require(button.itemArray.first { $0.representedObject as? String == next }))
+                #expect(try NSApp.sendAction(#require(button.action), to: button.target, from: button))
                 #expect(model.selectedModel == next)
                 #expect(session.modelLibrary.registry.resolve(session.modelLibrary.rewriteReference)?.1.id == next)
-                model.selectProvider(.remote(.freeModel))
+                catalog.ids = []
+                model.apiKey = "another-fixture"
+                try await Controls.wait { model.validationStatus == .invalid(message: L("models.noModels")) }
                 try await Controls.wait { nativeButtons(host).contains {
                     $0.accessibilityIdentifier() == "onboarding.llm.model"
                         && !$0.isEnabled && $0.numberOfItems == 0
@@ -102,7 +109,7 @@ extension OnboardingSpeechLLMTests {
                 })
                 #expect(empty.selectedItem == nil && model.canContinue == false)
                 let reference = session.modelLibrary.rewriteReference
-                _ = NSApp.sendAction(try #require(empty.action), to: empty.target, from: empty)
+                _ = try NSApp.sendAction(#require(empty.action), to: empty.target, from: empty)
                 #expect(session.modelLibrary.rewriteReference == reference)
             }
         }
@@ -117,7 +124,11 @@ extension OnboardingSpeechLLMTests {
             Controls.contains(OnboardingStrings.text("title", table: "OnboardingSpeech"), in: host)
                 && !Controls.contains(OnboardingStrings.text("title", table: "OnboardingLlm"), in: host)
         }
-        try await captureNativeMenu(in: host, identifier: "onboarding.speech.model", name: "speech-model-menu-\(suffix)")
+        try await captureNativeMenu(
+            in: host,
+            identifier: "onboarding.speech.model",
+            name: "speech-model-menu-\(suffix)"
+        )
         session.currentStep = .llm
         session.llmModel.selectProvider(.remote(.openAI))
         session.llmModel.apiKey = "fixture"
@@ -127,11 +138,14 @@ extension OnboardingSpeechLLMTests {
                 && !nativeButtons(host).contains { $0.accessibilityIdentifier() == "onboarding.speech.model" }
         }
         try await captureNativeMenu(in: host, identifier: "onboarding.llm.model", name: "llm-model-menu-\(suffix)")
-        try await captureNativeMenu(in: host, identifier: "onboarding.llm.moreProviders", name: "llm-more-menu-\(suffix)")
+        try await captureNativeMenu(
+            in: host,
+            identifier: "onboarding.llm.moreProviders",
+            name: "llm-more-menu-\(suffix)"
+        )
     }
 
     private func captureNativeMenu(in host: NSView, identifier: String, name: String) async throws {
         try await Controls.captureMenu(in: host, identifier: identifier, name: name)
     }
-
 }

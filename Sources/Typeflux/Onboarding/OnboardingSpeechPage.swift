@@ -39,7 +39,7 @@ struct OnboardingSpeechPage: View {
     private var providerList: some View {
         ScrollView {
             VStack(spacing: 8) {
-                ForEach(STTProvider.onboardingDisplayOrder, id: \.self) { provider in
+                ForEach(model.availableProviders, id: \.self) { provider in
                     OnboardingProviderCard(
                         provider: provider.studioProviderID,
                         title: title(for: provider),
@@ -116,16 +116,15 @@ private extension OnboardingSpeechPage {
                     items: LocalSTTModel.displayOrder.map { local in
                         .init(id: local.rawValue, title: local.displayName,
                               detail: model.isModelAvailable(local)
-                                ? OnboardingStrings.text("local.downloadedTag", table: "OnboardingSpeech")
-                                : local.specs.sizeValue)
+                                  ? OnboardingStrings.text("local.downloadedTag", table: "OnboardingSpeech")
+                                  : local.specs.sizeValue)
                     },
                     selection: model.selectedLocalModel.rawValue,
                     identifier: "onboarding.speech.model",
-                    height: 36,
-                    onSelect: { id in
-                        if let local = LocalSTTModel(rawValue: id) { model.selectLocalModel(local) }
-                    }
-                ) {
+                    height: 36
+                ) { id in
+                    if let local = LocalSTTModel(rawValue: id) { model.selectLocalModel(local) }
+                } label: {
                     HStack(spacing: 8) {
                         Text(model.selectedLocalModel.displayName)
                             .font(.system(size: 13))

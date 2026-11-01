@@ -15,7 +15,7 @@ extension OnboardingSpeechLLMTests {
                     settings.appLanguage = language
                     AppLocalization.shared.setLanguage(language)
                     try await Controls.withWindow(OnboardingView(viewModel: session, appearanceMode: appearance),
-                                            width: 960, height: 664, nativeWindow: true) { window, host in
+                                                  width: 960, height: 664, nativeWindow: true) { window, host in
                         window.appearance = AppAppearance.nsAppearance(for: appearance)
                         @MainActor func capture(_ name: String) async throws {
                             try await Task.sleep(for: .milliseconds(80))
@@ -31,6 +31,7 @@ extension OnboardingSpeechLLMTests {
             }
         }
     }
+
     private func captureSpeech(_ session: OnboardingViewModel, manager: Manager, host: NSView,
                                capture: @MainActor (String) async throws -> Void) async throws {
         let speech = session.speechModel
@@ -61,7 +62,7 @@ extension OnboardingSpeechLLMTests {
         speech.isMicrophoneDenied = true
         try await capture("speech-microphone-denied")
         speech.isMicrophoneDenied = false
-        for provider in STTProvider.onboardingDisplayOrder {
+        for provider in speech.availableProviders {
             speech.selectProvider(provider)
             try await capture("speech-\(provider.rawValue)")
             if provider == .soniox {
@@ -90,7 +91,7 @@ extension OnboardingSpeechLLMTests {
             OnboardingStrings.text("title", table: "OnboardingLlm"),
             in: host
         ) }
-        try await capture("llm-free")
+        try await capture("llm-initial")
         llm.selectProvider(.remote(.openAI))
         try await Controls.wait { llm.validationStatus == .idle }
         try await capture("llm-key-empty")
@@ -116,7 +117,7 @@ extension OnboardingSpeechLLMTests {
         llm.validationStatus = .valid
         llm.testStatus = .failure(message: "Connection failed")
         try await capture("llm-failure")
-        for provider in OnboardingLLMProvider.primaryOrder + OnboardingLLMProvider.moreProviders {
+        for provider in llm.availablePrimaryProviders + OnboardingLLMProvider.moreProviders {
             llm.selectProvider(provider)
             try await Controls.wait { llm.validationStatus != .validating }
             try await capture("llm-\(provider.id)")

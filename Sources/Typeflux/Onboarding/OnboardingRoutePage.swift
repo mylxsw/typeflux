@@ -44,22 +44,11 @@ struct OnboardingRoutePage: View {
                         Text(detail).font(.system(size: 12.5)).foregroundStyle(.secondary)
                     }
                     Spacer(minLength: 4)
-                    radio(selected: selected).padding(.top, 2)
+                    OnboardingSelectionIndicator(selected: selected).padding(.top, 2)
                 }.padding(.horizontal, 8).padding(.top, 16).padding(.bottom, 8)
             }
             .padding(10)
-            .background(cardFill(selected: selected))
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-            .overlay(RoundedRectangle(cornerRadius: 18).stroke(
-                selected ? (colorScheme == .dark ? Color.white : .accentColor).opacity(0.28) : .primary.opacity(0.08)
-            ))
-            .overlay {
-                if selected {
-                    RoundedRectangle(cornerRadius: 21).stroke(Color.accentColor.opacity(0.85), lineWidth: 1.2)
-                        .padding(-3)
-                }
-            }
-            .contentShape(RoundedRectangle(cornerRadius: 18))
+            .modifier(OnboardingSelectionSurface(selected: selected))
         }
         .buttonStyle(.plain)
         .simultaneousGesture(TapGesture(count: 2).onEnded { select(route, continueImmediately: true) })
@@ -74,24 +63,6 @@ struct OnboardingRoutePage: View {
         if continueImmediately {
             viewModel.advance()
         }
-    }
-
-    private func cardFill(selected: Bool) -> Color {
-        if selected {
-            return colorScheme == .dark ? color(0x3A3A40).opacity(0.96) : .accentColor.opacity(0.07)
-        }
-        return colorScheme == .dark ? .white.opacity(0.045) : .white
-    }
-
-    private func radio(selected: Bool) -> some View {
-        ZStack {
-            if selected {
-                Circle().fill(Color.accentColor)
-                Circle().fill(.white).frame(width: 7, height: 7)
-            } else {
-                Circle().stroke(Color.secondary.opacity(0.4), lineWidth: 1.5)
-            }
-        }.frame(width: 18, height: 18)
     }
 
     private var cloudArt: some View {
