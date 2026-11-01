@@ -66,8 +66,14 @@ struct OnboardingDoubaoConfiguration: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text(text("doubao.resourceLabel"))
-                        .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+                    HStack(spacing: 4) {
+                        Text(text("doubao.resourceLabel"))
+                        Image(systemName: "questionmark.circle")
+                            .help(text("doubao.resourceHint"))
+                            .accessibilityLabel(text("doubao.resourceHint"))
+                            .accessibilityIdentifier("onboarding.speech.doubaoResourceHelp")
+                    }
+                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
                     Spacer()
                     OnboardingModelPicker(
                         items: resources, selection: model.doubaoResourceID,
@@ -87,9 +93,6 @@ struct OnboardingDoubaoConfiguration: View {
                     .accessibilityLabel(text("doubao.resourceLabel"))
                     .accessibilityIdentifier("onboarding.speech.doubaoResourceID")
                     .modifier(DoubaoInputSurface())
-                Text(text("doubao.resourceHint"))
-                    .font(.system(size: 11)).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

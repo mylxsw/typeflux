@@ -40,7 +40,7 @@ struct OnboardingComponentTests {
                                     }
                                 }.frame(width: 330)
                                 OnboardingConfigPanel(eyebrow: "CONFIGURATION", name: "OpenAI",
-                                                      provider: .whisperAPI, detail: "Whisper") {
+                                                      provider: .whisperAPI) {
                                     TextField("API Key", text: .constant("")).textFieldStyle(.roundedBorder)
                                         .frame(height: 34)
                                 } actions: {

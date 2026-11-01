@@ -66,10 +66,9 @@ struct OnboardingSpeechPage: View {
             eyebrow: OnboardingStrings.text("configEyebrow", table: "OnboardingSpeech"),
             name: title(for: model.selectedProvider),
             provider: model.selectedProvider.studioProviderID,
-            detail: detail(for: model.selectedProvider),
-            fields: { VStack(alignment: .leading, spacing: 14) { configFields; configResult } },
+            fields: { configFields },
             actions: { configActions },
-            result: { EmptyView() }
+            result: { configResult }
         )
     }
 }

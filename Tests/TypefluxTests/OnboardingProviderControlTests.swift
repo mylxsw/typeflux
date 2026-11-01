@@ -73,6 +73,15 @@ extension OnboardingSpeechLLMTests {
                         }
                         #expect(editable != nil)
                         #expect(try #require(editable).frame.intersects(window.frame))
+                        let help = try #require(Controls.elements(in: host).first {
+                            $0.value("accessibilityIdentifier") as? String == "onboarding.speech.doubaoResourceHelp"
+                        })
+                        let hint = OnboardingStrings.text("doubao.resourceHint", table: "OnboardingSpeech")
+                        #expect(help.label == hint)
+                        #expect(help.value("accessibilityHelp") as? String == hint)
+                        #expect(!Controls.elements(in: host).contains {
+                            $0.role == NSAccessibility.Role.staticText.rawValue && $0.text == hint
+                        })
                         #expect(Controls.contains(
                             OnboardingStrings.text("doubao.guideTitle", table: "OnboardingSpeech"),
                             in: host
@@ -100,6 +109,63 @@ extension OnboardingSpeechLLMTests {
                 }
             }
         }
+    }
+
+    @Test func `speech test feedback stays fully visible outside the configuration scroll area`() async throws {
+        try await fixture { _, session, _, _, _ in
+            let model = session.speechModel
+            model.selectProvider(.doubaoRealtime)
+            model.doubaoAppID = "fixture-app"
+            model.doubaoAccessToken = "fixture-token"
+            for language in [AppLanguage.english, .simplifiedChinese] {
+                AppLocalization.shared.setLanguage(language)
+                for appearance in [AppearanceMode.light, .dark] {
+                    try await Controls.withWindow(OnboardingView(viewModel: session, appearanceMode: appearance),
+                                                  width: 960, height: 664, nativeWindow: true) { window, host in
+                        window.appearance = AppAppearance.nsAppearance(for: appearance)
+                        let guide = OnboardingStrings.text("doubao.guideTitle", table: "OnboardingSpeech")
+                        try await Controls.wait { Controls.contains(guide, in: host) }
+                        let states: [(OnboardingSpeechModel.TestStatus, String)] = [
+                            (.recording, OnboardingStrings.text("status.listening", table: "OnboardingSpeech")),
+                            (.recognizing, OnboardingStrings.text("status.recognizing", table: "OnboardingSpeech")),
+                            (.failure(message: "Fixture connection error"), "Fixture connection error"),
+                            (.success(preview: "Meeting tomorrow at three", latencyMs: 640),
+                             "「Meeting tomorrow at three」")
+                        ]
+                        for expanded in [false, true] {
+                            if expanded { try Controls.button(guide, in: host).press() }
+                            for (status, text) in states {
+                                model.testStatus = status
+                                try await Controls.wait { Controls.contains(text, in: host) }
+                                host.layoutSubtreeIfNeeded()
+                                let feedback = try #require(Controls.elements(in: host).first { $0.text == text })
+                                let button = try Controls.button(
+                                    OnboardingStrings.text("action.testHoldToTalk", table: "OnboardingSpeech"),
+                                    in: host
+                                )
+                                let content = window.convertToScreen(host.convert(host.bounds, to: nil))
+                                #expect(feedback.frame.height > 0 && content.contains(feedback.frame))
+                                #expect(content.contains(button.frame))
+                                #expect(feedback.frame.maxY < button.frame.minY)
+                                let scrolls = configurationScrollViews(in: host)
+                                #expect(!scrolls.isEmpty)
+                                for scroll in scrolls {
+                                    let viewport = window.convertToScreen(scroll.convert(scroll.bounds, to: nil))
+                                    #expect(!viewport.intersects(feedback.frame))
+                                }
+                            }
+                            try Controls.snapshot(host, name:
+                                "doubao-feedback-\(expanded ? "expanded" : "collapsed")-\(language.rawValue)-\(appearance.rawValue)")
+                        }
+                        model.testStatus = .idle
+                    }
+                }
+            }
+        }
+    }
+
+    private func configurationScrollViews(in view: NSView) -> [NSScrollView] {
+        (view as? NSScrollView).map { [$0] } ?? view.subviews.flatMap { configurationScrollViews(in: $0) }
     }
 
     @Test func `native speech model menu persists the selected model`() async throws {

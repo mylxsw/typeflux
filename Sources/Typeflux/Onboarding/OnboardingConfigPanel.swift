@@ -4,7 +4,6 @@ struct OnboardingConfigPanel<Fields: View, Actions: View, Result: View>: View {
     let eyebrow: String
     let name: String
     var provider: StudioModelProviderID?
-    var detail: String?
     @ViewBuilder var fields: () -> Fields
     @ViewBuilder var actions: () -> Actions
     @ViewBuilder var result: () -> Result
@@ -25,13 +24,11 @@ struct OnboardingConfigPanel<Fields: View, Actions: View, Result: View>: View {
                 }
                 Text(name).font(.system(size: 18, weight: .bold))
             }
-            if let detail {
-                Text(detail).font(.system(size: 12)).foregroundStyle(.secondary).padding(.top, -6)
-            }
             ScrollView { fields().frame(maxWidth: .infinity, alignment: .leading) }
                 .scrollIndicators(.hidden)
-            actions().frame(maxWidth: .infinity)
+            actions().frame(maxWidth: .infinity).fixedSize(horizontal: false, vertical: true)
             result().font(.system(size: 12)).frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.vertical, 22).padding(.horizontal, 24).frame(
             maxWidth: .infinity,

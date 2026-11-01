@@ -107,7 +107,6 @@ struct OnboardingLLMPage: View {
             eyebrow: OnboardingStrings.text("configEyebrow", table: "OnboardingLlm"),
             name: title(for: model.selectedProvider),
             provider: model.selectedProvider.studioProviderID,
-            detail: detail(for: model.selectedProvider),
             fields: { VStack(alignment: .leading, spacing: 14) { configFields; configResult } },
             actions: { configActions },
             result: { EmptyView() }
