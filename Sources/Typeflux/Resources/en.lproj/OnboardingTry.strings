@@ -44,5 +44,5 @@
 "ring.hold" = "Hold";
 "ring.move" = "Move toward an action";
 "ring.release" = "Release to run";
-"ring.practiceHint" = "Click a slice here to practice. No action will run.";
+"ring.practiceHint" = "Practice only. No actions run.";
 "ring.empty" = "Add actions in Settings → Ring to start.";

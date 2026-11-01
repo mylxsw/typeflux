@@ -44,5 +44,5 @@
 "ring.hold" = "長押し";
 "ring.move" = "使いたい操作へ移動";
 "ring.release" = "キーを離して実行";
-"ring.practiceHint" = "ここではクリックして練習できます。実際の操作は実行されません。";
+"ring.practiceHint" = "クリックで練習（実行しません）";
 "ring.empty" = "設定のリング画面で操作を追加してください。";

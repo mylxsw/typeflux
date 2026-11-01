@@ -243,6 +243,10 @@ struct OnboardingTryTests {
             #expect(!ring.isEmpty && ring != "feature.ring")
             #expect(!chat.isEmpty && chat != "feature.chat")
             #expect(!tried.isEmpty && tried != "button.tried")
+            for key in ["ring.practiceHint", "ring.empty"] {
+                let value = OnboardingStrings.text(key, table: "OnboardingTry", language: lang)
+                #expect(!value.isEmpty && value != key)
+            }
         }
     }
 

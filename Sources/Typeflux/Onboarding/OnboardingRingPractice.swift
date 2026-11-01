@@ -44,7 +44,8 @@ struct OnboardingRingPractice: View {
                 Divider().opacity(0.5)
                 Text(model.ringConfiguration.actions.isEmpty ? text("ring.empty") : text("ring.practiceHint"))
                     .font(.system(size: 11)).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.9)
                 if let title = selectedTitle ?? pointedTitle {
                     Text(title).font(.system(size: 12, weight: .semibold)).lineLimit(2)
                         .foregroundStyle(Color.accentColor)

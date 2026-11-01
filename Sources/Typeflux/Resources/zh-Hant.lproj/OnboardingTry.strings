@@ -44,5 +44,5 @@
 "ring.hold" = "按住";
 "ring.move" = "移向要用的動作";
 "ring.release" = "放開快速鍵執行";
-"ring.practiceHint" = "在這裡點選扇區練習，不會執行實際操作。";
+"ring.practiceHint" = "點選扇區練習，不執行操作。";
 "ring.empty" = "先到設定的圓環頁面加入動作。";
