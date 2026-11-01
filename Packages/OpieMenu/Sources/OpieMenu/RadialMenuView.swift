@@ -10,6 +10,7 @@ final class RadialMenuView: NSView {
     /// When set, a click in the middle calls this instead of closing the ring.
     var onCenterClick: (() -> Void)? { didSet { needsDisplay = true } }
     var freezesPointerForPreview = false
+    var tracksPointerOutsideBounds = true
     var onShapeChanged: (() -> Void)?
     var items: [OpieMenuItem]
     var centerTitle: String
@@ -163,6 +164,10 @@ final class RadialMenuView: NSView {
     override func mouseMoved(with event: NSEvent) { updateHover(event) }
     override func mouseEntered(with event: NSEvent) { updateHover(event) }
     override func mouseExited(with event: NSEvent) {
+        if !tracksPointerOutsideBounds {
+            updateHover(at: center)
+            return
+        }
         // The ring keeps following the pointer after it crosses the panel edge.
         refreshPointerFromScreen()
         startTicker()
@@ -193,8 +198,9 @@ final class RadialMenuView: NSView {
         let screenPoint = NSEvent.mouseLocation
         if let lastGlobalMouseLocation, distance(screenPoint, lastGlobalMouseLocation) < 0.5 { return }
         lastGlobalMouseLocation = screenPoint
-        let point = untransformed(convert(window.convertPoint(fromScreen: screenPoint), from: nil))
-        updateHover(at: point)
+        let localPoint = convert(window.convertPoint(fromScreen: screenPoint), from: nil)
+        guard tracksPointerOutsideBounds || bounds.contains(localPoint) else { return }
+        updateHover(at: untransformed(localPoint))
     }
 
     override func mouseDown(with event: NSEvent) {

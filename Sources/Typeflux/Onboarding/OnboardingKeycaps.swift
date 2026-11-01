@@ -10,6 +10,8 @@ struct OnboardingKeycaps: View {
             ForEach(Array(keys.enumerated()), id: \.offset) { _, key in
                 Text(key)
                     .font(.studioBody(11, weight: .semibold))
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
                     .foregroundStyle(StudioTheme.textPrimary)
                     .padding(.horizontal, 6)
                     .frame(minWidth: 22, minHeight: 21)
@@ -23,6 +25,7 @@ struct OnboardingKeycaps: View {
                     )
             }
         }
+        .fixedSize(horizontal: true, vertical: false)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(keys.joined(separator: " "))
     }

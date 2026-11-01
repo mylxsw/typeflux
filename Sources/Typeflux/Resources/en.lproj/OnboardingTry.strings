@@ -38,3 +38,11 @@
 "chat.result" = "July, +32% MoM";
 
 "button.tried" = "Tried it";
+
+/* Ring practice */
+"ring.guideTitle" = "Use the ring";
+"ring.hold" = "Hold the shortcut";
+"ring.move" = "Move toward an action";
+"ring.release" = "Release to run";
+"ring.practiceHint" = "Click a slice here to practice. No action will run.";
+"ring.empty" = "Add actions in Settings → Ring to start.";

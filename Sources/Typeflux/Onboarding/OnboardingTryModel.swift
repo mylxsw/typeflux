@@ -25,15 +25,24 @@ final class OnboardingTryModel: ObservableObject {
 
     weak var session: OnboardingViewModel?
 
-    @Published var canContinue: Bool? = nil
+    @Published var canContinue: Bool?
     @Published var isBusy = false
     @Published var primaryAction: (() -> Void)?
 
     @Published var selectedFeature: Feature = .voice
     @Published private(set) var triedFeatures: Set<Feature> = []
 
+    private var ringSubscription: AnyCancellable?
+
     init(session: OnboardingViewModel) {
         self.session = session
+        ringSubscription = NotificationCenter.default.publisher(for: .ringSettingsDidChange,
+                                                                object: session.settingsStore)
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+    }
+
+    var ringConfiguration: RingConfiguration {
+        session?.settingsStore.ringConfiguration ?? RingConfiguration()
     }
 
     func isTried(_ feature: Feature) -> Bool {

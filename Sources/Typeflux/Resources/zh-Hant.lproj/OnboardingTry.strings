@@ -38,3 +38,11 @@
 "chat.result" = "7 月，環比 +32%";
 
 "button.tried" = "試過了";
+
+/* Ring practice */
+"ring.guideTitle" = "這樣使用圓環";
+"ring.hold" = "按住快速鍵";
+"ring.move" = "移向要用的動作";
+"ring.release" = "放開快速鍵執行";
+"ring.practiceHint" = "在這裡點選扇區練習，不會執行實際操作。";
+"ring.empty" = "先到設定的圓環頁面加入動作。";

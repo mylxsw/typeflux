@@ -329,11 +329,71 @@ struct OnboardingTryTests {
         }
     }
 
+    @Test func `ring practice renders saved actions and pointer selection stays in onboarding`() async throws {
+        try await UI.withFixture { settings in
+            var action = RingAction.feature(.translate)
+            action.title = "Practice translation"
+            let configuration = RingConfiguration(actions: [action, .feature(.clipboard)], style: .classic,
+                                                  centerTitle: "My Ring")
+            settings.ringConfiguration = configuration
+            let model = OnboardingViewModel(
+                settingsStore: settings,
+                modelLibrary: AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false),
+                globeKeyReader: OnboardingReadyGlobeKey(), localModelManager: OnboardingTestModelManager(),
+                onComplete: {}
+            )
+            model.currentStep = .try
+            model.tryModel.selectFeature(.ring)
+            try await withNativeWindow(OnboardingView(viewModel: model, appearanceMode: .dark),
+                                       appearance: .dark) { window, host in
+                func preview(in view: NSView) -> NSView? {
+                    if String(describing: type(of: view)) == "OpieMenuPreviewView" { return view }
+                    return view.subviews.lazy.compactMap { preview(in: $0) }.first
+                }
+                try await UI.wait { preview(in: host) != nil }
+                let embedded = try #require(preview(in: host))
+                let drawing = try #require(embedded.subviews.first?.subviews.last)
+                #expect(String(describing: type(of: drawing)) == "RadialMenuView")
+                let point = drawing.convert(NSPoint(x: drawing.bounds.midX, y: drawing.bounds.midY + 100), to: nil)
+                func event(_ type: NSEvent.EventType) throws -> NSEvent {
+                    try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [], timestamp: 0,
+                                                    windowNumber: window.windowNumber, context: nil,
+                                                    eventNumber: 0, clickCount: 1, pressure: 1))
+                }
+                try drawing.mouseMoved(with: event(.mouseMoved))
+                try await Task.sleep(for: .milliseconds(180))
+                try UI.snapshot(host, name: "try-ring-native-hover")
+                try drawing.mouseDown(with: event(.leftMouseDown))
+                try drawing.mouseUp(with: event(.leftMouseUp))
+                try await UI.wait { model.tryModel.isTried(.ring) }
+                #expect(UI.contains(action.title, in: host))
+                #expect(settings.ringConfiguration == configuration)
+            }
+        }
+    }
+
+    @Test func `ring practice follows configured titles order and appearance`() async throws {
+        try await UI.withFixture { settings in
+            let session = OnboardingViewModel(
+                settingsStore: settings,
+                modelLibrary: AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false),
+                globeKeyReader: OnboardingReadyGlobeKey(), localModelManager: OnboardingTestModelManager(),
+                onComplete: {}
+            )
+            let configuration = RingConfiguration(actions: [.feature(.clipboard), .feature(.translate)],
+                                                  style: .liquidGlass, centerTitle: "Custom")
+            settings.ringConfiguration = configuration
+            #expect(session.tryModel.ringConfiguration == configuration)
+            #expect(!session.tryModel.isTried(.ring))
+        }
+    }
+
     @Test func `try page captures native snapshots across all states in dark and light modes`() async throws {
         for language in [AppLanguage.english, .simplifiedChinese] {
             for appearance in [AppearanceMode.dark, AppearanceMode.light] {
                 let mode = "\(language.rawValue)-\(appearance.rawValue)"
                 try await UI.withFixture { settings in
+                    settings.actionHotkeys[.ring] = .rightCommandActivation
                     let library = AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
                     let viewModel = OnboardingViewModel(
                         settingsStore: settings,

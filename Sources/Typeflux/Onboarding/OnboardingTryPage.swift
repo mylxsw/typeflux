@@ -38,11 +38,10 @@ struct OnboardingTryPage: View {
     private func featureRow(_ feature: OnboardingTryModel.Feature) -> some View {
         let isSelected = model.selectedFeature == feature
         let isConnected = model.isConnected(feature)
-        let isTried = model.isTried(feature)
         let keys = model.shortcutKeys(for: feature)
 
-        return Button(action: { model.selectFeature(feature) }) {
-            HStack(spacing: 12) {
+        return Button { model.selectFeature(feature) } label: {
+            HStack(spacing: 8) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .fill(isSelected ? Color.accentColor : Color.primary.opacity(0.05))
@@ -54,29 +53,14 @@ struct OnboardingTryPage: View {
 
                 Text(featureTitle(feature))
                     .font(.system(size: 13.5, weight: .semibold))
+                    .lineLimit(1)
                     .foregroundStyle(isConnected ? Color.primary : Color.secondary.opacity(0.6))
 
                 Spacer()
 
-                if isTried {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Color(red: 0.188, green: 0.82, blue: 0.345))
-                } else if isConnected {
-                    if keys.isEmpty {
-                        Text(OnboardingStrings.text("status.notSet", table: "OnboardingTry"))
-                            .font(.system(size: 12))
-                            .foregroundStyle(.tertiary)
-                    } else {
-                        OnboardingKeycaps(keys: keys)
-                    }
-                } else {
-                    Text(OnboardingStrings.text("status.notConnected", table: "OnboardingTry"))
-                        .font(.system(size: 12))
-                        .foregroundStyle(.tertiary)
-                }
+                featureAccessory(feature, connected: isConnected, keys: keys)
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 10)
             .frame(height: 54)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -92,6 +76,19 @@ struct OnboardingTryPage: View {
         .accessibilityLabel(featureTitle(feature))
         .accessibilityValue(isConnected ? keys.joined(separator: " ") :
             OnboardingStrings.text("status.notConnected", table: "OnboardingTry"))
+    }
+
+    @ViewBuilder
+    private func featureAccessory(_ feature: OnboardingTryModel.Feature, connected: Bool, keys: [String]) -> some View {
+        if model.isTried(feature) {
+            Image(systemName: "checkmark").font(.system(size: 12, weight: .bold))
+                .foregroundStyle(Color(red: 0.188, green: 0.82, blue: 0.345))
+        } else if connected, !keys.isEmpty {
+            OnboardingKeycaps(keys: keys)
+        } else {
+            Text(OnboardingStrings.text(connected ? "status.notSet" : "status.notConnected", table: "OnboardingTry"))
+                .font(.system(size: 12)).foregroundStyle(.tertiary)
+        }
     }
 
     // MARK: - Right Practice Card
@@ -121,14 +118,22 @@ struct OnboardingTryPage: View {
                     }
                 }
             }
-            .padding(24)
+            .padding(model.selectedFeature == .ring ? 12 : 24)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
     private var heroGradient: RadialGradient {
+        if model.selectedFeature == .ring {
+            return RadialGradient(
+                colors: colorScheme == .dark
+                    ? [Color(red: 0.14, green: 0.17, blue: 0.22), Color(red: 0.08, green: 0.09, blue: 0.12)]
+                    : [Color(red: 0.93, green: 0.95, blue: 0.98), Color(red: 0.98, green: 0.98, blue: 0.99)],
+                center: .topLeading, startRadius: 0, endRadius: 500
+            )
+        }
         if colorScheme == .dark {
-            RadialGradient(
+            return RadialGradient(
                 colors: [
                     Color(red: 0.231, green: 0.165, blue: 0.4),
                     Color(red: 0.133, green: 0.114, blue: 0.212),
@@ -139,7 +144,7 @@ struct OnboardingTryPage: View {
                 endRadius: 500
             )
         } else {
-            RadialGradient(
+            return RadialGradient(
                 colors: [
                     Color(red: 0.902, green: 0.867, blue: 0.988),
                     Color(red: 0.941, green: 0.925, blue: 0.98),
@@ -161,7 +166,7 @@ struct OnboardingTryPage: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Color.primary)
 
-            Button(action: { viewModel.returnToRoute() }) {
+            Button { viewModel.returnToRoute() } label: {
                 Text(OnboardingStrings.text("connect.button", table: "OnboardingTry"))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white)
@@ -289,43 +294,7 @@ extension OnboardingTryPage {
     }
 
     private var ringArea: some View {
-        VStack(spacing: 18) {
-            instructionView(
-                prefix: OnboardingStrings.text("ring.instructionPrefix", table: "OnboardingTry"),
-                keys: model.shortcutKeys(for: .ring),
-                suffix: OnboardingStrings.text("ring.instructionSuffix", table: "OnboardingTry")
-            )
-
-            ZStack {
-                let sectors = [
-                    OnboardingStrings.text("ring.sector.voice", table: "OnboardingTry"),
-                    OnboardingStrings.text("ring.sector.chat", table: "OnboardingTry"),
-                    OnboardingStrings.text("ring.sector.translate", table: "OnboardingTry"),
-                    OnboardingStrings.text("ring.sector.screenshot", table: "OnboardingTry"),
-                    OnboardingStrings.text("ring.sector.ocr", table: "OnboardingTry"),
-                    OnboardingStrings.text("ring.sector.clipboard", table: "OnboardingTry")
-                ]
-                ForEach(Array(sectors.enumerated()), id: \.offset) { index, title in
-                    let angle = Double(index * 60 - 90) * Double.pi / 180.0
-                    let offsetX = 66.0 * cos(angle)
-                    let offsetY = 66.0 * sin(angle)
-                    let isHighlighted = index == 2
-                    Circle()
-                        .fill(isHighlighted ? Color.accentColor : Color.primary
-                            .opacity(colorScheme == .dark ? 0.22 : 0.08))
-                        .frame(width: 50, height: 50)
-                        .overlay(
-                            Text(title)
-                                .font(.system(size: 11, weight: isHighlighted ? .semibold : .regular))
-                                .foregroundStyle(isHighlighted ? Color.white : Color.primary)
-                        )
-                        .offset(x: offsetX, y: offsetY)
-                }
-            }
-            .frame(width: 186, height: 186)
-
-            triedButton(for: .ring)
-        }
+        OnboardingRingPractice(model: model)
     }
 
     private var chatArea: some View {
@@ -381,7 +350,7 @@ extension OnboardingTryPage {
     }
 
     private func triedButton(for feature: OnboardingTryModel.Feature) -> some View {
-        Button(action: { model.markTried(feature) }) {
+        Button { model.markTried(feature) } label: {
             Text(OnboardingStrings.text("button.tried", table: "OnboardingTry"))
                 .font(.system(size: 12, weight: .semibold))
                 .padding(.horizontal, 13)
